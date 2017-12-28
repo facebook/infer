@@ -67,14 +67,20 @@ module SourceKind = struct
           (* taint the [this] parameter passed to the constructor *)
           Some (IntentFromURI, Some 0)
       | ( "android.content.Intent"
-        , ( "parseUri" | "setData" | "setDataAndNormalize" | "setDataAndType"
+        , ( "parseUri"
+          | "setData"
+          | "setDataAndNormalize"
+          | "setDataAndType"
           | "setDataAndTypeAndNormalize" ) ) ->
           Some (IntentFromURI, return)
       | ( "android.location.Location"
         , ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ) ->
           Some (PrivateData, return)
       | ( "android.telephony.TelephonyManager"
-        , ( "getDeviceId" | "getLine1Number" | "getSimSerialNumber" | "getSubscriberId"
+        , ( "getDeviceId"
+          | "getLine1Number"
+          | "getSimSerialNumber"
+          | "getSubscriberId"
           | "getVoiceMailNumber" ) ) ->
           Some (PrivateData, return)
       | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
@@ -109,7 +115,7 @@ module SourceKind = struct
               List.find_map
                 ~f:(fun (procedure_regex, kind) ->
                   if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
-                  else None)
+                  else None )
                 external_sources )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       match (* accessed global will be passed to us as the only parameter *)
@@ -158,14 +164,27 @@ module SourceKind = struct
             | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
                 Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
             | ( "android.app.Service"
-              , ( "onBind" | "onRebind" | "onStart" | "onStartCommand" | "onTaskRemoved"
+              , ( "onBind"
+                | "onRebind"
+                | "onStart"
+                | "onStartCommand"
+                | "onTaskRemoved"
                 | "onUnbind" ) ) ->
                 Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
             | "android.content.BroadcastReceiver", "onReceive" ->
                 Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
             | ( "android.content.ContentProvider"
-              , ( "bulkInsert" | "call" | "delete" | "insert" | "getType" | "openAssetFile"
-                | "openFile" | "openPipeHelper" | "openTypedAssetFile" | "query" | "refresh"
+              , ( "bulkInsert"
+                | "call"
+                | "delete"
+                | "insert"
+                | "getType"
+                | "openAssetFile"
+                | "openFile"
+                | "openPipeHelper"
+                | "openTypedAssetFile"
+                | "query"
+                | "refresh"
                 | "update" ) ) ->
                 Some
                   (taint_formals_with_types ["android.net.Uri"; "java.lang.String"]
@@ -212,7 +231,6 @@ module SourceKind = struct
           "UserControlledString"
       | UserControlledURI ->
           "UserControlledURI" )
-
 end
 
 module JavaSource = Source.Make (SourceKind)
@@ -304,24 +322,44 @@ module SinkKind = struct
             | "android.app.Activity", "startIntentSenderFromChild" ->
                 taint_nth 3 StartComponent
             | ( "android.content.Context"
-              , ( "bindService" | "sendBroadcast" | "sendBroadcastAsUser" | "sendOrderedBroadcast"
-                | "sendOrderedBroadcastAsUser" | "sendStickyBroadcast"
-                | "sendStickyBroadcastAsUser" | "sendStickyOrderedBroadcast"
-                | "sendStickyOrderedBroadcastAsUser" | "startActivities" | "startActivity"
-                | "startActivityForResult" | "startActivityIfNeeded" | "startNextMatchingActivity"
-                | "startService" | "stopService" ) ) ->
+              , ( "bindService"
+                | "sendBroadcast"
+                | "sendBroadcastAsUser"
+                | "sendOrderedBroadcast"
+                | "sendOrderedBroadcastAsUser"
+                | "sendStickyBroadcast"
+                | "sendStickyBroadcastAsUser"
+                | "sendStickyOrderedBroadcast"
+                | "sendStickyOrderedBroadcastAsUser"
+                | "startActivities"
+                | "startActivity"
+                | "startActivityForResult"
+                | "startActivityIfNeeded"
+                | "startNextMatchingActivity"
+                | "startService"
+                | "stopService" ) ) ->
                 taint_nth 0 StartComponent
             | "android.content.Context", "startIntentSender" ->
                 taint_nth 1 StartComponent
             | ( "android.content.Intent"
-              , ( "parseUri" | "getIntent" | "getIntentOld" | "setComponent" | "setData"
-                | "setDataAndNormalize" | "setDataAndType" | "setDataAndTypeAndNormalize"
+              , ( "parseUri"
+                | "getIntent"
+                | "getIntentOld"
+                | "setComponent"
+                | "setData"
+                | "setDataAndNormalize"
+                | "setDataAndType"
+                | "setDataAndTypeAndNormalize"
                 | "setPackage" ) ) ->
                 taint_nth 0 CreateIntent
             | "android.content.Intent", "setClassName" ->
                 taint_all CreateIntent
             | ( "android.webkit.WebView"
-              , ( "evaluateJavascript" | "loadData" | "loadDataWithBaseURL" | "loadUrl" | "postUrl"
+              , ( "evaluateJavascript"
+                | "loadData"
+                | "loadDataWithBaseURL"
+                | "loadUrl"
+                | "postUrl"
                 | "postWebMessage" ) ) ->
                 taint_all JavaScript
             | class_name, method_name ->
@@ -337,7 +375,7 @@ module SinkKind = struct
                       with Failure _ ->
                         (* couldn't parse the index, just taint everything *)
                         taint_all kind
-                    else None)
+                    else None )
                   external_sinks
           in
           PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
@@ -369,7 +407,6 @@ module SinkKind = struct
           "StartComponent"
       | Other ->
           "Other" )
-
 end
 
 module JavaSink = Sink.Make (SinkKind)
@@ -392,7 +429,7 @@ module JavaSanitizer = struct
         in
         List.find_map
           ~f:(fun procedure_regex ->
-            if Str.string_match procedure_regex procedure_string 0 then Some All else None)
+            if Str.string_match procedure_regex procedure_string 0 then Some All else None )
           external_sanitizers
     | _ ->
         None
@@ -445,5 +482,4 @@ include Trace.Make (struct
     | _, OpenDrawableResource
     | _, StartComponent ->
         None
-
 end)

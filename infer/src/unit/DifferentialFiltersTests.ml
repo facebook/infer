@@ -379,4 +379,3 @@ let tests =
        @ test_relative_complements @ test_skip_anonymous_class_renamings
        @ test_interesting_paths_filter
        @ [test_skip_duplicated_types_on_filenames; test_value_of_qualifier_tag]
-

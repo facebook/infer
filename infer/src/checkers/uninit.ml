@@ -107,7 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                && not (is_struct_field_passed_by_ref call t al idx) ->
             report_intra ((var, t), al) loc (snd extras)
         | _ ->
-            ())
+            () )
       actuals
 
 
@@ -142,7 +142,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | _ ->
                 t
           in
-          ((v', t'), a))
+          ((v', t'), a) )
         initialized_fields
     in
     match base with
@@ -265,14 +265,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl
               | _ ->
-                  acc)
+                  acc )
             ~init:astate.uninit_vars actuals
         in
         report_on_function_params call pdesc tenv uninit_vars actuals loc extras ;
         {astate with uninit_vars}
     | Call _ | Assume _ ->
         astate
-
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
@@ -301,7 +300,7 @@ let get_locals cfg tenv pdesc =
       | Typ.Tarray (t', _, _) ->
           (fst base_ap, [AccessPath.ArrayAccess (t', [])]) :: acc
       | _ ->
-          base_ap :: acc)
+          base_ap :: acc )
     ~init:[] (Procdesc.get_locals cfg)
 
 
@@ -332,4 +331,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
-

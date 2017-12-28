@@ -65,7 +65,7 @@ let compute_local_exception_line loc_trace =
   snd (List_.fold_until ~init:(`Continue (None, None)) ~f:compute_local_exception_line loc_trace)
 
 
-type node_id_key = {node_id: int; node_key: Digest.t}
+type node_id_key = {node_id: int; node_key: Caml.Digest.t}
 
 type err_key =
   { err_kind: Exceptions.err_kind
@@ -113,7 +113,6 @@ module ErrLogHash = struct
         (key1.err_kind, key1.in_footprint, key1.err_name)
         (key2.err_kind, key2.in_footprint, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
-
   end
 
   include Hashtbl.Make (Key)
@@ -147,12 +146,14 @@ let fold (f: err_key -> err_data -> 'a -> 'a) t acc =
     (fun err_key set acc -> ErrDataSet.fold (fun err_data acc -> f err_key err_data acc) set acc)
     t acc
 
+
 (** Return the number of elements in the error log which satisfy [filter] *)
 let size filter (err_log: t) =
   let count = ref 0 in
   ErrLogHash.iter
     (fun key err_datas ->
-      if filter key.err_kind key.in_footprint then count := !count + ErrDataSet.cardinal err_datas)
+      if filter key.err_kind key.in_footprint then count := !count + ErrDataSet.cardinal err_datas
+      )
     err_log ;
   !count
 
@@ -324,7 +325,7 @@ module Err_table = struct
     let count_err (err_name: IssueType.t) n =
       let err_string = err_name.IssueType.unique_id in
       let count = try String.Map.find_exn !err_name_map err_string with Not_found -> 0 in
-      err_name_map := String.Map.add ~key:err_string ~data:(count + n) !err_name_map
+      err_name_map := String.Map.set ~key:err_string ~data:(count + n) !err_name_map
     in
     let count key err_datas =
       if Exceptions.equal_err_kind ekind key.err_kind && key.in_footprint then
@@ -378,7 +379,7 @@ module Err_table = struct
       List.iter
         ~f:(fun (err_name, desc) ->
           Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc ekind err_name
-            desc err_data.loc_in_ml_source fmt ())
+            desc err_data.loc_in_ml_source fmt () )
         err_names
     in
     F.fprintf fmt "@.Detailed errors during footprint phase:@." ;
@@ -397,7 +398,6 @@ module Err_table = struct
     LocMap.iter
       (fun nslm err_names -> F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names)
       !map_warn_re
-
 end
 
 type err_table = Err_table.t

@@ -98,4 +98,3 @@ let get_sil_location_from_range trans_unit_ctx source_range prefer_first =
 let get_sil_location stmt_info context =
   let sloc1, _ = stmt_info.Clang_ast_t.si_source_range in
   clang_to_sil_location context.CContext.translation_unit_context sloc1
-

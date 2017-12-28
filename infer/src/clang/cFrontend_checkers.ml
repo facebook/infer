@@ -157,4 +157,3 @@ let class_name node =
           "" )
   | _ ->
       ""
-

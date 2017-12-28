@@ -1318,8 +1318,7 @@ module Normalize = struct
     in
     let handle_unary_negation (e1: Exp.t) (e2: Exp.t) =
       match (e1, e2) with
-      | UnOp (LNot, e1', _), Const Cint i
-      | Const Cint i, UnOp (LNot, e1', _)
+      | (UnOp (LNot, e1', _), Const Cint i | Const Cint i, UnOp (LNot, e1', _))
         when IntLit.iszero i ->
           (e1', Exp.zero, true)
       | _ ->
@@ -1389,7 +1388,7 @@ module Normalize = struct
               List.map
                 ~f:(fun (idx, cnt) ->
                   let idx' = exp_normalize tenv sub idx in
-                  (idx', strexp_normalize tenv sub cnt))
+                  (idx', strexp_normalize tenv sub cnt) )
                 idx_cnts
             in
             let idx_cnts'' = List.sort ~cmp:[%compare : Exp.t * Sil.strexp] idx_cnts' in
@@ -1578,7 +1577,7 @@ module Normalize = struct
                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
                       lt_list_tightened)
           | _ ->
-              true)
+              true )
         nonineq_list
     in
     (ineq_list', nonineq_list')
@@ -1712,7 +1711,6 @@ module Normalize = struct
     let nprop = List.fold ~f:(prop_atom_and tenv) ~init:p0 (get_pure_extended eprop) in
     unsafe_cast_to_normal
       (footprint_normalize tenv (set nprop ~pi_fp:eprop.pi_fp ~sigma_fp:eprop.sigma_fp))
-
 end
 
 (* End of module Normalize *)
@@ -1730,7 +1728,7 @@ let lexp_normalize_prop tenv p lexp =
   let noffsets =
     List.map
       ~f:(fun (n: Sil.offset) ->
-        match n with Off_fld _ -> n | Off_index e -> Sil.Off_index (exp_normalize_prop tenv p e))
+        match n with Off_fld _ -> n | Off_index e -> Sil.Off_index (exp_normalize_prop tenv p e) )
       offsets
   in
   Sil.exp_add_offsets nroot noffsets
@@ -2668,7 +2666,6 @@ end = struct
   let prop_chain_size p =
     let fp_size = pi_size p.pi_fp + sigma_size p.sigma_fp in
     pi_size p.pi + sigma_size p.sigma + fp_size
-
 end
 
 (*** END of module Metrics ***)
@@ -2729,7 +2726,6 @@ module CategorizePreconditions = struct
         OnlyAllocation
     | _ :: _, [], [] ->
         DataConstraints
-
 end
 
 (* Export for interface *)

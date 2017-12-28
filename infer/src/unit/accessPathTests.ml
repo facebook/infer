@@ -180,4 +180,3 @@ let tests =
   in
   "all_tests_suite"
   >::: [equal_test; append_test; prefix_test; of_exp_test; abstraction_test; domain_test]
-

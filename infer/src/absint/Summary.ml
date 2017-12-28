@@ -36,5 +36,4 @@ module Make (P : Payload) : S with type payload = P.payload = struct
         None
     | Some summary ->
         P.read_payload summary
-
 end

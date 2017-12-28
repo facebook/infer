@@ -187,7 +187,6 @@ module NoAstDecl = struct
 
   let objc_method_of_string_kind class_name method_name method_kind =
     mk_objc_method class_name method_name method_kind
-
 end
 
 let objc_method_procname ?tenv decl_info method_name mdi =
@@ -239,4 +238,3 @@ let from_decl_for_linters translation_unit_context method_decl =
       objc_method_procname decl_info method_name mdi
   | _ ->
       from_decl translation_unit_context method_decl
-

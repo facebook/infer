@@ -81,7 +81,6 @@ module Access = struct
           pname
     | InterfaceCall pname ->
         F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
-
 end
 
 module TraceElem = struct
@@ -150,7 +149,6 @@ module TraceElem = struct
   let make_unannotated_call_access pname loc =
     let site = make_dummy_site loc in
     make (Access.InterfaceCall pname) site
-
 end
 
 (* In this domain true<=false. The intended denotations [[.]] are
@@ -222,7 +220,6 @@ module Choice = struct
         F.fprintf fmt "OnMainThread"
     | LockHeld ->
         F.fprintf fmt "LockHeld"
-
 end
 
 module Attribute = struct
@@ -294,7 +291,6 @@ module OwnershipAbstractValue = struct
           (IntSet.elements s)
     | Owned ->
         F.fprintf fmt "Owned"
-
 end
 
 module OwnershipDomain = struct
@@ -363,7 +359,6 @@ module AttributeMapDomain = struct
       |> AttributeSetDomain.add attribute
     in
     add access_path attribute_set t
-
 end
 
 module Excluder = struct
@@ -376,7 +371,6 @@ module Excluder = struct
         F.fprintf fmt "Lock"
     | Both ->
         F.fprintf fmt "both Thread and Lock"
-
 end
 
 module AccessPrecondition = struct
@@ -449,7 +443,8 @@ let is_empty {threads; locks; accesses; ownership; attribute_map} =
 
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true
-  else ThreadsDomain.( <= ) ~lhs:lhs.threads ~rhs:rhs.threads
+  else
+    ThreadsDomain.( <= ) ~lhs:lhs.threads ~rhs:rhs.threads
     && LocksDomain.( <= ) ~lhs:lhs.locks ~rhs:rhs.locks
     && AccessDomain.( <= ) ~lhs:lhs.accesses ~rhs:rhs.accesses
     && AttributeMapDomain.( <= ) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
@@ -497,4 +492,3 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
   F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map
-

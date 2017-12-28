@@ -56,7 +56,8 @@ module ArrInfo = struct
   let ( <= ) : lhs:t -> rhs:t -> bool =
     fun ~lhs ~rhs ->
       if phys_equal lhs rhs then true
-      else Itv.le ~lhs:lhs.offset ~rhs:rhs.offset && Itv.le ~lhs:lhs.size ~rhs:rhs.size
+      else
+        Itv.le ~lhs:lhs.offset ~rhs:rhs.offset && Itv.le ~lhs:lhs.size ~rhs:rhs.size
         && Itv.le ~lhs:lhs.stride ~rhs:rhs.stride
 
 

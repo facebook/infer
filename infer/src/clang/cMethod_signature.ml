@@ -98,4 +98,3 @@ let ms_to_string ms =
       ms.args
   ^ "->" ^ Clang_ast_extend.type_ptr_to_string ms.ret_type.Clang_ast_t.qt_type_ptr ^ " "
   ^ Clang_ast_j.string_of_source_range ms.loc
-

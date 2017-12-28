@@ -194,7 +194,6 @@ end = struct
   let saturate constraints =
     let constraints_cleaned = sort_then_remove_redundancy constraints in
     saturate_ constraints_cleaned constraints_cleaned
-
 end
 
 (** Return true if the two types have sizes which can be compared *)
@@ -460,7 +459,7 @@ end = struct
           List.iter
             ~f:(fun (idx, se) ->
               add_lt_minus1_e idx ;
-              strexp_extract (se, elt_t))
+              strexp_extract (se, elt_t) )
             isel
     in
     let hpred_extract = function
@@ -603,7 +602,6 @@ end = struct
     let inconsistent_lt (e1, e2) = check_le ineq e2 e1 in
     List.exists ~f:inconsistent_neq neqs || List.exists ~f:inconsistent_leq leqs
     || List.exists ~f:inconsistent_lt lts
-
 
   (*
   (** Pretty print inequalities and disequalities *)
@@ -871,7 +869,7 @@ let get_smt_key a p =
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
   let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) p in
   Out_channel.close outc_tmp ;
-  Digest.to_hex (Digest.file tmp_filename)
+  Caml.Digest.to_hex (Caml.Digest.file tmp_filename)
 
 
 (** Check whether [prop |- a]. False means dont know. *)
@@ -1323,7 +1321,6 @@ end = struct
     d_inner () ;
     L.d_strln " returning FALSE" ;
     L.d_ln ()
-
 end
 
 let d_impl (s1, s2) = ProverState.d_implication (`Exp s1, `Exp s2)
@@ -1939,7 +1936,6 @@ module Subtyping_check = struct
     | _ ->
         (* don't know, consider both possibilities *)
         (Some texp1, Some texp1)
-
 end
 
 let cast_exception tenv texp1 texp2 e1 subs =
@@ -2773,7 +2769,6 @@ let find_minimum_pure_cover tenv cases =
   in
   let shrink cases = if List.length cases > 2 then shrink_ [] cases else cases in
   try Some (shrink (grow [] cases)) with NO_COVER -> None
-
 
 (*
 (** Check [prop |- e1<e2]. Result [false] means "don't know". *)

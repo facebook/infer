@@ -203,7 +203,6 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
       ~pos:(Some pos) ~path:path_to_node fmt
       (node_name ^ "#" ^ pos) ;
     F.fprintf fmt "(%a)" (pp_line_link source path_to_root) linenum
-
 end
 
 (* =============== END of module Html =============== *)
@@ -341,7 +340,6 @@ module Xml = struct
     if on_several_lines then pp_prelude fmt ;
     pp_node newline "" fmt node ;
     if on_several_lines then pp fmt "@."
-
 end
 
 (* =============== END of module Xml =============== *)

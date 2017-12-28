@@ -182,4 +182,3 @@ let report_cycle tenv hpred original_prop =
       Some (exn_retain_cycle tenv prop hpred cycle)
   | _ ->
       None
-

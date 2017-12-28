@@ -48,4 +48,3 @@ let update_current_method context decl =
   { context with
     current_method= Some decl
   ; parent_methods= add_parent_method context.current_method context.parent_methods }
-

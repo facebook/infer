@@ -84,7 +84,7 @@ let collect_all_stats_files () =
             let targets_files =
               List.map
                 ~f:(fun (t, p) ->
-                  (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p)))
+                  (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p)) )
                 r
             in
             Ok (Buck_out targets_files)
@@ -179,4 +179,3 @@ let generate_files () =
   write_to_json_file_opt
     (Filename.concat aggregated_reporting_stats_dir aggregated_stats_filename)
     j.reporting_json_data
-

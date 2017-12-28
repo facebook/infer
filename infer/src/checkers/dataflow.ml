@@ -157,7 +157,6 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
       with Not_found -> Dead_state
     in
     transitions
-
 end
 
 (* MakeDF *)
@@ -186,4 +185,3 @@ let callback_test_dataflow {Callbacks.proc_desc; tenv; summary} =
   in
   List.iter ~f:do_node (Procdesc.get_nodes proc_desc) ;
   summary
-

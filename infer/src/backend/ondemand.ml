@@ -211,4 +211,3 @@ let analyze_proc_name : Procdesc.t -> Typ.Procname.t -> Specs.summary option =
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
   match !callbacks_ref with Some callbacks -> callbacks.get_proc_desc callee_pname | None -> None
-

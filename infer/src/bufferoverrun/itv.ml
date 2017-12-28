@@ -46,7 +46,6 @@ module SymLinear = struct
       fun cond x y ->
         let merge_function k x y = if cond k x y then None else raise Exit in
         match merge merge_function x y with _ -> true | exception Exit -> false
-
   end
 
   type t = int M.t [@@deriving compare]

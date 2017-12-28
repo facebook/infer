@@ -253,7 +253,6 @@ end = struct
               let stats1 = compute_stats do_calls f path ; get_stats path in
               stats.max_length <- stats1.max_length ;
               stats.linear_num <- stats1.linear_num
-
   end
 
   (* End of module Invariant *)
@@ -376,7 +375,7 @@ end = struct
       (fun node num ->
         if num > !max_rep_num then (
           max_rep_node := node ;
-          max_rep_num := num ))
+          max_rep_num := num ) )
       !map ;
     (!max_rep_node, !max_rep_num)
 
@@ -480,7 +479,7 @@ end = struct
                 let definition_descr =
                   Format.sprintf "Definition of %s" (Typ.Procname.to_simplified_string pname)
                 in
-                trace := Errlog.make_trace_element (level + 1) loc definition_descr [] :: !trace)
+                trace := Errlog.make_trace_element (level + 1) loc definition_descr [] :: !trace )
             loc_opt
       | _, Some curr_node
         -> (
@@ -548,7 +547,6 @@ end = struct
     in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
     IList.remove_irrelevant_duplicates compare relevant (List.rev !trace)
-
 end
 
 (* =============== END of the Path module ===============*)
@@ -740,7 +738,6 @@ end = struct
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
   let from_renamed_list (pl: ('a Prop.t * Path.t) list) : t =
     List.fold ~f:(fun ps (p, pa) -> add_renamed_prop p pa ps) ~init:empty pl
-
 end
 
 (* =============== END of the PathSet module ===============*)

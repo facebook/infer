@@ -123,7 +123,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     String.compare f1 f2
   in
   let cmp ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2) =
-    [%compare : Digest.t * string * issue_file_with_renaming]
+    [%compare : Caml.Digest.t * string * issue_file_with_renaming]
       (issue1.Jsonbug_t.key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
       (issue2.Jsonbug_t.key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
   in
@@ -180,7 +180,7 @@ let value_of_qualifier_tag qts tag =
 
 type file_extension = string [@@deriving compare]
 
-type weak_hash = string * string * string * Digest.t * string option [@@deriving compare]
+type weak_hash = string * string * string * Caml.Digest.t * string option [@@deriving compare]
 
 let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   (*

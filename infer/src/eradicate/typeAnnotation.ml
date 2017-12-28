@@ -91,4 +91,3 @@ let with_origin ta o = {ta with origin= o}
 let from_item_annotation ia origin =
   let ta = const Nullable (Annotations.ia_is_nullable ia) origin in
   set_value Present (Annotations.ia_is_present ia) ta
-

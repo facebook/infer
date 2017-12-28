@@ -59,7 +59,7 @@ module Make (Kind : Kind) = struct
     let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
     List.map
       ~f:(fun (name, typ, kind_opt) ->
-        (name, typ, Option.map kind_opt ~f:(fun kind -> make kind site)))
+        (name, typ, Option.map kind_opt ~f:(fun kind -> make kind site)) )
       (Kind.get_tainted_formals pdesc tenv)
 
 

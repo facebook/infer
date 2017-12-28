@@ -137,4 +137,3 @@ let rec has_tmp_var = function
       has_tmp_var dexp || List.exists ~f:has_tmp_var dexp_list
   | Dconst _ | Dunknown | Dsizeof (_, None, _) ->
       false
-

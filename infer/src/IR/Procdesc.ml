@@ -251,7 +251,6 @@ module Node = struct
     in
     let pp fmt = F.fprintf fmt "%s@\n%a@?" str (pp_instrs pe None ~sub_instrs:true) node in
     F.asprintf "%t" pp
-
 end
 
 (* =============== END of module Node =============== *)
@@ -593,4 +592,3 @@ let has_modify_in_block_attr procdesc pvar =
            ProcAttributes.var_attribute_equal attr ProcAttributes.Modify_in_block )
   in
   List.exists ~f:pvar_local_matches (get_locals procdesc)
-

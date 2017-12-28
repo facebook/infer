@@ -10,4 +10,3 @@
 let validate_al_files () =
   prerr_endline "ERROR: infer was built without clang support." ;
   Die.exit 1
-

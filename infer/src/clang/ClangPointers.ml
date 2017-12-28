@@ -113,4 +113,3 @@ let populate_all_tables top_decl =
   (* populate caches *)
   visit_ast ~visit_decl:process_decl ~visit_stmt:add_stmt_to_cache ~visit_type:add_type_to_cache
     ~visit_src_loc:complete_source_location top_decl
-

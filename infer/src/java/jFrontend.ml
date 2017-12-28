@@ -215,4 +215,3 @@ let compute_class_icfg source_file linereader program tenv node =
   ( try create_icfg source_file linereader program icfg (Javalib.get_name node) node
     with Bir.Subroutine -> () ) ;
   (icfg.JContext.cg, icfg.JContext.cfg)
-

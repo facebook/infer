@@ -59,4 +59,3 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
      Caveat: it's possible that procedure will be captured in some other unrelated file
              later - infer may ignore it then. *)
   Attributes.load_defined attributes.proc_name
-

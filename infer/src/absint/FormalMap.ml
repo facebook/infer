@@ -20,7 +20,7 @@ let make pdesc =
     List.mapi
       ~f:(fun index (name, typ) ->
         let pvar = Pvar.mk name pname in
-        (AccessPath.base_of_pvar pvar typ, index))
+        (AccessPath.base_of_pvar pvar typ, index) )
       attrs.ProcAttributes.formals
   in
   List.fold

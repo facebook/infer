@@ -667,7 +667,7 @@ and analyzer =
 - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
 - $(b,crashcontext): experimental (see $(b,--crashcontext))|}
     ~f:(function
-        | CaptureOnly | CompileOnly as x ->
+        | (CaptureOnly | CompileOnly) as x ->
             let analyzer_str =
               List.find_map_exn string_to_analyzer ~f:(fun (s, y) ->
                   if equal_analyzer x y then Some s else None )
@@ -752,7 +752,7 @@ and ( annotation_reachability
         ~f:(fun b ->
           disable_all_checkers () ;
           var := b ;
-          b)
+          b )
         ( if String.equal doc "" then ""
         else Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long )
         [] (* do all the work in ~f *)
@@ -769,15 +769,14 @@ and ( annotation_reachability
       ( "Default checkers: "
       ^ ( List.rev_filter_map
             ~f:(fun (_, long, _, default) ->
-              if default then Some (Printf.sprintf "$(b,--%s)" long) else None)
+              if default then Some (Printf.sprintf "$(b,--%s)" long) else None )
             !all_checkers
         |> String.concat ~sep:", " ) )
       ~f:(fun b ->
         List.iter
-          ~f:(fun (var, _, _, default) ->
-            var := if b then default || !var else not default && !var)
+          ~f:(fun (var, _, _, default) -> var := if b then default || !var else not default && !var)
           !all_checkers ;
-        b)
+        b )
       [] (* do all the work in ~f *)
          []
     (* do all the work in ~f *)
@@ -1058,7 +1057,7 @@ and ( bo_debug
       "Debug mode (also sets $(b,--debug-level 2), $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-only-cheap-debug), $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
       ~f:(fun debug ->
         if debug then set_debug_level 2 else set_debug_level 0 ;
-        debug)
+        debug )
       [ developer_mode
       ; print_buckets
       ; print_types
@@ -1104,7 +1103,7 @@ and ( bo_debug
       "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), and unsets $(b,--allowed-failures) and $(b,--default-linters)."
       ~f:(fun debug ->
         debug_level_linters := if debug then 2 else 0 ;
-        debug)
+        debug )
       [debug; developer_mode] [default_linters; keep_going]
   in
   ( bo_debug
@@ -1156,7 +1155,7 @@ and () =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue = IssueType.from_string issue_id in
-          IssueType.set_enabled issue b ; issue_id)
+          IssueType.set_enabled issue b ; issue_id )
         ?default ~meta:"issue_type"
         ~in_help:CLOpt.([(Report, manual_generic)])
         doc
@@ -1728,10 +1727,12 @@ and report_previous =
 
 
 and rest =
-  CLOpt.mk_rest_actions ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
+  CLOpt.mk_rest_actions
+    ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
     "Stop argument processing, use remaining arguments as a build command" ~usage:exe_usage
     (fun build_exe ->
-      match Filename.basename build_exe with "java" | "javac" -> CLOpt.Javac | _ -> CLOpt.NoParse )
+      match Filename.basename build_exe with "java" | "javac" -> CLOpt.Javac | _ -> CLOpt.NoParse
+      )
 
 
 and results_dir =
@@ -1834,7 +1835,7 @@ and specs_library =
       ~long:"specs-library-index" ~default:""
       ~f:(fun file ->
         specs_library := read_specs_dir_list_file file @ !specs_library ;
-        "")
+        "" )
       ~in_help:CLOpt.([(Analyze, manual_generic)])
       ~meta:"file" ""
   in
@@ -2013,7 +2014,7 @@ let javac_classes_out =
           (* extend env var args to pass args to children that do not receive the rest args *)
           CLOpt.extend_env_args ["--results-dir"; classes_out_infer] ;
           results_dir := classes_out_infer ) ;
-      classes_out)
+      classes_out )
     ""
 
 
@@ -2025,7 +2026,7 @@ and _ =
           let files = List.filter paths ~f:(fun path -> Sys.is_file path = `Yes) in
           CLOpt.extend_env_args (List.concat_map files ~f:(fun file -> ["--specs-library"; file])) ;
           specs_library := List.rev_append files !specs_library ) ;
-      classpath)
+      classpath )
     ""
 
 
@@ -2093,7 +2094,7 @@ let post_parsing_initialization command_opt =
         match inferconfig_file with
         | Some inferconfig ->
             Printf.sprintf "version %s/inferconfig %s" Version.commit
-              (Digest.to_hex (Digest.file inferconfig))
+              (Caml.Digest.to_hex (Caml.Digest.file inferconfig))
         | None ->
             Version.commit
       in
@@ -2786,7 +2787,7 @@ let set_reference_and_call_function reference value f x =
   Utils.try_finally_swallow_timeout
     ~f:(fun () ->
       reference := value ;
-      f x)
+      f x )
     ~finally:restore
 
 

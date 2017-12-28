@@ -185,7 +185,7 @@ let directory_iter f path =
 
 let directory_is_empty path = Sys.readdir path |> Array.is_empty
 
-let string_crc_hex32 s = Digest.to_hex (Digest.string s)
+let string_crc_hex32 s = Caml.Digest.to_hex (Caml.Digest.string s)
 
 let read_json_file path =
   try Ok (Yojson.Basic.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
@@ -245,8 +245,8 @@ let shell_escape_command =
     | arg ->
         if Str.string_match no_quote_needed arg 0 then arg
         else if Str.string_match easy_single_quotable arg 0 then F.sprintf "'%s'" arg
-        else if Str.string_match easy_double_quotable arg 0 then arg |> Escape.escape_double_quotes
-          |> F.sprintf "\"%s\""
+        else if Str.string_match easy_double_quotable arg 0 then
+          arg |> Escape.escape_double_quotes |> F.sprintf "\"%s\""
         else
           (* ends on-going single quote, output single quote inside double quotes, then open a new single
        quote *)
@@ -338,7 +338,10 @@ let compare_versions v1 v2 =
 
 
 let write_file_with_locking ?(delete= false) ~f:do_write fname =
-  Unix.with_file ~mode:Unix.([O_WRONLY; O_CREAT]) fname ~f:(fun file_descr ->
+  Unix.with_file
+    ~mode:Unix.([O_WRONLY; O_CREAT])
+    fname
+    ~f:(fun file_descr ->
       if Unix.flock file_descr Unix.Flock_command.lock_exclusive then (
         (* make sure we're not writing over some existing, possibly longer content: some other
            process may have snagged the file from under us between open(2) and flock(2) so passing
@@ -387,4 +390,4 @@ let yield () =
   Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
 
 
-let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Digest.string
+let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.string

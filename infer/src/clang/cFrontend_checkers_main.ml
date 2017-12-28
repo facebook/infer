@@ -274,7 +274,7 @@ let rec do_frontend_checks_stmt (context: CLintersContext.context)
   List.iter
     ~f:(fun (cxt, stmts) ->
       List.iter ~f:(do_all_checks_on_stmts cxt map_active) stmts ;
-      call_tableaux cxt an map_active)
+      call_tableaux cxt an map_active )
     stmt_context_list
 
 
@@ -291,7 +291,7 @@ and do_frontend_checks_via_transition context map_active an trans =
       | Ctl_parser_types.Decl d ->
           do_frontend_checks_decl context map_active d
       | Ctl_parser_types.Stmt st ->
-          do_frontend_checks_stmt context map_active st)
+          do_frontend_checks_stmt context map_active st )
     succs
 
 
@@ -361,7 +361,7 @@ let find_linters_files () =
 
 
 let linters_files =
-  List.dedup ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
+  List.dedup_and_sort ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
 
 
 let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_context) ast =

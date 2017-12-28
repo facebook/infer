@@ -50,7 +50,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         List.fold ~f:add_actual_by_ref ~init:astate actuals
     | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
         astate
-
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

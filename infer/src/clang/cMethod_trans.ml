@@ -692,4 +692,3 @@ let get_captures_from_cpp_lambda dec =
       cxx_rdi.xrdi_lambda_captures
   | _ ->
       assert false
-

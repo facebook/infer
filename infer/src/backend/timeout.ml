@@ -118,10 +118,9 @@ let exe_timeout f x =
       ~f:(fun () ->
         suspend_existing_timeout_and_start_new_one () ;
         f x ;
-        None)
+        None )
       ~finally:resume_previous_timeout
   with SymOp.Analysis_failure_exe kind ->
     L.progressbar_timeout_event kind ;
     Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
     Some kind
-

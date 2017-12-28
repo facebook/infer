@@ -1331,4 +1331,3 @@ let explain_null_test_after_dereference tenv exp node line loc =
 
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc
-

@@ -109,7 +109,7 @@ end = struct
           let fsel' =
             List.map
               ~f:(fun (f'', se'') ->
-                if Typ.Fieldname.equal f'' fld then (fld, se_mod) else (f'', se''))
+                if Typ.Fieldname.equal f'' fld then (fld, se_mod) else (f'', se'') )
               fsel
           in
           Sil.Estruct (fsel', inst)
@@ -286,7 +286,6 @@ end = struct
     in
     let hpred' = hpred_replace_strexp tenv footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
-
 end
 
 (** This function renames expressions in [p]. The renaming is, roughly
@@ -305,8 +304,8 @@ let prop_replace_path_index tenv (p: Prop.exposed Prop.t) (path: StrexpMatch.pat
             let new_e_path_index =
               Prop.exp_normalize_prop tenv p (Exp.Lindex (e_path, new_index))
             in
-            (old_e_path_index, new_e_path_index) :: acc_inner)
-          ~init:acc_outer map)
+            (old_e_path_index, new_e_path_index) :: acc_inner )
+          ~init:acc_outer map )
       ~init:[] elist_path
   in
   let expmap_fun e' =
@@ -605,7 +604,7 @@ let check_after_array_abstraction tenv prop =
         List.iter
           ~f:(fun (f, se) ->
             let typ_f = Typ.Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f typ in
-            check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se)
+            check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se )
           fsel
   in
   let check_hpred = function
@@ -690,4 +689,3 @@ let remove_redundant_elements tenv prop =
     let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
     Prop.normalize tenv prop'
   else prop
-

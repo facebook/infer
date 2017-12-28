@@ -549,4 +549,3 @@ let stmt_node_child_type an =
       match stmts with [stmt] -> ast_node_type (Stmt stmt) | _ -> "" )
   | _ ->
       ""
-

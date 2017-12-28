@@ -32,11 +32,12 @@ let protect ~f ~recover ~pp_context =
       (* FIXME(t21762295): we do not expect this to happen but it does *)
       log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp class_name
   | exn ->
-      let trace = Exn.backtrace () in
+      let trace = Backtrace.get () in
       reraise_if exn ~f:(fun () ->
           L.internal_error "%a: %a@\n%!" pp_context () Exn.pp exn ;
           not Config.keep_going ) ;
-      log_and_recover ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn trace
+      log_and_recover ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn
+        (Backtrace.to_string trace)
 
 
 module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend = struct
@@ -357,8 +358,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             in
             let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
             List.iter ~f:translate no_method_decls ;
-            protect ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
-              ~recover:Fn.id ~pp_context:(fun fmt () ->
+            protect
+              ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
+              ~recover:Fn.id
+              ~pp_context:(fun fmt () ->
                 F.fprintf fmt "Error adding types from decl '%a'"
                   (Pp.to_string ~f:Clang_ast_j.string_of_decl)
                   dec ) ;
@@ -378,5 +381,4 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         List.iter ~f:translate decl_list
     | _ ->
         ()
-
 end

@@ -229,4 +229,3 @@ let trans_with_conditional stmt_info expr_info stmt_list =
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal "0"] @ [create_integer_literal "1"] in
   Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
-

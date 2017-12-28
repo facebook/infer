@@ -131,7 +131,6 @@ module Make (CFG : ProcCfg.S) = struct
         let mem = Dom.Mem.add_heap loc arr mem in
         let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num) in
         decl_sym_val pname tenv node location ~depth deref_loc typ mem
-
   end
 
   module Check = struct
@@ -160,6 +159,5 @@ module Make (CFG : ProcCfg.S) = struct
       let idx = Dom.Val.get_itv v_idx in
       let idx_traces = Dom.Val.get_traces v_idx in
       array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus:true pname location cond_set
-
   end
 end

@@ -31,7 +31,7 @@ let pp fmt (tenv: t) =
   TypenameHash.iter
     (fun name typ ->
       Format.fprintf fmt "@[<6>NAME: %s@." (Typ.Name.to_string name) ;
-      Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.Struct.pp Pp.text name) typ)
+      Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.Struct.pp Pp.text name) typ )
     tenv
 
 
@@ -128,8 +128,8 @@ let global_tenv : t option ref = ref None
 (** Load a type environment from a file *)
 let load_from_file (filename: DB.filename) : t option =
   if DB.equal_filename filename DB.global_tenv_fname then (
-    if is_none !global_tenv then global_tenv
-      := Serialization.read_from_file tenv_serializer DB.global_tenv_fname ;
+    if is_none !global_tenv then
+      global_tenv := Serialization.read_from_file tenv_serializer DB.global_tenv_fname ;
     !global_tenv )
   else Serialization.read_from_file tenv_serializer filename
 
@@ -157,4 +157,3 @@ let language_is tenv lang =
       Config.equal_language lang Java
   | exception Found _ ->
       Config.equal_language lang Clang
-

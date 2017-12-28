@@ -102,4 +102,3 @@ let pp pe prop f pset =
 let d p ps =
   let plist = to_proplist ps in
   Propgraph.d_proplist p plist
-

@@ -34,7 +34,7 @@ let ( <= ) ~lhs ~rhs =
       (fun id lhs_ap ->
         let rhs_has = IdMap.mem id rhs in
         if rhs_has && Config.debug_exceptions then check_invariant lhs_ap (IdMap.find id rhs) id ;
-        rhs_has)
+        rhs_has )
       lhs
 
 
@@ -52,7 +52,7 @@ let join astate1 astate2 =
         | None, Some _ ->
             ap2_opt
         | None, None ->
-            None)
+            None )
       astate1 astate2
 
 

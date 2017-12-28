@@ -42,4 +42,3 @@ let pp_file_pos f (loc: t) =
   let fname = SourceFile.to_string loc.file in
   let pos = to_string loc in
   F.fprintf f "%s:%s" fname pos
-

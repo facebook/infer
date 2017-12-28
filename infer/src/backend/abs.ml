@@ -889,7 +889,7 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
           | Sil.Aneq (Var _, _) | Sil.Apred (_, (Var _) :: _) | Anpred (_, (Var _) :: _) ->
               a :: pi
           | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ ->
-              pi)
+              pi )
         ~init:[] pi_filtered
     in
     List.rev new_pure
@@ -926,7 +926,7 @@ let abstract_gc tenv p =
         let no_fav_e1 = Sil.fav_is_empty fav_e1 in
         let no_fav_e2 = Sil.fav_is_empty fav_e2 in
         (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ())
-    | Sil.Apred _ | Anpred _ as a ->
+    | (Sil.Apred _ | Anpred _) as a ->
         let fav_a = Sil.atom_fav a in
         Sil.fav_is_empty fav_a
         || IList.intersect Ident.compare (Sil.fav_to_list fav_a) (Sil.fav_to_list fav_p_without_pi)
@@ -1111,8 +1111,7 @@ let check_junk ?original_prop pname tenv prop =
             in
             let ml_bucket_opt =
               match resource with
-              | PredSymb.Rmemory PredSymb.Mnew
-              | PredSymb.Rmemory PredSymb.Mnew_array
+              | (PredSymb.Rmemory PredSymb.Mnew | PredSymb.Rmemory PredSymb.Mnew_array)
                 when Config.curr_language_is Config.Clang ->
                   Mleak_buckets.should_raise_cpp_leak
               | _ ->
@@ -1137,9 +1136,7 @@ let check_junk ?original_prop pname tenv prop =
                     (false, exn)
                 | None ->
                     (true, exn_leak) )
-              | Some _, Rmemory Mobjc
-              | Some _, Rmemory Mnew
-              | Some _, Rmemory Mnew_array
+              | (Some _, Rmemory Mobjc | Some _, Rmemory Mnew | Some _, Rmemory Mnew_array)
                 when Config.curr_language_is Config.Clang ->
                   (is_none ml_bucket_opt, exn_leak)
               | Some _, Rmemory _ ->
@@ -1326,6 +1323,5 @@ let lifted_abstract pname tenv pset =
   let f p = if Prover.check_inconsistency tenv p then None else Some (abstract pname tenv p) in
   let abstracted_pset = Propset.map_option tenv f pset in
   abstracted_pset
-
 
 (***************** End of Main Abstraction Functions *****************)

@@ -85,8 +85,7 @@ let get_field_name program static tenv cn fs =
   let {Typ.Struct.fields; statics} = JTransType.get_class_struct_typ program tenv cn in
   match
     List.find
-      ~f:(fun (fieldname, _, _) ->
-        String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
+      ~f:(fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
       (if static then statics else fields)
   with
   | Some (fieldname, _, _) ->
@@ -150,7 +149,7 @@ let translate_locals program tenv formals bytecode jbir_code =
           ~f:(fun accu (_, _, var_name, var_type, _) ->
             let var = Mangled.from_string var_name
             and typ = JTransType.value_type program tenv var_type in
-            collect accu (var, typ))
+            collect accu (var, typ) )
           ~init variable_table
   in
   (* TODO (#4040807): Needs to add the JBir temporary variables since other parts of the
@@ -159,7 +158,7 @@ let translate_locals program tenv formals bytecode jbir_code =
     Array.fold
       ~f:(fun accu jbir_var ->
         let var = Mangled.from_string (JBir.var_name_g jbir_var) in
-        collect accu (var, Typ.mk Tvoid))
+        collect accu (var, Typ.mk Tvoid) )
       ~init:with_bytecode_vars (JBir.vars jbir_code)
   in
   snd with_jbir_vars
@@ -617,7 +616,7 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
     List.fold
       ~f:(fun (instrs_accu, args_accu) expr ->
         let instrs, sil_expr, sil_expr_type = expression context pc expr in
-        (instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]))
+        (instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]) )
       ~init expr_list
   in
   let callee_procname =

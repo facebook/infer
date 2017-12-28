@@ -38,8 +38,7 @@ let add_or_replace_check_changed tenv check_attribute_change prop atom =
       let _, nexp = List.hd_exn pairs in
       (* len exps0 > 0 by match *)
       let atom_map = function
-        | Sil.Apred (att, exp :: _)
-        | Anpred (att, exp :: _)
+        | (Sil.Apred (att, exp :: _) | Anpred (att, exp :: _))
           when Exp.equal nexp exp && attributes_in_same_category att att0 ->
             check_attribute_change att att0 ; atom
         | atom' ->
@@ -268,8 +267,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
     | Exp.UnOp (_, e, _) ->
         walk e
     | Exp.BinOp (op, e1, e2) ->
-        if Binop.equal op Binop.Div || Binop.equal op Binop.Mod then exps_divided
-          := e2 :: !exps_divided ;
+        if Binop.equal op Binop.Div || Binop.equal op Binop.Mod then
+          exps_divided := e2 :: !exps_divided ;
         walk e1 ;
         walk e2
     | Exp.Exn _ ->
@@ -394,10 +393,10 @@ let find_equal_formal_path tenv e prop =
                         | None ->
                             None )
                       | _ ->
-                          None)
+                          None )
                   fields ~init:None
             | _ ->
-                None)
+                None )
       prop.Prop.sigma ~init:None
   in
   match find_in_sigma e [] with
@@ -409,4 +408,3 @@ let find_equal_formal_path tenv e prop =
         Some vfs
     | _ ->
         None
-

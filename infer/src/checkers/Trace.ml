@@ -145,7 +145,7 @@ module Expander (TraceElem : TraceElem.S) = struct
         List.filter
           ~f:(fun callee_elem ->
             TraceElem.Kind.matches ~caller:caller_elem_kind ~callee:(TraceElem.kind callee_elem)
-            && not (is_recursive callee_elem seen_acc'))
+            && not (is_recursive callee_elem seen_acc') )
           elems
       in
       (* arbitrarily pick one elem and explore it further *)
@@ -160,7 +160,6 @@ module Expander (TraceElem : TraceElem.S) = struct
           ((elem, Passthrough.Set.empty) :: elems_passthroughs_acc, seen_acc')
     in
     fst (expand_ elem0 ([], CallSite.Set.empty))
-
 end
 
 module Make (Spec : Spec) = struct
@@ -178,7 +177,8 @@ module Make (Spec : Spec) = struct
 
     let ( <= ) ~lhs ~rhs =
       if phys_equal lhs rhs then true
-      else Known.( <= ) ~lhs:lhs.known ~rhs:rhs.known
+      else
+        Known.( <= ) ~lhs:lhs.known ~rhs:rhs.known
         && Footprint.( <= ) ~lhs:lhs.footprint ~rhs:rhs.footprint
         && Sanitizers.( <= ) ~lhs:lhs.sanitizers ~rhs:rhs.sanitizers
 
@@ -241,9 +241,8 @@ module Make (Spec : Spec) = struct
           | Some footprint_index ->
               IntSet.add footprint_index acc
           | None ->
-              acc)
+              acc )
         footprint IntSet.empty
-
   end
 
   module Sinks = Sink.Set
@@ -399,7 +398,7 @@ module Make (Spec : Spec) = struct
           let source_site = Source.call_site path_source in
           filter_passthroughs_ Top_level source_site (Sink.call_site path_sink) path_passthroughs
         in
-        (filtered_passthroughs, sources_passthroughs, sinks_passthroughs))
+        (filtered_passthroughs, sources_passthroughs, sinks_passthroughs) )
       (get_reports ?cur_site t)
 
 
@@ -426,7 +425,7 @@ module Make (Spec : Spec) = struct
           ~cmp:(fun passthrough1 passthrough2 ->
             let loc1 = CallSite.loc (Passthrough.site passthrough1) in
             let loc2 = CallSite.loc (Passthrough.site passthrough2) in
-            Int.compare loc1.Location.line loc2.Location.line)
+            Int.compare loc1.Location.line loc2.Location.line )
           (Passthroughs.elements passthroughs)
       in
       List.fold_right ~f:trace_elem_of_passthrough sorted_passthroughs ~init:acc0
@@ -573,5 +572,4 @@ module Make (Spec : Spec) = struct
       let sinks = Sinks.union prev.sinks next.sinks in
       let passthroughs = Passthroughs.union prev.passthroughs next.passthroughs in
       {sources; sinks; passthroughs}
-
 end

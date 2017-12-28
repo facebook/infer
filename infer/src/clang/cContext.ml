@@ -164,4 +164,3 @@ let rec get_outer_procname context =
       get_outer_procname outer_context
   | None ->
       Procdesc.get_proc_name context.procdesc
-

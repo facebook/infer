@@ -83,4 +83,3 @@ let diff driver_mode =
   ReportDiff.reportdiff ~current_report ~previous_report ;
   Driver.run_epilogue driver_mode ;
   ()
-

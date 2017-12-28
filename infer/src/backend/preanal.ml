@@ -108,7 +108,6 @@ module NullifyTransferFunctions = struct
             "Should not add nullify instructions before running nullify analysis!"
     in
     if is_last_instr_in_node instr node then postprocess astate' node extras else astate'
-
 end
 
 module NullifyAnalysis =
@@ -162,13 +161,13 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
                 | Exp.Var id ->
                     (pvars_acc, id :: ids_acc)
                 | _ ->
-                    (pvars_acc, ids_acc))
+                    (pvars_acc, ids_acc) )
               to_nullify ([], [])
           in
           node_add_removetmps_instructions node ids_to_remove ;
           node_add_nullify_instructions node pvars_to_nullify
       | None ->
-          ())
+          () )
     (ProcCfg.Exceptional.nodes nullify_proc_cfg) ;
   (* nullify all address taken variables *)
   if not (AddressTaken.Domain.is_empty address_taken_vars) then
@@ -199,4 +198,3 @@ let do_abstraction pdesc =
 
 let do_preanalysis pdesc tenv =
   if not (Procdesc.did_preanalysis pdesc) then ( do_liveness pdesc tenv ; do_abstraction pdesc )
-

@@ -52,4 +52,3 @@ let is_fragment tenv tname =
 let is_android_lib_class class_name =
   let class_str = Typ.Name.name class_name in
   String.is_prefix ~prefix:"android" class_str || String.is_prefix ~prefix:"com.android" class_str
-

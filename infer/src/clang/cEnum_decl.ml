@@ -56,4 +56,3 @@ let enum_decl decl =
       sil_desc
   | _ ->
       assert false
-

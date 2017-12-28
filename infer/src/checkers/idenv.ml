@@ -52,4 +52,3 @@ let expand_expr_temps idenv node exp_ =
 (** Return true if the expression is a temporary variable introduced by the front-end. *)
 let exp_is_temp idenv e =
   match expand_expr idenv e with Exp.Lvar pvar -> Pvar.is_frontend_tmp pvar | _ -> false
-

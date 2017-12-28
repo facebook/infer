@@ -29,7 +29,6 @@ module Source = struct
         List.map ~f:parse_source sources
     | _ ->
         []
-
 end
 
 module Sink = struct
@@ -49,7 +48,6 @@ module Sink = struct
         List.map ~f:parse_sink sinks
     | _ ->
         []
-
 end
 
 module Sanitizer = struct
@@ -68,7 +66,6 @@ module Sanitizer = struct
         List.map ~f:parse_sanitizer sinks
     | _ ->
         []
-
 end
 
 module Endpoint = struct
@@ -80,5 +77,4 @@ module Endpoint = struct
         List.map ~f:parse_endpoint endpoints
     | _ ->
         []
-
 end

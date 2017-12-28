@@ -17,7 +17,6 @@ module FieldsAssignedInConstructors = AbstractDomain.FiniteSet (struct
 
   let pp fmt (fieldname, typ) =
     F.fprintf fmt "(%a, %a)" Typ.Fieldname.pp fieldname (Typ.pp_full Pp.text) typ
-
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -59,7 +58,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate )
     | _ ->
         astate
-
 end
 
 (* Tracks when block variables of ObjC classes have been assigned to in constructors *)
@@ -113,4 +111,3 @@ let analysis cfg tenv =
   let procs = Cfg.get_defined_procs cfg in
   let fields_assigned_in_constructor = List.fold ~f ~init:initial procs in
   add_nonnull_to_fields fields_assigned_in_constructor tenv
-

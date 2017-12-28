@@ -70,7 +70,6 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let visited_preds' = IdSet.add node_id t.visited_preds in
       let priority' = compute_priority cfg t.node visited_preds' in
       {t with visited_preds= visited_preds'; priority= priority'}
-
   end
 
   type t = {worklist: WorkUnit.t M.t; cfg: CFG.t}
@@ -104,7 +103,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
         M.fold
           (fun id work (lowest_id, lowest_priority) ->
             let priority = WorkUnit.priority work in
-            if priority < lowest_priority then (id, priority) else (lowest_id, lowest_priority))
+            if priority < lowest_priority then (id, priority) else (lowest_id, lowest_priority) )
           t.worklist (init_id, init_priority)
       in
       let max_priority_work = M.find max_priority_id t.worklist in

@@ -66,7 +66,6 @@ module Loc = struct
         Mangled.equal (Pvar.get_name x) Ident.name_return
     | _ ->
         false
-
 end
 
 module PowLoc = struct

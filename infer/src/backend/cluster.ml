@@ -49,4 +49,3 @@ let pp_cluster fmt (nr, cluster) =
   (* touch the target of the rule to let `make` know that the job has been done *)
   F.fprintf fmt "\t%@touch $%@@\n" ;
   F.fprintf fmt "@\n"
-

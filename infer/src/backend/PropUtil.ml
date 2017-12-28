@@ -121,7 +121,7 @@ let remove_abduced_retvars tenv p =
             if Pvar.is_abduced pvar then (pvar :: abduceds, normal_pvars)
             else (abduceds, pvar :: normal_pvars)
         | _ ->
-            pvars)
+            pvars )
       ~init:([], []) p.Prop.sigma
   in
   let _, p' = Attribute.deallocate_stack_vars tenv p abduceds in
@@ -189,4 +189,3 @@ let remove_seed_vars tenv (prop: 'a Prop.t) : Prop.normal Prop.t =
   let sigma = prop.sigma in
   let sigma' = List.filter ~f:hpred_not_seed sigma in
   Prop.normalize tenv (Prop.set prop ~sigma:sigma')
-

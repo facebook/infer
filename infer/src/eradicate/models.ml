@@ -52,9 +52,9 @@ module Inference = struct
 
 
   let update_boolvec_str s_ size index bval =
-    let s = if String.is_empty s_ then String.make size '0' else s_ in
-    s.[index] <- (if bval then '1' else '0') ;
-    s
+    let s = if String.is_empty s_ then Bytes.make size '0' else Bytes.of_string s_ in
+    Bytes.set s index (if bval then '1' else '0') ;
+    Bytes.to_string s
 
 
   let mark_file update_str dir fname =
@@ -103,7 +103,6 @@ module Inference = struct
         let boolvec = ref [] in
         String.iter ~f:(fun c -> boolvec := Char.equal c '1' :: !boolvec) buf ;
         Some (List.rev !boolvec)
-
 end
 
 (* Inference *)

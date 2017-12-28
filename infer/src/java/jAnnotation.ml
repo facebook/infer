@@ -49,4 +49,3 @@ let translate_method ann : Annot.Method.t =
   let ret_item = translate_item global_ann in
   let param_items = List.map ~f:translate_item param_ann in
   (ret_item, param_items)
-

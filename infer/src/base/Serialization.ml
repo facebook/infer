@@ -34,7 +34,6 @@ module Key = struct
     , 579094948
     , 972393003
     , 852343110 )
-
 end
 
 (** version of the binary files, to be incremented for each change *)
@@ -95,8 +94,9 @@ let create_serializer (key: Key.t) : 'a serializer =
         (* Retry to read for 1 second in case of end of file, *)
         (* which indicates that another process is writing the same file. *)
         let one_second = Mtime.Span.of_uint64_ns (Int64.of_int 1_000_000_000) in
-        SymOp.try_finally ~f:(fun () -> retry_exception ~timeout:one_second ~catch_exn ~f:read ())
-          ~finally:(fun () -> In_channel.close inc )
+        SymOp.try_finally
+          ~f:(fun () -> retry_exception ~timeout:one_second ~catch_exn ~f:read ())
+          ~finally:(fun () -> In_channel.close inc)
   in
   let write_to_tmp_file fname data =
     let fname_tmp =

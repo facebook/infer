@@ -37,7 +37,6 @@ module MethodCall = struct
 
   let pp fmt {receiver; procname} =
     F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
-
 end
 
 module CallSet = AbstractDomain.FiniteSet (MethodCall)
@@ -59,9 +58,8 @@ let substitute ~(f_sub: LocalAccessPath.t -> LocalAccessPath.t option) astate =
             let receiver =
               match f_sub call.receiver with Some receiver' -> receiver' | None -> call.receiver
             in
-            CallSet.add {receiver; procname} call_set_acc)
+            CallSet.add {receiver; procname} call_set_acc )
           call_set CallSet.empty
       in
-      add access_path' call_set' acc)
+      add access_path' call_set' acc )
     astate empty
-

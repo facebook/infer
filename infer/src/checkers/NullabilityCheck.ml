@@ -68,7 +68,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           found_confict
           || in_footprint && IssueType.equal err_name IssueType.null_dereference
              && Location.equal loc report_location
-             && Localise.error_desc_is_reportable_bucket err_desc)
+             && Localise.error_desc_is_reportable_bucket err_desc )
         (Specs.get_err_log summary) false
 
 
@@ -238,7 +238,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if not (is_pointer_assignment proc_data.ProcData.tenv nullable_ap rhs) then
               (* TODO (T22426288): Undertand why the pointer derference and the pointer
                  assignment have the same HIL representation *)
-              report_nullable_dereference nullable_ap call_sites proc_data loc)
+              report_nullable_dereference nullable_ap call_sites proc_data loc )
           (longest_nullable_prefix lhs astate) ;
         match rhs with
         | HilExp.AccessPath ap -> (
@@ -271,7 +271,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if HilExp.is_null_literal exp then assume_pnames_notnull ap astate else astate
     | _ ->
         astate
-
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)

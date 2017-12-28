@@ -161,4 +161,3 @@ let tests =
   in
   let tests = instr_test :: graph_tests in
   "procCfgSuite" >::: tests
-

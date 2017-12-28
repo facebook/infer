@@ -176,4 +176,3 @@ let capture_files_in_database ~changed_files compilation_database =
 
 let capture_file_in_database compilation_database source_file =
   run_compilation_database compilation_database (SourceFile.equal source_file)
-

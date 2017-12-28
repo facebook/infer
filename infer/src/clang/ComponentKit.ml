@@ -291,7 +291,7 @@ let component_with_multiple_factory_methods_advice context an =
                 Some
                   "Instead, always expose all parameters in a single designated initializer and document which are optional."
             ; doc_url= None
-            ; loc= CFrontend_checkers.location_from_decl context meth_decl })
+            ; loc= CFrontend_checkers.location_from_decl context meth_decl } )
           (List.drop factory_methods 1)
     | _ ->
         assert false
@@ -408,7 +408,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
           ; description= "Line count analytics"
           ; suggestion= None
           ; doc_url= None
-          ; loc= {Location.line= i; Location.col= 0; Location.file= source_file} })
+          ; loc= {Location.line= i; Location.col= 0; Location.file= source_file} } )
         (List.range 1 line_count ~start:`inclusive ~stop:`inclusive)
   | _ ->
       []
@@ -462,4 +462,3 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
         ; loc }
   | _ ->
       None
-

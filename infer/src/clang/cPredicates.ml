@@ -673,7 +673,7 @@ let type_ptr_equal_type type_ptr type_str =
         abs_ctype'
     | None ->
         let abs_ctype' = parse_type_string type_str in
-        parsed_type_map := String.Map.add !parsed_type_map ~key:type_str ~data:abs_ctype' ;
+        parsed_type_map := String.Map.set !parsed_type_map ~key:type_str ~data:abs_ctype' ;
         abs_ctype'
   in
   match CAst_utils.get_type type_ptr with

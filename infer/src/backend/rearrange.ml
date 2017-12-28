@@ -367,7 +367,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
                 let isel_new = list_rev_and_concat isel_seen_rev ((i, se') :: isel_unseen) in
                 let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
                 let typ_new = Typ.mk ~default:typ_array (Tarray (typ', typ_array_len, None)) in
-                (atoms_new, array_new, typ_new) :: acc')
+                (atoms_new, array_new, typ_new) :: acc' )
               ~init:[] atoms_se_typ_list
           in
           let acc_new = atoms_se_typ_list' :: acc in
@@ -444,7 +444,7 @@ let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se t
   in
   List.map
     ~f:(fun (atoms', se', typ') ->
-      (laundry_atoms @ atoms', se', Exp.Sizeof {sizeof_data with typ= typ'}))
+      (laundry_atoms @ atoms', se', Exp.Sizeof {sizeof_data with typ= typ'}) )
     atoms_se_typ_list_filtered
 
 
@@ -667,7 +667,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
             let iter' =
               List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms
             in
-            Prop.prop_iter_replace_footprint_sigma iter' fp_sigma)
+            Prop.prop_iter_replace_footprint_sigma iter' fp_sigma )
           iter_atoms_fp_sigma_list
     in
     let res_prop_list = List.map ~f:(Prop.prop_iter_to_prop tenv) res_iter_list in
@@ -888,7 +888,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                && Pvar.is_this pvar ->
             Some (rhs_exp, typ)
         | _ ->
-            None)
+            None )
       sigma
   in
   (* warn if the access to [lexp] is not protected by the [guarded_by_fld_str] lock *)
@@ -964,7 +964,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                       | Sil.Eexp (rhs_exp, _) ->
                           Exp.equal exp rhs_exp && not (Typ.Fieldname.equal fld accessed_fld)
                       | _ ->
-                          false)
+                          false )
                     flds
               | _ ->
                   false)
@@ -1775,4 +1775,3 @@ let rearrange ?(report_deref_errors= true) pdesc tenv lexp typ prop loc
         raise (Exceptions.Symexec_memory_error __POS__) )
   | Some iter ->
       iter_rearrange pname tenv nlexp typ prop' iter inst
-

@@ -46,7 +46,7 @@ let iter_all_nodes ?(sorted= false) f cfg =
       (fun _ pdesc desc_nodes ->
         List.fold
           ~f:(fun desc_nodes node -> (pdesc, node) :: desc_nodes)
-          ~init:desc_nodes (Procdesc.get_nodes pdesc))
+          ~init:desc_nodes (Procdesc.get_nodes pdesc) )
       cfg []
     |> List.sort ~cmp:[%compare : Procdesc.t * Procdesc.Node.t]
     |> List.iter ~f:(fun (d, n) -> f d n)
@@ -248,7 +248,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
             ~equal:(fun i1 i2 ->
               let n, exp_map' = Sil.compare_structural_instr i1 i2 !exp_map in
               exp_map := exp_map' ;
-              Int.equal n 0)
+              Int.equal n 0 )
             instrs1 instrs2
         in
         Int.equal (compare_id n1 n2) 0
@@ -443,7 +443,7 @@ let specialize_types callee_pdesc resolved_pname args =
             (* Replace the type of the parameter by the type of the argument *)
             ((param_name, arg_typ) :: params, Mangled.Map.add param_name typename subts)
         | _ ->
-            ((param_name, param_typ) :: params, subts))
+            ((param_name, param_typ) :: params, subts) )
       ~init:([], Mangled.Map.empty) callee_attributes.formals args
   in
   let resolved_attributes =
@@ -561,7 +561,7 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
                 ~f:(fun (_, var, typ) ->
                   (* Here we create fresh names for the new formals, based on the names of the captured
                    variables annotated with the name of the caller method *)
-                  (Pvar.get_name_of_local_with_procname var, typ))
+                  (Pvar.get_name_of_local_with_procname var, typ) )
                 cl.captured_vars
             in
             Mangled.Map.add param_name (cl.name, formals_from_captured) subts
@@ -631,4 +631,3 @@ let pp_proc_signatures fmt cfg =
 let exists_for_source_file source =
   (* simplistic implementation that allocates the cfg as this is only used for reactive capture for now *)
   load source |> Option.is_some
-

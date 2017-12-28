@@ -65,7 +65,7 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
     ~f:(fun summary (language, resolved, proc_callback) ->
       if Config.equal_language language procedure_language && (resolved || not is_specialized) then
         proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
-      else summary)
+      else summary )
     !procedure_callbacks
 
 
@@ -82,7 +82,7 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
   in
   List.iter
     ~f:(fun (language_opt, cluster_callback) ->
-      if language_matches language_opt then cluster_callback environment)
+      if language_matches language_opt then cluster_callback environment )
     !cluster_callbacks
 
 

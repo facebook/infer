@@ -218,4 +218,3 @@ let iter_files f exe_env =
       SourceFile.Set.add fname seen_files_acc )
   in
   ignore (Typ.Procname.Hash.fold do_file exe_env.proc_map SourceFile.Set.empty)
-

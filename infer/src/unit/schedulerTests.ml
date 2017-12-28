@@ -127,4 +127,3 @@ let tests =
     |> List.map ~f:(fun (name, test, expected) -> name >:: create_test test expected)
   in
   "scheduler_suite" >::: test_list
-

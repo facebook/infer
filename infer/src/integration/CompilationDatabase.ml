@@ -153,4 +153,3 @@ let from_json_files db_json_files =
   List.iter ~f:(decode_json_file db) db_json_files ;
   L.(debug Capture Quiet) "created database with %d entries@\n" (get_size db) ;
   db
-

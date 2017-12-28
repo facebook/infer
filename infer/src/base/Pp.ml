@@ -63,7 +63,8 @@ let text =
 (** Default html print environment *)
 let html color =
   { text with
-    kind= HTML; cmap_norm= colormap_from_color color; cmap_foot= colormap_from_color color; color }
+    kind= HTML; cmap_norm= colormap_from_color color; cmap_foot= colormap_from_color color; color
+  }
 
 
 (** Extend the normal colormap for the given object with the given color *)
@@ -146,4 +147,3 @@ let pp_argfile fmt fname =
 let cli_args fmt args =
   F.fprintf fmt "'%a'@\n%a" (seq ~sep:"' '" string) args (seq ~sep:"\n" pp_argfile)
     (List.filter_map ~f:(String.chop_prefix ~prefix:"@") args)
-

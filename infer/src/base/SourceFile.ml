@@ -179,5 +179,4 @@ module SQLite = struct
         RelativeProjectRoot rel_path
     | Sqlite3.Data.BLOB b ->
         Marshal.from_string b 0
-
 end

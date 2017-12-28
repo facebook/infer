@@ -619,7 +619,6 @@ end = struct
         | [] ->
             ()
     done
-
 end
 
 let pp_texp_simple pe =
@@ -1402,7 +1401,7 @@ let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_ex
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. *)
 let exp_subst_of_list sub =
-  let sub' = List.dedup ~compare:compare_ident_exp sub in
+  let sub' = List.dedup_and_sort ~compare:compare_ident_exp sub in
   assert (sub_no_duplicated_ids sub') ;
   sub'
 
@@ -1410,7 +1409,7 @@ let exp_subst_of_list sub =
 let subst_of_list sub = `Exp (exp_subst_of_list sub)
 
 (** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence *)
-let exp_subst_of_list_duplicates sub = List.dedup ~compare:compare_ident_exp_ids sub
+let exp_subst_of_list_duplicates sub = List.dedup_and_sort ~compare:compare_ident_exp_ids sub
 
 (** Convert a subst to a list of pairs. *)
 let sub_to_list sub = sub
@@ -1535,7 +1534,7 @@ let rec exp_sub_ids (f: subst_fun) exp =
           (fun ((e, pvar, typ) as captured) ->
             let e' = exp_sub_ids f e in
             let typ' = f_typ typ in
-            if phys_equal e' e && phys_equal typ typ' then captured else (e', pvar, typ'))
+            if phys_equal e' e && phys_equal typ typ' then captured else (e', pvar, typ') )
           c.captured_vars
       in
       if phys_equal captured_vars c.captured_vars then exp else Exp.Closure {c with captured_vars}
@@ -1588,7 +1587,7 @@ let apply_sub subst : subst_fun =
   | `Exp l ->
       `Exp
         (fun id ->
-          match List.Assoc.find l ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id)
+          match List.Assoc.find l ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id )
   | `Typ typ_subst ->
       `Typ (Typ.sub_type typ_subst, Typ.sub_tname typ_subst)
 
@@ -1634,7 +1633,7 @@ let instr_sub_ids ~sub_id_binders f instr =
             let actual' = exp_sub_ids f actual in
             let typ' = sub_typ typ in
             if phys_equal actual' actual && phys_equal typ typ' then actual_pair
-            else (actual', typ'))
+            else (actual', typ') )
           actuals
       in
       if phys_equal ret_id' ret_id && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
@@ -1651,7 +1650,7 @@ let instr_sub_ids ~sub_id_binders f instr =
         IList.map_changed
           (fun ((name, typ) as local_var) ->
             let typ' = sub_typ typ in
-            if phys_equal typ typ' then local_var else (name, typ'))
+            if phys_equal typ typ' then local_var else (name, typ') )
           locals
       in
       if phys_equal locals locals' then instr else Declare_locals (locals', loc)
@@ -1738,7 +1737,7 @@ let compare_structural_instr instr1 instr2 exp_map =
     else
       List.fold2_exn
         ~f:(fun (n, exp_map) id1 id2 ->
-          if n <> 0 then (n, exp_map) else exp_compare_structural (Var id1) (Var id2) exp_map)
+          if n <> 0 then (n, exp_map) else exp_compare_structural (Var id1) (Var id2) exp_map )
         ~init:(0, exp_map) ids1 ids2
   in
   match (instr1, instr2) with
@@ -1768,7 +1767,7 @@ let compare_structural_instr instr1 instr2 exp_map =
         else
           List.fold2_exn
             ~f:(fun (n, exp_map) arg1 arg2 ->
-              if n <> 0 then (n, exp_map) else exp_typ_compare_structural arg1 arg2 exp_map)
+              if n <> 0 then (n, exp_map) else exp_typ_compare_structural arg1 arg2 exp_map )
             ~init:(0, exp_map) args1 args2
       in
       let n, exp_map = id_typ_opt_compare_structural ret_id1 ret_id2 exp_map in
@@ -1794,7 +1793,7 @@ let compare_structural_instr instr1 instr2 exp_map =
             if n <> 0 then (n, exp_map)
             else
               let n, exp_map = exp_compare_structural (Lvar pv1) (Lvar pv2) exp_map in
-              if n <> 0 then (n, exp_map) else (Typ.compare t1 t2, exp_map))
+              if n <> 0 then (n, exp_map) else (Typ.compare t1 t2, exp_map) )
           ~init:(0, exp_map) ptl1 ptl2
   | _ ->
       (compare_instr instr1 instr2, exp_map)

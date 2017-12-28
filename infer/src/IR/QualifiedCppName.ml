@@ -73,8 +73,9 @@ module Match = struct
 
   let qualifiers_list_matcher ?prefix quals_list =
     ( if List.is_empty quals_list then "a^" (* regexp that does not match anything *)
-    else List.rev_map ~f:(regexp_string_of_qualifiers ?prefix) quals_list
-      |> String.concat ~sep:"\\|" )
+    else
+      List.rev_map ~f:(regexp_string_of_qualifiers ?prefix) quals_list |> String.concat ~sep:"\\|"
+    )
     |> Str.regexp
 
 
@@ -100,5 +101,4 @@ module Match = struct
        instantiations *)
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
-
 end

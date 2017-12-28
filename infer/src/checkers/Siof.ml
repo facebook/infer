@@ -108,7 +108,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         GlobalVarSet.fold
           (fun global acc ->
             if is_dangerous global then SiofTrace.add_sink (SiofTrace.make_access global loc) acc
-            else acc)
+            else acc )
           globals trace
       in
       (NonBottom trace_with_non_init_globals, snd astate)
@@ -173,7 +173,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            at_least_nonbottom
     | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
-
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
@@ -283,4 +282,3 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
   | None ->
       () ) ;
   updated_summary
-

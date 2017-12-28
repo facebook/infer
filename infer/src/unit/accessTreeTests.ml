@@ -59,7 +59,6 @@ module MakeTree (Config : AccessTree.Config) = struct
       F.fprintf fmt "Expected to get tree %a but got %a" pp expected pp actual
     in
     OUnit2.assert_equal ~cmp:base_tree_equal ~pp_diff tree1 tree2
-
 end
 
 module Domain = MakeTree (AccessTree.DefaultConfig)
@@ -406,7 +405,7 @@ let tests =
       let has_ap_trace_pair ap_in trace_in =
         List.exists
           ~f:(fun (ap, trace) ->
-            AccessPath.Abs.equal ap ap_in && MockTraceDomain.equal trace trace_in)
+            AccessPath.Abs.equal ap ap_in && MockTraceDomain.equal trace trace_in )
           ap_traces
       in
       assert_bool "Should have six ap/trace pairs" (Int.equal (List.length ap_traces) 6) ;
@@ -528,4 +527,3 @@ let tests =
        ; depth_test
        ; max_depth_test
        ; max_width_test ]
-

@@ -431,4 +431,3 @@ let rec find_superclasses_with_attributes check tenv tname =
       if check struct_typ.annots then tname :: result_from_supers else result_from_supers
   | _ ->
       []
-

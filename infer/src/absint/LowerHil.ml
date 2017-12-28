@@ -72,7 +72,7 @@ struct
               let dummy_assign =
                 HilInstr.Assign (lhs_access_path, HilExp.AccessPath access_path, loc)
               in
-              TransferFunctions.exec_instr astate_acc extras node dummy_assign)
+              TransferFunctions.exec_instr astate_acc extras node dummy_assign )
             id_map actual_state
         in
         let actual_state'' = TransferFunctions.exec_instr actual_state' extras node hil_instr in
@@ -84,7 +84,6 @@ struct
         if phys_equal actual_state actual_state' then astate else (actual_state', id_map)
     | Ignore ->
         astate
-
 end
 
 module MakeAbstractInterpreterWithConfig
@@ -98,7 +97,6 @@ struct
     Preanal.do_preanalysis pdesc tenv ;
     let initial' = (initial, IdAccessPathMapDomain.empty) in
     Option.map ~f:fst (Interpreter.compute_post ~debug:false proc_data ~initial:initial')
-
 end
 
 module MakeAbstractInterpreter = MakeAbstractInterpreterWithConfig (DefaultConfig)

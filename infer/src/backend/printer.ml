@@ -151,7 +151,6 @@ end = struct
     let fd = Hashtbl.find log_files (node_fname, source) in
     Unix.close fd ;
     curr_html_formatter := F.std_formatter
-
 end
 
 (* =============== END of module NodesHtml =============== *)
@@ -380,7 +379,7 @@ let write_proc_html pdesc =
           ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
           ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
           ~isvisited:(is_visited n) ~isproof:false fmt
-          (Procdesc.Node.get_id n :> int))
+          (Procdesc.Node.get_id n :> int) )
       nodes ;
     match Specs.get_summary pname with
     | None ->
@@ -483,7 +482,7 @@ let write_html_file linereader filename procs =
           ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
           ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
           ~isvisited:(is_visited n) ~isproof fmt
-          (Procdesc.Node.get_id n :> int))
+          (Procdesc.Node.get_id n :> int) )
       nodes_at_linenum ;
     List.iter
       ~f:(fun n ->
@@ -502,7 +501,7 @@ let write_html_file linereader filename procs =
             in
             Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
         | _ ->
-            ())
+            () )
       nodes_at_linenum ;
     List.iter
       ~f:(fun err_string -> F.fprintf fmt "%s" (create_err_message err_string))
@@ -557,5 +556,5 @@ let write_all_html_files cluster =
       in
       SourceFile.Set.iter
         (fun file -> write_html_file linereader file (Cfg.get_all_procs cfg))
-        source_files_in_cfg)
+        source_files_in_cfg )
     exe_env

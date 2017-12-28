@@ -162,7 +162,6 @@ struct
     let cfg = CFG.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data ~initial ~debug in
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
-
 end
 
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =

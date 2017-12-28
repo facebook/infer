@@ -39,7 +39,6 @@ module Name = struct
         spec
     | FromString s ->
         s
-
 end
 
 type name = Name.t [@@deriving compare]
@@ -159,7 +158,6 @@ module NameGenerator = struct
       let new_stamp = max curr_stamp stamp in
       NameHash.replace !name_map name new_stamp
     with Not_found -> NameHash.add !name_map name stamp
-
 end
 
 (** Name used for the return variable *)

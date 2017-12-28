@@ -162,4 +162,3 @@ let create_exception_handlers context exit_nodes get_body_nodes impl =
           let handler_list = Hashtbl.find handler_table pc in
           Hashtbl.find catch_block_table handler_list
         with Not_found -> exit_nodes
-

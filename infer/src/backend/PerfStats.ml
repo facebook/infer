@@ -153,4 +153,3 @@ let register_report_at_exit =
       String.Table.set registered_files ~key:file ~data:() ;
       if not Config.buck_cache_mode then
         Epilogues.register ~f:(report_at_exit file) ("stats reporting in " ^ file) )
-

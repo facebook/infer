@@ -50,4 +50,3 @@ let exit_code_of_exception = function
       exitcode
   | _ ->
       (* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions *) 2
-

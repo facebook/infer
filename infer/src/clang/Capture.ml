@@ -180,4 +180,3 @@ let capture clang_cmd =
     let command_to_run = ClangCommand.command_to_run clang_cmd in
     L.(debug Capture Quiet) "Running non-cc command without capture: %s@\n" command_to_run ;
     run_clang command_to_run Utils.consume_in
-

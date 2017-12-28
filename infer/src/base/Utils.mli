@@ -111,5 +111,5 @@ val without_gc : f:(unit -> unit) -> unit
 val yield : unit -> unit
 (** try to give the control back to the OS without sleeping too much *)
 
-val better_hash : 'a -> Digest.t
+val better_hash : 'a -> Caml.Digest.t
 (** Hashtbl.hash only hashes the first 10 meaningful values, [better_hash] uses everything. *)

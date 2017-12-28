@@ -271,7 +271,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       print_debug_info instr mem output_mem ;
       output_mem
-
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
@@ -379,7 +378,6 @@ module Report = struct
             false )
       | _ ->
           false
-
   end
 
   let rec collect_instrs
@@ -511,7 +509,6 @@ module Report = struct
           Reporting.log_error_deprecated pname ~loc:location ~ltr:trace exn
       in
       PO.ConditionSet.check_all ~report cond_set
-
 end
 
 let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
@@ -553,4 +550,3 @@ let checker : Callbacks.proc_callback_args -> Specs.summary =
         Summary.update_summary post summary
     | None ->
         summary
-

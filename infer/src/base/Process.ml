@@ -17,7 +17,7 @@ let print_error_and_exit ?(exit_code= 1) fmt =
   F.kfprintf
     (fun _ ->
       L.external_error "%s" (F.flush_str_formatter ()) ;
-      L.exit exit_code)
+      L.exit exit_code )
     F.str_formatter fmt
 
 
@@ -65,4 +65,3 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
         let producer_status = Unix.waitpid producer_pid in
         let consumer_status = Unix.waitpid consumer_pid in
         (producer_status, consumer_status)
-

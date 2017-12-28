@@ -338,7 +338,7 @@ let rec get_all_fields program tenv cn =
           List.fold
             ~f:(fun (statics, fields) interface_name ->
               let interface_statics, interface_fields = extract_class_fields interface_name in
-              (interface_statics @ statics, interface_fields @ fields))
+              (interface_statics @ statics, interface_fields @ fields) )
             ~init:(rev_pair superclass_fields) jclass.Javalib.c_interfaces
           |> rev_pair
         in
@@ -452,7 +452,8 @@ let get_var_type_from_sig (context: JContext.t) var =
   let tenv = JContext.get_tenv context in
   List.find_map
     ~f:(fun (vt', var') ->
-      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None)
+      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None
+      )
     (JBir.params context.impl)
 
 
@@ -497,4 +498,3 @@ let add_models_types tenv =
     if not (Tenv.mem t typename) then Tenv.add tenv typename struct_typ
   in
   Tenv.iter (add_type tenv) !JClasspath.models_tenv
-

@@ -29,7 +29,7 @@ module Set = struct
         not
           (APSet.exists
              (fun rhs -> not (phys_equal lhs rhs) && AccessPath.Abs.( <= ) ~lhs ~rhs)
-             aps))
+             aps) )
       aps
 
 
@@ -70,5 +70,4 @@ module Set = struct
       in
       let diff_aps = APSet.diff next prev in
       APSet.fold abstract_access_path diff_aps APSet.empty |> join prev
-
 end

@@ -331,4 +331,3 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
         expr_info.Clang_ast_t.ei_qual_type
   in
   qual_type_to_sil_type tenv qt
-

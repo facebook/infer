@@ -64,4 +64,3 @@ let capture compiler ~prog ~args =
               "*** capture command failed:@\n*** %s@\n*** %s@."
               (String.concat ~sep:" " (prog :: args))
               (Unix.Exit_or_signal.to_string_hum status)
-

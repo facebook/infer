@@ -201,4 +201,3 @@ let callback_printf_args {Callbacks.tenv; proc_desc; summary} : Specs.summary =
     (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc summary)
     proc_desc ;
   summary
-

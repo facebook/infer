@@ -67,5 +67,4 @@ module Runner = struct
   let complete runner =
     ProcessPool.wait_all runner.pool ;
     Queue.iter ~f:(fun f -> f ()) runner.all_continuations
-
 end

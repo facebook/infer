@@ -47,4 +47,3 @@ let should_run_check mode =
       true
   | Off ->
       Config.debug_mode || Config.debug_exceptions || not Config.filtering
-

@@ -37,7 +37,6 @@ end = struct
     ; wrap_bold= wrap_simple
     ; pp_bold= pp_simple
     ; bold_to_string= Fn.id }
-
 end
 
 module PhabricatorFormatter : sig
@@ -72,7 +71,6 @@ end = struct
     ; wrap_bold
     ; pp_bold
     ; bold_to_string }
-
 end
 
 let formatter =

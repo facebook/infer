@@ -55,7 +55,6 @@ module InstrRef : InstrRefT = struct
   let gen instr_ref_gen =
     let node, ir = instr_ref_gen in
     incr ir ; (node, !ir)
-
 end
 
 (* InstrRef *)
@@ -137,7 +136,6 @@ module H = Hashtbl.Make (struct
     in
     let y = err_instance_hash err_inst in
     Hashtbl.hash (x, y)
-
 end
 (* H *))
 
@@ -265,7 +263,6 @@ module Strict = struct
         origin_descr_get_strict tenv origin_descr
     | _ ->
         None
-
 end
 
 (* Strict *)

@@ -135,7 +135,6 @@ module Jprop = struct
     | Joined (n, p, jp1, jp2) ->
         Joined (n, f p, map f jp1, map f jp2)
 
-
   (*
   let rec jprop_sub sub = function
     | Prop (n, p) -> Prop (n, Prop.prop_sub sub p)
@@ -232,7 +231,6 @@ end = struct
   let erase_join_info_pre tenv spec =
     let spec' = {spec with pre= Jprop.Prop (1, Jprop.to_prop spec.pre)} in
     normalize tenv spec'
-
 end
 
 (** Convert spec into normal form w.r.t. variable renaming *)
@@ -310,7 +308,6 @@ module CallStats = struct
       List.sort ~cmp:compare !elems
     in
     List.iter ~f:(fun (x, tr) -> f x tr) sorted_elems
-
 
   (*
   let pp fmt t =
@@ -443,13 +440,13 @@ let pp_specs pe fmt specs =
       List.iter
         ~f:(fun spec ->
           incr cnt ;
-          F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec)
+          F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec )
         specs
   | HTML ->
       List.iter
         ~f:(fun spec ->
           incr cnt ;
-          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec)
+          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec )
         specs
 
 
@@ -464,7 +461,7 @@ let get_signature summary =
     ~f:(fun (p, typ) ->
       let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
       let decl = F.asprintf "%t" pp in
-      s := if String.equal !s "" then decl else !s ^ ", " ^ decl)
+      s := if String.equal !s "" then decl else !s ^ ", " ^ decl )
     (get_formals summary) ;
   let pp f =
     F.fprintf f "%a %a" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
@@ -579,8 +576,7 @@ let res_dir_specs_filename pname =
 (** paths to the .specs file for the given procedure in the current spec libraries *)
 let specs_library_filenames pname =
   List.map
-    ~f:(fun specs_dir ->
-      DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
+    ~f:(fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
     Config.specs_library
 
 

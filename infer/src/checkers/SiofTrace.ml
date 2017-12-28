@@ -20,7 +20,6 @@ module GlobalVar = struct
   let pp fmt v =
     F.fprintf fmt "%a|%a" Mangled.pp (Pvar.get_name v) Pvar.pp_translation_unit
       (Pvar.get_translation_unit v)
-
 end
 
 module GlobalVarSet = PrettyPrintable.MakePPSet (GlobalVar)
@@ -77,4 +76,3 @@ let trace_of_error loc gname path =
     Errlog.make_trace_element 0 loc (Format.asprintf "initialization of %s" gname) []
   in
   trace_elem_of_global :: to_sink_loc_trace ~desc_of_sink ~sink_should_nest path
-

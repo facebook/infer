@@ -64,4 +64,3 @@ let tests =
     |> TestInterpreter.create_tests ProcData.empty_extras ~initial:AddressTaken.Domain.empty
   in
   "address_taken_suite" >::: test_list
-

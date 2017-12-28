@@ -70,7 +70,6 @@ end = struct
         let new_id = generate () in
         Unix.putenv ~key:infer_run_identifier_env_var ~data:new_id ;
         new_id
-
 end
 
 let get_log_identifier () = Random_id.get ()

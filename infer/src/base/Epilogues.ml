@@ -36,4 +36,3 @@ let register ~f desc =
   Pervasives.at_exit f_no_exn ;
   (* Register signal masking. *)
   Lazy.force activate_run_epilogues_on_signal
-

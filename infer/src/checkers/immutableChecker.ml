@@ -24,7 +24,7 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
       let in_casts expected given =
         List.exists
           ~f:(fun (x, y) ->
-            String.equal (Typ.Name.name expected) x && String.equal (Typ.Name.name given) y)
+            String.equal (Typ.Name.name expected) x && String.equal (Typ.Name.name given) y )
           casts
       in
       match
@@ -48,4 +48,3 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
 
 let callback_check_immutable_cast ({Callbacks.tenv} as args) =
   Eradicate.callback_check_return_type (check_immutable_cast tenv) args
-

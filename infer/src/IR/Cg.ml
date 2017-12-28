@@ -323,7 +323,7 @@ let pp_graph_dotty (g: t) fmt =
   List.iter
     ~f:(fun nc ->
       F.fprintf fmt "%a [shape=box,label=%a,color=%s,shape=%s]@\n" pp_node nc pp_node_label nc
-        "red" (get_shape nc))
+        "red" (get_shape nc) )
     nodes_with_calls ;
   List.iter ~f:(fun (s, d) -> F.fprintf fmt "%a -> %a@\n" pp_node s pp_node d) (get_edges g) ;
   F.fprintf fmt "}@."
@@ -337,4 +337,3 @@ let save_call_graph_dotty source (g: t) =
   let outc = Out_channel.create (DB.filename_to_string fname_dot) in
   let fmt = F.formatter_of_out_channel outc in
   pp_graph_dotty g fmt ; Out_channel.close outc
-

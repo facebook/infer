@@ -11,7 +11,7 @@ open! IStd
 module L = Logging
 
 type log_t =
-  ?loc:Location.t -> ?node_id:int * Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
+  ?loc:Location.t -> ?node_id:int * Caml.Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
@@ -24,7 +24,7 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
     let node_id =
       match node_id with
       | None ->
-          (State.get_node_id_key () :> int * Digest.t)
+          (State.get_node_id_key () :> int * Caml.Digest.t)
       | Some node_id ->
           node_id
     in
@@ -88,4 +88,3 @@ let log_warning_deprecated ?(store_summary= false) =
 
 let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
-

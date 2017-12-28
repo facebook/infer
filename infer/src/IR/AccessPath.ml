@@ -202,7 +202,6 @@ module Raw = struct
 
   let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
     if phys_equal ap1 ap2 then true else equal_base base1 base2 && is_prefix_path path1 path2
-
 end
 
 module Abs = struct
@@ -256,7 +255,6 @@ module Abs = struct
         Raw.pp fmt access_path
     | Abstracted access_path ->
         F.fprintf fmt "%a*" Raw.pp access_path
-
 end
 
 include Raw

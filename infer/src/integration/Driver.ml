@@ -514,7 +514,7 @@ let mode_of_build_command build_cmd =
           Python args
       | BXcode when Config.xcpretty ->
           XcodeXcpretty (prog, args)
-      | BAnt | BBuck | BGradle | BNdk | BXcode as build_system ->
+      | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
           PythonCapture (build_system, build_cmd)
 
 
@@ -574,4 +574,3 @@ let read_config_changed_files () =
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
         None
-

@@ -38,4 +38,3 @@ let mk_arg_file prefix style args =
   Utils.with_file_out file ~f:write_args |> ignore ;
   L.(debug Capture Medium) "Clang options stored in file %s@\n" file ;
   file
-

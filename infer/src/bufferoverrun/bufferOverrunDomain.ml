@@ -44,7 +44,8 @@ module Val = struct
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
-    else Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
+    else
+      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
 
 
@@ -216,7 +217,8 @@ module Val = struct
       let traces_caller =
         List.fold symbols
           ~f:(fun traces symbol ->
-            try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces)
+            try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces
+            )
           ~init:TraceSet.empty
       in
       let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
@@ -293,7 +295,6 @@ module Stack = struct
         remove temp_loc mem
       in
       List.fold temps ~init:mem ~f:remove_temp
-
 end
 
 module Heap = struct
@@ -312,7 +313,6 @@ module Heap = struct
         F.fprintf fmt "@[<v 2>{ " ;
         pp_collection ~pp_item fmt (bindings m) ;
         F.fprintf fmt " }@]"
-
   end
 
   include AbstractDomain.Map (Loc) (Val)
@@ -355,7 +355,6 @@ module Heap = struct
     fun mem ->
       let mem = filter (fun l _ -> Loc.is_return l) mem in
       if is_empty mem then Val.bot else snd (choose mem)
-
 end
 
 module AliasTarget = struct
@@ -448,7 +447,6 @@ module AliasMap = struct
     fun temps m ->
       let remove_temp m temp = M.remove temp m in
       List.fold temps ~init:m ~f:remove_temp
-
 end
 
 module AliasRet = struct
@@ -537,7 +535,6 @@ module Alias = struct
 
   let remove_temps : Ident.t list -> astate -> astate =
     fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
-
 end
 
 module MemReach = struct
@@ -549,7 +546,8 @@ module MemReach = struct
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
-    else Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack && Heap.( <= ) ~lhs:lhs.heap ~rhs:rhs.heap
+    else
+      Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack && Heap.( <= ) ~lhs:lhs.heap ~rhs:rhs.heap
       && Alias.( <= ) ~lhs:lhs.alias ~rhs:rhs.alias
 
 
@@ -672,7 +670,6 @@ module MemReach = struct
   let remove_temps : Ident.t list -> t -> t =
     fun temps m ->
       {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
-
 end
 
 module Mem = struct
@@ -813,5 +810,4 @@ module Summary = struct
     fun fmt (entry_mem, exit_mem, condition_set) ->
       F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp
         condition_set
-
 end

@@ -379,7 +379,7 @@ let build_macros_map_ macros init_map =
                 "Macro '%s' has more than one definition." (ALVar.formula_id_to_string key)
             else ALVar.FormulaIdMap.add key (false, params, formula) map'
         | _ ->
-            map')
+            map' )
       ~init:init_map macros
   in
   macros_map
@@ -398,7 +398,7 @@ let build_paths_map paths =
           match data with path_name, paths ->
             if ALVar.VarMap.mem path_name map' then
               L.(die ExternalError) "Path '%s' has more than one definition." path_name
-            else ALVar.VarMap.add path_name paths map')
+            else ALVar.VarMap.add path_name paths map' )
         ~init:init_map paths
     in
     paths_map
@@ -423,7 +423,7 @@ let expand_checkers macro_map path_map checkers =
               L.(debug Linters Medium) "  -Expanding path@\n" ;
               CPath (black_or_white_list, expand_path paths path_map) :: defs
           | cl ->
-              cl :: defs)
+              cl :: defs )
         ~init:[] c.definitions
     in
     {c with definitions= exp_defs}
@@ -484,8 +484,8 @@ let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node)
       List.iter
         ~f:(fun issue_desc ->
           if CIssue.should_run_check issue_desc.CIssue.mode then
-            fill_issue_desc_info_and_log context an issue_desc None issue_desc.CIssue.loc)
-        issue_desc_list)
+            fill_issue_desc_info_and_log context an issue_desc None issue_desc.CIssue.loc )
+        issue_desc_list )
     checkers
 
 
@@ -499,7 +499,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_type
             ()
         | Some witness ->
             let loc = CFrontend_checkers.location_from_an context witness in
-            fill_issue_desc_info_and_log context witness linter.issue_desc linter.def_file loc)
+            fill_issue_desc_info_and_log context witness linter.issue_desc linter.def_file loc )
     parsed_linters
 
 
@@ -514,4 +514,3 @@ let invoke_set_of_checkers_on_node context an =
       if not CFrontend_config.tableaux_evaluation then
         invoke_set_of_parsed_checkers_an !parsed_linters context an ) ;
   if Config.default_linters then invoke_set_of_hard_coded_checkers_an context an
-

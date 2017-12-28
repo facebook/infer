@@ -135,7 +135,7 @@ let add_source_file path map =
       (* Most common case: there is no conflict with the base name of the source file *)
       Singleton current_source_file
   in
-  String.Map.add ~key:basename ~data:entry map
+  String.Map.set ~key:basename ~data:entry map
 
 
 let add_root_path path roots = String.Set.add roots path
@@ -226,7 +226,7 @@ let search_classes path =
       if Filename.check_suffix p "class" then add_class paths classes p
       else if Filename.check_suffix p "jar" then
         (add_root_path p paths, collect_classnames classes p)
-      else accu)
+      else accu )
     (String.Set.empty, JBasics.ClassSet.empty) path
 
 
@@ -305,4 +305,3 @@ let load_program classpath classes =
   JBasics.ClassSet.iter (fun cn -> ignore (lookup_node cn program)) classes ;
   L.(debug Capture Medium) "done@." ;
   program
-

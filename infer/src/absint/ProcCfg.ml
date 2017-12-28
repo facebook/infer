@@ -84,7 +84,6 @@ module InstrNode = struct
         Procdesc.Node.pp_id fmt id
     | Instr_index i ->
         F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id i
-
 end
 
 module type S = sig
@@ -287,9 +286,8 @@ struct
     List.mapi
       ~f:(fun i instr ->
         let id = (Procdesc.Node.get_id t, Instr_index i) in
-        (instr, Some id))
+        (instr, Some id) )
       (instrs t)
-
 end
 
 module NodeIdMap (CFG : S) = Caml.Map.Make (struct

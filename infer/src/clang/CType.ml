@@ -88,7 +88,6 @@ let get_name_from_type_pointer custom_type_pointer =
   | _ ->
       assert false
 
-
 (*
 let rec get_type_list nn ll =
   match ll with

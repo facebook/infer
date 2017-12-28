@@ -31,7 +31,7 @@ let value_of_argv_option argv opt_name =
         else if String.equal opt_name prev_arg then Some arg
         else None
       in
-      (arg, result'))
+      (arg, result') )
     ~init:("", None) argv
   |> snd
 

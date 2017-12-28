@@ -22,7 +22,7 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
     [ (fun () ->
         let call_graph = Exe_env.get_cg exe_env in
         Callbacks.iterate_callbacks call_graph exe_env ;
-        if Config.write_html then Printer.write_all_html_files cluster) ]
+        if Config.write_html then Printer.write_all_html_files cluster ) ]
 
 
 (** Create tasks to analyze a cluster *)
@@ -85,7 +85,7 @@ let cluster_should_be_analyzed ~changed_files cluster =
       SourceFile.Set.fold
         (fun source_file source_dir_set ->
           let source_dir = DB.source_dir_from_source_file source_file in
-          String.Set.add source_dir_set (DB.source_dir_to_string source_dir))
+          String.Set.add source_dir_set (DB.source_dir_to_string source_dir) )
         changed_files String.Set.empty
     in
     Option.map ~f:source_dirs_to_analyze changed_files
@@ -134,8 +134,8 @@ let main ~changed_files ~makefile =
       in
       let n_clusters_to_analyze = List.length clusters_to_analyze in
       L.progress "Found %d%s source file%s to analyze in %s@." n_clusters_to_analyze
-        ( if Config.reactive_mode || Option.is_some changed_files then " (out of "
-            ^ string_of_int (List.length all_clusters) ^ ")"
+        ( if Config.reactive_mode || Option.is_some changed_files then
+            " (out of " ^ string_of_int (List.length all_clusters) ^ ")"
         else "" )
         (if Int.equal n_clusters_to_analyze 1 then "" else "s")
         Config.results_dir ;

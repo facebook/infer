@@ -41,7 +41,7 @@ let is_matching patterns source_file =
   let path = SourceFile.to_rel_path source_file in
   List.exists
     ~f:(fun pattern ->
-      try Int.equal (Str.search_forward pattern path 0) 0 with Not_found -> false)
+      try Int.equal (Str.search_forward pattern path 0) 0 with Not_found -> false )
     patterns
 
 
@@ -83,7 +83,6 @@ module FileContainsStringMatcher = struct
             source_map := SourceFile.Map.add source_file pattern_found !source_map ;
             pattern_found
           with Sys_error _ -> false
-
 end
 
 type method_pattern =
@@ -106,7 +105,7 @@ module FileOrProcMatcher = struct
         List.fold
           ~f:(fun map pattern ->
             let previous = try String.Map.find_exn map pattern.class_name with Not_found -> [] in
-            String.Map.add ~key:pattern.class_name ~data:(pattern :: previous) map)
+            String.Map.set ~key:pattern.class_name ~data:(pattern :: previous) map )
           ~init:String.Map.empty m_patterns
       in
       let do_java pname_java =
@@ -116,7 +115,7 @@ module FileOrProcMatcher = struct
           let class_patterns = String.Map.find_exn pattern_map class_name in
           List.exists
             ~f:(fun p ->
-              match p.method_name with None -> true | Some m -> String.equal m method_name)
+              match p.method_name with None -> true | Some m -> String.equal m method_name )
             class_patterns
         with Not_found -> false
       in
@@ -171,7 +170,6 @@ module FileOrProcMatcher = struct
         Format.fprintf fmt "Source contains (%s) {@\n%a}@\n"
           (Config.string_of_language language)
           pp_source_contains sc
-
 end
 
 (* of module FileOrProcMatcher *)
@@ -186,7 +184,6 @@ module OverridesMatcher = struct
           L.(die UserError) "Expecting method pattern"
     in
     List.exists ~f:is_matching patterns
-
 end
 
 let patterns_of_json_with_key (json_key, json) =
@@ -369,6 +366,5 @@ let test () =
         let matching = matching_analyzers source_file in
         if matching <> [] then
           let matching_s = String.concat ~sep:", " (List.map ~f:fst matching) in
-          L.result "%s -> {%s}@." (SourceFile.to_rel_path source_file) matching_s)
+          L.result "%s -> {%s}@." (SourceFile.to_rel_path source_file) matching_s )
     (Sys.getcwd ())
-

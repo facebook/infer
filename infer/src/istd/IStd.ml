@@ -28,16 +28,16 @@ module Unix_ = struct
     improve
       (fun () ->
         let prog_args = Array.of_list (prog :: args) in
-        Caml.UnixLabels.create_process ~prog ~args:prog_args ~stdin ~stdout ~stderr |> Pid.of_int)
+        Caml.UnixLabels.create_process ~prog ~args:prog_args ~stdin ~stdout ~stderr |> Pid.of_int
+        )
       (fun () ->
         [("prog", Sexp.Atom prog); ("args", Sexplib.Conv.sexp_of_list (fun a -> Sexp.Atom a) args)]
-    )
+        )
 
 
   let fork_redirect_exec_wait ~prog ~args ?stdin ?stdout ?stderr () =
     Unix.waitpid (create_process_redirect ~prog ~args ?stdin ?stdout ?stderr ())
     |> Unix.Exit_or_signal.or_error |> ok_exn
-
 end
 
 module List_ = struct
@@ -63,7 +63,6 @@ module List_ = struct
           else loop (h2 :: acc) l1 t2
     in
     loop [] l1 l2
-
 end
 
 (* Use Caml.Set since they are serialized using Marshal, and Core.Std.Set includes the comparison

@@ -353,7 +353,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
   let deref_err_list =
     List.fold
       ~f:(fun deref_errs hpred ->
-        match check_hpred hpred with Some reason -> reason :: deref_errs | None -> deref_errs)
+        match check_hpred hpred with Some reason -> reason :: deref_errs | None -> deref_errs )
       ~init:[] spec_pre.Prop.sigma
   in
   match deref_err_list with
@@ -789,13 +789,14 @@ let combine tenv ret_id (posts: ('a Prop.t * Paths.Path.t) list) actual_pre path
       else
         List.map
           ~f:(fun (p, path_post) ->
-            (p, Paths.Path.add_call (include_subtrace callee_pname) path_pre callee_pname path_post))
+            (p, Paths.Path.add_call (include_subtrace callee_pname) path_pre callee_pname path_post)
+            )
           posts
     in
     List.map
       ~f:(fun (p, path) ->
         post_process_post tenv caller_pname callee_pname loc actual_pre
-          (Prop.prop_sub split.sub p, path))
+          (Prop.prop_sub split.sub p, path) )
       posts'
   in
   L.d_increase_indent 1 ;
@@ -1029,7 +1030,7 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
       | Some (Deref_undef_exp, desc) ->
           raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
       | _ ->
-          ())
+          () )
     props
 
 
@@ -1366,4 +1367,3 @@ let exe_function_call callee_summary tenv ret_id_opt caller_pdesc callee_pname l
   in
   let results = List.map ~f:exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id_opt trace_call callee_pname callee_attrs loc results
-

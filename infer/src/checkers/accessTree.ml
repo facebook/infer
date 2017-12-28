@@ -181,7 +181,8 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
   let rec access_tree_lteq ((lhs_trace, lhs_tree) as lhs) ((rhs_trace, rhs_tree) as rhs) =
     if phys_equal lhs rhs then true
-    else TraceDomain.( <= ) ~lhs:lhs_trace ~rhs:rhs_trace
+    else
+      TraceDomain.( <= ) ~lhs:lhs_trace ~rhs:rhs_trace
       &&
       match (lhs_tree, rhs_tree) with
       | Subtree lhs_subtree, Subtree rhs_subtree ->
@@ -190,7 +191,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
               try
                 let rhs_v = AccessMap.find k rhs_subtree in
                 access_tree_lteq lhs_v rhs_v
-              with Not_found -> false)
+              with Not_found -> false )
             lhs_subtree
       | _, Star ->
           true
@@ -206,7 +207,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
           try
             let rhs_v = BaseMap.find k rhs in
             access_tree_lteq lhs_v rhs_v
-          with Not_found -> false)
+          with Not_found -> false )
         lhs
 
 
@@ -444,5 +445,4 @@ module PathSet (Config : Config) = struct
   let pp fmt tree =
     let collect_path acc access_path (is_mem, _) = if is_mem then access_path :: acc else acc in
     fold collect_path tree [] |> PrettyPrintable.pp_collection ~pp_item:AccessPath.Abs.pp fmt
-
 end

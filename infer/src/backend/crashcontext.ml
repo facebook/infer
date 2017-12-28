@@ -53,7 +53,7 @@ let stitch_summaries stacktrace_file summary_files out_file =
   let summary_map =
     List.fold
       ~f:(fun acc stacktree ->
-        String.Map.add ~key:(frame_id_of_summary stacktree) ~data:stacktree acc)
+        String.Map.set ~key:(frame_id_of_summary stacktree) ~data:stacktree acc )
       ~init:String.Map.empty summaries
   in
   let expand_stack_frame frame =
@@ -76,7 +76,7 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
         if Sys.is_directory path <> `Yes && Filename.check_suffix path "json"
            && String.is_suffix ~suffix:"crashcontext" (Filename.dirname path)
         then path :: summaries
-        else summaries)
+        else summaries )
       [] root_summaries_dir
   in
   let pair_for_stacktrace_file =

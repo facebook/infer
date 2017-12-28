@@ -53,7 +53,6 @@ module BoTrace = struct
     fun fmt t ->
       let pp_sep fmt () = F.fprintf fmt " :: " in
       F.pp_print_list ~pp_sep pp_elem fmt t.trace
-
 end
 
 module Set = struct
@@ -90,8 +89,8 @@ module Set = struct
             (fun trace_caller traces ->
               let new_trace_caller = BoTrace.add_elem (BoTrace.Call location) trace_caller in
               let new_trace = BoTrace.append trace_callee new_trace_caller in
-              add new_trace traces)
-            traces_caller traces)
+              add new_trace traces )
+            traces_caller traces )
         traces_callee empty
 
 
@@ -105,10 +104,9 @@ module Set = struct
             (fun arr_traces traces ->
               let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess location) idx_traces in
               let new_trace = BoTrace.append new_trace_idx arr_traces in
-              add new_trace traces)
-            arr_traces traces)
+              add new_trace traces )
+            arr_traces traces )
         idx_traces empty
-
 end
 
 include BoTrace

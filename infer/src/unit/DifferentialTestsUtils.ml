@@ -54,4 +54,3 @@ let pp_diff_of_int_list = pp_diff_of_list ~pp:Format.pp_print_int
 let sorted_hashes_of_issues issues =
   let hash i = i.Jsonbug_t.hash in
   List.sort ~cmp:String.compare (List.rev_map ~f:hash issues)
-

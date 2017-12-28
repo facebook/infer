@@ -294,7 +294,6 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
                  && equal_class_opt (get_class pname) (get_class curr_pname) )
            in
            final_typestates constructors_current_class)
-
     end
     (* Initializers *) in
     let do_final_typestate typestate_opt calls_this =
@@ -348,7 +347,6 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature ;
         callback2 calls_this checks callback_args annotated_signature linereader loc ) ;
     summary
-
 end
 
 (* MkCallback *)
@@ -390,4 +388,3 @@ let callback_check_return_type check_return_type callback_args =
     {TypeCheck.eradicate= false; check_extension= false; check_ret_type= [check_return_type]}
   in
   Main.callback checks callback_args
-

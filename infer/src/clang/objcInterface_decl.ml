@@ -40,7 +40,7 @@ let get_protocols protocols =
         | Some name_info ->
             CAst_utils.get_qualified_name name_info
         | None ->
-            assert false)
+            assert false )
       protocols
   in
   protocol_names
@@ -104,7 +104,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   List.iter
     ~f:(fun (fn, ft, _) ->
       L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Typ.Fieldname.to_string fn) ;
-      L.(debug Capture Verbose) "type: '%s'@\n" (Typ.to_string ft))
+      L.(debug Capture Verbose) "type: '%s'@\n" (Typ.to_string ft) )
     fields_sc ;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers: Typ.Name.t list) =
@@ -121,7 +121,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   L.(debug Capture Verbose) "Class %a field:@\n" QualifiedCppName.pp class_name ;
   List.iter
     ~f:(fun (fn, _, _) ->
-      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn))
+      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn) )
     all_fields ;
   ignore
     (Tenv.mk_struct tenv ~fields:all_fields ~supers ~methods:[] ~annots:Annot.Class.objc
@@ -174,4 +174,3 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
       class_desc
   | _ ->
       assert false
-

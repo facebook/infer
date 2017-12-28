@@ -130,4 +130,3 @@ let captured_vars_from_block_info context cvl =
         assert false
   in
   List.fold_right ~f:sil_var_of_captured_var cvl ~init:[]
-

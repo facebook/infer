@@ -121,8 +121,8 @@ let do_all_files classpath sources classes =
       | JClasspath.Duplicate source_files ->
           List.iter
             ~f:(fun (package, source_file) ->
-              translate_source_file basename (Some package, source_file) source_file)
-            source_files)
+              translate_source_file basename (Some package, source_file) source_file )
+            source_files )
     sources ;
   if Config.dependency_mode then capture_libs linereader program tenv ;
   save_tenv tenv ;

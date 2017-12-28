@@ -416,7 +416,8 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_s
   in
   let should_check_parameters =
     if check_library_calls then true
-    else Models.is_modelled_nullable callee_pname || callee_attributes.ProcAttributes.is_defined
+    else
+      Models.is_modelled_nullable callee_pname || callee_attributes.ProcAttributes.is_defined
       || Option.is_some callee_summary_opt
   in
   if should_check_parameters then

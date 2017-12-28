@@ -111,10 +111,11 @@ let print_stack_info = ref false
 (* replace a dollar sign in a name with a D. We need this because dotty get confused if there is*)
 (* a dollar sign i a label*)
 let strip_special_chars b =
+  let b = Bytes.of_string b in
   let replace st c c' =
-    if String.contains st c then
-      let idx = String.index_exn st c in
-      try st.[idx] <- c' ; st with Invalid_argument _ ->
+    if Bytes.contains st c then
+      let idx = String.index_exn (Bytes.to_string st) c in
+      try Bytes.set st idx c' ; st with Invalid_argument _ ->
         L.internal_error "@\n@\nstrip_special_chars: Invalid argument!@\n@." ;
         assert false
     else st
@@ -127,7 +128,7 @@ let strip_special_chars b =
   let s5 = replace s4 ')' 'B' in
   let s6 = replace s5 '+' 'P' in
   let s7 = replace s6 '-' 'M' in
-  s7
+  Bytes.to_string s7
 
 
 let rec strexp_to_string pe coo f se =
@@ -302,7 +303,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
             | Dotdllseg (_, e', _, _, _, _, _, _) ->
                 Exp.equal e e'
             | _ ->
-                false)
+                false )
           allocated_nodes
     | _ ->
         false
@@ -592,7 +593,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
               mk_link k
                 (mk_coordinate (n + 1) lambda)
                 (strip_special_chars lab_src) (mk_coordinate m lambda)
-                (strip_special_chars lab_trg))
+                (strip_special_chars lab_trg) )
             target_list
         in
         let links_from_elements = List.concat_map ~f:ff (n :: nl) in
@@ -619,7 +620,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
           let ff n =
             List.map
               ~f:(fun (k, lab_src, m, lab_trg) ->
-                mk_link k (mk_coordinate n lambda) lab_src (mk_coordinate m lambda) lab_trg)
+                mk_link k (mk_coordinate n lambda) lab_src (mk_coordinate m lambda) lab_trg )
               target_list
           in
           let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
@@ -654,7 +655,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
               List.map
                 ~f:(fun (k, m, lab_target) ->
                   mk_link k (mk_coordinate n lambda) "" (mk_coordinate m lambda)
-                    (strip_special_chars lab_target))
+                    (strip_special_chars lab_target) )
                 target_list
             in
             let ll = List.concat_map ~f:ff nl in
@@ -779,7 +780,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
   let remove_node n ns =
     List.filter
       ~f:(fun n' ->
-        match n' with Dotpointsto _ -> get_coordinate_id n' <> get_coordinate_id n | _ -> true)
+        match n' with Dotpointsto _ -> get_coordinate_id n' <> get_coordinate_id n | _ -> true )
       ns
   in
   let rec boxes_pointed_by n lns =
@@ -1065,7 +1066,7 @@ let pp_dotty_one_spec f pre posts =
       for j = 1 to 4 do
         F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]@\n" !spec_counter j j j
           !target_invisible_arrow_pre
-      done)
+      done )
     posts ;
   F.fprintf f "@\n } @\n"
 
@@ -1082,7 +1083,7 @@ let pp_dotty_prop_list_in_path f plist prev_n curr_n =
     List.iter
       ~f:(fun po ->
         incr proposition_counter ;
-        pp_dotty f Generic_proposition po None)
+        pp_dotty f Generic_proposition po None )
       plist ;
     if prev_n <> -1 then F.fprintf f "@\n state%iN ->state%iN@\n" prev_n curr_n ;
     F.fprintf f "@\n } @\n"
@@ -1164,7 +1165,7 @@ let pp_etlist byvals fmt etl =
       let byval_mark =
         if is_ptr && List.mem byvals index ~equal:Int.equal then "(byval)" else ""
       in
-      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) ty byval_mark)
+      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) ty byval_mark )
     etl
 
 
@@ -1445,7 +1446,7 @@ let make_set_dangling_nodes allocated_nodes (sigma: Sil.hpred list) =
           | VH_pointsto (_, e', _, _) | VH_lseg (_, e', _, _) | VH_dllseg (_, e', _, _, _, _) ->
               Exp.equal e e'
           | _ ->
-              false)
+              false )
         allocated_nodes
     in
     not allocated
@@ -1712,7 +1713,7 @@ let print_specs_xml signature specs loc fmt =
       :: List.map
            ~f:(fun (po, _) ->
              jj := !jj + 1 ;
-             prop_to_xml (add_stack_to_prop po) "postcondition" !jj)
+             prop_to_xml (add_stack_to_prop po) "postcondition" !jj )
            posts
     in
     Io_infer.Xml.create_tree "specification" [("id", string_of_int n)] xml_spec
@@ -1722,7 +1723,7 @@ let print_specs_xml signature specs loc fmt =
     List.map
       ~f:(fun s ->
         j := !j + 1 ;
-        do_one_spec (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts !j)
+        do_one_spec (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts !j )
       specs
   in
   let xml_specifications = Io_infer.Xml.create_tree "specifications" [] list_of_specs_xml in
@@ -1733,4 +1734,3 @@ let print_specs_xml signature specs loc fmt =
       [xml_signature; xml_specifications]
   in
   Io_infer.Xml.pp_document true fmt proc_summary
-

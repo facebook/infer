@@ -39,7 +39,7 @@ let line_range_of_pdesc pdesc =
     Procdesc.fold_instrs
       (fun acc _ instr ->
         let new_loc = Sil.instr_get_loc instr in
-        max acc new_loc.Location.line)
+        max acc new_loc.Location.line )
       start_line pdesc
   in
   {Stacktree_j.start_line; end_line}
@@ -84,7 +84,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Some callee_pdesc ->
                 stacktree_of_pdesc callee_pdesc "proc_start" )
           | Some stracktree ->
-              stracktree)
+              stracktree )
         procs
     in
     stacktree_of_pdesc pdesc ~loc ~callees location_type
@@ -143,7 +143,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | Sil.Load _ | Store _ | Prune _ | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
-
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
@@ -183,4 +182,3 @@ let checker {Callbacks.proc_desc; tenv; get_proc_desc; summary} : Specs.summary 
       let extras = {get_proc_desc; stacktraces} in
       ignore (Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty) ) ;
   summary
-

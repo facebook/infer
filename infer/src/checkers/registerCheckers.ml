@@ -134,4 +134,3 @@ let pp_checker fmt {name; callbacks} =
   F.fprintf fmt "%s (%a)" name
     (Pp.seq ~sep:", " (Pp.to_string ~f:Config.string_of_language))
     langs_of_callbacks
-

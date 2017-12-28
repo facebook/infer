@@ -754,7 +754,6 @@ module Procname = struct
 
   let ( $!--> ) args_matcher f =
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
-
 end
 
 module TypName = struct

@@ -18,7 +18,6 @@ module AnnotationAliases = struct
     | _ ->
         L.(die UserError)
           "Couldn't parse thread-safety annotation aliases; expected list of strings"
-
 end
 
 module Models = struct
@@ -113,17 +112,20 @@ module Models = struct
             match
               (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
             with
-            | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
+            | ( ( "java.util.concurrent.locks.Lock"
+                | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
               , ("lock" | "lockInterruptibly") ) ->
                 Lock
-            | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
+            | ( ( "java.util.concurrent.locks.Lock"
+                | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
               , "unlock" ) ->
                 Unlock
-            | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
+            | ( ( "java.util.concurrent.locks.Lock"
+                | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
               , "tryLock" ) ->
@@ -133,11 +135,11 @@ module Models = struct
                 Lock
             | _ ->
                 NoEffect )
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_lock pname actuals ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_lock pname actuals ->
           Lock
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_unlock pname ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_unlock pname ->
           Unlock
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_trylock pname ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_trylock pname ->
           LockedIfTrue
       | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
           Lock
@@ -175,33 +177,69 @@ module Models = struct
           let get_container_access_ typename =
             match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-              , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
+              , ( "append"
+                | "clear"
+                | "delete"
+                | "put"
+                | "remove"
+                | "removeAt"
+                | "removeAtRange"
                 | "setValueAt" ) ) ->
                 Some ContainerWrite
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
               , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") ) ->
                 Some ContainerRead
             | ( "android.support.v4.util.SimpleArrayMap"
-              , ( "clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt"
+              , ( "clear"
+                | "ensureCapacity"
+                | "put"
+                | "putAll"
+                | "remove"
+                | "removeAt"
                 | "setValueAt" ) ) ->
                 Some ContainerWrite
             | ( "android.support.v4.util.SimpleArrayMap"
-              , ( "containsKey" | "containsValue" | "get" | "hashCode" | "indexOfKey" | "isEmpty"
-                | "keyAt" | "size" | "valueAt" ) ) ->
+              , ( "containsKey"
+                | "containsValue"
+                | "get"
+                | "hashCode"
+                | "indexOfKey"
+                | "isEmpty"
+                | "keyAt"
+                | "size"
+                | "valueAt" ) ) ->
                 Some ContainerRead
             | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release") ->
                 Some ContainerWrite
             | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") ->
                 Some ContainerWrite
             | ( "java.util.List"
-              , ( "contains" | "containsAll" | "equals" | "get" | "hashCode" | "indexOf"
-                | "isEmpty" | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) ) ->
+              , ( "contains"
+                | "containsAll"
+                | "equals"
+                | "get"
+                | "hashCode"
+                | "indexOf"
+                | "isEmpty"
+                | "iterator"
+                | "lastIndexOf"
+                | "listIterator"
+                | "size"
+                | "toArray" ) ) ->
                 Some ContainerRead
             | "java.util.Map", ("clear" | "put" | "putAll" | "remove") ->
                 Some ContainerWrite
             | ( "java.util.Map"
-              , ( "containsKey" | "containsValue" | "entrySet" | "equals" | "get" | "hashCode"
-                | "isEmpty" | "keySet" | "size" | "values" ) ) ->
+              , ( "containsKey"
+                | "containsValue"
+                | "entrySet"
+                | "equals"
+                | "get"
+                | "hashCode"
+                | "isEmpty"
+                | "keySet"
+                | "size"
+                | "values" ) ) ->
                 Some ContainerRead
             | _ ->
                 None
@@ -210,10 +248,10 @@ module Models = struct
       (* The following order matters: we want to check if pname is a container write
          before we check if pname is a container read. This is due to a different
          treatment between std::map::operator[] and all other operator[]. *)
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname
         when is_cpp_container_write pname ->
           Some ContainerWrite
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_container_read pname ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_container_read pname ->
           Some ContainerRead
       | _ ->
           None
@@ -236,11 +274,10 @@ module Models = struct
            ; "std::vector" ])
     in
     function
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname ->
           Typ.Procname.is_destructor pname
           || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
                (Typ.Procname.get_qualifiers pname)
       | _ ->
           false
-
 end

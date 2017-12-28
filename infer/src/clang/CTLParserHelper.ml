@@ -36,4 +36,3 @@ let validate_al_files () =
       Ok ()
   | _ as errors ->
       Error (Yojson.Basic.to_string (`List errors))
-

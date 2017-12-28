@@ -114,4 +114,3 @@ let category_impl_decl qual_type_to_sil_type tenv decl =
       typ
   | _ ->
       assert false
-

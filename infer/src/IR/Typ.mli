@@ -640,5 +640,4 @@ module Struct : sig
   val get_field_type_and_annotation :
     lookup:lookup -> Fieldname.t -> typ -> (typ * Annot.Item.t) option
   (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
-
 end

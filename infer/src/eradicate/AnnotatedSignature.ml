@@ -50,14 +50,14 @@ let get proc_attributes : t =
 let param_is_nullable pvar ann_sig =
   List.exists
     ~f:(fun (param, annot, _) ->
-      Mangled.equal param (Pvar.get_name pvar) && Annotations.ia_is_nullable annot)
+      Mangled.equal param (Pvar.get_name pvar) && Annotations.ia_is_nullable annot )
     ann_sig.params
 
 
 let param_has_annot predicate pvar ann_sig =
   List.exists
     ~f:(fun (param, param_annot, _) ->
-      Mangled.equal param (Pvar.get_name pvar) && predicate param_annot)
+      Mangled.equal param (Pvar.get_name pvar) && predicate param_annot )
     ann_sig.params
 
 
@@ -153,4 +153,3 @@ let mark_return ann asig =
   let ia, t = asig.ret in
   let ret' = (mark_ia ann ia true, t) in
   {asig with ret= ret'}
-

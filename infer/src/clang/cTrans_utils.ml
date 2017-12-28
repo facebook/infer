@@ -116,7 +116,6 @@ module Nodes = struct
         true
     | `Minus | `Not | `LNot | `Real | `Imag | `Extension | `Coawait ->
         false
-
 end
 
 module GotoLabel = struct
@@ -126,7 +125,6 @@ module GotoLabel = struct
       let new_node = Nodes.create_node (Procdesc.Node.Skip_node node_name) [] sil_loc context in
       Hashtbl.add context.CContext.label_map label new_node ;
       new_node
-
 end
 
 type continuation =
@@ -269,7 +267,6 @@ module PriorityNode = struct
     else
       (* The node is created by the parent. We just pass back nodes/leafs params *)
       {res_state with exps= []}
-
 end
 
 module Loops = struct
@@ -303,7 +300,6 @@ module Loops = struct
 
   let get_cond loop_kind =
     match loop_kind with For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
-
 end
 
 module Scope = struct
@@ -311,7 +307,7 @@ module Scope = struct
 
   let add_scope_vars_to_destroy var_map stmt_info vars =
     let ptr = stmt_info.Clang_ast_t.si_pointer in
-    StmtMap.add var_map ~key:ptr ~data:vars
+    StmtMap.set var_map ~key:ptr ~data:vars
 
 
   let rec compute_vars vars_in_scope break_count var_map stmt =
@@ -365,7 +361,6 @@ module Scope = struct
 
   let compute_vars_to_destroy body =
     List.fold_left ~f:(compute_vars [] 0) ~init:StmtMap.empty [body]
-
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
@@ -683,7 +678,6 @@ module Self = struct
   let is_var_self pvar is_objc_method =
     let is_self = String.equal (Mangled.to_string (Pvar.get_name pvar)) CFrontend_config.self in
     is_self && is_objc_method
-
 end
 
 let rec is_method_call s =
@@ -736,7 +730,6 @@ let is_logical_negation_of_int tenv ei uoi =
 
 let is_block_enumerate_function mei =
   String.equal mei.Clang_ast_t.omei_selector CFrontend_config.enumerateObjectsUsingBlock
-
 
 (*
 (** Similar to extract_item_from_singleton but for option type *)

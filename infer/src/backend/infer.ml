@@ -38,7 +38,8 @@ let setup () =
       if not
            ( Driver.(equal_mode driver_mode Analyze)
            ||
-           Config.(buck || continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
+           Config.(buck || continue_capture || infer_is_clang || infer_is_javac || reactive_mode)
+           )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir ()
   | Explore ->

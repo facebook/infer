@@ -86,7 +86,7 @@ let stanzas =
           [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
           ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
        copy# actions *)
-            Printf.sprintf "(copy_files %s/*.mly)" source_dir ])
+            Printf.sprintf "(copy_files %s/*.mly)" source_dir ] )
         source_dirs
     |> List.concat )
 

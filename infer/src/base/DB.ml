@@ -92,13 +92,13 @@ let find_source_dirs () =
     List.iter
       ~f:(fun fname ->
         let path = Filename.concat dir fname in
-        if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
+        if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs )
       files
   in
   List.iter
     ~f:(fun fname ->
       let dir = Filename.concat Config.captured_dir fname in
-      if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir)
+      if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir )
     files_in_results_dir ;
   List.rev !source_dirs
 
@@ -164,7 +164,7 @@ let update_file_with_lock dir fname update =
   let buf = read_whole_file fd in
   reset_file fd ;
   let str = update buf in
-  let i = Unix.write fd ~buf:str ~pos:0 ~len:(String.length str) in
+  let i = Unix.write fd ~buf:(Bytes.of_string str) ~pos:0 ~len:(String.length str) in
   if Int.equal i (String.length str) then (
     Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L ;
     Unix.close fd )
@@ -265,7 +265,6 @@ module Results_dir = struct
     in
     let full_fname = Filename.concat (create dir_path) filename in
     Unix.openfile full_fname ~mode:Unix.([O_WRONLY; O_CREAT; O_TRUNC]) ~perm:0o777
-
 end
 
 let global_tenv_fname =
@@ -304,7 +303,8 @@ let fold_paths_matching ~dir ~p ~init ~f =
     Array.fold
       ~f:(fun acc file ->
         let path = dir ^/ file in
-        if Sys.is_directory path = `Yes then paths acc path else if p path then f path acc else acc)
+        if Sys.is_directory path = `Yes then paths acc path else if p path then f path acc else acc
+        )
       ~init:path_list (Sys.readdir dir)
   in
   paths init dir

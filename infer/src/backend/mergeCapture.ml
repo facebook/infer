@@ -65,7 +65,7 @@ let rec slink ~stats ~skiplevels src dst =
     Array.iter
       ~f:(fun item ->
         slink ~stats ~skiplevels:(skiplevels - 1) (Filename.concat src item)
-          (Filename.concat dst item))
+          (Filename.concat dst item) )
       items )
   else if skiplevels > 0 then ()
   else create_link ~stats src dst
@@ -92,7 +92,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
         ~f:(fun file ->
           let file_path = Filename.concat captured_file file in
           Sys.file_exists file_path = `Yes
-          && (not check_timestamp_of_symlinks || symlink_up_to_date file_path))
+          && (not check_timestamp_of_symlinks || symlink_up_to_date file_path) )
         contents
     else true
   in
@@ -129,8 +129,8 @@ let process_merge_file deps_file =
     match Str.split_delim (Str.regexp (Str.quote "\t")) line with
     | target :: _ :: target_results_dir :: _ ->
         let infer_out_src =
-          if Filename.is_relative target_results_dir then Filename.dirname (buck_out ())
-            ^/ target_results_dir
+          if Filename.is_relative target_results_dir then
+            Filename.dirname (buck_out ()) ^/ target_results_dir
           else target_results_dir
         in
         let skiplevels = 2 in
@@ -156,4 +156,3 @@ let merge_captured_targets () =
   MergeResults.merge_buck_flavors_results infer_deps_file ;
   process_merge_file infer_deps_file ;
   L.progress "Merging captured Buck targets took %a@\n%!" Mtime.Span.pp (Mtime_clock.count time0)
-

@@ -296,7 +296,6 @@ struct
     let open OUnit2 in
     List.map
       ~f:(fun (name, test_program) ->
-        name >:: create_test test_program extras ~initial pp_opt test_pname)
+        name >:: create_test test_program extras ~initial pp_opt test_pname )
       tests
-
 end

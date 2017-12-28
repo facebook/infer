@@ -79,4 +79,3 @@ let pp_diff_of_version_opt fmt (expected, actual) =
   let option_to_string opt = Option.value ~default:"" opt in
   Format.fprintf fmt "Expected: [%s] Found: [%s]" (option_to_string expected)
     (option_to_string actual)
-

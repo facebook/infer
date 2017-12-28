@@ -298,4 +298,3 @@ let case_analysis_basic tenv (c1, st) (c2, (_, flag2)) =
 let case_analysis tenv (c1, st1) (c2, st2) =
   if Config.subtype_multirange then get_subtypes tenv (c1, st1) (c2, st2)
   else case_analysis_basic tenv (c1, st1) (c2, st2)
-

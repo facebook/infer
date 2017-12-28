@@ -49,4 +49,3 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
   List.iteri ~f:do_cluster clusters ;
   pp_epilog fmt () ;
   Out_channel.close outc
-

@@ -53,7 +53,7 @@ let get_blocks_nullified node =
   let null_blocks =
     List.concat_map
       ~f:(fun i ->
-        match i with Sil.Nullify (pvar, _) when Sil.is_block_pvar pvar -> [pvar] | _ -> [])
+        match i with Sil.Nullify (pvar, _) when Sil.is_block_pvar pvar -> [pvar] | _ -> [] )
       (ProcCfg.Exceptional.instrs node)
   in
   null_blocks
@@ -642,7 +642,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.java 
           | Some class_name ->
               Typ.Procname.split_classname (Typ.Name.name class_name) :: accu
           | None ->
-              name :: accu)
+              name :: accu )
         ~init:[] args
         (Typ.Procname.java_get_parameters resolved_pname_java)
       |> List.rev
@@ -700,8 +700,7 @@ let resolve_and_analyze tenv caller_pdesc prop args callee_proc_name call_flags
             Some resolved_proc_desc
         | None ->
             Option.map
-              ~f:(fun callee_proc_desc ->
-                Cfg.specialize_types callee_proc_desc resolved_pname args)
+              ~f:(fun callee_proc_desc -> Cfg.specialize_types callee_proc_desc resolved_pname args)
               (Ondemand.get_proc_desc callee_proc_name)
       in
       Option.bind resolved_proc_desc_option ~f:analyze
@@ -753,7 +752,7 @@ let receiver_self receiver prop =
           Exp.equal e receiver && Pvar.is_seed pv
           && Mangled.equal (Pvar.get_name pv) (Mangled.from_string "self")
       | _ ->
-          false)
+          false )
     prop.Prop.sigma
 
 
@@ -914,7 +913,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
           | Sil.Hpointsto (Exp.Lvar pv, _, exp) when Pvar.equal pv abduced_ret_pv ->
               Some exp
           | _ ->
-              None)
+              None )
         p.Prop.sigma_fp
     in
     (* find an hpred [abduced] |-> A in [prop] and add [exp] = A to prop *)
@@ -1432,7 +1431,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
               Pvar.equal pv abduced
           | _ ->
-              false)
+              false )
         p.Prop.sigma_fp
     in
     (* prevent introducing multiple abduced retvals for a single call site in a loop *)
@@ -1480,7 +1479,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
               let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
               Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
           | _ ->
-              p)
+              p )
         ~init:prop' prop'.Prop.sigma
   in
   let non_const_actuals_by_ref =
@@ -1549,7 +1548,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
         | (Exp.Var _ as e), ({Typ.desc= Tptr _} as t) when should_abduce_param_value callee_pname ->
             Some (e, t, i)
         | _ ->
-            None)
+            None )
       args
   in
   let has_nonnull_annot = Annotations.ia_is_nonnull ret_annots in
@@ -1819,7 +1818,7 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
     let res_list =
       Config.run_with_abs_val_equal_zero
         (* no exp abstraction during sym exe *)
-          (fun () -> sym_exec tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path)
+          (fun () -> sym_exec tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path )
         ()
     in
     let res_list_nojunk =

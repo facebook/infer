@@ -222,7 +222,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     List.fold
       ~f:(fun acc (base, accesses) ->
-        if is_static_access (fst base) then acc else add_field_accesses (base, []) acc accesses)
+        if is_static_access (fst base) then acc else add_field_accesses (base, []) acc accesses )
       ~init:accesses (HilExp.get_access_paths exp)
 
 
@@ -278,7 +278,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | ("android.app.Activity" | "android.view.View"), "findViewById" ->
             (* assume findViewById creates fresh View's (note: not always true) *)
             true
-        | ( ( "android.support.v4.util.Pools$Pool" | "android.support.v4.util.Pools$SimplePool"
+        | ( ( "android.support.v4.util.Pools$Pool"
+            | "android.support.v4.util.Pools$SimplePool"
             | "android.support.v4.util.Pools$SynchronizedPool" )
           , "acquire" ) ->
             (* a pool should own all of its objects *)
@@ -394,8 +395,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match
         (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
       with
-      | ( ( "java.lang.Boolean" | "java.lang.Byte" | "java.lang.Char" | "java.lang.Double"
-          | "java.lang.Float" | "java.lang.Integer" | "java.lang.Long" | "java.lang.Short" )
+      | ( ( "java.lang.Boolean"
+          | "java.lang.Byte"
+          | "java.lang.Char"
+          | "java.lang.Double"
+          | "java.lang.Float"
+          | "java.lang.Integer"
+          | "java.lang.Long"
+          | "java.lang.Short" )
         , "valueOf" ) ->
           true
       | _ ->
@@ -407,7 +414,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_reads exps loc accesses locks threads ownership proc_data =
     List.fold
       ~f:(fun acc exp ->
-        add_access exp loc ~is_write_access:false acc locks threads ownership proc_data)
+        add_access exp loc ~is_write_access:false acc locks threads ownership proc_data )
       exps ~init:accesses
 
 
@@ -444,7 +451,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           PathDomain.Sinks.fold
             (fun elem acc ->
               let new_elem = TraceElem.map ~f:expand_path elem in
-              PathDomain.Sinks.add new_elem acc)
+              PathDomain.Sinks.add new_elem acc )
             (PathDomain.sinks accesses) PathDomain.Sinks.empty
         in
         PathDomain.update_sinks accesses sinks
@@ -621,7 +628,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                     L.internal_error
                                       "Bad actual index %d for callee %a with %d actuals." index
                                       Typ.Procname.pp callee_pname (List.length actuals) ;
-                                    acc)
+                                    acc )
                               formal_indexes accesses_acc
                       in
                       AccessDomain.fold update_accesses accesses astate.accesses
@@ -692,7 +699,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           not (List.is_empty rhs_access_paths)
           && List.for_all
                ~f:(fun access_path ->
-                 AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
+                 AttributeMapDomain.has_attribute access_path Functional astate.attribute_map )
                rhs_access_paths
           &&
           match AccessPath.get_typ lhs_access_path tenv with
@@ -782,7 +789,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
       | _ ->
           astate
-
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
@@ -820,7 +826,7 @@ let is_thread_safe item_annot =
     List.exists
       ~f:(fun annot_string ->
         Annotations.annot_ends_with annot annot_string
-        || String.equal annot.class_name annot_string)
+        || String.equal annot.class_name annot_string )
       threadsafe_annotations
     && match annot.Annot.parameters with ["false"] -> false | _ -> true
   in
@@ -881,7 +887,7 @@ let is_thread_safe_method pname tenv =
   PatternMatch.override_exists
     (fun pn ->
       Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes
-        is_thread_safe)
+        is_thread_safe )
     tenv pname
 
 
@@ -1068,7 +1074,7 @@ let get_all_accesses_with_pre pre_filter access_filter accesses =
   let open RacerDDomain in
   AccessDomain.fold
     (fun pre trace acc ->
-      if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc)
+      if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc )
     accesses PathDomain.empty
 
 
@@ -1333,7 +1339,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                 ~f:(fun {access= other_access; threads= other_threads} ->
                   if TraceElem.is_write other_access && ThreadsDomain.is_any other_threads then
                     Some other_access
-                  else None)
+                  else None )
                 accesses
           in
           if not (List.is_empty writes_on_background_thread && not (ThreadsDomain.is_any threads))
@@ -1363,14 +1369,14 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
         let is_conflict other_access pre other_thread =
           TraceElem.is_write other_access
           &&
-          if Typ.Procname.is_java pname then ThreadsDomain.is_any threads
-            || ThreadsDomain.is_any other_thread
+          if Typ.Procname.is_java pname then
+            ThreadsDomain.is_any threads || ThreadsDomain.is_any other_thread
           else is_cpp_protected_write pre
         in
         let all_writes =
           List.filter
             ~f:(fun {access= other_access; precondition; threads= other_threads} ->
-              is_conflict other_access precondition other_threads)
+              is_conflict other_access precondition other_threads )
             accesses
         in
         if not (List.is_empty all_writes) then
@@ -1398,7 +1404,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
               | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl) ->
                   TraceElem.is_write access
               | _ ->
-                  false)
+                  false )
             accesses
         in
         if not (List.is_empty conflicting_writes) then
@@ -1417,7 +1423,8 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
             (* check if the class contains a member of type std::mutex *)
             List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
                 Option.exists (Typ.name ft) ~f:(fun name ->
-                    QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
+                    QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) )
+        )
       in
       let should_report pdesc tenv =
         match Procdesc.get_proc_name pdesc with
@@ -1443,7 +1450,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
       in
       List.iter
         ~f:(fun access -> report_unsafe_access access reportable_accesses)
-        reportable_accesses)
+        reportable_accesses )
     aggregated_access_map
   |> ignore
 
@@ -1484,7 +1491,6 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
           [%compare : (var_ * Typ.t) * AccessPath.access list] ap1 ap2
       | (InterfaceCall _ | Read _ | Write _ | ContainerRead _ | ContainerWrite _), _ ->
           RacerDDomain.Access.compare x y
-
   end)
 
   type t = reported_access list M.t
@@ -1583,7 +1589,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
                 , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
                   syntactic_equal_access_path tenv ap1 ap2
               | _ ->
-                  RacerDDomain.Access.equal k k')
+                  RacerDDomain.Access.equal k k' )
             m
         in
         if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
@@ -1592,7 +1598,6 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
         aux new_acc non_k_part
     in
     aux AccessListMap.empty acc_map
-
 end
 
 (* decide if we should throw away a path before doing safety analysis
@@ -1615,7 +1620,7 @@ let should_filter_access access =
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
-let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env =
+let make_results_table (module AccessListMap : QuotientedAccessListMap) file_env =
   let open RacerDDomain in
   let aggregate_post {threads; accesses} tenv procdesc acc =
     AccessDomain.fold
@@ -1626,8 +1631,8 @@ let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env 
             if should_filter_access access_kind then acc
             else
               let reported_access = {access; precondition; threads; tenv; procdesc} in
-              AccessListMap.add access_kind reported_access acc)
-          (PathDomain.sinks accesses) acc)
+              AccessListMap.add access_kind reported_access acc )
+          (PathDomain.sinks accesses) acc )
       accesses acc
   in
   let aggregate_posts acc (tenv, proc_desc) =
@@ -1654,7 +1659,7 @@ let aggregate_by_class file_env =
             "unknown"
       in
       let bucket = try String.Map.find_exn acc classname with Not_found -> [] in
-      String.Map.add ~key:classname ~data:(proc :: bucket) acc)
+      String.Map.set ~key:classname ~data:(proc :: bucket) acc )
     ~init:String.Map.empty
 
 
@@ -1668,6 +1673,5 @@ let file_analysis {Callbacks.procedures} =
         (make_results_table
            ( if Tenv.language_is tenv Clang then (module SyntacticQuotientedAccessListMap)
            else (module MayAliasQuotientedAccessListMap) )
-           class_env))
+           class_env) )
     (aggregate_by_class procedures)
-

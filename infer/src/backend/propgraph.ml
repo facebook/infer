@@ -90,7 +90,8 @@ let get_subl footprint_part g = if footprint_part then [] else Sil.sub_to_list g
 let edge_from_source g n footprint_part is_hpred =
   let edges =
     if is_hpred then List.map ~f:(fun hpred -> Ehpred hpred) (get_sigma footprint_part g)
-    else List.map ~f:(fun a -> Eatom a) (get_pi footprint_part g)
+    else
+      List.map ~f:(fun a -> Eatom a) (get_pi footprint_part g)
       @ List.map ~f:(fun entry -> Esub_entry entry) (get_subl footprint_part g)
   in
   let starts_from hpred =

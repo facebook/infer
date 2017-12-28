@@ -82,4 +82,3 @@ let tests =
        ; one_frame_trace_test
        ; multi_frame_trace_test
        ; missing_line_info_test ]
-

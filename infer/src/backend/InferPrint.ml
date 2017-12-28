@@ -56,7 +56,7 @@ let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (
   in
   Utils.better_hash
     (kind, type_str, hashable_procedure_name, base_filename, location_independent_qualifier)
-  |> Digest.to_hex
+  |> Caml.Digest.to_hex
 
 
 let exception_value = "exception"
@@ -143,7 +143,7 @@ let summary_values summary =
   ; verr=
       Errlog.size
         (fun ekind in_footprint ->
-          Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint)
+          Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint )
         err_log
   ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
@@ -177,7 +177,6 @@ module ProcsCsv = struct
     pp "%d," sv.vline ;
     pp "\"%s\"," (Escape.escape_csv sv.vsignature) ;
     pp "%s@\n" sv.vproof_trace
-
 end
 
 let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =
@@ -290,7 +289,7 @@ module IssuesJson = struct
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
-        ; key= err_data.node_id_key.node_key |> Digest.to_hex
+        ; key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
         ; qualifier_tags= Localise.Tags.tag_value_records_of_tags key.err_desc.tags
         ; hash= compute_hash kind bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
@@ -309,7 +308,6 @@ module IssuesJson = struct
   (** Write bug report in JSON format *)
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log =
     Errlog.iter (pp_issue fmt error_filter procname proc_loc_opt) err_log
-
 end
 
 let pp_custom_of_report fmt report fields =
@@ -352,9 +350,9 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_bug_trace ->
           pp_trace fmt issue.bug_trace (comma_separator index)
       | `Issue_field_key ->
-          Format.fprintf fmt "%s%s" (comma_separator index) (Digest.to_hex issue.key)
+          Format.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.key)
       | `Issue_field_hash ->
-          Format.fprintf fmt "%s%s" (comma_separator index) (Digest.to_hex issue.hash)
+          Format.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.hash)
       | `Issue_field_line_offset ->
           Format.fprintf fmt "%s%d" (comma_separator index)
             (issue.line - issue.procedure_start_line)
@@ -371,7 +369,7 @@ let pp_custom_of_report fmt report fields =
 
 let tests_jsonbug_compare bug1 bug2 =
   let open Jsonbug_t in
-  [%compare : string * string * int * string * Digest.t]
+  [%compare : string * string * int * string * Caml.Digest.t]
     (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
     (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
 
@@ -395,7 +393,6 @@ module IssuesTxt = struct
   (** Write bug report in text format *)
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log =
     Errlog.iter (pp_issue fmt error_filter proc_loc_opt) err_log
-
 end
 
 let pp_text_of_report fmt report =
@@ -423,7 +420,6 @@ module CallsCsv = struct
       pp "%a@\n" Specs.CallStats.pp_trace trace
     in
     Specs.CallStats.iter do_call stats.Specs.call_stats
-
 end
 
 module Stats = struct
@@ -559,7 +555,6 @@ module Stats = struct
     F.fprintf fmt "@\n -------------------@\n" ;
     F.fprintf fmt "@\nDetailed Errors@\n@\n" ;
     List.iter ~f:(fun s -> F.fprintf fmt "%s@\n" s) (List.rev stats.saved_errors)
-
 end
 
 module Report = struct
@@ -605,7 +600,6 @@ module PreconditionStats = struct
     L.result "Procedures with empty precondition: %d@." !nr_empty ;
     L.result "Procedures with only allocation conditions: %d@." !nr_onlyallocation ;
     L.result "Procedures with data constraints: %d@." !nr_dataconstraints
-
 end
 
 (* Wrapper of an issue that compares all parts except the procname *)
@@ -631,13 +625,12 @@ module Issue = struct
      identical warning on the same line. Accomplish this by sorting without regard to procname, then
      de-duplicating. *)
   let sort_filter_issues issues =
-    let issues' = List.dedup ~compare issues in
+    let issues' = List.dedup_and_sort ~compare issues in
     ( if Config.developer_mode then
         let num_pruned_issues = List.length issues - List.length issues' in
         if num_pruned_issues > 0 then
           L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
     issues'
-
 end
 
 let error_filter filters proc_name file error_desc error_name =
@@ -842,7 +835,7 @@ module AnalysisResults = struct
       List.iter
         ~f:(fun arg ->
           if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "." then
-            print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files"))
+            print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
         Config.anon_args ;
       if Config.test_filtering then ( Inferconfig.test () ; L.exit 0 ) ;
       if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
@@ -918,7 +911,6 @@ module AnalysisResults = struct
           iterator_of_summary_list r
       | None ->
           L.(die UserError) "Error: cannot open analysis results file %s@." fname
-
 end
 
 let register_perf_stats_report () =
@@ -1004,7 +996,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
       let error_filter = error_filter filters proc_name in
       List.iter
         ~f:(fun issue_format -> pp_issue_in_format issue_format error_filter issue)
-        issue_formats)
+        issue_formats )
     (Issue.sort_filter_issues !all_issues) ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
   LintIssues.load_issues_to_errlog_map Config.lint_issues_dir_name ;

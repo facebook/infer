@@ -75,7 +75,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> exp_add_live call_exp |> add_live_actuals actuals call_exp
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
-
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
@@ -160,4 +159,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
-

@@ -114,9 +114,8 @@ module Tags = struct
     in
     List.filter_map
       ~f:(fun (tag, value) ->
-        if String.Set.mem line_tags tag then Some (int_of_string value) else None)
+        if String.Set.mem line_tags tag then Some (int_of_string value) else None )
       tags
-
 end
 
 type error_desc =
@@ -607,14 +606,16 @@ let dereference_string proc_name deref_str value_str access_opt loc =
       let annotation_name = nullable_annotation_name proc_name in
       match (Tags.get !tags Tags.nullable_src, Tags.get !tags Tags.weak_captured_var_src) with
       | Some nullable_src, _ ->
-          if String.equal nullable_src value_str then "is annotated with " ^ annotation_name
-            ^ " and is dereferenced without a null check"
-          else "is indirectly marked " ^ annotation_name ^ " (source: "
+          if String.equal nullable_src value_str then
+            "is annotated with " ^ annotation_name ^ " and is dereferenced without a null check"
+          else
+            "is indirectly marked " ^ annotation_name ^ " (source: "
             ^ MF.monospaced_to_string nullable_src ^ ") and is dereferenced without a null check"
       | None, Some weak_var_str ->
           if String.equal weak_var_str value_str then
             "is a weak pointer captured in the block and is dereferenced without a null check"
-          else "is equal to the variable " ^ MF.monospaced_to_string weak_var_str
+          else
+            "is equal to the variable " ^ MF.monospaced_to_string weak_var_str
             ^ ", a weak pointer captured in the block, and is dereferenced without a null check"
       | None, None ->
           deref_str.problem_str
@@ -690,8 +691,8 @@ let desc_allocation_mismatch alloc dealloc =
     Tags.update tags tag_line (string_of_int loc.Location.line) ;
     let by_call =
       if Typ.Procname.equal primitive_pname called_pname then ""
-      else " by call to "
-        ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
+      else
+        " by call to " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
     in
     "using " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)
     ^ by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc

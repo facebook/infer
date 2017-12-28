@@ -73,7 +73,7 @@ let init_active_map () =
   List.fold
     ~f:(fun acc_map linter ->
       let not_inf = not (is_in_formula linter.CFrontend_errors.condition) in
-      ClosureHashtbl.add linter.CFrontend_errors.condition not_inf acc_map)
+      ClosureHashtbl.add linter.CFrontend_errors.condition not_inf acc_map )
     ~init:ClosureHashtbl.empty !CFrontend_errors.parsed_linters
 
 
@@ -212,7 +212,7 @@ let exists_formula_in_successor_nodes an checker trans phi =
       let key = (node_pointer, checker) in
       let succ_sat_set = get_node_valuation key in
       (*print_formula_set succ_sat_set "SUCC_SAT_SET" ;*)
-      CTLFormulaSet.mem phi succ_sat_set)
+      CTLFormulaSet.mem phi succ_sat_set )
     succs
 
 
@@ -345,6 +345,5 @@ let build_valuation an lcxt linter_map_context =
     ~f:(fun (linter: linter) ->
       if CIssue.should_run_check linter.issue_desc.CIssue.mode
          && check_linter_map linter_map_context linter.condition
-      then do_one_check linter)
+      then do_one_check linter )
     !parsed_linters
-

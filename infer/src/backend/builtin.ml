@@ -70,4 +70,3 @@ let pp_registered fmt () =
 let print_and_exit () =
   pp_registered Format.std_formatter () ;
   L.exit 0
-

@@ -134,4 +134,3 @@ let to_files {introduced; fixed; preexisting} destdir =
   Out_channel.write_all (destdir ^/ "fixed.json") ~data:(Jsonbug_j.string_of_report fixed) ;
   Out_channel.write_all (destdir ^/ "preexisting.json")
     ~data:(Jsonbug_j.string_of_report preexisting)
-

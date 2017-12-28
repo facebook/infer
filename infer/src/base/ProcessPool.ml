@@ -45,4 +45,3 @@ let start_child ~f ~pool x =
   | `In_the_parent _pid ->
       incr pool ;
       if should_wait pool then wait pool
-

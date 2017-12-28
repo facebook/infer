@@ -118,4 +118,3 @@ let add_exn_node procname (exn_node: Procdesc.Node.t) =
 let get_exn_node procdesc =
   try Some (Typ.Procname.Hash.find exn_node_table (Procdesc.get_proc_name procdesc))
   with Not_found -> None
-

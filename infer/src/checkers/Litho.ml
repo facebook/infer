@@ -111,7 +111,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         with Not_found -> astate )
     | _ ->
         astate
-
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
@@ -140,7 +139,7 @@ let unroll_call call astate summary =
       Domain.CallSet.iter
         (fun call ->
           if not (is_cycle call.receiver) then unroll_call_ call (acc', depth')
-          else report receiver.access_path acc' summary)
+          else report receiver.access_path acc' summary )
         calls'
     with Not_found -> report receiver.access_path acc' summary
   in

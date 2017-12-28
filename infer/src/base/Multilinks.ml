@@ -64,4 +64,3 @@ let resolve fname =
         fname
     | Some links ->
       try DB.filename_from_string (String.Table.find_exn links base) with Not_found -> fname
-

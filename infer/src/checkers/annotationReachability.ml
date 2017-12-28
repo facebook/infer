@@ -59,7 +59,6 @@ module Domain = struct
 
   let is_tracked_var var (_, vstate) =
     match vstate with Bottom -> false | NonBottom vars -> TrackingVar.mem var vars
-
 end
 
 module Summary = Summary.Make (struct
@@ -198,7 +197,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
               let loc = CallSite.loc call_site in
               if Typ.Procname.Set.mem p visited then accu
               else ((p, loc) :: unseen, Typ.Procname.Set.add p visited)
-            with Not_found -> accu)
+            with Not_found -> accu )
           next_calls ([], visited_pnames)
       in
       List.iter ~f:(loop fst_call_loc updated_callees (new_trace, new_stack_str)) unseen_callees
@@ -211,7 +210,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
         loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc)
-      with Not_found -> ())
+      with Not_found -> () )
     sink_map
 
 
@@ -254,18 +253,16 @@ module StandardAnnotationSpec = struct
   let from_annotations src_annots snk_annot =
     let open AnnotationSpec in
     { source_predicate=
-        (fun tenv pname ->
-          List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
+        (fun tenv pname -> List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
-          check_attributes has_annot tenv pname)
+          check_attributes has_annot tenv pname )
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= snk_annot
     ; report=
         (fun proc_data annot_map -> report_src_snk_paths proc_data annot_map src_annots snk_annot)
     }
-
 end
 
 module NoAllocationAnnotationSpec = struct
@@ -282,8 +279,7 @@ module NoAllocationAnnotationSpec = struct
     ; sink_annotation= constructor_annot
     ; report=
         (fun proc_data annot_map ->
-          report_src_snk_paths proc_data annot_map [no_allocation_annot] constructor_annot) }
-
+          report_src_snk_paths proc_data annot_map [no_allocation_annot] constructor_annot ) }
 end
 
 module ExpensiveAnnotationSpec = struct
@@ -320,7 +316,7 @@ module ExpensiveAnnotationSpec = struct
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
-          check_attributes has_annot tenv pname || is_modeled_expensive tenv pname)
+          check_attributes has_annot tenv pname || is_modeled_expensive tenv pname )
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= expensive_annot
     ; report=
@@ -328,8 +324,7 @@ module ExpensiveAnnotationSpec = struct
           let proc_name = Procdesc.get_proc_name proc_desc in
           if is_expensive tenv proc_name then
             PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name ;
-          report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot) }
-
+          report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot ) }
 end
 
 (* parse user-defined specs from .inferconfig *)
@@ -406,7 +401,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if spec.sink_predicate tenv callee_pname
            && not (spec.sanitizer_predicate tenv caller_pname)
         then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
-        else astate)
+        else astate )
       annot_specs
 
 
@@ -421,7 +416,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         AnnotReachabilityDomain.fold
           (fun annot sink_map astate ->
-            AnnotReachabilityDomain.SinkMap.fold (add_call_site annot) sink_map astate)
+            AnnotReachabilityDomain.SinkMap.fold (add_call_site annot) sink_map astate )
           callee_call_map astate
 
 
@@ -445,7 +440,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         L.(die InternalError) "Expecting a return identifier"
     | _ ->
         astate
-
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

@@ -67,7 +67,7 @@ module Make (TraceElem : TraceElem.S) = struct
     List.fold
       ~f:(fun t_acc sink ->
         let callee_sink = Sink.with_callsite sink call_site in
-        add_sink callee_sink t_acc)
+        add_sink callee_sink t_acc )
       ~init:empty
       (Sinks.elements (sinks t))
 
@@ -92,5 +92,4 @@ module Make (TraceElem : TraceElem.S) = struct
       if not (Passthroughs.is_empty p) then F.fprintf fmt " via %a" Passthroughs.pp p
     in
     F.fprintf fmt "%a%a" Sinks.pp (sinks t) pp_passthroughs_if_not_empty (passthroughs t)
-
 end

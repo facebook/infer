@@ -176,7 +176,6 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         Sem.eval vector_exp mem |> Dom.Val.get_all_locs |> PowLoc.append_field ~fn:size_field
       in
       Dom.Mem.transform_mem ~f:(Dom.Val.plus increment) vector_size_locs mem
-
   end
 
   module Boost = struct
@@ -186,7 +185,6 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           Split.std_vector ~adds_at_least_one:true vector_arg location mem
         in
         {exec; check= no_check}
-
     end
   end
 
@@ -205,7 +203,6 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           Split.std_vector ~adds_at_least_one vector_arg location mem
         in
         {exec; check= no_check}
-
     end
   end
 
@@ -228,12 +225,10 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           $+? any_arg $--> Boost.Split.std_vector
         ; -"folly" &:: "split" $ any_arg $+ any_arg $+ capt_arg_of_typ (-"std" &:: "vector")
           $+? capt_exp $--> Folly.Split.std_vector ]
-
   end
 
   module TypName = struct
     let dispatch : typ_model ProcnameDispatcher.typ_dispatcher =
       ProcnameDispatcher.TypName.make_dispatcher []
-
   end
 end

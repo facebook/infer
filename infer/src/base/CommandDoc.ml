@@ -283,4 +283,3 @@ let command_to_data =
 
 let data_of_command command =
   List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_data command
-

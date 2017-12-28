@@ -131,4 +131,3 @@ let tests =
     |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras ~initial
   in
   "analyzer_tests_suite" >::: normal_test_list @ exceptional_test_list
-

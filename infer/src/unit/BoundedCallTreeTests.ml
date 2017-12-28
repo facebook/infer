@@ -88,4 +88,3 @@ let tests =
     @ test_list_multiple_traces_from_foo @ test_list_multiple_traces_from_bar
   in
   "bounded_calltree_test_suite" >::: test_list
-

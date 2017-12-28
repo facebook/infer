@@ -49,7 +49,7 @@ let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary
         List.iter
           ~f:(fun (fname, fld_typ, _) ->
             if not (Typ.Fieldname.Set.mem fname fields_nullified) then
-              report_error (Typ.mk (Tstruct class_typename)) fname fld_typ summary proc_desc)
+              report_error (Typ.mk (Tstruct class_typename)) fname fld_typ summary proc_desc )
           declared_view_fields
     | _ ->
         ()

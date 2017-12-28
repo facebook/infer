@@ -36,7 +36,6 @@ module MockTrace = Trace.Make (struct
       if String.is_prefix ~prefix:"SINK" (Typ.Procname.to_string pname) then
         Some (CallSite.make pname Location.dummy, IntSet.singleton 0)
       else None
-
   end)
 
   module Sanitizer = Sanitizer.Dummy
@@ -164,4 +163,3 @@ let tests =
          ~initial:(MockTaintAnalysis.Domain.empty, IdAccessPathMapDomain.empty)
   in
   "taint_test_suite" >::: test_list
-

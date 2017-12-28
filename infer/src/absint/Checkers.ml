@@ -28,7 +28,6 @@ module PP = struct
     in
     F.fprintf fmt "%a:%d@\n" SourceFile.pp loc.Location.file loc.Location.line ;
     for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
-
 end
 
 (* PP *)
@@ -109,5 +108,4 @@ module ST = struct
         (Typ.Procname.to_string proc_name) ;
       L.progress "%s@." description ;
       Reporting.log_error_deprecated proc_name ~loc ~ltr:trace exn )
-
 end

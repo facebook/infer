@@ -32,4 +32,3 @@ let is_weak_property obj_c_property_decl_info =
 let is_assign_property obj_c_property_decl_info =
   let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
   List.exists ~f:(fun a -> match a with `Assign -> true | _ -> false) attrs
-

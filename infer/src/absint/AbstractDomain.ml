@@ -137,8 +137,8 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
-    else Domain1.( <= ) ~lhs:(fst lhs) ~rhs:(fst rhs)
-      && Domain2.( <= ) ~lhs:(snd lhs) ~rhs:(snd rhs)
+    else
+      Domain1.( <= ) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.( <= ) ~lhs:(snd lhs) ~rhs:(snd rhs)
 
 
   let join astate1 astate2 =
@@ -192,7 +192,7 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
     else
       M.for_all
         (fun k lhs_v ->
-          try ValueDomain.( <= ) ~lhs:lhs_v ~rhs:(M.find k rhs) with Not_found -> false)
+          try ValueDomain.( <= ) ~lhs:lhs_v ~rhs:(M.find k rhs) with Not_found -> false )
         lhs
 
 
@@ -207,7 +207,7 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
           | Some v, _ | _, Some v ->
               Some v
           | None, None ->
-              None)
+              None )
         astate1 astate2
 
 
@@ -222,7 +222,7 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
           | Some v, _ | _, Some v ->
               Some v
           | None, None ->
-              None)
+              None )
         prev next
 
 
@@ -251,7 +251,7 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
           | Some v1, Some v2 ->
               Some (ValueDomain.join v1 v2)
           | _ ->
-              None)
+              None )
         astate1 astate2
 
 
@@ -264,7 +264,7 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
           | Some v1, Some v2 ->
               Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
           | _ ->
-              None)
+              None )
         prev next
 
 

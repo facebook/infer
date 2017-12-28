@@ -251,4 +251,3 @@ let sil_const_plus_one const =
       Exp.Const (Const.Cint (IntLit.add n IntLit.one))
   | _ ->
       Exp.BinOp (Binop.PlusA, const, Exp.Const (Const.Cint IntLit.one))
-

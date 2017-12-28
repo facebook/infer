@@ -69,4 +69,3 @@ let compute_statistics values =
   ; p75= percentile 0.75
   ; max= percentile 1.0
   ; count= num_elements }
-

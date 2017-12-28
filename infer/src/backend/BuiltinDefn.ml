@@ -397,6 +397,7 @@ let execute___set_mem_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args;
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
+
 let set_attr tenv pdesc prop path exp attr =
   let pname = Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
@@ -521,7 +522,7 @@ let execute_free mk ?(mark_as_freed= true) {Builtin.pdesc; instr; tenv; prop_; p
             ~f:(fun p ->
               execute_free_nonzero_ mk ~mark_as_freed pdesc tenv instr p
                 (Prop.exp_normalize_prop tenv p lexp)
-                typ loc)
+                typ loc )
             prop_nonzero
       in
       List.map ~f:(fun p -> (p, path)) plist

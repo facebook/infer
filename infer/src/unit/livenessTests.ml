@@ -104,4 +104,3 @@ let tests =
     |> TestInterpreter.create_tests ProcData.empty_extras ~initial:Liveness.Domain.empty
   in
   "liveness_test_suite" >::: test_list
-

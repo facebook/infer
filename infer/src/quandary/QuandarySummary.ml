@@ -23,7 +23,6 @@ module AccessTree = struct
         Java.pp fmt access_tree
     | Clang access_tree ->
         Clang.pp fmt access_tree
-
 end
 
 type t = AccessTree.t

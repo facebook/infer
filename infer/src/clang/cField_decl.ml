@@ -121,4 +121,3 @@ let modelled_field class_name_info =
     else res
   in
   List.fold ~f:modelled_field_in_class ~init:[] modelled_fields_in_classes
-

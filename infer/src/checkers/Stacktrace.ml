@@ -117,4 +117,3 @@ let of_json_file filename =
   | Sys_error msg | Yojson.Json_error msg ->
       L.(die UserError)
         "Could not read or parse the supplied JSON stacktrace file %s :@\n %s" filename msg
-

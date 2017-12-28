@@ -571,5 +571,4 @@ module Make (CFG : ProcCfg.S) = struct
         list_fold2_def ~default:Val.Itv.top ~f:add_pair formals actuals ~init:([], None)
       in
       (subst_map_of_pairs pairs, ret_alias)
-
 end

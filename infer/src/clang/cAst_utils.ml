@@ -111,14 +111,14 @@ let update_enum_map enum_constant_pointer sil_exp =
   in
   let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
   CFrontend_config.enum_map
-  := ClangPointers.Map.add !CFrontend_config.enum_map ~key:enum_constant_pointer
+  := ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
        ~data:enum_map_value
 
 
 let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
   let enum_map_value = (predecessor_pointer_opt, None) in
   CFrontend_config.enum_map
-  := ClangPointers.Map.add !CFrontend_config.enum_map ~key:enum_constant_pointer
+  := ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
        ~data:enum_map_value
 
 
@@ -594,4 +594,3 @@ let get_superclass_curr_class_objc_from_decl (decl: Clang_ast_t.decl) =
       Logging.die InternalError
         "Expected to be called only with ObjCInterfaceDecl, ObjCImplementationDecl, ObjCCategoryDecl or ObjCCategoryImplDecl, but got %s"
         (Clang_ast_proj.get_decl_kind_string decl)
-

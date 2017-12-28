@@ -85,13 +85,11 @@ module MockTrace = Trace.Make (struct
     if [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
       Some IssueType.quandary_taint_error
     else None
-
 end)
 
 let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
 
 let source_equal s source = MockSource.equal s source
-
 
 let tests =
   let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in
@@ -110,12 +108,12 @@ let tests =
       assert_bool "Reports should contain source1 -> sink1"
         (List.exists
            ~f:(fun {MockTrace.path_source; path_sink} ->
-             source_equal path_source source1 && MockSink.equal path_sink sink1)
+             source_equal path_source source1 && MockSink.equal path_sink sink1 )
            reports) ;
       assert_bool "Reports should contain source2 -> sink2"
         (List.exists
            ~f:(fun {MockTrace.path_source; path_sink} ->
-             source_equal path_source source2 && MockSink.equal path_sink sink2)
+             source_equal path_source source2 && MockSink.equal path_sink sink2 )
            reports)
     in
     "get_reports" >:: get_reports_

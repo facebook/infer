@@ -47,7 +47,6 @@ module Target = struct
         L.(die UserError)
           "Analyzer %s is Java-only; not supported with Buck flavors"
           (Config.string_of_analyzer Config.analyzer)
-
 end
 
 let parse_target_string =
@@ -124,7 +123,6 @@ module Query = struct
     let tmp_prefix = "buck_query_" in
     let debug = L.(debug Capture Medium) in
     Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:Fn.id
-
 end
 
 let accepted_buck_commands = ["build"]

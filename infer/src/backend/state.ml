@@ -25,7 +25,7 @@ type failure_stats =
   ; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
-  mutable first_failure: (Location.t * (int * Digest.t) * int * Errlog.loc_trace * exn) option
+  mutable first_failure: (Location.t * (int * Caml.Digest.t) * int * Errlog.loc_trace * exn) option
   (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
@@ -310,7 +310,7 @@ let mark_instr_ok () =
 
 let mark_instr_fail exn =
   let loc = get_loc () in
-  let key = (get_node_id_key () :> int * Digest.t) in
+  let key = (get_node_id_key () :> int * Caml.Digest.t) in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
@@ -320,7 +320,7 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Digest.t
+  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Caml.Digest.t
   -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string
   -> ?access:string -> exn -> unit
 

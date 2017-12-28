@@ -289,4 +289,3 @@ let () =
   Arg.parse (Arg.align speclist) add_file_to_check usage_msg ;
   List.iter ~f:check_copyright (List.rev !to_check) ;
   Pervasives.exit 0
-

@@ -98,5 +98,6 @@ include TaintAnalysis.Make (struct
     | _ ->
         None
 
+
   let is_taintable_type _ = true
 end)

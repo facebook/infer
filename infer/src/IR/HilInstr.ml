@@ -127,4 +127,3 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   | Declare_locals _ ->
       (* these don't seem useful for most analyses. can translate them later if we want to *)
       Ignore
-

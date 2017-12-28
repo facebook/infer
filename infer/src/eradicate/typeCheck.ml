@@ -130,7 +130,6 @@ module ComplexExpressions = struct
   let exp_to_string tenv node' exp =
     let map_dexp de_opt = de_opt in
     exp_to_string_map_dexp tenv map_dexp node' exp
-
 end
 
 (* ComplexExpressions *)
@@ -550,7 +549,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                     if Int.equal i 0 && not (Typ.Procname.java_is_static callee_pname) then "this"
                     else Printf.sprintf "arg%d" i
                   in
-                  (Mangled.from_string arg, typ))
+                  (Mangled.from_string arg, typ) )
                 etl_
             in
             let ret_type = Typ.java_proc_return_typ callee_pname_java in
@@ -818,7 +817,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 String.equal (Mangled.to_string s) "this"
                 || String.is_prefix ~prefix:"this$" (Mangled.to_string s)
               in
-              not param_is_this)
+              not param_is_this )
             (List.zip_exn sig_slice call_slice)
         in
         let resolved_params = List.mapi ~f:resolve_param sig_call_params in
@@ -1140,4 +1139,3 @@ let typecheck_node tenv ext calls_this checks idenv get_proc_desc curr_pname cur
   in
   if dont_propagate then ([], []) (* don't propagate to exit node *)
   else ([typestate_succ], !typestates_exn)
-

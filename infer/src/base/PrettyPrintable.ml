@@ -63,5 +63,4 @@ module MakePPMap (Ord : PrintableOrderedType) = struct
   let pp ~pp_value fmt m =
     let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Ord.pp k pp_value v in
     pp_collection ~pp_item fmt (bindings m)
-
 end

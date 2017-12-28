@@ -33,7 +33,6 @@ module UseDefChain = struct
         F.fprintf fmt "NullDefCompare(%a, %a)" Location.pp loc AccessPath.pp ap
     | DependsOn (loc, ap) ->
         F.fprintf fmt "DependsOn(%a, %a)" Location.pp loc AccessPath.pp ap
-
 end
 
 module Domain = AbstractDomain.Map (AccessPath) (UseDefChain)
@@ -101,7 +100,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         else astate
-
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
@@ -131,8 +129,9 @@ let make_error_trace astate ap ud =
         let ud' = Domain.find dep astate in
         let msg = F.sprintf "%s could be assigned here" (name_of ap) in
         let trace_elem = Errlog.make_trace_element depth loc msg [] in
-        Option.map (error_trace_impl (depth + 1) dep ud') ~f:(fun (_, trace) ->
-            (loc, trace_elem :: trace) )
+        Option.map
+          (error_trace_impl (depth + 1) dep ud')
+          ~f:(fun (_, trace) -> (loc, trace_elem :: trace))
       with Not_found -> None
   in
   error_trace_impl 0 ap ud
@@ -212,4 +211,3 @@ let checker {Callbacks.summary; proc_desc; tenv} =
     | None ->
         L.internal_error "Analyzer failed to compute post for %a@." Typ.Procname.pp proc_name ) ;
     summary
-

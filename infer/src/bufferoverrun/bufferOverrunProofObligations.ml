@@ -38,7 +38,7 @@ module AllocSizeCondition = struct
         `LeftSubsumesRight
     | `RightSubsumesLeft ->
         `RightSubsumesLeft
-    | `LeftSmallerThanRight | `RightSmallerThanLeft as cmp ->
+    | (`LeftSmallerThanRight | `RightSmallerThanLeft) as cmp ->
         let lpos = ItvPure.le_sem ItvPure.zero lhs in
         let rpos = ItvPure.le_sem ItvPure.zero rhs in
         if not (ItvPure.equal lpos rpos) then `NotComparable
@@ -83,7 +83,6 @@ module AllocSizeCondition = struct
 
   let subst bound_map length =
     match ItvPure.subst length bound_map with NonBottom length -> Some length | Bottom -> None
-
 end
 
 module ArrayAccessCondition = struct
@@ -227,7 +226,6 @@ module ArrayAccessCondition = struct
           Some {idx; size}
       | _ ->
           None
-
 end
 
 module Condition = struct
@@ -290,7 +288,6 @@ module Condition = struct
         AllocSizeCondition.check c
     | ArrayAccess c ->
         ArrayAccessCondition.check c
-
 end
 
 module ConditionTrace = struct
@@ -352,7 +349,6 @@ module ConditionTrace = struct
       ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces location
     in
     {ct with cond_trace= Inter (caller_pname, callee_pname, location); val_traces}
-
 end
 
 module ConditionSet = struct
@@ -482,9 +478,7 @@ module ConditionSet = struct
       F.pp_print_list ~pp_sep pp_cwt fmt condset ;
       F.fprintf fmt " }@]" ;
       F.fprintf fmt "@]"
-
 end
 
 let description cond trace =
   F.asprintf "%a%a" Condition.pp_description cond ConditionTrace.pp_description trace
-

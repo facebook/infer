@@ -62,7 +62,6 @@ module NodeVisitSet = Caml.Set.Make (struct
       | _ ->
           compare_number_of_visits x1 x2
     else compare_ids x1.node x2.node
-
 end)
 
 (** Table for the results of the join operation on nodes. *)
@@ -122,7 +121,6 @@ module Worklist = struct
     with Not_found ->
       L.internal_error "@\n...Work list is empty! Impossible to remove edge...@\n" ;
       assert false
-
 end
 
 (* =============== END of module Worklist =============== *)
@@ -325,8 +323,8 @@ let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
           State.set_path path None ;
           propagate wl pname ~is_exception:false
             (Paths.PathSet.from_renamed_list [(prop, path)])
-            node)
-        new_dset')
+            node )
+        new_dset' )
     succ_nodes
 
 
@@ -575,7 +573,7 @@ let report_context_leaks pname sigma tenv =
                 Errdesc.explain_context_leak pname (Typ.mk (Tstruct name)) fld_name leak_path
               in
               let exn = Exceptions.Context_leak (err_desc, __POS__) in
-              Reporting.log_error_deprecated pname exn)
+              Reporting.log_error_deprecated pname exn )
       context_exps
   in
   (* get the set of pointed-to expressions of type T <: Context *)
@@ -588,7 +586,7 @@ let report_context_leaks pname sigma tenv =
                && not (AndroidFramework.is_application tenv name) ->
             (exp, name) :: exps
         | _ ->
-            exps)
+            exps )
       ~init:[] sigma
   in
   List.iter
@@ -596,7 +594,7 @@ let report_context_leaks pname sigma tenv =
         | Sil.Hpointsto (Exp.Lvar pv, Sil.Estruct (static_flds, _), _) when Pvar.is_global pv ->
             List.iter
               ~f:(fun (f_name, f_strexp) ->
-                check_reachable_context_from_fld (f_name, f_strexp) context_exps)
+                check_reachable_context_from_fld (f_name, f_strexp) context_exps )
               static_flds
         | _ ->
             ())
@@ -733,7 +731,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * Specs.Visitedset
             (fun prop ->
               Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
                 (Attribute.remove_resource tenv Racquire (Rmemory Mmalloc)
-                   (Attribute.remove_resource tenv Racquire Rfile prop)))
+                   (Attribute.remove_resource tenv Racquire Rfile prop)) )
             pathset
         else pathset
     | _ ->
@@ -1135,7 +1133,7 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
       (List.fold
          ~f:(fun map spec ->
            SpecMap.add spec.Specs.pre
-             (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
+             (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map )
          ~init:SpecMap.empty old_specs)
   in
   let re_exe_filter old_spec =
@@ -1230,7 +1228,8 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
       let specs =
         List.map
           ~f:(fun jp ->
-            Specs.spec_normalize tenv {Specs.pre= jp; posts= []; visited= Specs.Visitedset.empty})
+            Specs.spec_normalize tenv {Specs.pre= jp; posts= []; visited= Specs.Visitedset.empty}
+            )
           joined_pres
       in
       let payload = {summary.Specs.payload with Specs.preposts= Some specs} in
