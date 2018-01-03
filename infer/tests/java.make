@@ -12,11 +12,9 @@ include $(ROOT_DIR)/Makefile.config
 ANDROID = $(JAVA_LIB_DIR)/android/android-23.jar
 ANDROIDSUPPORT = $(DEPENDENCIES_DIR)/java/android/support/v4/android-support-v4.jar
 ANNOTATIONS = $(ANNOTATIONS_DIR)/annotations.jar
-BUTTERKNIFE = $(DEPENDENCIES_DIR)/java/butterknife/butterknife-7.0.1.jar
 GUAVA = $(DEPENDENCIES_DIR)/java/guava/guava-10.0.1-fork.jar
 JACKSON = $(DEPENDENCIES_DIR)/java/jackson/jackson-2.2.3.jar
 JSR305 = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
 INJECT = $(DEPENDENCIES_DIR)/java/jsr-330/javax.inject.jar
-JUNIT = $(DEPENDENCIES_DIR)/java/junit/junit-4.11.jar
 
-CLASSPATH=$(ANDROID):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(BUTTERKNIFE):$(GUAVA):$(JACKSON):$(JSR305):$(INJECT):$(JAVA_BUILTINS_DIR):$(JUNIT):.
+CLASSPATH=$(ANDROID):$(ANDROIDSUPPORT):$(ANNOTATIONS):$(GUAVA):$(JACKSON):$(JSR305):$(INJECT):$(JAVA_BUILTINS_DIR):.
