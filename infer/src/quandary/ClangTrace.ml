@@ -76,7 +76,8 @@ module SourceKind = struct
             Some (ReadFile, Some 1)
         | _ ->
             get_external_source qualified_pname )
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access
+    | Typ.Procname.C _
+      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__global_access
       -> (
         (* is this var a command line flag created by the popular C++ gflags library for creating
            command-line flags (https://github.com/gflags/gflags)? *)
