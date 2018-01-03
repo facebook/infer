@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = checkers
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --biabduction --suggest-nullable --check-nullable --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS =  --debug-exceptions --no-default-checkers --suggest-nullable --check-nullable --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.m)
