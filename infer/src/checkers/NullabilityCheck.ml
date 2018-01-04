@@ -221,8 +221,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         check_ap proc_data loc receiver astate
     | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
         check_nil_in_objc_container proc_data loc args astate
-    | Call (Some ret_var, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, _)
-      when is_objc_instance_method callee_pname -> (
+    | Call
+        ( Some ((_, ret_typ) as ret_var)
+        , Direct callee_pname
+        , (HilExp.AccessPath receiver) :: _
+        , _
+        , _ )
+      when Typ.is_pointer ret_typ && is_objc_instance_method callee_pname -> (
       match longest_nullable_prefix receiver astate with
       | None ->
           astate

@@ -10,8 +10,15 @@
 
 int* __nullable returnsNull();
 
+typedef struct s_ {
+  int x;
+} S;
+
 @interface T : NSObject
 - (NSObject* _Nullable)nullableMethod;
+- (T* _Nullable)nullableT;
+@property(nonatomic) S structProperty;
+@property(nonatomic) S* pointerProperty;
 @end
 
 @implementation T {
@@ -214,6 +221,28 @@ int* __nullable returnsNull();
   NSMutableArray* mutableArray = [[NSMutableArray alloc] init];
   [mutableArray insertObject:[self nullableMethod] atIndex:0]; // reports here
   return mutableArray;
+}
+
+- (NSArray*)propagateNullabilityOnMethodCallBad {
+  NSObject* nullableObject = [self nullableMethod];
+  NSString* nullableString =
+      [nullableObject description]; // returns nil if nullableObject is nil
+  return @[ nullableString ]; // reports here
+}
+
+- (S*)shouldPropagateNullabilityOnPointerTypeBad {
+  T* nullableT = [self nullableT];
+  S* s = nullableT.pointerProperty; // returns  nil when nullableT is nil
+  s->x = 42; // reports here
+  return s;
+}
+
+- (S)shouldNotPropagateNullabilityOnNonPointerTypeGood {
+  T* nullableT = [self nullableT];
+  S s =
+      nullableT.structProperty; // returns an empty struct when nullabeT is nil
+  s.x = 42; // does not report here
+  return s;
 }
 
 @end
