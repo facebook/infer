@@ -15,10 +15,11 @@ public class NullableViolation {
 
   class T {
     int x;
+
     void doSomething() {}
   }
 
-  native static @Nullable T returnsNullable();
+  static native @Nullable T returnsNullable();
 
   void dereferenceNullableReturnValueBad() {
     T t = returnsNullable();
@@ -70,18 +71,24 @@ public class NullableViolation {
   }
 
   void usePreconditionsCheckNotNullOnVariableOkay() {
-      T t = returnsNullable();
-      Preconditions.checkNotNull(t);
-      t.doSomething(); // does not report here
+    T t = returnsNullable();
+    Preconditions.checkNotNull(t);
+    t.doSomething(); // does not report here
   }
 
   void usePreconditionsCheckNotNullOnMethodOkay() {
-      Preconditions.checkNotNull(returnsNullable()).doSomething(); // does not report here
+    Preconditions.checkNotNull(returnsNullable()).doSomething(); // does not report here
   }
 
   void usePreconditionsCheckNotNullRepeatedCallOkay() {
-      Preconditions.checkNotNull(returnsNullable());
-      returnsNullable().doSomething(); // does not report here
+    Preconditions.checkNotNull(returnsNullable());
+    returnsNullable().doSomething(); // does not report here
   }
 
+  native @Nullable Object getNullableObject();
+
+  void pointerAssignmentWithSubtype() {
+    Object object = getNullableObject();
+    object = "Hello";
+  }
 }

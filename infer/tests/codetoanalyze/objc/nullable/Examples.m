@@ -245,6 +245,13 @@ typedef struct s_ {
   return s;
 }
 
+- (NSArray*)pointerAssignmentWithSubtypeOkay:(NSString*)string {
+  NSObject* nullableObject = [self nullableMethod];
+  nullableObject = string;
+  NSArray* array = @[ nullableObject ]; // does not report here
+  return array;
+}
+
 @end
 
 @protocol P

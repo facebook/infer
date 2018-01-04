@@ -21,6 +21,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Specs.summary
 
+  let rec is_pointer_subtype tenv typ1 typ2 =
+    match (typ1.Typ.desc, typ2.Typ.desc) with
+    | Typ.Tptr (t1, _), Typ.Tptr (t2, _) -> (
+      match (t1.Typ.desc, t2.Typ.desc) with
+      | Typ.Tstruct n1, Typ.Tstruct n2 ->
+          Subtype.is_known_subtype tenv n1 n2
+      | _ ->
+          Typ.equal t1 t2 || is_pointer_subtype tenv t1 t2 )
+    | _ ->
+        false
+
+
   let is_non_objc_instance_method callee_pname =
     if Typ.Procname.is_java callee_pname then not (Typ.Procname.java_is_static callee_pname)
     else
@@ -195,11 +207,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
     let is_pointer_assignment tenv lhs rhs =
-      HilExp.is_null_literal rhs
       (* the rhs has type int when assigning the lhs to null *)
-      || Option.equal Typ.equal (AccessPath.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
-      (* the lhs and rhs have the same type in the case of pointer assignment
+      if HilExp.is_null_literal rhs then true
+        (* the lhs and rhs have the same type in the case of pointer assignment
          but the types are different when assigning the pointee *)
+      else
+        match (AccessPath.get_typ lhs tenv, HilExp.get_typ tenv rhs) with
+        (* defensive assumption when the types are not known *)
+        | None, _ | _, None ->
+            true
+        (* the rhs can be a subtype of the lhs *)
+        | Some lhs_typ, Some rhs_typ ->
+            is_pointer_subtype tenv rhs_typ lhs_typ
     in
     match instr with
     | Call (Some ret_var, Direct callee_pname, _, _, _)
