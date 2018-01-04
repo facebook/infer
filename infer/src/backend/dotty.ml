@@ -1160,12 +1160,11 @@ let pp_cfgnodename pname fmt (n: Procdesc.Node.t) =
 
 let pp_etlist byvals fmt etl =
   List.iteri
-    ~f:(fun index (id, ({Typ.desc} as ty)) ->
-      let is_ptr = match desc with Tptr _ -> true | _ -> false in
+    ~f:(fun index (id, typ) ->
       let byval_mark =
-        if is_ptr && List.mem byvals index ~equal:Int.equal then "(byval)" else ""
+        if Typ.is_pointer typ && List.mem byvals index ~equal:Int.equal then "(byval)" else ""
       in
-      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) ty byval_mark )
+      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) typ byval_mark )
     etl
 
 

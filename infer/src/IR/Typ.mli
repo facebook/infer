@@ -250,6 +250,8 @@ val is_array_of_cpp_class : t -> bool
 
 val is_pointer_to_cpp_class : t -> bool
 
+val is_pointer : t -> bool
+
 val has_block_prefix : string -> bool
 
 val is_block_type : t -> bool

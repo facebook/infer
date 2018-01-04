@@ -467,6 +467,8 @@ let rec is_array_of_cpp_class typ =
   match typ.desc with Tarray (typ, _, _) -> is_array_of_cpp_class typ | _ -> is_cpp_class typ
 
 
+let is_pointer typ = match typ.desc with Tptr _ -> true | _ -> false
+
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false
 
 let has_block_prefix s =

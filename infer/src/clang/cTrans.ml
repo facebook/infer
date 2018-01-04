@@ -500,7 +500,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       extract_exp_from_list pre_trans_result.exps
         "WARNING: in Field dereference we expect to know the object@\n"
     in
-    let is_pointer_typ = match class_typ.desc with Typ.Tptr _ -> true | _ -> false in
+    let is_pointer_typ = Typ.is_pointer class_typ in
     let class_typ = match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
     L.(debug Capture Verbose) "Type is  '%s' @." (Typ.to_string class_typ) ;
     let class_tname =

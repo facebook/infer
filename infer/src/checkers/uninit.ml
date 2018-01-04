@@ -31,8 +31,6 @@ end)
 
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
 
-let is_type_pointer t = match t.Typ.desc with Typ.Tptr _ -> true | _ -> false
-
 let rec is_basic_type t =
   match t.Typ.desc with
   | Tint _ | Tfloat _ | Tvoid ->
@@ -87,11 +85,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let function_expects_a_pointer_as_nth_param callee_pname idx =
-    match nth_formal_param callee_pname idx with
-    | Some (_, typ) ->
-        is_type_pointer typ
-    | _ ->
-        false
+    match nth_formal_param callee_pname idx with Some (_, typ) -> Typ.is_pointer typ | _ -> false
 
 
   let is_struct_field_passed_by_ref call t al idx =
@@ -103,7 +97,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun idx e ->
         match e with
         | HilExp.AccessPath ((var, t), al)
-          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (is_type_pointer t)
+          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (Typ.is_pointer t)
                && not (is_struct_field_passed_by_ref call t al idx) ->
             report_intra ((var, t), al) loc (snd extras)
         | _ ->
@@ -171,7 +165,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     HilExp.is_null_literal rhs
     (* the rhs has type int when assigning the lhs to null *)
     || Option.equal Typ.equal (AccessPath.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
-       && is_type_pointer (snd (fst lhs))
+       && Typ.is_pointer (snd (fst lhs))
 
 
   (* checks that the set of initialized formal parameters defined in the precondition of
@@ -206,7 +200,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
       (instr: HilInstr.t) =
     let update_prepost (((_, lhs_typ), apl) as lhs_ap) rhs =
-      if FormalMap.is_formal (fst lhs_ap) (fst extras) && is_type_pointer lhs_typ
+      if FormalMap.is_formal (fst lhs_ap) (fst extras) && Typ.is_pointer lhs_typ
          && (not (is_pointer_assignment tenv lhs_ap rhs) || List.length apl > 0)
       then
         let pre' = D.add lhs_ap (fst astate.prepost) in
@@ -225,7 +219,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let prepost = update_prepost lhs_ap rhs in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
-        if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (is_type_pointer lhs_typ)
+        if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (Typ.is_pointer lhs_typ)
         then report_intra (rhs_base, al) loc (snd extras) ;
         {astate with uninit_vars; prepost}
     | Assign (((lhs_ap, apl) as lhs), rhs, _) ->
