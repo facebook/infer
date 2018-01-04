@@ -24,6 +24,8 @@ let remove_proc_desc cfg pname = Typ.Procname.Hash.remove cfg pname
 
 let iter_proc_desc cfg f = Typ.Procname.Hash.iter f cfg
 
+let fold_proc_desc cfg f init = Typ.Procname.Hash.fold f cfg init
+
 let find_proc_desc_from_name cfg pname =
   try Some (Typ.Procname.Hash.find cfg pname) with Not_found -> None
 
@@ -59,9 +61,6 @@ let get_all_procs cfg =
   iter_proc_desc cfg f ; !procs
 
 
-(** Get the procedures whose body is defined in this cfg *)
-let get_defined_procs cfg = List.filter ~f:Procdesc.is_defined (get_all_procs cfg)
-
 (** checks whether a cfg is connected or not *)
 let check_cfg_connectedness cfg =
   let is_exit_node n =
@@ -83,15 +82,13 @@ let check_cfg_connectedness cfg =
       (* if the if brances end with a return *)
       match succs with [n'] when is_exit_node n' -> false | _ -> Int.equal (List.length preds) 0
   in
-  let do_pdesc pd =
-    let pname = Procdesc.get_proc_name pd in
+  let do_pdesc pname pd =
     let nodes = Procdesc.get_nodes pd in
     (* TODO (T20302015): also check the CFGs for the C-like procedures *)
     if not Config.keep_going && Typ.Procname.is_java pname && List.exists ~f:broken_node nodes then
       L.(die InternalError) "Broken CFG on %a" Typ.Procname.pp pname
   in
-  let pdescs = get_all_procs cfg in
-  List.iter ~f:do_pdesc pdescs
+  iter_proc_desc cfg do_pdesc
 
 
 let get_load_statement =
@@ -112,7 +109,7 @@ let load source =
 
 (** Save the .attr files for the procedures in the cfg. *)
 let save_attributes source_file cfg =
-  let save_proc pdesc =
+  let save_proc _ pdesc =
     let attributes = Procdesc.get_attributes pdesc in
     let loc = attributes.loc in
     let attributes' =
@@ -121,7 +118,7 @@ let save_attributes source_file cfg =
     in
     Attributes.store attributes'
   in
-  List.iter ~f:save_proc (get_all_procs cfg)
+  iter_proc_desc cfg save_proc
 
 
 (** Inline a synthetic (access or bridge) method. *)

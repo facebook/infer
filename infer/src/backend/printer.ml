@@ -546,15 +546,19 @@ let write_all_html_files cluster =
   let linereader = LineReader.create () in
   Exe_env.iter_files
     (fun _ cfg ->
-      let source_files_in_cfg =
-        let files = ref SourceFile.Set.empty in
-        Cfg.iter_proc_desc cfg (fun _ proc_desc ->
-            if Procdesc.is_defined proc_desc then
-              let file = (Procdesc.get_loc proc_desc).Location.file in
-              if is_whitelisted file then files := SourceFile.Set.add file !files else () ) ;
-        !files
+      let source_files_in_cfg, pdescs_in_cfg =
+        Cfg.fold_proc_desc cfg
+          (fun _ proc_desc (files, pdescs) ->
+            let updated_files =
+              if Procdesc.is_defined proc_desc then
+                let file = (Procdesc.get_loc proc_desc).Location.file in
+                if is_whitelisted file then SourceFile.Set.add file files else files
+              else files
+            in
+            (updated_files, proc_desc :: pdescs) )
+          (SourceFile.Set.empty, [])
       in
       SourceFile.Set.iter
-        (fun file -> write_html_file linereader file (Cfg.get_all_procs cfg))
+        (fun file -> write_html_file linereader file pdescs_in_cfg)
         source_files_in_cfg )
     exe_env
