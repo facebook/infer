@@ -90,7 +90,7 @@ let matcher_scope_guard =
     | _ ->
         init
   in
-  let default_scope_guards = ["CKComponentScope"] in
+  let default_scope_guards = ["CKComponentKey"; "CKComponentScope"] in
   of_json default_scope_guards Config.cxx_scope_guards
   |> QualifiedCppName.Match.of_fuzzy_qual_names
 
