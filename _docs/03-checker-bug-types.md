@@ -82,6 +82,6 @@ This error indicates a possible race condition--see the thread-safety [docs](htt
 
 ## <a name="INTERFACE_NOT_THREAD_SAFE"></a>Interface not thread-safe
 
-This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are needed, see the thread-safety [docs](http://fbinfer.com/docs/threadsafety.html#faq).
+This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are needed, see the detailed explanation [here](http://fbinfer.com/docs/threadsafety.html#interface-not-thread-safe).
 
 
