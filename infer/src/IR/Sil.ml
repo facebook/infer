@@ -2035,4 +2035,4 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   (ids_evars, List.map ~f:(hpred_sub subst) para.body_dll)
 
 
-let custom_error = Pvar.mk_global ~translation_unit:Pvar.TUExtern (Mangled.from_string "INFER_CUSTOM_ERROR")
+let custom_error = Pvar.mk_global ~translation_unit:Pvar.TUAnonymous (Mangled.from_string "INFER_CUSTOM_ERROR")

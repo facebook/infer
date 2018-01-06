@@ -15,7 +15,6 @@ module F = Format
 
 type translation_unit =
   | TUAnonymous
-  | TUExtern
   | TUFile of SourceFile.t
   [@@deriving compare]
 

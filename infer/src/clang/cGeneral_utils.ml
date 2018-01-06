@@ -130,10 +130,10 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
   let translation_unit =
     match Clang_ast_t.(var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr) with
     | true, None ->
-        Pvar.TUExtern
+        Pvar.TUAnonymous
     | _, None when var_decl_info.Clang_ast_t.vdi_is_static_data_member ->
         (* non-const static data member get extern scope unless they are defined out of line here (in which case vdi_init_expr will not be None) *)
-        Pvar.TUExtern
+        Pvar.TUAnonymous
     | true, Some _
     (* "extern" variables with initialisation code are not extern at all, but compilers accept this *)
     | false, _ ->

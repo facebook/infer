@@ -16,7 +16,6 @@ module F = Format
 
 type translation_unit =
   | TUAnonymous
-  | TUExtern
   | TUFile of SourceFile.t
   [@@deriving compare]
 
@@ -61,9 +60,7 @@ let equal = [%compare.equal : t]
 
 let pp_translation_unit fmt = function
   | TUAnonymous ->
-      ()
-  | TUExtern ->
-      Format.fprintf fmt "EXTERN"
+      Format.fprintf fmt "ANONYMOUS"
   | TUFile fname ->
       SourceFile.pp fmt fname
 
@@ -268,7 +265,7 @@ let get_initializer_pname {pv_name; pv_kind} =
                  (QualifiedCppName.of_qual_string name)
                  mangled Typ.NoTemplate ~is_generic_model:false)
             |> Option.return
-        | TUAnonymous | TUExtern ->
+        | TUAnonymous ->
             None
       else Some (Typ.Procname.from_string_c_fun name)
   | _ ->
