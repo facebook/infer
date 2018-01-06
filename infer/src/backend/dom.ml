@@ -2169,55 +2169,115 @@ let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
   in
   res
 
-let maximal_combine (timeout : int) (plus : 'a -> 'a -> 'a option) (xs : 'a list)  : 'a list =
-  let oops = ref 0 in
-  let plus a b = incr oops; if !oops >= timeout then None else plus a b in
+module MaxCliqueState = Caml.Set.Make (struct
+  type t = int list (* invariant: increasing *)
+  let rec compare xs ys = match xs, ys with
+    | [], [] -> 0
+    | [], _ -> -1
+    | _, [] -> +1
+    | x ::  _, y ::  _ when x < y -> -1
+    | x ::  _, y ::  _ when x > y -> +1
+    | _ :: xs, _ :: ys -> compare xs ys
+end)
+
+let rec filter_to n predicate xs x =
+  if x >= n then List.rev xs
+  else if predicate x xs then filter_to n predicate (x :: xs) (x + 1)
+  else filter_to n predicate xs (x + 1)
+
+(* Given a graph, initialize a maxclique generator. The vertices of the
+(undirected) graph are the integers 0,...,n-1, and its edges are given by the
+function [edge]. *)
+let initgen_maxclique (n : int) (edge : int -> int -> bool) =
+  let compatible x xs = List.for_all xs ~f:(edge x) in
+  let first = filter_to n compatible [] 0 in
+  let module S = MaxCliqueState in
+  (S.add first S.empty, n, edge)
+
+(* Given a maxclique generator, returns a pair (xs, g) with the next maxclique
+[xs] and the updated generator state [g]. If no more maxclique, raises
+[Not_found]. For the algorithm, see the JYP paper mentioned below. *)
+let next_maxclique (queue, n, edge) =
+  let module S = MaxCliqueState in
+  let xs = S.min_elt queue in (* raises [Not_found] at the end *)
+  let queue = S.remove xs queue in
+  let ys =
+    let ok_yx y x = x < y && not (edge x y) in
+    let ok_y y _ = List.exists xs ~f:(ok_yx y) in
+    filter_to n ok_y [] 0 in
+  let do_y queue y =
+    let xy_compat x = x < y && edge x y in
+    let zs = List.filter xs ~f:xy_compat @ [y] in
+    let maxclique zs = (* is zs a maxclique for the subgraph induced by 0..y? *)
+      let rec loop u vs = u > y || (match u, vs with
+        | u, v :: vs when Int.equal u v -> loop (u + 1) vs
+        | u, vs -> not (List.for_all zs ~f:(edge u)) && loop (u + 1) vs) in
+      loop 0 zs in
+    let fillup zs = (* greedily add vertices from y+1..n-1 to clique *)
+      let compatible z zs = List.for_all zs ~f:(edge z) in
+      filter_to n compatible (List.rev zs) (y + 1) in
+    if maxclique zs then S.add (fillup zs) queue else queue in
+  let queue = List.fold ~init:queue ~f:do_y ys in
+  (xs, (queue, n, edge))
+
+(* Find maximal subsets of [xs] that can be combined with a binary operator
+[plus] that is associative, commutative, but not necessarily defined
+everywhere.
+
+Let's call set S={x1,...,xn} *consistent* when ΣS=x1+...+xn is defined.  When
+x1,...,xn are preconditions and [plus] is the meet operator, it happens often
+(but not always) that pairwise consistency implies set consistency.  Therefore,
+we will use an algorithm that works fast in this case, and is incomplete
+otherwise.
+
+Suppose pairwise consistency implies set consistency.  Define a graph whose
+vertices are the [xs] and has an (undirected) edge xy when x+y is defined. In
+terms of this graph, the problem is to generate all maximal cliques. This can
+be done with polynomial delay using the JYP algorithm:
+  Johnson, Yannakakkis, Papadimitriou,
+  On Generating All Maximal Independent Sets, 1987
+A maximal clique S found by this algorithm will be pairwise consistent, and
+often but not always consistent. The current implementation simply filters
+out inconsistent maximal cliques.
+*)
+let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option) (xs : 'a list)  : 'a list =
+  let n = List.length xs in
+  let by_idx =
+    let xs = Array.of_list xs in
+    Array.get xs in
+  let lost = ref 0 in (* counts inconsistent maximal cliques *)
+  let oops = ref 0 in (* counts basic operations, for timeout *)
+  let plus x y = if !oops >= timeout then None else plus x y in
+  let exception Undefined in
+  let plus_exc x y = match plus x y with
+    | None -> raise Undefined
+    | Some z -> z in
+  let pairs = (* first, build graph with pairwise consistency *)
+    let h = Hashtbl.create (n * n) in
+    for i = 0 to n - 1 do
+      for j = i + 1 to n - 1 do
+        (try
+          incr oops;
+          let z = plus_exc (by_idx i) (by_idx j) in
+          Hashtbl.add h (i, j) z;
+          Hashtbl.add h (j, i) z
+        with Undefined -> ())
+      done
+    done; h in
+  let edge i j = incr oops; Hashtbl.mem pairs (i, j) in
   let result = ref [] in
-  let seen = ref [] in
-  let hash x =
-    let open Int64 in
-    let p = to_int_exn (bit_and 63L (of_int x * 100623947L)) in
-    shift_left 1L p in
-  let not_seen =
-    let mark = Array.create ~len:(List.length xs) 0 in
-    function (_, (sig_y, ys)) ->
-      let len_ys = List.length ys in
-      let subset (sig_x, xs) =
-        (incr oops; (Int64.equal 0L (Int64.bit_and (Int64.bit_not sig_x) sig_y))) &&
-        (List.fold ~f:(fun n x -> incr oops; n + mark.(x)) ~init:0 xs) >= len_ys in
-      List.iter ~f:(fun y -> mark.(y) <- 1) ys;
-      let r = not (List.exists ~f:subset !seen) in
-      List.iter ~f:(fun y -> mark.(y) <- 0) ys;
-      r in
-  let record (v, ys) =
-    seen := ys :: !seen;
-    result := v :: !result  in
-  let possible_moves =
-    let mark = Array.create ~len:(List.length xs) false in
-    function (_, (_, ys)) ->
-      let f (zss, i) x =
-        if mark.(i) then (zss, i + 1) else ((i, x) :: zss, i + 1) in
-      List.iter ~f:(fun y -> mark.(y) <- true) ys;
-      let r, _ = List.fold ~f ~init:([], 0) xs in
-      List.iter ~f:(fun y -> mark.(y) <- false) ys;
-      r in
-  let make_move (i, x) (v, (sig_y, ys)) = match plus v x with
-    | None -> None
-    | Some v -> Some (v, (Int64.bit_or sig_y (hash i), i :: ys)) in
-  let rec dfs ys =
-    let ms = possible_moves ys in
-    let f maximal m = match make_move m ys with
-      | Some zs when not_seen zs -> dfs zs; false
-      | _ -> maximal in
-    if List.fold ~f ~init:true ms then record ys in
-  let zss, _ =
-    let f (zss, i) x = ((x, (hash i, [i])) :: zss, i + 1) in
-    List.fold ~f ~init:([], 0) xs in
-  List.iter ~f:dfs zss;
+  let rec loop g =
+    let xs, ng = next_maxclique g in (* xs is a pairwise consistent set *)
+    let zs = List.map ~f:by_idx xs in
+    (try result :=  (List.fold ~init ~f:plus_exc zs) :: !result
+    with Undefined -> incr lost);
+    loop ng in
+  (try loop (initgen_maxclique n edge) with Not_found -> (* done *) ());
   L.d_strln (Printf.sprintf
-    "PERF maximal_combine inlen=%d outlen=%d oops=%d timeout=%b"
-    (List.length xs) (List.length !result) !oops (!oops >= timeout));
+    "PERF maximal_combine inlen=%d outlen=%d filtered=%d operations=%d"
+    n (List.length !result) !lost !oops);
   !result
+
 
 
 (**
@@ -2239,7 +2299,7 @@ let proplist_meet_generate tenv plist =
           L.d_strln_color Green ".... MEET SUCCEEDED ....";
           L.d_strln "RESULT SYM HEAP:"; Prop.d_prop c; L.d_ln (); L.d_ln ());
       r in
-  let xs = maximal_combine Config.max_meet plus plist in
+  let xs = maximal_combine ~timeout:Config.max_meet ~init:Prop.prop_emp ~plus plist in
   List.fold ~f:(fun p x -> Propset.add tenv x p) ~init:Propset.empty xs
 
 

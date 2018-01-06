@@ -245,7 +245,7 @@ let manual_racerd = "RACERD CHECKER OPTIONS"
 let manual_siof = "SIOF CHECKER OPTIONS"
 
 (** Maximum number of operations in [Dom.proplist_meet_generate]. *)
-let max_meet = 1000
+let max_meet = 1000000
 
 (** Maximum number of widens that can be performed before the analysis will intentionally crash.
     Used to guard against divergence in the case that someone has implemented a bad widening
