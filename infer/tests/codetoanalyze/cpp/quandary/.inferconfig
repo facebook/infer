@@ -43,6 +43,11 @@
       "index": "all"
     },
     {
+      "procedure": "__infer_url_sink",
+      "kind": "URL",
+      "index": "all"
+    },
+    {
       "procedure": "basics::Obj::method_sink",
       "kind": "Other",
       "index": "1"
@@ -69,8 +74,16 @@
       "kind": "All"
     },
     {
-      "procedure": "__infer_string_sanitizer",
-      "kind": "Escape"
+      "procedure": "__infer_shell_sanitizer",
+      "kind": "EscapeShell"
+    },
+    {
+      "procedure": "__infer_sql_sanitizer",
+      "kind": "EscapeSQL"
+    },
+    {
+      "procedure": "__infer_url_sanitizer",
+      "kind": "EscapeURL"
     },
     {
       "procedure": "basics::Obj::sanitizer1"

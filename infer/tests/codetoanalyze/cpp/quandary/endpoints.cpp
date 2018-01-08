@@ -12,8 +12,8 @@
 #include <string>
 
 extern void __infer_sql_sink(std::string);
-extern std::string __infer_all_sanitizer(std::string);
-extern std::string __infer_string_sanitizer(std::string);
+extern std::string __infer_shell_sanitizer(std::string);
+extern std::string __infer_sql_sanitizer(std::string);
 
 extern void curl_easy_setopt(void*, int, ...);
 
@@ -60,17 +60,18 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     __infer_sql_sink(formal);
   }
 
-  void sanitized_sql_bad(std::string formal) {
-    // this should report USER_CONTROLLED_SQL_RISK
-    __infer_sql_sink(__infer_string_sanitizer(formal));
+  void sanitized_sql_with_shell_bad(std::string formal) {
+    // this should report REMOTE_CODE_EXECUTION_RISK
+    __infer_sql_sink(__infer_shell_sanitizer(formal));
   }
 
-  void service1_endpoint_sql_sanitized_ok(std::string formal) {
-    __infer_sql_sink(__infer_all_sanitizer(formal));
+  void service1_endpoint_sql_sanitized_bad(std::string formal) {
+    // this should report USER_CONTROLLED_SQL_RISK
+    __infer_sql_sink(__infer_sql_sanitizer(formal));
   }
 
   void service1_endpoint_shell_sanitized_ok(std::string formal) {
-    system(__infer_string_sanitizer(formal).c_str());
+    system(__infer_shell_sanitizer(formal).c_str());
   }
 
   void service1_endpoint_struct_string_field_bad(request formal) {

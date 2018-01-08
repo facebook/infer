@@ -12,36 +12,67 @@
 
 extern std::string __infer_taint_source();
 
-extern void __infer_taint_sink(std::string);
 extern void __infer_sql_sink(std::string);
+extern void __infer_taint_sink(std::string);
+extern void __infer_url_sink(std::string);
 
 extern std::string __infer_all_sanitizer(std::string);
-extern std::string __infer_string_sanitizer(std::string);
+extern std::string __infer_shell_sanitizer(std::string);
+extern std::string __infer_sql_sanitizer(std::string);
+extern std::string __infer_url_sanitizer(std::string);
 
 namespace sanitizers {
 
-void escape_string_to_sql_ok() {
+void escape_sql_to_sql_ok() {
   auto source = __infer_taint_source();
-  auto sanitized = __infer_string_sanitizer(source);
+  auto sanitized = __infer_sql_sanitizer(source);
   __infer_sql_sink(sanitized);
 }
 
-void escape_string_to_shell_ok() {
+void escape_shell_to_shell_ok() {
   auto source = __infer_taint_source();
-  auto sanitized = __infer_string_sanitizer(source);
+  auto sanitized = __infer_shell_sanitizer(source);
   system(sanitized.c_str());
 }
 
-void escape_string_to_all_bad() {
+void escape_url_to_url_ok() {
   auto source = __infer_taint_source();
-  auto sanitized = __infer_string_sanitizer(source);
-  __infer_taint_sink(sanitized); // wrong kind of sanitizer; report
+  auto sanitized = __infer_url_sanitizer(source);
+  __infer_url_sink(sanitized);
 }
+
+void foo(std::string sanitized) { __infer_url_sink(sanitized); }
 
 void all_to_all_ok() {
   auto source = __infer_taint_source();
   auto sanitized = __infer_all_sanitizer(source);
   __infer_taint_sink(sanitized);
+}
+
+// test a few permutations of "wrong sanitizer for this sink"
+
+void escape_sql_to_shell_bad() {
+  auto source = __infer_taint_source();
+  auto sanitized = __infer_sql_sanitizer(source);
+  system(sanitized.c_str());
+}
+
+void escape_sql_to_url_bad() {
+  auto source = __infer_taint_source();
+  auto sanitized = __infer_sql_sanitizer(source);
+  __infer_url_sink(sanitized);
+}
+
+void escape_shell_to_url_bad() {
+  auto source = __infer_taint_source();
+  auto sanitized = __infer_shell_sanitizer(source);
+  __infer_url_sink(sanitized);
+}
+
+void escape_url_to_sql_bad() {
+  auto source = __infer_taint_source();
+  auto sanitized = __infer_url_sanitizer(source);
+  __infer_sql_sink(sanitized);
 }
 
 void dead_sanitizer_bad() {
@@ -61,7 +92,7 @@ void kill_sanitizer_bad() {
 void double_sanitize_ok() {
   auto source = __infer_taint_source();
   auto x = __infer_all_sanitizer(source);
-  auto y = __infer_string_sanitizer(x);
+  auto y = __infer_sql_sanitizer(x);
   __infer_taint_sink(y);
 }
 
@@ -97,7 +128,7 @@ void different_sanitizer_branches_ok(bool b) {
   if (b) {
     x = __infer_all_sanitizer(source);
   } else {
-    x = __infer_string_sanitizer(source);
+    x = __infer_sql_sanitizer(source);
   }
   __infer_sql_sink(x);
 }

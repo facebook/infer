@@ -214,8 +214,6 @@ val quandary_taint_error : t
 
 val registered_observer_being_deallocated : t
 
-val remote_code_execution_risk : t
-
 val resource_leak : t
 
 val retain_cycle : t
@@ -232,7 +230,11 @@ val skip_pointer_dereference : t
 
 val shell_injection : t
 
+val shell_injection_risk : t
+
 val sql_injection : t
+
+val sql_injection_risk : t
 
 val stack_variable_address_escape : t
 

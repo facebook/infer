@@ -297,8 +297,6 @@ let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
 
 let registered_observer_being_deallocated = from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
 
-let remote_code_execution_risk = from_string "REMOTE_CODE_EXECUTION_RISK"
-
 let resource_leak = from_string "RESOURCE_LEAK"
 
 let retain_cycle = from_string ~enabled:true "RETAIN_CYCLE"
@@ -315,7 +313,11 @@ let skip_pointer_dereference = from_string "SKIP_POINTER_DEREFERENCE"
 
 let shell_injection = from_string "SHELL_INJECTION"
 
+let shell_injection_risk = from_string "SHELL_INJECTION_RISK"
+
 let sql_injection = from_string "SQL_INJECTION"
+
+let sql_injection_risk = from_string "SQL_INJECTION_RISK"
 
 let stack_variable_address_escape = from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
 

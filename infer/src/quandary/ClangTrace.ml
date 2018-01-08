@@ -184,10 +184,10 @@ module SinkKind = struct
     | BufferAccess  (** read/write an array *)
     | CreateFile  (** create/open a file *)
     | HeapAllocation  (** heap memory allocation *)
-    | Network  (** network access *)
     | ShellExec  (** shell exec function *)
     | SQL  (** SQL query *)
     | StackAllocation  (** stack memory allocation *)
+    | URL  (** URL creation *)
     | Other  (** for testing or uncategorized sinks *)
     [@@deriving compare]
 
@@ -200,14 +200,14 @@ module SinkKind = struct
         CreateFile
     | "HeapAllocation" ->
         HeapAllocation
-    | "Network" ->
-        Network
     | "ShellExec" ->
         ShellExec
     | "SQL" ->
         SQL
     | "StackAllocation" ->
         StackAllocation
+    | "URL" ->
+        URL
     | _ ->
         Other
 
@@ -308,11 +308,10 @@ module SinkKind = struct
             match HilExp.eval exp with
             | Some Const.Cint i ->
                 (* check if the data kind might be CURLOPT_URL *)
-                if controls_request (IntLit.to_int i) then taint_after_nth 1 Network actuals
-                else None
+                if controls_request (IntLit.to_int i) then taint_after_nth 1 URL actuals else None
             | _ ->
                 (* can't statically resolve data kind; taint it just in case *)
-                taint_after_nth 1 Network actuals )
+                taint_after_nth 1 URL actuals )
           | None ->
               None )
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
@@ -349,14 +348,14 @@ module SinkKind = struct
           "CreateFile"
       | HeapAllocation ->
           "HeapAllocation"
-      | Network ->
-          "Network"
       | ShellExec ->
           "ShellExec"
       | SQL ->
           "SQL"
       | StackAllocation ->
           "StackAllocation"
+      | URL ->
+          "URL"
       | Other ->
           "Other" )
 end
@@ -365,13 +364,24 @@ module CppSink = Sink.Make (SinkKind)
 
 module CppSanitizer = struct
   type t =
-    | Escape  (** escaped string to sanitize SQL injection or ShellExec sinks *)
+    | EscapeShell  (** escape string to sanitize shell commands *)
+    | EscapeSQL  (** escape string to sanitize SQL queries *)
+    | EscapeURL  (** escape string to sanitize URLs (e.g., prevent injecting GET/POST params) *)
     | All  (** sanitizes all forms of taint *)
     [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
-  let of_string = function "Escape" -> Escape | _ -> All
+  let of_string = function
+    | "EscapeShell" ->
+        EscapeShell
+    | "EscapeSQL" ->
+        EscapeSQL
+    | "EscapeURL" ->
+        EscapeURL
+    | _ ->
+        All
+
 
   let external_sanitizers =
     List.map
@@ -389,7 +399,15 @@ module CppSanitizer = struct
       external_sanitizers
 
 
-  let pp fmt = function Escape -> F.fprintf fmt "Escape" | All -> F.fprintf fmt "All"
+  let pp fmt = function
+    | EscapeShell ->
+        F.fprintf fmt "EscapeShell"
+    | EscapeSQL ->
+        F.fprintf fmt "EscapeSQL"
+    | EscapeURL ->
+        F.fprintf fmt "EscapeURL"
+    | All ->
+        F.fprintf fmt "All"
 end
 
 include Trace.Make (struct
@@ -397,9 +415,10 @@ include Trace.Make (struct
   module Sink = CppSink
   module Sanitizer = CppSanitizer
 
-  (* return true if code injection is possible because the source is a string/is not sanitized *)
-  let is_injection_possible ?typ sanitizers =
-    let is_escaped = List.mem sanitizers Sanitizer.Escape ~equal:Sanitizer.equal in
+  (* return true if code injection is possible because the source is a string/is not sanitized with
+     [escape_sanitizer] *)
+  let is_injection_possible ?typ escape_sanitizer sanitizers =
+    let is_escaped = List.mem sanitizers escape_sanitizer ~equal:Sanitizer.equal in
     not is_escaped
     &&
     match typ with
@@ -416,33 +435,46 @@ include Trace.Make (struct
         (* the All sanitizer clears any form of taint; don't report *)
         None
     | UserControlledEndpoint (_, typ), CreateFile ->
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
+          IssueType.untrusted_file
     | (Endpoint (_, typ) | CommandLineFlag (_, typ)), CreateFile ->
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file_risk
-    | UserControlledEndpoint (_, typ), Network ->
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url
-    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), Network ->
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url_risk
-    | (EnvironmentVariable | ReadFile), Network ->
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
+          IssueType.untrusted_file_risk
+    | UserControlledEndpoint (_, typ), URL ->
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
+          IssueType.untrusted_url
+    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), URL ->
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
+          IssueType.untrusted_url_risk
+    | (EnvironmentVariable | ReadFile), URL ->
         None
     | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), SQL ->
-        if is_injection_possible ~typ sanitizers then Some IssueType.sql_injection
+        if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
+          Some IssueType.sql_injection
         else
           (* no injection risk, but still user-controlled *)
           Some IssueType.user_controlled_sql_risk
     | Endpoint (_, typ), SQL ->
-        if is_injection_possible ~typ sanitizers then
-          (* code injection if the caller of the endpoint doesn't sanitize on its end *)
-          Some IssueType.remote_code_execution_risk
+        if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
+          (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
+          Some IssueType.sql_injection_risk
         else
           (* no injection risk, but still user-controlled *)
           Some IssueType.user_controlled_sql_risk
     | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), ShellExec ->
         (* we know the user controls the endpoint, so it's code injection without a sanitizer *)
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.shell_injection
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
+          IssueType.shell_injection
     | Endpoint (_, typ), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.remote_code_execution_risk
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
+          IssueType.shell_injection_risk
     | UserControlledEndpoint _, BufferAccess ->
         (* untrusted data from an endpoint flowing into a buffer *)
         Some IssueType.quandary_taint_error
@@ -454,10 +486,19 @@ include Trace.Make (struct
         Some IssueType.quandary_taint_error
     | (EnvironmentVariable | ReadFile | Other), ShellExec ->
         (* untrusted flag, environment var, or file data flowing to shell *)
-        Option.some_if (is_injection_possible sanitizers) IssueType.shell_injection
+        Option.some_if
+          (is_injection_possible Sanitizer.EscapeShell sanitizers)
+          IssueType.shell_injection
     | (EnvironmentVariable | ReadFile | Other), SQL ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
-        Option.some_if (is_injection_possible sanitizers) IssueType.sql_injection
+        Option.some_if
+          (is_injection_possible Sanitizer.EscapeSQL sanitizers)
+          IssueType.sql_injection
+    | Other, URL ->
+        (* untrusted flag, environment var, or file data flowing to URL *)
+        Option.some_if
+          (is_injection_possible Sanitizer.EscapeURL sanitizers)
+          IssueType.untrusted_url_risk
     | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | ReadFile | Other)
       , HeapAllocation ) ->
         (* untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS. *)
