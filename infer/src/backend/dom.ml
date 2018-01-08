@@ -2239,6 +2239,9 @@ be done with polynomial delay using the JYP algorithm:
 A maximal clique S found by this algorithm will be pairwise consistent, and
 often but not always consistent. The current implementation simply filters
 out inconsistent maximal cliques.
+
+The [timeout] limits the number of maxcliques to be enumerated, because they
+can be exponentially many.
 *)
 let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option) (xs : 'a list)  : 'a list =
   let n = List.length xs in
@@ -2246,8 +2249,6 @@ let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option
     let xs = Array.of_list xs in
     Array.get xs in
   let lost = ref 0 in (* counts inconsistent maximal cliques *)
-  let oops = ref 0 in (* counts basic operations, for timeout *)
-  let plus x y = if !oops >= timeout then None else plus x y in
   let exception Undefined in
   let plus_exc x y = match plus x y with
     | None -> raise Undefined
@@ -2257,25 +2258,31 @@ let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option
     for i = 0 to n - 1 do
       for j = i + 1 to n - 1 do
         (try
-          incr oops;
           let z = plus_exc (by_idx i) (by_idx j) in
           Hashtbl.add h (i, j) z;
           Hashtbl.add h (j, i) z
         with Undefined -> ())
       done
     done; h in
-  let edge i j = incr oops; Hashtbl.mem pairs (i, j) in
+  let edge i j = Hashtbl.mem pairs (i, j) in
+  let maxclique_count = ref 0 in
+  let exception Timeout in
   let result = ref [] in
   let rec loop g =
+    SymOp.pay ();
+    incr maxclique_count;
+    if !maxclique_count >= timeout then raise Timeout;
     let xs, ng = next_maxclique g in (* xs is a pairwise consistent set *)
     let zs = List.map ~f:by_idx xs in
     (try result :=  (List.fold ~init ~f:plus_exc zs) :: !result
     with Undefined -> incr lost);
     loop ng in
-  (try loop (initgen_maxclique n edge) with Not_found -> (* done *) ());
+  (try loop (initgen_maxclique n edge) with
+  | Not_found -> (* done *) ()
+  | Timeout -> (* skip the other maxcliques *) ());
   L.d_strln (Printf.sprintf
-    "PERF maximal_combine inlen=%d outlen=%d filtered=%d operations=%d"
-    n (List.length !result) !lost !oops);
+    "PERF maximal_combine inlen=%d outlen=%d filtered=%d maxclique_count=%d"
+    n (List.length !result) !lost !maxclique_count);
   !result
 
 
@@ -2285,7 +2292,7 @@ let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option
   1) makes the result logically stronger (just like additive conjunction)
   2) makes the result spatially larger (just like multiplicative conjunction).
   Produces meets only for the subsets that have a meet, targeting such subsets
-  that are maximal, but settling for smaller ones on meet-timeout.
+  that are maximal.
 *)
 let proplist_meet_generate tenv plist =
   let plus a b =
