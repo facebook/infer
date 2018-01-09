@@ -65,29 +65,19 @@ type t =
   { cg: Cg.t  (** global call graph *)
   ; proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
   ; file_map: file_data FilenameHash.t  (** map from cg fname to file data *)
-  ; mutable source_files: SourceFile.Set.t  (** Source files in the execution environment *) }
+  ; source_file: SourceFile.t  (** source file being analyzed *) }
 
 (** initial state, used to add cg's *)
 type initial = t
 
-(** create a new execution environment *)
-let create () =
-  { cg= Cg.create (SourceFile.invalid __FILE__)
-  ; proc_map= Typ.Procname.Hash.create 17
-  ; file_map= FilenameHash.create 1
-  ; source_files= SourceFile.Set.empty }
-
-
 (** add call graph from fname in the spec db,
     with relative tenv and cfg, to the execution environment *)
-let add_cg (exe_env: t) (source_dir: DB.source_dir) =
-  let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
+let add_cg exe_env source =
+  let cg_fname = DB.source_dir_get_internal_file (DB.source_dir_from_source_file source) ".cg" in
   match Cg.load_from_file cg_fname with
   | None ->
       L.internal_error "Error: cannot load %s@." (DB.filename_to_string cg_fname)
   | Some cg ->
-      let source = Cg.get_source cg in
-      exe_env.source_files <- SourceFile.Set.add source exe_env.source_files ;
       let defined_procs = Cg.get_defined_nodes cg in
       let duplicate_procs_to_print =
         List.filter_map defined_procs ~f:(fun pname ->
@@ -199,23 +189,18 @@ let get_proc_desc exe_env pname =
       None
 
 
-(** Create an exe_env from a source dir *)
-let from_cluster cluster =
-  let exe_env = create () in
-  add_cg exe_env (DB.source_dir_from_source_file cluster) ;
-  exe_env
+let mk source_file =
+  let exe_env =
+    { cg= Cg.create (SourceFile.invalid __FILE__)
+    ; proc_map= Typ.Procname.Hash.create 17
+    ; file_map= FilenameHash.create 1
+    ; source_file }
+  in
+  add_cg exe_env source_file ; exe_env
 
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
 let iter_files f exe_env =
-  let do_file _ file_data seen_files_acc =
-    let fname = file_data.source in
-    if SourceFile.Set.mem fname seen_files_acc
-       || (* only files added with add_cg* functions *)
-          not (SourceFile.Set.mem fname exe_env.source_files)
-    then seen_files_acc
-    else (
-      Option.iter ~f:(fun cfg -> f fname cfg) (file_data_to_cfg file_data) ;
-      SourceFile.Set.add fname seen_files_acc )
-  in
-  ignore (Typ.Procname.Hash.fold do_file exe_env.proc_map SourceFile.Set.empty)
+  let source = exe_env.source_file in
+  let cfg = Cfg.load source in
+  Option.iter ~f:(f source) cfg

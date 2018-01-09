@@ -27,7 +27,7 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
 
 (** Create tasks to analyze a cluster *)
 let analyze_cluster_tasks cluster_num (cluster: Cluster.t) : Tasks.t =
-  let exe_env = Exe_env.from_cluster cluster in
+  let exe_env = Exe_env.mk cluster in
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
   let num_procs = List.length defined_procs in
   L.(debug Analysis Medium)

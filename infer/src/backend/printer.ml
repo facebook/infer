@@ -528,7 +528,7 @@ let write_html_file linereader filename procs =
 
 (** Create filename.ext.html for each file in the cluster. *)
 let write_all_html_files cluster =
-  let exe_env = Exe_env.from_cluster cluster in
+  let exe_env = Exe_env.mk cluster in
   let load_proc_desc pname = ignore (Exe_env.get_proc_desc exe_env pname) in
   let () = List.iter ~f:load_proc_desc (Cg.get_defined_nodes (Exe_env.get_cg exe_env)) in
   let opt_whitelist_regex =

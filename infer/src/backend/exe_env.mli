@@ -18,12 +18,8 @@ type initial
 (** execution environment: a global call graph, and map from procedure names to cfg and tenv *)
 type t
 
-val add_cg : initial -> DB.source_dir -> unit
-(** add call graph from the source dir in the spec db,
-    with relative tenv and cfg, to the execution environment *)
-
-val from_cluster : Cluster.t -> t
-(** Create an exe_env from a cluster *)
+val mk : SourceFile.t -> t
+(** Create an exe_env from a source file *)
 
 val get_cg : t -> Cg.t
 (** get the global call graph *)
