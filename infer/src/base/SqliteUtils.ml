@@ -15,29 +15,29 @@ let error ~fatal fmt =
   (if fatal then Format.kasprintf (fun err -> raise (Error err)) else L.internal_error) fmt
 
 
-let check_sqlite_error ?(fatal= false) ~log rc =
+let check_sqlite_error ?(fatal= false) db ~log rc =
   match (rc : Sqlite3.Rc.t) with
   | OK | ROW ->
       ()
   | _ as err ->
-      error ~fatal "%s: %s" log (Sqlite3.Rc.to_string err)
+      error ~fatal "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
 
 
 let exec db ~log ~stmt =
   (* Call [check_sqlite_error] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
-  try check_sqlite_error ~fatal:true ~log (Sqlite3.exec db stmt) with Error err ->
-    error ~fatal:true "exec: %s" err
+  try check_sqlite_error ~fatal:true db ~log (Sqlite3.exec db stmt) with Error err ->
+    error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 
-let finalize ~log stmt =
-  try check_sqlite_error ~fatal:true ~log (Sqlite3.finalize stmt) with
+let finalize db ~log stmt =
+  try check_sqlite_error ~fatal:true db ~log (Sqlite3.finalize stmt) with
   | Error err ->
-      error ~fatal:true "finalize: %s" err
+      error ~fatal:true "finalize: %s (%s)" err (Sqlite3.errmsg db)
   | Sqlite3.Error err ->
-      error ~fatal:true "finalize: %s: %s" log err
+      error ~fatal:true "finalize: %s: %s (%s)" log err (Sqlite3.errmsg db)
 
 
-let sqlite_result_rev_list_step ?finalize:(do_finalize = true) ~log stmt =
+let sqlite_result_rev_list_step ?finalize:(do_finalize = true) db ~log stmt =
   let rec aux rev_results =
     match Sqlite3.step stmt with
     | Sqlite3.Rc.ROW ->
@@ -47,14 +47,14 @@ let sqlite_result_rev_list_step ?finalize:(do_finalize = true) ~log stmt =
     | DONE ->
         rev_results
     | err ->
-        L.die InternalError "%s: %s" log (Sqlite3.Rc.to_string err)
+        L.die InternalError "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
   in
-  if do_finalize then protect ~finally:(fun () -> finalize ~log stmt) ~f:(fun () -> aux [])
+  if do_finalize then protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux [])
   else aux []
 
 
-let sqlite_result_step ?finalize ~log stmt =
-  match sqlite_result_rev_list_step ?finalize ~log stmt with
+let sqlite_result_step ?finalize db ~log stmt =
+  match sqlite_result_rev_list_step ?finalize db ~log stmt with
   | [] ->
       None
   | [x] ->
@@ -63,8 +63,8 @@ let sqlite_result_step ?finalize ~log stmt =
       L.die InternalError "%s: zero or one result expected, got %d instead" log (List.length l)
 
 
-let sqlite_unit_step ?finalize ~log stmt =
-  match sqlite_result_rev_list_step ?finalize ~log stmt with
+let sqlite_unit_step ?finalize db ~log stmt =
+  match sqlite_result_rev_list_step ?finalize db ~log stmt with
   | [] ->
       ()
   | l ->

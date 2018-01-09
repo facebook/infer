@@ -100,10 +100,10 @@ module SQLite = SqliteUtils.MarshalledData (struct
 end)
 
 let load source =
-  ResultsDatabase.with_registered_statement load_statement ~f:(fun load_stmt ->
+  ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
       SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_sqlite_error ~log:"load bind source file" ;
-      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" load_stmt
+      |> SqliteUtils.check_sqlite_error db ~log:"load bind source file" ;
+      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" db load_stmt
       |> Option.map ~f:SQLite.deserialize )
 
 
@@ -288,14 +288,14 @@ let store source_file cfg =
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
   save_attributes source_file cfg ;
-  ResultsDatabase.with_registered_statement store_statement ~f:(fun store_stmt ->
+  ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
       SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
       (* :source *)
-      |> SqliteUtils.check_sqlite_error ~log:"store bind source file" ;
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind source file" ;
       SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
       (* :cfg *)
-      |> SqliteUtils.check_sqlite_error ~log:"store bind cfg" ;
-      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" store_stmt )
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind cfg" ;
+      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 
 (** Applies convert_instr_list to all the instructions in all the nodes of the cfg *)

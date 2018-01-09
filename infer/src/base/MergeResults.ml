@@ -10,11 +10,12 @@ open! IStd
 module L = Logging
 
 let merge_attributes_table ~db_file =
+  let db = ResultsDatabase.get_database () in
   (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
      sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
      cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
      NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-  Sqlite3.exec (ResultsDatabase.get_database ())
+  Sqlite3.exec db
     {|
 INSERT OR REPLACE INTO attributes
 SELECT sub.proc_name, sub.attr_kind, sub.source_file, sub.proc_attributes
@@ -27,26 +28,26 @@ WHERE
   OR main.attr_kind < sub.attr_kind
   OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
 |}
-  |> SqliteUtils.check_sqlite_error
+  |> SqliteUtils.check_sqlite_error db
        ~log:(Printf.sprintf "copying attributes of database '%s'" db_file)
 
 
 let merge_cfg_table ~db_file =
-  Sqlite3.exec (ResultsDatabase.get_database ())
-    "INSERT OR REPLACE INTO cfg SELECT * FROM attached.cfg"
-  |> SqliteUtils.check_sqlite_error ~log:(Printf.sprintf "copying cfg of database '%s'" db_file)
+  let db = ResultsDatabase.get_database () in
+  Sqlite3.exec db "INSERT OR REPLACE INTO cfg SELECT * FROM attached.cfg"
+  |> SqliteUtils.check_sqlite_error db ~log:(Printf.sprintf "copying cfg of database '%s'" db_file)
 
 
 let merge ~db_file =
   let main_db = ResultsDatabase.get_database () in
-  SqliteUtils.check_sqlite_error ~fatal:true
-    ~log:(Printf.sprintf "attaching database '%s'" db_file)
-    (Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)) ;
+  Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
+  |> SqliteUtils.check_sqlite_error ~fatal:true main_db
+       ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   merge_attributes_table ~db_file ;
   merge_cfg_table ~db_file ;
-  SqliteUtils.check_sqlite_error ~fatal:true
-    ~log:(Printf.sprintf "detaching database '%s'" db_file)
-    (Sqlite3.exec main_db "DETACH attached") ;
+  Sqlite3.exec main_db "DETACH attached"
+  |> SqliteUtils.check_sqlite_error ~fatal:true main_db
+       ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
   ()
 
 

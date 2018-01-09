@@ -42,4 +42,4 @@ val register_statement : ('a, unit, string, registered_stmt) Base.format4 -> 'a
     statement, or about generating new statements when the connection to the DB changes: this is all
     handled internally. *)
 
-val with_registered_statement : registered_stmt -> f:(Sqlite3.stmt -> 'a) -> 'a
+val with_registered_statement : registered_stmt -> f:(Sqlite3.db -> Sqlite3.stmt -> 'a) -> 'a
