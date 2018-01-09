@@ -15,7 +15,18 @@ type retain_cycle_edge = {rc_from: retain_cycle_node; rc_field: retain_cycle_fie
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge}
 
 let create_cycle cycle =
-  match cycle with hd :: _ -> Some {rc_elements= cycle; rc_head= hd} | [] -> None
+  match cycle with
+  | [hd] -> (
+    match (* cycles of length 1 created at rearrange are not real *)
+          hd.rc_field.rc_field_inst with
+    | Sil.Irearrange _ ->
+        None
+    | _ ->
+        Some {rc_elements= cycle; rc_head= hd} )
+  | hd :: _ ->
+      Some {rc_elements= cycle; rc_head= hd}
+  | [] ->
+      None
 
 
 let retain_cycle_node_to_string (node: retain_cycle_node) =
