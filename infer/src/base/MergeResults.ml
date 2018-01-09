@@ -12,39 +12,29 @@ module L = Logging
 let merge_attributes_table ~db_file =
   (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
      sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
-     cases where a proc_name is present in both the sub-table and the main one (main_attr_kind !=
+     cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
      NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-  let copy_stmt =
-    Sqlite3.prepare (ResultsDatabase.get_database ())
-      {|
+  Sqlite3.exec (ResultsDatabase.get_database ())
+    {|
 INSERT OR REPLACE INTO attributes
-SELECT proc_name, attr_kind, source_file, proc_attributes
+SELECT sub.proc_name, sub.attr_kind, sub.source_file, sub.proc_attributes
 FROM (
-  SELECT sub.proc_name, sub.attr_kind, sub.source_file, sub.proc_attributes,
-         main.attr_kind AS main_attr_kind, main.source_file AS main_source_file
-  FROM (
-    attached.attributes AS sub
-    LEFT JOIN attributes AS main
-    ON sub.proc_name = main.proc_name ) )
+  attached.attributes AS sub
+  LEFT OUTER JOIN attributes AS main
+  ON sub.proc_name = main.proc_name )
 WHERE
-  main_attr_kind is NULL
-  OR main_attr_kind < attr_kind
-  OR (main_attr_kind = attr_kind AND main_source_file < source_file)
+  main.attr_kind IS NULL
+  OR main.attr_kind < sub.attr_kind
+  OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
 |}
-  in
-  SqliteUtils.sqlite_unit_step
-    ~log:(Printf.sprintf "copying attributes of database '%s'" db_file)
-    copy_stmt
+  |> SqliteUtils.check_sqlite_error
+       ~log:(Printf.sprintf "copying attributes of database '%s'" db_file)
 
 
 let merge_cfg_table ~db_file =
-  let copy_stmt =
-    Sqlite3.prepare (ResultsDatabase.get_database ())
-      "INSERT OR REPLACE INTO cfg SELECT * FROM attached.cfg"
-  in
-  SqliteUtils.sqlite_unit_step
-    ~log:(Printf.sprintf "copying cfgs of database '%s'" db_file)
-    copy_stmt
+  Sqlite3.exec (ResultsDatabase.get_database ())
+    "INSERT OR REPLACE INTO cfg SELECT * FROM attached.cfg"
+  |> SqliteUtils.check_sqlite_error ~log:(Printf.sprintf "copying cfg of database '%s'" db_file)
 
 
 let merge ~db_file =
