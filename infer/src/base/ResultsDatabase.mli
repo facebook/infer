@@ -31,7 +31,9 @@ val db_close : unit -> unit
 val create_db : unit -> unit
 (** create the database file and initialize all the necessary tables *)
 
-val register_statement : ('a, unit, string, unit -> Sqlite3.stmt) Base.format4 -> 'a
+type registered_stmt
+
+val register_statement : ('a, unit, string, registered_stmt) Base.format4 -> 'a
 (** Return a function unit -> Sqlite3.stmt that can be called (once the DB has been initialized) to
     get the prepared statement corresponding to the current DB connection. Use this to prepare
     statements only once per DB connection.
@@ -39,3 +41,5 @@ val register_statement : ('a, unit, string, unit -> Sqlite3.stmt) Base.format4 -
     In particular, clients of this need not worry about calling [Sqlite3.finalize] on the returned
     statement, or about generating new statements when the connection to the DB changes: this is all
     handled internally. *)
+
+val with_registered_statement : registered_stmt -> f:(Sqlite3.stmt -> 'a) -> 'a

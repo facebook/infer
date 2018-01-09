@@ -23,7 +23,7 @@ let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
   else ProcUndefined
 
 
-let get_replace_statement =
+let replace_statement =
   (* The innermost SELECT returns either the current attributes_kind and source_file associated with
      the given proc name, or default values of (-1,""). These default values have the property that
      they are always "less than" any legit value. More precisely, MAX ensures that some value is
@@ -56,19 +56,19 @@ FROM (
 
 
 let replace pname_blob akind loc_file attr_blob =
-  let replace_stmt = get_replace_statement () in
-  Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind pname" ;
-  Sqlite3.bind replace_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind attribute kind" ;
-  Sqlite3.bind replace_stmt 3 (* :sfile *) loc_file
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind source file" ;
-  Sqlite3.bind replace_stmt 4 (* :pattr *) attr_blob
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind proc attributes" ;
-  SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Attributes.replace" replace_stmt
+  ResultsDatabase.with_registered_statement replace_statement ~f:(fun replace_stmt ->
+      Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind pname" ;
+      Sqlite3.bind replace_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind attribute kind" ;
+      Sqlite3.bind replace_stmt 3 (* :sfile *) loc_file
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind source file" ;
+      Sqlite3.bind replace_stmt 4 (* :pattr *) attr_blob
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind proc attributes" ;
+      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Attributes.replace" replace_stmt )
 
 
-let get_find_more_defined_statement =
+let find_more_defined_statement =
   ResultsDatabase.register_statement
     {|
 SELECT attr_kind
@@ -79,31 +79,33 @@ WHERE proc_name = :pname
 
 
 let should_try_to_update pname_blob akind =
-  let find_stmt = get_find_more_defined_statement () in
-  Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind pname" ;
-  Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-  |> SqliteUtils.check_sqlite_error ~log:"replace bind attribute kind" ;
-  SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.replace" find_stmt
-  |> (* there is no entry with a strictly larger "definedness" for that proc name *) Option.is_none
+  ResultsDatabase.with_registered_statement find_more_defined_statement ~f:(fun find_stmt ->
+      Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind pname" ;
+      Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
+      |> SqliteUtils.check_sqlite_error ~log:"replace bind attribute kind" ;
+      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.replace" find_stmt
+      |> (* there is no entry with a strictly larger "definedness" for that proc name *)
+         Option.is_none )
 
 
-let get_select_statement =
+let select_statement =
   ResultsDatabase.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
 
 
-let get_select_defined_statement =
+let select_defined_statement =
   ResultsDatabase.register_statement
     "SELECT proc_attributes FROM attributes WHERE proc_name = :k AND attr_kind = %Ld"
     (int64_of_attributes_kind ProcDefined)
 
 
 let find ~defined pname_blob =
-  let select_stmt = if defined then get_select_defined_statement () else get_select_statement () in
-  Sqlite3.bind select_stmt 1 pname_blob
-  |> SqliteUtils.check_sqlite_error ~log:"find bind proc name" ;
-  SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.find" select_stmt
-  |> Option.map ~f:ProcAttributes.SQLite.deserialize
+  (if defined then select_defined_statement else select_statement)
+  |> ResultsDatabase.with_registered_statement ~f:(fun select_stmt ->
+         Sqlite3.bind select_stmt 1 pname_blob
+         |> SqliteUtils.check_sqlite_error ~log:"find bind proc name" ;
+         SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.find" select_stmt
+         |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
 let load pname = Typ.Procname.SQLite.serialize pname |> find ~defined:false

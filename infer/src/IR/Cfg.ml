@@ -91,7 +91,7 @@ let check_cfg_connectedness cfg =
   iter_proc_desc cfg do_pdesc
 
 
-let get_load_statement =
+let load_statement =
   ResultsDatabase.register_statement "SELECT cfgs FROM cfg WHERE source_file = :k"
 
 
@@ -100,11 +100,11 @@ module SQLite = SqliteUtils.MarshalledData (struct
 end)
 
 let load source =
-  let load_stmt = get_load_statement () in
-  SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
-  |> SqliteUtils.check_sqlite_error ~log:"load bind source file" ;
-  SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" load_stmt
-  |> Option.map ~f:SQLite.deserialize
+  ResultsDatabase.with_registered_statement load_statement ~f:(fun load_stmt ->
+      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      |> SqliteUtils.check_sqlite_error ~log:"load bind source file" ;
+      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" load_stmt
+      |> Option.map ~f:SQLite.deserialize )
 
 
 (** Save the .attr files for the procedures in the cfg. *)
@@ -276,7 +276,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
   Typ.Procname.Hash.iter mark_pdesc_if_unchanged cfg_new
 
 
-let get_store_statement =
+let store_statement =
   ResultsDatabase.register_statement "INSERT OR REPLACE INTO cfg VALUES (:source, :cfgs)"
 
 
@@ -288,14 +288,14 @@ let store source_file cfg =
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
   save_attributes source_file cfg ;
-  let store_stmt = get_store_statement () in
-  SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
-  (* :source *)
-  |> SqliteUtils.check_sqlite_error ~log:"store bind source file" ;
-  SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
-  (* :cfg *)
-  |> SqliteUtils.check_sqlite_error ~log:"store bind cfg" ;
-  SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" store_stmt
+  ResultsDatabase.with_registered_statement store_statement ~f:(fun store_stmt ->
+      SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
+      (* :source *)
+      |> SqliteUtils.check_sqlite_error ~log:"store bind source file" ;
+      SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
+      (* :cfg *)
+      |> SqliteUtils.check_sqlite_error ~log:"store bind cfg" ;
+      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" store_stmt )
 
 
 (** Applies convert_instr_list to all the instructions in all the nodes of the cfg *)

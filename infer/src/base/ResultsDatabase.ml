@@ -81,7 +81,9 @@ let db_canonicalize () =
   SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
 
 
-let register_statement stmt_fmt =
+type registered_stmt = unit -> Sqlite3.stmt
+
+let register_statement =
   let k stmt0 =
     let stmt_ref = ref None in
     let new_statement db =
@@ -99,12 +101,18 @@ let register_statement stmt_fmt =
       | None ->
           L.(die InternalError) "database not initialized"
       | Some stmt ->
-          Sqlite3.reset stmt |> SqliteUtils.check_sqlite_error ~log:"reset prepared statement" ;
           Sqlite3.clear_bindings stmt
           |> SqliteUtils.check_sqlite_error ~log:"clear bindings of prepared statement" ;
           stmt
   in
-  Printf.ksprintf k stmt_fmt
+  fun stmt_fmt -> Printf.ksprintf k stmt_fmt
+
+
+let with_registered_statement get_stmt ~f =
+  let stmt = get_stmt () in
+  let result = f stmt in
+  Sqlite3.reset stmt |> SqliteUtils.check_sqlite_error ~log:"reset prepared statement" ;
+  result
 
 
 let do_db_close db =
