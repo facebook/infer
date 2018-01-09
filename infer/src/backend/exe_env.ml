@@ -202,7 +202,8 @@ let get_proc_desc exe_env pname =
 (** Create an exe_env from a source dir *)
 let from_cluster cluster =
   let exe_env = create () in
-  add_cg exe_env cluster ; exe_env
+  add_cg exe_env (DB.source_dir_from_source_file cluster) ;
+  exe_env
 
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)

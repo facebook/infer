@@ -628,3 +628,10 @@ let pp_proc_signatures fmt cfg =
 let exists_for_source_file source =
   (* simplistic implementation that allocates the cfg as this is only used for reactive capture for now *)
   load source |> Option.is_some
+
+
+let get_captured_source_files () =
+  let db = ResultsDatabase.get_database () in
+  Sqlite3.prepare db "SELECT source_file FROM cfg"
+  |> SqliteUtils.sqlite_result_rev_list_step db ~log:"getting all source files"
+  |> List.filter_map ~f:(Option.map ~f:SourceFile.SQLite.deserialize)

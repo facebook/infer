@@ -14,7 +14,7 @@ module F = Format
 (** Module to process clusters of procedures. *)
 
 (** a cluster is a file *)
-type t = DB.source_dir
+type t = SourceFile.t
 
 (** type stored in .cluster file: (n,cl) indicates cl is cluster n *)
 type serializer_t = int * t

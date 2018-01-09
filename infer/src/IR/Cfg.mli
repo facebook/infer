@@ -64,3 +64,5 @@ val specialize_with_block_args :
 val pp_proc_signatures : Format.formatter -> t -> unit
 
 val exists_for_source_file : SourceFile.t -> bool
+
+val get_captured_source_files : unit -> SourceFile.t list

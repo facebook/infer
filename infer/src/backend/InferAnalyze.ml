@@ -77,23 +77,14 @@ let print_legend () =
 
 
 let cluster_should_be_analyzed ~changed_files cluster =
-  let fname = DB.source_dir_to_string cluster in
   (* whether [fname] is one of the [changed_files] *)
-  let is_changed_file =
-    (* set of source dirs to analyze inside infer-out/captured/ *)
-    let source_dirs_to_analyze changed_files =
-      SourceFile.Set.fold
-        (fun source_file source_dir_set ->
-          let source_dir = DB.source_dir_from_source_file source_file in
-          String.Set.add source_dir_set (DB.source_dir_to_string source_dir) )
-        changed_files String.Set.empty
-    in
-    Option.map ~f:source_dirs_to_analyze changed_files
-    |> fun dirs_opt -> Option.map dirs_opt ~f:(fun dirs -> String.Set.mem dirs fname)
-  in
+  let is_changed_file = Option.map changed_files ~f:(SourceFile.Set.mem cluster) in
   let check_modified () =
-    let modified = DB.file_was_updated_after_start (DB.filename_from_string fname) in
-    if modified && Config.developer_mode then L.debug Analysis Medium "Modified: %s@." fname ;
+    let modified =
+      DB.source_dir_from_source_file cluster |> DB.source_dir_to_string |> DB.filename_from_string
+      |> DB.file_was_updated_after_start
+    in
+    if modified then L.debug Analysis Medium "Modified: %a@\n" SourceFile.pp cluster ;
     modified
   in
   match is_changed_file with
@@ -128,7 +119,7 @@ let main ~changed_files ~makefile =
       (* delete all specs when doing a full analysis so that we do not report on procedures that do
          not exist anymore *)
       if not Config.reactive_mode then DB.Results_dir.clean_specs_dir () ;
-      let all_clusters = DB.find_source_dirs () in
+      let all_clusters = Cfg.get_captured_source_files () in
       let clusters_to_analyze =
         List.filter ~f:(cluster_should_be_analyzed ~changed_files) all_clusters
       in
@@ -142,7 +133,7 @@ let main ~changed_files ~makefile =
       let is_java =
         lazy
           (List.exists
-             ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
+             ~f:(fun cl -> Filename.check_suffix ".java" (SourceFile.to_string cl))
              all_clusters)
       in
       print_legend () ;

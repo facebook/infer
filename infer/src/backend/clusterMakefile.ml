@@ -42,7 +42,7 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
   let outc = Out_channel.create fname in
   let fmt = Format.formatter_of_out_channel outc in
   let do_cluster cluster_nr cluster =
-    F.fprintf fmt "#%s@\n" (DB.source_dir_to_string cluster) ;
+    F.fprintf fmt "#%a@\n" SourceFile.pp cluster ;
     Cluster.pp_cluster fmt (cluster_nr + 1, cluster)
   in
   pp_prolog fmt clusters ;
