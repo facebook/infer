@@ -1057,6 +1057,7 @@ and ( bo_debug
       "Debug mode (also sets $(b,--debug-level 2), $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-only-cheap-debug), $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
       ~f:(fun debug ->
         if debug then set_debug_level 2 else set_debug_level 0 ;
+        CommandLineOption.keep_args_file := debug ;
         debug )
       [ developer_mode
       ; print_buckets
@@ -2055,14 +2056,7 @@ let inferconfig_file =
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
-let late_epilogue_callback = ref (fun () -> ())
-
-let register_late_epilogue f =
-  let g = !late_epilogue_callback in
-  late_epilogue_callback := fun () -> f () ; g ()
-
-
-let late_epilogue () = !late_epilogue_callback ()
+let register_late_epilogue = Epilogues.register_late
 
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then
@@ -2160,7 +2154,7 @@ let post_parsing_initialization command_opt =
       Out_channel.newline stderr ) ;
     let exitcode = L.exit_code_of_exception exn in
     L.log_uncaught_exception exn ~exitcode ;
-    late_epilogue () ;
+    Epilogues.late () ;
     Pervasives.exit exitcode
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
