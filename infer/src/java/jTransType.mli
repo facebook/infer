@@ -89,6 +89,3 @@ val object_type_to_string : JBasics.object_type -> string
 val vt_to_java_type : JBasics.value_type -> Typ.Procname.java_type
 
 val cn_to_java_type : JBasics.class_name -> Typ.Procname.java_type
-
-val add_models_types : Tenv.t -> unit
-(** Add the types of the models to the type environment passed as parameter *)

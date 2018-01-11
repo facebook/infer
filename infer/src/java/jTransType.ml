@@ -491,10 +491,3 @@ let rec expr_type (context: JContext.t) expr =
     specified in ms. *)
 let return_type program tenv ms =
   match JBasics.ms_rtype ms with None -> Typ.mk Tvoid | Some vt -> value_type program tenv vt
-
-
-let add_models_types tenv =
-  let add_type t typename struct_typ =
-    if not (Tenv.mem t typename) then Tenv.add tenv typename struct_typ
-  in
-  Tenv.iter (add_type tenv) !JClasspath.models_tenv
