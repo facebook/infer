@@ -965,6 +965,8 @@ let parse_args ~usage initial_action ?initial_command args =
   parse_loop () ; curr_usage
 
 
+let keep_args_file = ref false
+
 let parse ?config_file ~usage action initial_command =
   let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
   let inferconfig_args =
@@ -1008,6 +1010,7 @@ let parse ?config_file ~usage action initial_command =
          to prevent this from happening *)
       let file = Filename.temp_file "args_" "" in
       Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
+      if not !keep_args_file then Utils.unlink_file_on_exit file ;
       "@" ^ file
     else ""
   in

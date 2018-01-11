@@ -9,6 +9,15 @@
 open! IStd
 module F = Format
 
+let late_callback = ref (fun () -> ())
+
+let register_late f =
+  let g = !late_callback in
+  late_callback := fun () -> f () ; g ()
+
+
+let late () = !late_callback ()
+
 (* Run the epilogues when we get SIGINT (Control-C). We do not want to mask SIGINT unless at least
    one epilogue has been registered, so make this value lazy. *)
 let activate_run_epilogues_on_signal =
@@ -18,7 +27,7 @@ let activate_run_epilogues_on_signal =
          (Filename.basename Sys.executable_name)
          (Signal.to_string s) ;
        (* Invoke the callback that runs at the end of uncaught_exception_handler *)
-       Config.late_epilogue () ;
+       late () ;
        (* Epilogues are registered with [at_exit] so exiting will make them run. *)
        Pervasives.exit 0
      in
@@ -27,7 +36,7 @@ let activate_run_epilogues_on_signal =
 
 let register ~f desc =
   let f_no_exn () =
-    if not !ProcessPool.in_child then
+    if not !ProcessPoolState.in_child then
       try f () with exn ->
         F.eprintf "Error while running epilogue \"%s\":@ %a.@ Powering through...@." desc Exn.pp
           exn

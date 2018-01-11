@@ -8,9 +8,6 @@
  *)
 open! IStd
 
-(** Keep track of whether the current execution is in a child process *)
-let in_child = ref false
-
 type t = {mutable num_processes: int; jobs: int}
 
 exception Execution_error of string
@@ -39,7 +36,7 @@ let should_wait counter = counter.num_processes >= counter.jobs
 let start_child ~f ~pool x =
   match Unix.fork () with
   | `In_the_child ->
-      in_child := true ;
+      ProcessPoolState.in_child := true ;
       f x ;
       Pervasives.exit 0
   | `In_the_parent _pid ->
