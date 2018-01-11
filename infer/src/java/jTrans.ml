@@ -437,7 +437,6 @@ let create_sil_deref exp typ loc =
 let rec expression (context: JContext.t) pc expr =
   let program = context.program in
   let loc = get_location context.source_file context.impl pc in
-  let file = loc.Location.file in
   let tenv = JContext.get_tenv context in
   let type_of_expr = JTransType.expr_type context expr in
   let trans_var pvar =
@@ -538,7 +537,7 @@ let rec expression (context: JContext.t) pc expr =
   | JBir.StaticField (cn, fs) ->
       let class_exp =
         let classname = Mangled.from_string (JBasics.cn_name cn) in
-        let var_name = Pvar.mk_global classname (Pvar.TUFile file) in
+        let var_name = Pvar.mk_global classname in
         Exp.Lvar var_name
       in
       let instrs, sil_expr = ([], class_exp) in
@@ -760,7 +759,6 @@ let instruction (context: JContext.t) pc instr : translation =
   let ret_var = Pvar.get_ret_pvar proc_name in
   let ret_type = Procdesc.get_ret_type context.procdesc in
   let loc = get_location context.source_file context.impl pc in
-  let file = loc.Location.file in
   let match_never_null = Inferconfig.never_return_null_matcher in
   let create_node node_kind sil_instrs =
     Procdesc.create_node context.procdesc loc node_kind sil_instrs
@@ -830,7 +828,7 @@ let instruction (context: JContext.t) pc instr : translation =
     | JBir.AffectStaticField (cn, fs, e_rhs) ->
         let class_exp =
           let classname = Mangled.from_string (JBasics.cn_name cn) in
-          let var_name = Pvar.mk_global classname (Pvar.TUFile file) in
+          let var_name = Pvar.mk_global classname in
           Exp.Lvar var_name
         in
         let stml1, sil_expr_lhs = ([], class_exp) in
