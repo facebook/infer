@@ -277,11 +277,11 @@ class Wrapper:
                 logging.info('Nothing to analyze')
             else:
                 self.timer.start('Running Buck ...')
-                javac_config = [
+                buck_config = [
                     '--config', 'tools.javac=' + infer_script,
                     '--config', 'client.id=infer.java',
                     '--config', 'java.abi_generation_mode=class']
-                buck_cmd = self.buck_cmd + javac_config
+                buck_cmd = self.buck_cmd + buck_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
             self._collect_results(start_time)
