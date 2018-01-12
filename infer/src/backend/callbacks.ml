@@ -89,10 +89,7 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks call_graph exe_env =
   let saved_language = !Config.curr_language in
-  let procs_to_analyze =
-    (* analyze all the currently defined procedures *)
-    Cg.get_defined_nodes call_graph
-  in
+  (* Create and register on-demand analysis callback *)
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some pdesc ->
@@ -103,17 +100,17 @@ let iterate_callbacks call_graph exe_env =
   let analyze_ondemand summary proc_desc =
     iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
   in
-  let callbacks = {Ondemand.analyze_ondemand; get_proc_desc} in
-  (* Create and register on-demand analysis callback *)
-  let analyze_proc_name pname =
-    match Ondemand.get_proc_desc pname with
-    | None ->
-        L.internal_error "Could not find proc desc for %a" Typ.Procname.pp pname
-    | Some pdesc ->
-        ignore (Ondemand.analyze_proc_desc pdesc pdesc)
+  Ondemand.set_callbacks {Ondemand.analyze_ondemand; get_proc_desc} ;
+  (* Invoke procedure callbacks using on-demand analysis schedulling *)
+  let procs_to_analyze =
+    (* analyze all the currently defined procedures *)
+    Cg.get_defined_nodes call_graph
   in
-  Ondemand.set_callbacks callbacks ;
-  (* Invoke procedure callbacks using on-demand anlaysis schedulling *)
+  let analyze_proc_name pname =
+    Option.iter
+      ~f:(fun pdesc -> ignore (Ondemand.analyze_proc_desc pdesc pdesc))
+      (Ondemand.get_proc_desc pname)
+  in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
   iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;
