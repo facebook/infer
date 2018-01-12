@@ -42,14 +42,14 @@ let replace_statement =
      values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
   ResultsDatabase.register_statement
     {|
-INSERT OR REPLACE INTO attributes
+INSERT OR REPLACE INTO procedures
 SELECT :pname, :akind, :sfile, :pattr
 FROM (
   SELECT NULL
   FROM (
     SELECT COALESCE(MAX(attr_kind),-1) AS attr_kind,
            COALESCE(MAX(source_file),"") AS source_file
-    FROM attributes
+    FROM procedures
     WHERE proc_name = :pname )
   WHERE attr_kind < :akind
         OR (attr_kind = :akind AND source_file < :sfile) )|}
@@ -72,7 +72,7 @@ let find_more_defined_statement =
   ResultsDatabase.register_statement
     {|
 SELECT attr_kind
-FROM attributes
+FROM procedures
 WHERE proc_name = :pname
       AND attr_kind > :akind
 |}
@@ -90,12 +90,12 @@ let should_try_to_update pname_blob akind =
 
 
 let select_statement =
-  ResultsDatabase.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
+  ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_name = :k"
 
 
 let select_defined_statement =
   ResultsDatabase.register_statement
-    "SELECT proc_attributes FROM attributes WHERE proc_name = :k AND attr_kind = %Ld"
+    "SELECT proc_attributes FROM procedures WHERE proc_name = :k AND attr_kind = %Ld"
     (int64_of_attributes_kind ProcDefined)
 
 

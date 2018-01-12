@@ -92,7 +92,7 @@ let check_cfg_connectedness cfg =
 
 
 let load_statement =
-  ResultsDatabase.register_statement "SELECT cfgs FROM cfg WHERE source_file = :k"
+  ResultsDatabase.register_statement "SELECT cfgs FROM source_files WHERE source_file = :k"
 
 
 module SQLite = SqliteUtils.MarshalledData (struct
@@ -277,7 +277,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
 
 
 let store_statement =
-  ResultsDatabase.register_statement "INSERT OR REPLACE INTO cfg VALUES (:source, :cfgs)"
+  ResultsDatabase.register_statement "INSERT OR REPLACE INTO source_files VALUES (:source, :cfgs)"
 
 
 let store source_file cfg =
@@ -632,6 +632,6 @@ let exists_for_source_file source =
 
 let get_captured_source_files () =
   let db = ResultsDatabase.get_database () in
-  Sqlite3.prepare db "SELECT source_file FROM cfg"
+  Sqlite3.prepare db "SELECT source_file FROM source_files"
   |> SqliteUtils.sqlite_result_rev_list_step db ~log:"getting all source files"
   |> List.filter_map ~f:(Option.map ~f:SourceFile.SQLite.deserialize)
