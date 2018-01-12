@@ -284,7 +284,22 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           List.map
             ~f:(fun sink ->
               let call_site = Sink.call_site sink in
-              let desc = Format.asprintf "Call to %a" Typ.Procname.pp (CallSite.pname call_site) in
+              let indexes = Sink.indexes sink in
+              let indexes_str =
+                match IntSet.cardinal indexes with
+                | 0 ->
+                    ""
+                | 1 ->
+                    " with tainted index " ^ string_of_int (IntSet.choose indexes)
+                | _ ->
+                    Format.asprintf " with tainted indexes %a"
+                      (PrettyPrintable.pp_collection ~pp_item:Int.pp)
+                      (IntSet.elements indexes)
+              in
+              let desc =
+                Format.asprintf "Call to %a%s" Typ.Procname.pp (CallSite.pname call_site)
+                  indexes_str
+              in
               Errlog.make_trace_element 0 (CallSite.loc call_site) desc [] )
             expanded_sinks
         in
@@ -311,7 +326,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | Some (actual_trace, _)
             -> (
               let sink' =
-                let indexes = TraceDomain.get_footprint_indexes actual_trace in
+                let indexes = IntSet.singleton sink_index in
                 TraceDomain.Sink.make ~indexes (TraceDomain.Sink.kind sink) callee_site
               in
               let actual_trace' = TraceDomain.add_sink sink' actual_trace in
