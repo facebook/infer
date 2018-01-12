@@ -13,7 +13,8 @@ ANALYZER_STRING=$(shell if [ -n $(ANALYZER) ]; then printf ' ($(ANALYZER))'; fi)
 default: compile
 
 issues.exp.test$(TEST_SUFFIX): infer-out$(TEST_SUFFIX)/report.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) --results-dir $(<D) \
+	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
 .PHONY: compile
 compile: $(OBJECTS)

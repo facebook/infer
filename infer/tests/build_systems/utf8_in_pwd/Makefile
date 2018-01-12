@@ -92,7 +92,8 @@ infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	    make clean all)
 
 issues-%.exp.test: infer-out-%/report.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ \
+	  -o $(<D) --from-json-report $<
 
 issues.exp.test: issues-cmake.exp.test issues-gradle.exp.test issues-javac.exp.test \
                  issues-make.exp.test

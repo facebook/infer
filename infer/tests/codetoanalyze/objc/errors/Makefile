@@ -139,9 +139,9 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
 
 issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
 	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.all \
-	  --from-json-report infer-out-all/report.json
+	  -o infer-out-all --from-json-report infer-out-all/report.json
 	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.arc \
-	  --from-json-report infer-out-arc/report.json
+	  -o infer-out-arc --from-json-report infer-out-arc/report.json
 	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
-	  --from-json-report infer-out/report.json
+	  -o infer-out --from-json-report infer-out/report.json
 	$(QUIET)cat $@.all $@.arc $@.default > $@

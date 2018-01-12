@@ -22,7 +22,7 @@ $(REPORT): $(JAVA_DEPS) $(MAKEFILE_LIST) SimpleLeak.java
 	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) -- javac SimpleLeak.java)
 
 $(EXPECTED_TEST_OUTPUT): $(REPORT)
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(<D) \
 		--issues-fields "qualifier_contains_potential_exception_note,bug_type,file,procedure,line_offset" \
 		--from-json-report $(REPORT) \
 		--issues-tests $(EXPECTED_TEST_OUTPUT)

@@ -19,13 +19,13 @@ default: analyze
 analyze: $(INFER_OUT)/differential/introduced.json
 
 introduced.exp.test: $(INFER_OUT)/differential/introduced.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
 		--from-json-report $(INFER_OUT)/differential/introduced.json \
 		--issues-tests introduced.exp.test
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
 		--from-json-report $(INFER_OUT)/differential/fixed.json \
 		--issues-tests fixed.exp.test
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
 		--from-json-report $(INFER_OUT)/differential/preexisting.json \
 		--issues-tests preexisting.exp.test
 

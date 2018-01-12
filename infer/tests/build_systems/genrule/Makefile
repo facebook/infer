@@ -30,7 +30,7 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 genrule: $(JSON_REPORT)
 
 
-$(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
+$(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES) $(MAKEFILE_LIST)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck genrule for Java integration,\
@@ -38,7 +38,8 @@ $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(BUCK) build --no-cache $(INFER_TARGET))
 	$(QUIET)touch $@
 
-infer-out/report.json: $(JSON_REPORT)
+infer-out/report.json: $(JSON_REPORT) $(MAKEFILE_LIST)
+	$(QUIET)$(REMOVE_DIR) infer-out
 	$(QUIET)$(MKDIR_P) infer-out
 #	the report contains absolute paths
 	$(QUIET)sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@

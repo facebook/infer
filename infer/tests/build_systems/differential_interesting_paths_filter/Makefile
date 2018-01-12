@@ -31,13 +31,13 @@ $(MODIFIED_FILES_FILE):
 		sed 's#__ABSOLUTE_PATH__#$(CURDIR)#g' '$(MODIFIED_FILES_FILE).template' > $@)
 
 current.exp.test: $(CURRENT_REPORT)
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(<D) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(CURRENT_DIR)/report.json \
 		--issues-tests current.exp.test
 
 previous.exp.test: $(PREVIOUS_REPORT)
-	$(QUIET)$(INFER_BIN) report \
+	$(QUIET)$(INFER_BIN) report -o $(<D) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(PREVIOUS_DIR)/report.json \
 		--issues-tests previous.exp.test
