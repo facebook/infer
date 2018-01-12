@@ -36,19 +36,18 @@ def create_genrules(
     name,
     srcs
     ):
-  if 'GENERATE_INFER_GENRULES' in os.environ and srcs:
-    for analyzer in analyzers:
-      analyzer_name = name + '_{}'.format(analyzer)
-      genrule(
-        name = analyzer_name,
-        srcs=srcs,
-        cmd = ' '.join([
+  for analyzer in analyzers:
+    analyzer_name = name + '_{}'.format(analyzer)
+    genrule(
+      name = analyzer_name,
+      srcs=srcs,
+      cmd = ' '.join([
           os.getenv('INFER_BIN', 'infer'),
           '-a', analyzer,
           '--results-dir', '$OUT',
           '--classpath', '$(classpath :{})'.format(name),
           '--sourcepath', '$SRCDIR',
           '--generated-classes', '$(location :{})'.format(name),
-        ]),
-        out = '{}_out'.format(analyzer),
-      )
+      ]),
+      out = '{}_out'.format(analyzer),
+    )

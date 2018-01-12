@@ -34,8 +34,7 @@ $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES) $(MAKEFILE_LIST)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck genrule for Java integration,\
-	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 GENERATE_INFER_GENRULES=1 \
-	$(BUCK) build --no-cache $(INFER_TARGET))
+	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 $(BUCK) build --no-cache $(INFER_TARGET))
 	$(QUIET)touch $@
 
 infer-out/report.json: $(JSON_REPORT) $(MAKEFILE_LIST)
