@@ -157,7 +157,7 @@ module SymLinear = struct
 
   let mult_const : t -> int -> t = fun x n -> M.map (( * ) n) x
 
-  let div_const : t -> int -> t = fun x n -> M.map (( / ) n) x
+  let div_const : t -> int -> t = fun x n -> M.map (fun c -> c / n) x
 
   (* Returns a symbol when the map contains only one symbol s with a
      given coefficient. *)

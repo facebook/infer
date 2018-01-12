@@ -73,3 +73,10 @@ void modulo_call_Bad_FN(unsigned int len, int i) {
   char arr[len];
   arr[modulo_signed(i, len)] = 123;
 }
+
+int division_of_zero_Good(int x) {
+  int i = 4 * x;
+  i /= 2;
+  i /= 2;
+  return i;
+}
