@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_2" ;
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Call _fun__dispatch_once \n   n$6=*&a:DispatchA* [line 39, column 24]\n  _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_block_attribute_once:long*,(_fun_objc_blockDispatchA_block_attribute_2,n$6):_fn_(*)) block_params [line 39, column 3]\n " shape="box"]
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" [label="4:  Call _fun__dispatch_once \n   n$6=*&a:DispatchA* [line 39, column 24]\n  _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_block_attribute_once:long*,(_fun_objc_blockDispatchA_block_attribute_2,(n$6 &a)):_fn_(*)) block_params [line 39, column 3]\n " shape="box"]
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_3" ;

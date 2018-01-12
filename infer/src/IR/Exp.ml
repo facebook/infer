@@ -246,8 +246,11 @@ let rec pp_ pe pp_t f e =
   | Exn e ->
       F.fprintf f "EXN %a" pp_exp e
   | Closure {name; captured_vars} ->
-      let id_exps = List.map ~f:(fun (id_exp, _, _) -> id_exp) captured_vars in
-      F.fprintf f "(%a)" (Pp.comma_seq pp_exp) (Const (Cfun name) :: id_exps)
+      if List.is_empty captured_vars then F.fprintf f "(%a)" pp_exp (Const (Cfun name))
+      else
+        F.fprintf f "(%a,%a)" pp_exp (Const (Cfun name))
+          (Pp.comma_seq (pp_captured_var pe pp_t))
+          captured_vars
   | Lvar pv ->
       Pvar.pp pe f pv
   | Lfield (e, fld, _) ->
@@ -264,6 +267,14 @@ let rec pp_ pe pp_t f e =
         (pp_if_some pp_len "len") dynamic_length
         (pp_if (not (String.equal "" subt_s)) Subtype.pp "sub_t")
         subtype
+
+
+and pp_captured_var pe pp_t f (exp, var, _) =
+  match exp with
+  | Lvar evar when Pvar.equal var evar ->
+      F.fprintf f "%a" (Pvar.pp pe) var
+  | _ ->
+      F.fprintf f "(%a %a)" (pp_ pe pp_t) exp (Pvar.pp pe) var
 
 
 let pp_printenv pe pp_typ f e = pp_ pe (pp_typ pe) f e
