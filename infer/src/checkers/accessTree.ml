@@ -440,7 +440,6 @@ module PathSet (Config : Config) = struct
   let mem access_path tree =
     match get_node access_path tree with None -> false | Some (is_mem, _) -> is_mem
 
-
   (* print as a set of paths rather than a map of paths to bools *)
   let pp fmt tree =
     let collect_path acc access_path (is_mem, _) = if is_mem then access_path :: acc else acc in
