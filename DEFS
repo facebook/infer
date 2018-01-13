@@ -1,7 +1,5 @@
 import os
 
-analyzers = ['checkers']
-
 original_java_library = java_library
 def java_library(
     name,
@@ -15,7 +13,7 @@ def java_library(
     **kwargs
   )
 
-  create_genrules(name, srcs)
+  create_infer_genrule(name, srcs)
 
 original_android_library = android_library
 def android_library(
@@ -30,24 +28,22 @@ def android_library(
     **kwargs
   )
 
-  create_genrules(name, srcs)
+  create_infer_genrule(name, srcs)
 
-def create_genrules(
+def create_infer_genrule(
     name,
     srcs
     ):
-  for analyzer in analyzers:
-    analyzer_name = name + '_{}'.format(analyzer)
-    genrule(
-      name = analyzer_name,
-      srcs=srcs,
-      cmd = ' '.join([
-          os.getenv('INFER_BIN', 'infer'),
-          '-a', analyzer,
-          '--results-dir', '$OUT',
-          '--classpath', '$(classpath :{})'.format(name),
-          '--sourcepath', '$SRCDIR',
-          '--generated-classes', '$(location :{})'.format(name),
-      ]),
-      out = '{}_out'.format(analyzer),
-    )
+  genrule_name = name + '_infer'
+  genrule(
+    name = genrule_name,
+    srcs=srcs,
+    cmd = ' '.join([
+        os.getenv('INFER_BIN', 'infer'),
+        '--results-dir', '$OUT',
+        '--classpath', '$(classpath :{})'.format(name),
+        '--sourcepath', '$SRCDIR',
+        '--generated-classes', '$(location :{})'.format(name),
+    ]),
+    out = 'infer_out',
+  )
