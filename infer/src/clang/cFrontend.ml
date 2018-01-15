@@ -31,7 +31,7 @@ let compute_icfg trans_unit_ctx tenv ast =
       assert false
 
 
-(* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
+(* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
 
 let init_global_state_capture () =
   Ident.NameGenerator.reset () ;
@@ -66,5 +66,9 @@ let do_source_file translation_unit_context ast =
     Dotty.print_icfg_dotty source_file cfg ;
     Cg.save_call_graph_dotty source_file call_graph ) ;
   L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg ;
+  L.(debug Capture Verbose)
+    "# Procedures started: %d@\n# Procedures completed: %d@\n@\n"
+    !CFrontend_config.procedures_attempted
+    (!CFrontend_config.procedures_attempted - !CFrontend_config.procedures_failed) ;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)

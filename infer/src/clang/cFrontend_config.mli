@@ -173,6 +173,10 @@ val sil_types_map : Typ.desc Clang_ast_extend.TypePointerMap.t ref
 (** Map from type pointers (clang pointers and types created later by frontend) to sil types
     Populated during frontend execution when new type is found *)
 
+val procedures_attempted : int ref
+
+val procedures_failed : int ref
+
 val reset_global_state : unit -> unit
 
 val tableaux_evaluation : bool

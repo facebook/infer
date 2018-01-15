@@ -173,11 +173,17 @@ let log_out = ref Format.std_formatter
 
 let sil_types_map = ref Clang_ast_extend.TypePointerMap.empty
 
+let procedures_attempted = ref 0
+
+let procedures_failed = ref 0
+
 let reset_global_state () =
   enum_map := ClangPointers.Map.empty ;
   global_translation_unit_decls := [] ;
   log_out := Format.std_formatter ;
-  sil_types_map := Clang_ast_extend.TypePointerMap.empty
+  sil_types_map := Clang_ast_extend.TypePointerMap.empty ;
+  procedures_attempted := 0 ;
+  procedures_failed := 0
 
 
 let tableaux_evaluation = false

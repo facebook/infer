@@ -17,6 +17,7 @@ module L = Logging
 let protect ~f ~recover ~pp_context =
   let log_and_recover ~print fmt =
     recover () ;
+    incr CFrontend_config.procedures_failed ;
     (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
   in
   try f () with
@@ -48,6 +49,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       body has_return_param is_objc_method outer_context_opt extra_instrs =
     L.(debug Capture Verbose)
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
+    incr CFrontend_config.procedures_attempted ;
     let recover () =
       Cfg.remove_proc_desc cfg procname ;
       CMethod_trans.create_external_procdesc cfg procname is_objc_method None
