@@ -106,7 +106,7 @@ def get_normalized_targets(targets):
     # this expands the targets passed on the command line, then filters away
     # targets that are not Java/Android. you need to change this if you
     # care about something other than Java/Android
-    TARGET_TYPES = "kind('android_library|java_library', deps('%s'))"
+    TARGET_TYPES = "kind('^(android|java)_library$', deps('%s'))"
     BUCK_GET_JAVA_TARGETS = ['buck', 'query', TARGET_TYPES]
     buck_cmd = BUCK_GET_JAVA_TARGETS + targets
 

@@ -132,8 +132,8 @@ let parameters_with_argument =
 
 
 let get_accepted_buck_kinds_pattern () =
-  if Option.is_some Config.buck_compilation_database then "(apple|cxx)_(binary|library|test)"
-  else "(apple|cxx)_(binary|library)"
+  if Option.is_some Config.buck_compilation_database then "^(apple|cxx)_(binary|library|test)$"
+  else "^(apple|cxx)_(binary|library)$"
 
 
 let max_command_line_length = 50
