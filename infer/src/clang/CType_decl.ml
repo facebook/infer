@@ -320,14 +320,3 @@ let class_from_pointer_type tenv qual_type =
       typename
   | _ ->
       assert false
-
-
-let get_class_type_np tenv expr_info obj_c_message_expr_info =
-  let qt =
-    match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-    | `Class qt ->
-        qt
-    | _ ->
-        expr_info.Clang_ast_t.ei_qual_type
-  in
-  qual_type_to_sil_type tenv qt

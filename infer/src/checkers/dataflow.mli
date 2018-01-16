@@ -49,5 +49,3 @@ end
 
 (** Functor to create an instance of a dataflow analysis. *)
 module MakeDF (St : DFStateType) : DF with type state = St.t
-
-val callback_test_dataflow : Callbacks.proc_callback_t

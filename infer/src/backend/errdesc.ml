@@ -101,71 +101,6 @@ let find_in_node_or_preds start_node f_node_instr =
   find start_node
 
 
-(** Find the Set instruction used to assign [id] to a program variable, if any *)
-let find_variable_assigment node id : Sil.instr option =
-  let find_set _ instr =
-    match instr with
-    | Sil.Store (Exp.Lvar _, _, e, _) when Exp.equal (Exp.Var id) e ->
-        Some instr
-    | _ ->
-        None
-  in
-  find_in_node_or_preds node find_set
-
-
-(** Check if a nullify instruction exists for the program variable after the given instruction *)
-let find_nullify_after_instr node instr pvar : bool =
-  let node_instrs = Procdesc.Node.get_instrs node in
-  let found_instr = ref false in
-  let find_nullify = function
-    | Sil.Nullify (pv, _) when !found_instr ->
-        Pvar.equal pv pvar
-    | instr_ ->
-        if Sil.equal_instr instr instr_ then found_instr := true ;
-        false
-  in
-  List.exists ~f:find_nullify node_instrs
-
-
-(** Find the other prune node of a conditional
-    (e.g. the false branch given the true branch of a conditional) *)
-let find_other_prune_node node =
-  match Procdesc.Node.get_preds node with
-  | [n_pre] -> (
-    match Procdesc.Node.get_succs n_pre with
-    | [n1; n2] ->
-        if Procdesc.Node.equal n1 node then Some n2 else Some n1
-    | _ ->
-        None )
-  | _ ->
-      None
-
-
-(** Return true if [id] is assigned to a program variable which is then nullified *)
-let id_is_assigned_then_dead node id =
-  match find_variable_assigment node id with
-  | Some (Sil.Store (Exp.Lvar pvar, _, _, _) as instr)
-    when Pvar.is_local pvar || Pvar.is_callee pvar ->
-      let is_prune =
-        match Procdesc.Node.get_kind node with Procdesc.Node.Prune_node _ -> true | _ -> false
-      in
-      let prune_check = function
-        (* if prune node, check that it's also nullified in the other branch *)
-        | Some node' -> (
-          match Procdesc.Node.get_instrs node' with
-          | instr' :: _ ->
-              find_nullify_after_instr node' instr' pvar
-          | _ ->
-              false )
-        | _ ->
-            false
-      in
-      find_nullify_after_instr node instr pvar
-      && (not is_prune || prune_check (find_other_prune_node node))
-  | _ ->
-      false
-
-
 (** Find the function call instruction used to initialize normal variable [id],
     and return the function name and arguments *)
 let find_normal_variable_funcall (node: Procdesc.Node.t) (id: Ident.t)
@@ -1126,9 +1061,6 @@ let explain_array_access tenv deref_str prop loc =
   explain_access_ tenv ~outermost_array:true deref_str prop loc
 
 
-(** Produce a description of the memory access performed in the current instruction, if any. *)
-let explain_memory_access tenv deref_str prop loc = explain_access_ tenv deref_str prop loc
-
 (* offset of an expression found following a program variable *)
 type pvar_off =
   (* value of a pvar *)
@@ -1264,23 +1196,8 @@ let explain_divide_by_zero tenv exp node loc =
       Localise.no_desc
 
 
-(** explain a return expression required *)
-let explain_return_expression_required loc typ =
-  let typ_str =
-    let pp fmt = Typ.pp_full Pp.text fmt typ in
-    F.asprintf "%t" pp
-  in
-  Localise.desc_return_expression_required typ_str loc
-
-
-(** explain a return statement missing *)
-let explain_return_statement_missing loc = Localise.desc_return_statement_missing loc
-
 (** explain a fronend warning *)
 let explain_frontend_warning loc = Localise.desc_frontend_warning loc
-
-(** explain a comparing floats for equality *)
-let explain_comparing_floats_for_equality loc = Localise.desc_comparing_floats_for_equality loc
 
 (** explain a condition which is always true or false *)
 let explain_condition_always_true_false tenv i cond node loc =

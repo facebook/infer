@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open Objc_models
 
 let is_modelled_static_function name =
   let modelled_functions = ["_dispatch_once"; "CFAutorelease"; "CFBridgingRelease"] in
@@ -16,10 +15,6 @@ let is_modelled_static_function name =
 
 
 let class_equal class_typename class_name = String.equal (Typ.Name.name class_typename) class_name
-
-let is_alloc_model typ pname =
-  Core_foundation_model.is_core_lib_create typ (Typ.Procname.to_string pname)
-
 
 let is_builtin_expect pname =
   String.equal (Typ.Procname.to_string pname) CFrontend_config.builtin_expect
@@ -68,8 +63,6 @@ let is_assert_log pname =
   | _ ->
       false
 
-
-let is_objc_memory_model_controlled o = Core_foundation_model.is_objc_memory_model_controlled o
 
 let get_predefined_ms_method condition class_name method_name method_kind mk_procname lang
     arguments return_type attributes builtin =

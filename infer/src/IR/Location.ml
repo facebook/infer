@@ -19,9 +19,6 @@ type t =
 
 let equal = [%compare.equal : t]
 
-(** Dump a location *)
-let d (loc: t) = L.add_print_action (L.PTloc, Obj.repr loc)
-
 let none file = {line= -1; col= -1; file}
 
 let dummy = none (SourceFile.invalid __FILE__)

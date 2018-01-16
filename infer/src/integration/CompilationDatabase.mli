@@ -13,16 +13,6 @@ type t
 
 type compilation_data = {dir: string; command: string; args: string}
 
-val empty : unit -> t
-
-val get_size : t -> int
-
-val iter : t -> (SourceFile.t -> compilation_data -> unit) -> unit
-
 val filter_compilation_data : t -> f:(SourceFile.t -> bool) -> compilation_data list
-
-val find : t -> SourceFile.t -> compilation_data
-
-val decode_json_file : t -> [< `Escaped of string | `Raw of string] -> unit
 
 val from_json_files : [< `Escaped of string | `Raw of string] list -> t

@@ -108,11 +108,6 @@ let dummy_stmt () =
   Clang_ast_t.NullStmt ({Clang_ast_t.si_pointer= pointer; si_source_range= source_range}, [])
 
 
-let make_stmt_info di =
-  { Clang_ast_t.si_pointer= di.Clang_ast_t.di_pointer
-  ; si_source_range= di.Clang_ast_t.di_source_range }
-
-
 let make_expr_info qt vk objc_kind =
   {Clang_ast_t.ei_qual_type= qt; ei_value_kind= vk; ei_object_kind= objc_kind}
 
@@ -147,10 +142,6 @@ let make_decl_ref_qt k decl_ptr name is_hidden qt =
 
 let make_decl_ref_expr_info decl_ref =
   {Clang_ast_t.drti_decl_ref= Some decl_ref; drti_found_decl_ref= None}
-
-
-let make_general_expr_info qt vk ok =
-  {Clang_ast_t.ei_qual_type= qt; ei_value_kind= vk; ei_object_kind= ok}
 
 
 let make_message_expr param_qt selector decl_ref_exp stmt_info add_cast =
@@ -202,19 +193,6 @@ let make_next_object_exp stmt_info item items =
   let nil_exp = create_nil stmt_info in
   let loop_cond = make_binary_stmt cast nil_exp stmt_info expr_info boi' in
   (assignment, loop_cond)
-
-
-(* 1. dispatch_once(v,block_def) is transformed as: block_def() *)
-(* 2. dispatch_once(v,block_var) is transformed as n$1 = *&block_var; n$2=n$1() *)
-let translate_dispatch_function stmt_info stmt_list n =
-  let open Clang_ast_t in
-  match stmt_list with
-  | _ :: args_stmts ->
-      let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
-      let arg_stmt = try List.nth_exn args_stmts n with Failure _ -> assert false in
-      CallExpr (stmt_info, [arg_stmt], expr_info_call)
-  | _ ->
-      assert false
 
 
 (* We translate an expression with a conditional*)

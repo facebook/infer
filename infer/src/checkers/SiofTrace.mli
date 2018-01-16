@@ -17,6 +17,4 @@ module GlobalVarSet : PrettyPrintable.PPSet with type elt = Pvar.t
 
 val make_access : Pvar.t -> Location.t -> Sink.t
 
-val is_intraprocedural_access : Sink.t -> bool
-
 val trace_of_error : Location.t -> string -> sink_path -> Errlog.loc_trace_elem list

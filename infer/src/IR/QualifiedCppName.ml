@@ -13,8 +13,6 @@ module L = Logging
 (* internally it uses reversed list to store qualified name, for example: ["get", "shared_ptr<int>", "std"]*)
 type t = string list [@@deriving compare]
 
-let equal = [%compare.equal : t]
-
 let empty = []
 
 let append_qualifier quals ~qual = List.cons qual quals

@@ -55,8 +55,6 @@ val void : string
 
 val this : Mangled.t
 
-val infer_undefined_cl : string
-
 val clone_name : string
 
 val field_cst : string

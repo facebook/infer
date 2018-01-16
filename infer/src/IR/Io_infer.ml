@@ -212,37 +212,13 @@ end
 module Xml = struct
   let tag_branch = "branch"
 
-  let tag_call_trace = "call_trace"
-
-  let tag_callee = "callee"
-
-  let tag_callee_id = "callee_id"
-
-  let tag_caller = "caller"
-
-  let tag_caller_id = "caller_id"
-
-  let tag_class = "class"
-
-  let tag_code = "code"
-
-  let tag_description = "description"
-
   let tag_err = "err"
-
-  let tag_flags = "flags"
 
   let tag_file = "file"
 
-  let tag_hash = "hash"
-
   let tag_in_calls = "in_calls"
 
-  let tag_key = "key"
-
   let tag_kind = "kind"
-
-  let tag_level = "level"
 
   let tag_line = "line"
 
@@ -252,27 +228,13 @@ module Xml = struct
 
   let tag_name_id = "name_id"
 
-  let tag_node = "node"
-
   let tag_out_calls = "out_calls"
-
-  let tag_precondition = "precondition"
-
-  let tag_procedure = "procedure"
-
-  let tag_procedure_id = "procedure_id"
 
   let tag_proof_coverage = "proof_coverage"
 
   let tag_proof_trace = "proof_trace"
 
-  let tag_qualifier = "qualifier"
-
-  let tag_qualifier_tags = "qualifier_tags"
-
   let tag_rank = "rank"
-
-  let tag_severity = "severity"
 
   let tag_signature = "signature"
 
@@ -286,60 +248,7 @@ module Xml = struct
 
   let tag_top = "top"
 
-  let tag_trace = "trace"
-
-  let tag_type = "type"
-
   let tag_weight = "weight"
-
-  type tree = {name: string; attributes: (string * string) list; forest: node list}
-
-  and node = Tree of tree | String of string
-
-  let pp = F.fprintf
-
-  let create_tree name attributes forest = Tree {name; attributes; forest}
-
-  let pp_attribute fmt (name, value) = pp fmt "%s=\"%s\"" name value
-
-  let pp_attributes fmt l = Pp.seq pp_attribute fmt l
-
-  (** print an xml node *)
-  let rec pp_node newline indent fmt = function
-    | Tree {name; attributes; forest} ->
-        let indent' = if String.equal newline "" then "" else indent ^ "  " in
-        let space = if List.is_empty attributes then "" else " " in
-        let pp_inside fmt () =
-          match forest with
-          | [] ->
-              ()
-          | [(String s)] ->
-              pp fmt "%s" s
-          | _ ->
-              pp fmt "%s%a%s" newline (pp_forest newline indent') forest indent
-        in
-        pp fmt "%s<%s%s%a>%a</%s>%s" indent name space pp_attributes attributes pp_inside () name
-          newline
-    | String s ->
-        F.fprintf fmt "%s%s%s" indent s newline
-
-
-  and pp_forest newline indent fmt forest = List.iter ~f:(pp_node newline indent fmt) forest
-
-  let pp_prelude fmt = pp fmt "%s" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>@\n"
-
-  let pp_open fmt name = pp_prelude fmt ; pp fmt "<%s>@\n" name
-
-  let pp_close fmt name = pp fmt "</%s>@." name
-
-  let pp_inner_node fmt node = pp_node "\n" "" fmt node
-
-  (** print an xml document, if the first parameter is false on a single line without preamble *)
-  let pp_document on_several_lines fmt node =
-    let newline = if on_several_lines then "\n" else "" in
-    if on_several_lines then pp_prelude fmt ;
-    pp_node newline "" fmt node ;
-    if on_several_lines then pp fmt "@."
 end
 
 (* =============== END of module Xml =============== *)

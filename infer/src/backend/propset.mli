@@ -14,6 +14,8 @@ open! IStd
 
 (** {2 Sets of Propositions} *)
 
+[@@@warning "-32"]
+
 (** Sets of propositions.
     The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
 type t
@@ -73,10 +75,9 @@ val is_empty : t -> bool
 
 val filter : (Prop.normal Prop.t -> bool) -> t -> t
 
-(** {2 Pretty print} *)
+[@@@warning "+32"]
 
-val pp : Pp.env -> Prop.normal Prop.t -> Format.formatter -> t -> unit
-(** Pretty print a set of propositions, obtained from the given prop. *)
+(** {2 Pretty print} *)
 
 val d : Prop.normal Prop.t -> t -> unit
 (** dump a propset coming form the given initial prop *)

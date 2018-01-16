@@ -28,16 +28,11 @@ val check_equal : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> bool
 val check_disequal : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> bool
 (** Check whether [prop |- exp1!=exp2].  Result [false] means "don't know". *)
 
-val check_le : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Exp.t -> bool
-
 val type_size_comparable : Typ.t -> Typ.t -> bool
 (** Return true if the two types have sizes which can be compared *)
 
 val check_type_size_leq : Typ.t -> Typ.t -> bool
 (** Check <= on the size of comparable types *)
-
-val check_type_size_lt : Typ.t -> Typ.t -> bool
-(** Check < on the size of comparable types *)
 
 val check_atom : Tenv.t -> Prop.normal Prop.t -> atom -> bool
 (** Check whether [prop |- a].  Result [false] means "don't know". *)
@@ -101,11 +96,6 @@ val find_minimum_pure_cover :
   Tenv.t -> (Sil.atom list * 'a) list -> (Sil.atom list * 'a) list option
 (** Find minimum set of pi's  in [cases] whose disjunction covers true *)
 
-(** {2 Compute various lower or upper bounds} *)
-
-val compute_upper_bound_of_exp : Tenv.t -> Prop.normal Prop.t -> Exp.t -> IntLit.t option
-(** Computer an upper bound of an expression *)
-
 (** {2 Subtype checking} *)
 
 module Subtyping_check : sig
@@ -116,5 +106,3 @@ module Subtyping_check : sig
   (** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2],
       and returns the updated types in the true and false case, if they are possible *)
 end
-
-val get_overrides_of : Tenv.t -> Typ.t -> Typ.Procname.t -> (Typ.t * Typ.Procname.t) list

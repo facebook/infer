@@ -40,8 +40,6 @@ module Jprop = struct
 
   let to_prop = function Prop (_, p) -> p | Joined (_, p, _, _) -> p
 
-  let to_number = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
-
   let rec fav_add_dfs tenv fav = function
     | Prop (_, p) ->
         Prop.prop_fav_add_dfs tenv fav p
@@ -690,8 +688,6 @@ let pdesc_resolve_attributes proc_desc =
       (* this should not happen *)
       assert false
 
-
-let summary_exists proc_name = match get_summary proc_name with Some _ -> true | None -> false
 
 (** Save summary for the procedure into the spec database *)
 let store_summary (summ1: summary) =

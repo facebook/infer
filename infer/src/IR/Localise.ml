@@ -128,8 +128,6 @@ let no_desc : error_desc = {descriptions= []; advice= None; tags= []; dotty= Non
 (** verbatim desc from a string, not to be used for user-visible descs *)
 let verbatim_desc s = {no_desc with descriptions= [s]}
 
-let custom_desc s tags = {no_desc with descriptions= [s]; tags}
-
 let custom_desc_with_advice description advice tags =
   {no_desc with descriptions= [description]; advice= Some advice; tags}
 
@@ -139,14 +137,6 @@ let pp_error_desc fmt err_desc =
   let pp_item fmt s = F.fprintf fmt "%s" s in
   Pp.seq pp_item fmt err_desc.descriptions
 
-
-(** pretty print an error advice *)
-let pp_error_advice fmt err_desc =
-  match err_desc.advice with Some advice -> F.fprintf fmt "%s" advice | None -> ()
-
-
-(** get tags of error description *)
-let error_desc_get_tags err_desc = err_desc.tags
 
 let error_desc_get_dotty err_desc = err_desc.dotty
 
@@ -169,16 +159,6 @@ end
 let error_desc_extract_tag_value err_desc tag_to_extract =
   let find_value tag v = match v with t, _ when String.equal t tag -> true | _ -> false in
   match List.find ~f:(find_value tag_to_extract) err_desc.tags with Some (_, s) -> s | None -> ""
-
-
-let error_desc_to_tag_value_pairs err_desc = err_desc.tags
-
-(** returns the content of the value tag of the error_desc *)
-let error_desc_get_tag_value error_desc = error_desc_extract_tag_value error_desc Tags.value
-
-(** returns the content of the call_procedure tag of the error_desc *)
-let error_desc_get_tag_call_procedure error_desc =
-  error_desc_extract_tag_value error_desc Tags.call_procedure
 
 
 (** get the bucket value of an error_desc, if any *)
@@ -445,22 +425,6 @@ let deref_str_array_bound size_opt index_opt =
   ; problem_str= "could be accessed with " ^ index_str ^ " out of bounds" }
 
 
-(** dereference strings for an uninitialized access whose lhs has the given attribute *)
-let deref_str_uninitialized alloc_att_opt =
-  let tags = Tags.create () in
-  let creation_str =
-    match alloc_att_opt with
-    | Some Sil.Apred (Aresource ({ra_kind= Racquire} as ra), _) ->
-        "after allocation " ^ by_call_to_ra tags ra
-    | _ ->
-        "after declaration"
-  in
-  { tags
-  ; value_pre= Some "value"
-  ; value_post= None
-  ; problem_str= "was not initialized " ^ creation_str ^ " and is used" }
-
-
 (** Java unchecked exceptions errors *)
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   { no_desc with
@@ -673,10 +637,6 @@ let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_nu
 
 let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_checked
 
-let is_parameter_field_not_null_checked_desc desc =
-  is_parameter_not_null_checked_desc desc || is_field_not_null_checked_desc desc
-
-
 let is_double_lock_desc desc = has_tag desc Tags.double_lock
 
 let desc_allocation_mismatch alloc dealloc =
@@ -702,11 +662,6 @@ let desc_allocation_mismatch alloc dealloc =
       (using false dealloc)
   in
   {no_desc with descriptions= [description]; tags= !tags}
-
-
-let desc_comparing_floats_for_equality loc =
-  let tags = Tags.create () in
-  {no_desc with descriptions= ["Comparing floats for equality " ^ at_line tags loc]; tags= !tags}
 
 
 let desc_condition_always_true_false i cond_str_opt loc =
@@ -889,16 +844,6 @@ let desc_null_test_after_dereference expr_str line loc =
   {no_desc with descriptions= [description]; tags= !tags}
 
 
-let desc_return_expression_required typ_str loc =
-  let tags = Tags.create () in
-  Tags.update tags Tags.value typ_str ;
-  let description =
-    Format.sprintf "Return statement requires an expression of type %s %s" typ_str
-      (at_line tags loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-
 let desc_retain_cycle cycle_str loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:" ;
   let tags = Tags.create () in
@@ -923,16 +868,6 @@ let desc_registered_observer_being_deallocated pvar loc =
         ^ ". Being still registered as observer of the notification "
         ^ "center, the deallocated object " ^ obj_str ^ " may be notified in the future." ]
   ; tags= !tags }
-
-
-let desc_return_statement_missing loc =
-  let tags = Tags.create () in
-  {no_desc with descriptions= ["Return statement missing " ^ at_line tags loc]; tags= !tags}
-
-
-let desc_return_value_ignored proc_name loc =
-  let tags = Tags.create () in
-  {no_desc with descriptions= ["after " ^ call_to_at_line tags proc_name loc]; tags= !tags}
 
 
 let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =

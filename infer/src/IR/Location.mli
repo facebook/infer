@@ -18,9 +18,6 @@ type t =
 
 val equal : t -> t -> bool
 
-val d : t -> unit
-(** Dump a location. *)
-
 val none : SourceFile.t -> t
 (** Dummy source location for the given file *)
 

@@ -85,36 +85,6 @@ module Node = struct
     let compare = compare_id
   end)
 
-  let get_sliced_succs node f =
-    let visited = ref NodeSet.empty in
-    let rec slice_nodes nodes : NodeSet.t =
-      let do_node acc n =
-        visited := NodeSet.add n !visited ;
-        if f n then NodeSet.singleton n
-        else
-          NodeSet.union acc
-            (slice_nodes (List.filter ~f:(fun s -> not (NodeSet.mem s !visited)) n.succs))
-      in
-      List.fold ~f:do_node ~init:NodeSet.empty nodes
-    in
-    NodeSet.elements (slice_nodes node.succs)
-
-
-  let get_sliced_preds node f =
-    let visited = ref NodeSet.empty in
-    let rec slice_nodes nodes : NodeSet.t =
-      let do_node acc n =
-        visited := NodeSet.add n !visited ;
-        if f n then NodeSet.singleton n
-        else
-          NodeSet.union acc
-            (slice_nodes (List.filter ~f:(fun s -> not (NodeSet.mem s !visited)) n.preds))
-      in
-      List.fold ~f:do_node ~init:NodeSet.empty nodes
-    in
-    NodeSet.elements (slice_nodes node.preds)
-
-
   let get_exn node = node.exn
 
   (** Get the name of the procedure the node belongs to *)
@@ -130,35 +100,11 @@ module Node = struct
   (** Get the predecessors of the node *)
   let get_preds node = node.preds
 
-  (** Generates a list of nodes starting at a given node
-      and recursively adding the results of the generator *)
-  let get_generated_slope start_node generator =
-    let visited = ref NodeSet.empty in
-    let rec nodes n =
-      visited := NodeSet.add n !visited ;
-      let succs = List.filter ~f:(fun n -> not (NodeSet.mem n !visited)) (generator n) in
-      match succs with [hd] -> n :: nodes hd | _ -> [n]
-    in
-    nodes start_node
-
-
   (** Get the node kind *)
   let get_kind node = node.kind
 
   (** Get the instructions to be executed *)
   let get_instrs node = node.instrs
-
-  (** Get the list of callee procnames from the node *)
-  let get_callees node =
-    let collect callees instr =
-      match instr with
-      | Sil.Call (_, exp, _, _, _) -> (
-        match exp with Exp.Const Const.Cfun procname -> procname :: callees | _ -> callees )
-      | _ ->
-          callees
-    in
-    List.fold ~f:collect ~init:[] (get_instrs node)
-
 
   (** Get the location of the node *)
   let get_loc n = n.loc
@@ -312,12 +258,7 @@ let signal_did_preanalysis pdesc = (pdesc.attributes).did_preanalysis <- true
 
 let get_attributes pdesc = pdesc.attributes
 
-let get_err_log pdesc = pdesc.attributes.err_log
-
 let get_exit_node pdesc = pdesc.exit_node
-
-(** Get flags for the proc desc *)
-let get_flags pdesc = pdesc.attributes.proc_flags
 
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
@@ -344,34 +285,12 @@ let get_ret_var pdesc = Pvar.mk Ident.name_return (get_proc_name pdesc)
 
 let get_start_node pdesc = pdesc.start_node
 
-(** List of nodes in the procedure sliced by a predicate up to the first branching *)
-let get_sliced_slope pdesc f =
-  Node.get_generated_slope (get_start_node pdesc) (fun n -> Node.get_sliced_succs n f)
-
-
-(** List of nodes in the procedure up to the first branching *)
-let get_slope pdesc = Node.get_generated_slope (get_start_node pdesc) Node.get_succs
-
 (** Return [true] iff the procedure is defined, and not just declared *)
 let is_defined pdesc = pdesc.attributes.is_defined
-
-let is_body_empty pdesc = List.is_empty (Node.get_succs (get_start_node pdesc))
 
 let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 
 let iter_nodes f pdesc = List.iter ~f (List.rev (get_nodes pdesc))
-
-let fold_calls f acc pdesc =
-  let do_node a node =
-    List.fold
-      ~f:(fun b callee_pname -> f b (callee_pname, Node.get_loc node))
-      ~init:a (Node.get_callees node)
-  in
-  List.fold ~f:do_node ~init:acc (get_nodes pdesc)
-
-
-(** iterate over the calls from the procedure: (callee,location) pairs *)
-let iter_calls f pdesc = fold_calls (fun _ call -> f call) () pdesc
 
 let iter_instrs f pdesc =
   let do_node node = List.iter ~f:(fun i -> f node i) (Node.get_instrs node) in
@@ -385,25 +304,6 @@ let fold_instrs f acc pdesc =
     List.fold ~f:(fun acc instr -> f acc node instr) ~init:acc (Node.get_instrs node)
   in
   fold_nodes fold_node acc pdesc
-
-
-let iter_slope f pdesc =
-  let visited = ref NodeSet.empty in
-  let rec do_node node =
-    visited := NodeSet.add node !visited ;
-    f node ;
-    match Node.get_succs node with
-    | [n] ->
-        if not (NodeSet.mem n !visited) then do_node n
-    | _ ->
-        ()
-  in
-  do_node (get_start_node pdesc)
-
-
-let iter_slope_calls f pdesc =
-  let do_node node = List.iter ~f:(fun callee_pname -> f callee_pname) (Node.get_callees node) in
-  iter_slope do_node pdesc
 
 
 (** iterate between two nodes or until we reach a branching structure *)
@@ -423,9 +323,6 @@ let iter_slope_range f src_node dst_node =
 
 (** Set the exit node of the proc desc *)
 let set_exit_node pdesc node = pdesc.exit_node <- node
-
-(** Set a flag for the proc desc *)
-let set_flag pdesc key value = ProcAttributes.proc_flags_add pdesc.attributes.proc_flags key value
 
 (** Set the start node of the proc desc *)
 let set_start_node pdesc node = pdesc.start_node <- node

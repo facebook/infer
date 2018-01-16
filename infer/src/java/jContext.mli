@@ -46,9 +46,6 @@ val get_tenv : t -> Tenv.t
 val get_cg : t -> Cg.t
 (** returns the control graph that corresponds to the current file.  *)
 
-val get_cfg : t -> Cfg.t
-(**  returns the control flow graph that corresponds to the current file. *)
-
 val add_if_jump : t -> Procdesc.Node.t -> int -> unit
 (** adds to the context the line that an if-node will jump to *)
 
@@ -79,6 +76,3 @@ val reset_exn_node_table : unit -> unit
 
 val add_exn_node : Typ.Procname.t -> Procdesc.Node.t -> unit
 (** adds the exception node for a given method *)
-
-val get_exn_node : Procdesc.t -> Procdesc.Node.t option
-(** returns the exception node of a given method *)

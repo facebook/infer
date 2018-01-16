@@ -176,11 +176,6 @@ module Core_foundation_model = struct
         core_graphics_types
 
 
-  let is_objc_memory_model_controlled o =
-    List.mem ~equal:String.equal core_foundation_types o
-    || List.mem ~equal:String.equal core_graphics_types o
-
-
   let rec is_core_lib lib typ =
     match typ.Typ.desc with
     | Typ.Tptr (styp, _) ->

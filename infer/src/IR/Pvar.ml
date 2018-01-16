@@ -93,12 +93,6 @@ let pp pe f pv =
 (** Dump a program variable. *)
 let d (pvar: t) = L.add_print_action (L.PTpvar, Obj.repr pvar)
 
-(** Pretty print a list of program variables. *)
-let pp_list pe f pvl = F.fprintf f "%a" (Pp.seq (fun f e -> F.fprintf f "%a" (pp pe) e)) pvl
-
-(** Dump a list of program variables. *)
-let d_list pvl = List.iter ~f:(fun pv -> d pv ; L.d_str " ") pvl
-
 let get_name pv = pv.pv_name
 
 let to_string pv = Mangled.to_string pv.pv_name

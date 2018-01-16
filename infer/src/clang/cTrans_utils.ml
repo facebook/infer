@@ -14,10 +14,9 @@ module Hashtbl = Caml.Hashtbl
 
 module L = Logging
 
-(* Extract the element of a singleton list. If the list is not a singleton *)
-(* It stops the computation giving a warning. We use this because we       *)
-(* assume in many places that a list is just a singleton. We use the       *)
-(* warning if to see which assumption was not correct                      *)
+(** Extract the element of a singleton list. If the list is not a singleton It stops the computation
+   giving a warning. We use this because we assume in many places that a list is just a
+   singleton. We use the warning if to see which assumption was not correct. *)
 let extract_item_from_singleton l warning_string failure_val =
   match l with
   | [item] ->
@@ -29,23 +28,14 @@ let extract_item_from_singleton l warning_string failure_val =
 
 let dummy_exp = (Exp.minus_one, Typ.mk (Tint Typ.IInt))
 
-(* Extract the element of a singleton list. If the list is not a singleton *)
-(* Gives a warning and return -1 as standard value indicating something    *)
-(* went wrong.                                                             *)
+(** Extract the element of a singleton list. If the list is not a singleton Gives a warning and
+   return -1 as standard value indicating something went wrong. *)
 let extract_exp_from_list el warning_string =
   extract_item_from_singleton el warning_string dummy_exp
 
 
 module Nodes = struct
   let prune_kind b = Procdesc.Node.Prune_node (b, Sil.Ik_bexp, string_of_bool b ^ " Branch")
-
-  let is_join_node n =
-    match Procdesc.Node.get_kind n with Procdesc.Node.Join_node -> true | _ -> false
-
-
-  let is_prune_node n =
-    match Procdesc.Node.get_kind n with Procdesc.Node.Prune_node _ -> true | _ -> false
-
 
   let is_true_prune_node n =
     match Procdesc.Node.get_kind n with
@@ -107,15 +97,6 @@ module Nodes = struct
     | `LOr
     | `Comma ->
         false
-
-
-  (** Check if this unary opertor requires the creation of a node in the cfg. *)
-  let need_unary_op_node uoi =
-    match uoi.Clang_ast_t.uoi_kind with
-    | `PostInc | `PostDec | `PreInc | `PreDec | `AddrOf | `Deref | `Plus ->
-        true
-    | `Minus | `Not | `LNot | `Real | `Imag | `Extension | `Coawait ->
-        false
 end
 
 module GotoLabel = struct
@@ -136,10 +117,6 @@ type continuation =
 let is_return_temp continuation =
   match continuation with Some cont -> cont.return_temp | _ -> false
 
-
-let ids_to_parent cont ids = if is_return_temp cont then ids else []
-
-let ids_to_node cont ids = if is_return_temp cont then [] else ids
 
 let mk_cond_continuation cont =
   match cont with
@@ -276,23 +253,10 @@ module Loops = struct
         * Clang_ast_t.stmt
         * Clang_ast_t.stmt
         * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-    (* init, decl_stmt, condition, increment and body *)
+        * Clang_ast_t.stmt  (** init, decl_stmt, condition, increment and body *)
     | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
-    (* decl_stmt, condition and body *)
-    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt
-
-  (* condition and body *)
-
-  let loop_kind_to_if_kind loop_kind =
-    match loop_kind with
-    | For _ ->
-        Sil.Ik_for
-    | While _ ->
-        Sil.Ik_while
-    | DoWhile _ ->
-        Sil.Ik_dowhile
-
+        (** decl_stmt, condition and body *)
+    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (** condition and body *)
 
   let get_body loop_kind =
     match loop_kind with For (_, _, _, _, body) | While (_, _, body) | DoWhile (_, body) -> body
@@ -598,64 +562,10 @@ let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with `SuperInstance -> true | _ -> false
 
 
-let get_selector_receiver obj_c_message_expr_info =
-  ( obj_c_message_expr_info.Clang_ast_t.omei_selector
-  , obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind )
-
-
-let is_member_exp stmt = match stmt with Clang_ast_t.MemberExpr _ -> true | _ -> false
-
-let is_enumeration_constant stmt =
-  match stmt with
-  | Clang_ast_t.DeclRefExpr (_, _, _, drei) -> (
-    match drei.Clang_ast_t.drti_decl_ref with
-    | Some d -> (
-      match d.Clang_ast_t.dr_kind with `EnumConstant -> true | _ -> false )
-    | _ ->
-        false )
-  | _ ->
-      false
-
-
 let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
 
 let extract_stmt_from_singleton stmt_list warning_string =
   extract_item_from_singleton stmt_list warning_string (Ast_expressions.dummy_stmt ())
-
-
-let rec get_type_from_exp_stmt stmt =
-  let do_decl_ref_exp i =
-    match i.Clang_ast_t.drti_decl_ref with
-    | Some d -> (
-      match d.Clang_ast_t.dr_qual_type with Some n -> n | _ -> assert false )
-    | _ ->
-        assert false
-  in
-  let open Clang_ast_t in
-  match stmt with
-  | CXXOperatorCallExpr (_, _, ei) | CallExpr (_, _, ei) ->
-      ei.Clang_ast_t.ei_qual_type
-  | MemberExpr (_, _, ei, _) ->
-      ei.Clang_ast_t.ei_qual_type
-  | ParenExpr (_, _, ei) ->
-      ei.Clang_ast_t.ei_qual_type
-  | ArraySubscriptExpr (_, _, ei) ->
-      ei.Clang_ast_t.ei_qual_type
-  | ObjCIvarRefExpr (_, _, ei, _) ->
-      ei.Clang_ast_t.ei_qual_type
-  | ObjCMessageExpr (_, _, ei, _) ->
-      ei.Clang_ast_t.ei_qual_type
-  | PseudoObjectExpr (_, _, ei) ->
-      ei.Clang_ast_t.ei_qual_type
-  | CStyleCastExpr (_, stmt_list, _, _, _)
-  | UnaryOperator (_, stmt_list, _, _)
-  | ImplicitCastExpr (_, stmt_list, _, _) ->
-      get_type_from_exp_stmt
-        (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
-  | DeclRefExpr (_, _, _, info) ->
-      do_decl_ref_exp info
-  | _ ->
-      L.die InternalError "get_type_from_expr_stmt failure: %s" (Clang_ast_j.string_of_stmt stmt)
 
 
 module Self = struct
@@ -680,30 +590,6 @@ module Self = struct
     is_self && is_objc_method
 end
 
-let rec is_method_call s =
-  match s with
-  | Clang_ast_t.ObjCMessageExpr _ ->
-      true
-  | _ ->
-    match snd (Clang_ast_proj.get_stmt_tuple s) with [] -> false | s'' :: _ -> is_method_call s''
-
-
-let rec get_decl_ref_info s =
-  match s with
-  | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) -> (
-    match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-    | Some decl_ref ->
-        decl_ref
-    | None ->
-        assert false )
-  | _ ->
-    match Clang_ast_proj.get_stmt_tuple s with
-    | _, [] ->
-        assert false
-    | _, s'' :: _ ->
-        get_decl_ref_info s''
-
-
 let rec contains_opaque_value_expr s =
   match s with
   | Clang_ast_t.OpaqueValueExpr _ ->
@@ -726,23 +612,3 @@ let is_logical_negation_of_int tenv ei uoi =
       true
   | _, _ ->
       false
-
-
-let is_block_enumerate_function mei =
-  String.equal mei.Clang_ast_t.omei_selector CFrontend_config.enumerateObjectsUsingBlock
-
-(*
-(** Similar to extract_item_from_singleton but for option type *)
-let extract_item_from_option op warning_string =
-  match op with
-  | Some item -> item
-  | _ -> L.(debug Capture Verbose) warning_string; assert false
-
-let extract_id_from_singleton id_list warning_string =
-  extract_item_from_singleton id_list warning_string (dummy_id ())
-
-let get_decl_pointer decl_ref_expr_info =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
-  | None -> assert false
-*)

@@ -72,8 +72,6 @@ val is_in_objc_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
 
 val is_in_objc_class_named : CLintersContext.context -> ALVar.alexp -> bool
 
-val is_subclass_of : Clang_ast_t.decl -> ALVar.alexp -> bool
-
 val captures_cxx_references : Ctl_parser_types.ast_node -> bool
 
 val is_binop_with_kind : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
@@ -119,8 +117,6 @@ val within_responds_to_selector_block :
 val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val receiver_class_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
-
-val receiver_instance_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
 
 val receiver_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
 

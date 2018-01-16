@@ -275,8 +275,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
 
   let skip_duplicated_types_on_filenames = skip_duplicated_types_on_filenames
 
-  let java_anon_class_pattern = java_anon_class_pattern
-
   let value_of_qualifier_tag = value_of_qualifier_tag
 
   let skip_anonymous_class_renamings = skip_anonymous_class_renamings

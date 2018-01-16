@@ -12,7 +12,7 @@ module L = Logging
 module F = Format
 
 module MockTraceElem = struct
-  type t = Kind1 | Kind2 | Footprint [@@deriving compare]
+  type t = Kind1 | Kind2 [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -22,14 +22,7 @@ module MockTraceElem = struct
 
   let make ?indexes:_ kind _ = kind
 
-  let pp fmt = function
-    | Kind1 ->
-        F.fprintf fmt "Kind1"
-    | Kind2 ->
-        F.fprintf fmt "Kind2"
-    | Footprint ->
-        F.fprintf fmt "Footprint"
-
+  let pp fmt = function Kind1 -> F.fprintf fmt "Kind1" | Kind2 -> F.fprintf fmt "Kind2"
 
   module Kind = struct
     type nonrec t = t
@@ -66,8 +59,6 @@ end
 
 module MockSink = struct
   include MockTraceElem
-
-  type parameter = {sink: t; index: int}
 
   let get _ = assert false
 

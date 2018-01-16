@@ -15,16 +15,12 @@ type closure = unit -> unit
 
 type t = {closures: closure list; continuations: closure Queue.t}
 
-type tasks = t
-
 let create ?(continuation= None) closures =
   let continuations =
     match continuation with None -> Queue.create () | Some closure -> Queue.singleton closure
   in
   {closures; continuations}
 
-
-let empty = {closures= []; continuations= Queue.create ()}
 
 (* Aggregate closures into groups of the given size *)
 let aggregate ~size t =

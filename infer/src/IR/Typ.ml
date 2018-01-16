@@ -73,8 +73,6 @@ let ikind_is_unsigned = function
       false
 
 
-let int_of_int64_kind i ik = IntLit.of_int64_unsigned i (ikind_is_unsigned ik)
-
 (** Kinds of floating-point numbers *)
 type fkind =
   | FFloat  (** [float] *)
@@ -461,12 +459,6 @@ let is_objc_class = is_class_of_kind Name.Objc.is_class
 
 let is_cpp_class = is_class_of_kind Name.Cpp.is_class
 
-let is_java_class = is_class_of_kind Name.Java.is_class
-
-let rec is_array_of_cpp_class typ =
-  match typ.desc with Tarray (typ, _, _) -> is_array_of_cpp_class typ | _ -> is_cpp_class typ
-
-
 let is_pointer typ = match typ.desc with Tptr _ -> true | _ -> false
 
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false
@@ -478,9 +470,6 @@ let has_block_prefix s =
   | _ ->
       false
 
-
-(** Check if type is a type for a block in objc *)
-let is_block_type typ = has_block_prefix (to_string typ)
 
 (** Java types by name *)
 let rec java_from_string : string -> t = function
@@ -565,8 +554,6 @@ module Procname = struct
   (** Type of Objective C block names. *)
   type block_name = string [@@deriving compare]
 
-  let block_from_string s = s
-
   (** Type of procedure names. *)
   type t =
     | Java of java
@@ -611,8 +598,6 @@ module Procname = struct
         if is_verbose verbosity then p ^ "." ^ cls else cls
 
 
-  let java_type_to_string p = java_type_to_string_verbosity p Verbose
-
   (** Given a list of types, it creates a unique string of types separated by commas *)
   let rec java_param_list_to_string inputList verbosity =
     match inputList with
@@ -625,7 +610,8 @@ module Procname = struct
         ^ java_param_list_to_string rest verbosity
 
 
-  (** It is the same as java_type_to_string, but Java return types are optional because of constructors without type *)
+  (** It is the same as java_type_to_string_verbosity, but Java return types are optional because
+      of constructors without type *)
   let java_return_type_to_string j verbosity =
     match j.return_type with None -> "" | Some typ -> java_type_to_string_verbosity typ verbosity
 
@@ -673,8 +659,6 @@ module Procname = struct
   let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
   let is_c_function = function C _ -> true | _ -> false
-
-  let is_obj_c_pp = function ObjC_Cpp _ | C _ -> true | _ -> false
 
   let is_constexpr = function ObjC_Cpp {kind= CPPConstructor (_, true)} -> true | _ -> false
 
@@ -750,8 +734,6 @@ module Procname = struct
   (** Return whether the procname is a block procname. *)
   let is_objc_block = function Block _ -> true | _ -> false
 
-  let is_with_block_parameters = function WithBlockParameters _ -> true | _ -> false
-
   (** Return whether the procname is a cpp lambda. *)
   let is_cpp_lambda procname = String.is_substring ~substring:"operator()" (get_method procname)
 
@@ -776,11 +758,6 @@ module Procname = struct
 
   (** Return the parameters of a java procname. *)
   let java_get_parameters j = j.parameters
-
-  (** Return the parameters of a java procname as strings. *)
-  let java_get_parameters_as_strings j =
-    List.map ~f:(fun param -> java_type_to_string param) j.parameters
-
 
   (** Return true if the java procedure is static *)
   let java_is_static = function Java j -> equal_method_kind j.kind Static | _ -> false
@@ -844,30 +821,6 @@ module Procname = struct
         is_int
     | None ->
         false
-
-
-  (** Check if the procedure belongs to an anonymous inner class. *)
-  let java_is_anonymous_inner_class = function
-    | Java j ->
-        is_anonymous_inner_class_name j.class_name
-    | _ ->
-        false
-
-
-  (** Check if the last parameter is a hidden inner class, and remove it if present.
-      This is used in private constructors, where a proxy constructor is generated
-      with an extra parameter and calls the normal constructor. *)
-  let java_remove_hidden_inner_class_parameter = function
-    | Java js -> (
-      match List.rev js.parameters with
-      | (_, s) :: par' ->
-          if is_anonymous_inner_class_name (Name.Java.from_string s) then
-            Some (Java {js with parameters= List.rev par'})
-          else None
-      | [] ->
-          None )
-    | _ ->
-        None
 
 
   (** Check if the procedure name is an anonymous inner class constructor. *)
@@ -1120,9 +1073,6 @@ module Procname = struct
     let pp = pp
   end)
 
-  (** Pretty print a set of proc names *)
-  let pp_set fmt set = Set.iter (fun pname -> F.fprintf fmt "%a " pp pname) set
-
   let objc_cpp_get_class_qualifiers objc_cpp = Name.qual_name objc_cpp.class_name
 
   let get_qualifiers pname =
@@ -1189,60 +1139,6 @@ module Procname = struct
       let default () = Sqlite3.Data.TEXT (to_filename pname) in
       Base.Hashtbl.find_or_add pname_to_key pname ~default
   end
-
-  (** given two template arguments, try to generate mapping from generic ones to concrete ones. *)
-  let get_template_args_mapping generic_procname concrete_procname =
-    let mapping_for_template_args (generic_name, generic_args) (concrete_name, concrete_args) =
-      match (generic_args, concrete_args) with
-      | Template {args= generic_typs}, Template {args= concrete_typs}
-        when QualifiedCppName.equal generic_name concrete_name -> (
-        try
-          `Valid
-            (List.fold2_exn generic_typs concrete_typs ~init:[] ~f:
-               (fun (* result will be reversed list. Ordering in template mapping doesn't matter so it's ok *)
-               result
-               gtyp
-               ctyp
-               ->
-                 match (gtyp, ctyp) with
-                 | TType {desc= TVar name}, TType concrete ->
-                     (name, concrete) :: result
-                 | _ ->
-                     result ))
-        with Invalid_argument _ ->
-          `Invalid (* fold2_exn throws on length mismatch, we need to handle it *) )
-      | NoTemplate, NoTemplate ->
-          `NoTemplate
-      | _ ->
-          `Invalid
-    in
-    let combine_mappings mapping1 mapping2 =
-      match (mapping1, mapping2) with
-      | `Valid m1, `Valid m2 ->
-          `Valid (List.append m1 m2)
-      | `NoTemplate, a | a, `NoTemplate ->
-          a
-      (* no template is no-op state, simply return the other state *) | _ ->
-          `Invalid
-      (* otherwise there is no valid mapping *)
-    in
-    let extract_mapping = function `Invalid | `NoTemplate -> None | `Valid m -> Some m in
-    let empty_qual =
-      QualifiedCppName.of_qual_string "FIXME"
-      (* TODO we should look at procedure names *)
-    in
-    match (generic_procname, concrete_procname) with
-    | C {template_args= args1}, C {template_args= args2} (* template function *) ->
-        mapping_for_template_args (empty_qual, args1) (empty_qual, args2) |> extract_mapping
-    | ( ObjC_Cpp {template_args= args1; class_name= CppClass (name1, class_args1)}
-      , ObjC_Cpp {template_args= args2; class_name= CppClass (name2, class_args2)}
-      (* template methods/template classes/both *) ) ->
-        combine_mappings
-          (mapping_for_template_args (name1, class_args1) (name2, class_args2))
-          (mapping_for_template_args (empty_qual, args1) (empty_qual, args2))
-        |> extract_mapping
-    | _ ->
-        None
 end
 
 (** Return the return type of [pname_java]. *)

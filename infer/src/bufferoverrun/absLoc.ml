@@ -49,8 +49,6 @@ module Loc = struct
 
   let is_var = function Var _ -> true | _ -> false
 
-  let is_logical_var = function Var Var.LogicalVar _ -> true | _ -> false
-
   let of_var v = Var v
 
   let of_allocsite a = Allocsite a
@@ -76,10 +74,6 @@ module PowLoc = struct
   let is_bot = is_empty
 
   let unknown = singleton Loc.unknown
-
-  let of_pvar pvar = singleton (Loc.of_pvar pvar)
-
-  let of_id id = singleton (Loc.of_id id)
 
   let append_field ploc ~fn =
     if is_bot ploc then singleton Loc.unknown

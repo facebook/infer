@@ -28,8 +28,6 @@ type mode =
 
 val equal_mode : mode -> mode -> bool
 
-val pp_mode : Format.formatter -> mode -> unit
-
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)
 

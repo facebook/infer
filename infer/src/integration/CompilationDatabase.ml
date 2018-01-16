@@ -18,13 +18,9 @@ let empty () = ref SourceFile.Map.empty
 
 let get_size database = SourceFile.Map.cardinal !database
 
-let iter database f = SourceFile.Map.iter f !database
-
 let filter_compilation_data database ~f =
   SourceFile.Map.filter (fun s _ -> f s) !database |> SourceFile.Map.bindings |> List.map ~f:snd
 
-
-let find database key = SourceFile.Map.find key !database
 
 let parse_command_and_arguments command_and_arguments =
   let regexp = Str.regexp "[^\\][ ]" in

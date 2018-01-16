@@ -45,8 +45,6 @@ type name = Name.t [@@deriving compare]
 
 let name_spec = Name.Spec
 
-let name_primed = Name.Primed
-
 let equal_name = [%compare.equal : name]
 
 type kind =
@@ -187,9 +185,6 @@ let create_fresh kind = NameGenerator.create_fresh_ident kind (standard_name kin
 
 let create_none () = create_fresh KNone
 
-(** Generate a primed identifier with the given name and stamp *)
-let create_primed name stamp = create_with_stamp KPrimed name stamp
-
 (** Generate a footprint identifier with the given name and stamp *)
 let create_footprint name stamp = create_with_stamp KFootprint name stamp
 
@@ -209,12 +204,6 @@ let is_footprint (id: t) = has_kind id KFootprint
 let is_none (id: t) = has_kind id KNone
 
 let is_path (id: t) = has_kind id KNormal && Int.equal id.stamp path_ident_stamp
-
-let make_unprimed id =
-  if not (has_kind id KPrimed) then assert false
-  else if has_kind id KNone then {id with kind= KNone}
-  else {id with kind= KNormal}
-
 
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
@@ -247,6 +236,3 @@ let pp f id = F.fprintf f "%s" (to_string id)
 
 (** pretty printer for lists of identifiers *)
 let pp_list = Pp.comma_seq pp
-
-(** pretty printer for lists of names *)
-let pp_name_list = Pp.comma_seq pp_name

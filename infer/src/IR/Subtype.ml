@@ -108,8 +108,6 @@ let check_subtype =
 
 let is_known_subtype tenv c1 c2 : bool = equal_result (check_subtype tenv c1 c2) Yes
 
-let is_known_not_subtype tenv c1 c2 : bool = equal_result (check_subtype tenv c1 c2) No
-
 let flag_to_string flag = match flag with CAST -> "(cast)" | INSTOF -> "(instof)" | NORMAL -> ""
 
 let pp f (t, flag) =
@@ -187,14 +185,6 @@ let normalize_subtypes t_opt c1 c2 flag1 flag2 =
         Some (Subtypes (List.sort ~cmp:Typ.Name.compare l), new_flag) )
   | None ->
       None
-
-
-let subtypes_to_string t =
-  match fst t with
-  | Exact ->
-      "ex" ^ flag_to_string (snd t)
-  | Subtypes l ->
-      list_to_string l ^ flag_to_string (snd t)
 
 
 (* c is a subtype when it does not appear in the list l of no-subtypes *)

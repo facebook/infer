@@ -17,8 +17,6 @@ module StmtMap = ClangPointers.Map
 
 type curr_class = ContextClsDeclPtr of int | ContextNoCls [@@deriving compare]
 
-val equal_curr_class : curr_class -> curr_class -> bool
-
 type str_node_map = (string, Procdesc.Node.t) Caml.Hashtbl.t
 
 type t =
@@ -41,8 +39,6 @@ type t =
 
 val get_procdesc : t -> Procdesc.t
 
-val get_cfg : t -> Cfg.t
-
 val get_cg : t -> Cg.t
 
 val get_curr_class : t -> curr_class
@@ -51,19 +47,13 @@ val get_curr_class_typename : t -> Typ.Name.t
 
 val get_curr_class_decl_ptr : curr_class -> Clang_ast_t.pointer
 
-val curr_class_to_string : curr_class -> string
-
 val is_objc_method : t -> bool
-
-val get_tenv : t -> Tenv.t
 
 val create_context :
   CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.t -> Procdesc.t -> curr_class
   -> Typ.t option -> bool -> t option -> Clang_ast_t.decl list StmtMap.t -> t
 
 val add_block_static_var : t -> Typ.Procname.t -> Pvar.t * Typ.t -> unit
-
-val static_vars_for_block : t -> Typ.Procname.t -> (Pvar.t * Typ.t) list
 
 val is_objc_instance : t -> bool
 

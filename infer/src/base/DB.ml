@@ -36,15 +36,6 @@ let dot_crc_len = 1 + 32
 
 let strip_crc str = String.slice str 0 (-dot_crc_len)
 
-let string_crc_has_extension ~ext name_crc =
-  let name = strip_crc name_crc in
-  match Filename.split_extension name with
-  | _, Some ext' ->
-      String.equal ext ext'
-  | _, None ->
-      false
-
-
 let curr_source_file_encoding = `Enc_crc
 
 (** string encoding of a source file (including path) as a single filename *)
@@ -83,33 +74,11 @@ let source_dir_from_source_file source_file =
   Filename.concat Config.captured_dir (source_file_encoding source_file)
 
 
-(** Find the source directories in the results dir *)
-let find_source_dirs () =
-  let source_dirs = ref [] in
-  let files_in_results_dir = Array.to_list (Sys.readdir Config.captured_dir) in
-  let add_cg_files_from_dir dir =
-    let files = Array.to_list (Sys.readdir dir) in
-    List.iter
-      ~f:(fun fname ->
-        let path = Filename.concat dir fname in
-        if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs )
-      files
-  in
-  List.iter
-    ~f:(fun fname ->
-      let dir = Filename.concat Config.captured_dir fname in
-      if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir )
-    files_in_results_dir ;
-  List.rev !source_dirs
-
-
 (** {2 Filename} *)
 
 type filename = string [@@deriving compare]
 
 let equal_filename = [%compare.equal : filename]
-
-let filename_concat = Filename.concat
 
 let filename_to_string s = s
 
@@ -137,11 +106,6 @@ let file_modified_time ?(symlink= false) fname =
     let stat = (if symlink then Unix.lstat else Unix.stat) fname in
     stat.Unix.st_mtime
   with Unix.Unix_error _ -> L.(die InternalError) "File %s does not exist." fname
-
-
-let filename_create_dir fname =
-  let dirname = Filename.dirname fname in
-  if Sys.file_exists dirname <> `Yes then Utils.create_dir dirname
 
 
 let read_whole_file fd = In_channel.input_all (Unix.in_channel_of_descr fd)
@@ -269,7 +233,7 @@ end
 
 let global_tenv_fname =
   let basename = Config.global_tenv_filename in
-  filename_concat Config.captured_dir basename
+  Config.captured_dir ^/ basename
 
 
 let is_source_file path =

@@ -35,32 +35,6 @@ val equal_language : language -> language -> bool
 
 val string_of_language : language -> string
 
-val ml_bucket_symbols :
-  (string * [`MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown])
-  list
-
-val issues_fields_symbols :
-  ( string
-  * [ `Issue_field_bug_class
-    | `Issue_field_kind
-    | `Issue_field_bug_type
-    | `Issue_field_qualifier
-    | `Issue_field_severity
-    | `Issue_field_visibility
-    | `Issue_field_line
-    | `Issue_field_column
-    | `Issue_field_procedure
-    | `Issue_field_procedure_id
-    | `Issue_field_procedure_start_line
-    | `Issue_field_file
-    | `Issue_field_bug_trace
-    | `Issue_field_key
-    | `Issue_field_hash
-    | `Issue_field_line_offset
-    | `Issue_field_procedure_id_without_crc
-    | `Issue_field_qualifier_contains_potential_exception_note ] )
-  list
-
 type os_type = Unix | Win32 | Cygwin
 
 type compilation_database_dependencies =
@@ -108,8 +82,6 @@ val backend_stats_dir_name : string
 val bin_dir : string
 
 val bound_error_allowed_in_procedure_call : bool
-
-val buck_generated_folder : string
 
 val buck_infer_deps_file_name : string
 
@@ -181,10 +153,6 @@ val log_analysis_symops_timeout : string
 
 val log_analysis_wallclock_timeout : string
 
-val log_dir_name : string
-
-val max_recursion : int
-
 val max_widens : int
 
 val meet_level : int
@@ -196,8 +164,6 @@ val models_jar : string
 val models_src_dir : string
 
 val multicore_dir_name : string
-
-val ncpu : int
 
 val nsnotification_center_checker_backend : bool
 
@@ -259,8 +225,6 @@ val unsafe_unret : string
 
 val use_jar_cache : bool
 
-val version_string : string
-
 val weak : string
 
 val whitelisted_cpp_methods : string list
@@ -294,8 +258,6 @@ val annotation_reachability : bool
 val annotation_reachability_custom_pairs : Yojson.Basic.json
 
 val array_level : int
-
-val ast_file : string option
 
 val biabduction : bool
 
@@ -390,8 +352,6 @@ val eradicate_field_over_annotated : bool
 
 val eradicate_optional_present : bool
 
-val eradicate_propagate_return_nullable : bool
-
 val eradicate_return_over_annotated : bool
 
 val eradicate_debug : bool
@@ -429,8 +389,6 @@ val frontend_stats : bool
 val gen_previous_build_command_script : string option
 
 val generated_classes : string option
-
-val headers : bool
 
 val html : bool
 
@@ -485,8 +443,6 @@ val java_jar_compiler : string option
 
 val javac_classes_out : string
 
-val javac_verbose_out : string
-
 val jobs : int
 
 val join_cond : int
@@ -521,8 +477,6 @@ val log_events : bool
 
 val log_file : string
 
-val makefile_cmdline : string
-
 val max_nesting : int option
 
 val merge : bool
@@ -541,8 +495,6 @@ val nelseg : bool
 val no_translate_libs : bool
 
 val nullable_annotation : string option
-
-val objc_memory_model_on : bool
 
 val only_cheap_debug : bool
 
@@ -573,8 +525,6 @@ val printf_args : bool
 val procedures_per_process : int
 
 val procs_csv : string option
-
-val procs_xml : string option
 
 val project_root : string
 
@@ -650,8 +600,6 @@ val subtype_multirange : bool
 
 val suggest_nullable : bool
 
-val svg : bool
-
 val symops_per_iteration : int option
 
 val test_filtering : bool
@@ -682,8 +630,6 @@ val uninit_interproc : bool
 
 val unsafe_malloc : bool
 
-val whole_seconds : bool
-
 val worklist_mode : int
 
 val write_dotty : bool
@@ -695,8 +641,6 @@ val write_html_whitelist_regex : string list
 val xcode_developer_dir : string option
 
 val xcpretty : bool
-
-val xml_specs : bool
 
 (** Global variables *)
 

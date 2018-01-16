@@ -34,6 +34,3 @@ let protocol_decl qual_type_to_sil_type tenv decl =
       protocol_desc
   | _ ->
       assert false
-
-
-let is_protocol decl = Clang_ast_t.(match decl with ObjCProtocolDecl _ -> true | _ -> false)

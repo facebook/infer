@@ -24,5 +24,3 @@ val build_valuation :
   Ctl_parser_types.ast_node -> CLintersContext.context -> context_linter_map -> unit
 
 val is_decl_allowed : CLintersContext.context -> Clang_ast_t.decl -> bool
-
-val print_table_size : unit -> unit

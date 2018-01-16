@@ -13,8 +13,6 @@ open! IStd
 
 type t [@@deriving compare]
 
-val equal : t -> t -> bool
-
 val const : AnnotatedSignature.annotation -> bool -> TypeOrigin.t -> t
 
 val descr_origin : Tenv.t -> t -> TypeErr.origin_descr

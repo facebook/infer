@@ -42,8 +42,6 @@ let create_context icfg procdesc impl cn source_file program =
   ; program }
 
 
-let get_cfg context = context.icfg.cfg
-
 let get_cg context = context.icfg.cg
 
 let get_tenv context = context.icfg.tenv
@@ -113,8 +111,3 @@ let reset_exn_node_table () = Typ.Procname.Hash.clear exn_node_table
 
 let add_exn_node procname (exn_node: Procdesc.Node.t) =
   Typ.Procname.Hash.add exn_node_table procname exn_node
-
-
-let get_exn_node procdesc =
-  try Some (Typ.Procname.Hash.find exn_node_table (Procdesc.get_proc_name procdesc))
-  with Not_found -> None

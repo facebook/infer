@@ -33,8 +33,6 @@ let expensive = "Expensive"
 
 let false_on_null = "FalseOnNull"
 
-let final = "final"
-
 let for_ui_thread = "ForUiThread"
 
 let for_non_ui_thread = "ForNonUiThread"
@@ -50,10 +48,6 @@ let initializer_ = "Initializer"
 let inject = "Inject"
 
 let inject_view = "InjectView"
-
-let integrity_source = "IntegritySource"
-
-let integrity_sink = "IntegritySink"
 
 let mutable_ = "Mutable"
 
@@ -80,10 +74,6 @@ let not_thread_safe = "NotThreadSafe"
 let performance_critical = "PerformanceCritical"
 
 let present = "Present"
-
-let privacy_source = "PrivacySource"
-
-let privacy_sink = "PrivacySink"
 
 let propagates_nullable = "PropagatesNullable"
 
@@ -138,11 +128,6 @@ let ia_contains ia ann_name = List.exists ~f:(class_name_matches ann_name) ia
 
 let ia_get ia ann_name = List.find ~f:(class_name_matches ann_name) ia |> Option.map ~f:fst
 
-let pdesc_has_parameter_annot pdesc predicate =
-  let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
-  List.exists ~f:predicate param_annotations
-
-
 let pdesc_get_return_annot pdesc =
   fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
 
@@ -172,8 +157,6 @@ let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
 
 
 let struct_typ_has_annot (struct_typ: Typ.Struct.t) predicate = predicate struct_typ.annots
-
-let ia_is_final ia = ia_contains ia final
 
 let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
 
@@ -234,10 +217,6 @@ let ia_is_expensive ia = ia_ends_with ia expensive
 
 let ia_is_functional ia = ia_ends_with ia functional
 
-let ia_is_performance_critical ia = ia_ends_with ia performance_critical
-
-let ia_is_no_allocation ia = ia_ends_with ia no_allocation
-
 let ia_is_ignore_allocations ia = ia_ends_with ia ignore_allocations
 
 let ia_is_inject ia = ia_ends_with ia inject
@@ -253,16 +232,6 @@ let ia_is_on_mount ia = ia_ends_with ia on_mount
 let ia_is_on_unbind ia = ia_ends_with ia on_unbind
 
 let ia_is_on_unmount ia = ia_ends_with ia on_unmount
-
-let ia_is_privacy_source ia = ia_ends_with ia privacy_source
-
-let ia_is_privacy_sink ia = ia_ends_with ia privacy_sink
-
-let ia_is_integrity_source ia = ia_ends_with ia integrity_source
-
-let ia_is_integrity_sink ia = ia_ends_with ia integrity_sink
-
-let ia_is_guarded_by ia = ia_ends_with ia guarded_by
 
 let ia_is_ui_thread ia = ia_ends_with ia ui_thread
 

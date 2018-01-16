@@ -22,8 +22,6 @@ module BoTrace = struct
 
   type t = {length: int; trace: elem list} [@@deriving compare]
 
-  let empty = {length= 0; trace= []}
-
   let singleton elem = {length= 1; trace= [elem]}
 
   let add_elem elem t = {length= t.length + 1; trace= elem :: t.trace}
@@ -71,10 +69,6 @@ module Set = struct
 
   let add_elem elem t =
     if is_empty t then singleton (BoTrace.singleton elem) else map (BoTrace.add_elem elem) t
-
-
-  let add_elem_last elem t =
-    if is_empty t then singleton (BoTrace.singleton elem) else map (BoTrace.add_elem_last elem) t
 
 
   let instantiate ~traces_caller ~traces_callee location =

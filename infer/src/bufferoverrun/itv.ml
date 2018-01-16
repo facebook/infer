@@ -60,12 +60,6 @@ module SymLinear = struct
 
   let min_binding : t -> Symbol.t * int = M.min_binding
 
-  let fold : (Symbol.t -> int -> 'b -> 'b) -> t -> 'b -> 'b = M.fold
-
-  let mem : Symbol.t -> t -> bool = M.mem
-
-  let initial : t = empty
-
   let singleton : Symbol.t -> int -> t = M.singleton
 
   let find : Symbol.t -> t -> int = fun s x -> try M.find s x with Not_found -> 0
@@ -137,22 +131,6 @@ module SymLinear = struct
             is_non_zero (n + m)
       in
       M.merge plus' x y
-
-
-  let minus : t -> t -> t =
-    fun x y ->
-      let minus' _ n_opt m_opt =
-        match (n_opt, m_opt) with
-        | None, None ->
-            None
-        | Some v, None ->
-            is_non_zero v
-        | None, Some v ->
-            is_non_zero (-v)
-        | Some n, Some m ->
-            is_non_zero (n - m)
-      in
-      M.merge minus' x y
 
 
   let mult_const : t -> int -> t = fun x n -> M.map (( * ) n) x
@@ -595,8 +573,6 @@ module Bound = struct
       else PInf
 
 
-  let initial : t = of_int 0
-
   let zero : t = Linear (0, SymLinear.zero)
 
   let one : t = Linear (1, SymLinear.zero)
@@ -751,8 +727,6 @@ module ItvPure = struct
 
   let equal = [%compare.equal : astate]
 
-  let initial : t = (Bound.initial, Bound.initial)
-
   let lb : t -> Bound.t = fst
 
   let ub : t -> Bound.t = snd
@@ -763,8 +737,6 @@ module ItvPure = struct
 
 
   let have_similar_bounds (l1, u1) (l2, u2) = Bound.are_similar l1 l2 && Bound.are_similar u1 u2
-
-  let make : Bound.t -> Bound.t -> t = fun l u -> (l, u)
 
   let subst : t -> Bound.t bottom_lifted SubstMap.t -> t bottom_lifted =
     fun x map ->
@@ -824,10 +796,6 @@ module ItvPure = struct
   let of_bound bound = (bound, bound)
 
   let of_int n = of_bound (Bound.of_int n)
-
-  let of_int_lit : IntLit.t -> t option =
-    fun s -> match IntLit.to_int s with size -> Some (of_int size) | exception _ -> None
-
 
   let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
     fun ~unsigned pname new_sym_num ->
@@ -1155,10 +1123,6 @@ let compare : t -> t -> int =
         ItvPure.compare_astate x y
 
 
-let equal = [%compare.equal : t]
-
-let compare_astate = compare
-
 let bot : t = Bottom
 
 let top : t = NonBottom ItvPure.top
@@ -1181,10 +1145,6 @@ let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
 
 let of_int_lit n = try of_int (IntLit.to_int n) with _ -> top
 
-let is_bot : t -> bool = fun x -> equal x Bottom
-
-let is_finite : t -> bool = function NonBottom x -> ItvPure.is_finite x | Bottom -> false
-
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
 let false_sem = NonBottom ItvPure.false_sem
@@ -1197,23 +1157,13 @@ let one = NonBottom ItvPure.one
 
 let pos = NonBottom ItvPure.pos
 
-let true_sem = NonBottom ItvPure.true_sem
-
 let unknown_bool = NonBottom ItvPure.unknown_bool
 
 let zero = NonBottom ItvPure.zero
 
-let make : Bound.t -> Bound.t -> t =
-  fun l u -> if Bound.lt u l then Bottom else NonBottom (ItvPure.make l u)
-
-
-let is_symbolic : t -> bool = function NonBottom x -> ItvPure.is_symbolic x | Bottom -> false
-
 let le : lhs:t -> rhs:t -> bool = ( <= )
 
 let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
-
-let to_string : t -> string = fun x -> pp F.str_formatter x ; F.flush_str_formatter ()
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
   fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)

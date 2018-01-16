@@ -29,8 +29,6 @@ module Access : sig
   val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
-
-  val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
 end
 
 module TraceElem : sig
@@ -77,8 +75,6 @@ module ThreadsDomain : sig
 
   include AbstractDomain.WithBottom with type astate := astate
 
-  val is_any_but_self : astate -> bool
-
   val is_any : astate -> bool
 end
 
@@ -108,7 +104,7 @@ module OwnershipDomain : sig
 
   val is_owned : AccessPath.t -> astate -> bool
 
-  val find : [`Use_get_owned_instead]
+  val find : [`Use_get_owned_instead]  [@@warning "-32"]
 end
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
@@ -117,8 +113,6 @@ module Choice : sig
     | OnMainThread  (** the current procedure is running on the main thread *)
     | LockHeld  (** a lock is currently held *)
     [@@deriving compare]
-
-  val pp : F.formatter -> t -> unit
 end
 
 module Attribute : sig
@@ -158,8 +152,6 @@ end
  **)
 module Excluder : sig
   type t = Thread | Lock | Both [@@deriving compare]
-
-  val pp : F.formatter -> t -> unit
 end
 
 module AccessPrecondition : sig

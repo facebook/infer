@@ -45,12 +45,6 @@ let init_global_nodes_valuation () =
   closure_map := ClosureHashtbl.empty
 
 
-let print_table_size () =
-  L.(debug Linters Medium)
-    "@\n[Size: %i]@\n"
-    (NodesValuationHashtbl.cardinal !global_nodes_valuation)
-
-
 let add_formula_to_valuation k s =
   global_nodes_valuation := NodesValuationHashtbl.add k s !global_nodes_valuation
 

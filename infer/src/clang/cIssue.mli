@@ -27,8 +27,6 @@ type issue_desc =
   ; suggestion: string option
   (* an optional suggestion or correction *) }
 
-val string_of_mode : mode -> string
-
 val pp_issue : Format.formatter -> issue_desc -> unit
 
 val should_run_check : mode -> bool

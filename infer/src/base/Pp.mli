@@ -47,9 +47,6 @@ val set_obj_sub : env -> ('a -> 'a) -> env
 (** Set the object substitution, which is supposed to preserve the type.
     Currently only used for a map from (identifier) expressions to the program var containing them *)
 
-val colormap_black : colormap
-(** standard colormap: black *)
-
 val colormap_red : colormap
 (** red colormap *)
 
@@ -83,9 +80,6 @@ val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 
 
 val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a ;-separated sequence *)
-
-val or_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
-(** Pretty print a or-separated sequence *)
 
 val to_string : f:('a -> string) -> F.formatter -> 'a -> unit
 (** turn a "to_string" function into a "pp_foo" *)

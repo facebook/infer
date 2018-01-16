@@ -51,18 +51,12 @@ module Jprop : sig
   val pp_short : Pp.env -> Format.formatter -> Prop.normal t -> unit
   (** Print the toplevel prop *)
 
-  val to_number : 'a t -> int
-  (** Extract the number associated to the toplevel jprop of a prop *)
-
   val to_prop : 'a t -> 'a Prop.t
   (** Extract the toplevel jprop of a prop *)
 end
 
 (** set of visited nodes: node id and list of lines of all the instructions *)
 module Visitedset : Caml.Set.S with type elt = Procdesc.Node.id * int list
-
-val visited_str : Visitedset.t -> string
-(** convert a Visitedset to a string *)
 
 (** A spec consists of:
     pre: a joined prop
@@ -120,8 +114,6 @@ val equal_status : status -> status -> bool
 
 val string_of_status : status -> string
 
-val pp_status : Format.formatter -> status -> unit
-
 type phase = FOOTPRINT | RE_EXECUTION
 
 val equal_phase : phase -> phase -> bool
@@ -175,9 +167,6 @@ val get_proc_desc : summary -> Procdesc.t
 val get_attributes : summary -> ProcAttributes.t
 (** Get the attributes of the procedure. *)
 
-val get_ret_type : summary -> Typ.t
-(** Get the return type of the procedure *)
-
 val get_formals : summary -> (Mangled.t * Typ.t) list
 (** Get the formal parameters of the procedure *)
 
@@ -206,17 +195,11 @@ val reset_summary : Procdesc.t -> summary
 val load_summary : DB.filename -> summary option
 (** Load procedure summary from the given file *)
 
-val summary_exists : Typ.Procname.t -> bool
-(** Check if a procedure summary exists for the given procedure name *)
-
 val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
 (** Cast a list of normalized specs to a list of specs *)
 
 val pp_spec : Pp.env -> (int * int) option -> Format.formatter -> Prop.normal spec -> unit
 (** Print the spec *)
-
-val pp_specs : Pp.env -> Format.formatter -> Prop.normal spec list -> unit
-(** Print the specs *)
 
 val pp_summary_html : SourceFile.t -> Pp.color -> Format.formatter -> summary -> unit
 (** Print the summary in html format *)
@@ -241,11 +224,5 @@ val proc_is_library : ProcAttributes.t -> bool
 val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 (** Convert spec into normal form w.r.t. variable renaming *)
 
-val res_dir_specs_filename : Typ.Procname.t -> DB.filename
-(** path to the .specs file for the given procedure in the current results dir *)
-
 val store_summary : summary -> unit
 (** Save summary for the procedure into the spec database *)
-
-val summary_compact : Sil.sharing_env -> summary -> summary
-(** Return a compact representation of the summary *)

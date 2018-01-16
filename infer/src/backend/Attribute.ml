@@ -66,13 +66,6 @@ let get_all (prop: 'a Prop.t) =
   List.rev !res
 
 
-(** Get all the attributes of the prop *)
-let get_for_symb prop att =
-  List.filter
-    ~f:(function Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att | _ -> false)
-    prop.Prop.pi
-
-
 (** Get the attribute associated to the expression, if any *)
 let get_for_exp tenv (prop: 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
@@ -101,15 +94,9 @@ let get_undef tenv prop exp = get tenv prop exp ACundef
 
 let get_resource tenv prop exp = get tenv prop exp ACresource
 
-let get_autorelease tenv prop exp = get tenv prop exp ACautorelease
-
 let get_objc_null tenv prop exp = get tenv prop exp ACobjc_null
 
-let get_div0 tenv prop exp = get tenv prop exp ACdiv0
-
 let get_observer tenv prop exp = get tenv prop exp ACobserver
-
-let get_retval tenv prop exp = get tenv prop exp ACretval
 
 let get_wontleak tenv prop exp = get tenv prop exp ACwontleak
 

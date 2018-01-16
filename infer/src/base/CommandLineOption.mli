@@ -53,8 +53,6 @@ val is_originator : bool
 
 val init_work_dir : string
 
-val strict_mode : bool
-
 (** The [mk_*] functions declare command line options, while [parse] parses then according to the
     declared options.
 
@@ -80,10 +78,6 @@ type 'a t =
 val mk_set : 'a ref -> 'a -> unit t
 (** [mk_set variable value] defines a command line option which sets [variable] to [value]. *)
 
-val mk_option :
-  ?default:'a option -> ?default_to_string:('a option -> string) -> f:(string -> 'a option)
-  -> ?mk_reset:bool -> 'a option ref t
-
 val mk_bool : ?deprecated_no:string list -> ?default:bool -> ?f:(bool -> bool) -> bool ref t
 (** [mk_bool long short doc] defines a [bool ref] set by the command line flag [--long] (and
     [-s]), and cleared by the flag [--no-long] (and [-S]).  If [long] already has a "no-" prefix,
@@ -101,8 +95,6 @@ val mk_bool_group :
 val mk_int : default:int -> ?f:(int -> int) -> int ref t
 
 val mk_int_opt : ?default:int -> ?f:(int -> int) -> int option ref t
-
-val mk_float : default:float -> float ref t
 
 val mk_float_opt : ?default:float -> float option ref t
 
@@ -146,20 +138,11 @@ val mk_symbol_seq :
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
     element of [symbols]. *)
 
-val mk_set_from_json :
-  default:'a -> default_to_string:('a -> string) -> f:(Yojson.Basic.json -> 'a) -> 'a ref t
-
 val mk_json : Yojson.Basic.json ref t
 
 val mk_anon : unit -> string list ref
 (** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse
     order they appeared on the command line. *)
-
-val mk_rest :
-  ?parse_mode:parse_mode -> ?in_help:(command * string) list -> string -> string list ref
-(** [mk_rest doc] defines a [string list ref] of the command line arguments following ["--"], in the
-    reverse order they appeared on the command line.  For example, calling [mk_rest] and parsing
-    [exe -opt1 -opt2 -- arg1 arg2] will result in the returned ref containing [arg2; arg1]. *)
 
 val mk_rest_actions :
   ?parse_mode:parse_mode -> ?in_help:(command * string) list -> string -> usage:string

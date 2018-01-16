@@ -24,9 +24,6 @@ val qual_type_to_sil_type : Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
 val class_from_pointer_type : Tenv.t -> Clang_ast_t.qual_type -> Typ.Name.t
 
-val get_class_type_np :
-  Tenv.t -> Clang_ast_t.expr_info -> Clang_ast_t.obj_c_message_expr_info -> Typ.t
-
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Tenv.t -> Typ.t
 
 val get_template_args : Tenv.t -> Clang_ast_t.template_specialization_info -> Typ.template_arg list

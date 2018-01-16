@@ -20,9 +20,6 @@ type proc_filter = Typ.Procname.t -> bool
 
 type filters = {path_filter: path_filter; error_filter: error_filter; proc_filter: proc_filter}
 
-val do_not_filter : filters
-(** Filters that accept everything. *)
-
 val create_filters : Config.analyzer -> filters
 (** Create filters based on the config file *)
 

@@ -189,8 +189,6 @@ let get_all_nodes (g: t) =
   List.map ~f:(fun node -> (node, get_calls g node)) nodes
 
 
-let get_nodes_and_calls (g: t) = List.filter ~f:(fun (n, _) -> node_defined g n) (get_all_nodes g)
-
 let node_get_num_ancestors g n = (n, Typ.Procname.Set.cardinal (get_ancestors g n))
 
 let get_edges (g: t) : ((node * int) * (node * int)) list =
@@ -201,59 +199,6 @@ let get_edges (g: t) : ((node * int) * (node * int)) list =
       info.children
   in
   node_map_iter f g ; !edges
-
-
-(** Return all the children of [n], whether defined or not *)
-let get_all_children (g: t) n = (Typ.Procname.Hash.find g.node_map n).children
-
-(** Return the children of [n] which are defined *)
-let get_defined_children (g: t) n = Typ.Procname.Set.filter (node_defined g) (get_all_children g n)
-
-(** Return the parents of [n] *)
-let get_parents (g: t) n = (Typ.Procname.Hash.find g.node_map n).parents
-
-(** Check if [source] recursively calls [dest] *)
-let calls_recursively (g: t) source dest = Typ.Procname.Set.mem source (get_ancestors g dest)
-
-(** Return the children of [n] which are not heirs of [n] *)
-let get_nonrecursive_dependents (g: t) n =
-  let is_not_recursive pn = not (Typ.Procname.Set.mem pn (get_ancestors g n)) in
-  let res0 = Typ.Procname.Set.filter is_not_recursive (get_all_children g n) in
-  let res = Typ.Procname.Set.filter (node_defined g) res0 in
-  res
-
-
-(** Return the ancestors of [n] which are also heirs of [n] *)
-let compute_recursive_dependents (g: t) n =
-  let reached_from_n pn = Typ.Procname.Set.mem n (get_ancestors g pn) in
-  let res0 = Typ.Procname.Set.filter reached_from_n (get_ancestors g n) in
-  let res = Typ.Procname.Set.filter (node_defined g) res0 in
-  res
-
-
-(** Compute the ancestors of [n] which are also heirs of [n], if not pre-computed already *)
-let get_recursive_dependents (g: t) n =
-  let info = Typ.Procname.Hash.find g.node_map n in
-  match info.recursive_dependents with
-  | None ->
-      let recursive_dependents = compute_recursive_dependents g n in
-      info.recursive_dependents <- Some recursive_dependents ;
-      recursive_dependents
-  | Some recursive_dependents ->
-      recursive_dependents
-
-
-(** Return the nodes dependent on [n] *)
-let get_dependents (g: t) n =
-  Typ.Procname.Set.union (get_nonrecursive_dependents g n) (get_recursive_dependents g n)
-
-
-(** Return all the nodes with their defined children *)
-let get_nodes_and_defined_children (g: t) =
-  let nodes = ref Typ.Procname.Set.empty in
-  node_map_iter (fun n info -> if info.defined then nodes := Typ.Procname.Set.add n !nodes) g ;
-  let nodes_list = Typ.Procname.Set.elements !nodes in
-  List.map ~f:(fun n -> (n, get_defined_children g n)) nodes_list
 
 
 (** nodes with defined flag, and edges *)
@@ -277,9 +222,6 @@ let get_defined_nodes (g: t) =
   let get_node (node, _) = node in
   List.map ~f:get_node (List.filter ~f:(fun (_, defined) -> defined) nodes)
 
-
-(** Return the path of the source file *)
-let get_source (g: t) = g.source
 
 (** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];
     undefined nodes become defined if at least one side is. *)

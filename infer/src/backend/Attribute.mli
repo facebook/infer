@@ -38,15 +38,6 @@ val get_all : 'a Prop.t -> Sil.atom list
 val get_for_exp : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom list
 (** Get the attributes associated to the expression, if any *)
 
-val get_for_symb : 'a Prop.t -> PredSymb.t -> Sil.atom list
-(** Retrieve all the atoms that contain a specific attribute *)
-
-val get_autorelease : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
-(** Get the autorelease attribute associated to the expression, if any *)
-
-val get_div0 : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
-(** Get the div0 attribute associated to the expression, if any *)
-
 val get_objc_null : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the objc null attribute associated to the expression, if any *)
 
@@ -55,9 +46,6 @@ val get_observer : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 
 val get_resource : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the resource attribute associated to the expression, if any *)
-
-val get_retval : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
-(** Get the retval null attribute associated to the expression, if any *)
 
 val get_undef : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the undef attribute associated to the expression, if any *)

@@ -30,9 +30,6 @@ val analyze_proc_name : Procdesc.t -> Typ.Procname.t -> Specs.summary option
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pdesc. *)
 
-val procedure_should_be_analyzed : Typ.Procname.t -> bool
-(** Check if the procedure called needs to be analyzed. *)
-
 val set_callbacks : callbacks -> unit
 (** Set the callbacks used to perform on-demand analysis. *)
 

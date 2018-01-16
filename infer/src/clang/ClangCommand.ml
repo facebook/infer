@@ -152,8 +152,6 @@ let command_to_run cmd =
     mk_cmd (fun x -> x)
 
 
-let with_exec exec args = {args with exec}
-
 let with_plugin_args args =
   let plugin_arg_flag = "-plugin-arg-" ^ plugin_name in
   let args_before_rev =
@@ -188,8 +186,6 @@ let with_plugin_args args =
 
 
 let prepend_arg arg clang_args = {clang_args with argv= arg :: clang_args.argv}
-
-let prepend_args args clang_args = {clang_args with argv= args @ clang_args.argv}
 
 let append_args args clang_args = {clang_args with argv= clang_args.argv @ args}
 

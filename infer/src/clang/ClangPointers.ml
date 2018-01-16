@@ -9,9 +9,6 @@
 
 open! IStd
 module L = Logging
-
-type t = Clang_ast_t.pointer
-
 module Map = Map.Make (Int)
 
 let ivar_to_property_table = Int.Table.create ~size:256 ()

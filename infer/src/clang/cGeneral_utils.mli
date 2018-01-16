@@ -13,24 +13,13 @@ open! IStd
 
 type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
-val string_from_list : string list -> string
-
 val append_no_duplicates_fields :
   (Typ.Fieldname.t * Typ.t * Annot.Item.t) list -> (Typ.Fieldname.t * Typ.t * Annot.Item.t) list
   -> (Typ.Fieldname.t * Typ.t * Annot.Item.t) list
 
-val collect_list_tuples :
-  ('a list * 'b list * 'c list * 'd list * 'e list) list
-  -> 'a list * 'b list * 'c list * 'd list * 'e list
-  -> 'a list * 'b list * 'c list * 'd list * 'e list
-
 val swap_elements_list : 'a list -> 'a list
 
-val zip : 'a list -> 'b list -> ('a * 'b) list
-
 val list_range : int -> int -> int list
-
-val replicate : int -> 'a -> 'a list
 
 val mk_class_field_name : Typ.Name.t -> string -> Typ.Fieldname.t
 

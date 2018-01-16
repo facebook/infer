@@ -48,9 +48,6 @@ val compare_prop : 'a t -> 'a t -> int
 val equal_sigma : sigma -> sigma -> bool
 (** Check the equality of two sigma's *)
 
-val equal_prop : 'a t -> 'a t -> bool
-(** Check the equality of two propositions *)
-
 val pp_sub : Pp.env -> Format.formatter -> subst -> unit
 (** Pretty print a substitution. *)
 
@@ -90,9 +87,6 @@ val prop_pred_env : 'a t -> Sil.Predicates.env
 
 val d_prop : 'a t -> unit
 (** Dump a proposition. *)
-
-val d_prop_with_typ : 'a t -> unit
-(** Dump a proposition with type information *)
 
 val pp_proplist_with_typ : Pp.env -> Format.formatter -> normal t list -> unit
 (** Pretty print a list propositions with type information *)
@@ -179,13 +173,7 @@ val lexp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
 
 val atom_normalize_prop : Tenv.t -> 'a t -> atom -> atom
 
-val strexp_normalize_prop : Tenv.t -> 'a t -> strexp -> strexp
-
-val hpred_normalize_prop : Tenv.t -> 'a t -> hpred -> hpred
-
 val sigma_normalize_prop : Tenv.t -> 'a t -> hpred list -> hpred list
-
-val pi_normalize_prop : Tenv.t -> 'a t -> atom list -> atom list
 
 val normalize : Tenv.t -> exposed t -> normal t
 (** normalize a prop *)
@@ -240,14 +228,6 @@ val mk_dllseg :
   Tenv.t -> lseg_kind -> hpara_dll -> Exp.t -> Exp.t -> Exp.t -> Exp.t -> Exp.t list -> hpred
 (** Construct a dllseg predicate *)
 
-val mk_hpara : Tenv.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara
-(** Construct a hpara *)
-
-val mk_dll_hpara :
-  Tenv.t -> Ident.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list
-  -> hpara_dll
-(** Construct a dll_hpara *)
-
 val prop_emp : normal t
 (** Proposition [true /\ emp]. *)
 
@@ -280,9 +260,6 @@ val extract_footprint : 'a t -> exposed t
 
 val extract_spec : normal t -> normal t * normal t
 (** Extract the (footprint,current) pair *)
-
-val prop_set_footprint : 'a t -> 'b t -> exposed t
-(** [prop_set_fooprint p p_foot] sets proposition [p_foot] as footprint of [p]. *)
 
 val prop_expand : Tenv.t -> normal t -> normal t list
 (** Expand PE listsegs if the flag is on. *)
@@ -340,9 +317,6 @@ val prop_iter_current : Tenv.t -> 'a prop_iter -> hpred * 'a
 val prop_iter_next : 'a prop_iter -> unit prop_iter option
 (** Return the next iterator. *)
 
-val prop_iter_remove_curr_then_next : 'a prop_iter -> unit prop_iter option
-(** Remove the current hpred and return the next iterator. *)
-
 val prop_iter_update_current : 'a prop_iter -> hpred -> 'a prop_iter
 (** Update the current element of the iterator. *)
 
@@ -379,9 +353,6 @@ val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 val strexp_get_exps : Sil.strexp -> Exp.Set.t
 (** return the set of subexpressions of [strexp] *)
 
-val hpred_get_targets : Sil.hpred -> Exp.Set.t
-(** get the set of expressions on the righthand side of [hpred] *)
-
 val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
@@ -391,11 +362,6 @@ val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.S
 module Metrics : sig
   val prop_size : 'a t -> int
   (** Compute a size value for the prop, which indicates its complexity *)
-
-  val prop_chain_size : 'a t -> int
-  (** Approximate the size of the longest chain by counting the max
-      number of |-> with the same type and whose lhs is primed or
-      footprint *)
 end
 
 module CategorizePreconditions : sig

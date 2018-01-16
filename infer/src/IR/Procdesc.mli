@@ -56,9 +56,6 @@ module Node : sig
   val equal : t -> t -> bool
   (** Check if two nodes are equal *)
 
-  val get_callees : t -> Typ.Procname.t list
-  (** Get the list of callee procnames from the node *)
-
   val get_description : Pp.env -> t -> string
   (** Return a description of the node *)
 
@@ -67,10 +64,6 @@ module Node : sig
 
   val get_exn : t -> t list
   (** Get the exception nodes from the current node *)
-
-  val get_generated_slope : t -> (t -> t list) -> t list
-  (** Get a list of unique nodes until the first branch starting
-      from a node with subsequent applications of a generator function *)
 
   val get_id : t -> id
   (** Get the unique id of the node *)
@@ -92,12 +85,6 @@ module Node : sig
 
   val get_proc_name : t -> Typ.Procname.t
   (** Get the name of the procedure the node belongs to *)
-
-  val get_sliced_preds : t -> (t -> bool) -> t list
-  (** Get the predecessor nodes of a node where the given predicate evaluates to true *)
-
-  val get_sliced_succs : t -> (t -> bool) -> t list
-  (** Get the successor nodes of a node where the given predicate evaluates to true *)
 
   val get_succs : t -> t list
   (** Get the successor nodes of the current node *)
@@ -149,9 +136,6 @@ val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 val did_preanalysis : t -> bool
 (** true if we ran the preanalysis on the CFG associated with [t] *)
 
-val fold_calls : ('a -> Typ.Procname.t * Location.t -> 'a) -> 'a -> t -> 'a
-(** fold over the calls from the procedure: (callee, location) pairs *)
-
 val fold_instrs : ('a -> Node.t -> Sil.instr -> 'a) -> 'a -> t -> 'a
 (** fold over all nodes and their instructions *)
 
@@ -170,12 +154,7 @@ val get_attributes : t -> ProcAttributes.t
 val get_captured : t -> (Mangled.t * Typ.t) list
 (** Return name and type of block's captured variables *)
 
-val get_err_log : t -> Errlog.t
-
 val get_exit_node : t -> Node.t
-
-val get_flags : t -> ProcAttributes.proc_flags
-(** Get flags for the proc desc *)
 
 val get_formals : t -> (Mangled.t * Typ.t) list
 (** Return name and type of formal parameters *)
@@ -195,37 +174,19 @@ val get_ret_type : t -> Typ.t
 
 val get_ret_var : t -> Pvar.t
 
-val get_sliced_slope : t -> (Node.t -> bool) -> Node.t list
-(** Get the sliced procedure's nodes up until the first branching *)
-
-val get_slope : t -> Node.t list
-(** Get the procedure's nodes up until the first branching *)
-
 val get_start_node : t -> Node.t
 
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)
 
-val is_body_empty : t -> bool
-(** Return [true] if the body of the procdesc is empty (no instructions) *)
-
 val is_java_synchronized : t -> bool
 (** Return [true] if the procedure signature has the Java synchronized keyword *)
-
-val iter_calls : (Typ.Procname.t * Location.t -> unit) -> t -> unit
-(** iterate over the calls from the procedure: (callee, location) pairs *)
 
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
 
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
-
-val iter_slope : (Node.t -> unit) -> t -> unit
-(** iterate over all nodes until we reach a branching structure *)
-
-val iter_slope_calls : (Typ.Procname.t -> unit) -> t -> unit
-(** iterate over all calls until we reach a branching structure *)
 
 val iter_slope_range : (Node.t -> unit) -> Node.t -> Node.t -> unit
 (** iterate between two nodes or until we reach a branching structure *)
@@ -235,9 +196,6 @@ val node_set_succs_exn : t -> Node.t -> Node.t list -> Node.t list -> unit
 
 val set_exit_node : t -> Node.t -> unit
 (** Set the exit node of the procedure *)
-
-val set_flag : t -> string -> string -> unit
-(** Set a flag for the proc desc *)
 
 val set_start_node : t -> Node.t -> unit
 

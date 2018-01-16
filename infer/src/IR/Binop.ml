@@ -45,25 +45,6 @@ let equal = [%compare.equal : t]
     The return value false means "don't know". *)
 let injective = function PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true | _ -> false
 
-(** This function returns true if the operation can be inverted. *)
-let invertible = function PlusA | PlusPI | MinusA | MinusPI -> true | _ -> false
-
-(** This function inverts an invertible injective binary operator.
-    If the [binop] operation is not invertible, the function raises Assert_failure. *)
-let invert bop =
-  match bop with
-  | PlusA ->
-      MinusA
-  | PlusPI ->
-      MinusPI
-  | MinusA ->
-      PlusA
-  | MinusPI ->
-      PlusPI
-  | _ ->
-      assert false
-
-
 (** This function returns true if 0 is the right unit of [binop].
     The return value false means "don't know". *)
 let is_zero_runit = function PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true | _ -> false

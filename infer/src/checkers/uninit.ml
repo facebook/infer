@@ -146,10 +146,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         uninit_vars
 
 
-  let remove_array_element base uninit_vars =
-    D.remove (base, [AccessPath.ArrayAccess (snd base, [])]) uninit_vars
-
-
   let is_dummy_constructor_of_a_struct call =
     let is_dummy_constructor_of_struct =
       match get_formals call with

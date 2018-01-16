@@ -14,20 +14,6 @@ open! IStd
 (** flags for a procedure *)
 type proc_flags = (string, string) Caml.Hashtbl.t [@@deriving compare]
 
-val proc_flag_ignore_return : string
-(** key to specify that a function should be treated as a skip function *)
-
-(** key to specify that it is OK to ignore the return value *)
-
-val proc_flags_empty : unit -> proc_flags
-(** empty proc flags *)
-
-val proc_flags_add : proc_flags -> string -> string -> unit
-(** add a key value pair to a proc flags *)
-
-val proc_flags_find : proc_flags -> string -> string
-(** find a value for a key in the proc flags *)
-
 type objc_accessor_type =
   | Objc_getter of Typ.Struct.field
   | Objc_setter of Typ.Struct.field

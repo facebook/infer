@@ -178,8 +178,6 @@ let to_category att =
 
 let is_undef = function Aundef _ -> true | _ -> false
 
-let is_wont_leak = function Awont_leak -> true | _ -> false
-
 (** convert the attribute to a string *)
 let to_string pe = function
   | Aresource ra ->

@@ -45,17 +45,9 @@ val is_known_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
     Note that [not (is_known_subtype tenv c1 c2) == true] does not imply
     that [is_known_not_subtype tenv c1 c2 == true] *)
 
-val is_known_not_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
-(** [is_known_not_subtype tenv c1 c2] returns true if there is enough information in [tenv] to prove
-    that [c1] is not a subtype of [c2].
-    Note that [not (is_known_not_subtype tenv c1 c2) == true] does not imply
-    that [is_known_subtype tenv c1 c2 == true] *)
-
-val subtypes_to_string : t -> string
-
 val is_cast : t -> bool
 
-val is_instof : t -> bool
+val is_instof : t -> bool  [@@warning "-32"]
 
 val equal_modulo_flag : t -> t -> bool
 (** equality ignoring flags in the subtype *)

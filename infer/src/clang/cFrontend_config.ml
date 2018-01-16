@@ -40,32 +40,16 @@ let assert_fail = "__assert_fail"
 
 let assert_rtn = "__assert_rtn"
 
-let atomic_att = "<\"Atomic\">"
-
-let autorelease = "autorelease"
-
 let biniou_buffer_size =
   (* the C++ standard suggests that implementation should support string literals up to this length *)
   65535
 
-
-let block = "block"
 
 let builtin_expect = "__builtin_expect"
 
 let builtin_memset_chk = "__builtin___memset_chk"
 
 let builtin_object_size = "__builtin_object_size"
-
-let cf_alloc = "__cf_alloc"
-
-let cf_autorelease = "CFAutorelease"
-
-let cf_bridging_release = "CFBridgingRelease"
-
-let cf_bridging_retain = "CFBridgingRetain"
-
-let cf_non_null_alloc = "__cf_non_null_alloc"
 
 let ckcomponent_cl = "CKComponent"
 
@@ -79,21 +63,7 @@ let clang_bin xx =
 
 let class_method = "class"
 
-let class_type = "Class"
-
-let copy = "copy"
-
-let count = "count"
-
-let drain = "drain"
-
-let emtpy_name_category = "EMPTY_NAME_CATEGORY_FOR_"
-
-let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
-
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
-
-let free = "free"
 
 let google_LogMessageFatal = "google::LogMessageFatal_LogMessageFatal"
 
@@ -113,23 +83,13 @@ let infer_skip_gcc_asm_stmt = "__infer_skip_gcc_asm_stmt"
 
 let init = "init"
 
-let invalid_pointer = 0
-
 let is_kind_of_class = "isKindOfClass:"
 
 let malloc = "malloc"
 
-let mutableCopy = "mutableCopy"
-
 let new_str = "new"
 
 let next_object = "nextObject"
-
-let ns_make_collectable = "NSMakeCollectable"
-
-let nsarray_cl = "NSArray"
-
-let nsautorelease_pool_cl = "NSAutoreleasePool"
 
 let nsproxy_cl = "NSProxy"
 
@@ -141,16 +101,6 @@ let objc_class = "objc_class"
 
 let objc_object = "objc_object"
 
-let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
-
-let objects = "objects"
-
-let pseudo_object_type = "<pseudo-object type>"
-
-let release = "release"
-
-let retain = "retain"
-
 let return_param = "__return_param"
 
 let self = "self"
@@ -160,8 +110,6 @@ let std_addressof = QualifiedCppName.Match.of_fuzzy_qual_names ["std::addressof"
 let string_with_utf8_m = "stringWithUTF8String:"
 
 let this = "this"
-
-let void = "void"
 
 let replace_with_deref_first_arg_attr = "__infer_replace_with_deref_first_arg"
 

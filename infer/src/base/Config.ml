@@ -160,8 +160,6 @@ let backend_stats_dir_name = "backend_stats"
     continues *)
 let bound_error_allowed_in_procedure_call = true
 
-let buck_generated_folder = "buck-out/gen"
-
 let buck_infer_deps_file_name = "infer-deps.txt"
 
 let buck_results_dir_name = "infer"
@@ -226,8 +224,6 @@ let log_analysis_recursion_timeout = "R"
 
 let log_analysis_crash = "C"
 
-let log_dir_name = "log"
-
 let manual_buck_compilation_db = "BUCK COMPILATION DATABASE OPTIONS"
 
 let manual_buck_flavors = "BUCK FLAVORS OPTIONS"
@@ -253,9 +249,6 @@ let manual_quandary = "QUANDARY CHECKER OPTIONS"
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
 let manual_siof = "SIOF CHECKER OPTIONS"
-
-(** Maximum level of recursion during the analysis, after which a timeout is generated *)
-let max_recursion = 5
 
 (** Maximum number of widens that can be performed before the analysis will intentionally crash.
     Used to guard against divergence in the case that someone has implemented a bad widening
@@ -824,11 +817,6 @@ and array_level =
 |}
 
 
-and ast_file =
-  CLOpt.mk_path_opt ~deprecated:["ast"] ~long:"ast-file" ~meta:"file"
-    "AST file for the translation"
-
-
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex"; "-blacklist"] ~long:"buck-blacklist"
     ~in_help:CLOpt.([(Run, manual_buck_flavors); (Capture, manual_buck_flavors)])
@@ -1204,11 +1192,6 @@ and eradicate_optional_present =
   CLOpt.mk_bool ~long:"eradicate-optional-present" "Check for @Present annotations"
 
 
-and eradicate_propagate_return_nullable =
-  CLOpt.mk_bool ~long:"eradicate-propagate-return-nullable"
-    "Propagation of nullable to the return value"
-
-
 and eradicate_return_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
 
@@ -1475,9 +1458,6 @@ and load_results =
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
 
-(** name of the makefile to create with clusters and dependencies *)
-and makefile = CLOpt.mk_path ~deprecated:["makefile"] ~long:"makefile" ~default:"" ~meta:"file" ""
-
 and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
@@ -1519,11 +1499,6 @@ and nelseg = CLOpt.mk_bool ~deprecated:["nelseg"] ~long:"nelseg" "Use only nonem
 
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
-
-
-(* TODO: document *)
-and objc_memory_model =
-  CLOpt.mk_bool ~deprecated:["objcm"] ~long:"objc-memory-model" "Use ObjC memory model"
 
 
 and only_footprint =
@@ -1624,11 +1599,6 @@ and procedures_per_process =
 and procs_csv =
   CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv" ~meta:"file"
     "Write statistics for each procedure in CSV format to a file"
-
-
-and procs_xml =
-  CLOpt.mk_path_opt ~deprecated:["procs_xml"] ~long:"procs-xml" ~meta:"file"
-    "Write statistics for each procedure in XML format to a file (as a path relative to $(b,--results-dir))"
 
 
 and progress_bar =
@@ -1880,8 +1850,6 @@ and subtype_multirange =
     "Use the multirange subtyping domain"
 
 
-and svg = CLOpt.mk_bool ~deprecated:["svg"] ~long:"svg" "Generate .dot and .svg files from specs"
-
 and symops_per_iteration =
   CLOpt.mk_int_opt ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~meta:"int"
     "Set the number of symbolic operations per iteration (see $(b,--iterations))"
@@ -1947,11 +1915,6 @@ and unsafe_malloc =
     "Assume that malloc(3) never returns null."
 
 
-(** Set the path to the javac verbose output *)
-and verbose_out =
-  CLOpt.mk_path ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:"" ~meta:"file" ""
-
-
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
@@ -1962,10 +1925,6 @@ and version =
     "Print version information in json format and exit" ;
   CLOpt.mk_set var `Vcs ~long:"version-vcs" "Print version control system commit and exit" ;
   var
-
-
-and whole_seconds =
-  CLOpt.mk_bool ~deprecated:["whole_seconds"] ~long:"whole-seconds" "Print whole seconds only"
 
 
 (** visit mode for the worklist:
@@ -1992,11 +1951,6 @@ and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty" ~default:false
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`)."
-
-
-and xml_specs =
-  CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
-    "Export specs into XML files file1.xml ... filen.xml"
 
 
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
@@ -2279,8 +2233,6 @@ and append_buck_flavors = !append_buck_flavors
 
 and array_level = !array_level
 
-and ast_file = !ast_file
-
 and biabduction = !biabduction
 
 and blacklist = !blacklist
@@ -2384,8 +2336,6 @@ and eradicate_field_over_annotated = !eradicate_field_over_annotated
 
 and eradicate_optional_present = !eradicate_optional_present
 
-and eradicate_propagate_return_nullable = !eradicate_propagate_return_nullable
-
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
 
 and eradicate_debug = !eradicate_debug
@@ -2437,8 +2387,6 @@ and gen_previous_build_command_script = !gen_previous_build_command_script
 
 and generated_classes = !generated_classes
 
-and headers = !headers
-
 and html = !html
 
 and icfg_dotty_outfile = !icfg_dotty_outfile
@@ -2466,8 +2414,6 @@ and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
 
 and javac_classes_out = !javac_classes_out
-
-and javac_verbose_out = !verbose_out
 
 and jobs = !jobs
 
@@ -2512,8 +2458,6 @@ and log_events = !log_events
 
 and log_file = !log_file
 
-and makefile_cmdline = !makefile
-
 and max_nesting = !max_nesting
 
 and merge = !merge
@@ -2533,8 +2477,6 @@ and nullable_annotation = !nullable_annotation
 and suggest_nullable = !suggest_nullable
 
 and no_translate_libs = not !headers
-
-and objc_memory_model_on = !objc_memory_model
 
 and only_cheap_debug = !only_cheap_debug
 
@@ -2577,8 +2519,6 @@ and print_using_diff = !print_using_diff
 and procedures_per_process = !procedures_per_process
 
 and procs_csv = !procs_csv
-
-and procs_xml = !procs_xml
 
 and project_root = !project_root
 
@@ -2658,8 +2598,6 @@ and stats_report = !stats_report
 
 and subtype_multirange = !subtype_multirange
 
-and svg = !svg
-
 and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
@@ -2692,8 +2630,6 @@ and uninit_interproc = !uninit_interproc
 
 and unsafe_malloc = !unsafe_malloc
 
-and whole_seconds = !whole_seconds
-
 and worklist_mode = !worklist_mode
 
 and write_dotty = !write_dotty
@@ -2705,8 +2641,6 @@ and write_html_whitelist_regex = !write_html_whitelist_regex
 and xcode_developer_dir = !xcode_developer_dir
 
 and xcpretty = !xcpretty
-
-and xml_specs = !xml_specs
 
 (** Configuration values derived from command-line options *)
 

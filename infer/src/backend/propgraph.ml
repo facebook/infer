@@ -17,30 +17,11 @@ module L = Logging
 
 type t = Prop.normal Prop.t
 
-type node = Exp.t
-
 type sub_entry = Ident.t * Exp.t
 
 type edge = Ehpred of Sil.hpred | Eatom of Sil.atom | Esub_entry of sub_entry
 
 let from_prop p = p
-
-(** Return [true] if root node *)
-let rec is_root = function
-  | Exp.Var id ->
-      Ident.is_normal id
-  | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Lvar _ ->
-      true
-  | Exp.Cast (_, e) ->
-      is_root e
-  | Exp.UnOp _ | Exp.BinOp _ | Exp.Lfield _ | Exp.Lindex _ | Exp.Sizeof _ ->
-      false
-
-
-(** Return [true] if the nodes are connected. Used to compute reachability. *)
-let nodes_connected n1 n2 = Exp.equal n1 n2
-
-(* Implemented as equality for now, later it might contain offset by a constant *)
 
 (** Return [true] if the edge is an hpred, and [false] if it is an atom *)
 let edge_is_hpred = function Ehpred _ -> true | Eatom _ -> false | Esub_entry _ -> false
@@ -65,20 +46,6 @@ let edge_get_source = function
       Some (Exp.Var x)
 
 
-(** Return the successor nodes of the edge *)
-let edge_get_succs = function
-  | Ehpred hpred ->
-      Exp.Set.elements (Prop.hpred_get_targets hpred)
-  | Eatom Sil.Aeq (_, e2) ->
-      [e2]
-  | Eatom Sil.Aneq (_, e2) ->
-      [e2]
-  | Eatom (Sil.Apred _ | Anpred _) ->
-      []
-  | Esub_entry (_, e) ->
-      [e]
-
-
 let get_sigma footprint_part g = if footprint_part then g.Prop.sigma_fp else g.Prop.sigma
 
 let get_pi footprint_part g = if footprint_part then g.Prop.pi_fp else g.Prop.pi
@@ -98,12 +65,6 @@ let edge_from_source g n footprint_part is_hpred =
     match edge_get_source hpred with Some e -> Exp.equal n e | None -> false
   in
   match List.filter ~f:starts_from edges with [] -> None | edge :: _ -> Some edge
-
-
-(** [get_succs g n footprint_part is_hpred] returns the successor nodes of [n] in [g].
-    [footprint_part] indicates whether to search the successors in the footprint part, and [is_pred] whether to follow hpred edges. *)
-let get_succs g n footprint_part is_hpred =
-  match edge_from_source g n footprint_part is_hpred with None -> [] | Some e -> edge_get_succs e
 
 
 (** [get_edges footprint_part g] returns the list of edges in [g], in the footprint part if [fotprint_part] is true *)
@@ -132,10 +93,6 @@ let edge_equal e1 e2 =
 let contains_edge (footprint_part: bool) (g: t) (e: edge) =
   List.exists ~f:(fun e' -> edge_equal e e') (get_edges footprint_part g)
 
-
-(** [iter_edges footprint_part f g] iterates function [f] on the edges in [g] in the same order as returned by [get_edges];
-    if [footprint_part] is true the edges are taken from the footprint part. *)
-let iter_edges footprint_part f g = List.iter ~f (get_edges footprint_part g)
 
 (** Graph annotated with the differences w.r.t. a previous graph *)
 type diff =

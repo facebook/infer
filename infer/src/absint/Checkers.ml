@@ -14,24 +14,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-(** Convenience functions for checkers to print information *)
-module PP = struct
-  (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
-      and [nafter] lines after [loc] *)
-  let pp_loc_range linereader nbefore nafter fmt loc =
-    let printline n =
-      match Printer.LineReader.from_loc linereader {loc with Location.line= n} with
-      | Some s ->
-          F.fprintf fmt "%s%s@\n" (if Int.equal n loc.Location.line then "-->" else "   ") s
-      | _ ->
-          ()
-    in
-    F.fprintf fmt "%a:%d@\n" SourceFile.pp loc.Location.file loc.Location.line ;
-    for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
-end
-
-(* PP *)
-
 (** State that persists in the .specs files. *)
 module ST = struct
   let report_error tenv proc_name proc_desc kind loc ?(advice= None) ?(field_name= None)

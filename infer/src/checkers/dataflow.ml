@@ -162,7 +162,7 @@ end
 (* MakeDF *)
 
 (** Example dataflow callback: compute the the distance from a node to the start node. *)
-let callback_test_dataflow {Callbacks.proc_desc; tenv; summary} =
+let _callback_test_dataflow {Callbacks.proc_desc; tenv; summary} =
   let verbose = false in
   let module DFCount = MakeDF (struct
     type t = int

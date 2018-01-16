@@ -19,9 +19,6 @@ val find_files : path:string -> extension:string -> string list
 val string_crc_hex32 : string -> string
 (** Compute a 32-character hexadecimal crc using the Digest module  *)
 
-val copy_file : string -> string -> int option
-(** copy a source file, return the number of lines, or None in case of error *)
-
 val read_file : string -> (string list, string) Result.t
 (** read a source file and return a list of lines *)
 
@@ -40,9 +37,6 @@ type outfile =
 
 val create_outfile : string -> outfile option
 (** create an outfile for the command line, the boolean indicates whether to do demangling when closing the file *)
-
-val do_outf : outfile option -> (outfile -> unit) -> unit
-(** operate on an outfile reference if it is not None *)
 
 val close_outf : outfile -> unit
 (** close an outfile *)

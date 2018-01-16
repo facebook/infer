@@ -38,11 +38,6 @@ let check_register_populated () =
     L.(die InternalError) "Builtins were not initialized"
 
 
-(** check if the function is a builtin *)
-let is_registered name =
-  Typ.Procname.Hash.mem builtin_functions name || (check_register_populated () ; false)
-
-
 (** get the symbolic execution handler associated to the builtin function name *)
 let get name : t option =
   try Some (Typ.Procname.Hash.find builtin_functions name) with Not_found ->

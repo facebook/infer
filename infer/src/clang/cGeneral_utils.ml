@@ -26,10 +26,6 @@ let rec swap_elements_list l =
       assert false
 
 
-let rec string_from_list l =
-  match l with [] -> "" | [item] -> item | item :: l' -> item ^ " " ^ string_from_list l'
-
-
 let append_no_duplicates_annotations list1 list2 =
   let equal (annot1, _) (annot2, _) =
     String.equal annot1.Annot.class_name annot2.Annot.class_name
@@ -62,24 +58,10 @@ let rec append_no_duplicates_fields list1 list2 =
       list2
 
 
-let rec collect_list_tuples l (a, a1, b, c, d) =
-  match l with
-  | [] ->
-      (a, a1, b, c, d)
-  | (a', a1', b', c', d') :: l' ->
-      collect_list_tuples l' (a @ a', a1 @ a1', b @ b', c @ c', d @ d')
-
-
-let rec zip xs ys =
-  match (xs, ys) with [], _ | _, [] -> [] | x :: xs, y :: ys -> (x, y) :: zip xs ys
-
-
 let list_range i j =
   let rec aux n acc = if n < i then acc else aux (n - 1) (n :: acc) in
   aux j []
 
-
-let replicate n el = List.map ~f:(fun _ -> el) (list_range 0 (n - 1))
 
 let mk_class_field_name class_tname field_name =
   Typ.Fieldname.Clang.from_class_name class_tname field_name

@@ -11,10 +11,6 @@
 type accept_more
  and end_of_list
 
-(** To be used in 'emptyness *)
-type empty
- and non_empty
-
 (* Markers are a fool-proofing mechanism to avoid mistaking captured types.
   Template argument types can be captured with [capt_typ] to be referenced later
   by their position [typ1], [typ2], [typ3], ...
@@ -275,6 +271,7 @@ module Procname : sig
     If the args do not match, raise an internal error.
  *)
 end
+[@@warning "-32"]
 
 module TypName : sig
   include Common
@@ -291,3 +288,4 @@ module TypName : sig
   val ( &--> ) :
     ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
 end
+[@@warning "-32"]

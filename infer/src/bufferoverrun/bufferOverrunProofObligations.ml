@@ -333,12 +333,6 @@ module ConditionTrace = struct
 
   let get_cond_trace : t -> cond_trace = fun ct -> ct.cond_trace
 
-  let get_proc_name : t -> Typ.Procname.t = fun ct -> ct.proc_name
-
-  let get_caller_proc_name ct =
-    match ct.cond_trace with Intra pname -> pname | Inter (caller_pname, _, _) -> caller_pname
-
-
   let make : Typ.Procname.t -> Location.t -> ValTraceSet.t -> t =
     fun proc_name location val_traces ->
       {proc_name; location; cond_trace= Intra proc_name; val_traces}

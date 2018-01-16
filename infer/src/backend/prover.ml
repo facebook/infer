@@ -910,12 +910,6 @@ let check_atom tenv prop a0 =
       List.exists ~f:(Sil.equal_atom a) prop.Prop.pi
 
 
-(** Check [prop |- e1<=e2]. Result [false] means "don't know". *)
-let check_le tenv prop e1 e2 =
-  let e1_le_e2 = Exp.BinOp (Binop.Le, e1, e2) in
-  check_atom tenv prop (Prop.mk_inequality tenv e1_le_e2)
-
-
 (** Check whether [prop |- allocated(e)]. *)
 let check_allocatedness tenv prop e =
   let n_e = Prop.exp_normalize_prop ~destructive:true tenv prop e in
@@ -934,12 +928,6 @@ let check_allocatedness tenv prop e =
         else false
   in
   List.exists ~f spatial_part
-
-
-(** Compute an upper bound of an expression *)
-let compute_upper_bound_of_exp tenv p e =
-  let ineq = Inequalities.from_prop tenv p in
-  Inequalities.compute_upper_bound ineq e
 
 
 (** Check if two hpreds have the same allocated lhs *)
@@ -1949,35 +1937,6 @@ let cast_exception tenv texp1 texp2 e1 subs =
         ()
   in
   raise (IMPL_EXC ("class cast exception", subs, EXC_FALSE))
-
-
-(** get all methods that override [supertype].[pname] in [tenv].
-    Note: supertype should be a type T rather than a pointer to type T
-    Note: [pname] wil never be included in the returned result *)
-let get_overrides_of tenv supertype pname =
-  let typ_has_method pname (typ: Typ.t) =
-    match typ.desc with
-    | Tstruct name -> (
-      match Tenv.lookup tenv name with
-      | Some {methods} ->
-          List.exists ~f:(fun m -> Typ.Procname.equal pname m) methods
-      | None ->
-          false )
-    | _ ->
-        false
-  in
-  let gather_overrides tname _ overrides_acc =
-    let typ = Typ.mk (Tstruct tname) in
-    (* TODO shouldn't really create type here...*)
-    (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
-    if not (Typ.equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
-      (* only select the ones that implement [pname] as overrides *)
-      let resolved_pname = Typ.Procname.replace_class pname tname in
-      if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
-      else overrides_acc
-    else overrides_acc
-  in
-  Tenv.fold gather_overrides tenv []
 
 
 (** Check the equality of two types ignoring flags in the subtyping components *)

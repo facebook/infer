@@ -106,8 +106,6 @@ let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
 let cannot_star = from_string "Cannot_star"
 
-let checkers_access_global = from_string "CHECKERS_ACCESS_GLOBAL"
-
 let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY"
 
 let checkers_annotation_reachability_error = from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
@@ -122,15 +120,9 @@ let checkers_fragment_retain_view = from_string "CHECKERS_FRAGMENT_RETAINS_VIEW"
 
 let checkers_immutable_cast = from_string "CHECKERS_IMMUTABLE_CAST"
 
-let checkers_print_c_call = from_string "CHECKERS_PRINT_C_CALL"
-
-let checkers_print_objc_method_calls = from_string "CHECKERS_PRINT_OBJC_METHOD_CALLS"
-
 let checkers_printf_args = from_string "CHECKERS_PRINTF_ARGS"
 
 let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
-
-let cluster_callback = from_string "CLUSTER_CALLBACK"
 
 let codequery = from_string "Codequery"
 
@@ -290,8 +282,6 @@ let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
 let precondition_not_met = from_string "PRECONDITION_NOT_MET"
 
 let premature_nil_termination = from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
-
-let proc_callback = from_string "PROC_CALLBACK" ~hum:"Procedure Callback"
 
 let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
 

@@ -14,17 +14,8 @@ open! IStd
 (** Type for type environment. *)
 type t
 
-val add : t -> Typ.Name.t -> Typ.Struct.t -> unit
-(** Add a (name,typename) pair to the global type environment. *)
-
 val create : unit -> t
 (** Create a new type environment. *)
-
-val fold : (Typ.Name.t -> Typ.Struct.t -> 'a -> 'a) -> t -> 'a -> 'a
-(** Fold a function over the elements of the type environment. *)
-
-val iter : (Typ.Name.t -> Typ.Struct.t -> unit) -> t -> unit
-(** iterate over a type environment *)
 
 val load_from_file : DB.filename -> t option
 (** Load a type environment from a file *)
@@ -43,17 +34,11 @@ val add_field : t -> Typ.Name.t -> Typ.Struct.field -> unit
 
 val sort_fields_tenv : t -> unit
 
-val mem : t -> Typ.Name.t -> bool
-(** Check if typename is found in t *)
-
-val pp : Format.formatter -> t -> unit
+val pp : Format.formatter -> t -> unit  [@@warning "-32"]
 (** print a type environment *)
 
 val store_to_file : DB.filename -> t -> unit
 (** Save a type environment into a file *)
-
-val get_overriden_method : t -> Typ.Procname.java -> Typ.Procname.t option
-(** Get method that is being overriden by java_pname (if any) **)
 
 val language_is : t -> Config.language -> bool
 (** Test the language from which the types in the tenv were translated *)

@@ -20,10 +20,6 @@ open! IStd
 
 module L = Logging
 
-let is_pointer_to_objc_class typ =
-  match typ.Typ.desc with Tptr (typ, _) when Typ.is_objc_class typ -> true | _ -> false
-
-
 let get_super_interface_decl otdi_super =
   match otdi_super with
   | Some dr ->

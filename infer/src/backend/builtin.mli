@@ -31,9 +31,6 @@ type registered
 val register : Typ.Procname.t -> t -> registered
 (** Register a builtin [Typ.Procname.t] and symbolic execution handler *)
 
-val is_registered : Typ.Procname.t -> bool
-(** Check if the function is a builtin *)
-
 val get : Typ.Procname.t -> t option
 (** Get the symbolic execution handler associated to the builtin function name *)
 

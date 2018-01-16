@@ -29,9 +29,6 @@ module Path : sig
   val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
   (** add a call to a procname that's had to be skipped, along with the reason and the location of the procname when known *)
 
-  val contains : t -> t -> bool
-  (** check whether a path contains another path *)
-
   val contains_position : t -> PredSymb.path_pos -> bool
   (** check wether the path contains the given position *)
 
@@ -454,14 +451,6 @@ end = struct
 
   let d p = L.add_print_action (L.PTpath, Obj.repr p)
 
-  let rec contains p1 p2 =
-    match p2 with
-    | Pjoin (p2', p2'', _) ->
-        contains p1 p2' || contains p1 p2''
-    | _ ->
-        phys_equal p1 p2
-
-
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in
     let g level path _ exn_opt =
@@ -579,12 +568,6 @@ module PathSet : sig
   val equal : t -> t -> bool
   (** equality for pathsets *)
 
-  val filter : (Prop.normal Prop.t -> bool) -> t -> t
-  (** filter a pathset on the prop component *)
-
-  val filter_path : Path.t -> t -> Prop.normal Prop.t list
-  (** find the list of props whose associated path contains the given path *)
-
   val fold : (Prop.normal Prop.t -> Path.t -> 'a -> 'a) -> t -> 'a -> 'a
   (** fold over a pathset *)
 
@@ -638,15 +621,6 @@ end = struct
   let to_proplist ps = List.map ~f:fst (elements ps)
 
   let to_propset tenv ps = Propset.from_proplist tenv (to_proplist ps)
-
-  let filter f ps =
-    let elements = ref [] in
-    PropMap.iter (fun p _ -> elements := p :: !elements) ps ;
-    elements := List.filter ~f:(fun p -> not (f p)) !elements ;
-    let filtered_map = ref ps in
-    List.iter ~f:(fun p -> filtered_map := PropMap.remove p !filtered_map) !elements ;
-    !filtered_map
-
 
   let partition f ps =
     let elements = ref [] in
@@ -728,12 +702,6 @@ end = struct
 
 
   let d (ps: t) = L.add_print_action (L.PTpathset, Obj.repr ps)
-
-  let filter_path path ps =
-    let plist = ref [] in
-    let f prop path' = if Path.contains path path' then plist := prop :: !plist in
-    iter f ps ; !plist
-
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
   let from_renamed_list (pl: ('a Prop.t * Path.t) list) : t =

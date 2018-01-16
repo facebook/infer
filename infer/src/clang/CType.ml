@@ -15,10 +15,6 @@ module L = Logging
 
 let add_pointer_to_typ typ = Typ.mk (Tptr (typ, Typ.Pk_pointer))
 
-let remove_pointer_to_typ typ =
-  match typ.Typ.desc with Typ.Tptr (typ, Typ.Pk_pointer) -> typ | _ -> typ
-
-
 let objc_classname_of_type typ =
   match typ.Typ.desc with
   | Typ.Tstruct name ->
@@ -78,25 +74,3 @@ let is_reference_type {Clang_ast_t.qt_type_ptr} =
       true
   | _ ->
       false
-
-
-(* To be called with strings of format "<pointer_type_info>*<class_name>" *)
-let get_name_from_type_pointer custom_type_pointer =
-  match Str.split (Str.regexp "*") custom_type_pointer with
-  | [pointer_type_info; class_name] ->
-      (pointer_type_info, class_name)
-  | _ ->
-      assert false
-
-(*
-let rec get_type_list nn ll =
-  match ll with
-  | [] -> []
-  | (n, t):: ll' ->
-      (* L.(debug Capture Verbose) ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
-      if n = nn then (
-        L.(debug Capture Verbose) ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
-          (Typ.to_string t);
-        [t]
-      ) else get_type_list nn ll'
-*)

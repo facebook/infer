@@ -93,12 +93,6 @@ let partition = PropSet.partition
 
 (** {2 Pretty print} *)
 
-(** Pretty print a set of propositions, obtained from the given prop. *)
-let pp pe prop f pset =
-  let plist = to_proplist pset in
-  Propgraph.pp_proplist pe "PROP" (prop, false) f plist
-
-
 let d p ps =
   let plist = to_proplist ps in
   Propgraph.d_proplist p plist

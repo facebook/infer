@@ -201,11 +201,6 @@ let compare_hpara_dll = compare_hpara_dll0 (fun _ _ -> 0)
 
 let equal_hpara_dll = [%compare.equal : hpara_dll]
 
-(** Return the lhs expression of a hpred *)
-let hpred_get_lhs h =
-  match h with Hpointsto (e, _, _) | Hlseg (_, _, e, _, _) | Hdllseg (_, _, e, _, _, _, _) -> e
-
-
 (** {2 Comparision and Inspection Functions} *)
 let is_objc_object = function
   | Hpointsto (_, _, Sizeof {typ}) ->
@@ -229,9 +224,6 @@ let zero_value_of_numerical_type_option typ =
 
 (** Returns the zero value of a type, for int, float and ptr types, fail otherwise *)
 let zero_value_of_numerical_type typ = Option.value_exn (zero_value_of_numerical_type_option typ)
-
-(** Make a static local name in objc *)
-let mk_static_local_name pname vname = pname ^ "_" ^ vname
 
 (** Check if a pvar is a local static in objc *)
 let is_static_local_name pname pvar =
@@ -346,9 +338,6 @@ let pp_offset pe f = function
 (** Convert an offset to a string *)
 let offset_to_string e = F.asprintf "%a" (pp_offset Pp.text) e
 
-(** dump an offset. *)
-let d_offset (off: offset) = L.add_print_action (L.PToff, Obj.repr off)
-
 (** Pretty print a list of offsets *)
 let rec pp_offset_list pe f = function
   | [] ->
@@ -451,9 +440,6 @@ let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
 let pp_instr_list pe fmt instrs =
   List.iter instrs ~f:(fun instr -> F.fprintf fmt "%a;@\n" (pp_instr pe) instr)
 
-
-(** Dump a list of instructions. *)
-let d_instr_list (il: instr list) = L.add_print_action (L.PTinstr_list, Obj.repr il)
 
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
@@ -625,11 +611,7 @@ let pp_texp_simple pe =
   match pe.Pp.opt with SIM_DEFAULT -> pp_texp pe | SIM_WITH_TYP -> pp_texp_full pe
 
 
-let inst_abstraction = Iabstraction
-
 let inst_actual_precondition = Iactual_precondition
-
-let inst_alloc = Ialloc
 
 (** for formal parameters *)
 let inst_formal = Iformal (None, false)
@@ -644,8 +626,6 @@ let inst_none = Inone
 let inst_nullify = Inullify
 
 let inst_rearrange b loc pos = Irearrange (Some b, false, loc.Location.line, pos)
-
-let inst_taint = Itaint
 
 let inst_update loc pos = Iupdate (None, false, loc.Location.line, pos)
 
@@ -774,9 +754,6 @@ let inst_set_null_case_flag = function
   | inst ->
       inst
 
-
-(** Get the null case flag of the inst. *)
-let inst_get_null_case_flag = function Iupdate (_, ncf, _, _) -> Some ncf | _ -> None
 
 (** Update [inst_old] to [inst_new] preserving the zero flag *)
 let update_inst inst_old inst_new =
@@ -927,27 +904,6 @@ let pp_sexp_list pe f sel =
   F.fprintf f "%a" (Pp.seq (fun f se -> F.fprintf f "%a" (pp_sexp pe) se)) sel
 
 
-(** dump a list of expressions. *)
-let d_sexp_list (sel: strexp list) = L.add_print_action (L.PTsexp_list, Obj.repr sel)
-
-let rec pp_hpara_list pe f = function
-  | [] ->
-      ()
-  | [para] ->
-      F.fprintf f "PRED: %a" (pp_hpara pe) para
-  | para :: paras ->
-      F.fprintf f "PRED: %a@\n@\n%a" (pp_hpara pe) para (pp_hpara_list pe) paras
-
-
-let rec pp_hpara_dll_list pe f = function
-  | [] ->
-      ()
-  | [para] ->
-      F.fprintf f "PRED: %a" (pp_hpara_dll pe) para
-  | para :: paras ->
-      F.fprintf f "PRED: %a@\n@\n%a" (pp_hpara_dll pe) para (pp_hpara_dll_list pe) paras
-
-
 (** dump a hpred. *)
 let d_hpred (hpred: hpred) = L.add_print_action (L.PThpred, Obj.repr hpred)
 
@@ -1042,8 +998,6 @@ let atom_expmap (f: Exp.t -> Exp.t) = function
       Anpred (a, List.map ~f es)
 
 
-let atom_list_expmap (f: Exp.t -> Exp.t) (alist: atom list) = List.map ~f:(atom_expmap f) alist
-
 (** {2 Function for computing lexps in sigma} *)
 
 let hpred_get_lexp acc = function
@@ -1086,59 +1040,6 @@ let rec exp_fpv e =
   (* TODO: Sizeof length expressions may contain variables, do not ignore them. *)
   | Sizeof _ ->
       []
-
-
-let exp_list_fpv el = List.concat_map ~f:exp_fpv el
-
-let atom_fpv = function
-  | Aeq (e1, e2) ->
-      exp_fpv e1 @ exp_fpv e2
-  | Aneq (e1, e2) ->
-      exp_fpv e1 @ exp_fpv e2
-  | Apred (_, es) | Anpred (_, es) ->
-      List.fold ~f:(fun fpv e -> List.rev_append (exp_fpv e) fpv) ~init:[] es
-
-
-let rec strexp_fpv = function
-  | Eexp (e, _) ->
-      exp_fpv e
-  | Estruct (fld_se_list, _) ->
-      let f (_, se) = strexp_fpv se in
-      List.concat_map ~f fld_se_list
-  | Earray (len, idx_se_list, _) ->
-      let fpv_in_len = exp_fpv len in
-      let f (idx, se) = exp_fpv idx @ strexp_fpv se in
-      fpv_in_len @ List.concat_map ~f idx_se_list
-
-
-let rec hpred_fpv = function
-  | Hpointsto (base, se, te) ->
-      exp_fpv base @ strexp_fpv se @ exp_fpv te
-  | Hlseg (_, para, e1, e2, elist) ->
-      let fpvars_in_elist = exp_list_fpv elist in
-      hpara_fpv para @ exp_fpv (* This set has to be empty. *) e1 @ exp_fpv e2 @ fpvars_in_elist
-  | Hdllseg (_, para, e1, e2, e3, e4, elist) ->
-      let fpvars_in_elist = exp_list_fpv elist in
-      hpara_dll_fpv para (* This set has to be empty. *)
-      @ exp_fpv e1 @ exp_fpv e2 @ exp_fpv e3 @ exp_fpv e4 @ fpvars_in_elist
-
-
-(** hpara should not contain any program variables.
-    This is because it might cause problems when we do interprocedural
-    analysis. In interprocedural analysis, we should consider the issue
-    of scopes of program variables. *)
-and hpara_fpv para =
-  let fpvars_in_body = List.concat_map ~f:hpred_fpv para.body in
-  match fpvars_in_body with [] -> [] | _ -> assert false
-
-
-(** hpara_dll should not contain any program variables.
-    This is because it might cause problems when we do interprocedural
-    analysis. In interprocedural analysis, we should consider the issue
-    of scopes of program variables. *)
-and hpara_dll_fpv para =
-  let fpvars_in_body = List.concat_map ~f:hpred_fpv para.body_dll in
-  match fpvars_in_body with [] -> [] | _ -> assert false
 
 
 (** {2 Functions for computing free non-program variables} *)
@@ -1187,9 +1088,6 @@ let fav_to_list fav = List.rev !fav
 (** Pretty print a fav. *)
 let pp_fav f fav = Pp.seq Ident.pp f (fav_to_list fav)
 
-(** Copy a [fav]. *)
-let fav_copy fav = ref (List.map ~f:(fun x -> x) !fav)
-
 (** Turn a xxx_fav_add function into a xxx_fav function *)
 let fav_imperative_to_functional f x =
   let fav = fav_new () in
@@ -1202,24 +1100,6 @@ let fav_filter_ident fav filter = fav := List.filter ~f:filter !fav
 
 (** Like [fav_filter_ident] but return a copy. *)
 let fav_copy_filter_ident fav filter = ref (List.filter ~f:filter !fav)
-
-(** checks whether every element in l1 appears l2 **)
-let rec ident_sorted_list_subset l1 l2 =
-  match (l1, l2) with
-  | [], _ ->
-      true
-  | _ :: _, [] ->
-      false
-  | id1 :: l1, id2 :: l2 ->
-      let n = Ident.compare id1 id2 in
-      if Int.equal n 0 then ident_sorted_list_subset l1 (id2 :: l2)
-      else if n > 0 then ident_sorted_list_subset (id1 :: l1) l2
-      else false
-
-
-(** [fav_subset_ident fav1 fav2] returns true if every ident in [fav1]
-    is in [fav2].*)
-let fav_subset_ident fav1 fav2 = ident_sorted_list_subset (fav_to_list fav1) (fav_to_list fav2)
 
 let fav_mem fav id = List.exists ~f:(Ident.equal id) !fav
 
@@ -1265,9 +1145,6 @@ let atom_fav_add fav = function
 
 
 let atom_fav = fav_imperative_to_functional atom_fav_add
-
-(** Atoms do not contain binders *)
-let atom_av_add = atom_fav_add
 
 let rec strexp_fav_add fav = function
   | Eexp (e, _) ->
@@ -1315,46 +1192,6 @@ let array_clean_new_index footprint_part new_idx =
 
 
 (** {2 Functions for computing all free or bound non-program variables} *)
-
-(** Expressions do not bind variables *)
-let exp_av_add = exp_fav_add
-
-(** Structured expressions do not bind variables *)
-let strexp_av_add = strexp_fav_add
-
-let rec hpara_av_add fav para =
-  List.iter ~f:(hpred_av_add fav) para.body ;
-  fav ++ para.root ;
-  fav ++ para.next ;
-  fav +++ para.svars ;
-  fav +++ para.evars
-
-
-and hpara_dll_av_add fav para =
-  List.iter ~f:(hpred_av_add fav) para.body_dll ;
-  fav ++ para.cell ;
-  fav ++ para.blink ;
-  fav ++ para.flink ;
-  fav +++ para.svars_dll ;
-  fav +++ para.evars_dll
-
-
-and hpred_av_add fav = function
-  | Hpointsto (base, se, te) ->
-      exp_av_add fav base ; strexp_av_add fav se ; exp_av_add fav te
-  | Hlseg (_, para, e1, e2, elist) ->
-      hpara_av_add fav para ;
-      exp_av_add fav e1 ;
-      exp_av_add fav e2 ;
-      List.iter ~f:(exp_av_add fav) elist
-  | Hdllseg (_, para, e1, e2, e3, e4, elist) ->
-      hpara_dll_av_add fav para ;
-      exp_av_add fav e1 ;
-      exp_av_add fav e2 ;
-      exp_av_add fav e3 ;
-      exp_av_add fav e4 ;
-      List.iter ~f:(exp_av_add fav) elist
-
 
 let hpara_shallow_av_add fav para =
   List.iter ~f:(hpred_fav_add fav) para.body ;
@@ -1505,9 +1342,6 @@ let extend_sub sub id exp : exp_subst option =
 let sub_fav_add fav (sub: exp_subst) =
   List.iter ~f:(fun (id, e) -> fav ++ id ; exp_fav_add fav e) sub
 
-
-(** Substitutions do not contain binders *)
-let sub_av_add = sub_fav_add
 
 let rec exp_sub_ids (f: subst_fun) exp =
   let f_typ x = match f with `Exp _ -> x | `Typ (f, _) -> f x in
@@ -1807,6 +1641,9 @@ let hpred_sub subst =
 
 
 (** {2 Functions for replacing occurrences of expressions.} *)
+
+(** The first parameter should define a partial function.
+    No parts of hpara are replaced by these functions. *)
 let rec exp_replace_exp epairs e =
   (* First we check if there is an exact match *)
   match List.find ~f:(fun (e1, _) -> Exp.equal e e1) epairs with

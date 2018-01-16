@@ -74,10 +74,6 @@ module Hash = Hashtbl.Make (struct
   let hash = hash
 end)
 
-let rec is_array_index_of exp1 exp2 =
-  match exp1 with Lindex (exp, _) -> is_array_index_of exp exp2 | _ -> equal exp1 exp2
-
-
 let is_null_literal = function Const Cint n -> IntLit.isnull n | _ -> false
 
 let is_this = function Lvar pvar -> Pvar.is_this pvar | _ -> false
@@ -129,17 +125,6 @@ let rec pointer_arith = function
 
 let get_undefined footprint =
   Var (Ident.create_fresh (if footprint then Ident.kfootprint else Ident.kprimed))
-
-
-(** returns true if the expression represents a stack-directed address *)
-let rec is_stack_addr e =
-  match (e : t) with
-  | Lvar pv ->
-      not (Pvar.is_global pv)
-  | UnOp (_, e', _) | Cast (_, e') | Lfield (e', _, _) | Lindex (e', _) ->
-      is_stack_addr e'
-  | _ ->
-      false
 
 
 (** returns true if the express operates on address of local variable *)

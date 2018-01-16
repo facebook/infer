@@ -54,12 +54,6 @@ let get_class_name_from_member member_name_info =
       assert false
 
 
-let make_name_decl name = {Clang_ast_t.ni_name= name; ni_qual_name= [name]}
-
-let make_qual_name_decl class_name_quals name =
-  {Clang_ast_t.ni_name= name; ni_qual_name= name :: class_name_quals}
-
-
 let pointer_counter = ref 0
 
 let get_fresh_pointer () =
@@ -67,8 +61,6 @@ let get_fresh_pointer () =
   let internal_pointer = - !pointer_counter in
   internal_pointer
 
-
-let get_invalid_pointer () = CFrontend_config.invalid_pointer
 
 let type_from_unary_expr_or_type_trait_expr_info info =
   match info.Clang_ast_t.uttei_qual_type with Some tp -> Some tp | None -> None
@@ -335,25 +327,6 @@ let rec get_super_if decl =
       None
 
 
-let get_super_impl impl_decl_info =
-  let objc_interface_decl_current =
-    get_decl_opt_with_decl_ref impl_decl_info.Clang_ast_t.oidi_class_interface
-  in
-  let objc_interface_decl_super = get_super_if objc_interface_decl_current in
-  let objc_implementation_decl_super =
-    match objc_interface_decl_super with
-    | Some ObjCInterfaceDecl (_, _, _, _, interface_decl_info) ->
-        get_decl_opt_with_decl_ref interface_decl_info.otdi_implementation
-    | _ ->
-        None
-  in
-  match objc_implementation_decl_super with
-  | Some ObjCImplementationDecl (_, _, decl_list, _, impl_decl_info) ->
-      Some (decl_list, impl_decl_info)
-  | _ ->
-      None
-
-
 let get_super_ObjCImplementationDecl impl_decl_info =
   let objc_interface_decl_current =
     get_decl_opt_with_decl_ref impl_decl_info.Clang_ast_t.oidi_class_interface
@@ -406,21 +379,6 @@ and ctype_to_objc_interface typ_opt =
       qual_type_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
   | _ ->
       None
-
-
-let qual_type_is_typedef_named qual_type (type_name: string) : bool =
-  let is_decl_name_match decl_opt =
-    let tuple_opt =
-      match decl_opt with Some decl -> Clang_ast_proj.get_named_decl_tuple decl | _ -> None
-    in
-    match tuple_opt with Some (_, ni) -> String.equal type_name ni.ni_name | _ -> false
-  in
-  match get_type qual_type.Clang_ast_t.qt_type_ptr with
-  | Some TypedefType (_, tti) ->
-      let decl_opt = get_decl tti.tti_decl_ptr in
-      is_decl_name_match decl_opt
-  | _ ->
-      false
 
 
 let if_decl_to_di_pointer_opt if_decl =

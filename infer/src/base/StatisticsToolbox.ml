@@ -30,18 +30,6 @@ let to_json s =
     ; ("count", `Int s.count) ]
 
 
-let from_json json =
-  let open! Yojson.Basic.Util in
-  { sum= json |> member "sum" |> to_float
-  ; avg= json |> member "avg" |> to_float
-  ; min= json |> member "min" |> to_float
-  ; p10= json |> member "p10" |> to_float
-  ; median= json |> member "median" |> to_float
-  ; p75= json |> member "p75" |> to_float
-  ; max= json |> member "max" |> to_float
-  ; count= json |> member "count" |> to_int }
-
-
 let compute_statistics values =
   let num_elements = List.length values in
   let sum = List.fold ~f:(fun acc v -> acc +. v) ~init:0.0 values in

@@ -233,11 +233,6 @@ module Abs = struct
         None
 
 
-  let get_footprint_index access_path =
-    let base, _ = extract access_path in
-    get_footprint_index_base base
-
-
   let is_exact = function Exact _ -> true | Abstracted _ -> false
 
   let ( <= ) ~lhs ~rhs =

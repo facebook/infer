@@ -64,37 +64,13 @@ end
 module Xml : sig
   val tag_branch : string
 
-  val tag_call_trace : string
-
-  val tag_callee : string
-
-  val tag_callee_id : string
-
-  val tag_caller : string
-
-  val tag_caller_id : string
-
-  val tag_class : string
-
-  val tag_code : string
-
-  val tag_description : string
-
   val tag_err : string
 
   val tag_file : string
 
-  val tag_flags : string
-
-  val tag_hash : string
-
   val tag_in_calls : string
 
-  val tag_key : string
-
   val tag_kind : string
-
-  val tag_level : string
 
   val tag_line : string
 
@@ -104,27 +80,13 @@ module Xml : sig
 
   val tag_name_id : string
 
-  val tag_node : string
-
   val tag_out_calls : string
-
-  val tag_precondition : string
-
-  val tag_procedure : string
-
-  val tag_procedure_id : string
 
   val tag_proof_coverage : string
 
   val tag_proof_trace : string
 
-  val tag_qualifier : string
-
-  val tag_qualifier_tags : string
-
   val tag_rank : string
-
-  val tag_severity : string
 
   val tag_signature : string
 
@@ -138,27 +100,5 @@ module Xml : sig
 
   val tag_top : string
 
-  val tag_trace : string
-
-  val tag_type : string
-
   val tag_weight : string
-
-  type tree = {name: string; attributes: (string * string) list; forest: node list}
-
-  and node = Tree of tree | String of string  (** create a tree *)
-
-  val create_tree : string -> (string * string) list -> node list -> node
-
-  val pp_document : bool -> Format.formatter -> node -> unit
-  (** print an xml document, if the first parameter is false on a single line without preamble *)
-
-  val pp_open : Format.formatter -> string -> unit
-  (** print the opening lines of an xml document consisting of a main tree with the given name *)
-
-  val pp_close : Format.formatter -> string -> unit
-  (** print the closing lines of an xml document consisting of a main tree with the given name *)
-
-  val pp_inner_node : Format.formatter -> node -> unit
-  (** print a node between a [pp_open] and a [pp_close] *)
 end

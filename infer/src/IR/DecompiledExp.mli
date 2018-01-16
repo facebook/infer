@@ -37,9 +37,6 @@ type vpath = t option
 val to_string : t -> string
 (** convert to a string *)
 
-val pp : F.formatter -> t -> unit
-(** pretty print *)
-
 val pp_vpath : Pp.env -> F.formatter -> vpath -> unit
 (** Pretty print a value path *)
 

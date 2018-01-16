@@ -24,9 +24,6 @@ module Path : sig
   val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
   (** add a call to a procname that's had to be skipped, along with the reason and the location of the procname when known *)
 
-  val contains : t -> t -> bool
-  (** check whether a path contains another path *)
-
   val contains_position : t -> PredSymb.path_pos -> bool
   (** check wether the path contains the given position *)
 
@@ -36,10 +33,10 @@ module Path : sig
   val curr_node : t -> Procdesc.Node.t option
   (** return the current node of the path *)
 
-  val d : t -> unit
+  val d : t -> unit  [@@warning "-32"]
   (** dump a path *)
 
-  val d_stats : t -> unit
+  val d_stats : t -> unit  [@@warning "-32"]
   (** dump statistics of the path *)
 
   val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
@@ -65,6 +62,7 @@ module Path : sig
   (** pretty print a path *)
 
   val pp_stats : Format.formatter -> t -> unit
+    [@@warning "-32"]
   (** pretty print statistics of the path *)
 
   val start : Procdesc.Node.t -> t
@@ -78,7 +76,7 @@ module PathSet : sig
   val add_renamed_prop : Prop.normal Prop.t -> Path.t -> t -> t
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
 
-  val d : t -> unit
+  val d : t -> unit  [@@warning "-32"]
   (** dump the pathset *)
 
   val diff : t -> t -> t
@@ -92,12 +90,6 @@ module PathSet : sig
 
   val equal : t -> t -> bool
   (** equality for pathsets *)
-
-  val filter : (Prop.normal Prop.t -> bool) -> t -> t
-  (** filter a pathset on the prop component *)
-
-  val filter_path : Path.t -> t -> Prop.normal Prop.t list
-  (** find the list of props whose associated path contains the given path *)
 
   val fold : (Prop.normal Prop.t -> Path.t -> 'a -> 'a) -> t -> 'a -> 'a
   (** fold over a pathset *)

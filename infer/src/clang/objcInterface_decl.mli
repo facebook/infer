@@ -17,5 +17,3 @@ val interface_declaration :
 
 val interface_impl_declaration :
   CAst_utils.qual_type_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.desc
-
-val is_pointer_to_objc_class : Typ.t -> bool

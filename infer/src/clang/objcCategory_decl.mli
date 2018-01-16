@@ -17,6 +17,4 @@ val category_decl : CAst_utils.qual_type_to_sil_type -> Tenv.t -> Clang_ast_t.de
 
 val category_impl_decl : CAst_utils.qual_type_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Typ.desc
 
-val noname_category : string -> string
-
 val get_base_class_name_from_category : Clang_ast_t.decl -> Typ.Name.t option

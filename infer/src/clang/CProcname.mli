@@ -36,8 +36,4 @@ val mk_fresh_block_procname : Typ.Procname.t -> Typ.Procname.t
 (** Makes a fresh name for a block defined inside the defining procedure.
     It updates the global block_counter *)
 
-val get_next_block_pvar : Typ.Procname.t -> Pvar.t
-(** Returns the next fresh name for a block defined inside the defining procedure
-    It does not update the global block_counter *)
-
 val reset_block_counter : unit -> unit

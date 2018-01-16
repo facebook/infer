@@ -43,18 +43,9 @@ val collect_res_trans : Procdesc.t -> trans_result list -> trans_result
 
 val is_return_temp : continuation option -> bool
 
-val ids_to_parent : continuation option -> Ident.t list -> Ident.t list
-
-val ids_to_node : continuation option -> Ident.t list -> Ident.t list
-
 val mk_cond_continuation : continuation option -> continuation option
 
-val extract_item_from_singleton : 'a list -> string -> 'a -> 'a
-
 val extract_exp_from_list : (Exp.t * Typ.t) list -> string -> Exp.t * Typ.t
-
-val get_selector_receiver :
-  Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects :
   (Exp.t * Typ.t) list -> Sil.instr list -> Location.t -> (Exp.t * Typ.t) list * Sil.instr list
@@ -62,12 +53,6 @@ val define_condition_side_effects :
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
 val is_null_stmt : Clang_ast_t.stmt -> bool
-
-val is_enumeration_constant : Clang_ast_t.stmt -> bool
-
-val is_member_exp : Clang_ast_t.stmt -> bool
-
-val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.qual_type
 
 val dereference_value_from_result :
   Location.t -> trans_result -> strip_pointer:bool -> trans_result
@@ -80,11 +65,7 @@ val cast_operation :
 
 val trans_assertion : trans_state -> Location.t -> trans_result
 
-val is_method_call : Clang_ast_t.stmt -> bool
-
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
-
-val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans :
   trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
@@ -92,38 +73,24 @@ val builtin_trans :
 val cxx_method_builtin_trans :
   trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
 
-val alloc_trans :
-  trans_state -> alloc_builtin:Typ.Procname.t -> Location.t -> Clang_ast_t.stmt_info -> Typ.t
-  -> trans_result
-
 val new_or_alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option
   -> string -> trans_result
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 
-val dereference_var_sil : Exp.t * Typ.t -> Location.t -> Sil.instr list * Exp.t
-
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes : sig
   val is_binary_assign_op : Clang_ast_t.binary_operator_info -> bool
 
-  val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
-
   val create_node :
     Procdesc.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Procdesc.Node.t
-
-  val is_join_node : Procdesc.Node.t -> bool
 
   val create_prune_node :
     branch:bool -> negate_cond:bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t
     -> Sil.if_kind -> CContext.t -> Procdesc.Node.t
 
-  val is_prune_node : Procdesc.Node.t -> bool
-
   val is_true_prune_node : Procdesc.Node.t -> bool
-
-  val prune_kind : bool -> Procdesc.Node.nodekind
 end
 
 (** priority_node is used to enforce some kind of policy for creating nodes in the cfg. Certain
@@ -169,15 +136,10 @@ module Loops : sig
         * Clang_ast_t.stmt
         * Clang_ast_t.stmt
         * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-    (* init, decl_stmt, condition, increment and body *)
+        * Clang_ast_t.stmt  (** init, decl_stmt, condition, increment and body *)
     | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
-    (* decl_stmt, condition and body *)
-    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt
-
-  (* condition and body *)
-
-  val loop_kind_to_if_kind : loop_kind -> Sil.if_kind
+        (** decl_stmt, condition and body *)
+    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (** condition and body *)
 
   val get_cond : loop_kind -> Clang_ast_t.stmt
 
@@ -205,5 +167,3 @@ end
 
 val is_logical_negation_of_int :
   Tenv.t -> Clang_ast_t.expr_info -> Clang_ast_t.unary_operator_info -> bool
-
-val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool

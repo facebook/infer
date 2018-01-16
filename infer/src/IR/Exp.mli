@@ -47,9 +47,6 @@ and t =
 val equal : t -> t -> bool
 (** Equality for expressions. *)
 
-val hash : t -> int
-(** Hash function for expressions. *)
-
 (** Set of expressions. *)
 module Set : Caml.Set.S with type elt = t
 
@@ -58,9 +55,6 @@ module Map : Caml.Map.S with type key = t
 
 (** Hashtable with expression keys. *)
 module Hash : Caml.Hashtbl.S with type key = t
-
-val is_array_index_of : t -> t -> bool
-(** returns true is index is an array index of arr. *)
 
 val is_null_literal : t -> bool
 
@@ -85,9 +79,6 @@ val get_undefined : bool -> t
 val pointer_arith : t -> bool
 (** Checks whether an expression denotes a location using pointer arithmetic.
     Currently, catches array - indexing expressions such as a[i] only. *)
-
-val is_stack_addr : t -> bool
-(** returns true if the expression represents a stack-directed address *)
 
 val has_local_addr : t -> bool
 (** returns true if the expression operates on address of local variable *)

@@ -73,7 +73,7 @@ val iter : iter_fun -> t -> unit
 
 val fold : (err_key -> err_data -> 'a -> 'a) -> t -> 'a -> 'a
 
-val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit
+val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit  [@@warning "-32"]
 
 val pp_loc_trace : Format.formatter -> loc_trace -> unit
 
@@ -95,23 +95,3 @@ val update : t -> t -> unit
 val log_issue :
   Exceptions.err_kind -> t -> Location.t -> int * Caml.Digest.t -> int -> loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
-
-(** {2 Functions for manipulating per-file error tables} *)
-
-(** Type for per-file error tables *)
-type err_table
-
-val create_err_table : unit -> err_table
-(** Create an error table *)
-
-val extend_table : err_table -> t -> unit
-(** Add an error log to the global per-file table *)
-
-val err_table_size_footprint : Exceptions.err_kind -> err_table -> int
-(** Size of the global per-file error table for the footprint phase *)
-
-val pp_err_table_stats : Exceptions.err_kind -> Format.formatter -> err_table -> unit
-(** Print stats for the global per-file error table *)
-
-val print_err_table_details : Format.formatter -> err_table -> unit
-(** Print details of the global per-file error table *)

@@ -17,8 +17,6 @@ let builtins_package = "com.facebook.infer.builtins"
 
 let infer_builtins_cl = builtins_package ^ ".InferBuiltins"
 
-let infer_undefined_cl = builtins_package ^ ".InferUndefined"
-
 let obj_type = JBasics.TObject (JBasics.TClass JBasics.java_lang_object)
 
 let string_cl = "java.lang.String"

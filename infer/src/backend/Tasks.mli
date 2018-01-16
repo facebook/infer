@@ -13,8 +13,6 @@ open! IStd
     with a continuation to be executed at the end *)
 type t
 
-type tasks = t
-
 (** Each task/continuation executes a closure *)
 type closure = unit -> unit
 
@@ -25,9 +23,6 @@ val aggregate : size:int -> t -> t
 val create : ?continuation:closure option -> closure list -> t
 (** Create tasks with a list of closures to be executed in parallel,
     and an optional continuation to be executed afterwards *)
-
-val empty : t
-(** No-op tasks *)
 
 val run : t -> unit
 (** Run the closures and continuation *)

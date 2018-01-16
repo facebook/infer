@@ -45,13 +45,6 @@ val injective : t -> bool
     wrt. each argument: op(e,-) and op(-, e) is injective for all e.
     The return value false means "don't know". *)
 
-val invertible : t -> bool
-(** This function returns true if the operation can be inverted. *)
-
-val invert : t -> t
-(** This function inverts an invertible injective binary operator.
-    If the [binop] operation is not invertible, the function raises Assert_failure. *)
-
 val is_zero_runit : t -> bool
 (** This function returns true if 0 is the right unit of [binop].
     The return value false means "don't know". *)

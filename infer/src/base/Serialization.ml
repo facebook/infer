@@ -16,7 +16,6 @@ module F = Format
 type 'a serializer =
   { read_from_string: string -> 'a option
   ; read_from_file: DB.filename -> 'a option
-  ; update_file: f:('a option -> 'a) -> DB.filename -> unit
   ; write_to_file: data:'a -> DB.filename -> unit }
 
 module Key = struct
@@ -24,16 +23,8 @@ module Key = struct
   type t = int
 
   (** current key for tenv, procedure summary, cfg, error trace, call graph *)
-  let tenv, summary, cfg, trace, cg, analysis_results, cluster, attributes, lint_issues =
-    ( 425184201
-    , 160179325
-    , 1062389858
-    , 221487792
-    , 477305409
-    , 799050016
-    , 579094948
-    , 972393003
-    , 852343110 )
+  let tenv, summary, cg, analysis_results, cluster, lint_issues =
+    (425184201, 160179325, 477305409, 799050016, 579094948, 852343110)
 end
 
 (** version of the binary files, to be incremented for each change *)
@@ -50,7 +41,7 @@ let retry_exception ~timeout ~catch_exn ~f x =
   retry ()
 
 
-type 'a write_command = Replace of 'a | Update of ('a option -> 'a)
+type 'a write_command = Replace of 'a
 
 let create_serializer (key: Key.t) : 'a serializer =
   let read_data ((key': Key.t), (version': int), (value: 'a)) source_msg =
@@ -113,20 +104,7 @@ let create_serializer (key: Key.t) : 'a serializer =
     let fname_str = DB.filename_to_string fname in
     let fname_str_lock = fname_str ^ ".lock" in
     Utils.write_file_with_locking fname_str_lock ~delete:true ~f:(fun _outc ->
-        let data_to_write : 'a =
-          match cmd with
-          | Replace data ->
-              data
-          | Update upd ->
-              let old_data_opt =
-                if DB.file_exists fname then
-                  (* Because of locking, this should be the latest data written
-                       by any writer, and can be used for updating *)
-                  read_from_file fname
-                else None
-              in
-              upd old_data_opt
-        in
+        let data_to_write : 'a = match cmd with Replace data -> data in
         let fname_str_tmp = write_to_tmp_file fname_str data_to_write in
         (* Rename is atomic: the readers can only see one version of this file,
              possibly stale but not corrupted. *)
@@ -135,15 +113,12 @@ let create_serializer (key: Key.t) : 'a serializer =
   let write_to_file ~(data: 'a) (fname: DB.filename) =
     execute_write_command_with_lock fname (Replace data)
   in
-  let update_file ~f (fname: DB.filename) = execute_write_command_with_lock fname (Update f) in
-  {read_from_string; read_from_file; update_file; write_to_file}
+  {read_from_string; read_from_file; write_to_file}
 
 
 let read_from_string s = s.read_from_string
 
 let read_from_file s = s.read_from_file
-
-let update_file s = s.update_file
 
 let write_to_file s = s.write_to_file
 

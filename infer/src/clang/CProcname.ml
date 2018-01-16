@@ -146,13 +146,8 @@ let block_procname_with_index defining_proc i =
   ^ Config.anonymous_block_num_sep ^ string_of_int i
 
 
-(* Global counter for anonymous block*)
+(** Global counter for anonymous block*)
 let block_counter = ref 0
-
-let get_next_block_pvar defining_proc =
-  let name = block_procname_with_index defining_proc (!block_counter + 1) in
-  Pvar.mk_tmp name defining_proc
-
 
 let reset_block_counter () = block_counter := 0
 

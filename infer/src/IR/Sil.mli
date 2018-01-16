@@ -116,11 +116,7 @@ type inst =
 
 val equal_inst : inst -> inst -> bool
 
-val inst_abstraction : inst
-
 val inst_actual_precondition : inst
-
-val inst_alloc : inst
 
 val inst_formal : inst
 
@@ -137,12 +133,7 @@ val inst_nullify : inst
 val inst_rearrange : bool -> Location.t -> PredSymb.path_pos -> inst
 (** the boolean indicates whether the pointer is known nonzero *)
 
-val inst_taint : inst
-
 val inst_update : Location.t -> PredSymb.path_pos -> inst
-
-val inst_get_null_case_flag : inst -> bool option
-(** Get the null case flag of the inst. *)
 
 val inst_set_null_case_flag : inst -> inst
 (** Set the null case flag of the inst. *)
@@ -249,9 +240,6 @@ type sharing_env
 val create_sharing_env : unit -> sharing_env
 (** Create a sharing env to store canonical representations *)
 
-val exp_compact : sharing_env -> Exp.t -> Exp.t
-(** Return a canonical representation of the exp *)
-
 val hpred_compact : sharing_env -> hpred -> hpred
 (** Return a compact representation of the exp *)
 
@@ -263,9 +251,6 @@ val zero_value_of_numerical_type_option : Typ.t -> Exp.t option
 
 val zero_value_of_numerical_type : Typ.t -> Exp.t
 (** Returns the zero value of a type, for int, float and ptr types, fail otherwise *)
-
-val mk_static_local_name : string -> string -> string
-(** Make a static local name in objc *)
 
 val is_static_local_name : string -> Pvar.t -> bool
 (** Check if a pvar is a local static in objc *)
@@ -281,9 +266,6 @@ val add_with_block_parameters_flag : instr -> instr
    contain an Objective-C block, and the method is an Objective-C method
    (to be extended to other methods) *)
 
-val hpred_get_lhs : hpred -> Exp.t
-(** Return the lhs expression of a hpred *)
-
 (** {2 Pretty Printing} *)
 
 val color_pre_wrapper : Pp.env -> F.formatter -> 'a -> Pp.env * bool
@@ -294,9 +276,6 @@ val color_post_wrapper : bool -> F.formatter -> unit
 
 val pp_exp_printenv : Pp.env -> F.formatter -> Exp.t -> unit
 (** Pretty print an expression. *)
-
-val pp_exp_typ : Pp.env -> F.formatter -> Exp.t * Typ.t -> unit
-(** Pretty print an expression with type. *)
 
 val d_exp : Exp.t -> unit
 (** dump an expression. *)
@@ -322,9 +301,6 @@ val pp_offset : Pp.env -> F.formatter -> offset -> unit
 val offset_to_string : offset -> string
 (** Convert an offset to a string *)
 
-val d_offset : offset -> unit
-(** Dump an offset *)
-
 val pp_offset_list : Pp.env -> F.formatter -> offset list -> unit
 (** Pretty print a list of offsets *)
 
@@ -346,9 +322,6 @@ val d_instr : instr -> unit
 val pp_instr_list : Pp.env -> F.formatter -> instr list -> unit
 (** Pretty print a list of instructions. *)
 
-val d_instr_list : instr list -> unit
-(** Dump a list of instructions. *)
-
 val pp_atom : Pp.env -> F.formatter -> atom -> unit
 (** Pretty print an atom. *)
 
@@ -367,9 +340,6 @@ val d_sexp : strexp -> unit
 val pp_sexp_list : Pp.env -> F.formatter -> strexp list -> unit
 (** Pretty print a strexp list. *)
 
-val d_sexp_list : strexp list -> unit
-(** Dump a strexp. *)
-
 val pp_hpred : Pp.env -> F.formatter -> hpred -> unit
 (** Pretty print a hpred. *)
 
@@ -379,14 +349,8 @@ val d_hpred : hpred -> unit
 val pp_hpara : Pp.env -> F.formatter -> hpara -> unit
 (** Pretty print a hpara. *)
 
-val pp_hpara_list : Pp.env -> F.formatter -> hpara list -> unit
-(** Pretty print a list of hparas. *)
-
 val pp_hpara_dll : Pp.env -> F.formatter -> hpara_dll -> unit
 (** Pretty print a hpara_dll. *)
-
-val pp_hpara_dll_list : Pp.env -> F.formatter -> hpara_dll list -> unit
-(** Pretty print a list of hpara_dlls. *)
 
 (** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara.
@@ -400,12 +364,6 @@ module Predicates : sig
 
   val is_empty : env -> bool
   (** return true if the environment is empty *)
-
-  val get_hpara_id : env -> hpara -> int
-  (** return the id of the hpara *)
-
-  val get_hpara_dll_id : env -> hpara_dll -> int
-  (** return the id of the hpara_dll *)
 
   val iter : env -> (int -> hpara -> unit) -> (int -> hpara_dll -> unit) -> unit
   (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll,
@@ -446,10 +404,6 @@ val atom_expmap : (Exp.t -> Exp.t) -> atom -> atom
 (** Change exps in atom by [f].
     WARNING: the result might not be normalized. *)
 
-val atom_list_expmap : (Exp.t -> Exp.t) -> atom list -> atom list
-(** Change exps in atom list by [f].
-    WARNING: the result might not be normalized. *)
-
 val hpred_list_get_lexps : (Exp.t -> bool) -> hpred list -> Exp.t list
 
 val hpred_entries : hpred -> Exp.t list
@@ -457,16 +411,6 @@ val hpred_entries : hpred -> Exp.t list
 (** {2 Function for computing lexps in sigma} *)
 
 val exp_fpv : Exp.t -> Pvar.t list
-
-(** {2 Functions for computing program variables} *)
-
-val strexp_fpv : strexp -> Pvar.t list
-
-val atom_fpv : atom -> Pvar.t list
-
-val hpred_fpv : hpred -> Pvar.t list
-
-val hpara_fpv : hpara -> Pvar.t list
 
 (** {2 Functions for computing free non-program variables} *)
 
@@ -478,7 +422,7 @@ val fav_duplicates : bool ref
 (** flag to indicate whether fav's are stored in duplicate form.
     Only to be used with fav_to_list *)
 
-val pp_fav : F.formatter -> fav -> unit
+val pp_fav : F.formatter -> fav -> unit  [@@warning "-32"]
 (** Pretty print a fav. *)
 
 val fav_new : unit -> fav
@@ -503,9 +447,6 @@ val fav_to_list : fav -> Ident.t list
 (** Convert a [fav] to a list of identifiers while preserving the order
     that identifiers were added to [fav]. *)
 
-val fav_copy : fav -> fav
-(** Copy a [fav]. *)
-
 val fav_imperative_to_functional : (fav -> 'a -> unit) -> 'a -> fav
 (** Turn a xxx_fav_add function into a xxx_fav function *)
 
@@ -514,10 +455,6 @@ val fav_filter_ident : fav -> (Ident.t -> bool) -> unit
 
 val fav_copy_filter_ident : fav -> (Ident.t -> bool) -> fav
 (** Like [fav_filter_ident] but return a copy. *)
-
-val fav_subset_ident : fav -> fav -> bool
-(** [fav_subset_ident fav1 fav2] returns true if every ident in [fav1]
-    is in [fav2].*)
 
 val ident_list_fav_add : Ident.t list -> fav -> unit
 (** add identifier list to fav *)
@@ -547,29 +484,11 @@ val hpara_shallow_av : hpara -> fav
 val hpara_dll_shallow_av : hpara_dll -> fav
 (** Variables in hpara_dll, excluding bound vars in the body *)
 
-(** {2 Functions for computing all free or bound non-program variables} *)
-
-val exp_av_add : fav -> Exp.t -> unit
-(** Non-program variables include all of primed, normal and footprint
-    variables. Thus, the functions essentially compute all the
-    identifiers occuring in a parameter. Some variables can appear more
-    than once in the result. *)
-
-val strexp_av_add : fav -> strexp -> unit
-
-val atom_av_add : fav -> atom -> unit
-
-val hpred_av_add : fav -> hpred -> unit
-
-val hpara_av_add : fav -> hpara -> unit
-
 (** {2 Substitution} *)
 
 type exp_subst [@@deriving compare]
 
 type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
-
-type subst_fun = [`Exp of Ident.t -> Exp.t | `Typ of (Typ.t -> Typ.t) * (Typ.Name.t -> Typ.Name.t)]
 
 val equal_exp_subst : exp_subst -> exp_subst -> bool
 (** Equality for substitutions. *)
@@ -642,18 +561,11 @@ val sub_map : (Ident.t -> Ident.t) -> (Exp.t -> Exp.t) -> exp_subst -> exp_subst
 (** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
 
-val mem_sub : Ident.t -> exp_subst -> bool
-(** Checks whether [id] belongs to the domain of [subst]. *)
-
 val extend_sub : exp_subst -> Ident.t -> Exp.t -> exp_subst option
 (** Extend substitution and return [None] if not possible. *)
 
 val sub_fav_add : fav -> exp_subst -> unit
 (** Free auxilary variables in the domain and range of the
-    substitution. *)
-
-val sub_av_add : fav -> exp_subst -> unit
-(** Free or bound auxilary variables in the domain and range of the
     substitution. *)
 
 (** substitution functions
@@ -668,16 +580,7 @@ val instr_sub : subst -> instr -> instr
 
 val hpred_sub : subst -> hpred -> hpred
 
-val instr_sub_ids : sub_id_binders:bool -> subst_fun -> instr -> instr
-(** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's *)
-
 (** {2 Functions for replacing occurrences of expressions.} *)
-
-val exp_replace_exp : (Exp.t * Exp.t) list -> Exp.t -> Exp.t
-(** The first parameter should define a partial function.
-    No parts of hpara are replaced by these functions. *)
-
-val strexp_replace_exp : (Exp.t * Exp.t) list -> strexp -> strexp
 
 val atom_replace_exp : (Exp.t * Exp.t) list -> atom -> atom
 

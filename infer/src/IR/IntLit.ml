@@ -59,8 +59,6 @@ let of_int64 i = (false, i, false)
 
 let of_int32 i = of_int64 (Int64.of_int32 i)
 
-let of_int64_unsigned i unsigned = (unsigned, i, false)
-
 let of_int i = of_int64 (Int64.of_int i)
 
 let to_int (_, i, _) = Int64.to_int_exn i

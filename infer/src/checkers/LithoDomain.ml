@@ -19,8 +19,6 @@ module LocalAccessPath = struct
 
   let make access_path parent = {access_path; parent}
 
-  let is_rooted_in_footprint {access_path= (base_var, _), _} = Var.is_footprint base_var
-
   let to_formal_option {access_path= ((_, base_typ) as base), accesses; parent} formal_map =
     match FormalMap.get_formal_index base formal_map with
     | Some formal_index ->

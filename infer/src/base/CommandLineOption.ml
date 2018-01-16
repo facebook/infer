@@ -49,7 +49,6 @@ type spec =
   | Unit of (unit -> unit)
   | String of (string -> unit)
   | Symbol of string list * (string -> unit)
-  | Rest of (string -> unit)
 
 let to_arg_spec = function
   | Unit f ->
@@ -58,8 +57,6 @@ let to_arg_spec = function
       Arg.String f
   | Symbol (symbols, f) ->
       Arg.Symbol (symbols, f)
-  | Rest f ->
-      Arg.Rest f
 
 
 let to_arg_spec_triple (x, spec, y) = (x, to_arg_spec spec, y)
@@ -295,8 +292,6 @@ let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
         String (warn_then_f f)
     | Symbol (symbols, f) ->
         Symbol (symbols, warn_then_f f)
-    | Rest _ as spec ->
-        spec
   in
   let deprecated_decode_json ~inferconfig_dir j =
     warnf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead." deprecated long ;
@@ -485,14 +480,6 @@ let mk_int_opt ?default ?f:(f0 = Fn.id) ?(deprecated= []) ~long ?short ?parse_mo
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 
-let mk_float ~default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "float") doc =
-  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
-    ~default_to_string:string_of_float
-    ~mk_setter:(fun var str -> var := float_of_string str)
-    ~decode_json:(string_json_decoder ~long)
-    ~mk_spec:(fun set -> String set)
-
-
 let mk_float_opt ?default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "float") doc =
   let default_to_string = function Some f -> string_of_float f | None -> "" in
   let f s = Some (float_of_string s) in
@@ -637,14 +624,6 @@ let mk_symbol_seq ?(default= []) ~symbols ~eq ?(deprecated= []) ~long ?short ?pa
     ~mk_spec:(fun set -> String set)
 
 
-let mk_set_from_json ~default ~default_to_string ~f ?(deprecated= []) ~long ?short ?parse_mode
-    ?in_help ?(meta= "json") doc =
-  mk ~deprecated ~long ?short ?parse_mode ?in_help ~meta doc ~default ~default_to_string
-    ~mk_setter:(fun var json -> var := f (Yojson.Basic.from_string json))
-    ~decode_json:(fun ~inferconfig_dir:_ json -> [dashdash long; Yojson.Basic.to_string json])
-    ~mk_spec:(fun set -> String set)
-
-
 let mk_json ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "json") doc =
   mk ~deprecated ~long ?short ?parse_mode ?in_help ~meta doc ~default:(`List [])
     ~default_to_string:Yojson.Basic.to_string
@@ -656,14 +635,6 @@ let mk_json ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "json") 
 (** [mk_anon] always return the same ref. Anonymous arguments are only accepted if
     [parse_action_accept_unknown_args] is true. *)
 let mk_anon () = rev_anon_args
-
-let mk_rest ?(parse_mode= InferCommand) ?(in_help= []) doc =
-  let rest = ref [] in
-  let spec = Rest (fun arg -> rest := arg :: !rest) in
-  add parse_mode in_help
-    {long= "--"; short= ""; meta= ""; doc; spec; decode_json= (fun ~inferconfig_dir:_ _ -> [])} ;
-  rest
-
 
 let normalize_desc_list speclist =
   let norm k =

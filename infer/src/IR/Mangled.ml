@@ -31,9 +31,6 @@ let to_string_full (pn: t) =
   match pn.mangled with Some mangled -> pn.plain ^ "{" ^ mangled ^ "}" | None -> pn.plain
 
 
-(** Get mangled string if given *)
-let get_mangled pn = match pn.mangled with Some s -> s | None -> pn.plain
-
 (** Pretty print a mangled name *)
 let pp f pn = F.fprintf f "%s" (to_string pn)
 

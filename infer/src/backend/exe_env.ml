@@ -67,9 +67,6 @@ type t =
   ; file_map: file_data FilenameHash.t  (** map from cg fname to file data *)
   ; source_file: SourceFile.t  (** source file being analyzed *) }
 
-(** initial state, used to add cg's *)
-type initial = t
-
 (** add call graph from fname in the spec db,
     with relative tenv and cfg, to the execution environment *)
 let add_cg exe_env source =
@@ -124,11 +121,6 @@ let get_file_data exe_env pname =
       file_data
     in
     Option.map ~f:get_file_data_for_source source_file_opt
-
-
-(** return the source file associated to the procedure *)
-let get_source exe_env pname =
-  Option.map ~f:(fun file_data -> file_data.source) (get_file_data exe_env pname)
 
 
 let file_data_to_tenv file_data =

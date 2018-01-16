@@ -23,9 +23,6 @@ module LineReader : sig
   val from_file_linenum_original : t -> SourceFile.t -> int -> string option
   (** get the line from a source file and line number *)
 
-  val from_file_linenum : t -> SourceFile.t -> int -> string option
-  (** get the line from a source file and line number looking for the copy of the file in the results dir *)
-
   val from_loc : t -> Location.t -> string option
   (** get the line from a location looking for the copy of the file in the results dir *)
 end
@@ -38,9 +35,6 @@ val force_delayed_prints : unit -> unit
 
 val node_finish_session : Procdesc.Node.t -> unit
 (** Finish a session, and perform delayed print actions if required *)
-
-val node_is_visited : Procdesc.Node.t -> bool * bool
-(** Return true if the node was visited during footprint and during re-execution *)
 
 val node_start_session : Procdesc.Node.t -> int -> unit
 (** Start a session, and create a new html fine for the node if it does not exist yet *)

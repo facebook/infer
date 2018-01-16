@@ -29,9 +29,6 @@ val create_cfg : unit -> t
 val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 (** Create a new procdesc *)
 
-val iter_proc_desc : t -> (Typ.Procname.t -> Procdesc.t -> unit) -> unit
-(** Iterate over all the procdesc's *)
-
 val fold_proc_desc : t -> (Typ.Procname.t -> Procdesc.t -> 'a -> 'a) -> 'a -> 'a
 (** Fold over all the procdesc's *)
 

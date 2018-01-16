@@ -19,13 +19,7 @@ module ArrInfo = struct
 
   type astate = t
 
-  let bot : t = {offset= Itv.bot; size= Itv.bot; stride= Itv.bot}
-
-  let initial : t = bot
-
   let top : t = {offset= Itv.top; size= Itv.top; stride= Itv.top}
-
-  let input : t = {offset= Itv.zero; size= Itv.pos; stride= Itv.one}
 
   let make : Itv.t * Itv.t * Itv.t -> t = fun (o, s, stride) -> {offset= o; size= s; stride}
 
@@ -47,22 +41,12 @@ module ArrInfo = struct
         ; stride= Itv.widen ~prev:prev.stride ~next:next.stride ~num_iters }
 
 
-  let eq : t -> t -> bool =
-    fun a1 a2 ->
-      if phys_equal a1 a2 then true
-      else Itv.eq a1.offset a2.offset && Itv.eq a1.size a2.size && Itv.eq a1.stride a2.stride
-
-
   let ( <= ) : lhs:t -> rhs:t -> bool =
     fun ~lhs ~rhs ->
       if phys_equal lhs rhs then true
       else
         Itv.le ~lhs:lhs.offset ~rhs:rhs.offset && Itv.le ~lhs:lhs.size ~rhs:rhs.size
         && Itv.le ~lhs:lhs.stride ~rhs:rhs.stride
-
-
-  let weak_plus_size : t -> Itv.t -> t =
-    fun arr i -> {arr with size= Itv.join arr.size (Itv.plus i arr.size)}
 
 
   let plus_offset : t -> Itv.t -> t = fun arr i -> {arr with offset= Itv.plus arr.offset i}
@@ -103,10 +87,6 @@ module ArrInfo = struct
     fun arr1 arr2 -> {arr1 with offset= Itv.prune_eq arr1.offset arr2.offset}
 
 
-  let prune_ne : t -> t -> t =
-    fun arr1 arr2 -> {arr1 with offset= Itv.prune_ne arr1.offset arr2.offset}
-
-
   let set_size : Itv.t -> t -> t = fun size arr -> {arr with size}
 end
 
@@ -125,14 +105,6 @@ let make : Allocsite.t -> Itv.t -> Itv.t -> Itv.t -> astate =
 let offsetof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
 
 let sizeof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
-
-let extern : string -> astate = fun allocsite -> add allocsite ArrInfo.top empty
-
-let input : string -> astate = fun allocsite -> add allocsite ArrInfo.input empty
-
-let weak_plus_size : astate -> Itv.t -> astate =
-  fun arr i -> map (fun a -> ArrInfo.weak_plus_size a i) arr
-
 
 let plus_offset : astate -> Itv.t -> astate =
   fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
@@ -183,7 +155,5 @@ let prune_comp : Binop.t -> astate -> astate -> astate =
 
 
 let prune_eq : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
-
-let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
 
 let set_size : Itv.t -> astate -> astate = fun size a -> map (ArrInfo.set_size size) a

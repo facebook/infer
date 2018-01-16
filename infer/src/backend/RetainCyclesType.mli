@@ -19,8 +19,6 @@ type retain_cycle_edge = {rc_from: retain_cycle_node; rc_field: retain_cycle_fie
 to model the cycle structure. The next element from the end of the list is the head. *)
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge}
 
-val retain_cycle_to_string : t -> string
-
 val print_cycle : t -> unit
 
 val create_cycle : retain_cycle_edge list -> t option

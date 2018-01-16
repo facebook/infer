@@ -46,17 +46,10 @@ module Item = struct
 
   type t = t_ [@@deriving compare]
 
-  let equal = [%compare.equal : t]
-
   (** Pretty print an item annotation. *)
   let pp fmt ann =
     let pp fmt (a, _) = pp fmt a in
     F.fprintf fmt "<%a>" (Pp.seq pp) ann
-
-
-  let to_string ann =
-    let pp fmt = pp fmt ann in
-    F.asprintf "%t" pp
 
 
   (** Empty item annotation. *)

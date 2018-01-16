@@ -40,9 +40,6 @@ val get_typ : t -> Tenv.t -> Typ.t option
 val base_of_pvar : Pvar.t -> Typ.t -> base
 (** create a base from a pvar *)
 
-val base_of_id : Ident.t -> Typ.t -> base
-(** create a base from an ident *)
-
 val of_pvar : Pvar.t -> Typ.t -> t
 (** create an access path from a pvar *)
 
@@ -78,8 +75,6 @@ val pp_base : Format.formatter -> base -> unit
 
 val pp_access : Format.formatter -> access -> unit
 
-val pp_access_list : Format.formatter -> access list -> unit
-
 module Abs : sig
   type raw = t
 
@@ -96,10 +91,6 @@ module Abs : sig
   val get_footprint_index_base : base -> int option
   (** return the formal index associated with the base of this access path if there is one, or None
     otherwise *)
-
-  val get_footprint_index : t -> int option
-  (** return the formal index associated with the base of this access path if there is one, or None
-      otherwise *)
 
   val with_base : base -> t -> t
   (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces

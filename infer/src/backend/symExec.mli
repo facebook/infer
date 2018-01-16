@@ -38,9 +38,3 @@ val check_arith_norm_exp :
 (** Check for arithmetic problems and normalize an expression. *)
 
 val prune : Tenv.t -> positive:bool -> Exp.t -> Prop.normal Prop.t -> Propset.t
-
-val resolve_method : Tenv.t -> Typ.Name.t -> Typ.Procname.t -> Typ.Procname.t
-(** OO method resolution: given a class name and a method name, climb the class hierarchy to find
-    the procname that the method name will actually resolve to at runtime. For example, if we have a
-    procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
-    toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)

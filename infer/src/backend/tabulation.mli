@@ -12,9 +12,6 @@ open! IStd
 
 (** Interprocedural footprint analysis *)
 
-(** Frame and anti-frame *)
-type splitting
-
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
 (** Remove constant string or class from a prop *)
 

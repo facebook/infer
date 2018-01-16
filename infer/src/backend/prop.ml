@@ -95,9 +95,6 @@ include Core
 (** Comparison between propositions. Lexicographical order. *)
 let compare_prop p1 p2 = compare (fun _ _ -> 0) p1 p2
 
-(** Check the equality of two propositions *)
-let equal_prop p1 p2 = Int.equal (compare_prop p1 p2) 0
-
 (** {1 Functions for Pretty Printing} *)
 
 (** Pretty print a footprint. *)
@@ -342,9 +339,6 @@ let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p
 
 (** Dump a proposition. *)
 let d_prop (prop: 'a t) = L.add_print_action (PTprop, Obj.repr prop)
-
-(** Dump a proposition. *)
-let d_prop_with_typ (prop: 'a t) = L.add_print_action (PTprop_with_typ, Obj.repr prop)
 
 (** Print a list of propositions, prepending each one with the given string *)
 let pp_proplist_with_typ pe f plist =
@@ -1738,20 +1732,8 @@ let atom_normalize_prop tenv prop atom =
   Config.run_with_abs_val_equal_zero (Normalize.atom_normalize tenv (`Exp prop.sub)) atom
 
 
-let strexp_normalize_prop tenv prop strexp =
-  Config.run_with_abs_val_equal_zero (Normalize.strexp_normalize tenv (`Exp prop.sub)) strexp
-
-
-let hpred_normalize_prop tenv prop hpred =
-  Config.run_with_abs_val_equal_zero (Normalize.hpred_normalize tenv (`Exp prop.sub)) hpred
-
-
 let sigma_normalize_prop tenv prop sigma =
   Config.run_with_abs_val_equal_zero (Normalize.sigma_normalize tenv (`Exp prop.sub)) sigma
-
-
-let pi_normalize_prop tenv prop pi =
-  Config.run_with_abs_val_equal_zero (Normalize.pi_normalize tenv (`Exp prop.sub) prop.sigma) pi
 
 
 let sigma_replace_exp tenv epairs sigma =
@@ -1788,20 +1770,6 @@ let mk_lseg tenv k para e_start e_end es_shared : Sil.hpred =
 let mk_dllseg tenv k para exp_iF exp_oB exp_oF exp_iB exps_shared : Sil.hpred =
   let npara = Normalize.hpara_dll_normalize tenv para in
   Hdllseg (k, npara, exp_iF, exp_oB, exp_oF, exp_iB, exps_shared)
-
-
-(** Exp.Construct a hpara *)
-let mk_hpara tenv root next svars evars body =
-  let para = {Sil.root; next; svars; evars; body} in
-  Normalize.hpara_normalize tenv para
-
-
-(** Exp.Construct a dll_hpara *)
-let mk_dll_hpara tenv iF oB oF svars evars body =
-  let para =
-    {Sil.cell= iF; blink= oB; flink= oF; svars_dll= svars; evars_dll= evars; body_dll= body}
-  in
-  Normalize.hpara_dll_normalize tenv para
 
 
 (** Construct a points-to predicate for a single program variable.
@@ -1841,14 +1809,6 @@ let extract_spec (p: normal t) : normal t * normal t =
   let pre = extract_footprint p in
   let post = set p ~pi_fp:[] ~sigma_fp:[] in
   (unsafe_cast_to_normal pre, unsafe_cast_to_normal post)
-
-
-(** [prop_set_fooprint p p_foot] sets proposition [p_foot] as footprint of [p]. *)
-let prop_set_footprint p p_foot =
-  let pi =
-    List.map ~f:(fun (i, e) -> Sil.Aeq (Var i, e)) (Sil.sub_to_list p_foot.sub) @ p_foot.pi
-  in
-  set p ~pi_fp:pi ~sigma_fp:p_foot.sigma
 
 
 (** {2 Functions for renaming primed variables by "canonical names"} *)
@@ -2434,14 +2394,6 @@ let prop_iter_next iter =
           pit_old= iter.pit_curr :: iter.pit_old; pit_curr= hpred'; pit_state= (); pit_new= new' }
 
 
-let prop_iter_remove_curr_then_next iter =
-  match iter.pit_new with
-  | [] ->
-      None
-  | hpred' :: new' ->
-      Some {iter with pit_old= iter.pit_old; pit_curr= hpred'; pit_state= (); pit_new= new'}
-
-
 (** Insert before the current element of the iterator. *)
 let prop_iter_prev_then_insert iter hpred =
   {iter with pit_new= iter.pit_curr :: iter.pit_new; pit_curr= hpred}
@@ -2621,14 +2573,10 @@ let prop_expand prop =
 (*** START of module Metrics ***)
 module Metrics : sig
   val prop_size : 'a t -> int
-
-  val prop_chain_size : 'a t -> int
 end = struct
   let ptsto_weight = 1
 
   and lseg_weight = 3
-
-  and pi_weight = 1
 
   let rec hpara_size hpara = sigma_size hpara.Sil.body
 
@@ -2650,22 +2598,12 @@ end = struct
     !size
 
 
-  let pi_size pi = pi_weight * List.length pi
-
   (** Compute a size value for the prop, which indicates its
       complexity *)
   let prop_size p =
     let size_current = sigma_size p.sigma in
     let size_footprint = sigma_size p.sigma_fp in
     max size_current size_footprint
-
-
-  (** Approximate the size of the longest chain by counting the max
-      number of |-> with the same type and whose lhs is primed or
-      footprint *)
-  let prop_chain_size p =
-    let fp_size = pi_size p.pi_fp + sigma_size p.sigma_fp in
-    pi_size p.pi + sigma_size p.sigma + fp_size
 end
 
 (*** END of module Metrics ***)

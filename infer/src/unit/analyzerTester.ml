@@ -23,14 +23,11 @@ module StructuredSil = struct
     | Cmd of Sil.instr
     | If of Exp.t * structured_instr list * structured_instr list
     | While of Exp.t * structured_instr list
-    (* try/catch/finally. note: there is no throw. the semantics are that every command in the try
+        (** try/catch/finally. note: there is no throw. the semantics are that every command in the try
        block is assumed to be possibly-excepting, and the catch block captures all exceptions *)
     | Try of structured_instr list * structured_instr list * structured_instr list
     | Invariant of assertion * label
-
-  (* gets autotranslated into assertions about abstract state *)
-
-  type structured_program = structured_instr list
+        (** gets autotranslated into assertions about abstract state *)
 
   let rec pp_structured_instr fmt = function
     | Cmd instr ->
@@ -118,16 +115,6 @@ module StructuredSil = struct
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
 
-  let cast_id_to_id lhs cast_typ rhs =
-    let lhs_id = ident_of_str lhs in
-    let rhs_id = Exp.Var (ident_of_str rhs) in
-    let cast_sizeof =
-      Exp.Sizeof {typ= cast_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-    in
-    let args = [(rhs_id, cast_typ); (cast_sizeof, cast_typ)] in
-    make_call ~procname:BuiltinDecl.__cast (Some (lhs_id, cast_typ)) args
-
-
   let var_assign_exp ~rhs_typ lhs rhs_exp =
     let lhs_exp = var_of_str lhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
@@ -166,8 +153,6 @@ struct
   open StructuredSil
   module I = AbstractInterpreter.Make (CFG) (T)
   module M = I.InvariantMap
-
-  type assert_map = string M.t
 
   let structured_program_to_cfg program test_pname =
     let cfg = Cfg.create_cfg () in

@@ -25,8 +25,6 @@ type t = Typ.Struct.t TypenameHash.t
 
 let iter f tenv = TypenameHash.iter f tenv
 
-let fold f tenv = TypenameHash.fold f tenv
-
 let pp fmt (tenv: t) =
   TypenameHash.iter
     (fun name typ ->
@@ -47,9 +45,6 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?supers ?annots name =
   struct_typ
 
 
-(** Check if typename is found in tenv *)
-let mem tenv name = TypenameHash.mem tenv name
-
 (** Look up a name in the global type environment. *)
 let lookup tenv name : Typ.Struct.t option =
   try Some (TypenameHash.find tenv name) with Not_found ->
@@ -62,9 +57,6 @@ let lookup tenv name : Typ.Struct.t option =
     | _ ->
         None
 
-
-(** Add a (name,type) pair to the global type environment. *)
-let add tenv name struct_typ = TypenameHash.replace tenv name struct_typ
 
 let compare_fields (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2
 
@@ -88,34 +80,6 @@ let add_field tenv class_tn_name field =
         ignore (mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name)
   | _ ->
       ()
-
-
-(** Get method that is being overriden by java_pname (if any) **)
-let get_overriden_method tenv pname_java =
-  let struct_typ_get_method_by_name (struct_typ: Typ.Struct.t) method_name =
-    List.find_exn
-      ~f:(fun meth -> String.equal method_name (Typ.Procname.get_method meth))
-      struct_typ.methods
-  in
-  let rec get_overriden_method_in_supers pname_java supers =
-    match supers with
-    | superclass :: supers_tail -> (
-      match lookup tenv superclass with
-      | Some struct_typ -> (
-        try
-          Some (struct_typ_get_method_by_name struct_typ (Typ.Procname.java_get_method pname_java))
-        with Not_found ->
-          get_overriden_method_in_supers pname_java (supers_tail @ struct_typ.supers) )
-      | None ->
-          get_overriden_method_in_supers pname_java supers_tail )
-    | [] ->
-        None
-  in
-  match lookup tenv (Typ.Procname.java_get_class_type_name pname_java) with
-  | Some {supers} ->
-      get_overriden_method_in_supers pname_java supers
-  | _ ->
-      None
 
 
 (** Serializer for type environments *)

@@ -20,8 +20,6 @@ open Dataflow
 (* check that nonnullable fields are initialized in constructors *)
 let check_field_initialization = true
 
-type parameters = TypeState.parameters
-
 (** Type for a module that provides a main callback function *)
 module type CallBackT = sig
   val callback : TypeCheck.checks -> Callbacks.proc_callback_t

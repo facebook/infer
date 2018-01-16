@@ -22,12 +22,6 @@ val command_to_run : t -> string
 (** Make a command into a string ready to be passed to a shell to be executed. Fine to call with
     clang driver commands. *)
 
-val has_flag : t -> string -> bool
-(** Whether the command has this flag set in its arguments. Must be called on normalized commands. *)
-
-val value_of_option : t -> string -> string option
-(** The value passed to an option in the arguments of a command. Must be called on normalized commands. *)
-
 val can_attach_ast_exporter : t -> bool
 (** Whether the command is suitable for attaching the AST exporter. Must be called on normalized commands. *)
 
@@ -36,11 +30,6 @@ val with_plugin_args : t -> t
 
 val prepend_arg : string -> t -> t
 
-val prepend_args : string list -> t -> t
-
 val append_args : string list -> t -> t
 
 val get_orig_argv : t -> string list
-
-val with_exec : string -> t -> t
-(** update the executable to be run *)

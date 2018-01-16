@@ -115,8 +115,6 @@ val to_category : t -> category
 
 val is_undef : t -> bool
 
-val is_wont_leak : t -> bool
-
 val to_string : Pp.env -> t -> string
 (** convert the attribute to a string *)
 

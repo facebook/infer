@@ -35,20 +35,8 @@ val log_info_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
 val log_issue_from_errlog : Exceptions.err_kind -> log_issue_from_errlog
 (** Report an issue of a given kind  in the given error log. *)
 
-val log_error_from_errlog : log_issue_from_errlog
-(** Report an error in the given error log. *)
-
-val log_warning_from_errlog : log_issue_from_errlog
-(** Report a warning in the given error log. *)
-
-val log_info_from_errlog : log_issue_from_errlog
-(** Report an info in the given error log. *)
-
 val log_error : Specs.summary -> log_t
 (** Add an error to the given summary. *)
 
 val log_warning : Specs.summary -> log_t
 (** Add an warning to the given summary. *)
-
-val log_info : Specs.summary -> log_t
-(** Add an info to the given summary. *)

@@ -23,38 +23,14 @@ module type S = sig
 
   type counter = unit -> int
 
-  val counter_gen : int -> counter
-
   module Exec : sig
-    val load_val : Ident.t -> Dom.Val.astate -> Dom.Mem.astate -> Dom.Mem.astate
-
     type decl_local =
       Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> inst_num:int -> dimension:int
       -> Dom.Mem.astate -> Dom.Mem.astate * int
 
-    val decl_local_array :
-      decl_local:decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t
-      -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
-      -> Dom.Mem.astate * int
-
     type decl_sym_val =
       Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int -> Loc.t -> Typ.t
       -> Dom.Mem.astate -> Dom.Mem.astate
-
-    val decl_sym_arr :
-      decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int
-      -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int -> new_sym_num:counter
-      -> new_alloc_num:counter -> Dom.Mem.astate -> Dom.Mem.astate
-  end
-
-  module Check : sig
-    val array_access :
-      arr:ArrayBlk.astate -> arr_traces:TraceSet.t -> idx:Itv.astate -> idx_traces:TraceSet.t
-      -> is_plus:bool -> Typ.Procname.t -> Location.t -> PO.ConditionSet.t -> PO.ConditionSet.t
-
-    val lindex :
-      array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Typ.Procname.t -> Location.t
-      -> PO.ConditionSet.t -> PO.ConditionSet.t
   end
 end
 

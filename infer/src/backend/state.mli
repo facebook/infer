@@ -39,9 +39,6 @@ val get_loc_trace : unit -> Errlog.loc_trace
 val get_node : unit -> Procdesc.Node.t
 (** Get last node seen in symbolic execution *)
 
-val get_node_id : unit -> Procdesc.Node.id
-(** Get id of last node seen in symbolic execution *)
-
 val get_node_id_key : unit -> Procdesc.Node.id * Caml.Digest.t
 (** Get id and key of last node seen in symbolic execution *)
 

@@ -20,12 +20,3 @@ module ST : sig
     -> unit
   (** Report an error. *)
 end
-
-(* ST *)
-
-module PP : sig
-  val pp_loc_range : Printer.LineReader.t -> int -> int -> Format.formatter -> Location.t -> unit
-  (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
-      and [nafter] lines after [loc] *)
-end
-(* PP *)

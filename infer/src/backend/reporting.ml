@@ -66,17 +66,9 @@ let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_i
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_error_from_errlog = log_issue_from_errlog Exceptions.Kerror
-
-let log_warning_from_errlog = log_issue_from_errlog Exceptions.Kwarning
-
-let log_info_from_errlog = log_issue_from_errlog Exceptions.Kinfo
-
 let log_error = log_issue_from_summary Exceptions.Kerror
 
 let log_warning = log_issue_from_summary Exceptions.Kwarning
-
-let log_info = log_issue_from_summary Exceptions.Kwarning
 
 let log_error_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kerror

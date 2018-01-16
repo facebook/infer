@@ -14,8 +14,6 @@ type t [@@deriving compare]
 val empty : t
 (** empty qualified name *)
 
-val equal : t -> t -> bool
-
 val of_qual_string : string -> t
 (** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers *)
 

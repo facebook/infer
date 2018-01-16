@@ -18,12 +18,6 @@ module MockTraceDomain = struct
 
   let top = singleton top_str
 
-  (* stop others from creating top by accident, adding to top, or removing it *)
-  let add e s =
-    assert (e <> top_str) ;
-    if phys_equal s top then top else add e s
-
-
   let singleton e =
     assert (e <> top_str) ;
     singleton e

@@ -11,14 +11,6 @@ open! IStd
 
 (** Module for Pattern matching. *)
 
-val get_java_field_access_signature : Sil.instr -> (string * string * string) option
-(** Returns the signature of a field access (class name, field name, field type name) *)
-
-val get_java_method_call_formal_signature :
-  Sil.instr -> (string * string * string list * string) option
-(** Returns the formal signature (class name, method name,
-    argument type names and return type name) *)
-
 val get_this_type : ProcAttributes.t -> Typ.t option
 (** Get the this type of a procedure *)
 
@@ -28,19 +20,11 @@ val get_type_name : Typ.t -> string
 val get_vararg_type_names : Tenv.t -> Procdesc.Node.t -> Pvar.t -> string list
 (** Get the type names of a variable argument *)
 
-val has_formal_method_argument_type_names : Procdesc.t -> Typ.Procname.java -> string list -> bool
-
 val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
 (** Check if the method is one of the known initializer methods. *)
 
 val is_getter : Typ.Procname.java -> bool
 (** Is this a getter proc name? *)
-
-val is_setter : Typ.Procname.java -> bool
-(** Is this a setter proc name? *)
-
-val is_immediate_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
-(** Is the type a direct subtype of the typename? *)
 
 val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 (** Is the type a transitive subtype of the typename? *)
@@ -60,8 +44,6 @@ val java_get_const_type_name : Const.t -> string
 
 val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
-
-val java_proc_name_with_class_method : Typ.Procname.java -> string -> string -> bool
 
 val proc_calls :
   (Typ.Procname.t -> ProcAttributes.t option) -> Procdesc.t
@@ -89,9 +71,6 @@ val type_is_object : Typ.t -> bool
 
 val get_fields_nullified : Procdesc.t -> Typ.Fieldname.Set.t
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
-
-val is_exception : Tenv.t -> Typ.Name.t -> bool
-(** [is_exception tenv class_name] checks if class_name is of type java.lang.Exception *)
 
 val is_throwable : Tenv.t -> Typ.Name.t -> bool
 (** [is_throwable tenv class_name] checks if class_name is of type java.lang.Throwable *)

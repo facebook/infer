@@ -22,17 +22,6 @@ let mem_idlist i l = List.exists ~f:(Ident.equal i) l
     considered during pattern matching *)
 type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
-let pp_hpat pe f hpat = F.fprintf f "%a" (Sil.pp_hpred pe) hpat.hpred
-
-let rec pp_hpat_list pe f = function
-  | [] ->
-      ()
-  | [hpat] ->
-      F.fprintf f "%a" (pp_hpat pe) hpat
-  | hpat :: hpats ->
-      F.fprintf f "%a * %a" (pp_hpat pe) hpat (pp_hpat_list pe) hpats
-
-
 (** Checks e1 = e2[sub ++ sub'] for some sub' with dom(sub') subseteq vars.
     Returns (sub ++ sub', vars - dom(sub')). *)
 let rec exp_match e1 sub vars e2 : (Sil.exp_subst * Ident.t list) option =
@@ -821,25 +810,6 @@ let find_partial_iso tenv eq corres todos sigma =
   let init_sigma_corres = ([], []) in
   let init_sigma_todo = sigma in
   generic_find_partial_iso tenv Exact update corres init_sigma_corres todos init_sigma_todo
-
-
-(** [find_partial_iso_from_two_sigmas] finds isomorphic sub-sigmas inside two
-    given sigmas. The function returns a partial iso and four sigmas. The first
-    sigma is the first copy of the two isomorphic sigmas, so it uses expressions in the domain of
-    the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
-    and it uses expressions in the range of the isomorphism. The third and fourth
-    are the unused parts of the two input sigmas. *)
-let find_partial_iso_from_two_sigmas tenv mode eq corres todos sigma1 sigma2 =
-  let update e1 e2 sigma_todo =
-    let sigma_todo1, sigma_todo2 = sigma_todo in
-    let hpredo1, sigma_todo1_no_e1 = sigma_remove_hpred eq sigma_todo1 e1 in
-    let hpredo2, sigma_todo2_no_e2 = sigma_remove_hpred eq sigma_todo2 e2 in
-    let new_sigma_todo = (sigma_todo1_no_e1, sigma_todo2_no_e2) in
-    (hpredo1, hpredo2, new_sigma_todo)
-  in
-  let init_sigma_corres = ([], []) in
-  let init_sigma_todo = (sigma1, sigma2) in
-  generic_find_partial_iso tenv mode update corres init_sigma_corres todos init_sigma_todo
 
 
 (** Lift the kind of list segment predicates to PE *)

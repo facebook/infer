@@ -19,12 +19,6 @@ module Key : sig
   val analysis_results : t
   (** current key for an analysis results value *)
 
-  val attributes : t
-  (** current key for proc attributes *)
-
-  val cfg : t
-  (** current key for a cfg *)
-
   val cg : t
   (** current key for a call graph *)
 
@@ -39,9 +33,6 @@ module Key : sig
 
   val tenv : t
   (** current key for tenv *)
-
-  val trace : t
-  (** current key for an error trace *)
 end
 
 (** Generic serializer *)
@@ -56,10 +47,6 @@ val read_from_file : 'a serializer -> DB.filename -> 'a option
 
 val read_from_string : 'a serializer -> string -> 'a option
 (** Deserialize a string and check the keys *)
-
-val update_file : 'a serializer -> f:('a option -> 'a) -> DB.filename -> unit
-(** Serialize into a file.
-    The upd function takes the old value, if any, and returns the value to write *)
 
 val write_to_file : 'a serializer -> data:'a -> DB.filename -> unit
 (** Serialize into a file writing value *)

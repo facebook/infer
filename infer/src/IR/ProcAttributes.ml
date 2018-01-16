@@ -24,12 +24,6 @@ let compare_proc_flags x y =
 
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
-let proc_flag_ignore_return = "ignore_return"
-
-let proc_flags_add proc_flags key value = Hashtbl.replace proc_flags key value
-
-let proc_flags_find proc_flags key = Hashtbl.find proc_flags key
-
 (** Type for ObjC accessors *)
 type objc_accessor_type =
   | Objc_getter of Typ.Struct.field

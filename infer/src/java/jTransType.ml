@@ -86,10 +86,6 @@ let rec get_named_type vt : Typ.t =
         Typ.mk (Tptr (Typ.mk (Tstruct (typename_of_classname cn)), Typ.Pk_pointer))
 
 
-let extract_cn_type_np typ =
-  match typ.Typ.desc with Typ.Tptr (vtyp, Typ.Pk_pointer) -> vtyp | _ -> typ
-
-
 let rec create_array_type typ dim =
   if dim > 0 then
     let content_typ = create_array_type typ (dim - 1) in

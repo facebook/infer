@@ -10,12 +10,9 @@
 open! IStd
 module L = Logging
 
-(** In this module an ObjC category declaration or implementation is processed. The category    *)
-
-(** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
-
-(* Name used for category with no name, i.e., "" *)
-let noname_category class_name = CFrontend_config.emtpy_name_category ^ class_name
+(** In this module an ObjC category declaration or implementation is processed. The category is
+   saved in the tenv as a struct with the corresponding fields and methods , and the class it
+   belongs to *)
 
 let cat_class_decl dr =
   match dr.Clang_ast_t.dr_name with Some n -> CAst_utils.get_qualified_name n | _ -> assert false

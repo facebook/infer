@@ -234,12 +234,6 @@ module Val = struct
       {x with traces}
 
 
-  let add_trace_elem_last : Trace.elem -> t -> t =
-    fun elem x ->
-      let traces = TraceSet.add_elem_last elem x.traces in
-      {x with traces}
-
-
   let pp_summary : F.formatter -> t -> unit =
     fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
 
@@ -252,8 +246,6 @@ module Val = struct
     let nat = of_itv Itv.nat
 
     let m1_255 = of_itv Itv.m1_255
-
-    let pos = of_itv Itv.pos
 
     let top = of_itv Itv.top
   end
@@ -272,22 +264,6 @@ module Stack = struct
       PowLoc.fold find_join locs Val.bot
 
 
-  let strong_update : PowLoc.t -> Val.astate -> astate -> astate =
-    fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
-
-
-  let weak_update : PowLoc.t -> Val.astate -> astate -> astate =
-    fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
-
-
-  let pp_summary : F.formatter -> astate -> unit =
-    fun fmt mem ->
-      let pp_not_logical_var k v =
-        if Loc.is_logical_var k then () else F.fprintf fmt "%a -> %a@," Loc.pp k Val.pp_summary v
-      in
-      iter pp_not_logical_var mem
-
-
   let remove_temps : Ident.t list -> astate -> astate =
     fun temps mem ->
       let remove_temp mem temp =
@@ -300,19 +276,6 @@ end
 module Heap = struct
   module PPMap = struct
     include PrettyPrintable.MakePPMap (Loc)
-
-    let pp_collection : pp_item:(F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit =
-      fun ~pp_item fmt c ->
-        let pp_sep fmt () = F.fprintf fmt ",@," in
-        F.pp_print_list ~pp_sep pp_item fmt c
-
-
-    let pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit =
-      fun ~pp_value fmt m ->
-        let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Loc.pp k pp_value v in
-        F.fprintf fmt "@[<v 2>{ " ;
-        pp_collection ~pp_item fmt (bindings m) ;
-        F.fprintf fmt " }@]"
   end
 
   include AbstractDomain.Map (Loc) (Val)
@@ -347,10 +310,6 @@ module Heap = struct
       F.fprintf fmt " }@]"
 
 
-  let get_symbols : astate -> Itv.Symbol.t list =
-    fun mem -> List.concat_map ~f:(fun (_, v) -> Val.get_symbols v) (bindings mem)
-
-
   let get_return : astate -> Val.t =
     fun mem ->
       let mem = filter (fun l _ -> Loc.is_return l) mem in
@@ -363,8 +322,6 @@ module AliasTarget = struct
   let equal = [%compare.equal : t]
 
   let pp fmt = function Simple l -> Loc.pp fmt l | Empty l -> F.fprintf fmt "empty(%a)" Loc.pp l
-
-  let of_simple l = Simple l
 
   let of_empty l = Empty l
 
@@ -622,10 +579,6 @@ module MemReach = struct
 
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v m -> {m with heap= Heap.add k v m.heap}
 
-  let strong_update_stack : PowLoc.t -> Val.t -> t -> t =
-    fun p v m -> {m with stack= Stack.strong_update p v m.stack}
-
-
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with heap= Heap.strong_update p v m.heap}
 
@@ -634,15 +587,9 @@ module MemReach = struct
     fun ~f p m -> {m with heap= Heap.transform ~f p m.heap}
 
 
-  let weak_update_stack : PowLoc.t -> Val.t -> t -> t =
-    fun p v m -> {m with stack= Stack.weak_update p v m.stack}
-
-
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with heap= Heap.weak_update p v m.heap}
 
-
-  let get_heap_symbols : t -> Itv.Symbol.t list = fun m -> Heap.get_symbols m.heap
 
   let get_return : t -> Val.t = fun m -> Heap.get_return m.heap
 
@@ -742,27 +689,15 @@ module Mem = struct
 
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_heap k v)
 
-  let strong_update_stack : PowLoc.t -> Val.t -> t -> t =
-    fun p v -> f_lift (MemReach.strong_update_stack p v)
-
-
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.strong_update_heap p v)
-
-
-  let weak_update_stack : PowLoc.t -> Val.t -> t -> t =
-    fun p v -> f_lift (MemReach.weak_update_stack p v)
 
 
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.weak_update_heap p v)
 
 
-  let get_heap_symbols : t -> Itv.Symbol.t list = f_lift_default [] MemReach.get_heap_symbols
-
   let get_return : t -> Val.t = f_lift_default Val.bot MemReach.get_return
-
-  let can_strong_update : PowLoc.t -> bool = MemReach.can_strong_update
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
 
@@ -782,17 +717,7 @@ module Summary = struct
 
   let get_cond_set : t -> PO.ConditionSet.t = trd3
 
-  let get_symbols : t -> Itv.Symbol.t list = fun s -> Mem.get_heap_symbols (get_input s)
-
   let get_return : t -> Val.t = fun s -> Mem.get_return (get_output s)
-
-  let pp_symbols : F.formatter -> t -> unit =
-    fun fmt s ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      F.fprintf fmt "@[<hov 2>Symbols: {" ;
-      F.pp_print_list ~pp_sep Itv.Symbol.pp fmt (get_symbols s) ;
-      F.fprintf fmt "}@]"
-
 
   let pp_symbol_map : F.formatter -> t -> unit = fun fmt s -> Mem.pp_summary fmt (get_input s)
 

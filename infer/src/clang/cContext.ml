@@ -23,8 +23,6 @@ type pointer = int [@@deriving compare]
 
 type curr_class = ContextClsDeclPtr of pointer | ContextNoCls [@@deriving compare]
 
-let equal_curr_class = [%compare.equal : curr_class]
-
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
 type t =
@@ -59,11 +57,7 @@ let create_context translation_unit_context tenv cg cfg procdesc curr_class retu
   ; vars_to_destroy }
 
 
-let get_cfg context = context.cfg
-
 let get_cg context = context.cg
-
-let get_tenv context = context.tenv
 
 let get_procdesc context = context.procdesc
 
@@ -124,14 +118,6 @@ let get_curr_class_typename context =
       assert false
 
 
-let curr_class_to_string curr_class =
-  match curr_class with
-  | ContextClsDeclPtr ptr ->
-      "decl_ptr: " ^ string_of_int ptr
-  | ContextNoCls ->
-      "no class"
-
-
 let add_block_static_var context block_name static_var_typ =
   match (context.outer_context, static_var_typ) with
   | Some outer_context, (static_var, _) when Pvar.is_global static_var ->
@@ -152,10 +138,6 @@ let add_block_static_var context block_name static_var_typ =
         outer_context.blocks_static_vars <- blocks_static_vars
   | _ ->
       ()
-
-
-let static_vars_for_block context block_name =
-  try Typ.Procname.Map.find block_name context.blocks_static_vars with Not_found -> []
 
 
 let rec get_outer_procname context =

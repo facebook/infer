@@ -9,9 +9,6 @@
 
 open! IStd
 
-(** pointers produced by the AST exporter to represent sharing in the AST *)
-type t = Clang_ast_t.pointer
-
 module Map : module type of Map.Make (Int)
 
 val ivar_to_property_table : Clang_ast_t.decl Int.Table.t

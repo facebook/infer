@@ -16,9 +16,6 @@ val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t opt
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
 
-val id_is_assigned_then_dead : Procdesc.Node.t -> Ident.t -> bool
-(** Return true if [id] is assigned to a program variable which is then nullified *)
-
 val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Sil.hpred -> PredSymb.resource option
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 
@@ -79,12 +76,6 @@ val explain_divide_by_zero :
   Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a division by zero *)
 
-val explain_return_expression_required : Location.t -> Typ.t -> Localise.error_desc
-(** explain a return expression required *)
-
-val explain_comparing_floats_for_equality : Location.t -> Localise.error_desc
-(** explain a comparing floats for equality *)
-
 val explain_condition_always_true_false :
   Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a condition which is always true or false *)
@@ -98,9 +89,6 @@ val explain_stack_variable_address_escape :
 val explain_frontend_warning : string -> string option -> Location.t -> Localise.error_desc
 (** explain frontend warning *)
 
-val explain_return_statement_missing : Location.t -> Localise.error_desc
-(** explain a return statement missing *)
-
 val explain_unary_minus_applied_to_unsigned_expression :
   Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain unary minus applied to unsigned expression *)
@@ -113,26 +101,12 @@ val explain_leak :
     If it is an abstraction, blame any variable nullify at the current node.
     If there is an alloc attribute, print the function call and line number. *)
 
-val explain_memory_access :
-  Typ.Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
-(** Produce a description of the memory access performed in the current instruction, if any. *)
-
 val explain_null_test_after_dereference :
   Tenv.t -> Exp.t -> Procdesc.Node.t -> int -> Location.t -> Localise.error_desc
 (** explain a test for NULL of a dereferenced pointer *)
 
 val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
 (** warn at the given location *)
-
-(* offset of an expression found following a program variable *)
-
-type pvar_off = Fpvar (* value of a pvar *)
-  | Fstruct of Typ.Fieldname.t list
-
-(* value obtained by dereferencing the pvar and following a sequence of fields *)
-
-val find_with_exp : 'a Prop.t -> Exp.t -> (Pvar.t * pvar_off) option
-(** Find a program variable whose value is [exp] or pointing to a struct containing [exp] *)
 
 val find_outermost_dereference : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 

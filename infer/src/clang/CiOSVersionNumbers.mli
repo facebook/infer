@@ -9,11 +9,7 @@
 
 open! IStd
 
-type machine_readable_version = float
-
 type human_readable_version = string
-
-type t = machine_readable_version * human_readable_version
 
 val version_of : string -> human_readable_version option
 

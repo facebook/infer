@@ -32,9 +32,6 @@ val equal : t -> t -> bool
 val d : t -> unit
 (** Dump a program variable. *)
 
-val d_list : t list -> unit
-(** Dump a list of program variables. *)
-
 val get_name : t -> Mangled.t
 (** Get the name component of a program variable. *)
 
@@ -101,9 +98,6 @@ val mk_tmp : string -> Typ.Procname.t -> t
 
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a program variable. *)
-
-val pp_list : Pp.env -> F.formatter -> t list -> unit
-(** Pretty print a list of program variables. *)
 
 val pp_value : F.formatter -> t -> unit
 (** Pretty print a pvar which denotes a value, not an address *)

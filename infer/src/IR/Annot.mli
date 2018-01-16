@@ -35,18 +35,11 @@ module Item : sig
   (** Annotation for one item: a list of annotations with visibility. *)
   type nonrec t = (t * bool) list [@@deriving compare]
 
-  val equal : t -> t -> bool
-
   val pp : F.formatter -> t -> unit
   (** Pretty print an item annotation. *)
 
-  val to_string : t -> string
-
   val empty : t
   (** Empty item annotation. *)
-
-  val is_empty : t -> bool
-  (** Check if the item annodation is empty. *)
 end
 
 module Class : sig

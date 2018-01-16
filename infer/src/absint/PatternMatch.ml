@@ -22,13 +22,6 @@ let type_is_object typ =
       false
 
 
-let java_proc_name_with_class_method pn_java class_with_path method_name =
-  try
-    String.equal (Typ.Procname.java_get_class_name pn_java) class_with_path
-    && String.equal (Typ.Procname.java_get_method pn_java) method_name
-  with _ -> false
-
-
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 let rec supertype_exists tenv pred name =
   match Tenv.lookup tenv name with
@@ -48,14 +41,6 @@ let rec supertype_find_map_opt tenv f name =
         None )
   | result ->
       result
-
-
-let is_immediate_subtype tenv this_type_name super_type_name =
-  match Tenv.lookup tenv this_type_name with
-  | Some {supers} ->
-      List.exists ~f:(Typ.Name.equal super_type_name) supers
-  | None ->
-      false
 
 
 (** return true if [typ0] <: [typ1] *)
@@ -196,48 +181,8 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   List.rev (type_names call_node)
 
 
-let has_formal_proc_argument_type_names proc_desc argument_type_names =
-  let formals = Procdesc.get_formals proc_desc in
-  let equal_formal_arg (_, typ) arg_type_name = String.equal (get_type_name typ) arg_type_name in
-  Int.equal (List.length formals) (List.length argument_type_names)
-  && List.for_all2_exn ~f:equal_formal_arg formals argument_type_names
-
-
-let has_formal_method_argument_type_names cfg pname_java argument_type_names =
-  has_formal_proc_argument_type_names cfg
-    (Typ.Procname.java_get_class_name pname_java :: argument_type_names)
-
-
 let is_getter pname_java =
   Str.string_match (Str.regexp "get*") (Typ.Procname.java_get_method pname_java) 0
-
-
-let is_setter pname_java =
-  Str.string_match (Str.regexp "set*") (Typ.Procname.java_get_method pname_java) 0
-
-
-(** Returns the signature of a field access (class name, field name, field type name) *)
-let get_java_field_access_signature = function
-  | Sil.Load (_, Exp.Lfield (_, fn, ft), bt, _) ->
-      Some (get_type_name bt, Typ.Fieldname.java_get_field fn, get_type_name ft)
-  | _ ->
-      None
-
-
-(** Returns the formal signature (class name, method name,
-    argument type names and return type name) *)
-let get_java_method_call_formal_signature = function
-  | Sil.Call (_, Exp.Const Const.Cfun pn, (_, tt) :: args, _, _) -> (
-    match pn with
-    | Typ.Procname.Java pn_java ->
-        let arg_names = List.map ~f:(function _, t -> get_type_name t) args in
-        let rt_name = Typ.Procname.java_get_return_type pn_java in
-        let m_name = Typ.Procname.java_get_method pn_java in
-        Some (get_type_name tt, m_name, arg_names, rt_name)
-    | _ ->
-        None )
-  | _ ->
-      None
 
 
 let type_is_class typ =
@@ -391,9 +336,6 @@ let get_fields_nullified procdesc =
 let is_runtime_exception tenv typename =
   is_subtype_of_str tenv typename "java.lang.RuntimeException"
 
-
-(** Checks if the class name is a Java exception *)
-let is_exception tenv typename = is_subtype_of_str tenv typename "java.lang.Exception"
 
 (** Checks if the class name is a Java exception *)
 let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"

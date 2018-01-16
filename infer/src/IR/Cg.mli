@@ -12,10 +12,6 @@ open! IStd
 
 (** Module for call graphs *)
 
-type in_out_calls =
-  { in_calls: int  (** total number of in calls transitively *)
-  ; out_calls: int  (** total number of out calls transitively *) }
-
 (** the type of a call graph *)
 type t
 
@@ -33,9 +29,6 @@ val add_edge : t -> Typ.Procname.t -> Typ.Procname.t -> unit
 val add_defined_node : t -> Typ.Procname.t -> unit
 (** Add a node to the call graph as defined *)
 
-val calls_recursively : t -> Typ.Procname.t -> Typ.Procname.t -> bool
-(** Check if [source] recursively calls [dest] *)
-
 val create : SourceFile.t -> t
 (** Create an empty call graph *)
 
@@ -43,54 +36,11 @@ val extend : t -> t -> unit
 (** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];
     undefined nodes become defined if at least one side is. *)
 
-val get_all_children : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return all the children of [n], whether defined or not *)
-
-val get_ancestors : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Compute the ancestors of the node, if not pre-computed already *)
-
-val get_heirs : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Compute the heirs of the node, if not pre-computed already *)
-
-val get_calls : t -> Typ.Procname.t -> in_out_calls
-(** Return the in/out calls of the node *)
-
 val get_defined_nodes : t -> Typ.Procname.t list
 (** Return the list of nodes which are defined *)
 
-val get_defined_children : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return the children of [n] which are defined *)
-
-val get_dependents : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return the nodes dependent on [n] *)
-
-val get_nodes_and_calls : t -> (Typ.Procname.t * in_out_calls) list
-(** Return the list of nodes with calls *)
-
-val get_nodes_and_defined_children : t -> (Typ.Procname.t * Typ.Procname.Set.t) list
-(** Return all the nodes with their defined children *)
-
-val get_nodes_and_edges :
-  t -> (Typ.Procname.t * bool) list * (Typ.Procname.t * Typ.Procname.t) list
-(** Return the list of nodes, with defined flag, and the list of edges *)
-
-val get_nonrecursive_dependents : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return the children of [n] which are not heirs of [n] and are defined *)
-
-val get_parents : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return the parents of [n] *)
-
-val get_recursive_dependents : t -> Typ.Procname.t -> Typ.Procname.Set.t
-(** Return the ancestors of [n] which are also heirs of [n] *)
-
-val get_source : t -> SourceFile.t
-(** Return the path of the source file *)
-
 val load_from_file : DB.filename -> t option
 (** Load a call graph from a file *)
-
-val node_defined : t -> Typ.Procname.t -> bool
-(** Returns true if the node is defined *)
 
 val remove_node_defined : t -> Typ.Procname.t -> unit
 (** Remove the defined flag from a node, if it exists. *)

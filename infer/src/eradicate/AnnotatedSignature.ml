@@ -47,13 +47,6 @@ let get proc_attributes : t =
   annotated_signature
 
 
-let param_is_nullable pvar ann_sig =
-  List.exists
-    ~f:(fun (param, annot, _) ->
-      Mangled.equal param (Pvar.get_name pvar) && Annotations.ia_is_nullable annot )
-    ann_sig.params
-
-
 let param_has_annot predicate pvar ann_sig =
   List.exists
     ~f:(fun (param, param_annot, _) ->
@@ -72,32 +65,6 @@ let pp proc_name fmt annotated_signature =
     (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
 
-let is_anonymous_inner_class_wrapper ann_sig proc_name =
-  let check_ret (ia, t) = Annot.Item.is_empty ia && PatternMatch.type_is_object t in
-  let x_param_found = ref false in
-  let name_is_x_number name =
-    let name_str = Mangled.to_string name in
-    let len = String.length name_str in
-    len >= 2 && String.equal (String.sub name_str ~pos:0 ~len:1) "x"
-    &&
-    let s = String.sub name_str ~pos:1 ~len:(len - 1) in
-    let is_int =
-      try
-        ignore (int_of_string s) ;
-        x_param_found := true ;
-        true
-      with Failure _ -> false
-    in
-    is_int
-  in
-  let check_param (name, ia, t) =
-    if String.equal (Mangled.to_string name) "this" then true
-    else name_is_x_number name && Annot.Item.is_empty ia && PatternMatch.type_is_object t
-  in
-  Typ.Procname.java_is_anonymous_inner_class proc_name && check_ret ann_sig.ret
-  && List.for_all ~f:check_param ann_sig.params && !x_param_found
-
-
 let mk_ann_str s = {Annot.class_name= s; parameters= []}
 
 let mk_ann = function
@@ -110,12 +77,6 @@ let mk_ann = function
 let mk_ia ann ia = if ia_is ann ia then ia else (mk_ann ann, true) :: ia
 
 let mark_ia ann ia x = if x then mk_ia ann ia else ia
-
-let method_annotation_mark_return ann method_annotation =
-  let ia_ret, params = method_annotation in
-  let ia_ret' = mark_ia ann ia_ret true in
-  (ia_ret', params)
-
 
 let mark proc_name ann asig (b, bs) =
   let ia, t = asig.ret in

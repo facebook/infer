@@ -27,10 +27,6 @@ val hpara_dll_match_with_impl : Tenv.t -> bool -> Sil.hpara_dll -> Sil.hpara_dll
     considered during pattern matching. *)
 type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
-val pp_hpat : Pp.env -> Format.formatter -> hpred_pat -> unit
-
-val pp_hpat_list : Pp.env -> Format.formatter -> hpred_pat list -> unit
-
 type sidecondition = Prop.normal Prop.t -> Sil.exp_subst -> bool
 
 val prop_match_with_impl :
@@ -53,22 +49,6 @@ val find_partial_iso :
     the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
     and it uses expressions in the range of the isomorphism. The third is the unused
     part of the input sigma. *)
-
-(** This mode expresses the flexibility allowed during the isomorphism check *)
-type iso_mode = Exact | LFieldForget | RFieldForget
-
-val find_partial_iso_from_two_sigmas :
-  Tenv.t -> iso_mode -> (Exp.t -> Exp.t -> bool) -> (Exp.t * Exp.t) list -> (Exp.t * Exp.t) list
-  -> Sil.hpred list -> Sil.hpred list
-  -> ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * (Sil.hpred list * Sil.hpred list))
-     option
-(** [find_partial_iso_from_two_sigmas] finds isomorphic sub-sigmas inside two
-    given sigmas. The second argument is an equality checker.
-    The function returns a partial iso and four sigmas. The first
-    sigma is the first copy of the two isomorphic sigmas, so it uses expressions in the domain of
-    the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
-    and it uses expressions in the range of the isomorphism. The third and fourth
-    are the unused parts of the two input sigmas. *)
 
 val hpara_iso : Tenv.t -> Sil.hpara -> Sil.hpara -> bool
 (** [hpara_iso] soundly checks whether two hparas are isomorphic. *)

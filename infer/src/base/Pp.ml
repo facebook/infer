@@ -118,8 +118,6 @@ let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
 let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:";" pp f l
 
-let or_seq ?print_env pp f = seq ?print_env ~sep:" ||" ~sep_html:" &or;" pp f
-
 (** Print the current time and date in a format similar to the "date" command *)
 let current_time f () =
   let tm = Unix.localtime (Unix.time ()) in

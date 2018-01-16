@@ -22,9 +22,6 @@ val is_context : Tenv.t -> Typ.Name.t -> bool
 val is_application : Tenv.t -> Typ.Name.t -> bool
 (** return true if [typename] <: android.app.Application *)
 
-val is_activity : Tenv.t -> Typ.Name.t -> bool
-(** return true if [typename] <: android.app.Activity *)
-
 val is_view : Tenv.t -> Typ.Name.t -> bool
 (** return true if [typename] <: android.view.View *)
 
@@ -32,6 +29,3 @@ val is_fragment : Tenv.t -> Typ.Name.t -> bool
 
 val is_destroy_method : Typ.Procname.t -> bool
 (** return true if [procname] is a special lifecycle cleanup method *)
-
-val is_android_lib_class : Typ.Name.t -> bool
-(** return true if [class_name] is the name of a class that belong to the Android framework *)

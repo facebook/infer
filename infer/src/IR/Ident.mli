@@ -64,9 +64,6 @@ val kfootprint : kind
 (** hash table with names as keys *)
 module NameHash : Caml.Hashtbl.S with type key = name
 
-val name_primed : name
-(** Name used for primed tmp variables *)
-
 val name_spec : name
 (** Name used for spec variables *)
 
@@ -90,9 +87,6 @@ val create_normal : name -> int -> t
 
 val create_none : unit -> t
 (** Create a "null" identifier for situations where the IR requires an id that will never be read *)
-
-val create_primed : name -> int -> t
-(** Generate a primed identifier with the given name and stamp. *)
 
 val create_footprint : name -> int -> t
 (** Generate a footprint identifier with the given name and stamp. *)
@@ -121,9 +115,6 @@ val is_path : t -> bool
 val is_none : t -> bool
 (** Check whether an identifier is the special "none" identifier *)
 
-val make_unprimed : t -> t
-(** Convert a primed ident into a nonprimed one, keeping the stamp. *)
-
 val get_stamp : t -> int
 (** Get the stamp of the identifier *)
 
@@ -143,6 +134,3 @@ val to_string : t -> string
 
 val pp_list : Format.formatter -> t list -> unit
 (** Pretty print a list of identifiers. *)
-
-val pp_name_list : Format.formatter -> name list -> unit
-(** Pretty print a list of names. *)

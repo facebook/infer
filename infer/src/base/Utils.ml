@@ -55,34 +55,6 @@ let read_file fname =
       cleanup () ; Error error
 
 
-(** copy a source file, return the number of lines, or None in case of error *)
-let copy_file fname_from fname_to =
-  let res = ref 0 in
-  let cin_ref = ref None in
-  let cout_ref = ref None in
-  let cleanup () =
-    (match !cin_ref with None -> () | Some cin -> In_channel.close cin) ;
-    match !cout_ref with None -> () | Some cout -> Out_channel.close cout
-  in
-  try
-    let cin = In_channel.create fname_from in
-    cin_ref := Some cin ;
-    let cout = Out_channel.create fname_to in
-    cout_ref := Some cout ;
-    while true do
-      let line = In_channel.input_line_exn cin in
-      Out_channel.output_string cout line ;
-      Out_channel.output_char cout '\n' ;
-      incr res
-    done ;
-    assert false
-  with
-  | End_of_file ->
-      cleanup () ; Some !res
-  | Sys_error _ ->
-      cleanup () ; None
-
-
 (** type for files used for printing *)
 type outfile =
   { fname: string  (** name of the file *)
@@ -99,9 +71,6 @@ let create_outfile fname =
     F.fprintf F.err_formatter "error: cannot create file %s@." fname ;
     None
 
-
-(** operate on an outfile reference if it is not None *)
-let do_outf outf_opt f = match outf_opt with None -> () | Some outf -> f outf
 
 (** close an outfile *)
 let close_outf outf = Out_channel.close outf.out_c
