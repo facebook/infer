@@ -1145,6 +1145,10 @@ let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
 
 let of_int_lit n = try of_int (IntLit.to_int n) with _ -> top
 
+let of_int64 : Int64.t -> astate =
+  fun n -> Int64.to_int n |> Option.value_map ~f:of_int ~default:top
+
+
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
 let false_sem = NonBottom ItvPure.false_sem

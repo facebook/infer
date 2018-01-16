@@ -206,9 +206,50 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     end
   end
 
+  module StdArray = struct
+    let typ typ length =
+      let declare_local ~decl_local pname node location loc ~inst_num ~dimension mem =
+        (* should this be deferred to the constructor? *)
+        let length = Some (IntLit.of_int64 length) in
+        BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length ~inst_num
+          ~dimension mem
+      in
+      let declare_symbolic ~decl_sym_val pname tenv node location ~depth loc ~inst_num ~new_sym_num
+          ~new_alloc_num mem =
+        let offset = Itv.zero in
+        let size = Itv.of_int64 length in
+        BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ ~offset
+          ~size ~inst_num ~new_sym_num ~new_alloc_num mem
+      in
+      {declare_local; declare_symbolic}
+
+
+    let constructor _size =
+      let exec _pname _ret _node _location mem = mem (* initialize? *) in
+      {exec; check= no_check}
+
+
+    let at _size (array_exp, _) (index_exp, _) =
+      (* TODO? use size *)
+      let exec _pname ret _node _location mem =
+        L.(debug BufferOverrun Verbose) "Using model std::array<_, %Ld>::at" _size ;
+        match ret with
+        | Some (id, _) ->
+            BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
+        | None ->
+            mem
+      and check pname _node location mem cond_set =
+        BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
+      in
+      {exec; check}
+  end
+
   module Procname = struct
     let dispatch : model ProcnameDispatcher.dispatcher =
       let open ProcnameDispatcher.Procname in
+      let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
+      let std_array0 = mk_std_array () in
+      let std_array2 = mk_std_array () in
       make_dispatcher
         [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
         ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
@@ -224,11 +265,15 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         ; -"boost" &:: "split" $ capt_arg_of_typ (-"std" &:: "vector") $+ any_arg $+ any_arg
           $+? any_arg $--> Boost.Split.std_vector
         ; -"folly" &:: "split" $ any_arg $+ any_arg $+ capt_arg_of_typ (-"std" &:: "vector")
-          $+? capt_exp $--> Folly.Split.std_vector ]
+          $+? capt_exp $--> Folly.Split.std_vector
+        ; std_array0 >:: "array" &--> StdArray.constructor
+        ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
+        ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at ]
   end
 
   module TypName = struct
     let dispatch : typ_model ProcnameDispatcher.typ_dispatcher =
-      ProcnameDispatcher.TypName.make_dispatcher []
+      let open ProcnameDispatcher.TypName in
+      make_dispatcher [-"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ]
   end
 end
