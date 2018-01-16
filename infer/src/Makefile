@@ -95,7 +95,7 @@ all: infer
 
 GENERATED_FROM_AUTOCONF = jbuild.common jbuild-workspace base/Version.ml
 
-GENERATED_JBUILDS = jbuild atd/jbuild istd/jbuild scripts/jbuild
+GENERATED_JBUILDS = jbuild atd/jbuild deadcode/jbuild istd/jbuild scripts/jbuild
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_JBUILDS) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -159,7 +159,7 @@ roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif
 clusters:=base clang java IR
 
-ml_src_files:=$(shell find . -regex '\./[a-zA-Z].*\.ml\(i\)*')
+ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -type d),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
@@ -265,11 +265,13 @@ $(GENERATED_JBUILDS): jbuild.common
 
 jbuild: jbuild.in
 atd/jbuild: atd/jbuild.in
+deadcode/jbuild: deadcode/jbuild.in
 istd/jbuild: istd/jbuild.in
 scripts/jbuild: scripts/jbuild.in
 
 .PHONY: clean
 clean:
+	$(MAKE) -C deadcode clean
 	$(REMOVE) $(INFER_TARGET)
 	$(REMOVE) toplevel.mlpack
 	$(REMOVE_DIR) $(BUILD_DIR)
