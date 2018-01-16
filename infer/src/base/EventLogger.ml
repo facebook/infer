@@ -74,9 +74,31 @@ end
 
 let get_log_identifier () = Random_id.get ()
 
-type event = UncaughtException of exn * int
+type procedures_translated =
+  { procedures_translated_total: int
+  ; procedures_translated_failed: int
+  ; lang: string
+  ; source_file: SourceFile.t }
 
-let string_of_event event = match event with UncaughtException _ -> "UncaughtException"
+let create_procedures_translated_row base record =
+  let open JsonBuilder in
+  base |> add_int ~key:"procedures_translated_total" ~data:record.procedures_translated_total
+  |> add_int ~key:"procedures_translated_failed" ~data:record.procedures_translated_failed
+  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_file)
+
+
+type event =
+  | UncaughtException of exn * int
+  | ProceduresTranslatedSummary of procedures_translated
+
+let string_of_event event =
+  match event with
+  | UncaughtException _ ->
+      "UncaughtException"
+  | ProceduresTranslatedSummary _ ->
+      "ProceduresTranslatedSummary"
+
 
 let sequence_ctr = ref 0
 
@@ -104,10 +126,13 @@ let create_row event =
     |> add_int ~key:"sequence" ~data:(!sequence_ctr - 1) |> add_string ~key:"sysname" ~data:sysname
     |> add_int ~key:"time" ~data:(int_of_float (Unix.time ()))
   in
-  ( match event with UncaughtException (exn, exitcode) ->
+  ( match event with
+  | UncaughtException (exn, exitcode) ->
       base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
       |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
-      |> add_int ~key:"exitcode" ~data:exitcode )
+      |> add_int ~key:"exitcode" ~data:exitcode
+  | ProceduresTranslatedSummary record ->
+      create_procedures_translated_row base record )
   |> JsonBuilder.to_json
 
 

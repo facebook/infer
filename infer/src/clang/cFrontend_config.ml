@@ -22,6 +22,10 @@ let unimplemented fmt = F.kasprintf (fun msg -> raise (Unimplemented msg)) fmt
 
 type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
 
+let string_of_clang_lang (lang: clang_lang) : string =
+  match lang with C -> "C" | CPP -> "CPP" | ObjC -> "ObjC" | ObjCPP -> "ObjCPP"
+
+
 let equal_clang_lang = [%compare.equal : clang_lang]
 
 type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}

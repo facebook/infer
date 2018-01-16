@@ -7,7 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type event = UncaughtException of exn * int  (** exception, exitcode *)
+type procedures_translated =
+  { procedures_translated_total: int
+  ; procedures_translated_failed: int
+  ; lang: string
+  ; source_file: SourceFile.t }
+
+type event =
+  | UncaughtException of exn * int  (** exception, exitcode *)
+  | ProceduresTranslatedSummary of procedures_translated  (** record of procedures translated *)
 
 val get_log_identifier : unit -> string
 

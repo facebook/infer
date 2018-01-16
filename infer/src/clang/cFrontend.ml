@@ -39,7 +39,7 @@ let init_global_state_capture () =
   CProcname.reset_block_counter ()
 
 
-let do_source_file translation_unit_context ast =
+let do_source_file (translation_unit_context: CFrontend_config.translation_unit_context) ast =
   let tenv = Tenv.create () in
   CType_decl.add_predefined_types tenv ;
   init_global_state_capture () ;
@@ -66,9 +66,13 @@ let do_source_file translation_unit_context ast =
     Dotty.print_icfg_dotty source_file cfg ;
     Cg.save_call_graph_dotty source_file call_graph ) ;
   L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg ;
-  L.(debug Capture Verbose)
-    "# Procedures started: %d@\n# Procedures completed: %d@\n@\n"
-    !CFrontend_config.procedures_attempted
-    (!CFrontend_config.procedures_attempted - !CFrontend_config.procedures_failed) ;
+  let procedures_translated_summary =
+    EventLogger.ProceduresTranslatedSummary
+      { procedures_translated_total= !CFrontend_config.procedures_attempted
+      ; procedures_translated_failed= !CFrontend_config.procedures_failed
+      ; lang= CFrontend_config.string_of_clang_lang translation_unit_context.lang
+      ; source_file= translation_unit_context.source_file }
+  in
+  EventLogger.log procedures_translated_summary ;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)
