@@ -265,6 +265,11 @@ module Procname : sig
     ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
   (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the function *)
 
+  val ( &::.*--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+      accepts ALL function arguments, binds the function *)
+
   val ( $!--> ) :
     ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
   (** Ends function arguments, accepts NO more function arguments.
@@ -287,5 +292,10 @@ module TypName : sig
 
   val ( &--> ) :
     ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
+
+  val ( &::.*--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+        accepts ALL function arguments, binds the function *)
 end
 [@@warning "-32"]

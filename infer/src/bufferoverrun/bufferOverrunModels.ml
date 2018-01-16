@@ -242,6 +242,31 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
       in
       {exec; check}
+
+
+    let no_model =
+      let exec pname ret _node location mem =
+        L.(debug BufferOverrun Verbose)
+          "No model for %a at %a" Typ.Procname.pp pname Location.pp location ;
+        mem
+      in
+      {exec; check= no_check}
+
+
+    let no_typ_model =
+      let no_model kind pname location mem =
+        L.(debug BufferOverrun Verbose)
+          "No %s type model in %a at %a" kind Typ.Procname.pp pname Location.pp location ;
+        mem
+      in
+      let declare_local ~decl_local:_ pname _node location _loc ~inst_num ~dimension:_ mem =
+        (no_model "local" pname location mem, inst_num)
+      in
+      let declare_symbolic ~decl_sym_val:_ pname _tenv _node location ~depth:_ _loc ~inst_num:_
+          ~new_sym_num:_ ~new_alloc_num:_ mem =
+        no_model "symbolic" pname location mem
+      in
+      {declare_local; declare_symbolic}
   end
 
   module Procname = struct
@@ -268,12 +293,15 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           $+? capt_exp $--> Folly.Split.std_vector
         ; std_array0 >:: "array" &--> StdArray.constructor
         ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
-        ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at ]
+        ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
+        ; -"std" &:: "array" &::.*--> StdArray.no_model ]
   end
 
   module TypName = struct
     let dispatch : typ_model ProcnameDispatcher.typ_dispatcher =
       let open ProcnameDispatcher.TypName in
-      make_dispatcher [-"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ]
+      make_dispatcher
+        [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ
+        ; -"std" &:: "array" &::.*--> StdArray.no_typ_model ]
   end
 end

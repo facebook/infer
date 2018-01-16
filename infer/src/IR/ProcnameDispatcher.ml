@@ -199,6 +199,34 @@ let name_cons
     {on_objc_cpp; on_qual_name; get_markers}
 
 
+let all_names_cons
+    : ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
+      -> ('f_in, 'f_out, 'captured_tpes, 'markers_in, 'markers_out, non_empty) path_matcher =
+  fun m ->
+    let {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}} = m in
+    let rec on_templated_name_rec f templated_name =
+      match on_templated_name f templated_name with
+      | Some _ as some ->
+          some
+      | None ->
+          let qual_name, _template_args = templated_name in
+          match QualifiedCppName.extract_last qual_name with
+          | None ->
+              None
+          | Some (_last, rest) ->
+              on_templated_name_rec f (rest, [])
+    in
+    let on_templated_name = on_templated_name_rec in
+    let on_objc_cpp f objc_cpp =
+      match on_objc_cpp f objc_cpp with
+      | Some _ as some ->
+          some
+      | None ->
+          on_templated_name f (templated_name_of_class_name objc_cpp.Typ.Procname.class_name)
+    in
+    {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}}
+
+
 let templ_begin
     : ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
       -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, accept_more) templ_matcher =
@@ -496,6 +524,8 @@ module Common = struct
 
   let ( &::! ) path_matcher name = name_cons path_matcher name
 
+  let ( &::.*! ) path_matcher () = all_names_cons path_matcher
+
   let ( ~- ) name = empty &::! name
 
   let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
@@ -508,9 +538,9 @@ module Common = struct
 
   let ( >:: ) templ_matcher name = templ_matcher >! () &::! name
 
-  let ( &+...>:: ) templ_matcher name = templ_matcher &+ any_template_args >:: name
+  let ( &+...>:: ) templ_matcher name = templ_matcher &+...>! () &::! name
 
-  let ( &:: ) path_matcher name = path_matcher < any_template_args >:: name
+  let ( &:: ) name_matcher name = name_matcher <...>! () &::! name
 
   let ( <>:: ) name_matcher name = name_matcher <! () >:: name
 end
@@ -734,7 +764,7 @@ module Procname = struct
 
   let ( $--> ) args_matcher f = args_matcher $* no_args_left $*--> f
 
-  let ( $ ) name_matcher one_arg = name_matcher < any_template_args >$ one_arg
+  let ( $ ) name_matcher func_arg = name_matcher <...>! () $! () $+ func_arg
 
   let ( <>$ ) name_matcher one_arg = name_matcher <! () >$ one_arg
 
@@ -744,13 +774,15 @@ module Procname = struct
 
   let ( >$$--> ) templ_matcher f = templ_matcher >$! () $--> f
 
-  let ( $$--> ) name_matcher f = name_matcher < any_template_args >$$--> f
+  let ( $$--> ) name_matcher f = name_matcher <...>! () $! () $--> f
 
   let ( <>$$--> ) name_matcher f = name_matcher <! () >$$--> f
 
-  let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
+  let ( &--> ) name_matcher f = name_matcher <...>! () $! () $+...$--> f
 
   let ( <>--> ) name_matcher f = name_matcher <! () >--> f
+
+  let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+...$--> f
 
   let ( $!--> ) args_matcher f =
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
@@ -777,5 +809,7 @@ module TypName = struct
 
   let ( <>--> ) name_matcher f = name_matcher <! () >--> f
 
-  let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
+  let ( &--> ) name_matcher f = name_matcher <...>! () &-->! f
+
+  let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () &-->! f
 end
