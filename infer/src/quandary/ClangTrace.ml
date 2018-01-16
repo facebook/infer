@@ -76,8 +76,7 @@ module SourceKind = struct
             Some (ReadFile, Some 1)
         | _ ->
             get_external_source qualified_pname )
-    | Typ.Procname.C _
-      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__global_access
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access
       -> (
         (* is this var a command line flag created by the popular C++ gflags library for creating
            command-line flags (https://github.com/gflags/gflags)? *)
@@ -438,7 +437,7 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.untrusted_file
-    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), CreateFile ->
+    | Endpoint (_, typ), CreateFile ->
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.untrusted_file_risk
@@ -446,11 +445,11 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url
-    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), URL ->
+    | Endpoint (_, typ), URL ->
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
-    | (EnvironmentVariable | ReadFile), URL ->
+    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), URL ->
         None
     | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), SQL ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
@@ -508,7 +507,7 @@ include Trace.Make (struct
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array
-    | (EnvironmentVariable | ReadFile), CreateFile ->
+    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), CreateFile ->
         None
     | Other, _ ->
         (* Other matches everything *)

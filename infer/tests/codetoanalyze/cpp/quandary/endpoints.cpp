@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <fstream>
+#include <iostream>
 #include <string>
 
 extern void __infer_sql_sink(std::string);

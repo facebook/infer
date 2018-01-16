@@ -10,7 +10,11 @@
 #include <fstream>
 #include <unistd.h>
 
+extern void __infer_url_sink(char*);
+
 namespace files {
+
+extern char* FLAGS_cli_string;
 
 void read_file_call_exec_bad1(int length) {
   std::ifstream is("test.txt", std::ifstream::binary);
@@ -61,5 +65,11 @@ void read_file_call_exec_bad5(std::iostream is, int length) {
     execle(buffer, NULL);
   }
 }
+
+void read_file_from_flag_ok(int length) {
+  std::ofstream file1(FLAGS_cli_string, std::ifstream::binary);
+}
+
+void url_from_flag_ok() { __infer_url_sink(FLAGS_cli_string); }
 
 }
