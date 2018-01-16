@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 exception ALParserInvariantViolationException of string
 
 type exc_info = {description: string; filename: string; line: int}

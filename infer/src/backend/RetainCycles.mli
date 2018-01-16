@@ -7,4 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 val report_cycle : Tenv.t -> Sil.hpred -> Prop.normal Prop.t option option -> exn option

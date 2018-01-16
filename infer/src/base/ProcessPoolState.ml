@@ -6,5 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
+open! IStd
+
 (** Keep track of whether the current execution is in a child process *)
 let in_child = ref false

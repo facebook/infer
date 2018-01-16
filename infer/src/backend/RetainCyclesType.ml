@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+open! IStd
+
 type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t}
 
 type retain_cycle_field_objc = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}

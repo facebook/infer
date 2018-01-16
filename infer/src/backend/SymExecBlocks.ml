@@ -6,6 +6,9 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
+open! IStd
+
 (* Given two lists of tuples (exp1, var1, typ1) and (exp2, var2, typ2)
 append the lists avoiding duplicates, where if the variables exist we check their
 equality, otherwise we check the equality of the expressions. This is to avoid

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 let validate_al_files () =
   prerr_endline "ERROR: infer was built without clang support." ;
   Die.exit 1
