@@ -25,7 +25,7 @@ let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
   let is_on_destroy_view =
-    String.equal (Typ.Procname.java_get_method pname_java) "onDestroyView"
+    String.equal (Typ.Procname.Java.get_method pname_java) "onDestroyView"
   in
   let fld_typ_is_view typ =
     match typ.Typ.desc with
@@ -36,11 +36,11 @@ let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary
   in
   (* is [fldname] a View type declared by [class_typename]? *)
   let is_declared_view_typ class_typename (fldname, fld_typ, _) =
-    let fld_classname = Typ.Name.Java.from_string (Typ.Fieldname.java_get_class fldname) in
+    let fld_classname = Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class fldname) in
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
   if is_on_destroy_view then
-    let class_typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
+    let class_typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname_java) in
     match Tenv.lookup tenv class_typename with
     | Some {fields} when AndroidFramework.is_fragment tenv class_typename ->
         let declared_view_fields = List.filter ~f:(is_declared_view_typ class_typename) fields in

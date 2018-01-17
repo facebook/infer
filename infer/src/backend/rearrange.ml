@@ -753,7 +753,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let guarded_by_str_is_current_class guarded_by_str = function
     | Typ.Procname.Java java_pname ->
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
-        guarded_by_str_is_class guarded_by_str (Typ.Procname.java_get_class_name java_pname)
+        guarded_by_str_is_class guarded_by_str (Typ.Procname.Java.get_class_name java_pname)
     | _ ->
         false
   in
@@ -765,7 +765,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   let guarded_by_str_is_super_class_this guarded_by_str pname =
     match pname with
     | Typ.Procname.Java java_pname ->
-        let current_class_type_name = Typ.Procname.java_get_class_type_name java_pname in
+        let current_class_type_name = Typ.Procname.Java.get_class_type_name java_pname in
         let comparison class_type_name _ =
           guarded_by_str_is_class_this (Typ.Name.to_string class_type_name) guarded_by_str
         in
@@ -776,7 +776,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   (* return true if [guarded_by_str] is as suffix of "<name_of_current_class>.this" *)
   let guarded_by_str_is_current_class_this guarded_by_str = function
     | Typ.Procname.Java java_pname ->
-        guarded_by_str_is_class_this (Typ.Procname.java_get_class_name java_pname) guarded_by_str
+        guarded_by_str_is_class_this (Typ.Procname.Java.get_class_name java_pname) guarded_by_str
     | _ ->
         false
   in
@@ -807,7 +807,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       match extract_guarded_by_str item_annot with
       | Some "this" ->
           (* expand "this" into <classname>.this *)
-          Some (Printf.sprintf "%s.this" (Typ.Fieldname.java_get_class fld))
+          Some (Printf.sprintf "%s.this" (Typ.Fieldname.Java.get_class fld))
       | guarded_by_str_opt ->
           guarded_by_str_opt )
     | _ ->
@@ -876,7 +876,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
               (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
                      note that this is a bit sketchy when there are mutliple this$n's, but there's
                      nothing we can do to disambiguate them. *)
-              get_fld_strexp_and_typ typ (fun f _ -> Typ.Fieldname.java_is_outer_instance f) flds
+              get_fld_strexp_and_typ typ (fun f _ -> Typ.Fieldname.Java.is_outer_instance f) flds
           | None ->
               (* can't find an exact match. try a different convention. *)
               match_on_field_type typ flds

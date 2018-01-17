@@ -109,8 +109,8 @@ module FileOrProcMatcher = struct
           ~init:String.Map.empty m_patterns
       in
       let do_java pname_java =
-        let class_name = Typ.Procname.java_get_class_name pname_java
-        and method_name = Typ.Procname.java_get_method pname_java in
+        let class_name = Typ.Procname.Java.get_class_name pname_java
+        and method_name = Typ.Procname.Java.get_method pname_java in
         try
           let class_patterns = String.Map.find_exn pattern_map class_name in
           List.exists

@@ -77,7 +77,7 @@ let is_modeled_expensive tenv = function
       &&
       let is_subclass =
         let classname =
-          Typ.Name.Java.from_string (Typ.Procname.java_get_class_name proc_name_java)
+          Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java)
         in
         PatternMatch.is_subtype_of_str tenv classname
       in
@@ -90,7 +90,7 @@ let is_allocator tenv pname =
   match pname with
   | Typ.Procname.Java pname_java ->
       let is_throwable () =
-        let class_name = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
+        let class_name = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname_java) in
         PatternMatch.is_throwable tenv class_name
       in
       Typ.Procname.is_constructor pname && not (BuiltinDecl.is_declared pname)
@@ -372,7 +372,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_unlikely pname =
     match pname with
     | Typ.Procname.Java java_pname ->
-        String.equal (Typ.Procname.java_get_method java_pname) "unlikely"
+        String.equal (Typ.Procname.Java.get_method java_pname) "unlikely"
     | _ ->
         false
 

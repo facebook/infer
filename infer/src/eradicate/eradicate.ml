@@ -180,7 +180,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
                 let get_class_opt pn =
                   match pn with
                   | Typ.Procname.Java pn_java ->
-                      Some (Typ.Procname.java_get_class_name pn_java)
+                      Some (Typ.Procname.Java.get_class_name pn_java)
                   | _ ->
                       None
                 in
@@ -259,7 +259,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let get_class pn =
         match pn with
         | Typ.Procname.Java pn_java ->
-            Some (Typ.Procname.java_get_class_name pn_java)
+            Some (Typ.Procname.Java.get_class_name pn_java)
         | _ ->
             None
 

@@ -37,7 +37,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> (
         PatternMatch.is_getter java_procname
         &&
-        match Typ.Procname.java_get_package java_procname with
+        match Typ.Procname.Java.get_package java_procname with
         | Some package ->
             String.is_prefix ~prefix:"com.facebook.graphql.model" package
         | None ->
@@ -150,7 +150,7 @@ let unroll_call call astate summary =
 let should_report proc_desc =
   match Procdesc.get_proc_name proc_desc with
   | Typ.Procname.Java java_pname -> (
-    match Typ.Procname.java_get_method java_pname with "onCreateLayout" -> true | _ -> false )
+    match Typ.Procname.Java.get_method java_pname with "onCreateLayout" -> true | _ -> false )
   | _ ->
       false
 

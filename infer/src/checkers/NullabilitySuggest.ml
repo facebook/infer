@@ -140,8 +140,8 @@ let make_error_trace astate ap ud =
 let pretty_field_name proc_data field_name =
   match Procdesc.get_proc_name proc_data.ProcData.pdesc with
   | Typ.Procname.Java jproc_name ->
-      let proc_class_name = Typ.Procname.java_get_class_name jproc_name in
-      let field_class_name = Typ.Fieldname.java_get_class field_name in
+      let proc_class_name = Typ.Procname.Java.get_class_name jproc_name in
+      let field_class_name = Typ.Fieldname.Java.get_class field_name in
       if String.equal proc_class_name field_class_name then Typ.Fieldname.to_flat_string field_name
       else Typ.Fieldname.to_simplified_string field_name
   | _ ->
@@ -154,7 +154,7 @@ let pretty_field_name proc_data field_name =
 let is_outside_codebase proc_desc tenv field_name =
   match Procdesc.get_proc_name proc_desc with
   | Typ.Procname.Java _ ->
-      let class_name = Typ.Fieldname.java_get_class field_name in
+      let class_name = Typ.Fieldname.Java.get_class field_name in
       let class_type = Typ.Name.Java.from_string class_name in
       let class_struct = Tenv.lookup tenv class_type in
       let first_method =

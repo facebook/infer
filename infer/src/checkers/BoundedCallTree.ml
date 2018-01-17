@@ -112,7 +112,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match pname with
             | Typ.Procname.Java java_proc ->
                 String.equal frame.Stacktrace.class_str
-                  (Typ.Procname.java_get_class_name java_proc)
+                  (Typ.Procname.Java.get_class_name java_proc)
             | Typ.Procname.ObjC_Cpp objc_cpp_prod ->
                 String.equal frame.Stacktrace.class_str
                   (Typ.Procname.objc_cpp_get_class_name objc_cpp_prod)

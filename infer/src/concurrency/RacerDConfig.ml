@@ -28,21 +28,21 @@ module Models = struct
   type container_access = ContainerRead | ContainerWrite
 
   let is_thread_utils_type java_pname =
-    let pn = Typ.Procname.java_get_class_name java_pname in
+    let pn = Typ.Procname.Java.get_class_name java_pname in
     String.is_suffix ~suffix:"ThreadUtils" pn || String.is_suffix ~suffix:"ThreadUtil" pn
 
 
   let is_thread_utils_method method_name_str = function
     | Typ.Procname.Java java_pname ->
         is_thread_utils_type java_pname
-        && String.equal (Typ.Procname.java_get_method java_pname) method_name_str
+        && String.equal (Typ.Procname.Java.get_method java_pname) method_name_str
     | _ ->
         false
 
 
   let get_thread = function
     | Typ.Procname.Java java_pname when is_thread_utils_type java_pname -> (
-      match Typ.Procname.java_get_method java_pname with
+      match Typ.Procname.Java.get_method java_pname with
       | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread" ->
           MainThread
       | "isMainThread" | "isUiThread" ->
@@ -110,7 +110,7 @@ module Models = struct
           if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
           else
             match
-              (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+              (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
             with
             | ( ( "java.util.concurrent.locks.Lock"
                 | "java.util.concurrent.locks.ReentrantLock"
@@ -173,9 +173,9 @@ module Models = struct
     fun pn tenv ->
       match pn with
       | Typ.Procname.Java java_pname ->
-          let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+          let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
           let get_container_access_ typename =
-            match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
+            match (Typ.Name.name typename, Typ.Procname.Java.get_method java_pname) with
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
               , ( "append"
                 | "clear"

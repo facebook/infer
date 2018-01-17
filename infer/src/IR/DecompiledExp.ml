@@ -61,7 +61,7 @@ let rec to_string = function
             let s =
               match pname with
               | Typ.Procname.Java pname_java ->
-                  Typ.Procname.java_get_method pname_java
+                  Typ.Procname.Java.get_method pname_java
               | _ ->
                   Typ.Procname.to_string pname
             in

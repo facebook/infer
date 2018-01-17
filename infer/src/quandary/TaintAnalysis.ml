@@ -121,7 +121,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let is_endpoint source =
       match CallSite.pname (TraceDomain.Source.call_site source) with
       | Typ.Procname.Java java_pname ->
-          String.Set.mem (Lazy.force endpoints) (Typ.Procname.java_get_class_name java_pname)
+          String.Set.mem (Lazy.force endpoints) (Typ.Procname.Java.get_class_name java_pname)
       | _ ->
           false
 
@@ -519,7 +519,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let is_variadic =
               match callee_pname with
               | Typ.Procname.Java pname -> (
-                match List.rev (Typ.Procname.java_get_parameters pname) with
+                match List.rev (Typ.Procname.Java.get_parameters pname) with
                 | (_, "java.lang.Object[]") :: _ ->
                     true
                 | _ ->

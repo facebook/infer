@@ -297,7 +297,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
           else
             match pn with
             | Typ.Procname.Java pn_java ->
-                MF.monospaced_to_string (Typ.Procname.java_get_method pn_java)
+                MF.monospaced_to_string (Typ.Procname.Java.get_method pn_java)
             | _ ->
                 MF.monospaced_to_string (Typ.Procname.to_simplified_string pn)
         in
@@ -340,7 +340,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
           else
             match pn with
             | Typ.Procname.Java pn_java ->
-                Typ.Procname.java_get_method pn_java
+                Typ.Procname.Java.get_method pn_java
             | _ ->
                 Typ.Procname.to_simplified_string pn
         in

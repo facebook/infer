@@ -62,7 +62,7 @@ module SourceKind = struct
     let return = None in
     match pname with
     | Typ.Procname.Java pname -> (
-      match (Typ.Procname.java_get_class_name pname, Typ.Procname.java_get_method pname) with
+      match (Typ.Procname.Java.get_class_name pname, Typ.Procname.Java.get_method pname) with
       | "android.content.Intent", "<init>" when actual_has_type 2 "android.net.Uri" actuals tenv ->
           (* taint the [this] parameter passed to the constructor *)
           Some (IntentFromURI, Some 0)
@@ -154,7 +154,7 @@ module SourceKind = struct
     match Procdesc.get_proc_name pdesc with
     | Typ.Procname.Java java_pname -> (
       match
-        (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
       with
       | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
           taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
@@ -298,7 +298,7 @@ module SinkKind = struct
     match pname with
     | Typ.Procname.Java java_pname -> (
       match
-        (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
       with
       | "android.text.Html", "fromHtml" ->
           taint_nth 0 HTML
@@ -424,8 +424,8 @@ module JavaSanitizer = struct
     | Typ.Procname.Java java_pname ->
         let procedure_string =
           Printf.sprintf "%s.%s"
-            (Typ.Procname.java_get_class_name java_pname)
-            (Typ.Procname.java_get_method java_pname)
+            (Typ.Procname.Java.get_class_name java_pname)
+            (Typ.Procname.Java.get_method java_pname)
         in
         List.find_map
           ~f:(fun procedure_regex ->

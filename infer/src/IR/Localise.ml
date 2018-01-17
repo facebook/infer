@@ -252,14 +252,14 @@ let rec format_typ typ =
 
 
 let format_field f =
-  if Config.curr_language_is Config.Java then Typ.Fieldname.java_get_field f
+  if Config.curr_language_is Config.Java then Typ.Fieldname.Java.get_field f
   else Typ.Fieldname.to_string f
 
 
 let format_method pname =
   match pname with
   | Typ.Procname.Java pname_java ->
-      Typ.Procname.java_get_method pname_java
+      Typ.Procname.Java.get_method pname_java
   | _ ->
       Typ.Procname.to_string pname
 
@@ -462,8 +462,8 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
       | Typ.Procname.Java pname_java ->
           MF.monospaced_to_string
             (Printf.sprintf "%s.%s"
-               (Typ.Procname.java_get_class_name pname_java)
-               (Typ.Procname.java_get_method pname_java))
+               (Typ.Procname.Java.get_class_name pname_java)
+               (Typ.Procname.Java.get_method pname_java))
       | _ ->
           ""
     in

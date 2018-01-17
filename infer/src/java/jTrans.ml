@@ -27,8 +27,8 @@ let fix_method_definition_line linereader proc_name loc =
       let inner_class_name cname =
         match String.rsplit2 cname ~on:'$' with Some (_, icn) -> icn | None -> cname
       in
-      inner_class_name (Typ.Procname.java_get_simple_class_name proc_name_java)
-    else Typ.Procname.java_get_method proc_name_java
+      inner_class_name (Typ.Procname.Java.get_simple_class_name proc_name_java)
+    else Typ.Procname.Java.get_method proc_name_java
   in
   let regex = Str.regexp (Str.quote method_name) in
   let method_is_defined_here linenum =

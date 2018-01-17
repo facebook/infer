@@ -159,6 +159,14 @@ module Name : sig
     val is_class : t -> bool
     (** [is_class name] holds if [name] names a Java class *)
 
+    val split_classname : string -> string option * string
+    (** Given a package.class_name string, look for the latest dot and split the string
+        in two (package, class_name). *)
+
+    val get_parent_class : t -> t option
+    (** Given an inner classname like C$Inner1$Inner2, return Some C$Inner1. If the class is not an
+        inner class, return None *)
+
     val java_lang_object : t
 
     val java_io_serializable : t
@@ -250,8 +258,49 @@ type typ = t
 module Procname : sig
   (** Module for Procedure Names. *)
 
+  type method_kind =
+    | Non_Static
+        (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+    | Static  (** in Java, procedures called with invokestatic *)
+
   (** Type of java procedure names. *)
-  type java
+  module Java : sig
+    type t [@@deriving compare]
+
+    (** e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects *)
+    type java_type = string option * string
+
+    val make : Name.t -> java_type option -> string -> java_type list -> method_kind -> t
+    (** Create a Java procedure name from its
+        class_name method_name args_type_name return_type_name method_kind. *)
+
+    val replace_parameters : t -> java_type list -> t
+    (** Replace the parameters of a java procname. *)
+
+    val replace_return_type : t -> java_type -> t
+    (** Replace the method of a java procname. *)
+
+    val get_class_name : t -> string
+    (** Return the class name of a java procedure name. *)
+
+    val get_class_type_name : t -> Name.t
+    (** Return the class name as a typename of a java procedure name. *)
+
+    val get_simple_class_name : t -> string
+    (** Return the simple class name of a java procedure name. *)
+
+    val get_package : t -> string option
+    (** Return the package name of a java procedure name. *)
+
+    val get_method : t -> string
+    (** Return the method name of a java procedure name. *)
+
+    val get_parameters : t -> java_type list
+    (** Return the parameters of a java procedure name. *)
+
+    val replace_method : t -> string -> t
+    (** Replace the method name of an existing java procname. *)
+  end
 
   (** Type of c procedure names. *)
   type c = private
@@ -286,7 +335,7 @@ module Procname : sig
   bar() {foo(my_block)} is executed as  foo_my_block() {my_block(); }
   where foo_my_block is created with WithBlockParameters (foo, [my_block]) *)
   type t =
-    | Java of java
+    | Java of Java.t
     | C of c
     | Linters_dummy_method
     | Block of block_name
@@ -297,13 +346,6 @@ module Procname : sig
   val block_name_of_procname : t -> block_name
 
   val equal : t -> t -> bool
-
-  type java_type = string option * string
-
-  type method_kind =
-    | Non_Static
-        (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
-    | Static  (** in Java, procedures called with invokestatic *)
 
   (** Hash tables with proc names as keys. *)
   module Hashable : Caml.Hashtbl.HashedType with type t = t
@@ -371,16 +413,6 @@ module Procname : sig
   val is_destructor : t -> bool
   (** Check if this is a dealloc method. *)
 
-  val java : Name.t -> java_type option -> string -> java_type list -> method_kind -> java
-  (** Create a Java procedure name from its
-      class_name method_name args_type_name return_type_name method_kind. *)
-
-  val java_replace_parameters : java -> java_type list -> java
-  (** Replace the parameters of a java procname. *)
-
-  val java_replace_return_type : java -> java_type -> java
-  (** Replace the method of a java procname. *)
-
   val mangled_objc_block : string -> t
   (** Create an objc block name. *)
 
@@ -402,24 +434,6 @@ module Procname : sig
 
   val objc_method_kind_of_bool : bool -> objc_cpp_method_kind
   (** Create ObjC method type from a bool is_instance. *)
-
-  val java_get_class_name : java -> string
-  (** Return the class name of a java procedure name. *)
-
-  val java_get_class_type_name : java -> Name.t
-  (** Return the class name as a typename of a java procedure name. *)
-
-  val java_get_simple_class_name : java -> string
-  (** Return the simple class name of a java procedure name. *)
-
-  val java_get_package : java -> string option
-  (** Return the package name of a java procedure name. *)
-
-  val java_get_method : java -> string
-  (** Return the method name of a java procedure name. *)
-
-  val java_get_parameters : java -> java_type list
-  (** Return the parameters of a java procedure name. *)
 
   val java_is_access_method : t -> bool
   (** Check if the procedure name is an acess method (e.g. access$100 used to
@@ -447,9 +461,6 @@ module Procname : sig
   val java_is_generated : t -> bool
   (** Check if the proc name comes from generated code *)
 
-  val java_replace_method : java -> string -> java
-  (** Replace the method name of an existing java procname. *)
-
   val is_class_initializer : t -> bool
   (** Check if this is a class initializer. *)
 
@@ -466,10 +477,6 @@ module Procname : sig
   val replace_class : t -> Name.t -> t
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
-
-  val split_classname : string -> string option * string
-  (** Given a package.class_name string, look for the latest dot and split the string
-      in two (package, class_name). *)
 
   val to_string : t -> string
   (** Convert a proc name to a string for the user to see. *)
@@ -493,7 +500,7 @@ module Procname : sig
   (** get qualifiers of a class owning objc/C++ method *)
 end
 
-val java_proc_return_typ : Procname.java -> t
+val java_proc_return_typ : Procname.Java.t -> t
 (** Return the return type of [pname_java]. *)
 
 module Fieldname : sig
@@ -521,6 +528,16 @@ module Fieldname : sig
 
     val is_captured_parameter : t -> bool
     (** Check if field is a captured parameter *)
+
+    val get_class : t -> string
+    (** The class part of the fieldname *)
+
+    val get_field : t -> string
+    (** The last component of the fieldname *)
+
+    val is_outer_instance : t -> bool
+    (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
+        instance. *)
   end
 
   val to_string : t -> string
@@ -538,15 +555,6 @@ module Fieldname : sig
 
   val pp : Format.formatter -> t -> unit
   (** Pretty print a field name. *)
-
-  val java_get_class : t -> string
-  (** The class part of the fieldname *)
-
-  val java_get_field : t -> string
-  (** The last component of the fieldname *)
-
-  val java_is_outer_instance : t -> bool
-  (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outher instance. *)
 
   val clang_get_qual_class : t -> QualifiedCppName.t option
   (** get qualified classname of a field if it's coming from clang frontend. returns None otherwise *)

@@ -44,7 +44,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 false
           in
           PatternMatch.supertype_exists tenv is_closable_interface
-            (Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_procname))
+            (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_procname))
       | _ ->
           false
     in

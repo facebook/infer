@@ -349,7 +349,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar inner_origin fn typ in
               (Exp.Lvar pvar, typestate')
-          | Exp.Lfield (_exp', fn', _) when Typ.Fieldname.java_is_outer_instance fn' ->
+          | Exp.Lfield (_exp', fn', _) when Typ.Fieldname.Java.is_outer_instance fn' ->
               (* handle double dereference when accessing a field from an outer class *)
               let fld_name = Typ.Fieldname.to_string fn' ^ "_" ^ Typ.Fieldname.to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
@@ -377,8 +377,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
     match (curr_pname, pn) with
     | Typ.Procname.Java curr_pname_java, Typ.Procname.Java pn_java ->
         if String.equal
-             (Typ.Procname.java_get_class_name curr_pname_java)
-             (Typ.Procname.java_get_class_name pn_java)
+             (Typ.Procname.Java.get_class_name curr_pname_java)
+             (Typ.Procname.Java.get_class_name pn_java)
         then calls_this := true
     | _ ->
         ()
@@ -708,9 +708,9 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         let pname_get_from_pname_put pname_put =
           let object_t = (Some "java.lang", "Object") in
           let parameters = [object_t] in
-          Typ.Procname.java_replace_parameters
-            (Typ.Procname.java_replace_return_type
-               (Typ.Procname.java_replace_method pname_put "get")
+          Typ.Procname.Java.replace_parameters
+            (Typ.Procname.Java.replace_return_type
+               (Typ.Procname.Java.replace_method pname_put "get")
                object_t)
             parameters
         in
@@ -849,7 +849,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             let has_method pn name =
               match pn with
               | Typ.Procname.Java pn_java ->
-                  String.equal (Typ.Procname.java_get_method pn_java) name
+                  String.equal (Typ.Procname.Java.get_method pn_java) name
               | _ ->
                   false
             in
@@ -916,8 +916,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                   (DExp.Dconst Const.Cfun Typ.Procname.Java pname_java, args, loc, call_flags) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
-                  Typ.Procname.java_replace_return_type
-                    (Typ.Procname.java_replace_method pname_java "get")
+                  Typ.Procname.Java.replace_return_type
+                    (Typ.Procname.Java.replace_method pname_java "get")
                     object_t
                 in
                 let fun_dexp = DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java')) in

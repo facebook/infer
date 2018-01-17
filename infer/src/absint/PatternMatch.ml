@@ -182,7 +182,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
 
 
 let is_getter pname_java =
-  Str.string_match (Str.regexp "get*") (Typ.Procname.java_get_method pname_java) 0
+  Str.string_match (Str.regexp "get*") (Typ.Procname.Java.get_method pname_java) 0
 
 
 let type_is_class typ =
@@ -228,7 +228,7 @@ let method_is_initializer (tenv: Tenv.t) (proc_attributes: ProcAttributes.t) : b
       if type_has_initializer tenv this_type then
         match proc_attributes.ProcAttributes.proc_name with
         | Typ.Procname.Java pname_java ->
-            let mname = Typ.Procname.java_get_method pname_java in
+            let mname = Typ.Procname.Java.get_method pname_java in
             List.exists ~f:(String.equal mname) initializer_methods
         | _ ->
             false
@@ -299,7 +299,7 @@ let override_exists f tenv proc_name =
   match proc_name with
   | Typ.Procname.Java proc_name_java ->
       let type_name =
-        Typ.Name.Java.from_string (Typ.Procname.java_get_class_name proc_name_java)
+        Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java)
       in
       List.exists ~f:(super_type_exists tenv)
         (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
@@ -345,7 +345,7 @@ let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Thro
 let check_class_attributes check tenv = function
   | Typ.Procname.Java java_pname ->
       let check_class_annots _ {Typ.Struct.annots} = check annots in
-      supertype_exists tenv check_class_annots (Typ.Procname.java_get_class_type_name java_pname)
+      supertype_exists tenv check_class_annots (Typ.Procname.Java.get_class_type_name java_pname)
   | _ ->
       false
 
@@ -354,7 +354,7 @@ let check_class_attributes check tenv = function
     for the current class only*)
 let check_current_class_attributes check tenv = function
   | Typ.Procname.Java java_pname -> (
-    match Tenv.lookup tenv (Typ.Procname.java_get_class_type_name java_pname) with
+    match Tenv.lookup tenv (Typ.Procname.Java.get_class_type_name java_pname) with
     | Some struct_typ ->
         check struct_typ.annots
     | _ ->

@@ -126,7 +126,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (** return true if this function is library code from the JDK core libraries or Android *)
   let is_java_library = function
     | Typ.Procname.Java java_pname -> (
-      match Typ.Procname.java_get_package java_pname with
+      match Typ.Procname.Java.get_package java_pname with
       | Some package_name ->
           String.is_prefix ~prefix:"java." package_name
           || String.is_prefix ~prefix:"android." package_name
@@ -139,7 +139,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_builder_function = function
     | Typ.Procname.Java java_pname ->
-        String.is_suffix ~suffix:"$Builder" (Typ.Procname.java_get_class_name java_pname)
+        String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
     | _ ->
         false
 
@@ -231,7 +231,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_modeled_functional = function
       | Typ.Procname.Java java_pname -> (
         match
-          (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
         with
         | "android.content.res.Resources", method_name ->
             (* all methods of Resources are considered @Functional except for the ones in this
@@ -261,7 +261,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_owned_in_library = function
       | Typ.Procname.Java java_pname -> (
         match
-          (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
         with
         | "javax.inject.Provider", "get" ->
             (* in dependency injection, the library allocates fresh values behind the scenes *)
@@ -296,7 +296,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_threadsafe_collection pn tenv =
     match pn with
     | Typ.Procname.Java java_pname ->
-        let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
         let aux tn _ =
           match Typ.Name.name tn with
           | "java.util.concurrent.ConcurrentMap"
@@ -326,7 +326,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | (AccessPath.FieldAccess base_field) :: (AccessPath.FieldAccess container_field) :: _
         when Typ.Procname.is_java callee_pname ->
           let base_typename =
-            Typ.Name.Java.from_string (Typ.Fieldname.java_get_class base_field)
+            Typ.Name.Java.from_string (Typ.Fieldname.Java.get_class base_field)
           in
           is_annotated_synchronized base_typename container_field tenv
       | [(AccessPath.FieldAccess container_field)] -> (
@@ -393,7 +393,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_box = function
     | Typ.Procname.Java java_pname -> (
       match
-        (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
+        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
       with
       | ( ( "java.lang.Boolean"
           | "java.lang.Byte"
@@ -861,7 +861,7 @@ let should_analyze_proc pdesc tenv =
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
   | Typ.Procname.Java java_pname ->
-      let current_class = Typ.Procname.java_get_class_type_name java_pname in
+      let current_class = Typ.Procname.Java.get_class_type_name java_pname in
       let thread_safe_annotated_classes =
         PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
       in
@@ -1215,7 +1215,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
 let report_unannotated_interface_violation tenv pdesc access thread reported_pname =
   match reported_pname with
   | Typ.Procname.Java java_pname ->
-      let class_name = Typ.Procname.java_get_class_name java_pname in
+      let class_name = Typ.Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
           "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
@@ -1231,8 +1231,8 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
 let pp_procname_short fmt = function
   | Typ.Procname.Java java ->
       F.fprintf fmt "%s.%s"
-        (Typ.Procname.java_get_class_name java)
-        (Typ.Procname.java_get_method java)
+        (Typ.Procname.Java.get_class_name java)
+        (Typ.Procname.Java.get_method java)
   | pname ->
       Typ.Procname.pp fmt pname
 
@@ -1654,7 +1654,7 @@ let aggregate_by_class file_env =
       let classname =
         match pname with
         | Typ.Procname.Java java_pname ->
-            Typ.Procname.java_get_class_name java_pname
+            Typ.Procname.Java.get_class_name java_pname
         | _ ->
             "unknown"
       in

@@ -189,13 +189,13 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     in
     not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs)
     && TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs
-    && PatternMatch.type_is_class t_lhs && not (Typ.Fieldname.java_is_outer_instance fname)
+    && PatternMatch.type_is_class t_lhs && not (Typ.Fieldname.Java.is_outer_instance fname)
     && not (field_is_field_injector_readwrite ())
   in
   let should_report_absent =
     Config.eradicate_optional_present && TypeAnnotation.get_value AnnotatedSignature.Present ta_lhs
     && not (TypeAnnotation.get_value AnnotatedSignature.Present ta_rhs)
-    && not (Typ.Fieldname.java_is_outer_instance fname)
+    && not (Typ.Fieldname.Java.is_outer_instance fname)
   in
   let should_report_mutable =
     let field_is_mutable () =
@@ -267,11 +267,11 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
             in
             let should_check_field_initialization =
               let in_current_class =
-                let fld_cname = Typ.Fieldname.java_get_class fn in
+                let fld_cname = Typ.Fieldname.Java.get_class fn in
                 String.equal (Typ.Name.name name) fld_cname
               in
               not injector_readonly_annotated && PatternMatch.type_is_class ft && in_current_class
-              && not (Typ.Fieldname.java_is_outer_instance fn)
+              && not (Typ.Fieldname.Java.is_outer_instance fn)
             in
             if should_check_field_initialization then (
               if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn ;

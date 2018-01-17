@@ -23,7 +23,7 @@ let drawable_prefix = "R$drawable"
 let is_destroy_method pname =
   match pname with
   | Typ.Procname.Java pname_java ->
-      let method_name = Typ.Procname.java_get_method pname_java in
+      let method_name = Typ.Procname.Java.get_method pname_java in
       String.equal method_name on_destroy || String.equal method_name on_destroy_view
   | _ ->
       false

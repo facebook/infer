@@ -45,8 +45,8 @@ include TaintAnalysis.Make (struct
       -> (
         let is_static = Typ.Procname.java_is_static pname in
         match
-          ( Typ.Procname.java_get_class_name java_pname
-          , Typ.Procname.java_get_method java_pname
+          ( Typ.Procname.Java.get_class_name java_pname
+          , Typ.Procname.Java.get_method java_pname
           , ret_typ_opt )
         with
         | "android.content.Intent", ("putExtra" | "putExtras"), _ ->

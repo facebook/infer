@@ -1323,7 +1323,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let should_add_ret_attr _ =
     let is_likely_getter = function
       | Typ.Procname.Java pn_java ->
-          Int.equal (List.length (Typ.Procname.java_get_parameters pn_java)) 0
+          Int.equal (List.length (Typ.Procname.Java.get_parameters pn_java)) 0
       | _ ->
           false
     in

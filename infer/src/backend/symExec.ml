@@ -586,7 +586,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
     match pname with
     | Typ.Procname.Java pname_java
       -> (
-        let name = Typ.Procname.java_get_class_type_name pname_java in
+        let name = Typ.Procname.Java.get_class_type_name pname_java in
         match Tenv.lookup tenv name with
         | Some _ ->
             Typ.mk (Typ.Tptr (Typ.mk (Tstruct name), Pk_pointer))
@@ -633,25 +633,25 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.java =
+let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.Java.t =
   let resolve_from_args resolved_pname_java args =
     let resolved_params =
       List.fold2_exn
         ~f:(fun accu (arg_exp, _) name ->
           match resolve_typename prop arg_exp with
           | Some class_name ->
-              Typ.Procname.split_classname (Typ.Name.name class_name) :: accu
+              Typ.Name.Java.split_classname (Typ.Name.name class_name) :: accu
           | None ->
               name :: accu )
         ~init:[] args
-        (Typ.Procname.java_get_parameters resolved_pname_java)
+        (Typ.Procname.Java.get_parameters resolved_pname_java)
       |> List.rev
     in
-    Typ.Procname.java_replace_parameters resolved_pname_java resolved_params
+    Typ.Procname.Java.replace_parameters resolved_pname_java resolved_params
   in
   let resolved_pname_java, other_args =
     let pname = Typ.Procname.Java pname_java
-    and parameters = Typ.Procname.java_get_parameters pname_java in
+    and parameters = Typ.Procname.Java.get_parameters pname_java in
     let match_parameters args = Int.equal (List.length args) (List.length parameters) in
     match args with
     | [] ->
@@ -721,7 +721,7 @@ let resolve_and_analyze tenv caller_pdesc prop args callee_proc_name call_flags
 let call_constructor_url_update_args pname actual_params =
   let url_pname =
     Typ.Procname.Java
-      (Typ.Procname.java
+      (Typ.Procname.Java.make
          (Typ.Name.Java.from_string "java.net.URL")
          None "<init>" [(Some "java.lang", "String")] Typ.Procname.Non_Static)
   in
