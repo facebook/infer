@@ -192,9 +192,7 @@ let should_capture classes package_opt source_basename node =
    In the standard - mode, it translated all the classes that correspond to this
    source file. *)
 let compute_source_icfg linereader classes program tenv source_basename package_opt source_file =
-  let icfg =
-    {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create_cfg (); JContext.tenv}
-  in
+  let icfg = {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create (); JContext.tenv} in
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
   in
@@ -209,9 +207,7 @@ let compute_source_icfg linereader classes program tenv source_basename package_
 
 
 let compute_class_icfg source_file linereader program tenv node =
-  let icfg =
-    {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create_cfg (); JContext.tenv}
-  in
+  let icfg = {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create (); JContext.tenv} in
   ( try create_icfg source_file linereader program icfg (Javalib.get_name node) node
     with Bir.Subroutine -> () ) ;
   (icfg.JContext.cg, icfg.JContext.cfg)

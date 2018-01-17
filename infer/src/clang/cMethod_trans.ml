@@ -387,14 +387,14 @@ let sil_func_attributes_of_attributes attrs =
 
 
 let should_create_procdesc cfg procname defined set_objc_accessor_attr =
-  match Cfg.find_proc_desc_from_name cfg procname with
-  | Some previous_procdesc ->
+  match Typ.Procname.Hash.find cfg procname with
+  | previous_procdesc ->
       let is_defined_previous = Procdesc.is_defined previous_procdesc in
       if (defined || set_objc_accessor_attr) && not is_defined_previous then (
-        Cfg.remove_proc_desc cfg (Procdesc.get_proc_name previous_procdesc) ;
+        Typ.Procname.Hash.remove cfg procname ;
         true )
       else false
-  | None ->
+  | exception Not_found ->
       true
 
 
@@ -634,22 +634,19 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
 let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
-  match Cfg.find_proc_desc_from_name cfg proc_name with
-  | Some _ ->
-      ()
-  | None ->
-      let ret_type, formals =
-        match type_opt with
-        | Some (ret_type, arg_types) ->
-            (ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types)
-        | None ->
-            (Typ.mk Typ.Tvoid, [])
-      in
-      let proc_attributes =
-        { (ProcAttributes.default proc_name) with
-          ProcAttributes.formals; is_objc_instance_method= is_objc_inst_method; ret_type }
-      in
-      ignore (Cfg.create_proc_desc cfg proc_attributes)
+  if not (Typ.Procname.Hash.mem cfg proc_name) then
+    let ret_type, formals =
+      match type_opt with
+      | Some (ret_type, arg_types) ->
+          (ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types)
+      | None ->
+          (Typ.mk Typ.Tvoid, [])
+    in
+    let proc_attributes =
+      { (ProcAttributes.default proc_name) with
+        ProcAttributes.formals; is_objc_instance_method= is_objc_inst_method; ret_type }
+    in
+    ignore (Cfg.create_proc_desc cfg proc_attributes)
 
 
 let create_procdesc_with_pointer context pointer class_name_opt name =

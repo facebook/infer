@@ -700,7 +700,8 @@ let resolve_and_analyze tenv caller_pdesc prop args callee_proc_name call_flags
             Some resolved_proc_desc
         | None ->
             Option.map
-              ~f:(fun callee_proc_desc -> Cfg.specialize_types callee_proc_desc resolved_pname args)
+              ~f:(fun callee_proc_desc ->
+                Procdesc.specialize_types callee_proc_desc resolved_pname args )
               (Ondemand.get_proc_desc callee_proc_name)
       in
       Option.bind resolved_proc_desc_option ~f:analyze

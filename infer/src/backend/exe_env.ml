@@ -175,8 +175,12 @@ let get_cfg exe_env pname =
 (** return the proc desc associated to the procedure *)
 let get_proc_desc exe_env pname =
   match get_cfg exe_env pname with
-  | Some cfg ->
-      Cfg.find_proc_desc_from_name cfg pname
+  | Some cfg -> (
+    match Typ.Procname.Hash.find cfg pname with
+    | proc_desc ->
+        Some proc_desc
+    | exception Not_found ->
+        None )
   | None ->
       None
 

@@ -119,7 +119,7 @@ let main ~changed_files ~makefile =
       (* delete all specs when doing a full analysis so that we do not report on procedures that do
          not exist anymore *)
       if not Config.reactive_mode then DB.Results_dir.clean_specs_dir () ;
-      let all_clusters = Cfg.get_captured_source_files () in
+      let all_clusters = SourceFiles.get_all () in
       let clusters_to_analyze =
         List.filter ~f:(cluster_should_be_analyzed ~changed_files) all_clusters
       in

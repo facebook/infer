@@ -14,7 +14,7 @@ module InstrCfg = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
 module BackwardInstrCfg = ProcCfg.Backward (InstrCfg)
 
 let tests =
-  let cfg = Cfg.create_cfg () in
+  let cfg = Cfg.create () in
   let test_pdesc = Cfg.create_proc_desc cfg (ProcAttributes.default Typ.Procname.empty_block) in
   let dummy_instr1 = Sil.Remove_temps ([], Location.dummy) in
   let dummy_instr2 = Sil.Abstract Location.dummy in

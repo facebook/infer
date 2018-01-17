@@ -51,15 +51,15 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
     incr CFrontend_config.procedures_attempted ;
     let recover () =
-      Cfg.remove_proc_desc cfg procname ;
+      Typ.Procname.Hash.remove cfg procname ;
       CMethod_trans.create_external_procdesc cfg procname is_objc_method None
     in
     let pp_context fmt () =
       F.fprintf fmt "Aborting translation of method '%a'" Typ.Procname.pp procname
     in
     let f () =
-      match Cfg.find_proc_desc_from_name cfg procname with
-      | Some procdesc when Procdesc.is_defined procdesc && not (model_exists procname) ->
+      match Typ.Procname.Hash.find cfg procname with
+      | procdesc when Procdesc.is_defined procdesc && not (model_exists procname) ->
           let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
           let context =
             CContext.create_context trans_unit_ctx tenv cg cfg procdesc class_decl_opt
@@ -79,6 +79,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [] ;
           Cg.add_defined_node (CContext.get_cg context) (Procdesc.get_proc_name procdesc)
       | _ ->
+          ()
+      | exception Not_found ->
           ()
     in
     protect ~f ~recover ~pp_context

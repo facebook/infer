@@ -547,7 +547,7 @@ let write_all_html_files cluster =
   Exe_env.iter_files
     (fun _ cfg ->
       let source_files_in_cfg, pdescs_in_cfg =
-        Cfg.fold_proc_desc cfg
+        Typ.Procname.Hash.fold
           (fun _ proc_desc (files, pdescs) ->
             let updated_files =
               if Procdesc.is_defined proc_desc then
@@ -556,7 +556,7 @@ let write_all_html_files cluster =
               else files
             in
             (updated_files, proc_desc :: pdescs) )
-          (SourceFile.Set.empty, [])
+          cfg (SourceFile.Set.empty, [])
       in
       SourceFile.Set.iter
         (fun file -> write_html_file linereader file pdescs_in_cfg)

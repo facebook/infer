@@ -736,7 +736,7 @@ let init_summary proc_desc =
 
 let dummy =
   let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block in
-  let dummy_proc_desc = Procdesc.from_proc_attributes ~called_from_cfg:true dummy_attributes in
+  let dummy_proc_desc = Procdesc.from_proc_attributes dummy_attributes in
   init_summary dummy_proc_desc
 
 

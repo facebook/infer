@@ -24,7 +24,7 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
            was, there is no point in trying to capture it again.  Treat existance of the cfg as a
            barrier - if it exists it means that all attributes files have been created - write logic
            is defined in Cfg.store *)
-        if not (Cfg.exists_for_source_file decl_file) then (
+        if not (SourceFiles.is_captured decl_file) then (
           L.(debug Capture Verbose) "Started capture of %a...@\n" SourceFile.pp definition_file ;
           Timeout.suspend_existing_timeout ~keep_symop_total:true ;
           protect

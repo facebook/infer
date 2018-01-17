@@ -142,8 +142,8 @@ val fold_instrs : ('a -> Node.t -> Sil.instr -> 'a) -> 'a -> t -> 'a
 val fold_nodes : ('a -> Node.t -> 'a) -> 'a -> t -> 'a
 (** fold over all nodes *)
 
-val from_proc_attributes : called_from_cfg:bool -> ProcAttributes.t -> t
-(** Only call from Cfg. *)
+val from_proc_attributes : ProcAttributes.t -> t
+(** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
 
 val get_access : t -> PredSymb.access
 (** Return the visibility attribute *)
@@ -215,3 +215,16 @@ val is_specialized : t -> bool
 val is_captured_var : t -> Pvar.t -> bool
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
+
+val specialize_types : t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> t
+(** Creates a copy of a procedure description and a list of type substitutions of the form
+    (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
+    all the type of the parameters are replaced in the instructions according to the list.
+    The virtual calls are also replaced to match the parameter types *)
+
+val specialize_with_block_args : t -> Typ.Procname.t -> Exp.closure option list -> t
+(** Creates a copy of a procedure description given a list of possible closures
+  that are passed as arguments to the method. The resulting procdesc is isomorphic but
+  a) the block parameters are replaces with the closures
+  b) the parameters of the method are extended with parameters for the captured variables
+  in the closures *)

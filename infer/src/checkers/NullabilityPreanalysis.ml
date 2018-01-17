@@ -107,5 +107,5 @@ let analysis cfg tenv =
           domain
     else domain
   in
-  let fields_assigned_in_constructor = Cfg.fold_proc_desc cfg f initial in
+  let fields_assigned_in_constructor = Typ.Procname.Hash.fold f cfg initial in
   add_nonnull_to_fields fields_assigned_in_constructor tenv
