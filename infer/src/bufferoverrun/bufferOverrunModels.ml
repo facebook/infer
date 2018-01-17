@@ -245,7 +245,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
     let no_model =
-      let exec pname ret _node location mem =
+      let exec pname _ret _node location mem =
         L.(debug BufferOverrun Verbose)
           "No model for %a at %a" Typ.Procname.pp pname Location.pp location ;
         mem
