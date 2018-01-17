@@ -280,7 +280,9 @@ class Wrapper:
                 buck_config = [
                     '--config', 'tools.javac=' + infer_script,
                     '--config', 'client.id=infer.java',
-                    '--config', 'java.abi_generation_mode=class']
+                    '--config', 'java.abi_generation_mode=class',
+                    '--config', 'infer.no_custom_javac=true',
+                ]
                 buck_cmd = self.buck_cmd + buck_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
