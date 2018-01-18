@@ -110,3 +110,8 @@ val better_hash : 'a -> Caml.Digest.t
 
 val unlink_file_on_exit : string -> unit
 (** delete [temporary] file on exit *)
+
+val strip_balanced_once : drop:(char -> bool) -> string -> string
+(** drop at most one layer of well-balanced first and last characters satisfying [drop] from the
+   string; for instance, [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"]
+   returns "aaba" *)

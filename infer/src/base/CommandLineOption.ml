@@ -771,18 +771,6 @@ let mk_subcommand command ?on_unknown_arg:(on_unknown = `Reject) ~name ?deprecat
   subcommand_actions := (name, switch) :: !subcommand_actions
 
 
-(* drop well-balanced first and last characters in [s] that satisfy the [drop] predicate; for
-   instance, [lrstrip ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"] returns "ab" *)
-let rec lrstrip ~drop s =
-  let n = String.length s in
-  if n < 2 then s
-  else
-    let first = String.unsafe_get s 0 in
-    if Char.equal first (String.unsafe_get s (n - 1)) && drop first then
-      lrstrip ~drop (String.slice s 1 (n - 1))
-    else s
-
-
 let args_from_argfile arg =
   let abs_fname =
     let fname = String.slice arg 1 (String.length arg) in
@@ -790,7 +778,7 @@ let args_from_argfile arg =
   in
   match In_channel.read_lines abs_fname with
   | lines ->
-      let strip = lrstrip ~drop:(function '"' | '\'' -> true | _ -> false) in
+      let strip = Utils.strip_balanced_once ~drop:(function '"' | '\'' -> true | _ -> false) in
       List.map ~f:strip lines
   | exception e ->
       raise (Arg.Bad ("Error reading argument file '" ^ abs_fname ^ "': " ^ Exn.to_string e))

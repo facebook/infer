@@ -364,3 +364,15 @@ let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.stri
 let unlink_file_on_exit temp_file =
   "Cleaning temporary file " ^ temp_file
   |> Epilogues.register ~f:(fun () -> try Unix.unlink temp_file with _ -> ())
+
+
+(** drop at most one layer of well-balanced first and last characters satisfying [drop] from the
+   string; for instance, [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"]
+   returns "aaba" *)
+let strip_balanced_once ~drop s =
+  let n = String.length s in
+  if n < 2 then s
+  else
+    let first = String.unsafe_get s 0 in
+    if Char.equal first (String.unsafe_get s (n - 1)) && drop first then String.slice s 1 (n - 1)
+    else s
