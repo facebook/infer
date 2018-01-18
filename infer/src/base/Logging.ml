@@ -39,12 +39,11 @@ let dup_formatter fmt1 fmt2 =
   f
 
 
-(* can be set up to emit to a file later on, but can also be left as-is and logging will only happen
-   on the console *)
-let log_file = ref (F.err_formatter, `Console)
+(* can be set up to emit to a file later on *)
+let log_file = ref None
 
 type formatters =
-  { file: F.formatter  (** send to log file *)
+  { file: F.formatter option  (** send to log file *)
   ; console_file: F.formatter  (** send both to console and log file *) }
 
 let logging_formatters = ref []
@@ -54,9 +53,8 @@ let is_newline = ref true
 
 let prev_category = ref ""
 
-let mk_file_formatter category0 =
-  (* make a copy of file_fmt *)
-  let f = copy_formatter (fst !log_file) in
+let mk_file_formatter file_fmt category0 =
+  let f = copy_formatter file_fmt in
   let out_functions_orig = F.pp_get_formatter_out_functions f () in
   let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (Unix.getpid ())) category0 in
   let print_prefix_if_newline () =
@@ -101,12 +99,14 @@ let register_formatter =
        in
        let justified_prefix = fill ^ prefix in
        let mk_formatters () =
-         let file = mk_file_formatter justified_prefix in
-         let console_file =
-           let console = if use_stdout then F.std_formatter else F.err_formatter in
-           dup_formatter console file
-         in
-         {file; console_file}
+         let console = if use_stdout then F.std_formatter else F.err_formatter in
+         match !log_file with
+         | Some (file_fmt, _) ->
+             let file = mk_file_formatter file_fmt justified_prefix in
+             let console_file = dup_formatter console file in
+             {file= Some file; console_file}
+         | None ->
+             {file= None; console_file= console}
        in
        let formatters = mk_formatters () in
        let formatters_ref = ref formatters in
@@ -115,7 +115,8 @@ let register_formatter =
 
 
 let flush_formatters {file; console_file} =
-  F.pp_print_flush file () ; F.pp_print_flush console_file ()
+  Option.iter file ~f:(fun file -> F.pp_print_flush file ()) ;
+  F.pp_print_flush console_file ()
 
 
 let reset_formatters () =
@@ -130,16 +131,16 @@ let reset_formatters () =
   logging_formatters := [] ;
   (* create new formatters *)
   List.iter ~f:refresh_formatter previous_formatters ;
-  if not !is_newline then F.pp_print_newline (fst !log_file) () ;
+  if not !is_newline then
+    Option.iter !log_file ~f:(function log_file, _ -> F.pp_print_newline log_file ()) ;
   is_newline := true
 
 
 let close_logs () =
   let close_fmt (_, formatters) = flush_formatters formatters in
   List.iter ~f:close_fmt !logging_formatters ;
-  let fmt, chan = !log_file in
-  F.pp_print_flush fmt () ;
-  match chan with `Console -> () | `Channel c -> Out_channel.close c
+  Option.iter !log_file ~f:(function file_fmt, chan ->
+      F.pp_print_flush file_fmt () ; Out_channel.close chan )
 
 
 let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
@@ -153,7 +154,9 @@ let log ~to_console ?(to_file= true) (lazy formatters) =
   | _ ->
       (* to_console might be true, but in that case so is Config.print_logs so do not print to
          stderr because it will get logs from the log file already *)
-      F.fprintf !formatters.file
+      Option.value_map !formatters.file
+        ~f:(fun file_fmt -> F.fprintf file_fmt)
+        ~default:(F.fprintf F.err_formatter)
 
 
 let debug_file_fmts = register_formatter "debug"
@@ -284,10 +287,10 @@ let die error msg =
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)
 let setup_log_file () =
   match !log_file with
-  | _, `Channel _ ->
+  | Some _ ->
       (* already set up *)
       ()
-  | _, `Console ->
+  | None ->
       let fmt, chan, preexisting_logfile =
         let results_dir =
           (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log
@@ -305,7 +308,7 @@ let setup_log_file () =
         in
         (file_fmt, chan, preexisting_logfile)
       in
-      log_file := (fmt, `Channel chan) ;
+      log_file := Some (fmt, chan) ;
       if preexisting_logfile then is_newline := false ;
       reset_formatters () ;
       if CLOpt.is_originator && preexisting_logfile then
@@ -365,7 +368,8 @@ let printer_hook = ref (fun _ -> Die.(die InternalError) "uninitialized printer 
 (** extend the current print log *)
 let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.only_cheap_debug then !printer_hook (fst !log_file) pact
+  else if not Config.only_cheap_debug then
+    Option.iter !log_file ~f:(function file_fmt, _ -> !printer_hook file_fmt pact)
 
 
 (** reset the delayed print actions *)
