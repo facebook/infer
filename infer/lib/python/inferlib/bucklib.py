@@ -72,10 +72,6 @@ def prepare_build(args):
         logging.error('Could not find infer')
         raise e
 
-    # make sure INFER_ANALYSIS is set when buck is called
-    logging.info('Setup Infer analysis mode for Buck: export INFER_ANALYSIS=1')
-    os.environ['INFER_ANALYSIS'] = '1'
-
     # disable the Buck daemon as changes in the Buck config
     # may be missed otherwise
     os.environ['NO_BUCKD'] = '1'
