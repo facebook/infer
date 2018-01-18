@@ -904,7 +904,12 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     in
     let is_synchronized_on_class guarded_by_str =
       guarded_by_str_is_current_class guarded_by_str pname && Procdesc.is_java_synchronized pdesc
-      && Typ.Procname.java_is_static pname
+      &&
+      match pname with
+      | Typ.Procname.Java java_pname ->
+          Typ.Procname.Java.is_static java_pname
+      | _ ->
+          false
     in
     let warn accessed_fld guarded_by_str =
       let loc = State.get_loc () in
@@ -929,8 +934,14 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       ( guarded_by_str_is_current_class_this guarded_by_str pname
       || guarded_by_str_is_super_class_this guarded_by_str pname )
       && Procdesc.is_java_synchronized pdesc
-      || guarded_by_str_is_current_class guarded_by_str pname
-         && Procdesc.is_java_synchronized pdesc && Typ.Procname.java_is_static pname
+      || ( guarded_by_str_is_current_class guarded_by_str pname
+         && Procdesc.is_java_synchronized pdesc
+         &&
+         match pname with
+         | Typ.Procname.Java java_pname ->
+             Typ.Procname.Java.is_static java_pname
+         | _ ->
+             false )
       || (* or the prop says we already have the lock *)
          List.exists
            ~f:(function Sil.Apred (Alocked, _) -> true | _ -> false)
@@ -972,7 +983,12 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       in
       Procdesc.get_access pdesc <> PredSymb.Private
       && not (Annotations.pdesc_return_annot_ends_with pdesc Annotations.visibleForTesting)
-      && not (Typ.Procname.java_is_access_method (Procdesc.get_proc_name pdesc))
+      && not
+           ( match Procdesc.get_proc_name pdesc with
+           | Typ.Procname.Java java_pname ->
+               Typ.Procname.Java.is_access_method java_pname
+           | _ ->
+               false )
       && not (is_accessible_through_local_ref lexp) && not guardedby_is_self_referential
       && not (proc_has_suppress_guarded_by_annot pdesc)
     in
@@ -1761,10 +1777,15 @@ let rearrange ?(report_deref_errors= true) pdesc tenv lexp typ prop loc
   if report_deref_errors then check_dereference_error tenv pdesc prop nlexp (State.get_loc ()) ;
   let pname = Procdesc.get_proc_name pdesc in
   let prop' =
-    if Config.csl_analysis && !Config.footprint && Typ.Procname.is_java pname
-       && not (Typ.Procname.is_constructor pname || Typ.Procname.is_class_initializer pname)
-    then add_guarded_by_constraints tenv prop lexp pdesc
-    else prop
+    match pname with
+    | Typ.Procname.Java java_pname
+      when Config.csl_analysis && !Config.footprint
+           && not
+                ( Typ.Procname.is_constructor pname
+                || Typ.Procname.Java.is_class_initializer java_pname ) ->
+        add_guarded_by_constraints tenv prop lexp pdesc
+    | _ ->
+        prop
   in
   match Prop.prop_iter_create prop' with
   | None ->

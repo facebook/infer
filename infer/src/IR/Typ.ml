@@ -506,45 +506,9 @@ let has_block_prefix s =
       false
 
 
-(** Java types by name *)
-let rec java_from_string : string -> t = function
-  | "" | "void" ->
-      mk Tvoid
-  | "int" ->
-      mk (Tint IInt)
-  | "byte" ->
-      mk (Tint IShort)
-  | "short" ->
-      mk (Tint IShort)
-  | "boolean" ->
-      mk (Tint IBool)
-  | "char" ->
-      mk (Tint IChar)
-  | "long" ->
-      mk (Tint ILong)
-  | "float" ->
-      mk (Tfloat FFloat)
-  | "double" ->
-      mk (Tfloat FDouble)
-  | typ_str when String.contains typ_str '[' ->
-      let stripped_typ = String.sub typ_str ~pos:0 ~len:(String.length typ_str - 2) in
-      mk (Tptr (mk (Tarray (java_from_string stripped_typ, None, None)), Pk_pointer))
-  | typ_str ->
-      mk (Tstruct (Name.Java.from_string typ_str))
-
-
 type typ = t
 
 module Procname = struct
-  type method_kind =
-    | Non_Static
-    (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
-    | Static
-    (* in Java, procedures called with invokestatic *)
-    [@@deriving compare]
-
-  let equal_method_kind = [%compare.equal : method_kind]
-
   (** Level of verbosity of some to_string functions. *)
   type detail_level = Verbose | Non_verbose | Simple [@@deriving compare]
 
@@ -553,6 +517,13 @@ module Procname = struct
   let is_verbose v = match v with Verbose -> true | _ -> false
 
   module Java = struct
+    type kind =
+      | Non_Static
+      (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+      | Static
+      (* in Java, procedures called with invokestatic *)
+      [@@deriving compare]
+
     (* TODO: use Mangled.t here *)
     type java_type = string option * string
 
@@ -565,7 +536,7 @@ module Procname = struct
       ; parameters: java_type list
       ; class_name: Name.t
       ; return_type: java_type option (* option because constructors have no return type *)
-      ; kind: method_kind }
+      ; kind: kind }
       [@@deriving compare]
 
     let make class_name return_type method_name parameters kind =
@@ -655,6 +626,72 @@ module Procname = struct
             else cls_prefix ^ j.method_name
           in
           method_name ^ "(" ^ params ^ ")"
+
+
+    let get_return_typ pname_java =
+      let rec java_from_string = function
+        | "" | "void" ->
+            mk Tvoid
+        | "int" ->
+            mk (Tint IInt)
+        | "byte" ->
+            mk (Tint IShort)
+        | "short" ->
+            mk (Tint IShort)
+        | "boolean" ->
+            mk (Tint IBool)
+        | "char" ->
+            mk (Tint IChar)
+        | "long" ->
+            mk (Tint ILong)
+        | "float" ->
+            mk (Tfloat FFloat)
+        | "double" ->
+            mk (Tfloat FDouble)
+        | typ_str when String.contains typ_str '[' ->
+            let stripped_typ = String.sub typ_str ~pos:0 ~len:(String.length typ_str - 2) in
+            mk (Tptr (mk (Tarray (java_from_string stripped_typ, None, None)), Pk_pointer))
+        | typ_str ->
+            mk (Tstruct (Name.Java.from_string typ_str))
+      in
+      let typ = java_from_string (get_return_type pname_java) in
+      match typ.desc with Tstruct _ -> mk (Tptr (typ, Pk_pointer)) | _ -> typ
+
+
+    let is_close {method_name} = String.equal method_name "close"
+
+    let is_class_initializer {method_name} = String.equal method_name "<clinit>"
+
+    let is_anonymous_inner_class_constructor {class_name} =
+      Name.Java.is_anonymous_inner_class_name class_name
+
+
+    let is_static {kind} = match kind with Static -> true | _ -> false
+
+    let is_lambda {method_name} = String.is_prefix ~prefix:"lambda$" method_name
+
+    let is_generated {method_name} = String.is_prefix ~prefix:"$" method_name
+
+    let is_access_method {method_name} =
+      match String.rsplit2 method_name ~on:'$' with
+      | Some ("access", s) ->
+          let is_int =
+            try
+              ignore (int_of_string s) ;
+              true
+            with Failure _ -> false
+          in
+          is_int
+      | _ ->
+          false
+
+
+    let is_autogen_method {method_name} = String.contains method_name '$'
+
+    (** Check if the proc name has the type of a java vararg.
+      Note: currently only checks that the last argument has type Object[]. *)
+    let is_vararg {parameters} =
+      match List.last parameters with Some (_, "java.lang.Object[]") -> true | _ -> false
   end
 
   (** Type of c procedure names. *)
@@ -758,67 +795,6 @@ module Procname = struct
         t
 
 
-  (** Check if the procedure name is an anonymous inner class constructor. *)
-  let java_is_anonymous_inner_class_constructor = function
-    | Java js ->
-        Name.Java.is_anonymous_inner_class_name js.class_name
-    | _ ->
-        false
-
-
-  (** Return true if the java procedure is static *)
-  let java_is_static = function Java j -> equal_method_kind j.kind Static | _ -> false
-
-  let java_is_lambda = function
-    | Java j ->
-        String.is_prefix ~prefix:"lambda$" j.method_name
-    | _ ->
-        false
-
-
-  let java_is_generated = function
-    | Java j ->
-        String.is_prefix ~prefix:"$" j.method_name
-    | _ ->
-        false
-
-
-  (** Check if the procedure name is an acess method (e.g. access$100 used to
-      access private members from a nested class. *)
-  let java_is_access_method = function
-    | Java js -> (
-      match String.rsplit2 js.method_name ~on:'$' with
-      | Some ("access", s) ->
-          let is_int =
-            try
-              ignore (int_of_string s) ;
-              true
-            with Failure _ -> false
-          in
-          is_int
-      | _ ->
-          false )
-    | _ ->
-        false
-
-
-  (** Check if the procedure name is of an auto-generated method containing '$'. *)
-  let java_is_autogen_method = function
-    | Java js ->
-        String.contains js.method_name '$'
-    | _ ->
-        false
-
-
-  (** Check if the proc name has the type of a java vararg.
-      Note: currently only checks that the last argument has type Object[]. *)
-  let java_is_vararg = function
-    | Java js -> (
-      match List.rev js.parameters with (_, "java.lang.Object[]") :: _ -> true | _ -> false )
-    | _ ->
-        false
-
-
   let rec objc_cpp_replace_method_name t (new_method_name: string) =
     match t with
     | ObjC_Cpp osig ->
@@ -905,16 +881,6 @@ module Procname = struct
         true
     | ObjC_Cpp name ->
         is_objc_dealloc name.method_name
-    | _ ->
-        false
-
-
-  let java_is_close = function Java js -> String.equal js.method_name "close" | _ -> false
-
-  (** [is_class_initializer pname] returns true if [pname] is a class initializer *)
-  let is_class_initializer = function
-    | Java js ->
-        String.equal js.method_name "<clinit>"
     | _ ->
         false
 
@@ -1145,12 +1111,6 @@ module Procname = struct
       Base.Hashtbl.find_or_add pname_to_key pname ~default
   end
 end
-
-(** Return the return type of [pname_java]. *)
-let java_proc_return_typ pname_java : t =
-  let typ = java_from_string (Procname.Java.get_return_type pname_java) in
-  match typ.desc with Tstruct _ -> mk (Tptr (typ, Pk_pointer)) | _ -> typ
-
 
 module Fieldname = struct
   type clang_field_info = {class_name: Name.t; field_name: string} [@@deriving compare]

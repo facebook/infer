@@ -217,7 +217,7 @@ let method_signature_names ms =
 
 
 let get_method_kind m =
-  if Javalib.is_static_method m then Typ.Procname.Static else Typ.Procname.Non_Static
+  if Javalib.is_static_method m then Typ.Procname.Java.Static else Typ.Procname.Java.Non_Static
 
 
 let get_method_procname cn ms method_kind =

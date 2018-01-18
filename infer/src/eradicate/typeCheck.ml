@@ -546,13 +546,14 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
               List.mapi
                 ~f:(fun i (_, typ) ->
                   let arg =
-                    if Int.equal i 0 && not (Typ.Procname.java_is_static callee_pname) then "this"
+                    if Int.equal i 0 && not (Typ.Procname.Java.is_static callee_pname_java) then
+                      "this"
                     else Printf.sprintf "arg%d" i
                   in
                   (Mangled.from_string arg, typ) )
                 etl_
             in
-            let ret_type = Typ.java_proc_return_typ callee_pname_java in
+            let ret_type = Typ.Procname.Java.get_return_typ callee_pname_java in
             let proc_attributes =
               {(ProcAttributes.default callee_pname) with ProcAttributes.formals; ret_type}
             in
@@ -572,7 +573,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         drop_unchecked_signature_params callee_attributes annotated_signature
       in
       let is_anonymous_inner_class_constructor =
-        Typ.Procname.java_is_anonymous_inner_class_constructor callee_pname
+        Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
       in
       let do_return (ret_ta, ret_typ) loc' typestate' =
         let mk_return_range () = (ret_typ, ret_ta, [loc']) in
@@ -858,7 +859,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 (Models.get_check_not_null_parameter callee_pname)
                 ~is_vararg:false typestate2
             else if has_method callee_pname "checkNotNull"
-                    && Typ.Procname.java_is_vararg callee_pname
+                    && Typ.Procname.Java.is_vararg callee_pname_java
             then
               let last_parameter = List.length call_params in
               do_preconditions_check_not_null last_parameter ~is_vararg:true typestate2

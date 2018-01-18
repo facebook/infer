@@ -171,10 +171,10 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
 (** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. *)
 let proc_inline_synthetic_methods cfg pdesc : unit =
   let instr_inline_synthetic_method = function
-    | Sil.Call (ret_id, Exp.Const Const.Cfun pn, etl, loc, _) -> (
+    | Sil.Call (ret_id, Exp.Const Const.Cfun (Typ.Procname.Java java_pn as pn), etl, loc, _) -> (
       match Typ.Procname.Hash.find cfg pn with
       | pd ->
-          let is_access = Typ.Procname.java_is_access_method pn in
+          let is_access = Typ.Procname.Java.is_access_method java_pn in
           let attributes = Procdesc.get_attributes pd in
           let is_synthetic = attributes.is_synthetic_method in
           let is_bridge = attributes.is_bridge_method in

@@ -1083,7 +1083,7 @@ let report_runtime_exceptions tenv pdesc summary =
     &&
     match pname with
     | Typ.Procname.Java pname_java ->
-        Typ.Procname.java_is_static pname
+        Typ.Procname.Java.is_static pname_java
         && String.equal (Typ.Procname.Java.get_method pname_java) "main"
     | _ ->
         false

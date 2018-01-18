@@ -723,7 +723,7 @@ let call_constructor_url_update_args pname actual_params =
     Typ.Procname.Java
       (Typ.Procname.Java.make
          (Typ.Name.Java.from_string "java.net.URL")
-         None "<init>" [(Some "java.lang", "String")] Typ.Procname.Non_Static)
+         None "<init>" [(Some "java.lang", "String")] Typ.Procname.Java.Non_Static)
   in
   if Typ.Procname.equal url_pname pname then
     match actual_params with
@@ -1186,7 +1186,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
           in
           match resolved_summary_opt with
           | None ->
-              let ret_typ = Typ.java_proc_return_typ callee_pname_java in
+              let ret_typ = Typ.Procname.Java.get_return_typ callee_pname_java in
               let ret_annots = load_ret_annots callee_pname in
               exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
           | Some resolved_summary ->
@@ -1211,7 +1211,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
             in
             match Ondemand.analyze_proc_name current_pdesc pname with
             | None ->
-                let ret_typ = Typ.java_proc_return_typ callee_pname_java in
+                let ret_typ = Typ.Procname.Java.get_return_typ callee_pname_java in
                 let ret_annots = load_ret_annots callee_pname in
                 exec_skip_call ~reason:"unknown method" ret_annots ret_typ
             | Some callee_summary ->

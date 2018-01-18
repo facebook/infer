@@ -326,7 +326,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
     let filter_special_cases () =
-      if Typ.Procname.java_is_access_method proc_name
+      if ( match proc_name with
+         | Typ.Procname.Java java_pname ->
+             Typ.Procname.Java.is_access_method java_pname
+         | _ ->
+             false )
          || (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else

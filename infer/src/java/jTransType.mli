@@ -12,10 +12,10 @@ open! IStd
 open Javalib_pack
 open Sawja_pack
 
-val get_method_kind : JCode.jcode Javalib.jmethod -> Typ.Procname.method_kind
+val get_method_kind : JCode.jcode Javalib.jmethod -> Typ.Procname.Java.kind
 
 val get_method_procname :
-  JBasics.class_name -> JBasics.method_signature -> Typ.Procname.method_kind -> Typ.Procname.t
+  JBasics.class_name -> JBasics.method_signature -> Typ.Procname.Java.kind -> Typ.Procname.t
 (** returns a procedure name based on the class name and the method's signature. *)
 
 val translate_method_name : JCode.jcode Javalib.jmethod -> Typ.Procname.t

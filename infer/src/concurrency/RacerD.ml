@@ -854,8 +854,14 @@ let pdesc_is_assumed_thread_safe pdesc tenv =
    find more bugs. this is just a temporary measure to avoid obvious false positives *)
 let should_analyze_proc pdesc tenv =
   let pn = Procdesc.get_proc_name pdesc in
-  not (Typ.Procname.is_class_initializer pn) && not (FbThreadSafety.is_logging_method pn)
-  && not (pdesc_is_assumed_thread_safe pdesc tenv) && not (RacerDConfig.Models.should_skip pn)
+  not
+    ( match pn with
+    | Typ.Procname.Java java_pname ->
+        Typ.Procname.Java.is_class_initializer java_pname
+    | _ ->
+        false )
+  && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)
+  && not (RacerDConfig.Models.should_skip pn)
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -1277,7 +1283,12 @@ let make_read_write_race_description ~read_is_sync (conflict: reported_access) p
 let should_report_on_proc proc_desc tenv =
   let proc_name = Procdesc.get_proc_name proc_desc in
   is_thread_safe_method proc_name tenv
-  || not (Typ.Procname.java_is_autogen_method proc_name)
+  || not
+       ( match proc_name with
+       | Typ.Procname.Java java_pname ->
+           Typ.Procname.Java.is_autogen_method java_pname
+       | _ ->
+           false )
      && Procdesc.get_access proc_desc <> PredSymb.Private
      && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 

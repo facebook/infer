@@ -202,7 +202,12 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       match t_ia_opt with Some (_, ia) -> Annotations.ia_is_mutable ia | _ -> false
     in
     Config.eradicate_field_not_mutable && not (Typ.Procname.is_constructor curr_pname)
-    && not (Typ.Procname.is_class_initializer curr_pname) && not (field_is_mutable ())
+    && ( match curr_pname with
+       | Typ.Procname.Java java_pname ->
+           not (Typ.Procname.Java.is_class_initializer java_pname)
+       | _ ->
+           true )
+    && not (field_is_mutable ())
   in
   ( if should_report_nullable || should_report_absent then
       let ann =
@@ -311,7 +316,11 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
-    when Typ.Procname.java_is_lambda curr_pname ->
+    when match curr_pname with
+         | Typ.Procname.Java java_pname ->
+             Typ.Procname.Java.is_lambda java_pname
+         | _ ->
+             false ->
       ()
   | Some (_, final_ta, _) ->
       let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in

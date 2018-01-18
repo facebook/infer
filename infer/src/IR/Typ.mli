@@ -258,19 +258,19 @@ type typ = t
 module Procname : sig
   (** Module for Procedure Names. *)
 
-  type method_kind =
-    | Non_Static
-        (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
-    | Static  (** in Java, procedures called with invokestatic *)
-
   (** Type of java procedure names. *)
   module Java : sig
+    type kind =
+      | Non_Static
+          (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+      | Static  (** in Java, procedures called with invokestatic *)
+
     type t [@@deriving compare]
 
     (** e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects *)
     type java_type = string option * string
 
-    val make : Name.t -> java_type option -> string -> java_type list -> method_kind -> t
+    val make : Name.t -> java_type option -> string -> java_type list -> kind -> t
     (** Create a Java procedure name from its
         class_name method_name args_type_name return_type_name method_kind. *)
 
@@ -300,6 +300,38 @@ module Procname : sig
 
     val replace_method : t -> string -> t
     (** Replace the method name of an existing java procname. *)
+
+    val get_return_typ : t -> typ
+    (** Return the return type of [pname_java]. return Tvoid if there's no return type *)
+
+    val is_access_method : t -> bool
+    (** Check if the procedure name is an acess method (e.g. access$100 used to
+          access private members from a nested class. *)
+
+    val is_autogen_method : t -> bool
+    (** Check if the procedure name is of an auto-generated method containing '$'. *)
+
+    val is_anonymous_inner_class_constructor : t -> bool
+    (** Check if the procedure name is an anonymous inner class constructor. *)
+
+    val is_close : t -> bool
+    (** Check if the method name is "close". *)
+
+    val is_static : t -> bool
+    (** Check if the java procedure is static. *)
+
+    val is_vararg : t -> bool
+    (** Check if the proc name has the type of a java vararg.
+          Note: currently only checks that the last argument has type Object[]. *)
+
+    val is_lambda : t -> bool
+    (** Check if the proc name comes from a lambda expression *)
+
+    val is_generated : t -> bool
+    (** Check if the proc name comes from generated code *)
+
+    val is_class_initializer : t -> bool
+    (** Check if this is a class initializer. *)
   end
 
   (** Type of c procedure names. *)
@@ -435,35 +467,6 @@ module Procname : sig
   val objc_method_kind_of_bool : bool -> objc_cpp_method_kind
   (** Create ObjC method type from a bool is_instance. *)
 
-  val java_is_access_method : t -> bool
-  (** Check if the procedure name is an acess method (e.g. access$100 used to
-      access private members from a nested class. *)
-
-  val java_is_autogen_method : t -> bool
-  (** Check if the procedure name is of an auto-generated method containing '$'. *)
-
-  val java_is_anonymous_inner_class_constructor : t -> bool
-  (** Check if the procedure name is an anonymous inner class constructor. *)
-
-  val java_is_close : t -> bool
-  (** Check if the method name is "close". *)
-
-  val java_is_static : t -> bool
-  (** Check if the java procedure is static. *)
-
-  val java_is_vararg : t -> bool
-  (** Check if the proc name has the type of a java vararg.
-      Note: currently only checks that the last argument has type Object[]. *)
-
-  val java_is_lambda : t -> bool
-  (** Check if the proc name comes from a lambda expression *)
-
-  val java_is_generated : t -> bool
-  (** Check if the proc name comes from generated code *)
-
-  val is_class_initializer : t -> bool
-  (** Check if this is a class initializer. *)
-
   val is_infer_undefined : t -> bool
   (** Check if this is a special Infer undefined procedure. *)
 
@@ -499,9 +502,6 @@ module Procname : sig
   val objc_cpp_get_class_qualifiers : objc_cpp -> QualifiedCppName.t
   (** get qualifiers of a class owning objc/C++ method *)
 end
-
-val java_proc_return_typ : Procname.Java.t -> t
-(** Return the return type of [pname_java]. *)
 
 module Fieldname : sig
   (** Names for fields of class/struct/union *)

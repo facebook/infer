@@ -110,9 +110,9 @@ let formals_from_signature program tenv cn ms kind =
   in
   let init_arg_list =
     match kind with
-    | Typ.Procname.Static ->
+    | Typ.Procname.Java.Static ->
         []
-    | Typ.Procname.Non_Static ->
+    | Typ.Procname.Java.Non_Static ->
         [(JConfig.this, JTransType.get_class_type program tenv cn)]
   in
   List.rev (List.fold ~f:collect ~init:init_arg_list (JBasics.ms_args ms))
@@ -650,6 +650,12 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
         let sil_var = JContext.set_pvar context var return_type in
         call_ret_instrs sil_var
   in
+  let is_close = function
+    | Typ.Procname.Java java_pname ->
+        Typ.Procname.Java.is_close java_pname
+    | _ ->
+        false
+  in
   let instrs =
     match call_args with
     (* modeling a class bypasses the treatment of Closeable *)
@@ -668,7 +674,7 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
         call_instrs @ [set_file_attr]
     (* remove file attribute when calling the close method of a subtype of Closeable *)
     | [exp]
-      when Typ.Procname.java_is_close callee_procname ->
+      when is_close callee_procname ->
         let set_mem_attr =
           let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_mem_attribute) in
           Sil.Call (None, set_builtin, [exp], loc, CallFlags.default)
@@ -891,7 +897,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let constr_procname, call_instrs =
           let ret_opt = Some (Exp.Var ret_id, class_type) in
           method_invocation context loc pc None cn constr_ms ret_opt constr_arg_list I_Special
-            Typ.Procname.Non_Static
+            Typ.Procname.Java.Non_Static
         in
         let pvar = JContext.set_pvar context var class_type in
         let set_instr = Sil.Store (Exp.Lvar pvar, class_type, Exp.Var ret_id, loc) in
@@ -929,7 +935,7 @@ let instruction (context: JContext.t) pc instr : translation =
         in
         let callee_procname, call_instrs =
           method_invocation context loc pc var_opt cn ms sil_obj_opt args I_Static
-            Typ.Procname.Static
+            Typ.Procname.Java.Static
         in
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
@@ -944,7 +950,7 @@ let instruction (context: JContext.t) pc instr : translation =
           let callee_procname, call_instrs =
             let ret_opt = Some (sil_obj_expr, sil_obj_type) in
             method_invocation context loc pc var_opt cn ms ret_opt args invoke_kind
-              Typ.Procname.Non_Static
+              Typ.Procname.Java.Non_Static
           in
           let node_kind = create_node_kind callee_procname in
           let call_node = create_node node_kind (instrs @ call_instrs) in
@@ -978,7 +984,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let instrs, sil_obj_expr, sil_obj_type = expression context pc obj in
         let callee_procname, call_instrs =
           method_invocation context loc pc var_opt cn ms (Some (sil_obj_expr, sil_obj_type)) args
-            I_Special Typ.Procname.Non_Static
+            I_Special Typ.Procname.Java.Non_Static
         in
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
@@ -1022,7 +1028,7 @@ let instruction (context: JContext.t) pc instr : translation =
           let _, call_instrs =
             let ret_opt = Some (Exp.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special
-              Typ.Procname.Static
+              Typ.Procname.Java.Static
           in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
           let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
@@ -1079,7 +1085,7 @@ let instruction (context: JContext.t) pc instr : translation =
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
           let _, call_instrs =
             method_invocation context loc pc None out_of_bound_cn constr_ms
-              (Some (Exp.Var ret_id, class_type)) [] I_Special Typ.Procname.Static
+              (Some (Exp.Var ret_id, class_type)) [] I_Special Typ.Procname.Java.Static
           in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
           let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in
@@ -1124,7 +1130,7 @@ let instruction (context: JContext.t) pc instr : translation =
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
           let _, call_instrs =
             method_invocation context loc pc None cce_cn constr_ms
-              (Some (Exp.Var ret_id, class_type)) [] I_Special Typ.Procname.Static
+              (Some (Exp.Var ret_id, class_type)) [] I_Special Typ.Procname.Java.Static
           in
           let sil_exn = Exp.Exn (Exp.Var ret_id) in
           let set_instr = Sil.Store (Exp.Lvar ret_var, ret_type, sil_exn, loc) in

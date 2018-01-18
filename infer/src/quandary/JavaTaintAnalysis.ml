@@ -41,9 +41,9 @@ include TaintAnalysis.Make (struct
           false
     in
     match pname with
-    | Typ.Procname.Java java_pname as pname
+    | Typ.Procname.Java java_pname
       -> (
-        let is_static = Typ.Procname.java_is_static pname in
+        let is_static = Typ.Procname.Java.is_static java_pname in
         match
           ( Typ.Procname.Java.get_class_name java_pname
           , Typ.Procname.Java.get_method java_pname
