@@ -74,6 +74,42 @@ end
 
 let get_log_identifier () = Random_id.get ()
 
+let bind_default opt map_func prev = match opt with Some x -> map_func x prev | None -> prev
+
+type frontend_exception =
+  { exception_type: string
+  ; source_location_start: Location.t
+  ; source_location_end: Location.t
+  ; exception_file: string
+  ; exception_line: int
+  ; ast_node: string option
+  ; lang: string }
+
+let create_frontend_exception_row base record =
+  let open JsonBuilder in
+  base |> add_string ~key:"exception_type" ~data:record.exception_type
+  |> add_string ~key:"source_location_start_file"
+       ~data:(SourceFile.to_rel_path record.source_location_start.file)
+  |> add_string ~key:"source_location_start_pos"
+       ~data:
+         (String.concat
+            [ string_of_int record.source_location_start.line
+            ; ":"
+            ; string_of_int record.source_location_start.col ])
+  |> add_string ~key:"source_location_end_file"
+       ~data:(SourceFile.to_rel_path record.source_location_end.file)
+  |> add_string ~key:"source_location_end_pos"
+       ~data:
+         (String.concat
+            [ string_of_int record.source_location_end.line
+            ; ":"
+            ; string_of_int record.source_location_end.col ])
+  |> add_string ~key:"exception_triggered_location"
+       ~data:(String.concat [record.exception_file; ":"; string_of_int record.exception_line])
+  |> bind_default record.ast_node (fun ast_node -> add_string ~key:"ast_node" ~data:ast_node)
+  |> add_string ~key:"lang" ~data:record.lang
+
+
 type procedures_translated =
   { procedures_translated_total: int
   ; procedures_translated_failed: int
@@ -90,12 +126,15 @@ let create_procedures_translated_row base record =
 
 type event =
   | UncaughtException of exn * int
+  | FrontendException of frontend_exception
   | ProceduresTranslatedSummary of procedures_translated
 
 let string_of_event event =
   match event with
   | UncaughtException _ ->
       "UncaughtException"
+  | FrontendException _ ->
+      "FrontendException"
   | ProceduresTranslatedSummary _ ->
       "ProceduresTranslatedSummary"
 
@@ -131,6 +170,8 @@ let create_row event =
       base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
       |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
       |> add_int ~key:"exitcode" ~data:exitcode
+  | FrontendException record ->
+      create_frontend_exception_row base record
   | ProceduresTranslatedSummary record ->
       create_procedures_translated_row base record )
   |> JsonBuilder.to_json

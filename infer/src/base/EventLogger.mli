@@ -7,6 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type frontend_exception =
+  { exception_type: string
+  ; source_location_start: Location.t
+  ; source_location_end: Location.t
+  ; exception_file: string
+  ; exception_line: int
+  ; ast_node: string option
+  ; lang: string }
+
 type procedures_translated =
   { procedures_translated_total: int
   ; procedures_translated_failed: int
@@ -15,6 +24,7 @@ type procedures_translated =
 
 type event =
   | UncaughtException of exn * int  (** exception, exitcode *)
+  | FrontendException of frontend_exception  (** record of caught exception *)
   | ProceduresTranslatedSummary of procedures_translated  (** record of procedures translated *)
 
 val get_log_identifier : unit -> string

@@ -11,23 +11,26 @@ open! IStd
 
 (** Module that contains constants and global state used in the frontend *)
 
+type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
+
+val string_of_clang_lang : clang_lang -> string
+
+val equal_clang_lang : clang_lang -> clang_lang -> bool
+
 exception IncorrectAssumption of string
 
 val incorrect_assumption : ('a, Format.formatter, unit, _) format4 -> 'a
 (** Used to mark places in the frontend that incorrectly assume something to be
     impossible. TODO(t21762295) get rid of all instances of this. *)
 
-exception Unimplemented of string
+exception Unimplemented of
+  string * (string * int * int * int) * Clang_ast_t.source_range * string option
 
-val unimplemented : ('a, Format.formatter, unit, _) format4 -> 'a
+val unimplemented :
+  string * int * int * int -> Clang_ast_t.source_range -> string option
+  -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise Unimplemented. This is caught at the level of translating a method and makes the frontend
     give up on that method. *)
-
-type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
-
-val string_of_clang_lang : clang_lang -> string
-
-val equal_clang_lang : clang_lang -> clang_lang -> bool
 
 type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}
 

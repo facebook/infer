@@ -14,17 +14,32 @@ module F = Format
 
 module L = Logging
 
-let protect ~f ~recover ~pp_context =
+let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translation_unit_context) =
   let log_and_recover ~print fmt =
     recover () ;
     incr CFrontend_config.procedures_failed ;
     (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
   in
+  let caught_exception exception_type (exception_file, exception_line, _, _)
+      (source_location_start, source_location_end) ast_node =
+    EventLogger.FrontendException
+      { exception_type
+      ; source_location_start= CLocation.clang_to_sil_location trans_unit_ctx source_location_start
+      ; source_location_end= CLocation.clang_to_sil_location trans_unit_ctx source_location_end
+      ; exception_file
+      ; exception_line
+      ; ast_node
+      ; lang= CFrontend_config.string_of_clang_lang trans_unit_ctx.lang }
+  in
   try f () with
   (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
        catching the exception) unless `--keep-going` was passed. Print errors we should fix
        (t21762295) to the console. *)
-  | CFrontend_config.Unimplemented msg ->
+  | CFrontend_config.Unimplemented (msg, exception_pos, source_range, ast_node) ->
+      let caught_unimplemented_exception =
+        caught_exception "Unimplemented" exception_pos source_range ast_node
+      in
+      EventLogger.log caught_unimplemented_exception ;
       log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" msg
   | CFrontend_config.IncorrectAssumption msg ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
@@ -83,7 +98,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | exception Not_found ->
           ()
     in
-    protect ~f ~recover ~pp_context
+    protect ~f ~recover ~pp_context trans_unit_ctx
 
 
   let function_decl trans_unit_ctx tenv cfg cg func_decl block_data_opt =
@@ -368,7 +383,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               ~pp_context:(fun fmt () ->
                 F.fprintf fmt "Error adding types from decl '%a'"
                   (Pp.to_string ~f:Clang_ast_j.string_of_decl)
-                  dec ) ;
+                  dec )
+              trans_unit_ctx ;
             List.iter ~f:translate method_decls
         | _ ->
             () ) ;

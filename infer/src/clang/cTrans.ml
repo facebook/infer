@@ -393,12 +393,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let exps = [(exp, typ)] in
               {empty_res_trans with exps; instrs}
           | Tfun _ | Tvoid | Tarray _ | TVar _ ->
-              CFrontend_config.unimplemented "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
+              CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+                "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
         in
         let res_trans = fill_typ_with_zero var_exp_typ in
         {res_trans with initd_exps= [fst var_exp_typ]}
     | None ->
-        CFrontend_config.unimplemented "Retrieving var from non-InitListExpr parent"
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "Retrieving var from non-InitListExpr parent"
 
 
   let no_op_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
@@ -746,7 +748,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor ->
         method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
-        CFrontend_config.unimplemented
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
           "Decl ref expression %a with pointer %d still needs to be translated"
           (Pp.to_string ~f:Clang_ast_j.string_of_decl_kind)
           decl_kind decl_ref.Clang_ast_t.dr_decl_pointer
@@ -1518,7 +1520,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let root_nodes' = if root_nodes <> [] then root_nodes else op_res_trans.root_nodes in
         {op_res_trans with root_nodes= root_nodes'}
     | _ ->
-        CFrontend_config.unimplemented "BinaryConditionalOperator not translated"
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "BinaryConditionalOperator not translated"
 
 
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
@@ -2069,7 +2072,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | [stmt] ->
         [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
     | _ ->
-        CFrontend_config.unimplemented
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
           "InitListExpression for var %a type %a with multiple init statements" Exp.pp var_exp
           (Typ.pp_full Pp.text) var_typ
 
@@ -2115,8 +2118,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Tint _ | Tfloat _ | Tptr _ ->
             initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | _ ->
-            CFrontend_config.unimplemented "InitListExp for var %a of type %a" Exp.pp var_exp
-              (Typ.pp Pp.text) var_typ
+            CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+              "InitListExp for var %a of type %a" Exp.pp var_exp (Typ.pp Pp.text) var_typ
       in
       let nname = "InitListExp" in
       let res_trans =
@@ -2257,8 +2260,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | (TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _) :: _ ->
           empty_res_trans
       | decl :: _ ->
-          CFrontend_config.unimplemented "In DeclStmt found an unknown declaration type %s"
-            (Clang_ast_j.string_of_decl decl)
+          CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+            "In DeclStmt found an unknown declaration type %s" (Clang_ast_j.string_of_decl decl)
       | [] ->
           assert false
     in
@@ -2951,7 +2954,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         binaryOperator_trans trans_state binop_info stmt_info expr_info stmt_list
 
 
-  and attributedStmt_trans trans_state stmts attrs =
+  and attributedStmt_trans trans_state stmt_info stmts attrs =
     let open Clang_ast_t in
     match (stmts, attrs) with
     | [stmt], [attr] -> (
@@ -2959,12 +2962,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | NullStmt _, FallThroughAttr _ ->
           no_op_trans trans_state.succ_nodes
       | _ ->
-          CFrontend_config.unimplemented
+          CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
             "attributedStmt [stmt] [attr] with:@\nstmt=%s@\nattr=%s@\n"
             (Clang_ast_j.string_of_stmt stmt)
             (Clang_ast_j.string_of_attribute attr) )
     | _ ->
-        CFrontend_config.unimplemented "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
           (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
           stmts
           (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_attribute))
@@ -3207,8 +3211,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | LambdaExpr (stmt_info, _, expr_info, lambda_expr_info) ->
         let trans_state' = {trans_state with priority= Free} in
         lambdaExpr_trans trans_state' stmt_info expr_info lambda_expr_info
-    | AttributedStmt (_, stmts, attrs) ->
-        attributedStmt_trans trans_state stmts attrs
+    | AttributedStmt (stmt_info, stmts, attrs) ->
+        attributedStmt_trans trans_state stmt_info stmts attrs
     | TypeTraitExpr (_, _, expr_info, type_trait_info) ->
         booleanValue_trans trans_state expr_info type_trait_info.Clang_ast_t.xtti_value
     | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
@@ -3230,7 +3234,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SubstNonTypeTemplateParmExpr _
     | SubstNonTypeTemplateParmPackExpr _
     | CXXDependentScopeMemberExpr _ ->
-        CFrontend_config.unimplemented "Translation of templated code is unsupported: %a"
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+          (Some (Clang_ast_proj.get_stmt_kind_string instr))
+          "Translation of templated code is unsupported: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
           instr
     | ForStmt (_, _) | WhileStmt (_, _) | DoStmt (_, _) | ObjCForCollectionStmt (_, _) ->
@@ -3328,7 +3334,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHLeaveStmt _
     | SEHTryStmt _
     | DefaultStmt _ ->
-        CFrontend_config.unimplemented "Statement translation for kind %s: %a"
+        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+          (Some (Clang_ast_proj.get_stmt_kind_string instr))
+          "Statement translation for kind %s: %a"
           (Clang_ast_proj.get_stmt_kind_string instr)
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
           instr
