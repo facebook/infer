@@ -100,21 +100,12 @@ let get_cycle root prop =
       []
 
 
-let get_var_retain_cycle prop_ =
-  let sigma = prop_.Prop.sigma in
+let get_var_retain_cycle hpred prop_ =
   (* returns the pvars of the first cycle we find in sigma.
      This is an heuristic that works if there is one cycle.
      In case there are more than one cycle we may return not necessarily
      the one we are looking for. *)
-  let rec do_sigma sigma_todo =
-    match sigma_todo with
-    | [] ->
-        []
-    | hp :: sigma' ->
-        let cycle = get_cycle hp prop_ in
-        if List.is_empty cycle then do_sigma sigma' else cycle
-  in
-  let cycle_elements = do_sigma sigma in
+  let cycle_elements = get_cycle hpred prop_ in
   RetainCyclesType.create_cycle cycle_elements
 
 
@@ -177,7 +168,7 @@ let report_cycle tenv hpred original_prop =
         Otherwise we report a retain cycle. *)
   let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
   let prop = remove_opt original_prop in
-  match get_var_retain_cycle prop with
+  match get_var_retain_cycle hpred prop with
   | Some cycle when not (cycle_has_weak_or_unretained_or_assign_field tenv cycle) ->
       RetainCyclesType.print_cycle cycle ;
       Some (exn_retain_cycle tenv prop hpred cycle)
