@@ -2000,12 +2000,8 @@ let inferconfig_file =
         if is_root then None else find parent
   in
   match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some env_path ->
-      (* make sure the path makes sense in children infer processes *)
-      Some
-        ( if Filename.is_relative env_path then
-            Utils.filename_to_absolute ~root:CLOpt.init_work_dir env_path
-        else env_path )
+  | Some _ as env_path ->
+      env_path
   | None ->
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
@@ -2013,8 +2009,18 @@ let inferconfig_file =
 let register_late_epilogue = Epilogues.register_late
 
 let post_parsing_initialization command_opt =
-  if CommandLineOption.is_originator then
+  if CommandLineOption.is_originator then (
+    (* let subprocesses know where the toplevel process' results dir is *)
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
+    (* make sure subprocesses read from the same .inferconfig as the toplevel process *)
+    Option.iter inferconfig_file ~f:(fun filename ->
+        let abs_filename =
+          if Filename.is_relative filename then
+            (* make sure the path makes sense in children infer processes *)
+            CLOpt.init_work_dir ^/ filename
+          else filename
+        in
+        Unix.putenv ~key:CommandDoc.inferconfig_env_var ~data:abs_filename ) ) ;
   ( match !version with
   | `Full when !buck ->
       (* Buck reads stderr in some versions, stdout in others *)
