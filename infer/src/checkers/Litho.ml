@@ -90,7 +90,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
           let return_calls =
             (try Domain.find return_access_path astate with Not_found -> Domain.CallSet.empty)
-            |> Domain.CallSet.add {receiver; procname= callee_procname}
+            |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_procname)
           in
           Domain.add return_access_path return_calls astate
         else
@@ -126,27 +126,6 @@ let report access_path call_chain summary =
   Reporting.log_error summary ~loc ~ltr exn
 
 
-let unroll_call call astate summary =
-  let max_depth = Domain.cardinal astate in
-  let rec unroll_call_ ({receiver; procname}: Domain.MethodCall.t) (acc, depth) =
-    let acc' = procname :: acc in
-    let depth' = depth + 1 in
-    let is_cycle access_path =
-      (* detect direct cycles and cycles due to mutual recursion *)
-      Domain.LocalAccessPath.equal access_path receiver || depth' > max_depth
-    in
-    try
-      let calls' = Domain.find receiver astate in
-      Domain.CallSet.iter
-        (fun call ->
-          if not (is_cycle call.receiver) then unroll_call_ call (acc', depth')
-          else report receiver.access_path acc' summary )
-        calls'
-    with Not_found -> report receiver.access_path acc' summary
-  in
-  unroll_call_ call ([], 0)
-
-
 let should_report proc_desc =
   match Procdesc.get_proc_name proc_desc with
   | Typ.Procname.Java java_pname -> (
@@ -155,10 +134,14 @@ let should_report proc_desc =
       false
 
 
-let report_call_chains post summary =
-  Domain.iter
-    (fun _ call_set -> Domain.CallSet.iter (fun call -> unroll_call call post summary) call_set)
-    post
+let report_graphql_getters summary access_path call_chain =
+  let call_strings = List.map ~f:(Typ.Procname.to_simplified_string ~withclass:false) call_chain in
+  let call_string = String.concat ~sep:"." call_strings in
+  let message = F.asprintf "%a.%s" AccessPath.pp access_path call_string in
+  let exn = Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message) in
+  let loc = Specs.get_loc summary in
+  let ltr = [Errlog.make_trace_element 0 loc message []] in
+  Reporting.log_error summary ~loc ~ltr exn
 
 
 let postprocess astate proc_desc : Domain.astate =
@@ -171,7 +154,9 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make_default proc_desc tenv in
   match Analyzer.compute_post proc_data ~initial:Domain.empty with
   | Some post ->
-      if should_report proc_desc then report_call_chains post summary ;
+      ( if should_report proc_desc then
+          let f = report_graphql_getters summary in
+          Domain.iter_call_chains ~f post ) ;
       let payload = postprocess post proc_desc in
       Summary.update_summary payload summary
   | None ->

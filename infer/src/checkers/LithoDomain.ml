@@ -11,7 +11,6 @@ open! IStd
 module F = Format
 module L = Logging
 
-(** Access path + its parent procedure *)
 module LocalAccessPath = struct
   type t = {access_path: AccessPath.t; parent: Typ.Procname.t} [@@deriving compare]
 
@@ -30,9 +29,10 @@ module LocalAccessPath = struct
   let pp fmt t = AccessPath.pp fmt t.access_path
 end
 
-(** Called procedure + it's receiver *)
 module MethodCall = struct
   type t = {receiver: LocalAccessPath.t; procname: Typ.Procname.t} [@@deriving compare]
+
+  let make receiver procname = {receiver; procname}
 
   let pp fmt {receiver; procname} =
     F.fprintf fmt "%a.%a" LocalAccessPath.pp receiver Typ.Procname.pp procname
@@ -62,3 +62,31 @@ let substitute ~(f_sub: LocalAccessPath.t -> LocalAccessPath.t option) astate =
       in
       add access_path' call_set' acc )
     astate empty
+
+
+let iter_call_chains_with_suffix ~f call_suffix astate =
+  let max_depth = cardinal astate in
+  let rec unroll_call_ ({receiver; procname}: MethodCall.t) (acc, depth) =
+    let acc' = procname :: acc in
+    let depth' = depth + 1 in
+    let is_cycle access_path =
+      (* detect direct cycles and cycles due to mutual recursion *)
+      LocalAccessPath.equal access_path receiver || depth' > max_depth
+    in
+    try
+      let calls' = find receiver astate in
+      CallSet.iter
+        (fun call ->
+          if not (is_cycle call.receiver) then unroll_call_ call (acc', depth')
+          else f receiver.access_path acc' )
+        calls'
+    with Not_found -> f receiver.access_path acc'
+  in
+  unroll_call_ call_suffix ([], 0)
+
+
+let iter_call_chains ~f astate =
+  iter
+    (fun _ call_set ->
+      CallSet.iter (fun call -> iter_call_chains_with_suffix ~f call astate) call_set )
+    astate
