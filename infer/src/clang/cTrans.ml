@@ -135,8 +135,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      expressions, but we take the type and create a static method call from it. This is done in
      objcMessageExpr_trans. *)
   let exec_with_self_exception f trans_state stmt =
-    try f trans_state stmt with Self.SelfClassException class_name ->
-      let typ = Typ.mk (Tstruct class_name) in
+    try f trans_state stmt with Self.SelfClassException e ->
+      let typ = Typ.mk (Tstruct e.class_name) in
       { empty_res_trans with
         exps=
           [ ( Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
@@ -716,10 +716,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let var_exp = Exp.Lvar pvar in
     let exps =
       if Self.is_var_self pvar (CContext.is_objc_method context) then
-        let class_typename = CContext.get_curr_class_typename context in
-        if CType.is_class typ then raise (Self.SelfClassException class_typename)
+        let class_name = CContext.get_curr_class_typename context in
+        if CType.is_class typ then
+          raise
+            (Self.SelfClassException
+               {class_name; position= __POS__; source_range= stmt_info.Clang_ast_t.si_source_range})
         else
-          let typ = CType.add_pointer_to_typ (Typ.mk (Tstruct class_typename)) in
+          let typ = CType.add_pointer_to_typ (Typ.mk (Tstruct class_name)) in
           [(var_exp, typ)]
       else [(var_exp, typ)]
     in
@@ -1165,7 +1168,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       (* alloc or new *)
       (* FIXME(t21762295): we do not expect this to propagate to the top but it does *)
-      raise (Self.SelfClassException class_name)
+      raise
+        (Self.SelfClassException
+           {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
     else if String.equal selector CFrontend_config.alloc
             || String.equal selector CFrontend_config.new_str
     then
@@ -1190,11 +1195,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           try
             let fst_res_trans = instruction trans_state_param stmt in
             (obj_c_message_expr_info, fst_res_trans)
-          with Self.SelfClassException class_typename ->
+          with Self.SelfClassException e ->
             let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
             let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
             let obj_c_message_expr_info =
-              Ast_expressions.make_obj_c_message_expr_info_class selector class_typename pointer
+              Ast_expressions.make_obj_c_message_expr_info_class selector e.class_name pointer
             in
             (obj_c_message_expr_info, empty_res_trans)
         in

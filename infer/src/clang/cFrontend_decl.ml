@@ -48,9 +48,14 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translatio
       in
       EventLogger.log caught_incorrect_assumption ;
       log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
-  | CTrans_utils.Self.SelfClassException class_name ->
+  | CTrans_utils.Self.SelfClassException e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
-      log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp class_name
+      let caught_selfclass_exception =
+        Some (Typ.Name.to_string e.class_name)
+        |> caught_exception "SelfClassException" e.position e.source_range
+      in
+      EventLogger.log caught_selfclass_exception ;
+      log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp e.class_name
   | exn ->
       let trace = Backtrace.get () in
       reraise_if exn ~f:(fun () ->
