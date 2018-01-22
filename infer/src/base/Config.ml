@@ -1889,6 +1889,10 @@ and tracing =
     "Report error traces for runtime exceptions (Java only): generate preconditions for runtimeexceptions in Java and report errors for public methods which throw runtime exceptions"
 
 
+and tv_commit =
+  CLOpt.mk_string_opt ~long:"tv-commit" ~meta:"commit" "Commit hash to submit to Traceview"
+
+
 and tv_limit =
   CLOpt.mk_int ~long:"tv-limit" ~default:100 ~meta:"int"
     "The maximum number of traces to submit to Traceview"
@@ -2623,6 +2627,8 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 
 and tracing = !tracing
+
+and tv_commit = !tv_commit
 
 and tv_limit = !tv_limit
 

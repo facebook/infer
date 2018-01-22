@@ -618,6 +618,8 @@ val trace_join : bool
 
 val trace_rearrange : bool
 
+val tv_commit : string option
+
 val tv_limit : int
 
 val tv_limit_filtered : int
