@@ -35,15 +35,19 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translatio
   (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
        catching the exception) unless `--keep-going` was passed. Print errors we should fix
        (t21762295) to the console. *)
-  | CFrontend_config.Unimplemented (msg, exception_pos, source_range, ast_node) ->
+  | CFrontend_config.Unimplemented e ->
       let caught_unimplemented_exception =
-        caught_exception "Unimplemented" exception_pos source_range ast_node
+        caught_exception "Unimplemented" e.position e.source_range e.ast_node
       in
       EventLogger.log caught_unimplemented_exception ;
-      log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" msg
-  | CFrontend_config.IncorrectAssumption msg ->
+      log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" e.msg
+  | CFrontend_config.IncorrectAssumption e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
-      log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" msg
+      let caught_incorrect_assumption =
+        caught_exception "IncorrectAssumption" e.position e.source_range e.ast_node
+      in
+      EventLogger.log caught_incorrect_assumption ;
+      log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
   | CTrans_utils.Self.SelfClassException class_name ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
       log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp class_name
@@ -339,7 +343,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               (* create the corresponding global variable to get the right pname for its
                 initializer *)
               let global =
-                CGeneral_utils.mk_sil_global_var trans_unit_ctx named_decl_info vdi qt
+                CGeneral_utils.mk_sil_global_var trans_unit_ctx decl_info named_decl_info vdi qt
               in
               (* safe to Option.get because it's a global *)
               Option.value_exn (Pvar.get_initializer_pname global)

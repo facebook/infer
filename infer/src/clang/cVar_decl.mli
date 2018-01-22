@@ -15,12 +15,15 @@ open! IStd
 
 val sil_var_of_decl : CContext.t -> Clang_ast_t.decl -> Typ.Procname.t -> Pvar.t
 
-val sil_var_of_decl_ref : CContext.t -> Clang_ast_t.decl_ref -> Typ.Procname.t -> Pvar.t
+val sil_var_of_decl_ref :
+  CContext.t -> Clang_ast_t.source_range -> Clang_ast_t.decl_ref -> Typ.Procname.t -> Pvar.t
 
 val add_var_to_locals : Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
 
 val sil_var_of_captured_var :
-  Clang_ast_t.decl_ref -> CContext.t -> Typ.Procname.t -> Pvar.t * Typ.typ
+  Clang_ast_t.decl_ref -> CContext.t -> Clang_ast_t.source_range -> Typ.Procname.t
+  -> Pvar.t * Typ.typ
 
 val captured_vars_from_block_info :
-  CContext.t -> Clang_ast_t.block_captured_variable list -> (Pvar.t * Typ.t) list
+  CContext.t -> Clang_ast_t.source_range -> Clang_ast_t.block_captured_variable list
+  -> (Pvar.t * Typ.t) list

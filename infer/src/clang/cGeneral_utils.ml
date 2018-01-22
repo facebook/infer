@@ -79,7 +79,7 @@ let is_objc_extension translation_unit_context =
   || CFrontend_config.equal_clang_lang lang CFrontend_config.ObjCPP
 
 
-let get_var_name_mangled name_info var_decl_info =
+let get_var_name_mangled decl_info name_info var_decl_info =
   let clang_name = CAst_utils.get_qualified_name name_info |> QualifiedCppName.to_qual_string in
   let param_idx_opt = var_decl_info.Clang_ast_t.vdi_parm_index_in_function in
   let name_string =
@@ -87,7 +87,7 @@ let get_var_name_mangled name_info var_decl_info =
     | "", Some index ->
         "__param_" ^ string_of_int index
     | "", None ->
-        CFrontend_config.incorrect_assumption
+        CFrontend_config.incorrect_assumption __POS__ decl_info.Clang_ast_t.di_source_range None
           "Got both empty clang_name and None for param_idx in get_var_name_mangled (%a) (%a)"
           (Pp.to_string ~f:Clang_ast_j.string_of_named_decl_info)
           name_info
@@ -106,9 +106,9 @@ let get_var_name_mangled name_info var_decl_info =
   (name_string, mangled)
 
 
-let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) named_decl_info
-    var_decl_info qt =
-  let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
+let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) decl_info
+    named_decl_info var_decl_info qt =
+  let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
   let translation_unit =
     match Clang_ast_t.(var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr) with
     | true, None ->
@@ -150,7 +150,9 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
 let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =
   match decl_info_qual_type_opt with
   | Some (decl_info, qt, var_decl_info, should_be_mangled) ->
-      let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
+      let name_string, simple_name =
+        get_var_name_mangled decl_info named_decl_info var_decl_info
+      in
       if var_decl_info.Clang_ast_t.vdi_is_global then
         let mk_name =
           if var_decl_info.Clang_ast_t.vdi_is_static_local then
@@ -159,7 +161,7 @@ let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname o
                 Mangled.from_string (Typ.Procname.to_string outer_procname ^ "_" ^ name_string) )
           else None
         in
-        mk_sil_global_var trans_unit_ctx ?mk_name named_decl_info var_decl_info qt
+        mk_sil_global_var trans_unit_ctx ?mk_name decl_info named_decl_info var_decl_info qt
       else if not should_be_mangled then Pvar.mk simple_name procname
       else
         let start_location = fst decl_info.Clang_ast_t.di_source_range in

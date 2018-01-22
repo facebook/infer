@@ -34,7 +34,7 @@ let sil_var_of_decl context var_decl procname =
       assert false
 
 
-let sil_var_of_decl_ref context decl_ref procname =
+let sil_var_of_decl_ref context source_range decl_ref procname =
   let name =
     match decl_ref.Clang_ast_t.dr_name with Some name_info -> name_info | None -> assert false
   in
@@ -53,7 +53,7 @@ let sil_var_of_decl_ref context decl_ref procname =
             sil_var_of_decl context var_decl procname
         | None ->
             (* FIXME(t21762295) *)
-            CFrontend_config.incorrect_assumption
+            CFrontend_config.incorrect_assumption __POS__ source_range None
               "pointer '%d' for var decl not found. The var decl was: %a" pointer
               (Pp.to_string ~f:Clang_ast_j.string_of_decl_ref)
               decl_ref
@@ -80,24 +80,24 @@ let add_var_to_locals procdesc var_decl typ pvar =
       assert false
 
 
-let sil_var_of_captured_var decl_ref context procname =
+let sil_var_of_captured_var decl_ref context source_range procname =
   match decl_ref with
   | {Clang_ast_t.dr_qual_type= Some qual_type} ->
-      ( sil_var_of_decl_ref context decl_ref procname
+      ( sil_var_of_decl_ref context source_range decl_ref procname
       , CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type )
   | _ ->
       assert false
 
 
 (* Returns a list of captured variables as sil variables. *)
-let captured_vars_from_block_info context cvl =
+let captured_vars_from_block_info context source_range cvl =
   let procname = Procdesc.get_proc_name context.CContext.procdesc in
   let sil_var_of_captured_var {Clang_ast_t.bcv_variable} vars_acc =
     match bcv_variable with
     | Some ({Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} as decl_ref) ->
         if String.equal ni_name CFrontend_config.self && not (CContext.is_objc_instance context)
         then vars_acc
-        else sil_var_of_captured_var decl_ref context procname :: vars_acc
+        else sil_var_of_captured_var decl_ref context source_range procname :: vars_acc
     | _ ->
         assert false
   in

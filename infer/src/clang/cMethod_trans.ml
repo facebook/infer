@@ -126,11 +126,11 @@ let is_cpp_nothrow function_method_decl_info =
     1. self/this parameter (optional, only for methods)
     2. normal parameters
     3. return parameter (optional) *)
-let get_parameters trans_unit_ctx tenv function_method_decl_info =
+let get_parameters trans_unit_ctx tenv decl_info function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
-        let _, mangled = CGeneral_utils.get_var_name_mangled name_info var_decl_info in
+        let _, mangled = CGeneral_utils.get_var_name_mangled decl_info name_info var_decl_info in
         let param_typ = CType_decl.qual_type_to_sil_type tenv qt in
         let new_qt =
           match param_typ.Typ.desc with
@@ -163,7 +163,7 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp, return_param_type_opt = get_return_val_and_param_types tenv function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
-  let parameters = get_parameters trans_unit_ctx tenv function_method_decl_info in
+  let parameters = get_parameters trans_unit_ctx tenv decl_info function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language trans_unit_ctx function_method_decl_info in
   let is_cpp_virtual = is_cpp_virtual function_method_decl_info in

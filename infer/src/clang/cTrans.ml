@@ -516,7 +516,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             assert false )
       | _ as decl ->
           (* FIXME(t21762295): we do not expect this to happen but it does *)
-          CFrontend_config.incorrect_assumption
+          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
             "di_parent_pointer should be always set for fields/ivars, but got %a"
             (Pp.option (Pp.to_string ~f:Clang_ast_j.string_of_decl))
             decl
@@ -709,7 +709,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+    let pvar =
+      CVar_decl.sil_var_of_decl_ref context stmt_info.Clang_ast_t.si_source_range decl_ref procname
+    in
     CContext.add_block_static_var context procname (pvar, typ) ;
     let var_exp = Exp.Lvar pvar in
     let exps =
@@ -986,7 +988,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if Int.equal (List.length params) (List.length params_stmt) then params
           else
             (* FIXME(t21762295) this is reachable *)
-            CFrontend_config.incorrect_assumption
+            CFrontend_config.incorrect_assumption __POS__ si.Clang_ast_t.si_source_range None
               "In call to %a: stmt_list and res_trans_par.exps must have same size but they don't:@\nstmt_list(%d)=[%a]@\nres_trans_par.exps(%d)=[%a]@\n"
               Typ.Procname.pp procname (List.length params) (Pp.seq Exp.pp)
               (List.map ~f:fst params) (List.length params_stmt)
@@ -1024,8 +1026,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           pn
       | _ ->
           (* method pointer not implemented, this shouldn't happen but it does (t21762295) *)
-          CFrontend_config.incorrect_assumption "Could not resolve CXX method call %a" Exp.pp
-            sil_method
+          CFrontend_config.incorrect_assumption __POS__ si.Clang_ast_t.si_source_range None
+            "Could not resolve CXX method call %a" Exp.pp sil_method
     in
     (* As we may have nodes coming from different parameters we need to call instruction for each
        parameter and collect the results afterwards. The 'instructions' function does not do that *)
@@ -1852,7 +1854,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {empty_res_trans with root_nodes= top_nodes; leaf_nodes= succ_nodes}
     | _ ->
         (* TODO(t21762295) this raises sometimes *)
-        CFrontend_config.incorrect_assumption
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
           "Unexpected Switch Statement sub-expression list: [%a]"
           (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
           switch_stmt_list
@@ -2237,7 +2239,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* Record declaration is done in the beginning when procdesc is defined.*)
         collect_all_decl trans_state var_decls' next_nodes stmt_info
     | decl :: _ ->
-        CFrontend_config.incorrect_assumption "unexpected decl type %s in collect_all_decl: %a"
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "unexpected decl type %s in collect_all_decl: %a"
           (Clang_ast_proj.get_decl_kind_string decl)
           (Pp.to_string ~f:Clang_ast_j.string_of_decl)
           decl
@@ -2603,7 +2606,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname ;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-        let captureds = CVar_decl.captured_vars_from_block_info context captured_block_vars in
+        let captureds =
+          CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
+            captured_block_vars
+        in
         let ids_instrs = List.map ~f:assign_captured_var captureds in
         let ids, instrs = List.unzip ids_instrs in
         let block_data = (context, qual_type, block_pname, captureds) in
@@ -2631,7 +2637,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Cg.add_edge context.cg procname lambda_pname ;
     let make_captured_tuple (pvar, typ) = (Exp.Lvar pvar, pvar, typ) in
     let get_captured_pvar_typ decl_ref =
-      CVar_decl.sil_var_of_captured_var decl_ref context procname
+      CVar_decl.sil_var_of_captured_var decl_ref context stmt_info.Clang_ast_t.si_source_range
+        procname
     in
     let translate_capture_init (pvar, typ) init_decl =
       match init_decl with
@@ -2983,7 +2990,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         if destr_trans_result.root_nodes <> [] then destr_trans_result
         else {empty_res_trans with root_nodes= bn.break}
     | _ (* t21762295 *) ->
-        CFrontend_config.incorrect_assumption "Break stmt without continuation: %a"
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "Break stmt without continuation: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
 
@@ -2996,7 +3004,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         if destr_trans_result.root_nodes <> [] then destr_trans_result
         else {empty_res_trans with root_nodes= bn.continue}
     | _ (* t21762295 *) ->
-        CFrontend_config.incorrect_assumption "Continue stmt without continuation: %a"
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "Continue stmt without continuation: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
 
@@ -3052,7 +3061,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         switchStmt_trans trans_state stmt_info switch_stmt_list
     | CaseStmt _ ->
         (* where do we even get case stmts outside of the switch stmt? (t21762295) *)
-        CFrontend_config.incorrect_assumption "Case statement outside of switch statement: %a"
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "Case statement outside of switch statement: %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
           instr
     | StmtExpr (_, stmt_list, _) ->
@@ -3240,7 +3250,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
           instr
     | ForStmt (_, _) | WhileStmt (_, _) | DoStmt (_, _) | ObjCForCollectionStmt (_, _) ->
-        CFrontend_config.incorrect_assumption "Unexpected shape for %a: %a"
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+          "Unexpected shape for %a: %a"
           (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
           instr
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
