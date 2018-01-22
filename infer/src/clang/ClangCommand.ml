@@ -13,7 +13,9 @@ module L = Logging
 type t = {exec: string; argv: string list; orig_argv: string list; quoting_style: ClangQuotes.style}
 
 (** bad for every clang invocation *)
-let clang_blacklisted_flags = ["-fembed-bitcode-marker"; "-fno-canonical-system-headers"]
+let clang_blacklisted_flags =
+  ["--expt-relaxed-constexpr"; "-fembed-bitcode-marker"; "-fno-canonical-system-headers"]
+
 
 let fcp_dir =
   Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name
