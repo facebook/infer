@@ -77,7 +77,7 @@ let log_environment_info () =
 
 let prepare_events_logging () =
   (* there's no point in logging data from the events command. To fetch them we'd need to run events again... *)
-  if CLOpt.equal_command Config.command CLOpt.Events then ()
+  if InferCommand.equal Config.command Events then ()
   else
     let log_identifier_msg =
       Printf.sprintf "Infer log identifier is %s\n" (EventLogger.get_log_identifier ())

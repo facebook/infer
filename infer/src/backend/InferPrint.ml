@@ -750,7 +750,7 @@ let pp_summary_by_report_kind formats_by_report_kind summary error_filter linere
         pp_stats (error_filter file) linereader summary stats format_list
     | Calls, _ :: _ ->
         pp_calls summary format_list
-    | Summary, _ when CLOpt.equal_command Config.command CLOpt.Report && not Config.quiet ->
+    | Summary, _ when InferCommand.equal Config.command Report && not Config.quiet ->
         pp_summary summary
     | _ ->
         ()

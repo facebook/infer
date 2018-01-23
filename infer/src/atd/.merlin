@@ -3,7 +3,9 @@ FLG -open InferGenerated -g -short-paths -safe-string -principal -strict-formats
 PKG atd
 PKG atdgen
 PKG biniou
+PKG core
 PKG easy-format
+PKG ppx_compare
 PKG str
 PKG unix
 PKG yojson

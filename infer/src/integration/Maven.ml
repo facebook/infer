@@ -35,7 +35,7 @@ let infer_profile =
       </build>
     </profile>|}
        infer_profile_name
-       (Config.bin_dir ^/ CLOpt.infer_exe_name))
+       (Config.bin_dir ^/ InferCommand.infer_exe_name))
 
 
 let pom_worklist = ref [CLOpt.init_work_dir]

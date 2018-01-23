@@ -22,7 +22,7 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
   let see_also =
     let exe_names =
       List.map see_also_commands ~f:(fun cmd ->
-          let exe = CLOpt.exe_name_of_command cmd in
+          let exe = InferCommand.to_exe_name cmd in
           Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section )
     in
     [`P (String.concat ~sep:", " exe_names)]
@@ -54,7 +54,7 @@ let analyze =
     ~synopsis:{|$(b,infer) $(b,analyze) $(i,[options])
 $(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
-    ~see_also:CLOpt.([Report; Run])
+    ~see_also:InferCommand.([Report; Run])
 
 
 let capture =
@@ -76,7 +76,7 @@ $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebui
       [ `P
           "Capture the build command or compilation database specified on the command line: infer intercepts calls to the compiler to read source files, translate them into infer's intermediate representation, and store the result of the translation in the results directory."
       ]
-    ~see_also:CLOpt.([Analyze; Compile; Run])
+    ~see_also:InferCommand.([Analyze; Compile; Run])
 
 
 let compile =
@@ -104,7 +104,7 @@ let compile =
   cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
   infer capture --compilation-database compile_commands.json|}
       ]
-    ~see_also:CLOpt.([Capture])
+    ~see_also:InferCommand.([Capture])
 
 
 let diff =
@@ -112,7 +112,7 @@ let diff =
     ~short_description:"Report the difference between two versions of a project"
     ~synopsis:"$(b,infer) $(b,diff) $(i,[options])"
     ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
-    ~see_also:CLOpt.([ReportDiff; Run])
+    ~see_also:InferCommand.([ReportDiff; Run])
 
 
 let explore =
@@ -123,7 +123,7 @@ let explore =
       [ `P
           "Show the list of bugs on the console and explore symbolic program traces emitted by infer to explain a report. Can also generate an HTML report from a JSON report."
       ]
-    ~see_also:CLOpt.([Report; Run])
+    ~see_also:InferCommand.([Report; Run])
 
 
 let infer =
@@ -203,7 +203,7 @@ $(b,infer) $(i,[options])|}
     "cxx": false,
     "infer-blacklist-files-containing": ["@generated","@Generated"]
   }|}
-      ] ~see_also:CLOpt.all_commands "infer"
+      ] ~see_also:InferCommand.all_commands "infer"
 
 
 let report =
@@ -215,7 +215,7 @@ let report =
       ; `P
           "If no specs file are passed on the command line, process all the .specs in the results directory."
       ]
-    ~see_also:CLOpt.([ReportDiff; Run])
+    ~see_also:InferCommand.([ReportDiff; Run])
 
 
 let reportdiff =
@@ -235,7 +235,7 @@ let reportdiff =
       ; `P
           "- $(b,preexisting.json) contains the issues found in both $(i,previous) and $(i,current)."
       ; `P "All three files follow the same format as normal infer reports." ]
-    ~see_also:CLOpt.([Report])
+    ~see_also:InferCommand.([Report])
 
 
 let events =
@@ -246,7 +246,7 @@ let events =
       [ `P
           "Emit to stdout one JSON object per line, each describing a logged event happened during the execution of Infer"
       ]
-    ~see_also:CLOpt.([Report; Run])
+    ~see_also:InferCommand.([Report; Run])
 
 
 let run =
@@ -260,16 +260,16 @@ $(b,infer) $(i,[options]) $(b,--) $(i,compile command)|}
           "Calling \"$(b,infer) $(b,run) $(i,[options])\" is equivalent to performing the following sequence of commands:"
       ; `Pre {|$(b,infer) $(b,capture) $(i,[options])
 $(b,infer) $(b,analyze) $(i,[options])|} ]
-    ~see_also:CLOpt.([Analyze; Capture; Report])
+    ~see_also:InferCommand.([Analyze; Capture; Report])
 
 
 let command_to_data =
   let mk cmd mk_doc =
-    let name = CLOpt.name_of_command cmd in
-    let command_doc = mk_doc (CLOpt.exe_name_of_command cmd) in
+    let name = InferCommand.to_string cmd in
+    let command_doc = mk_doc (InferCommand.to_exe_name cmd) in
     (cmd, {name; command_doc})
   in
-  let open CLOpt in
+  let open InferCommand in
   [ mk Analyze analyze
   ; mk Capture capture
   ; mk Compile compile
@@ -281,5 +281,4 @@ let command_to_data =
   ; mk Run run ]
 
 
-let data_of_command command =
-  List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_data command
+let data_of_command command = List.Assoc.find_exn ~equal:InferCommand.equal command_to_data command

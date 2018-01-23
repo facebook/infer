@@ -86,48 +86,6 @@ let anon_arg_action_of_parse_mode parse_mode =
   {parse_subcommands; parse_argfiles; on_unknown}
 
 
-(* NOTE: All variants must be also added to `all_commands` below *)
-type command =
-  | Analyze
-  | Capture
-  | Compile
-  | Diff
-  | Events
-  | Explore
-  | Report
-  | ReportDiff
-  | Run
-  [@@deriving compare]
-
-let equal_command = [%compare.equal : command]
-
-let infer_exe_name = "infer"
-
-let command_to_name =
-  [ (Analyze, "analyze")
-  ; (Capture, "capture")
-  ; (Compile, "compile")
-  ; (Diff, "diff")
-  ; (Events, "events")
-  ; (Explore, "explore")
-  ; (Report, "report")
-  ; (ReportDiff, "reportdiff")
-  ; (Run, "run") ]
-
-
-let all_commands = List.map ~f:fst command_to_name
-
-let name_of_command = List.Assoc.find_exn ~equal:equal_command command_to_name
-
-let exe_name_of_command_name name = Printf.sprintf "%s-%s" infer_exe_name name
-
-let exe_name_of_command cmd = name_of_command cmd |> exe_name_of_command_name
-
-let command_of_exe_name exe_name =
-  List.find_map command_to_name ~f:(fun (cmd, name) ->
-      if String.equal exe_name (exe_name_of_command_name name) then Some cmd else None )
-
-
 type command_doc =
   { title: Cmdliner.Manpage.title
   ; manual_before_options: Cmdliner.Manpage.block list
@@ -218,7 +176,7 @@ module SectionMap = Caml.Map.Make (struct
 end)
 
 let help_sections_desc_lists =
-  List.map all_commands ~f:(fun command -> (command, ref SectionMap.empty))
+  List.map InferCommand.all_commands ~f:(fun command -> (command, ref SectionMap.empty))
 
 
 let visible_descs_list = ref []
@@ -231,7 +189,9 @@ let add parse_mode sections desc =
   let desc_list = List.Assoc.find_exn ~equal:equal_parse_mode parse_mode_desc_lists parse_mode in
   desc_list := desc :: !desc_list ;
   let add_to_section (command, section) =
-    let sections = List.Assoc.find_exn ~equal:equal_command help_sections_desc_lists command in
+    let sections =
+      List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command
+    in
     let prev_contents = try SectionMap.find section !sections with Not_found -> [] in
     sections := SectionMap.add section (desc :: prev_contents) !sections
   in
@@ -259,10 +219,10 @@ let add parse_mode sections desc =
         in
         (* in the help of `infer` itself, show in which specific commands the option is used *)
         let commands =
-          List.map ~f:fst sections |> List.sort ~cmp:compare_command
-          |> List.remove_consecutive_duplicates ~equal:equal_command
+          List.map ~f:fst sections |> List.sort ~cmp:InferCommand.compare
+          |> List.remove_consecutive_duplicates ~equal:InferCommand.equal
           |> List.map ~f:(fun cmd ->
-                 let exe = exe_name_of_command cmd in
+                 let exe = InferCommand.to_exe_name cmd in
                  Printf.sprintf "$(b,%s)(1)" (Cmdliner.Manpage.escape exe) )
           |> oxford_comma
         in
@@ -358,7 +318,7 @@ let curr_command = ref None
 
 type 'a t =
   ?deprecated:string list -> long:Arg.key -> ?short:char -> ?parse_mode:parse_mode
-  -> ?in_help:(command * string) list -> ?meta:string -> Arg.doc -> 'a
+  -> ?in_help:(InferCommand.t * string) list -> ?meta:string -> Arg.doc -> 'a
 
 let string_json_decoder ~long ~inferconfig_dir:_ json = [dashdash long; YBU.to_string json]
 
@@ -731,7 +691,7 @@ let select_parse_mode ~usage parse_mode =
 
 
 let string_of_command command =
-  let _, s, _ = List.Assoc.find_exn !subcommands ~equal:equal_command command in
+  let _, s, _ = List.Assoc.find_exn !subcommands ~equal:InferCommand.equal command in
   s
 
 
@@ -1012,7 +972,7 @@ let show_manual ?internal_section format default_doc command_opt =
     | None ->
         default_doc
     | Some command ->
-      match List.Assoc.find_exn ~equal:equal_command !subcommands command with
+      match List.Assoc.find_exn ~equal:InferCommand.equal !subcommands command with
       | Some command_doc, _, _ ->
           command_doc
       | None, _, _ ->
@@ -1058,7 +1018,7 @@ let show_manual ?internal_section format default_doc command_opt =
         match command_opt with
         | Some command ->
             let sections =
-              List.Assoc.find_exn ~equal:equal_command help_sections_desc_lists command
+              List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command
             in
             SectionMap.fold
               (fun section descs result ->

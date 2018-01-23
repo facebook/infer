@@ -155,7 +155,7 @@ let create_row event =
   incr sequence_ctr ;
   let open JsonBuilder in
   let base =
-    empty |> add_string ~key:"command" ~data:(CLOpt.name_of_command Config.command)
+    empty |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
     |> add_string ~key:"event_tag" ~data:(string_of_event event)
     |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
     |> add_string ~key:"infer_commit" ~data:Version.commit

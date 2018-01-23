@@ -20,35 +20,6 @@ type parse_mode =
   | NoParse  (** all arguments are anonymous arguments, no parsing is attempted *)
   [@@deriving compare]
 
-(** Main modes of operation for infer *)
-type command =
-  | Analyze  (** analyze previously captured source files *)
-  | Capture
-      (** capture compilation commands and translate source files into infer's intermediate
-                language *)
-  | Compile
-      (** set up the infer environment then run the compilation commands without capturing the
-                source files *)
-  | Diff  (** orchestrate a diff analysis *)
-  | Events  (** dump logged events into stdout *)
-  | Explore  (** explore infer reports *)
-  | Report  (** post-process infer results and reports *)
-  | ReportDiff  (** compute the difference of two infer reports *)
-  | Run  (** orchestrate the capture, analysis, and reporting of a compilation command *)
-  [@@deriving compare]
-
-val equal_command : command -> command -> bool
-
-val all_commands : command list
-
-val infer_exe_name : string
-
-val name_of_command : command -> string
-
-val exe_name_of_command : command -> string
-
-val command_of_exe_name : string -> command option
-
 val is_originator : bool
 
 val init_work_dir : string
@@ -73,7 +44,7 @@ val init_work_dir : string
 *)
 type 'a t =
   ?deprecated:string list -> long:string -> ?short:char -> ?parse_mode:parse_mode
-  -> ?in_help:(command * string) list -> ?meta:string -> string -> 'a
+  -> ?in_help:(InferCommand.t * string) list -> ?meta:string -> string -> 'a
 
 val mk_set : 'a ref -> 'a -> unit t
 (** [mk_set variable value] defines a command line option which sets [variable] to [value]. *)
@@ -145,7 +116,7 @@ val mk_anon : unit -> string list ref
     order they appeared on the command line. *)
 
 val mk_rest_actions :
-  ?parse_mode:parse_mode -> ?in_help:(command * string) list -> string -> usage:string
+  ?parse_mode:parse_mode -> ?in_help:(InferCommand.t * string) list -> string -> usage:string
   -> (string -> parse_mode) -> string list ref
 (** [mk_rest_actions doc ~usage command_to_parse_mode] defines a [string list ref] of the command
     line arguments following ["--"], in the reverse order they appeared on the command line. [usage]
@@ -183,8 +154,9 @@ val mk_command_doc :
 *)
 
 val mk_subcommand :
-  command -> ?on_unknown_arg:[`Add | `Skip | `Reject] -> name:string -> ?deprecated_long:string
-  -> ?parse_mode:parse_mode -> ?in_help:(command * string) list -> command_doc option -> unit
+  InferCommand.t -> ?on_unknown_arg:[`Add | `Skip | `Reject] -> name:string
+  -> ?deprecated_long:string -> ?parse_mode:parse_mode -> ?in_help:(InferCommand.t * string) list
+  -> command_doc option -> unit
 (** [mk_subcommand command ~long command_doc] defines the subcommand [command]. A subcommand is
     activated by passing [name], and by passing [--deprecated_long] if specified. A man page is
     automatically generated for [command] based on the information in [command_doc], if available
@@ -204,8 +176,8 @@ val extend_env_args : string list -> unit
 (** [extend_env_args args] appends [args] to those passed via [args_env_var] *)
 
 val parse :
-  ?config_file:string -> usage:Arg.usage_msg -> parse_mode -> command option
-  -> command option * (int -> 'a)
+  ?config_file:string -> usage:Arg.usage_msg -> parse_mode -> InferCommand.t option
+  -> InferCommand.t option * (int -> 'a)
 (** [parse ~usage parse_mode command] parses command line arguments as specified by preceding calls
     to the [mk_*] functions, and returns:
     - the command selected by the user on the command line, except if [command] is not None in which
@@ -228,7 +200,8 @@ val is_env_var_set : string -> bool
 (** [is_env_var_set var] is true if $[var]=1 *)
 
 val show_manual :
-  ?internal_section:string -> Cmdliner.Manpage.format -> command_doc -> command option -> unit
+  ?internal_section:string -> Cmdliner.Manpage.format -> command_doc -> InferCommand.t option
+  -> unit
 (** Display the manual of [command] to the user, or [command_doc] if [command] is None. [format] is
     used as for [Cmdliner.Manpage.print]. If [internal_section] is specified, add a section titled
     [internal_section] about internal (hidden) options. *)

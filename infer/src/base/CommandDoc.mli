@@ -18,4 +18,4 @@ val inferconfig_file : string
 
 val infer : CLOpt.command_doc
 
-val data_of_command : CLOpt.command -> data
+val data_of_command : InferCommand.t -> data

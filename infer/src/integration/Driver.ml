@@ -394,7 +394,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
   in
   let should_merge =
     match mode with
-    | PythonCapture (BBuck, _) when Config.flavors && CLOpt.(equal_command Run) Config.command ->
+    | PythonCapture (BBuck, _) when Config.flavors && InferCommand.(equal Run) Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
     | _ ->
