@@ -267,6 +267,8 @@ let memory_leak = from_string "MEMORY_LEAK"
 
 let missing_fld = from_string "Missing_fld" ~hum:"Missing Field"
 
+let missing_required_prop = from_string "MISSING_REQUIRED_PROP"
+
 let null_dereference = from_string "NULL_DEREFERENCE"
 
 let null_test_after_dereference = from_string ~enabled:false "NULL_TEST_AFTER_DEREFERENCE"

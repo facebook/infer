@@ -409,7 +409,7 @@ module Name = struct
 
     let split_typename typename = split_classname (name typename)
 
-    let get_parent_class class_name =
+    let get_outer_class class_name =
       let package_name, class_name_no_package = split_typename class_name in
       match String.rsplit2 ~on:'$' class_name_no_package with
       | Some (parent_class, _) ->

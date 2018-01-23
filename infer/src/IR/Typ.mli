@@ -163,7 +163,7 @@ module Name : sig
     (** Given a package.class_name string, look for the latest dot and split the string
         in two (package, class_name). *)
 
-    val get_parent_class : t -> t option
+    val get_outer_class : t -> t option
     (** Given an inner classname like C$Inner1$Inner2, return Some C$Inner1. If the class is not an
         inner class, return None *)
 

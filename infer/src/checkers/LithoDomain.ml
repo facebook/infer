@@ -63,7 +63,6 @@ let substitute ~(f_sub: LocalAccessPath.t -> LocalAccessPath.t option) astate =
       add access_path' call_set' acc )
     astate empty
 
-
 let iter_call_chains_with_suffix ~f call_suffix astate =
   let max_depth = cardinal astate in
   let rec unroll_call_ ({receiver; procname}: MethodCall.t) (acc, depth) =
@@ -83,7 +82,6 @@ let iter_call_chains_with_suffix ~f call_suffix astate =
     with Not_found -> f receiver.access_path acc'
   in
   unroll_call_ call_suffix ([], 0)
-
 
 let iter_call_chains ~f astate =
   iter

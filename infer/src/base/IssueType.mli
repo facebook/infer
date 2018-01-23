@@ -184,6 +184,8 @@ val memory_leak : t
 
 val missing_fld : t
 
+val missing_required_prop : t
+
 val null_dereference : t
 
 val null_test_after_dereference : t

@@ -75,6 +75,8 @@ let performance_critical = "PerformanceCritical"
 
 let present = "Present"
 
+let prop = "Prop"
+
 let propagates_nullable = "PropagatesNullable"
 
 let returns_ownership = "ReturnsOwnership"
@@ -165,6 +167,8 @@ let ia_is_propagates_nullable ia = ia_ends_with ia propagates_nullable
 let ia_is_nullable ia = ia_ends_with ia nullable || ia_is_propagates_nullable ia
 
 let ia_is_present ia = ia_ends_with ia present
+
+let ia_is_prop ia = ia_ends_with ia prop
 
 let ia_is_nonnull ia = List.exists ~f:(ia_ends_with ia) [nonnull; notnull; camel_nonnull]
 
