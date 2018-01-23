@@ -9,22 +9,6 @@
 
 open! IStd
 
-(** type for remembering what we have already reported to avoid duplicates. our policy is to report
-    each kind of access (read/write) to the same field reachable from the same procedure only once.
-    in addition, if a call to a procedure (transitively) accesses multiple fields, we will only
-    report one of each kind of access *)
-type reported =
-  { reported_sites: CallSite.Set.t
-  ; reported_writes: Typ.Procname.Set.t
-  ; reported_reads: Typ.Procname.Set.t }
-
-let empty_reported =
-  let reported_sites = CallSite.Set.empty in
-  let reported_writes = Typ.Procname.Set.empty in
-  let reported_reads = Typ.Procname.Set.empty in
-  {reported_sites; reported_reads; reported_writes}
-
-
 (** set of lists of locations for remembering what trace ends have been reported *)
 module LocListSet = struct
   include Caml.Set.Make (struct
@@ -36,36 +20,8 @@ module LocListSet = struct
   let add s xs = if List.is_empty xs then s else add (List.sort ~cmp:Location.compare xs) s
 end
 
-let is_duplicate_report pname access end_locs {reported_sites; reported_writes; reported_reads}
-    reported_ends =
-  let open RacerDDomain in
-  Config.filtering
-  && ( LocListSet.mem reported_ends end_locs
-     || CallSite.Set.mem (TraceElem.call_site access) reported_sites
-     ||
-     match TraceElem.kind access with
-     | Access.Write _ | Access.ContainerWrite _ ->
-         Typ.Procname.Set.mem pname reported_writes
-     | Access.Read _ | Access.ContainerRead _ ->
-         Typ.Procname.Set.mem pname reported_reads
-     | Access.InterfaceCall _ ->
-         false )
-
-
-let update_reported pname access reported =
-  let open RacerDDomain in
-  if Config.filtering then
-    let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
-    match TraceElem.kind access with
-    | Access.Write _ | Access.ContainerWrite _ ->
-        let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
-        {reported with reported_writes; reported_sites}
-    | Access.Read _ | Access.ContainerRead _ ->
-        let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
-        {reported with reported_reads; reported_sites}
-    | Access.InterfaceCall _ ->
-        reported
-  else reported
+let is_duplicate_report end_locs reported_ends =
+  Config.filtering && LocListSet.mem reported_ends end_locs
 
 
 let sort_by_decreasing_preference_to_report issues =
@@ -87,21 +43,16 @@ let sort_by_location issues =
 
 
 let dedup (issues: Jsonbug_t.jsonbug list) =
-  List.fold (sort_by_decreasing_preference_to_report issues)
-    ~init:(empty_reported, LocListSet.empty, []) ~f:
-    (fun (reported, reported_ends, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
+  List.fold (sort_by_decreasing_preference_to_report issues) ~init:(LocListSet.empty, []) ~f:
+    (fun (reported_ends, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
       match issue.access with
       | Some encoded ->
-          let pname, access, end_locs = IssueAuxData.decode encoded in
-          if is_duplicate_report pname access end_locs reported reported_ends then
-            (reported, reported_ends, nondup_issues)
-          else
-            ( update_reported pname access reported
-            , LocListSet.add reported_ends end_locs
-            , {issue with access= None} :: nondup_issues )
+          let _, _, end_locs = IssueAuxData.decode encoded in
+          if is_duplicate_report end_locs reported_ends then (reported_ends, nondup_issues)
+          else (LocListSet.add reported_ends end_locs, {issue with access= None} :: nondup_issues)
       | None ->
-          (reported, reported_ends, {issue with access= None} :: nondup_issues) )
-  |> trd3 |> sort_by_location
+          (reported_ends, {issue with access= None} :: nondup_issues) )
+  |> snd |> sort_by_location
 
 
 type t = {introduced: Jsonbug_t.report; fixed: Jsonbug_t.report; preexisting: Jsonbug_t.report}
