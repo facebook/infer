@@ -9,6 +9,12 @@
 
 open! IStd
 
+val major : int
+
+val minor : int
+
+val patch : int
+
 val commit : string
 
 val versionString : string

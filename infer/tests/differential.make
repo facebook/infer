@@ -11,7 +11,6 @@
 include $(TESTS_DIR)/base.make
 
 INFER_OUT = infer-out
-DIFFERENTIAL_REPORT = $(INFER_OUT)/differential/introduced.json
 EXPECTED_TEST_OUTPUT = introduced.exp.test
 INFERPRINT_ISSUES_FIELDS = \
 	"bug_type,file,procedure,line_offset,procedure_id,procedure_id_without_crc"
@@ -30,14 +29,13 @@ $(PREVIOUS_REPORT): $(CURRENT_REPORT)
 .PHONY: analyze
 analyze: $(CURRENT_REPORT) $(PREVIOUS_REPORT)
 
-$(DIFFERENTIAL_REPORT): $(CURRENT_REPORT) $(PREVIOUS_REPORT) $(MAKEFILE_LIST)
+$(EXPECTED_TEST_OUTPUT): $(CURRENT_REPORT) $(PREVIOUS_REPORT) $(MODIFIED_FILES_FILE) \
+                         $(INFER_BIN) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) $(INFER_OUT)
 	$(QUIET)$(call silent_on_success,Computing results difference in $(TEST_REL_DIR),\
 	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) reportdiff \
 		--report-current $(CURRENT_REPORT) --report-previous $(PREVIOUS_REPORT) \
 		$(DIFFERENTIAL_ARGS))
-
-$(EXPECTED_TEST_OUTPUT): $(DIFFERENTIAL_REPORT) $(INFER_BIN) $(MAKEFILE_LIST)
 	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/introduced.json \

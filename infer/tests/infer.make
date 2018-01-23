@@ -5,6 +5,8 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+INFER_OUT ?= infer-out$(TEST_SUFFIX)
+
 include $(TESTS_DIR)/base.make
 
 # useful to print non-default analyzer
@@ -12,7 +14,7 @@ ANALYZER_STRING=$(shell if [ -n $(ANALYZER) ]; then printf ' ($(ANALYZER))'; fi)
 
 default: compile
 
-issues.exp.test$(TEST_SUFFIX): infer-out$(TEST_SUFFIX)/report.json $(INFER_BIN)
+issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
 	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) --results-dir $(<D) \
 	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
@@ -20,7 +22,7 @@ issues.exp.test$(TEST_SUFFIX): infer-out$(TEST_SUFFIX)/report.json $(INFER_BIN)
 compile: $(OBJECTS)
 
 .PHONY: analyze
-analyze: infer-out$(TEST_SUFFIX)/report.json
+analyze: $(INFER_OUT)/report.json
 
 .PHONY: print
 print: issues.exp.test$(TEST_SUFFIX)
@@ -36,5 +38,7 @@ replace: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) infer-out$(TEST_SUFFIX) \
-	  $(OBJECTS) $(CLEAN_EXTRA)
+	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) $(OBJECTS) $(CLEAN_EXTRA)
+ifneq ($(INFER_OUT),.)
+	$(REMOVE_DIR) $(INFER_OUT)
+endif

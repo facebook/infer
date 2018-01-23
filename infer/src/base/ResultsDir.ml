@@ -8,6 +8,7 @@
  *)
 open! IStd
 open! PVariant
+module CLOpt = CommandLineOption
 module L = Logging
 
 let results_dir_dir_markers =
@@ -30,16 +31,22 @@ let is_results_dir ~check_correct_version () =
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" !not_found)
 
 
+let non_empty_directory_exists results_dir =
+  (* Look if [results_dir] exists and is a non-empty directory. If it's an empty directory, leave it
+     alone. This allows users to create a temporary directory for the infer results without infer
+     removing it to recreate it, which could be racy. *)
+  Sys.is_directory results_dir = `Yes && not (Utils.directory_is_empty results_dir)
+
+
 let remove_results_dir () =
-  (* Look if file exists, it may not be a directory but that will be caught by the call to [is_results_dir]. If it's an empty directory, leave it alone. This allows users to create a temporary directory for the infer results without infer removing it to recreate it, which could be racy. *)
-  if Sys.file_exists Config.results_dir = `Yes && not (Utils.directory_is_empty Config.results_dir)
-  then (
+  if non_empty_directory_exists Config.results_dir then (
     if not Config.force_delete_results_dir then
       Result.iter_error (is_results_dir ~check_correct_version:false ()) ~f:(fun err ->
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\nERROR: Please delete '%s' and try again@."
             Config.results_dir err Config.results_dir ) ;
-    Utils.rmtree Config.results_dir )
+    Utils.rmtree Config.results_dir ) ;
+  RunState.reset ()
 
 
 let prepare_logging_and_db () =
@@ -50,17 +57,30 @@ let prepare_logging_and_db () =
 
 
 let create_results_dir () =
+  if non_empty_directory_exists Config.results_dir then
+    RunState.load_and_validate ()
+    |> Result.iter_error ~f:(fun error ->
+           if Config.force_delete_results_dir then (
+             L.user_warning
+               "%s@\nDeleting results dir because --force-delete-results-dir was passed@." error ;
+             remove_results_dir () )
+           else L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   Unix.mkdir_p Config.results_dir ;
   Unix.mkdir_p (Config.results_dir ^/ Config.events_dir_name) ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
-  prepare_logging_and_db ()
+  prepare_logging_and_db () ;
+  ()
 
 
 let assert_results_dir advice =
   Result.iter_error (is_results_dir ~check_correct_version:true ()) ~f:(fun err ->
       L.(die UserError)
         "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err advice ) ;
-  prepare_logging_and_db ()
+  RunState.load_and_validate ()
+  |> Result.iter_error ~f:(fun error ->
+         L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
+  prepare_logging_and_db () ;
+  ()
 
 
 let delete_capture_and_analysis_data () =

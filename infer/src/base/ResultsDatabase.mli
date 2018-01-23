@@ -13,6 +13,9 @@ val database_filename : string
 val database_fullpath : string
 (** the absolute path to the database file *)
 
+val schema_hum : string
+(**  some human-readable string describing the tables *)
+
 val get_database : unit -> Sqlite3.db
 (** The results database. You should always use this function to access the database, as the connection to it may change during the execution (see [new_database_connection]). *)
 

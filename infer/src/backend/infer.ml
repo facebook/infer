@@ -26,7 +26,7 @@ let run driver_mode =
 
 
 let setup () =
-  match Config.command with
+  ( match Config.command with
   | Analyze ->
       ResultsDir.assert_results_dir "have you run capture before?"
   | Report | ReportDiff ->
@@ -45,7 +45,9 @@ let setup () =
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
   | Events ->
-      ResultsDir.assert_results_dir "have you run infer before?"
+      ResultsDir.assert_results_dir "have you run infer before?" ) ;
+  if CLOpt.is_originator then ( RunState.add_run_to_sequence () ; RunState.store () ) ;
+  ()
 
 
 let print_active_checkers () =

@@ -45,7 +45,6 @@ previous.exp.test: $(PREVIOUS_REPORT)
 test: compare_reports
 print: current.exp.test previous.exp.test
 replace: replace_reports
-$(DIFFERENTIAL_REPORT): $(MODIFIED_FILES_FILE)
 
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/com/example/DiffClass1.java.current src/com/example/DiffClass1.java

@@ -127,13 +127,19 @@ let clean_results_dir () =
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in
-  if Config.capture && Utils.directory_is_empty Config.captured_dir then (
+  if Config.capture && Utils.directory_is_empty Config.captured_dir then
+    let nothing_to_compile_msg = "Nothing to compile." in
+    let please_run_capture_msg =
+      match mode with Analyze -> " Have you run `infer capture`?" | _ -> ""
+    in
     ( match clean_command_opt with
     | Some clean_command ->
-        L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command
+        L.user_warning "%s%s Try running `%s` first.@." nothing_to_compile_msg
+          please_run_capture_msg clean_command
     | None ->
-        L.user_warning "@\nNothing to compile. Try cleaning the build first.@." ) ;
-    true )
+        L.user_warning "%s%s Try cleaning the build first.@." nothing_to_compile_msg
+          please_run_capture_msg ) ;
+    true
   else false
 
 
