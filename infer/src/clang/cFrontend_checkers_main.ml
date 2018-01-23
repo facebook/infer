@@ -23,24 +23,30 @@ let rec parse_import_file import_file channel =
         ; global_paths= curr_file_paths
         ; checkers= _ } ->
         already_imported_files := import_file :: !already_imported_files ;
-        collect_all_macros_and_paths imports curr_file_macros curr_file_paths
+        collect_all_macros_and_paths ~from_file:import_file imports curr_file_macros
+          curr_file_paths
     | None ->
         L.(debug Linters Medium) "No macros or paths found.@\n" ;
         ([], [])
 
 
-and collect_all_macros_and_paths imports curr_file_macros curr_file_paths =
+and collect_all_macros_and_paths ~from_file imports curr_file_macros curr_file_paths =
   L.(debug Linters Medium) "#### Start parsing import macros #####@\n" ;
-  let import_macros, import_paths = parse_imports imports in
+  let import_macros, import_paths = parse_imports ~from_file imports in
   L.(debug Linters Medium) "#### Add global macros to import macros #####@\n" ;
   let macros = List.append import_macros curr_file_macros in
   let paths = List.append import_paths curr_file_paths in
   (macros, paths)
 
 
-(* Parse import files with macro definitions, and it returns a list of LET clauses *)
-and parse_imports imports_files =
-  let parse_one_import_file fimport (macros, paths) =
+(** Parse import files with macro definitions, and return a list of LET clauses *)
+and parse_imports ~from_file imports_files =
+  let source_dir = Filename.dirname from_file in
+  let resolve_import fimport =
+    if Filename.is_relative fimport then source_dir ^/ fimport else fimport |> Filename.realpath
+  in
+  let parse_one_import_file fimport0 (macros, paths) =
+    let fimport = resolve_import fimport0 in
     L.(debug Linters Medium) "  Loading import macros from file %s@\n" fimport ;
     let in_channel = In_channel.create fimport in
     let parsed_macros, parsed_paths = parse_import_file fimport in_channel in
@@ -60,7 +66,10 @@ let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
       ; global_paths= curr_file_paths
       ; checkers= parsed_checkers } ->
       already_imported_files := [linters_def_file] ;
-      let macros, paths = collect_all_macros_and_paths imports curr_file_macros curr_file_paths in
+      let macros, paths =
+        collect_all_macros_and_paths ~from_file:linters_def_file imports curr_file_macros
+          curr_file_paths
+      in
       let macros_map = CFrontend_errors.build_macros_map macros in
       let paths_map = CFrontend_errors.build_paths_map paths in
       L.(debug Linters Medium) "#### Start Expanding checkers #####@\n" ;
@@ -73,7 +82,7 @@ let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
       []
 
 
-(* Parse the files with linters definitions, and it returns a list of linters *)
+(** Parse the files with linters definitions, and return a list of linters *)
 let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
   let collect_parsed_linters linters_def_file linters =
     L.(debug Linters Medium) "Loading linters rules from %s@\n" linters_def_file ;
