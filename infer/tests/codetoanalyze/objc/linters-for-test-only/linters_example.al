@@ -1,4 +1,4 @@
-#IMPORT <library.al>
+#IMPORT "library.al"
 
 GLOBAL-MACROS {
 

@@ -60,8 +60,6 @@ rule token = parse
   | "}" { RIGHT_BRACE }
   | "(" { LEFT_PAREN }
   | ")" { RIGHT_PAREN }
-  | "<" { LESS_THAN }
-  | ">" { GREATER_THAN }
   | "=" { ASSIGNMENT }
   | ";" { SEMICOLON }
   | "," { COMMA }
@@ -83,7 +81,6 @@ rule token = parse
   | "Cond" {COND}
   | "PointerToDecl" {POINTER_TO_DECL}
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
-  | file_id { FILE_IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
   | eof { EOF }

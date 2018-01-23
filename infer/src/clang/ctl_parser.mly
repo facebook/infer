@@ -48,8 +48,6 @@
 %token GLOBAL_MACROS
 %token GLOBAL_PATHS
 %token HASHIMPORT
-%token LESS_THAN
-%token GREATER_THAN
 %token ET
 %token WITH_TRANSITION
 %token WHEN
@@ -71,7 +69,6 @@
 %token IMPLIES
 %token REGEXP
 %token <string> IDENTIFIER
-%token <string> FILE_IDENTIFIER
 %token <string> STRING
 %token WHITELIST_PATH
 %token BLACKLIST_PATH
@@ -120,8 +117,8 @@ al_file:
 
 import_files:
   | { [] }
-  | HASHIMPORT LESS_THAN file_identifier GREATER_THAN import_files
-    { L.(debug Linters Verbose) "Parsed import clauses...@\n@\n"; $3 :: $5 }
+  | HASHIMPORT STRING import_files
+    { L.(debug Linters Verbose) "Parsed import clauses...@\n@\n"; $2 :: $3 }
   ;
 
 global_macros:
@@ -328,10 +325,5 @@ alexp:
  identifier:
   | IDENTIFIER { is_not_infer_reserved_id $1;
                  L.(debug Linters Verbose) "\tParsed identifier '%s'@\n" $1; $1 }
-  ;
-
-file_identifier:
-  | FILE_IDENTIFIER { is_not_infer_reserved_id $1;
-                      L.(debug Linters Verbose) "\tParsed file identifier '%s'@\n" $1; $1 }
   ;
 %%
