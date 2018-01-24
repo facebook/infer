@@ -12,14 +12,18 @@ open! IStd
 
 (** Support for Execution environments *)
 
-(** execution environment: a global call graph, and map from procedure names to cfg and tenv *)
-type t
+type file_data
+
+module FilenameHash : Caml.Hashtbl.S
+
+type t = private
+  { cg: Cg.t  (** global call graph *)
+  ; proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
+  ; file_map: file_data FilenameHash.t  (** map from cg fname to file data *)
+  ; source_file: SourceFile.t  (** source file being analyzed *) }
 
 val mk : SourceFile.t -> t
 (** Create an exe_env from a source file *)
-
-val get_cg : t -> Cg.t
-(** get the global call graph *)
 
 val get_tenv : t -> Typ.Procname.t -> Tenv.t
 (** return the type environment associated to the procedure *)

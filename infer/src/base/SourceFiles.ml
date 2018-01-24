@@ -15,6 +15,20 @@ let get_all () =
   |> List.filter_map ~f:(Option.map ~f:SourceFile.SQLite.deserialize)
 
 
+let load_proc_names_statement =
+  ResultsDatabase.register_statement
+    "SELECT procedure_names FROM source_files WHERE source_file = :k"
+
+
+let proc_names_of_source source =
+  ResultsDatabase.with_registered_statement load_proc_names_statement ~f:(fun db load_stmt ->
+      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      |> SqliteUtils.check_sqlite_error db ~log:"load bind source file" ;
+      SqliteUtils.sqlite_result_step ~finalize:false db ~log:"SourceFiles.proc_names_of_source"
+        load_stmt
+      |> Option.value_map ~default:[] ~f:Typ.Procname.SQLiteList.deserialize )
+
+
 let exists_statement =
   ResultsDatabase.register_statement "SELECT 1 FROM source_files WHERE source_file = :k"
 

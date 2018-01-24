@@ -394,6 +394,8 @@ module Procname : sig
     val serialize : t -> Sqlite3.Data.t
   end
 
+  module SQLiteList : SqliteUtils.Data with type t = t list
+
   val c : QualifiedCppName.t -> string -> template_spec_info -> is_generic_model:bool -> c
   (** Create a C procedure name from plain and mangled name. *)
 

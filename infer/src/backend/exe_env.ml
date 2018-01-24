@@ -44,6 +44,8 @@ end)
 let new_file_data source cg_fname =
   let file_base = DB.chop_extension cg_fname in
   let tenv_file = tenv_filename file_base in
+  (* Do not fill in tenv and cfg as they can be quite large. This makes calls to fork() cheaper
+     until we start filling out these fields. *)
   { source
   ; tenv_file
   ; tenv= None (* Sil.load_tenv_from_file tenv_file *)
@@ -60,7 +62,6 @@ let create_file_data table source cg_fname =
       file_data
 
 
-(** execution environment *)
 type t =
   { cg: Cg.t  (** global call graph *)
   ; proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
@@ -96,9 +97,6 @@ let add_cg exe_env source =
                   SourceFile.pp source SourceFile.pp source_captured Typ.Procname.pp pname ) ) ;
       Cg.extend exe_env.cg cg
 
-
-(** get the global call graph *)
-let get_cg exe_env = exe_env.cg
 
 let get_file_data exe_env pname =
   try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Not_found ->

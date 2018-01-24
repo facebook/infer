@@ -37,5 +37,5 @@ val register_procedure_callback :
 val register_cluster_callback : Config.language -> cluster_callback_t -> unit
 (** register a cluster callback *)
 
-val iterate_callbacks : Cg.t -> Exe_env.t -> unit
+val iterate_callbacks : Exe_env.t -> unit
 (** Invoke all the registered callbacks. *)

@@ -87,9 +87,8 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
 
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
-let iterate_callbacks call_graph exe_env =
+let iterate_callbacks (exe_env: Exe_env.t) =
   let saved_language = !Config.curr_language in
-  (* Create and register on-demand analysis callback *)
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some pdesc ->
@@ -104,7 +103,7 @@ let iterate_callbacks call_graph exe_env =
   (* Invoke procedure callbacks using on-demand analysis schedulling *)
   let procs_to_analyze =
     (* analyze all the currently defined procedures *)
-    Cg.get_defined_nodes call_graph
+    SourceFiles.proc_names_of_source exe_env.source_file
   in
   let analyze_proc_name pname =
     Option.iter

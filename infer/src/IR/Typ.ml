@@ -1110,6 +1110,10 @@ module Procname = struct
       let default () = Sqlite3.Data.TEXT (to_filename pname) in
       Base.Hashtbl.find_or_add pname_to_key pname ~default
   end
+
+  module SQLiteList = SqliteUtils.MarshalledData (struct
+    type nonrec t = t list
+  end)
 end
 
 module Fieldname = struct

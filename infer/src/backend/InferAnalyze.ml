@@ -20,18 +20,15 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
   Random.self_init () ;
   Tasks.create
     [ (fun () ->
-        let call_graph = Exe_env.get_cg exe_env in
-        Callbacks.iterate_callbacks call_graph exe_env ;
+        Callbacks.iterate_callbacks exe_env ;
         if Config.write_html then Printer.write_all_html_files cluster ) ]
 
 
 (** Create tasks to analyze a cluster *)
 let analyze_cluster_tasks cluster_num (cluster: Cluster.t) : Tasks.t =
   let exe_env = Exe_env.mk cluster in
-  let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
-  let num_procs = List.length defined_procs in
   L.(debug Analysis Medium)
-    "@\nProcessing cluster #%d with %d procedures@." (cluster_num + 1) num_procs ;
+    "@\nProcessing cluster '%a' #%d@." SourceFile.pp cluster (cluster_num + 1) ;
   analyze_exe_env_tasks cluster exe_env
 
 
