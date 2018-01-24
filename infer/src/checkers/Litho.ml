@@ -99,11 +99,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let get_required_props typename tenv =
+    let is_required_prop annotations =
+      List.exists
+        ~f:(fun ({Annot.class_name; parameters}, _) ->
+          String.is_suffix class_name ~suffix:Annotations.prop
+          && (* Don't count as required if it's @Prop(optional = true). Note: this is a hack. We
+                only translate boolean parameters at the moment, and we only translate the value of
+                the parameter (as a string, lol), not its name. In this case, the only boolean
+                parameter of @Prop is optional, and its default value is false. So it suffices to
+                do the "one parameter true" check *)
+             not (List.exists ~f:(fun annot_string -> String.equal annot_string "true") parameters)
+          )
+        annotations
+    in
     match Tenv.lookup tenv typename with
     | Some {fields} ->
         List.filter_map
-          ~f:(fun (fieldname, _, annot) ->
-            if Annotations.ia_is_prop annot then Some (Typ.Fieldname.Java.get_field fieldname)
+          ~f:(fun (fieldname, _, annotation) ->
+            if is_required_prop annotation then Some (Typ.Fieldname.Java.get_field fieldname)
             else None )
           fields
     | None ->
@@ -139,7 +152,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               let prop_set =
                 List.fold prop_setter_calls
                   ~f:(fun acc pname -> String.Set.add acc (Typ.Procname.get_method pname))
-                  ~init:String.Set.empty in
+                  ~init:String.Set.empty
+              in
               List.iter
                 ~f:(fun required_prop ->
                   if not (String.Set.mem prop_set required_prop) then

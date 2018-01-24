@@ -1,3 +1,5 @@
+package codetoanalyze.java.litho;
+
 /*
  * Copyright (c) 2018 - present Facebook, Inc.
  * All rights reserved.
@@ -80,8 +82,8 @@ public class RequiredProps {
         .build();
   }
 
-  // need to parse optional boolean for this to work
-  public MyComponent FP_buildWithRequiredOk() {
+  // prop 2 is optional
+  public MyComponent buildWithout2Ok() {
     return
       mMyComponent
         .create()
@@ -90,6 +92,7 @@ public class RequiredProps {
         .build();
   }
 
+  // prop 1 is required
   public MyComponent buildWithout1Bad() {
     return
       mMyComponent
@@ -99,12 +102,13 @@ public class RequiredProps {
         .build();
   }
 
-  public MyComponent buildWithout2Bad() {
+  // prop3 is required
+  public MyComponent buildWithout3Bad() {
     return
       mMyComponent
         .create()
         .prop1(new Object())
-        .prop3(new Object())
+        .prop2(new Object())
         .build();
   }
 

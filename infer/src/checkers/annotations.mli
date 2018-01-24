@@ -25,6 +25,8 @@ val performance_critical : string
 
 val present : string
 
+val prop : string
+
 val for_non_ui_thread : string
 
 val for_ui_thread : string
