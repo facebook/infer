@@ -169,20 +169,21 @@ let touch_start_file_unless_continue () =
   else if not Config.continue_capture then ( delete () ; create () )
 
 
-exception Infer_error of string
-
-let default_error_handling : Unix.Exit_or_signal.t -> unit = function
+let command_error_handling ~always_die ~prog ~args = function
   | Ok _ ->
       ()
-  | Error _ as status when Config.keep_going ->
-      (* Log error and proceed past the failure when keep going mode is on *)
-      L.external_error "%s" (Unix.Exit_or_signal.to_string_hum status) ;
-      ()
   | Error _ as status ->
-      raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+      let log =
+        if not always_die && Config.keep_going then
+          (* Log error and proceed past the failure when keep going mode is on *)
+          L.external_error
+        else L.die InternalError
+      in
+      log "Error running '%s' %a:@\n  %s" prog Pp.cli_args args
+        (Unix.Exit_or_signal.to_string_hum status)
 
 
-let run_command ?(cleanup= default_error_handling) ~prog ~args () =
+let run_command ~prog ~args ?(cleanup= command_error_handling ~always_die:false ~prog ~args) () =
   Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
   |> fun status ->
   cleanup status ;
@@ -309,10 +310,8 @@ let capture ~changed_files mode =
               when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
                 (* swallow infer.py argument parsing error *)
                 Config.print_usage_exit ()
-            | Error _ as status ->
-                raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
-            | Ok _ ->
-                ())
+            | status ->
+                command_error_handling ~always_die:true ~prog:infer_py ~args status)
         ()
   | XcodeXcpretty (prog, args) ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
