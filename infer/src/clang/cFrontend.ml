@@ -51,11 +51,10 @@ let do_source_file (translation_unit_context: CFrontend_config.translation_unit_
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   let source_dir = DB.source_dir_from_source_file source_file in
-  let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
   NullabilityPreanalysis.analysis cfg tenv ;
   Cfg.store source_file cfg ;
   Tenv.sort_fields_tenv tenv ;
-  Tenv.store_to_file tenv_file tenv ;
+  Tenv.store source_file tenv ;
   if Config.debug_mode then Cfg.check_cfg_connectedness cfg ;
   if Config.debug_mode || Config.testing_mode || Config.frontend_tests
      || Option.is_some Config.icfg_dotty_outfile

@@ -231,11 +231,6 @@ module Results_dir = struct
     Unix.openfile full_fname ~mode:Unix.([O_WRONLY; O_CREAT; O_TRUNC]) ~perm:0o777
 end
 
-let global_tenv_fname =
-  let basename = Config.global_tenv_filename in
-  Config.captured_dir ^/ basename
-
-
 let is_source_file path =
   List.exists ~f:(fun ext -> Filename.check_suffix path ext) Config.source_file_extentions
 

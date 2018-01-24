@@ -18,28 +18,13 @@ module L = Logging
 module F = Format
 
 (** per-file data: type environment and cfg *)
-type file_data =
-  { source: SourceFile.t
-  ; tenv_file: DB.filename
-  ; mutable tenv: Tenv.t option
-  ; mutable cfg: Cfg.t option }
-
-(** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
-let tenv_of_source source =
-  let source_dir = DB.source_dir_from_source_file source in
-  let per_source_tenv_filename = DB.source_dir_get_internal_file source_dir ".tenv" in
-  if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) = `Yes then
-    per_source_tenv_filename
-  else DB.global_tenv_fname
-
+type file_data = {source: SourceFile.t; mutable tenv: Tenv.t option; mutable cfg: Cfg.t option}
 
 (** create a new file_data *)
 let new_file_data source =
-  let tenv_file = tenv_of_source source in
   (* Do not fill in tenv and cfg as they can be quite large. This makes calls to fork() cheaper
      until we start filling out these fields. *)
   { source
-  ; tenv_file
   ; tenv= None (* Sil.load_tenv_from_file tenv_file *)
   ; cfg= None (* Cfg.load_cfg_from_file cfg_file *) }
 
@@ -81,7 +66,7 @@ let get_file_data exe_env pname =
 
 
 let file_data_to_tenv file_data =
-  if is_none file_data.tenv then file_data.tenv <- Tenv.load_from_file file_data.tenv_file ;
+  if is_none file_data.tenv then file_data.tenv <- Tenv.load file_data.source ;
   file_data.tenv
 
 
@@ -92,11 +77,9 @@ let file_data_to_cfg file_data =
 
 let java_global_tenv =
   lazy
-    ( match Tenv.load_from_file DB.global_tenv_fname with
+    ( match Tenv.load_global () with
     | None ->
-        L.(die InternalError)
-          "Could not load the global tenv at path '%s'"
-          (DB.filename_to_string DB.global_tenv_fname)
+        L.(die InternalError) "Could not load the global tenv"
     | Some tenv ->
         tenv )
 
@@ -114,8 +97,8 @@ let get_tenv exe_env proc_name =
           tenv
       | None ->
           L.(die InternalError)
-            "get_tenv: tenv not found for %a in file '%s'" Typ.Procname.pp proc_name
-            (DB.filename_to_string file_data.tenv_file) )
+            "get_tenv: tenv not found for %a in file '%a'" Typ.Procname.pp proc_name SourceFile.pp
+            exe_env.source_file )
     | None ->
         L.(die InternalError) "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
 

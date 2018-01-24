@@ -109,9 +109,6 @@ val update_file_with_lock : string -> string -> (string -> string) -> unit
     If the file does not exist, it is created, and update is given the empty string.
     A lock is used to allow write attempts in parallel. *)
 
-val global_tenv_fname : filename
-(** get the path of the global type environment (only used in Java) *)
-
 val is_source_file : string -> bool
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
 

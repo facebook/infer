@@ -17,8 +17,17 @@ type t
 val create : unit -> t
 (** Create a new type environment. *)
 
-val load_from_file : DB.filename -> t option
-(** Load a type environment from a file *)
+val load : SourceFile.t -> t option
+(** Load a type environment for a source file *)
+
+val load_global : unit -> t option
+(** load the global type environment (Java) *)
+
+val store : SourceFile.t -> t -> unit
+(** Save a type environment into a file *)
+
+val store_global : t -> unit
+(** save a global type environment (Java) *)
 
 val lookup : t -> Typ.Name.t -> Typ.Struct.t option
 (** Look up a name in the global type environment. *)
@@ -36,9 +45,6 @@ val sort_fields_tenv : t -> unit
 
 val pp : Format.formatter -> t -> unit  [@@warning "-32"]
 (** print a type environment *)
-
-val store_to_file : DB.filename -> t -> unit
-(** Save a type environment into a file *)
 
 val language_is : t -> Config.language -> bool
 (** Test the language from which the types in the tenv were translated *)

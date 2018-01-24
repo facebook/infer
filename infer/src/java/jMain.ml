@@ -65,23 +65,20 @@ let capture_libs linereader program tenv =
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
 let load_tenv () =
-  match Tenv.load_from_file DB.global_tenv_fname with
+  match Tenv.load_global () with
   | None ->
       Tenv.create ()
   | Some _ when Config.models_mode ->
       L.(die InternalError)
-        "Unexpected tenv file %s found while generating the models"
-        (DB.filename_to_string DB.global_tenv_fname)
+        "Unexpected global tenv file found in '%s' while generating the models" Config.captured_dir
   | Some tenv ->
       tenv
 
 
-(* Store to a file the type environment containing all the types required to perform the analysis *)
+(** Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =
-  (* TODO: this prevents per compilation step incremental analysis at this stage *)
-  if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname ;
-  L.(debug Capture Medium) "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname) ;
-  Tenv.store_to_file DB.global_tenv_fname tenv
+  L.(debug Capture Medium) "writing new global tenv@." ;
+  Tenv.store_global tenv
 
 
 (* The program is loaded and translated *)

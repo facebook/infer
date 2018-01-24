@@ -89,26 +89,38 @@ let tenv_serializer : t Serialization.serializer =
 
 let global_tenv : t option ref = ref None
 
-(** Load a type environment from a file *)
-let load_from_file (filename: DB.filename) : t option =
-  if DB.equal_filename filename DB.global_tenv_fname then (
-    if is_none !global_tenv then
-      global_tenv := Serialization.read_from_file tenv_serializer DB.global_tenv_fname ;
-    !global_tenv )
-  else Serialization.read_from_file tenv_serializer filename
+let tenv_filename_of_source_file source_file =
+  DB.source_dir_get_internal_file (DB.source_dir_from_source_file source_file) ".tenv"
 
 
-(** Save a type environment into a file *)
-let store_to_file (filename: DB.filename) (tenv: t) =
-  (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
-     frontend and backend run in the same process *)
-  if DB.equal_filename filename DB.global_tenv_fname then global_tenv := Some tenv ;
-  Serialization.write_to_file tenv_serializer filename ~data:tenv ;
+let load source_file : t option =
+  tenv_filename_of_source_file source_file |> Serialization.read_from_file tenv_serializer
+
+
+let global_tenv_path = Config.(captured_dir ^/ global_tenv_filename) |> DB.filename_from_string
+
+let load_global () : t option =
+  if is_none !global_tenv then
+    global_tenv := Serialization.read_from_file tenv_serializer global_tenv_path ;
+  !global_tenv
+
+
+let store_to_filename tenv tenv_filename =
+  Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
   if Config.debug_mode then
-    let debug_filename = DB.filename_to_string (DB.filename_add_suffix filename ".debug") in
+    let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
     let out_channel = Out_channel.create debug_filename in
     let fmt = Format.formatter_of_out_channel out_channel in
     Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel
+
+
+let store source_file tenv = tenv_filename_of_source_file source_file |> store_to_filename tenv
+
+let store_global tenv =
+  (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
+     frontend and backend run in the same process *)
+  global_tenv := Some tenv ;
+  store_to_filename tenv global_tenv_path
 
 
 exception Found of Typ.Name.t
