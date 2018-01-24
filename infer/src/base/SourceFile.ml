@@ -37,6 +37,14 @@ end
 module Map = Caml.Map.Make (OrderedSourceFile)
 module Set = Caml.Set.Make (OrderedSourceFile)
 
+module Hash = Caml.Hashtbl.Make (struct
+  type nonrec t = t
+
+  let equal = equal
+
+  let hash = Caml.Hashtbl.hash
+end)
+
 let from_abs_path ?(warn_on_error= true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;

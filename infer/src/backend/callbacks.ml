@@ -9,6 +9,7 @@
 
 open! IStd
 open! PVariant
+module F = Format
 module L = Logging
 
 (** Module to register and invoke callbacks *)
@@ -86,13 +87,42 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
     !cluster_callbacks
 
 
+let dump_duplicate_procs (exe_env: Exe_env.t) procs =
+  let duplicate_procs =
+    List.filter_map procs ~f:(fun pname ->
+        match Exe_env.get_proc_desc exe_env pname with
+        | Some pdesc when (* defined in the current file *) Procdesc.is_defined pdesc -> (
+          match Attributes.load pname with
+          | Some {source_file_captured; loc}
+            when (* defined in another file *)
+                 not (SourceFile.equal exe_env.source_file source_file_captured)
+                 && (* really defined in the current file and not in an include *)
+                    SourceFile.equal exe_env.source_file loc.file ->
+              Some (pname, source_file_captured)
+          | _ ->
+              None )
+        | _ ->
+            None )
+  in
+  let output_to_file duplicate_procs =
+    Out_channel.with_file (Config.results_dir ^/ Config.duplicates_filename)
+      ~append:true ~perm:0o666 ~f:(fun outc ->
+        let fmt = F.formatter_of_out_channel outc in
+        List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
+            F.fprintf fmt "@.DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@."
+              SourceFile.pp exe_env.source_file SourceFile.pp source_captured Typ.Procname.pp pname
+        ) )
+  in
+  if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
+
+
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks (exe_env: Exe_env.t) =
   let saved_language = !Config.curr_language in
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
-    | Some pdesc ->
-        Some pdesc
+    | Some _ as pdesc_opt ->
+        pdesc_opt
     | None ->
         Option.map ~f:Specs.get_proc_desc (Specs.get_summary proc_name)
   in
@@ -105,6 +135,7 @@ let iterate_callbacks (exe_env: Exe_env.t) =
     (* analyze all the currently defined procedures *)
     SourceFiles.proc_names_of_source exe_env.source_file
   in
+  if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env procs_to_analyze ;
   let analyze_proc_name pname =
     Option.iter
       ~f:(fun pdesc -> ignore (Ondemand.analyze_proc_desc pdesc pdesc))

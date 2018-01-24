@@ -17,6 +17,8 @@ module Map : Caml.Map.S with type key = t
 (** Set of source files *)
 module Set : Caml.Set.S with type elt = t
 
+module Hash : Caml.Hashtbl.S with type key = t
+
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)
 

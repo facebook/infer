@@ -14,12 +14,9 @@ open! IStd
 
 type file_data
 
-module FilenameHash : Caml.Hashtbl.S
-
 type t = private
-  { cg: Cg.t  (** global call graph *)
-  ; proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
-  ; file_map: file_data FilenameHash.t  (** map from cg fname to file data *)
+  { proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
+  ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *)
   ; source_file: SourceFile.t  (** source file being analyzed *) }
 
 val mk : SourceFile.t -> t
