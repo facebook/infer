@@ -455,7 +455,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
       in
       Exp.Var fresh_id
     in
-    if Config.curr_language_is Config.Java && Sil.equal_inst inst Sil.Ialloc then
+    if Language.curr_language_is Java && Sil.equal_inst inst Sil.Ialloc then
       match typ.desc with Tfloat _ -> Exp.Const (Cfloat 0.0) | _ -> Exp.zero
     else create_fresh_var ()
   in
@@ -724,10 +724,10 @@ module Normalize = struct
       | Sizeof {nbytes= Some n} when destructive ->
           Exp.Const (Const.Cint (IntLit.of_int n))
       | Sizeof {typ= {desc= Tarray ({desc= Tint ik}, _, _)}; dynamic_length= Some l}
-        when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
+        when Typ.ikind_is_char ik && Language.curr_language_is Clang ->
           eval l
       | Sizeof {typ= {desc= Tarray ({desc= Tint ik}, Some l, _)}}
-        when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
+        when Typ.ikind_is_char ik && Language.curr_language_is Clang ->
           Const (Cint l)
       | Sizeof _ ->
           e

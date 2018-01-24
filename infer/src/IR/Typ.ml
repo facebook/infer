@@ -835,17 +835,17 @@ module Procname = struct
   (** Return the language of the procedure. *)
   let get_language = function
     | ObjC_Cpp _ ->
-        Config.Clang
+        Language.Clang
     | C _ ->
-        Config.Clang
+        Language.Clang
     | Block _ ->
-        Config.Clang
+        Language.Clang
     | Linters_dummy_method ->
-        Config.Clang
+        Language.Clang
     | WithBlockParameters _ ->
-        Config.Clang
+        Language.Clang
     | Java _ ->
-        Config.Java
+        Language.Java
 
 
   let is_objc_constructor method_name =

@@ -48,7 +48,7 @@ let is_matching patterns source_file =
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   not (BuiltinDecl.is_declared proc_name)
-  && Config.equal_language (Typ.Procname.get_language proc_name) language
+  && Language.equal (Typ.Procname.get_language proc_name) language
   && String.equal (Typ.Procname.get_method proc_name) method_name
 
 
@@ -89,8 +89,8 @@ type method_pattern =
   {class_name: string; method_name: string option; parameters: string list option}
 
 type pattern =
-  | Method_pattern of Config.language * method_pattern
-  | Source_contains of Config.language * string
+  | Method_pattern of Language.t * method_pattern
+  | Source_contains of Language.t * string
 
 (* Module to create matcher based on source file names or class names and method names *)
 module FileOrProcMatcher = struct
@@ -163,12 +163,10 @@ module FileOrProcMatcher = struct
     and pp_source_contains fmt sc = Format.fprintf fmt "  pattern: %s@\n" sc in
     match pattern with
     | Method_pattern (language, mp) ->
-        Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n"
-          (Config.string_of_language language)
+        Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n" (Language.to_string language)
           pp_method_pattern mp
     | Source_contains (language, sc) ->
-        Format.fprintf fmt "Source contains (%s) {@\n%a}@\n"
-          (Config.string_of_language language)
+        Format.fprintf fmt "Source contains (%s) {@\n%a}@\n" (Language.to_string language)
           pp_source_contains sc
 end
 
@@ -189,11 +187,12 @@ end
 let patterns_of_json_with_key (json_key, json) =
   let default_method_pattern = {class_name= ""; method_name= None; parameters= None} in
   let default_source_contains = "" in
-  let language_of_string = function
-    | "Java" ->
-        Ok Config.Java
-    | l ->
-        Error ("JSON key " ^ json_key ^ " not supported for language " ^ l)
+  let language_of_string s =
+    match Language.of_string s with
+    | Some Language.Java ->
+        Ok Language.Java
+    | _ ->
+        Error ("JSON key " ^ json_key ^ " not supported for language " ^ s)
   in
   let rec detect_language = function
     | [] ->

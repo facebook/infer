@@ -81,7 +81,7 @@ let check_access access_opt de_opt =
       let formal_ids = ref [] in
       let process_formal_letref = function
         | Sil.Load (id, Exp.Lvar pvar, _, _) ->
-            let is_java_this = Config.curr_language_is Config.Java && Pvar.is_this pvar in
+            let is_java_this = Language.curr_language_is Java && Pvar.is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
         | _ ->
             ()

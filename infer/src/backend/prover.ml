@@ -992,14 +992,14 @@ let check_inconsistency_base tenv prop =
     | Some (_, _, pdesc) ->
         let procedure_attr = Procdesc.get_attributes pdesc in
         let language = Typ.Procname.get_language (Procdesc.get_proc_name pdesc) in
-        let is_java_this pvar = Config.equal_language language Config.Java && Pvar.is_this pvar in
+        let is_java_this pvar = Language.equal language Java && Pvar.is_this pvar in
         let is_objc_instance_self pvar =
-          Config.equal_language language Config.Clang
+          Language.equal language Clang
           && Mangled.equal (Pvar.get_name pvar) (Mangled.from_string "self")
           && procedure_attr.ProcAttributes.is_objc_instance_method
         in
         let is_cpp_this pvar =
-          Config.equal_language language Config.Clang && Pvar.is_this pvar
+          Language.equal language Clang && Pvar.is_this pvar
           && procedure_attr.ProcAttributes.is_cpp_instance_method
         in
         let do_hpred = function
@@ -2329,10 +2329,10 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let root = Exp.Const (Const.Cstr s) in
     let sexp =
       let index = Exp.int (IntLit.of_int (String.length s)) in
-      match !Config.curr_language with
-      | Config.Clang ->
+      match !Language.curr_language with
+      | Clang ->
           Sil.Earray (Exp.int len, [(index, Sil.Eexp (Exp.zero, Sil.inst_none))], Sil.inst_none)
-      | Config.Java ->
+      | Java ->
           let mk_fld_sexp s =
             let fld = Typ.Fieldname.Java.from_string s in
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
@@ -2345,25 +2345,25 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; "java.lang.String.value" ]
           in
           Sil.Estruct (List.map ~f:mk_fld_sexp fields, Sil.inst_none)
-      | Config.Python ->
+      | Python ->
           L.die InternalError "mk_constant_string_hpred not implemented for Python"
     in
     let const_string_texp =
-      match !Config.curr_language with
-      | Config.Clang ->
+      match !Language.curr_language with
+      | Clang ->
           Exp.Sizeof
             { typ= Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), Some len, Some (IntLit.of_int 1)))
             ; nbytes= None
             ; dynamic_length= None
             ; subtype= Subtype.exact }
-      | Config.Java ->
+      | Java ->
           let object_type = Typ.Name.Java.from_string "java.lang.String" in
           Exp.Sizeof
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
             ; dynamic_length= None
             ; subtype= Subtype.exact }
-      | Config.Python ->
+      | Python ->
           L.die InternalError "const_string_texp not implemented for Python"
     in
     Sil.Hpointsto (root, sexp, const_string_texp)

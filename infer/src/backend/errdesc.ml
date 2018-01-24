@@ -729,7 +729,7 @@ let access_opt ?(is_nullable= false) inst =
       Some (Localise.Last_accessed (n, is_nullable))
   | Sil.Ireturn_from_call n ->
       Some (Localise.Returned_from_call n)
-  | Sil.Ialloc when Config.curr_language_is Config.Java ->
+  | Sil.Ialloc when Language.curr_language_is Java ->
       Some Localise.Initialized_automatically
   | inst ->
       if verbose then
@@ -913,7 +913,7 @@ let create_dereference_desc proc_name tenv ?(use_buckets= false) ?(outermost_arr
   in
   let desc = Localise.dereference_string proc_name deref_str value_str access_opt' loc in
   let desc =
-    if Config.curr_language_is Config.Clang && not is_premature_nil then
+    if Language.curr_language_is Clang && not is_premature_nil then
       match de_opt with
       | Some DExp.Dpvar pvar | Some DExp.Dpvaraddr pvar -> (
         match Attribute.get_objc_null tenv prop (Exp.Lvar pvar) with

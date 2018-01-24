@@ -240,8 +240,7 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
   let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
-    not Config.developer_mode && Config.curr_language_is Config.Java
-    && Int.equal loc.Location.line 0
+    not Config.developer_mode && Language.curr_language_is Java && Int.equal loc.Location.line 0
   in
   let hide_memory_error =
     match Localise.error_desc_get_bucket error.description with

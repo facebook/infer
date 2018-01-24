@@ -34,7 +34,7 @@ let register_perf_stats_report source_file =
 let init_global_state_for_capture_and_linters source_file =
   L.(debug Capture Medium) "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file)) ;
   if Config.developer_mode then register_perf_stats_report source_file ;
-  Config.curr_language := Config.Clang ;
+  Language.curr_language := Language.Clang ;
   if Config.capture then DB.Results_dir.init source_file ;
   CFrontend_config.reset_global_state ()
 

@@ -243,7 +243,7 @@ let add_by_call_to_opt problem_str tags proc_name_opt =
 
 let rec format_typ typ =
   match typ.Typ.desc with
-  | Typ.Tptr (t, _) when Config.curr_language_is Config.Java ->
+  | Typ.Tptr (t, _) when Language.curr_language_is Java ->
       format_typ t
   | Typ.Tstruct name ->
       Typ.Name.name name
@@ -252,7 +252,7 @@ let rec format_typ typ =
 
 
 let format_field f =
-  if Config.curr_language_is Config.Java then Typ.Fieldname.Java.get_field f
+  if Language.curr_language_is Java then Typ.Fieldname.Java.get_field f
   else Typ.Fieldname.to_string f
 
 
@@ -279,7 +279,7 @@ type deref_str =
   ; value_post: string option  (** string printed after the value being dereferenced *)
   ; problem_str: string  (** description of the problem *) }
 
-let pointer_or_object () = if Config.curr_language_is Config.Java then "object" else "pointer"
+let pointer_or_object () = if Language.curr_language_is Java then "object" else "pointer"
 
 let deref_str_null_ proc_name_opt problem_str_ tags =
   let problem_str = add_by_call_to_opt problem_str_ tags proc_name_opt in

@@ -1090,7 +1090,7 @@ let check_junk ?original_prop pname tenv prop =
             let ml_bucket_opt =
               match resource with
               | (PredSymb.Rmemory PredSymb.Mnew | PredSymb.Rmemory PredSymb.Mnew_array)
-                when Config.curr_language_is Config.Clang ->
+                when Language.curr_language_is Clang ->
                   Mleak_buckets.should_raise_cpp_leak
               | _ ->
                   None
@@ -1115,10 +1115,10 @@ let check_junk ?original_prop pname tenv prop =
                 | None ->
                     (true, exn_leak) )
               | (Some _, Rmemory Mnew | Some _, Rmemory Mnew_array)
-                when Config.curr_language_is Config.Clang ->
+                when Language.curr_language_is Clang ->
                   (is_none ml_bucket_opt, exn_leak)
               | Some _, Rmemory _ ->
-                  (Config.curr_language_is Config.Java, exn_leak)
+                  (Language.curr_language_is Java, exn_leak)
               | Some _, Rignore ->
                   (true, exn_leak)
               | Some _, Rfile when Config.tracing ->
@@ -1137,9 +1137,9 @@ let check_junk ?original_prop pname tenv prop =
                 | Some exn ->
                     (false, exn)
                 | None ->
-                    (Config.curr_language_is Config.Java, exn_leak) )
+                    (Language.curr_language_is Java, exn_leak) )
               | _ ->
-                  (Config.curr_language_is Config.Java, exn_leak)
+                  (Language.curr_language_is Java, exn_leak)
             in
             let already_reported () =
               let attr_opt_equal ao1 ao2 =
@@ -1158,7 +1158,7 @@ let check_junk ?original_prop pname tenv prop =
             let ignore_leak =
               !Config.allow_leak || ignore_resource || is_undefined || already_reported ()
             in
-            let report_and_continue = Config.curr_language_is Config.Java || !Config.footprint in
+            let report_and_continue = Language.curr_language_is Java || !Config.footprint in
             let report_leak () =
               if not report_and_continue then raise exn
               else (

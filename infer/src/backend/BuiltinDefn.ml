@@ -38,7 +38,7 @@ let mk_empty_array_rearranged len =
 
 
 let extract_array_type typ =
-  if Config.curr_language_is Config.Java then
+  if Language.curr_language_is Java then
     match typ.Typ.desc with Typ.Tptr (({Typ.desc= Tarray _} as arr), _) -> Some arr | _ -> None
   else
     match typ.Typ.desc with
@@ -270,7 +270,7 @@ let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id;
       in
       (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
       (* and throw an exception in case of a cast to a reference. *)
-      let should_throw_exception = Config.curr_language_is Config.Java || is_cast_to_reference in
+      let should_throw_exception = Language.curr_language_is Java || is_cast_to_reference in
       let deal_with_failed_cast val1 texp1 texp2 =
         raise (Tabulation.create_cast_exception tenv __POS__ None texp1 texp2 val1)
       in

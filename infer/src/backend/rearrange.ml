@@ -471,12 +471,12 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst
       raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let subtype =
-    match !Config.curr_language with
-    | Config.Clang ->
+    match !Language.curr_language with
+    | Clang ->
         Subtype.exact
-    | Config.Java ->
+    | Java ->
         Subtype.subtypes
-    | Config.Python ->
+    | Python ->
         L.die InternalError "Subtypes for Python not implemented"
   in
   let create_ptsto footprint_part off0 =
@@ -1719,8 +1719,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     | _ ->
         (None, false)
   in
-  if Config.curr_language_is Config.Clang && fun_exp_may_be_null ()
-     && not (is_fun_exp_captured_var ())
+  if Language.curr_language_is Clang && fun_exp_may_be_null () && not (is_fun_exp_captured_var ())
   then
     let deref_str = Localise.deref_str_null None in
     let err_desc_nobuckets =

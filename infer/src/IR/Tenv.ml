@@ -130,6 +130,6 @@ let language_is tenv lang =
   | () ->
       false
   | exception Found JavaClass _ ->
-      Config.equal_language lang Java
+      Language.equal lang Java
   | exception Found _ ->
-      Config.equal_language lang Clang
+      Language.equal lang Clang

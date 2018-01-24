@@ -407,7 +407,7 @@ module Procname : sig
   val from_string_c_fun : string -> t
   (** Convert a string to a proc name. *)
 
-  val get_language : t -> Config.language
+  val get_language : t -> Language.t
   (** Return the language of the procedure. *)
 
   val get_method : t -> string

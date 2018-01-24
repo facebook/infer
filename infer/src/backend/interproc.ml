@@ -674,7 +674,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize tenv (Prop.prop_sub (`Exp sub) pre) in
-      if Config.curr_language_is Config.Java && Procdesc.get_access pdesc <> PredSymb.Private then
+      if Language.curr_language_is Java && Procdesc.get_access pdesc <> PredSymb.Private then
         report_context_leaks pname post.Prop.sigma tenv ;
       let post' =
         if Prover.check_inconsistency_base tenv prop then None
@@ -782,12 +782,12 @@ let prop_init_formals_seed tenv new_formals (prop: 'a Prop.t) : Prop.exposed Pro
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp =
-        match !Config.curr_language with
-        | Config.Clang ->
+        match !Language.curr_language with
+        | Clang ->
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-        | Config.Java ->
+        | Java ->
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
-        | Config.Python ->
+        | Python ->
             L.die InternalError "prop_init_formals_seed not implemented for Python"
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None)
@@ -991,7 +991,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
 
 let set_current_language proc_desc =
   let language = Typ.Procname.get_language (Procdesc.get_proc_name proc_desc) in
-  Config.curr_language := language
+  Language.curr_language := language
 
 
 (** reset global values before analysing a procedure *)
@@ -1038,7 +1038,7 @@ let custom_error_preconditions summary =
 let remove_this_not_null tenv prop =
   let collect_hpred (var_option, hpreds) = function
     | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var var, _), _)
-      when Config.curr_language_is Config.Java && Pvar.is_this pvar ->
+      when Language.curr_language_is Java && Pvar.is_this pvar ->
         (Some var, hpreds)
     | hpred ->
         (var_option, hpred :: hpreds)
@@ -1212,9 +1212,9 @@ let analyze_proc tenv proc_cfg : Specs.summary =
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let updated_summary = update_summary tenv summary specs phase res in
-  if Config.curr_language_is Config.Clang && Config.report_custom_error then
+  if Language.curr_language_is Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary ;
-  if Config.curr_language_is Config.Java && Config.tracing then
+  if Language.curr_language_is Java && Config.tracing then
     report_runtime_exceptions tenv proc_desc updated_summary ;
   updated_summary
 

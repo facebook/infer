@@ -29,12 +29,6 @@ val string_to_analyzer : (string * analyzer) list
 
 val string_of_analyzer : analyzer -> string
 
-type language = Clang | Java | Python [@@deriving compare]
-
-val equal_language : language -> language -> bool
-
-val string_of_language : language -> string
-
 type os_type = Unix | Win32 | Cygwin
 
 type compilation_database_dependencies =
@@ -647,10 +641,6 @@ val xcpretty : bool
 (** Global variables *)
 
 val arc_mode : bool ref
-
-val curr_language : language ref
-
-val curr_language_is : language -> bool
 
 val footprint : bool ref
 

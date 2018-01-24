@@ -46,7 +46,7 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
         false
   in
   let should_suppress_lint =
-    Config.curr_language_is Config.Java
+    Language.curr_language_is Java
     && Annotations.ia_is_suppress_lint
          (fst (Specs.get_attributes summary).ProcAttributes.method_annotation)
   in

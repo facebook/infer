@@ -22,7 +22,7 @@ type callback_fun =
   | DynamicDispatch of Callbacks.proc_callback_t
   | Cluster of Callbacks.cluster_callback_t
 
-type callback = callback_fun * Config.language
+type callback = callback_fun * Language.t
 
 type checker = {name: string; active: bool; callbacks: callback list}
 
@@ -31,58 +31,58 @@ let all_checkers =
      Currently, the checkers are run in the reverse order *)
   [ { name= "annotation reachability"
     ; active= Config.annotation_reachability
-    ; callbacks= [(Procedure AnnotationReachability.checker, Config.Java)] }
+    ; callbacks= [(Procedure AnnotationReachability.checker, Language.Java)] }
   ; { name= "nullable checks"
     ; active= Config.check_nullable
     ; callbacks=
-        [ (Procedure NullabilityCheck.checker, Config.Clang)
-        ; (Procedure NullabilityCheck.checker, Config.Java) ] }
+        [ (Procedure NullabilityCheck.checker, Language.Clang)
+        ; (Procedure NullabilityCheck.checker, Language.Java) ] }
   ; { name= "biabduction"
     ; active= Config.biabduction
     ; callbacks=
-        [ (Procedure Interproc.analyze_procedure, Config.Clang)
-        ; (DynamicDispatch Interproc.analyze_procedure, Config.Java) ] }
+        [ (Procedure Interproc.analyze_procedure, Language.Clang)
+        ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun"
     ; active= Config.bufferoverrun
     ; callbacks=
-        [ (Procedure BufferOverrunChecker.checker, Config.Clang)
-        ; (Procedure BufferOverrunChecker.checker, Config.Java) ] }
+        [ (Procedure BufferOverrunChecker.checker, Language.Clang)
+        ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
   ; { name= "crashcontext"
     ; active= Config.crashcontext
-    ; callbacks= [(Procedure BoundedCallTree.checker, Config.Java)] }
+    ; callbacks= [(Procedure BoundedCallTree.checker, Language.Java)] }
   ; { name= "eradicate"
     ; active= Config.eradicate
-    ; callbacks= [(Procedure Eradicate.callback_eradicate, Config.Java)] }
+    ; callbacks= [(Procedure Eradicate.callback_eradicate, Language.Java)] }
   ; { name= "fragment retains view"
     ; active= Config.fragment_retains_view
     ; callbacks=
-        [(Procedure FragmentRetainsViewChecker.callback_fragment_retains_view, Config.Java)] }
+        [(Procedure FragmentRetainsViewChecker.callback_fragment_retains_view, Language.Java)] }
   ; { name= "immutable cast"
     ; active= Config.immutable_cast
-    ; callbacks= [(Procedure ImmutableChecker.callback_check_immutable_cast, Config.Java)] }
+    ; callbacks= [(Procedure ImmutableChecker.callback_check_immutable_cast, Language.Java)] }
   ; { name= "liveness"
     ; active= Config.liveness
-    ; callbacks= [(Procedure Liveness.checker, Config.Clang)] }
+    ; callbacks= [(Procedure Liveness.checker, Language.Clang)] }
   ; { name= "printf args"
     ; active= Config.printf_args
-    ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Config.Java)] }
+    ; callbacks= [(Procedure PrintfArgs.callback_printf_args, Language.Java)] }
   ; { name= "nullable suggestion"
     ; active= Config.suggest_nullable
     ; callbacks=
-        [ (Procedure NullabilitySuggest.checker, Config.Java)
-        ; (Procedure NullabilitySuggest.checker, Config.Clang) ] }
+        [ (Procedure NullabilitySuggest.checker, Language.Java)
+        ; (Procedure NullabilitySuggest.checker, Language.Clang) ] }
   ; { name= "quandary"
     ; active= Config.quandary
     ; callbacks=
-        [ (Procedure JavaTaintAnalysis.checker, Config.Java)
-        ; (Procedure ClangTaintAnalysis.checker, Config.Clang) ] }
+        [ (Procedure JavaTaintAnalysis.checker, Language.Java)
+        ; (Procedure ClangTaintAnalysis.checker, Language.Clang) ] }
   ; { name= "RacerD"
     ; active= Config.racerd
     ; callbacks=
-        [ (Procedure RacerD.analyze_procedure, Config.Clang)
-        ; (Procedure RacerD.analyze_procedure, Config.Java)
-        ; (Cluster RacerD.file_analysis, Config.Clang)
-        ; (Cluster RacerD.file_analysis, Config.Java) ] }
+        [ (Procedure RacerD.analyze_procedure, Language.Clang)
+        ; (Procedure RacerD.analyze_procedure, Language.Java)
+        ; (Cluster RacerD.file_analysis, Language.Clang)
+        ; (Cluster RacerD.file_analysis, Language.Java) ] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
     ; active= Config.resource_leak
@@ -90,12 +90,12 @@ let all_checkers =
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it
                interprocedural later on *)
             Procedure ResourceLeaks.checker
-          , Config.Java ) ] }
-  ; {name= "litho"; active= Config.litho; callbacks= [(Procedure Litho.checker, Config.Java)]}
-  ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Config.Clang)]}
+          , Language.Java ) ] }
+  ; {name= "litho"; active= Config.litho; callbacks= [(Procedure Litho.checker, Language.Java)]}
+  ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Language.Clang)]}
   ; { name= "uninitialized variables"
     ; active= Config.uninit
-    ; callbacks= [(Procedure Uninit.checker, Config.Clang)] } ]
+    ; callbacks= [(Procedure Uninit.checker, Language.Clang)] } ]
 
 
 let get_active_checkers () =
@@ -119,11 +119,7 @@ let register checkers =
   List.iter ~f:register_one checkers
 
 
-module LanguageSet = Caml.Set.Make (struct
-  type t = Config.language
-
-  let compare = Config.compare_language
-end)
+module LanguageSet = Caml.Set.Make (Language)
 
 let pp_checker fmt {name; callbacks} =
   let langs_of_callbacks =
@@ -132,5 +128,5 @@ let pp_checker fmt {name; callbacks} =
     |> LanguageSet.elements
   in
   F.fprintf fmt "%s (%a)" name
-    (Pp.seq ~sep:", " (Pp.to_string ~f:Config.string_of_language))
+    (Pp.seq ~sep:", " (Pp.to_string ~f:Language.to_string))
     langs_of_callbacks

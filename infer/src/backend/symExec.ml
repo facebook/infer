@@ -514,7 +514,7 @@ let check_deallocate_static_memory prop_after =
 
 
 let method_exists right_proc_name methods =
-  if Config.curr_language_is Config.Java then
+  if Language.curr_language_is Java then
     List.exists ~f:(fun meth_name -> Typ.Procname.equal right_proc_name meth_name) methods
   else
     (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
@@ -611,7 +611,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
       [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _
     -> (
-      if !Config.curr_language <> Config.Java then
+      if !Language.curr_language <> Language.Java then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
       else
@@ -1135,7 +1135,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
-        if !Config.curr_language <> Config.Clang || Config.report_condition_always_true_in_clang
+        if !Language.curr_language <> Language.Clang
+           || Config.report_condition_always_true_in_clang
         then
           let report_condition_always_true_false i =
             let skip_loop =
@@ -1256,7 +1257,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
               let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
               let ret_typ_opt = Option.map ~f:Procdesc.get_ret_type callee_pdesc_opt in
               let sentinel_result =
-                if Config.curr_language_is Config.Clang then
+                if Language.curr_language_is Clang then
                   check_variadic_sentinel_if_present
                     (call_args prop_r callee_pname actual_params ret_id loc)
                 else [(prop_r, path)]
@@ -1746,7 +1747,7 @@ and proc_call callee_summary
   (* In case we call an objc instance method we add and extra spec *)
   (* were the receiver is null and the semantics of the call is nop*)
   (* let callee_attrs = Specs.get_attributes callee_summary in *)
-  if !Config.curr_language <> Config.Java
+  if !Language.curr_language <> Language.Java
      && (Specs.get_attributes callee_summary).ProcAttributes.is_objc_instance_method
   then
     handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname

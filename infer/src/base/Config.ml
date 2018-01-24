@@ -45,12 +45,6 @@ let clang_frontend_action_symbols =
   [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
 
 
-type language = Clang | Java | Python [@@deriving compare]
-
-let equal_language = [%compare.equal : language]
-
-let string_of_language = function Java -> "Java" | Clang -> "C/C++/ObjC" | Python -> "python"
-
 let ml_bucket_symbols =
   [ ("all", `MLeak_all)
   ; ("cf", `MLeak_cf)
@@ -2737,11 +2731,6 @@ let set_reference_and_call_function reference value f x =
 
 (** Current Objective-C Automatic Reference Counting (ARC) mode *)
 let arc_mode = ref false
-
-(** Current language *)
-let curr_language = ref Clang
-
-let curr_language_is lang = equal_language !curr_language lang
 
 (** Flag for footprint discovery mode *)
 let footprint = ref true

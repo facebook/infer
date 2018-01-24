@@ -46,5 +46,5 @@ val sort_fields_tenv : t -> unit
 val pp : Format.formatter -> t -> unit  [@@warning "-32"]
 (** print a type environment *)
 
-val language_is : t -> Config.language -> bool
+val language_is : t -> Language.t -> bool
 (** Test the language from which the types in the tenv were translated *)

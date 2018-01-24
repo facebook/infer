@@ -26,7 +26,7 @@ let volatile = {class_name= "volatile"; parameters= []}
 let final = {class_name= "final"; parameters= []}
 
 (** Pretty print an annotation. *)
-let prefix = match Config.curr_language_is Config.Java with true -> "@" | false -> "_"
+let prefix = match Language.curr_language_is Java with true -> "@" | false -> "_"
 
 let pp fmt annotation = F.fprintf fmt "%s%s" prefix annotation.class_name
 
