@@ -1109,6 +1109,9 @@ module Procname = struct
     let serialize pname =
       let default () = Sqlite3.Data.TEXT (to_filename pname) in
       Base.Hashtbl.find_or_add pname_to_key pname ~default
+
+
+    let clear_cache () = Base.Hashtbl.clear pname_to_key
   end
 
   module SQLiteList = SqliteUtils.MarshalledData (struct

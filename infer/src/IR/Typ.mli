@@ -392,6 +392,8 @@ module Procname : sig
 
   module SQLite : sig
     val serialize : t -> Sqlite3.Data.t
+
+    val clear_cache : unit -> unit
   end
 
   module SQLiteList : SqliteUtils.Data with type t = t list

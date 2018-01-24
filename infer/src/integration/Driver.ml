@@ -90,9 +90,7 @@ let clean_results_dir () =
         ResultsDatabase.database_filename ^ "-shm"
       ; ResultsDatabase.database_filename ^ "-wal" ]
     in
-    let suffixes_to_delete =
-      ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cg"])
-    in
+    let suffixes_to_delete = [".txt"; ".csv"; ".json"] in
     fun name ->
       (* Keep the JSON report *)
       not (String.equal (Filename.basename name) Config.report_json)

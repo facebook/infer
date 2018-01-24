@@ -17,7 +17,7 @@ module NodeTbl = Procdesc.NodeHash
 type jump_kind = Next | Jump of int | Exit
 
 (** Translation data *)
-type icfg = {tenv: Tenv.t; cg: Cg.t; cfg: Cfg.t}
+type icfg = {tenv: Tenv.t; cfg: Cfg.t}
 
 type t =
   { icfg: icfg
@@ -41,8 +41,6 @@ let create_context icfg procdesc impl cn source_file program =
   ; source_file
   ; program }
 
-
-let get_cg context = context.icfg.cg
 
 let get_tenv context = context.icfg.tenv
 

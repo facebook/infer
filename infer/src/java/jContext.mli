@@ -22,7 +22,7 @@ module NodeTbl : Caml.Hashtbl.S with type key = Procdesc.Node.t
 (** data structure for saving the three structures tht contain the intermediate
     representation of a file: the type environment, the control graph and the control
     flow graph *)
-type icfg = {tenv: Tenv.t; cg: Cg.t; cfg: Cfg.t}
+type icfg = {tenv: Tenv.t; cfg: Cfg.t}
 
 (** data structure for storing the context elements.  *)
 type t = private
@@ -42,9 +42,6 @@ val create_context :
 
 val get_tenv : t -> Tenv.t
 (** returns the type environment that corresponds to the current file. *)
-
-val get_cg : t -> Cg.t
-(** returns the control graph that corresponds to the current file.  *)
 
 val add_if_jump : t -> Procdesc.Node.t -> int -> unit
 (** adds to the context the line that an if-node will jump to *)

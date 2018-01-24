@@ -150,14 +150,13 @@ let create_icfg source_file linereader program icfg cn node =
       try
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset () ;
-        ( match m with
+        match m with
         | Javalib.AbstractMethod am ->
             ignore (JTrans.create_am_procdesc source_file program icfg am proc_name)
         | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
             ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
         | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program linereader icfg cm proc_name ) ;
-        Cg.add_defined_node icfg.JContext.cg proc_name
+            add_cmethod source_file program linereader icfg cm proc_name
       with JBasics.Class_structure_error _ ->
         L.internal_error "create_icfg raised JBasics.Class_structure_error on %a@." Typ.Procname.pp
           proc_name
@@ -192,7 +191,7 @@ let should_capture classes package_opt source_basename node =
    In the standard - mode, it translated all the classes that correspond to this
    source file. *)
 let compute_source_icfg linereader classes program tenv source_basename package_opt source_file =
-  let icfg = {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create (); JContext.tenv} in
+  let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn node =
     if test node then try procedure cn node with Bir.Subroutine -> ()
   in
@@ -203,11 +202,11 @@ let compute_source_icfg linereader classes program tenv source_basename package_
          (create_icfg source_file linereader program icfg))
       (JClasspath.get_classmap program)
   in
-  (icfg.JContext.cg, icfg.JContext.cfg)
+  icfg.JContext.cfg
 
 
 let compute_class_icfg source_file linereader program tenv node =
-  let icfg = {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create (); JContext.tenv} in
+  let icfg = {JContext.cfg= Cfg.create (); tenv} in
   ( try create_icfg source_file linereader program icfg (Javalib.get_name node) node
     with Bir.Subroutine -> () ) ;
-  (icfg.JContext.cg, icfg.JContext.cfg)
+  icfg.JContext.cfg

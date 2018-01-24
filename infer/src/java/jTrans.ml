@@ -759,7 +759,6 @@ let assume_not_null loc sil_expr =
 
 let instruction (context: JContext.t) pc instr : translation =
   let tenv = JContext.get_tenv context in
-  let cg = JContext.get_cg context in
   let program = context.program in
   let proc_name = Procdesc.get_proc_name context.procdesc in
   let ret_var = Pvar.get_ret_pvar proc_name in
@@ -904,8 +903,6 @@ let instruction (context: JContext.t) pc instr : translation =
         let instrs = new_instr :: call_instrs @ [set_instr] in
         let node_kind = create_node_kind constr_procname in
         let node = create_node node_kind instrs in
-        let caller_procname = Procdesc.get_proc_name context.procdesc in
-        Cg.add_edge cg caller_procname constr_procname ;
         Instr node
     | JBir.NewArray (var, vt, expr_list) ->
         let builtin_new_array = Exp.Const (Const.Cfun BuiltinDecl.__new_array) in
@@ -939,12 +936,9 @@ let instruction (context: JContext.t) pc instr : translation =
         in
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
-        let caller_procname = Procdesc.get_proc_name context.procdesc in
-        Cg.add_edge cg caller_procname callee_procname ;
         Instr call_node
     | JBir.InvokeVirtual (var_opt, obj, call_kind, ms, args)
       -> (
-        let caller_procname = Procdesc.get_proc_name context.procdesc in
         let instrs, sil_obj_expr, sil_obj_type = expression context pc obj in
         let create_call_node cn invoke_kind =
           let callee_procname, call_instrs =
@@ -954,7 +948,6 @@ let instruction (context: JContext.t) pc instr : translation =
           in
           let node_kind = create_node_kind callee_procname in
           let call_node = create_node node_kind (instrs @ call_instrs) in
-          Cg.add_edge cg caller_procname callee_procname ;
           call_node
         in
         let trans_virtual_call original_cn invoke_kind =
@@ -988,9 +981,6 @@ let instruction (context: JContext.t) pc instr : translation =
         in
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
-        let procdesc = context.procdesc in
-        let caller_procname = Procdesc.get_proc_name procdesc in
-        Cg.add_edge cg caller_procname callee_procname ;
         Instr call_node
     | JBir.Check JBir.CheckNullPointer expr when Config.tracing && is_this expr ->
         (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)

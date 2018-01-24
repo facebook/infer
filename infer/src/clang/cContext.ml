@@ -28,7 +28,6 @@ type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 type t =
   { translation_unit_context: CFrontend_config.translation_unit_context
   ; tenv: Tenv.t
-  ; cg: Cg.t
   ; cfg: Cfg.t
   ; procdesc: Procdesc.t
   ; is_objc_method: bool
@@ -41,11 +40,10 @@ type t =
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t }
 
-let create_context translation_unit_context tenv cg cfg procdesc curr_class return_param_typ
+let create_context translation_unit_context tenv cfg procdesc curr_class return_param_typ
     is_objc_method outer_context vars_to_destroy =
   { translation_unit_context
   ; tenv
-  ; cg
   ; cfg
   ; procdesc
   ; curr_class
@@ -56,8 +54,6 @@ let create_context translation_unit_context tenv cg cfg procdesc curr_class retu
   ; label_map= Hashtbl.create 17
   ; vars_to_destroy }
 
-
-let get_cg context = context.cg
 
 let get_procdesc context = context.procdesc
 

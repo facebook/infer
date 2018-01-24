@@ -17,6 +17,7 @@ module F = Format
 let analyze_exe_env_tasks cluster exe_env : Tasks.t =
   L.progressbar_file () ;
   Specs.clear_spec_tbl () ;
+  Typ.Procname.SQLite.clear_cache () ;
   Random.self_init () ;
   Tasks.create
     [ (fun () ->

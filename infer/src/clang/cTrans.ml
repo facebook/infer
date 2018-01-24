@@ -190,8 +190,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let open CContext in
     (* translation will reset Ident counter, save it's state and restore it afterwards *)
     let ident_state = Ident.NameGenerator.get_current () in
-    F.translate_one_declaration context.translation_unit_context context.tenv context.cg
-      context.cfg `Translation decl ;
+    F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
+      `Translation decl ;
     Ident.NameGenerator.set_current ident_state
 
 
@@ -1009,16 +1009,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let res_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans
         in
-        let add_cg_edge callee_pname = Cg.add_edge context.CContext.cg procname callee_pname in
-        Option.iter ~f:add_cg_edge callee_pname_opt ;
         {res_trans_to_parent with exps= res_trans_call.exps}
 
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
       function_type is_cpp_call_virtual extra_res_trans =
-    let open CContext in
     let context = trans_state_pri.context in
-    let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* first for method address, second for 'this' expression and other parameters *)
     assert (List.length result_trans_callee.exps >= 1) ;
@@ -1056,7 +1052,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let result_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans
         in
-        Cg.add_edge context.CContext.cg procname callee_pname ;
         {result_trans_to_parent with exps= res_trans_call.exps}
 
 
@@ -1244,7 +1239,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let is_virtual =
           CMethod_trans.equal_method_call_type method_call_type CMethod_trans.MCVirtual
         in
-        Cg.add_edge context.CContext.cg procname callee_name ;
         let call_flags = {CallFlags.default with CallFlags.cf_virtual= is_virtual} in
         let method_sil = Exp.Const (Const.Cfun callee_name) in
         let res_trans_call =
@@ -2607,9 +2601,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let qual_type = expr_info.Clang_ast_t.ei_qual_type in
         let block_pname = CProcname.mk_fresh_block_procname procname in
         let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
-        (* We need to set the explicit dependency between the newly created block and the *)
-        (* defining procedure. We add an edge in the call graph.*)
-        Cg.add_edge context.cg procname block_pname ;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
         let captureds =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
@@ -2618,7 +2609,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let ids_instrs = List.map ~f:assign_captured_var captureds in
         let ids, instrs = List.unzip ids_instrs in
         let block_data = (context, qual_type, block_pname, captureds) in
-        F.function_decl context.translation_unit_context context.tenv context.cfg context.cg decl
+        F.function_decl context.translation_unit_context context.tenv context.cfg decl
           (Some block_data) ;
         let captured_vars =
           List.map2_exn ~f:(fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds
@@ -2637,9 +2628,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let procname = Procdesc.get_proc_name context.procdesc in
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
-    (* We need to set the explicit dependency between the newly created lambda and the *)
-    (* defining procedure. We add an edge in the call graph.*)
-    Cg.add_edge context.cg procname lambda_pname ;
     let make_captured_tuple (pvar, typ) = (Exp.Lvar pvar, pvar, typ) in
     let get_captured_pvar_typ decl_ref =
       CVar_decl.sil_var_of_captured_var decl_ref context stmt_info.Clang_ast_t.si_source_range
