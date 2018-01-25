@@ -99,6 +99,14 @@ let () =
           L.exit 0
       | Error e ->
           print_endline e ; L.exit 3 ) ;
+  ( match Config.check_version with
+  | Some check_version ->
+      if not (String.equal check_version Version.versionString) then
+        L.(die UserError)
+          "Provided version '%s' does not match actual version '%s'" check_version
+          Version.versionString
+  | None ->
+      () ) ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   setup () ;
   log_environment_info () ;

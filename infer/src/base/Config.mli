@@ -284,6 +284,8 @@ val changed_files_index : string option
 
 val check_nullable : bool
 
+val check_version : string option
+
 val clang_biniou_file : string option
 
 val clang_frontend_action_string : string

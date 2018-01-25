@@ -872,6 +872,11 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should start. Source files should be specified relative to project root or be absolute"
 
 
+and check_version =
+  CLOpt.mk_string_opt ~long:"check-version" ~meta:"version"
+    "Verify that the Infer version is equal to the provided argument"
+
+
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
     ~in_help:InferCommand.([(Capture, manual_clang)])
@@ -2285,6 +2290,8 @@ and capture =
 and changed_files_index = !changed_files_index
 
 and check_nullable = !check_nullable
+
+and check_version = !check_version
 
 and clang_biniou_file = !clang_biniou_file
 
