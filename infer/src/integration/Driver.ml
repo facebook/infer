@@ -75,11 +75,14 @@ let clean_results_dir () =
   let should_delete_dir =
     let dirs_to_delete =
       let open Config in
-      [ backend_stats_dir_name
-      ; classnames_dir_name
-      ; frontend_stats_dir_name
-      ; multicore_dir_name
-      ; reporting_stats_dir_name ]
+      let common_list =
+        [ backend_stats_dir_name
+        ; classnames_dir_name
+        ; frontend_stats_dir_name
+        ; multicore_dir_name
+        ; reporting_stats_dir_name ]
+      in
+      if flavors then common_list else captured_dir_name :: common_list
     in
     List.mem ~equal:String.equal dirs_to_delete
   in
