@@ -105,8 +105,7 @@ let restore_global_state st =
   Timeout.resume_previous_timeout ()
 
 
-let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
-  let curr_pname = Procdesc.get_proc_name curr_pdesc in
+let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
@@ -117,7 +116,8 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
   in
   L.progressbar_procedure () ;
   if Config.trace_ondemand then
-    L.progress "[%d] run_proc_analysis %a -> %a@." !nesting Typ.Procname.pp curr_pname
+    L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Typ.Procname.pp)
+      (Option.map caller_pdesc ~f:Procdesc.get_proc_name)
       Typ.Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
@@ -166,39 +166,39 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
         log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
 
 
-let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
+let analyze_proc_desc ?caller_pdesc callee_pdesc : Specs.summary option =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | None ->
       L.(die InternalError)
-        "No callbacks registered to analyze proc desc %a when analyzing %a" Typ.Procname.pp
-        callee_pname Typ.Procname.pp
-        (Procdesc.get_proc_name curr_pdesc)
+        "No callbacks registered to analyze proc desc %a (when analyzing %a)" Typ.Procname.pp
+        callee_pname (Pp.option Typ.Procname.pp)
+        (Option.map ~f:Procdesc.get_proc_name caller_pdesc)
   | Some callbacks ->
       if should_be_analyzed callee_pname proc_attributes then
-        Some (run_proc_analysis callbacks.analyze_ondemand curr_pdesc callee_pdesc)
+        Some (run_proc_analysis callbacks.analyze_ondemand ~caller_pdesc callee_pdesc)
       else Specs.get_summary callee_pname
 
 
 (** analyze_proc_name curr_pdesc proc_name performs an on-demand analysis of proc_name triggered
     during the analysis of curr_pname *)
-let analyze_proc_name : Procdesc.t -> Typ.Procname.t -> Specs.summary option =
+let analyze_proc_name : ?caller_pdesc:Procdesc.t -> Typ.Procname.t -> Specs.summary option =
   let cached_results = Typ.Procname.Hash.create 100 in
-  fun curr_pdesc callee_pname ->
+  fun ?caller_pdesc callee_pname ->
     try Typ.Procname.Hash.find cached_results callee_pname with Not_found ->
       let summary_option =
         match !callbacks_ref with
         | None ->
             L.(die InternalError)
-              "No callbacks registered to analyze proc name %a when analyzing %a@." Typ.Procname.pp
-              callee_pname Typ.Procname.pp
-              (Procdesc.get_proc_name curr_pdesc)
+              "No callbacks registered to analyze proc name %a (when analyzing %a)@."
+              Typ.Procname.pp callee_pname (Pp.option Typ.Procname.pp)
+              (Option.map ~f:Procdesc.get_proc_name caller_pdesc)
         | Some callbacks ->
             if procedure_should_be_analyzed callee_pname then
               match callbacks.get_proc_desc callee_pname with
               | Some callee_pdesc ->
-                  analyze_proc_desc curr_pdesc callee_pdesc
+                  analyze_proc_desc ?caller_pdesc callee_pdesc
               | None ->
                   Specs.get_summary callee_pname
             else Specs.get_summary callee_pname

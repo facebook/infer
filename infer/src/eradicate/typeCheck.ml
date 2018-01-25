@@ -530,7 +530,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       , etl_
       , loc
       , cflags ) ->
-      let callee_summary_opt = Ondemand.analyze_proc_name curr_pdesc callee_pname in
+      let callee_summary_opt = Ondemand.analyze_proc_name ~caller_pdesc:curr_pdesc callee_pname in
       let callee_attributes =
         let proc_attriutes_opt =
           Option.value_map

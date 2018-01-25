@@ -140,7 +140,7 @@ let iterate_callbacks (exe_env: Exe_env.t) =
   if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env procs_to_analyze ;
   let analyze_proc_name pname =
     Option.iter
-      ~f:(fun pdesc -> ignore (Ondemand.analyze_proc_desc pdesc pdesc))
+      ~f:(fun pdesc -> ignore (Ondemand.analyze_proc_desc pdesc))
       (Ondemand.get_proc_desc pname)
   in
   List.iter ~f:analyze_proc_name procs_to_analyze ;

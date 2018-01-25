@@ -44,7 +44,7 @@ let get_extended_args_for_method_with_block_analysis act_params =
   List.map ~f:(fun (exp, _, typ) -> (exp, typ)) args_and_captured
 
 
-let resolve_method_with_block_args_and_analyze caller_pdesc pname act_params =
+let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
   let pdesc_opt =
     match Specs.get_summary pname with
     | Some summary ->
@@ -88,7 +88,7 @@ let resolve_method_with_block_args_and_analyze caller_pdesc pname act_params =
         (fun _ instr -> Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr Pp.text) instr)
         specialized_pdesc ;
       Logging.(debug Analysis Verbose) "End of instructions@." ;
-      match Ondemand.analyze_proc_desc caller_pdesc specialized_pdesc with
+      match Ondemand.analyze_proc_desc ~caller_pdesc specialized_pdesc with
       | Some summary ->
           (* Since the closures in the formals were replaced by the captured variables,
            we do the same with the actual arguments *)

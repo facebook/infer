@@ -160,7 +160,9 @@ let is_outside_codebase proc_desc tenv field_name =
       let first_method =
         Option.bind ~f:(fun (cls: Typ.Struct.t) -> List.hd cls.methods) class_struct
       in
-      let summary = Option.bind ~f:(Ondemand.analyze_proc_name proc_desc) first_method in
+      let summary =
+        Option.bind ~f:(Ondemand.analyze_proc_name ~caller_pdesc:proc_desc) first_method
+      in
       Option.is_none summary
   | _ ->
       false

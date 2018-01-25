@@ -118,8 +118,8 @@ let method_has_annot annot tenv pname =
 
 let method_overrides_annot annot tenv pname = method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls caller_pdesc annot pname =
-  match Ondemand.analyze_proc_name caller_pdesc pname with
+let lookup_annotation_calls ~caller_pdesc annot pname =
+  match Ondemand.analyze_proc_name ~caller_pdesc pname with
   | Some {Specs.payload= {Specs.annot_map= Some annot_map}} -> (
     try AnnotReachabilityDomain.find annot annot_map with Not_found ->
       AnnotReachabilityDomain.SinkMap.empty )
@@ -220,7 +220,7 @@ let report_src_snk_path {Callbacks.proc_desc; tenv; summary} sink_map snk_annot 
   if method_overrides_annot src_annot tenv proc_name then
     let f_report = report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
     report_call_stack summary (method_has_annot snk_annot tenv)
-      (lookup_annotation_calls proc_desc snk_annot)
+      (lookup_annotation_calls ~caller_pdesc:proc_desc snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 
 
