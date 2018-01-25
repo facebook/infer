@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_1" [label="1: Start constructor_with_body::test_div0\nFormals: \nLocals:  x:constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 30, column 1]\n " color=yellow style=filled]
 	
 

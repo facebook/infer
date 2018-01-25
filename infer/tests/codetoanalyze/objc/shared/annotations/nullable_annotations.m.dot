@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_1" [label="1: Start npe_property_nullable\nFormals: \nLocals:  child:Person* person:Person* \n   DECLARE_LOCALS(&return,&child,&person); [line 55, column 1]\n " color=yellow style=filled]
 	
 

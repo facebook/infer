@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_1" [label="1: Start struct_pass_by_value::var_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X x:struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&x); [line 27, column 1]\n " color=yellow style=filled]
 	
 

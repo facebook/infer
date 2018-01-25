@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_1" [label="1: Start DispatchInMacroTest\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 

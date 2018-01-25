@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_1" [label="1: Start cfautorelease_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 40, column 1]\n " color=yellow style=filled]
 	
 

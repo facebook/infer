@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_1" [label="1: Start choose2_div0_no_report\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
 	
 

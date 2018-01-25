@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "m1.ae7be26cdaa742ca148068d5ac90eaca_1" [label="1: Start m1\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 12, column 1]\n " color=yellow style=filled]
 	
 

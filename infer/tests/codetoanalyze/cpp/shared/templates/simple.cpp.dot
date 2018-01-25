@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_1" [label="1: Start div0_template_field\nFormals:  v:Container<int>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
 	
 

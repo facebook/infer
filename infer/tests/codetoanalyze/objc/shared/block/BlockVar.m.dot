@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "test#BlockVar#class.79d88363beeb921609a605886abe817f_1" [label="1: Start BlockVar_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
 	
 

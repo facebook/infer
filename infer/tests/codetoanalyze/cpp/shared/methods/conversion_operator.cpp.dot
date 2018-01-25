@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_1" [label="1: Start conversion_operator::branch_div0\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 34, column 1]\n " color=yellow style=filled]
 	
 

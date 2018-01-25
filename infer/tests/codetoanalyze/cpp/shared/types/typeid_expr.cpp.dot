@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "person_typeid#_Z13person_typeidv.259e8739c3aa7b455d1b67a326ce9b09_1" [label="1: Start person_typeid\nFormals: \nLocals:  t:int person:Person \n   DECLARE_LOCALS(&return,&t,&person); [line 19]\n " color=yellow style=filled]
 	
 

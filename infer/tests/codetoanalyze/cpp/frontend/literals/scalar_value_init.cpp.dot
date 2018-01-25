@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "get<ENUM>#8194971217283422499.150bc0995c110083a73c0ededcfe6d76_1" [label="1: Start get<ENUM>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
 	
 

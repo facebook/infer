@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_1" [label="1: Start init_list::zero_init_primitive\nFormals: \nLocals:  f:float p:int* i:int \n   DECLARE_LOCALS(&return,&f,&p,&i); [line 27, column 1]\n " color=yellow style=filled]
 	
 

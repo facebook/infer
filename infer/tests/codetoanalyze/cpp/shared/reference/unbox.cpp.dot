@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "unbox_ref#9977470601320200599.91094dce9e5b43dc4c89abcbc69b2c70_1" [label="1: Start unbox_ref\nFormals: \nLocals:  r:int& a:int \n   DECLARE_LOCALS(&return,&r,&a); [line 17, column 1]\n " color=yellow style=filled]
 	
 

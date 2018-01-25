@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
 	
 

@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "dummy_struct#__infer_globals_initializer_pass_by_val.24fe54080733cebf362d2b34e691bb44_1" [label="1: Start __infer_globals_initializer_pass_by_val::dummy_struct\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 

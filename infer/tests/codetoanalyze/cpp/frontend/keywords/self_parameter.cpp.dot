@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" [label="1: Start test\nFormals:  a:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 

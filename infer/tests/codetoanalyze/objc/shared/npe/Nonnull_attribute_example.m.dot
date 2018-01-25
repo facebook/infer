@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  callback:_fn_(*)\nLocals: \nAnnotation: <> NonnullAtrributeTest(<_Nonnull>) \n   DECLARE_LOCALS(&return); [line 46, column 1]\n " color=yellow style=filled]
 	
 

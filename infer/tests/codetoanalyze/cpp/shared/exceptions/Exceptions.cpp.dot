@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_1" [label="1: Start call_deref_with_null\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 

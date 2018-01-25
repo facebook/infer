@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "objc_blockMyBlock_array_1.876ea7470c254ef92f8b4921d5f810e1_1" [label="1: Start objc_blockMyBlock_array_1\nFormals:  object:objc_object* idx:unsigned long stop:_Bool*\nLocals:  ShouldStop:int \n   DECLARE_LOCALS(&return,&ShouldStop); [line 21, column 33]\n " color=yellow style=filled]
 	
 

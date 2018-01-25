@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "copyX_div0#copy_move_constructor#7555826423954612298.1fd45599e2fc3ce471d7d474aa615bcb_1" [label="1: Start copy_move_constructor::copyX_div0\nFormals: \nLocals:  x2:copy_move_constructor::X x1:copy_move_constructor::X \n   DECLARE_LOCALS(&return,&x2,&x1); [line 41, column 1]\n " color=yellow style=filled]
 	
 

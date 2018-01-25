@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_1" [label="1: Start DispatchEx_dispatch_once_example\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 

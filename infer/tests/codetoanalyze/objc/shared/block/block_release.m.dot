@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_1" [label="1: Start My_manager_blockReleaseTODO\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20, column 1]\n " color=yellow style=filled]
 	
 

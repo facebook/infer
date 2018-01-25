@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_1" [label="1: Start A___infer_inner_destructor_~A\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
 	
 

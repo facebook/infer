@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_1" [label="1: Start div0_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 

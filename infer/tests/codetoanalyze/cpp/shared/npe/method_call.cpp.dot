@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" [label="1: Start npe_call\nFormals: \nLocals:  x:X* \n   DECLARE_LOCALS(&return,&x); [line 15, column 1]\n " color=yellow style=filled]
 	
 

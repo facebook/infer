@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "bar#13629960763458822780.27859d4aca4c920a20241f1b78082005_1" [label="1: Start bar\nFormals: \nLocals:  func:bar::lambda_shared_lambda_lambda1.cpp:11:15 0$?%__sil_tmpSIL_materialize_temp__n$1:bar::lambda_shared_lambda_lambda1.cpp:11:15 \n   DECLARE_LOCALS(&return,&func,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 10, column 1]\n " color=yellow style=filled]
 	
 

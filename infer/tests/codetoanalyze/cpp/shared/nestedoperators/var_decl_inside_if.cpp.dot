@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "simple_init_div1#11746272153330047279.0563640869475a4683e824c15c85a68a_1" [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 10, column 1]\n " color=yellow style=filled]
 	
 

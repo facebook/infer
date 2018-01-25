@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_1" [label="1: Start temp_object::assign_temp_div0\nFormals: \nLocals:  x:temp_object::X 0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const  \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 28, column 1]\n " color=yellow style=filled]
 	
 

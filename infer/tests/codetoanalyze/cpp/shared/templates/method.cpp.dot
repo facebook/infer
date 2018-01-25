@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "div0_getter#method#14570248362286164751.5f9f1e67fd1ac95f6c38eb7d407ea9ec_1" [label="1: Start method::div0_getter\nFormals: \nLocals:  g:method::Getter x2:method::X2 \n   DECLARE_LOCALS(&return,&g,&x2); [line 39, column 1]\n " color=yellow style=filled]
 	
 

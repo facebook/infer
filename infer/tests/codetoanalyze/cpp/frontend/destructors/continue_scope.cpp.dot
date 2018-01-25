@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_1" [label="1: Start continue_scope::test_while1\nFormals:  a:_Bool b:_Bool\nLocals:  x2:continue_scope::X x4:continue_scope::X x1:continue_scope::X \n   DECLARE_LOCALS(&return,&x2,&x4,&x1); [line 68, column 1]\n " color=yellow style=filled]
 	
 

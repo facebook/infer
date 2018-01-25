@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "array_of_person#7945672701495610995.0fecf6778237d47d15191cac7fab514c_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:Person[10*4] 0$?%__sil_tmpSIL_materialize_temp__n$1:Person 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$3:Person \n   DECLARE_LOCALS(&return,&arr,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmpSIL_materialize_temp__n$2,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 17, column 1]\n " color=yellow style=filled]
 	
 

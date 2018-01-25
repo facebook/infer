@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_1" [label="1: Start destructor_scope::callgetZ\nFormals: \nLocals:  0$?%__sil_tmp__temp_return_n$1:destructor_scope::Z \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_return_n$1); [line 84, column 1]\n " color=yellow style=filled]
 	
 

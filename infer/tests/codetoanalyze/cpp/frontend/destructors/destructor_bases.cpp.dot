@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "A#A#{14779025497907219583}.17208581fb4c6bbf4d62e29851fb70ab_1" [label="1: Start A_A\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
 	
 

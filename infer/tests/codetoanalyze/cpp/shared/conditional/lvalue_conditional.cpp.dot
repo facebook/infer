@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "div0_choose_lvalue#13889289797749672490.33434dbd9bc43b011249899260680670_1" [label="1: Start div0_choose_lvalue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
 	
 

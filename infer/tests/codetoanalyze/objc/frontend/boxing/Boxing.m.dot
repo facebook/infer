@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing_getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14, column 1]\n " color=yellow style=filled]
 	
 

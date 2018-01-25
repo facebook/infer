@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_1" [label="1: Start call_method_with_default_parameters\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 16, column 1]\n " color=yellow style=filled]
 	
 

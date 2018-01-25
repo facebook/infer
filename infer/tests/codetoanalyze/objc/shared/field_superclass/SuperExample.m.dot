@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" [label="1: Start super_example_main\nFormals:  argc:int argv:char**\nLocals:  a:objc_object* \n   DECLARE_LOCALS(&return,&a); [line 40, column 1]\n " color=yellow style=filled]
 	
 

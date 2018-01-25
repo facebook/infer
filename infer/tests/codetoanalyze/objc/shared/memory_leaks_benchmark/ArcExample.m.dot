@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA_getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 22, column 1]\n " color=yellow style=filled]
 	
 

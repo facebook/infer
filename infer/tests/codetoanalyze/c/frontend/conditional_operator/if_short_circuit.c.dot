@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "test_loop.254a9d372f8f45542e409771135b9322_1" [label="1: Start test_loop\nFormals: \nLocals:  block_size:char* spec:char* \n   DECLARE_LOCALS(&return,&block_size,&spec); [line 29, column 1]\n " color=yellow style=filled]
 	
 

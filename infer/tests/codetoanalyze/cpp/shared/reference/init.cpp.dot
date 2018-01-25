@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" [label="1: Start init_from_val\nFormals:  par:int\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 16, column 1]\n " color=yellow style=filled]
 	
 

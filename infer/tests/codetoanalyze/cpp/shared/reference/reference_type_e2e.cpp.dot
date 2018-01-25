@@ -1,5 +1,5 @@
 /* @generated */
-digraph iCFG {
+digraph cfg {
 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" [label="1: Start ptr_div0\nFormals: \nLocals:  p:int* a:int \n   DECLARE_LOCALS(&return,&p,&a); [line 13, column 1]\n " color=yellow style=filled]
 	
 
