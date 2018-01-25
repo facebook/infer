@@ -60,13 +60,9 @@ module LithoFramework = struct
         false
 end
 
-module TransferFunctions (CFG : ProcCfg.S) = struct
-  module CFG = CFG
-  module Domain = Domain
-
-  type extras = ProcData.no_extras
-
-  let is_graphql_getter procname summary =
+module GraphQLGetters = struct
+  (* return true if this is a graphql getter *)
+  let is_function procname summary =
     Option.is_none summary
     (* we skip analysis of all GraphQL procs *)
     &&
@@ -83,6 +79,112 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
+
+  let should_report proc_desc =
+    LithoFramework.is_on_create_layout (Procdesc.get_proc_name proc_desc)
+
+
+  let report astate summary =
+    let report_graphql_getter access_path call_chain =
+      let call_strings =
+        List.map ~f:(Typ.Procname.to_simplified_string ~withclass:false) call_chain
+      in
+      let call_string = String.concat ~sep:"." call_strings in
+      let message = F.asprintf "%a.%s" AccessPath.pp access_path call_string in
+      let exn =
+        Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message)
+      in
+      let loc = Specs.get_loc summary in
+      let ltr = [Errlog.make_trace_element 0 loc message []] in
+      Reporting.log_error summary ~loc ~ltr exn
+    in
+    Domain.iter_call_chains ~f:report_graphql_getter astate
+end
+
+module RequiredProps = struct
+  let get_required_props typename tenv =
+    let is_required annot_list =
+      List.exists
+        ~f:(fun ({Annot.class_name; parameters}, _) ->
+          String.is_suffix class_name ~suffix:Annotations.prop
+          && (* Don't count as required if it's @Prop(optional = true) *)
+             not (List.exists ~f:(fun annot_string -> String.equal annot_string "true") parameters)
+          )
+        annot_list
+    in
+    match Tenv.lookup tenv typename with
+    | Some {fields} ->
+        List.filter_map
+          ~f:(fun (fieldname, _, annot) ->
+            if is_required annot then Some (Typ.Fieldname.Java.get_field fieldname) else None )
+          fields
+    | None ->
+        []
+
+
+  let report_missing_required_prop summary prop_string loc =
+    let message =
+      F.asprintf "@Prop %s is required, but not set before the call to build()" prop_string
+    in
+    let exn =
+      Exceptions.Checkers (IssueType.missing_required_prop, Localise.verbatim_desc message)
+    in
+    let ltr = [Errlog.make_trace_element 0 loc message []] in
+    Reporting.log_error summary ~loc ~ltr exn
+
+
+  (* walk backward through [call_chain] and return the first type T <: Component that is not part of
+     the Litho framework (i.e., is client code) *)
+  let find_client_component_type call_chain =
+    List.find_map
+      ~f:(fun pname ->
+        match pname with
+        | Typ.Procname.Java java_pname ->
+            Typ.Name.Java.get_outer_class (Typ.Procname.Java.get_class_type_name java_pname)
+        | _ ->
+            None )
+      call_chain
+
+
+  let should_report proc_desc tenv =
+    let pname = Procdesc.get_proc_name proc_desc in
+    not (LithoFramework.is_function pname)
+    && not (LithoFramework.is_component_build_method pname tenv)
+    && Procdesc.get_access proc_desc <> PredSymb.Private
+
+
+  let report astate tenv summary =
+    let check_required_prop_chain _ call_chain =
+      let rev_chain = List.rev call_chain in
+      match rev_chain with
+      | pname :: _ when LithoFramework.is_component_build_method pname tenv -> (
+        match
+          (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder
+               part from the typename, then look at the fields of MyComponent to figure out which
+               ones are annotated with @Prop *)
+          find_client_component_type call_chain
+        with
+        | Some parent_typename ->
+            let required_props = get_required_props parent_typename tenv in
+            let prop_set = List.map ~f:Typ.Procname.get_method call_chain |> String.Set.of_list in
+            List.iter
+              ~f:(fun required_prop ->
+                if not (String.Set.mem prop_set required_prop) then
+                  report_missing_required_prop summary required_prop (Specs.get_loc summary) )
+              required_props
+        | _ ->
+            () )
+      | _ ->
+          ()
+    in
+    Domain.iter_call_chains ~f:check_required_prop_chain astate
+end
+
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
+
+  type extras = ProcData.no_extras
 
   let apply_callee_summary summary_opt caller_pname ret_opt actuals astate =
     match summary_opt with
@@ -123,7 +225,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let receiver = Domain.LocalAccessPath.make receiver_ap caller_pname in
         if ( LithoFramework.is_component_builder callee_procname proc_data.tenv
            (* track Builder's in order to check required prop's *)
-           || is_graphql_getter callee_procname summary
+           || GraphQLGetters.is_function callee_procname summary
            || (* track GraphQL getters in order to report graphql field accesses *)
               Domain.mem receiver astate
               (* track anything called on a receiver we're already tracking *) )
@@ -162,106 +264,16 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
 
-let should_report proc_desc = LithoFramework.is_on_create_layout (Procdesc.get_proc_name proc_desc)
-
-let report_graphql_getters summary access_path call_chain =
-  let call_strings = List.map ~f:(Typ.Procname.to_simplified_string ~withclass:false) call_chain in
-  let call_string = String.concat ~sep:"." call_strings in
-  let message = F.asprintf "%a.%s" AccessPath.pp access_path call_string in
-  let exn = Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message) in
-  let loc = Specs.get_loc summary in
-  let ltr = [Errlog.make_trace_element 0 loc message []] in
-  Reporting.log_error summary ~loc ~ltr exn
-
-
-let postprocess astate formal_map : Domain.astate =
-  let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
-  Domain.substitute ~f_sub astate
-
-
-let get_required_props typename tenv =
-  let is_required annot_list =
-    List.exists
-      ~f:(fun ({Annot.class_name; parameters}, _) ->
-        String.is_suffix class_name ~suffix:Annotations.prop
-        && (* Don't count as required if it's @Prop(optional = true) *)
-           not (List.exists ~f:(fun annot_string -> String.equal annot_string "true") parameters)
-        )
-      annot_list
-  in
-  match Tenv.lookup tenv typename with
-  | Some {fields} ->
-      List.filter_map
-        ~f:(fun (fieldname, _, annot) ->
-          if is_required annot then Some (Typ.Fieldname.Java.get_field fieldname) else None )
-        fields
-  | None ->
-      []
-
-
-let report_missing_required_prop summary prop_string loc =
-  let message =
-    F.asprintf "@Prop %s is required, but not set before the call to build()" prop_string
-  in
-  let exn =
-    Exceptions.Checkers (IssueType.missing_required_prop, Localise.verbatim_desc message)
-  in
-  let ltr = [Errlog.make_trace_element 0 loc message []] in
-  Reporting.log_error summary ~loc ~ltr exn
-
-
-(* walk backward through [call_chain] and return the first type T <: Component that is not part of
-   the Litho framework (i.e., is client code) *)
-let find_client_component_type call_chain =
-  List.find_map
-    ~f:(fun pname ->
-      match pname with
-      | Typ.Procname.Java java_pname ->
-          Typ.Name.Java.get_outer_class (Typ.Procname.Java.get_class_type_name java_pname)
-      | _ ->
-          None )
-    call_chain
-
-
-let check_required_props astate tenv summary =
-  let check_required_prop_chain _ call_chain =
-    let rev_chain = List.rev call_chain in
-    match rev_chain with
-    | pname :: _ when LithoFramework.is_component_build_method pname tenv -> (
-      match
-        (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder part
-           from the typename, then look at the fields of MyComponent to figure out which ones are
-           annotated with @Prop *)
-        find_client_component_type call_chain
-      with
-      | Some parent_typename ->
-          let required_props = get_required_props parent_typename tenv in
-          let prop_set = List.map ~f:Typ.Procname.get_method call_chain |> String.Set.of_list in
-          List.iter
-            ~f:(fun required_prop ->
-              if not (String.Set.mem prop_set required_prop) then
-                report_missing_required_prop summary required_prop (Specs.get_loc summary) )
-            required_props
-      | _ ->
-          () )
-    | _ ->
-        ()
-  in
-  Domain.iter_call_chains ~f:check_required_prop_chain astate
-
-
 let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make_default proc_desc tenv in
   match Analyzer.compute_post proc_data ~initial:Domain.empty with
   | Some post ->
-      let pname = Procdesc.get_proc_name proc_desc in
-      if not (LithoFramework.is_function pname)
-         && not (LithoFramework.is_component_build_method pname tenv)
-         && Procdesc.get_access proc_desc <> PredSymb.Private
-      then check_required_props post tenv summary ;
-      ( if should_report proc_desc then
-          let f = report_graphql_getters summary in
-          Domain.iter_call_chains ~f post ) ;
+      if RequiredProps.should_report proc_desc tenv then RequiredProps.report post tenv summary ;
+      if GraphQLGetters.should_report proc_desc then GraphQLGetters.report post summary ;
+      let postprocess astate formal_map : Domain.astate =
+        let f_sub access_path = Domain.LocalAccessPath.to_formal_option access_path formal_map in
+        Domain.substitute ~f_sub astate
+      in
       let payload = postprocess post (FormalMap.make proc_desc) in
       Summary.update_summary payload summary
   | None ->

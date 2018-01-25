@@ -38,11 +38,5 @@ val substitute : f_sub:(LocalAccessPath.t -> LocalAccessPath.t option) -> astate
 (** Substitute each access path in the domain using [f_sub]. If [f_sub] returns None, the
     original access path is retained; otherwise, the new one is used *)
 
-val iter_call_chains_with_suffix :
-  f:(AccessPath.t -> Typ.Procname.t list -> unit) -> MethodCall.t -> astate -> unit
-(** Unroll the domain to enumerate all the call chains ending in [call] and apply [f] to each
-    maximal chain. For example, if the domain encodes the chains foo().bar().goo() and foo().baz(),
-    [f] will be called once on foo().bar().goo() and once on foo().baz() *)
-
 val iter_call_chains : f:(AccessPath.t -> Typ.Procname.t list -> unit) -> astate -> unit
 (** Apply [f] to each maximal call chain encoded in [astate] *)
