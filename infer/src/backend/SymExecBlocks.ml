@@ -46,7 +46,7 @@ let get_extended_args_for_method_with_block_analysis act_params =
 
 let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
   let pdesc_opt =
-    match Specs.get_summary pname with
+    match Ondemand.analyze_proc_name ~caller_pdesc pname with
     | Some summary ->
         Some (Specs.get_proc_desc summary)
     | None ->
