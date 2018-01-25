@@ -248,7 +248,7 @@ Action: choose a consistent annotation based on the desired invariant.
 
 Example:
 
-````java
+```java
 class A {
 
   int len(@Nullable String s) {
@@ -270,7 +270,7 @@ class B extends A {
 
 A consistent use of @Nullable on parameters across subtyping should prevent runtime issue like in:
 
-````java
+```java
 public class Main {
 
   String s;
