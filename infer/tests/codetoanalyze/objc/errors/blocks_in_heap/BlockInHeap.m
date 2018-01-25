@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2018 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+#import <Foundation/NSObject.h>
+
+@interface BlockInHeap : NSObject
+
+typedef void (^BlockInHeapHandler)(BlockInHeap* name);
+
+@property(nonatomic, strong) BlockInHeapHandler handler;
+
+@property(nonatomic, strong) BlockInHeap* child;
+
+@end
+
+@implementation BlockInHeap
+
+- (void)assign_block_to_ivar {
+  self.handler = ^(BlockInHeap* b) {
+    self->_child = b;
+  };
+}
+
+@end
+
+int block_in_heap_executed_after_bi_abduction_ok() {
+  BlockInHeap* c = [[BlockInHeap alloc] init];
+  [c assign_block_to_ivar];
+  BlockInHeap* b = [[BlockInHeap alloc] init];
+  c.handler(b);
+  return 5;
+}
+
+int block_in_heap_executed_after_bi_abduction_ok_test() {
+  if (block_in_heap_executed_after_bi_abduction_ok() == 5) {
+    int* p = 0;
+    return *p;
+  } else {
+    int* p = 0;
+    return *p;
+  }
+}

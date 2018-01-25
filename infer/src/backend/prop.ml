@@ -1415,6 +1415,65 @@ module Normalize = struct
     mk_ptsto tenv exp strexp te
 
 
+  (** Captured variables in the closures consist of expressions and variables, with the implicit
+      assumption that these two values are in the relation &var -> id. However, after bi-abduction, etc. 
+      the constraint may not hold anymore, so this function ensures that it is always kept. 
+      In particular, we have &var -> id iff we also have the pair (id, var) as part of captured variables. *)
+  let make_captured_in_closures_consistent sigma =
+    let open Sil in
+    let find_correct_captured captured =
+      let find_captured_variable_in_the_heap captured' hpred =
+        match hpred with
+        | Hpointsto (Exp.Lvar var, Eexp (Exp.Var id, _), _) ->
+            List.map
+              ~f:(fun ((e_captured, var_captured, t) as captured_item) ->
+                match e_captured with
+                | Exp.Var id_captured ->
+                    if Ident.equal id id_captured && Pvar.equal var var_captured then captured_item
+                    else if Ident.equal id id_captured then (e_captured, var, t)
+                    else if Pvar.equal var var_captured then (Exp.Var id, var_captured, t)
+                    else captured_item
+                | _ ->
+                    captured_item )
+              captured'
+        | _ ->
+            captured'
+      in
+      List.fold_left ~f:find_captured_variable_in_the_heap ~init:captured sigma
+    in
+    let process_closures exp =
+      match exp with
+      | Exp.Closure {name; captured_vars} ->
+          let correct_captured = find_correct_captured captured_vars in
+          if phys_equal captured_vars correct_captured then exp
+          else Exp.Closure {name; captured_vars= correct_captured}
+      | _ ->
+          exp
+    in
+    let rec process_closures_in_se se =
+      match se with
+      | Eexp (exp, inst) ->
+          let new_exp = process_closures exp in
+          if phys_equal exp new_exp then se else Eexp (new_exp, inst)
+      | Estruct (fields, inst) ->
+          let new_fields =
+            List.map ~f:(fun (field, se) -> (field, process_closures_in_se se)) fields
+          in
+          if phys_equal fields new_fields then se else Estruct (new_fields, inst)
+      | _ ->
+          se
+    in
+    let process_closures_in_the_heap hpred =
+      match hpred with
+      | Hpointsto (e, se, inst) ->
+          let new_se = process_closures_in_se se in
+          if phys_equal new_se se then hpred else Hpointsto (e, new_se, inst)
+      | _ ->
+          hpred
+    in
+    List.map ~f:process_closures_in_the_heap sigma
+
+
   let rec hpred_normalize tenv sub (hpred: Sil.hpred) : Sil.hpred =
     let replace_hpred hpred' =
       L.d_strln "found array with sizeof(..) size" ;
@@ -1500,7 +1559,8 @@ module Normalize = struct
 
   let sigma_normalize tenv sub sigma =
     let sigma' =
-      List.stable_sort ~cmp:Sil.compare_hpred (List.map ~f:(hpred_normalize tenv sub) sigma)
+      List.map ~f:(hpred_normalize tenv sub) sigma |> make_captured_in_closures_consistent
+      |> List.stable_sort ~cmp:Sil.compare_hpred
     in
     if equal_sigma sigma sigma' then sigma else sigma'
 
