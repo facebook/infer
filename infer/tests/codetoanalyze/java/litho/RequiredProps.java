@@ -1,5 +1,3 @@
-package codetoanalyze.java.litho;
-
 /*
  * Copyright (c) 2018 - present Facebook, Inc.
  * All rights reserved.
@@ -8,6 +6,10 @@ package codetoanalyze.java.litho;
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+
+package codetoanalyze.java.litho;
+
+import com.facebook.litho.Column;
 import com.facebook.litho.Component;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -165,19 +167,35 @@ public class RequiredProps {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
-  // we report every time we see [build()], need to be a bit smarter in general
-  private MyComponent FP_buildSuffix(MyComponent.Builder builder) {
+  // don't want to report here; want to report at clients that don't pass prop1
+  private MyComponent buildSuffix(MyComponent.Builder builder) {
     return builder.prop2(new Object()).prop3(new Object()).build();
   }
 
-  // shouldn't report here
+  // shouldn't report here; prop 1 passed
   public MyComponent callBuildSuffixWithRequiredOk() {
-    return FP_buildSuffix(mMyComponent.create().prop1(new Object()));
+    return buildSuffix(mMyComponent.create().prop1(new Object()));
   }
 
-  // should report here
-  public MyComponent FN_callBuildSuffixWithoutRequiredBad() {
-    return FP_buildSuffix(mMyComponent.create());
+  // should report here; forgot prop 1
+  public MyComponent callBuildSuffixWithoutRequiredBad() {
+    return buildSuffix(mMyComponent.create());
+  }
+
+  public Object generalTypeForgot3Bad() {
+    MyComponent.Builder builder1 = mMyComponent.create();
+    Component.Builder builder2 = (Component.Builder) builder1.prop1(new Object());
+    // don't fail to find required @Prop's for MyComponent.Builder even though the static type that
+    // build is invoked on is [builder2]
+    return builder2.build();
+  }
+
+  public void buildWithColumnChildBad() {
+    Column.Builder builder = Column.create();
+    MyComponent.Builder childBuilder =
+      mMyComponent.create().prop1(new Object());
+    // forgot prop 3, and builder.child() will invoke build() on childBuilder
+    builder.child(childBuilder);
   }
 
 }
