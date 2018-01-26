@@ -1,0 +1,1 @@
+ERADICATE_NULL_METHOD_CALL, src/DiffExample.java, void Example.theSecondWarningReportedAsIntroducedBad(), 2, Example.theSecondWarningReportedAsIntroducedBad():void.769a1d033f7c0ce662bd32cbfd6749ac, Example.theSecondWarningReportedAsIntroducedBad():void

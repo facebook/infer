@@ -45,18 +45,28 @@ let error_desc_to_plain_string error_desc =
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
 
-let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (filename: string)
-    (qualifier: string) =
-  let base_filename = Filename.basename filename in
-  let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
-  let location_independent_qualifier =
-    (* Removing the line and column information from the error message to make the
-       hash invariant when moving the source code in the file *)
-    Str.global_replace (Str.regexp "\\(line\\|column\\)\\ [0-9]+") "_" qualifier
-  in
-  Utils.better_hash
-    (kind, type_str, hashable_procedure_name, base_filename, location_independent_qualifier)
-  |> Caml.Digest.to_hex
+let compute_hash
+    : kind:string -> bug_type:string -> procname:Typ.Procname.t -> file:string -> qualifier:string
+      -> string =
+  let counter = Hashtbl.create 128 in
+  fun ~kind ~bug_type ~procname ~file ~qualifier ->
+    let base_filename = Filename.basename file in
+    let hashable_procedure_name = Typ.Procname.hashable_name procname in
+    let location_independent_qualifier =
+      (* Removing the line and column information from the error message to make the
+         hash invariant when moving the source code in the file *)
+      Str.global_replace (Str.regexp "\\(line\\|column\\)\\ [0-9]+") "_" qualifier
+    in
+    let base_hash =
+      Utils.better_hash
+        (kind, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
+    in
+    let index =
+      let previous = try Hashtbl.find counter base_hash with Not_found -> 0 in
+      previous + 1
+    in
+    Hashtbl.replace counter base_hash index ;
+    Caml.Digest.to_hex (Utils.better_hash (base_hash, index))
 
 
 let exception_value = "exception"
@@ -291,7 +301,7 @@ module IssuesJson = struct
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
         ; key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
         ; qualifier_tags= Localise.Tags.tag_value_records_of_tags key.err_desc.tags
-        ; hash= compute_hash kind bug_type procname file qualifier
+        ; hash= compute_hash ~kind ~bug_type ~procname ~file ~qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= key.err_name.IssueType.hum
