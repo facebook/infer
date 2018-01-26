@@ -2666,8 +2666,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {final_trans_result with exps= [(closure, typ)]}
 
 
-  and cxxNewExpr_trans trans_state stmt_info stmt_list expr_info cxx_new_expr_info =
-    let instructions_trans_result = instructions trans_state stmt_list in
+  and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
     let typ = CType_decl.get_type_from_expr_info expr_info context.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -2689,7 +2688,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (Some (Exp.Const (Const.Cint IntLit.minus_one)), empty_res_trans)
       else (None, empty_res_trans)
     in
-    let res_trans_new = cpp_new_trans sil_loc typ size_exp_opt in
+    let placement_args =
+      List.filter_map ~f:CAst_utils.get_stmt cxx_new_expr_info.Clang_ast_t.xnei_placement_args
+    in
+    let trans_state_placement = {trans_state_pri with succ_nodes= []} in
+    let res_trans_placement = instructions trans_state_placement placement_args in
+    let res_trans_new = cpp_new_trans sil_loc typ size_exp_opt res_trans_placement.exps in
     let stmt_opt = CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
     let trans_state_init = {trans_state_pri with succ_nodes= []} in
     let var_exp_typ =
@@ -2728,13 +2732,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | _ ->
           [init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt]
     in
-    let all_res_trans = [res_trans_size; res_trans_new] @ res_trans_init in
+    let all_res_trans = [res_trans_size; res_trans_placement; res_trans_new] @ res_trans_init in
     let nname = "CXXNewExpr" in
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info all_res_trans
     in
-    collect_res_trans context.CContext.procdesc
-      [instructions_trans_result; {result_trans_to_parent with exps= res_trans_new.exps}]
+    {result_trans_to_parent with exps= res_trans_new.exps}
 
 
   and cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info =
@@ -3179,8 +3182,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         stringLiteral_trans trans_state expr_info ""
     | BinaryConditionalOperator (stmt_info, stmts, expr_info) ->
         binaryConditionalOperator_trans trans_state stmt_info stmts expr_info
-    | CXXNewExpr (stmt_info, stmt_list, expr_info, cxx_new_expr_info) ->
-        cxxNewExpr_trans trans_state stmt_info stmt_list expr_info cxx_new_expr_info
+    | CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info) ->
+        cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info
     | CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info) ->
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->

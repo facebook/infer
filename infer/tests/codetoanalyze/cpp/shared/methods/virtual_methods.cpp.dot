@@ -107,7 +107,7 @@ digraph cfg {
 	
 
 	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_2" ;
-"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" [label="4:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:Polygon**) [line 71, column 23]\n  n$1=*&trgl:Polygon* [line 71, column 23]\n  n$2=_fun___new(sizeof(t=Triangle):unsigned long) [line 71, column 19]\n  _fun_Triangle_Triangle(n$2:Triangle*) [line 71, column 23]\n " shape="box"]
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(t=Triangle):unsigned long) [line 71, column 19]\n  _fun_Triangle_Triangle(n$1:Triangle*) [line 71, column 23]\n  *&trgl:Triangle*=n$1 [line 71, column 3]\n " shape="box"]
 	
 
 	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" ;

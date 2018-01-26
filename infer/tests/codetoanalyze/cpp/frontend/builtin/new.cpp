@@ -16,3 +16,11 @@ void test() {
   // int* i_a = new int[10];
   // delete[] i_a;
 }
+
+struct A {};
+
+void* operator new(unsigned long size, void* ptr, void* ptr2) noexcept {
+  return ptr2;
+};
+
+void test_placement(void* ptr, int* ptr2) { auto* p = new (ptr, ++ptr2) A(); }

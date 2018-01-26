@@ -328,7 +328,7 @@ module Scope = struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type =
+let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc function_type =
   let function_type, function_type_np =
     match function_type.Typ.desc with
     | Tptr (styp, Typ.Pk_pointer)
@@ -352,7 +352,7 @@ let create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type =
           sizeof_exp_
     in
     let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
-    [exp]
+    match placement_args_exps with Some args -> exp :: args | None -> [exp]
   in
   let ret_id_typ = Some (ret_id, function_type) in
   let stmt_call =
@@ -416,12 +416,17 @@ let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt select
   else Logging.die InternalError "Expected selector new or alloc but got, %s" selector
 
 
-let cpp_new_trans sil_loc function_type size_exp =
+let cpp_new_trans sil_loc function_type size_exp placement_args_exps =
   let alloc_builtin =
-    match size_exp with Some _ -> BuiltinDecl.__new_array | None -> BuiltinDecl.__new
+    match placement_args_exps with
+    | [] -> (
+      match size_exp with Some _ -> BuiltinDecl.__new_array | None -> BuiltinDecl.__new )
+    | _ ->
+        (* TODO: call user defined `new` when there is more than one placement argument *)
+        BuiltinDecl.__placement_new
   in
   let function_type, stmt_call, exp =
-    create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type
+    create_alloc_instrs ~alloc_builtin ?size_exp ~placement_args_exps sil_loc function_type
   in
   {empty_res_trans with instrs= stmt_call; exps= [(exp, function_type)]}
 

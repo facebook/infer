@@ -77,7 +77,7 @@ val new_or_alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option
   -> string -> trans_result
 
-val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
+val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.typ) list -> trans_result
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes : sig
