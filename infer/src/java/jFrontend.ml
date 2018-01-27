@@ -157,9 +157,9 @@ let create_icfg source_file linereader program icfg cn node =
             ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
         | Javalib.ConcreteMethod cm ->
             add_cmethod source_file program linereader icfg cm proc_name
-      with JBasics.Class_structure_error _ ->
-        L.internal_error "create_icfg raised JBasics.Class_structure_error on %a@." Typ.Procname.pp
-          proc_name
+      with JBasics.Class_structure_error error ->
+        L.internal_error "create_icfg raised JBasics.Class_structure_error %s on %a@." error
+          Typ.Procname.pp proc_name
   in
   Javalib.m_iter translate node
 
