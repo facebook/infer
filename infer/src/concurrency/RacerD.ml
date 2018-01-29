@@ -1461,13 +1461,13 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           let conflicting_writes =
             List.filter
               ~f:(fun {access; precondition; threads= other_threads} ->
+                TraceElem.is_write access
+                &&
                 match precondition with
-                | AccessPrecondition.Unprotected _ ->
-                    TraceElem.is_write access && ThreadsDomain.is_any other_threads
-                | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl) ->
-                    TraceElem.is_write access
-                | _ ->
-                    false )
+                | Unprotected _ | TotallyUnprotected ->
+                    ThreadsDomain.is_any other_threads
+                | Protected other_excl ->
+                    is_opposite (excl, other_excl) )
               accesses
           in
           if not (List.is_empty conflicting_writes) then
