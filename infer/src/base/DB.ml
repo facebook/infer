@@ -78,19 +78,13 @@ let source_dir_from_source_file source_file =
 
 type filename = string [@@deriving compare]
 
-let equal_filename = [%compare.equal : filename]
-
 let filename_to_string s = s
 
 let filename_from_string s = s
 
 let filename_add_suffix fn s = fn ^ s
 
-let chop_extension = Filename.chop_extension
-
 let file_exists path = Sys.file_exists path = `Yes
-
-let file_remove = Sys.remove
 
 module FilenameSet = Caml.Set.Make (struct
   type t = filename [@@deriving compare]

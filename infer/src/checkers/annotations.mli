@@ -96,8 +96,6 @@ val ia_is_on_bind : Annot.Item.t -> bool
 
 val ia_is_on_mount : Annot.Item.t -> bool
 
-val ia_is_prop : Annot.Item.t -> bool
-
 val ia_is_on_unbind : Annot.Item.t -> bool
 
 val ia_is_on_unmount : Annot.Item.t -> bool

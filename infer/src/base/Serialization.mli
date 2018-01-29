@@ -19,9 +19,6 @@ module Key : sig
   val analysis_results : t
   (** current key for an analysis results value *)
 
-  val cg : t
-  (** current key for a call graph *)
-
   val cluster : t
   (** current key for a cluster *)
 
@@ -50,3 +47,7 @@ val read_from_string : 'a serializer -> string -> 'a option
 
 val write_to_file : 'a serializer -> data:'a -> DB.filename -> unit
 (** Serialize into a file writing value *)
+
+val generate_keys : unit -> int * int * int * int * int
+  [@@warning "-32"]
+(** Generate new (random) serialization keys, to be used in an ocaml toplevel *)

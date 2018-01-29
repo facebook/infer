@@ -316,6 +316,19 @@ AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
 AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
 
+AC_CHECK_TOOL([SED], [sed], [no])
+AS_IF([test "$SED" != "xno"], [
+  AC_MSG_CHECKING([if sed is GNU sed])
+  AS_IF(["$SED" --version 2> /dev/null | grep -q -e "GNU sed"], [
+    GNU_SED="$SED"
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+    AC_CHECK_TOOL([GNU_SED], [gsed], [no])
+  ])
+])
+AC_SUBST([GNU_SED])
+
 AC_CHECK_TOOL([BREW], [brew], [no])
 
 # warn about broken pkg-config version for brew users

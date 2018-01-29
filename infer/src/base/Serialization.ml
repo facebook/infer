@@ -22,9 +22,9 @@ module Key = struct
   (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
   type t = int
 
-  (** current key for tenv, procedure summary, cfg, error trace, call graph *)
-  let tenv, summary, cg, analysis_results, cluster, lint_issues =
-    (425184201, 160179325, 477305409, 799050016, 579094948, 852343110)
+  (** Current keys for various serializable objects. The keys are computed using the [generate_keys] function below *)
+  let tenv, summary, analysis_results, cluster, lint_issues =
+    (425184201, 160179325, 799050016, 579094948, 852343110)
 end
 
 (** version of the binary files, to be incremented for each change *)
@@ -122,11 +122,10 @@ let read_from_file s = s.read_from_file
 
 let write_to_file s = s.write_to_file
 
-(*
-(** Generate random keys, to be used in an ocaml toplevel *)
+(** Generate new (random) serialization keys, to be run in an ocaml toplevel and used in the [Key]
+    module above *)
 let generate_keys () =
-  Random.self_init ();
+  Random.self_init () ;
   let max_rand_int = 0x3FFFFFFF (* determined by Rand library *) in
   let gen () = Random.int max_rand_int in
-  gen (), gen (), gen (), gen (), gen (), gen ()
-*)
+  (gen (), gen (), gen (), gen (), gen ())

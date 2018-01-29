@@ -30,11 +30,15 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
+INFER_BUILD_DIR = ../_build/test
+
+ALL_INFER_IN_ONE_FILE_ML = all_infer_in_one_file.ml
+
 default: detect_dead_code
 
-ml_src_files_from_mlly:=$(shell find .. -not -path "../*stubs*" -regex '\.\./[a-zA-Z].*\.ml\(l\|y\)')
+ml_src_files_from_mlly:=$(shell find .. -not -path "../*stubs*" -regex '\.\./[a-zA-Z].*\.ml[ly]')
 
-ml_src_files:=$(shell cd .. && find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
+ml_src_files:=$(shell cd .. && find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.mli*')
 
 ml_src_files_without_mli:=$(shell cd .. && for i in */*.ml */*/*.ml; do [ -f $${i}i ] || echo $$i; done)
 
@@ -52,79 +56,91 @@ depend:
 #	file, you need the module value to be defined before you can refer to it, even in
 #	signatures. Because of this, the order given by ocamldep is not enough to avoid "Unbound
 #	module MyModule" errors in the case of signatures referring to other modules.
-	$(QUIET)echo "(* START OF SIGNATURE $*.mli *)" >> all_infer_in_one_file.ml
+	$(QUIET)echo "(* START OF SIGNATURE $*.mli *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	put too many spaces in general but you never know what the contents of the file is;
 #	sometimes spaces will be needed
-	$(QUIET)echo "  module type " >> all_infer_in_one_file.ml
+	$(QUIET)echo "  module type " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	suppress some warnings for generated code
-	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> all_infer_in_one_file.ml; fi
+	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 #	compute module name from file name: capitalize first letter
-	$(QUIET)echo $(shell basename $*) | sed -e "s/\b\(.\)/  \u\1/g" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  = sig " >> all_infer_in_one_file.ml
+	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  = sig " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	pre-processor directive to get errors in the original files and not in all_infer_in_one_file.ml
-	$(QUIET)echo '# 1 "$*.mli"' >> all_infer_in_one_file.ml
-	cat ../$*.mli >> all_infer_in_one_file.ml
-	$(QUIET)echo "  end " >> all_infer_in_one_file.ml
-	$(QUIET)echo "(* END OF SIGNATURE $*.mli *)" >> all_infer_in_one_file.ml
-	$(QUIET)echo >> all_infer_in_one_file.ml
+	$(QUIET)echo '# 1 "$*.mli"' >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat ../$*.mli >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "(* END OF SIGNATURE $*.mli *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	lots of duplication from above, sorry
-	$(QUIET)echo "(* START OF MODULE $*.ml *)" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  module " >> all_infer_in_one_file.ml
-	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> all_infer_in_one_file.ml; fi
-	$(QUIET)echo $(shell basename $*) | sed -e "s/\b\(.\)/  \u\1/g" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  : " >> all_infer_in_one_file.ml
-	$(QUIET)echo $(shell basename $*) | sed -e "s/\b\(.\)/  \u\1/g" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  = struct " >> all_infer_in_one_file.ml
-	$(QUIET)echo '# 1 "$*.ml"' >> all_infer_in_one_file.ml
-	cat ../$*.ml >> all_infer_in_one_file.ml
-	$(QUIET)echo "  end " >> all_infer_in_one_file.ml
-	$(QUIET)echo "(* END OF MODULE $*.ml *)" >> all_infer_in_one_file.ml
-	$(QUIET)echo >> all_infer_in_one_file.ml
+	$(QUIET)echo "(* START OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  module " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
+	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  : " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo '# 1 "$*.ml"' >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat ../$*.ml >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "(* END OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 
 $(ml_src_files_without_mli:.ml=.cmx):
 #	again mostly duplicated from above
-	$(QUIET)echo "(* START OF MODULE $(@) *)" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  module " >> all_infer_in_one_file.ml
-	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> all_infer_in_one_file.ml; fi
-	$(QUIET)echo $(shell basename $@ .cmx) | sed -e "s/\b\(.\)/  \u\1/g" >> all_infer_in_one_file.ml
-	$(QUIET)echo "  = struct " >> all_infer_in_one_file.ml
-	$(QUIET)echo "# 1 \"$$(echo $@ | sed -e 's/\.cmx$$/.ml/')\"" >> all_infer_in_one_file.ml
-	cat ../$$(echo $@ | sed -e "s/\.cmx$$/.ml/") >> all_infer_in_one_file.ml
-	$(QUIET)echo "  end " >> all_infer_in_one_file.ml
-	$(QUIET)echo "(* END OF MODULE $@ *)" >> all_infer_in_one_file.ml
-	$(QUIET)echo >> all_infer_in_one_file.ml
+	$(QUIET)echo "(* START OF MODULE $(@) *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  module " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
+	$(QUIET)echo $(shell basename $@ .cmx) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "# 1 \"$$(echo $@ | $(GNU_SED) -e 's/\.cmx$$/.ml/')\"" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	cat ../$$(echo $@ | $(GNU_SED) -e "s/\.cmx$$/.ml/") >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "(* END OF MODULE $@ *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 
 -include .depend
 
-.PHONY: all_infer_in_one_file.ml
-all_infer_in_one_file.ml: backend/infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.cmx
-	$(QUIET)echo "see results in all_infer_in_one_file.ml"
+# Concatenate all source files of infer into a single file. Assume that all source files are
+# available (in particular generated ones) and .depend has been created by ocamldep. Depend on the
+# root .cmx to include all the code. Any code not used in the construction of these "root .cmx" will
+# be considered dead.
+.PHONY: flatten_infer
+flatten_infer: backend/infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.cmx
+	$(QUIET)echo "see results in $(ALL_INFER_IN_ONE_FILE_ML)"
 
 .PHONY: detect_dead_code
 detect_dead_code:
 	$(MAKE) clean
+#	create a dummy implementation file to keep jbuilder happy, as we are about to generate the
+#	jbuilder file for this directory
+	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get jbuild generated, and the generated code for the lexers and parsers in ../_build
-	$(MAKE) -C .. byte
+	$(MAKE) GENERATED_JBUILDS=deadcode/jbuild -C .. test
 #	copy generated source files from ../_build
 	for file in $(ml_src_files_from_mlly); do \
 	  set +e; \
-	  [ -f "../_build/default/$$(basename $$file .mly).ml" ] && \
-	    $(COPY) ../_build/default/$$(basename $$file .mly).ml .; \
-	  [ -f "../_build/default/$$(basename $$file .mly).mli" ] && \
-	    $(COPY) ../_build/default/$$(basename $$file .mly).mli .; \
-	  [ -f "../_build/default/$$(basename $$file .mll).ml" ] && \
-	    $(COPY) ../_build/default/$$(basename $$file .mll).ml .; \
-	  [ -f "../_build/default/$$(basename $$file .mll).mli" ] && \
-	    $(COPY) ../_build/default/$$(basename $$file .mll).mli .; \
+	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mly).ml" ] && \
+	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mly).ml .; \
+	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mly).mli" ] && \
+	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mly).mli .; \
+	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mll).ml" ] && \
+	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mll).ml .; \
+	  [ -f "$(INFER_BUILD_DIR)/$$(basename $$file .mll).mli" ] && \
+	    $(COPY) $(INFER_BUILD_DIR)/$$(basename $$file .mll).mli .; \
 	  set -e; \
 	done
-	$(REMOVE) all_infer_in_one_file.ml
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
-#	have changed, so run another `make`.
-	$(MAKE) -j 1 all_infer_in_one_file.ml
-#	build and get dead code warnings
-	jbuilder build ../_build/default/deadcode/all_infer_in_one_file.bc
+#	have changed. For both of these reasons, run another `make`.
+#	Create a temp file so that the build doesn't break if this step gets interrupted.
+	tmp_file=$$(mktemp --tmpdir all_infer_in_one_file_XXXXX.ml); \
+	$(MAKE) -j 1 ALL_INFER_IN_ONE_FILE_ML="$$tmp_file" flatten_infer; \
+	mv "$$tmp_file" $(ALL_INFER_IN_ONE_FILE_ML)
+#	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
+	if ! jbuilder build $(INFER_BUILD_DIR)/deadcode/all_infer_in_one_file.bc; then \
+	  $(MAKE) clean; \
+	  exit 1; \
+	fi
 #	be paranoid about cleaning because we do not want to include infer_in_one_file into infer by
 #	accident and I don't know enough jbuilder to be positive that it won't happen
 	$(MAKE) clean
@@ -132,4 +148,3 @@ detect_dead_code:
 .PHONY: clean
 clean:
 	$(REMOVE) .depend *.ml *.mli jbuild
-	touch all_infer_in_one_file.mli all_infer_in_one_file.ml

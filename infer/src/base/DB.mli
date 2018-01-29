@@ -17,8 +17,6 @@ open! IStd
 (** generic file name *)
 type filename [@@deriving compare]
 
-val equal_filename : filename -> filename -> bool
-
 module FilenameSet : Caml.Set.S with type elt = filename
 
 module FilenameMap : Caml.Map.S with type key = filename
@@ -27,13 +25,9 @@ val filename_from_string : string -> filename
 
 val filename_to_string : filename -> string
 
-val chop_extension : filename -> filename
-
 val filename_add_suffix : filename -> string -> filename
 
 val file_exists : filename -> bool
-
-val file_remove : filename -> unit
 
 val file_modified_time : ?symlink:bool -> filename -> float
 (** Return the time when a file was last modified. The file must exist. *)

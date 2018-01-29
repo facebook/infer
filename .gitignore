@@ -163,3 +163,5 @@ infer/src/.project
 # generated when looking for dead code
 /infer/src/deadcode/.depend
 /infer/src/deadcode/jbuild
+/infer/src/deadcode/*.ml
+/infer/src/deadcode/*.mli

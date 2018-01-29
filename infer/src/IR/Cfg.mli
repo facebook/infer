@@ -21,9 +21,6 @@ val load : SourceFile.t -> t option
 val store : SourceFile.t -> t -> unit
 (** Save a cfg into the database *)
 
-val get_all_proc_descs : t -> Procdesc.t list
-(** get all the values from the hashtable *)
-
 val get_all_proc_names : t -> Typ.Procname.t list
 (** get all the keys from the hashtable *)
 
