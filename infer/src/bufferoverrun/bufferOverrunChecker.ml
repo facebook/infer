@@ -340,43 +340,33 @@ module Report = struct
 
 
   module ExitStatement = struct
-    let successors node = Procdesc.Node.get_succs node
-
-    let predecessors node = Procdesc.Node.get_preds node
-
-    let preds_of_singleton_successor node =
-      match successors node with [succ] -> Some (predecessors succ) | _ -> None
-
-
-    (* last statement in if branch *)
-    (* do we transfer control to a node with multiple predecessors *)
-    let has_multiple_sibling_nodes_and_one_successor node =
-      match preds_of_singleton_successor node with
-      (* we need at least 2 predecessors *)
-      | Some (_ :: _ :: _) ->
+    let non_significant_instr = function
+      | Sil.(Abstract _ | Nullify _ | Remove_temps _) ->
           true
       | _ ->
           false
 
 
-    (* check that we are the last instruction in the current node
-     * and that the current node is followed by a unique successor
-     * with no instructions.
-     *
-     * this is our proxy for being the last statement in a procedure.
-     * The tests pass, but it's kind of a hack and depends on an internal
-     * detail of SIL that could change in the future. *)
-    let is_last_in_node_and_followed_by_empty_successor node rem_instrs =
-      List.is_empty rem_instrs
+    (* check that we are the last significant instruction
+     * of a procedure (no more significant instruction)
+     * or of a block (goes directly to a node with multiple predecessors)
+     *)
+    let rec is_end_of_block_or_procedure node rem_instrs =
+      List.for_all rem_instrs ~f:non_significant_instr
       &&
       match Procdesc.Node.get_succs node with
-      | [succ] -> (
-        match CFG.instrs succ with
-        | [] ->
-            List.is_empty (Procdesc.Node.get_succs succ)
-        | _ ->
-            false )
-      | _ ->
+      | [] ->
+          true
+      | [succ]
+        -> (
+          is_end_of_block_or_procedure succ (CFG.instrs succ)
+          ||
+          match Procdesc.Node.get_preds succ with
+          | _ :: _ :: _ ->
+              true (* [succ] is a join, i.e. [node] is the end of a block *)
+          | _ ->
+              false )
+      | _ :: _ :: _ ->
           false
   end
 
@@ -424,15 +414,10 @@ module Report = struct
                     Exceptions.Condition_always_true_false (desc, not true_branch, __POS__)
                   in
                   Reporting.log_warning summary ~loc:location exn
-              (* special case for when we're at the end of a procedure *)
+              (* special case for `exit` when we're at the end of a block / procedure *)
               | Sil.Call (_, Const Cfun pname, _, _, _)
                 when String.equal (Typ.Procname.get_method pname) "exit"
-                     && ExitStatement.is_last_in_node_and_followed_by_empty_successor node
-                          rem_instrs ->
-                  ()
-              | Sil.Call (_, Const Cfun pname, _, _, _)
-                when String.equal (Typ.Procname.get_method pname) "exit"
-                     && ExitStatement.has_multiple_sibling_nodes_and_one_successor node ->
+                     && ExitStatement.is_end_of_block_or_procedure node rem_instrs ->
                   ()
               | _ ->
                   let location = Sil.instr_get_loc instr in
