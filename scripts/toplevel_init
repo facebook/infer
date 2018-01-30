@@ -3,16 +3,24 @@
 (* load dependencies *)
 #use "topfind";;
 #thread;;
+#require "ANSITerminal";;
+#require "atdgen";;
 #require "cmdliner";;
 #require "core.top";;
 #require "ctypes";;
 #require "ctypes.stubs";;
+#require "ppx_compare";;
 #require "sawja";;
 #require "sqlite3";;
-#require "atdgen";;
 #require "xmlm";;
-#require "ANSITerminal";;
 
 open InferStdlib;;
 open InferGenerated;;
 open InferModules;;
+
+(* Most of infer uses this, useful for copy/pasting. Can be (partially) countered by typing `open
+Caml.Pervasives`. *)
+open IStd;;
+
+module L = Logging;;
+module F = Format;;
