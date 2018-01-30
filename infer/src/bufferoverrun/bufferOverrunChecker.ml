@@ -381,9 +381,9 @@ module Report = struct
   end
 
   let rec collect_instrs
-      : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate -> PO.ConditionSet.t
-        -> PO.ConditionSet.t =
-    fun ({pdesc; tenv; extras} as pdata) node instrs mem cond_set ->
+      : Specs.summary -> extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
+        -> PO.ConditionSet.t -> PO.ConditionSet.t =
+    fun summary ({pdesc; tenv; extras} as pdata) node instrs mem cond_set ->
       match instrs with
       | [] ->
           cond_set
@@ -399,9 +399,9 @@ module Report = struct
                   check pname node location mem cond_set
               | None ->
                 match Summary.read_summary pdesc callee_pname with
-                | Some summary ->
+                | Some callee_summary ->
                     let callee = extras callee_pname in
-                    instantiate_cond tenv pname callee params mem summary location
+                    instantiate_cond tenv pname callee params mem callee_summary location
                     |> PO.ConditionSet.join cond_set
                 | _ ->
                     cond_set )
@@ -423,7 +423,7 @@ module Report = struct
                   let exn =
                     Exceptions.Condition_always_true_false (desc, not true_branch, __POS__)
                   in
-                  Reporting.log_warning_deprecated pname ~loc:location exn
+                  Reporting.log_warning summary ~loc:location exn
               (* special case for when we're at the end of a procedure *)
               | Sil.Call (_, Const Cfun pname, _, _, _)
                 when String.equal (Typ.Procname.get_method pname) "exit"
@@ -438,29 +438,29 @@ module Report = struct
                   let location = Sil.instr_get_loc instr in
                   let desc = Errdesc.explain_unreachable_code_after location in
                   let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
-                  Reporting.log_error_deprecated pname ~loc:location exn )
+                  Reporting.log_error summary ~loc:location exn )
             | _ ->
                 ()
           in
           print_debug_info instr mem' cond_set ;
-          collect_instrs pdata node rem_instrs mem' cond_set
+          collect_instrs summary pdata node rem_instrs mem' cond_set
 
 
   let collect_node
-      : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t -> CFG.node
-        -> PO.ConditionSet.t =
-    fun pdata inv_map cond_set node ->
+      : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t
+        -> CFG.node -> PO.ConditionSet.t =
+    fun summary pdata inv_map cond_set node ->
       match Analyzer.extract_pre (CFG.id node) inv_map with
       | Some mem ->
           let instrs = CFG.instrs node in
-          collect_instrs pdata node instrs mem cond_set
+          collect_instrs summary pdata node instrs mem cond_set
       | _ ->
           cond_set
 
 
-  let collect : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
-    fun ({pdesc} as pdata) inv_map ->
-      let add_node1 acc node = collect_node pdata inv_map acc node in
+  let collect : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
+    fun summary ({pdesc} as pdata) inv_map ->
+      let add_node1 acc node = collect_node summary pdata inv_map acc node in
       Procdesc.fold_nodes add_node1 PO.ConditionSet.empty pdesc
 
 
@@ -484,8 +484,8 @@ module Report = struct
       List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
 
-  let report_error : Procdesc.t -> PO.ConditionSet.t -> unit =
-    fun pdesc cond_set ->
+  let report_errors : Specs.summary -> Procdesc.t -> PO.ConditionSet.t -> unit =
+    fun summary pdesc cond_set ->
       let pname = Procdesc.get_proc_name pdesc in
       let report cond trace issue_type =
         let caller_pname, location =
@@ -506,13 +506,14 @@ module Report = struct
             | exception _ ->
                 [Errlog.make_trace_element 0 location description []]
           in
-          Reporting.log_error_deprecated pname ~loc:location ~ltr:trace exn
+          Reporting.log_error summary ~loc:location ~ltr:trace exn
       in
       PO.ConditionSet.check_all ~report cond_set
 end
 
-let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
-  fun {pdesc; tenv; extras= get_pdesc} ->
+let compute_post
+    : Specs.summary -> Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
+  fun summary {pdesc; tenv; extras= get_pdesc} ->
     let cfg = CFG.from_pdesc pdesc in
     let pdata = ProcData.make pdesc tenv get_pdesc in
     let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
@@ -524,8 +525,8 @@ let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.paylo
       let exit_id = CFG.id (CFG.exit_node cfg) in
       Analyzer.extract_post exit_id inv_map
     in
-    let cond_set = Report.collect pdata inv_map in
-    Report.report_error pdesc cond_set ;
+    let cond_set = Report.collect summary pdata inv_map in
+    Report.report_errors summary pdesc cond_set ;
     match (entry_mem, exit_mem) with
     | Some entry_mem, Some exit_mem ->
         Some (entry_mem, exit_mem, cond_set)
@@ -541,12 +542,13 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
 
 let checker : Callbacks.proc_callback_args -> Specs.summary =
   fun {proc_desc; tenv; summary; get_proc_desc} ->
-    let proc_name = Specs.get_proc_name summary in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
     Preanal.do_preanalysis proc_desc tenv ;
-    match compute_post proc_data with
+    match compute_post summary proc_data with
     | Some post ->
-        if Config.bo_debug >= 1 then print_summary proc_name post ;
+        ( if Config.bo_debug >= 1 then
+            let proc_name = Specs.get_proc_name summary in
+            print_summary proc_name post ) ;
         Summary.update_summary post summary
     | None ->
         summary
