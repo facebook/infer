@@ -133,7 +133,7 @@ detect_dead_code:
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
 #	have changed. For both of these reasons, run another `make`.
 #	Create a temp file so that the build doesn't break if this step gets interrupted.
-	tmp_file=$$(mktemp --tmpdir all_infer_in_one_file_XXXXX.ml); \
+	tmp_file=$$(mktemp -t all_infer_in_one_file_XXXXX.ml); \
 	$(MAKE) -j 1 ALL_INFER_IN_ONE_FILE_ML="$$tmp_file" flatten_infer; \
 	mv "$$tmp_file" $(ALL_INFER_IN_ONE_FILE_ML)
 #	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
