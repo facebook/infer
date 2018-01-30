@@ -15,8 +15,8 @@ EXPECTED_TEST_OUTPUT = introduced.exp.test
 INFERPRINT_ISSUES_FIELDS = \
 	"bug_type,file,procedure,line_offset,procedure_id,procedure_id_without_crc"
 
-CURRENT_DIR = infer-current
-PREVIOUS_DIR = infer-previous
+CURRENT_DIR = infer-out-current
+PREVIOUS_DIR = infer-out-previous
 CURRENT_REPORT = $(CURRENT_DIR)/report.json
 PREVIOUS_REPORT = $(PREVIOUS_DIR)/report.json
 

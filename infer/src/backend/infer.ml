@@ -35,11 +35,14 @@ let setup () =
       ResultsDir.remove_results_dir () ; ResultsDir.create_results_dir ()
   | Capture | Compile | Run ->
       let driver_mode = Lazy.force Driver.mode_from_command_line in
-      if not
-           ( Driver.(equal_mode driver_mode Analyze)
-           ||
-           Config.(buck || continue_capture || infer_is_clang || infer_is_javac || reactive_mode)
-           )
+      if Config.(
+           (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
+              avoid getting errors because some of their contents is missing (removed by
+              [Driver.clean_results_dir ()]). *)
+           buck && flavors)
+         || not
+              ( Driver.(equal_mode driver_mode Analyze)
+              || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir ()
   | Explore ->
