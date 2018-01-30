@@ -623,6 +623,10 @@ devsetup: Makefile.autoconf
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
+	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
+	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
+	  brew install gnu-sed; \
+	fi
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && ! $$(parallel -h | grep -q GNU); then \
 	  echo '$(TERM_INFO)*** Installing GNU parallel$(TERM_RESET)' >&2; \
 	  brew install parallel; \
