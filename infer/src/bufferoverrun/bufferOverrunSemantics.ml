@@ -525,11 +525,9 @@ module Make (CFG : ProcCfg.S) = struct
         match formal with
         | Itv.Bound.Linear (_, se1) when Itv.SymLinear.is_zero se1 ->
             (bound_map, trace_map)
-        | Itv.Bound.Linear (0, se1) when Itv.SymLinear.cardinal se1 > 0 ->
-            let symbol, coeff = Itv.SymLinear.min_binding se1 in
-            if Int.equal coeff 1 then
-              (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
-            else assert false
+        | Itv.Bound.Linear (0, se1) ->
+            let symbol = Itv.SymLinear.get_one_symbol se1 in
+            (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
         | Itv.Bound.MinMax (0, Itv.Bound.Plus, Itv.Bound.Max, 0, symbol) ->
             (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
         | _ ->
