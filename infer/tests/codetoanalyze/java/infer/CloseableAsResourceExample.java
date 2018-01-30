@@ -66,6 +66,16 @@ class ResourceWithException implements Closeable {
   }
 }
 
+class ByteArrayOutputStreamWrapper extends ByteArrayOutputStream {
+}
+
+class ByteArrayInputStreamWrapper extends ByteArrayInputStream {
+
+  public ByteArrayInputStreamWrapper(byte[] arr) {
+    super(arr);
+  }
+}
+
 public class CloseableAsResourceExample {
 
   native static boolean star();
@@ -113,6 +123,11 @@ public class CloseableAsResourceExample {
 
   void noNeedToCloseByteArrayOutputStream() {
     ByteArrayOutputStream stream = new ByteArrayOutputStream(42);
+  }
+
+  void noCloseByteArrayWrappersOk(byte[] array) {
+    ByteArrayOutputStreamWrapper stream1 = new ByteArrayOutputStreamWrapper();
+    ByteArrayInputStreamWrapper stream2 = new ByteArrayInputStreamWrapper(array);
   }
 
   void noNeedToCloseByteArrayInputStream(byte[] array) {

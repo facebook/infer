@@ -656,6 +656,18 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
     | _ ->
         false
   in
+  (* return true for classes that are a subclass of Closeable, but don't actually represent a
+     resource *)
+  let is_non_resource_closeable typename _ =
+    match Typ.Name.name typename with
+    | "java.io.ByteArrayInputStream"
+    | "java.io.ByteArrayOutputStream"
+    | "java.io.StringReader"
+    | "java.io.StringWriter" ->
+        true
+    | _ ->
+        false
+  in
   let instrs =
     match call_args with
     (* modeling a class bypasses the treatment of Closeable *)
@@ -665,7 +677,8 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
     | ((_, {Typ.desc= Typ.Tptr ({desc= Tstruct typename}, _)}) as exp) :: _
     (* add a file attribute when calling the constructor of a subtype of Closeable *)
       when Typ.Procname.is_constructor callee_procname
-           && AndroidFramework.is_autocloseable tenv typename ->
+           && AndroidFramework.is_autocloseable tenv typename
+           && not (PatternMatch.supertype_exists tenv is_non_resource_closeable typename) ->
         let set_file_attr =
           let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_file_attribute) in
           Sil.Call (None, set_builtin, [exp], loc, CallFlags.default)
