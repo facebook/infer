@@ -344,6 +344,10 @@ module SinkKind = struct
             taint_all Deserialization
         | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
             taint_nth 0 Other
+        | "java.lang.ProcessBuilder", "<init>" ->
+            taint_all ShellExec
+        | "java.lang.ProcessBuilder", "command" ->
+            taint_all ShellExec
         | class_name, method_name ->
             let taint_matching_supertype typename =
               match (Typ.Name.name typename, method_name) with

@@ -55,8 +55,9 @@ include TaintAnalysis.Make (struct
             []
         | _ when Typ.Procname.is_constructor pname ->
             [TaintSpec.Propagate_to_receiver]
-        | _, _, (Some {Typ.desc= Tvoid} | None) when not is_static ->
-            (* for instance methods with no return value, propagate the taint to the receiver *)
+        | _, _, (Some {Typ.desc= Tvoid | Tint _ | Tfloat _} | None) when not is_static ->
+            (* for instance methods with a non-Object return value, propagate the taint to the
+               receiver *)
             [TaintSpec.Propagate_to_receiver]
         | classname, _, Some {Typ.desc= Tptr _ | Tstruct _} -> (
           match actuals with

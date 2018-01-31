@@ -15,7 +15,10 @@ import android.text.Html;
 import android.text.Spanned;
 import android.widget.EditText;
 import java.io.IOException;
+import java.lang.ProcessBuilder;
 import java.lang.Runtime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.facebook.infer.builtins.InferTaint;
 
@@ -49,5 +52,22 @@ public class UserControlledStrings {
     Runtime.getRuntime().exec(cmds);
   }
 
+  ProcessBuilder clipboardToProcessBuilder1Bad() {
+    return new ProcessBuilder(clipboard.getText().toString());
+  }
+
+  ProcessBuilder clipboardToProcessBuilder2Bad() {
+    return new ProcessBuilder("sh", clipboard.getText().toString());
+  }
+
+  ProcessBuilder clipboardToProcessBuilder3Bad(ProcessBuilder builder) {
+    return builder.command(clipboard.getText().toString());
+  }
+
+  ProcessBuilder clipboardToProcessBuilder4Bad(ProcessBuilder builder) {
+    List<String> cmds = new ArrayList();
+    cmds.add(clipboard.getText().toString());
+    return builder.command(cmds);
+  }
 
 }
