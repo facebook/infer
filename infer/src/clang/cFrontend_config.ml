@@ -28,13 +28,13 @@ type exception_details =
 
 exception Unimplemented of exception_details
 
-let unimplemented position source_range ast_node fmt =
+let unimplemented position source_range ?ast_node fmt =
   F.kasprintf (fun msg -> raise (Unimplemented {msg; position; source_range; ast_node})) fmt
 
 
 exception IncorrectAssumption of exception_details
 
-let incorrect_assumption position source_range ast_node fmt =
+let incorrect_assumption position source_range ?ast_node fmt =
   F.kasprintf (fun msg -> raise (IncorrectAssumption {msg; position; source_range; ast_node})) fmt
 
 

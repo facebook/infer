@@ -178,7 +178,7 @@ let make_next_object_exp stmt_info item items =
         let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
         (Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info), var_qual_type)
     | _ ->
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range None
+        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
           "unexpected item %a"
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
           item
