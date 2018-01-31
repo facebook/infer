@@ -350,13 +350,6 @@ val prop_iter_make_id_primed : Tenv.t -> Ident.t -> 'a prop_iter -> 'a prop_iter
 val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 (** Collect garbage fields. *)
 
-val strexp_get_exps : Sil.strexp -> Exp.Set.t
-(** return the set of subexpressions of [strexp] *)
-
-val compute_reachable_hpreds : hpred list -> Exp.Set.t -> Sil.HpredSet.t * Exp.Set.t
-(** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
-    [exps] *)
-
 (** {2 Internal modules} *)
 
 module Metrics : sig

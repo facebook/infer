@@ -38,11 +38,6 @@ val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 (** describe rvalue [e] as a dexp *)
 
-val explain_context_leak :
-  Typ.Procname.t -> Typ.t -> Typ.Fieldname.t -> (Typ.Fieldname.t option * Typ.t) list
-  -> Localise.error_desc
-(** Produce a description of a persistent reference to an Android Context *)
-
 val explain_allocation_mismatch : PredSymb.res_action -> PredSymb.res_action -> Localise.error_desc
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 

@@ -87,8 +87,6 @@ val condition_always_false : t
 
 val condition_always_true : t
 
-val context_leak : t
-
 val create_intent_from_uri : t
 
 val cross_site_scripting : t

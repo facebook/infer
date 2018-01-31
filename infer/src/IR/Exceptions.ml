@@ -65,8 +65,6 @@ exception Comparing_floats_for_equality of Localise.error_desc * L.ml_loc
 
 exception Condition_always_true_false of Localise.error_desc * bool * L.ml_loc
 
-exception Context_leak of Localise.error_desc * L.ml_loc
-
 exception Custom_error of string * Localise.error_desc
 
 exception Dangling_pointer_dereference of
@@ -165,14 +163,6 @@ let recognize_exception exn =
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
-      ; kind= None
-      ; category= Nocat }
-  | Context_leak (desc, _) ->
-      { name= IssueType.context_leak
-      ; description= desc
-      ; ml_loc= None
-      ; visibility= Exn_user
-      ; severity= High
       ; kind= None
       ; category= Nocat }
   | Analysis_stops (desc, ml_loc_opt) ->

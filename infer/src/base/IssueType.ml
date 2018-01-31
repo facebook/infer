@@ -132,8 +132,6 @@ let condition_always_false = from_string ~enabled:false "CONDITION_ALWAYS_FALSE"
 
 let condition_always_true = from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
 
-let context_leak = from_string "CONTEXT_LEAK"
-
 let create_intent_from_uri = from_string "CREATE_INTENT_FROM_URI"
 
 let cross_site_scripting = from_string "CROSS_SITE_SCRIPTING"

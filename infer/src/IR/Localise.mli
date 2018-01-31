@@ -164,9 +164,6 @@ val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 
 val java_unchecked_exn_desc : Typ.Procname.t -> Typ.Name.t -> string -> error_desc
 
-val desc_context_leak :
-  Typ.Procname.t -> Typ.t -> Typ.Fieldname.t -> (Typ.Fieldname.t option * Typ.t) list -> error_desc
-
 val desc_fragment_retains_view : Typ.t -> Typ.Fieldname.t -> Typ.t -> Typ.Procname.t -> error_desc
 
 val desc_custom_error : Location.t -> error_desc
