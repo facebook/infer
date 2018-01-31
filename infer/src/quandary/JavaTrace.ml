@@ -244,6 +244,7 @@ module SinkKind = struct
     | HTML  (** sink that creates HTML *)
     | JavaScript  (** sink that passes its arguments to untrusted JS code *)
     | Logging  (** sink that logs one or more of its arguments *)
+    | ShellExec  (** sink that runs a shell command *)
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
     | Other  (** for testing or uncategorized sinks *)
     [@@deriving compare]
@@ -265,6 +266,8 @@ module SinkKind = struct
         Logging
     | "OpenDrawableResource" ->
         OpenDrawableResource
+    | "ShellExec" ->
+        ShellExec
     | "StartComponent" ->
         StartComponent
     | _ ->
@@ -364,6 +367,8 @@ module SinkKind = struct
                   | "postUrl"
                   | "postWebMessage" ) ) ->
                   taint_all JavaScript
+              | "java.lang.Runtime", "exec" ->
+                  taint_nth 0 ShellExec
               | class_name, method_name ->
                   (* check the list of externally specified sinks *)
                   let procedure = class_name ^ "." ^ method_name in
@@ -405,6 +410,8 @@ module SinkKind = struct
           "Logging"
       | OpenDrawableResource ->
           "OpenDrawableResource"
+      | ShellExec ->
+          "ShellExec"
       | StartComponent ->
           "StartComponent"
       | Other ->
@@ -474,6 +481,8 @@ include Trace.Make (struct
         Some IssueType.create_intent_from_uri
     | PrivateData, Logging ->
         Some IssueType.logging_private_data
+    | (Intent | UserControlledString | UserControlledURI), ShellExec ->
+        Some IssueType.shell_injection
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error

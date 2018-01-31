@@ -14,6 +14,8 @@ import android.content.ClipboardManager;
 import android.text.Html;
 import android.text.Spanned;
 import android.widget.EditText;
+import java.io.IOException;
+import java.lang.Runtime;
 
 import com.facebook.infer.builtins.InferTaint;
 
@@ -37,5 +39,15 @@ public class UserControlledStrings {
   Spanned editTextToHtmlBad() {
     return Html.fromHtml(mEditText.getText().toString());
   }
+
+  void clipboardToShellDirectBad() throws IOException {
+    Runtime.getRuntime().exec(clipboard.getText().toString());
+  }
+
+  void clipboardToShellArrayBad() throws IOException {
+    String[] cmds = new String[] { "ls", clipboard.getText().toString() };
+    Runtime.getRuntime().exec(cmds);
+  }
+
 
 }
