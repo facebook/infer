@@ -199,8 +199,44 @@ class RaceWithMainThread{
     mFld = null;
   }
 
-}
+  int mOnlyWrittenOnMain;
 
+  private void conditionalMainThreadWrite1(boolean b) {
+    if (b) {
+      OurThreadUtil.assertOnUiThread();
+      mOnlyWrittenOnMain = 7;
+    }
+  }
+
+  // make sure we don't forget what thread the callee write occurred on
+  public void conditionalMainThreadWriteOk() {
+    conditionalMainThreadWrite1(true);
+  }
+
+  int mWrittenOffMain;
+
+  private void conditionalMainThreadWrite2(boolean b) {
+    if (b) {
+      OurThreadUtil.assertOnUiThread();
+    } else {
+      mOnlyWrittenOnMain = 7;
+    }
+  }
+
+  public void conditionalMainThreadWriteBad() {
+    conditionalMainThreadWrite2(false);
+  }
+
+  int mSharedField;
+
+  public void writeAfterConditionalMainThreadInCalleeBad() {
+    conditionalMainThreadWrite1(true);
+    // one branch of the callee runs on the main thread, but that doesn't mean we can assume that
+    // the caller does too
+    mSharedField = 7;
+  }
+
+}
 
 // not marked thread-safe
 class Unmarked {

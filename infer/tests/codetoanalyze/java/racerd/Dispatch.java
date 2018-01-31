@@ -75,4 +75,17 @@ public class Dispatch {
     t.foo();
   }
 
+  public void callUnderLock(AnnotatedInterface i) {
+    synchronized(this) {
+      i.foo();
+    }
+  }
+
+}
+
+class Some {
+
+  void callFromElsewhere(Dispatch d, AnnotatedInterface i) {
+    d.callUnderLock(i);
+  }
 }

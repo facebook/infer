@@ -322,7 +322,7 @@ module OwnershipDomain = struct
 
 
   (*
-returns Owned if any prefix is owned on any prefix, else OwnedIf if it is 
+returns Owned if any prefix is owned on any prefix, else OwnedIf if it is
 OwnedIf in the astate, else UnOwned
 *)
   let get_owned access_path astate =
@@ -361,55 +361,43 @@ module AttributeMapDomain = struct
     add access_path attribute_set t
 end
 
-module Excluder = struct
-  type t = Thread | Lock | Both [@@deriving compare]
+module AccessData = struct
+  module Precondition = struct
+    type t = Conjunction of IntSet.t | False [@@deriving compare]
 
-  let pp fmt = function
-    | Thread ->
-        F.fprintf fmt "Thread"
-    | Lock ->
-        F.fprintf fmt "Lock"
-    | Both ->
-        F.fprintf fmt "both Thread and Lock"
-end
+    (* precondition is true if the conjunction of owned indexes is empty *)
+    let is_true = function False -> false | Conjunction set -> IntSet.is_empty set
 
-module AccessPrecondition = struct
-  type t =
-    | Protected of Excluder.t
-    | Unprotected of IntSet.t
-    | TotallyUnprotected
-    [@@deriving compare]
+    let pp fmt = function
+      | Conjunction indexes ->
+          F.fprintf fmt "Owned(%a)"
+            (PrettyPrintable.pp_collection ~pp_item:Int.pp)
+            (IntSet.elements indexes)
+      | False ->
+          F.fprintf fmt "False"
+  end
 
-  let pp fmt = function
-    | Protected excl ->
-        F.fprintf fmt "ProtectedBy(%a)" Excluder.pp excl
-    | TotallyUnprotected ->
-        F.fprintf fmt "TotallyUnprotected"
-    | Unprotected indexes ->
-        F.fprintf fmt "Unprotected(%a)"
-          (PrettyPrintable.pp_collection ~pp_item:Int.pp)
-          (IntSet.elements indexes)
+  type t = {thread: bool; lock: bool; ownership_precondition: Precondition.t} [@@deriving compare]
+
+  let make locks threads ownership_precondition pdesc =
+    (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
+       such accesses *)
+    assert (not (Precondition.is_true ownership_precondition)) ;
+    let thread = ThreadsDomain.is_any_but_self threads in
+    let lock = locks || Procdesc.is_java_synchronized pdesc in
+    {thread; lock; ownership_precondition}
 
 
-  let make_protected locks thread pdesc =
-    let is_main_thread = ThreadsDomain.is_any_but_self thread in
-    let locked = locks || Procdesc.is_java_synchronized pdesc in
-    if not locked && not is_main_thread then TotallyUnprotected
-    else if locked && is_main_thread then Protected Excluder.Both
-    else if locked then Protected Excluder.Lock
-    else Protected Excluder.Thread
+  let is_unprotected {thread; lock; ownership_precondition} =
+    not thread && not lock && not (Precondition.is_true ownership_precondition)
 
 
-  let make_unprotected indexes =
-    assert (not (IntSet.is_empty indexes)) ;
-    Unprotected indexes
-
-
-  let totally_unprotected = TotallyUnprotected
+  let pp fmt {thread; lock; ownership_precondition} =
+    F.fprintf fmt "Thread: %b Lock: %b Pre: %a" thread lock Precondition.pp ownership_precondition
 end
 
 module AccessDomain = struct
-  include AbstractDomain.Map (AccessPrecondition) (PathDomain)
+  include AbstractDomain.Map (AccessData) (PathDomain)
 
   let add_access precondition access_path t =
     let precondition_accesses = try find precondition t with Not_found -> PathDomain.empty in

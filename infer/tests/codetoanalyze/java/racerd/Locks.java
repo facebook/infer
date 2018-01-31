@@ -18,7 +18,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @ThreadSafe
 public class Locks {
-
   Integer f;
 
   Lock mLock;
@@ -232,5 +231,36 @@ public class Locks {
       mLock.unlock();
     }
   }
+
+  Object mField2;
+
+  private synchronized void lockedWriteInCallee() {
+    this.mField2 = null;
+  }
+
+  public static void ownedLockedReadOk() {
+    Locks owned = new Locks();
+    owned.lockedWriteInCallee();
+  }
+
+  public Object unownedReadOk() {
+    // safe because the only other access to mField is owned
+    return this.mField2;
+  }
+
+  Object mField3;
+
+  private synchronized void lockedWriteInCallee2() {
+    this.mField3 = null;
+  }
+
+  public void unownedLockedWriteOk() {
+    lockedWriteInCallee2();
+  }
+
+  public Object unownedReadBad() {
+    return this.mField3;
+  }
+
 
 }
