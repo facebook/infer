@@ -14,6 +14,7 @@ module L = Logging
 module SourceKind = struct
   type t =
     | DrawableResource of Pvar.t  (** Drawable resource ID read from a global *)
+    | Endpoint of (Mangled.t * Typ.desc)  (** source originating from formal of an endpoint *)
     | Intent  (** external Intent or a value read from one *)
     | IntentFromURI  (** Intent created from a URI *)
     | Other  (** for testing or uncategorized sources *)
@@ -25,6 +26,8 @@ module SourceKind = struct
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
+    | "Endpoint" ->
+        Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
     | "Intent" ->
         Intent
     | "IntentFromURI" ->
@@ -150,6 +153,20 @@ module SourceKind = struct
       in
       List.map ~f:taint_formal_with_types formals
     in
+    (* taint all formals except for [this] *)
+    let taint_all_but_this ~make_source =
+      List.map
+        ~f:(fun (name, typ) ->
+          let taint =
+            match Mangled.to_string name with
+            | "this" ->
+                None
+            | _ ->
+                Some (make_source name typ.Typ.desc)
+          in
+          (name, typ, taint) )
+        (Procdesc.get_formals pdesc)
+    in
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
     | Typ.Procname.Java java_pname -> (
@@ -199,7 +216,15 @@ module SourceKind = struct
               , ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ) ->
                 Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
             | _ ->
-                None
+              match Tenv.lookup tenv typename with
+              | Some typ ->
+                  if Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service then
+                    (* assume every non-this formal of a Thrift service is tainted *)
+                    (* TODO: may not want to taint numbers or Enum's *)
+                    Some (taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc)))
+                  else None
+              | _ ->
+                  None
           in
           match
             PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
@@ -219,6 +244,8 @@ module SourceKind = struct
       ( match kind with
       | DrawableResource pvar ->
           Pvar.to_string pvar
+      | Endpoint (formal_name, _) ->
+          F.asprintf "Endpoint[%s]" (Mangled.to_string formal_name)
       | Intent ->
           "Intent"
       | IntentFromURI ->
@@ -457,19 +484,20 @@ include Trace.Make (struct
     | _ when not (List.is_empty sanitizers) ->
         (* assume any sanitizer clears all forms of taint *)
         None
-    | (Intent | UserControlledString | UserControlledURI), CreateIntent ->
+    | (Endpoint _ | Intent | UserControlledString | UserControlledURI), CreateIntent ->
         (* creating Intent from user-congrolled data *)
         Some IssueType.untrusted_intent_creation
-    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), CreateFile ->
+    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), CreateFile ->
         (* user-controlled file creation; may be vulnerable to path traversal + more *)
         Some IssueType.untrusted_file
-    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), Deserialization ->
+    | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)
+      , Deserialization ) ->
         (* shouldn't let anyone external control what we deserialize *)
         Some IssueType.untrusted_deserialization
-    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), HTML ->
+    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), HTML ->
         (* untrusted data flows into HTML; XSS risk *)
         Some IssueType.cross_site_scripting
-    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript ->
+    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript ->
         (* untrusted data flows into JS *)
         Some IssueType.javascript_injection
     | DrawableResource _, OpenDrawableResource ->
@@ -481,7 +509,7 @@ include Trace.Make (struct
         Some IssueType.create_intent_from_uri
     | PrivateData, Logging ->
         Some IssueType.logging_private_data
-    | (Intent | UserControlledString | UserControlledURI), ShellExec ->
+    | (Endpoint _ | Intent | UserControlledString | UserControlledURI), ShellExec ->
         Some IssueType.shell_injection
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
