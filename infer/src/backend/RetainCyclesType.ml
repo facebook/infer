@@ -14,22 +14,29 @@ type retain_cycle_field_objc =
   {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}
   [@@deriving compare]
 
-type retain_cycle_edge =
+type retain_cycle_edge_objc =
   {rc_from: retain_cycle_node; rc_field: retain_cycle_field_objc}
   [@@deriving compare]
 
+type retain_cycle_edge = Object of retain_cycle_edge_objc | Block [@@deriving compare]
+
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge} [@@deriving compare]
+
+let is_inst_rearrange node =
+  match node with
+  | Object obj -> (
+    match obj.rc_field.rc_field_inst with Sil.Irearrange _ -> true | _ -> false )
+  | Block ->
+      false
+
 
 let create_cycle cycle =
   let sorted_cycle = List.sort ~cmp:compare_retain_cycle_edge cycle in
   match sorted_cycle with
-  | [hd] -> (
-    match (* cycles of length 1 created at rearrange are not real *)
-          hd.rc_field.rc_field_inst with
-    | Sil.Irearrange _ ->
+  | [hd] ->
+      if is_inst_rearrange hd then (* cycles of length 1 created at rearrange are not real *)
         None
-    | _ ->
-        Some {rc_elements= sorted_cycle; rc_head= hd} )
+      else Some {rc_elements= sorted_cycle; rc_head= hd}
   | hd :: _ ->
       Some {rc_elements= sorted_cycle; rc_head= hd}
   | [] ->
@@ -47,9 +54,13 @@ let retain_cycle_field_to_string (field: retain_cycle_field_objc) =
 
 
 let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
-  Format.sprintf "%s ->{%s}"
-    (retain_cycle_node_to_string edge.rc_from)
-    (retain_cycle_field_to_string edge.rc_field)
+  match edge with
+  | Object obj ->
+      Format.sprintf "%s ->{%s}"
+        (retain_cycle_node_to_string obj.rc_from)
+        (retain_cycle_field_to_string obj.rc_field)
+  | Block ->
+      Format.sprintf "a block"
 
 
 let retain_cycle_to_string cycle =

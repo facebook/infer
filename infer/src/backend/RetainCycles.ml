@@ -17,27 +17,34 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
   let do_edge index_ edge =
     let index = index_ + 1 in
     let node = State.get_node () in
-    let from_exp_str =
-      match edge.rc_from.rc_node_exp with
-      | Exp.Lvar pvar when Pvar.equal pvar Sil.block_pvar ->
-          "a block"
-      | _ ->
-        match Errdesc.find_outermost_dereference tenv node edge.rc_from.rc_node_exp with
-        | Some de ->
-            DecompiledExp.to_string de
-        | None ->
-            Format.sprintf "(object of type %s)" (Typ.to_string edge.rc_from.rc_node_typ)
+    let from_exp_str edge_obj =
+      match Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp with
+      | Some de ->
+          DecompiledExp.to_string de
+      | None ->
+          Format.sprintf "(object of type %s)" (Typ.to_string edge_obj.rc_from.rc_node_typ)
     in
-    let inst_str inst =
-      let update_str_list = Localise.access_desc (ref []) (Errdesc.access_opt inst) in
-      if List.is_empty update_str_list then " " else ", " ^ String.concat ~sep:"," update_str_list
+    let location_str =
+      match edge with
+      | Object obj ->
+          let update_str_list =
+            Localise.access_desc (ref []) (Errdesc.access_opt obj.rc_field.rc_field_inst)
+          in
+          if List.is_empty update_str_list then " "
+          else ", " ^ String.concat ~sep:"," update_str_list
+      | Block ->
+          ""
     in
     let cycle_item_str =
-      Format.sprintf "%s->%s" from_exp_str (Typ.Fieldname.to_string edge.rc_field.rc_field_name)
+      match edge with
+      | Object obj ->
+          MF.monospaced_to_string
+            (Format.sprintf "%s->%s" (from_exp_str obj)
+               (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
+      | Block ->
+          Format.sprintf "a block"
     in
-    Format.sprintf "(%d) %s%s" index
-      (MF.monospaced_to_string cycle_item_str)
-      (inst_str edge.rc_field.rc_field_inst)
+    Format.sprintf "(%d) %s%s" index cycle_item_str location_str
   in
   let cycle_str = List.mapi ~f:do_edge cycle.rc_elements in
   List.fold_left cycle_str ~f:(fun acc s -> Format.sprintf "%s\n %s" acc s) ~init:""
@@ -55,31 +62,55 @@ let get_cycle root prop =
    Returns a pair (path, bool) where path is a list of edges 
    describing the path to e_root and bool is true if e_root is reached. *)
   let rec dfs root_node from_node path fields visited =
+    let get_cycle_blocks exp =
+      match exp with
+      | Exp.Closure {captured_vars}
+      (* will turn on in prod when false positives have been addressed *)
+        when Config.debug_exceptions ->
+          List.find ~f:(fun (e, _, _) -> Exp.equal e root_node.rc_node_exp) captured_vars
+          |> Option.map ~f:snd3
+      | _ ->
+          None
+    in
     match fields with
     | [] ->
         (path, false)
     | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
         if Exp.equal f_exp root_node.rc_node_exp then
           let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-          let edge = {rc_from= from_node; rc_field} in
+          let edge = Object {rc_from= from_node; rc_field} in
           (edge :: path, true)
-        else if List.mem ~equal:Exp.equal visited f_exp then (path, false)
         else
-          let visited' = from_node.rc_node_exp :: visited in
-          let res =
-            match get_points_to f_exp with
-            | None ->
-                (path, false)
-            | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}) ->
+          let cycle_block_opt = get_cycle_blocks f_exp in
+          if Option.is_some cycle_block_opt then
+            match cycle_block_opt with
+            | Some var ->
                 let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-                let edge = {rc_from= from_node; rc_field} in
-                let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
-                dfs root_node rc_to (edge :: path) new_fields visited'
-            | _ ->
-                (path, false)
-            (* check for lists *)
-          in
-          if snd res then res else dfs root_node from_node path el' visited'
+                (* From the captured variables we get the actual name of the variable 
+                that is more useful for the error message *)
+                let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
+                let edge1 = Object {rc_from= updated_from_node; rc_field} in
+                let edge2 = Block in
+                (edge1 :: edge2 :: path, true)
+            | None ->
+                assert false
+          else if List.mem ~equal:Exp.equal visited f_exp then (path, false)
+          else
+            let visited' = from_node.rc_node_exp :: visited in
+            let res =
+              match get_points_to f_exp with
+              | None ->
+                  (path, false)
+              | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}) ->
+                  let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
+                  let edge = Object {rc_from= from_node; rc_field} in
+                  let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
+                  dfs root_node rc_to (edge :: path) new_fields visited'
+              | _ ->
+                  (path, false)
+              (* check for lists *)
+            in
+            if snd res then res else dfs root_node from_node path el' visited'
     | _ ->
         (path, false)
   in
@@ -149,8 +180,12 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
     | [] ->
         false
     | edge :: c' ->
-        let ia = get_item_annotation edge.rc_from.rc_node_typ edge.rc_field.rc_field_name in
-        if List.exists ~f:do_annotation ia then true else do_cycle c'
+      match edge with
+      | Object obj ->
+          let ia = get_item_annotation obj.rc_from.rc_node_typ obj.rc_field.rc_field_name in
+          if List.exists ~f:do_annotation ia then true else do_cycle c'
+      | Block ->
+          false
   in
   do_cycle cycle.rc_elements
 

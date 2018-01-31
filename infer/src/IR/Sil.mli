@@ -255,9 +255,6 @@ val zero_value_of_numerical_type : Typ.t -> Exp.t
 val is_static_local_name : string -> Pvar.t -> bool
 (** Check if a pvar is a local static in objc *)
 
-val block_pvar : Pvar.t
-(** A block pvar used to explain retain cycles *)
-
 val is_block_pvar : Pvar.t -> bool
 (** Check if a pvar is a local pointing to a block in objc *)
 

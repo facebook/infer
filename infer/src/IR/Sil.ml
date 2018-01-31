@@ -431,9 +431,6 @@ let add_with_block_parameters_flag instr =
 (** Check if a pvar is a local pointing to a block in objc *)
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
-(** A block pvar used to explain retain cycles *)
-let block_pvar = Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string_c_fun "")
-
 (** Dump an instruction. *)
 let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
 

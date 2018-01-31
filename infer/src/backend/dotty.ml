@@ -1081,17 +1081,32 @@ let pp_dotty_prop fmt (prop, cycle) =
 
 let dotty_retain_cycle_to_str prop (cycle: RetainCyclesType.t) =
   let open RetainCyclesType in
+  let get_exp_from_edge edge =
+    match edge with
+    | Object obj ->
+        obj.rc_from.rc_node_exp
+    | Block ->
+        Exp.Lvar (Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string_c_fun ""))
+  in
+  let get_field_from_edge edge =
+    match edge with
+    | Object obj ->
+        obj.rc_field.rc_field_name
+    | Block ->
+        Typ.Fieldname.Java.from_string ""
+  in
+  let open RetainCyclesType in
   let rec cycle_to_list elements =
     match elements with
     | edge1 :: edge2 :: rest ->
-        ( edge1.rc_from.rc_node_exp
-        , edge1.rc_field.rc_field_name
-        , Sil.Eexp (edge2.rc_from.rc_node_exp, Sil.Inone) )
+        ( get_exp_from_edge edge1
+        , get_field_from_edge edge1
+        , Sil.Eexp (get_exp_from_edge edge2, Sil.Inone) )
         :: cycle_to_list (edge2 :: rest)
     | [edge] ->
-        [ ( edge.rc_from.rc_node_exp
-          , edge.rc_field.rc_field_name
-          , Sil.Eexp (cycle.rc_head.rc_from.rc_node_exp, Sil.Inone) ) ]
+        [ ( get_exp_from_edge edge
+          , get_field_from_edge edge
+          , Sil.Eexp (get_exp_from_edge edge, Sil.Inone) ) ]
     | [] ->
         []
   in

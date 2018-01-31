@@ -92,6 +92,7 @@ SOURCES_ARC = \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/retain_cycle.m \
   memory_leaks_benchmark/retain_cycle2.m \
+	memory_leaks_benchmark/RetainCycleBlocks.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \

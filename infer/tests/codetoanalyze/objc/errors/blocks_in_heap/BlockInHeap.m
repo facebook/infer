@@ -12,7 +12,7 @@
 
 typedef void (^BlockInHeapHandler)(BlockInHeap* name);
 
-@property(nonatomic, strong) BlockInHeapHandler handler;
+@property(nonatomic, weak) BlockInHeapHandler handler;
 
 @property(nonatomic, strong) BlockInHeap* child;
 
@@ -27,8 +27,8 @@ typedef void (^BlockInHeapHandler)(BlockInHeap* name);
 }
 
 @end
-
-int block_in_heap_executed_after_bi_abduction_ok() {
+// no retain cycle because handler is a weak pointer.
+int block_in_heap_executed_after_bi_abduction_ok_no_retain_cycle() {
   BlockInHeap* c = [[BlockInHeap alloc] init];
   [c assign_block_to_ivar];
   BlockInHeap* b = [[BlockInHeap alloc] init];
@@ -37,7 +37,7 @@ int block_in_heap_executed_after_bi_abduction_ok() {
 }
 
 int block_in_heap_executed_after_bi_abduction_ok_test() {
-  if (block_in_heap_executed_after_bi_abduction_ok() == 5) {
+  if (block_in_heap_executed_after_bi_abduction_ok_no_retain_cycle() == 5) {
     int* p = 0;
     return *p;
   } else {
