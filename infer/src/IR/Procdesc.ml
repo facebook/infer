@@ -274,6 +274,8 @@ let get_access pdesc = pdesc.attributes.access
 
 let get_nodes pdesc = pdesc.nodes
 
+let get_nodes_num pdesc = pdesc.nodes_num
+
 let get_proc_name pdesc = pdesc.attributes.proc_name
 
 (** Return the return type of the procedure *)

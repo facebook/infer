@@ -47,10 +47,12 @@ let pp_failure_kind fmt = function
   | FKsymops_timeout symops ->
       F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops
   | FKrecursion_timeout level ->
-      F.fprintf fmt "RECURSION TIMEOUT(%d)" level
+      F.fprintf fmt "RECURSION TIMEOUT (%d)" level
   | FKcrash msg ->
       F.fprintf fmt "CRASH (%s)" msg
 
+
+let failure_kind_to_string failure_kind = Format.asprintf "%a" pp_failure_kind failure_kind
 
 (** Count the number of symbolic operations *)
 

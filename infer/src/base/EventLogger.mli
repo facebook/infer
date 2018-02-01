@@ -22,15 +22,27 @@ type procedures_translated =
   ; lang: string
   ; source_file: SourceFile.t }
 
+type analysis_stats =
+  { num_preposts: int
+  ; analysis_nodes_visited: int
+  ; analysis_total_nodes: int
+  ; symops: int
+  ; method_location: Location.t
+  ; analysis_status: SymOp.failure_kind option
+  ; method_name: string }
+
 type event =
   | UncaughtException of exn * int  (** exception, exitcode *)
   | FrontendException of frontend_exception  (** record of caught exception *)
   | ProceduresTranslatedSummary of procedures_translated  (** record of procedures translated *)
+  | AnalysisStats of analysis_stats  (** record of stats from the backend *)
 
 val get_log_identifier : unit -> string
 
 val prepare : unit -> unit
 
 val log : event -> unit
+
+val log_multiple : event list -> unit
 
 val dump : unit -> unit

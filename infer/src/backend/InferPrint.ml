@@ -446,7 +446,8 @@ module Stats = struct
     ; mutable ntimeouts: int
     ; mutable nverified: int
     ; mutable nwarnings: int
-    ; mutable saved_errors: string list }
+    ; mutable saved_errors: string list
+    ; mutable events_to_log: EventLogger.event list }
 
   let create () =
     { files= Hashtbl.create 3
@@ -461,7 +462,8 @@ module Stats = struct
     ; ntimeouts= 0
     ; nverified= 0
     ; nwarnings= 0
-    ; saved_errors= [] }
+    ; saved_errors= []
+    ; events_to_log= [] }
 
 
   let process_loc loc stats =
@@ -547,6 +549,22 @@ module Stats = struct
     if is_timeout then stats.ntimeouts <- stats.ntimeouts + 1 ;
     if is_defective then stats.ndefective <- stats.ndefective + 1 ;
     process_loc (Specs.get_loc summary) stats
+
+
+  let process_summary_for_logging _ (summary: Specs.summary) _ stats =
+    let num_preposts =
+      match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
+    in
+    stats.events_to_log
+    <- EventLogger.AnalysisStats
+         { num_preposts
+         ; analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
+         ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
+         ; symops= summary.stats.symops
+         ; method_location= Specs.get_loc summary
+         ; analysis_status= summary.stats.stats_failure
+         ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string }
+       :: stats.events_to_log
 
 
   let num_files stats = Hashtbl.length stats.files
@@ -654,53 +672,99 @@ let error_filter filters proc_name file error_desc error_name =
 
 type report_kind = Issues | Procs | Stats | Calls | Summary [@@deriving compare]
 
-type bug_format_kind = Json | Csv | Tests | Text [@@deriving compare]
+let _string_of_report_kind = function
+  | Issues ->
+      "Issues"
+  | Procs ->
+      "Procs"
+  | Stats ->
+      "Stats"
+  | Calls ->
+      "Calls"
+  | Summary ->
+      "Summary"
 
-let pp_issue_in_format (format_kind, (outf: Utils.outfile)) error_filter
+
+type bug_format_kind = Json | Csv | Logs | Tests | Text [@@deriving compare]
+
+let _string_of_bug_format_kind = function
+  | Json ->
+      "Json"
+  | Csv ->
+      "Csv"
+  | Logs ->
+      "Logs"
+  | Tests ->
+      "Tests"
+  | Text ->
+      "Text"
+
+
+let get_outfile outfile =
+  match outfile with
+  | Some outfile ->
+      outfile
+  | None ->
+      L.(die InternalError) "An outfile is require for this format."
+
+
+let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_filter
     {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
   | Csv ->
       L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Json ->
+      let outf = get_outfile outfile_opt in
       IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Tests ->
       L.(die InternalError) "Printing issues as tests is not implemented"
+  | Logs ->
+      L.(die InternalError) "Printing issues as logs is not implemented"
   | Text ->
+      let outf = get_outfile outfile_opt in
       IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
 
 
-let pp_issues_in_format (format_kind, (outf: Utils.outfile)) =
+let pp_issues_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
   match format_kind with
   | Json ->
+      let outf = get_outfile outfile_opt in
       IssuesJson.pp_issues_of_error_log outf.fmt
   | Csv ->
       L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
       L.(die InternalError) "Printing issues as tests is not implemented"
+  | Logs ->
+      L.(die InternalError) "Printing issues as logs is not implemented"
   | Text ->
+      let outf = get_outfile outfile_opt in
       IssuesTxt.pp_issues_of_error_log outf.fmt
 
 
-let pp_procs_in_format (format_kind, (outf: Utils.outfile)) =
+let pp_procs_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
   match format_kind with
   | Csv ->
+      let outf = get_outfile outfile_opt in
       ProcsCsv.pp_summary outf.fmt
-  | Json | Tests | Text ->
-      L.(die InternalError) "Printing procs in json/tests/text is not implemented"
+  | Json | Tests | Text | Logs ->
+      L.(die InternalError) "Printing procs in json/tests/text/logs is not implemented"
 
 
-let pp_calls_in_format (format_kind, (outf: Utils.outfile)) =
+let pp_calls_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
   match format_kind with
   | Csv ->
+      let outf = get_outfile outfile_opt in
       CallsCsv.pp_calls outf.fmt
-  | Json | Tests | Text ->
-      L.(die InternalError) "Printing calls in json/tests/text is not implemented"
+  | Json | Tests | Text | Logs ->
+      L.(die InternalError) "Printing calls in json/tests/text/logs is not implemented"
 
 
 let pp_stats_in_format (format_kind, _) =
   match format_kind with
   | Csv ->
       Stats.process_summary
+  | Logs ->
+      Stats.process_summary_for_logging
   | Json | Tests | Text ->
       L.(die InternalError) "Printing stats in json/tests/text is not implemented"
 
@@ -773,16 +837,20 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
   match Utils.read_file fname with
   | Ok report_lines ->
       let pp_json_issues format_list report =
-        let pp_json_issue (format_kind, (outf: Utils.outfile)) =
+        let pp_json_issue (format_kind, (outfile_opt: Utils.outfile option)) =
           match format_kind with
           | Tests ->
+              let outf = get_outfile outfile_opt in
               pp_custom_of_report outf.fmt report Config.issues_fields
           | Text ->
+              let outf = get_outfile outfile_opt in
               pp_text_of_report outf.fmt report
           | Json ->
               L.(die InternalError) "Printing issues from json does not support json output"
           | Csv ->
               L.(die InternalError) "Printing issues from json does not support csv output"
+          | Logs ->
+              L.(die InternalError) "Printing issues from json does not support logs output"
         in
         List.iter ~f:pp_json_issue format_list
       in
@@ -931,10 +999,12 @@ let register_perf_stats_report () =
 
 let mk_format format_kind fname =
   Option.value_map
-    ~f:(fun out_file -> [(format_kind, out_file)])
+    ~f:(fun out_file -> [(format_kind, Some out_file)])
     ~default:[] (Utils.create_outfile fname)
 
 
+(** Although the out_file is an Option type, the None option is strictly meant for the
+  logs format_kind, and all other formats should contain an outfile value. *)
 let init_issues_format_list report_json =
   let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
   let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
@@ -944,29 +1014,36 @@ let init_issues_format_list report_json =
 
 let init_procs_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.procs_csv
 
-let init_calls_format_list () =
-  let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] Config.calls_csv in
-  csv_format
-
+let init_calls_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.calls_csv
 
 let init_stats_format_list () =
   let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] Config.stats_report in
-  csv_format
+  let logs_format = [(Logs, None)] in
+  csv_format @ logs_format
 
 
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
-    let init_files_of_format (format_kind, (outfile: Utils.outfile)) =
+    let init_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
       match (format_kind, report_kind) with
       | Csv, Issues ->
           L.(die InternalError) "Printing issues in a CSV format is not implemented"
+      | Logs, (Issues | Procs | Calls | Summary) ->
+          L.(die InternalError) "Logging these reports is not implemented"
       | Csv, Procs ->
+          let outfile = get_outfile outfile_opt in
           ProcsCsv.pp_header outfile.fmt ()
       | Csv, Stats ->
+          let outfile = get_outfile outfile_opt in
           Report.pp_header outfile.fmt ()
       | Json, Issues ->
+          let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_open outfile.fmt ()
-      | (Csv | Json | Tests | Text), _ ->
+      | Csv, (Calls | Summary)
+      | Json, (Procs | Stats | Calls | Summary)
+      | Logs, Stats
+      | Tests, _
+      | Text, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -974,17 +1051,25 @@ let init_files format_list_by_kind =
   List.iter ~f:init_files_of_report_kind format_list_by_kind
 
 
-let finalize_and_close_files format_list_by_kind stats =
+let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
   let close_files_of_report_kind (report_kind, format_list) =
-    let close_files_of_format (format_kind, (outfile: Utils.outfile)) =
+    let close_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
       ( match (format_kind, report_kind) with
       | Csv, Stats ->
+          let outfile = get_outfile outfile_opt in
           F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | Json, Issues ->
+          let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_close outfile.fmt ()
-      | (Csv | Tests | Text | Json), _ ->
+      | Logs, Stats ->
+          EventLogger.log_multiple stats.events_to_log
+      | Csv, (Issues | Procs | Calls | Summary)
+      | Logs, (Issues | Procs | Calls | Summary)
+      | Json, (Procs | Stats | Calls | Summary)
+      | Tests, _
+      | Text, _ ->
           () ) ;
-      Utils.close_outf outfile
+      match outfile_opt with Some outfile -> Utils.close_outf outfile | None -> ()
     in
     List.iter ~f:close_files_of_format format_list ;
     ()

@@ -124,10 +124,40 @@ let create_procedures_translated_row base record =
   |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_file)
 
 
+type analysis_stats =
+  { num_preposts: int
+  ; analysis_nodes_visited: int
+  ; analysis_total_nodes: int
+  ; symops: int
+  ; method_location: Location.t
+  ; analysis_status: SymOp.failure_kind option
+  ; method_name: string }
+
+let create_analysis_stats_row base record =
+  let open JsonBuilder in
+  base |> add_int ~key:"num_preposts" ~data:record.num_preposts
+  |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
+  |> add_int ~key:"analysis_total_nodes" ~data:record.analysis_total_nodes
+  |> add_int ~key:"symops" ~data:record.symops
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.method_location.file)
+  |> add_string ~key:"method_location"
+       ~data:
+         (String.concat
+            [ string_of_int record.method_location.line
+            ; ":"
+            ; string_of_int record.method_location.col ])
+  |> add_string ~key:"analysis_status"
+       ~data:
+         (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
+              SymOp.failure_kind_to_string stats_failure ))
+  |> add_string ~key:"method_name" ~data:record.method_name
+
+
 type event =
   | UncaughtException of exn * int
   | FrontendException of frontend_exception
   | ProceduresTranslatedSummary of procedures_translated
+  | AnalysisStats of analysis_stats
 
 let string_of_event event =
   match event with
@@ -137,6 +167,8 @@ let string_of_event event =
       "FrontendException"
   | ProceduresTranslatedSummary _ ->
       "ProceduresTranslatedSummary"
+  | AnalysisStats _ ->
+      "AnalysisStats"
 
 
 let sequence_ctr = ref 0
@@ -173,12 +205,22 @@ let create_row event =
   | FrontendException record ->
       create_frontend_exception_row base record
   | ProceduresTranslatedSummary record ->
-      create_procedures_translated_row base record )
+      create_procedures_translated_row base record
+  | AnalysisStats record ->
+      create_analysis_stats_row base record )
   |> JsonBuilder.to_json
 
 
 let prepare = IO.prepare
 
 let log event = IO.write "%s\n" (create_row event)
+
+let log_multiple events =
+  let rows = List.map ~f:create_row events in
+  let combinedJson =
+    List.fold_right rows ~init:"" ~f:(fun row combined -> combined ^ row ^ "\n")
+  in
+  IO.write "%s" combinedJson
+
 
 let dump = IO.dump
