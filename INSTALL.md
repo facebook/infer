@@ -99,55 +99,8 @@ sudo make install
 
 ## How to install the dependencies on Linux
 
-Here are instructions on how to install the dependencies needed to
-compile Infer on a few Linux distributions.
-
-### Debian 7 (Wheezy) and Ubuntu 14.04 LTS
-
-```sh
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install -y \
-  autoconf \
-  automake \
-  build-essential \
-  git \
-  libgmp-dev \
-  libmpc-dev \
-  libmpfr-dev \
-  libsqlite3-dev \
-  m4 \
-  openjdk-7-jdk \
-  pkg-config \
-  python-software-properties \
-  unzip \
-  zlib1g-dev
-```
-
-### Debian 8 (Jessie)
-
-```sh
-sudo apt install -y \
-  autoconf \
-  automake \
-  build-essential \
-  git \
-  libgmp-dev \
-  libmpc-dev \
-  libmpfr-dev \
-  libsqlite3-dev \
-  m4 \
-  opam \
-  openjdk-7-jdk \
-  unzip \
-  zlib1g-dev \
-  opam \
-  rsync \
-  pkg-config \
-  libncurses-dev \
-  python \
-  aspcud
-```
+See the Dockerfile in docker/ for inspiration. It includes the
+dependencies needed to build infer on Debian 9 (stretch).
 
 ### Setting up opam
 

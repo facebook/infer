@@ -1,26 +1,27 @@
-FROM ubuntu:17.04
+FROM debian:stretch-slim
 
-MAINTAINER Infer
+LABEL maintainer "Infer team"
 
+# mkdir the man/man1 directory due to Debian bug #863199
 RUN apt-get update && \
-    apt-get install -y \
-            aspcud \
-            curl \
-            opam \
-            pkg-config \
-            autoconf \
-            libsqlite3-dev \
-            zlib1g-dev \
-            cmake \
-            libc6-dev \
-            libc6-i386 \
-            lib32z1 \
-            lib32stdc++6 \
-            openjdk-8-jdk-headless && \
+    mkdir -p /usr/share/man/man1 && \
+    apt-get install --yes --no-install-recommends \
+      autoconf \
+      automake \
+      cmake \
+      curl \
+      git \
+      libc6-dev \
+      libsqlite3-dev \
+      opam \
+      openjdk-8-jdk-headless \
+      pkg-config \
+      python2.7 \
+      zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.13.0; \
+RUN INFER_VERSION=v0.13.1; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
