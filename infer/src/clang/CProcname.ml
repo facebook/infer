@@ -167,7 +167,8 @@ let get_class_typename ?tenv method_decl_info =
   | Some class_decl ->
       CType_decl.get_record_typename ?tenv class_decl
   | None ->
-      assert false
+      CFrontend_config.incorrect_assumption __POS__ method_decl_info.Clang_ast_t.di_source_range
+        "Expecting class declaration when getting the class typename"
 
 
 module NoAstDecl = struct
