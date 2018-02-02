@@ -19,6 +19,7 @@ let create_procname name =
   let pname = Typ.Procname.from_string_c_fun name in
   register pname ; pname
 
+
 let create_objc_class_method class_name method_name =
   let method_kind = Typ.Procname.ObjCClassMethod in
   let tname = Typ.Name.Objc.from_string class_name in
@@ -27,6 +28,7 @@ let create_objc_class_method class_name method_name =
       (Typ.Procname.objc_cpp tname method_name method_kind Typ.NoTemplate ~is_generic_model:false)
   in
   register pname ; pname
+
 
 let is_declared pname = Typ.Procname.Set.mem pname !builtin_decls
 
@@ -82,6 +84,7 @@ let __objc_cast = create_procname "__objc_cast"
 
 let __objc_dictionary_literal =
   create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:"
+
 
 let __objc_release = create_procname "__objc_release"
 

@@ -23,12 +23,13 @@ module MockTraceElem = struct
   let make ?indexes:_ kind _ = kind
 
   let pp fmt = function
-    | Kind1
-     -> F.fprintf fmt "Kind1"
-    | Kind2
-     -> F.fprintf fmt "Kind2"
-    | Footprint
-     -> F.fprintf fmt "Footprint"
+    | Kind1 ->
+        F.fprintf fmt "Kind1"
+    | Kind2 ->
+        F.fprintf fmt "Kind2"
+    | Footprint ->
+        F.fprintf fmt "Footprint"
+
 
   module Kind = struct
     type nonrec t = t
@@ -87,10 +88,11 @@ let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lh
 
 let source_equal path_source source =
   match path_source with
-  | MockTrace.Known s
-   -> MockSource.equal s source
-  | MockTrace.Footprint _
-   -> false
+  | MockTrace.Known s ->
+      MockSource.equal s source
+  | MockTrace.Footprint _ ->
+      false
+
 
 let tests =
   let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in

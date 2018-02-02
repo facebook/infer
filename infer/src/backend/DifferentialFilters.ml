@@ -29,22 +29,22 @@ module FileRenamings = struct
       try
         match assoc with
         | `Assoc l
-         -> (
+          -> (
             let current_opt = List.Assoc.find ~equal:String.equal l "current" in
             let previous_opt = List.Assoc.find ~equal:String.equal l "previous" in
             match (current_opt, previous_opt) with
-            | Some `String current, Some `String previous
-             -> {current; previous}
-            | None, _
-             -> raise (Yojson.Json_error "\"current\" field missing")
-            | Some _, None
-             -> raise (Yojson.Json_error "\"previous\" field missing")
-            | Some _, Some `String _
-             -> raise (Yojson.Json_error "\"current\" field is not a string")
-            | Some _, Some _
-             -> raise (Yojson.Json_error "\"previous\" field is not a string") )
-        | _
-         -> raise (Yojson.Json_error "not a record")
+            | Some `String current, Some `String previous ->
+                {current; previous}
+            | None, _ ->
+                raise (Yojson.Json_error "\"current\" field missing")
+            | Some _, None ->
+                raise (Yojson.Json_error "\"previous\" field missing")
+            | Some _, Some `String _ ->
+                raise (Yojson.Json_error "\"current\" field is not a string")
+            | Some _, Some _ ->
+                raise (Yojson.Json_error "\"previous\" field is not a string") )
+        | _ ->
+            raise (Yojson.Json_error "not a record")
       with Yojson.Json_error err ->
         L.(die UserError)
           "Error parsing file renamings: %s@\nExpected JSON object of the following form: '%s', but instead got: '%s'"
@@ -52,10 +52,11 @@ module FileRenamings = struct
           (Yojson.Basic.to_string assoc)
     in
     match j with
-    | `List json_renamings
-     -> List.map ~f:renaming_of_assoc json_renamings
-    | _
-     -> L.(die UserError) "Expected JSON list but got '%s'" input
+    | `List json_renamings ->
+        List.map ~f:renaming_of_assoc json_renamings
+    | _ ->
+        L.(die UserError) "Expected JSON list but got '%s'" input
+
 
   let from_json_file file : t = from_json (In_channel.read_all file)
 
@@ -63,11 +64,13 @@ module FileRenamings = struct
     let r = List.find ~f:(fun r -> String.equal current r.current) t in
     Option.map ~f:(fun r -> r.previous) r
 
+
   let pp fmt t =
     let pp_tuple fmt {current; previous} =
       Format.fprintf fmt "{\"current\": \"%s\", \"previous\": \"%s\"}" current previous
     in
     Format.fprintf fmt "[%a]" (Pp.comma_seq pp_tuple) t
+
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
     let from_renamings = from_renamings
@@ -82,31 +85,32 @@ end
     intersection of [l1] and [l2] according to [cmd] and additionally satisfy [pred], and [lN'] is
     [lN] minus [dups]. [dups] contains only one witness for each removed issue, taken from [l1]. *)
 let relative_complements ~cmp ?(pred= fun _ -> true) l1 l2 =
-  let rec aux (out_l1, dups, out_l2 as out) in_l1 in_l2 =
+  let rec aux ((out_l1, dups, out_l2) as out) in_l1 in_l2 =
     let is_last_seen_dup v = match dups with ld :: _ -> Int.equal (cmp ld v) 0 | [] -> false in
     match (in_l1, in_l2) with
-    | i :: is, f :: fs when Int.equal (cmp i f) 0
-     -> (* i = f *)
+    | i :: is, f :: fs when Int.equal (cmp i f) 0 ->
+        (* i = f *)
         if pred i then aux (out_l1, i :: dups, out_l2) is fs
         else aux (i :: out_l1, dups, f :: out_l2) is fs
-    | i :: is, f :: _ when cmp i f < 0
-     -> (* i < f *)
+    | i :: is, f :: _ when cmp i f < 0 ->
+        (* i < f *)
         let out_l1' = if is_last_seen_dup i then out_l1 else i :: out_l1 in
         aux (out_l1', dups, out_l2) is in_l2
-    | _ :: _, f :: fs
-     -> (* i > f *)
+    | _ :: _, f :: fs ->
+        (* i > f *)
         let out_l2' = if is_last_seen_dup f then out_l2 else f :: out_l2 in
         aux (out_l1, dups, out_l2') in_l1 fs
-    | i :: is, [] when is_last_seen_dup i
-     -> aux out is in_l2
-    | [], f :: fs when is_last_seen_dup f
-     -> aux out in_l1 fs
-    | _, _
-     -> (List.rev_append in_l1 out_l1, dups, List.rev_append in_l2 out_l2)
+    | i :: is, [] when is_last_seen_dup i ->
+        aux out is in_l2
+    | [], f :: fs when is_last_seen_dup f ->
+        aux out in_l1 fs
+    | _, _ ->
+        (List.rev_append in_l1 out_l1, dups, List.rev_append in_l2 out_l2)
   in
   let l1_sorted = List.sort ~cmp l1 in
   let l2_sorted = List.sort ~cmp l2 in
   aux ([], [], []) l1_sorted l2_sorted
+
 
 type issue_file_with_renaming = Jsonbug_t.jsonbug * string option
 
@@ -118,7 +122,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     in
     String.compare f1 f2
   in
-  let cmp (issue1, _ as issue_with_previous_file1) (issue2, _ as issue_with_previous_file2) =
+  let cmp ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2) =
     [%compare : int * string * issue_file_with_renaming]
       (issue1.Jsonbug_t.key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
       (issue2.Jsonbug_t.key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
@@ -142,6 +146,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
   in
   {introduced; fixed; preexisting}
 
+
 let java_anon_class_pattern = Str.regexp "\\$[0-9]+"
 
 type procedure_id = string
@@ -164,12 +169,14 @@ let compare_procedure_id pid1 pid2 =
   in
   String.compare pid1_norm_trimmed pid2_norm_trimmed
 
+
 let value_of_qualifier_tag qts tag =
   match List.find ~f:(fun elem -> String.equal elem.Jsonbug_t.tag tag) qts with
-  | Some qt
-   -> Some qt.Jsonbug_t.value
-  | None
-   -> None
+  | Some qt ->
+      Some qt.Jsonbug_t.value
+  | None ->
+      None
+
 
 type file_extension = string [@@deriving compare]
 
@@ -206,10 +213,10 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   let pred (issue: Jsonbug_t.jsonbug) =
     let is_java_file () =
       match extension issue.file with
-      | Some ext
-       -> String.equal (String.lowercase ext) "java"
-      | None
-       -> false
+      | Some ext ->
+          String.equal (String.lowercase ext) "java"
+      | None ->
+          false
     in
     let has_anonymous_class_token () =
       try
@@ -224,11 +231,12 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   in
   {introduced; fixed; preexisting= preexisting @ diff.preexisting}
 
+
 (* Strip issues whose paths are not among those we're interested in *)
 let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
   match interesting_paths with
-  | Some (paths: SourceFile.t list)
-   -> let interesting_paths_set =
+  | Some (paths: SourceFile.t list) ->
+      let interesting_paths_set =
         paths
         |> List.filter_map ~f:(fun p ->
                if not (SourceFile.is_invalid p) && SourceFile.is_under_project_root p then
@@ -240,8 +248,9 @@ let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
         List.filter
           ~f:(fun issue -> String.Set.mem interesting_paths_set issue.Jsonbug_t.file)
           report
-  | None
-   -> Fn.id
+  | None ->
+      Fn.id
+
 
 let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplicated_types: bool)
     ~(interesting_paths: SourceFile.t list option) : Differential.t =
@@ -259,6 +268,7 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
   { introduced= apply_paths_filter_if_needed `Introduced diff'.introduced
   ; fixed= apply_paths_filter_if_needed `Fixed diff'.fixed
   ; preexisting= apply_paths_filter_if_needed `Preexisting diff'.preexisting }
+
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let relative_complements = relative_complements

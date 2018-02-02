@@ -25,4 +25,5 @@ let test_correct_removing_new_lines =
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )
 
+
 let tests = "cfrontend_errors_suite" >::: test_correct_removing_new_lines

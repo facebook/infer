@@ -72,7 +72,7 @@ module Make (Spec : Spec) : S = struct
       let pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
       Domain.fold
         (fun astate acc ->
-          Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc)
+          Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc )
         astate_set Domain.empty
   end
 
@@ -97,5 +97,6 @@ module Make (Spec : Spec) : S = struct
     let inv_map =
       Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) ~initial:Domain.empty
     in
-    Analyzer.InvariantMap.iter do_reporting inv_map ; summary
+    Analyzer.InvariantMap.iter do_reporting inv_map ;
+    summary
 end

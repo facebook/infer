@@ -45,10 +45,10 @@ let retry_exception ~timeout ~catch_exn ~f x =
   let init_time = Mtime_clock.counter () in
   let expired () = Mtime.Span.compare timeout (Mtime_clock.count init_time) <= 0 in
   let rec retry () =
-    try f x
-    with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
+    try f x with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
   in
   retry ()
+
 
 type 'a write_command = Replace of 'a | Update of ('a option -> 'a)
 
@@ -67,36 +67,36 @@ let create_serializer (key: Key.t) : 'a serializer =
     else Some value
   in
   let read_from_string (str: string) : 'a option =
-    try read_data (Marshal.from_string str 0) "string"
-    with Sys_error _ -> None
+    try read_data (Marshal.from_string str 0) "string" with Sys_error _ -> None
   in
   (* The reads happen without synchronization.
      The writes are synchronized with a .lock file. *)
   let read_from_file (fname: DB.filename) : 'a option =
     let fname_str = DB.filename_to_string fname in
     match In_channel.create ~binary:true fname_str with
-    | exception Sys_error _
-     -> None
-    | inc
-     -> let read () =
+    | exception Sys_error _ ->
+        None
+    | inc ->
+        let read () =
           try
             In_channel.seek inc 0L ;
             read_data (Marshal.from_channel inc) fname_str
           with Sys_error _ -> None
         in
         let catch_exn = function
-          | End_of_file
-           -> true
-          | Failure _
-           -> true (* handle input_value: truncated object *)
-          | _
-           -> false
+          | End_of_file ->
+              true
+          | Failure _ ->
+              true (* handle input_value: truncated object *)
+          | _ ->
+              false
         in
         (* Retry to read for 1 second in case of end of file, *)
         (* which indicates that another process is writing the same file. *)
         let one_second = Mtime.Span.of_uint64_ns (Int64.of_int 1_000_000_000) in
-        SymOp.try_finally ~f:(fun () -> retry_exception ~timeout:one_second ~catch_exn ~f:read ())
-          ~finally:(fun () -> In_channel.close inc )
+        SymOp.try_finally
+          ~f:(fun () -> retry_exception ~timeout:one_second ~catch_exn ~f:read ())
+          ~finally:(fun () -> In_channel.close inc)
   in
   let write_to_tmp_file fname data =
     let fname_tmp =
@@ -115,10 +115,10 @@ let create_serializer (key: Key.t) : 'a serializer =
     Utils.write_file_with_locking fname_str_lock ~delete:true ~f:(fun _outc ->
         let data_to_write : 'a =
           match cmd with
-          | Replace data
-           -> data
-          | Update upd
-           -> let old_data_opt =
+          | Replace data ->
+              data
+          | Update upd ->
+              let old_data_opt =
                 if DB.file_exists fname then
                   (* Because of locking, this should be the latest data written
                        by any writer, and can be used for updating *)
@@ -137,6 +137,7 @@ let create_serializer (key: Key.t) : 'a serializer =
   in
   let update_file ~f (fname: DB.filename) = execute_write_command_with_lock fname (Update f) in
   {read_from_string; read_from_file; update_file; write_to_file}
+
 
 let read_from_string s = s.read_from_string
 

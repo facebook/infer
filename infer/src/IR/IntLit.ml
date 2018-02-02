@@ -21,23 +21,27 @@ exception OversizedShift
 
 let area u i =
   match (i < 0L, u) with
-  | true, false
-   -> (* only representable as signed *) 1
-  | false, _
-   -> (* in the intersection between signed and unsigned *) 2
-  | true, true
-   -> (* only representable as unsigned *) 3
+  | true, false ->
+      (* only representable as signed *) 1
+  | false, _ ->
+      (* in the intersection between signed and unsigned *) 2
+  | true, true ->
+      (* only representable as unsigned *) 3
+
 
 let to_signed (unsigned, i, ptr) =
   if Int.equal (area unsigned i) 3 then None
   else (* not representable as signed *) Some (false, i, ptr)
 
+
 let compare (unsigned1, i1, _) (unsigned2, i2, _) =
   let n = Bool.compare unsigned1 unsigned2 in
   if n <> 0 then n else Int64.compare i1 i2
 
+
 let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =
   [%compare : int * Int64.t] (area unsigned1 i1, i1) (area unsigned2 i2, i2)
+
 
 let eq i1 i2 = Int.equal (compare_value i1 i2) 0
 
@@ -86,6 +90,7 @@ let neg (unsigned, i, ptr) = (unsigned, Int64.neg i, ptr)
 let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
   (unsigned1 || unsigned2, binop i1 i2, ptr1 || ptr2)
 
+
 let lift1 unop (unsigned, i, ptr) = (unsigned, unop i, ptr)
 
 let add i1 i2 = lift Int64.( + ) i1 i2
@@ -108,25 +113,28 @@ let sub i1 i2 = add i1 (neg i2)
 
 let shift_left (unsigned1, i1, ptr1) (_, i2, _) =
   match Int64.to_int i2 with
-  | None
-   -> L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
-  | Some i2
-   -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
+  | None ->
+      L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
+  | Some i2 ->
+      if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_left i1 i2 in
       (unsigned1, res, ptr1)
 
+
 let shift_right (unsigned1, i1, ptr1) (_, i2, _) =
   match Int64.to_int i2 with
-  | None
-   -> L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
-  | Some i2
-   -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
+  | None ->
+      L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
+  | Some i2 ->
+      if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_right i1 i2 in
       (unsigned1, res, ptr1)
+
 
 let pp f (unsigned, n, ptr) =
   if ptr && Int64.equal n 0L then F.fprintf f "null"
   else if unsigned then F.fprintf f "%Lu" n
   else F.fprintf f "%Ld" n
+
 
 let to_string i = F.asprintf "%a" pp i

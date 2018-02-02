@@ -24,10 +24,12 @@ let modified_targets = ref String.Set.empty
 
 let record_modified_targets_from_file file =
   match Utils.read_file file with
-  | Ok targets
-   -> modified_targets := List.fold ~f:String.Set.add ~init:String.Set.empty targets
-  | Error error
-   -> L.user_error "Failed to read modified targets file '%s': %s@." file error ; ()
+  | Ok targets ->
+      modified_targets := List.fold ~f:String.Set.add ~init:String.Set.empty targets
+  | Error error ->
+      L.user_error "Failed to read modified targets file '%s': %s@." file error ;
+      ()
+
 
 type stats = {mutable files_linked: int; mutable targets_merged: int}
 
@@ -38,6 +40,7 @@ let link_exists s =
     let _ = Unix.lstat s in
     true
   with Unix.Unix_error _ -> false
+
 
 let create_link ~stats src dst =
   if link_exists dst then Unix.unlink dst ;
@@ -50,6 +53,7 @@ let create_link ~stats src dst =
   Unix.utimes src ~access:near_past ~modif:near_past ;
   stats.files_linked <- stats.files_linked + 1
 
+
 (** Create symbolic links recursively from the destination to the source.
     Replicate the structure of the source directory in the destination,
     with files replaced by links to the source. *)
@@ -61,10 +65,11 @@ let rec slink ~stats ~skiplevels src dst =
     Array.iter
       ~f:(fun item ->
         slink ~stats ~skiplevels:(skiplevels - 1) (Filename.concat src item)
-          (Filename.concat dst item))
+          (Filename.concat dst item) )
       items )
   else if skiplevels > 0 then ()
   else create_link ~stats src dst
+
 
 (** Determine if the destination should link to the source.
     To check if it was linked before, check if all the captured source files
@@ -87,7 +92,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
         ~f:(fun file ->
           let file_path = Filename.concat captured_file file in
           Sys.file_exists file_path = `Yes
-          && (not check_timestamp_of_symlinks || symlink_up_to_date file_path))
+          && (not check_timestamp_of_symlinks || symlink_up_to_date file_path) )
         contents
     else true
   in
@@ -113,6 +118,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
   if r then L.(debug MergeCapture Medium) "%s@." target_results_dir ;
   r
 
+
 (** should_link needs to know whether the source file has changed,
     and  to determine whether the destination has never been copied.
     In both cases, perform the link. *)
@@ -121,26 +127,27 @@ let process_merge_file deps_file =
   let stats = empty_stats () in
   let process_line line =
     match Str.split_delim (Str.regexp (Str.quote "\t")) line with
-    | target :: _ :: target_results_dir :: _
-     -> let infer_out_src =
-          if Filename.is_relative target_results_dir then Filename.dirname (buck_out ())
-            ^/ target_results_dir
+    | target :: _ :: target_results_dir :: _ ->
+        let infer_out_src =
+          if Filename.is_relative target_results_dir then
+            Filename.dirname (buck_out ()) ^/ target_results_dir
           else target_results_dir
         in
         let skiplevels = 2 in
         (* Don't link toplevel files, definitely not .start *)
         if should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst then
           slink ~stats ~skiplevels infer_out_src infer_out_dst
-    | _
-     -> ()
+    | _ ->
+        ()
   in
   ( match Utils.read_file deps_file with
-  | Ok lines
-   -> List.iter ~f:process_line lines
-  | Error error
-   -> L.internal_error "Couldn't read deps file '%s': %s" deps_file error ) ;
+  | Ok lines ->
+      List.iter ~f:process_line lines
+  | Error error ->
+      L.internal_error "Couldn't read deps file '%s': %s" deps_file error ) ;
   L.progress "Targets merged: %d@\n" stats.targets_merged ;
   L.progress "Files linked: %d@\n" stats.files_linked
+
 
 let merge_captured_targets () =
   let time0 = Mtime_clock.counter () in

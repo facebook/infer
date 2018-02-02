@@ -23,14 +23,17 @@ module MockTraceDomain = struct
     assert (e <> top_str) ;
     if phys_equal s top then top else add e s
 
+
   let singleton e =
     assert (e <> top_str) ;
     singleton e
+
 
   (* total hack of a widening just to test that widening of traces is working *)
   let widen ~prev ~next ~num_iters:_ =
     let trace_diff = diff next prev in
     if not (is_empty trace_diff) then top else join prev next
+
 
   (* similarly, hack printing so top looks different *)
   let pp fmt s = if phys_equal s top then F.fprintf fmt "T" else pp fmt s
@@ -44,12 +47,12 @@ module MakeTree (Config : AccessTree.Config) = struct
       MockTraceDomain.equal trace1 trace2
       &&
       match (subtree1, subtree2) with
-      | Star, Star
-       -> true
-      | Subtree t1, Subtree t2
-       -> AccessMap.equal access_tree_equal t1 t2
-      | _
-       -> false
+      | Star, Star ->
+          true
+      | Subtree t1, Subtree t2 ->
+          AccessMap.equal access_tree_equal t1 t2
+      | _ ->
+          false
     in
     let base_tree_equal tree1 tree2 = BaseMap.equal access_tree_equal tree1 tree2 in
     let pp_diff fmt (actual, expected) =
@@ -122,10 +125,10 @@ let tests =
   let no_trace = "NONE" in
   let get_trace_str access_path tree =
     match Domain.get_trace access_path tree with
-    | Some trace
-     -> F.asprintf "%a" MockTraceDomain.pp trace
-    | None
-     -> no_trace
+    | Some trace ->
+        F.asprintf "%a" MockTraceDomain.pp trace
+    | None ->
+        no_trace
   in
   let assert_traces_eq access_path tree expected_trace_str =
     let actual_trace_str = get_trace_str access_path tree in
@@ -137,14 +140,14 @@ let tests =
   let assert_trace_not_found access_path tree = assert_traces_eq access_path tree no_trace in
   let assert_node_equal access_path tree expected_node =
     match Domain.get_node access_path tree with
-    | Some actual_node
-     -> let pp_diff fmt (actual, expected) =
+    | Some actual_node ->
+        let pp_diff fmt (actual, expected) =
           F.fprintf fmt "Expected to retrieve node %a but got %a" Domain.pp_node expected
             Domain.pp_node actual
         in
         assert_equal ~pp_diff expected_node actual_node
-    | None
-     -> assert false
+    | None ->
+        assert false
   in
   let get_trace_test =
     let get_trace_test_ _ =
@@ -204,37 +207,44 @@ let tests =
       (* normal tests *)
       (* add base when absent *)
       let x_y_base_tree_with_added_trace = mk_x_y_base_tree added_trace in
-      Domain.assert_trees_equal (Domain.add_trace x added_trace y_base_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace x added_trace y_base_tree)
         x_y_base_tree_with_added_trace ;
       (* add base when present *)
-      Domain.assert_trees_equal (Domain.add_trace x added_trace x_y_base_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace x added_trace x_y_base_tree)
         x_y_base_tree_with_added_trace ;
       let x_y_base_tree_with_y_trace = mk_x_y_base_tree y_trace in
-      Domain.assert_trees_equal (Domain.add_trace x added_trace x_y_base_tree_with_y_trace)
+      Domain.assert_trees_equal
+        (Domain.add_trace x added_trace x_y_base_tree_with_y_trace)
         x_y_base_tree_with_added_trace ;
       (* add path when absent *)
       let xFG_tree_added_trace = mk_xFG_tree added_trace in
       Domain.assert_trees_equal (Domain.add_trace xFG added_trace x_base_tree) xFG_tree_added_trace ;
       (* add path when present *)
       let xFG_tree_y_trace = mk_xFG_tree y_trace in
-      Domain.assert_trees_equal (Domain.add_trace xFG added_trace xFG_tree_y_trace)
+      Domain.assert_trees_equal
+        (Domain.add_trace xFG added_trace xFG_tree_y_trace)
         xFG_tree_added_trace ;
       (* add starred path when base absent *)
       let xF_star_tree_added_trace =
         Domain.make_starred_leaf added_trace |> Domain.AccessMap.singleton f
         |> Domain.make_node MockTraceDomain.empty |> Domain.BaseMap.singleton x_base
       in
-      Domain.assert_trees_equal (Domain.add_trace xF_star added_trace Domain.empty)
+      Domain.assert_trees_equal
+        (Domain.add_trace xF_star added_trace Domain.empty)
         xF_star_tree_added_trace ;
       (* add starred path when base present *)
-      Domain.assert_trees_equal (Domain.add_trace xF_star added_trace x_base_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace xF_star added_trace x_base_tree)
         xF_star_tree_added_trace ;
       (* adding array path should do weak updates *)
       let aArrF_tree = mk_xArrF_tree array_f_trace in
       let aArrF_tree_joined_trace =
         mk_xArrF_tree (MockTraceDomain.join added_trace array_f_trace)
       in
-      Domain.assert_trees_equal (Domain.add_trace xArrF added_trace aArrF_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace xArrF added_trace aArrF_tree)
         aArrF_tree_joined_trace ;
       (* starred tests *)
       (* we should do a strong update when updating x.f* with x.f *)
@@ -248,7 +258,8 @@ let tests =
         let joined_trace = MockTraceDomain.join x_trace added_trace in
         Domain.BaseMap.singleton x_base (Domain.make_starred_leaf joined_trace)
       in
-      Domain.assert_trees_equal (Domain.add_trace xF added_trace x_star_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace xF added_trace x_star_tree)
         x_star_tree_added_trace ;
       (* when updating x.f.g with x.f*, we should remember traces associated with f and g even as
          we replace that subtree with a * *)
@@ -259,7 +270,8 @@ let tests =
         Domain.make_starred_leaf joined_trace |> Domain.AccessMap.singleton f
         |> Domain.make_node x_trace |> Domain.BaseMap.singleton x_base
       in
-      Domain.assert_trees_equal (Domain.add_trace xF_star added_trace xFG_tree)
+      Domain.assert_trees_equal
+        (Domain.add_trace xF_star added_trace xFG_tree)
         xF_star_tree_joined_traces ;
       (* [add_node] tests are sparse, since [add_trace] is just [add_node] <empty node>. main things
          to test are (1) adding a non-empty node works, (2) adding a non-empty node does the proper
@@ -393,7 +405,7 @@ let tests =
       let has_ap_trace_pair ap_in trace_in =
         List.exists
           ~f:(fun (ap, trace) ->
-            AccessPath.Abs.equal ap ap_in && MockTraceDomain.equal trace trace_in)
+            AccessPath.Abs.equal ap ap_in && MockTraceDomain.equal trace trace_in )
           ap_traces
       in
       assert_bool "Should have six ap/trace pairs" (Int.equal (List.length ap_traces) 6) ;

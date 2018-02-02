@@ -62,10 +62,12 @@ let ms_get_return_param_typ {return_param_typ} = return_param_typ
 let ms_is_getter {pointer_to_property_opt; args} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length args) 1
 
+
 (* A method is a setter if it has a link to a property and *)
 (* it has 2 argument (this includes self) *)
 let ms_is_setter {pointer_to_property_opt; args} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length args) 2
+
 
 let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cpp_nothrow language
     pointer_to_parent pointer_to_property_opt return_param_typ access =
@@ -85,6 +87,7 @@ let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cp
   ; pointer_to_parent
   ; pointer_to_property_opt
   ; return_param_typ }
+
 
 let replace_name_ms ms name = {ms with name}
 

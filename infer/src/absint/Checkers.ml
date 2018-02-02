@@ -21,10 +21,10 @@ module PP = struct
   let pp_loc_range linereader nbefore nafter fmt loc =
     let printline n =
       match Printer.LineReader.from_loc linereader {loc with Location.line= n} with
-      | Some s
-       -> F.fprintf fmt "%s%s@\n" (if Int.equal n loc.Location.line then "-->" else "   ") s
-      | _
-       -> ()
+      | Some s ->
+          F.fprintf fmt "%s%s@\n" (if Int.equal n loc.Location.line then "-->" else "   ") s
+      | _ ->
+          ()
     in
     F.fprintf fmt "%a:%d@\n" SourceFile.pp loc.Location.file loc.Location.line ;
     for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
@@ -73,33 +73,33 @@ module ST = struct
         match (field_name, PatternMatch.get_this_type proc_attributes) with
         | Some field_name, Some t -> (
           match Typ.Struct.get_field_type_and_annotation ~lookup field_name t with
-          | Some (_, ia)
-           -> Annotations.ia_has_annotation_with ia annotation_matches
-          | None
-           -> false )
-        | _
-         -> false
+          | Some (_, ia) ->
+              Annotations.ia_has_annotation_with ia annotation_matches
+          | None ->
+              false )
+        | _ ->
+            false
       in
       let is_class_suppressed =
         match PatternMatch.get_this_type proc_attributes with
         | Some t -> (
           match PatternMatch.type_get_annotation tenv t with
-          | Some ia
-           -> Annotations.ia_has_annotation_with ia annotation_matches
-          | None
-           -> false )
-        | None
-         -> false
+          | Some ia ->
+              Annotations.ia_has_annotation_with ia annotation_matches
+          | None ->
+              false )
+        | None ->
+            false
       in
       is_method_suppressed || is_field_suppressed || is_class_suppressed
     in
     let trace =
       let origin_elements =
         match origin_loc with
-        | Some oloc
-         -> [Errlog.make_trace_element 0 oloc "origin" []]
-        | None
-         -> []
+        | Some oloc ->
+            [Errlog.make_trace_element 0 oloc "origin" []]
+        | None ->
+            []
       in
       origin_elements @ [Errlog.make_trace_element 0 loc description []]
     in

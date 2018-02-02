@@ -26,10 +26,11 @@ let equal_access = [%compare.equal : access]
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 let get_sentinel_func_attribute_value attr_list =
   match attr_list with
-  | (FA_sentinel (sentinel, null_pos)) :: _
-   -> Some (sentinel, null_pos)
-  | []
-   -> None
+  | (FA_sentinel (sentinel, null_pos)) :: _ ->
+      Some (sentinel, null_pos)
+  | [] ->
+      None
+
 
 type mem_kind =
   | Mmalloc  (** memory allocated with malloc *)
@@ -71,6 +72,7 @@ type res_action =
 (* ignore other values beside resources: arbitrary merging into one *)
 let compare_res_action {ra_kind= k1; ra_res= r1} {ra_kind= k2; ra_res= r2} =
   [%compare : res_act_kind * resource] (k1, r1) (k2, r2)
+
 
 (* type aliases for components of t values that compare should ignore *)
 type _annot_item = Annot.Item.t
@@ -115,25 +117,27 @@ let equal = [%compare.equal : t]
 
 (** name of the allocation function for the given memory kind *)
 let mem_alloc_pname = function
-  | Mmalloc
-   -> Typ.Procname.from_string_c_fun "malloc"
-  | Mnew
-   -> Typ.Procname.from_string_c_fun "new"
-  | Mnew_array
-   -> Typ.Procname.from_string_c_fun "new[]"
-  | Mobjc
-   -> Typ.Procname.from_string_c_fun "alloc"
+  | Mmalloc ->
+      Typ.Procname.from_string_c_fun "malloc"
+  | Mnew ->
+      Typ.Procname.from_string_c_fun "new"
+  | Mnew_array ->
+      Typ.Procname.from_string_c_fun "new[]"
+  | Mobjc ->
+      Typ.Procname.from_string_c_fun "alloc"
+
 
 (** name of the deallocation function for the given memory kind *)
 let mem_dealloc_pname = function
-  | Mmalloc
-   -> Typ.Procname.from_string_c_fun "free"
-  | Mnew
-   -> Typ.Procname.from_string_c_fun "delete"
-  | Mnew_array
-   -> Typ.Procname.from_string_c_fun "delete[]"
-  | Mobjc
-   -> Typ.Procname.from_string_c_fun "dealloc"
+  | Mmalloc ->
+      Typ.Procname.from_string_c_fun "free"
+  | Mnew ->
+      Typ.Procname.from_string_c_fun "delete"
+  | Mnew_array ->
+      Typ.Procname.from_string_c_fun "delete[]"
+  | Mobjc ->
+      Typ.Procname.from_string_c_fun "dealloc"
+
 
 (** Categories of attributes *)
 type category =
@@ -152,24 +156,25 @@ let equal_category = [%compare.equal : category]
 
 let to_category att =
   match att with
-  | Aresource _ | Adangling _
-   -> ACresource
-  | Alocked | Aunlocked
-   -> AClock
-  | Aautorelease
-   -> ACautorelease
-  | Adiv0 _
-   -> ACdiv0
-  | Aobjc_null
-   -> ACobjc_null
-  | Aretval _
-   -> ACretval
-  | Aundef _
-   -> ACundef
-  | Aobserver | Aunsubscribed_observer
-   -> ACobserver
-  | Awont_leak
-   -> ACwontleak
+  | Aresource _ | Adangling _ ->
+      ACresource
+  | Alocked | Aunlocked ->
+      AClock
+  | Aautorelease ->
+      ACautorelease
+  | Adiv0 _ ->
+      ACdiv0
+  | Aobjc_null ->
+      ACobjc_null
+  | Aretval _ ->
+      ACretval
+  | Aundef _ ->
+      ACundef
+  | Aobserver | Aunsubscribed_observer ->
+      ACobserver
+  | Awont_leak ->
+      ACwontleak
+
 
 let is_undef = function Aundef _ -> true | _ -> false
 
@@ -177,71 +182,72 @@ let is_wont_leak = function Awont_leak -> true | _ -> false
 
 (** convert the attribute to a string *)
 let to_string pe = function
-  | Aresource ra
-   -> let mk_name = function
-        | Mmalloc
-         -> "ma"
-        | Mnew
-         -> "ne"
-        | Mnew_array
-         -> "na"
-        | Mobjc
-         -> "oc"
+  | Aresource ra ->
+      let mk_name = function
+        | Mmalloc ->
+            "ma"
+        | Mnew ->
+            "ne"
+        | Mnew_array ->
+            "na"
+        | Mobjc ->
+            "oc"
       in
       let name =
         match (ra.ra_kind, ra.ra_res) with
-        | Racquire, Rmemory mk
-         -> "MEM" ^ mk_name mk
-        | Racquire, Rfile
-         -> "FILE"
-        | Rrelease, Rmemory mk
-         -> "FREED" ^ mk_name mk
-        | Rrelease, Rfile
-         -> "CLOSED"
-        | _, Rignore
-         -> "IGNORE"
-        | Racquire, Rlock
-         -> "LOCKED"
-        | Rrelease, Rlock
-         -> "UNLOCKED"
+        | Racquire, Rmemory mk ->
+            "MEM" ^ mk_name mk
+        | Racquire, Rfile ->
+            "FILE"
+        | Rrelease, Rmemory mk ->
+            "FREED" ^ mk_name mk
+        | Rrelease, Rfile ->
+            "CLOSED"
+        | _, Rignore ->
+            "IGNORE"
+        | Racquire, Rlock ->
+            "LOCKED"
+        | Rrelease, Rlock ->
+            "UNLOCKED"
       in
       let str_vpath =
         if Config.trace_error then F.asprintf "%a" (DecompiledExp.pp_vpath pe) ra.ra_vpath else ""
       in
       name ^ Binop.str pe Lt ^ Typ.Procname.to_string ra.ra_pname ^ ":"
       ^ string_of_int ra.ra_loc.Location.line ^ Binop.str pe Gt ^ str_vpath
-  | Aautorelease
-   -> "AUTORELEASE"
-  | Adangling dk
-   -> let dks =
+  | Aautorelease ->
+      "AUTORELEASE"
+  | Adangling dk ->
+      let dks =
         match dk with
-        | DAuninit
-         -> "UNINIT"
-        | DAaddr_stack_var
-         -> "ADDR_STACK"
-        | DAminusone
-         -> "MINUS1"
+        | DAuninit ->
+            "UNINIT"
+        | DAaddr_stack_var ->
+            "ADDR_STACK"
+        | DAminusone ->
+            "MINUS1"
       in
       "DANGL" ^ Binop.str pe Lt ^ dks ^ Binop.str pe Gt
-  | Aundef (pn, _, loc, _)
-   -> "UND" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt ^ ":"
+  | Aundef (pn, _, loc, _) ->
+      "UND" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt ^ ":"
       ^ string_of_int loc.Location.line
-  | Alocked
-   -> "LOCKED"
-  | Aunlocked
-   -> "UNLOCKED"
-  | Adiv0 (_, _)
-   -> "DIV0"
-  | Aobjc_null
-   -> "OBJC_NULL"
-  | Aretval (pn, _)
-   -> "RET" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt
-  | Aobserver
-   -> "OBSERVER"
-  | Aunsubscribed_observer
-   -> "UNSUBSCRIBED_OBSERVER"
-  | Awont_leak
-   -> "WONT_LEAK"
+  | Alocked ->
+      "LOCKED"
+  | Aunlocked ->
+      "UNLOCKED"
+  | Adiv0 (_, _) ->
+      "DIV0"
+  | Aobjc_null ->
+      "OBJC_NULL"
+  | Aretval (pn, _) ->
+      "RET" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt
+  | Aobserver ->
+      "OBSERVER"
+  | Aunsubscribed_observer ->
+      "UNSUBSCRIBED_OBSERVER"
+  | Awont_leak ->
+      "WONT_LEAK"
+
 
 (** dump an attribute *)
 let d_attribute (a: t) = L.add_print_action (L.PTattribute, Obj.repr a)

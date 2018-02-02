@@ -201,11 +201,11 @@ val init_summary :
   * (* nodes *)
     ProcAttributes.proc_flags
   * (* procedure flags *)
-    (Typ.Procname.t * Location.t) list
+  (Typ.Procname.t * Location.t) list
   * (* calls *)
     ProcAttributes.t
   * (* attributes of the procedure *)
-    Procdesc.t option
+  Procdesc.t option
   (* procdesc option *) -> summary
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     This also stores the new summary in the spec table. *)

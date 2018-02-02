@@ -58,10 +58,12 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let compute_priority cfg node visited_preds =
       List.length (CFG.preds cfg node) - IdSet.cardinal visited_preds
 
+
     let make cfg node =
       let visited_preds = IdSet.empty in
       let priority = compute_priority cfg node visited_preds in
       {node; visited_preds; priority}
+
 
     (* add [node_id] to the visited preds for [t] *)
     let add_visited_pred cfg t node_id =
@@ -79,14 +81,15 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let schedule_succ worklist_acc node_to_schedule =
       let id_to_schedule = CFG.id node_to_schedule in
       let old_work =
-        try M.find id_to_schedule worklist_acc
-        with Not_found -> WorkUnit.make t.cfg node_to_schedule
+        try M.find id_to_schedule worklist_acc with Not_found ->
+          WorkUnit.make t.cfg node_to_schedule
       in
       let new_work = WorkUnit.add_visited_pred t.cfg old_work node_id in
       M.add id_to_schedule new_work worklist_acc
     in
     let new_worklist = List.fold ~f:schedule_succ ~init:t.worklist (CFG.succs t.cfg node) in
     {t with worklist= new_worklist}
+
 
   (* remove and return the node with the highest priority (note that smaller integers have higher
      priority), the ids of its visited predecessors, and new schedule *)
@@ -100,7 +103,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
         M.fold
           (fun id work (lowest_id, lowest_priority) ->
             let priority = WorkUnit.priority work in
-            if priority < lowest_priority then (id, priority) else (lowest_id, lowest_priority))
+            if priority < lowest_priority then (id, priority) else (lowest_id, lowest_priority) )
           t.worklist (init_id, init_priority)
       in
       let max_priority_work = M.find max_priority_id t.worklist in
@@ -108,6 +111,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let t' = {t with worklist= M.remove (CFG.id node) t.worklist} in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
     with Not_found -> None
+
 
   let empty cfg = {worklist= M.empty; cfg}
 end

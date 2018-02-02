@@ -9,7 +9,7 @@
 
 open! IStd
 
-type model_table_t = (string, (bool * bool list)) Caml.Hashtbl.t
+type model_table_t = (string, bool * bool list) Caml.Hashtbl.t
 
 val this_file : string
 (** Name of this file. *)

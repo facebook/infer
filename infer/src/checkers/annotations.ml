@@ -114,18 +114,21 @@ let volatile = "volatile"
 let ia_has_annotation_with (ia: Annot.Item.t) (predicate: Annot.t -> bool) : bool =
   List.exists ~f:(fun (a, _) -> predicate a) ia
 
+
 let ma_has_annotation_with ((ia, ial): Annot.Method.t) (predicate: Annot.t -> bool) : bool =
   let has_annot a = ia_has_annotation_with a predicate in
   has_annot ia || List.exists ~f:has_annot ial
+
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
 let annot_ends_with annot ann_name =
   match String.rsplit2 annot.Annot.class_name ~on:'.' with
-  | None
-   -> String.equal annot.Annot.class_name ann_name
-  | Some (_, annot_class_name)
-   -> String.equal annot_class_name ann_name
+  | None ->
+      String.equal annot.Annot.class_name ann_name
+  | Some (_, annot_class_name) ->
+      String.equal annot_class_name ann_name
+
 
 let class_name_matches s ((annot: Annot.t), _) = String.equal s annot.class_name
 
@@ -139,22 +142,26 @@ let pdesc_has_parameter_annot pdesc predicate =
   let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in
   List.exists ~f:predicate param_annotations
 
+
 let pdesc_get_return_annot pdesc =
   fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
+
 
 let pdesc_has_return_annot pdesc predicate = predicate (pdesc_get_return_annot pdesc)
 
 let pdesc_return_annot_ends_with pdesc annot =
   pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
 
+
 (* note: we would use Specs.proc_resolve_attributes directly instead of requiring [attrs_of_pname],
    but doing so creates a circular dependency *)
 let pname_has_return_annot pname ~attrs_of_pname predicate =
   match attrs_of_pname pname with
-  | Some attributes
-   -> predicate (fst attributes.ProcAttributes.method_annotation)
-  | None
-   -> false
+  | Some attributes ->
+      predicate (fst attributes.ProcAttributes.method_annotation)
+  | None ->
+      false
+
 
 let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
@@ -162,6 +169,7 @@ let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
   in
   List.exists ~f:fld_has_taint_annot struct_typ.fields
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
+
 
 let struct_typ_has_annot (struct_typ: Typ.Struct.t) predicate = predicate struct_typ.annots
 
@@ -201,6 +209,7 @@ let field_injector_readwrite_list =
   ; bind_string
   ; suppress_view_nullability ]
 
+
 let field_injector_readonly_list = inject :: field_injector_readwrite_list
 
 (** Annotations for readonly injectors.
@@ -208,10 +217,12 @@ let field_injector_readonly_list = inject :: field_injector_readwrite_list
 let ia_is_field_injector_readonly ia =
   List.exists ~f:(ia_ends_with ia) field_injector_readonly_list
 
+
 (** Annotations for read-write injectors.
     The injector framework initializes the field and can write null into it. *)
 let ia_is_field_injector_readwrite ia =
   List.exists ~f:(ia_ends_with ia) field_injector_readwrite_list
+
 
 let ia_is_mutable ia = ia_ends_with ia mutable_
 

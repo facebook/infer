@@ -75,10 +75,11 @@ end
 
 let formatter =
   match Config.report_formatter with
-  | `No_formatter
-   -> NoFormatter.formatter
-  | `Phabricator_formatter
-   -> PhabricatorFormatter.formatter
+  | `No_formatter ->
+      NoFormatter.formatter
+  | `Phabricator_formatter ->
+      PhabricatorFormatter.formatter
+
 
 let wrap_monospaced = formatter.wrap_monospaced
 

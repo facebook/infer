@@ -83,8 +83,7 @@ let all_checkers =
     ; active= Config.repeated_calls
     ; callbacks= [(Procedure RepeatedCallsChecker.callback_check_repeated_calls, Config.Java)] }
   ; { name=
-        "resource leak"
-        (** toy resource analysis to use in the infer lab, see the lab/ directory *)
+        "resource leak" (* toy resource analysis to use in the infer lab, see the lab/ directory *)
     ; active= Config.resource_leak
     ; callbacks=
         [ ( (* the checked-in version is intraprocedural, but the lab asks to make it interprocedural later on *)
@@ -95,24 +94,27 @@ let all_checkers =
     ; active= Config.uninit
     ; callbacks= [(Procedure Uninit.checker, Config.Clang)] } ]
 
+
 let get_active_checkers () =
   let filter_checker {active} = active in
   List.filter ~f:filter_checker all_checkers
+
 
 let register checkers =
   let register_one {callbacks} =
     let register_callback (callback, language) =
       match callback with
-      | Procedure procedure_cb
-       -> Callbacks.register_procedure_callback language procedure_cb
-      | DynamicDispatch procedure_cb
-       -> Callbacks.register_procedure_callback ~dynamic_dispath:true language procedure_cb
-      | Cluster cluster_cb
-       -> Callbacks.register_cluster_callback language cluster_cb
+      | Procedure procedure_cb ->
+          Callbacks.register_procedure_callback language procedure_cb
+      | DynamicDispatch procedure_cb ->
+          Callbacks.register_procedure_callback ~dynamic_dispath:true language procedure_cb
+      | Cluster cluster_cb ->
+          Callbacks.register_cluster_callback language cluster_cb
     in
     List.iter ~f:register_callback callbacks
   in
   List.iter ~f:register_one checkers
+
 
 module LanguageSet = Caml.Set.Make (struct
   type t = Config.language

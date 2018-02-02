@@ -77,12 +77,13 @@ module InstrNode = struct
     let n = Procdesc.Node.compare_id id1 id2 in
     if n <> 0 then n else compare_index index1 index2
 
+
   let pp_id fmt (id, index) =
     match index with
-    | Node_index
-     -> Procdesc.Node.pp_id fmt id
-    | Instr_index i
-     -> F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id i
+    | Node_index ->
+        Procdesc.Node.pp_id fmt id
+    | Instr_index i ->
+        F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id i
 end
 
 module type S = sig
@@ -187,8 +188,7 @@ module Exceptional = struct
       let add_exn_pred exn_preds_acc exn_succ_node =
         let exn_succ_node_id = Procdesc.Node.get_id exn_succ_node in
         let existing_exn_preds =
-          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc
-          with Not_found -> []
+          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc with Not_found -> []
         in
         if not (List.mem ~equal:Procdesc.Node.equal existing_exn_preds n) then
           (* don't add duplicates *)
@@ -202,6 +202,7 @@ module Exceptional = struct
     in
     (pdesc, exceptional_preds)
 
+
   let instrs = Procdesc.Node.get_instrs
 
   let instr_ids n = List.map ~f:(fun i -> (i, None)) (instrs n)
@@ -213,28 +214,30 @@ module Exceptional = struct
   let normal_preds _ n = Procdesc.Node.get_preds n
 
   let exceptional_preds (_, exn_pred_map) n =
-    try Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map
-    with Not_found -> []
+    try Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map with Not_found -> []
+
 
   (** get all normal and exceptional successors of [n]. *)
   let succs t n =
     let normal_succs = normal_succs t n in
     match exceptional_succs t n with
-    | []
-     -> normal_succs
-    | exceptional_succs
-     -> normal_succs @ exceptional_succs |> List.sort ~cmp:Procdesc.Node.compare
+    | [] ->
+        normal_succs
+    | exceptional_succs ->
+        normal_succs @ exceptional_succs |> List.sort ~cmp:Procdesc.Node.compare
         |> List.remove_consecutive_duplicates ~equal:Procdesc.Node.equal
+
 
   (** get all normal and exceptional predecessors of [n]. *)
   let preds t n =
     let normal_preds = normal_preds t n in
     match exceptional_preds t n with
-    | []
-     -> normal_preds
-    | exceptional_preds
-     -> normal_preds @ exceptional_preds |> List.sort ~cmp:Procdesc.Node.compare
+    | [] ->
+        normal_preds
+    | exceptional_preds ->
+        normal_preds @ exceptional_preds |> List.sort ~cmp:Procdesc.Node.compare
         |> List.remove_consecutive_duplicates ~equal:Procdesc.Node.equal
+
 
   let proc_desc (pdesc, _) = pdesc
 
@@ -283,7 +286,7 @@ struct
     List.mapi
       ~f:(fun i instr ->
         let id = (Procdesc.Node.get_id t, Instr_index i) in
-        (instr, Some id))
+        (instr, Some id) )
       (instrs t)
 end
 

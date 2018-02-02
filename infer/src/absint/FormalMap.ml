@@ -20,24 +20,24 @@ let make pdesc =
     List.mapi
       ~f:(fun index (name, typ) ->
         let pvar = Pvar.mk name pname in
-        (AccessPath.base_of_pvar pvar typ, index))
+        (AccessPath.base_of_pvar pvar typ, index) )
       attrs.ProcAttributes.formals
   in
   List.fold
     ~f:(fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
     ~init:AccessPath.BaseMap.empty formals_with_nums
 
+
 let empty = AccessPath.BaseMap.empty
 
 let is_formal = AccessPath.BaseMap.mem
 
-let get_formal_index base t =
-  try Some (AccessPath.BaseMap.find base t)
-  with Not_found -> None
+let get_formal_index base t = try Some (AccessPath.BaseMap.find base t) with Not_found -> None
 
 let get_formal_base index t =
   List.find ~f:(fun (_, i) -> Int.equal i index) (AccessPath.BaseMap.bindings t)
   |> Option.map ~f:fst
+
 
 let get_formals_indexes = AccessPath.BaseMap.bindings
 

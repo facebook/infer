@@ -40,10 +40,11 @@ module Make (Kind : Kind) = struct
 
   let get site actuals tenv =
     match Kind.get (CallSite.pname site) actuals tenv with
-    | Some (kind, indexes)
-     -> Some {kind; site; indexes}
-    | None
-     -> None
+    | Some (kind, indexes) ->
+        Some {kind; site; indexes}
+    | None ->
+        None
+
 
   let with_callsite t callee_site = {t with site= callee_site}
 

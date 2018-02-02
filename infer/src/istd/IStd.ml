@@ -11,8 +11,7 @@ include Core
 
 module Unix_ = struct
   let improve f make_arg_sexps =
-    try f ()
-    with Unix.Unix_error (e, s, _) ->
+    try f () with Unix.Unix_error (e, s, _) ->
       let buf = Buffer.create 100 in
       let fmt = Format.formatter_of_buffer buf in
       Format.pp_set_margin fmt 10000 ;
@@ -23,15 +22,18 @@ module Unix_ = struct
       let arg_str = Buffer.contents buf in
       raise (Unix.Unix_error (e, s, arg_str))
 
+
   let create_process_redirect ~prog ~args ?(stdin= Unix.stdin) ?(stdout= Unix.stdout)
       ?(stderr= Unix.stderr) () =
     improve
       (fun () ->
         let prog_args = Array.of_list (prog :: args) in
-        Caml.UnixLabels.create_process ~prog ~args:prog_args ~stdin ~stdout ~stderr |> Pid.of_int)
+        Caml.UnixLabels.create_process ~prog ~args:prog_args ~stdin ~stdout ~stderr |> Pid.of_int
+        )
       (fun () ->
         [("prog", Sexp.Atom prog); ("args", Sexplib.Conv.sexp_of_list (fun a -> Sexp.Atom a) args)]
-    )
+        )
+
 
   let fork_redirect_exec_wait ~prog ~args ?stdin ?stdout ?stderr () =
     Unix.waitpid (create_process_redirect ~prog ~args ?stdin ?stdout ?stderr ())
@@ -41,20 +43,21 @@ end
 module List_ = struct
   let rec fold_until ~init ~f l =
     match (l, init) with
-    | _, `Stop init' | [], `Continue init'
-     -> init'
-    | h :: t, `Continue _
-     -> fold_until ~init:(f init h) ~f t
+    | _, `Stop init' | [], `Continue init' ->
+        init'
+    | h :: t, `Continue _ ->
+        fold_until ~init:(f init h) ~f t
+
 
   let merge_dedup l1 l2 ~compare =
     let rec loop acc l1 l2 =
       match (l1, l2) with
-      | [], l2
-       -> List.rev_append acc l2
-      | l1, []
-       -> List.rev_append acc l1
-      | h1 :: t1, h2 :: t2
-       -> let cmp = compare h1 h2 in
+      | [], l2 ->
+          List.rev_append acc l2
+      | l1, [] ->
+          List.rev_append acc l1
+      | h1 :: t1, h2 :: t2 ->
+          let cmp = compare h1 h2 in
           if cmp = 0 then loop (h1 :: acc) t1 t2
           else if cmp < 0 then loop (h1 :: acc) t1 l2
           else loop (h2 :: acc) l1 t2
@@ -84,10 +87,12 @@ let reraise_after ~f exn =
   let () = f () in
   Caml.Printexc.raise_with_backtrace exn backtrace
 
+
 (** Reraise the exception if f returns true. Always reraise immediately after catching the exception, otherwise the backtrace can be wrong *)
 let reraise_if ~f exn =
   let backtrace = Caml.Printexc.get_raw_backtrace () in
   if f () then Caml.Printexc.raise_with_backtrace exn backtrace
+
 
 let failwith _ : [`use_Logging_die_instead] = assert false
 
@@ -108,8 +113,10 @@ module ANSITerminal : module type of ANSITerminal = struct
   let print_string =
     if Unix.(isatty stdout) then print_string else fun _ -> Pervasives.print_string
 
+
   let prerr_string =
     if Unix.(isatty stderr) then prerr_string else fun _ -> Pervasives.prerr_string
+
 
   let printf styles fmt = Format.ksprintf (fun s -> print_string styles s) fmt
 

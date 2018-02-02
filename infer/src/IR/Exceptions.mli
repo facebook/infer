@@ -67,8 +67,7 @@ exception Context_leak of Localise.error_desc * Logging.ml_loc
 
 exception Custom_error of string * Localise.error_desc
 
-exception
-  Dangling_pointer_dereference of
+exception Dangling_pointer_dereference of
   PredSymb.dangling_kind option * Localise.error_desc * Logging.ml_loc
 
 exception Deallocate_stack_variable of Localise.error_desc
@@ -97,8 +96,7 @@ exception Internal_error of Localise.error_desc
 
 exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 
-exception
-  Leak of
+exception Leak of
   bool * Sil.hpred * (visibility * Localise.error_desc) * bool * PredSymb.resource * Logging.ml_loc
 
 exception Missing_fld of Typ.Fieldname.t * Logging.ml_loc
