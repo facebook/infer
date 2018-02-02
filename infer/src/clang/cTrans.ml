@@ -2275,19 +2275,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (* For OpaqueValueExpr we return the translation generated from its source expression*)
-  and opaqueValueExpr_trans trans_state opaque_value_expr_info =
+  and opaqueValueExpr_trans trans_state opaque_value_expr_info source_range =
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     match trans_state.opaque_exp with
     | Some exp ->
         {empty_res_trans with exps= [exp]}
-    | _ ->
+    | None ->
       match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
       | Some stmt ->
           instruction trans_state stmt
-      | _ ->
-          assert false
+      | None ->
+          CFrontend_config.incorrect_assumption __POS__ source_range
+            "Expected source expression for OpaqueValueExpr"
 
 
   (* NOTE: This translation has several hypothesis. Need to be verified when we have more*)
@@ -2672,9 +2673,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
+    let source_range = stmt_info.Clang_ast_t.si_source_range in
     let size_exp_opt, res_trans_size =
       if is_dyn_array then
-        match CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr with
+        match
+          CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr source_range
+        with
         | Some stmt
           -> (
             let trans_state_size = {trans_state_pri with succ_nodes= []} in
@@ -2689,12 +2693,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       else (None, empty_res_trans)
     in
     let placement_args =
-      List.filter_map ~f:CAst_utils.get_stmt cxx_new_expr_info.Clang_ast_t.xnei_placement_args
+      List.filter_map
+        ~f:(fun i -> CAst_utils.get_stmt i source_range)
+        cxx_new_expr_info.Clang_ast_t.xnei_placement_args
     in
     let trans_state_placement = {trans_state_pri with succ_nodes= []} in
     let res_trans_placement = instructions trans_state_placement placement_args in
     let res_trans_new = cpp_new_trans sil_loc typ size_exp_opt res_trans_placement.exps in
-    let stmt_opt = CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
+    let stmt_opt =
+      CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr source_range
+    in
     let trans_state_init = {trans_state_pri with succ_nodes= []} in
     let var_exp_typ =
       match res_trans_new.exps with
@@ -3085,8 +3093,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCPropertyRefExpr_trans trans_state stmt_list
     | CXXThisExpr (stmt_info, _, expr_info) ->
         cxxThisExpr_trans trans_state stmt_info expr_info
-    | OpaqueValueExpr (_, _, _, opaque_value_expr_info) ->
+    | OpaqueValueExpr (stmt_info, _, _, opaque_value_expr_info) ->
         opaqueValueExpr_trans trans_state opaque_value_expr_info
+          stmt_info.Clang_ast_t.si_source_range
     | PseudoObjectExpr (_, stmt_list, _) ->
         pseudoObjectExpr_trans trans_state stmt_list
     | UnaryExprOrTypeTraitExpr (_, _, expr_info, ei) ->
@@ -3360,10 +3369,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         true
     in
     (* its pointer will be used in PriorityNode *)
-    let this_stmt_info = Ast_expressions.dummy_stmt_info () in
+    let this_stmt_info = CAst_utils.dummy_stmt_info () in
     (* this will be used to avoid creating node in init_expr_trans *)
     let child_stmt_info =
-      {(Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range= source_range}
+      {(CAst_utils.dummy_stmt_info ()) with Clang_ast_t.si_source_range= source_range}
     in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
     let class_qual_type =

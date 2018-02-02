@@ -449,7 +449,15 @@ let dereference_var_sil (exp, typ) sil_loc =
     assigned to it *)
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let obj_sil, class_typ = extract_exp_from_list trans_result.exps "" in
-  let typ_no_ptr = match class_typ.Typ.desc with Tptr (typ, _) -> typ | _ -> assert false in
+  let typ_no_ptr =
+    match class_typ.Typ.desc with
+    | Tptr (typ, _) ->
+        typ
+    | _ ->
+        CFrontend_config.incorrect_assumption __POS__
+          (CAst_utils.dummy_source_range ())
+          "Expected pointer type but found type %a" (Typ.pp_full Pp.text) class_typ
+  in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, cast_typ) sil_loc in
   {trans_result with instrs= trans_result.instrs @ cast_inst; exps= [(cast_exp, cast_typ)]}
@@ -570,7 +578,7 @@ let is_superinstance mei =
 let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
 
 let extract_stmt_from_singleton stmt_list warning_string =
-  extract_item_from_singleton stmt_list warning_string (Ast_expressions.dummy_stmt ())
+  extract_item_from_singleton stmt_list warning_string (CAst_utils.dummy_stmt ())
 
 
 module Self = struct

@@ -11,6 +11,12 @@ open! IStd
 
 (** Functions for transformations of ast nodes *)
 
+val dummy_stmt : unit -> Clang_ast_t.stmt
+
+val dummy_source_range : unit -> Clang_ast_t.source_range
+
+val dummy_stmt_info : unit -> Clang_ast_t.stmt_info
+
 val get_fresh_pointer : unit -> Clang_ast_t.pointer
 
 val type_from_unary_expr_or_type_trait_expr_info :
@@ -20,9 +26,10 @@ val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
 val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option
 
-val get_stmt : Clang_ast_t.pointer -> Clang_ast_t.stmt option
+val get_stmt : Clang_ast_t.pointer -> Clang_ast_t.source_range -> Clang_ast_t.stmt option
 
-val get_stmt_opt : Clang_ast_t.pointer option -> Clang_ast_t.stmt option
+val get_stmt_opt :
+  Clang_ast_t.pointer option -> Clang_ast_t.source_range -> Clang_ast_t.stmt option
 
 val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
 

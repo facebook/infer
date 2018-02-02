@@ -12,15 +12,6 @@
 open! IStd
 module L = Logging
 
-let dummy_source_range () =
-  let dummy_source_loc = {Clang_ast_t.sl_file= None; sl_line= None; sl_column= None} in
-  (dummy_source_loc, dummy_source_loc)
-
-
-let dummy_stmt_info () =
-  {Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer (); si_source_range= dummy_source_range ()}
-
-
 let stmt_info_with_fresh_pointer stmt_info =
   { Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()
   ; si_source_range= stmt_info.Clang_ast_t.si_source_range }
@@ -60,7 +51,7 @@ let create_class_qual_type ?quals typename =
 
 
 let create_integer_literal n =
-  let stmt_info = dummy_stmt_info () in
+  let stmt_info = CAst_utils.dummy_stmt_info () in
   let expr_info =
     {Clang_ast_t.ei_qual_type= create_int_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
   in
@@ -100,12 +91,6 @@ let create_nil stmt_info =
   let cstyle_cast_expr = create_cstyle_cast_expr stmt_info [integer_literal] create_int_type in
   let paren_expr = create_parent_expr stmt_info [cstyle_cast_expr] in
   create_implicit_cast_expr stmt_info [paren_expr] create_id_type `NullToPointer
-
-
-let dummy_stmt () =
-  let pointer = CAst_utils.get_fresh_pointer () in
-  let source_range = dummy_source_range () in
-  Clang_ast_t.NullStmt ({Clang_ast_t.si_pointer= pointer; si_source_range= source_range}, [])
 
 
 let make_expr_info qt vk objc_kind =

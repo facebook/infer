@@ -62,6 +62,21 @@ let get_fresh_pointer () =
   internal_pointer
 
 
+let dummy_source_range () =
+  let dummy_source_loc = {Clang_ast_t.sl_file= None; sl_line= None; sl_column= None} in
+  (dummy_source_loc, dummy_source_loc)
+
+
+let dummy_stmt_info () =
+  {Clang_ast_t.si_pointer= get_fresh_pointer (); si_source_range= dummy_source_range ()}
+
+
+let dummy_stmt () =
+  let pointer = get_fresh_pointer () in
+  let source_range = dummy_source_range () in
+  Clang_ast_t.NullStmt ({Clang_ast_t.si_pointer= pointer; si_source_range= source_range}, [])
+
+
 let type_from_unary_expr_or_type_trait_expr_info info =
   match info.Clang_ast_t.uttei_qual_type with Some tp -> Some tp | None -> None
 
@@ -72,14 +87,16 @@ let get_decl_opt decl_ptr_opt =
   match decl_ptr_opt with Some decl_ptr -> get_decl decl_ptr | None -> None
 
 
-let get_stmt stmt_ptr =
+let get_stmt stmt_ptr source_range =
   let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
-  if Option.is_none stmt then L.internal_error "stmt with pointer %d not found@\n" stmt_ptr ;
+  if Option.is_none stmt then
+    CFrontend_config.incorrect_assumption __POS__ source_range "stmt with pointer %d not found@\n"
+      stmt_ptr ;
   stmt
 
 
-let get_stmt_opt stmt_ptr_opt =
-  match stmt_ptr_opt with Some stmt_ptr -> get_stmt stmt_ptr | None -> None
+let get_stmt_opt stmt_ptr_opt source_range =
+  match stmt_ptr_opt with Some stmt_ptr -> get_stmt stmt_ptr source_range | None -> None
 
 
 let get_decl_opt_with_decl_ref decl_ref_opt =
@@ -123,7 +140,9 @@ let get_type type_ptr =
   match type_ptr with
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
       let typ = Int.Table.find ClangPointers.pointer_type_table raw_ptr in
-      if Option.is_none typ then L.internal_error "type with pointer %d not found@\n" raw_ptr ;
+      if Option.is_none typ then
+        CFrontend_config.incorrect_assumption __POS__ (dummy_source_range ())
+          "type with pointer %d not found@\n" raw_ptr ;
       typ
   | _ ->
       (* otherwise, function fails *)
@@ -145,7 +164,7 @@ let get_desugared_type type_ptr =
 
 let get_decl_from_typ_ptr typ_ptr =
   let typ_opt = get_desugared_type typ_ptr in
-  let typ = match typ_opt with Some t -> t | _ -> assert false in
+  let typ = match typ_opt with Some t -> t | None -> assert false in
   match (typ : Clang_ast_t.c_type) with
   | RecordType (_, decl_ptr) | ObjCInterfaceType (_, decl_ptr) ->
       get_decl decl_ptr
