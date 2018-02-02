@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 # - opam
 # - docker/Dockerfile
 AC_INIT([Infer],
-        [0.13.0],
+        [0.13.1],
         [https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/istd/IStd.ml])
@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR([infer/src/istd/IStd.ml])
 # WARNING: keep in sync with above
 INFER_MAJOR=0
 INFER_MINOR=13
-INFER_PATCH=0
+INFER_PATCH=1
 
 AC_SUBST([INFER_MAJOR])
 AC_SUBST([INFER_MINOR])
