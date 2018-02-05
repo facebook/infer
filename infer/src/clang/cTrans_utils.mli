@@ -158,7 +158,7 @@ end
 module Self : sig
   exception SelfClassException of
     { class_name: Typ.Name.t
-    ; position: string * int * int * int
+    ; position: CFrontend_config.ocaml_pos
     ; source_range: Clang_ast_t.source_range }
 
   val add_self_parameter_for_super_instance :
