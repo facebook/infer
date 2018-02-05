@@ -129,6 +129,16 @@ typedef struct s_ {
   return array;
 }
 
+- (NSArray*)nullableMethodCheckedForNullAndReturnOkay {
+  NSObject* nullableObject = [self nullableMethod];
+  NSArray* array;
+  if (nullableObject == nil) {
+    return array;
+  }
+  array = @[ nullableObject ]; // does not report here
+  return array;
+}
+
 - (NSArray*)secondElementNullableObjectInNSArrayBad {
   NSObject* allocatedObject = [NSObject alloc];
   NSObject* nullableObject = [self nullableMethod];

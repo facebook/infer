@@ -97,6 +97,13 @@ void methodCheckedForNullOkay(T* t) {
   }
 }
 
+void methodCheckedForNullAndReturnOkay(T* t) {
+  if (t->mayReturnNullObject() == nullptr) {
+    return;
+  }
+  t->mayReturnNullObject()->doSomething(); // does not report here
+}
+
 void reportsViolationOutsideOfNullCheckBad(T* t) {
   if (t->mayReturnNullObject() != nullptr) {
     t->mayReturnNullObject()->doSomething(); // does not report here

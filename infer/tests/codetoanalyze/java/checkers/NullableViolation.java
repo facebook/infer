@@ -43,6 +43,13 @@ public class NullableViolation {
     }
   }
 
+  void nullableMethodCheckedForNullAndReturnOkay() {
+    if (returnsNullable() == null) {
+        return;
+    }
+    returnsNullable().doSomething(); // does not report here
+  }
+
   void dereferenceNullableMethodIncorrectlyCheckedForNullBad() {
     if (returnsNullable() == null) {
       returnsNullable().doSomething(); // reports here
