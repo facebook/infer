@@ -298,3 +298,34 @@ module BooleanOr = struct
 
   let pp fmt astate = F.fprintf fmt "%b" astate
 end
+
+module type MaxCount = sig
+  val max : int
+end
+
+module CountDomain (MaxCount : MaxCount) = struct
+  type astate = int
+
+  let top =
+    assert (MaxCount.max > 0) ;
+    MaxCount.max
+
+
+  let empty = 0
+
+  let is_top = Int.equal top
+
+  let is_empty = Int.equal empty
+
+  let ( <= ) ~lhs ~rhs = lhs <= rhs
+
+  let join astate1 astate2 = Int.min top (Int.max astate1 astate2)
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let increment astate = if is_top astate then top else astate + 1
+
+  let decrement astate = if is_empty astate then empty else astate - 1
+
+  let pp = Int.pp
+end

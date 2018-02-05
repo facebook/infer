@@ -365,7 +365,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           OwnershipAbstractValue.unowned
     in
     Some
-      { locks= false
+      { locks= LocksDomain.empty
       ; threads= ThreadsDomain.empty
       ; accesses= callee_accesses
       ; return_ownership
@@ -531,7 +531,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       if AccessData.Precondition.is_true ownership_precondition' then accesses_acc
       else
-        let locks' = locks || pre.lock in
+        let locks' = if pre.lock then LocksDomain.add_lock locks else locks in
         (* if the access occurred on a main thread in the callee, we should remember this when
            moving it to the callee. if we don't know what thread it ran on, use the caller's
            thread *)
@@ -604,9 +604,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             match Models.get_lock callee_pname actuals with
             | Lock ->
-                {astate with locks= true; threads= update_for_lock_use astate.threads}
+                { astate with
+                  locks= LocksDomain.add_lock astate.locks
+                ; threads= update_for_lock_use astate.threads }
             | Unlock ->
-                {astate with locks= false; threads= update_for_lock_use astate.threads}
+                { astate with
+                  locks= LocksDomain.remove_lock astate.locks
+                ; threads= update_for_lock_use astate.threads }
             | LockedIfTrue -> (
               match ret_opt with
               | Some ret_access_path ->
@@ -631,7 +635,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       {summary with accesses= rebased_accesses} )
                 with
                 | Some {threads; locks; accesses; return_ownership; return_attributes} ->
-                    let locks = locks || astate.locks in
+                    let locks = LocksDomain.join locks astate.locks in
                     let threads =
                       match (astate.threads, threads) with
                       | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _ ->
@@ -767,7 +771,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let add_choice bool_value (acc: Domain.astate) = function
           | Choice.LockHeld ->
-              let locks = bool_value in
+              let locks =
+                if bool_value then LocksDomain.add_lock acc.locks
+                else LocksDomain.remove_lock acc.locks
+              in
               {acc with locks}
           | Choice.OnMainThread ->
               let threads =
@@ -916,7 +923,7 @@ let is_marked_thread_safe pdesc tenv =
 
 let empty_post : RacerDDomain.summary =
   { threads= RacerDDomain.ThreadsDomain.empty
-  ; locks= false
+  ; locks= RacerDDomain.LocksDomain.empty
   ; accesses= RacerDDomain.AccessDomain.empty
   ; return_ownership= RacerDDomain.OwnershipAbstractValue.unowned
   ; return_attributes= RacerDDomain.AttributeSetDomain.empty }

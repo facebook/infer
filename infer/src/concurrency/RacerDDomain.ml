@@ -151,14 +151,37 @@ module TraceElem = struct
     make (Access.InterfaceCall pname) site
 end
 
-(* In this domain true<=false. The intended denotations [[.]] are
-    [[true]] = the set of all states where we know according, to annotations
-               or assertions or lock instructions, that some lock is held.
-    [[false]] = the empty set
-   The use of && for join in this domain enforces that, to know a lock is held, one must hold in
-   all branches.
-*)
-module LocksDomain = AbstractDomain.BooleanAnd
+module LockCount = AbstractDomain.CountDomain (struct
+  let max = 5
+
+  (* arbitrary threshold for max locks we expect to be held simultaneously *)
+end)
+
+module LocksDomain = struct
+  include AbstractDomain.Map (AccessPath) (LockCount)
+
+  (* TODO: eventually, we'll ask add_lock/remove_lock to pass the lock name. for now, this is a hack
+     to model having a single lock used everywhere *)
+  let the_only_lock = ((Var.of_id (Ident.create Ident.knormal 0), Typ.void_star), [])
+
+  let is_locked astate =
+    (* we only add locks with positive count, so safe to just check emptiness *)
+    not (is_empty astate)
+
+
+  let add_lock astate =
+    let count = try find the_only_lock astate with Not_found -> LockCount.empty in
+    add the_only_lock (LockCount.increment count) astate
+
+
+  let remove_lock astate =
+    try
+      let count = find the_only_lock astate in
+      let count' = LockCount.decrement count in
+      if LockCount.is_empty count' then remove the_only_lock astate
+      else add the_only_lock count' astate
+    with Not_found -> astate
+end
 
 module ThreadsDomain = struct
   type astate = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
@@ -379,12 +402,12 @@ module AccessData = struct
 
   type t = {thread: bool; lock: bool; ownership_precondition: Precondition.t} [@@deriving compare]
 
-  let make locks threads ownership_precondition pdesc =
+  let make lock threads ownership_precondition pdesc =
     (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
        such accesses *)
     assert (not (Precondition.is_true ownership_precondition)) ;
     let thread = ThreadsDomain.is_any_but_self threads in
-    let lock = locks || Procdesc.is_java_synchronized pdesc in
+    let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
     {thread; lock; ownership_precondition}
 
 
@@ -417,7 +440,7 @@ type astate =
 
 let empty =
   let threads = ThreadsDomain.empty in
-  let locks = false in
+  let locks = LocksDomain.empty in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
@@ -425,7 +448,7 @@ let empty =
 
 
 let is_empty {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_empty threads && not locks && AccessDomain.is_empty accesses
+  ThreadsDomain.is_empty threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
 
 

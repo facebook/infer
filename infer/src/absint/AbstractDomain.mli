@@ -108,3 +108,26 @@ module BooleanAnd : S with type astate = bool
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
 module BooleanOr : WithBottom with type astate = bool
+
+module type MaxCount = sig
+  val max : int
+  (** must be positive *)
+end
+
+(** Domain keeping a non-negative count with a bounded maximum value. The count can be only
+    incremented and decremented *)
+module CountDomain (MaxCount : MaxCount) : sig
+  include WithBottom with type astate = private int
+
+  val top : astate  [@@warning "-32"]
+  (** maximum value *)
+
+  val is_top : astate -> bool  [@@warning "-32"]
+  (** return true if this is the maximum value *)
+
+  val increment : astate -> astate
+  (** bump the count by one if it is less than the max *)
+
+  val decrement : astate -> astate
+  (** descrease the count by one if it is greater than 0 *)
+end

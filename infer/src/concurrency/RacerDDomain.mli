@@ -51,12 +51,20 @@ module TraceElem : sig
   val make_unannotated_call_access : Typ.Procname.t -> Location.t -> t
 end
 
-(** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
-    the existence of one global lock. In the case that a lock is held on the access to a variable,
-    but the lock held is the wrong one, we will erroneously say that the access is thread-safe.
-    However, this coarse abstraction saves us from the complexity of tracking which locks are held
-    and which memory locations correspond to the same lock. *)
-module LocksDomain : AbstractDomain.S with type astate = bool
+(** Overapproximation of number of locks that are currently held *)
+module LocksDomain : sig
+  include AbstractDomain.WithBottom
+
+  val is_locked : astate -> bool
+    [@@warning "-32"]
+  (** returns true if the number of locks held is greater than zero or Top *)
+
+  val add_lock : astate -> astate
+  (** record acquisition of a lock *)
+
+  val remove_lock : astate -> astate
+  (** record release of a lock *)
+end
 
 (** Abstraction of threads that may run in parallel with the current thread.
     NoThread < AnyThreadExceptSelf < AnyThread *)

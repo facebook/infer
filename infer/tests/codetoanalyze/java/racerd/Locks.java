@@ -25,7 +25,8 @@ public class Locks {
   ReentrantLock mReentrantLock;
   ReentrantReadWriteLock mReentrantReadWriteLock;
 
-  public void lockInOneBranchBad(boolean b) {
+  // we allow this for now
+  public void FN_lockInOneBranchBad(boolean b) {
     if (b) {
       mLock.lock();
     }
@@ -164,8 +165,111 @@ public class Locks {
     mLock.unlock();
   }
 
-  // our "squish all locks into one" abstraction is not ideal here...
-  public void FP_unlockOneLock() {
+  void nested1Ok() {
+    synchronized (this) {
+      synchronized (this) {
+      }
+      // a bad abstraction of locks will treat this as unlocked...
+      f = 32;
+    }
+  }
+
+  void nested2Ok() {
+    synchronized (this) {
+      synchronized (this) {
+        f = 32;
+      }
+    }
+  }
+
+  void nested3Ok() {
+    synchronized (this) {
+      f = 32;
+      synchronized (this) {
+      }
+    }
+  }
+
+  void nested1Bad() {
+    synchronized (this) {
+      synchronized (this) {
+      }
+    }
+    f = 32;
+  }
+
+  void nested2Bad() {
+    synchronized (this) {
+    }
+    f = 32;
+    synchronized (this) {
+    }
+  }
+
+  void nested3Bad() {
+    synchronized (this) {
+    }
+    synchronized (this) {
+    }
+    f = 32;
+  }
+
+
+  void useLock() {
+    synchronized (this) {
+    }
+  }
+
+  void useLockInCalleeBad() {
+    useLock();
+    f = 32;
+  }
+
+  void lockInLoopOk(int i) {
+    while (i > 0) {
+      i++;
+      mLock.lock();
+    }
+    f = 32;
+  }
+
+  void unlockInLoopOk(int i) {
+    mLock.lock();
+    while (i > 0) {
+      i++;
+      mLock.unlock();
+    }
+    f = 32;
+  }
+
+  void lockInLoopLexicalBad(int i) {
+    while (i > 0) {
+      i++;
+      synchronized(this) {
+      }
+    }
+    f = 32;
+  }
+
+  void lockInLoopLexicalOk(int i) {
+    while (i > 0) {
+      i++;
+      synchronized(this) {
+        f = 32;
+      }
+    }
+  }
+
+  void loopInLockLexicalBad(int i) {
+    synchronized(this) {
+      while (i > 0) {
+        i++;
+      }
+      f = 32;
+    }
+  }
+
+  public void unlockOneLockOk() {
     mLock.lock();
     mReentrantLock.lock();
     mReentrantLock.unlock();
