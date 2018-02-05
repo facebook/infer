@@ -20,41 +20,24 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translatio
     incr CFrontend_config.procedures_failed ;
     (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
   in
-  let caught_exception exception_type (exception_file, exception_line, _, _)
-      (source_location_start, source_location_end) ast_node =
-    EventLogger.FrontendException
-      { exception_type
-      ; source_location_start= CLocation.clang_to_sil_location trans_unit_ctx source_location_start
-      ; source_location_end= CLocation.clang_to_sil_location trans_unit_ctx source_location_end
-      ; exception_file
-      ; exception_line
-      ; ast_node
-      ; lang= CFrontend_config.string_of_clang_lang trans_unit_ctx.lang }
-  in
   try f () with
   (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
        catching the exception) unless `--keep-going` was passed. Print errors we should fix
        (t21762295) to the console. *)
   | CFrontend_config.Unimplemented e ->
-      let caught_unimplemented_exception =
-        caught_exception "Unimplemented" e.position e.source_range e.ast_node
-      in
-      EventLogger.log caught_unimplemented_exception ;
+      ClangLogging.log_caught_exception trans_unit_ctx "Unimplemented" e.position e.source_range
+        e.ast_node ;
       log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" e.msg
   | CFrontend_config.IncorrectAssumption e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
-      let caught_incorrect_assumption =
-        caught_exception "IncorrectAssumption" e.position e.source_range e.ast_node
-      in
-      EventLogger.log caught_incorrect_assumption ;
+      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+        e.source_range e.ast_node ;
       log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
   | CTrans_utils.Self.SelfClassException e ->
       (* FIXME(t21762295): we do not expect this to happen but it does *)
-      let caught_selfclass_exception =
-        Some (Typ.Name.to_string e.class_name)
-        |> caught_exception "SelfClassException" e.position e.source_range
-      in
-      EventLogger.log caught_selfclass_exception ;
+      Some (Typ.Name.to_string e.class_name)
+      |> ClangLogging.log_caught_exception trans_unit_ctx "SelfClassException" e.position
+           e.source_range ;
       log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp e.class_name
   | exn ->
       let trace = Backtrace.get () in

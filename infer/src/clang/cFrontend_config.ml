@@ -20,9 +20,11 @@ let string_of_clang_lang (lang: clang_lang) : string =
 
 let equal_clang_lang = [%compare.equal : clang_lang]
 
+type ocaml_pos = string * int * int * int
+
 type exception_details =
   { msg: string
-  ; position: string * int * int * int
+  ; position: ocaml_pos
   ; source_range: Clang_ast_t.source_range
   ; ast_node: string option }
 
@@ -36,7 +38,6 @@ exception IncorrectAssumption of exception_details
 
 let incorrect_assumption position source_range ?ast_node fmt =
   F.kasprintf (fun msg -> raise (IncorrectAssumption {msg; position; source_range; ast_node})) fmt
-
 
 type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}
 

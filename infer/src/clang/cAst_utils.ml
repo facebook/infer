@@ -135,13 +135,14 @@ let get_enum_constant_exp enum_constant_pointer =
   ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
 
 
-let get_type type_ptr =
-  (* There is chance for success only if type_ptr is in fact clang pointer *)
+let get_type ?source_range type_ptr =
+  let source_range = match source_range with Some sr -> sr | None -> dummy_source_range () in
   match type_ptr with
+  (* There is chance for success only if type_ptr is in fact clang pointer *)
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
       let typ = Int.Table.find ClangPointers.pointer_type_table raw_ptr in
       if Option.is_none typ then
-        CFrontend_config.incorrect_assumption __POS__ (dummy_source_range ())
+        CFrontend_config.incorrect_assumption __POS__ source_range
           "type with pointer %d not found@\n" raw_ptr ;
       typ
   | _ ->
@@ -151,8 +152,8 @@ let get_type type_ptr =
       None
 
 
-let get_desugared_type type_ptr =
-  let typ_opt = get_type type_ptr in
+let get_desugared_type ?source_range type_ptr =
+  let typ_opt = get_type ?source_range type_ptr in
   match typ_opt with
   | Some typ
     -> (

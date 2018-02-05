@@ -1209,8 +1209,13 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
         Some an
     | False ->
         None
-    | Atomic (name, params) ->
-        if eval_Atomic name params an lcxt then Some an else None
+    | Atomic (name, params) -> (
+      try if eval_Atomic name params an lcxt then Some an else None
+      with CFrontend_config.IncorrectAssumption e ->
+        let trans_unit_ctx = lcxt.CLintersContext.translation_unit_context in
+        ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+          e.source_range e.ast_node ;
+        None )
     | InNode (node_type_list, f1) ->
         in_node node_type_list f1 an lcxt
     | Not f1 -> (

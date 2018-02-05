@@ -17,16 +17,18 @@ val string_of_clang_lang : clang_lang -> string
 
 val equal_clang_lang : clang_lang -> clang_lang -> bool
 
+type ocaml_pos = string * int * int * int
+
 type exception_details =
   { msg: string
-  ; position: string * int * int * int
+  ; position: ocaml_pos
   ; source_range: Clang_ast_t.source_range
   ; ast_node: string option }
 
 exception Unimplemented of exception_details
 
 val unimplemented :
-  string * int * int * int -> Clang_ast_t.source_range -> ?ast_node:string
+  ocaml_pos -> Clang_ast_t.source_range -> ?ast_node:string
   -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise Unimplemented. This is caught at the level of translating a method and makes the frontend
     give up on that method. *)
@@ -34,7 +36,7 @@ val unimplemented :
 exception IncorrectAssumption of exception_details
 
 val incorrect_assumption :
-  string * int * int * int -> Clang_ast_t.source_range -> ?ast_node:string
+  ocaml_pos -> Clang_ast_t.source_range -> ?ast_node:string
   -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Used to mark places in the frontend that incorrectly assume something to be
     impossible. TODO(t21762295) get rid of all instances of this. *)
