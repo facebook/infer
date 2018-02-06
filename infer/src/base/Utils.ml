@@ -193,9 +193,13 @@ let write_json_to_file destfile json =
   with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
 
 
-let consume_in chan_in =
-  try while true do In_channel.input_line_exn chan_in |> ignore done with End_of_file -> ()
+let with_channel_in ~f chan_in =
+  try while true do f @@ In_channel.input_line_exn chan_in done with End_of_file -> ()
 
+
+let consume_in chan_in = with_channel_in ~f:ignore chan_in
+
+let echo_in chan_in = with_channel_in ~f:print_endline chan_in
 
 let with_process_in command read =
   let chan = Unix.open_process_in command in

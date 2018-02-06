@@ -59,6 +59,10 @@ val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 val write_json_to_file : string -> Yojson.Basic.json -> unit
 
 val consume_in : In_channel.t -> unit
+(** consume and ignore all the lines from the channel until End_of_file is reached *)
+
+val echo_in : In_channel.t -> unit
+(** echo the lines we get to stdout until End_of_file is reached *)
 
 val with_process_in : string -> (In_channel.t -> 'a) -> 'a * Unix.Exit_or_signal.t
 
