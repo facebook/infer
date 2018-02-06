@@ -208,11 +208,8 @@ let method_signature_names ms =
     | Some vt ->
         Some (vt_to_java_type vt)
   in
-  let rec args_to_signature l =
-    match l with [] -> [] | vt :: tail -> vt_to_java_type vt :: args_to_signature tail
-  in
   let method_name = JBasics.ms_name ms in
-  let args_types = args_to_signature (JBasics.ms_args ms) in
+  let args_types = List.map ~f:vt_to_java_type (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)
 
 
