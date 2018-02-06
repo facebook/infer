@@ -134,7 +134,7 @@ let process_merge_file deps_file =
           else target_results_dir
         in
         let skiplevels = 2 in
-        (* Don't link toplevel files, definitely not .start *)
+        (* Don't link toplevel files *)
         if should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst then
           slink ~stats ~skiplevels infer_out_src infer_out_dst
     | _ ->

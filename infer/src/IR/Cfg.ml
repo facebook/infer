@@ -270,7 +270,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
 
 let store_statement =
   ResultsDatabase.register_statement
-    "INSERT OR REPLACE INTO source_files VALUES (:source, :cfgs, :proc_names)"
+    "INSERT OR REPLACE INTO source_files VALUES (:source, :cfgs, :proc_names, :timestamp)"
 
 
 let store source_file cfg =
@@ -291,6 +291,9 @@ let store source_file cfg =
       get_all_proc_names cfg |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 3
       (* :proc_names *)
       |> SqliteUtils.check_sqlite_error db ~log:"store bind proc names" ;
+      Sqlite3.bind store_stmt 4 (Sqlite3.Data.INT Int64.one)
+      (* :freshly_captured *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store freshness" ;
       SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 

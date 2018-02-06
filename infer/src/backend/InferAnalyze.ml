@@ -78,10 +78,7 @@ let cluster_should_be_analyzed ~changed_files cluster =
   (* whether [fname] is one of the [changed_files] *)
   let is_changed_file = Option.map changed_files ~f:(SourceFile.Set.mem cluster) in
   let check_modified () =
-    let modified =
-      DB.source_dir_from_source_file cluster |> DB.source_dir_to_string |> DB.filename_from_string
-      |> DB.file_was_updated_after_start
-    in
+    let modified = SourceFiles.is_freshly_captured cluster in
     if modified then L.debug Analysis Medium "Modified: %a@\n" SourceFile.pp cluster ;
     modified
   in

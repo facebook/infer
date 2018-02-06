@@ -34,7 +34,12 @@ WHERE
 
 let merge_source_files_table ~db_file =
   let db = ResultsDatabase.get_database () in
-  Sqlite3.exec db "INSERT OR REPLACE INTO source_files SELECT * FROM attached.source_files"
+  Sqlite3.exec db
+    {|
+    INSERT OR REPLACE INTO source_files
+    SELECT source_file, cfgs, procedure_names, 1
+    FROM attached.source_files
+|}
   |> SqliteUtils.check_sqlite_error db
        ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
 

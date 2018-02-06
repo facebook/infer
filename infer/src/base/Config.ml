@@ -287,8 +287,6 @@ let specs_dir_name = "specs"
 
 let specs_files_suffix = ".specs"
 
-let start_filename = ".start"
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 

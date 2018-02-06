@@ -26,5 +26,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing infer-run Buck flavors integration,\
 	NO_BUCKD=1 \
-	$(INFER_BIN) $(INFER_OPTIONS) run --flavors --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) $(INFER_OPTIONS) run --flavors --results-dir $(CURDIR)/infer-out --reactive -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

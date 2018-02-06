@@ -32,13 +32,6 @@ val file_exists : filename -> bool
 val file_modified_time : ?symlink:bool -> filename -> float
 (** Return the time when a file was last modified. The file must exist. *)
 
-val mark_file_updated : string -> unit
-(** Mark a file as updated by changing its timestamps to be one second in the future.
-    This guarantees that it appears updated after start. *)
-
-val file_was_updated_after_start : filename -> bool
-(** Return whether filename was updated after analysis started. File doesn't have to exist *)
-
 (** {2 Results Directory} *)
 
 module Results_dir : sig

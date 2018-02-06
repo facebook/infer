@@ -44,7 +44,10 @@ let setup () =
               ( Driver.(equal_mode driver_mode Analyze)
               || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
       then ResultsDir.remove_results_dir () ;
-      ResultsDir.create_results_dir ()
+      ResultsDir.create_results_dir () ;
+      if CLOpt.is_originator && not Config.continue_capture
+         && not Driver.(equal_mode driver_mode Analyze)
+      then SourceFiles.mark_all_stale ()
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
   | Events ->

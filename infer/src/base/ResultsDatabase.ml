@@ -29,7 +29,8 @@ let source_files_schema =
   {|CREATE TABLE IF NOT EXISTS source_files
   ( source_file TEXT PRIMARY KEY
   , cfgs BLOB NOT NULL
-  , procedure_names BLOB NOT NULL )|}
+  , procedure_names BLOB NOT NULL
+  , freshly_captured INT NOT NULL )|}
 
 
 let schema_hum = Printf.sprintf "%s;\n%s" procedures_schema source_files_schema

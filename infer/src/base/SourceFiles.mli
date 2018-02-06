@@ -15,3 +15,12 @@ val proc_names_of_source : SourceFile.t -> Typ.Procname.t list
 
 val is_captured : SourceFile.t -> bool
 (** has the source file been captured? *)
+
+val is_empty : unit -> bool
+(** whether there exists at least one captured source file *)
+
+val is_freshly_captured : SourceFile.t -> bool
+(** whether the source file was captured in the last capture phase *)
+
+val mark_all_stale : unit -> unit
+(** mark all source files as stale; do be called at the start of a new capture phase *)

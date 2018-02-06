@@ -29,11 +29,9 @@ let init_global_state source_file =
 
 
 let store_icfg source_file cfg =
-  let source_dir = DB.source_dir_from_source_file source_file in
   Cfg.store source_file cfg ;
   if Config.debug_mode || Config.frontend_tests then Dotty.print_icfg_dotty source_file cfg ;
-  (* NOTE: nothing should be written to source_dir after this *)
-  DB.mark_file_updated (DB.source_dir_to_string source_dir)
+  ()
 
 
 (* Given a source file, its code is translated, and the call-graph, control-flow-graph and type *)

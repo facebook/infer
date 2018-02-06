@@ -209,8 +209,6 @@ val specs_dir_name : string
 
 val specs_files_suffix : string
 
-val start_filename : string
-
 val trace_absarray : bool
 
 val undo_join : bool

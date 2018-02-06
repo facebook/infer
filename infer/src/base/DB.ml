@@ -229,27 +229,6 @@ let is_source_file path =
   List.exists ~f:(fun ext -> Filename.check_suffix path ext) Config.source_file_extentions
 
 
-let infer_start_time =
-  lazy
-    (file_modified_time (Results_dir.path_to_filename Results_dir.Abs_root [Config.start_filename]))
-
-
-(** Return whether filename was updated after analysis started. File doesn't have to exist *)
-let file_was_updated_after_start fname =
-  if file_exists fname then
-    let file_mtime = file_modified_time fname in
-    file_mtime > Lazy.force infer_start_time
-  else (* since file doesn't exist, it wasn't modified *)
-    false
-
-
-(** Mark a file as updated by changing its timestamps to be one second in the future.
-    This guarantees that it appears updated after start. *)
-let mark_file_updated fname =
-  let near_future = Unix.gettimeofday () +. 1. in
-  Unix.utimes fname ~access:near_future ~modif:near_future
-
-
 (** Fold over all file paths recursively under [dir] which match [p]. *)
 let fold_paths_matching ~dir ~p ~init ~f =
   let rec paths path_list dir =
