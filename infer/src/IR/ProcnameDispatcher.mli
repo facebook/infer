@@ -46,13 +46,13 @@ type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 
 type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
 
-type 'f matcher = Typ.Procname.t -> FuncArg.t list -> 'f option
+type 'f matcher
 
-type 'f dispatcher = 'f matcher
+type 'f dispatcher = Typ.Procname.t -> FuncArg.t list -> 'f option
 
-type 'f typ_matcher = Typ.name -> 'f option
+type 'f typ_matcher
 
-type 'f typ_dispatcher = 'f typ_matcher
+type 'f typ_dispatcher = Typ.name -> 'f option
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
   - [C/C++ function/method] --> [f]

@@ -44,7 +44,9 @@ let all_checkers =
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun"
     ; active= Config.bufferoverrun
-    ; callbacks= [(Procedure BufferOverrunChecker.checker, Language.Clang)] }
+    ; callbacks=
+        [ (Procedure BufferOverrunChecker.checker, Language.Clang)
+        ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
   ; { name= "crashcontext"
     ; active= Config.crashcontext
     ; callbacks= [(Procedure BoundedCallTree.checker, Language.Java)] }
