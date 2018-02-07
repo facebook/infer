@@ -254,12 +254,12 @@ let rec pp_ pe pp_t f e =
         subtype
 
 
-and pp_captured_var pe pp_t f (exp, var, _) =
+and pp_captured_var pe pp_t f (exp, var, typ) =
   match exp with
   | Lvar evar when Pvar.equal var evar ->
       F.fprintf f "%a" (Pvar.pp pe) var
   | _ ->
-      F.fprintf f "(%a %a)" (pp_ pe pp_t) exp (Pvar.pp pe) var
+      F.fprintf f "(%a %a:%a)" (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 
 
 let pp_printenv pe pp_typ f e = pp_ pe (pp_typ pe) f e

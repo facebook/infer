@@ -32,7 +32,7 @@ digraph cfg {
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" ;
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" [label="9:  BinaryOperatorStmt: Assign \n   n$5=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseTODO_1,(n$5 &newImage)) [line 25, column 3]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" [label="9:  BinaryOperatorStmt: Assign \n   n$5=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseTODO_1,(n$5 &newImage:CGImage*)) [line 25, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" ;

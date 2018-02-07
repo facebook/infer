@@ -36,10 +36,25 @@ typedef void (^MyHandler)(RCBlock* name);
   };
 }
 
+- (void)retain_weak_self_in_block {
+  __weak typeof(self) weak_self = self;
+  self.handler = ^(RCBlock* b) {
+    __strong typeof(self) strong_self = weak_self;
+    if (strong_self)
+      strong_self->_child = b;
+  };
+}
+
 @end
 
-int main() {
+int call_retain_self_in_block_cycle() {
   RCBlock* c = [[RCBlock alloc] init];
   [c retain_self_in_block];
+  return 0;
+}
+
+int call_retain_weak_self_in_block_no_cycle() {
+  RCBlock* c = [[RCBlock alloc] init];
+  [c retain_weak_self_in_block];
   return 0;
 }

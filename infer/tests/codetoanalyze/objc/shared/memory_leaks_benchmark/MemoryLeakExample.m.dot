@@ -188,7 +188,7 @@ digraph cfg {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   n$42=*&x:int* [line 96, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockCapturedVarLeak_1,(n$42 &x)) [line 96, column 3]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   n$42=*&x:int* [line 96, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockCapturedVarLeak_1,(n$42 &x:int*)) [line 96, column 3]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" ;
@@ -211,7 +211,7 @@ digraph cfg {
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_3" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_2" ;
-"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" [label="4:  DeclStmt \n   n$49=*&x:int* [line 105, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockFreeNoLeakTODO_2,(n$49 &x)) [line 105, column 3]\n " shape="box"]
+"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" [label="4:  DeclStmt \n   n$49=*&x:int* [line 105, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockFreeNoLeakTODO_2,(n$49 &x:int*)) [line 105, column 3]\n " shape="box"]
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_3" ;

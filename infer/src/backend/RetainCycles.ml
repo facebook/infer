@@ -67,7 +67,14 @@ let get_cycle root prop =
       | Exp.Closure {captured_vars}
       (* will turn on in prod when false positives have been addressed *)
         when Config.debug_exceptions ->
-          List.find ~f:(fun (e, _, _) -> Exp.equal e root_node.rc_node_exp) captured_vars
+          List.find
+            ~f:(fun (e, _, typ) ->
+              match typ.Typ.desc with
+              | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+                  false
+              | _ ->
+                  Exp.equal e root_node.rc_node_exp )
+            captured_vars
           |> Option.map ~f:snd3
       | _ ->
           None
