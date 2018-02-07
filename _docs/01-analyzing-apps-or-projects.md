@@ -52,7 +52,7 @@ infer run -- make <make target>
 
 ### Using a compilation database
 
-Many build systems like cmake, Xcode or Buck generates compilation database. infer is able to use this database directly, simplifying its usage.
+Many build systems like cmake, Xcode or Buck generate compilation databases. infer is able to use this database directly, simplifying its usage.
 
 ```bash
 infer --compilation-database compile_commands.json
