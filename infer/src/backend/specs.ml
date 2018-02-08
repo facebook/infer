@@ -662,20 +662,11 @@ let proc_is_library proc_attributes =
     If no attributes can be found, return None.
 *)
 let proc_resolve_attributes proc_name =
-  let from_attributes_table () = Attributes.load proc_name in
-  let from_specs () = Option.map ~f:get_attributes (get_summary proc_name) in
-  match from_specs () with
-  | Some attributes
-    -> (
-      if attributes.ProcAttributes.is_defined then Some attributes
-      else
-        match from_attributes_table () with
-        | Some attributes' ->
-            Some attributes'
-        | None ->
-            Some attributes )
+  match get_summary proc_name with
+  | Some summary ->
+      Some (get_attributes summary)
   | None ->
-      from_attributes_table ()
+      Attributes.load proc_name
 
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
