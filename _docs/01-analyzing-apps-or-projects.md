@@ -48,3 +48,12 @@ Infer can analyze projects that compile with `make`. If there are C++ files in t
 ```bash
 infer run -- make <make target>
 ```
+
+
+### Using a compilation database
+
+Many build systems like cmake, Xcode or Buck generate compilation databases. infer is able to use this database directly, simplifying its usage.
+
+```bash
+infer --compilation-database compile_commands.json
+```
