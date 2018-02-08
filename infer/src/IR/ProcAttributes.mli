@@ -25,6 +25,8 @@ type clang_method_kind =
 
 val clang_method_kind_equal : clang_method_kind -> clang_method_kind -> bool
 
+val string_of_clang_method_kind : clang_method_kind -> string
+
 type objc_accessor_type =
   | Objc_getter of Typ.Struct.field
   | Objc_setter of Typ.Struct.field

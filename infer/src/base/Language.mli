@@ -15,6 +15,8 @@ val equal : t -> t -> bool
 
 val to_string : t -> string
 
+val to_explicit_string : t -> string
+
 val of_string : string -> t option
 
 val curr_language : t ref

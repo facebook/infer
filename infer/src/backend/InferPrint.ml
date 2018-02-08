@@ -552,6 +552,10 @@ module Stats = struct
          ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
          ; symops= summary.stats.symops
          ; method_location= Specs.get_loc summary
+         ; lang=
+             Specs.get_proc_name summary |> Typ.Procname.get_language
+             |> Language.to_explicit_string
+         ; clang_method_kind= (Specs.get_attributes summary).clang_method_kind
          ; analysis_status= summary.stats.stats_failure
          ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string }
        :: stats.events_to_log

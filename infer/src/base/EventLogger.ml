@@ -130,6 +130,8 @@ type analysis_stats =
   ; analysis_total_nodes: int
   ; symops: int
   ; method_location: Location.t
+  ; lang: string
+  ; clang_method_kind: ProcAttributes.clang_method_kind
   ; analysis_status: SymOp.failure_kind option
   ; method_name: string }
 
@@ -146,6 +148,9 @@ let create_analysis_stats_row base record =
             [ string_of_int record.method_location.line
             ; ":"
             ; string_of_int record.method_location.col ])
+  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string ~key:"clang_method_kind"
+       ~data:(ProcAttributes.string_of_clang_method_kind record.clang_method_kind)
   |> add_string ~key:"analysis_status"
        ~data:
          (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->

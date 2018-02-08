@@ -35,6 +35,21 @@ type clang_method_kind =
 
 let clang_method_kind_equal = [%compare.equal : clang_method_kind]
 
+let string_of_clang_method_kind = function
+  | CPP_INSTANCE ->
+      "CPP_INSTANCE"
+  | OBJC_INSTANCE ->
+      "OBJC_INSTANCE"
+  | CPP_CLASS ->
+      "CPP_CLASS"
+  | OBJC_CLASS ->
+      "OBJC_CLASS"
+  | BLOCK ->
+      "BLOCK"
+  | C_FUNCTION ->
+      "C_FUNCTION"
+
+
 (** Type for ObjC accessors *)
 type objc_accessor_type =
   | Objc_getter of Typ.Struct.field

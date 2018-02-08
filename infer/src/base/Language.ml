@@ -16,6 +16,8 @@ let language_to_string = [(Clang, "C/C++/ObjC"); (Java, "Java"); (Python, "pytho
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
 
+let to_explicit_string = function Clang -> "Clang" | Java -> "Java" | Python -> "Python"
+
 let of_string s = List.Assoc.find (List.Assoc.inverse language_to_string) ~equal:String.equal s
 
 (** Current language *)

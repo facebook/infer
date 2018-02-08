@@ -28,6 +28,8 @@ type analysis_stats =
   ; analysis_total_nodes: int
   ; symops: int
   ; method_location: Location.t
+  ; lang: string
+  ; clang_method_kind: ProcAttributes.clang_method_kind
   ; analysis_status: SymOp.failure_kind option
   ; method_name: string }
 
