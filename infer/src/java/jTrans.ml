@@ -284,6 +284,35 @@ let trans_access = function
       PredSymb.Protected
 
 
+let create_callee_attributes tenv program cn ms procname =
+  let f jclass =
+    try
+      let jmethod = Javalib.get_method jclass ms in
+      let formals =
+        formals_from_signature program tenv cn ms (JTransType.get_method_kind jmethod)
+      in
+      let ret_type = JTransType.return_type program tenv ms in
+      let access, method_annotation, exceptions, is_abstract =
+        match jmethod with
+        | Javalib.AbstractMethod am ->
+            ( trans_access am.Javalib.am_access
+            , JAnnotation.translate_method am.Javalib.am_annotations
+            , List.map ~f:JBasics.cn_name am.Javalib.am_exceptions
+            , true )
+        | Javalib.ConcreteMethod cm ->
+            ( trans_access cm.Javalib.cm_access
+            , JAnnotation.translate_method cm.Javalib.cm_annotations
+            , List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
+            , false )
+      in
+      Some
+        { (ProcAttributes.default procname) with
+          ProcAttributes.access; exceptions; method_annotation; formals; ret_type; is_abstract }
+    with Not_found -> None
+  in
+  Option.bind ~f (JClasspath.lookup_node cn program)
+
+
 let create_empty_cfg proc_name source_file procdesc =
   let start_kind = Procdesc.Node.Start_node proc_name in
   let start_node = Procdesc.create_node procdesc (Location.none source_file) start_kind [] in
@@ -625,6 +654,7 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
     then proc
     else JTransType.get_method_procname cn' ms method_kind
   in
+  JClasspath.add_missing_callee program callee_procname cn' ms ;
   let call_instrs =
     let callee_fun = Exp.Const (Const.Cfun callee_procname) in
     let return_type =

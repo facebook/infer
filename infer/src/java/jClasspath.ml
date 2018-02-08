@@ -226,9 +226,15 @@ let load_from_arguments classes_out_path =
   (classpath, search_sources (), classes)
 
 
+type callee_status = Translated | Missing of JBasics.class_name * JBasics.method_signature
+
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
-type program = {classpath: Javalib.class_path; models: classmap; mutable classmap: classmap}
+type program =
+  { classpath: Javalib.class_path
+  ; models: classmap
+  ; mutable classmap: classmap
+  ; callees: callee_status Typ.Procname.Hash.t }
 
 let get_classmap program = program.classmap
 
@@ -238,6 +244,20 @@ let get_models program = program.models
 
 let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
+
+
+let set_callee_translated program pname =
+  Typ.Procname.Hash.replace program.callees pname Translated
+
+
+let add_missing_callee program pname cn ms =
+  if not (Typ.Procname.Hash.mem program.callees pname) then
+    Typ.Procname.Hash.add program.callees pname (Missing (cn, ms))
+
+
+let iter_missing_callees program ~f =
+  let select proc_name = function Translated -> () | Missing (cn, ms) -> f proc_name cn ms in
+  Typ.Procname.Hash.iter select program.callees
 
 
 let cleanup program = Javalib.close_class_path program.classpath
@@ -270,7 +290,10 @@ let load_program classpath classes =
     else collect_classes JBasics.ClassMap.empty !models_jar
   in
   let program =
-    {classpath= Javalib.class_path classpath; models; classmap= JBasics.ClassMap.empty}
+    { classpath= Javalib.class_path classpath
+    ; models
+    ; classmap= JBasics.ClassMap.empty
+    ; callees= Typ.Procname.Hash.create 128 }
   in
   JBasics.ClassSet.iter (fun cn -> ignore (lookup_node cn program)) classes ;
   L.(debug Capture Medium) "done@." ;

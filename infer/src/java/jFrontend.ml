@@ -141,6 +141,7 @@ let create_icfg source_file linereader program icfg cn node =
   if Config.dependency_mode && not (is_classname_cached cn) then cache_classname cn ;
   let translate m =
     let proc_name = JTransType.translate_method_name m in
+    JClasspath.set_callee_translated program proc_name ;
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
       L.(debug Capture Verbose)

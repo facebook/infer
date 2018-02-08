@@ -44,3 +44,13 @@ val load_program : string -> JBasics.ClassSet.t -> program
 
 val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface_or_class option
 (** retrive a Java node from the classname *)
+
+val add_missing_callee :
+  program -> Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit
+(** add the class name of method signature to the list of callees  *)
+
+val set_callee_translated : program -> Typ.Procname.t -> unit
+(** set that the CFG for the procedure has been created *)
+
+val iter_missing_callees :
+  program -> f:(Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit) -> unit

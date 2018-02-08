@@ -21,6 +21,10 @@ type translation =
 
 val is_java_native : JCode.jcode Javalib.concrete_method -> bool
 
+val create_callee_attributes :
+  Tenv.t -> JClasspath.program -> JBasics.class_name -> JBasics.method_signature -> Typ.Procname.t
+  -> ProcAttributes.t option
+
 val create_am_procdesc :
   SourceFile.t -> JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Typ.Procname.t
   -> Procdesc.t

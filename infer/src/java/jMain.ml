@@ -79,6 +79,13 @@ let save_tenv tenv =
   Tenv.store_global tenv
 
 
+let store_callee_attributes tenv program =
+  let f proc_name cn ms =
+    Option.iter ~f:Attributes.store (JTrans.create_callee_attributes tenv program cn ms proc_name)
+  in
+  JClasspath.iter_missing_callees program ~f
+
+
 (* The program is loaded and translated *)
 let do_all_files classpath sources classes =
   L.(debug Capture Quiet)
@@ -113,6 +120,7 @@ let do_all_files classpath sources classes =
             source_files )
     sources ;
   if Config.dependency_mode then capture_libs linereader program tenv ;
+  store_callee_attributes tenv program ;
   save_tenv tenv ;
   JClasspath.cleanup program ;
   L.(debug Capture Quiet) "done capturing all files@."
