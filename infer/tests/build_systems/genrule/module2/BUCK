@@ -2,6 +2,7 @@ java_library(
     name='module2',
     srcs=glob(["*.java"]),
     deps=[
-        '//infer/tests/build_systems/genrule/module1:module1'
+        '//infer/tests/build_systems/genrule/module1:module1',
+        '//infer/tests/build_systems/genrule/annotations:annotations',
     ]
 )

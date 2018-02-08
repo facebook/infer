@@ -9,27 +9,30 @@
 
 package genrule.module2;
 
+import genrule.annotations.Nullable;
 import genrule.module1.Class1;
 import genrule.module1.SkipImplementationClass1;
 
 public class Class2 {
 
-  void localNPE2() {
+  @Nullable Object field2;
+
+  void localNPE2Bad() {
     Object obj = null;
     obj.toString();
   }
 
-  void interTargetNPE() {
+  void interTargetNPEBad() {
     Object obj = Class1.returnsNull();
     obj.toString();
   }
 
-  void interTargetAbstractNPE(Class1 class1) {
+  void interTargetAbstractNPEBad(Class1 class1) {
     Object obj = class1.abstractMayReturnNull();
     obj.toString();
   }
 
-  void interTargetNativeNPE(Class1 class1) {
+  void interTargetNativeNPEBad(Class1 class1) {
     Object obj = class1.nativeMayReturnNull();
     obj.toString();
   }
@@ -42,6 +45,14 @@ public class Class2 {
   void followMethodDeclarationOnlyOk(SkipImplementationClass1 obj1) {
     Object obj2 = obj1.notAnnotatedNullable();
     obj2.toString();
+  }
+
+  void dereferenceLocalNullableFieldBad() {
+    field2.toString();
+  }
+
+  void dereferenceInterTargetFieldBad(Class1 class1) {
+    class1.field1.toString();
   }
 
 }

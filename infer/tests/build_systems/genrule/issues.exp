@@ -1,1 +1,3 @@
-build_systems/genrule/module2/Class2.java, void Class2.localNPE2(), 2, NULL_DEREFERENCE, [start of procedure localNPE2()]
+build_systems/genrule/module2/Class2.java, void Class2.dereferenceInterTargetFieldBad(Class1), 1, ERADICATE_NULL_METHOD_CALL, [origin,The value of `class1.field1` in the call to `toString()` could be null. (Origin: field Class1.field1 at line 55)]
+build_systems/genrule/module2/Class2.java, void Class2.dereferenceLocalNullableFieldBad(), 1, ERADICATE_NULL_METHOD_CALL, [origin,The value of `Class2.field2` in the call to `toString()` could be null. (Origin: field Class2.field2 at line 51)]
+build_systems/genrule/module2/Class2.java, void Class2.localNPE2Bad(), 2, ERADICATE_NULL_METHOD_CALL, [origin,The value of `obj` in the call to `toString()` could be null. (Origin: null constant at line 21)]

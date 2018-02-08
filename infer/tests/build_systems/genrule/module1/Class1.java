@@ -13,6 +13,8 @@ import genrule.annotations.Nullable;
 
 public abstract class Class1 {
 
+  public @Nullable Object field1;
+
   public static @Nullable String returnsNull() {
     return null;
   }
