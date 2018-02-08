@@ -175,3 +175,20 @@ local within one procedure. But they are valuable and Infer doesn't try to
 duplicate what they are good at. At Facebook we run both Infer and a 
 collection of Android linters. Findbugs can be useful too; it is more akin 
 to linters.
+
+### Why Infer doesn't find a particular bug? 
+
+The answer here is for one of the checkers of Infer, the bi-abduction checker, that finds Null Dereferences, Memory Leaks, Retain Cycles and other memory related issues. 
+
+The analysis performs a symbolic execution of the code, keeping data structures that represent a symbolic heap, and trying to prove memory safety of the program. When it fails to prove it, it can report an error, if it finds a Null Dereference or Memory Leak, or it can find itself in an inconsistent state. In any case, it will stop the analysis of that particular procedure because the attempted proof doesn't make sense anymore. Another cause of the analysis not reaching some part of the code is that we introduce timeouts in the analysis, because otherwise it would take too long. So it could reach a timeout before reaching the end of the method. So when Infer doesn't find a particular bug, it's possible that it is because it couldn't reach that part of the code. 
+
+
+
+
+
+
+
+
+
+
+
