@@ -674,21 +674,43 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         empty_res_trans
 
 
-  let this_expr_trans trans_state sil_loc class_qual_type =
-    let context = trans_state.context in
-    let procname = Procdesc.get_proc_name context.CContext.procdesc in
+  let get_this_exp_typ ?class_qual_type {CContext.curr_class; tenv; procdesc} =
+    let class_qual_type =
+      match class_qual_type with
+      | Some class_qual_type ->
+          class_qual_type
+      | None ->
+          let class_ptr = CContext.get_curr_class_decl_ptr curr_class in
+          Ast_expressions.create_pointer_qual_type (CAst_utils.qual_type_of_decl_ptr class_ptr)
+    in
+    let procname = Procdesc.get_proc_name procdesc in
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
-    let exp = Exp.Lvar pvar in
-    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv class_qual_type in
-    let exps = [(exp, typ)] in
+    (Exp.Lvar pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
+
+
+  let this_expr_trans ?class_qual_type trans_state sil_loc =
+    let exps = [get_this_exp_typ ?class_qual_type trans_state.context] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc {empty_res_trans with exps} ~strip_pointer:false
 
 
+  (* get the [this] of the current procedure *)
+  let compute_this_expr trans_state stmt_info =
+    let context = trans_state.context in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
+    let this_res_trans = this_expr_trans trans_state sil_loc in
+    let obj_sil, class_typ =
+      extract_exp_from_list this_res_trans.exps
+        "WARNING: There should be one expression for 'this'. @\n"
+    in
+    let this_qual_type = match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
+    (obj_sil, this_qual_type, this_res_trans)
+
+
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    this_expr_trans trans_state sil_loc expr_info.Clang_ast_t.ei_qual_type
+    this_expr_trans trans_state sil_loc ~class_qual_type:expr_info.Clang_ast_t.ei_qual_type
 
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
@@ -1270,22 +1292,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {res_trans_to_parent with exps= res_trans_call.exps}
 
 
-  and compute_this_for_destructor_calls trans_state stmt_info class_ptr =
-    let context = trans_state.context in
-    let sil_loc = CLocation.get_sil_location stmt_info context in
-    let class_qual_type = CAst_utils.qual_type_of_decl_ptr class_ptr in
-    let this_res_trans =
-      this_expr_trans trans_state sil_loc
-        (Ast_expressions.create_pointer_qual_type class_qual_type)
-    in
-    let obj_sil, class_typ =
-      extract_exp_from_list this_res_trans.exps
-        "WARNING: There should be one expression for 'this' in constructor. @\n"
-    in
-    let this_qual_type = match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
-    (obj_sil, this_qual_type, this_res_trans)
-
-
   and inject_base_class_destructor_calls trans_state stmt_info bases obj_sil this_qual_type =
     List.rev_map bases ~f:(fun base ->
         let this_res_trans_destruct = {empty_res_trans with exps= [(obj_sil, this_qual_type)]} in
@@ -1317,9 +1323,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
       (* compute `this` once that is used for all destructor calls of virtual base class *)
-      let obj_sil, this_qual_type, this_res_trans =
-        compute_this_for_destructor_calls trans_state stmt_info_loc class_ptr
-      in
+      let obj_sil, this_qual_type, this_res_trans = compute_this_expr trans_state stmt_info_loc in
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info_loc in
       let bases_res_trans =
         inject_base_class_destructor_calls trans_state_pri stmt_info_loc bases obj_sil
@@ -1344,9 +1348,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
       (* compute `this` once that is used for all destructors of fields and base classes *)
-      let obj_sil, this_qual_type, this_res_trans =
-        compute_this_for_destructor_calls trans_state stmt_info_loc class_ptr
-      in
+      let obj_sil, this_qual_type, this_res_trans = compute_this_expr trans_state stmt_info_loc in
       (* ReturnStmt claims a priority with the same `stmt_info`.
        New pointer is generated to avoid premature node creation *)
       let stmt_info' =
@@ -3373,7 +3375,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      an input parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
     let context = trans_state.context in
-    let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
     let source_range = ctor_init.Clang_ast_t.xci_source_range in
     let sil_loc =
       CLocation.get_sil_location_from_range context.CContext.translation_unit_context source_range
@@ -3386,10 +3387,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {(CAst_utils.dummy_stmt_info ()) with Clang_ast_t.si_source_range= source_range}
     in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let class_qual_type =
-      Ast_expressions.create_pointer_qual_type (CAst_utils.qual_type_of_decl_ptr class_ptr)
-    in
-    let this_res_trans = this_expr_trans trans_state' sil_loc class_qual_type in
+    let this_res_trans = this_expr_trans trans_state' sil_loc in
     let var_res_trans =
       match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->
