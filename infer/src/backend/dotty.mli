@@ -21,5 +21,3 @@ val print_icfg_dotty : SourceFile.t -> Cfg.t -> unit
 
 val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
 (** Dotty printing for specs *)
-
-val dotty_retain_cycle_to_str : Prop.normal Prop.t -> RetainCyclesType.t -> string option

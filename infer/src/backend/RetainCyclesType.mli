@@ -15,9 +15,9 @@ type retain_cycle_field_objc = {rc_field_name: Typ.Fieldname.t; rc_field_inst: S
 
 type retain_cycle_edge_objc = {rc_from: retain_cycle_node; rc_field: retain_cycle_field_objc}
 
-type retain_cycle_edge = Object of retain_cycle_edge_objc | Block
+type retain_cycle_edge = Object of retain_cycle_edge_objc | Block of Typ.Procname.t
 
-(** A retain cycle is a non-empty list of paths. It also contains a pointer to the head of the list 
+(** A retain cycle is a non-empty list of paths. It also contains a pointer to the head of the list
 to model the cycle structure. The next element from the end of the list is the head. *)
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge}
 
@@ -25,3 +25,7 @@ val print_cycle : t -> unit
 
 val create_cycle : retain_cycle_edge list -> t option
 (** Creates a cycle if the list is non-empty *)
+
+val pp_dotty : Format.formatter -> t -> unit
+
+val write_dotty_to_file : string -> t -> unit

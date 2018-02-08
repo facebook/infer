@@ -275,6 +275,8 @@ let report_nullable_inconsistency = true
 
 let reporting_stats_dir_name = "reporting_stats"
 
+let retain_cycle_dotty_dir = "retain_cycle_dotty"
+
 (** If true, compact summaries before saving *)
 let save_compact_summaries = true
 

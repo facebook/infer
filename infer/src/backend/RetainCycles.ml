@@ -32,7 +32,7 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
           in
           if List.is_empty update_str_list then " "
           else ", " ^ String.concat ~sep:"," update_str_list
-      | Block ->
+      | Block _ ->
           ""
     in
     let cycle_item_str =
@@ -41,7 +41,7 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
           MF.monospaced_to_string
             (Format.sprintf "%s->%s" (from_exp_str obj)
                (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
-      | Block ->
+      | Block _ ->
           Format.sprintf "a block"
     in
     Format.sprintf "(%d) %s%s" index cycle_item_str location_str
@@ -59,14 +59,12 @@ let get_cycle root prop =
       sigma
   in
   (* Perform a dfs of a graph stopping when e_root is reached.
-   Returns a pair (path, bool) where path is a list of edges 
+   Returns a pair (path, bool) where path is a list of edges
    describing the path to e_root and bool is true if e_root is reached. *)
   let rec dfs root_node from_node path fields visited =
     let get_cycle_blocks exp =
       match exp with
-      | Exp.Closure {captured_vars}
-      (* will turn on in prod when false positives have been addressed *)
-        when Config.debug_exceptions ->
+      | Exp.Closure {name; captured_vars} ->
           List.find
             ~f:(fun (e, _, typ) ->
               match typ.Typ.desc with
@@ -75,7 +73,7 @@ let get_cycle root prop =
               | _ ->
                   Exp.equal e root_node.rc_node_exp )
             captured_vars
-          |> Option.map ~f:snd3
+          |> Option.map ~f:(fun (_, var, _) -> (name, var))
       | _ ->
           None
     in
@@ -91,13 +89,13 @@ let get_cycle root prop =
           let cycle_block_opt = get_cycle_blocks f_exp in
           if Option.is_some cycle_block_opt then
             match cycle_block_opt with
-            | Some var ->
+            | Some (procname, var) ->
                 let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-                (* From the captured variables we get the actual name of the variable 
+                (* From the captured variables we get the actual name of the variable
                 that is more useful for the error message *)
                 let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
                 let edge1 = Object {rc_from= updated_from_node; rc_field} in
-                let edge2 = Block in
+                let edge2 = Block procname in
                 (edge1 :: edge2 :: path, true)
             | None ->
                 assert false
@@ -191,16 +189,21 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
       | Object obj ->
           let ia = get_item_annotation obj.rc_from.rc_node_typ obj.rc_field.rc_field_name in
           if List.exists ~f:do_annotation ia then true else do_cycle c'
-      | Block ->
+      | Block _ ->
           false
   in
   do_cycle cycle.rc_elements
 
 
-let exn_retain_cycle tenv prop hpred cycle =
+let exn_retain_cycle tenv hpred cycle =
   let retain_cycle = desc_retain_cycle tenv cycle in
-  let cycle_dotty = Dotty.dotty_retain_cycle_to_str prop cycle in
-  let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) cycle_dotty in
+  let cycle_dotty = Format.asprintf "%a" RetainCyclesType.pp_dotty cycle in
+  ( if Config.debug_mode then
+      let rc_dotty_dir = Filename.concat Config.results_dir Config.retain_cycle_dotty_dir in
+      Utils.create_dir rc_dotty_dir ;
+      let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
+      RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
+  let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) (Some cycle_dotty) in
   Exceptions.Retain_cycle (hpred, desc, __POS__)
 
 
@@ -213,6 +216,6 @@ let report_cycle tenv hpred original_prop =
   match get_var_retain_cycle hpred prop with
   | Some cycle when not (cycle_has_weak_or_unretained_or_assign_field tenv cycle) ->
       RetainCyclesType.print_cycle cycle ;
-      Some (exn_retain_cycle tenv prop hpred cycle)
+      Some (exn_retain_cycle tenv hpred cycle)
   | _ ->
       None

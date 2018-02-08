@@ -195,6 +195,8 @@ val report_nullable_inconsistency : bool
 
 val reporting_stats_dir_name : string
 
+val retain_cycle_dotty_dir : string
+
 val save_compact_summaries : bool
 
 val smt_output : bool

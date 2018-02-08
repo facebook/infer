@@ -19,7 +19,6 @@ module F = Format
 let print_full_prop = ref false
 
 type kind_of_dotty_prop =
-  | Generic_proposition
   | Spec_precondition
   | Spec_postcondition of Prop.normal Prop.t  (** the precondition associated with the post *)
   | Lambda_pred of int * int * bool
@@ -712,10 +711,6 @@ let print_kind f kind =
       F.fprintf f "@\n POST%iL0 [label=\"POST %i \",  style=filled, color= yellow]@\n"
         !dotty_state_count !post_counter ;
       print_stack_info := true
-  | Generic_proposition ->
-      if !print_full_prop then
-        F.fprintf f "@\n HEAP%iL0 [label=\"HEAP %i \",  style=filled, color= yellow]@\n"
-          !dotty_state_count !proposition_counter
   | Lambda_pred (no, lev, array) ->
     match array with
     | false ->
@@ -1069,50 +1064,6 @@ let pp_dotty_one_spec f pre posts =
       done )
     posts ;
   F.fprintf f "@\n } @\n"
-
-
-let pp_dotty_prop fmt (prop, cycle) =
-  reset_proposition_counter () ;
-  Format.fprintf fmt "@\n@\n@\ndigraph main { @\nnode [shape=box]; @\n" ;
-  Format.fprintf fmt "@\n compound = true; rankdir =LR; @\n" ;
-  pp_dotty fmt Generic_proposition prop (Some cycle) ;
-  Format.fprintf fmt "@\n}"
-
-
-let dotty_retain_cycle_to_str prop (cycle: RetainCyclesType.t) =
-  let open RetainCyclesType in
-  let get_exp_from_edge edge =
-    match edge with
-    | Object obj ->
-        obj.rc_from.rc_node_exp
-    | Block ->
-        Exp.Lvar (Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string_c_fun ""))
-  in
-  let get_field_from_edge edge =
-    match edge with
-    | Object obj ->
-        obj.rc_field.rc_field_name
-    | Block ->
-        Typ.Fieldname.Java.from_string ""
-  in
-  let open RetainCyclesType in
-  let rec cycle_to_list elements =
-    match elements with
-    | edge1 :: edge2 :: rest ->
-        ( get_exp_from_edge edge1
-        , get_field_from_edge edge1
-        , Sil.Eexp (get_exp_from_edge edge2, Sil.Inone) )
-        :: cycle_to_list (edge2 :: rest)
-    | [edge] ->
-        [ ( get_exp_from_edge edge
-          , get_field_from_edge edge
-          , Sil.Eexp (get_exp_from_edge edge, Sil.Inone) ) ]
-    | [] ->
-        []
-  in
-  let cycle_list = cycle_to_list cycle.rc_elements in
-  try Some (F.asprintf "%a" pp_dotty_prop (prop, cycle_list))
-  with exn when SymOp.exn_not_failure exn -> None
 
 
 (********** START of Print interprocedural cfgs in dotty format  *)

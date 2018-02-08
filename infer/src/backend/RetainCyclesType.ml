@@ -18,7 +18,10 @@ type retain_cycle_edge_objc =
   {rc_from: retain_cycle_node; rc_field: retain_cycle_field_objc}
   [@@deriving compare]
 
-type retain_cycle_edge = Object of retain_cycle_edge_objc | Block [@@deriving compare]
+type retain_cycle_edge =
+  | Object of retain_cycle_edge_objc
+  | Block of Typ.Procname.t
+  [@@deriving compare]
 
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge} [@@deriving compare]
 
@@ -26,7 +29,7 @@ let is_inst_rearrange node =
   match node with
   | Object obj -> (
     match obj.rc_field.rc_field_inst with Sil.Irearrange _ -> true | _ -> false )
-  | Block ->
+  | Block _ ->
       false
 
 
@@ -59,7 +62,7 @@ let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
       Format.sprintf "%s ->{%s}"
         (retain_cycle_node_to_string obj.rc_from)
         (retain_cycle_field_to_string obj.rc_field)
-  | Block ->
+  | Block _ ->
       Format.sprintf "a block"
 
 
@@ -69,3 +72,54 @@ let retain_cycle_to_string cycle =
 
 
 let print_cycle cycle = Logging.d_strln (retain_cycle_to_string cycle)
+
+let pp_dotty fmt cycle =
+  let pp_dotty_obj fmt element =
+    match element with
+    | Object obj ->
+        Format.fprintf fmt "Object: %a" (Typ.pp Pp.text) obj.rc_from.rc_node_typ
+    | Block _ ->
+        Format.fprintf fmt "Block"
+  in
+  let pp_dotty_id fmt element =
+    match element with
+    | Object obj ->
+        Typ.pp Pp.text fmt obj.rc_from.rc_node_typ
+    | Block name ->
+        Format.fprintf fmt "%s" (Typ.Procname.to_unique_id name)
+  in
+  let pp_dotty_field fmt element =
+    match element with
+    | Object obj ->
+        Typ.Fieldname.pp fmt obj.rc_field.rc_field_name
+    | Block _ ->
+        Format.fprintf fmt ""
+  in
+  let pp_dotty_element fmt element =
+    Format.fprintf fmt "\t%a [label = \"%a | %a \"]@\n" pp_dotty_id element pp_dotty_obj element
+      pp_dotty_field element
+  in
+  let rec pp_dotty_edges fmt edges =
+    match edges with
+    | edge1 :: edge2 :: rest ->
+        Format.fprintf fmt "\t%a -> %a [color=\"blue\"];@\n" pp_dotty_id edge1 pp_dotty_id edge2 ;
+        pp_dotty_edges fmt (edge2 :: rest)
+    | [edge] ->
+        Format.fprintf fmt "\t%a -> %a [color=\"blue\"];@\n" pp_dotty_id edge pp_dotty_id
+          cycle.rc_head
+    | [] ->
+        ()
+  in
+  Format.fprintf fmt "@\n@\n@\ndigraph main { @\n\tnode [shape=record]; @\n" ;
+  Format.fprintf fmt "@\n\trankdir =LR; @\n" ;
+  Format.fprintf fmt "@\n" ;
+  List.iter ~f:(pp_dotty_element fmt) cycle.rc_elements ;
+  Format.fprintf fmt "@\n" ;
+  pp_dotty_edges fmt cycle.rc_elements ;
+  Format.fprintf fmt "@\n}"
+
+
+let write_dotty_to_file fname cycle =
+  let chan = Out_channel.create fname in
+  let fmt = Format.formatter_of_out_channel chan in
+  pp_dotty fmt cycle ; Out_channel.close chan
