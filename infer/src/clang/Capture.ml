@@ -101,12 +101,12 @@ let run_and_validate_clang_frontend ast_source =
 
 let run_clang clang_command read =
   let exit_with_error exit_code =
-    L.external_error "Error: the following clang command did not run successfully:@\n  %s@\n%!"
-      clang_command ;
+    L.external_error "Error: the following clang command did not run successfully:@\n  %a@."
+      ClangCommand.pp clang_command ;
     L.exit exit_code
   in
   (* NOTE: exceptions will propagate through without exiting here *)
-  match Utils.with_process_in clang_command read with
+  match Utils.with_process_in (ClangCommand.command_to_run clang_command) read with
   | res, Ok () ->
       res
   | _, Error `Exit_non_zero n ->
@@ -116,8 +116,8 @@ let run_clang clang_command read =
       exit_with_error 1
 
 
-let run_plugin_and_frontend source_path frontend clang_args =
-  let clang_command = ClangCommand.command_to_run (ClangCommand.with_plugin_args clang_args) in
+let run_plugin_and_frontend source_path frontend clang_cmd =
+  let clang_plugin_cmd = ClangCommand.with_plugin_args clang_cmd in
   ( if debug_mode then
       (* -cc1 clang commands always set -o explicitly *)
       let basename = source_path ^ ".ast" in
@@ -126,12 +126,14 @@ let run_plugin_and_frontend source_path frontend clang_args =
       let debug_script_out = Out_channel.create frontend_script_fname in
       let debug_script_fmt = Format.formatter_of_out_channel debug_script_out in
       let biniou_fname = Printf.sprintf "%s.biniou" basename in
-      Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n" clang_command biniou_fname ;
+      Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n"
+        (ClangCommand.command_to_run clang_plugin_cmd)
+        biniou_fname ;
       Format.fprintf debug_script_fmt
         "bdump -x -d \"%s/clang_ast.dict\" -w '!!DUMMY!!' %s \\@\n  > %s.bdump" Config.etc_dir
         biniou_fname basename ;
       Out_channel.close debug_script_out ) ;
-  run_clang clang_command frontend
+  run_clang clang_plugin_cmd frontend
 
 
 let cc1_capture clang_cmd =
@@ -148,7 +150,7 @@ let cc1_capture clang_cmd =
   then (
     L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path ;
     (* We still need to run clang, but we don't have to attach the plugin. *)
-    run_clang (ClangCommand.command_to_run clang_cmd) Utils.consume_in )
+    run_clang clang_cmd Utils.consume_in )
   else if Config.skip_analysis_in_path_skips_compilation
           && CLocation.is_file_blacklisted source_path
   then (
@@ -173,10 +175,10 @@ let capture clang_cmd =
     (* when running with buck's compilation-database, skip commands where frontend cannot be
        attached, as they may cause unnecessary compilation errors *)
     ()
-  else
+  else (
     (* Non-compilation (eg, linking) command. Run the command as-is. It will not get captured
        further since `clang -### ...` will only output commands that invoke binaries using their
        absolute paths. *)
-    let command_to_run = ClangCommand.command_to_run clang_cmd in
-    L.(debug Capture Quiet) "Running non-cc command without capture: %s@\n" command_to_run ;
-    run_clang command_to_run Utils.echo_in
+    L.(debug Capture Medium)
+      "Running non-cc command without capture: %a@\n" ClangCommand.pp clang_cmd ;
+    run_clang clang_cmd Utils.echo_in )

@@ -34,3 +34,6 @@ val escape_filename : string -> string
 
 val escape_double_quotes : string -> string
 (** replaces double-quote with backslash double-quote *)
+
+val escape_in_single_quotes : string -> string
+(** put the string inside single quotes and escape the single quotes within that string *)

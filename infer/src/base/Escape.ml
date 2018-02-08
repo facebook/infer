@@ -131,3 +131,6 @@ let escape_filename s =
 
 
 let escape_double_quotes s = escape_map (function '"' -> Some "\\\"" | _ -> None) s
+
+let escape_in_single_quotes s =
+  Printf.sprintf "'%s'" (escape_map (function '\'' -> Some "'\\''" | _ -> None) s)

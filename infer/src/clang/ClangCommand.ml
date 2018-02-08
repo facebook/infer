@@ -78,16 +78,18 @@ let filter_and_replace_unsupported_args ?(replace_options_arg= fun _ s -> s)
     ?(blacklisted_flags= []) ?(blacklisted_flags_with_arg= []) ?(post_args= []) args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
      some change has been performed *)
-  let rec aux (prev_is_blacklisted_with_arg, res_rev, changed) args =
+  let rec aux in_argfiles (prev_is_blacklisted_with_arg, res_rev, changed) args =
     match args with
     | [] ->
         (prev_is_blacklisted_with_arg, res_rev, changed)
     | _ :: tl when prev_is_blacklisted_with_arg ->
         (* in the unlikely event that a blacklisted flag with arg sits as the last option in some
            arg file, we need to remove its argument now *)
-        aux (false, res_rev, true) tl
-    | at_argfile :: tl when String.is_prefix at_argfile ~prefix:"@"
+        aux in_argfiles (false, res_rev, true) tl
+    | at_argfile :: tl
+      when String.is_prefix at_argfile ~prefix:"@" && not (String.Set.mem in_argfiles at_argfile)
       -> (
+        let in_argfiles' = String.Set.add in_argfiles at_argfile in
         let argfile = String.slice at_argfile 1 (String.length at_argfile) in
         match In_channel.read_lines argfile with
         | lines ->
@@ -98,26 +100,28 @@ let filter_and_replace_unsupported_args ?(replace_options_arg= fun _ s -> s)
               |> Utils.strip_balanced_once ~drop:(function '"' | '\'' -> true | _ -> false)
             in
             let last_in_file_is_blacklisted, rev_res_with_file_args, changed_file =
-              List.map ~f:strip lines |> aux (prev_is_blacklisted_with_arg, res_rev, false)
+              List.map ~f:strip lines
+              |> aux in_argfiles' (prev_is_blacklisted_with_arg, res_rev, false)
             in
-            if changed_file then aux (last_in_file_is_blacklisted, rev_res_with_file_args, true) tl
+            if changed_file then
+              aux in_argfiles' (last_in_file_is_blacklisted, rev_res_with_file_args, true) tl
             else
               (* keep the same argfile if we haven't needed to change anything in it *)
-              aux (last_in_file_is_blacklisted, at_argfile :: res_rev, changed) tl
+              aux in_argfiles' (last_in_file_is_blacklisted, at_argfile :: res_rev, changed) tl
         | exception e ->
             L.external_warning "Error reading argument file '%s': %s@\n" at_argfile
               (Exn.to_string e) ;
-            aux (false, at_argfile :: res_rev, changed) tl )
+            aux in_argfiles' (false, at_argfile :: res_rev, changed) tl )
     | flag :: tl when List.mem ~equal:String.equal blacklisted_flags flag ->
-        aux (false, res_rev, true) tl
+        aux in_argfiles (false, res_rev, true) tl
     | flag :: tl when List.mem ~equal:String.equal blacklisted_flags_with_arg flag ->
         (* remove the flag and its arg separately in case we are at the end of an argfile *)
-        aux (true, res_rev, true) tl
+        aux in_argfiles (true, res_rev, true) tl
     | arg :: tl ->
         let arg' = replace_options_arg res_rev arg in
-        aux (false, arg' :: res_rev, changed || not (phys_equal arg arg')) tl
+        aux in_argfiles (false, arg' :: res_rev, changed || not (phys_equal arg arg')) tl
   in
-  match aux (false, [], false) args with _, res_rev, _ ->
+  match aux String.Set.empty (false, [], false) args with _, res_rev, _ ->
     (* return non-reversed list *)
     List.rev_append res_rev post_args
 
@@ -180,19 +184,25 @@ let mk quoting_style ~prog ~args =
   {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style}
 
 
-let command_to_run cmd =
-  let mk_cmd normalizer =
-    let {exec; argv; quoting_style} = normalizer cmd in
-    Printf.sprintf "'%s' %s" exec
-      (List.map ~f:(ClangQuotes.quote quoting_style) argv |> String.concat ~sep:" ")
+let to_unescaped_args cmd =
+  let mk_exec_argv normalizer =
+    let {exec; argv} = normalizer cmd in
+    exec :: argv
   in
-  if can_attach_ast_exporter cmd then mk_cmd clang_cc1_cmd_sanitizer
+  if can_attach_ast_exporter cmd then mk_exec_argv clang_cc1_cmd_sanitizer
   else if String.is_prefix ~prefix:"clang" (Filename.basename cmd.exec) then
     (* `clang` supports argument files and the commands can be longer than the maximum length of the
        command line, so put arguments in a file *)
-    mk_cmd file_arg_cmd_sanitizer
+    mk_exec_argv file_arg_cmd_sanitizer
   else (* other commands such as `ld` do not support argument files *)
-    mk_cmd (fun x -> x)
+    mk_exec_argv (fun x -> x)
+
+
+let pp f cmd = to_unescaped_args cmd |> Pp.cli_args f
+
+let command_to_run cmd =
+  to_unescaped_args cmd |> List.map ~f:(ClangQuotes.quote cmd.quoting_style)
+  |> String.concat ~sep:" "
 
 
 let with_plugin_args args =

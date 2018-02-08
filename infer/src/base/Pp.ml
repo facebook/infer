@@ -134,14 +134,36 @@ let option pp fmt = function None -> string fmt "None" | Some x -> F.fprintf fmt
 
 let to_string ~f fmt x = string fmt (f x)
 
-let pp_argfile fmt fname =
-  try
-    F.fprintf fmt "  Contents of '%s'@\n" fname ;
-    In_channel.iter_lines ~f:(F.fprintf fmt "  %s@\n") (In_channel.create fname) ;
-    F.fprintf fmt "  /Contents of '%s'@\n" fname
-  with exn -> F.fprintf fmt "  Error reading file '%s':@\n  %a@\n" fname Exn.pp exn
-
-
 let cli_args fmt args =
-  F.fprintf fmt "'%a'@\n%a" (seq ~sep:"' '" string) args (seq ~sep:"\n" pp_argfile)
-    (List.filter_map ~f:(String.chop_prefix ~prefix:"@") args)
+  let pp_args fmt args =
+    F.fprintf fmt "@[<hov2>  " ;
+    seq ~sep:"" ~print_env:{text with break_lines= true} string fmt
+      (List.map args ~f:Escape.escape_in_single_quotes) ;
+    F.fprintf fmt "@]@\n"
+  in
+  let rec pp_argfile_args in_argfiles fmt args =
+    let at_least_one = ref false in
+    List.iter args ~f:(fun arg ->
+        String.chop_prefix ~prefix:"@" arg
+        |> Option.iter ~f:(fun argfile ->
+               if not !at_least_one then (
+                 F.fprintf fmt "@[<hov2>  " ;
+                 at_least_one := true ) ;
+               pp_argfile in_argfiles fmt argfile ) ) ;
+    if !at_least_one then F.fprintf fmt "@]@\n"
+  and pp_argfile in_argfiles fmt fname =
+    if not (String.Set.mem in_argfiles fname) then
+      let in_argfiles' = String.Set.add in_argfiles fname in
+      match In_channel.read_lines fname with
+      | args ->
+          F.fprintf fmt "++Contents of %s:@\n" (Escape.escape_in_single_quotes fname) ;
+          pp_args fmt args ;
+          pp_argfile_args in_argfiles' fmt args ;
+          ()
+      | exception exn ->
+          F.fprintf fmt "@\n++Error reading file %s:@\n  %a@\n"
+            (Escape.escape_in_single_quotes fname)
+            Exn.pp exn
+  in
+  pp_args fmt args ;
+  pp_argfile_args String.Set.empty fmt args

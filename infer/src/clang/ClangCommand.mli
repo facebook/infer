@@ -33,3 +33,5 @@ val prepend_arg : string -> t -> t
 val append_args : string list -> t -> t
 
 val get_orig_argv : t -> string list
+
+val pp : Format.formatter -> t -> unit
