@@ -28,7 +28,7 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
       match edge with
       | Object obj ->
           let update_str_list =
-            Localise.access_desc (ref []) (Errdesc.access_opt obj.rc_field.rc_field_inst)
+            Localise.access_desc (Errdesc.access_opt obj.rc_field.rc_field_inst)
           in
           if List.is_empty update_str_list then " "
           else ", " ^ String.concat ~sep:"," update_str_list

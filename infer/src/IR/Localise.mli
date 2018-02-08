@@ -14,7 +14,6 @@ open! IStd
 
 module Tags : sig
   type t
-
 end
 
 (** description field of error messages *)
@@ -183,4 +182,4 @@ val desc_unsafe_guarded_by_access : Typ.Fieldname.t -> string -> Location.t -> e
 
 val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Location.t -> error_desc
 
-val access_desc : (string, string) Base__List.Assoc.t ref -> access option -> string list
+val access_desc : access option -> string list
