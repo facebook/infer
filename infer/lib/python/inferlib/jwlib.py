@@ -24,6 +24,29 @@ class InferJavacCapture():
     def start(self):
         infer = os.path.join(config.BIN_DIRECTORY, 'infer')
         # pass --continue to prevent removing the results-dir
+        new_javac_args = []
+        list_count = 0
+        file_count = 0
+        source_list = "infer_sourcefiles"
+        if os.path.exists(source_list+str(list_count)):
+            os.remove(source_list+str(list_count))
+        f = open(source_list+str(list_count), "a")
+        for arg in self.javac_args:
+            if arg.endswith(".java"):
+                file_count += 1
+                f.write(arg + "\n")
+                if file_count >= 1000:
+                    file_count = 0
+                    list_count += 1
+                    f.close()
+                    if os.path.exists(source_list + str(list_count)):
+                        os.remove(source_list + str(list_count))
+                    f = open(source_list + str(list_count), "a")
+            else:
+                new_javac_args.append(arg)
+        f.close()
+        self.javac_args = new_javac_args
+
         cmd = [
             infer,
             'capture',
@@ -31,7 +54,16 @@ class InferJavacCapture():
             '--', 'javac'
         ] + self.javac_args
         try:
-            return subprocess.check_call(cmd)
+            # return subprocess.check_call(cmd)
+            exitcode = 0
+            for i in range(list_count+1):
+                cur_cmd = cmd + ["@" + source_list + str(i)]
+                exitcode = exitcode or subprocess.check_call(cur_cmd)
+
+            for i in range(list_count + 1):
+                if os.path.exists(source_list + str(i)):
+                    os.remove(source_list + str(i))
+            return exitcode
         except Exception as e:
             print('Failed to execute:', ' '.join(cmd))
             raise e
