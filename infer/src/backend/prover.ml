@@ -996,11 +996,13 @@ let check_inconsistency_base tenv prop =
         let is_objc_instance_self pvar =
           Language.equal language Clang
           && Mangled.equal (Pvar.get_name pvar) (Mangled.from_string "self")
-          && procedure_attr.ProcAttributes.is_objc_instance_method
+          && ProcAttributes.clang_method_kind_equal procedure_attr.ProcAttributes.clang_method_kind
+               ProcAttributes.OBJC_INSTANCE
         in
         let is_cpp_this pvar =
           Language.equal language Clang && Pvar.is_this pvar
-          && procedure_attr.ProcAttributes.is_cpp_instance_method
+          && ProcAttributes.clang_method_kind_equal procedure_attr.ProcAttributes.clang_method_kind
+               ProcAttributes.CPP_INSTANCE
         in
         let do_hpred = function
           | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->

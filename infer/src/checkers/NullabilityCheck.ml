@@ -40,13 +40,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         not (Typ.Procname.Java.is_static java_pname)
     | _ ->
         Option.exists
-          ~f:(fun attributes -> attributes.ProcAttributes.is_cpp_instance_method)
+          ~f:(fun attributes ->
+            ProcAttributes.clang_method_kind_equal attributes.ProcAttributes.clang_method_kind
+              ProcAttributes.CPP_INSTANCE )
           (Specs.proc_resolve_attributes callee_pname)
 
 
   let is_objc_instance_method callee_pname =
     Option.exists
-      ~f:(fun attributes -> attributes.ProcAttributes.is_objc_instance_method)
+      ~f:(fun attributes ->
+        ProcAttributes.clang_method_kind_equal attributes.ProcAttributes.clang_method_kind
+          ProcAttributes.OBJC_INSTANCE )
       (Specs.proc_resolve_attributes callee_pname)
 
 

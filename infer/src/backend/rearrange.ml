@@ -1665,11 +1665,16 @@ let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
 let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
   let pname = Procdesc.get_proc_name pdesc in
   let is_this = function
-    | Exp.Lvar pvar ->
-        let {ProcAttributes.is_objc_instance_method; is_cpp_instance_method} =
-          Procdesc.get_attributes pdesc
-        in
-        is_objc_instance_method && Pvar.is_self pvar || is_cpp_instance_method && Pvar.is_this pvar
+    | Exp.Lvar pvar
+      -> (
+        let {ProcAttributes.clang_method_kind} = Procdesc.get_attributes pdesc in
+        match clang_method_kind with
+        | ProcAttributes.OBJC_INSTANCE ->
+            Pvar.is_self pvar
+        | ProcAttributes.CPP_INSTANCE ->
+            Pvar.is_this pvar
+        | _ ->
+            false )
     | _ ->
         false
   in

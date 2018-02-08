@@ -20,7 +20,7 @@ type method_signature =
   ; ret_type: Clang_ast_t.qual_type
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
-  ; is_instance: bool
+  ; method_kind: ProcAttributes.clang_method_kind
   ; is_cpp_virtual: bool
   ; is_cpp_nothrow: bool
   ; language: CFrontend_config.clang_lang
@@ -43,7 +43,7 @@ let ms_get_attributes {attributes} = attributes
 
 let ms_get_loc {loc} = loc
 
-let ms_is_instance {is_instance} = is_instance
+let ms_get_method_kind {method_kind} = method_kind
 
 let ms_is_cpp_virtual {is_cpp_virtual} = is_cpp_virtual
 
@@ -69,7 +69,7 @@ let ms_is_setter {pointer_to_property_opt; args} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length args) 2
 
 
-let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cpp_nothrow language
+let make_ms name args ret_type attributes loc method_kind ?is_cpp_virtual ?is_cpp_nothrow language
     pointer_to_parent pointer_to_property_opt return_param_typ access =
   let booloption_to_bool = function Some b -> b | None -> false in
   let is_cpp_virtual = booloption_to_bool is_cpp_virtual in
@@ -80,7 +80,7 @@ let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cp
   ; ret_type
   ; attributes
   ; loc
-  ; is_instance
+  ; method_kind
   ; is_cpp_virtual
   ; is_cpp_nothrow
   ; language

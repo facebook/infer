@@ -14,6 +14,17 @@ open! IStd
 (** flags for a procedure *)
 type proc_flags = (string, string) Caml.Hashtbl.t [@@deriving compare]
 
+type clang_method_kind =
+  | CPP_INSTANCE
+  | OBJC_INSTANCE
+  | CPP_CLASS
+  | OBJC_CLASS
+  | BLOCK
+  | C_FUNCTION
+  [@@deriving compare]
+
+val clang_method_kind_equal : clang_method_kind -> clang_method_kind -> bool
+
 type objc_accessor_type =
   | Objc_getter of Typ.Struct.field
   | Objc_setter of Typ.Struct.field
@@ -43,13 +54,12 @@ type t =
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
-  ; is_objc_instance_method: bool  (** the procedure is an objective-C instance method *)
-  ; is_cpp_instance_method: bool  (** the procedure is an C++ instance method *)
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
+  ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t option  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)

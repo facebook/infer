@@ -34,14 +34,18 @@ type function_method_decl_info =
   | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * Clang_ast_t.pointer
   | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.qual_type * CContext.t
 
-let is_instance_method function_method_decl_info =
+let get_method_kind function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info _ | Block_decl_info _ ->
-      false
+  | Func_decl_info _ ->
+      ProcAttributes.C_FUNCTION
+  | Block_decl_info _ ->
+      ProcAttributes.BLOCK
   | Cpp_Meth_decl_info (_, method_decl_info, _, _) ->
-      not method_decl_info.Clang_ast_t.xmdi_is_static
+      if method_decl_info.Clang_ast_t.xmdi_is_static then ProcAttributes.CPP_CLASS
+      else ProcAttributes.CPP_INSTANCE
   | ObjC_Meth_decl_info (method_decl_info, _) ->
-      method_decl_info.Clang_ast_t.omdi_is_instance_method
+      if method_decl_info.Clang_ast_t.omdi_is_instance_method then ProcAttributes.OBJC_INSTANCE
+      else ProcAttributes.OBJC_CLASS
 
 
 let get_original_return_type function_method_decl_info =
@@ -53,7 +57,8 @@ let get_original_return_type function_method_decl_info =
 
 
 let get_class_param function_method_decl_info =
-  if is_instance_method function_method_decl_info then
+  match get_method_kind function_method_decl_info with
+  | ProcAttributes.CPP_INSTANCE | ProcAttributes.OBJC_INSTANCE -> (
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, _, class_decl_ptr, _) ->
         let class_type = CAst_utils.qual_type_of_decl_ptr class_decl_ptr in
@@ -62,8 +67,9 @@ let get_class_param function_method_decl_info =
         let class_type = CAst_utils.qual_type_of_decl_ptr class_decl_ptr in
         [(Mangled.from_string CFrontend_config.self, class_type)]
     | _ ->
-        []
-  else []
+        [] )
+  | _ ->
+      []
 
 
 let should_add_return_param return_type ~is_objc_method =
@@ -162,14 +168,14 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp, return_param_type_opt = get_return_val_and_param_types tenv function_method_decl_info in
-  let is_instance_method = is_instance_method function_method_decl_info in
+  let method_kind = get_method_kind function_method_decl_info in
   let parameters = get_parameters trans_unit_ctx tenv decl_info function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language trans_unit_ctx function_method_decl_info in
   let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
   let is_cpp_nothrow = is_cpp_nothrow function_method_decl_info in
   let access = decl_info.Clang_ast_t.di_access in
-  CMethod_signature.make_ms procname parameters tp attributes source_range is_instance_method
+  CMethod_signature.make_ms procname parameters tp attributes source_range method_kind
     ~is_cpp_virtual ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt
     return_param_type_opt access
 
@@ -348,7 +354,11 @@ let get_formal_parameters tenv ms =
                  (CMethod_signature.ms_get_lang ms)
                  CFrontend_config.CPP
           in
-          is_objc_self && CMethod_signature.ms_is_instance ms || is_cxx_this
+          is_objc_self
+          && ProcAttributes.clang_method_kind_equal
+               (CMethod_signature.ms_get_method_kind ms)
+               ProcAttributes.OBJC_INSTANCE
+          || is_cxx_this
         in
         let qt =
           if should_add_pointer (Mangled.to_string mangled) ms then
@@ -547,7 +557,7 @@ let get_objc_property_accessor tenv ms =
 
 (** Creates a procedure description. *)
 let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg tenv ms fbody
-    captured is_objc_inst_method =
+    captured =
   let defined = not (Int.equal (List.length fbody) 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Typ.Procname.to_string proc_name in
@@ -556,10 +566,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
   let method_annotation =
     sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) method_ret_type
   in
-  let is_cpp_inst_method =
-    CMethod_signature.ms_is_instance ms
-    && CFrontend_config.equal_clang_lang (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP
-  in
+  let clang_method_kind = CMethod_signature.ms_get_method_kind ms in
   let is_cpp_nothrow = CMethod_signature.ms_is_cpp_nothrow ms in
   let access =
     match CMethod_signature.ms_get_access ms with
@@ -607,11 +614,10 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
         ; access
         ; func_attributes= attributes
         ; is_defined= defined
-        ; is_objc_instance_method= is_objc_inst_method
-        ; is_cpp_instance_method= is_cpp_inst_method
         ; is_cpp_noexcept_method= is_cpp_nothrow
         ; is_model= Config.models_mode
         ; loc= loc_start
+        ; clang_method_kind
         ; objc_accessor= objc_property_accessor
         ; translation_unit= Some trans_unit_ctx.CFrontend_config.source_file
         ; method_annotation
@@ -633,7 +639,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
 
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
-let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
+let create_external_procdesc cfg proc_name clang_method_kind type_opt =
   if not (Typ.Procname.Hash.mem cfg proc_name) then
     let ret_type, formals =
       match type_opt with
@@ -643,8 +649,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
           (Typ.mk Typ.Tvoid, [])
     in
     let proc_attributes =
-      { (ProcAttributes.default proc_name) with
-        ProcAttributes.formals; is_objc_instance_method= is_objc_inst_method; ret_type }
+      {(ProcAttributes.default proc_name) with ProcAttributes.formals; clang_method_kind; ret_type}
     in
     ignore (Cfg.create_proc_desc cfg proc_attributes)
 
@@ -655,18 +660,20 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
   | Some callee_ms ->
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
-           [] [] false) ;
+           [] []) ;
       CMethod_signature.ms_get_name callee_ms
   | None ->
-      let callee_name =
+      let callee_name, method_kind =
         match class_name_opt with
         | Some class_name ->
-            CProcname.NoAstDecl.cpp_method_of_string context.tenv class_name name
+            ( CProcname.NoAstDecl.cpp_method_of_string context.tenv class_name name
+            , ProcAttributes.CPP_INSTANCE )
         | None ->
-            CProcname.NoAstDecl.c_function_of_string context.translation_unit_context context.tenv
-              name
+            ( CProcname.NoAstDecl.c_function_of_string context.translation_unit_context
+                context.tenv name
+            , ProcAttributes.C_FUNCTION )
       in
-      create_external_procdesc context.cfg callee_name false None ;
+      create_external_procdesc context.cfg callee_name method_kind None ;
       callee_name
 
 

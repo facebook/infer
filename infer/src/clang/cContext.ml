@@ -71,7 +71,8 @@ let rec is_objc_instance context =
       is_objc_instance outer_context
   | None ->
       let attrs = Procdesc.get_attributes context.procdesc in
-      attrs.ProcAttributes.is_objc_instance_method
+      ProcAttributes.clang_method_kind_equal attrs.ProcAttributes.clang_method_kind
+        ProcAttributes.OBJC_INSTANCE
 
 
 let rec get_curr_class context =

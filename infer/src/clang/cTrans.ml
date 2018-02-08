@@ -28,7 +28,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CMethod_trans.get_objc_method_data obj_c_message_expr_info
     in
     let is_instance = mc_type <> CMethod_trans.MCStatic in
-    let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
+    let objc_method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
+    let method_kind =
+      if is_instance then ProcAttributes.OBJC_INSTANCE else ProcAttributes.OBJC_CLASS
+    in
     let ms_opt =
       match method_pointer_opt with
       | Some pointer ->
@@ -47,7 +50,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params
           in
-          CProcname.NoAstDecl.objc_method_of_string_kind class_name selector method_kind
+          CProcname.NoAstDecl.objc_method_of_string_kind class_name selector objc_method_kind
     in
     let predefined_ms_opt =
       match proc_name with
@@ -62,17 +65,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some ms, _ ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-             context.tenv ms [] [] is_instance) ;
+             context.tenv ms [] []) ;
         (CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual)
     | None, Some ms ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-             context.tenv ms [] [] is_instance) ;
+             context.tenv ms [] []) ;
         if CMethod_signature.ms_is_getter ms || CMethod_signature.ms_is_setter ms then
           (proc_name, CMethod_trans.MCNoVirtual)
         else (proc_name, mc_type)
     | _ ->
-        CMethod_trans.create_external_procdesc context.cfg proc_name is_instance None ;
+        CMethod_trans.create_external_procdesc context.cfg proc_name method_kind None ;
         (proc_name, mc_type)
 
 
@@ -560,7 +563,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         decl_ptr
     in
     let is_instance_method =
-      match ms_opt with Some ms -> CMethod_signature.ms_is_instance ms | _ -> true
+      match ms_opt with
+      | Some ms -> (
+        match CMethod_signature.ms_get_method_kind ms with
+        | ProcAttributes.CPP_INSTANCE | ProcAttributes.OBJC_INSTANCE ->
+            true
+        | _ ->
+            false )
+      | _ ->
+          true
       (* might happen for methods that are not exported yet (some templates). *)
     in
     let is_cpp_virtual =
@@ -619,7 +630,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 in
                 ignore
                   (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
-                     context.tenv ms' [] [] false) ;
+                     context.tenv ms' [] []) ;
                 CMethod_signature.ms_get_name ms'
             | None ->
                 CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)

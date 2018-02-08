@@ -1298,7 +1298,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                             prop path
                       | None, false ->
                           let is_objc_instance_method =
-                            attrs.ProcAttributes.is_objc_instance_method
+                            ProcAttributes.clang_method_kind_equal
+                              attrs.ProcAttributes.clang_method_kind ProcAttributes.OBJC_INSTANCE
                           in
                           skip_call ~is_objc_instance_method ~reason:"function or method not found"
                             prop path resolved_pname ret_annots loc ret_id ret_typ_opt
@@ -1751,7 +1752,9 @@ and proc_call callee_summary
   (* were the receiver is null and the semantics of the call is nop*)
   (* let callee_attrs = Specs.get_attributes callee_summary in *)
   if !Language.curr_language <> Language.Java
-     && (Specs.get_attributes callee_summary).ProcAttributes.is_objc_instance_method
+     && ProcAttributes.clang_method_kind_equal
+          (Specs.get_attributes callee_summary).ProcAttributes.clang_method_kind
+          ProcAttributes.OBJC_INSTANCE
   then
     handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname
       loc path
