@@ -59,40 +59,17 @@ let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (
   |> Caml.Digest.to_hex
 
 
-let exception_value = "exception"
-
 let loc_trace_to_jsonbug_record trace_list ekind =
   match ekind with
   | Exceptions.Kinfo ->
       []
   | _ ->
-      let tag_value_records_of_node_tag nt =
-        match nt with
-        | Errlog.Condition cond ->
-            [ {Jsonbug_j.tag= Io_infer.Xml.tag_kind; value= "condition"}
-            ; {Jsonbug_j.tag= Io_infer.Xml.tag_branch; value= Printf.sprintf "%B" cond} ]
-        | Errlog.Exception exn_name ->
-            let res = [{Jsonbug_j.tag= Io_infer.Xml.tag_kind; value= exception_value}] in
-            let exn_str = Typ.Name.name exn_name in
-            if String.is_empty exn_str then res
-            else {Jsonbug_j.tag= Io_infer.Xml.tag_name; value= exn_str} :: res
-        | Errlog.Procedure_start pname ->
-            [ {Jsonbug_j.tag= Io_infer.Xml.tag_kind; value= "procedure_start"}
-            ; {Jsonbug_j.tag= Io_infer.Xml.tag_name; value= Typ.Procname.to_string pname}
-            ; {Jsonbug_j.tag= Io_infer.Xml.tag_name_id; value= Typ.Procname.to_filename pname} ]
-        | Errlog.Procedure_end pname ->
-            [ {Jsonbug_j.tag= Io_infer.Xml.tag_kind; value= "procedure_end"}
-            ; {Jsonbug_j.tag= Io_infer.Xml.tag_name; value= Typ.Procname.to_string pname}
-            ; {Jsonbug_j.tag= Io_infer.Xml.tag_name_id; value= Typ.Procname.to_filename pname} ]
-      in
       let trace_item_to_record trace_item =
         { Jsonbug_j.level= trace_item.Errlog.lt_level
         ; filename= SourceFile.to_string trace_item.Errlog.lt_loc.Location.file
         ; line_number= trace_item.Errlog.lt_loc.Location.line
         ; column_number= trace_item.Errlog.lt_loc.Location.col
-        ; description= trace_item.Errlog.lt_description
-        ; node_tags=
-            List.concat_map ~f:tag_value_records_of_node_tag trace_item.Errlog.lt_node_tags }
+        ; description= trace_item.Errlog.lt_description }
       in
       let record_list = List.rev (List.rev_map ~f:trace_item_to_record trace_list) in
       record_list
@@ -290,7 +267,6 @@ module IssuesJson = struct
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
         ; key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
-        ; qualifier_tags= Localise.Tags.tag_value_records_of_tags key.err_desc.tags
         ; hash= compute_hash kind bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc

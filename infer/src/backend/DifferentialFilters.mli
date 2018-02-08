@@ -42,8 +42,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
 
   val skip_duplicated_types_on_filenames : FileRenamings.t -> Differential.t -> Differential.t
 
-  val value_of_qualifier_tag : Jsonbug_t.tag_value_record list -> string -> string option
-
   val skip_anonymous_class_renamings : Differential.t -> Differential.t
 
   val interesting_paths_filter :

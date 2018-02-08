@@ -9,6 +9,4 @@
 
 open! IStd
 
-val exception_value : string
-
 val main : report_json:string option -> unit

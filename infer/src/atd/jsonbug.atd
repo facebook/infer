@@ -1,15 +1,9 @@
-type tag_value_record = {
-  tag : string;
-  value : string;
-}
-
 type json_trace_item = {
   level : int;
   filename : string;
   line_number : int;
   column_number : int;
   description : string;
-  node_tags : tag_value_record list;
 }
 
 type loc = {
@@ -35,7 +29,6 @@ type jsonbug = {
   file : string;
   bug_trace : json_trace_item list;
   key : string;
-  qualifier_tags : tag_value_record list;
   hash : string;
   ?dotty : string option;
   ?infer_source_loc: loc option;

@@ -210,15 +210,11 @@ end
 
 (** Create and print xml trees *)
 module Xml = struct
-  let tag_branch = "branch"
-
   let tag_err = "err"
 
   let tag_file = "file"
 
   let tag_in_calls = "in_calls"
-
-  let tag_kind = "kind"
 
   let tag_line = "line"
 

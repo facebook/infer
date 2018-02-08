@@ -62,15 +62,11 @@ end
 
 (** Create and print xml trees *)
 module Xml : sig
-  val tag_branch : string
-
   val tag_err : string
 
   val tag_file : string
 
   val tag_in_calls : string
-
-  val tag_kind : string
 
   val tag_line : string
 

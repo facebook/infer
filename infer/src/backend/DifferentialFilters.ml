@@ -170,17 +170,9 @@ let compare_procedure_id pid1 pid2 =
   String.compare pid1_norm_trimmed pid2_norm_trimmed
 
 
-let value_of_qualifier_tag qts tag =
-  match List.find ~f:(fun elem -> String.equal elem.Jsonbug_t.tag tag) qts with
-  | Some qt ->
-      Some qt.Jsonbug_t.value
-  | None ->
-      None
-
-
 type file_extension = string [@@deriving compare]
 
-type weak_hash = string * string * string * Caml.Digest.t * string option [@@deriving compare]
+type weak_hash = string * string * string * Caml.Digest.t [@@deriving compare]
 
 let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   (*
@@ -195,20 +187,8 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   let extension fname = snd (Filename.split_extension fname) in
   let cmp (i1: Jsonbug_t.jsonbug) (i2: Jsonbug_t.jsonbug) =
     [%compare : file_extension option * weak_hash * procedure_id]
-      ( extension i1.file
-      , ( i1.kind
-        , i1.bug_type
-        , i1.file
-        , i1.key
-        , value_of_qualifier_tag i1.qualifier_tags "call_procedure" )
-      , string_of_procedure_id i1 )
-      ( extension i2.file
-      , ( i2.kind
-        , i2.bug_type
-        , i2.file
-        , i2.key
-        , value_of_qualifier_tag i2.qualifier_tags "call_procedure" )
-      , string_of_procedure_id i2 )
+      (extension i1.file, (i1.kind, i1.bug_type, i1.file, i1.key), string_of_procedure_id i1)
+      (extension i2.file, (i2.kind, i2.bug_type, i2.file, i2.key), string_of_procedure_id i2)
   in
   let pred (issue: Jsonbug_t.jsonbug) =
     let is_java_file () =
@@ -274,8 +254,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let relative_complements = relative_complements
 
   let skip_duplicated_types_on_filenames = skip_duplicated_types_on_filenames
-
-  let value_of_qualifier_tag = value_of_qualifier_tag
 
   let skip_anonymous_class_renamings = skip_anonymous_class_renamings
 

@@ -15,14 +15,6 @@ open! IStd
 module Tags : sig
   type t
 
-  val tag_value_records_of_tags : t -> Jsonbug_t.tag_value_record list
-  (** convert error description's tags to atd-serializable format *)
-
-  val tags_of_tag_value_records : Jsonbug_t.tag_value_record list -> t
-  (** convert atd-serializable format to error description's tags *)
-
-  val lines_of_tags : t -> int list
-  (** collect all lines from tags *)
 end
 
 (** description field of error messages *)

@@ -190,29 +190,7 @@ let test_skip_duplicated_types_on_filenames =
   "test_skip_duplicated_types_on_filenames" >:: do_assert
 
 
-let test_value_of_qualifier_tag =
-  let qts = [{Jsonbug_t.tag= "tag1"; value= "value1"}; {Jsonbug_t.tag= "tag2"; value= "value2"}] in
-  let pp_diff fmt (expected, actual) =
-    let to_str v = Option.value v ~default:"NONE" in
-    Format.fprintf fmt "Expected: %s Found: %s" (to_str expected) (to_str actual)
-  in
-  let do_assert _ =
-    assert_equal ~cmp:(Option.equal String.equal) ~pp_diff (Some "value2")
-      (DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.value_of_qualifier_tag qts
-         "tag2") ;
-    assert_equal ~cmp:(Option.equal String.equal) ~pp_diff None
-      (DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.value_of_qualifier_tag qts
-         "tag3") ;
-    assert_equal ~cmp:(Option.equal String.equal) ~pp_diff (Some "value1")
-      (DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.value_of_qualifier_tag qts
-         "tag1")
-  in
-  "test_value_of_qualifier_tag" >:: do_assert
-
-
 let test_skip_anonymous_class_renamings =
-  let qt1 = [{Jsonbug_t.tag= "call_procedure"; value= "aValue1"}] in
-  let qt2 = [{Jsonbug_t.tag= "call_procedure"; value= "aValue2"}] in
   let create_test input_diff (exp_introduced, exp_fixed, exp_preexisting) _ =
     let diff' =
       DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.skip_anonymous_class_renamings
@@ -240,13 +218,13 @@ let test_skip_anonymous_class_renamings =
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$83.onMenuItemActionExpand(android.view.MenuItem):b."
                 ^ "5ab5e18cae498c35d887ce88f3d5fa82" )
-              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"3" ()
+              ~file:"a.java" ~key:"1" ~hash:"3" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$83$7.onMenuItemActionExpand(android.view.MenuItem)."
                 ^ "522cc747174466169781c9d2fc980dbc" )
-              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"4" ()
+              ~file:"a.java" ~key:"1" ~hash:"4" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:"procid5.c854fd4a98113d9ab5b82deb3545de89" ~file:"b.java" ~key:"5"
               ~hash:"5" () ]
@@ -256,7 +234,7 @@ let test_skip_anonymous_class_renamings =
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$9.onMenuItemActionExpand(android.view.MenuItem):bo."
                 ^ "ba1776155fba2899542401da5bc779a5" )
-              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"1" ()
+              ~file:"a.java" ~key:"1" ~hash:"1" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:"procid2.92095aee3f1884c37e96feae031f4931" ~file:"b.java" ~key:"2"
               ~hash:"2" () ]
@@ -323,20 +301,7 @@ let test_skip_anonymous_class_renamings =
               ~procedure_id:
                 "com.whatever.package.Class$8.foo():bool.cffd4e941668063eb802183dbd3e856d"
               ~file:"a.mm" ~key:"1" ~hash:"4" () ]
-    , (["3"], ["4"], ["1"]) )
-  ; ( "test_skip_anonymous_class_renamings_with_different_call_procedure_qualifier_tags"
-    , Differential.of_reports
-        ~current_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$3$1.foo():bool.9ff39eb5c53c81da9f6a7ade324345b6"
-              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"1" () ]
-        ~previous_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:"1" ~qualifier_tags:qt2 ~hash:"2" () ]
-    , (["1"], ["2"], []) ) ]
+    , (["3"], ["4"], ["1"]) ) ]
   |> List.map ~f:(fun (name, diff, expected_output) -> name >:: create_test diff expected_output)
 
 
@@ -377,5 +342,4 @@ let tests =
   "differential_filters_suite"
   >::: test_file_renamings_from_json @ test_file_renamings_find_previous
        @ test_relative_complements @ test_skip_anonymous_class_renamings
-       @ test_interesting_paths_filter
-       @ [test_skip_duplicated_types_on_filenames; test_value_of_qualifier_tag]
+       @ test_interesting_paths_filter @ [test_skip_duplicated_types_on_filenames]
