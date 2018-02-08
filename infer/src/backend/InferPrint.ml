@@ -547,19 +547,18 @@ module Stats = struct
     in
     stats.events_to_log
     <- EventLogger.AnalysisStats
-         { num_preposts
-         ; analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
+         { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
+         ; analysis_status= summary.stats.stats_failure
          ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
-         ; symops= summary.stats.symops
-         ; method_location= Specs.get_loc summary
+         ; clang_method_kind= (Specs.get_attributes summary).clang_method_kind
          ; lang=
              Specs.get_proc_name summary |> Typ.Procname.get_language
              |> Language.to_explicit_string
-         ; clang_method_kind= (Specs.get_attributes summary).clang_method_kind
-         ; analysis_status= summary.stats.stats_failure
-         ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string }
+         ; method_location= Specs.get_loc summary
+         ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string
+         ; num_preposts
+         ; symops= summary.stats.symops }
        :: stats.events_to_log
-
 
   let num_files stats = Hashtbl.length stats.files
 

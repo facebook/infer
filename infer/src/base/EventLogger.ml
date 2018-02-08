@@ -77,17 +77,21 @@ let get_log_identifier () = Random_id.get ()
 let bind_default opt map_func prev = match opt with Some x -> map_func x prev | None -> prev
 
 type frontend_exception =
-  { exception_type: string
-  ; source_location_start: Location.t
-  ; source_location_end: Location.t
+  { ast_node: string option
   ; exception_file: string
   ; exception_line: int
-  ; ast_node: string option
-  ; lang: string }
+  ; exception_type: string
+  ; lang: string
+  ; source_location_start: Location.t
+  ; source_location_end: Location.t }
 
 let create_frontend_exception_row base record =
   let open JsonBuilder in
-  base |> add_string ~key:"exception_type" ~data:record.exception_type
+  base |> bind_default record.ast_node (fun ast_node -> add_string ~key:"ast_node" ~data:ast_node)
+  |> add_string ~key:"exception_triggered_location"
+       ~data:(String.concat [record.exception_file; ":"; string_of_int record.exception_line])
+  |> add_string ~key:"exception_type" ~data:record.exception_type
+  |> add_string ~key:"lang" ~data:record.lang
   |> add_string ~key:"source_location_start_file"
        ~data:(SourceFile.to_rel_path record.source_location_start.file)
   |> add_string ~key:"source_location_start_pos"
@@ -104,58 +108,54 @@ let create_frontend_exception_row base record =
             [ string_of_int record.source_location_end.line
             ; ":"
             ; string_of_int record.source_location_end.col ])
-  |> add_string ~key:"exception_triggered_location"
-       ~data:(String.concat [record.exception_file; ":"; string_of_int record.exception_line])
-  |> bind_default record.ast_node (fun ast_node -> add_string ~key:"ast_node" ~data:ast_node)
-  |> add_string ~key:"lang" ~data:record.lang
 
 
 type procedures_translated =
-  { procedures_translated_total: int
+  { lang: string
   ; procedures_translated_failed: int
-  ; lang: string
+  ; procedures_translated_total: int
   ; source_file: SourceFile.t }
 
 let create_procedures_translated_row base record =
   let open JsonBuilder in
-  base |> add_int ~key:"procedures_translated_total" ~data:record.procedures_translated_total
+  base |> add_string ~key:"lang" ~data:record.lang
   |> add_int ~key:"procedures_translated_failed" ~data:record.procedures_translated_failed
-  |> add_string ~key:"lang" ~data:record.lang
+  |> add_int ~key:"procedures_translated_total" ~data:record.procedures_translated_total
   |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_file)
 
 
 type analysis_stats =
-  { num_preposts: int
-  ; analysis_nodes_visited: int
-  ; analysis_total_nodes: int
-  ; symops: int
-  ; method_location: Location.t
-  ; lang: string
-  ; clang_method_kind: ProcAttributes.clang_method_kind
+  { analysis_nodes_visited: int
   ; analysis_status: SymOp.failure_kind option
-  ; method_name: string }
+  ; analysis_total_nodes: int
+  ; clang_method_kind: ProcAttributes.clang_method_kind
+  ; lang: string
+  ; method_location: Location.t
+  ; method_name: string
+  ; num_preposts: int
+  ; symops: int }
 
 let create_analysis_stats_row base record =
   let open JsonBuilder in
-  base |> add_int ~key:"num_preposts" ~data:record.num_preposts
-  |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
+  base |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
+  |> add_string ~key:"analysis_status"
+       ~data:
+         (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
+              SymOp.failure_kind_to_string stats_failure ))
   |> add_int ~key:"analysis_total_nodes" ~data:record.analysis_total_nodes
-  |> add_int ~key:"symops" ~data:record.symops
-  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.method_location.file)
+  |> add_string ~key:"clang_method_kind"
+       ~data:(ProcAttributes.string_of_clang_method_kind record.clang_method_kind)
+  |> add_string ~key:"lang" ~data:record.lang
   |> add_string ~key:"method_location"
        ~data:
          (String.concat
             [ string_of_int record.method_location.line
             ; ":"
             ; string_of_int record.method_location.col ])
-  |> add_string ~key:"lang" ~data:record.lang
-  |> add_string ~key:"clang_method_kind"
-       ~data:(ProcAttributes.string_of_clang_method_kind record.clang_method_kind)
-  |> add_string ~key:"analysis_status"
-       ~data:
-         (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
-              SymOp.failure_kind_to_string stats_failure ))
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.method_location.file)
   |> add_string ~key:"method_name" ~data:record.method_name
+  |> add_int ~key:"num_preposts" ~data:record.num_preposts
+  |> add_int ~key:"symops" ~data:record.symops
 
 
 type event =

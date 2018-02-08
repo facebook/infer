@@ -8,36 +8,36 @@
  *)
 
 type frontend_exception =
-  { exception_type: string
-  ; source_location_start: Location.t
-  ; source_location_end: Location.t
+  { ast_node: string option
   ; exception_file: string
   ; exception_line: int
-  ; ast_node: string option
-  ; lang: string }
+  ; exception_type: string
+  ; lang: string
+  ; source_location_start: Location.t
+  ; source_location_end: Location.t }
 
 type procedures_translated =
-  { procedures_translated_total: int
+  { lang: string
   ; procedures_translated_failed: int
-  ; lang: string
+  ; procedures_translated_total: int
   ; source_file: SourceFile.t }
 
 type analysis_stats =
-  { num_preposts: int
-  ; analysis_nodes_visited: int
-  ; analysis_total_nodes: int
-  ; symops: int
-  ; method_location: Location.t
-  ; lang: string
-  ; clang_method_kind: ProcAttributes.clang_method_kind
+  { analysis_nodes_visited: int
   ; analysis_status: SymOp.failure_kind option
-  ; method_name: string }
+  ; analysis_total_nodes: int
+  ; clang_method_kind: ProcAttributes.clang_method_kind
+  ; lang: string
+  ; method_location: Location.t
+  ; method_name: string
+  ; num_preposts: int
+  ; symops: int }
 
 type event =
   | UncaughtException of exn * int  (** exception, exitcode *)
   | FrontendException of frontend_exception  (** record of caught exception *)
   | ProceduresTranslatedSummary of procedures_translated  (** record of procedures translated *)
-  | AnalysisStats of analysis_stats  (** record of stats from the backend *)
+  | AnalysisStats of analysis_stats  (** record of stats from procedure analysis *)
 
 val get_log_identifier : unit -> string
 
