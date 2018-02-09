@@ -694,28 +694,93 @@ module Procname = struct
       match List.last parameters with Some (_, "java.lang.Object[]") -> true | _ -> false
   end
 
+  module ObjC_Cpp = struct
+    type kind =
+      | CPPMethod of string option
+      | CPPConstructor of (string option * bool)
+      | CPPDestructor of string option
+      | ObjCClassMethod
+      | ObjCInstanceMethod
+      | ObjCInternalMethod
+      [@@deriving compare]
+
+    type t =
+      { method_name: string
+      ; class_name: Name.t
+      ; kind: kind
+      ; template_args: template_spec_info
+      ; is_generic_model: bool }
+      [@@deriving compare]
+
+    let make class_name method_name kind template_args ~is_generic_model =
+      {class_name; method_name; kind; template_args; is_generic_model}
+
+
+    let get_class_name objc_cpp = Name.name objc_cpp.class_name
+
+    let get_class_type_name objc_cpp = objc_cpp.class_name
+
+    let get_class_qualifiers objc_cpp = Name.qual_name objc_cpp.class_name
+
+    let objc_method_kind_of_bool is_instance =
+      if is_instance then ObjCInstanceMethod else ObjCClassMethod
+
+
+    let is_objc_constructor method_name =
+      String.equal method_name "new" || String.is_prefix ~prefix:"init" method_name
+
+
+    let is_objc_kind = function
+      | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
+          true
+      | _ ->
+          false
+
+
+    let is_objc_method {kind} = is_objc_kind kind
+
+    let is_objc_dealloc method_name = String.equal method_name "dealloc"
+
+    let is_destructor = function
+      | {kind= CPPDestructor _} ->
+          true
+      | name ->
+          is_objc_dealloc name.method_name
+
+
+    let is_constexpr = function {kind= CPPConstructor (_, true)} -> true | _ -> false
+
+    let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
+
+    let kind_to_verbose_string = function
+      | CPPMethod m | CPPDestructor m ->
+          "(" ^ (match m with None -> "" | Some s -> s) ^ ")"
+      | CPPConstructor (m, is_constexpr) ->
+          "{" ^ (match m with None -> "" | Some s -> s)
+          ^ (if is_constexpr then "|constexpr" else "") ^ "}"
+      | ObjCClassMethod ->
+          "class"
+      | ObjCInstanceMethod ->
+          "instance"
+      | ObjCInternalMethod ->
+          "internal"
+
+
+    let to_string osig detail_level =
+      match detail_level with
+      | Simple ->
+          osig.method_name
+      | Non_verbose ->
+          Name.name osig.class_name ^ "_" ^ osig.method_name
+      | Verbose ->
+          let m_str = kind_to_verbose_string osig.kind in
+          Name.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
+  end
+
   (** Type of c procedure names. *)
   type c =
     { name: QualifiedCppName.t
     ; mangled: string option
-    ; template_args: template_spec_info
-    ; is_generic_model: bool }
-    [@@deriving compare]
-
-  type objc_cpp_method_kind =
-    | CPPMethod of string option  (** with mangling *)
-    | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
-    | CPPDestructor of string option  (** with mangling *)
-    | ObjCClassMethod
-    | ObjCInstanceMethod
-    | ObjCInternalMethod
-    [@@deriving compare]
-
-  (** Type of Objective C and C++ procedure names: method signatures. *)
-  type objc_cpp =
-    { method_name: string
-    ; class_name: Name.t
-    ; kind: objc_cpp_method_kind
     ; template_args: template_spec_info
     ; is_generic_model: bool }
     [@@deriving compare]
@@ -729,17 +794,13 @@ module Procname = struct
     | C of c
     | Linters_dummy_method
     | Block of block_name
-    | ObjC_Cpp of objc_cpp
+    | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
     [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
   let hash = Hashtbl.hash
-
-  let objc_method_kind_of_bool is_instance =
-    if is_instance then ObjCInstanceMethod else ObjCClassMethod
-
 
   let block_name_of_procname procname =
     match procname with
@@ -763,11 +824,6 @@ module Procname = struct
       ; is_generic_model= false }
 
 
-  (** Create an objc procedure name from a class_name and method_name. *)
-  let objc_cpp class_name method_name kind template_args ~is_generic_model =
-    {class_name; method_name; kind; template_args; is_generic_model}
-
-
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
   (** Create an objc procedure name from a class_name and method_name. *)
@@ -775,11 +831,17 @@ module Procname = struct
 
   let is_java = function Java _ -> true | _ -> false
 
+  (* TODO: deprecate this unfortunately named function and use is_clang instead *)
   let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
   let is_c_function = function C _ -> true | _ -> false
 
-  let is_constexpr = function ObjC_Cpp {kind= CPPConstructor (_, true)} -> true | _ -> false
+  let is_clang = function
+    | ObjC_Cpp name ->
+        ObjC_Cpp.is_objc_method name
+    | name ->
+        is_c_function name
+
 
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
@@ -805,11 +867,6 @@ module Procname = struct
         t
 
 
-  (** Get the class name of a Objective-C/C++ procedure name. *)
-  let objc_cpp_get_class_name objc_cpp = Name.name objc_cpp.class_name
-
-  let objc_cpp_get_class_type_name objc_cpp = objc_cpp.class_name
-
   (** Return the method/function of a procname. *)
   let rec get_method = function
     | ObjC_Cpp name ->
@@ -829,9 +886,6 @@ module Procname = struct
   (** Return whether the procname is a block procname. *)
   let is_objc_block = function Block _ -> true | _ -> false
 
-  (** Return whether the procname is a cpp lambda. *)
-  let is_cpp_lambda procname = String.is_substring ~substring:"operator()" (get_method procname)
-
   (** Return the language of the procedure. *)
   let get_language = function
     | ObjC_Cpp _ ->
@@ -848,39 +902,14 @@ module Procname = struct
         Language.Java
 
 
-  let is_objc_constructor method_name =
-    String.equal method_name "new" || String.is_prefix ~prefix:"init" method_name
-
-
-  let is_objc_kind = function
-    | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
-        true
-    | _ ->
-        false
-
-
-  let is_objc_method = function ObjC_Cpp {kind} -> is_objc_kind kind | _ -> false
-
   (** [is_constructor pname] returns true if [pname] is a constructor *)
   let is_constructor = function
     | Java js ->
         String.equal js.method_name "<init>"
     | ObjC_Cpp {kind= CPPConstructor _} ->
         true
-    | ObjC_Cpp {kind; method_name} when is_objc_kind kind ->
-        is_objc_constructor method_name
-    | _ ->
-        false
-
-
-  let is_objc_dealloc method_name = String.equal method_name "dealloc"
-
-  (** [is_dealloc pname] returns true if [pname] is the dealloc method in Objective-C *)
-  let is_destructor = function
-    | ObjC_Cpp {kind= CPPDestructor _} ->
-        true
-    | ObjC_Cpp name ->
-        is_objc_dealloc name.method_name
+    | ObjC_Cpp {kind; method_name} when ObjC_Cpp.is_objc_kind kind ->
+        ObjC_Cpp.is_objc_constructor method_name
     | _ ->
         false
 
@@ -913,32 +942,6 @@ module Procname = struct
     if verbose then match c2 with None -> plain | Some s -> plain ^ "{" ^ s ^ "}" else plain
 
 
-  let c_method_kind_verbose_str kind =
-    match kind with
-    | CPPMethod m | CPPDestructor m ->
-        "(" ^ (match m with None -> "" | Some s -> s) ^ ")"
-    | CPPConstructor (m, is_constexpr) ->
-        "{" ^ (match m with None -> "" | Some s -> s) ^ (if is_constexpr then "|constexpr" else "")
-        ^ "}"
-    | ObjCClassMethod ->
-        "class"
-    | ObjCInstanceMethod ->
-        "instance"
-    | ObjCInternalMethod ->
-        "internal"
-
-
-  let c_method_to_string osig detail_level =
-    match detail_level with
-    | Simple ->
-        osig.method_name
-    | Non_verbose ->
-        Name.name osig.class_name ^ "_" ^ osig.method_name
-    | Verbose ->
-        let m_str = c_method_kind_verbose_str osig.kind in
-        Name.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
-
-
   let with_blocks_parameters_to_string base blocks to_string_f =
     let base_id = to_string_f base in
     String.concat ~sep:"_" (base_id :: blocks)
@@ -952,7 +955,7 @@ module Procname = struct
     | C {name; mangled} ->
         to_readable_string (name, mangled) true
     | ObjC_Cpp osig ->
-        c_method_to_string osig Verbose
+        ObjC_Cpp.to_string osig Verbose
     | Block name ->
         name
     | WithBlockParameters (base, blocks) ->
@@ -969,7 +972,7 @@ module Procname = struct
     | C {name; mangled} ->
         to_readable_string (name, mangled) false
     | ObjC_Cpp osig ->
-        c_method_to_string osig Non_verbose
+        ObjC_Cpp.to_string osig Non_verbose
     | Block name ->
         name
     | WithBlockParameters (base, blocks) ->
@@ -986,7 +989,7 @@ module Procname = struct
     | C {name; mangled} ->
         to_readable_string (name, mangled) false ^ "()"
     | ObjC_Cpp osig ->
-        c_method_to_string osig Simple
+        ObjC_Cpp.to_string osig Simple
     | Block _ ->
         "block"
     | WithBlockParameters (base, _) ->
@@ -1002,7 +1005,7 @@ module Procname = struct
            invariant when introducing new annonynous classes *)
         Str.global_replace (Str.regexp "$[0-9]+") "$_"
           (Java.to_string ~withclass:true pname Simple)
-    | ObjC_Cpp _ when is_objc_method p ->
+    | ObjC_Cpp m when ObjC_Cpp.is_objc_method m ->
         (* In Objective C, the list of parameters is part of the method name. To prevent the bug
            hash to change when a parameter is introduced or removed, only the part of the name
            before the first colon is used for the bug hash *)
@@ -1044,14 +1047,12 @@ module Procname = struct
     let pp = pp
   end)
 
-  let objc_cpp_get_class_qualifiers objc_cpp = Name.qual_name objc_cpp.class_name
-
   let get_qualifiers pname =
     match pname with
     | C {name} ->
         name
     | ObjC_Cpp objc_cpp ->
-        objc_cpp_get_class_qualifiers objc_cpp
+        ObjC_Cpp.get_class_qualifiers objc_cpp
         |> QualifiedCppName.append_qualifier ~qual:objc_cpp.method_name
     | _ ->
         QualifiedCppName.empty
@@ -1068,7 +1069,7 @@ module Procname = struct
       | C {mangled} ->
           get_qual_name_str pname :: Option.to_list mangled |> String.concat ~sep:"#"
       | ObjC_Cpp objc_cpp ->
-          get_qual_name_str pname ^ "#" ^ c_method_kind_verbose_str objc_cpp.kind
+          get_qual_name_str pname ^ "#" ^ ObjC_Cpp.kind_to_verbose_string objc_cpp.kind
       | _ ->
           to_unique_id pname
     in

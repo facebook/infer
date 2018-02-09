@@ -334,26 +334,57 @@ module Procname : sig
     (** Check if this is a class initializer. *)
   end
 
+  module ObjC_Cpp : sig
+    type kind =
+      | CPPMethod of string option  (** with mangling *)
+      | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
+      | CPPDestructor of string option  (** with mangling *)
+      | ObjCClassMethod
+      | ObjCInstanceMethod
+      | ObjCInternalMethod
+      [@@deriving compare]
+
+    (** Type of Objective C and C++ procedure names: method signatures. *)
+    type t =
+      { method_name: string
+      ; class_name: Name.t
+      ; kind: kind
+      ; template_args: template_spec_info
+      ; is_generic_model: bool }
+      [@@deriving compare]
+
+    val make : Name.t -> string -> kind -> template_spec_info -> is_generic_model:bool -> t
+    (** Create an objc procedure name from a class_name and method_name. *)
+
+    val get_class_name : t -> string
+
+    val get_class_type_name : t -> Name.t
+
+    val get_class_qualifiers : t -> QualifiedCppName.t
+
+    val objc_method_kind_of_bool : bool -> kind
+    (** Create ObjC method type from a bool is_instance. *)
+
+    val is_objc_constructor : string -> bool
+    (** Check if this is a constructor method in Objective-C. *)
+
+    val is_objc_dealloc : string -> bool
+    (** Check if this is a dealloc method in Objective-C. *)
+
+    val is_destructor : t -> bool
+    (** Check if this is a dealloc method. *)
+
+    val is_constexpr : t -> bool
+    (** Check if this is a constexpr function. *)
+
+    val is_cpp_lambda : t -> bool
+    (** Return whether the procname is a cpp lambda. *)
+  end
+
   (** Type of c procedure names. *)
   type c = private
     { name: QualifiedCppName.t
     ; mangled: string option
-    ; template_args: template_spec_info
-    ; is_generic_model: bool }
-
-  type objc_cpp_method_kind =
-    | CPPMethod of string option  (** with mangling *)
-    | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
-    | CPPDestructor of string option  (** with mangling *)
-    | ObjCClassMethod
-    | ObjCInstanceMethod
-    | ObjCInternalMethod
-
-  (** Type of Objective C and C++ procedure names. *)
-  type objc_cpp = private
-    { method_name: string
-    ; class_name: Name.t
-    ; kind: objc_cpp_method_kind
     ; template_args: template_spec_info
     ; is_generic_model: bool }
 
@@ -371,7 +402,7 @@ module Procname : sig
     | C of c
     | Linters_dummy_method
     | Block of block_name
-    | ObjC_Cpp of objc_cpp
+    | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
     [@@deriving compare]
 
@@ -416,60 +447,29 @@ module Procname : sig
   val is_objc_block : t -> bool
   (** Return whether the procname is a block procname. *)
 
-  val is_cpp_lambda : t -> bool
-  (** Return whether the procname is a cpp lambda. *)
-
   val hash_pname : t -> int
   (** Hash function for procname. *)
 
   val is_c_method : t -> bool
-  (** Check if this is an Objective-C/C++ method name. *)
+  (** Return true this is an Objective-C/C++ method name. *)
 
-  val is_c_function : t -> bool
-  (** Check if this is a C function name. *)
-
-  val is_objc_constructor : string -> bool
-  (** Check if this is a constructor method in Objective-C. *)
-
-  val is_objc_method : t -> bool
-  (** Check if this is an Objective-C method. *)
+  val is_clang : t -> bool
+  (** Return true if this is a C, C++, or Objective-C procedure name *)
 
   val is_constructor : t -> bool
   (** Check if this is a constructor. *)
 
-  val is_constexpr : t -> bool
-  (** Check if this is a constexpr function. *)
-
   val is_java : t -> bool
   (** Check if this is a Java procedure name. *)
 
-  val is_objc_dealloc : string -> bool
-  (** Check if this is a dealloc method in Objective-C. *)
-
-  val is_destructor : t -> bool
-  (** Check if this is a dealloc method. *)
-
   val mangled_objc_block : string -> t
   (** Create an objc block name. *)
-
-  val objc_cpp :
-    Name.t -> string -> objc_cpp_method_kind -> template_spec_info -> is_generic_model:bool
-    -> objc_cpp
-  (** Create an objc procedure name from a class_name and method_name. *)
 
   val with_block_parameters : t -> block_name list -> t
   (** Create a procedure name instantiated with block parameters from a base procedure name
     and a list of block procedure names (the arguments). *)
 
-  val objc_cpp_get_class_name : objc_cpp -> string
-  (** Get the class name of a Objective-C/C++ procedure name. *)
-
-  val objc_cpp_get_class_type_name : objc_cpp -> Name.t
-
   val objc_cpp_replace_method_name : t -> string -> t
-
-  val objc_method_kind_of_bool : bool -> objc_cpp_method_kind
-  (** Create ObjC method type from a bool is_instance. *)
 
   val is_infer_undefined : t -> bool
   (** Check if this is a special Infer undefined procedure. *)
@@ -502,9 +502,6 @@ module Procname : sig
 
   val get_qualifiers : t -> QualifiedCppName.t
   (** get qualifiers of C/objc/C++ method/function *)
-
-  val objc_cpp_get_class_qualifiers : objc_cpp -> QualifiedCppName.t
-  (** get qualifiers of a class owning objc/C++ method *)
 end
 
 module Fieldname : sig

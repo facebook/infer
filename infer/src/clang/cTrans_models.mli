@@ -28,6 +28,5 @@ val is_modeled_builtin : string -> bool
 val is_modeled_attribute : string -> bool
 
 val get_predefined_model_method_signature :
-  Typ.Name.t -> string
-  -> (Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t)
+  Typ.Name.t -> string -> (Typ.Name.t -> string -> Typ.Procname.ObjC_Cpp.kind -> Typ.Procname.t)
   -> CFrontend_config.clang_lang -> CMethod_signature.method_signature option

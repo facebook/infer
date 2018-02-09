@@ -23,7 +23,7 @@ type typ = Typ.t
 
 type c = Typ.Procname.c
 
-type objc_cpp = Typ.Procname.objc_cpp
+type objc_cpp = Typ.Procname.ObjC_Cpp.t
 
 type qual_name = QualifiedCppName.t
 
@@ -184,9 +184,9 @@ let name_cons
       | _ ->
           None
     in
-    let on_objc_cpp f objc_cpp =
-      if String.equal name objc_cpp.Typ.Procname.method_name then
-        on_templated_name f (templated_name_of_class_name objc_cpp.Typ.Procname.class_name)
+    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
+      if String.equal name objc_cpp.method_name then
+        on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
       else None
     in
     {on_objc_cpp; on_qual_name; get_markers}
@@ -210,12 +210,12 @@ let all_names_cons
               on_templated_name_rec f (rest, [])
     in
     let on_templated_name = on_templated_name_rec in
-    let on_objc_cpp f objc_cpp =
+    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
       match on_objc_cpp f objc_cpp with
       | Some _ as some ->
           some
       | None ->
-          on_templated_name f (templated_name_of_class_name objc_cpp.Typ.Procname.class_name)
+          on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
     in
     {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}}
 
@@ -232,14 +232,12 @@ let templ_begin
       | Some (f, captured_types) ->
           Some (f, captured_types, template_args)
     in
-    let on_objc_cpp f objc_cpp =
+    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
       match on_objc_cpp f objc_cpp with
       | None ->
           None
       | Some (f, captured_types) ->
-          let template_args =
-            template_args_of_template_spec_info objc_cpp.Typ.Procname.template_args
-          in
+          let template_args = template_args_of_template_spec_info objc_cpp.template_args in
           Some (f, captured_types, template_args)
     in
     {on_objc_cpp; on_templated_name; get_markers}

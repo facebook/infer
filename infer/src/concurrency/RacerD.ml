@@ -1493,7 +1493,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
       in
       let class_has_mutex_member objc_cpp tenv =
-        let class_name = Typ.Procname.objc_cpp_get_class_type_name objc_cpp in
+        let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
         let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"] in
         Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
             (* check if the class contains a member of type std::mutex *)

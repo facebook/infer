@@ -93,7 +93,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
     Ast_expressions.create_char_star_type ~quals:(Typ.mk_type_quals ~is_const:true ()) ()
   in
   let args = [(Mangled.from_string "x", char_star_type)] in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCClassMethod
+  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjC_Cpp.ObjCClassMethod
     mk_procname lang args id_type [] None
 
 
@@ -101,8 +101,9 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let condition = String.equal method_name CFrontend_config.is_kind_of_class in
   let class_type = Ast_expressions.create_class_qual_type class_name in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCInstanceMethod
-    mk_procname lang args Ast_expressions.create_BOOL_type [] (Some BuiltinDecl.__instanceof)
+  get_predefined_ms_method condition class_name method_name
+    Typ.Procname.ObjC_Cpp.ObjCInstanceMethod mk_procname lang args Ast_expressions.create_BOOL_type
+    [] (Some BuiltinDecl.__instanceof)
 
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =

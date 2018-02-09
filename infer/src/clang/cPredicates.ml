@@ -403,10 +403,12 @@ let get_method_name_from_context context =
 
 
 let is_objc_constructor context =
-  Typ.Procname.is_objc_constructor (get_method_name_from_context context)
+  Typ.Procname.ObjC_Cpp.is_objc_constructor (get_method_name_from_context context)
 
 
-let is_objc_dealloc context = Typ.Procname.is_objc_dealloc (get_method_name_from_context context)
+let is_objc_dealloc context =
+  Typ.Procname.ObjC_Cpp.is_objc_dealloc (get_method_name_from_context context)
+
 
 let is_in_method context name =
   let current_method_name = get_method_name_from_context context in

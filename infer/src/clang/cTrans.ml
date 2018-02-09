@@ -28,7 +28,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CMethod_trans.get_objc_method_data obj_c_message_expr_info
     in
     let is_instance = mc_type <> CMethod_trans.MCStatic in
-    let objc_method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
+    let objc_method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
     let method_kind =
       if is_instance then ProcAttributes.OBJC_INSTANCE else ProcAttributes.OBJC_CLASS
     in
@@ -55,7 +55,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let predefined_ms_opt =
       match proc_name with
       | Typ.Procname.ObjC_Cpp objc_cpp ->
-          let class_name = Typ.Procname.objc_cpp_get_class_type_name objc_cpp in
+          let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
             CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
       | _ ->
@@ -2435,7 +2435,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           this is ensured by creating a fresh pointer in `inject_destructors`
       *)
       if destr_trans_result.root_nodes <> [] then assert false ;
-      let is_destructor = Typ.Procname.is_destructor procname in
+      let is_destructor =
+        match procname with
+        | Typ.Procname.ObjC_Cpp cpp_pname ->
+            Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+        | _ ->
+            false
+      in
       let destructor_res =
         if is_destructor then
           cxx_inject_field_destructors_in_destructor_body trans_state_pri stmt_info
@@ -3484,7 +3490,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; opaque_exp= None }
     in
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
-    let is_destructor = Typ.Procname.is_destructor procname in
+    let is_destructor =
+      match procname with
+      | Typ.Procname.ObjC_Cpp cpp_pname ->
+          Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+      | _ ->
+          false
+    in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple body in
     let destructor_res, body =
       if is_destructor_wrapper then

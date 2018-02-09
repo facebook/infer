@@ -459,7 +459,7 @@ let is_specialized pdesc =
   attributes.ProcAttributes.is_specialized
 
 
-(* true if pvar is a captred variable of a cpp lambda or obcj block *)
+(* true if pvar is a captured variable of a cpp lambda or objc block *)
 let is_captured_var procdesc pvar =
   let procname = get_proc_name procdesc in
   let pvar_name = Pvar.get_name pvar in
@@ -468,11 +468,15 @@ let is_captured_var procdesc pvar =
   in
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
-    (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
-    Typ.Procname.is_cpp_lambda procname
-    && not
-         ( List.exists ~f:pvar_local_matches (get_locals procdesc)
-         || List.exists ~f:pvar_matches (get_formals procdesc) )
+    match procname with
+    | Typ.Procname.ObjC_Cpp cpp_pname ->
+        (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
+        Typ.Procname.ObjC_Cpp.is_cpp_lambda cpp_pname
+        && not
+             ( List.exists ~f:pvar_local_matches (get_locals procdesc)
+             || List.exists ~f:pvar_matches (get_formals procdesc) )
+    | _ ->
+        false
   in
   let is_captured_var_objc_block =
     (* var is captured if the procedure is a objc block and the var is in the captured *)

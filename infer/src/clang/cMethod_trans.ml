@@ -296,7 +296,7 @@ let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr
     | Some ms -> (
       match CMethod_signature.ms_get_name ms with
       | Typ.Procname.ObjC_Cpp objc_cpp ->
-          Some (Typ.Procname.objc_cpp_get_class_type_name objc_cpp)
+          Some (Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp)
       | _ ->
           None )
     | None ->
@@ -529,7 +529,7 @@ let get_objc_property_accessor tenv ms =
           let class_tname =
             match CMethod_signature.ms_get_name ms with
             | Typ.Procname.ObjC_Cpp objc_cpp ->
-                Typ.Procname.objc_cpp_get_class_type_name objc_cpp
+                Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp
             | _ ->
                 assert false
           in

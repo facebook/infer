@@ -274,8 +274,8 @@ module Models = struct
            ; "std::vector" ])
     in
     function
-      | (Typ.Procname.ObjC_Cpp _ | C _) as pname ->
-          Typ.Procname.is_destructor pname
+      | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
+          Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
           || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
                (Typ.Procname.get_qualifiers pname)
       | _ ->

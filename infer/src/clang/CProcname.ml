@@ -58,7 +58,7 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
     | Some (decl_info, function_decl_info) -> (
       match function_decl_info.Clang_ast_t.fdi_storage_class with
       | Some "static"
-      (* when we model static functions, we cannot take the file into account to 
+      (* when we model static functions, we cannot take the file into account to
        create a mangled name because the file of the model is different to the real file,
        thus the model won't work *)
         when not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name)) ->
@@ -105,11 +105,11 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
   let method_kind =
     match meth_decl with
     | Some Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr}) ->
-        Typ.Procname.CPPConstructor (mangled, xmdi_is_constexpr)
+        Typ.Procname.ObjC_Cpp.CPPConstructor (mangled, xmdi_is_constexpr)
     | Some Clang_ast_t.CXXDestructorDecl _ ->
-        Typ.Procname.CPPDestructor mangled
+        Typ.Procname.ObjC_Cpp.CPPDestructor mangled
     | _ ->
-        Typ.Procname.CPPMethod mangled
+        Typ.Procname.ObjC_Cpp.CPPMethod mangled
   in
   let template_info, is_generic_model =
     match meth_decl with
@@ -132,12 +132,12 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
         (Typ.NoTemplate, false)
   in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp class_name method_name method_kind template_info ~is_generic_model)
+    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info ~is_generic_model)
 
 
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp class_typename method_name method_kind Typ.NoTemplate
+    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate
        ~is_generic_model:false)
 
 
@@ -188,7 +188,7 @@ end
 let objc_method_procname ?tenv decl_info method_name mdi =
   let class_typename = get_class_typename ?tenv decl_info in
   let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-  let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
+  let method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
   mk_objc_method class_typename method_name method_kind
 
 

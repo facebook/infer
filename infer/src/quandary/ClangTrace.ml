@@ -68,7 +68,7 @@ module SourceKind = struct
         let qualified_pname = Typ.Procname.get_qualifiers pname in
         match
           ( QualifiedCppName.to_list
-              (Typ.Name.unqualified_name (Typ.Procname.objc_cpp_get_class_type_name cpp_name))
+              (Typ.Name.unqualified_name (Typ.Procname.ObjC_Cpp.get_class_type_name cpp_name))
           , Typ.Procname.get_method pname )
         with
         | ( ["std"; ("basic_istream" | "basic_iostream")]
@@ -128,7 +128,7 @@ module SourceKind = struct
           | _ ->
               false
         in
-        let typename = Typ.Procname.objc_cpp_get_class_type_name cpp_pname in
+        let typename = Typ.Procname.ObjC_Cpp.get_class_type_name cpp_pname in
         PatternMatch.supertype_exists tenv is_thrift_service_ typename
       in
       (* taint all formals except for [this] *)
@@ -149,7 +149,7 @@ module SourceKind = struct
       | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
           let qualified_pname =
             F.sprintf "%s::%s"
-              (Typ.Procname.objc_cpp_get_class_name cpp_pname)
+              (Typ.Procname.ObjC_Cpp.get_class_name cpp_pname)
               (Typ.Procname.get_method pname)
           in
           if String.Set.mem endpoints qualified_pname then
@@ -272,7 +272,7 @@ module SinkKind = struct
     | Typ.Procname.ObjC_Cpp cpp_name -> (
       match
         ( QualifiedCppName.to_list
-            (Typ.Name.unqualified_name (Typ.Procname.objc_cpp_get_class_type_name cpp_name))
+            (Typ.Name.unqualified_name (Typ.Procname.ObjC_Cpp.get_class_type_name cpp_name))
         , Typ.Procname.get_method pname )
       with
       | ( ["std"; ("basic_fstream" | "basic_ifstream" | "basic_ofstream")]

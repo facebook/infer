@@ -29,7 +29,7 @@ module NoAstDecl : sig
   val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Typ.Procname.t
 
   val objc_method_of_string_kind :
-    Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t
+    Typ.Name.t -> string -> Typ.Procname.ObjC_Cpp.kind -> Typ.Procname.t
 end
 
 val mk_fresh_block_procname : Typ.Procname.t -> Typ.Procname.t

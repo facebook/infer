@@ -115,7 +115,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   (Typ.Procname.Java.get_class_name java_proc)
             | Typ.Procname.ObjC_Cpp objc_cpp_prod ->
                 String.equal frame.Stacktrace.class_str
-                  (Typ.Procname.objc_cpp_get_class_name objc_cpp_prod)
+                  (Typ.Procname.ObjC_Cpp.get_class_name objc_cpp_prod)
             | Typ.Procname.C _ ->
                 true (* Needed for test code. *)
             | Typ.Procname.Block _

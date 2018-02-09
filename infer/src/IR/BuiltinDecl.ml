@@ -21,11 +21,12 @@ let create_procname name =
 
 
 let create_objc_class_method class_name method_name =
-  let method_kind = Typ.Procname.ObjCClassMethod in
+  let method_kind = Typ.Procname.ObjC_Cpp.ObjCClassMethod in
   let tname = Typ.Name.Objc.from_string class_name in
   let pname =
     Typ.Procname.ObjC_Cpp
-      (Typ.Procname.objc_cpp tname method_name method_kind Typ.NoTemplate ~is_generic_model:false)
+      (Typ.Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate
+         ~is_generic_model:false)
   in
   register pname ; pname
 

@@ -137,9 +137,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               else None )
         in
         Domain.join astate (NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
-    | Call (_, Const Cfun callee_pname, _ :: actuals_without_self, loc, _)
-      when Typ.Procname.is_c_method callee_pname && Typ.Procname.is_constructor callee_pname
-           && Typ.Procname.is_constexpr callee_pname ->
+    | Call (_, Const Cfun (ObjC_Cpp cpp_pname as callee_pname), _ :: actuals_without_self, loc, _)
+      when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname ->
         add_actuals_globals astate pdesc loc actuals_without_self
     | Call (_, Const Cfun callee_pname, actuals, loc, _) ->
         let callee_astate =
@@ -267,7 +266,12 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
        to figure this out when analyzing the function, but we might as well use the user's
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
-    if Typ.Procname.is_constexpr pname then Summary.update_summary initial summary
+    if match pname with
+       | ObjC_Cpp cpp_pname ->
+           Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
+       | _ ->
+           false
+    then Summary.update_summary initial summary
     else
       match Analyzer.compute_post proc_data ~initial with
       | Some post ->

@@ -28,7 +28,7 @@ let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 let is_method_of_objc_cpp_class pname matcher =
   match pname with
   | Typ.Procname.ObjC_Cpp objc_cpp ->
-      let class_qual_opt = Typ.Procname.objc_cpp_get_class_qualifiers objc_cpp in
+      let class_qual_opt = Typ.Procname.ObjC_Cpp.get_class_qualifiers objc_cpp in
       is_one_of_classes matcher class_qual_opt
   | _ ->
       false
