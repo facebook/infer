@@ -674,7 +674,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         empty_res_trans
 
 
-  let get_this_exp_typ stmt_info ?class_qual_type {CContext.curr_class; tenv; procdesc} =
+  let get_this_pvar_typ stmt_info ?class_qual_type {CContext.curr_class; tenv; procdesc} =
     let class_qual_type =
       match class_qual_type with
       | Some class_qual_type ->
@@ -686,11 +686,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let procname = Procdesc.get_proc_name procdesc in
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
-    (Exp.Lvar pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
-
+    (pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
 
   let this_expr_trans stmt_info ?class_qual_type trans_state sil_loc =
-    let exps = [get_this_exp_typ stmt_info ?class_qual_type trans_state.context] in
+    let this_pvar, this_typ = get_this_pvar_typ stmt_info ?class_qual_type trans_state.context in
+    let exps = [(Exp.Lvar this_pvar, this_typ)] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc {empty_res_trans with exps} ~strip_pointer:false
 
@@ -2655,7 +2655,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | _ ->
           L.die ExternalError "Unexpected: capture-init statement without var decl"
     in
-    let translate_captured {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl}
+    let translate_captured
+        {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this}
         ((trans_results_acc, captured_vars_acc) as acc) =
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl ->
@@ -2668,9 +2669,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
           (trans_results_acc, make_captured_tuple pvar_typ :: captured_vars_acc)
       | None, None ->
-          acc
+          if lci_capture_this then
+            (* captured [this] *)
+            let this_typ = get_this_pvar_typ stmt_info context in
+            (trans_results_acc, make_captured_tuple this_typ :: captured_vars_acc)
+          else acc
       | None, Some _ ->
-          L.die InternalError "Capture-init with init, but no capture"
+          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+            "Capture-init with init, but no capture"
     in
     let lei_captures = CMethod_trans.get_captures_from_cpp_lambda lei_lambda_decl in
     let trans_results, captured_vars =
