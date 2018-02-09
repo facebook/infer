@@ -68,24 +68,23 @@ let substitute ~(f_sub: LocalAccessPath.t -> LocalAccessPath.t option) astate =
     maximal chain. For example, if the domain encodes the chains foo().bar().goo() and foo().baz(),
     [f] will be called once on foo().bar().goo() and once on foo().baz() *)
 let iter_call_chains_with_suffix ~f call_suffix astate =
-  let max_depth = cardinal astate in
-  let rec unroll_call_ ({receiver; procname}: MethodCall.t) (acc, depth) =
-    let acc' = procname :: acc in
-    let depth' = depth + 1 in
-    let is_cycle access_path =
+  let rec unroll_call_ ({receiver; procname}: MethodCall.t) (acc, visited) =
+    let is_cycle (call: MethodCall.t) =
       (* detect direct cycles and cycles due to mutual recursion *)
-      LocalAccessPath.equal access_path receiver || depth' > max_depth
+      LocalAccessPath.equal call.receiver receiver || Typ.Procname.Set.mem call.procname visited
     in
+    let acc' = procname :: acc in
+    let visited' = Typ.Procname.Set.add procname visited in
     try
       let calls' = find receiver astate in
       CallSet.iter
         (fun call ->
-          if not (is_cycle call.receiver) then unroll_call_ call (acc', depth')
+          if not (is_cycle call) then unroll_call_ call (acc', visited')
           else f receiver.access_path acc' )
         calls'
     with Not_found -> f receiver.access_path acc'
   in
-  unroll_call_ call_suffix ([], 0)
+  unroll_call_ call_suffix ([], Typ.Procname.Set.empty)
 
 
 let iter_call_chains ~f astate =
