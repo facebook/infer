@@ -899,14 +899,15 @@ let add_struct_value_to_footprint tenv abduced_pv typ prop =
   (prop', struct_strexp)
 
 
+let is_rec_call callee_pname caller_pdesc =
+  (* TODO: (t7147096) extend this to detect mutual recursion *)
+  Typ.Procname.equal callee_pname (Procdesc.get_proc_name caller_pdesc)
+
+
 let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ callee_pname
     callee_loc =
   if Typ.Procname.is_infer_undefined callee_pname then prop
   else
-    let is_rec_call pname =
-      (* TODO: (t7147096) extend this to detect mutual recursion *)
-      Typ.Procname.equal pname (Procdesc.get_proc_name pdesc)
-    in
     let lookup_abduced_expression p abduced_ret_pv =
       List.find_map
         ~f:(fun hpred ->
@@ -933,7 +934,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
         match typ.Typ.desc with Typ.Tptr _ -> Prop.conjoin_neq tenv exp Exp.zero prop | _ -> prop
       else prop
     in
-    if not (is_rec_call callee_pname) then
+    if not (is_rec_call callee_pname pdesc) then
       (* introduce a fresh program variable to allow abduction on the return value *)
       let prop_with_abduced_var =
         let abduced_ret_pv =
@@ -1421,7 +1422,7 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
   List.fold ~f ~init:ppl instrs
 
 
-and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
+and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref callee_pname callee_loc =
   let add_actual_by_ref_to_footprint prop (actual, actual_typ, actual_index) =
     let abduced =
       match actual with
@@ -1441,7 +1442,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         p.Prop.sigma_fp
     in
     (* prevent introducing multiple abduced retvals for a single call site in a loop *)
-    if already_has_abduced_retval prop then prop
+    if already_has_abduced_retval prop || is_rec_call callee_pname caller_pdesc then prop
     else if !Config.footprint then
       let prop', abduced_strexp =
         match actual_typ.Typ.desc with
@@ -1570,7 +1571,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
       | _ ->
           pre_1
     in
-    add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc
+    add_constraints_on_actuals_by_ref tenv pdesc pre_2 actuals_by_ref callee_pname loc
   in
   if is_scan (* if scan function, don't mark anything with undef attributes *) then
     [(Tabulation.remove_constant_string_class tenv pre_final, path)]
