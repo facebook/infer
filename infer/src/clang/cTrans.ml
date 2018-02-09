@@ -674,13 +674,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         empty_res_trans
 
 
-  let get_this_exp_typ ?class_qual_type {CContext.curr_class; tenv; procdesc} =
+  let get_this_exp_typ stmt_info ?class_qual_type {CContext.curr_class; tenv; procdesc} =
     let class_qual_type =
       match class_qual_type with
       | Some class_qual_type ->
           class_qual_type
       | None ->
-          let class_ptr = CContext.get_curr_class_decl_ptr curr_class in
+          let class_ptr = CContext.get_curr_class_decl_ptr stmt_info curr_class in
           Ast_expressions.create_pointer_qual_type (CAst_utils.qual_type_of_decl_ptr class_ptr)
     in
     let procname = Procdesc.get_proc_name procdesc in
@@ -689,8 +689,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (Exp.Lvar pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
 
 
-  let this_expr_trans ?class_qual_type trans_state sil_loc =
-    let exps = [get_this_exp_typ ?class_qual_type trans_state.context] in
+  let this_expr_trans stmt_info ?class_qual_type trans_state sil_loc =
+    let exps = [get_this_exp_typ stmt_info ?class_qual_type trans_state.context] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc {empty_res_trans with exps} ~strip_pointer:false
 
@@ -699,7 +699,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let compute_this_expr trans_state stmt_info =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let this_res_trans = this_expr_trans trans_state sil_loc in
+    let this_res_trans = this_expr_trans stmt_info trans_state sil_loc in
     let obj_sil, class_typ =
       extract_exp_from_list this_res_trans.exps
         "WARNING: There should be one expression for 'this'. @\n"
@@ -710,7 +710,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    this_expr_trans trans_state sil_loc ~class_qual_type:expr_info.Clang_ast_t.ei_qual_type
+    this_expr_trans stmt_info trans_state sil_loc
+      ~class_qual_type:expr_info.Clang_ast_t.ei_qual_type
 
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
@@ -749,7 +750,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let var_exp = Exp.Lvar pvar in
     let exps =
       if Self.is_var_self pvar (CContext.is_objc_method context) then
-        let class_name = CContext.get_curr_class_typename context in
+        let class_name = CContext.get_curr_class_typename stmt_info context in
         if CType.is_class typ then
           raise
             (Self.SelfClassException
@@ -1264,7 +1265,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           get_callee_objc_method context obj_c_message_expr_info subexpr_exprs
         in
         let res_trans_add_self =
-          Self.add_self_parameter_for_super_instance context procname sil_loc
+          Self.add_self_parameter_for_super_instance si context procname sil_loc
             obj_c_message_expr_info
         in
         let res_trans_subexpr_list = res_trans_add_self :: res_trans_subexpr_list in
@@ -1315,7 +1316,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       empty_res_trans
     else
       (* get virtual base classes of the current class *)
-      let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
+      let class_ptr = CContext.get_curr_class_decl_ptr stmt_info context.CContext.curr_class in
       let decl = Option.value_exn (CAst_utils.get_decl class_ptr) in
       let typ_pointer_opt = CAst_utils.type_of_decl decl in
       let bases = CAst_utils.get_cxx_virtual_base_classes decl in
@@ -1341,7 +1342,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       empty_res_trans
     else
       (* get fields and base classes of the current class *)
-      let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
+      let class_ptr = CContext.get_curr_class_decl_ptr stmt_info context.CContext.curr_class in
       let decl = Option.value_exn (CAst_utils.get_decl class_ptr) in
       let fields = CAst_utils.get_record_fields decl in
       let bases = CAst_utils.get_cxx_base_classes decl in
@@ -3387,7 +3388,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {(CAst_utils.dummy_stmt_info ()) with Clang_ast_t.si_source_range= source_range}
     in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let this_res_trans = this_expr_trans trans_state' sil_loc in
+    let this_res_trans = this_expr_trans child_stmt_info trans_state' sil_loc in
     let var_res_trans =
       match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->

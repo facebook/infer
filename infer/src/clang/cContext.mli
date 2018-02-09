@@ -40,9 +40,9 @@ val get_procdesc : t -> Procdesc.t
 
 val get_curr_class : t -> curr_class
 
-val get_curr_class_typename : t -> Typ.Name.t
+val get_curr_class_typename : Clang_ast_t.stmt_info -> t -> Typ.Name.t
 
-val get_curr_class_decl_ptr : curr_class -> Clang_ast_t.pointer
+val get_curr_class_decl_ptr : Clang_ast_t.stmt_info -> curr_class -> Clang_ast_t.pointer
 
 val is_objc_method : t -> bool
 

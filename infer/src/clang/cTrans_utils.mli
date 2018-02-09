@@ -162,8 +162,8 @@ module Self : sig
     ; source_range: Clang_ast_t.source_range }
 
   val add_self_parameter_for_super_instance :
-    CContext.t -> Typ.Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info
-    -> trans_result
+    Clang_ast_t.stmt_info -> CContext.t -> Typ.Procname.t -> Location.t
+    -> Clang_ast_t.obj_c_message_expr_info -> trans_result
 
   val is_var_self : Pvar.t -> bool -> bool
 end

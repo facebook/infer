@@ -588,11 +588,12 @@ module Self = struct
     ; position: CFrontend_config.ocaml_pos
     ; source_range: Clang_ast_t.source_range }
 
-  let add_self_parameter_for_super_instance context procname loc mei =
+  let add_self_parameter_for_super_instance stmt_info context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, ins =
         let t' =
-          CType.add_pointer_to_typ (Typ.mk (Tstruct (CContext.get_curr_class_typename context)))
+          CType.add_pointer_to_typ
+            (Typ.mk (Tstruct (CContext.get_curr_class_typename stmt_info context)))
         in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in

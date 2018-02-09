@@ -83,12 +83,17 @@ let rec get_curr_class context =
       context.curr_class
 
 
-let get_curr_class_decl_ptr curr_class =
-  match curr_class with ContextClsDeclPtr ptr -> ptr | _ -> assert false
+let get_curr_class_decl_ptr stmt_info curr_class =
+  match curr_class with
+  | ContextClsDeclPtr ptr ->
+      ptr
+  | _ ->
+      CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+        "current class is not ContextClsDeclPtr"
 
 
-let get_curr_class_ptr curr_class =
-  let decl_ptr = get_curr_class_decl_ptr curr_class in
+let get_curr_class_ptr stmt_info curr_class =
+  let decl_ptr = get_curr_class_decl_ptr stmt_info curr_class in
   let get_ptr_from_decl_ref = function
     | Some dr ->
         dr.Clang_ast_t.dr_decl_pointer
@@ -105,10 +110,10 @@ let get_curr_class_ptr curr_class =
       decl_ptr
 
 
-let get_curr_class_typename context =
+let get_curr_class_typename stmt_info context =
   let tenv = context.tenv in
   let curr_class = get_curr_class context in
-  match get_curr_class_ptr curr_class |> CAst_utils.get_decl with
+  match get_curr_class_ptr stmt_info curr_class |> CAst_utils.get_decl with
   | Some decl ->
       CType_decl.get_record_typename ~tenv decl
   | None ->
