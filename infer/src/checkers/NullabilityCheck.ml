@@ -175,6 +175,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let find_nullable_ap ap (aps, _) = NullableAP.find ap aps
 
   let assume_pnames_notnull ap (aps, checked_pnames) : Domain.astate =
+    let remove_call_sites ap aps =
+      let add_diff (to_remove: CallSites.t) ap call_sites map =
+        let remaining_call_sites = CallSites.diff call_sites to_remove in
+        if CallSites.is_empty remaining_call_sites then map
+        else NullableAP.add ap remaining_call_sites map
+      in
+      match NullableAP.find_opt ap aps with
+      | None ->
+          aps
+      | Some call_sites ->
+          let updated_aps = NullableAP.fold (add_diff call_sites) aps NullableAP.empty in
+          updated_aps
+    in
     let updated_pnames =
       try
         let call_sites = NullableAP.find ap aps in
@@ -183,7 +196,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           call_sites checked_pnames
       with Not_found -> checked_pnames
     in
-    (NullableAP.remove ap aps, updated_pnames)
+    (remove_call_sites ap aps, updated_pnames)
 
 
   let rec longest_nullable_prefix ap ((nulable_aps, _) as astate) =

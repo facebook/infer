@@ -45,7 +45,7 @@ public class NullableViolation {
 
   void nullableMethodCheckedForNullAndReturnOkay() {
     if (returnsNullable() == null) {
-        return;
+      return;
     }
     returnsNullable().doSomething(); // does not report here
   }
@@ -97,5 +97,20 @@ public class NullableViolation {
   void pointerAssignmentWithSubtype() {
     Object object = getNullableObject();
     object = "Hello";
+  }
+
+  void deferenceAliasOfNullableValueCheckedForNullOkay() {
+    T t = returnsNullable();
+    T s = t;
+    if (t != null) {
+      s.x = 42;
+    }
+  }
+
+  void dereferenceWithAssignmentExpressionsOkay() {
+    T t;
+    while ((t = returnsNullable()) != null) {
+      t.doSomething();
+    }
   }
 }

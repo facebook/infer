@@ -141,3 +141,11 @@ void onlyReportOnceBad(T* t) {
   // ...
   t->mayReturnNullObject()->doSomething(); // does not report here
 }
+
+void dereferenceOfAliasesCheckedForNullOkay(T* t) {
+  T* s = t->mayReturnNullObject();
+  T* r = s;
+  if (r != nullptr) {
+    s->doSomething();
+  }
+}
