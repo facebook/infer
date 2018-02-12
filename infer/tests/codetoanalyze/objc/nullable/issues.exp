@@ -4,6 +4,7 @@ codetoanalyze/objc/nullable/Examples.m, T_assignNonnullFieldToNullBad, 1, FIELD_
 codetoanalyze/objc/nullable/Examples.m, T_assignUnnanotatedFieldToNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is assigned null here]
 codetoanalyze/objc/nullable/Examples.m, T_createArrayByAddingNilBad, 2, NULLABLE_DEREFERENCE, [dereferencing the return of nullableMethod,assignment of the nullable value,definition of nullableMethod]
 codetoanalyze/objc/nullable/Examples.m, T_dereferenceNullableFunctionBad, 2, NULLABLE_DEREFERENCE, [dereference of &p,assignment of the nullable value,definition of returnsNull]
+codetoanalyze/objc/nullable/Examples.m, T_dereferenceNullableLibraryMethodBad:, 2, NULLABLE_DEREFERENCE, [dereference of &nullableObject,assignment of the nullable value,definition of nullableLibraryMethod]
 codetoanalyze/objc/nullable/Examples.m, T_dereferenceUnnanotatedFieldAfterTestForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
 codetoanalyze/objc/nullable/Examples.m, T_indirectNullableKeyInNSDictionaryBad, 3, NULLABLE_DEREFERENCE, [dereference of &nullableKeyString,assignment of the nullable value,definition of nullableMethod]
 codetoanalyze/objc/nullable/Examples.m, T_insertNullableObjectInMutableArrayBad, 2, NULLABLE_DEREFERENCE, [dereferencing the return of nullableMethod,assignment of the nullable value,definition of nullableMethod]

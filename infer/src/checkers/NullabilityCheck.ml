@@ -91,6 +91,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (Specs.get_err_log summary) false
 
 
+  (* On Clang languages, the annotations like _Nullabe can be found on the declaration
+     or on the implementation without the two being necessarily consistent.
+     Here, we explicitely want to lookup the annotations locally: either form
+     the implementation when defined locally, or from the included headers *)
+  let lookup_local_attributes = function
+    | Typ.Procname.Java _ as pname ->
+        (* Looking up the attribute according to the classpath *)
+        Specs.proc_resolve_attributes pname
+    | pname ->
+        (* Looking up the attributes locally, i.e. either from the file of from the includes *)
+        Option.map ~f:Procdesc.get_attributes (Ondemand.get_proc_desc pname)
+
+
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
     let summary = extras in
     if is_conflicting_report summary loc then ()
@@ -134,7 +147,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let trace =
         let with_origin_site =
           let callee_pname = CallSite.pname call_site in
-          match Specs.proc_resolve_attributes callee_pname with
+          match lookup_local_attributes callee_pname with
           | None ->
               []
           | Some attributes ->
@@ -252,8 +265,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
         astate
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
-      when Annotations.pname_has_return_annot callee_pname
-             ~attrs_of_pname:Specs.proc_resolve_attributes Annotations.ia_is_nullable ->
+      when Annotations.pname_has_return_annot callee_pname ~attrs_of_pname:lookup_local_attributes
+             Annotations.ia_is_nullable ->
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
     | Call (_, Direct callee_pname, (HilExp.AccessExpression receiver) :: _, _, loc)
