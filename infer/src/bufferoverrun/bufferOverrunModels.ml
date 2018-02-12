@@ -283,6 +283,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
         ; -"infer_print" <>$ capt_exp $!--> infer_print
         ; -"malloc" <>$ capt_exp $+...$--> malloc
+        ; -"__new" <>$ capt_exp $+...$--> malloc
         ; -"__new_array" <>$ capt_exp $+...$--> malloc
         ; -"realloc" <>$ any_arg $+ capt_exp $+...$--> realloc
         ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length

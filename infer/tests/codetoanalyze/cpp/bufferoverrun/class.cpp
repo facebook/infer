@@ -24,4 +24,16 @@ class my_class {
     int n = 10;
     return arr[id(n)];
   }
+
+  int access_nth(int n) { return arr[n]; }
 };
+
+void access_after_new_Good() {
+  my_class* x = new my_class();
+  x->access_nth(5);
+}
+
+void access_after_new_Bad() {
+  my_class* x = new my_class();
+  x->access_nth(15);
+}
