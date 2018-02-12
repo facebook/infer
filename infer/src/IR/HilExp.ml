@@ -12,7 +12,7 @@ module F = Format
 module L = Logging
 
 type t =
-  | AccessPath of AccessPath.t
+  | AccessExpression of AccessExpression.t
   | UnaryOperator of Unop.t * t * Typ.t option
   | BinaryOperator of Binop.t * t * t
   | Exception of t
@@ -23,8 +23,8 @@ type t =
   [@@deriving compare]
 
 let rec pp fmt = function
-  | AccessPath access_path ->
-      AccessPath.pp fmt access_path
+  | AccessExpression access_expr ->
+      AccessPath.pp fmt (AccessExpression.to_access_path access_expr)
   | UnaryOperator (op, e, _) ->
       F.fprintf fmt "%s%a" (Unop.str op) pp e
   | BinaryOperator (op, e1, e2) ->
@@ -43,8 +43,8 @@ let rec pp fmt = function
 
 
 let rec get_typ tenv = function
-  | AccessPath access_path ->
-      AccessPath.get_typ access_path tenv
+  | AccessExpression access_expr ->
+      AccessPath.get_typ (AccessExpression.to_access_path access_expr) tenv
   | UnaryOperator (_, _, typ_opt) ->
       typ_opt
   | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _) ->
@@ -86,8 +86,8 @@ let rec get_typ tenv = function
 let get_access_paths exp0 =
   let rec get_access_paths_ exp acc =
     match exp with
-    | AccessPath ap ->
-        ap :: acc
+    | AccessExpression ae ->
+        AccessExpression.to_access_path ae :: acc
     | Cast (_, e) | UnaryOperator (_, e, _) | Exception e | Sizeof (_, Some e) ->
         get_access_paths_ e acc
     | BinaryOperator (_, e1, e2) ->
@@ -113,7 +113,7 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
           | None ->
               AccessPath.of_id id typ
         in
-        AccessPath ap
+        AccessExpression (AccessExpression.of_access_path ap)
     | UnOp (op, e, typ_opt) ->
         UnaryOperator (op, of_sil_ e typ, typ_opt)
     | BinOp (op, e0, e1) ->
@@ -136,7 +136,7 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
     | Lfield (root_exp, fld, root_exp_typ) -> (
       match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
       | Some access_path ->
-          AccessPath access_path
+          AccessExpression (AccessExpression.of_access_path access_path)
       | None ->
           (* unsupported field expression: represent with a dummy variable *)
           of_sil_
@@ -153,7 +153,7 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
     | Lindex (root_exp, index_exp) -> (
       match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
       | Some access_path ->
-          AccessPath access_path
+          AccessExpression (AccessExpression.of_access_path access_path)
       | None ->
           (* unsupported index expression: represent with a dummy variable *)
           of_sil_
@@ -163,7 +163,7 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
     | Lvar _ ->
       match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
       | Some access_path ->
-          AccessPath access_path
+          AccessExpression (AccessExpression.of_access_path access_path)
       | None ->
           L.(die InternalError) "Couldn't convert var expression %a to access path" Exp.pp exp
   in

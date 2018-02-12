@@ -92,16 +92,19 @@ module SourceKind = struct
         in
         (* accessed global will be passed to us as the only parameter *)
         match actuals with
-        | [(HilExp.AccessPath access_path)] when is_gflag access_path ->
-            let (global_pvar, _), _ = access_path in
-            let typ_desc =
-              match AccessPath.get_typ access_path tenv with
-              | Some {Typ.desc} ->
-                  desc
-              | None ->
-                  Typ.void_star.desc
-            in
-            Some (CommandLineFlag (global_pvar, typ_desc), None)
+        | [(HilExp.AccessExpression access_expr)] ->
+            let access_path = AccessExpression.to_access_path access_expr in
+            if is_gflag access_path then
+              let (global_pvar, _), _ = access_path in
+              let typ_desc =
+                match AccessPath.get_typ access_path tenv with
+                | Some {Typ.desc} ->
+                    desc
+                | None ->
+                    Typ.void_star.desc
+              in
+              Some (CommandLineFlag (global_pvar, typ_desc), None)
+            else None
         | _ ->
             None )
     | Typ.Procname.C _ -> (

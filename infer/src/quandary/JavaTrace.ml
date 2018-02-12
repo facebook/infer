@@ -123,13 +123,17 @@ module SourceKind = struct
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       match (* accessed global will be passed to us as the only parameter *)
             actuals with
-      | [(HilExp.AccessPath ((Var.ProgramVar pvar, _), _))] ->
-          let pvar_string = Pvar.to_string pvar in
-          (* checking substring instead of prefix because we expect field names like
-             com.myapp.R$drawable.whatever *)
-          if String.is_substring ~substring:AndroidFramework.drawable_prefix pvar_string then
-            Some (DrawableResource pvar, None)
-          else None
+      | [(HilExp.AccessExpression access_expr)] -> (
+        match AccessExpression.to_access_path access_expr with
+        | (Var.ProgramVar pvar, _), _ ->
+            let pvar_string = Pvar.to_string pvar in
+            (* checking substring instead of prefix because we expect field names like
+               com.myapp.R$drawable.whatever *)
+            if String.is_substring ~substring:AndroidFramework.drawable_prefix pvar_string then
+              Some (DrawableResource pvar, None)
+            else None
+        | _ ->
+            None )
       | _ ->
           None )
     | pname when BuiltinDecl.is_declared pname ->

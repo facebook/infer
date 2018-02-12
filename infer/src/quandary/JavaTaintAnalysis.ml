@@ -26,8 +26,8 @@ include TaintAnalysis.Make (struct
 
   let handle_unknown_call pname ret_typ_opt actuals tenv =
     let get_receiver_typ tenv = function
-      | HilExp.AccessPath access_path ->
-          AccessPath.get_typ access_path tenv
+      | HilExp.AccessExpression access_expr ->
+          AccessPath.get_typ (AccessExpression.to_access_path access_expr) tenv
       | _ ->
           None
     in

@@ -194,8 +194,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match Var.get_footprint_index var with
           | Some footprint_index -> (
             match List.nth actuals footprint_index with
-            | Some HilExp.AccessPath actual_access_path ->
-                Some (Domain.LocalAccessPath.make actual_access_path caller_pname)
+            | Some HilExp.AccessExpression actual_access_expr ->
+                Some
+                  (Domain.LocalAccessPath.make
+                     (AccessExpression.to_access_path actual_access_expr)
+                     caller_pname)
             | _ ->
                 None )
           | None ->
@@ -218,11 +221,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call
         ( (Some return_base as ret_opt)
         , Direct (Typ.Procname.Java java_callee_procname as callee_procname)
-        , ((HilExp.AccessPath receiver_ap) :: _ as actuals)
+        , ((HilExp.AccessExpression receiver_ae) :: _ as actuals)
         , _
         , _ ) ->
         let summary = Summary.read_summary proc_data.pdesc callee_procname in
-        let receiver = Domain.LocalAccessPath.make receiver_ap caller_pname in
+        let receiver =
+          Domain.LocalAccessPath.make (AccessExpression.to_access_path receiver_ae) caller_pname
+        in
         if ( LithoFramework.is_component_builder callee_procname proc_data.tenv
            (* track Builder's in order to check required prop's *)
            || GraphQLGetters.is_function callee_procname summary
@@ -247,13 +252,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_opt, Direct callee_procname, actuals, _, _) ->
         let summary = Summary.read_summary proc_data.pdesc callee_procname in
         apply_callee_summary summary caller_pname ret_opt actuals astate
-    | Assign (lhs_ap, HilExp.AccessPath rhs_ap, _)
+    | Assign (lhs_ap, HilExp.AccessExpression rhs_ae, _)
       -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
            tmp.getBar() *)
         let lhs_access_path = Domain.LocalAccessPath.make lhs_ap caller_pname in
-        let rhs_access_path = Domain.LocalAccessPath.make rhs_ap caller_pname in
+        let rhs_access_path =
+          Domain.LocalAccessPath.make (AccessExpression.to_access_path rhs_ae) caller_pname
+        in
         try
           let call_set = Domain.find rhs_access_path astate in
           Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set

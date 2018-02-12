@@ -96,10 +96,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     List.iteri
       ~f:(fun idx e ->
         match e with
-        | HilExp.AccessPath ((var, t), al)
-          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (Typ.is_pointer t)
-               && not (is_struct_field_passed_by_ref call t al idx) ->
-            report_intra ((var, t), al) loc (snd extras)
+        | HilExp.AccessExpression access_expr ->
+            let (var, t), al = AccessExpression.to_access_path access_expr in
+            if should_report_var pdesc tenv uninit_vars ((var, t), al) && not (Typ.is_pointer t)
+               && not (is_struct_field_passed_by_ref call t al idx)
+            then report_intra ((var, t), al) loc (snd extras)
+            else ()
         | _ ->
             () )
       actuals
@@ -205,7 +207,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       else astate.prepost
     in
     match instr with
-    | Assign ((((lhs_var, lhs_typ), apl) as lhs_ap), (HilExp.AccessPath (rhs_base, al) as rhs), loc) ->
+    | Assign
+        ( (((lhs_var, lhs_typ), apl) as lhs_ap)
+        , (HilExp.AccessExpression access_expr as rhs_expr)
+        , loc ) ->
+        let rhs_base, al = AccessExpression.to_access_path access_expr in
         let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
         let uninit_vars =
           if Int.equal (List.length apl) 0 then
@@ -213,7 +219,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             remove_all_fields tenv (lhs_var, lhs_typ) uninit_vars'
           else uninit_vars'
         in
-        let prepost = update_prepost lhs_ap rhs in
+        let prepost = update_prepost lhs_ap rhs_expr in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
         if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (Typ.is_pointer lhs_typ)
         then report_intra (rhs_base, al) loc (snd extras) ;
@@ -234,23 +240,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           List.foldi
             ~f:(fun idx acc actual_exp ->
               match actual_exp with
-              | HilExp.AccessPath (((_, {Typ.desc= Tarray _}) as base), al)
-                when is_blacklisted_function call ->
-                  D.remove (base, al) acc
-              | HilExp.AccessPath (((_, t) as base), al)
-                when is_struct_field_passed_by_ref call t al idx ->
-                  (* Access to a field of a struct by reference *)
-                  if Config.uninit_interproc then
-                    remove_initialized_params pdesc call acc idx (base, al) false
-                  else D.remove (base, al) acc
-              | HilExp.AccessPath ap when Typ.Procname.is_constructor call ->
-                  remove_all_fields tenv (fst ap) (D.remove ap acc)
-              | HilExp.AccessPath (((_, {Typ.desc= Tptr _}) as base), al) ->
-                  if Config.uninit_interproc then
-                    remove_initialized_params pdesc call acc idx (base, al) true
-                  else
-                    let acc' = D.remove (base, al) acc in
-                    remove_all_fields tenv base acc'
+              | HilExp.AccessExpression access_expr -> (
+                match AccessExpression.to_access_path access_expr with
+                | ((_, {Typ.desc= Tarray _}) as base), al when is_blacklisted_function call ->
+                    D.remove (base, al) acc
+                | ((_, t) as base), al when is_struct_field_passed_by_ref call t al idx ->
+                    (* Access to a field of a struct by reference *)
+                    if Config.uninit_interproc then
+                      remove_initialized_params pdesc call acc idx (base, al) false
+                    else D.remove (base, al) acc
+                | ap when Typ.Procname.is_constructor call ->
+                    remove_all_fields tenv (fst ap) (D.remove ap acc)
+                | ((_, {Typ.desc= Tptr _}) as base), al ->
+                    if Config.uninit_interproc then
+                      remove_initialized_params pdesc call acc idx (base, al) true
+                    else
+                      let acc' = D.remove (base, al) acc in
+                      remove_all_fields tenv base acc'
+                | _ ->
+                    acc )
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl

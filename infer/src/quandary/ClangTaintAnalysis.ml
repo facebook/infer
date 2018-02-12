@@ -35,15 +35,17 @@ include TaintAnalysis.Make (struct
       | None, _ when Typ.Procname.is_constructor pname ->
           (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
-      | ( None
-        , (HilExp.AccessPath ((Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []))
-          :: _ )
-        when Pvar.is_frontend_tmp pvar ->
-          (* no return value, but the frontend has introduced a dummy return variable and will
+      | None, (HilExp.AccessExpression access_expr) :: _ -> (
+        match AccessExpression.to_access_path access_expr with
+        | (Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []
+          when Pvar.is_frontend_tmp pvar ->
+            (* no return value, but the frontend has introduced a dummy return variable and will
                assign the return value to this variable. So propagate taint to the dummy return
                variable *)
-          let actual_index = List.length actuals - 1 in
-          [TaintSpec.Propagate_to_actual actual_index]
+            let actual_index = List.length actuals - 1 in
+            [TaintSpec.Propagate_to_actual actual_index]
+        | _ ->
+            [TaintSpec.Propagate_to_receiver] )
       | None, _ ->
           (* no return value; propagate taint from actuals to receiver *)
           [TaintSpec.Propagate_to_receiver]

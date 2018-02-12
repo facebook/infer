@@ -219,7 +219,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | [arg] when HilExp.is_null_literal arg ->
         astate
-    | (HilExp.AccessPath ap) :: other_args ->
+    | (HilExp.AccessExpression access_expr) :: other_args ->
+        let ap = AccessExpression.to_access_path access_expr in
         check_nil_in_objc_container proc_data loc other_args (check_ap proc_data loc ap astate)
     | _ :: other_args ->
         check_nil_in_objc_container proc_data loc other_args astate
@@ -245,9 +246,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when NullCheckedPname.mem callee_pname checked_pnames ->
         (* Do not report nullable when the method has already been checked for null *)
         remove_nullable_ap (ret_var, []) astate
-    | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, _)
+    | Call (_, Direct callee_pname, (HilExp.AccessExpression receiver) :: _, _, _)
       when Models.is_check_not_null callee_pname ->
-        assume_pnames_notnull receiver astate
+        assume_pnames_notnull (AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
         astate
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
@@ -255,19 +256,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              ~attrs_of_pname:Specs.proc_resolve_attributes Annotations.ia_is_nullable ->
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
-    | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
+    | Call (_, Direct callee_pname, (HilExp.AccessExpression receiver) :: _, _, loc)
       when is_non_objc_instance_method callee_pname ->
-        check_ap proc_data loc receiver astate
+        check_ap proc_data loc (AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
         check_nil_in_objc_container proc_data loc args astate
     | Call
         ( Some ((_, ret_typ) as ret_var)
         , Direct callee_pname
-        , (HilExp.AccessPath receiver) :: _
+        , (HilExp.AccessExpression receiver) :: _
         , _
         , _ )
       when Typ.is_pointer ret_typ && is_objc_instance_method callee_pname -> (
-      match longest_nullable_prefix receiver astate with
+      match longest_nullable_prefix (AccessExpression.to_access_path receiver) astate with
       | None ->
           astate
       | Some (_, call_sites) ->
@@ -285,9 +286,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               report_nullable_dereference nullable_ap call_sites proc_data loc )
           (longest_nullable_prefix lhs astate) ;
         match rhs with
-        | HilExp.AccessPath ap -> (
+        | HilExp.AccessExpression access_expr -> (
           try
             (* Add the lhs to the list of nullable values if the rhs is nullable *)
+            let ap = AccessExpression.to_access_path access_expr in
             add_nullable_ap lhs (find_nullable_ap ap astate) astate
           with Not_found ->
             (* Remove the lhs from the list of nullable values if the rhs is not nullable *)
@@ -295,24 +297,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             (* Remove the lhs from the list of nullable values if the rhs is not an access path *)
             remove_nullable_ap lhs astate )
-    | Assume (HilExp.AccessPath ap, _, _, _) ->
-        assume_pnames_notnull ap astate
+    | Assume (HilExp.AccessExpression access_expr, _, _, _) ->
+        assume_pnames_notnull (AccessExpression.to_access_path access_expr) astate
     | Assume
-        ( ( HilExp.BinaryOperator (Binop.Ne, HilExp.AccessPath ap, exp)
-          | HilExp.BinaryOperator (Binop.Ne, exp, HilExp.AccessPath ap) )
+        ( ( HilExp.BinaryOperator (Binop.Ne, HilExp.AccessExpression access_expr, exp)
+          | HilExp.BinaryOperator (Binop.Ne, exp, HilExp.AccessExpression access_expr) )
         , _
         , _
         , _ )
     | Assume
         ( HilExp.UnaryOperator
             ( Unop.LNot
-            , ( HilExp.BinaryOperator (Binop.Eq, HilExp.AccessPath ap, exp)
-              | HilExp.BinaryOperator (Binop.Eq, exp, HilExp.AccessPath ap) )
+            , ( HilExp.BinaryOperator (Binop.Eq, HilExp.AccessExpression access_expr, exp)
+              | HilExp.BinaryOperator (Binop.Eq, exp, HilExp.AccessExpression access_expr) )
             , _ )
         , _
         , _
         , _ ) ->
-        if HilExp.is_null_literal exp then assume_pnames_notnull ap astate else astate
+        if HilExp.is_null_literal exp then
+          assume_pnames_notnull (AccessExpression.to_access_path access_expr) astate
+        else astate
     | _ ->
         astate
 end

@@ -57,8 +57,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match exp with
     | HilExp.Constant Cint n when IntLit.isnull n ->
         Some (UseDefChain.NullDefAssign (loc, lhs))
-    | HilExp.AccessPath ap -> (
+    | HilExp.AccessExpression access_expr -> (
       try
+        let ap = AccessExpression.to_access_path access_expr in
         match Domain.find ap astate with
         | UseDefChain.NullDefCompare _ ->
             (* Stop NullDefCompare from propagating here because we want to prevent
@@ -73,9 +74,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let extract_null_compare_expr = function
-    | HilExp.BinaryOperator ((Eq | Ne), HilExp.AccessPath ap, exp)
-    | HilExp.BinaryOperator ((Eq | Ne), exp, HilExp.AccessPath ap) ->
-        Option.some_if (HilExp.is_null_literal exp) ap
+    | HilExp.BinaryOperator ((Eq | Ne), HilExp.AccessExpression access_expr, exp)
+    | HilExp.BinaryOperator ((Eq | Ne), exp, HilExp.AccessExpression access_expr) ->
+        Option.some_if (HilExp.is_null_literal exp) (AccessExpression.to_access_path access_expr)
     | _ ->
         None
 

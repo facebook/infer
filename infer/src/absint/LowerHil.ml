@@ -70,7 +70,10 @@ struct
             (fun id access_path astate_acc ->
               let lhs_access_path = ((id, Typ.mk Typ.Tvoid), []) in
               let dummy_assign =
-                HilInstr.Assign (lhs_access_path, HilExp.AccessPath access_path, loc)
+                HilInstr.Assign
+                  ( lhs_access_path
+                  , HilExp.AccessExpression (AccessExpression.of_access_path access_path)
+                  , loc )
               in
               TransferFunctions.exec_instr astate_acc extras node dummy_assign )
             id_map actual_state

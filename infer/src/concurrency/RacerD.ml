@@ -33,8 +33,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open HilExp in
     let open Domain in
     match e with
-    | HilExp.AccessPath ap -> (
-      try AttributeMapDomain.find ap attribute_map with Not_found -> AttributeSetDomain.empty )
+    | HilExp.AccessExpression access_expr -> (
+      try AttributeMapDomain.find (AccessExpression.to_access_path access_expr) attribute_map
+      with Not_found -> AttributeSetDomain.empty )
     | Constant _ ->
         AttributeSetDomain.of_list [Attribute.Functional]
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
@@ -53,8 +54,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     let open HilExp in
     match expr with
-    | AccessPath ap ->
-        OwnershipDomain.get_owned ap ownership
+    | AccessExpression access_expr ->
+        OwnershipDomain.get_owned (AccessExpression.to_access_path access_expr) ownership
     | Constant _ ->
         OwnershipAbstractValue.owned
     | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e) ->
@@ -102,7 +103,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let ret_access_path = (ret, []) in
         let get_ownership formal_index acc =
           match List.nth actuals formal_index with
-          | Some HilExp.AccessPath actual_ap ->
+          | Some HilExp.AccessExpression access_expr ->
+              let actual_ap = AccessExpression.to_access_path access_expr in
               OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
           | Some HilExp.Constant _ ->
               acc
@@ -376,8 +378,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open RacerDConfig in
     let get_receiver_ap actuals =
       match List.hd actuals with
-      | Some HilExp.AccessPath receiver_ap ->
-          receiver_ap
+      | Some HilExp.AccessExpression receiver_expr ->
+          AccessExpression.to_access_path receiver_expr
       | _ ->
           L.(die InternalError)
             "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
@@ -428,8 +430,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     if AccessDomain.is_empty accesses then accesses
     else
       let rec get_access_path = function
-        | HilExp.AccessPath ap ->
-            Some ap
+        | HilExp.AccessExpression access_expr ->
+            Some (AccessExpression.to_access_path access_expr)
         | HilExp.Cast (_, e) | HilExp.Exception e ->
             get_access_path e
         | _ ->
@@ -479,8 +481,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | HilExp.Constant _ ->
           (* the actual is a constant, so it's owned in the caller. *)
           Conjunction actual_indexes
-      | HilExp.AccessPath actual_access_path
+      | HilExp.AccessExpression access_expr
         -> (
+          let actual_access_path = AccessExpression.to_access_path access_expr in
           if OwnershipDomain.is_owned actual_access_path caller_astate.ownership then
             (* the actual passed to the current callee is owned. drop all the conditional accesses
                for that actual, since they're all safe *)
@@ -661,15 +664,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     in
                     if is_box callee_pname then
                       match (ret_opt, actuals) with
-                      | Some ret, (HilExp.AccessPath actual_ap) :: _
-                        when AttributeMapDomain.has_attribute actual_ap Functional
-                               astate.attribute_map ->
-                          (* TODO: check for constants, which are functional? *)
-                          let attribute_map =
-                            AttributeMapDomain.add_attribute (ret, []) Functional
-                              astate.attribute_map
-                          in
-                          {astate with attribute_map}
+                      | Some ret, (HilExp.AccessExpression actual_access_expr) :: _ ->
+                          let actual_ap = AccessExpression.to_access_path actual_access_expr in
+                          if AttributeMapDomain.has_attribute actual_ap Functional
+                               astate.attribute_map
+                          then
+                            (* TODO: check for constants, which are functional? *)
+                            let attribute_map =
+                              AttributeMapDomain.add_attribute (ret, []) Functional
+                                astate.attribute_map
+                            in
+                            {astate with attribute_map}
+                          else astate
                       | _ ->
                           astate
                     else if should_assume_returns_ownership call_flags actuals then
@@ -733,8 +739,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                report spurious read/write races *)
             rhs_accesses
           else
-            add_access (AccessPath lhs_access_path) loc ~is_write_access:true rhs_accesses
-              astate.locks astate.threads astate.ownership proc_data
+            add_access
+              (AccessExpression (AccessExpression.of_access_path lhs_access_path))
+              loc ~is_write_access:true rhs_accesses astate.locks astate.threads astate.ownership
+              proc_data
         in
         let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
         let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
@@ -750,8 +758,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            [var] is set to true. return None if it has free variables that stop us from
            evaluating it *)
         and eval_bexp var = function
-          | HilExp.AccessPath ap when AccessPath.equal ap var ->
-              Some true
+          | HilExp.AccessExpression access_expr ->
+              if AccessPath.equal (AccessExpression.to_access_path access_expr) var then Some true
+              else None
           | HilExp.Constant c ->
               Some (not (Const.iszero_int_float c))
           | HilExp.UnaryOperator (Unop.LNot, e, _) ->

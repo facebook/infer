@@ -48,8 +48,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   let analyze_id_assignment lhs_id rhs_exp rhs_typ loc =
     let rhs_hil_exp = exp_of_sil rhs_exp rhs_typ in
     match rhs_hil_exp with
-    | AccessPath rhs_access_path ->
-        Bind (lhs_id, rhs_access_path)
+    | AccessExpression rhs_access_expr ->
+        Bind (lhs_id, AccessExpression.to_access_path rhs_access_expr)
     | _ ->
         Instr (Assign (((lhs_id, rhs_typ), []), rhs_hil_exp, loc))
   in
@@ -69,8 +69,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_access_path =
         match exp_of_sil lhs_exp typ with
-        | AccessPath ap ->
-            ap
+        | AccessExpression access_expr ->
+            AccessExpression.to_access_path access_expr
         | BinaryOperator (_, exp0, exp1) -> (
           match
             (* pointer arithmetic. somewhere in one of the expressions, there should be at least
@@ -107,8 +107,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
         match exp_of_sil call_exp (Typ.mk Tvoid) with
         | Constant Cfun procname | Closure (procname, _) ->
             Direct procname
-        | AccessPath access_path ->
-            Indirect access_path
+        | AccessExpression access_expr ->
+            Indirect (AccessExpression.to_access_path access_expr)
         | call_exp ->
             L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
       in
