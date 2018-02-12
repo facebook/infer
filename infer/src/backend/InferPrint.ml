@@ -536,6 +536,7 @@ module Stats = struct
          ; symops= summary.stats.symops }
        :: stats.events_to_log
 
+
   let num_files stats = Hashtbl.length stats.files
 
   let pp fmt stats =
@@ -1031,7 +1032,7 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_close outfile.fmt ()
       | Logs, Stats ->
-          EventLogger.log_multiple stats.events_to_log
+          List.iter ~f:EventLogger.log stats.events_to_log
       | Csv, (Issues | Procs | Calls | Summary)
       | Logs, (Issues | Procs | Calls | Summary)
       | Json, (Procs | Stats | Calls | Summary)

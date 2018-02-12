@@ -45,6 +45,4 @@ val prepare : unit -> unit
 
 val log : event -> unit
 
-val log_multiple : event list -> unit
-
 val dump : unit -> unit

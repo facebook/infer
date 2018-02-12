@@ -220,12 +220,4 @@ let prepare = IO.prepare
 
 let log event = IO.write "%s\n" (create_row event)
 
-let log_multiple events =
-  let rows = List.map ~f:create_row events in
-  let combinedJson =
-    List.fold_right rows ~init:"" ~f:(fun row combined -> combined ^ row ^ "\n")
-  in
-  IO.write "%s" combinedJson
-
-
 let dump = IO.dump
