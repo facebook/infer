@@ -266,6 +266,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with instrs= [call_instr']; exps= ret_exps; initd_exps}
 
 
+  (* Given a captured var, return the instruction to assign it to a temp *)
+  let assign_captured_var loc (cvar, typ) =
+    let id = Ident.create_fresh Ident.knormal in
+    let instr = Sil.Load (id, Exp.Lvar cvar, typ, loc) in
+    (id, instr)
+
+
+  let closure_trans closure_pname captured_vars context stmt_info expr_info =
+    let loc = CLocation.get_sil_location stmt_info context in
+    let open CContext in
+    let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
+    let ids_instrs = List.map ~f:(assign_captured_var loc) captured_vars in
+    let ids, instrs = List.unzip ids_instrs in
+    let captured_vars =
+      List.map2_exn ~f:(fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captured_vars
+    in
+    let closure = Exp.Closure {name= closure_pname; captured_vars} in
+    {empty_res_trans with instrs; exps= [(closure, typ)]}
+
+
   let stringLiteral_trans trans_state expr_info str =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cstr str) in
@@ -687,6 +708,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
     (pvar, CType_decl.qual_type_to_sil_type tenv class_qual_type)
+
 
   let this_expr_trans stmt_info ?class_qual_type trans_state sil_loc =
     let this_pvar, this_typ = get_this_pvar_typ stmt_info ?class_qual_type trans_state.context in
@@ -2606,38 +2628,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and blockExpr_trans trans_state stmt_info expr_info decl =
     let context = trans_state.context in
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
-    let loc =
-      match stmt_info.Clang_ast_t.si_source_range with l1, _ ->
-        CLocation.clang_to_sil_location context.CContext.translation_unit_context l1
-    in
-    (* Given a captured var, return the instruction to assign it to a temp *)
-    let assign_captured_var (cvar, typ) =
-      let id = Ident.create_fresh Ident.knormal in
-      let instr = Sil.Load (id, Exp.Lvar cvar, typ, loc) in
-      (id, instr)
-    in
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
-        let qual_type = expr_info.Clang_ast_t.ei_qual_type in
         let block_pname = CProcname.mk_fresh_block_procname procname in
-        let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
-        let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-        let captureds =
+        let captured_pvars =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
-            captured_block_vars
+            block_decl_info.Clang_ast_t.bdi_captured_variables
         in
-        let ids_instrs = List.map ~f:assign_captured_var captureds in
-        let ids, instrs = List.unzip ids_instrs in
-        let block_data = (context, qual_type, block_pname, captureds) in
-        F.function_decl context.translation_unit_context context.tenv context.cfg decl
-          (Some block_data) ;
-        let captured_vars =
-          List.map2_exn ~f:(fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds
-        in
-        let closure = Exp.Closure {name= block_pname; captured_vars} in
-        {empty_res_trans with instrs; exps= [(closure, typ)]}
+        let res = closure_trans block_pname captured_pvars context stmt_info expr_info in
+        let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+        let block_data = Some (context, qual_type, block_pname, captured_pvars) in
+        F.function_decl context.translation_unit_context context.tenv context.cfg decl block_data ;
+        res
     | _ ->
+        (* Block expression with no BlockDecl *)
         assert false
 
 
@@ -2649,7 +2654,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let procname = Procdesc.get_proc_name context.procdesc in
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
-    let make_captured_tuple (pvar, typ) = (Exp.Lvar pvar, pvar, typ) in
     let get_captured_pvar_typ decl_ref =
       CVar_decl.sil_var_of_captured_var decl_ref context stmt_info.Clang_ast_t.si_source_range
         procname
@@ -2659,7 +2663,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Clang_ast_t.VarDecl (_, _, _, {vdi_init_expr}) ->
           init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
       | _ ->
-          L.die ExternalError "Unexpected: capture-init statement without var decl"
+          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+            "Capture-init statement without var decl"
+    in
+    let translate_normal_capture pvar_typ (trans_results_acc, captured_vars_acc) =
+      let loc = CLocation.get_sil_location stmt_info context in
+      let id, instr = assign_captured_var loc pvar_typ in
+      let trans_results = {empty_res_trans with instrs= [instr]} in
+      (trans_results :: trans_results_acc, (Exp.Var id, fst pvar_typ, snd pvar_typ) :: captured_vars_acc)
     in
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this}
@@ -2669,16 +2680,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* capture and init *)
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
           ( translate_capture_init pvar_typ init_decl :: trans_results_acc
-          , make_captured_tuple pvar_typ :: captured_vars_acc )
+          ,  (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
       | Some captured_var_decl_ref, None ->
           (* just capture *)
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
-          (trans_results_acc, make_captured_tuple pvar_typ :: captured_vars_acc)
+          translate_normal_capture pvar_typ acc
       | None, None ->
           if lci_capture_this then
             (* captured [this] *)
             let this_typ = get_this_pvar_typ stmt_info context in
-            (trans_results_acc, make_captured_tuple this_typ :: captured_vars_acc)
+            translate_normal_capture this_typ acc
           else acc
       | None, Some _ ->
           CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
