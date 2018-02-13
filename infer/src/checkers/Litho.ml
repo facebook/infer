@@ -153,6 +153,14 @@ module RequiredProps = struct
     && Procdesc.get_access proc_desc <> PredSymb.Private
 
 
+  let has_prop prop_set prop =
+    String.Set.mem prop_set prop
+    (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), or myPropRes().
+       Our annotation parameter parsing is too primitive to identify resType, so just assume
+       that all @Prop's can be set any of these 3 ways. *)
+    || String.Set.mem prop_set (prop ^ "Attr") || String.Set.mem prop_set (prop ^ "Res")
+
+
   let report astate tenv summary =
     let check_required_prop_chain _ call_chain =
       let rev_chain = List.rev call_chain in
@@ -169,7 +177,7 @@ module RequiredProps = struct
             let prop_set = List.map ~f:Typ.Procname.get_method call_chain |> String.Set.of_list in
             List.iter
               ~f:(fun required_prop ->
-                if not (String.Set.mem prop_set required_prop) then
+                if not (has_prop prop_set required_prop) then
                   report_missing_required_prop summary required_prop (Specs.get_loc summary) )
               required_props
         | _ ->
