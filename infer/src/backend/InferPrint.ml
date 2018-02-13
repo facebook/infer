@@ -988,7 +988,7 @@ let init_calls_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] 
 
 let init_stats_format_list () =
   let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] Config.stats_report in
-  let logs_format = [(Logs, None)] in
+  let logs_format = if Config.log_events then [(Logs, None)] else [] in
   csv_format @ logs_format
 
 
