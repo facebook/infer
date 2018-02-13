@@ -350,15 +350,6 @@ let rec rmtree name =
       ()
 
 
-let without_gc ~f =
-  let stat = Gc.get () in
-  let space_oh = stat.space_overhead in
-  Gc.set {stat with space_overhead= 10000} ;
-  let res = f () in
-  Gc.set {stat with space_overhead= space_oh} ;
-  res
-
-
 let yield () =
   Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
 

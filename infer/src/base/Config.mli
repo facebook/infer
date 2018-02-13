@@ -467,8 +467,6 @@ val litho : bool
 
 val liveness : bool
 
-val load_analysis_results : string option
-
 val log_events : bool
 
 val log_file : string
@@ -555,8 +553,6 @@ val reports_include_ml_loc : bool
 val resource_leak : bool
 
 val results_dir : string
-
-val save_analysis_results : string option
 
 val seconds_per_iteration : float option
 

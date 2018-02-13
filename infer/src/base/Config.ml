@@ -1455,12 +1455,6 @@ and load_average =
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and make only)"
 
 
-and load_results =
-  CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
-    ~in_help:InferCommand.([(Report, manual_generic)])
-    ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
-
-
 and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
@@ -1720,12 +1714,6 @@ and results_dir =
         ; (Run, manual_generic)
         ; (Report, manual_generic) ])
     ~meta:"dir" "Write results and internal files in the specified directory"
-
-
-and save_results =
-  CLOpt.mk_path_opt ~deprecated:["save_results"] ~long:"save-results"
-    ~in_help:InferCommand.([(Report, manual_generic)])
-    ~meta:"file.iar" "Save analysis results to Infer Analysis Results file file.iar"
 
 
 and seconds_per_iteration =
@@ -2467,8 +2455,6 @@ and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
 
-and load_analysis_results = !load_results
-
 and log_events = !log_events
 
 and log_file = !log_file
@@ -2572,8 +2558,6 @@ and reports_include_ml_loc = !reports_include_ml_loc
 and resource_leak = !resource_leak
 
 and results_dir = !results_dir
-
-and save_analysis_results = !save_results
 
 and seconds_per_iteration = !seconds_per_iteration
 

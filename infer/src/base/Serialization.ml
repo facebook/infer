@@ -22,9 +22,9 @@ module Key = struct
   (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
   type t = int
 
-  (** Current keys for various serializable objects. The keys are computed using the [generate_keys] function below *)
-  let tenv, summary, analysis_results, cluster, lint_issues =
-    (425184201, 160179325, 799050016, 579094948, 852343110)
+  (** Current keys for various serializable objects. The keys are computed using the [generate_keys]
+     function below *)
+  let tenv, summary, cluster, lint_issues = (425184201, 160179325, 579094948, 852343110)
 end
 
 (** version of the binary files, to be incremented for each change *)

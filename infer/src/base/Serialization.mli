@@ -16,9 +16,6 @@ module Key : sig
   (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
   type t
 
-  val analysis_results : t
-  (** current key for an analysis results value *)
-
   val cluster : t
   (** current key for a cluster *)
 
