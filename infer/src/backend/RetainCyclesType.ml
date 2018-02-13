@@ -23,6 +23,8 @@ type retain_cycle_edge =
   | Block of Typ.Procname.t
   [@@deriving compare]
 
+let retain_cycle_edge_equal = [%compare.equal : retain_cycle_edge]
+
 type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge} [@@deriving compare]
 
 let is_inst_rearrange node =
@@ -33,20 +35,7 @@ let is_inst_rearrange node =
       false
 
 
-let create_cycle cycle =
-  let sorted_cycle = List.sort ~cmp:compare_retain_cycle_edge cycle in
-  match sorted_cycle with
-  | [hd] ->
-      if is_inst_rearrange hd then (* cycles of length 1 created at rearrange are not real *)
-        None
-      else Some {rc_elements= sorted_cycle; rc_head= hd}
-  | hd :: _ ->
-      Some {rc_elements= sorted_cycle; rc_head= hd}
-  | [] ->
-      None
-
-
-let retain_cycle_node_to_string (node: retain_cycle_node) =
+let _retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
 
@@ -56,11 +45,11 @@ let retain_cycle_field_to_string (field: retain_cycle_field_objc) =
     (Sil.inst_to_string field.rc_field_inst)
 
 
-let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
+let _retain_cycle_edge_to_string (edge: retain_cycle_edge) =
   match edge with
   | Object obj ->
       Format.sprintf "%s ->{%s}"
-        (retain_cycle_node_to_string obj.rc_from)
+        (_retain_cycle_node_to_string obj.rc_from)
         (retain_cycle_field_to_string obj.rc_field)
   | Block _ ->
       Format.sprintf "a block"
@@ -68,10 +57,44 @@ let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
 
 let retain_cycle_to_string cycle =
   "Cycle= \n\t"
-  ^ String.concat ~sep:"->" (List.map ~f:retain_cycle_edge_to_string cycle.rc_elements)
+  ^ String.concat ~sep:"->" (List.map ~f:_retain_cycle_edge_to_string cycle.rc_elements)
 
 
 let print_cycle cycle = Logging.d_strln (retain_cycle_to_string cycle)
+
+let find_minimum_element cycle =
+  List.reduce_exn cycle.rc_elements ~f:(fun el1 el2 ->
+      if compare_retain_cycle_edge el1 el2 < 0 then el1 else el2 )
+
+
+let shift cycle head : t =
+  let rec shift_elements rev_tail elements =
+    match elements with
+    | hd :: rest when not (retain_cycle_edge_equal hd head) ->
+        shift_elements (hd :: rev_tail) rest
+    | _ ->
+        elements @ List.rev rev_tail
+  in
+  let new_elements = shift_elements [] cycle.rc_elements in
+  {rc_elements= new_elements; rc_head= List.hd_exn new_elements}
+
+
+let normalize_cycle cycle =
+  let min = find_minimum_element cycle in
+  shift cycle min
+
+
+let create_cycle cycle =
+  match cycle with
+  | [hd] ->
+      if is_inst_rearrange hd then (* cycles of length 1 created at rearrange are not real *)
+        None
+      else Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
+  | hd :: _ ->
+      Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
+  | [] ->
+      None
+
 
 let pp_dotty fmt cycle =
   let pp_dotty_obj fmt element =

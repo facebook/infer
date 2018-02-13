@@ -50,6 +50,22 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
   List.fold_left cycle_str ~f:(fun acc s -> Format.sprintf "%s\n %s" acc s) ~init:""
 
 
+let get_cycle_blocks root_node exp =
+  match exp with
+  | Exp.Closure {name; captured_vars} ->
+      List.find
+        ~f:(fun (e, _, typ) ->
+          match typ.Typ.desc with
+          | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+              false
+          | _ ->
+              Exp.equal e root_node.RetainCyclesType.rc_node_exp )
+        captured_vars
+      |> Option.map ~f:(fun (_, var, _) -> (name, var))
+  | _ ->
+      None
+
+
 let get_cycle root prop =
   let open RetainCyclesType in
   let sigma = prop.Prop.sigma in
@@ -61,63 +77,48 @@ let get_cycle root prop =
   (* Perform a dfs of a graph stopping when e_root is reached.
    Returns a pair (path, bool) where path is a list of edges
    describing the path to e_root and bool is true if e_root is reached. *)
-  let rec dfs root_node from_node path fields visited =
-    let get_cycle_blocks exp =
-      match exp with
-      | Exp.Closure {name; captured_vars} ->
-          List.find
-            ~f:(fun (e, _, typ) ->
-              match typ.Typ.desc with
-              | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-                  false
-              | _ ->
-                  Exp.equal e root_node.rc_node_exp )
-            captured_vars
-          |> Option.map ~f:(fun (_, var, _) -> (name, var))
-      | _ ->
-          None
-    in
+  let rec dfs ~root_node ~from_node ~rev_path ~fields ~visited =
     match fields with
     | [] ->
-        (path, false)
+        (rev_path, false)
     | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
+        (* found root, finish the cycle *)
         if Exp.equal f_exp root_node.rc_node_exp then
           let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
           let edge = Object {rc_from= from_node; rc_field} in
-          (edge :: path, true)
+          (edge :: rev_path, true) (* we already visited f_exp, stop *)
+        else if List.mem ~equal:Exp.equal visited f_exp then (rev_path, false)
         else
-          let cycle_block_opt = get_cycle_blocks f_exp in
+          let visited' = from_node.rc_node_exp :: visited in
+          let cycle_block_opt = get_cycle_blocks root_node f_exp in
+          (* cycle with a block *)
           if Option.is_some cycle_block_opt then
-            match cycle_block_opt with
-            | Some (procname, var) ->
-                let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-                (* From the captured variables we get the actual name of the variable
-                that is more useful for the error message *)
-                let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
-                let edge1 = Object {rc_from= updated_from_node; rc_field} in
-                let edge2 = Block procname in
-                (edge1 :: edge2 :: path, true)
-            | None ->
-                assert false
-          else if List.mem ~equal:Exp.equal visited f_exp then (path, false)
+            let procname, var = Option.value_exn cycle_block_opt in
+            let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
+            (* From the captured variables we get the actual name of the variable
+            that is more useful for the error message *)
+            let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
+            let edge1 = Object {rc_from= updated_from_node; rc_field} in
+            let edge2 = Block procname in
+            (edge2 :: edge1 :: rev_path, true)
           else
-            let visited' = from_node.rc_node_exp :: visited in
             let res =
               match get_points_to f_exp with
               | None ->
-                  (path, false)
+                  (rev_path, false)
               | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}) ->
                   let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
                   let edge = Object {rc_from= from_node; rc_field} in
                   let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
-                  dfs root_node rc_to (edge :: path) new_fields visited'
+                  dfs ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path) ~fields:new_fields
+                    ~visited:visited'
               | _ ->
-                  (path, false)
-              (* check for lists *)
+                  (rev_path, false)
             in
-            if snd res then res else dfs root_node from_node path el' visited'
+            if snd res then res
+            else dfs ~root_node ~from_node ~rev_path ~fields:el' ~visited:visited'
     | _ ->
-        (path, false)
+        (rev_path, false)
   in
   L.d_strln "Looking for cycle with root expression: " ;
   Sil.d_hpred root ;
@@ -126,8 +127,10 @@ let get_cycle root prop =
   | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) ->
       let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
-      let pot_cycle, res = dfs se_root se_root [] fl [] in
-      if res then pot_cycle
+      let pot_cycle, res =
+        dfs ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]
+      in
+      if res then List.rev pot_cycle
       else (
         L.d_strln "NO cycle found from root" ;
         [] )
