@@ -90,67 +90,75 @@ and contains_ck_impl decl_list =
     const NSString *y;
     ``` *)
 let mutable_local_vars_advice context an =
-  let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
-    let typ_opt = CAst_utils.get_desugared_type qual_type.qt_type_ptr in
-    match (typ_opt : Clang_ast_t.c_type option) with
-    | Some ObjCInterfaceType (_, decl_ptr) | Some RecordType (_, decl_ptr) ->
-        CAst_utils.get_decl decl_ptr
-    | Some PointerType (_, inner_qual_type)
-    | Some ObjCObjectPointerType (_, inner_qual_type)
-    | Some LValueReferenceType (_, inner_qual_type) ->
-        get_referenced_type inner_qual_type
-    | _ ->
-        None
-  in
-  let is_of_whitelisted_type qual_type =
-    let cpp_whitelist =
-      [ "CKComponentScope"
-      ; "FBTrackingNodeScope"
-      ; "FBTrackingCodeScope"
-      ; "CKComponentContext"
-      ; "CKComponentKey" ]
+  try
+    let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
+      let typ_opt = CAst_utils.get_desugared_type qual_type.qt_type_ptr in
+      match (typ_opt : Clang_ast_t.c_type option) with
+      | Some ObjCInterfaceType (_, decl_ptr) | Some RecordType (_, decl_ptr) ->
+          CAst_utils.get_decl decl_ptr
+      | Some PointerType (_, inner_qual_type)
+      | Some ObjCObjectPointerType (_, inner_qual_type)
+      | Some LValueReferenceType (_, inner_qual_type) ->
+          get_referenced_type inner_qual_type
+      | _ ->
+          None
     in
-    let objc_whitelist = ["NSError"] in
-    match get_referenced_type qual_type with
-    | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
-        List.mem ~equal:String.equal cpp_whitelist ndi.ni_name
-    | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-        List.mem ~equal:String.equal objc_whitelist ndi.ni_name
-    | _ ->
-        false
-  in
-  match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.VarDecl (decl_info, named_decl_info, qual_type, _) as decl) ->
-      let is_const_ref =
-        match CAst_utils.get_type qual_type.qt_type_ptr with
-        | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
-            qt_is_const
-        | _ ->
-            false
+    let is_of_whitelisted_type qual_type =
+      let cpp_whitelist =
+        [ "CKComponentScope"
+        ; "FBTrackingNodeScope"
+        ; "FBTrackingCodeScope"
+        ; "CKComponentContext"
+        ; "CKComponentKey" ]
       in
-      let is_const = qual_type.qt_is_const || is_const_ref in
-      let condition =
-        is_ck_context context an && not (CAst_utils.is_syntactically_global_var decl)
-        && not (CAst_utils.is_static_local_var decl) && not is_const
-        && not (is_of_whitelisted_type qual_type) && not decl_info.di_is_implicit
-        && not context.CLintersContext.in_for_loop_declaration
-        && not (CAst_utils.is_std_vector qual_type) && not (CAst_utils.has_block_attribute decl)
-      in
-      if condition then
-        Some
-          { CIssue.id= "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
-          ; name= None
-          ; severity= Exceptions.Kadvice
-          ; mode= CIssue.On
-          ; description=
-              "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name
-              ^ " should be const to avoid reassignment"
-          ; suggestion= Some "Add a const (after the asterisk for pointer types)."
-          ; doc_url= None
-          ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
-      else None
-  | _ ->
-      None
+      let objc_whitelist = ["NSError"] in
+      match get_referenced_type qual_type with
+      | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
+          List.mem ~equal:String.equal cpp_whitelist ndi.ni_name
+      | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+          List.mem ~equal:String.equal objc_whitelist ndi.ni_name
+      | _ ->
+          false
+    in
+    if is_ck_context context an then
+      match an with
+      | Ctl_parser_types.Decl
+          (Clang_ast_t.VarDecl (decl_info, named_decl_info, qual_type, _) as decl) ->
+          let is_const_ref =
+            match CAst_utils.get_type qual_type.qt_type_ptr with
+            | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
+                qt_is_const
+            | _ ->
+                false
+          in
+          let is_const = qual_type.qt_is_const || is_const_ref in
+          let should_not_report_mutable_local =
+            CAst_utils.is_syntactically_global_var decl || CAst_utils.is_static_local_var decl
+            || is_const || is_of_whitelisted_type qual_type || decl_info.di_is_implicit
+            || context.CLintersContext.in_for_loop_declaration
+            || CAst_utils.is_std_vector qual_type || CAst_utils.has_block_attribute decl
+          in
+          if should_not_report_mutable_local then None
+          else
+            Some
+              { CIssue.id= "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
+              ; name= None
+              ; severity= Exceptions.Kadvice
+              ; mode= CIssue.On
+              ; description=
+                  "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name
+                  ^ " should be const to avoid reassignment"
+              ; suggestion= Some "Add a const (after the asterisk for pointer types)."
+              ; doc_url= None
+              ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
+      | _ ->
+          None
+    else None
+  with CFrontend_config.IncorrectAssumption e ->
+    let trans_unit_ctx = context.CLintersContext.translation_unit_context in
+    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+      e.source_range e.ast_node ;
+    None
 
 
 (* Should only be called with a VarDecl *)
@@ -163,26 +171,27 @@ let component_factory_function_advice context an =
   let is_component_if decl =
     CAst_utils.is_objc_if_descendant decl [CFrontend_config.ckcomponent_cl]
   in
-  match an with
-  | Ctl_parser_types.Decl
-      Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
-      let objc_interface = CAst_utils.qual_type_to_objc_interface qual_type in
-      let condition = is_ck_context context an && is_component_if objc_interface in
-      if condition then
-        Some
-          { CIssue.id= "COMPONENT_FACTORY_FUNCTION"
-          ; name= None
-          ; severity= Exceptions.Kadvice
-          ; mode= CIssue.Off
-          ; description= "Break out composite components"
-          ; suggestion=
-              Some
-                "Prefer subclassing CKCompositeComponent to static helper functions that return a CKComponent subclass."
-          ; doc_url= None
-          ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
-      else None
-  | _ ->
-      None
+  if is_ck_context context an then
+    match an with
+    | Ctl_parser_types.Decl
+        Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
+        let objc_interface = CAst_utils.qual_type_to_objc_interface qual_type in
+        if is_component_if objc_interface then
+          Some
+            { CIssue.id= "COMPONENT_FACTORY_FUNCTION"
+            ; name= None
+            ; severity= Exceptions.Kadvice
+            ; mode= CIssue.Off
+            ; description= "Break out composite components"
+            ; suggestion=
+                Some
+                  "Prefer subclassing CKCompositeComponent to static helper functions that return a CKComponent subclass."
+            ; doc_url= None
+            ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
+        else None
+    | _ ->
+        None
+  else None
 
 
 (* Should only be called with FunctionDecl *)

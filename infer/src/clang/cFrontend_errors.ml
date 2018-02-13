@@ -471,8 +471,13 @@ let fill_issue_desc_info_and_log context an (issue_desc: CIssue.issue_desc) lint
   let description = process_message issue_desc.description in
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
-  log_frontend_issue context.CLintersContext.translation_unit_context
-    context.CLintersContext.current_method an issue_desc' linters_def_file
+  try
+    log_frontend_issue context.CLintersContext.translation_unit_context
+      context.CLintersContext.current_method an issue_desc' linters_def_file
+  with CFrontend_config.IncorrectAssumption e ->
+    let trans_unit_ctx = context.CLintersContext.translation_unit_context in
+    ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+      e.source_range e.ast_node
 
 
 (* Calls the set of hard coded checkers (if any) *)

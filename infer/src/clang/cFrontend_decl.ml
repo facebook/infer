@@ -94,68 +94,77 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
 
   let function_decl trans_unit_ctx tenv cfg func_decl block_data_opt =
-    let captured_vars, outer_context_opt =
-      match block_data_opt with
-      | Some (outer_context, _, _, captured_vars) ->
-          (captured_vars, Some outer_context)
+    try
+      let captured_vars, outer_context_opt =
+        match block_data_opt with
+        | Some (outer_context, _, _, captured_vars) ->
+            (captured_vars, Some outer_context)
+        | None ->
+            ([], None)
+      in
+      let ms, body_opt, extra_instrs =
+        CMethod_trans.method_signature_of_decl trans_unit_ctx tenv func_decl block_data_opt
+      in
+      match body_opt with
+      | Some body ->
+          (* Only in the case the function declaration has a defined body we create a procdesc *)
+          let procname = CMethod_signature.ms_get_name ms in
+          let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
+          if CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] captured_vars
+          then
+            add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms
+              return_param_typ_opt false outer_context_opt extra_instrs
       | None ->
-          ([], None)
-    in
-    let ms, body_opt, extra_instrs =
-      CMethod_trans.method_signature_of_decl trans_unit_ctx tenv func_decl block_data_opt
-    in
-    match body_opt with
-    | Some body ->
-        (* Only in the case the function declaration has a defined body we create a procdesc *)
-        let procname = CMethod_signature.ms_get_name ms in
-        let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
-        if CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] captured_vars then
-          add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms
-            return_param_typ_opt false outer_context_opt extra_instrs
-    | None ->
-        ()
+          ()
+    with CFrontend_config.IncorrectAssumption e ->
+      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+        e.source_range e.ast_node
 
 
   let process_method_decl ?(set_objc_accessor_attr= false) ?(is_destructor= false) trans_unit_ctx
       tenv cfg curr_class meth_decl ~is_objc =
-    let ms, body_opt, extra_instrs =
-      CMethod_trans.method_signature_of_decl trans_unit_ctx tenv meth_decl None
-    in
-    match body_opt with
-    | Some body ->
-        let procname = CMethod_signature.ms_get_name ms in
-        let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
-        let ms', procname' =
-          if is_destructor then (
-            (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
-            (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
-            (* The destructor wrapper calls the inner destructor which has the actual body *)
-            if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
-                 ms [body] []
-            then
-              add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
-                is_objc None extra_instrs ~is_destructor_wrapper:true ;
-            let new_method_name =
-              Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
-            in
-            let ms' =
-              CMethod_signature.replace_name_ms ms
-                (Typ.Procname.objc_cpp_replace_method_name procname new_method_name)
-            in
-            let procname' = CMethod_signature.ms_get_name ms' in
-            (ms', procname') )
-          else (ms, procname)
-        in
-        if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms'
-             [body] []
-        then
-          add_method trans_unit_ctx tenv cfg curr_class procname' body ms' return_param_typ_opt
-            is_objc None extra_instrs ~is_destructor_wrapper:false
-    | None ->
-        if set_objc_accessor_attr then
-          ignore
-            (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms
-               [] [])
+    try
+      let ms, body_opt, extra_instrs =
+        CMethod_trans.method_signature_of_decl trans_unit_ctx tenv meth_decl None
+      in
+      match body_opt with
+      | Some body ->
+          let procname = CMethod_signature.ms_get_name ms in
+          let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
+          let ms', procname' =
+            if is_destructor then (
+              (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
+              (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
+              (* The destructor wrapper calls the inner destructor which has the actual body *)
+              if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg
+                   tenv ms [body] []
+              then
+                add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
+                  is_objc None extra_instrs ~is_destructor_wrapper:true ;
+              let new_method_name =
+                Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
+              in
+              let ms' =
+                CMethod_signature.replace_name_ms ms
+                  (Typ.Procname.objc_cpp_replace_method_name procname new_method_name)
+              in
+              let procname' = CMethod_signature.ms_get_name ms' in
+              (ms', procname') )
+            else (ms, procname)
+          in
+          if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
+               ms' [body] []
+          then
+            add_method trans_unit_ctx tenv cfg curr_class procname' body ms' return_param_typ_opt
+              is_objc None extra_instrs ~is_destructor_wrapper:false
+      | None ->
+          if set_objc_accessor_attr then
+            ignore
+              (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
+                 ms [] [])
+    with CFrontend_config.IncorrectAssumption e ->
+      ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
+        e.source_range e.ast_node
 
 
   let process_property_implementation trans_unit_ctx tenv cfg curr_class
