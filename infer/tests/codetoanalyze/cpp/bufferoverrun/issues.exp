@@ -17,6 +17,8 @@ codetoanalyze/cpp/bufferoverrun/simple_vector.cpp, my_vector_oob_Bad, 2, BUFFER_
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, normal_array_bo, 2, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [42, 42] Size: [42, 42]]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, std_array_bo_Bad, 2, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [42, 42] Size: [42, 42]]
 codetoanalyze/cpp/bufferoverrun/trivial.cpp, trivial, 2, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [10, 10] Size: [10, 10]]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, assert_Bad, 6, BUFFER_OVERRUN_L1, [Call,Call,Assignment,Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [6, 6] Size: [5, 5]]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, assert_Good_FP, 6, BUFFER_OVERRUN_L3, [Call,Call,Assignment,Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [4, 4] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, data_Bad, 4, BUFFER_OVERRUN_L1, [Call,Call,Assignment,Call,Call,ArrayDeclaration,Assignment,Assignment,Return,Assignment,Assignment,Return,Assignment,Assignment,ArrayAccess: Offset: [10, 10] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, just_test_model_FP, 16, BUFFER_OVERRUN_L5, [Call,ArrayAccess: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, just_test_model_FP, 18, BUFFER_OVERRUN_L3, [Call,Call,Call,Assignment,Call,Call,Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [1, 1] Size: [0, +oo]]

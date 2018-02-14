@@ -326,20 +326,20 @@ module Make (CFG : ProcCfg.S) = struct
       ArrayBlk.make allocsite offset size stride |> Val.of_array_blk
 
 
-  let prune_unop : Exp.t -> Mem.astate -> Mem.astate =
-    fun e mem ->
+  let prune_unop : PrunePairs.t ref -> Exp.t -> Mem.astate -> Mem.astate =
+    fun prune_pairs e mem ->
       match e with
       | Exp.Var x -> (
         match Mem.find_alias x mem with
         | Some AliasTarget.Simple lv ->
             let v = Mem.find_heap lv mem in
             let v' = Val.prune_zero v in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | Some AliasTarget.Empty lv ->
             let v = Mem.find_heap lv mem in
             let itv_v = Itv.prune_eq (Val.get_itv v) Itv.zero in
             let v' = Val.modify_itv itv_v v in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | None ->
             mem )
       | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
@@ -348,20 +348,20 @@ module Make (CFG : ProcCfg.S) = struct
             let v = Mem.find_heap lv mem in
             let itv_v = Itv.prune_eq (Val.get_itv v) Itv.false_sem in
             let v' = Val.modify_itv itv_v v in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | Some AliasTarget.Empty lv ->
             let v = Mem.find_heap lv mem in
             let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
             let v' = Val.modify_itv itv_v v in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | None ->
             mem )
       | _ ->
           mem
 
 
-  let prune_binop_left : Exp.t -> Mem.astate -> Mem.astate =
-    fun e mem ->
+  let prune_binop_left : PrunePairs.t ref -> Exp.t -> Mem.astate -> Mem.astate =
+    fun prune_pairs e mem ->
       match e with
       | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
       | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
@@ -371,7 +371,7 @@ module Make (CFG : ProcCfg.S) = struct
         | Some lv ->
             let v = Mem.find_heap lv mem in
             let v' = Val.prune_comp comp v (eval e' mem) in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | None ->
             mem )
       | Exp.BinOp (Binop.Eq, Exp.Var x, e') -> (
@@ -379,7 +379,7 @@ module Make (CFG : ProcCfg.S) = struct
         | Some lv ->
             let v = Mem.find_heap lv mem in
             let v' = Val.prune_eq v (eval e' mem) in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | None ->
             mem )
       | Exp.BinOp (Binop.Ne, Exp.Var x, e') -> (
@@ -387,15 +387,15 @@ module Make (CFG : ProcCfg.S) = struct
         | Some lv ->
             let v = Mem.find_heap lv mem in
             let v' = Val.prune_ne v (eval e' mem) in
-            Mem.update_mem (PowLoc.singleton lv) v' mem
+            Mem.update_mem_in_prune prune_pairs lv v' mem
         | None ->
             mem )
       | _ ->
           mem
 
 
-  let prune_binop_right : Exp.t -> Mem.astate -> Mem.astate =
-    fun e mem ->
+  let prune_binop_right : PrunePairs.t ref -> Exp.t -> Mem.astate -> Mem.astate =
+    fun prune_pairs e mem ->
       match e with
       | Exp.BinOp ((Binop.Lt as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Gt as c), e', Exp.Var x)
@@ -403,7 +403,7 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.BinOp ((Binop.Ge as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Eq as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Ne as c), e', Exp.Var x) ->
-          prune_binop_left (Exp.BinOp (comp_rev c, Exp.Var x, e')) mem
+          prune_binop_left prune_pairs (Exp.BinOp (comp_rev c, Exp.Var x, e')) mem
       | _ ->
           mem
 
@@ -416,31 +416,39 @@ module Make (CFG : ProcCfg.S) = struct
     fun e mem -> if is_unreachable_constant e mem then Mem.bot else mem
 
 
-  let rec prune : Exp.t -> Mem.astate -> Mem.astate =
+  let prune : Exp.t -> Mem.astate -> Mem.astate =
     fun e mem ->
-      let mem =
-        mem |> prune_unreachable e |> prune_unop e |> prune_binop_left e |> prune_binop_right e
+      let prune_pairs = ref PrunePairs.empty in
+      let rec prune_helper e mem =
+        let mem =
+          mem |> prune_unreachable e |> prune_unop prune_pairs e |> prune_binop_left prune_pairs e
+          |> prune_binop_right prune_pairs e
+        in
+        match e with
+        | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
+            prune_helper e mem
+        | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
+            prune_helper (Exp.UnOp (Unop.LNot, e, None)) mem
+        | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
+            prune_helper (Exp.Var x) mem
+        | Exp.BinOp (Binop.LAnd, e1, e2) ->
+            mem |> prune_helper e1 |> prune_helper e2
+        | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
+            mem |> prune_helper (Exp.UnOp (Unop.LNot, e1, t))
+            |> prune_helper (Exp.UnOp (Unop.LNot, e2, t))
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ge as c), e1, e2), _)
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Eq as c), e1, e2), _)
+        | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ne as c), e1, e2), _) ->
+            prune_helper (Exp.BinOp (comp_not c, e1, e2)) mem
+        | _ ->
+            mem
       in
-      match e with
-      | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
-          prune e mem
-      | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
-          prune (Exp.UnOp (Unop.LNot, e, None)) mem
-      | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
-          prune (Exp.Var x) mem
-      | Exp.BinOp (Binop.LAnd, e1, e2) ->
-          mem |> prune e1 |> prune e2
-      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
-          mem |> prune (Exp.UnOp (Unop.LNot, e1, t)) |> prune (Exp.UnOp (Unop.LNot, e2, t))
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ge as c), e1, e2), _)
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Eq as c), e1, e2), _)
-      | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ne as c), e1, e2), _) ->
-          prune (Exp.BinOp (comp_not c, e1, e2)) mem
-      | _ ->
-          mem
+      let mem = Mem.apply_latest_prune e mem in
+      let mem = prune_helper e mem in
+      Mem.set_prune_pairs !prune_pairs mem
 
 
   let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =

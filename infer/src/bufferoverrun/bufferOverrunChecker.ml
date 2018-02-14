@@ -204,19 +204,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
             let mem = Dom.Mem.update_mem locs v mem in
-            if PowLoc.is_singleton locs then
-              let loc_v = PowLoc.min_elt locs in
-              match Typ.Procname.get_method pname with
-              | "__inferbo_empty" when Loc.is_return loc_v -> (
-                match Sem.get_formals pdesc with
-                | [(formal, _)] ->
-                    let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
-                    Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+            let mem =
+              if PowLoc.is_singleton locs then
+                let loc_v = PowLoc.min_elt locs in
+                match Typ.Procname.get_method pname with
+                | "__inferbo_empty" when Loc.is_return loc_v -> (
+                  match Sem.get_formals pdesc with
+                  | [(formal, _)] ->
+                      let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
+                      Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+                  | _ ->
+                      assert false )
                 | _ ->
-                    assert false )
-              | _ ->
-                  Dom.Mem.store_simple_alias loc_v exp2 mem
-            else mem
+                    Dom.Mem.store_simple_alias loc_v exp2 mem
+              else mem
+            in
+            let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
+            mem
         | Prune (exp, _, _, _) ->
             Sem.prune exp mem
         | Call (ret, Const Cfun callee_pname, params, location, _) -> (

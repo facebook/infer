@@ -8,6 +8,7 @@
  */
 #include <vector>
 #include <list>
+#include <assert.h>
 
 void out_of_bound_Bad(std::vector<int> v) {
   unsigned int n = v.size();
@@ -155,4 +156,31 @@ void data_Bad() {
   int* p = v.data();
   p[4] = 10;
   p[v[4]] = 1;
+}
+
+void assert_Good() {
+  std::vector<int> v;
+  for (int i = 0; i < 5; i++) {
+    v.push_back(1);
+  }
+  assert(v.size() == 5);
+  v[4] = 1;
+}
+
+void assert_Good_FP(int x) {
+  std::vector<int> v;
+  for (int i = 0; i < 5; i++) {
+    v.push_back(1);
+  }
+  assert(((v.size() == 5) ? 1 : 0) ? 1 : 0);
+  v[4] = 1;
+}
+
+void assert_Bad() {
+  std::vector<int> v;
+  for (int i = 0; i < 5; i++) {
+    v.push_back(1);
+  }
+  assert(v.size() == 5);
+  v[6] = 1;
 }
