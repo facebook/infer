@@ -122,9 +122,10 @@ module RequiredProps = struct
         []
 
 
-  let report_missing_required_prop summary prop_string loc =
+  let report_missing_required_prop summary prop_string parent_typename loc =
     let message =
-      F.asprintf "@Prop %s is required, but not set before the call to build()" prop_string
+      F.asprintf "@Prop %s is required for component %s, but is not set before the call to build()"
+        prop_string (Typ.Name.name parent_typename)
     in
     let exn =
       Exceptions.Checkers (IssueType.missing_required_prop, Localise.verbatim_desc message)
@@ -178,7 +179,8 @@ module RequiredProps = struct
             List.iter
               ~f:(fun required_prop ->
                 if not (has_prop prop_set required_prop) then
-                  report_missing_required_prop summary required_prop (Specs.get_loc summary) )
+                  report_missing_required_prop summary required_prop parent_typename
+                    (Specs.get_loc summary) )
               required_props
         | _ ->
             () )
