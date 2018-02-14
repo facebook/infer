@@ -30,11 +30,10 @@ module IO = struct
 
 
   let prepare () =
-    if Config.log_events then (
-      close () ;
-      let fname = events_dir ^/ (Unix.getpid () |> Pid.to_string) ^ log_file_extension in
-      let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
-      out_chan := Some oc )
+    close () ;
+    let fname = events_dir ^/ (Unix.getpid () |> Pid.to_string) ^ log_file_extension in
+    let oc = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 fname in
+    out_chan := Some oc
 
 
   let write fmt =
@@ -71,8 +70,6 @@ end = struct
         Unix.putenv ~key:infer_run_identifier_env_var ~data:new_id ;
         new_id
 end
-
-let get_log_identifier () = Random_id.get ()
 
 let bind_default opt map_func prev = match opt with Some x -> map_func x prev | None -> prev
 
@@ -188,36 +185,64 @@ let sysname =
   with _ -> "Unknown"
 
 
-let create_row event =
-  incr sequence_ctr ;
-  let open JsonBuilder in
-  let base =
-    empty |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
-    |> add_string ~key:"event_tag" ~data:(string_of_event event)
-    |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
-    |> add_string ~key:"infer_commit" ~data:Version.commit
-    |> add_int ~key:"is_originator" ~data:(if CLOpt.is_originator then 1 else 0)
-    |> add_int ~key:"pid" ~data:(pid ())
-    |> add_string ~key:"run_identifier" ~data:(get_log_identifier ())
-    |> add_int ~key:"sequence" ~data:(!sequence_ctr - 1) |> add_string ~key:"sysname" ~data:sysname
-    |> add_int ~key:"time" ~data:(int_of_float (Unix.time ()))
-  in
-  ( match event with
-  | UncaughtException (exn, exitcode) ->
-      base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
-      |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
-      |> add_int ~key:"exitcode" ~data:exitcode
-  | FrontendException record ->
-      create_frontend_exception_row base record
-  | ProceduresTranslatedSummary record ->
-      create_procedures_translated_row base record
-  | AnalysisStats record ->
-      create_analysis_stats_row base record )
-  |> JsonBuilder.to_json
+module type S = sig
+  val get_log_identifier : unit -> string
+
+  val prepare : unit -> unit
+
+  val log : event -> unit
+
+  val dump : unit -> unit
+end
+
+module LoggerImpl : S = struct
+  let get_log_identifier () = Random_id.get ()
+
+  let create_row event =
+    incr sequence_ctr ;
+    let open JsonBuilder in
+    let base =
+      empty |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
+      |> add_string ~key:"event_tag" ~data:(string_of_event event)
+      |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
+      |> add_string ~key:"infer_commit" ~data:Version.commit
+      |> add_int ~key:"is_originator" ~data:(if CLOpt.is_originator then 1 else 0)
+      |> add_int ~key:"pid" ~data:(pid ())
+      |> add_string ~key:"run_identifier" ~data:(get_log_identifier ())
+      |> add_int ~key:"sequence" ~data:(!sequence_ctr - 1)
+      |> add_string ~key:"sysname" ~data:sysname
+      |> add_int ~key:"time" ~data:(int_of_float (Unix.time ()))
+    in
+    ( match event with
+    | UncaughtException (exn, exitcode) ->
+        base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
+        |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
+        |> add_int ~key:"exitcode" ~data:exitcode
+    | FrontendException record ->
+        create_frontend_exception_row base record
+    | ProceduresTranslatedSummary record ->
+        create_procedures_translated_row base record
+    | AnalysisStats record ->
+        create_analysis_stats_row base record )
+    |> JsonBuilder.to_json
 
 
-let prepare = IO.prepare
+  let prepare = IO.prepare
 
-let log event = IO.write "%s\n" (create_row event)
+  let log event = IO.write "%s\n" (create_row event)
 
-let dump = IO.dump
+  let dump = IO.dump
+end
+
+module DummyLogger : S = struct
+  let get_log_identifier () = ""
+
+  let prepare () = ()
+
+  let log _ = ()
+
+  let dump _ = ()
+end
+
+(* use real logger if logging is enabled, dummy logger otherwise *)
+include ( val if Config.log_events then (module LoggerImpl : S) else (module DummyLogger : S) )
