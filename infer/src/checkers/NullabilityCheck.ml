@@ -289,8 +289,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_nullable_ap (ret_var, []) call_sites astate )
     | Call (Some ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
-    | Assign (lhs, rhs, loc)
+    | Assign (lhs_access_expr, rhs, loc)
       -> (
+        let lhs = AccessExpression.to_access_path lhs_access_expr in
         Option.iter
           ~f:(fun (nullable_ap, call_sites) ->
             if not (is_pointer_assignment proc_data.ProcData.tenv nullable_ap rhs) then

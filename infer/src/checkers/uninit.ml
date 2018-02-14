@@ -207,11 +207,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       else astate.prepost
     in
     match instr with
-    | Assign
-        ( (((lhs_var, lhs_typ), apl) as lhs_ap)
-        , (HilExp.AccessExpression access_expr as rhs_expr)
-        , loc ) ->
-        let rhs_base, al = AccessExpression.to_access_path access_expr in
+    | Assign (lhs_access_expr, (HilExp.AccessExpression rhs_access_expr as rhs_expr), loc) ->
+        let ((lhs_var, lhs_typ), apl) as lhs_ap =
+          AccessExpression.to_access_path lhs_access_expr
+        in
+        let rhs_base, al = AccessExpression.to_access_path rhs_access_expr in
         let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
         let uninit_vars =
           if Int.equal (List.length apl) 0 then
@@ -224,7 +224,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (Typ.is_pointer lhs_typ)
         then report_intra (rhs_base, al) loc (snd extras) ;
         {astate with uninit_vars; prepost}
-    | Assign (((lhs_ap, apl) as lhs), rhs, _) ->
+    | Assign (lhs_access_expr, rhs, _) ->
+        let (lhs_ap, apl) as lhs = AccessExpression.to_access_path lhs_access_expr in
         let uninit_vars = D.remove lhs astate.uninit_vars in
         let prepost = update_prepost (lhs_ap, apl) rhs in
         {astate with uninit_vars; prepost}

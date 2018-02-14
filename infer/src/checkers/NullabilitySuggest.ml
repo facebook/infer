@@ -93,7 +93,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call _ ->
         (* For now we just assume the callee always return non-null *)
         astate
-    | Assign (lhs, rhs, loc) ->
+    | Assign (lhs_access_expr, rhs, loc) ->
+        let lhs = AccessExpression.to_access_path lhs_access_expr in
         if not (is_access_nullable lhs proc_data) then
           match nullable_usedef_chain_of rhs lhs astate loc with
           | Some udchain ->

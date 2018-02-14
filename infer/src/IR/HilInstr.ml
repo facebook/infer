@@ -21,14 +21,16 @@ let pp_call fmt = function
 
 
 type t =
-  | Assign of AccessPath.t * HilExp.t * Location.t
+  | Assign of AccessExpression.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
   [@@deriving compare]
 
 let pp fmt = function
-  | Assign (access_path, exp, loc) ->
-      F.fprintf fmt "%a := %a [%a]" AccessPath.pp access_path HilExp.pp exp Location.pp loc
+  | Assign (access_expr, exp, loc) ->
+      F.fprintf fmt "%a := %a [%a]" AccessPath.pp
+        (AccessExpression.to_access_path access_expr)
+        HilExp.pp exp Location.pp loc
   | Assume (exp, _, _, loc) ->
       F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
   | Call (ret_opt, call, actuals, _, loc) ->
@@ -51,7 +53,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
     | AccessExpression rhs_access_expr ->
         Bind (lhs_id, AccessExpression.to_access_path rhs_access_expr)
     | _ ->
-        Instr (Assign (((lhs_id, rhs_typ), []), rhs_hil_exp, loc))
+        Instr (Assign (AccessExpression.Base (lhs_id, rhs_typ), rhs_hil_exp, loc))
   in
   match instr with
   | Load (lhs_id, rhs_exp, rhs_typ, loc) ->
@@ -67,10 +69,10 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
     when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store (lhs_exp, typ, rhs_exp, loc) ->
-      let lhs_access_path =
+      let lhs_access_expr =
         match exp_of_sil lhs_exp typ with
         | AccessExpression access_expr ->
-            AccessExpression.to_access_path access_expr
+            access_expr
         | BinaryOperator (_, exp0, exp1) -> (
           match
             (* pointer arithmetic. somewhere in one of the expressions, there should be at least
@@ -80,11 +82,11 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
             HilExp.get_access_paths exp0
           with
           | ap :: _ ->
-              ap
+              AccessExpression.of_access_path ap
           | [] ->
             match HilExp.get_access_paths exp1 with
             | ap :: _ ->
-                ap
+                AccessExpression.of_access_path ap
             | [] ->
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
@@ -95,12 +97,12 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
             let dummy_base_var =
               Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
             in
-            ((dummy_base_var, Typ.void_star), [])
+            AccessExpression.Base (dummy_base_var, Typ.void_star)
         | _ ->
             L.(die InternalError)
               "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc
       in
-      Instr (Assign (lhs_access_path, exp_of_sil rhs_exp typ, loc))
+      Instr (Assign (lhs_access_expr, exp_of_sil rhs_exp typ, loc))
   | Call (ret_opt, call_exp, formals, loc, call_flags) ->
       let hil_ret = Option.map ~f:(fun (ret_id, ret_typ) -> (Var.of_id ret_id, ret_typ)) ret_opt in
       let hil_call =

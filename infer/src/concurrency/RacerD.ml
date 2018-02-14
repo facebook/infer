@@ -711,7 +711,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             {astate_callee with ownership; attribute_map}
         | _ ->
             astate_callee )
-    | Assign (lhs_access_path, rhs_exp, loc) ->
+    | Assign (lhs_access_expr, rhs_exp, loc) ->
+        let lhs_access_path = AccessExpression.to_access_path lhs_access_expr in
         let rhs_accesses =
           add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
             astate.ownership proc_data

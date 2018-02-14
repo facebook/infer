@@ -260,12 +260,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_opt, Direct callee_procname, actuals, _, _) ->
         let summary = Summary.read_summary proc_data.pdesc callee_procname in
         apply_callee_summary summary caller_pname ret_opt actuals astate
-    | Assign (lhs_ap, HilExp.AccessExpression rhs_ae, _)
+    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _)
       -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
            tmp.getBar() *)
-        let lhs_access_path = Domain.LocalAccessPath.make lhs_ap caller_pname in
+        let lhs_access_path =
+          Domain.LocalAccessPath.make (AccessExpression.to_access_path lhs_ae) caller_pname
+        in
         let rhs_access_path =
           Domain.LocalAccessPath.make (AccessExpression.to_access_path rhs_ae) caller_pname
         in

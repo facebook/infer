@@ -68,7 +68,7 @@ struct
         let actual_state' =
           IdAccessPathMapDomain.fold
             (fun id access_path astate_acc ->
-              let lhs_access_path = ((id, Typ.mk Typ.Tvoid), []) in
+              let lhs_access_path = AccessExpression.Base (id, Typ.mk Typ.Tvoid) in
               let dummy_assign =
                 HilInstr.Assign
                   ( lhs_access_path

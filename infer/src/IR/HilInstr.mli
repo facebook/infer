@@ -14,7 +14,8 @@ module F = Format
 type call = Direct of Typ.Procname.t | Indirect of AccessPath.t [@@deriving compare]
 
 type t =
-  | Assign of AccessPath.t * HilExp.t * Location.t  (** LHS access path, RHS expression *)
+  | Assign of AccessExpression.t * HilExp.t * Location.t
+      (** LHS access expression, RHS expression *)
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
       (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
   | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
