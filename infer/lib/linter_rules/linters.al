@@ -40,39 +40,35 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 // Fires whenever a NSNumber is dangerously coerced to a boolean in a comparison
 DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 
-	LET is_binop = is_node("BinaryOperator");
-	LET is_binop_eq = is_binop_with_kind("EQ");
-	LET is_binop_ne = is_binop_with_kind("NE");
-	LET is_binop_neq = is_binop_eq OR is_binop_ne;
-	LET is_unop_lnot = is_unop_with_kind("LNot");
-	LET is_implicit_cast_expr = is_node("ImplicitCastExpr");
-	LET is_expr_with_cleanups = is_node("ExprWithCleanups");
-	LET is_nsnumber = isa("NSNumber");
+	LET bool_op =
+		is_binop_with_kind("LAnd") OR is_binop_with_kind("LOr")
+		OR is_unop_with_kind("LNot") OR is_unop_with_kind("LNot");
 
-  LET eu =(
-	 					(NOT is_binop_neq)
-						AND (is_expr_with_cleanups
-	 								OR is_implicit_cast_expr
-	 								OR is_binop
-	 								OR is_unop_lnot)
-					)
-						HOLDS-UNTIL
-					(
-						is_nsnumber
-					);
+  LET comparison_with_integral =
+	  ( is_binop_with_kind("EQ") OR is_binop_with_kind("NE")
+			OR is_binop_with_kind("GT") OR is_binop_with_kind("GE")
+			OR is_binop_with_kind("LT") OR is_binop_with_kind("LE"))
+		AND
+		( (is_node("ImplicitCastExpr") AND has_type("NSNumber *")
+			AND (has_cast_kind("IntegralToPointer") OR has_cast_kind("NullToPointer"))
+		) HOLDS-NEXT);
 
-  LET etx = eu HOLDS-NEXT WITH-TRANSITION Cond;
+	LET root_is_stmt_expecting_bool =
+		is_node("IfStmt") OR is_node("ForStmt") OR is_node("WhileStmt");
 
+	LET use_num_as_bool =
+		(bool_op OR root_is_stmt_expecting_bool) AND (has_type("NSNumber *") HOLDS-NEXT);
 
- 	SET report_when =
-					WHEN
-         		etx
-					HOLDS-IN-NODE IfStmt, ForStmt, WhileStmt, ConditionalOperator;
+	LET bad_conditional =
+	  is_node("ConditionalOperator") AND (has_type("NSNumber *") HOLDS-NEXT WITH-TRANSITION Cond);
 
-  SET message = "Implicitly checking whether NSNumber pointer is nil";
+	SET report_when =
+		use_num_as_bool OR comparison_with_integral OR bad_conditional;
+
+  SET message = "Implicitly checking whether NSNumber pointer is nil or comparing to integral value";
 
 	SET suggestion =
-		"Did you mean to compare against the unboxed value instead? Please either explicitly compare the NSNumber instance to nil, or use one of the NSNumber accessors before the comparison.";
+		"Did you mean to use/compare against the unboxed value instead? Please either explicitly compare the NSNumber instance to nil, or use one of the NSNumber accessors before the comparison.";
 };
 
 
