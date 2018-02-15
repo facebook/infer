@@ -50,6 +50,44 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
   List.fold_left cycle_str ~f:(fun acc s -> Format.sprintf "%s\n %s" acc s) ~init:""
 
 
+let edge_is_strong tenv obj_edge =
+  let open RetainCyclesType in
+  (* returns items annotation for field fn in struct t *)
+  let get_item_annotation (t: Typ.t) fn =
+    match t.desc with
+    | Tstruct name
+      -> (
+        let equal_fn (fn', _, _) = Typ.Fieldname.equal fn fn' in
+        match Tenv.lookup tenv name with
+        | Some {fields; statics} ->
+            let find fields =
+              List.find ~f:equal_fn fields |> Option.value_map ~f:trd3 ~default:[]
+            in
+            find fields @ find statics
+        | None ->
+            [] )
+    | _ ->
+        []
+  in
+  let has_weak_or_unretained_or_assign params =
+    List.exists
+      ~f:(fun att ->
+        String.equal Config.unsafe_unret att || String.equal Config.weak att
+        || String.equal Config.assign att )
+      params
+  in
+  let ia = get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name in
+  let weak_edge =
+    List.exists
+      ~f:(fun ((ann: Annot.t), _) ->
+        ( String.equal ann.class_name Config.property_attributes
+        || String.equal ann.class_name Config.ivar_attributes )
+        && has_weak_or_unretained_or_assign ann.parameters )
+      ia
+  in
+  not weak_edge
+
+
 let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
@@ -66,7 +104,7 @@ let get_cycle_blocks root_node exp =
       None
 
 
-let get_cycle root prop =
+let get_cycle root tenv prop =
   let open RetainCyclesType in
   let sigma = prop.Prop.sigma in
   let get_points_to e =
@@ -82,33 +120,32 @@ let get_cycle root prop =
     | [] ->
         (rev_path, false)
     | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
+        let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
+        let obj_edge = {rc_from= from_node; rc_field} in
+        let edge = Object obj_edge in
         (* found root, finish the cycle *)
-        if Exp.equal f_exp root_node.rc_node_exp then
-          let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-          let edge = Object {rc_from= from_node; rc_field} in
+        if edge_is_strong tenv obj_edge && Exp.equal f_exp root_node.rc_node_exp then
           (edge :: rev_path, true) (* we already visited f_exp, stop *)
         else if List.mem ~equal:Exp.equal visited f_exp then (rev_path, false)
         else
           let visited' = from_node.rc_node_exp :: visited in
           let cycle_block_opt = get_cycle_blocks root_node f_exp in
           (* cycle with a block *)
-          if Option.is_some cycle_block_opt then
+          if edge_is_strong tenv obj_edge && Option.is_some cycle_block_opt then
             let procname, var = Option.value_exn cycle_block_opt in
-            let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
             (* From the captured variables we get the actual name of the variable
             that is more useful for the error message *)
             let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
-            let edge1 = Object {rc_from= updated_from_node; rc_field} in
+            let edge = Object {obj_edge with rc_from= updated_from_node} in
             let edge2 = Block procname in
-            (edge2 :: edge1 :: rev_path, true)
+            (edge2 :: edge :: rev_path, true)
           else
             let res =
               match get_points_to f_exp with
               | None ->
                   (rev_path, false)
-              | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}) ->
-                  let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
-                  let edge = Object {rc_from= from_node; rc_field} in
+              | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te})
+                when edge_is_strong tenv obj_edge ->
                   let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
                   dfs ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path) ~fields:new_fields
                     ~visited:visited'
@@ -139,63 +176,13 @@ let get_cycle root prop =
       []
 
 
-let get_var_retain_cycle hpred prop_ =
+let get_var_retain_cycle hpred tenv prop_ =
   (* returns the pvars of the first cycle we find in sigma.
      This is an heuristic that works if there is one cycle.
      In case there are more than one cycle we may return not necessarily
      the one we are looking for. *)
-  let cycle_elements = get_cycle hpred prop_ in
+  let cycle_elements = get_cycle hpred tenv prop_ in
   RetainCyclesType.create_cycle cycle_elements
-
-
-(** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
-    weak/unsafe_unretained/assing *)
-let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
-  let open RetainCyclesType in
-  (* returns items annotation for field fn in struct t *)
-  let get_item_annotation (t: Typ.t) fn =
-    match t.desc with
-    | Tstruct name
-      -> (
-        let equal_fn (fn', _, _) = Typ.Fieldname.equal fn fn' in
-        match Tenv.lookup tenv name with
-        | Some {fields; statics} ->
-            List.find ~f:equal_fn (fields @ statics) |> Option.value_map ~f:trd3 ~default:[]
-        | None ->
-            [] )
-    | _ ->
-        []
-  in
-  let rec has_weak_or_unretained_or_assign params =
-    match params with
-    | [] ->
-        false
-    | att :: _
-      when String.equal Config.unsafe_unret att || String.equal Config.weak att
-           || String.equal Config.assign att ->
-        true
-    | _ :: params' ->
-        has_weak_or_unretained_or_assign params'
-  in
-  let do_annotation ((a: Annot.t), _) =
-    ( String.equal a.class_name Config.property_attributes
-    || String.equal a.class_name Config.ivar_attributes )
-    && has_weak_or_unretained_or_assign a.parameters
-  in
-  let rec do_cycle c =
-    let open RetainCyclesType in
-    match c with
-    | [] ->
-        false
-    | edge :: c' ->
-      match edge with
-      | Object obj ->
-          let ia = get_item_annotation obj.rc_from.rc_node_typ obj.rc_field.rc_field_name in
-          if List.exists ~f:do_annotation ia then true else do_cycle c'
-      | Block _ ->
-          false
-  in
-  do_cycle cycle.rc_elements
 
 
 let exn_retain_cycle tenv hpred cycle =
@@ -216,8 +203,8 @@ let report_cycle tenv hpred original_prop =
         Otherwise we report a retain cycle. *)
   let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
   let prop = remove_opt original_prop in
-  match get_var_retain_cycle hpred prop with
-  | Some cycle when not (cycle_has_weak_or_unretained_or_assign_field tenv cycle) ->
+  match get_var_retain_cycle hpred tenv prop with
+  | Some cycle ->
       RetainCyclesType.print_cycle cycle ;
       Some (exn_retain_cycle tenv hpred cycle)
   | _ ->
