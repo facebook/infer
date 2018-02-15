@@ -323,6 +323,12 @@ struct NoDestructor {};
 
 void dead_struct_no_destructor_bad() { NoDestructor dead; }
 
+struct NoDestructorDefinition {
+  ~NoDestructorDefinition();
+};
+
+void dead_struct_no_destructor_definition_ok() { NoDestructorDefinition dead; }
+
 std::mutex my_mutex;
 
 void dead_lock_guard_ok() { std::lock_guard<std::mutex> lock(my_mutex); }

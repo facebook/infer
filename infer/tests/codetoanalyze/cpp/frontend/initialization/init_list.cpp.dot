@@ -22,41 +22,49 @@ digraph cfg {
 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_1" [label="1: Start init_list::zero_init_record\nFormals: \nLocals:  c:init_list::C y:init_list::Y \n   DECLARE_LOCALS(&return,&c,&y); [line 33, column 1]\n " color=yellow style=filled]
 	
 
-	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_1" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" ;
+	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_1" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" ;
 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" [label="2: Exit init_list::zero_init_record \n  " color=yellow style=filled]
 	
 
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  DeclStmt \n   _fun_init_list::C_C(&c:init_list::C*) [line 35, column 5]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 36, column 1]\n  _fun_init_list::C_~C(&c:init_list::C*) [line 36, column 1]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_2" ;
-"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   *&y.z:int=0 [line 34, column 7]\n  *&y.x.a:int=0 [line 34, column 7]\n  *&y.x.p:int*=null [line 34, column 7]\n " shape="box"]
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" [label="4:  DeclStmt \n   _fun_init_list::C_C(&c:init_list::C*) [line 35, column 5]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_3" ;
+"zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" [label="5:  DeclStmt \n   *&y.z:int=0 [line 34, column 7]\n  *&y.x.a:int=0 [line 34, column 7]\n  *&y.x.p:int*=null [line 34, column 7]\n " shape="box"]
+	
+
+	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" ;
 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_1" [label="1: Start init_list::record_init\nFormals: \nLocals:  c:init_list::C y2:init_list::Y y1:init_list::Y x:init_list::X \n   DECLARE_LOCALS(&return,&c,&y2,&y1,&x); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_1" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" ;
+	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_1" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" ;
 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" [label="2: Exit init_list::record_init \n  " color=yellow style=filled]
 	
 
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  DeclStmt \n   _fun_init_list::C_C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 43, column 5]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" [label="3:  Destruction \n   _=*&c:init_list::C [line 44, column 1]\n  _fun_init_list::C_~C(&c:init_list::C*) [line 44, column 1]\n  _=*&x:init_list::X [line 44, column 1]\n  _fun_init_list::X_~X(&x:init_list::X*) [line 44, column 1]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_2" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   *&y2.z:int=1 [line 41, column 7]\n  *&y2.x.a:int=2 [line 41, column 11]\n  *&y2.x.p:int*=null [line 41, column 11]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" [label="4:  DeclStmt \n   _fun_init_list::C_C(&c:init_list::C*,1:int,2:int,&x:init_list::X&) [line 43, column 5]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_3" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" [label="5:  DeclStmt \n   *&y1.z:int=1 [line 40, column 7]\n  _fun_init_list::X_X(&y1.x:init_list::X*,&x:init_list::X&) [line 40, column 11]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" [label="5:  DeclStmt \n   *&y2.z:int=1 [line 41, column 7]\n  *&y2.x.a:int=2 [line 41, column 11]\n  *&y2.x.p:int*=null [line 41, column 11]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_4" ;
-"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   *&x.a:int=1 [line 39, column 6]\n  *&x.p:int*=null [line 39, column 6]\n " shape="box"]
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" [label="6:  DeclStmt \n   *&y1.z:int=1 [line 40, column 7]\n  _fun_init_list::X_X(&y1.x:init_list::X*,&x:init_list::X&) [line 40, column 11]\n " shape="box"]
 	
 
 	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_5" ;
+"record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" [label="7:  DeclStmt \n   *&x.a:int=1 [line 39, column 6]\n  *&x.p:int*=null [line 39, column 6]\n " shape="box"]
+	
+
+	 "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_7" -> "record_init#init_list#9390182661430352809.a0bac2a3cf71c0b7c450ce49d030845f_6" ;
 "list_init#init_list#18348854466346904105.0126b9f1f80f91b73d5fbdbf2bc60754_1" [label="1: Start init_list::list_init\nFormals: \nLocals:  ty:init_list::Y[3*24] yref:init_list::Y& y:init_list::Y ti:int[4*4] \n   DECLARE_LOCALS(&return,&ty,&yref,&y,&ti); [line 46, column 1]\n " color=yellow style=filled]
 	
 

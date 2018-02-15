@@ -1,17 +1,17 @@
 /* @generated */
 digraph cfg {
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_1" [label="1: Start temp_object::assign_temp_div0\nFormals: \nLocals:  x:temp_object::X 0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const  \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 28, column 1]\n " color=yellow style=filled]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_1" [label="1: Start temp_object::assign_temp_div0\nFormals: \nLocals:  x:temp_object::X 0$?%__sil_tmpSIL_materialize_temp__n$3:temp_object::X const  \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 28, column 1]\n " color=yellow style=filled]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_1" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" ;
 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_2" [label="2: Exit temp_object::assign_temp_div0 \n  " color=yellow style=filled]
 	
 
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" [label="3:  Return Stmt \n   _=*&x:temp_object::X [line 30, column 10]\n  n$1=_fun_temp_object::X_div(&x:temp_object::X&) [line 30, column 10]\n  *&return:int=n$1 [line 30, column 3]\n " shape="box"]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" [label="3:  Return Stmt \n   _=*&x:temp_object::X [line 30, column 10]\n  n$1=_fun_temp_object::X_div(&x:temp_object::X&) [line 30, column 10]\n  *&return:int=n$1 [line 30, column 3]\n  _=*&x:temp_object::X [line 30, column 16]\n  _fun_temp_object::X_~X(&x:temp_object::X*) [line 30, column 16]\n " shape="box"]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_2" ;
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" [label="4:  DeclStmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const *,0:int,1:int) [line 29, column 9]\n  _fun_temp_object::X_X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const &) [line 29, column 9]\n " shape="box"]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" [label="4:  DeclStmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$3:temp_object::X const *,0:int,1:int) [line 29, column 9]\n  _fun_temp_object::X_X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$3:temp_object::X const &) [line 29, column 9]\n " shape="box"]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" ;

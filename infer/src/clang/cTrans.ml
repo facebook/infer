@@ -680,13 +680,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match destruct_decl_ref_opt with
     | Some decl_ref -> (
       match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
-      | Some CXXDestructorDecl (_, named_decl_info, _, {fdi_body= None}, _) ->
-          L.(debug Capture Verbose)
-            "@\n Trying to translate destructor call, but found empty destructor body for %s@\n@."
-            (CAst_utils.get_unqualified_name named_decl_info) ;
-          empty_res_trans
-      | Some CXXDestructorDecl (_, _, _, {fdi_body= Some _}, _)
-      (* Translate only those destructors that have bodies *) ->
+      | Some CXXDestructorDecl _ ->
           method_deref_trans ~is_inner_destructor trans_state pvar_trans_result decl_ref si
             `CXXDestructor
       | _ ->
@@ -2670,7 +2664,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let loc = CLocation.get_sil_location stmt_info context in
       let id, instr = assign_captured_var loc pvar_typ in
       let trans_results = {empty_res_trans with instrs= [instr]} in
-      (trans_results :: trans_results_acc, (Exp.Var id, fst pvar_typ, snd pvar_typ) :: captured_vars_acc)
+      ( trans_results :: trans_results_acc
+      , (Exp.Var id, fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
     in
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this}
@@ -2680,7 +2675,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* capture and init *)
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
           ( translate_capture_init pvar_typ init_decl :: trans_results_acc
-          ,  (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
+          , (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
       | Some captured_var_decl_ref, None ->
           (* just capture *)
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in

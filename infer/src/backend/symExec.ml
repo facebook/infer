@@ -1537,11 +1537,13 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
     | Java _ ->
         (* FIXME (T19882766): we need to disable this for Java because it breaks too many tests *)
         false
-    | ObjC_Cpp _ ->
+    | ObjC_Cpp cpp_name ->
         (* FIXME: we need to work around a frontend hack for std::shared_ptr
          * to silent some of the uninitialization warnings *)
-        if String.is_suffix ~suffix:"_std__shared_ptr" (Typ.Procname.to_string callee_pname) then
-          false
+        if String.is_suffix ~suffix:"_std__shared_ptr" (Typ.Procname.to_string callee_pname)
+           (* Abduced parameters for the empty destructor body cause `Cannot star` *)
+           || Typ.Procname.ObjC_Cpp.is_destructor cpp_name
+        then false
         else true
     | _ ->
         true
