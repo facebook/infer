@@ -28,44 +28,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
-  (* propagate attributes from the leaves to the root of an RHS Hil expression *)
-  let rec attributes_of_expr attribute_map e =
-    let open HilExp in
-    let open Domain in
-    match e with
-    | HilExp.AccessExpression access_expr -> (
-      try AttributeMapDomain.find (AccessExpression.to_access_path access_expr) attribute_map
-      with Not_found -> AttributeSetDomain.empty )
-    | Constant _ ->
-        AttributeSetDomain.of_list [Attribute.Functional]
-    | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
-        attributes_of_expr attribute_map expr
-    | UnaryOperator (_, expr, _) ->
-        attributes_of_expr attribute_map expr
-    | BinaryOperator (_, expr1, expr2) ->
-        let attributes1 = attributes_of_expr attribute_map expr1 in
-        let attributes2 = attributes_of_expr attribute_map expr2 in
-        AttributeSetDomain.join attributes1 attributes2
-    | Closure _ | Sizeof _ ->
-        AttributeSetDomain.empty
-
-
-  let rec ownership_of_expr expr ownership =
-    let open Domain in
-    let open HilExp in
-    match expr with
-    | AccessExpression access_expr ->
-        OwnershipDomain.get_owned (AccessExpression.to_access_path access_expr) ownership
-    | Constant _ ->
-        OwnershipAbstractValue.owned
-    | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e) ->
-        ownership_of_expr e ownership
-    | _ ->
-        OwnershipAbstractValue.unowned
-
-
   let propagate_attributes lhs_access_path rhs_exp attribute_map =
-    let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
+    let rhs_attributes = Domain.attributes_of_expr attribute_map rhs_exp in
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
 
@@ -77,16 +41,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let ownership_value =
         match accesses with
         | [] ->
-            ownership_of_expr rhs_exp ownership
+            Domain.ownership_of_expr rhs_exp ownership
         | [_]
           when match Domain.OwnershipDomain.get_owned (lhs_root, []) ownership with
                | Domain.OwnershipAbstractValue.OwnedIf _ ->
                    true
                | _ ->
                    false ->
-            ownership_of_expr rhs_exp ownership
+            Domain.ownership_of_expr rhs_exp ownership
         | _ when Domain.OwnershipDomain.is_owned lhs_access_path ownership ->
-            ownership_of_expr rhs_exp ownership
+            Domain.ownership_of_expr rhs_exp ownership
         | _ ->
             Domain.OwnershipAbstractValue.unowned
       in
@@ -125,42 +89,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (ownership', attribute_map')
 
 
-  (** return true if this function is library code from the JDK core libraries or Android *)
-  let is_java_library = function
-    | Typ.Procname.Java java_pname -> (
-      match Typ.Procname.Java.get_package java_pname with
-      | Some package_name ->
-          String.is_prefix ~prefix:"java." package_name
-          || String.is_prefix ~prefix:"android." package_name
-          || String.is_prefix ~prefix:"com.google." package_name
-      | None ->
-          false )
-    | _ ->
-        false
-
-
-  let is_builder_function = function
-    | Typ.Procname.Java java_pname ->
-        String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
-    | _ ->
-        false
-
-
-  let has_return_annot predicate pn =
-    Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
-
-
   let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
       attribute_map (proc_data: extras ProcData.t) =
+    let open RacerDConfig in
     let thread_safe_or_thread_confined annot =
       Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
     in
     if call_flags.cf_interface && Typ.Procname.is_java pname
-       && not (is_java_library pname || is_builder_function pname)
+       && not (Models.is_java_library pname || Models.is_builder_function pname)
        (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
           thread-safe (would be unreasonable to ask everyone to annotate them) *)
        && not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname)
-       && not (has_return_annot thread_safe_or_thread_confined pname)
+       && not (Models.has_return_annot thread_safe_or_thread_confined pname)
     then
       let open Domain in
       let pre = AccessData.make locks threads False proc_data.pdesc in
@@ -229,93 +169,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~init:accesses (HilExp.get_access_paths exp)
 
 
-  let is_functional pname =
-    let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
-    let is_modeled_functional = function
-      | Typ.Procname.Java java_pname -> (
-        match
-          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-        with
-        | "android.content.res.Resources", method_name ->
-            (* all methods of Resources are considered @Functional except for the ones in this
-               blacklist *)
-            let non_functional_resource_methods =
-              [ "getAssets"
-              ; "getConfiguration"
-              ; "getSystem"
-              ; "newTheme"
-              ; "openRawResource"
-              ; "openRawResourceFd" ]
-            in
-            not (List.mem ~equal:String.equal non_functional_resource_methods method_name)
-        | _ ->
-            false )
-      | _ ->
-          false
-    in
-    is_annotated_functional pname || is_modeled_functional pname
-
-
-  let acquires_ownership pname tenv =
-    let is_allocation pn =
-      Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
-    in
-    (* identify library functions that maintain ownership invariants behind the scenes *)
-    let is_owned_in_library = function
-      | Typ.Procname.Java java_pname -> (
-        match
-          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-        with
-        | "javax.inject.Provider", "get" ->
-            (* in dependency injection, the library allocates fresh values behind the scenes *)
-            true
-        | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance" ->
-            (* reflection can perform allocations *)
-            true
-        | "java.lang.Object", "clone" ->
-            (* cloning is like allocation *)
-            true
-        | "java.lang.ThreadLocal", "get" ->
-            (* ThreadLocal prevents sharing between threads behind the scenes *)
-            true
-        | ("android.app.Activity" | "android.view.View"), "findViewById" ->
-            (* assume findViewById creates fresh View's (note: not always true) *)
-            true
-        | ( ( "android.support.v4.util.Pools$Pool"
-            | "android.support.v4.util.Pools$SimplePool"
-            | "android.support.v4.util.Pools$SynchronizedPool" )
-          , "acquire" ) ->
-            (* a pool should own all of its objects *)
-            true
-        | _ ->
-            false )
-      | _ ->
-          false
-    in
-    is_allocation pname || is_owned_in_library pname
-    || PatternMatch.override_exists is_owned_in_library tenv pname
-
-
-  let is_threadsafe_collection pn tenv =
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
-        let aux tn _ =
-          match Typ.Name.name tn with
-          | "java.util.concurrent.ConcurrentMap"
-          | "java.util.concurrent.CopyOnWriteArrayList"
-          | "android.support.v4.util.Pools$SynchronizedPool" ->
-              true
-          | _ ->
-              false
-        in
-        PatternMatch.supertype_exists tenv aux typename
-    | _ ->
-        false
-
-
   let is_synchronized_container callee_pname ((_, (base_typ: Typ.t)), accesses) tenv =
-    if is_threadsafe_collection callee_pname tenv then true
+    let open RacerDConfig in
+    if Models.is_threadsafe_collection callee_pname tenv then true
     else
       let is_annotated_synchronized base_typename container_field tenv =
         match Tenv.lookup tenv base_typename with
@@ -394,28 +250,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           tenv caller_pdesc astate
     | None, _ ->
         Summary.read_summary caller_pdesc callee_pname
-
-
-  (* return true if the given procname boxes a primitive type into a reference type *)
-  let is_box = function
-    | Typ.Procname.Java java_pname -> (
-      match
-        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-      with
-      | ( ( "java.lang.Boolean"
-          | "java.lang.Byte"
-          | "java.lang.Char"
-          | "java.lang.Double"
-          | "java.lang.Float"
-          | "java.lang.Integer"
-          | "java.lang.Long"
-          | "java.lang.Short" )
-        , "valueOf" ) ->
-          true
-      | _ ->
-          false )
-    | _ ->
-        false
 
 
   let add_reads exps loc accesses locks threads ownership proc_data =
@@ -550,7 +384,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     let open RacerDConfig in
     match instr with
-    | Call (Some ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
+    | Call (Some ret_base, Direct procname, actuals, _, loc)
+      when Models.acquires_ownership procname tenv ->
         let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
             proc_data
@@ -662,7 +497,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                          ownership *)
                       not call_flags.cf_interface && List.is_empty actuals
                     in
-                    if is_box callee_pname then
+                    if Models.is_box callee_pname then
                       match (ret_opt, actuals) with
                       | Some ret, (HilExp.AccessExpression actual_access_expr) :: _ ->
                           let actual_ap = AccessExpression.to_access_path actual_access_expr in
@@ -698,11 +533,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               else attribute_map
             in
             let attribute_map =
-              add_if_annotated is_functional Functional astate_callee.attribute_map
+              add_if_annotated Models.is_functional Functional astate_callee.attribute_map
             in
             let ownership =
               if PatternMatch.override_exists
-                   (has_return_annot Annotations.ia_is_returns_ownership)
+                   (Models.has_return_annot Annotations.ia_is_returns_ownership)
                    tenv callee_pname
               then
                 OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned astate_callee.ownership
@@ -822,115 +657,6 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
-(* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
-   run on the same thread. For the moment we won't warn on accesses resulting from use of such
-   methods at all. In future we should account for races between these methods and methods from
-   completely different classes that don't necessarily run on the same thread as the confined
-   object. *)
-let is_thread_confined_method tenv pdesc =
-  Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_confined
-  || PatternMatch.check_current_class_attributes Annotations.ia_is_thread_confined tenv
-       (Procdesc.get_proc_name pdesc)
-
-
-(* we don't want to warn on methods that run on the UI thread because they should always be
-   single-threaded *)
-let runs_on_ui_thread proc_desc =
-  (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
-     @OnUnmount always run on the UI thread *)
-  Annotations.pdesc_has_return_annot proc_desc (fun annot ->
-      Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
-      || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
-      || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot )
-
-
-let threadsafe_annotations =
-  Annotations.thread_safe :: RacerDConfig.AnnotationAliases.of_json Config.threadsafe_aliases
-
-
-(* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
-   as an alias of @ThreadSafe in a .inferconfig file. *)
-let is_thread_safe item_annot =
-  let f ((annot: Annot.t), _) =
-    List.exists
-      ~f:(fun annot_string ->
-        Annotations.annot_ends_with annot annot_string
-        || String.equal annot.class_name annot_string )
-      threadsafe_annotations
-    && match annot.Annot.parameters with ["false"] -> false | _ -> true
-  in
-  List.exists ~f item_annot
-
-
-(* returns true if the annotation is @ThreadSafe(enableChecks = false) *)
-let is_assumed_thread_safe item_annot =
-  let f (annot, _) =
-    Annotations.annot_ends_with annot Annotations.thread_safe
-    && match annot.Annot.parameters with ["false"] -> true | _ -> false
-  in
-  List.exists ~f item_annot
-
-
-let pdesc_is_assumed_thread_safe pdesc tenv =
-  is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc)
-  || PatternMatch.check_current_class_attributes is_assumed_thread_safe tenv
-       (Procdesc.get_proc_name pdesc)
-
-
-(* return true if we should compute a summary for the procedure. if this returns false, we won't
-   analyze the procedure or report any warnings on it *)
-(* note: in the future, we will want to analyze the procedures in all of these cases in order to
-   find more bugs. this is just a temporary measure to avoid obvious false positives *)
-let should_analyze_proc pdesc tenv =
-  let pn = Procdesc.get_proc_name pdesc in
-  not
-    ( match pn with
-    | Typ.Procname.Java java_pname ->
-        Typ.Procname.Java.is_class_initializer java_pname
-    | _ ->
-        false )
-  && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)
-  && not (RacerDConfig.Models.should_skip pn)
-
-
-let get_current_class_and_threadsafe_superclasses tenv pname =
-  match pname with
-  | Typ.Procname.Java java_pname ->
-      let current_class = Typ.Procname.Java.get_class_type_name java_pname in
-      let thread_safe_annotated_classes =
-        PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
-      in
-      Some (current_class, thread_safe_annotated_classes)
-  | _ ->
-      None
-
-
-let is_thread_safe_class pname tenv =
-  not
-    ((* current class not marked thread-safe *)
-     PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname)
-  &&
-  (* current class or superclass is marked thread-safe *)
-  match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (_, thread_safe_annotated_classes) ->
-      not (List.is_empty thread_safe_annotated_classes)
-  | _ ->
-      false
-
-
-let is_thread_safe_method pname tenv =
-  PatternMatch.override_exists
-    (fun pn ->
-      Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes
-        is_thread_safe )
-    tenv pname
-
-
-let is_marked_thread_safe pdesc tenv =
-  let pname = Procdesc.get_proc_name pdesc in
-  is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
-
-
 let empty_post : RacerDDomain.summary =
   { threads= RacerDDomain.ThreadsDomain.empty
   ; locks= RacerDDomain.LocksDomain.empty
@@ -940,18 +666,20 @@ let empty_post : RacerDDomain.summary =
 
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
+  let open RacerDConfig in
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open RacerDDomain in
-  if should_analyze_proc proc_desc tenv then
+  if Models.should_analyze_proc proc_desc tenv then
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
     let initial =
       let threads =
-        if runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc then
-          ThreadsDomain.AnyThreadButSelf
-        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_desc tenv
+        if Models.runs_on_ui_thread proc_desc || Models.is_thread_confined_method tenv proc_desc
+        then ThreadsDomain.AnyThreadButSelf
+        else if Procdesc.is_java_synchronized proc_desc
+                || Models.is_marked_thread_safe proc_desc tenv
         then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
@@ -1037,10 +765,11 @@ type report_kind =
 
 (** Explain why we are reporting this access, in Java *)
 let get_reporting_explanation_java report_kind tenv pname thread =
+  let open RacerDConfig in
   (* best explanation is always that the current class or method is annotated thread-safe. try for
      that first. *)
   let annotation_explanation_opt =
-    if is_thread_safe_method pname tenv then
+    if Models.is_thread_safe_method pname tenv then
       Some
         (F.asprintf
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
@@ -1050,7 +779,7 @@ let get_reporting_explanation_java report_kind tenv pname thread =
       | Some (qual, annot) ->
           Some (FbThreadSafety.message_fbthreadsafe_class qual annot)
       | None ->
-        match get_current_class_and_threadsafe_superclasses tenv pname with
+        match Models.get_current_class_and_threadsafe_superclasses tenv pname with
         | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
             Some
               ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
@@ -1099,21 +828,6 @@ let get_reporting_explanation report_kind tenv pname thread =
   if Typ.Procname.is_java pname then get_reporting_explanation_java report_kind tenv pname thread
   else get_reporting_explanation_cpp
 
-
-let filter_by_access access_filter trace =
-  let open RacerDDomain in
-  PathDomain.Sinks.filter access_filter (PathDomain.sinks trace) |> PathDomain.update_sinks trace
-
-
-let get_all_accesses_with_pre pre_filter access_filter accesses =
-  let open RacerDDomain in
-  AccessDomain.fold
-    (fun pre trace acc ->
-      if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc )
-    accesses PathDomain.empty
-
-
-let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
 let pp_container_access fmt (access_path, access_pname) =
   F.fprintf fmt "container %a via call to %s"
@@ -1323,21 +1037,6 @@ let empty_reported =
   {reported_sites; reported_reads; reported_writes}
 
 
-(* return true if procedure is at an abstraction boundary or reporting has been explicitly
-   requested via @ThreadSafe *)
-let should_report_on_proc proc_desc tenv =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  is_thread_safe_method proc_name tenv
-  || not
-       ( match proc_name with
-       | Typ.Procname.Java java_pname ->
-           Typ.Procname.Java.is_autogen_method java_pname
-       | _ ->
-           false )
-     && Procdesc.get_access proc_desc <> PredSymb.Private
-     && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
-
-
 (** Report accesses that may race with each other.
 
     Principles for race reporting.
@@ -1368,6 +1067,7 @@ let should_report_on_proc proc_desc tenv =
 *)
 let report_unsafe_accesses (aggregated_access_map: reported_access list AccessListMap.t) =
   let open RacerDDomain in
+  let open RacerDConfig in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
     if Config.filtering then
       CallSite.Set.mem (TraceElem.call_site access) reported_sites
@@ -1402,7 +1102,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
       match TraceElem.kind access with
       | Access.InterfaceCall unannoted_call_pname ->
           if AccessData.is_unprotected precondition && ThreadsDomain.is_any threads
-             && is_marked_thread_safe procdesc tenv
+             && Models.is_marked_thread_safe procdesc tenv
           then (
             (* un-annotated interface call + no lock in method marked thread-safe. warn *)
             report_unannotated_interface_violation tenv procdesc access threads
@@ -1522,7 +1222,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
             List.exists
               ~f:(fun ({threads}: reported_access) -> ThreadsDomain.is_any threads)
               grouped_accesses
-            && should_report_on_proc pdesc tenv
+            && Models.should_report_on_proc pdesc tenv
         | ObjC_Cpp objc_cpp ->
             (* do not report if a procedure is private  *)
             Procdesc.get_access pdesc <> PredSymb.Private

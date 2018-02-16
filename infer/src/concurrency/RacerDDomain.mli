@@ -212,3 +212,12 @@ type summary =
 include AbstractDomain.WithBottom with type astate := astate
 
 val pp_summary : F.formatter -> summary -> unit
+
+val attributes_of_expr :
+  AttributeSetDomain.t AttributeMapDomain.t -> HilExp.t -> AttributeSetDomain.t
+(** propagate attributes from the leaves to the root of an RHS Hil expression *)
+
+val ownership_of_expr :
+  HilExp.t -> OwnershipAbstractValue.astate AttributeMapDomain.t -> OwnershipAbstractValue.astate
+
+val get_all_accesses : (TraceElem.t -> bool) -> PathDomain.t AccessDomain.t -> PathDomain.t

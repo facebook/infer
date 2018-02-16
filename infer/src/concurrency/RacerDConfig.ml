@@ -257,6 +257,8 @@ module Models = struct
           None
 
 
+  (** holds of procedure names which should not be analyzed in order to avoid known sources of
+      inaccuracy *)
   let should_skip =
     let matcher =
       lazy
@@ -280,4 +282,260 @@ module Models = struct
                (Typ.Procname.get_qualifiers pname)
       | _ ->
           false
+
+
+  (** return true if this function is library code from the JDK core libraries or Android *)
+  let is_java_library = function
+    | Typ.Procname.Java java_pname -> (
+      match Typ.Procname.Java.get_package java_pname with
+      | Some package_name ->
+          String.is_prefix ~prefix:"java." package_name
+          || String.is_prefix ~prefix:"android." package_name
+          || String.is_prefix ~prefix:"com.google." package_name
+      | None ->
+          false )
+    | _ ->
+        false
+
+
+  let is_builder_function = function
+    | Typ.Procname.Java java_pname ->
+        String.is_suffix ~suffix:"$Builder" (Typ.Procname.Java.get_class_name java_pname)
+    | _ ->
+        false
+
+
+  let has_return_annot predicate pn =
+    Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
+
+
+  let is_functional pname =
+    let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
+    let is_modeled_functional = function
+      | Typ.Procname.Java java_pname -> (
+        match
+          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
+        with
+        | "android.content.res.Resources", method_name ->
+            (* all methods of Resources are considered @Functional except for the ones in this
+                 blacklist *)
+            let non_functional_resource_methods =
+              [ "getAssets"
+              ; "getConfiguration"
+              ; "getSystem"
+              ; "newTheme"
+              ; "openRawResource"
+              ; "openRawResourceFd" ]
+            in
+            not (List.mem ~equal:String.equal non_functional_resource_methods method_name)
+        | _ ->
+            false )
+      | _ ->
+          false
+    in
+    is_annotated_functional pname || is_modeled_functional pname
+
+
+  let acquires_ownership pname tenv =
+    let is_allocation pn =
+      Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
+    in
+    (* identify library functions that maintain ownership invariants behind the scenes *)
+    let is_owned_in_library = function
+      | Typ.Procname.Java java_pname -> (
+        match
+          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
+        with
+        | "javax.inject.Provider", "get" ->
+            (* in dependency injection, the library allocates fresh values behind the scenes *)
+            true
+        | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance" ->
+            (* reflection can perform allocations *)
+            true
+        | "java.lang.Object", "clone" ->
+            (* cloning is like allocation *)
+            true
+        | "java.lang.ThreadLocal", "get" ->
+            (* ThreadLocal prevents sharing between threads behind the scenes *)
+            true
+        | ("android.app.Activity" | "android.view.View"), "findViewById" ->
+            (* assume findViewById creates fresh View's (note: not always true) *)
+            true
+        | ( ( "android.support.v4.util.Pools$Pool"
+            | "android.support.v4.util.Pools$SimplePool"
+            | "android.support.v4.util.Pools$SynchronizedPool" )
+          , "acquire" ) ->
+            (* a pool should own all of its objects *)
+            true
+        | _ ->
+            false )
+      | _ ->
+          false
+    in
+    is_allocation pname || is_owned_in_library pname
+    || PatternMatch.override_exists is_owned_in_library tenv pname
+
+
+  let is_threadsafe_collection pn tenv =
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let typename = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname) in
+        let aux tn _ =
+          match Typ.Name.name tn with
+          | "java.util.concurrent.ConcurrentMap"
+          | "java.util.concurrent.CopyOnWriteArrayList"
+          | "android.support.v4.util.Pools$SynchronizedPool" ->
+              true
+          | _ ->
+              false
+        in
+        PatternMatch.supertype_exists tenv aux typename
+    | _ ->
+        false
+
+
+  (* return true if the given procname boxes a primitive type into a reference type *)
+  let is_box = function
+    | Typ.Procname.Java java_pname -> (
+      match
+        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
+      with
+      | ( ( "java.lang.Boolean"
+          | "java.lang.Byte"
+          | "java.lang.Char"
+          | "java.lang.Double"
+          | "java.lang.Float"
+          | "java.lang.Integer"
+          | "java.lang.Long"
+          | "java.lang.Short" )
+        , "valueOf" ) ->
+          true
+      | _ ->
+          false )
+    | _ ->
+        false
+
+
+  (* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
+           run on the same thread. For the moment we won't warn on accesses resulting from use of such
+           methods at all. In future we should account for races between these methods and methods from
+           completely different classes that don't necessarily run on the same thread as the confined
+           object. *)
+  let is_thread_confined_method tenv pdesc =
+    Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_confined
+    || PatternMatch.check_current_class_attributes Annotations.ia_is_thread_confined tenv
+         (Procdesc.get_proc_name pdesc)
+
+
+  (* we don't want to warn on methods that run on the UI thread because they should always be
+      single-threaded *)
+  let runs_on_ui_thread proc_desc =
+    (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
+        @OnUnmount always run on the UI thread *)
+    Annotations.pdesc_has_return_annot proc_desc (fun annot ->
+        Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
+        || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
+        || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot )
+
+
+  let threadsafe_annotations =
+    Annotations.thread_safe :: AnnotationAliases.of_json Config.threadsafe_aliases
+
+
+  (* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
+     as an alias of @ThreadSafe in a .inferconfig file. *)
+  let is_thread_safe item_annot =
+    let f ((annot: Annot.t), _) =
+      List.exists
+        ~f:(fun annot_string ->
+          Annotations.annot_ends_with annot annot_string
+          || String.equal annot.class_name annot_string )
+        threadsafe_annotations
+      && match annot.Annot.parameters with ["false"] -> false | _ -> true
+    in
+    List.exists ~f item_annot
+
+
+  (* returns true if the annotation is @ThreadSafe(enableChecks = false) *)
+  let is_assumed_thread_safe item_annot =
+    let f (annot, _) =
+      Annotations.annot_ends_with annot Annotations.thread_safe
+      && match annot.Annot.parameters with ["false"] -> true | _ -> false
+    in
+    List.exists ~f item_annot
+
+
+  let pdesc_is_assumed_thread_safe pdesc tenv =
+    is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc)
+    || PatternMatch.check_current_class_attributes is_assumed_thread_safe tenv
+         (Procdesc.get_proc_name pdesc)
+
+
+  (* return true if we should compute a summary for the procedure. if this returns false, we won't
+      analyze the procedure or report any warnings on it *)
+  (* note: in the future, we will want to analyze the procedures in all of these cases in order to
+      find more bugs. this is just a temporary measure to avoid obvious false positives *)
+  let should_analyze_proc pdesc tenv =
+    let pn = Procdesc.get_proc_name pdesc in
+    not
+      ( match pn with
+      | Typ.Procname.Java java_pname ->
+          Typ.Procname.Java.is_class_initializer java_pname
+      | _ ->
+          false )
+    && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)
+    && not (should_skip pn)
+
+
+  let get_current_class_and_threadsafe_superclasses tenv pname =
+    match pname with
+    | Typ.Procname.Java java_pname ->
+        let current_class = Typ.Procname.Java.get_class_type_name java_pname in
+        let thread_safe_annotated_classes =
+          PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
+        in
+        Some (current_class, thread_safe_annotated_classes)
+    | _ ->
+        None
+
+
+  let is_thread_safe_class pname tenv =
+    not
+      ((* current class not marked thread-safe *)
+       PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname)
+    &&
+    (* current class or superclass is marked thread-safe *)
+    match get_current_class_and_threadsafe_superclasses tenv pname with
+    | Some (_, thread_safe_annotated_classes) ->
+        not (List.is_empty thread_safe_annotated_classes)
+    | _ ->
+        false
+
+
+  let is_thread_safe_method pname tenv =
+    PatternMatch.override_exists
+      (fun pn ->
+        Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes
+          is_thread_safe )
+      tenv pname
+
+
+  let is_marked_thread_safe pdesc tenv =
+    let pname = Procdesc.get_proc_name pdesc in
+    is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
+
+
+  (* return true if procedure is at an abstraction boundary or reporting has been explicitly
+     requested via @ThreadSafe *)
+  let should_report_on_proc proc_desc tenv =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    is_thread_safe_method proc_name tenv
+    || not
+         ( match proc_name with
+         | Typ.Procname.Java java_pname ->
+             Typ.Procname.Java.is_autogen_method java_pname
+         | _ ->
+             false )
+       && Procdesc.get_access proc_desc <> PredSymb.Private
+       && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 end

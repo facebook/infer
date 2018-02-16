@@ -503,3 +503,50 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map} =
   F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map
+
+
+let rec attributes_of_expr attribute_map e =
+  let open HilExp in
+  match e with
+  | HilExp.AccessExpression access_expr -> (
+    try AttributeMapDomain.find (AccessExpression.to_access_path access_expr) attribute_map
+    with Not_found -> AttributeSetDomain.empty )
+  | Constant _ ->
+      AttributeSetDomain.of_list [Attribute.Functional]
+  | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
+      attributes_of_expr attribute_map expr
+  | UnaryOperator (_, expr, _) ->
+      attributes_of_expr attribute_map expr
+  | BinaryOperator (_, expr1, expr2) ->
+      let attributes1 = attributes_of_expr attribute_map expr1 in
+      let attributes2 = attributes_of_expr attribute_map expr2 in
+      AttributeSetDomain.join attributes1 attributes2
+  | Closure _ | Sizeof _ ->
+      AttributeSetDomain.empty
+
+
+let rec ownership_of_expr expr ownership =
+  let open HilExp in
+  match expr with
+  | AccessExpression access_expr ->
+      OwnershipDomain.get_owned (AccessExpression.to_access_path access_expr) ownership
+  | Constant _ ->
+      OwnershipAbstractValue.owned
+  | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e) ->
+      ownership_of_expr e ownership
+  | _ ->
+      OwnershipAbstractValue.unowned
+
+
+let filter_by_access access_filter trace =
+  PathDomain.Sinks.filter access_filter (PathDomain.sinks trace) |> PathDomain.update_sinks trace
+
+
+let get_all_accesses_with_pre pre_filter access_filter accesses =
+  AccessDomain.fold
+    (fun pre trace acc ->
+      if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc )
+    accesses PathDomain.empty
+
+
+let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
