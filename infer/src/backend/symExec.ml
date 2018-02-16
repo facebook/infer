@@ -787,7 +787,8 @@ let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver 
 let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre ret_id
     res =
   let path_description =
-    "Message " ^ Typ.Procname.to_simplified_string callee_pname ^ " with receiver nil returns nil."
+    F.sprintf "Message %s with receiver nil returns nil."
+      (Typ.Procname.to_simplified_string callee_pname)
   in
   let receiver =
     match actual_pars with
@@ -821,11 +822,11 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
     (* objective-c instance method with a null receiver just return objc_null(res). *)
     let path = Paths.Path.add_description path path_description in
     L.d_strln
-      ( "Object-C method " ^ Typ.Procname.to_string callee_pname
-      ^ " called with nil receiver. Returning 0/nil" ) ;
+      (F.sprintf "Object-C method %s called with nil receiver. Returning 0/nil"
+         (Typ.Procname.to_string callee_pname)) ;
     (* We wish to nullify the result. However, in some cases,
-       we want to add the attribute OBJC_NULL to it so that we *)
-    (* can keep track of how this object became null,
+       we want to add the attribute OBJC_NULL to it so that we
+       can keep track of how this object became null,
        so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
@@ -1100,8 +1101,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_info_deprecated current_pname exn ;
       L.d_strln
-        ( "Undefined function " ^ Typ.Procname.to_string callee_pname
-        ^ ", returning undefined value." ) ;
+        (F.sprintf "Undefined function %s, returning undefined value."
+           (Typ.Procname.to_string callee_pname)) ;
       ( match Specs.get_summary current_pname with
       | None ->
           ()
@@ -1414,7 +1415,8 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
       let loc =
         match error.ml_loc with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
       in
-      L.d_warning ("Generated Instruction Failed with: " ^ error.name.IssueType.unique_id ^ loc) ;
+      L.d_warning
+        (F.sprintf "Generated Instruction Failed with: %s%s" error.name.IssueType.unique_id loc) ;
       L.d_ln () ;
       [(p, path)]
   in
@@ -1647,8 +1649,8 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
 and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
   let field_name, _, _ = field in
   L.d_strln
-    ( "No custom getter found. Executing the ObjC builtin getter with ivar "
-    ^ Typ.Fieldname.to_string field_name ^ "." ) ;
+    (F.sprintf "No custom getter found. Executing the ObjC builtin getter with ivar %s."
+       (Typ.Fieldname.to_string field_name)) ;
   let ret_id = match ret_id with Some (ret_id, _) -> ret_id | None -> assert false in
   match args with
   | [ ( lexp
@@ -1665,8 +1667,8 @@ and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
 and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
   let field_name, _, _ = field in
   L.d_strln
-    ( "No custom setter found. Executing the ObjC builtin setter with ivar "
-    ^ Typ.Fieldname.to_string field_name ^ "." ) ;
+    (F.sprintf "No custom setter found. Executing the ObjC builtin setter with ivar %s."
+       (Typ.Fieldname.to_string field_name)) ;
   match args with
   | ( lexp1
     , ( ({Typ.desc= Tstruct struct_name} as typ1)
