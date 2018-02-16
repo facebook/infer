@@ -246,6 +246,8 @@ val unsafe_guarded_by_access : t
 
 val use_after_free : t
 
+val use_after_lifetime : t
+
 val untrusted_deserialization : t
 
 val untrusted_file : t

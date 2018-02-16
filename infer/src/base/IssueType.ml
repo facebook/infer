@@ -333,6 +333,8 @@ let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
 let use_after_free = from_string "USE_AFTER_FREE"
 
+let use_after_lifetime = from_string "USE_AFTER_LIFETIME"
+
 let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
 
 let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"

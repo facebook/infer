@@ -496,6 +496,8 @@ val only_footprint : bool
 
 val only_show : bool
 
+val ownership : bool
+
 val pmd_xml : bool
 
 val precondition_stats : bool

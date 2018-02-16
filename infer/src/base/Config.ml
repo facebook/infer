@@ -679,6 +679,7 @@ and ( annotation_reachability
     , linters
     , litho
     , liveness
+    , ownership
     , printf_args
     , quandary
     , racerd
@@ -720,6 +721,7 @@ and ( annotation_reachability
   and litho = mk_checker ~long:"litho" "Experimental checkers supporting the Litho framework"
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
+  and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
     mk_checker ~long:"printf-args" ~default:true
       "the detection of mismatch between the Java printf format strings and the argument types For, example, this checker will warn about the type error in `printf(\"Hello %d\", \"world\")`"
@@ -781,6 +783,7 @@ and ( annotation_reachability
   , linters
   , litho
   , liveness
+  , ownership
   , printf_args
   , quandary
   , racerd
@@ -2484,6 +2487,8 @@ and only_cheap_debug = !only_cheap_debug
 and only_footprint = !only_footprint
 
 and only_show = !only_show
+
+and ownership = !ownership
 
 and passthroughs = !passthroughs
 

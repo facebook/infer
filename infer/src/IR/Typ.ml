@@ -1057,7 +1057,6 @@ module Procname = struct
     | _ ->
         QualifiedCppName.empty
 
-
   (** Convert a proc name to a filename *)
   let to_concrete_filename ?crc_only pname =
     (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
