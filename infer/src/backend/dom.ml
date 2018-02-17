@@ -2169,15 +2169,8 @@ let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
   in
   res
 
-module MaxCliqueState = Caml.Set.Make (struct
-  type t = int list (* invariant: increasing *)
-  let rec compare xs ys = match xs, ys with
-    | [], [] -> 0
-    | [], _ -> -1
-    | _, [] -> +1
-    | x ::  _, y ::  _ when x < y -> -1
-    | x ::  _, y ::  _ when x > y -> +1
-    | _ :: xs, _ :: ys -> compare xs ys
+module MaxCliqueSet = Caml.Set.Make (struct
+  type t = int list [@@deriving compare] (* invariant: increasing *)
 end)
 
 let rec filter_to n predicate xs x =
@@ -2191,34 +2184,49 @@ function [edge]. *)
 let initgen_maxclique (n : int) (edge : int -> int -> bool) =
   let compatible x xs = List.for_all xs ~f:(edge x) in
   let first = filter_to n compatible [] 0 in
-  let module S = MaxCliqueState in
-  (S.add first S.empty, n, edge)
+  let module S = MaxCliqueSet in
+  (S.singleton first, n, edge)
 
-(* Given a maxclique generator, returns a pair (xs, g) with the next maxclique
-[xs] and the updated generator state [g]. If no more maxclique, raises
-[Not_found]. For the algorithm, see the JYP paper mentioned below. *)
+(* Given a maxclique generator, returns [Some (xs, g)] with the next maxclique
+[xs] and the updated generator state [g]. If no more maxclique, returns [None].
+For the algorithm, see the JYP paper mentioned below. *)
 let next_maxclique (queue, n, edge) =
-  let module S = MaxCliqueState in
-  let xs = S.min_elt queue in (* raises [Not_found] at the end *)
-  let queue = S.remove xs queue in
-  let ys =
-    let ok_yx y x = x < y && not (edge x y) in
-    let ok_y y _ = List.exists xs ~f:(ok_yx y) in
-    filter_to n ok_y [] 0 in
-  let do_y queue y =
-    let xy_compat x = x < y && edge x y in
-    let zs = List.filter xs ~f:xy_compat @ [y] in
-    let maxclique zs = (* is zs a maxclique for the subgraph induced by 0..y? *)
-      let rec loop u vs = u > y || (match u, vs with
-        | u, v :: vs when Int.equal u v -> loop (u + 1) vs
-        | u, vs -> not (List.for_all zs ~f:(edge u)) && loop (u + 1) vs) in
-      loop 0 zs in
-    let fillup zs = (* greedily add vertices from y+1..n-1 to clique *)
-      let compatible z zs = List.for_all zs ~f:(edge z) in
-      filter_to n compatible (List.rev zs) (y + 1) in
-    if maxclique zs then S.add (fillup zs) queue else queue in
-  let queue = List.fold ~init:queue ~f:do_y ys in
-  (xs, (queue, n, edge))
+  let module S = MaxCliqueSet in
+  if S.is_empty queue then None else begin
+    let xs = S.min_elt queue in
+    let queue = S.remove xs queue in
+    let ys =
+      let ok_yx y x = x < y && not (edge x y) in
+      let ok_y y _ = List.exists xs ~f:(ok_yx y) in
+      filter_to n ok_y [] 0 in
+    let do_y queue y =
+      let maxclique zs = (* is zs a maxclique for the subgraph induced by 0..y? *)
+        let rec loop u vs = u < 0 || (match vs with
+          | v :: vs when Int.equal u v -> loop (u - 1) vs
+          | vs -> not (List.for_all zs ~f:(edge u)) && loop (u - 1) vs) in
+        loop y zs in
+      let fillup zs = (* greedily add vertices from y+1..n-1 to clique *)
+        let compatible z zs = List.for_all zs ~f:(edge z) in
+        filter_to n compatible zs (y + 1) in
+      let xy_compat x = x < y && edge x y in
+      let zs = y :: List.rev_filter xs ~f:xy_compat in
+      if maxclique zs then S.add (fillup zs) queue else queue in
+    let queue = List.fold ~init:queue ~f:do_y ys in
+    Some (xs, (queue, n, edge))
+  end
+
+let fold_stream ~zero ~plus ~init ~next =
+  let rec go x generator = match next generator with
+    | None -> x (* end of stream *)
+    | Some (y, generator) ->
+        (match plus x y with
+        | None -> x (* plus says we should stop early *)
+        | Some z -> go z generator) in
+  go zero (init ())
+
+let fold_maxclique ~(zero : 'a) ~(plus : 'a -> int list -> 'a option) ~(n : int) ~(edge : int -> int -> bool) =
+  fold_stream ~zero ~plus ~init:(fun () -> initgen_maxclique n edge) ~next:next_maxclique
+
 
 (* Find maximal subsets of [xs] that can be combined with a binary operator
 [plus] that is associative, commutative, but not necessarily defined
@@ -2244,47 +2252,38 @@ The [timeout] limits the number of maxcliques to be enumerated, because they
 can be exponentially many.
 *)
 let maximal_combine ~(timeout : int) ~(init : 'a) ~(plus : 'a -> 'a -> 'a option) (xs : 'a list)  : 'a list =
-  let n = List.length xs in
-  let by_idx =
-    let xs = Array.of_list xs in
-    Array.get xs in
-  let lost = ref 0 in (* counts inconsistent maximal cliques *)
-  let exception Undefined in
-  let plus_exc x y = match plus x y with
-    | None -> raise Undefined
-    | Some z -> z in
-  let pairs = (* first, build graph with pairwise consistency *)
-    let h = Hashtbl.create (n * n) in
-    for i = 0 to n - 1 do
-      for j = i + 1 to n - 1 do
-        (try
-          let z = plus_exc (by_idx i) (by_idx j) in
-          Hashtbl.add h (i, j) z;
-          Hashtbl.add h (j, i) z
-        with Undefined -> ())
-      done
-    done; h in
-  let edge i j = Hashtbl.mem pairs (i, j) in
-  let maxclique_count = ref 0 in
-  let exception Timeout in
-  let result = ref [] in
-  let rec loop g =
+  let plus_by_idx : (*increasing*) int list -> 'a option =
+    (* C.t inv: decreasing *)
+    let module C = Caml.Map.Make (struct type t = int list [@@deriving compare] end) in
+    let cache =
+      let f index cache value = C.add [index] (Some value) cache in
+      ref (List.foldi ~init:C.empty ~f xs) in
+    let rec doit us r vs = match r, vs with
+      | None, _ -> None
+      | _, [] -> r
+      | Some r, v :: vs ->
+          let us = v :: us in
+          let r =
+            try C.find us !cache
+            with Not_found ->
+              (let r = plus r (Option.value_exn (C.find [v] !cache)) in
+              cache := C.add us r !cache; r) in
+          doit us r vs in
+    (fun indices -> doit [] (Some init) indices) in
+  let edge i j =
+    plus_by_idx [Int.min i j; Int.max i j] |> Option.is_some in
+  let do_one_clique (m, result) clique =
     SymOp.pay ();
-    incr maxclique_count;
-    if !maxclique_count >= timeout then raise Timeout;
-    let xs, ng = next_maxclique g in (* xs is a pairwise consistent set *)
-    let zs = List.map ~f:by_idx xs in
-    (try result :=  (List.fold ~init ~f:plus_exc zs) :: !result
-    with Undefined -> incr lost);
-    loop ng in
-  (try loop (initgen_maxclique n edge) with
-  | Not_found -> (* done *) ()
-  | Timeout -> (* skip the other maxcliques *) ());
+    if m > timeout then None else
+    (match plus_by_idx clique with
+    | None -> Some (m + 1, result)
+    | Some r -> Some (m + 1, r :: result)) in
+  let maxclique_count, result =
+    fold_maxclique ~zero:(0, []) ~plus:do_one_clique ~n:(List.length xs) ~edge in
   L.d_strln (Printf.sprintf
-    "PERF maximal_combine inlen=%d outlen=%d filtered=%d maxclique_count=%d"
-    n (List.length !result) !lost !maxclique_count);
-  !result
-
+    "PERF maximal_combine inlen=%d outlen=%d maxclique_count=%d"
+    (List.length xs) (List.length result) maxclique_count);
+  result
 
 
 (**
