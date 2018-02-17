@@ -2169,55 +2169,78 @@ let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
   in
   res
 
+let maximal_combine (timeout : int) (plus : 'a -> 'a -> 'a option) (xs : 'a list)  : 'a list =
+  let oops = ref 0 in
+  let plus a b = incr oops; if !oops >= timeout then None else plus a b in
+  let result = ref [] in
+  let seen = ref [] in
+  let hash x =
+    let open Int64 in
+    let p = to_int_exn (bit_and 63L (of_int x * 100623947L)) in
+    shift_left 1L p in
+  let not_seen =
+    let mark = Array.create ~len:(List.length xs) 0 in
+    function (_, (sig_y, ys)) ->
+      let len_ys = List.length ys in
+      let subset (sig_x, xs) =
+        (incr oops; (Int64.equal 0L (Int64.bit_and (Int64.bit_not sig_x) sig_y))) &&
+        (List.fold ~f:(fun n x -> incr oops; n + mark.(x)) ~init:0 xs) >= len_ys in
+      List.iter ~f:(fun y -> mark.(y) <- 1) ys;
+      let r = not (List.exists ~f:subset !seen) in
+      List.iter ~f:(fun y -> mark.(y) <- 0) ys;
+      r in
+  let record (v, ys) =
+    seen := ys :: !seen;
+    result := v :: !result  in
+  let possible_moves =
+    let mark = Array.create ~len:(List.length xs) false in
+    function (_, (_, ys)) ->
+      let f (zss, i) x =
+        if mark.(i) then (zss, i + 1) else ((i, x) :: zss, i + 1) in
+      List.iter ~f:(fun y -> mark.(y) <- true) ys;
+      let r, _ = List.fold ~f ~init:([], 0) xs in
+      List.iter ~f:(fun y -> mark.(y) <- false) ys;
+      r in
+  let make_move (i, x) (v, (sig_y, ys)) = match plus v x with
+    | None -> None
+    | Some v -> Some (v, (Int64.bit_or sig_y (hash i), i :: ys)) in
+  let rec dfs ys =
+    let ms = possible_moves ys in
+    let f maximal m = match make_move m ys with
+      | Some zs when not_seen zs -> dfs zs; false
+      | _ -> maximal in
+    if List.fold ~f ~init:true ms then record ys in
+  let zss, _ =
+    let f (zss, i) x = ((x, (hash i, [i])) :: zss, i + 1) in
+    List.fold ~f ~init:([], 0) xs in
+  List.iter ~f:dfs zss;
+  L.d_strln (Printf.sprintf
+    "PERF maximal_combine inlen=%d outlen=%d oops=%d timeout=%b"
+    (List.length xs) (List.length !result) !oops (!oops >= timeout));
+  !result
+
 
 (**
-   The meet operator does two things:
-   1) makes the result logically stronger (just like additive conjunction)
-   2) makes the result spatially larger (just like multiplicative conjunction).
-   Assuming that the meet operator forms a partial commutative monoid (soft assumption: it means
-   that the results are more predictable), try to combine every element of plist with any other element.
-   Return a list of the same lenght, with each element maximally combined. The algorithm is quadratic.
-   The operation is dependent on the order in which elements are combined; there is a straightforward
-   order - independent algorithm but it is exponential.
+  The meet operator does two things:
+  1) makes the result logically stronger (just like additive conjunction)
+  2) makes the result spatially larger (just like multiplicative conjunction).
+  Produces meets only for the subsets that have a meet, targeting such subsets
+  that are maximal, but settling for smaller ones on meet-timeout.
 *)
 let proplist_meet_generate tenv plist =
-  let props_done = ref Propset.empty in
-  let combine p (porig, pcombined) =
-    SymOp.pay () ;
-    (* pay one symop *)
-    L.d_strln ".... MEET ...." ;
-    L.d_strln "MEET SYM HEAP1: " ;
-    Prop.d_prop p ;
-    L.d_ln () ;
-    L.d_strln "MEET SYM HEAP2: " ;
-    Prop.d_prop pcombined ;
-    L.d_ln () ;
-    match prop_partial_meet tenv p pcombined with
-    | None ->
-        L.d_strln_color Red ".... MEET FAILED ...." ;
-        L.d_ln () ;
-        (porig, pcombined)
-    | Some pcombined' ->
-        L.d_strln_color Green ".... MEET SUCCEEDED ...." ;
-        L.d_strln "RESULT SYM HEAP:" ;
-        Prop.d_prop pcombined' ;
-        L.d_ln () ;
-        L.d_ln () ;
-        (porig, pcombined')
-  in
-  let rec proplist_meet = function
-    | [] ->
-        ()
-    | (porig, pcombined) :: pplist ->
-        (* use porig instead of pcombined because it might be combinable with more othe props *)
-        (* e.g. porig might contain a global var to add to the ture branch of a conditional *)
-        (* but pcombined might have been combined with the false branch already *)
-        let pplist' = List.map ~f:(combine porig) pplist in
-        props_done := Propset.add tenv pcombined !props_done ;
-        proplist_meet pplist'
-  in
-  proplist_meet (List.map ~f:(fun p -> (p, p)) plist) ;
-  !props_done
+  let plus a b =
+      SymOp.pay ();
+      L.d_strln "MEET SYM HEAP1: ";  Prop.d_prop a; L.d_ln ();
+      L.d_strln "MEET SYM HEAP2: ";  Prop.d_prop b; L.d_ln ();
+      let r = prop_partial_meet tenv a b in
+      (match r with
+      | None -> L.d_strln_color Red ".... MEET FAILED ...."; L.d_ln ();
+      | Some c ->
+          L.d_strln_color Green ".... MEET SUCCEEDED ....";
+          L.d_strln "RESULT SYM HEAP:"; Prop.d_prop c; L.d_ln (); L.d_ln ());
+      r in
+  let xs = maximal_combine Config.max_meet plus plist in
+  List.fold ~f:(fun p x -> Propset.add tenv x p) ~init:Propset.empty xs
 
 
 let propset_meet_generate_pre tenv pset =

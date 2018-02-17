@@ -147,6 +147,8 @@ val log_analysis_symops_timeout : string
 
 val log_analysis_wallclock_timeout : string
 
+val max_meet : int
+
 val max_widens : int
 
 val meet_level : int
