@@ -521,15 +521,17 @@ module Stats = struct
     let num_preposts =
       match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
     in
+    let lang = Specs.get_proc_name summary |> Typ.Procname.get_language in
     stats.events_to_log
     <- EventLogger.AnalysisStats
          { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
          ; analysis_status= summary.stats.stats_failure
          ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
-         ; clang_method_kind= (Specs.get_attributes summary).clang_method_kind
-         ; lang=
-             Specs.get_proc_name summary |> Typ.Procname.get_language
-             |> Language.to_explicit_string
+         ; clang_method_kind=
+             ( if Language.equal lang Language.Clang then
+                 Some (Specs.get_attributes summary).clang_method_kind
+             else None )
+         ; lang= Language.to_explicit_string lang
          ; method_location= Specs.get_loc summary
          ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string
          ; num_preposts

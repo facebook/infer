@@ -1307,9 +1307,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                             prop path resolved_pname ret_annots loc ret_id ret_typ_opt
                             n_actual_params )
                   | None ->
-                      skip_call ~is_objc_instance_method:false
-                        ~reason:"function or method not found" prop path resolved_pname ret_annots
-                        loc ret_id ret_typ_opt n_actual_params
+                      skip_call ~reason:"function or method not found" prop path resolved_pname
+                        ret_annots loc ret_id ret_typ_opt n_actual_params
                 else
                   proc_call
                     (Option.value_exn resolved_summary_opt)
@@ -1716,6 +1715,7 @@ and sym_exec_alloc_model pname ret_typ tenv ret_id pdesc loc prop path : Builtin
 and proc_call callee_summary
     {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc} =
   let caller_pname = Procdesc.get_proc_name pdesc in
+  let callee_attrs = Specs.get_attributes callee_summary in
   let callee_pname = Specs.get_proc_name callee_summary in
   check_inherently_dangerous_function caller_pname callee_pname ;
   let formal_types = List.map ~f:snd (Specs.get_formals callee_summary) in
@@ -1753,21 +1753,17 @@ and proc_call callee_summary
        to their actual type otherwise. The latter case happens
        with variable - arguments functions *)
   let actual_params = comb actual_pars formal_types in
-  (* In case we call an objc instance method we add and extra spec *)
-  (* were the receiver is null and the semantics of the call is nop*)
-  (* let callee_attrs = Specs.get_attributes callee_summary in *)
-  if !Language.curr_language <> Language.Java
-     && ProcAttributes.clang_method_kind_equal
-          (Specs.get_attributes callee_summary).ProcAttributes.clang_method_kind
-          ProcAttributes.OBJC_INSTANCE
-  then
-    handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname
-      loc path
-      (Tabulation.exe_function_call callee_summary)
-  else
-    (* non-objective-c method call. Standard tabulation *)
-    Tabulation.exe_function_call callee_summary tenv ret_id pdesc callee_pname loc actual_params
-      pre path
+  (* In case we call an objc instance method we add an extra spec
+      where the receiver is null and the semantics of the call is nop *)
+  match (!Language.curr_language, callee_attrs.ProcAttributes.clang_method_kind) with
+  | Language.Clang, ProcAttributes.OBJC_INSTANCE ->
+      handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname
+        loc path
+        (Tabulation.exe_function_call callee_summary)
+  | _ ->
+      (* non-objective-c method call. Standard tabulation *)
+      Tabulation.exe_function_call callee_summary tenv ret_id pdesc callee_pname loc actual_params
+        pre path
 
 
 (** perform symbolic execution for a single prop, and check for junk *)
