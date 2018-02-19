@@ -13,6 +13,8 @@ val empty : t
 
 val add_string : t -> key:string -> data:string -> t
 
+val add_string_opt : t -> key:string -> data:string option -> t
+
 val add_int : t -> key:string -> data:int -> t
 
 val to_json : t -> string

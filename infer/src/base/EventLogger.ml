@@ -71,7 +71,39 @@ end = struct
         new_id
 end
 
-let bind_default opt map_func prev = match opt with Some x -> map_func x prev | None -> prev
+type analysis_stats =
+  { analysis_nodes_visited: int
+  ; analysis_status: SymOp.failure_kind option
+  ; analysis_total_nodes: int
+  ; clang_method_kind: ProcAttributes.clang_method_kind
+  ; lang: string
+  ; method_location: Location.t
+  ; method_name: string
+  ; num_preposts: int
+  ; symops: int }
+
+let create_analysis_stats_row base record =
+  let open JsonBuilder in
+  base |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
+  |> add_string ~key:"analysis_status"
+       ~data:
+         (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
+              SymOp.failure_kind_to_string stats_failure ))
+  |> add_int ~key:"analysis_total_nodes" ~data:record.analysis_total_nodes
+  |> add_string ~key:"clang_method_kind"
+       ~data:(ProcAttributes.string_of_clang_method_kind record.clang_method_kind)
+  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string ~key:"method_location"
+       ~data:
+         (String.concat
+            [ string_of_int record.method_location.line
+            ; ":"
+            ; string_of_int record.method_location.col ])
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.method_location.file)
+  |> add_string ~key:"method_name" ~data:record.method_name
+  |> add_int ~key:"num_preposts" ~data:record.num_preposts
+  |> add_int ~key:"symops" ~data:record.symops
+
 
 type frontend_exception =
   { ast_node: string option
@@ -84,7 +116,7 @@ type frontend_exception =
 
 let create_frontend_exception_row base record =
   let open JsonBuilder in
-  base |> bind_default record.ast_node (fun ast_node -> add_string ~key:"ast_node" ~data:ast_node)
+  base |> add_string_opt ~key:"ast_node" ~data:record.ast_node
   |> add_string ~key:"exception_triggered_location"
        ~data:(String.concat [record.exception_file; ":"; string_of_int record.exception_line])
   |> add_string ~key:"exception_type" ~data:record.exception_type
@@ -121,56 +153,22 @@ let create_procedures_translated_row base record =
   |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_file)
 
 
-type analysis_stats =
-  { analysis_nodes_visited: int
-  ; analysis_status: SymOp.failure_kind option
-  ; analysis_total_nodes: int
-  ; clang_method_kind: ProcAttributes.clang_method_kind
-  ; lang: string
-  ; method_location: Location.t
-  ; method_name: string
-  ; num_preposts: int
-  ; symops: int }
-
-let create_analysis_stats_row base record =
-  let open JsonBuilder in
-  base |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
-  |> add_string ~key:"analysis_status"
-       ~data:
-         (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
-              SymOp.failure_kind_to_string stats_failure ))
-  |> add_int ~key:"analysis_total_nodes" ~data:record.analysis_total_nodes
-  |> add_string ~key:"clang_method_kind"
-       ~data:(ProcAttributes.string_of_clang_method_kind record.clang_method_kind)
-  |> add_string ~key:"lang" ~data:record.lang
-  |> add_string ~key:"method_location"
-       ~data:
-         (String.concat
-            [ string_of_int record.method_location.line
-            ; ":"
-            ; string_of_int record.method_location.col ])
-  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.method_location.file)
-  |> add_string ~key:"method_name" ~data:record.method_name
-  |> add_int ~key:"num_preposts" ~data:record.num_preposts
-  |> add_int ~key:"symops" ~data:record.symops
-
-
 type event =
-  | UncaughtException of exn * int
+  | AnalysisStats of analysis_stats
   | FrontendException of frontend_exception
   | ProceduresTranslatedSummary of procedures_translated
-  | AnalysisStats of analysis_stats
+  | UncaughtException of exn * int
 
 let string_of_event event =
   match event with
-  | UncaughtException _ ->
-      "UncaughtException"
+  | AnalysisStats _ ->
+      "AnalysisStats"
   | FrontendException _ ->
       "FrontendException"
   | ProceduresTranslatedSummary _ ->
       "ProceduresTranslatedSummary"
-  | AnalysisStats _ ->
-      "AnalysisStats"
+  | UncaughtException _ ->
+      "UncaughtException"
 
 
 let sequence_ctr = ref 0
@@ -214,16 +212,16 @@ module LoggerImpl : S = struct
       |> add_int ~key:"time" ~data:(int_of_float (Unix.time ()))
     in
     ( match event with
-    | UncaughtException (exn, exitcode) ->
-        base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
-        |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
-        |> add_int ~key:"exitcode" ~data:exitcode
+    | AnalysisStats record ->
+        create_analysis_stats_row base record
     | FrontendException record ->
         create_frontend_exception_row base record
     | ProceduresTranslatedSummary record ->
         create_procedures_translated_row base record
-    | AnalysisStats record ->
-        create_analysis_stats_row base record )
+    | UncaughtException (exn, exitcode) ->
+        base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
+        |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
+        |> add_int ~key:"exitcode" ~data:exitcode )
     |> JsonBuilder.to_json
 
 

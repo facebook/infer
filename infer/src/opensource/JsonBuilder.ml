@@ -15,6 +15,10 @@ let empty = []
 
 let add_string t ~key ~data = (key, `String data) :: t
 
+let add_string_opt t ~key ~data =
+  match data with Some data -> add_string t ~key ~data | None -> t
+
+
 let add_int t ~key ~data = (key, `Int data) :: t
 
 let to_json t = Yojson.Basic.to_string (`Assoc t)

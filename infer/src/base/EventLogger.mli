@@ -7,6 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type analysis_stats =
+  { analysis_nodes_visited: int
+  ; analysis_status: SymOp.failure_kind option
+  ; analysis_total_nodes: int
+  ; clang_method_kind: ProcAttributes.clang_method_kind
+  ; lang: string
+  ; method_location: Location.t
+  ; method_name: string
+  ; num_preposts: int
+  ; symops: int }
+
 type frontend_exception =
   { ast_node: string option
   ; exception_file: string
@@ -22,22 +33,11 @@ type procedures_translated =
   ; procedures_translated_total: int
   ; source_file: SourceFile.t }
 
-type analysis_stats =
-  { analysis_nodes_visited: int
-  ; analysis_status: SymOp.failure_kind option
-  ; analysis_total_nodes: int
-  ; clang_method_kind: ProcAttributes.clang_method_kind
-  ; lang: string
-  ; method_location: Location.t
-  ; method_name: string
-  ; num_preposts: int
-  ; symops: int }
-
 type event =
+  | AnalysisStats of analysis_stats
+  | FrontendException of frontend_exception
+  | ProceduresTranslatedSummary of procedures_translated
   | UncaughtException of exn * int  (** exception, exitcode *)
-  | FrontendException of frontend_exception  (** record of caught exception *)
-  | ProceduresTranslatedSummary of procedures_translated  (** record of procedures translated *)
-  | AnalysisStats of analysis_stats  (** record of stats from procedure analysis *)
 
 val get_log_identifier : unit -> string
 
