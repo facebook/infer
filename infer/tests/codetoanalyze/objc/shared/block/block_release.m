@@ -17,7 +17,7 @@
 
 @implementation My_manager
 
-- (int)blockReleaseTODO {
+- (int)blockReleaseNoLeak {
   void (^b)(int a);
   int z = 3;
   CGContextRef context = CGBitmapContextCreate(NULL, 0, 0, 8, 0, 0, 0);
@@ -26,7 +26,7 @@
     if (newImage)
       CGImageRelease(newImage);
   };
-  b(z); // currently doesn't work due to PRECONDITION_NOT_MET here
+  b(z);
   if (context)
     CGContextRelease(context);
   return z;

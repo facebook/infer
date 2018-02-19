@@ -12,14 +12,29 @@
 
 typedef void (^MyHandler)(RCBlock* name);
 
+@interface RCBlockAA : NSObject
+
+@property(nonatomic, strong) RCBlock* b;
+
+@property(nonatomic, strong) RCBlockAA* child;
+
+@end
+
+typedef void (^MyAHandler)(RCBlockAA* name);
+
 @interface RCBlock : NSObject {
   RCBlock* child;
 }
 
 @property(nonatomic, strong) MyHandler handler;
 
+@property(nonatomic, strong) MyAHandler a_handler;
+
 @property(nonatomic, strong) RCBlock* child;
 
+@end
+
+@implementation RCBlockAA
 @end
 
 @implementation RCBlock
@@ -56,5 +71,15 @@ int call_retain_self_in_block_cycle() {
 int call_retain_weak_self_in_block_no_cycle() {
   RCBlock* c = [[RCBlock alloc] init];
   [c retain_weak_self_in_block];
+  return 0;
+}
+
+int retain_a_in_block_cycle() {
+  RCBlockAA* a = [RCBlockAA new];
+  RCBlock* b = [RCBlock new];
+  a.b = b;
+  b.a_handler = ^(RCBlockAA* b) {
+    a.child = a;
+  };
   return 0;
 }

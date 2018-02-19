@@ -91,15 +91,16 @@ let edge_is_strong tenv obj_edge =
 let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
-      List.find
-        ~f:(fun (e, _, typ) ->
-          match typ.Typ.desc with
-          | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-              false
-          | _ ->
-              Exp.equal e root_node.RetainCyclesType.rc_node_exp )
-        captured_vars
-      |> Option.map ~f:(fun (_, var, _) -> (name, var))
+      if List.exists
+           ~f:(fun (e, _, typ) ->
+             match typ.Typ.desc with
+             | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+                 false
+             | _ ->
+                 Exp.equal e root_node.RetainCyclesType.rc_node_exp )
+           captured_vars
+      then Some name
+      else None
   | _ ->
       None
 
@@ -132,11 +133,7 @@ let get_cycle root tenv prop =
           let cycle_block_opt = get_cycle_blocks root_node f_exp in
           (* cycle with a block *)
           if edge_is_strong tenv obj_edge && Option.is_some cycle_block_opt then
-            let procname, var = Option.value_exn cycle_block_opt in
-            (* From the captured variables we get the actual name of the variable
-            that is more useful for the error message *)
-            let updated_from_node = {from_node with rc_node_exp= Exp.Lvar var} in
-            let edge = Object {obj_edge with rc_from= updated_from_node} in
+            let procname = Option.value_exn cycle_block_opt in
             let edge2 = Block procname in
             (edge2 :: edge :: rev_path, true)
           else

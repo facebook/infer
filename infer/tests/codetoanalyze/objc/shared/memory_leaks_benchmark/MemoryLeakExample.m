@@ -99,7 +99,7 @@ CGColorRef FBColorCreateWithGray(CGFloat gray, CGFloat a);
   return blk();
 }
 
-- (int)blockFreeNoLeakTODO {
+- (int)blockFreeNoLeak {
   int* x = malloc(sizeof(int));
   *x = 2;
   int (^blk)(void) = ^() {

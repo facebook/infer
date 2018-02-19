@@ -2070,8 +2070,11 @@ let rec exp_captured_ren ren (e: Exp.t) : Exp.t =
       Var (ident_captured_ren ren id)
   | Exn e ->
       Exn (exp_captured_ren ren e)
-  | Closure _ ->
-      e (* TODO: why captured vars not renamed? *)
+  | Closure {name; captured_vars} ->
+      let captured_vars' =
+        List.map ~f:(fun (e, v, t) -> (exp_captured_ren ren e, v, t)) captured_vars
+      in
+      Closure {name; captured_vars= captured_vars'}
   | Const _ ->
       e
   | Sizeof ({dynamic_length} as sizeof_data) ->
