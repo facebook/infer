@@ -23,13 +23,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = FieldsAssignedInConstructors
 
-  type extras = Exp.t Ident.IdentHash.t
+  type extras = Exp.t Ident.Hash.t
 
   let exp_is_null ids_map exp =
     match exp with
     | Exp.Var id -> (
       try
-        let exp = Ident.IdentHash.find ids_map id in
+        let exp = Ident.Hash.find ids_map id in
         Exp.is_null_literal exp
       with Not_found -> false )
     | _ ->
@@ -37,14 +37,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_self ids_map id =
-    try match Ident.IdentHash.find ids_map id with Exp.Lvar var -> Pvar.is_self var | _ -> false
+    try match Ident.Hash.find ids_map id with Exp.Lvar var -> Pvar.is_self var | _ -> false
     with Not_found -> false
 
 
-  let exec_instr astate (proc_data: Exp.t Ident.IdentHash.t ProcData.t) _ instr =
+  let exec_instr astate (proc_data: Exp.t Ident.Hash.t ProcData.t) _ instr =
     match instr with
     | Sil.Load (id, exp, _, _) ->
-        Ident.IdentHash.add proc_data.extras id exp ;
+        Ident.Hash.add proc_data.extras id exp ;
         astate
     | Sil.Store (Exp.Lfield (Exp.Var lhs_id, name, typ), exp_typ, rhs, _) -> (
       match exp_typ.Typ.desc with
@@ -98,7 +98,7 @@ let analysis cfg tenv =
     if Procdesc.is_defined pdesc && Typ.Procname.is_constructor proc_name then
       match
         FieldsAssignedInConstructorsChecker.compute_post
-          (ProcData.make pdesc tenv (Ident.IdentHash.create 10))
+          (ProcData.make pdesc tenv (Ident.Hash.create 10))
           ~initial
       with
       | Some new_domain ->

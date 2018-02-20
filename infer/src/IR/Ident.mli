@@ -31,13 +31,13 @@ val equal_kind : kind -> kind -> bool
 (** Equality for kind. *)
 
 (** Set for identifiers. *)
-module IdentSet : Caml.Set.S with type elt = t
+module Set : Caml.Set.S with type elt = t
 
 (** Hash table with ident as key. *)
-module IdentHash : Caml.Hashtbl.S with type key = t
+module Hash : Caml.Hashtbl.S with type key = t
 
 (** Map with ident as key. *)
-module IdentMap : Caml.Map.S with type key = t
+module Map : Caml.Map.S with type key = t
 
 module NameGenerator : sig
   type t
@@ -52,7 +52,7 @@ module NameGenerator : sig
   (** Set the current name generator. *)
 end
 
-val idlist_to_idset : t list -> IdentSet.t
+val idlist_to_idset : t list -> Set.t
 (** Convert an identfier list to an identifier set *)
 
 val kprimed : kind

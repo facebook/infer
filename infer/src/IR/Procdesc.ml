@@ -551,9 +551,9 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
     | exp ->
         exp
   in
-  let subst_map = ref Ident.IdentMap.empty in
+  let subst_map = ref Ident.Map.empty in
   let redirect_typename origin_id =
-    try Some (Ident.IdentMap.find origin_id !subst_map) with Not_found -> None
+    try Some (Ident.Map.find origin_id !subst_map) with Not_found -> None
   in
   let convert_instr instrs = function
     | Sil.Load
@@ -565,11 +565,11 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
           try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions with Not_found ->
             origin_typename
         in
-        subst_map := Ident.IdentMap.add id specialized_typname !subst_map ;
+        subst_map := Ident.Map.add id specialized_typname !subst_map ;
         Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc) :: instrs
     | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc) ->
         let updated_typ : Typ.t =
-          try Typ.mk ~default:origin_typ (Tstruct (Ident.IdentMap.find origin_id !subst_map))
+          try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Not_found -> origin_typ
         in
         Sil.Load (id, convert_exp origin_exp, updated_typ, loc) :: instrs
@@ -670,7 +670,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
     match instr with
     | Sil.Load (id, Exp.Lvar block_param, _, _)
       when Mangled.Map.mem (Pvar.get_name block_param) substitutions ->
-        let id_map = Ident.IdentMap.add id (Pvar.get_name block_param) id_map in
+        let id_map = Ident.Map.add id (Pvar.get_name block_param) id_map in
         (* we don't need the load the block param instruction anymore *)
         (instrs, id_map)
     | Sil.Load (id, origin_exp, origin_typ, loc) ->
@@ -683,7 +683,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
     | Sil.Call (return_ids, Exp.Var id, origin_args, loc, call_flags) -> (
       try
         let block_name, extra_formals =
-          let block_var = Ident.IdentMap.find id id_map in
+          let block_var = Ident.Map.find id id_map in
           Mangled.Map.find block_var substitutions
         in
         (* once we find the block in the map, it means that we need to subsitute it with the
@@ -730,7 +730,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         (instrs, id_map)
   in
   let f_instr_list instrs =
-    let instrs, _ = List.fold ~f:convert_instr ~init:([], Ident.IdentMap.empty) instrs in
+    let instrs, _ = List.fold ~f:convert_instr ~init:([], Ident.Map.empty) instrs in
     List.rev instrs
   in
   f_instr_list

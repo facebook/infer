@@ -75,19 +75,19 @@ let equal i1 i2 =
 
 
 (** {2 Set for identifiers} *)
-module IdentSet = Caml.Set.Make (struct
+module Set = Caml.Set.Make (struct
   type nonrec t = t
 
   let compare = compare
 end)
 
-module IdentMap = Caml.Map.Make (struct
+module Map = Caml.Map.Make (struct
   type nonrec t = t
 
   let compare = compare
 end)
 
-module IdentHash = Hashtbl.Make (struct
+module Hash = Hashtbl.Make (struct
   type nonrec t = t
 
   let equal = equal
@@ -95,7 +95,7 @@ module IdentHash = Hashtbl.Make (struct
   let hash (id: t) = Hashtbl.hash id
 end)
 
-let idlist_to_idset ids = List.fold ~f:(fun set id -> IdentSet.add id set) ~init:IdentSet.empty ids
+let idlist_to_idset ids = List.fold ~f:(fun set id -> Set.add id set) ~init:Set.empty ids
 
 (** {2 Conversion between Names and Strings} *)
 module NameHash = Hashtbl.Make (struct

@@ -219,14 +219,13 @@ let get_pure (p: 'a t) : pi = pi_of_subst p.sub @ p.pi
 let get_pure_extended p =
   let base = get_pure p in
   let primed_atoms, _ =
-    List.fold base ~init:([], Ident.IdentMap.empty) ~f:
-      (fun ((atoms, primed_map) as acc) base_atom ->
+    List.fold base ~init:([], Ident.Map.empty) ~f:(fun ((atoms, primed_map) as acc) base_atom ->
         let extend_atoms id pid =
           try
-            let old_id = Ident.IdentMap.find pid primed_map in
+            let old_id = Ident.Map.find pid primed_map in
             let new_atom = Sil.Aeq (Var id, Var old_id) in
             (new_atom :: atoms, primed_map)
-          with Not_found -> (atoms, Ident.IdentMap.add pid id primed_map)
+          with Not_found -> (atoms, Ident.Map.add pid id primed_map)
         in
         match base_atom with
         | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id0 && not (Ident.is_primed id1) ->

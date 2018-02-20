@@ -1840,8 +1840,7 @@ let pi_partial_meet tenv (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.
   let dom2 = Ident.idlist_to_idset (Sil.sub_domain sub2) in
   let handle_atom sub dom atom =
     let fav_list = Sil.fav_to_list (Sil.atom_fav atom) in
-    if List.for_all ~f:(fun id -> Ident.IdentSet.mem id dom) fav_list then
-      Sil.atom_sub (`Exp sub) atom
+    if List.for_all ~f:(fun id -> Ident.Set.mem id dom) fav_list then Sil.atom_sub (`Exp sub) atom
     else ( L.d_str "handle_atom failed on " ; Sil.d_atom atom ; L.d_ln () ; raise Sil.JoinFail )
   in
   let f1 p' atom = Prop.prop_atom_and tenv p' (handle_atom sub1 dom1 atom) in

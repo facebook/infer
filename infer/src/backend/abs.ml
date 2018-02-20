@@ -963,8 +963,7 @@ let sigma_reachable root_fav sigma =
   let edge_fires (e, _) =
     match e with
     | Exp.Var id ->
-        if Ident.is_primed id || Ident.is_footprint id then Ident.IdentSet.mem id !reach_set
-        else true
+        if Ident.is_primed id || Ident.is_footprint id then Ident.Set.mem id !reach_set else true
     | _ ->
         true
   in
@@ -974,7 +973,7 @@ let sigma_reachable root_fav sigma =
         (edges_to_revisit, modified)
     | edge :: edges_todo' ->
         if edge_fires edge then (
-          reach_set := Ident.IdentSet.union (snd edge) !reach_set ;
+          reach_set := Ident.Set.union (snd edge) !reach_set ;
           apply_once edges_to_revisit edges_todo' true )
         else apply_once (edge :: edges_to_revisit) edges_todo' modified
   in
@@ -984,7 +983,7 @@ let sigma_reachable root_fav sigma =
   in
   find_fixpoint !edges ;
   (* L.d_str "reachable: ";
-     Ident.IdentSet.iter (fun id -> Sil.d_exp (Exp.Var id); L.d_str " ") !reach_set;
+     Ident.Set.iter (fun id -> Sil.d_exp (Exp.Var id); L.d_str " ") !reach_set;
      L.d_ln (); *)
   !reach_set
 
@@ -1022,7 +1021,7 @@ let check_junk ?original_prop pname tenv prop =
     let id_considered_reachable =
       (* reachability function *)
       let reach_set = sigma_reachable fav_root sigma in
-      fun id -> Ident.IdentSet.mem id reach_set
+      fun id -> Ident.Set.mem id reach_set
     in
     let should_remove_hpred entries =
       let predicate = function
