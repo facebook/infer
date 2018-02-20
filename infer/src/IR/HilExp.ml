@@ -31,8 +31,17 @@ let rec pp fmt = function
       F.fprintf fmt "%a %s %a" pp e1 (Binop.str Pp.text op) pp e2
   | Exception e ->
       F.fprintf fmt "exception %a" pp e
-  | Closure (pname, _) ->
-      F.fprintf fmt "closure(%a)" Typ.Procname.pp pname
+  | Closure (pname, captured) ->
+      let pp_item fmt (base, exp) =
+        match exp with
+        | AccessExpression Base b when AccessPath.equal_base b base ->
+            F.fprintf fmt "%a captured" AccessPath.pp_base b
+        | _ ->
+            F.fprintf fmt "%a captured as %a" AccessPath.pp_base base pp exp
+      in
+      F.fprintf fmt "closure(%a, %a)" Typ.Procname.pp pname
+        (PrettyPrintable.pp_collection ~pp_item)
+        captured
   | Constant c ->
       Const.pp Pp.text fmt c
   | Cast (typ, e) ->
@@ -92,7 +101,9 @@ let get_access_paths exp0 =
         get_access_paths_ e acc
     | BinaryOperator (_, e1, e2) ->
         get_access_paths_ e1 acc |> get_access_paths_ e2
-    | Closure _ | Constant _ | Sizeof _ ->
+    | Closure (_, captured) ->
+        List.fold captured ~f:(fun acc (_, e) -> get_access_paths_ e acc) ~init:acc
+    | Constant _ | Sizeof _ ->
         acc
   in
   get_access_paths_ exp0 []
