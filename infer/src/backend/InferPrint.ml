@@ -412,8 +412,7 @@ module Stats = struct
     ; mutable ntimeouts: int
     ; mutable nverified: int
     ; mutable nwarnings: int
-    ; mutable saved_errors: string list
-    ; mutable events_to_log: EventLogger.event list }
+    ; mutable saved_errors: string list }
 
   let create () =
     { files= Hashtbl.create 3
@@ -428,8 +427,7 @@ module Stats = struct
     ; ntimeouts= 0
     ; nverified= 0
     ; nwarnings= 0
-    ; saved_errors= []
-    ; events_to_log= [] }
+    ; saved_errors= [] }
 
 
   let process_loc loc stats =
@@ -517,28 +515,6 @@ module Stats = struct
     process_loc (Specs.get_loc summary) stats
 
 
-  let process_summary_for_logging _ (summary: Specs.summary) _ stats =
-    let num_preposts =
-      match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
-    in
-    let lang = Specs.get_proc_name summary |> Typ.Procname.get_language in
-    stats.events_to_log
-    <- EventLogger.AnalysisStats
-         { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
-         ; analysis_status= summary.stats.stats_failure
-         ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
-         ; clang_method_kind=
-             ( if Language.equal lang Language.Clang then
-                 Some (Specs.get_attributes summary).clang_method_kind
-             else None )
-         ; lang= Language.to_explicit_string lang
-         ; method_location= Specs.get_loc summary
-         ; method_name= Specs.get_proc_name summary |> Typ.Procname.to_string
-         ; num_preposts
-         ; symops= summary.stats.symops }
-       :: stats.events_to_log
-
-
   let num_files stats = Hashtbl.length stats.files
 
   let pp fmt stats =
@@ -555,6 +531,31 @@ module Stats = struct
     F.fprintf fmt "@\n -------------------@\n" ;
     F.fprintf fmt "@\nDetailed Errors@\n@\n" ;
     List.iter ~f:(fun s -> F.fprintf fmt "%s@\n" s) (List.rev stats.saved_errors)
+end
+
+module StatsLogs = struct
+  let process _ (summary: Specs.summary) _ _ =
+    let num_preposts =
+      match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
+    in
+    let proc_name = Specs.get_proc_name summary in
+    let lang = Typ.Procname.get_language proc_name in
+    let stats =
+      EventLogger.AnalysisStats
+        { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
+        ; analysis_status= summary.stats.stats_failure
+        ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
+        ; clang_method_kind=
+            ( if Language.equal lang Language.Clang then
+                Some (Specs.get_attributes summary).clang_method_kind
+            else None )
+        ; lang= Language.to_explicit_string lang
+        ; method_location= Specs.get_loc summary
+        ; method_name= Typ.Procname.to_string proc_name
+        ; num_preposts
+        ; symops= summary.stats.symops }
+    in
+    EventLogger.log stats
 end
 
 module Report = struct
@@ -728,7 +729,7 @@ let pp_calls_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
       let outf = get_outfile outfile_opt in
       CallsCsv.pp_calls outf.fmt
   | Json | Tests | Text | Logs ->
-      L.(die InternalError) "Printing calls in json/tests/text/logs is not implemented"
+      L.(die InternalError) "Printing calls in json/tests/text is not implemented"
 
 
 let pp_stats_in_format (format_kind, _) =
@@ -736,7 +737,7 @@ let pp_stats_in_format (format_kind, _) =
   | Csv ->
       Stats.process_summary
   | Logs ->
-      Stats.process_summary_for_logging
+      StatsLogs.process
   | Json | Tests | Text ->
       L.(die InternalError) "Printing stats in json/tests/text is not implemented"
 
@@ -952,8 +953,8 @@ let init_files format_list_by_kind =
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_open outfile.fmt ()
       | Csv, (Calls | Summary)
-      | Json, (Procs | Stats | Calls | Summary)
       | Logs, Stats
+      | Json, (Procs | Stats | Calls | Summary)
       | Tests, _
       | Text, _ ->
           ()
@@ -967,16 +968,16 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
   let close_files_of_report_kind (report_kind, format_list) =
     let close_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
       ( match (format_kind, report_kind) with
+      | Logs, (Issues | Procs | Calls | Summary) ->
+          L.(die InternalError) "Logging these reports is not implemented"
       | Csv, Stats ->
           let outfile = get_outfile outfile_opt in
           F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_close outfile.fmt ()
-      | Logs, Stats ->
-          List.iter ~f:EventLogger.log stats.events_to_log
       | Csv, (Issues | Procs | Calls | Summary)
-      | Logs, (Issues | Procs | Calls | Summary)
+      | Logs, Stats
       | Json, (Procs | Stats | Calls | Summary)
       | Tests, _
       | Text, _ ->
