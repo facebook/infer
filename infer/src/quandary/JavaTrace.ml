@@ -222,7 +222,9 @@ module SourceKind = struct
             | _ ->
               match Tenv.lookup tenv typename with
               | Some typ ->
-                  if Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service then
+                  if Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
+                     && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
+                  then
                     (* assume every non-this formal of a Thrift service is tainted *)
                     (* TODO: may not want to taint numbers or Enum's *)
                     Some (taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc)))

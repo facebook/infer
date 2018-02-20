@@ -33,6 +33,21 @@ class Service1 {
     Runtime.getRuntime().exec(s); // RCE if s is tainted, we should warn
   }
 
+  // assume protected methods aren't exported to Thrift
+  protected void protectedServiceMethodOk(String s) throws IOException {
+    Runtime.getRuntime().exec(s);
+  }
+
+  // assume package-protected methods aren't exported to Thrift
+  void packageProtectedServiceMethodOk(String s) throws IOException {
+    Runtime.getRuntime().exec(s);
+  }
+
+  // private methods can't be exported to thrift
+  private void privateMethodNotEndpointOk(String s) throws IOException {
+    Runtime.getRuntime().exec(s);
+  }
+
 }
 
 @ThriftService
