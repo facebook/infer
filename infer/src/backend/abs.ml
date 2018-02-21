@@ -1107,12 +1107,10 @@ let check_junk ?original_prop pname tenv prop =
               match (alloc_attribute, resource) with
               | Some PredSymb.Awont_leak, Rmemory _ ->
                   (true, exn_leak)
-              | Some _, Rmemory Mobjc -> (
-                match RetainCycles.report_cycle tenv hpred original_prop with
-                | Some exn ->
-                    (false, exn)
-                | None ->
-                    (true, exn_leak) )
+              | Some _, Rmemory Mobjc ->
+                  RetainCycles.report_cycle tenv pname hpred original_prop ;
+                  (true, exn_leak)
+                  (* we report now inside RetainCycles, here we ignore the leak *)
               | (Some _, Rmemory Mnew | Some _, Rmemory Mnew_array)
                 when Language.curr_language_is Clang ->
                   (is_none ml_bucket_opt, exn_leak)
@@ -1126,17 +1124,13 @@ let check_junk ?original_prop pname tenv prop =
                   (false, exn_leak)
               | Some _, Rlock ->
                   (false, exn_leak)
-              | _ when Sil.is_objc_object hpred -> (
-                match
+              | _ when Sil.is_objc_object hpred ->
                   (* When it's a cycle and it is an Objective-C object then
                         we have a retain cycle. Objc object may not have the
                         Mobjc qualifier when added in footprint doing abduction *)
-                  RetainCycles.report_cycle tenv hpred original_prop
-                with
-                | Some exn ->
-                    (false, exn)
-                | None ->
-                    (Language.curr_language_is Java, exn_leak) )
+                  RetainCycles.report_cycle tenv pname hpred original_prop ;
+                  (true, exn_leak)
+                  (* we report now inside RetainCycles, here we ignore the leak *)
               | _ ->
                   (Language.curr_language_is Java, exn_leak)
             in

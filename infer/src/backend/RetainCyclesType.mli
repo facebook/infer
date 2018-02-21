@@ -19,7 +19,10 @@ type retain_cycle_edge = Object of retain_cycle_edge_objc | Block of Typ.Procnam
 
 (** A retain cycle is a non-empty list of paths. It also contains a pointer to the head of the list
 to model the cycle structure. The next element from the end of the list is the head. *)
-type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge}
+type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
+
+(** Set for retain cycles. *)
+module Set : Caml.Set.S with type elt = t
 
 val print_cycle : t -> unit
 
@@ -33,3 +36,5 @@ val write_dotty_to_file : string -> t -> unit
 val _retain_cycle_edge_to_string : retain_cycle_edge -> string
 
 val _retain_cycle_node_to_string : retain_cycle_node -> string
+
+val _retain_cycle_to_string : t -> string

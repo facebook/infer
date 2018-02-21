@@ -26,6 +26,8 @@ typedef void (^MyAHandler)(RCBlockAA* name);
   RCBlock* child;
 }
 
+@property(nonatomic, strong) RCBlockAA* a;
+
 @property(nonatomic, strong) MyHandler handler;
 
 @property(nonatomic, strong) MyAHandler a_handler;
@@ -78,6 +80,7 @@ int retain_a_in_block_cycle() {
   RCBlockAA* a = [RCBlockAA new];
   RCBlock* b = [RCBlock new];
   a.b = b;
+  b.a = a;
   b.a_handler = ^(RCBlockAA* b) {
     a.child = a;
   };

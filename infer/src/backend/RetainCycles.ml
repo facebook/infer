@@ -88,6 +88,18 @@ let edge_is_strong tenv obj_edge =
   not weak_edge
 
 
+exception Max_retain_cycles of RetainCyclesType.Set.t
+
+let add_cycle found_cycles rev_path =
+  match RetainCyclesType.create_cycle (List.rev rev_path) with
+  | Some cycle ->
+      if RetainCyclesType.Set.cardinal found_cycles < 10 then
+        RetainCyclesType.Set.add cycle found_cycles
+      else raise (Max_retain_cycles found_cycles)
+  | None ->
+      found_cycles
+
+
 let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
@@ -105,7 +117,7 @@ let get_cycle_blocks root_node exp =
       None
 
 
-let get_cycle root tenv prop =
+let get_cycles found_cycles root tenv prop =
   let open RetainCyclesType in
   let sigma = prop.Prop.sigma in
   let get_points_to e =
@@ -113,46 +125,45 @@ let get_cycle root tenv prop =
       ~f:(fun hpred -> match hpred with Sil.Hpointsto (e', _, _) -> Exp.equal e' e | _ -> false)
       sigma
   in
-  (* Perform a dfs of a graph stopping when e_root is reached.
-   Returns a pair (path, bool) where path is a list of edges
-   describing the path to e_root and bool is true if e_root is reached. *)
-  let rec dfs ~root_node ~from_node ~rev_path ~fields ~visited =
+  (* Perform a dfs of a graph stopping when e_root is reached. Returns the set of cycles reached. *)
+  let rec dfs ~found_cycles ~root_node ~from_node ~rev_path ~fields ~visited =
     match fields with
     | [] ->
-        (rev_path, false)
+        found_cycles
     | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
         let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
         let obj_edge = {rc_from= from_node; rc_field} in
         let edge = Object obj_edge in
-        (* found root, finish the cycle *)
-        if edge_is_strong tenv obj_edge && Exp.equal f_exp root_node.rc_node_exp then
-          (edge :: rev_path, true) (* we already visited f_exp, stop *)
-        else if List.mem ~equal:Exp.equal visited f_exp then (rev_path, false)
-        else
-          let visited' = from_node.rc_node_exp :: visited in
-          let cycle_block_opt = get_cycle_blocks root_node f_exp in
-          (* cycle with a block *)
-          if edge_is_strong tenv obj_edge && Option.is_some cycle_block_opt then
-            let procname = Option.value_exn cycle_block_opt in
-            let edge2 = Block procname in
-            (edge2 :: edge :: rev_path, true)
+        let visited' = from_node.rc_node_exp :: visited in
+        let found_cycles' =
+          (* found root, finish the cycle *)
+          if edge_is_strong tenv obj_edge && Exp.equal f_exp root_node.rc_node_exp then
+            add_cycle found_cycles (edge :: rev_path) (* we already visited f_exp, stop *)
+          else if List.mem ~equal:Exp.equal visited f_exp then found_cycles
           else
-            let res =
+            (* cycle with a block *)
+            let cycle_opt = get_cycle_blocks root_node f_exp in
+            if edge_is_strong tenv obj_edge && Option.is_some cycle_opt then
+              let procname = Option.value_exn cycle_opt in
+              let edge2 = Block procname in
+              let rev_path' = edge2 :: edge :: rev_path in
+              add_cycle found_cycles rev_path'
+            else
               match get_points_to f_exp with
               | None ->
-                  (rev_path, false)
+                  found_cycles
               | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te})
                 when edge_is_strong tenv obj_edge ->
                   let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
-                  dfs ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path) ~fields:new_fields
-                    ~visited:visited'
+                  dfs ~found_cycles ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path)
+                    ~fields:new_fields ~visited:visited'
               | _ ->
-                  (rev_path, false)
-            in
-            if snd res then res
-            else dfs ~root_node ~from_node ~rev_path ~fields:el' ~visited:visited'
+                  found_cycles
+        in
+        dfs ~found_cycles:found_cycles' ~root_node ~from_node ~rev_path ~fields:el'
+          ~visited:visited'
     | _ ->
-        (rev_path, false)
+        found_cycles
   in
   L.d_strln "Looking for cycle with root expression: " ;
   Sil.d_hpred root ;
@@ -161,25 +172,16 @@ let get_cycle root tenv prop =
   | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) ->
       let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
-      let pot_cycle, res =
-        dfs ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]
-      in
-      if res then List.rev pot_cycle
-      else (
-        L.d_strln "NO cycle found from root" ;
-        [] )
+      dfs ~found_cycles ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]
   | _ ->
       L.d_strln "Root exp is not an allocated object. No cycle found" ;
-      []
+      found_cycles
 
 
-let get_var_retain_cycle hpred tenv prop_ =
-  (* returns the pvars of the first cycle we find in sigma.
-     This is an heuristic that works if there is one cycle.
-     In case there are more than one cycle we may return not necessarily
-     the one we are looking for. *)
-  let cycle_elements = get_cycle hpred tenv prop_ in
-  RetainCyclesType.create_cycle cycle_elements
+(* Find all the cycles available with root hpred, up to a limit of 10 *)
+let get_retain_cycles hpred tenv prop_ =
+  try get_cycles RetainCyclesType.Set.empty hpred tenv prop_ with Max_retain_cycles cycles ->
+    cycles
 
 
 let exn_retain_cycle tenv hpred cycle =
@@ -194,15 +196,20 @@ let exn_retain_cycle tenv hpred cycle =
   Exceptions.Retain_cycle (hpred, desc, __POS__)
 
 
-let report_cycle tenv hpred original_prop =
+let report_cycle tenv pname hpred original_prop =
   (* When there is a cycle in objc we ignore it
         only if it's empty or it has weak or unsafe_unretained fields.
         Otherwise we report a retain cycle. *)
   let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
   let prop = remove_opt original_prop in
-  match get_var_retain_cycle hpred tenv prop with
-  | Some cycle ->
-      RetainCyclesType.print_cycle cycle ;
-      Some (exn_retain_cycle tenv hpred cycle)
-  | _ ->
-      None
+  let cycles = get_retain_cycles hpred tenv prop in
+  RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
+  match Specs.get_summary pname with
+  | Some summary ->
+      RetainCyclesType.Set.iter
+        (fun cycle ->
+          let exn = exn_retain_cycle tenv hpred cycle in
+          Reporting.log_error summary exn )
+        cycles
+  | None ->
+      ()

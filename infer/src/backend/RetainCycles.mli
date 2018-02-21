@@ -9,4 +9,5 @@
 
 open! IStd
 
-val report_cycle : Tenv.t -> Sil.hpred -> Prop.normal Prop.t option option -> exn option
+val report_cycle :
+  Tenv.t -> Typ.Procname.t -> Sil.hpred -> Prop.normal Prop.t option option -> unit

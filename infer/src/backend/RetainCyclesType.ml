@@ -25,7 +25,13 @@ type retain_cycle_edge =
 
 let retain_cycle_edge_equal = [%compare.equal : retain_cycle_edge]
 
-type t = {rc_elements: retain_cycle_edge list; rc_head: retain_cycle_edge} [@@deriving compare]
+type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list} [@@deriving compare]
+
+module Set = Caml.Set.Make (struct
+  type nonrec t = t
+
+  let compare = compare
+end)
 
 let is_inst_rearrange node =
   match node with
@@ -55,12 +61,12 @@ let _retain_cycle_edge_to_string (edge: retain_cycle_edge) =
       Format.sprintf "a block"
 
 
-let retain_cycle_to_string cycle =
+let _retain_cycle_to_string cycle =
   "Cycle= \n\t"
   ^ String.concat ~sep:"->" (List.map ~f:_retain_cycle_edge_to_string cycle.rc_elements)
 
 
-let print_cycle cycle = Logging.d_strln (retain_cycle_to_string cycle)
+let print_cycle cycle = Logging.d_strln (_retain_cycle_to_string cycle)
 
 let find_minimum_element cycle =
   List.reduce_exn cycle.rc_elements ~f:(fun el1 el2 ->
