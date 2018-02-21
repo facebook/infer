@@ -273,8 +273,6 @@ val buck_out : string option
 
 val bufferoverrun : bool
 
-val calls_csv : string option
-
 val capture : bool
 
 val captured_dir : string

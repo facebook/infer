@@ -18,6 +18,13 @@ type analysis_stats =
   ; num_preposts: int
   ; symops: int }
 
+type call_trace =
+  { call_location: Location.t
+  ; call_result: string
+  ; callee_name: string
+  ; caller_name: string
+  ; lang: string }
+
 type frontend_exception =
   { ast_node: string option
   ; exception_file: string
@@ -35,6 +42,7 @@ type procedures_translated =
 
 type event =
   | AnalysisStats of analysis_stats
+  | CallTrace of call_trace
   | FrontendException of frontend_exception
   | ProceduresTranslatedSummary of procedures_translated
   | UncaughtException of exn * int  (** exception, exitcode *)

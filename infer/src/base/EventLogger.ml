@@ -105,6 +105,27 @@ let create_analysis_stats_row base record =
   |> add_int ~key:"symops" ~data:record.symops
 
 
+type call_trace =
+  { call_location: Location.t
+  ; call_result: string
+  ; callee_name: string
+  ; caller_name: string
+  ; lang: string }
+
+let create_call_trace_row base record =
+  let open JsonBuilder in
+  base
+  |> add_string ~key:"call_location"
+       ~data:
+         (String.concat
+            [string_of_int record.call_location.line; ":"; string_of_int record.call_location.col])
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.call_location.file)
+  |> add_string ~key:"call_result" ~data:record.call_result
+  |> add_string ~key:"callee_name" ~data:record.callee_name
+  |> add_string ~key:"caller_name" ~data:record.caller_name
+  |> add_string ~key:"lang" ~data:record.lang
+
+
 type frontend_exception =
   { ast_node: string option
   ; exception_file: string
@@ -155,6 +176,7 @@ let create_procedures_translated_row base record =
 
 type event =
   | AnalysisStats of analysis_stats
+  | CallTrace of call_trace
   | FrontendException of frontend_exception
   | ProceduresTranslatedSummary of procedures_translated
   | UncaughtException of exn * int
@@ -163,6 +185,8 @@ let string_of_event event =
   match event with
   | AnalysisStats _ ->
       "AnalysisStats"
+  | CallTrace _ ->
+      "CallTrace"
   | FrontendException _ ->
       "FrontendException"
   | ProceduresTranslatedSummary _ ->
@@ -214,6 +238,8 @@ module LoggerImpl : S = struct
     ( match event with
     | AnalysisStats record ->
         create_analysis_stats_row base record
+    | CallTrace record ->
+        create_call_trace_row base record
     | FrontendException record ->
         create_frontend_exception_row base record
     | ProceduresTranslatedSummary record ->

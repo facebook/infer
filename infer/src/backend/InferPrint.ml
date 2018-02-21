@@ -380,24 +380,6 @@ let pp_text_of_report fmt report =
   List.iter ~f:pp_row report ; F.fprintf fmt "@?"
 
 
-module CallsCsv = struct
-  (** Write proc summary stats in csv format *)
-  let pp_calls fmt summary =
-    let pp x = F.fprintf fmt x in
-    let stats = summary.Specs.stats in
-    let caller_name = Specs.get_proc_name summary in
-    let do_call (callee_name, loc) trace =
-      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string caller_name)) ;
-      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename caller_name)) ;
-      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string callee_name)) ;
-      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename callee_name)) ;
-      pp "%s," (SourceFile.to_string (Specs.get_loc summary).Location.file) ;
-      pp "%d," loc.Location.line ;
-      pp "%a@\n" Specs.CallStats.pp_trace trace
-    in
-    Specs.CallStats.iter do_call stats.Specs.call_stats
-end
-
 module Stats = struct
   type t =
     { files: (SourceFile.t, unit) Hashtbl.t
@@ -643,7 +625,7 @@ let error_filter filters proc_name file error_desc error_name =
   && filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Issues | Procs | Stats | Calls | Summary [@@deriving compare]
+type report_kind = Issues | Procs | Stats | Summary [@@deriving compare]
 
 let _string_of_report_kind = function
   | Issues ->
@@ -652,8 +634,6 @@ let _string_of_report_kind = function
       "Procs"
   | Stats ->
       "Stats"
-  | Calls ->
-      "Calls"
   | Summary ->
       "Summary"
 
@@ -723,15 +703,6 @@ let pp_procs_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
       L.(die InternalError) "Printing procs in json/tests/text/logs is not implemented"
 
 
-let pp_calls_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
-  match format_kind with
-  | Csv ->
-      let outf = get_outfile outfile_opt in
-      CallsCsv.pp_calls outf.fmt
-  | Json | Tests | Text | Logs ->
-      L.(die InternalError) "Printing calls in json/tests/text is not implemented"
-
-
 let pp_stats_in_format (format_kind, _) =
   match format_kind with
   | Csv ->
@@ -766,14 +737,6 @@ let pp_procs summary procs_format_list =
   List.iter ~f:pp_procs_in_format procs_format_list
 
 
-let pp_calls summary calls_format_list =
-  let pp_calls_in_format format =
-    let pp_calls = pp_calls_in_format format in
-    pp_calls summary
-  in
-  List.iter ~f:pp_calls_in_format calls_format_list
-
-
 let pp_stats error_filter linereader summary stats stats_format_list =
   let pp_stats_in_format format =
     let pp_stats = pp_stats_in_format format in
@@ -795,8 +758,6 @@ let pp_summary_by_report_kind formats_by_report_kind summary error_filter linere
         pp_procs summary format_list
     | Stats, _ :: _ ->
         pp_stats (error_filter file) linereader summary stats format_list
-    | Calls, _ :: _ ->
-        pp_calls summary format_list
     | Summary, _ when InferCommand.equal Config.command Report && not Config.quiet ->
         pp_summary summary
     | _ ->
@@ -927,8 +888,6 @@ let init_issues_format_list report_json =
 
 let init_procs_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.procs_csv
 
-let init_calls_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.calls_csv
-
 let init_stats_format_list () =
   let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] Config.stats_report in
   let logs_format = if Config.log_events then [(Logs, None)] else [] in
@@ -941,7 +900,7 @@ let init_files format_list_by_kind =
       match (format_kind, report_kind) with
       | Csv, Issues ->
           L.(die InternalError) "Printing issues in a CSV format is not implemented"
-      | Logs, (Issues | Procs | Calls | Summary) ->
+      | Logs, (Issues | Procs | Summary) ->
           L.(die InternalError) "Logging these reports is not implemented"
       | Csv, Procs ->
           let outfile = get_outfile outfile_opt in
@@ -952,11 +911,7 @@ let init_files format_list_by_kind =
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_open outfile.fmt ()
-      | Csv, (Calls | Summary)
-      | Logs, Stats
-      | Json, (Procs | Stats | Calls | Summary)
-      | Tests, _
-      | Text, _ ->
+      | Csv, Summary | Logs, Stats | Json, (Procs | Stats | Summary) | Tests, _ | Text, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -968,7 +923,7 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
   let close_files_of_report_kind (report_kind, format_list) =
     let close_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
       ( match (format_kind, report_kind) with
-      | Logs, (Issues | Procs | Calls | Summary) ->
+      | Logs, (Issues | Procs | Summary) ->
           L.(die InternalError) "Logging these reports is not implemented"
       | Csv, Stats ->
           let outfile = get_outfile outfile_opt in
@@ -976,9 +931,9 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_json_close outfile.fmt ()
-      | Csv, (Issues | Procs | Calls | Summary)
+      | Csv, (Issues | Procs | Summary)
       | Logs, Stats
-      | Json, (Procs | Stats | Calls | Summary)
+      | Json, (Procs | Stats | Summary)
       | Tests, _
       | Text, _ ->
           () ) ;
@@ -1019,7 +974,6 @@ let main ~report_json =
   let formats_by_report_kind =
     [ (Issues, issue_formats)
     ; (Procs, init_procs_format_list ())
-    ; (Calls, init_calls_format_list ())
     ; (Stats, init_stats_format_list ())
     ; (Summary, []) ]
   in

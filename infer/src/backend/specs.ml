@@ -237,92 +237,13 @@ let spec_normalize = NormSpec.normalize
 (** Cast a list of normalized specs to a list of specs *)
 let normalized_specs_to_specs = NormSpec.tospecs
 
-module CallStats = struct
-  (** module for tracing stats of function calls *)
-  module PnameLocHash = Hashtbl.Make (struct
-    type t = Typ.Procname.t * Location.t
-
-    let hash (pname, loc) = Hashtbl.hash (Typ.Procname.hash_pname pname, loc.Location.line)
-
-    let equal = [%compare.equal : Typ.Procname.t * Location.t]
-  end)
-
-  (** kind of result of a procedure call *)
-  type call_result =
-    | CR_success  (** successful call *)
-    | CR_not_met  (** precondition not met *)
-    | CR_not_found  (** the callee has no specs *)
-    | CR_skip  (** the callee was skipped *)
-
-  type trace = (call_result * bool) list
-
-  type t = trace PnameLocHash.t
-
-  let trace_add tr (res: call_result) in_footprint = (res, in_footprint) :: tr
-
-  let empty_trace : trace = []
-
-  let init calls =
-    let hash = PnameLocHash.create 1 in
-    let do_call pn_loc = PnameLocHash.add hash pn_loc empty_trace in
-    List.iter ~f:do_call calls ; hash
-
-
-  let trace t proc_name loc res in_footprint =
-    let tr_old =
-      try PnameLocHash.find t (proc_name, loc) with Not_found ->
-        PnameLocHash.add t (proc_name, loc) empty_trace ;
-        empty_trace
-    in
-    let tr_new = trace_add tr_old res in_footprint in
-    PnameLocHash.replace t (proc_name, loc) tr_new
-
-
-  let tr_elem_str (cr, in_footprint) =
-    let s1 =
-      match cr with
-      | CR_success ->
-          "OK"
-      | CR_not_met ->
-          "NotMet"
-      | CR_not_found ->
-          "NotFound"
-      | CR_skip ->
-          "Skip"
-    in
-    let s2 = if in_footprint then "FP" else "RE" in
-    s1 ^ ":" ^ s2
-
-
-  let pp_trace fmt tr = Pp.seq (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x)) fmt (List.rev tr)
-
-  let iter f t =
-    let elems = ref [] in
-    PnameLocHash.iter (fun x tr -> elems := (x, tr) :: !elems) t ;
-    let sorted_elems =
-      let compare (pname_loc1, _) (pname_loc2, _) =
-        [%compare : Typ.Procname.t * Location.t] pname_loc1 pname_loc2
-      in
-      List.sort ~cmp:compare !elems
-    in
-    List.iter ~f:(fun (x, tr) -> f x tr) sorted_elems
-
-  (*
-  let pp fmt t =
-    let do_call (pname, loc) tr =
-      F.fprintf fmt "%a %a: %a@\n" Typ.Procname.pp pname Location.pp loc pp_trace tr in
-    iter do_call t
-*)
-end
-
 (** Execution statistics *)
 type stats =
   { stats_failure: SymOp.failure_kind option
         (** what type of failure stopped the analysis (if any) *)
   ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
   ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
-  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *)
-  ; call_stats: CallStats.t }
+  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
 
 type status = Pending | Analyzed [@@deriving compare]
 
@@ -537,11 +458,7 @@ let pp_summary_html source color fmt summary =
 
 
 let empty_stats =
-  { stats_failure= None
-  ; symops= 0
-  ; nodes_visited_fp= IntSet.empty
-  ; nodes_visited_re= IntSet.empty
-  ; call_stats= CallStats.init [] (* TODO(T23648322): remove the call_stats *) }
+  {stats_failure= None; symops= 0; nodes_visited_fp= IntSet.empty; nodes_visited_re= IntSet.empty}
 
 
 let payload_compact sh payload =

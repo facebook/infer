@@ -857,12 +857,6 @@ and buck_out =
     ~meta:"dir" "Specify the root directory of buck-out"
 
 
-and calls_csv =
-  CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
-    ~in_help:InferCommand.([(Report, manual_generic)])
-    ~meta:"file" "Write individual calls in CSV format to $(i,file)"
-
-
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -2264,8 +2258,6 @@ and buck_compilation_database =
 and buck_out = !buck_out
 
 and bufferoverrun = !bufferoverrun
-
-and calls_csv = !calls_csv
 
 and capture =
   (* take `--clang-frontend-action` as the source of truth as long as that option exists *)

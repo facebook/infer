@@ -72,38 +72,13 @@ module NormSpec : sig
   (** Erase join info from pre of spec *)
 end
 
-(** module for tracing stats of function calls *)
-module CallStats : sig
-  type t
-
-  (** kind of result of a procedure call *)
-  type call_result =
-    | CR_success  (** successful call *)
-    | CR_not_met  (** precondition not met *)
-    | CR_not_found  (** the callee has no specs *)
-    | CR_skip  (** the callee was skipped *)
-
-  (** trace of an occurrence of function call *)
-  type trace = (call_result * bool) list
-
-  val iter : (Typ.Procname.t * Location.t -> trace -> unit) -> t -> unit
-  (** iterate over results of procedure calls *)
-
-  val trace : t -> Typ.Procname.t -> Location.t -> call_result -> bool -> unit
-  (** trace a procedure call *)
-
-  val pp_trace : Format.formatter -> trace -> unit
-  (** pretty print a call trace *)
-end
-
 (** Execution statistics *)
 type stats =
   { stats_failure: SymOp.failure_kind option
         (** what type of failure stopped the analysis (if any) *)
   ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
   ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
-  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *)
-  ; call_stats: CallStats.t }
+  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
 
 (** Analysis status of the procedure:
     - Pending means that the summary has been created by the procedure has not been analyzed yet

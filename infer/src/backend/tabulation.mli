@@ -10,6 +10,15 @@
 
 open! IStd
 
+(** kind of result of a procedure call *)
+type call_result =
+  | CR_success  (** successful call *)
+  | CR_not_met  (** precondition not met *)
+  | CR_not_found  (** the callee has no specs *)
+  | CR_skip  (** the callee was skipped *)
+
+val log_call_trace : Typ.Procname.t -> Typ.Procname.t -> Location.t -> call_result -> unit
+
 (** Interprocedural footprint analysis *)
 
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
