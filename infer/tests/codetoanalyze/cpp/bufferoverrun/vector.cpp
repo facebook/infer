@@ -184,3 +184,42 @@ void assert_Bad() {
   assert(v.size() == 5);
   v[6] = 1;
 }
+
+class CharVector {
+ public:
+  CharVector(char* init) : a(init) {}
+
+  char& operator[](int idx) { return a[idx]; }
+
+ private:
+  char* a;
+};
+
+void access_in_sixth(int count, CharVector v) {
+  assert(count >= 0);
+  assert(count < 5);
+  v[count + 1] = '0';
+}
+
+void access_minus_one(int count, CharVector v) {
+  assert(count >= 0);
+  v[count - 1] = '0';
+}
+
+void precise_subst_Good() {
+  char a[10];
+  CharVector v(a);
+  access_in_sixth(0, v);
+}
+
+void precise_subst_Good_FP() {
+  char a[10];
+  CharVector v(a);
+  access_minus_one(1, v);
+}
+
+void precise_subst_Bad() {
+  char a[10];
+  CharVector v(a);
+  access_minus_one(0, v);
+}

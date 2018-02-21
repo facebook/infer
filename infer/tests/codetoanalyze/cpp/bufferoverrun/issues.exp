@@ -23,6 +23,8 @@ codetoanalyze/cpp/bufferoverrun/vector.cpp, data_Bad, 4, BUFFER_OVERRUN_L1, [Cal
 codetoanalyze/cpp/bufferoverrun/vector.cpp, just_test_model_FP, 16, BUFFER_OVERRUN_L5, [Call,ArrayAccess: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, just_test_model_FP, 18, BUFFER_OVERRUN_L3, [Call,Call,Call,Assignment,Call,Call,Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [1, 1] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, out_of_bound_Bad, 2, BUFFER_OVERRUN_L2, [Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [u$12, u$13] Size: [u$12, u$13]]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Bad, 3, BUFFER_OVERRUN_L1, [ArrayDeclaration,Call,Assignment,Call,Assignment,Call,Call,Assignment,Return,ArrayAccess: Offset: [-1, -1] Size: [10, 10] @ codetoanalyze/cpp/bufferoverrun/vector.cpp:206:3 by call `access_minus_one()` ]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Good_FP, 3, BUFFER_OVERRUN_L3, [ArrayDeclaration,Call,Assignment,Call,Assignment,Call,Call,Assignment,Return,ArrayAccess: Offset: [-1, 0] Size: [10, 10] @ codetoanalyze/cpp/bufferoverrun/vector.cpp:206:3 by call `access_minus_one()` ]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, push_back_Bad, 3, BUFFER_OVERRUN_L1, [Call,Call,Assignment,Call,Assignment,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [1, 1] Size: [1, 1]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, reserve_Bad, 3, BUFFER_OVERRUN_L1, [Call,Call,Assignment,Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, 0] Size: [0, 0]]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, safe_access3_Good, 2, CONDITION_ALWAYS_FALSE, []
