@@ -389,8 +389,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (instr: HilInstr.t) =
     let open Domain in
     let open RacerDConfig in
+    let add_base ret_opt wps =
+      match ret_opt with Some vt -> StabilityDomain.add_path (vt, []) wps | _ -> wps
+    in
     match instr with
-    | Call (Some ret_base, Direct procname, actuals, _, loc)
+    | Call ((Some ret_base as rt), Direct procname, actuals, _, loc)
       when Models.acquires_ownership procname tenv ->
         let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
@@ -400,7 +403,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
         in
         (* Record all actuals as wobbly paths *)
-        let wobbly_paths = StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths in
+        let wobbly_paths =
+          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base rt
+        in
         {astate with accesses; ownership; wobbly_paths}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
       -> (
@@ -412,7 +417,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
             astate.ownership proc_data
         in
-        let wobbly_paths = StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths in
+        let wobbly_paths =
+          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base ret_opt
+        in
         let astate = {astate with accesses; wobbly_paths} in
         let astate =
           match Models.get_thread callee_pname with

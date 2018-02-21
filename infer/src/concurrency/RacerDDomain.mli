@@ -197,6 +197,8 @@ module StabilityDomain : sig
 
   val add_wobbly_paths_assign : AccessPath.t -> HilExp.t -> t -> t
 
+  val add_path : AccessPath.t -> t -> t
+
   val add_wobbly_actuals : HilExp.t list -> t -> t
 end
 
