@@ -431,12 +431,116 @@ module AccessDomain = struct
   let get_accesses precondition t = try find precondition t with Not_found -> PathDomain.empty
 end
 
+module StabilityDomain = struct
+  include AccessTree.PathSet (AccessTree.DefaultConfig)
+
+  let get_all_paths t =
+    fold
+      (fun paths z _ ->
+        match z with AccessPath.Abs.Abstracted p | AccessPath.Abs.Exact p -> p :: paths )
+      t []
+
+
+  let add_path (access_path: AccessPath.t) t =
+    let (base, _), accesses = access_path in
+    (* Without this check, short prefixes will override longer paths in the tree *)
+    if mem (AccessPath.Abs.Abstracted access_path) t then t
+    else
+      match (base, accesses) with
+      (* Do not add a vanilla "this" as a prefix *)
+      | Var.ProgramVar pvar, []
+        when Pvar.is_this pvar ->
+          t
+      | _ ->
+          let ap_abs = AccessPath.Abs.Exact access_path in
+          add_trace ap_abs true t
+
+
+  let add_wobbly_path_exp exp paths =
+    let access_paths = HilExp.get_access_paths exp in
+    List.fold ~f:(fun acc p -> add_path p acc) access_paths ~init:paths
+
+
+  let add_wobbly_actuals exps paths =
+    (* Checking conditions for inter-procedural stability:
+       automatically add duplicating actuals, "deep" stability
+       checking will be handled by processing the method's footprint
+       and rebasing (see StabilityDomain.rebase_paths). *)
+    let is_dup_access_path e =
+      List.count exps ~f:(fun x ->
+          match (x, e) with
+          | HilExp.AccessExpression ae1, HilExp.AccessExpression ae2 ->
+              AccessPath.equal
+                (AccessExpression.to_access_path ae1)
+                (AccessExpression.to_access_path ae2)
+          | _, _ ->
+              false )
+      > 1
+    in
+    let is_prefix_exp x e =
+      match (x, e) with
+      | HilExp.AccessExpression ae1, HilExp.AccessExpression ae2 ->
+          let open AccessExpression in
+          let ap1, ap2 = (to_access_path ae1, to_access_path ae2) in
+          AccessPath.is_prefix ap1 ap2 && not (AccessPath.equal ap1 ap2)
+      | _ ->
+          false
+    in
+    let find_all_prefixes e = List.filter exps ~f:(fun x -> is_prefix_exp x e) in
+    let with_duplicates =
+      List.fold exps ~init:paths ~f:(fun acc e ->
+          if is_dup_access_path e then add_wobbly_path_exp e acc else acc )
+    in
+    let with_prefixes =
+      List.fold exps ~init:with_duplicates ~f:(fun acc_paths e ->
+          List.fold (find_all_prefixes e) ~init:acc_paths ~f:(fun acc1 e1 ->
+              add_wobbly_path_exp e1 acc1 ) )
+    in
+    with_prefixes
+
+
+  let add_wobbly_paths_assign lhs_path rhs_exp paths =
+    let paths_with_lhs = add_path lhs_path paths in
+    let paths_with_lsh_rhs = add_wobbly_path_exp rhs_exp paths_with_lhs in
+    paths_with_lsh_rhs
+
+
+  let rebase_paths actuals pdesc t =
+    let formal_map = FormalMap.make pdesc in
+    let remove_pure_formals paths =
+      List.filter paths ~f:(fun p ->
+          match p with
+          | base, [] when FormalMap.get_formal_index base formal_map |> Option.is_some ->
+              false
+          | _ ->
+              true )
+    in
+    let expand_path ((base, accesses) as path) =
+      match FormalMap.get_formal_index base formal_map with
+      | Some formal_index -> (
+        match List.nth actuals formal_index with
+        | Some actual_exp -> (
+          match HilExp.get_access_paths actual_exp with
+          | [actual] ->
+              AccessPath.append actual accesses
+          | _ ->
+              path )
+        | None ->
+            path )
+      | None ->
+          path
+    in
+    get_all_paths t |> remove_pure_formals |> List.map ~f:expand_path
+    |> List.fold ~f:(fun acc p -> add_path p acc) ~init:empty
+end
+
 type astate =
   { threads: ThreadsDomain.astate
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; ownership: OwnershipDomain.astate
-  ; attribute_map: AttributeMapDomain.astate }
+  ; attribute_map: AttributeMapDomain.astate
+  ; wobbly_paths: StabilityDomain.astate }
 
 let empty =
   let threads = ThreadsDomain.empty in
@@ -444,12 +548,14 @@ let empty =
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
-  {threads; locks; accesses; ownership; attribute_map}
+  let wobbly_paths = StabilityDomain.empty in
+  {threads; locks; accesses; ownership; attribute_map; wobbly_paths}
 
 
-let is_empty {threads; locks; accesses; ownership; attribute_map} =
+let is_empty {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
   ThreadsDomain.is_empty threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
+  && StabilityDomain.is_empty wobbly_paths
 
 
 let ( <= ) ~lhs ~rhs =
@@ -459,6 +565,7 @@ let ( <= ) ~lhs ~rhs =
     && LocksDomain.( <= ) ~lhs:lhs.locks ~rhs:rhs.locks
     && AccessDomain.( <= ) ~lhs:lhs.accesses ~rhs:rhs.accesses
     && AttributeMapDomain.( <= ) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
+    && StabilityDomain.( <= ) ~lhs:lhs.wobbly_paths ~rhs:rhs.wobbly_paths
 
 
 let join astate1 astate2 =
@@ -469,7 +576,8 @@ let join astate1 astate2 =
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let ownership = OwnershipDomain.join astate1.ownership astate2.ownership in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    {threads; locks; accesses; ownership; attribute_map}
+    let wobbly_paths = StabilityDomain.join astate1.wobbly_paths astate2.wobbly_paths in
+    {threads; locks; accesses; ownership; attribute_map; wobbly_paths}
 
 
 let widen ~prev ~next ~num_iters =
@@ -482,7 +590,10 @@ let widen ~prev ~next ~num_iters =
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters
     in
-    {threads; locks; accesses; ownership; attribute_map}
+    let wobbly_paths =
+      StabilityDomain.widen ~prev:prev.wobbly_paths ~next:next.wobbly_paths ~num_iters
+    in
+    {threads; locks; accesses; ownership; attribute_map; wobbly_paths}
 
 
 type summary =
@@ -490,19 +601,22 @@ type summary =
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate }
+  ; return_attributes: AttributeSetDomain.astate
+  ; wobbly_paths: StabilityDomain.astate }
 
-let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes} =
+let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes; wobbly_paths} =
   F.fprintf fmt
-    "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
+    "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\nWobbly Paths: %a@\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
     OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
+    StabilityDomain.pp wobbly_paths
 
 
-let pp fmt {threads; locks; accesses; ownership; attribute_map} =
-  F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\n"
+let pp fmt {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
+  F.fprintf fmt
+    "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\nNon-stable Paths: %a@\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
-    ownership AttributeMapDomain.pp attribute_map
+    ownership AttributeMapDomain.pp attribute_map StabilityDomain.pp wobbly_paths
 
 
 let rec attributes_of_expr attribute_map e =

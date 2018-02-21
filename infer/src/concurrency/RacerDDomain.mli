@@ -190,6 +190,16 @@ module AccessDomain : sig
   (** get all accesses with the given precondition *)
 end
 
+module StabilityDomain : sig
+  include module type of AccessTree.PathSet (AccessTree.DefaultConfig)
+
+  val rebase_paths : HilExp.t list -> Procdesc.t -> t -> t
+
+  val add_wobbly_paths_assign : AccessPath.t -> HilExp.t -> t -> t
+
+  val add_wobbly_actuals : HilExp.t list -> t -> t
+end
+
 type astate =
   { threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
   ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
@@ -197,7 +207,9 @@ type astate =
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.astate  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.astate
-        (** map of access paths to attributes such as owned, functional, ... *) }
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; wobbly_paths: StabilityDomain.astate
+        (** Record the "touched" paths that can compromise the race detection **) }
 
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which
@@ -207,7 +219,8 @@ type summary =
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate }
+  ; return_attributes: AttributeSetDomain.astate
+  ; wobbly_paths: StabilityDomain.astate }
 
 include AbstractDomain.WithBottom with type astate := astate
 
