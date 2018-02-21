@@ -285,12 +285,6 @@ val set :
   ?sub:Sil.exp_subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t -> exposed t
 (** Set individual fields of the prop. *)
 
-val prop_rename_fav_with_existentials : Tenv.t -> normal t -> normal t
-(** Rename free variables in a prop replacing them with existentially quantified vars *)
-
-val remove_seed_captured_vars_block : Tenv.t -> Mangled.t list -> normal t -> normal t
-(** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
-
 (** {2 Prop iterators} *)
 
 (** Iterator over the sigma part. Each iterator has a current [hpred]. *)

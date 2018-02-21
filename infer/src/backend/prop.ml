@@ -2284,31 +2284,6 @@ let from_pi pi = set prop_emp ~pi
 
 let from_sigma sigma = set prop_emp ~sigma
 
-(** Rename free variables in a prop replacing them with existentially quantified vars *)
-let prop_rename_fav_with_existentials tenv (p: normal t) : normal t =
-  let fav = Sil.fav_new () in
-  prop_fav_add fav p ;
-  let ids = Sil.fav_to_list fav in
-  let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
-  let p' = prop_sub ren_sub p in
-  (*L.d_strln "Prop after renaming:"; d_prop p'; L.d_strln "";*)
-  Normalize.normalize tenv p'
-
-
-(** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
-let remove_seed_captured_vars_block tenv captured_vars prop =
-  let hpred_seed_captured = function
-    | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
-        let pname = Pvar.get_name pv in
-        Pvar.is_seed pv && List.mem ~equal:Mangled.equal captured_vars pname
-    | _ ->
-        false
-  in
-  let sigma = prop.sigma in
-  let sigma' = List.filter ~f:(fun hpred -> not (hpred_seed_captured hpred)) sigma in
-  Normalize.normalize tenv (set prop ~sigma:sigma')
-
 
 (** {2 Prop iterators} *)
 

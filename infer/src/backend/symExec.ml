@@ -48,35 +48,6 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
       fail Sil.offset_to_string off
 
 
-(** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
-let get_blocks_nullified node =
-  let null_blocks =
-    List.concat_map
-      ~f:(fun i ->
-        match i with Sil.Nullify (pvar, _) when Sil.is_block_pvar pvar -> [pvar] | _ -> [] )
-      (ProcCfg.Exceptional.instrs node)
-  in
-  null_blocks
-
-
-(** Given a proposition and an objc block checks whether by existentially quantifying
-    captured variables in the block we obtain a leak. *)
-let check_block_retain_cycle tenv caller_pname prop block_nullified =
-  let mblock = Pvar.get_name block_nullified in
-  let block_pname = Typ.Procname.mangled_objc_block (Mangled.to_string mblock) in
-  let block_captured =
-    match Attributes.load block_pname with
-    | Some attributes ->
-        fst (List.unzip attributes.ProcAttributes.captured)
-    | None ->
-        []
-  in
-  let prop' = Prop.remove_seed_captured_vars_block tenv block_captured prop in
-  let prop'' = Prop.prop_rename_fav_with_existentials tenv prop' in
-  let _ : Prop.normal Prop.t = Abs.abstract_junk ~original_prop:prop caller_pname tenv prop'' in
-  ()
-
-
 (** Apply function [f] to the expression at position [offlist] in [strexp].
     If not found, expand [strexp] and apply [f] to [None].
     The routine should maintain the invariant that strexp and typ correspond to
@@ -1367,9 +1338,6 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
             pvar ;
           assert false )
   | Sil.Abstract _ ->
-      let node = State.get_node () in
-      let blocks_nullified = get_blocks_nullified node in
-      List.iter ~f:(check_block_retain_cycle tenv current_pname prop_) blocks_nullified ;
       if Prover.check_inconsistency tenv prop_ then ret_old_path []
       else
         ret_old_path
