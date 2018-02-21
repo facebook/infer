@@ -52,7 +52,10 @@ module Domain = struct
   include AbstractDomain.Map (Var) (Permission)
 
   let log_use_after_lifetime var loc summary =
-    let message = F.asprintf "Variable %a is used after its lifetime has ended" Var.pp var in
+    let message =
+      F.asprintf "Variable %a is used after its lifetime has ended at %a" Var.pp var Location.pp
+        loc
+    in
     let ltr = [Errlog.make_trace_element 0 loc "Use of invalid variable" []] in
     let exn = Exceptions.Checkers (IssueType.use_after_lifetime, Localise.verbatim_desc message) in
     Reporting.log_error summary ~loc ~ltr exn
@@ -104,8 +107,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = Specs.summary
 
   let transfers_ownership pname =
-    (* TODO: support delete[], free, and destructors *)
+    (* TODO: support delete[], free, and (in some cases) std::move *)
     Typ.Procname.equal pname BuiltinDecl.__delete
+    ||
+    match pname with
+    | Typ.Procname.ObjC_Cpp clang_pname ->
+        Typ.Procname.ObjC_Cpp.is_destructor clang_pname
+    | _ ->
+        false
 
 
   let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
