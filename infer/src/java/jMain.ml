@@ -38,6 +38,7 @@ let store_icfg source_file cfg =
 (* environment are obtained and saved. *)
 let do_source_file linereader classes program tenv source_basename package_opt source_file =
   L.(debug Capture Medium) "@\nfilename: %a (%s)@." SourceFile.pp source_file source_basename ;
+  init_global_state source_file ;
   let cfg =
     JFrontend.compute_source_icfg linereader classes program tenv source_basename package_opt
       source_file
@@ -100,11 +101,10 @@ let do_all_files classpath sources classes =
         ~f:(fun pattern -> Str.string_match (Str.regexp pattern) path 0)
         Config.skip_analysis_in_path
     in
-    is_path_matching (SourceFile.to_rel_path source_file)
+    SourceFile.is_invalid source_file || is_path_matching (SourceFile.to_rel_path source_file)
     || Inferconfig.skip_translation_matcher source_file Typ.Procname.empty_block
   in
   let translate_source_file basename (package_opt, _) source_file =
-    init_global_state source_file ;
     if not (skip source_file) then
       do_source_file linereader classes program tenv basename package_opt source_file
   in
