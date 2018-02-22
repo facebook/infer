@@ -106,14 +106,14 @@ let pp_dotty fmt cycle =
   let pp_dotty_obj fmt element =
     match element with
     | Object obj ->
-        Format.fprintf fmt "Object: %a" (Typ.pp Pp.text) obj.rc_from.rc_node_typ
+        Format.fprintf fmt "Object: %s" (Typ.to_string obj.rc_from.rc_node_typ)
     | Block _ ->
         Format.fprintf fmt "Block"
   in
   let pp_dotty_id fmt element =
     match element with
     | Object obj ->
-        Typ.pp Pp.text fmt obj.rc_from.rc_node_typ
+        Format.fprintf fmt "%s" (Typ.to_string obj.rc_from.rc_node_typ)
     | Block name ->
         Format.fprintf fmt "%s" (Typ.Procname.to_unique_id name)
   in
