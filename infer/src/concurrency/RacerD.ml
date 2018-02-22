@@ -962,13 +962,13 @@ let make_trace ~report_kind original_path pdesc =
 let ignore_var v = Var.is_global v || Var.is_return v
 
 (* Checking for a wobbly path *)
-let contaminated_race_msg access wobbly_paths =
+let get_contaminated_race_message access wobbly_paths =
   let open RacerDDomain in
   let wobbly_path_opt =
     match TraceElem.kind access with
     | TraceElem.Kind.Read access_path
     | Write access_path
-    (* Access paths rooted in static variables are always race-prone, 
+    (* Access paths rooted in static variables are always race-prone,
          hence do not complain about contamination. *)
       when not (access_path |> fst |> fst |> ignore_var) ->
         let proper_prefix_path = AccessPath.truncate access_path in
@@ -1030,15 +1030,20 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
       (* why we are reporting it *)
       let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
       let error_message = F.sprintf "%s%s" description explanation in
-      let contaminated = contaminated_race_msg access wobbly_paths in
-      let exn =
-        Exceptions.Checkers
-          ( issue_type
-          , Localise.verbatim_desc (error_message ^ Option.value contaminated ~default:"") )
-      in
-      let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
-      let access = IssueAuxData.encode (pname, access, end_locs) in
-      Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr ~access exn
+      match get_contaminated_race_message access wobbly_paths with
+      | Some _ when Config.racerd_use_path_stability ->
+          (* don't report races on unstable paths when use_path_stability is on *)
+          ()
+      | contaminated_message_opt ->
+          let exn =
+            Exceptions.Checkers
+              ( issue_type
+              , Localise.verbatim_desc
+                  (error_message ^ Option.value contaminated_message_opt ~default:"") )
+          in
+          let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
+          let access = IssueAuxData.encode (pname, access, end_locs) in
+          Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr ~access exn
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)

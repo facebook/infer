@@ -1644,6 +1644,11 @@ and quiet =
     "Do not print specs on standard output (default: only print for the $(b,report) command)"
 
 
+and racerd_use_path_stability =
+  CLOpt.mk_bool ~long:"racerd-use-path-stability" ~default:false
+    "Use access path stability to prune RacerD false positives"
+
+
 and reactive =
   CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive" ~short:'r'
     ~in_help:InferCommand.([(Analyze, manual_generic)])
@@ -2521,6 +2526,8 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 
 and racerd = !racerd
+
+and racerd_use_path_stability = !racerd_use_path_stability
 
 and reactive_mode = !reactive || InferCommand.(equal Diff) command
 
