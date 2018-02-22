@@ -2019,18 +2019,6 @@ let post_parsing_initialization command_opt =
       print_endline version_string ; prerr_endline version_string
   | `Javac when !buck ->
       (* print buck key *)
-      let javac_version =
-        let javac_args =
-          if infer_is_javac then
-            match Array.to_list Sys.argv with [] -> [] | _ :: args -> "javac" :: args
-          else List.rev !rest
-        in
-        (* stderr contents of build command *)
-        let chans = Unix.open_process_full (String.concat ~sep:" " javac_args) ~env:[||] in
-        let err = String.strip (In_channel.input_all chans.stderr) in
-        Unix.close_process_full chans |> ignore ;
-        err
-      in
       let analyzer_name =
         List.Assoc.find_exn ~equal:equal_analyzer
           (List.map ~f:(fun (n, a) -> (a, n)) string_to_analyzer)
@@ -2044,8 +2032,8 @@ let post_parsing_initialization command_opt =
         | None ->
             Version.commit
       in
-      F.printf "%s/%s/%s@." javac_version analyzer_name infer_version ;
-      F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
+      F.printf "%s/%s@." analyzer_name infer_version ;
+      F.eprintf "%s/%s@." analyzer_name infer_version
   | `Full ->
       print_endline version_string
   | `Javac ->
