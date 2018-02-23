@@ -23,8 +23,6 @@ end)
 (** Type for type environment. *)
 type t = Typ.Struct.t TypenameHash.t
 
-let iter f tenv = TypenameHash.iter f tenv
-
 let pp fmt (tenv: t) =
   TypenameHash.iter
     (fun name typ ->
@@ -61,15 +59,6 @@ let lookup tenv name : Typ.Struct.t option =
 let compare_fields (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2
 
 let equal_fields f1 f2 = Int.equal (compare_fields f1 f2) 0
-
-let sort_fields fields = List.sort ~cmp:compare_fields fields
-
-let sort_fields_tenv tenv =
-  let sort_fields_struct name ({Typ.Struct.fields} as st) =
-    ignore (mk_struct tenv ~default:st ~fields:(sort_fields fields) name)
-  in
-  iter sort_fields_struct tenv
-
 
 (** Add a field to a given struct in the global type environment. *)
 let add_field tenv class_tn_name field =

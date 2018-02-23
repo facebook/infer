@@ -41,8 +41,6 @@ val mk_struct :
 val add_field : t -> Typ.Name.t -> Typ.Struct.field -> unit
 (** Add a field to a given struct in the global type environment. *)
 
-val sort_fields_tenv : t -> unit
-
 val pp : Format.formatter -> t -> unit  [@@warning "-32"]
 (** print a type environment *)
 
