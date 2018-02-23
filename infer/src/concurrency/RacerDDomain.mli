@@ -64,6 +64,9 @@ module LocksDomain : sig
 
   val remove_lock : astate -> astate
   (** record release of a lock *)
+
+  val integrate_summary : caller_astate:astate -> callee_astate:astate -> astate
+  (** integrate current state with a callee summary *)
 end
 
 (** Abstraction of threads that may run in parallel with the current thread.

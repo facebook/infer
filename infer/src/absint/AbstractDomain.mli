@@ -130,4 +130,7 @@ module CountDomain (MaxCount : MaxCount) : sig
 
   val decrement : astate -> astate
   (** descrease the count by one if it is greater than 0 *)
+
+  val add : astate -> astate -> astate
+  (** capped sum of two states *)
 end

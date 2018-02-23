@@ -323,6 +323,8 @@ module CountDomain (MaxCount : MaxCount) = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
+  let add astate1 astate2 = Int.min top (astate1 + astate2)
+
   let increment astate = if is_top astate then top else astate + 1
 
   let decrement astate = if is_empty astate then empty else astate - 1

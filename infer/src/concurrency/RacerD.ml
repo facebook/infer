@@ -495,7 +495,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     ; return_ownership
                     ; return_attributes
                     ; wobbly_paths= callee_wps } ->
-                    let locks = LocksDomain.join locks astate.locks in
+                    let locks =
+                      LocksDomain.integrate_summary ~caller_astate:astate.locks
+                        ~callee_astate:locks
+                    in
                     let threads =
                       match (astate.threads, threads) with
                       | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _ ->

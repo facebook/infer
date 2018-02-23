@@ -169,18 +169,27 @@ module LocksDomain = struct
     not (is_empty astate)
 
 
+  let lookup_count lock astate = try find lock astate with Not_found -> LockCount.empty
+
   let add_lock astate =
-    let count = try find the_only_lock astate with Not_found -> LockCount.empty in
+    let count = lookup_count the_only_lock astate in
     add the_only_lock (LockCount.increment count) astate
 
 
   let remove_lock astate =
+    let count = lookup_count the_only_lock astate in
     try
-      let count = find the_only_lock astate in
       let count' = LockCount.decrement count in
       if LockCount.is_empty count' then remove the_only_lock astate
       else add the_only_lock count' astate
     with Not_found -> astate
+
+
+  let integrate_summary ~caller_astate ~callee_astate =
+    let caller_count = lookup_count the_only_lock caller_astate in
+    let callee_count = lookup_count the_only_lock callee_astate in
+    let sum = LockCount.add caller_count callee_count in
+    if LockCount.is_empty sum then caller_astate else add the_only_lock sum caller_astate
 end
 
 module ThreadsDomain = struct
