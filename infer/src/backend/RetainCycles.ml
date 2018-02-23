@@ -63,11 +63,11 @@ let edge_is_strong tenv obj_edge =
             let find fields =
               List.find ~f:equal_fn fields |> Option.value_map ~f:trd3 ~default:[]
             in
-            find fields @ find statics
+            Some (find fields @ find statics)
         | None ->
-            [] )
+            None )
     | _ ->
-        []
+        None
   in
   let has_weak_or_unretained_or_assign params =
     List.exists
@@ -76,14 +76,18 @@ let edge_is_strong tenv obj_edge =
         || String.equal Config.assign att )
       params
   in
-  let ia = get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name in
   let weak_edge =
-    List.exists
-      ~f:(fun ((ann: Annot.t), _) ->
-        ( String.equal ann.class_name Config.property_attributes
-        || String.equal ann.class_name Config.ivar_attributes )
-        && has_weak_or_unretained_or_assign ann.parameters )
-      ia
+    match get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name with
+    | Some ia ->
+        List.exists
+          ~f:(fun ((ann: Annot.t), _) ->
+            ( String.equal ann.class_name Config.property_attributes
+            || String.equal ann.class_name Config.ivar_attributes )
+            && has_weak_or_unretained_or_assign ann.parameters )
+          ia
+    | None ->
+        true
+    (* Assume the edge is weak if the type cannot be found in the tenv, to avoid FPs *)
   in
   not weak_edge
 
