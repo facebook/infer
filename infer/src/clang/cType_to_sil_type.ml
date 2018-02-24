@@ -92,7 +92,7 @@ let rec build_array_type translate_decl tenv (qual_type: Clang_ast_t.qual_type) 
   let array_type = qual_type_to_sil_type translate_decl tenv qual_type in
   let length = Option.map ~f:IntLit.of_int length_opt in
   let stride = Option.map ~f:IntLit.of_int stride_opt in
-  Typ.Tarray (array_type, length, stride)
+  Typ.Tarray {elt= array_type; length; stride}
 
 and type_desc_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with

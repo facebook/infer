@@ -78,8 +78,8 @@ and desc =
   | Tptr of t * ptr_kind  (** pointer type *)
   | Tstruct of name  (** structured value type name *)
   | TVar of string  (** type variable (ie. C++ template variables) *)
-  | Tarray of t * IntLit.t option * IntLit.t option
-      (** array type with statically fixed stride and length *)
+  | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
+      (** array type with statically fixed length and stride *)
   [@@deriving compare]
 
 and name =
@@ -108,6 +108,9 @@ and template_spec_info =
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)
+
+val mk_array : ?default:t -> ?quals:type_quals -> ?length:IntLit.t -> ?stride:IntLit.t -> t -> t
+(** Create an array type from a given element type. If [length] or [stride] value is given, use them as static length and size. *)
 
 val void_star : t
 (** void* type *)

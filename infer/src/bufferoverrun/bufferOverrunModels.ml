@@ -177,12 +177,12 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   let set_array_length array length_exp =
     let exec {pname; node} mem =
       match array with
-      | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)} ->
+      | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
           let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
-          let stride = Option.map ~f:IntLit.to_int stride0 in
-          let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
+          let stride = Option.map ~f:IntLit.to_int stride in
+          let v = Sem.eval_array_alloc pname node elt ?stride Itv.zero length 0 1 in
           mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
-          |> set_uninitialized node typ (Dom.Val.get_array_locs v)
+          |> set_uninitialized node elt (Dom.Val.get_array_locs v)
       | _ ->
           L.(die InternalError) "Unexpected type of first argument for __set_array_length()"
     and check = check_alloc_size length_exp in

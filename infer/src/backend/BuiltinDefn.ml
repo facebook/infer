@@ -45,7 +45,7 @@ let extract_array_type typ =
     | Typ.Tarray _ ->
         Some typ
     | Typ.Tptr (elt, _) ->
-        Some (Typ.mk ~default:typ (Tarray (elt, None, None)))
+        Some (Typ.mk_array ~default:typ elt)
     | _ ->
         None
 
@@ -556,10 +556,11 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
     | Exp.Lfield _
     | Exp.Lindex _ ->
         e
-    | Exp.Sizeof {typ= {Typ.desc= Tarray ({Typ.desc= Tint ik}, _, _)}; dynamic_length= Some len}
+    | Exp.Sizeof {typ= {Typ.desc= Tarray {elt= {Typ.desc= Tint ik}}}; dynamic_length= Some len}
       when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Exp.Sizeof {typ= {Typ.desc= Tarray ({Typ.desc= Tint ik}, Some len, _)}; dynamic_length= None}
+    | Exp.Sizeof
+        {typ= {Typ.desc= Tarray {elt= {Typ.desc= Tint ik}; length= Some len}}; dynamic_length= None}
       when Typ.ikind_is_char ik ->
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ ->
@@ -585,7 +586,7 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
   in
   let cnt_te =
     Exp.Sizeof
-      { typ= Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None, Some (IntLit.of_int 1)))
+      { typ= Typ.mk_array (Typ.mk (Tint Typ.IChar)) ~stride:(IntLit.of_int 1)
       ; nbytes= None
       ; dynamic_length= Some size_exp'
       ; subtype= Subtype.exact }

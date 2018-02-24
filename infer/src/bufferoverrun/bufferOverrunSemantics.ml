@@ -68,10 +68,10 @@ module Make (CFG : ProcCfg.S) = struct
         4
     | Typ.Tstruct _ | Typ.TVar _ ->
         4 (* TODO *)
-    | Typ.Tarray (_, Some length, Some stride) ->
+    | Typ.Tarray {length= Some length; stride= Some stride} ->
         IntLit.to_int stride * IntLit.to_int length
-    | Typ.Tarray (typ, Some length, None) ->
-        sizeof typ * IntLit.to_int length
+    | Typ.Tarray {elt; length= Some length; stride= None} ->
+        sizeof elt * IntLit.to_int length
     | _ ->
         4
 

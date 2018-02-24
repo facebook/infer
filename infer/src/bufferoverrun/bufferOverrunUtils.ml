@@ -136,7 +136,7 @@ module Make (CFG : ProcCfg.S) = struct
         let field_loc = PowLoc.append_field locs ~fn:field_name in
         let mem =
           match field_typ.Typ.desc with
-          | Tarray (typ, Some length, stride) ->
+          | Tarray {elt= typ; length= Some length; stride} ->
               let length = Itv.of_int_lit length in
               let length =
                 Option.value_map dyn_length ~default:length ~f:(fun dyn_length ->

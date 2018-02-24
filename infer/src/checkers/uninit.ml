@@ -296,8 +296,8 @@ let get_locals cfg tenv pdesc =
                                     to the fields one level down *)
         | _ ->
             acc )
-      | Typ.Tarray (t', _, _) ->
-          (fst base_ap, [AccessPath.ArrayAccess (t', [])]) :: acc
+      | Typ.Tarray {elt} ->
+          (fst base_ap, [AccessPath.ArrayAccess (elt, [])]) :: acc
       | _ ->
           base_ap :: acc )
     ~init:[] (Procdesc.get_locals cfg)

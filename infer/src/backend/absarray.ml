@@ -85,7 +85,7 @@ end = struct
           get_strexp_at_syn_offsets tenv se' t' syn_offs'
       | None ->
           fail () )
-    | Sil.Earray (_, esel, _), Typ.Tarray (t', _, _), (Index ind) :: syn_offs' ->
+    | Sil.Earray (_, esel, _), Typ.Tarray {elt= t'}, (Index ind) :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | _ ->
@@ -115,7 +115,7 @@ end = struct
           Sil.Estruct (fsel', inst)
       | None ->
           assert false )
-    | Sil.Earray (len, esel, inst), Tarray (t', _, _), (Index idx) :: syn_offs' ->
+    | Sil.Earray (len, esel, inst), Tarray {elt= t'}, (Index idx) :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let esel' =
@@ -181,8 +181,8 @@ end = struct
               find_offset_fsel sigma_other hpred root offs fsel fields typ
           | None ->
               () )
-        | Sil.Earray (_, esel, _), Tarray (t, _, _) ->
-            find_offset_esel sigma_other hpred root offs esel t
+        | Sil.Earray (_, esel, _), Tarray {elt} ->
+            find_offset_esel sigma_other hpred root offs esel elt
         | _ ->
             ()
     and find_offset_fsel sigma_other hpred root offs fsel ftal typ =
@@ -474,7 +474,7 @@ let keep_only_indices tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (ind
 (** If the type is array, check whether we should do abstraction *)
 let array_typ_can_abstract {Typ.desc} =
   match desc with
-  | Tarray ({desc= Tptr ({desc= Tfun _}, _)}, _, _) ->
+  | Tarray {elt= {desc= Tptr ({desc= Tfun _}, _)}} ->
       false (* don't abstract arrays of pointers *)
   | _ ->
       true

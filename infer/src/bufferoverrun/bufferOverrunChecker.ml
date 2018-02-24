@@ -66,18 +66,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               BoUtils.Exec.decl_sym_arr
                 ~decl_sym_val:(decl_sym_val ~is_last_field:false)
                 pname tenv node location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
-          | Typ.Tarray (typ, opt_int_lit, _) ->
+          | Typ.Tarray {elt; length} ->
               let size =
-                match opt_int_lit with
-                | Some int_lit when is_last_field && (IntLit.iszero int_lit || IntLit.isone int_lit) ->
+                match length with
+                | Some length when is_last_field && (IntLit.iszero length || IntLit.isone length) ->
                     Some (Itv.make_sym pname new_sym_num)
                 | _ ->
-                    Option.map ~f:Itv.of_int_lit opt_int_lit
+                    Option.map ~f:Itv.of_int_lit length
               in
               let offset = Itv.zero in
               BoUtils.Exec.decl_sym_arr
                 ~decl_sym_val:(decl_sym_val ~is_last_field:false)
-                pname tenv node location ~depth loc typ ~offset ?size ~inst_num ~new_sym_num
+                pname tenv node location ~depth loc elt ~offset ?size ~inst_num ~new_sym_num
                 ~new_alloc_num mem
           | Typ.Tstruct typename -> (
             match Models.TypName.dispatch typename with
@@ -257,8 +257,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (* array allocation in stack e.g., int arr[10] *)
             let rec decl_local pname node location loc typ ~inst_num ~dimension mem =
               match typ.Typ.desc with
-              | Typ.Tarray (typ, length, stride0) ->
-                  let stride = Option.map ~f:IntLit.to_int stride0 in
+              | Typ.Tarray {elt= typ; length; stride} ->
+                  let stride = Option.map ~f:IntLit.to_int stride in
                   BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length
                     ?stride ~inst_num ~dimension mem
               | Typ.Tstruct typname -> (

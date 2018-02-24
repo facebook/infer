@@ -127,7 +127,7 @@ module T = struct
     | Tptr of t * ptr_kind  (** pointer type *)
     | Tstruct of name  (** structured value type name *)
     | TVar of string  (** type variable (ie. C++ template variables) *)
-    | Tarray of t * IntLit.t option * IntLit.t option
+    | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
         (** array type with statically fixed length and stride *)
     [@@deriving compare]
 
@@ -185,6 +185,10 @@ let mk ?default ?quals desc : t =
   mk_aux ?default ?quals desc
 
 
+let mk_array ?default ?quals ?length ?stride elt : t =
+  mk ?default ?quals (Tarray {elt; length; stride})
+
+
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
 
 let merge_quals quals1 quals2 =
@@ -222,9 +226,9 @@ let rec pp_full pe f typ =
         F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
     | Tptr (typ, pk) ->
         F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
-    | Tarray (typ, static_len, static_stride) ->
+    | Tarray {elt; length; stride} ->
         let pp_int_opt fmt = function Some x -> IntLit.pp fmt x | None -> F.fprintf fmt "_" in
-        F.fprintf f "%a[%a*%a]" (pp_full pe) typ pp_int_opt static_len pp_int_opt static_stride
+        F.fprintf f "%a[%a*%a]" (pp_full pe) elt pp_int_opt length pp_int_opt stride
   in
   F.fprintf f "%a%a" pp_desc typ pp_quals typ
 
@@ -279,10 +283,10 @@ let rec sub_type subst generic_typ : t =
         mk ~quals:(merge_quals t.quals generic_typ.quals) t.desc
     | None ->
         generic_typ )
-  | Tarray (typ, arg1, arg2) ->
+  | Tarray {elt= typ; length; stride} ->
       let typ' = sub_type subst typ in
       if phys_equal typ typ' then generic_typ
-      else mk ~default:generic_typ (Tarray (typ', arg1, arg2))
+      else mk_array ~default:generic_typ typ' ?length ?stride
   | Tptr (typ, arg) ->
       let typ' = sub_type subst typ in
       if phys_equal typ typ' then generic_typ else mk ~default:generic_typ (Tptr (typ', arg))
@@ -483,7 +487,7 @@ let strip_ptr typ = match typ.desc with Tptr (t, _) -> t | _ -> assert false
 (** If an array type, return the type of the element.
     If not, return the default type if given, otherwise raise an exception *)
 let array_elem default_opt typ =
-  match typ.desc with Tarray (t_el, _, _) -> t_el | _ -> unsome "array_elem" default_opt
+  match typ.desc with Tarray {elt} -> elt | _ -> unsome "array_elem" default_opt
 
 
 let is_class_of_kind check_fun typ =
@@ -650,7 +654,7 @@ module Procname = struct
             mk (Tfloat FDouble)
         | typ_str when String.contains typ_str '[' ->
             let stripped_typ = String.sub typ_str ~pos:0 ~len:(String.length typ_str - 2) in
-            mk (Tptr (mk (Tarray (java_from_string stripped_typ, None, None)), Pk_pointer))
+            mk (Tptr (mk_array (java_from_string stripped_typ), Pk_pointer))
         | typ_str ->
             mk (Tstruct (Name.Java.from_string typ_str))
       in
@@ -1057,6 +1061,7 @@ module Procname = struct
     | _ ->
         QualifiedCppName.empty
 
+
   (** Convert a proc name to a filename *)
   let to_concrete_filename ?crc_only pname =
     (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
@@ -1266,8 +1271,8 @@ module Struct = struct
   (** the element typ of the final extensible array in the given typ, if any *)
   let rec get_extensible_array_element_typ ~lookup (typ: T.t) =
     match typ.desc with
-    | Tarray (typ, _, _) ->
-        Some typ
+    | Tarray {elt} ->
+        Some elt
     | Tstruct name -> (
       match lookup name with
       | Some {fields} -> (

@@ -161,7 +161,7 @@ module Raw = struct
             if include_array_indexes then of_exp_ index_exp typ [] [] else []
           in
           let array_access = ArrayAccess (typ, index_access_paths) in
-          let array_typ = Typ.mk (Tarray (typ, None, None)) in
+          let array_typ = Typ.mk_array typ in
           of_exp_ root_exp array_typ (array_access :: accesses) acc
       | Exp.Cast (cast_typ, cast_exp) ->
           of_exp_ cast_exp cast_typ [] acc

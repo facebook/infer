@@ -403,7 +403,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                     assert false
               in
               List.map ~f:fill_typ_with_zero field_exps |> flatten_res_trans
-          | Tarray (field_typ, Some n, _) ->
+          | Tarray {elt= field_typ; length= Some n} ->
               let size = IntLit.to_int n in
               let indices = CGeneral_utils.list_range 0 (size - 1) in
               List.map indices ~f:(fun i ->
@@ -2142,8 +2142,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       let all_res_trans =
         match var_typ.Typ.desc with
-        | Typ.Tarray (typ_inside, _, _) ->
-            initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp typ_inside
+        | Typ.Tarray {elt} ->
+            initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp elt
         | Tstruct _ ->
             initListExpr_struct_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | Tint _ | Tfloat _ | Tptr _ ->
@@ -2740,7 +2740,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match res_trans_new.exps with
       | [(var_exp, ({desc= Tptr (t, _)} as var_typ))] when is_dyn_array ->
           (* represent dynamic array as Tarray *)
-          (var_exp, Typ.mk ~default:var_typ (Typ.Tarray (t, None, None)))
+          (var_exp, Typ.mk_array ~default:var_typ t)
       | [(var_exp, {desc= Tptr (t, _)})] when not is_dyn_array ->
           (var_exp, t)
       | _ ->

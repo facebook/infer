@@ -136,12 +136,12 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let e' = Sil.array_clean_new_index footprint_part e in
         let len = Exp.Var (new_id ()) in
         let se = Sil.Earray (len, [(e', se')], inst) in
-        let res_t = Typ.mk (Tarray (res_t', None, None)) in
+        let res_t = Typ.mk_array res_t' in
         (Sil.Aeq (e, e') :: atoms', se, res_t)
-    | Tarray (t', len_, stride_), off
+    | Tarray {elt= t'; length; stride}, off
       -> (
         let len =
-          match len_ with None -> Exp.Var (new_id ()) | Some len -> Exp.Const (Const.Cint len)
+          match length with None -> Exp.Var (new_id ()) | Some len -> Exp.Const (Const.Cint len)
         in
         match off with
         | [] ->
@@ -153,7 +153,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
             in
             let e' = Sil.array_clean_new_index footprint_part e in
             let se = Sil.Earray (len, [(e', se')], inst) in
-            let res_t = Typ.mk ~default:t (Tarray (res_t', len_, stride_)) in
+            let res_t = Typ.mk_array ~default:t res_t' ?length ?stride in
             (Sil.Aeq (e, e') :: atoms', se, res_t)
         | (Sil.Off_fld _) :: _ ->
             assert false )
@@ -176,7 +176,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         in
         let e' = Sil.array_clean_new_index footprint_part e in
         let se = Sil.Earray (len, [(e', se')], inst) in
-        let res_t = mk_typ_f (Tarray (res_t', None, None)) in
+        let res_t = mk_typ_f (Tarray {elt= res_t'; length= None; stride= None}) in
         (Sil.Aeq (e, e') :: atoms', se, res_t)
     | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ | TVar _, _ ->
         fail t off __POS__
@@ -275,10 +275,12 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
             else Exp.Var (new_id ())
       in
       let se_new = Sil.Earray (len, [(Exp.zero, se)], inst) in
-      let typ_new = Typ.mk (Tarray (typ, None, None)) in
+      let typ_new = Typ.mk_array typ in
       strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off
         inst
-  | (Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Tarray (typ', len_for_typ', stride)
+  | ( (Off_index e) :: off'
+    , Sil.Earray (len, esel, inst_arr)
+    , Tarray {elt= typ'; length= len_for_typ'; stride} )
     -> (
       bounds_check tenv pname orig_prop len e (State.get_loc ()) ;
       match List.find ~f:(fun (e', _) -> Exp.equal e e') esel with
@@ -293,7 +295,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
             if Typ.equal res_typ' typ' || Int.equal (List.length res_esel') 1 then
               ( res_atoms'
               , Sil.Earray (len, res_esel', inst_arr)
-              , Typ.mk ~default:typ (Tarray (res_typ', len_for_typ', stride)) )
+              , Typ.mk_array ~default:typ res_typ' ?length:len_for_typ' ?stride )
               :: acc
             else raise (Exceptions.Bad_footprint __POS__)
           in
@@ -323,7 +325,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
   in
   if index_in_array then
     let array_default = Sil.Earray (array_len, array_cont, inst_arr) in
-    let typ_default = Typ.mk ~default:typ_array (Tarray (typ_cont, typ_array_len, None)) in
+    let typ_default = Typ.mk_array ~default:typ_array typ_cont ?length:typ_array_len in
     [([], array_default, typ_default)]
   else if !Config.footprint then
     let atoms, elem_se, elem_typ =
@@ -334,7 +336,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
       List.sort ~cmp:[%compare : Exp.t * Sil.strexp] ((index, elem_se) :: array_cont)
     in
     let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
-    let typ_new = Typ.mk ~default:typ_array (Tarray (elem_typ, typ_array_len, None)) in
+    let typ_new = Typ.mk_array ~default:typ_array elem_typ ?length:typ_array_len in
     [(atoms, array_new, typ_new)]
   else
     let res_new =
@@ -348,7 +350,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
           List.sort ~cmp:[%compare : Exp.t * Sil.strexp] ((index, elem_se) :: array_cont)
         in
         let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
-        let typ_new = Typ.mk ~default:typ_array (Tarray (elem_typ, typ_array_len, None)) in
+        let typ_new = Typ.mk_array ~default:typ_array elem_typ ?length:typ_array_len in
         [(atoms, array_new, typ_new)]
     in
     let rec handle_case acc isel_seen_rev = function
@@ -366,7 +368,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
                 let atoms_new = Sil.Aeq (index, i) :: atoms' in
                 let isel_new = list_rev_and_concat isel_seen_rev ((i, se') :: isel_unseen) in
                 let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
-                let typ_new = Typ.mk ~default:typ_array (Tarray (typ', typ_array_len, None)) in
+                let typ_new = Typ.mk_array ~default:typ_array typ' ?length:typ_array_len in
                 (atoms_new, array_new, typ_new) :: acc' )
               ~init:[] atoms_se_typ_list
           in
@@ -1324,7 +1326,7 @@ let type_at_offset tenv texp off =
             None )
       | None ->
           None )
-    | (Off_index _) :: off', Tarray (typ', _, _) ->
+    | (Off_index _) :: off', Tarray {elt= typ'} ->
         strip_offset off' typ'
     | _ ->
         None
@@ -1390,7 +1392,7 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst
       | _ ->
           typ_from_instr )
     | (Sil.Off_index _) :: off ->
-        Typ.mk (Tarray (root_typ_of_offsets off, None, None))
+        Typ.mk_array (root_typ_of_offsets off)
     | _ ->
         typ_from_instr
   in
