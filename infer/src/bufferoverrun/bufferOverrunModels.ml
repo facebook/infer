@@ -20,28 +20,33 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   module CFG = BoUtils.CFG
   module Sem = BoUtils.Sem
 
-  type exec_fun =
-    Typ.Procname.t -> (Ident.t * Typ.t) option -> CFG.node -> Location.t -> Dom.Mem.astate
-    -> Dom.Mem.astate
+  type model_env =
+    { pname: Typ.Procname.t
+    ; node: CFG.node
+    ; location: Location.t
+    ; tenv: Tenv.t
+    ; ret: (Ident.t * Typ.t) option }
 
-  type check_fun =
-    Typ.Procname.t -> CFG.node -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
-    -> PO.ConditionSet.t
+  let mk_model_env pname node location ?ret tenv = {pname; node; location; tenv; ret}
+
+  type exec_fun = model_env -> Dom.Mem.astate -> Dom.Mem.astate
+
+  type check_fun = model_env -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t
 
   type model = {exec: exec_fun; check: check_fun}
 
   type declare_local_fun =
-    decl_local:BoUtils.Exec.decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t
-    -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
+    decl_local:BoUtils.Exec.decl_local -> model_env -> Loc.t -> inst_num:int -> dimension:int
+    -> Dom.Mem.astate -> Dom.Mem.astate * int
 
   type declare_symbolic_fun =
-    decl_sym_val:BoUtils.Exec.decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t
-    -> depth:int -> Loc.t -> inst_num:int -> new_sym_num:BoUtils.counter
-    -> new_alloc_num:BoUtils.counter -> Dom.Mem.astate -> Dom.Mem.astate
+    decl_sym_val:BoUtils.Exec.decl_sym_val -> model_env -> depth:int -> Loc.t -> inst_num:int
+    -> new_sym_num:BoUtils.counter -> new_alloc_num:BoUtils.counter -> Dom.Mem.astate
+    -> Dom.Mem.astate
 
   type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
 
-  let no_check _pname _node _location _mem cond_set = cond_set
+  let no_check _model_env _mem cond_set = cond_set
 
   (* NOTE: heuristic *)
   let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t = function
@@ -54,7 +59,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
 
 
-  let check_alloc_size size_exp pname _node location mem cond_set =
+  let check_alloc_size size_exp {pname; location} mem cond_set =
     let _, _, length0 = get_malloc_info size_exp in
     let v_length = Sem.eval length0 mem in
     match Dom.Val.get_itv v_length with
@@ -77,7 +82,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let malloc size_exp =
-    let exec pname ret node location mem =
+    let exec {pname; ret; node; location} mem =
       match ret with
       | Some (id, _) ->
           let typ, stride, length0 = get_malloc_info size_exp in
@@ -100,7 +105,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   let realloc = malloc
 
   let inferbo_min e1 e2 =
-    let exec _pname ret _node _location mem =
+    let exec {ret} mem =
       match ret with
       | Some (id, _) ->
           let i1 = Sem.eval e1 mem |> Dom.Val.get_itv in
@@ -114,7 +119,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let inferbo_set_size e1 e2 =
-    let exec _pname _ret _node _location mem =
+    let exec _model_env mem =
       let locs = Sem.eval_locs e1 mem |> Dom.Val.get_pow_loc in
       let size = Sem.eval e2 mem |> Dom.Val.get_itv in
       let arr = Dom.Mem.find_heap_set locs mem in
@@ -124,7 +129,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check}
 
 
-  let model_by_value value _pname ret _node _location mem =
+  let model_by_value value {ret} mem =
     match ret with
     | Some (id, _) ->
         Dom.Mem.add_stack (Loc.of_id id) value mem
@@ -137,12 +142,12 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   let by_value value = {exec= model_by_value value; check= no_check}
 
   let bottom =
-    let exec _pname _ret _node _location _mem = Bottom in
+    let exec _model_env _mem = Bottom in
     {exec; check= no_check}
 
 
   let infer_print e =
-    let exec _pname _ret _node location mem =
+    let exec {location} mem =
       L.(debug BufferOverrun Medium)
         "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp (Sem.eval e mem) ;
       mem
@@ -151,7 +156,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let set_array_length array length_exp =
-    let exec pname _ret node _location mem =
+    let exec {pname; node} mem =
       match array with
       | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)} ->
           let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
@@ -181,7 +186,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   module Boost = struct
     module Split = struct
       let std_vector vector_arg =
-        let exec _pname _ret _node location mem =
+        let exec {location} mem =
           Split.std_vector ~adds_at_least_one:true vector_arg location mem
         in
         {exec; check= no_check}
@@ -191,7 +196,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   module Folly = struct
     module Split = struct
       let std_vector vector_arg ignore_empty_opt =
-        let exec _pname _ret _node location mem =
+        let exec {location} mem =
           let adds_at_least_one =
             match ignore_empty_opt with
             | Some ignore_empty_exp ->
@@ -208,14 +213,14 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   module StdArray = struct
     let typ typ length =
-      let declare_local ~decl_local pname node location loc ~inst_num ~dimension mem =
+      let declare_local ~decl_local {pname; node; location} loc ~inst_num ~dimension mem =
         (* should this be deferred to the constructor? *)
         let length = Some (IntLit.of_int64 length) in
         BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length ~inst_num
           ~dimension mem
       in
-      let declare_symbolic ~decl_sym_val pname tenv node location ~depth loc ~inst_num ~new_sym_num
-          ~new_alloc_num mem =
+      let declare_symbolic ~decl_sym_val {pname; tenv; node; location} ~depth loc ~inst_num
+          ~new_sym_num ~new_alloc_num mem =
         let offset = Itv.zero in
         let size = Itv.of_int64 length in
         BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ ~offset
@@ -225,27 +230,27 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
     let constructor _size =
-      let exec _pname _ret _node _location mem = mem (* initialize? *) in
+      let exec _model_env mem = mem (* initialize? *) in
       {exec; check= no_check}
 
 
     let at _size (array_exp, _) (index_exp, _) =
       (* TODO? use size *)
-      let exec _pname ret _node _location mem =
+      let exec {ret} mem =
         L.(debug BufferOverrun Verbose) "Using model std::array<_, %Ld>::at" _size ;
         match ret with
         | Some (id, _) ->
             BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
         | None ->
             mem
-      and check pname _node location mem cond_set =
+      and check {pname; location} mem cond_set =
         BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
       in
       {exec; check}
 
 
     let no_model =
-      let exec pname _ret _node location mem =
+      let exec {pname; location} mem =
         L.(debug BufferOverrun Verbose)
           "No model for %a at %a" Typ.Procname.pp pname Location.pp location ;
         mem
@@ -259,10 +264,10 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           "No %s type model in %a at %a" kind Typ.Procname.pp pname Location.pp location ;
         mem
       in
-      let declare_local ~decl_local:_ pname _node location _loc ~inst_num ~dimension:_ mem =
+      let declare_local ~decl_local:_ {pname; location} _loc ~inst_num ~dimension:_ mem =
         (no_model "local" pname location mem, inst_num)
       in
-      let declare_symbolic ~decl_sym_val:_ pname _tenv _node location ~depth:_ _loc ~inst_num:_
+      let declare_symbolic ~decl_sym_val:_ {pname; location} ~depth:_ _loc ~inst_num:_
           ~new_sym_num:_ ~new_alloc_num:_ mem =
         no_model "symbolic" pname location mem
       in

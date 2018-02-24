@@ -73,8 +73,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | Typ.Tstruct typename -> (
             match Models.TypName.dispatch typename with
             | Some {Models.declare_symbolic} ->
-                declare_symbolic ~decl_sym_val pname tenv node location ~depth loc ~inst_num
-                  ~new_sym_num ~new_alloc_num mem
+                let model_env = Models.mk_model_env pname node location tenv in
+                declare_symbolic ~decl_sym_val model_env ~depth loc ~inst_num ~new_sym_num
+                  ~new_alloc_num mem
             | None ->
                 let decl_fld mem (fn, typ, _) =
                   let loc_fld = Loc.append_field loc ~fn in
@@ -223,21 +224,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             mem
         | Prune (exp, _, _, _) ->
             Sem.prune exp mem
-        | Call (ret, Const Cfun callee_pname, params, location, _) -> (
-          match Models.Procname.dispatch callee_pname params with
-          | Some {Models.exec} ->
-              exec callee_pname ret node location mem
-          | None ->
-            match Summary.read_summary pdesc callee_pname with
-            | Some summary ->
-                let callee = extras callee_pname in
-                instantiate_mem tenv ret callee callee_pname params mem summary location
+        | Call (ret, Const Cfun callee_pname, params, location, _)
+          -> (
+            let model_env = Models.mk_model_env callee_pname node location tenv ?ret in
+            match Models.Procname.dispatch callee_pname params with
+            | Some {Models.exec} ->
+                exec model_env mem
             | None ->
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
-                  location ;
-                Models.model_by_value Dom.Val.unknown callee_pname ret node location mem
-                |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
+              match Summary.read_summary pdesc callee_pname with
+              | Some summary ->
+                  let callee = extras callee_pname in
+                  instantiate_mem tenv ret callee callee_pname params mem summary location
+              | None ->
+                  L.(debug BufferOverrun Verbose)
+                    "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
+                    location ;
+                  Models.model_by_value Dom.Val.unknown model_env mem
+                  |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
         | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)
             let rec decl_local pname node location loc typ ~inst_num ~dimension mem =
@@ -249,7 +252,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | Typ.Tstruct typname -> (
                 match Models.TypName.dispatch typname with
                 | Some {Models.declare_local} ->
-                    declare_local ~decl_local pname node location loc ~inst_num ~dimension mem
+                    let model_env = Models.mk_model_env pname node location tenv in
+                    declare_local ~decl_local model_env loc ~inst_num ~dimension mem
                 | None ->
                     (mem, inst_num) )
               | _ ->
@@ -390,7 +394,7 @@ module Report = struct
             | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
               match Models.Procname.dispatch callee_pname params with
               | Some {Models.check} ->
-                  check pname node location mem cond_set
+                  check (Models.mk_model_env pname node location tenv) mem cond_set
               | None ->
                 match Summary.read_summary pdesc callee_pname with
                 | Some callee_summary ->
