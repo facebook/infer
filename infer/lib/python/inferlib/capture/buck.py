@@ -113,6 +113,8 @@ class BuckAnalyzer:
         )
         args = [
             '--config',
+            'client.id=infer.clang',
+            '--config',
             '*//infer.infer_bin={bin}'
             .format(bin=config.BIN_DIRECTORY),
             '--config',
