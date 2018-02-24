@@ -37,3 +37,30 @@ void access_after_new_Bad() {
   my_class* x = new my_class();
   x->access_nth(15);
 }
+
+#include <stdlib.h>
+
+class my_class2 {
+ public:
+  int a[5];
+};
+
+void array_member_malloc_Good() {
+  my_class2* x = (my_class2*)malloc(sizeof(my_class2));
+  x->a[0] = 0;
+}
+
+void array_member_malloc_Bad() {
+  my_class2* x = (my_class2*)malloc(sizeof(my_class2));
+  x->a[10] = 0;
+}
+
+class my_class3 {
+ public:
+  my_class2 b;
+};
+
+void array_member_malloc2_Bad() {
+  my_class3* x = (my_class3*)malloc(sizeof(my_class3));
+  x->b.a[10] = 0;
+}

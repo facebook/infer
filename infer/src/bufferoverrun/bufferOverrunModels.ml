@@ -82,7 +82,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let malloc size_exp =
-    let exec {pname; ret; node; location} mem =
+    let exec {pname; ret; node; location; tenv} mem =
       match ret with
       | Some (id, _) ->
           let typ, stride, length0 = get_malloc_info size_exp in
@@ -94,6 +94,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           in
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized node typ (Dom.Val.get_array_locs v)
+          |> BoUtils.Exec.init_array_fields tenv pname node typ (Dom.Val.get_array_locs v)
       | _ ->
           L.(debug BufferOverrun Verbose)
             "/!\\ Do not know where to model malloc at %a@\n" Location.pp (CFG.loc node) ;
