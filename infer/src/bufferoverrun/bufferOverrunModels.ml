@@ -48,19 +48,23 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   let no_check _model_env _mem cond_set = cond_set
 
-  (* NOTE: heuristic *)
-  let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t = function
+  (* It returns a tuple of:
+     - type of array element
+     - stride of the type
+     - array size
+     - flexible array size *)
+  let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = function
     | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
     | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
-        (typ, nbytes, length)
-    | Exp.Sizeof {typ; nbytes} ->
-        (typ, nbytes, Exp.one)
+        (typ, nbytes, length, None)
+    | Exp.Sizeof {typ; nbytes; dynamic_length} ->
+        (typ, nbytes, Exp.one, dynamic_length)
     | x ->
-        (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
+        (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None)
 
 
   let check_alloc_size size_exp {pname; location} mem cond_set =
-    let _, _, length0 = get_malloc_info size_exp in
+    let _, _, length0, _ = get_malloc_info size_exp in
     let v_length = Sem.eval length0 mem in
     match Dom.Val.get_itv v_length with
     | Bottom ->
@@ -85,7 +89,8 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     let exec {pname; ret; node; location; tenv} mem =
       match ret with
       | Some (id, _) ->
-          let typ, stride, length0 = get_malloc_info size_exp in
+          let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+          let typ, stride, length0, dyn_length = get_malloc_info size_exp in
           let length = Sem.eval length0 mem in
           let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
           let v =
@@ -95,6 +100,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized node typ (Dom.Val.get_array_locs v)
           |> BoUtils.Exec.init_array_fields tenv pname node typ (Dom.Val.get_array_locs v)
+               ?dyn_length
       | _ ->
           L.(debug BufferOverrun Verbose)
             "/!\\ Do not know where to model malloc at %a@\n" Location.pp (CFG.loc node) ;

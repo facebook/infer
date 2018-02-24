@@ -78,3 +78,86 @@ void placement_new_Bad() {
   my_class2* x = new (mem) my_class2();
   x->a[10] = 0;
 }
+
+class my_class4 {
+ public:
+  int a[3];
+  int c[3];
+  int b[1];
+};
+
+void flexible_array1_Good() {
+  char* mem = (char*)malloc(sizeof(my_class4) + 4 * sizeof(int));
+  my_class4* x = new (mem) my_class4();
+  x->b[4] = 0;
+}
+
+void flexible_array1_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class4) + 4 * sizeof(int));
+  my_class4* x = new (mem) my_class4();
+  x->b[5] = 0;
+}
+
+void flexible_array2_Bad_FN() {
+  char* mem = (char*)malloc(4 * sizeof(int) + sizeof(my_class4));
+  my_class4* x = new (mem) my_class4();
+  x->b[5] = 0;
+}
+
+void flexible_array3_Bad_FN() {
+  char* mem = (char*)malloc(sizeof(my_class4) + sizeof(int) * 4);
+  my_class4* x = new (mem) my_class4();
+  x->b[5] = 0;
+}
+
+class my_class5 {
+ public:
+  int d[3];
+  int f[3];
+  my_class4 e;
+};
+
+void flexible_array4_Good() {
+  char* mem = (char*)malloc(sizeof(my_class5) + 4 * sizeof(int));
+  my_class5* x = new (mem) my_class5();
+  x->e.b[4] = 0;
+}
+
+void flexible_array4_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class5) + 4 * sizeof(int));
+  my_class5* x = new (mem) my_class5();
+  x->e.b[5] = 0;
+}
+
+class Tree {
+ private:
+  unsigned int children_num;
+
+  Tree(unsigned int children_num) : children_num(children_num) {}
+
+ public:
+  void set_child(Tree* child, unsigned int nth) { children[nth] = child; }
+
+  static Tree* NewNode(unsigned int children_num) {
+    char* mem =
+        (char*)malloc(sizeof(Tree) + (children_num - 1) * sizeof(Tree*));
+    return new (mem) Tree(children_num);
+  }
+
+  static Tree* NewLeaf() { return new Tree(0); }
+
+ private:
+  Tree* children[1];
+};
+
+void flexible_array5_Good_FP() {
+  Tree* t = Tree::NewNode(3);
+  t->set_child(Tree::NewLeaf(), 0);
+  t->set_child(Tree::NewLeaf(), 1);
+  t->set_child(Tree::NewLeaf(), 2);
+}
+
+void flexible_array5_Bad() {
+  Tree* t = Tree::NewNode(3);
+  t->set_child(Tree::NewLeaf(), 5);
+}

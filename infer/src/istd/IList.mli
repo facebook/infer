@@ -26,6 +26,9 @@ val intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
 val inter : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 (** [inter cmp xs ys] are the elements in both [xs] and [ys], sorted according to [cmp]. *)
 
+val fold_last : 'a list -> init:'b -> f:('b -> 'a -> 'b) -> f_last:('b -> 'a -> 'b) -> 'b
+(** like fold, but apply f_last to the last element *)
+
 val to_string : ('a -> string) -> 'a list -> string
 
 val uncons_exn : 'a list -> 'a * 'a list

@@ -45,7 +45,8 @@ module type S = sig
       -> new_alloc_num:counter -> Dom.Mem.astate -> Dom.Mem.astate
 
     val init_array_fields :
-      Tenv.t -> Typ.Procname.t -> CFG.node -> Typ.t -> PowLoc.t -> Dom.Mem.astate -> Dom.Mem.astate
+      Tenv.t -> Typ.Procname.t -> CFG.node -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t
+      -> Dom.Mem.astate -> Dom.Mem.astate
   end
 
   module Check : sig
@@ -130,35 +131,41 @@ module Make (CFG : ProcCfg.S) = struct
         decl_sym_val pname tenv node location ~depth deref_loc typ mem
 
 
-    let init_array_fields tenv pname node typ locs mem =
-      let rec init_field locs dimension (mem, inst_num) (field_name, field_typ, _) =
+    let init_array_fields tenv pname node typ locs ?dyn_length mem =
+      let rec init_field locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
         let field_loc = PowLoc.append_field locs ~fn:field_name in
         let mem =
           match field_typ.Typ.desc with
           | Tarray (typ, Some length, stride) ->
               let length = Itv.of_int_lit length in
+              let length =
+                Option.value_map dyn_length ~default:length ~f:(fun dyn_length ->
+                    let i = Dom.Val.get_itv (Sem.eval dyn_length mem) in
+                    Itv.plus i length )
+              in
               let stride = Option.map stride ~f:IntLit.to_int in
               let v =
                 Sem.eval_array_alloc pname node typ ?stride Itv.zero length inst_num dimension
               in
               Dom.Mem.strong_update_heap field_loc v mem
           | _ ->
-              init_fields field_typ field_loc dimension mem
+              init_fields field_typ field_loc dimension ?dyn_length mem
         in
         (mem, inst_num + 1)
-      and init_fields typ locs dimension mem =
+      and init_fields typ locs dimension ?dyn_length mem =
         match typ.Typ.desc with
         | Tstruct typename -> (
           match Tenv.lookup tenv typename with
           | Some str ->
-              List.fold ~f:(init_field locs (dimension + 1)) ~init:(mem, 1) str.Typ.Struct.fields
+              let f = init_field locs (dimension + 1) in
+              IList.fold_last ~f ~f_last:(f ?dyn_length) ~init:(mem, 1) str.Typ.Struct.fields
               |> fst
           | None ->
               mem )
         | _ ->
             mem
       in
-      init_fields typ locs 1 mem
+      init_fields typ locs 1 ?dyn_length mem
   end
 
   module Check = struct

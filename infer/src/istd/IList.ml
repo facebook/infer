@@ -96,6 +96,17 @@ let inter compare xs ys =
   inter_ [] rev_xs rev_ys
 
 
+(** like fold, but apply f_last to the last element *)
+let rec fold_last l ~init ~f ~f_last =
+  match l with
+  | [] ->
+      init
+  | [last] ->
+      f_last init last
+  | hd :: tl ->
+      fold_last tl ~init:(f init hd) ~f ~f_last
+
+
 let to_string f l =
   let rec aux l = match l with [] -> "" | [s] -> f s | s :: rest -> f s ^ ", " ^ aux rest in
   "[" ^ aux l ^ "]"
