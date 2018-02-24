@@ -105,6 +105,18 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   let realloc = malloc
 
+  let placement_new allocated_mem_exp =
+    let exec {ret} mem =
+      match ret with
+      | Some (id, _) ->
+          let v = Sem.eval allocated_mem_exp mem in
+          Dom.Mem.add_stack (Loc.of_id id) v mem
+      | None ->
+          mem
+    in
+    {exec; check= no_check}
+
+
   let inferbo_min e1 e2 =
     let exec {ret} mem =
       match ret with
@@ -291,6 +303,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         ; -"malloc" <>$ capt_exp $+...$--> malloc
         ; -"__new" <>$ capt_exp $+...$--> malloc
         ; -"__new_array" <>$ capt_exp $+...$--> malloc
+        ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
         ; -"realloc" <>$ any_arg $+ capt_exp $+...$--> realloc
         ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
         ; -"strlen" <>--> by_value Dom.Val.Itv.nat

@@ -64,3 +64,17 @@ void array_member_malloc2_Bad() {
   my_class3* x = (my_class3*)malloc(sizeof(my_class3));
   x->b.a[10] = 0;
 }
+
+#include <new>
+
+void placement_new_Good() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (mem) my_class2();
+  x->a[0] = 0;
+}
+
+void placement_new_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (mem) my_class2();
+  x->a[10] = 0;
+}
