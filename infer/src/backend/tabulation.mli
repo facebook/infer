@@ -17,7 +17,8 @@ type call_result =
   | CR_not_found  (** the callee has no specs *)
   | CR_skip  (** the callee was skipped *)
 
-val log_call_trace : Typ.Procname.t -> Typ.Procname.t -> Location.t -> call_result -> unit
+val log_call_trace :
+  Typ.Procname.t -> Typ.Procname.t -> ?reason:string -> Location.t -> call_result -> unit
 
 (** Interprocedural footprint analysis *)
 

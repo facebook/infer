@@ -83,14 +83,15 @@ let print_results tenv actual_pre results =
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
 
 
-let log_call_trace caller_name callee_name loc res =
+let log_call_trace caller_name callee_name ?reason loc res =
   let call_trace =
     EventLogger.CallTrace
       { call_location= loc
       ; call_result= string_of_call_result res
       ; callee_name= Typ.Procname.to_string callee_name
       ; caller_name= Typ.Procname.to_string caller_name
-      ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string }
+      ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string
+      ; reason }
   in
   if !Config.footprint then EventLogger.log call_trace
 

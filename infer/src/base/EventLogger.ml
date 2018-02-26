@@ -110,7 +110,8 @@ type call_trace =
   ; call_result: string
   ; callee_name: string
   ; caller_name: string
-  ; lang: string }
+  ; lang: string
+  ; reason: string option }
 
 let create_call_trace_row base record =
   let open JsonBuilder in
@@ -123,7 +124,7 @@ let create_call_trace_row base record =
   |> add_string ~key:"call_result" ~data:record.call_result
   |> add_string ~key:"callee_name" ~data:record.callee_name
   |> add_string ~key:"caller_name" ~data:record.caller_name
-  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string ~key:"lang" ~data:record.lang |> add_string_opt ~key:"reason" ~data:record.reason
 
 
 type frontend_exception =

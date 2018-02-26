@@ -1081,7 +1081,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
           ()
       | Some summary ->
           let proc_name = Specs.get_proc_name summary in
-          Tabulation.log_call_trace proc_name callee_pname loc Tabulation.CR_skip ) ;
+          Tabulation.log_call_trace proc_name callee_pname ~reason loc Tabulation.CR_skip ) ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ_opt ret_annots
         Builtin.
           { pdesc= current_pdesc

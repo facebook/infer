@@ -23,7 +23,8 @@ type call_trace =
   ; call_result: string
   ; callee_name: string
   ; caller_name: string
-  ; lang: string }
+  ; lang: string
+  ; reason: string option }
 
 type frontend_exception =
   { ast_node: string option
