@@ -85,8 +85,7 @@ module FileContainsStringMatcher = struct
           with Sys_error _ -> false
 end
 
-type method_pattern =
-  {class_name: string; method_name: string option; parameters: string list option}
+type method_pattern = {class_name: string; method_name: string option}
 
 type pattern =
   | Method_pattern of Language.t * method_pattern
@@ -154,12 +153,8 @@ module FileOrProcMatcher = struct
       Format.fprintf fmt "  %s: %a,@\n" key (pp_option pp_value) value
     in
     let pp_method_pattern fmt mp =
-      let pp_params fmt l =
-        Format.fprintf fmt "[%a]" (Pp.semicolon_seq ~print_env:Pp.text pp_string) l
-      in
-      Format.fprintf fmt "%a%a%a" (pp_key_value pp_string) ("class", Some mp.class_name)
-        (pp_key_value pp_string) ("method", mp.method_name) (pp_key_value pp_params)
-        ("parameters", mp.parameters)
+      Format.fprintf fmt "%a%a" (pp_key_value pp_string) ("class", Some mp.class_name)
+        (pp_key_value pp_string) ("method", mp.method_name)
     and pp_source_contains fmt sc = Format.fprintf fmt "  pattern: %s@\n" sc in
     match pattern with
     | Method_pattern (language, mp) ->
@@ -185,7 +180,7 @@ module OverridesMatcher = struct
 end
 
 let patterns_of_json_with_key (json_key, json) =
-  let default_method_pattern = {class_name= ""; method_name= None; parameters= None} in
+  let default_method_pattern = {class_name= ""; method_name= None} in
   let default_source_contains = "" in
   let language_of_string s =
     match Language.of_string s with
@@ -226,25 +221,12 @@ let patterns_of_json_with_key (json_key, json) =
   in
   (* Translate a JSON entry into a matching pattern *)
   let create_pattern (assoc: (string * Yojson.Basic.json) list) =
-    let collect_params l =
-      let collect accu = function
-        | `String s ->
-            s :: accu
-        | _ ->
-            L.(die UserError)
-              "Unrecognised parameters in %s"
-              (Yojson.Basic.to_string (`Assoc assoc))
-      in
-      List.rev (List.fold ~f:collect ~init:[] l)
-    in
     let create_method_pattern assoc =
       let loop mp = function
         | key, `String s when String.equal key "class" ->
             {mp with class_name= s}
         | key, `String s when String.equal key "method" ->
             {mp with method_name= Some s}
-        | key, `List l when String.equal key "parameters" ->
-            {mp with parameters= Some (collect_params l)}
         | key, _ when String.equal key "language" ->
             mp
         | _ ->
