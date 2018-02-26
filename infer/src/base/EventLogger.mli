@@ -11,7 +11,7 @@ type analysis_stats =
   { analysis_nodes_visited: int
   ; analysis_status: SymOp.failure_kind option
   ; analysis_total_nodes: int
-  ; clang_method_kind: ProcAttributes.clang_method_kind option
+  ; clang_method_kind: string option
   ; lang: string
   ; method_location: Location.t
   ; method_name: string

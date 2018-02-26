@@ -520,6 +520,9 @@ module StatsLogs = struct
     let num_preposts =
       match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
     in
+    let clang_method_kind =
+      ProcAttributes.string_of_clang_method_kind (Specs.get_attributes summary).clang_method_kind
+    in
     let proc_name = Specs.get_proc_name summary in
     let lang = Typ.Procname.get_language proc_name in
     let stats =
@@ -528,9 +531,7 @@ module StatsLogs = struct
         ; analysis_status= summary.stats.stats_failure
         ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
         ; clang_method_kind=
-            ( if Language.equal lang Language.Clang then
-                Some (Specs.get_attributes summary).clang_method_kind
-            else None )
+            (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
         ; lang= Language.to_explicit_string lang
         ; method_location= Specs.get_loc summary
         ; method_name= Typ.Procname.to_string proc_name
@@ -664,11 +665,11 @@ let get_outfile outfile =
 let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_filter
     {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
-  | Csv ->
-      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Json ->
       let outf = get_outfile outfile_opt in
       IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
+  | Csv ->
+      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
       L.(die InternalError) "Printing issues as tests is not implemented"
   | Logs ->
@@ -871,14 +872,14 @@ let register_perf_stats_report () =
   PerfStats.register_report_at_exit stats_file
 
 
+(** Although the out_file is an Option type, the None option is strictly meant for the
+  logs format_kind, and all other formats should contain an outfile value. *)
 let mk_format format_kind fname =
   Option.value_map
     ~f:(fun out_file -> [(format_kind, Some out_file)])
     ~default:[] (Utils.create_outfile fname)
 
 
-(** Although the out_file is an Option type, the None option is strictly meant for the
-  logs format_kind, and all other formats should contain an outfile value. *)
 let init_issues_format_list report_json =
   let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
   let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
