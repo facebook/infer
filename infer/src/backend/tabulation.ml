@@ -92,7 +92,7 @@ let log_call_trace caller_name callee_name loc res =
       ; caller_name= Typ.Procname.to_string caller_name
       ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string }
   in
-  if !Config.footprint then EventLogger.log call_trace else ()
+  if !Config.footprint then EventLogger.log call_trace
 
 
 (***************)
