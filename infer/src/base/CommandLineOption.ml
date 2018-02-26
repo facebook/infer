@@ -477,7 +477,7 @@ let mk_string_list ?(default= []) ?(f= fun s -> s) ?(deprecated= []) ~long ?shor
 
 
 let normalize_path_in_args_being_parsed ?(f= Fn.id) ~is_anon_arg str =
-  if Filename.is_relative str then
+  if Filename.is_relative str then (
     (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
        that [!arg_being_parsed] points at either [str] (if [is_anon_arg]) or at the option name
        position in [!args_to_parse], as is the case e.g. when calling
@@ -485,7 +485,7 @@ let normalize_path_in_args_being_parsed ?(f= Fn.id) ~is_anon_arg str =
     let root = Unix.getcwd () in
     let abs_path = Utils.filename_to_absolute ~root str in
     !args_to_parse.((!arg_being_parsed + if is_anon_arg then 0 else 1)) <- f abs_path ;
-    abs_path
+    abs_path )
   else str
 
 
@@ -922,7 +922,7 @@ let parse ?config_file ~usage action initial_command =
   in
   let to_export =
     let argv_to_export = decode_env_to_argv !args_to_export in
-    if argv_to_export <> [] then
+    if argv_to_export <> [] then (
       (* We have to be careful not to add too much data to the environment because the size of the
          environment contributes to the length of the command to be run. If the environment + CLI is
          too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
@@ -930,7 +930,7 @@ let parse ?config_file ~usage action initial_command =
       let file = Filename.temp_file "args_" "" in
       Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
       if not !keep_args_file then Utils.unlink_file_on_exit file ;
-      "@" ^ file
+      "@" ^ file )
     else ""
   in
   Unix.putenv ~key:args_env_var ~data:to_export ;

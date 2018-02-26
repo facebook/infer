@@ -177,7 +177,10 @@ let checker {Callbacks.proc_desc; tenv; get_proc_desc; summary} : Specs.summary 
   ( match loaded_stacktraces with
   | None ->
       L.(die UserError)
-        "Missing command line option. Either '--stacktrace stack.json' or '--stacktrace-dir ./dir' must be used when running '-a crashcontext'. This options expects a JSON formated stack trace or a directory containing multiple such traces, respectively. See tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
+        "Missing command line option. Either '--stacktrace stack.json' or '--stacktrace-dir \
+         ./dir' must be used when running '-a crashcontext'. This options expects a JSON formated \
+         stack trace or a directory containing multiple such traces, respectively. See \
+         tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
   | Some stacktraces ->
       let extras = {get_proc_desc; stacktraces} in
       ignore (Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty) ) ;

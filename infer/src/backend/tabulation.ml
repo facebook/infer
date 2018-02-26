@@ -419,7 +419,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
   let check_attr atom =
     match atom with
     | Sil.Apred (Adiv0 path_pos, [e]) ->
-        if Prover.check_zero tenv e then
+        if Prover.check_zero tenv e then (
           let desc =
             Errdesc.explain_divide_by_zero tenv e (State.get_node ()) (State.get_loc ())
           in
@@ -431,7 +431,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
           in
           State.set_path new_path path_pos_opt ;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          Reporting.log_warning_deprecated caller_pname exn
+          Reporting.log_warning_deprecated caller_pname exn )
     | _ ->
         ()
   in
@@ -964,13 +964,13 @@ let mk_actual_precondition tenv prop actual_params formal_params =
       | f :: fpars', a :: apars' ->
           (f, a) :: comb fpars' apars'
       | [], _ ->
-          ( if apars <> [] then
-              let str =
-                "more actual pars than formal pars in fun call ("
-                ^ string_of_int (List.length actual_params) ^ " vs "
-                ^ string_of_int (List.length formal_params) ^ ")"
-              in
-              L.d_warning str ; L.d_ln () ) ;
+          if apars <> [] then (
+            let str =
+              "more actual pars than formal pars in fun call ("
+              ^ string_of_int (List.length actual_params) ^ " vs "
+              ^ string_of_int (List.length formal_params) ^ ")"
+            in
+            L.d_warning str ; L.d_ln () ) ;
           []
       | _ :: _, [] ->
           raise (Exceptions.Wrong_argument_number __POS__)
@@ -1234,9 +1234,9 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let call_desc kind_opt = Localise.desc_precondition_not_met kind_opt callee_pname loc in
   let res_with_path_idents =
     if !Config.footprint then
-      if List.is_empty valid_res_cons_pre_missing then
-        (* no valid results where actual pre and missing are consistent *)
-        match deref_errors with
+      if List.is_empty valid_res_cons_pre_missing then (
+        match (* no valid results where actual pre and missing are consistent *)
+              deref_errors with
         | error :: _
           -> (
             (* dereference error detected *)
@@ -1304,7 +1304,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
               else call_desc None
             in
             trace_call CR_not_met ;
-            raise (Exceptions.Precondition_not_met (desc, __POS__))
+            raise (Exceptions.Precondition_not_met (desc, __POS__)) )
       else
         (* combine the valid results, and store diverging states *)
         let process_valid_res vr =

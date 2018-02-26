@@ -172,75 +172,75 @@ let empty : ('f, 'f, unit, 'markers, 'markers, empty) path_matcher =
 let name_cons
     : ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) path_matcher -> string
       -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
-  fun m name ->
-    let {on_templated_name; get_markers} = m in
-    let fuzzy_name_regexp =
-      name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9]+>\\)?$" |> Str.regexp
-    in
-    let on_qual_name f qual_name =
-      match QualifiedCppName.extract_last qual_name with
-      | Some (last, rest) when Str.string_match fuzzy_name_regexp last 0 ->
-          on_templated_name f (rest, [])
-      | _ ->
-          None
-    in
-    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
-      if String.equal name objc_cpp.method_name then
-        on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
-      else None
-    in
-    {on_objc_cpp; on_qual_name; get_markers}
+ fun m name ->
+  let {on_templated_name; get_markers} = m in
+  let fuzzy_name_regexp =
+    name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9]+>\\)?$" |> Str.regexp
+  in
+  let on_qual_name f qual_name =
+    match QualifiedCppName.extract_last qual_name with
+    | Some (last, rest) when Str.string_match fuzzy_name_regexp last 0 ->
+        on_templated_name f (rest, [])
+    | _ ->
+        None
+  in
+  let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
+    if String.equal name objc_cpp.method_name then
+      on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
+    else None
+  in
+  {on_objc_cpp; on_qual_name; get_markers}
 
 
 let all_names_cons
     : ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
       -> ('f_in, 'f_out, 'captured_tpes, 'markers_in, 'markers_out, non_empty) path_matcher =
-  fun m ->
-    let {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}} = m in
-    let rec on_templated_name_rec f templated_name =
-      match on_templated_name f templated_name with
-      | Some _ as some ->
-          some
-      | None ->
-          let qual_name, _template_args = templated_name in
-          match QualifiedCppName.extract_last qual_name with
-          | None ->
-              None
-          | Some (_last, rest) ->
-              on_templated_name_rec f (rest, [])
-    in
-    let on_templated_name = on_templated_name_rec in
-    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
-      match on_objc_cpp f objc_cpp with
-      | Some _ as some ->
-          some
-      | None ->
-          on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
-    in
-    {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}}
+ fun m ->
+  let {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}} = m in
+  let rec on_templated_name_rec f templated_name =
+    match on_templated_name f templated_name with
+    | Some _ as some ->
+        some
+    | None ->
+        let qual_name, _template_args = templated_name in
+        match QualifiedCppName.extract_last qual_name with
+        | None ->
+            None
+        | Some (_last, rest) ->
+            on_templated_name_rec f (rest, [])
+  in
+  let on_templated_name = on_templated_name_rec in
+  let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
+    match on_objc_cpp f objc_cpp with
+    | Some _ as some ->
+        some
+    | None ->
+        on_templated_name f (templated_name_of_class_name objc_cpp.class_name)
+  in
+  {on_templated_name; get_markers; path_extra= PathNonEmpty {on_objc_cpp}}
 
 
 let templ_begin
     : ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
       -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, accept_more) templ_matcher =
-  fun m ->
-    let {on_objc_cpp; on_qual_name; get_markers} = m in
-    let on_templated_name f (qual_name, template_args) =
-      match on_qual_name f qual_name with
-      | None ->
-          None
-      | Some (f, captured_types) ->
-          Some (f, captured_types, template_args)
-    in
-    let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
-      match on_objc_cpp f objc_cpp with
-      | None ->
-          None
-      | Some (f, captured_types) ->
-          let template_args = template_args_of_template_spec_info objc_cpp.template_args in
-          Some (f, captured_types, template_args)
-    in
-    {on_objc_cpp; on_templated_name; get_markers}
+ fun m ->
+  let {on_objc_cpp; on_qual_name; get_markers} = m in
+  let on_templated_name f (qual_name, template_args) =
+    match on_qual_name f qual_name with
+    | None ->
+        None
+    | Some (f, captured_types) ->
+        Some (f, captured_types, template_args)
+  in
+  let on_objc_cpp f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
+    match on_objc_cpp f objc_cpp with
+    | None ->
+        None
+    | Some (f, captured_types) ->
+        let template_args = template_args_of_template_spec_info objc_cpp.template_args in
+        Some (f, captured_types, template_args)
+  in
+  {on_objc_cpp; on_templated_name; get_markers}
 
 
 let templ_cons
@@ -260,15 +260,15 @@ let templ_cons
          , 'lc )
          template_arg
       -> ('f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher =
-  fun m template_arg ->
-    let {on_objc_cpp; on_templated_name; get_markers} = m in
-    let {eat_template_arg; add_marker} = template_arg in
-    let get_markers m = get_markers (add_marker m) in
-    let on_templated_name f templated_name =
-      on_templated_name f templated_name |> Option.bind ~f:eat_template_arg
-    in
-    let on_objc_cpp f objc_cpp = on_objc_cpp f objc_cpp |> Option.bind ~f:eat_template_arg in
-    {on_objc_cpp; on_templated_name; get_markers}
+ fun m template_arg ->
+  let {on_objc_cpp; on_templated_name; get_markers} = m in
+  let {eat_template_arg; add_marker} = template_arg in
+  let get_markers m = get_markers (add_marker m) in
+  let on_templated_name f templated_name =
+    on_templated_name f templated_name |> Option.bind ~f:eat_template_arg
+  in
+  let on_objc_cpp f objc_cpp = on_objc_cpp f objc_cpp |> Option.bind ~f:eat_template_arg in
+  {on_objc_cpp; on_templated_name; get_markers}
 
 
 let templ_end
@@ -307,24 +307,24 @@ let args_cons
     : ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
       -> ('f_interm, 'f_out, 'captured_types, 'markers) func_arg
       -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher =
-  fun m func_arg ->
-    let {on_proc; on_args; markers} = m in
-    let {marker_static_checker; eat_func_arg} = func_arg in
-    assert (marker_static_checker markers) ;
-    let on_args capt f_args = on_args capt f_args |> Option.bind ~f:(eat_func_arg capt) in
-    {on_proc; on_args; markers}
+ fun m func_arg ->
+  let {on_proc; on_args; markers} = m in
+  let {marker_static_checker; eat_func_arg} = func_arg in
+  assert (marker_static_checker markers) ;
+  let on_args capt f_args = on_args capt f_args |> Option.bind ~f:(eat_func_arg capt) in
+  {on_proc; on_args; markers}
 
 
 let args_end
     : ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
       -> ('f_proc_out, 'f_out, 'captured_types) func_args_end -> ('f_in, 'f_out) all_args_matcher =
-  fun m func_args_end ->
-    let {on_proc= {on_c; on_objc_cpp}; on_args} = m in
-    let on_c f c args = on_c f c |> pre_bind_opt ~f:(func_args_end ~on_args args) in
-    let on_objc_cpp f objc_cpp args =
-      on_objc_cpp f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args args)
-    in
-    {on_c; on_objc_cpp}
+ fun m func_args_end ->
+  let {on_proc= {on_c; on_objc_cpp}; on_args} = m in
+  let on_c f c args = on_c f c |> pre_bind_opt ~f:(func_args_end ~on_args args) in
+  let on_objc_cpp f objc_cpp args =
+    on_objc_cpp f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args args)
+  in
+  {on_c; on_objc_cpp}
 
 
 module type Common = sig
@@ -460,17 +460,17 @@ module Common = struct
            , 'marker * 'markers
            , accept_more )
            template_arg =
-    fun marker ->
-      let eat_template_arg (f, captured_types, template_args) =
-        match template_args with
-        | (Typ.TType ty) :: rest ->
-            let captured_types () = (ty, captured_types ()) in
-            Some (f ty, captured_types, rest)
-        | _ ->
-            None
-      in
-      let add_marker capture_markers = (marker, capture_markers) in
-      {eat_template_arg; add_marker}
+   fun marker ->
+    let eat_template_arg (f, captured_types, template_args) =
+      match template_args with
+      | (Typ.TType ty) :: rest ->
+          let captured_types () = (ty, captured_types ()) in
+          Some (f ty, captured_types, rest)
+      | _ ->
+          None
+    in
+    let add_marker capture_markers = (marker, capture_markers) in
+    {eat_template_arg; add_marker}
 
 
   (** Captures an int *)
@@ -540,46 +540,46 @@ module Procname = struct
   include Common
 
   let make_matcher : ('f_in, 'f_out) all_args_matcher -> 'f_in -> 'f_out matcher =
-    fun m f ->
-      let {on_c; on_objc_cpp} : (_, _) all_args_matcher = m in
-      let on_objc_cpp objc_cpp args =
-        match on_objc_cpp f objc_cpp args with
-        | DoesNotMatch ->
-            None
-        | Matches res ->
-            Some res
-        | RetryWith {on_objc_cpp} ->
-            on_objc_cpp objc_cpp args
-      in
-      let on_c c args =
-        match on_c f c args with
-        | DoesNotMatch ->
-            None
-        | Matches res ->
-            Some res
-        | RetryWith {on_c} ->
-            on_c c args
-      in
-      {on_objc_cpp; on_c}
+   fun m f ->
+    let {on_c; on_objc_cpp} : (_, _) all_args_matcher = m in
+    let on_objc_cpp objc_cpp args =
+      match on_objc_cpp f objc_cpp args with
+      | DoesNotMatch ->
+          None
+      | Matches res ->
+          Some res
+      | RetryWith {on_objc_cpp} ->
+          on_objc_cpp objc_cpp args
+    in
+    let on_c c args =
+      match on_c f c args with
+      | DoesNotMatch ->
+          None
+      | Matches res ->
+          Some res
+      | RetryWith {on_c} ->
+          on_c c args
+    in
+    {on_objc_cpp; on_c}
 
 
   (** Simple implementation of a dispatcher, could be optimized later *)
   let make_dispatcher : 'f matcher list -> 'f dispatcher =
-    fun matchers ->
-      let on_objc_cpp objc_cpp args =
-        List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_objc_cpp objc_cpp args)
-      in
-      let on_c c args =
-        List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_c c args)
-      in
-      fun procname args ->
-        match procname with
-        | ObjC_Cpp objc_cpp ->
-            on_objc_cpp objc_cpp args
-        | C c ->
-            on_c c args
-        | _ ->
-            None
+   fun matchers ->
+    let on_objc_cpp objc_cpp args =
+      List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_objc_cpp objc_cpp args)
+    in
+    let on_c c args =
+      List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_c c args)
+    in
+    fun procname args ->
+      match procname with
+      | ObjC_Cpp objc_cpp ->
+          on_objc_cpp objc_cpp args
+      | C c ->
+          on_c c args
+      | _ ->
+          None
 
 
   (* Function args *)
@@ -595,10 +595,10 @@ module Procname = struct
   let mk_match_typ_nth
       : ('markers -> 'marker) -> ('captured_types -> 'marker mtyp) -> 'marker
         -> ('captured_types, 'markers) one_arg_matcher =
-    fun get_m get_c marker ->
-      let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
-      let match_arg capt arg = Typ.equal (FuncArg.typ arg) (get_c capt) in
-      {match_arg; marker_static_checker}
+   fun get_m get_c marker ->
+    let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
+    let match_arg capt arg = Typ.equal (FuncArg.typ arg) (get_c capt) in
+    {match_arg; marker_static_checker}
 
 
   (** Matches first captured type *)
@@ -622,19 +622,19 @@ module Procname = struct
 
   (** Matches the type matched by the given path_matcher *)
   let match_typ : (_, _, unit, unit, unit, non_empty) path_matcher -> (_, _) one_arg_matcher =
-    fun m ->
-      let {on_templated_name} : (_, _, unit, unit, unit, non_empty) path_matcher = m in
-      let rec match_typ typ =
-        match typ with
-        | {Typ.desc= Tstruct name} ->
-            name |> templated_name_of_class_name |> on_templated_name () |> Option.is_some
-        | {Typ.desc= Tptr (typ, _ptr_kind)} ->
-            match_typ typ
-        | _ ->
-            false
-      in
-      let match_arg _capt arg = match_typ (FuncArg.typ arg) in
-      {match_arg; marker_static_checker= no_marker_checker}
+   fun m ->
+    let {on_templated_name} : (_, _, unit, unit, unit, non_empty) path_matcher = m in
+    let rec match_typ typ =
+      match typ with
+      | {Typ.desc= Tstruct name} ->
+          name |> templated_name_of_class_name |> on_templated_name () |> Option.is_some
+      | {Typ.desc= Tptr (typ, _ptr_kind)} ->
+          match_typ typ
+      | _ ->
+          false
+    in
+    let match_arg _capt arg = match_typ (FuncArg.typ arg) in
+    {match_arg; marker_static_checker= no_marker_checker}
 
 
   (* Function argument capture *)
@@ -674,21 +674,21 @@ module Procname = struct
   let make_arg
       : ('arg_in, 'arg_out, 'f_in, 'f_out) arg_preparer
         -> ('arg_in, 'arg_out, 'f_in, 'f_out, _, _) one_arg -> ('f_in, 'f_out, _, _) func_arg =
-    fun arg_preparer one_arg ->
-      let {on_empty; wrapper} = arg_preparer in
-      let {one_arg_matcher; capture} = one_arg in
-      let {match_arg; marker_static_checker} = one_arg_matcher in
-      let {get_captured_value; do_capture} = capture in
-      let eat_func_arg capt (f, args) =
-        match args with
-        | [] ->
-            on_empty do_capture f
-        | arg :: rest when match_arg capt arg ->
-            Some (arg |> get_captured_value |> wrapper |> do_capture f, rest)
-        | _ ->
-            None
-      in
-      {eat_func_arg; marker_static_checker}
+   fun arg_preparer one_arg ->
+    let {on_empty; wrapper} = arg_preparer in
+    let {one_arg_matcher; capture} = one_arg in
+    let {match_arg; marker_static_checker} = one_arg_matcher in
+    let {get_captured_value; do_capture} = capture in
+    let eat_func_arg capt (f, args) =
+      match args with
+      | [] ->
+          on_empty do_capture f
+      | arg :: rest when match_arg capt arg ->
+          Some (arg |> get_captured_value |> wrapper |> do_capture f, rest)
+      | _ ->
+          None
+    in
+    {eat_func_arg; marker_static_checker}
 
 
   let any_arg : (unit, _, 'f, 'f, _, _) one_arg =
@@ -708,15 +708,15 @@ module Procname = struct
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
 
   let typ1 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
-    fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}
+   fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}
 
 
   let typ2 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
-    fun m -> {one_arg_matcher= match_typ2 m; capture= no_capture}
+   fun m -> {one_arg_matcher= match_typ2 m; capture= no_capture}
 
 
   let typ3 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
-    fun m -> {one_arg_matcher= match_typ3 m; capture= no_capture}
+   fun m -> {one_arg_matcher= match_typ3 m; capture= no_capture}
 
 
   (* Function args end *)
@@ -728,7 +728,7 @@ module Procname = struct
 
   (** Matches any function arguments *)
   let any_func_args : (_, _, _) func_args_end =
-    fun ~on_args args (f, capt) -> on_args capt (f, args) |> pre_map_opt ~f:fst
+   fun ~on_args args (f, capt) -> on_args capt (f, args) |> pre_map_opt ~f:fst
 
 
   (** If [func_args_end1] does not match, use [func_args_end2] *)
@@ -736,23 +736,23 @@ module Procname = struct
       : ('f_in, 'f_out, 'captured_types) func_args_end
         -> ('f_in, 'f_out, 'captured_types) func_args_end
         -> ('f_in, 'f_out, 'captured_types) func_args_end =
-    fun func_args_end1 func_args_end2 ~on_args args f_capt ->
-      match func_args_end1 ~on_args args f_capt with
-      | DoesNotMatch ->
-          func_args_end2 ~on_args args f_capt
-      | otherwise ->
-          otherwise
+   fun func_args_end1 func_args_end2 ~on_args args f_capt ->
+    match func_args_end1 ~on_args args f_capt with
+    | DoesNotMatch ->
+        func_args_end2 ~on_args args f_capt
+    | otherwise ->
+        otherwise
 
 
   (** Retries matching with another matcher *)
   let args_end_retry : _ matcher -> (_, _, _) func_args_end =
-    fun m ~on_args:_ _args _f_capt -> RetryWith m
+   fun m ~on_args:_ _args _f_capt -> RetryWith m
 
 
   (** Retries matching with another matcher if the function does not have the
     exact number/types of args *)
   let exact_args_or_retry : 'f matcher -> (_, _, _) func_args_end =
-    fun m -> alternative_args_end no_args_left (args_end_retry m)
+   fun m -> alternative_args_end no_args_left (args_end_retry m)
 
 
   let wrong_args_internal_error : _ matcher =
@@ -816,22 +816,22 @@ module TypName = struct
 
   let make_matcher
       : ('f_in, 'f_out, _, _, _, non_empty) path_matcher -> 'f_in -> 'f_out typ_matcher =
-    fun m f ->
-      let {on_templated_name} : ('f_in, 'f_out, _, _, _, non_empty) path_matcher = m in
-      let on_templated_name templated_name =
-        templated_name |> on_templated_name f |> Option.map ~f:fst
-      in
-      {on_templated_name}
+   fun m f ->
+    let {on_templated_name} : ('f_in, 'f_out, _, _, _, non_empty) path_matcher = m in
+    let on_templated_name templated_name =
+      templated_name |> on_templated_name f |> Option.map ~f:fst
+    in
+    {on_templated_name}
 
 
   let make_dispatcher : 'f typ_matcher list -> 'f typ_dispatcher =
-    fun matchers typname ->
-      match templated_name_of_class_name typname with
-      | exception DoNotHandleJavaYet ->
-          None
-      | templated_name ->
-          List.find_map matchers ~f:(fun (matcher: _ typ_matcher) ->
-              matcher.on_templated_name templated_name )
+   fun matchers typname ->
+    match templated_name_of_class_name typname with
+    | exception DoNotHandleJavaYet ->
+        None
+    | templated_name ->
+        List.find_map matchers ~f:(fun (matcher: _ typ_matcher) ->
+            matcher.on_templated_name templated_name )
 
 
   let ( &-->! ) path_matcher f = make_matcher path_matcher f

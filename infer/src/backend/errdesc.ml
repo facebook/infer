@@ -1150,11 +1150,11 @@ let explain_dereference_as_caller_expression proc_name tenv ?(use_buckets= false
       if Pvar.is_global pv then
         let dexp = exp_lv_dexp tenv node (Exp.Lvar pv) in
         create_dereference_desc proc_name tenv ~use_buckets dexp deref_str actual_pre loc
-      else if Pvar.is_callee pv then
+      else if Pvar.is_callee pv then (
         let position = find_formal_param_number pv_name in
         if verbose then L.d_strln ("parameter number: " ^ string_of_int position) ;
         explain_nth_function_parameter proc_name tenv use_buckets deref_str actual_pre position
-          pvar_off
+          pvar_off )
       else if Attribute.has_dangling_uninit tenv spec_pre exp then
         Localise.desc_uninitialized_dangling_pointer_deref deref_str (Pvar.to_string pv) loc
       else Localise.no_desc

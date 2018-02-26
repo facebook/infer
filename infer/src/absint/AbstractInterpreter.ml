@@ -78,19 +78,19 @@ struct
       let instr_ids = match CFG.instr_ids node with [] -> [(Sil.skip_instr, None)] | l -> l in
       if debug then NodePrinter.start_session (CFG.underlying_node node) ;
       let astate_post, inv_map_post = List.fold ~f:compute_post ~init:(pre, inv_map) instr_ids in
-      ( if debug then
-          let instrs = List.map ~f:fst instr_ids in
-          L.d_strln
-            (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
-               (Sil.pp_instr_list Pp.(html Green))
-               instrs Domain.pp astate_post) ;
-          NodePrinter.finish_session (CFG.underlying_node node) ) ;
+      if debug then (
+        let instrs = List.map ~f:fst instr_ids in
+        L.d_strln
+          (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
+             (Sil.pp_instr_list Pp.(html Green))
+             instrs Domain.pp astate_post) ;
+        NodePrinter.finish_session (CFG.underlying_node node) ) ;
       let inv_map'' =
         InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map_post
       in
       (inv_map'', Scheduler.schedule_succs work_queue node)
     in
-    if InvariantMap.mem node_id inv_map then
+    if InvariantMap.mem node_id inv_map then (
       let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
         if CFG.is_loop_head pdesc node then
@@ -102,9 +102,10 @@ struct
         let visit_count' = old_state.visit_count + 1 in
         if visit_count' > Config.max_widens then
           L.(die InternalError)
-            "Exceeded max widening threshold %d while analyzing %a. Please check your widening operator or increase the threshold"
-            Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
-        update_inv_map widened_pre visit_count'
+            "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
+             operator or increase the threshold" Config.max_widens Typ.Procname.pp
+            (Procdesc.get_proc_name pdesc) ;
+        update_inv_map widened_pre visit_count' )
     else
       (* first time visiting this node *)
       let visit_count = 1 in

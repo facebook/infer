@@ -119,7 +119,8 @@ let load_from_verbose_output javac_verbose_out =
             1. [wrote DirectoryFileObject[/path/to/classes_out:path/to/File.java]], leaves `path/to/File.java` in match group 2
             2. [wrote RegularFileObject[path/to/File.java]], leaves `path/to/File.java` in match group 5
             3. [wrote SimpleFileObject[path/to/File.java]], also leaves `path/to/File.java` in match group 5 *)
-         "\\[wrote \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\)\\]\\]"
+         "\\[wrote \
+          \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\)\\]\\]"
          Config.javac_classes_out)
   in
   let source_filename_re =

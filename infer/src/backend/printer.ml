@@ -358,7 +358,7 @@ let node_finish_session node =
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only *)
 let write_proc_html pdesc =
-  if Config.write_html then
+  if Config.write_html then (
     let pname = Procdesc.get_proc_name pdesc in
     let source = (Procdesc.get_loc pdesc).file in
     let nodes = List.sort ~cmp:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
@@ -386,7 +386,7 @@ let write_proc_html pdesc =
         ()
     | Some summary ->
         Specs.pp_summary_html source Black fmt summary ;
-        Io_infer.Html.close (fd, fmt)
+        Io_infer.Html.close (fd, fmt) )
 
 
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)

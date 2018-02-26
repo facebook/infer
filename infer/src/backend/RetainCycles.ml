@@ -191,11 +191,11 @@ let get_retain_cycles hpred tenv prop_ =
 let exn_retain_cycle tenv hpred cycle =
   let retain_cycle = desc_retain_cycle tenv cycle in
   let cycle_dotty = Format.asprintf "%a" RetainCyclesType.pp_dotty cycle in
-  ( if Config.debug_mode then
-      let rc_dotty_dir = Filename.concat Config.results_dir Config.retain_cycle_dotty_dir in
-      Utils.create_dir rc_dotty_dir ;
-      let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
-      RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
+  if Config.debug_mode then (
+    let rc_dotty_dir = Filename.concat Config.results_dir Config.retain_cycle_dotty_dir in
+    Utils.create_dir rc_dotty_dir ;
+    let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
+    RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
   let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) (Some cycle_dotty) in
   Exceptions.Retain_cycle (hpred, desc, __POS__)
 

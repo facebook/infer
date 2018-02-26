@@ -161,8 +161,8 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
     let node_text =
       let pp fmt =
         Format.fprintf fmt
-          "<span class='%s'>%s<span class='expansion'>node%d preds:%a succs:%a exn:%a %s%s</span></span>"
-          style_class display_name id (Pp.seq Format.pp_print_int) preds
+          "<span class='%s'>%s<span class='expansion'>node%d preds:%a succs:%a exn:%a \
+           %s%s</span></span>" style_class display_name id (Pp.seq Format.pp_print_int) preds
           (Pp.seq Format.pp_print_int) succs (Pp.seq Format.pp_print_int) exn description
           (if not isvisited then "\nNOT VISITED" else "")
       in

@@ -844,13 +844,13 @@ let get_reporting_explanation_java report_kind tenv pname thread =
   | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
       ( IssueType.thread_safety_violation
       , F.asprintf
-          "%s, so we assume that this method can run in parallel with other non-private methods in the class (including itself)."
-          threadsafe_explanation )
+          "%s, so we assume that this method can run in parallel with other non-private methods \
+           in the class (including itself)." threadsafe_explanation )
   | _, Some threadsafe_explanation ->
       ( IssueType.thread_safety_violation
       , F.asprintf
-          "%s. Although this access is not known to run on a background thread, it may happen in parallel with another access that does."
-          threadsafe_explanation )
+          "%s. Although this access is not known to run on a background thread, it may happen in \
+           parallel with another access that does." threadsafe_explanation )
   | _, None ->
       (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
       if RacerDDomain.ThreadsDomain.is_any thread then
@@ -859,8 +859,9 @@ let get_reporting_explanation_java report_kind tenv pname thread =
       else
         ( IssueType.thread_safety_violation
         , F.asprintf
-            "@\n Reporting because another access to the same memory occurs on a background thread, although this access may not."
-        )
+            "@\n \
+             Reporting because another access to the same memory occurs on a background thread, \
+             although this access may not." )
 
 
 (** Explain why we are reporting this access, in C++ *)
@@ -995,8 +996,12 @@ let get_contaminated_race_message access wobbly_paths =
   in
   Option.map wobbly_path_opt ~f:(fun (wobbly_path, access_path) ->
       F.asprintf
-        "@\n\nNote that the prefix path %a has been contaminated during the execution, so the reported race on %a might be a false positive.@\n\n"
-        AccessPath.pp wobbly_path AccessPath.pp access_path )
+        "@\n\
+         \n\
+         Note that the prefix path %a has been contaminated during the execution, so the reported \
+         race on %a might be a false positive.@\n\
+         \n\
+         " AccessPath.pp wobbly_path AccessPath.pp access_path )
 
 
 let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread
@@ -1058,7 +1063,8 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
       let class_name = Typ.Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
-          "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
+          "Unprotected call to method of un-annotated interface %s. Consider annotating the class \
+           with %a, adding a lock, or using an interface that is known to be thread-safe."
           class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation tenv pdesc ~make_description ~report_kind:UnannotatedInterface
@@ -1222,12 +1228,12 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
             in
             if AccessData.is_unprotected precondition
                && (not (List.is_empty writes_on_background_thread) || ThreadsDomain.is_any threads)
-            then
+            then (
               let conflict = List.hd writes_on_background_thread in
               report_thread_safety_violation tenv procdesc
                 ~make_description:make_unprotected_write_description
                 ~report_kind:(WriteWriteRace conflict) access threads wobbly_paths ;
-              update_reported access pname reported_acc
+              update_reported access pname reported_acc )
             else reported_acc
         | _ ->
             (* Do not report unprotected writes when an access can't run in parallel with itself, or
@@ -1252,12 +1258,12 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                 is_conflict other_access precondition other_threads )
               accesses
           in
-          if not (List.is_empty all_writes) then
+          if not (List.is_empty all_writes) then (
             let conflict = List.hd_exn all_writes in
             report_thread_safety_violation tenv procdesc
               ~make_description:(make_read_write_race_description ~read_is_sync:false conflict)
               ~report_kind:(ReadWriteRace conflict.access) access threads wobbly_paths ;
-            update_reported access pname reported_acc
+            update_reported access pname reported_acc )
           else reported_acc
       | Access.Read _ | ContainerRead _ ->
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
@@ -1279,13 +1285,13 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                 )
               accesses
           in
-          if not (List.is_empty conflicting_writes) then
+          if not (List.is_empty conflicting_writes) then (
             let conflict = List.hd_exn conflicting_writes in
             (* protected read with conflicting unprotected write(s). warn. *)
             report_thread_safety_violation tenv procdesc
               ~make_description:(make_read_write_race_description ~read_is_sync:true conflict)
               ~report_kind:(ReadWriteRace conflict.access) access threads wobbly_paths ;
-            update_reported access pname reported_acc
+            update_reported access pname reported_acc )
           else reported_acc
   in
   AccessListMap.fold

@@ -562,13 +562,14 @@ let get_superclass_curr_class_objc_from_decl (decl: Clang_ast_t.decl) =
         otdi.otdi_super
     | _ ->
         Logging.die InternalError
-          "Expected that ObjCImplementationDecl always has a pointer to it's interface, but wasn't the case with %s"
-          ni.Clang_ast_t.ni_name )
+          "Expected that ObjCImplementationDecl always has a pointer to it's interface, but \
+           wasn't the case with %s" ni.Clang_ast_t.ni_name )
   | ObjCCategoryDecl (_, _, _, _, ocdi) ->
       ocdi.odi_class_interface
   | ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
       ocidi.ocidi_class_interface
   | decl ->
       Logging.die InternalError
-        "Expected to be called only with ObjCInterfaceDecl, ObjCImplementationDecl, ObjCCategoryDecl or ObjCCategoryImplDecl, but got %s"
+        "Expected to be called only with ObjCInterfaceDecl, ObjCImplementationDecl, \
+         ObjCCategoryDecl or ObjCCategoryImplDecl, but got %s"
         (Clang_ast_proj.get_decl_kind_string decl)

@@ -209,15 +209,15 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
            true )
     && not (field_is_mutable ())
   in
-  ( if should_report_nullable || should_report_absent then
-      let ann =
-        if should_report_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
-      in
-      if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname ;
-      let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
-      report_error tenv find_canonical_duplicate
-        (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr)) (Some instr_ref) loc
-        curr_pdesc ) ;
+  if should_report_nullable || should_report_absent then (
+    let ann =
+      if should_report_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
+    in
+    if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname ;
+    let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
+    report_error tenv find_canonical_duplicate
+      (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr)) (Some instr_ref) loc
+      curr_pdesc ) ;
   if should_report_mutable then
     let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
     report_error tenv find_canonical_duplicate (TypeErr.Field_not_mutable (fname, origin_descr))

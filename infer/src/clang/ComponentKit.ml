@@ -185,7 +185,8 @@ let component_factory_function_advice context an =
             ; description= "Break out composite components"
             ; suggestion=
                 Some
-                  "Prefer subclassing CKCompositeComponent to static helper functions that return a CKComponent subclass."
+                  "Prefer subclassing CKCompositeComponent to static helper functions that return \
+                   a CKComponent subclass."
             ; doc_url= None
             ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
         else None
@@ -298,7 +299,8 @@ let component_with_multiple_factory_methods_advice context an =
             ; description= "Avoid Overrides"
             ; suggestion=
                 Some
-                  "Instead, always expose all parameters in a single designated initializer and document which are optional."
+                  "Instead, always expose all parameters in a single designated initializer and \
+                   document which are optional."
             ; doc_url= None
             ; loc= CFrontend_checkers.location_from_decl context meth_decl } )
           (List.drop factory_methods 1)

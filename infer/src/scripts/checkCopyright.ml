@@ -251,13 +251,13 @@ let check_copyright fname =
   let lines_arr = Array.of_list lines in
   match find_copyright_line lines 0 with
   | None ->
-      if file_should_have_copyright fname then
+      if file_should_have_copyright fname then (
         let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
         let com_style = List.Assoc.find_exn com_style_of_lang ~equal:Filename.check_suffix fname in
         let prefix = prefix_of_comment_style com_style in
         let start = default_start_line_of_com_style com_style in
         output_diff fname lines_arr start (-1) (-1) 0 false year com_style prefix ;
-        Pervasives.exit copyright_modified_exit_code
+        Pervasives.exit copyright_modified_exit_code )
   | Some n ->
       let line = lines_arr.(n) in
       let cstart, com_style = find_comment_start_and_style lines_arr n in
@@ -270,10 +270,10 @@ let check_copyright fname =
             Pervasives.exit copyright_malformed_exit_code
         | Some fb_year ->
             let prefix = prefix_of_comment_style com_style in
-            if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
+            if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then (
               let len = String.length line in
               output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix ;
-              Pervasives.exit copyright_modified_exit_code )
+              Pervasives.exit copyright_modified_exit_code ) )
       else (
         F.eprintf "Copyright not recognized: %s@." fname ;
         Pervasives.exit copyright_malformed_exit_code )

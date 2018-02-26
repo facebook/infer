@@ -89,21 +89,21 @@ module Make (CFG : ProcCfg.S) = struct
         : decl_local:decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t
           -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int
           -> Dom.Mem.astate -> Dom.Mem.astate * int =
-      fun ~decl_local pname node location loc typ ~length ?stride ~inst_num ~dimension mem ->
-        let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
-        let arr =
-          Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
-          |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
-        in
-        let mem =
-          if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem
-          else Dom.Mem.add_heap loc arr mem
-        in
-        let loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension) in
-        let mem, _ =
-          decl_local pname node location loc typ ~inst_num ~dimension:(dimension + 1) mem
-        in
-        (mem, inst_num + 1)
+     fun ~decl_local pname node location loc typ ~length ?stride ~inst_num ~dimension mem ->
+      let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
+      let arr =
+        Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
+        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+      in
+      let mem =
+        if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem
+        else Dom.Mem.add_heap loc arr mem
+      in
+      let loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension) in
+      let mem, _ =
+        decl_local pname node location loc typ ~inst_num ~dimension:(dimension + 1) mem
+      in
+      (mem, inst_num + 1)
 
 
     type decl_sym_val =
@@ -114,21 +114,21 @@ module Make (CFG : ProcCfg.S) = struct
         : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t
           -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
           -> new_sym_num:counter -> new_alloc_num:counter -> Dom.Mem.astate -> Dom.Mem.astate =
-      fun ~decl_sym_val pname tenv node location ~depth loc typ ?offset ?size ~inst_num
-          ~new_sym_num ~new_alloc_num mem ->
-        let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
-        let itv_make_sym () = Itv.make_sym pname new_sym_num in
-        let offset = option_value offset itv_make_sym in
-        let size = option_value size itv_make_sym in
-        let alloc_num = new_alloc_num () in
-        let elem = Trace.SymAssign location in
-        let arr =
-          Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
-          |> Dom.Val.add_trace_elem elem
-        in
-        let mem = Dom.Mem.add_heap loc arr mem in
-        let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num) in
-        decl_sym_val pname tenv node location ~depth deref_loc typ mem
+     fun ~decl_sym_val pname tenv node location ~depth loc typ ?offset ?size ~inst_num ~new_sym_num
+         ~new_alloc_num mem ->
+      let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
+      let itv_make_sym () = Itv.make_sym pname new_sym_num in
+      let offset = option_value offset itv_make_sym in
+      let size = option_value size itv_make_sym in
+      let alloc_num = new_alloc_num () in
+      let elem = Trace.SymAssign location in
+      let arr =
+        Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
+        |> Dom.Val.add_trace_elem elem
+      in
+      let mem = Dom.Mem.add_heap loc arr mem in
+      let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num) in
+      decl_sym_val pname tenv node location ~depth deref_loc typ mem
 
 
     let init_array_fields tenv pname node typ locs ?dyn_length mem =

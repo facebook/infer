@@ -34,7 +34,8 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
           if in_casts name_expected name_given then
             let description =
               Format.asprintf
-                "Method %s returns %a but the return type is %a. Make sure that users of this method do not try to modify the collection."
+                "Method %s returns %a but the return type is %a. Make sure that users of this \
+                 method do not try to modify the collection."
                 (Typ.Procname.to_simplified_string curr_pname)
                 Typ.Name.pp name_given Typ.Name.pp name_expected
             in

@@ -91,26 +91,26 @@ module ArrayAccessCondition = struct
   let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
 
   let set_size_pos : t -> t =
-    fun c ->
-      let size' = ItvPure.make_positive c.size in
-      if phys_equal size' c.size then c else {c with size= size'}
+   fun c ->
+    let size' = ItvPure.make_positive c.size in
+    if phys_equal size' c.size then c else {c with size= size'}
 
 
   let pp : F.formatter -> t -> unit =
-    fun fmt c ->
-      let c = set_size_pos c in
-      F.fprintf fmt "%a < %a" ItvPure.pp c.idx ItvPure.pp c.size
+   fun fmt c ->
+    let c = set_size_pos c in
+    F.fprintf fmt "%a < %a" ItvPure.pp c.idx ItvPure.pp c.size
 
 
   let pp_description : F.formatter -> t -> unit =
-    fun fmt c ->
-      let c = set_size_pos c in
-      F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp c.idx ItvPure.pp c.size
+   fun fmt c ->
+    let c = set_size_pos c in
+    F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp c.idx ItvPure.pp c.size
 
 
   let make : idx:ItvPure.t -> size:ItvPure.t -> t option =
-    fun ~idx ~size ->
-      if ItvPure.is_invalid idx || ItvPure.is_invalid size then None else Some {idx; size}
+   fun ~idx ~size ->
+    if ItvPure.is_invalid idx || ItvPure.is_invalid size then None else Some {idx; size}
 
 
   let have_similar_bounds {idx= lidx; size= lsiz} {idx= ridx; size= rsiz} =
@@ -163,69 +163,68 @@ module ArrayAccessCondition = struct
 
 
   let filter1 : t -> bool =
-    fun c ->
-      ItvPure.is_top c.idx || ItvPure.is_top c.size
-      || Itv.Bound.eq (ItvPure.lb c.idx) Itv.Bound.MInf
-      || Itv.Bound.eq (ItvPure.lb c.size) Itv.Bound.MInf
-      || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
+   fun c ->
+    ItvPure.is_top c.idx || ItvPure.is_top c.size || Itv.Bound.eq (ItvPure.lb c.idx) Itv.Bound.MInf
+    || Itv.Bound.eq (ItvPure.lb c.size) Itv.Bound.MInf
+    || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
 
 
   let filter2 : t -> bool =
-    fun c ->
-      (* basically, alarms involving infinity are filtered *)
-      (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
-      && (* except the following cases *)
-         not
-           ( Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-             && (* idx non-infty lb < 0 *)
-                Itv.Bound.lt (ItvPure.lb c.idx) Itv.Bound.zero
-           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-              && (* idx non-infty lb > size lb *)
-                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
-           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-              && (* idx non-infty lb > size ub *)
-                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
-           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && (* idx non-infty ub > size lb *)
-                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
-           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && (* idx non-infty ub > size ub *)
-                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
+   fun c ->
+    (* basically, alarms involving infinity are filtered *)
+    (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
+    && (* except the following cases *)
+       not
+         ( Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+           && (* idx non-infty lb < 0 *)
+              Itv.Bound.lt (ItvPure.lb c.idx) Itv.Bound.zero
+         || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+            && (* idx non-infty lb > size lb *)
+               Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
+         || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+            && (* idx non-infty lb > size ub *)
+               Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
+         || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+            && (* idx non-infty ub > size lb *)
+               Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
+         || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+            && (* idx non-infty ub > size ub *)
+               Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
 
 
   (* check buffer overrun and return its confidence *)
   let check : t -> IssueType.t option =
-    fun c ->
-      (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
-      let c' = set_size_pos c in
-      (* if sl < 0, use sl' = 0 *)
-      let not_overrun = ItvPure.lt_sem c'.idx c'.size in
-      let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
-      (* il >= 0 and iu < sl, definitely not an error *)
-      if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
-        (* iu < 0 or il >= su, definitely an error *)
-      else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
-        Some IssueType.buffer_overrun_l1 (* su <= iu < +oo, most probably an error *)
-      else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
-      then Some IssueType.buffer_overrun_l2 (* symbolic il >= sl, probably an error *)
-      else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
-              && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
-      then Some IssueType.buffer_overrun_s2 (* other symbolic bounds are probably too noisy *)
-      else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size)
-      then None
-      else if filter1 c then Some IssueType.buffer_overrun_l5
-      else if filter2 c then Some IssueType.buffer_overrun_l4
-      else Some IssueType.buffer_overrun_l3
+   fun c ->
+    (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
+    let c' = set_size_pos c in
+    (* if sl < 0, use sl' = 0 *)
+    let not_overrun = ItvPure.lt_sem c'.idx c'.size in
+    let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
+    (* il >= 0 and iu < sl, definitely not an error *)
+    if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
+      (* iu < 0 or il >= su, definitely an error *)
+    else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
+      Some IssueType.buffer_overrun_l1 (* su <= iu < +oo, most probably an error *)
+    else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+            && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
+    then Some IssueType.buffer_overrun_l2 (* symbolic il >= sl, probably an error *)
+    else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
+            && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
+    then Some IssueType.buffer_overrun_s2 (* other symbolic bounds are probably too noisy *)
+    else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size) then
+      None
+    else if filter1 c then Some IssueType.buffer_overrun_l5
+    else if filter2 c then Some IssueType.buffer_overrun_l4
+    else Some IssueType.buffer_overrun_l3
 
 
   let subst : Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t -> t option =
-    fun bound_map c ->
-      match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
-      | NonBottom idx, NonBottom size ->
-          Some {idx; size}
-      | _ ->
-          None
+   fun bound_map c ->
+    match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
+    | NonBottom idx, NonBottom size ->
+        Some {idx; size}
+    | _ ->
+        None
 end
 
 module Condition = struct
@@ -306,27 +305,27 @@ module ConditionTrace = struct
   let pp_location : F.formatter -> t -> unit = fun fmt ct -> Location.pp_file_pos fmt ct.location
 
   let pp : F.formatter -> t -> unit =
-    fun fmt ct ->
-      if Config.bo_debug <= 1 then F.fprintf fmt "at %a" pp_location ct
-      else
-        match ct.cond_trace with
-        | Inter (_, pname, location) ->
-            let pname = Typ.Procname.to_string pname in
-            F.fprintf fmt "at %a by call %s() at %a (%a)" pp_location ct pname Location.pp_file_pos
-              location ValTraceSet.pp ct.val_traces
-        | Intra _ ->
-            F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
+   fun fmt ct ->
+    if Config.bo_debug <= 1 then F.fprintf fmt "at %a" pp_location ct
+    else
+      match ct.cond_trace with
+      | Inter (_, pname, location) ->
+          let pname = Typ.Procname.to_string pname in
+          F.fprintf fmt "at %a by call %s() at %a (%a)" pp_location ct pname Location.pp_file_pos
+            location ValTraceSet.pp ct.val_traces
+      | Intra _ ->
+          F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
 
 
   let pp_description : F.formatter -> t -> unit =
-    fun fmt ct ->
-      match ct.cond_trace with
-      | Inter (_, pname, _)
-        when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
-          F.fprintf fmt " %@ %a by call %a " pp_location ct MF.pp_monospaced
-            (Typ.Procname.to_string pname ^ "()")
-      | _ ->
-          ()
+   fun fmt ct ->
+    match ct.cond_trace with
+    | Inter (_, pname, _)
+      when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
+        F.fprintf fmt " %@ %a by call %a " pp_location ct MF.pp_monospaced
+          (Typ.Procname.to_string pname ^ "()")
+    | _ ->
+        ()
 
 
   let get_location : t -> Location.t = fun ct -> ct.location
@@ -334,8 +333,8 @@ module ConditionTrace = struct
   let get_cond_trace : t -> cond_trace = fun ct -> ct.cond_trace
 
   let make : Typ.Procname.t -> Location.t -> ValTraceSet.t -> t =
-    fun proc_name location val_traces ->
-      {proc_name; location; cond_trace= Intra proc_name; val_traces}
+   fun proc_name location val_traces ->
+    {proc_name; location; cond_trace= Intra proc_name; val_traces}
 
 
   let make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location ct =
@@ -455,23 +454,23 @@ module ConditionSet = struct
   let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace
 
   let pp_summary : F.formatter -> t -> unit =
-    fun fmt condset ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      F.fprintf fmt "@[<v 0>Safety conditions:@," ;
-      F.fprintf fmt "@[<hov 2>{ " ;
-      F.pp_print_list ~pp_sep pp_cwt fmt condset ;
-      F.fprintf fmt " }@]" ;
-      F.fprintf fmt "@]"
+   fun fmt condset ->
+    let pp_sep fmt () = F.fprintf fmt ", @," in
+    F.fprintf fmt "@[<v 0>Safety conditions:@," ;
+    F.fprintf fmt "@[<hov 2>{ " ;
+    F.pp_print_list ~pp_sep pp_cwt fmt condset ;
+    F.fprintf fmt " }@]" ;
+    F.fprintf fmt "@]"
 
 
   let pp : Format.formatter -> t -> unit =
-    fun fmt condset ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      F.fprintf fmt "@[<v 2>Safety conditions :@," ;
-      F.fprintf fmt "@[<hov 1>{" ;
-      F.pp_print_list ~pp_sep pp_cwt fmt condset ;
-      F.fprintf fmt " }@]" ;
-      F.fprintf fmt "@]"
+   fun fmt condset ->
+    let pp_sep fmt () = F.fprintf fmt ", @," in
+    F.fprintf fmt "@[<v 2>Safety conditions :@," ;
+    F.fprintf fmt "@[<hov 1>{" ;
+    F.pp_print_list ~pp_sep pp_cwt fmt condset ;
+    F.fprintf fmt " }@]" ;
+    F.fprintf fmt "@]"
 end
 
 let description cond trace =

@@ -357,7 +357,9 @@ type abs_ctype =
 
 let display_equality_warning () =
   L.(debug Linters Medium)
-    "[WARNING:] Type Comparison failed... This might indicate that the types are different or the specified type is internally represented in a different way and therefore not recognized.@\n"
+    "[WARNING:] Type Comparison failed... This might indicate that the types are different or the \
+     specified type is internally represented in a different way and therefore not recognized.@\n\
+     "
 
 
 let rec abs_ctype_to_string t =
@@ -483,7 +485,11 @@ and check_type_ptr type_ptr abs_ctype =
    comparison function for Clang_ast_t.c_type *)
 and c_type_equal c_type abs_ctype =
   L.(debug Linters Medium)
-    "@\nComparing c_type/abs_ctype for equality... Type compared: @\nc_type = `%s`  @\nabs_ctype =`%s`@\n"
+    "@\n\
+     Comparing c_type/abs_ctype for equality... Type compared: @\n\
+     c_type = `%s`  @\n\
+     abs_ctype =`%s`@\n\
+     "
     (Clang_ast_j.string_of_c_type c_type)
     (abs_ctype_to_string abs_ctype) ;
   let open Clang_ast_t in

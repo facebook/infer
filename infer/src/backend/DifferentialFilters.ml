@@ -47,9 +47,9 @@ module FileRenamings = struct
             raise (Yojson.Json_error "not a record")
       with Yojson.Json_error err ->
         L.(die UserError)
-          "Error parsing file renamings: %s@\nExpected JSON object of the following form: '%s', but instead got: '%s'"
-          err "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
-          (Yojson.Basic.to_string assoc)
+          "Error parsing file renamings: %s@\n\
+           Expected JSON object of the following form: '%s', but instead got: '%s'" err
+          "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}" (Yojson.Basic.to_string assoc)
     in
     match j with
     | `List json_renamings ->

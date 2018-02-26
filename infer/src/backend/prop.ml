@@ -465,8 +465,9 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
     -> (
       if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
         L.die InternalError
-          "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also of type struct %a: %a:%a"
-          Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path) Typ.Name.pp name ;
+          "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also \
+           of type struct %a: %a:%a" Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path)
+          Typ.Name.pp name ;
       match (struct_init_mode, Tenv.lookup tenv name) with
       | Fld_init, Some {fields} ->
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
@@ -2283,7 +2284,6 @@ let prop_primed_vars_to_normal_vars tenv (p: normal t) : normal t =
 let from_pi pi = set prop_emp ~pi
 
 let from_sigma sigma = set prop_emp ~sigma
-
 
 (** {2 Prop iterators} *)
 

@@ -249,7 +249,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
         List.length es >= 1
     | Exp.Var _ ->
         if Int.equal Config.join_cond 0 then List.exists ~f:(Exp.equal Exp.zero) es
-        else if Dangling.check side e then
+        else if Dangling.check side e then (
           let r = List.exists ~f:(fun e' -> not (Dangling.check side_op e')) es in
           if r then (
             L.d_str ".... Dangling Check (dang e:" ;
@@ -258,7 +258,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
             Sil.d_exp_list es ;
             L.d_strln ") ...." ;
             L.d_ln () ) ;
-          r
+          r )
         else
           let r = List.exists ~f:(Dangling.check side_op) es in
           if r then (

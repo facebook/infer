@@ -84,7 +84,8 @@ let run_compilation_database compilation_database should_capture_file =
   L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs ;
   if sentinel_exists fail_sentinel then (
     L.progress
-      "Failure detected, capture did not finish successfully. Use `--linters-ignore-clang-failures` to ignore compilation errors. Terminating@." ;
+      "Failure detected, capture did not finish successfully. Use \
+       `--linters-ignore-clang-failures` to ignore compilation errors. Terminating@." ;
     L.exit 1 )
 
 

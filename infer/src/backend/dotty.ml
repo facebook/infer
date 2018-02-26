@@ -112,11 +112,11 @@ let print_stack_info = ref false
 let strip_special_chars b =
   let b = Bytes.of_string b in
   let replace st c c' =
-    if Bytes.contains st c then
+    if Bytes.contains st c then (
       let idx = String.index_exn (Bytes.to_string st) c in
       try Bytes.set st idx c' ; st with Invalid_argument _ ->
         L.internal_error "@\n@\nstrip_special_chars: Invalid argument!@\n@." ;
-        assert false
+        assert false )
     else st
   in
   let s0 = replace b '(' 'B' in

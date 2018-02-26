@@ -295,29 +295,30 @@ let annotated_list_nullable =
       , "javax.lang.model.util.Elements.getAllAnnotationMirrors(javax.lang.model.element.Element):java.util.List"
       )
     ; ( o2
-      , "javax.lang.model.util.Elements.hides(javax.lang.model.element.Element, javax.lang.model.element.Element):boolean"
-      )
+      , "javax.lang.model.util.Elements.hides(javax.lang.model.element.Element, \
+         javax.lang.model.element.Element):boolean" )
     ; ( o3
-      , "javax.lang.model.util.Elements.overrides(javax.lang.model.element.ExecutableElement, javax.lang.model.element.ExecutableElement, javax.lang.model.element.TypeElement):boolean"
+      , "javax.lang.model.util.Elements.overrides(javax.lang.model.element.ExecutableElement, \
+         javax.lang.model.element.ExecutableElement, javax.lang.model.element.TypeElement):boolean"
       )
     ; ( o1
       , "javax.lang.model.util.Types.asElement(javax.lang.model.type.TypeMirror):javax.lang.model.element.Element"
       )
     ; ( o2
-      , "javax.lang.model.util.Types.isSameType(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean"
-      )
+      , "javax.lang.model.util.Types.isSameType(javax.lang.model.type.TypeMirror, \
+         javax.lang.model.type.TypeMirror):boolean" )
     ; ( o2
-      , "javax.lang.model.util.Types.isSubtype(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean"
-      )
+      , "javax.lang.model.util.Types.isSubtype(javax.lang.model.type.TypeMirror, \
+         javax.lang.model.type.TypeMirror):boolean" )
     ; ( o2
-      , "javax.lang.model.util.Types.isAssignable(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean"
-      )
+      , "javax.lang.model.util.Types.isAssignable(javax.lang.model.type.TypeMirror, \
+         javax.lang.model.type.TypeMirror):boolean" )
     ; ( o2
-      , "javax.lang.model.util.Types.contains(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean"
-      )
+      , "javax.lang.model.util.Types.contains(javax.lang.model.type.TypeMirror, \
+         javax.lang.model.type.TypeMirror):boolean" )
     ; ( o2
-      , "javax.lang.model.util.Types.isSubsignature(javax.lang.model.type.ExecutableType, javax.lang.model.type.ExecutableType):boolean"
-      )
+      , "javax.lang.model.util.Types.isSubsignature(javax.lang.model.type.ExecutableType, \
+         javax.lang.model.type.ExecutableType):boolean" )
     ; ( o1
       , "javax.lang.model.util.Types.directSupertypes(javax.lang.model.type.TypeMirror):java.util.List"
       )
@@ -337,34 +338,35 @@ let annotated_list_nullable =
       , "javax.lang.model.util.Types.getArrayType(javax.lang.model.type.TypeMirror):javax.lang.model.type.ArrayType"
       )
     ; ( o2
-      , "javax.lang.model.util.Types.getWildcardType(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):javax.lang.model.type.WildcardType"
-      )
+      , "javax.lang.model.util.Types.getWildcardType(javax.lang.model.type.TypeMirror, \
+         javax.lang.model.type.TypeMirror):javax.lang.model.type.WildcardType" )
     ; ( o2
-      , "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.element.TypeElement, javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType"
-      )
+      , "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.element.TypeElement, \
+         javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType" )
     ; ( o3
-      , "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.type.DeclaredType, javax.lang.model.element.TypeElement, javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType"
-      )
+      , "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.type.DeclaredType, \
+         javax.lang.model.element.TypeElement, \
+         javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType" )
     ; ( o2
-      , "javax.lang.model.util.Types.asMemberOf(javax.lang.model.type.DeclaredType, javax.lang.model.element.Element):javax.lang.model.type.TypeMirror"
-      )
+      , "javax.lang.model.util.Types.asMemberOf(javax.lang.model.type.DeclaredType, \
+         javax.lang.model.element.Element):javax.lang.model.type.TypeMirror" )
     ; ( n3
       , "javax.tools.JavaCompiler.getStandardFileManager(javax.tools.DiagnosticListener,java.util.Locale,java.nio.charset.Charset):javax.tools.StandardJavaFileManager"
       )
     ; (ng, "javax.tools.JavaFileObject.getAccessLevel():javax.lang.model.element.Modifier")
     ; (ng, "javax.tools.JavaFileObject.getNestingKind():javax.lang.model.element.NestingKind")
     ; ( o2
-      , "com.sun.source.util.SourcePositions.getStartPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long"
-      )
+      , "com.sun.source.util.SourcePositions.getStartPosition(com.sun.source.tree.CompilationUnitTree, \
+         com.sun.source.tree.Tree):long" )
     ; ( o2
-      , "com.sun.source.util.SourcePositions.getEndPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long"
-      )
+      , "com.sun.source.util.SourcePositions.getEndPosition(com.sun.source.tree.CompilationUnitTree, \
+         com.sun.source.tree.Tree):long" )
     ; ( (n, [o; o])
-      , "com.sun.source.util.TreePath.getPath(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):com.sun.source.util.TreePath"
-      )
+      , "com.sun.source.util.TreePath.getPath(com.sun.source.tree.CompilationUnitTree, \
+         com.sun.source.tree.Tree):com.sun.source.util.TreePath" )
     ; ( (n, [o; o])
-      , "com.sun.source.util.TreePath.getPath(com.sun.source.util.TreePath, com.sun.source.tree.Tree):com.sun.source.util.TreePath"
-      )
+      , "com.sun.source.util.TreePath.getPath(com.sun.source.util.TreePath, \
+         com.sun.source.tree.Tree):com.sun.source.util.TreePath" )
     ; ( (n, [o])
       , "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element):com.sun.source.tree.Tree"
       )
@@ -375,23 +377,25 @@ let annotated_list_nullable =
       , "com.sun.source.util.Trees.getTree(javax.lang.model.element.ExecutableElement):com.sun.source.tree.MethodTree"
       )
     ; ( (n, [o; o])
-      , "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror):com.sun.source.tree.Tree"
-      )
+      , "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, \
+         javax.lang.model.element.AnnotationMirror):com.sun.source.tree.Tree" )
     ; ( (n, [o; o; o])
-      , "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror, javax.lang.model.element.AnnotationValue):com.sun.source.tree.Tree"
-      )
+      , "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, \
+         javax.lang.model.element.AnnotationMirror, \
+         javax.lang.model.element.AnnotationValue):com.sun.source.tree.Tree" )
     ; ( o2
-      , "com.sun.source.util.Trees.getPath(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):com.sun.source.util.TreePath"
-      )
+      , "com.sun.source.util.Trees.getPath(com.sun.source.tree.CompilationUnitTree, \
+         com.sun.source.tree.Tree):com.sun.source.util.TreePath" )
     ; ( (n, [o])
       , "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element):com.sun.source.util.TreePath"
       )
     ; ( (n, [o; o])
-      , "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror):com.sun.source.util.TreePath"
-      )
+      , "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, \
+         javax.lang.model.element.AnnotationMirror):com.sun.source.util.TreePath" )
     ; ( (n, [o; o; o])
-      , "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror, javax.lang.model.element.AnnotationValue):com.sun.source.util.TreePath"
-      )
+      , "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, \
+         javax.lang.model.element.AnnotationMirror, \
+         javax.lang.model.element.AnnotationValue):com.sun.source.util.TreePath" )
     ; ( (n, [o])
       , "com.sun.source.util.Trees.getElement(com.sun.source.util.TreePath):javax.lang.model.element.Element"
       )
@@ -404,17 +408,18 @@ let annotated_list_nullable =
     ; ( (n, [o])
       , "com.sun.source.util.Trees.getDocComment(com.sun.source.util.TreePath):java.lang.String" )
     ; ( o2
-      , "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, javax.lang.model.element.TypeElement):boolean"
-      )
+      , "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, \
+         javax.lang.model.element.TypeElement):boolean" )
     ; ( o3
-      , "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, javax.lang.model.element.Element, javax.lang.model.type.DeclaredType):boolean"
-      )
+      , "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, \
+         javax.lang.model.element.Element, javax.lang.model.type.DeclaredType):boolean" )
     ; ( o1
       , "com.sun.source.util.Trees.getOriginalType(javax.lang.model.type.ErrorType):javax.lang.model.type.TypeMirror"
       )
     ; ( (o, [o; o; o; o])
-      , "com.sun.source.util.Trees.printMessage(javax.tools.Diagnostic.Kind, java.lang.CharSequence, com.sun.source.tree.Tree, com.sun.source.tree.CompilationUnitTree):void"
-      )
+      , "com.sun.source.util.Trees.printMessage(javax.tools.Diagnostic.Kind, \
+         java.lang.CharSequence, com.sun.source.tree.Tree, \
+         com.sun.source.tree.CompilationUnitTree):void" )
     ; ( o1
       , "com.sun.source.util.Trees.getLub(com.sun.source.tree.CatchTree):javax.lang.model.type.TypeMirror"
       )

@@ -205,10 +205,10 @@ end = struct
       let nodes_found stats = stats.max_length > 0 in
       function
         | Pstart (node, stats) ->
-            if stats_is_dummy stats then
+            if stats_is_dummy stats then (
               let found = f node in
               stats.max_length <- (if found then 1 else 0) ;
-              stats.linear_num <- 1.0
+              stats.linear_num <- 1.0 )
         | Pnode (node, _, _, path, stats, _) ->
             if stats_is_dummy stats then (
               compute_stats do_calls f path ;
@@ -227,7 +227,7 @@ end = struct
               stats.max_length <- max stats1.max_length stats2.max_length ;
               stats.linear_num <- stats1.linear_num +. stats2.linear_num )
         | Pcall (path1, _, ExecCompleted path2, stats) ->
-            if stats_is_dummy stats then
+            if stats_is_dummy stats then (
               let stats2 =
                 match do_calls with
                 | true ->
@@ -244,12 +244,12 @@ end = struct
                 compute_stats do_calls f' path1 ; get_stats path1
               in
               stats.max_length <- stats1.max_length + stats2.max_length ;
-              stats.linear_num <- stats1.linear_num
+              stats.linear_num <- stats1.linear_num )
         | Pcall (path, _, ExecSkipped _, stats) ->
-            if stats_is_dummy stats then
+            if stats_is_dummy stats then (
               let stats1 = compute_stats do_calls f path ; get_stats path in
               stats.max_length <- stats1.max_length ;
-              stats.linear_num <- stats1.linear_num
+              stats.linear_num <- stats1.linear_num )
   end
 
   (* End of module Invariant *)
@@ -441,10 +441,10 @@ end = struct
             F.fprintf fmt "(%a: %s)" (doit (n - 1)) path reason
     in
     let print_delayed () =
-      if not (PathMap.is_empty !delayed) then
+      if not (PathMap.is_empty !delayed) then (
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
         F.fprintf fmt "where@\n" ;
-        PathMap.iter f !delayed
+        PathMap.iter f !delayed )
     in
     add_delayed path ; doit 0 fmt path ; print_delayed ()
 

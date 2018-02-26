@@ -876,27 +876,27 @@ let get_smt_key a p =
 let check_atom tenv prop a0 =
   let a = Prop.atom_normalize_prop tenv prop a0 in
   let prop_no_fp = Prop.set prop ~pi_fp:[] ~sigma_fp:[] in
-  ( if Config.smt_output then
-      let key = get_smt_key a prop_no_fp in
-      let key_filename =
-        let source = (State.get_loc ()).file in
-        DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) [key ^ ".cns"]
-      in
-      let outc = Out_channel.create (DB.filename_to_string key_filename) in
-      let fmt = F.formatter_of_out_channel outc in
-      L.d_str ("ID: " ^ key) ;
-      L.d_ln () ;
-      L.d_str "CHECK_ATOM_BOUND: " ;
-      Sil.d_atom a ;
-      L.d_ln () ;
-      L.d_str "WHERE:" ;
-      L.d_ln () ;
-      Prop.d_prop prop_no_fp ;
-      L.d_ln () ;
-      L.d_ln () ;
-      F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a" key (Sil.pp_atom Pp.text) a
-        (Prop.pp_prop Pp.text) prop_no_fp ;
-      Out_channel.close outc ) ;
+  if Config.smt_output then (
+    let key = get_smt_key a prop_no_fp in
+    let key_filename =
+      let source = (State.get_loc ()).file in
+      DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) [key ^ ".cns"]
+    in
+    let outc = Out_channel.create (DB.filename_to_string key_filename) in
+    let fmt = F.formatter_of_out_channel outc in
+    L.d_str ("ID: " ^ key) ;
+    L.d_ln () ;
+    L.d_str "CHECK_ATOM_BOUND: " ;
+    Sil.d_atom a ;
+    L.d_ln () ;
+    L.d_str "WHERE:" ;
+    L.d_ln () ;
+    Prop.d_prop prop_no_fp ;
+    L.d_ln () ;
+    L.d_ln () ;
+    F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a" key (Sil.pp_atom Pp.text) a
+      (Prop.pp_prop Pp.text) prop_no_fp ;
+    Out_channel.close outc ) ;
   match a with
   | Sil.Aeq (Exp.BinOp (Binop.Le, e1, e2), Exp.Const Const.Cint i) when IntLit.isone i ->
       check_le_normalized tenv prop e1 e2

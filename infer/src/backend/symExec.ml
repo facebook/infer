@@ -791,7 +791,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
     | _ ->
         prop
   in
-  if is_receiver_null then
+  if is_receiver_null then (
     (* objective-c instance method with a null receiver just return objc_null(res). *)
     let path = Paths.Path.add_description path path_description in
     L.d_strln
@@ -801,7 +801,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
        we want to add the attribute OBJC_NULL to it so that we
        can keep track of how this object became null,
        so that in a NPE we can separate it into a different error type *)
-    [(add_objc_null_attribute_or_nullify_result pre, path)]
+    [(add_objc_null_attribute_or_nullify_result pre, path)] )
   else
     match force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver with
     | [] ->

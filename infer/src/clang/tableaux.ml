@@ -257,8 +257,11 @@ let add_valid_formulae an checker lcxt cl =
         add_in_set phi acc_set
     | AG _ | AX _ | AF _ | AU _ | EH _ | ET _ | Implies _ ->
         Logging.die InternalError
-          "@\n We should not have operators AG, AX, AF, AU, EH, ET.\n  Failing with formula @\n   %a@\n"
-          CTL.Debug.pp_formula phi
+          "@\n \
+           We should not have operators AG, AX, AF, AU, EH, ET.\n  \
+           Failing with formula @\n   \
+           %a@\n\
+           " CTL.Debug.pp_formula phi
     | _ ->
         acc_set
   in
@@ -329,11 +332,11 @@ let build_valuation an lcxt linter_map_context =
         closure_map := ClosureHashtbl.add normalized_condition (is_state_only, cl') !closure_map ;
         (is_state_only, cl')
     in
-    if not (is_state_only && skip_evaluation_InNode_formula an normalized_condition) then
+    if not (is_state_only && skip_evaluation_InNode_formula an normalized_condition) then (
       let sat_set = add_valid_formulae an linter.issue_desc.id lcxt cl in
       (*L.progress " [Set Size: %i] @\n" (CTLFormulaSet.cardinal sat_set);*)
       if CTLFormulaSet.mem normalized_condition sat_set then report_issue an lcxt linter ;
-      add_formula_to_valuation (node_pointer, linter.issue_desc.id) sat_set
+      add_formula_to_valuation (node_pointer, linter.issue_desc.id) sat_set )
   in
   List.iter
     ~f:(fun (linter: linter) ->

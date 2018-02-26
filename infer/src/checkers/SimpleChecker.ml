@@ -57,7 +57,8 @@ module Make (Spec : Spec) : S = struct
       (* failsafe for accidental non-finite height domains *)
       if num_iters >= iters_befor_timeout then
         L.(die InternalError)
-          "Stopping analysis after 1000 iterations without convergence. Make sure your domain is finite height."
+          "Stopping analysis after 1000 iterations without convergence. Make sure your domain is \
+           finite height."
       else widen ~prev ~next ~num_iters
   end
 

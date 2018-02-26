@@ -275,8 +275,8 @@ let get_superclass_curr_class_objc context =
           CAst_utils.get_superclass_curr_class_objc_from_decl decl
       | None ->
           Logging.die InternalError
-            "Expected that the current class ptr in the context is a valid pointer to class decl, but didn't find declaration, ptr is %d "
-            ptr )
+            "Expected that the current class ptr in the context is a valid pointer to class decl, \
+             but didn't find declaration, ptr is %d " ptr )
     | CContext.ContextNoCls ->
         Logging.die InternalError
           "This should only be called in the context of a class, but got CContext.ContextNoCls"
@@ -625,13 +625,13 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
       in
       Cfg.create_proc_desc cfg proc_attributes
     in
-    if defined then
+    if defined then (
       let start_kind = Procdesc.Node.Start_node proc_name in
       let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
       let exit_kind = Procdesc.Node.Exit_node proc_name in
       let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
       Procdesc.set_start_node procdesc start_node ;
-      Procdesc.set_exit_node procdesc exit_node
+      Procdesc.set_exit_node procdesc exit_node )
   in
   if should_create_procdesc cfg proc_name defined set_objc_accessor_attr then (
     create_new_procdesc () ; true )

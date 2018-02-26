@@ -230,7 +230,7 @@ module PriorityNode = struct
   let compute_results_to_parent trans_state loc nd_name stmt_info res_states_children =
     let res_state = collect_res_trans trans_state.context.procdesc res_states_children in
     let create_node = own_priority_node trans_state.priority stmt_info && res_state.instrs <> [] in
-    if create_node then
+    if create_node then (
       (* We need to create a node *)
       let node_kind = Procdesc.Node.Stmt_node nd_name in
       let node = Nodes.create_node node_kind res_state.instrs loc trans_state.context in
@@ -240,7 +240,7 @@ module PriorityNode = struct
         res_state.leaf_nodes ;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = if res_state.root_nodes <> [] then res_state.root_nodes else [node] in
-      {res_state with root_nodes; leaf_nodes= [node]; instrs= []; exps= []}
+      {res_state with root_nodes; leaf_nodes= [node]; instrs= []; exps= []} )
     else
       (* The node is created by the parent. We just pass back nodes/leafs params *)
       {res_state with exps= []}

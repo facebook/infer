@@ -30,13 +30,13 @@ struct
   type extras = TransferFunctions.extras
 
   let pp_pre_post pre post hil_instr node =
-    if Config.write_html then
+    if Config.write_html then (
       let underyling_node = CFG.underlying_node node in
       NodePrinter.start_session underyling_node ;
       L.d_strln
         (Format.asprintf "PRE: %a@.INSTR: %a@.POST: %a@." TransferFunctions.Domain.pp pre
            HilInstr.pp hil_instr TransferFunctions.Domain.pp post) ;
-      NodePrinter.finish_session underyling_node
+      NodePrinter.finish_session underyling_node )
 
 
   let is_java_unlock pname actuals =

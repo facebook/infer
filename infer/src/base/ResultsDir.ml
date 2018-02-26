@@ -43,8 +43,9 @@ let remove_results_dir () =
     if not Config.force_delete_results_dir then
       Result.iter_error (is_results_dir ~check_correct_version:false ()) ~f:(fun err ->
           L.(die UserError)
-            "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\nERROR: Please delete '%s' and try again@."
-            Config.results_dir err Config.results_dir ) ;
+            "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
+             ERROR: Please delete '%s' and try again@." Config.results_dir err Config.results_dir
+      ) ;
     Utils.rmtree Config.results_dir ) ;
   RunState.reset ()
 

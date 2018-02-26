@@ -119,8 +119,13 @@ let exec_action_item ~prog ~args = function
       (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
        `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
       L.(die UserError)
-        "Failed to execute compilation command:@\n'%s' %a@\n@\nError message:@\n%s@\n@\n*** Infer needs a working compilation command to run."
-        prog Pp.cli_args args error
+        "Failed to execute compilation command:@\n\
+         '%s' %a@\n\
+         @\n\
+         Error message:@\n\
+         %s@\n\
+         @\n\
+         *** Infer needs a working compilation command to run." prog Pp.cli_args args error
   | ClangWarning warning ->
       L.external_warning "%s@\n" warning
   | Command clang_cmd ->
@@ -156,6 +161,9 @@ let exe ~prog ~args =
            will fail with the appropriate error message from clang instead of silently analyzing 0
            files. *)
       L.(debug Capture Quiet)
-        "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will run the original command directly:@\n  %s@\n"
+        "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will \
+         run the original command directly:@\n  \
+         %s@\n\
+         "
         (String.concat ~sep:" " @@ prog :: args) ;
     Process.create_process_and_wait ~prog ~args )

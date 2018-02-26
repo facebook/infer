@@ -61,7 +61,12 @@ let compile compiler build_prog build_args =
       | None ->
           let verbose_errlog = Utils.with_file_in verbose_out_file ~f:In_channel.input_all in
           L.(die UserError)
-            "@\n*** Failed to execute compilation command: %s@\n*** Command: %s@\n*** Output:@\n%s%s@\n*** Infer needs a working compilation command to run.@."
+            "@\n\
+             *** Failed to execute compilation command: %s@\n\
+             *** Command: %s@\n\
+             *** Output:@\n\
+             %s%s@\n\
+             *** Infer needs a working compilation command to run.@."
             (Unix.Exit_or_signal.to_string_hum (Error err))
             shell_cmd log verbose_errlog )
     | exception exn ->

@@ -9,8 +9,8 @@
 
 open! IStd
 
+(** The functions in this module tend to raise more often than their counterparts in [Sqlite3]. In particular, they may raise if the [Sqlite3.Rc.t] result of certain operations is unexpected. *)
 exception Error of string
-    (** The functions in this module tend to raise more often than their counterparts in [Sqlite3]. In particular, they may raise if the [Sqlite3.Rc.t] result of certain operations is unexpected. *)
 
 val check_sqlite_error : ?fatal:bool -> Sqlite3.db -> log:string -> Sqlite3.Rc.t -> unit
 (** Assert that the result is either [Sqlite3.Rc.OK]. If [row_is_ok] then [Sqlite3.Rc.ROW] is also accepted. If the result is not valid, then if [fatal] is set raise [Error], otherwise log the error and proceed. *)

@@ -1248,8 +1248,15 @@ module Struct = struct
     if Config.debug_mode then
       (* change false to true to print the details of struct *)
       F.fprintf f
-        "%a @\n\tfields: {%a@\n\t}@\n\tsupers: {%a@\n\t}@\n\tmethods: {%a@\n\t}@\n\tannots: {%a@\n\t}"
-        Name.pp name
+        "%a @\n\
+         \tfields: {%a@\n\
+         \t}@\n\
+         \tsupers: {%a@\n\
+         \t}@\n\
+         \tmethods: {%a@\n\
+         \t}@\n\
+         \tannots: {%a@\n\
+         \t}" Name.pp name
         (Pp.seq (pp_field pe))
         fields
         (Pp.seq (fun f n -> F.fprintf f "@\n\t\t%a" Name.pp n))

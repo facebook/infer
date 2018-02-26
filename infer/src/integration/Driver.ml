@@ -170,7 +170,10 @@ let check_xcpretty () =
       ()
   | Error _ ->
       L.user_error
-        "@\nxcpretty not found in the path. Please consider installing xcpretty for a more robust integration with xcodebuild. Otherwise use the option --no-xcpretty.@\n@."
+        "@\n\
+         xcpretty not found in the path. Please consider installing xcpretty for a more robust \
+         integration with xcodebuild. Otherwise use the option --no-xcpretty.@\n\
+         @."
 
 
 let capture_with_compilation_database db_files =
@@ -258,7 +261,7 @@ let capture ~changed_files mode =
                 ["--xcode-developer-dir"; d] )
           @ "--"
             ::
-            ( if in_buck_mode && Config.flavors then
+            ( if in_buck_mode && Config.flavors then (
                 (* let children infer processes know that they are inside Buck *)
                 let infer_args_with_buck =
                   String.concat
@@ -275,7 +278,7 @@ let capture ~changed_files mode =
                 let updated_buck_cmd = prog :: command :: Buck.store_args_in_file all_args in
                 Logging.(debug Capture Quiet)
                   "Processed buck command '%a'@\n" (Pp.seq Pp.string) updated_buck_cmd ;
-                updated_buck_cmd
+                updated_buck_cmd )
             else build_cmd ) )
       in
       run_command ~prog:infer_py ~args
@@ -439,7 +442,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "clang and xcode"
     in
     L.(die UserError)
-      "Unsupported build mode: %s@\nInfer was built with %s analyzers disabled.@ Please rebuild infer with %s enabled.@."
+      "Unsupported build mode: %s@\n\
+       Infer was built with %s analyzers disabled.@ Please rebuild infer with %s enabled.@."
       requested_mode_string analyzer_string analyzer_string
 
 
@@ -461,7 +465,8 @@ let assert_supported_build_system build_system =
         else (
           if Config.reactive_mode then
             L.user_error
-              "WARNING: The reactive analysis mode is not compatible with the Buck integration for Java" ;
+              "WARNING: The reactive analysis mode is not compatible with the Buck integration \
+               for Java" ;
           (`Java, Config.string_of_build_system build_system) )
       in
       assert_supported_mode analyzer build_string
@@ -488,7 +493,8 @@ let mode_of_build_command build_cmd =
       match (build_system : Config.build_system) with
       | BAnalyze ->
           CLOpt.warnf
-            "WARNING: `infer -- analyze` is deprecated; use the `infer analyze` subcommand instead@." ;
+            "WARNING: `infer -- analyze` is deprecated; use the `infer analyze` subcommand \
+             instead@." ;
           Analyze
       | BBuck when Option.is_some Config.buck_compilation_database ->
           BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))
@@ -543,12 +549,12 @@ let run_prologue mode =
 
 
 let run_epilogue mode =
-  ( if CLOpt.is_originator then
-      let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
-      if Config.developer_mode then StatsAggregator.generate_files () ;
-      if Config.equal_analyzer Config.analyzer Config.Crashcontext then
-        Crashcontext.crashcontext_epilogue ~in_buck_mode ;
-      if Config.fail_on_bug then fail_on_issue_epilogue () ) ;
+  if CLOpt.is_originator then (
+    let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
+    if Config.developer_mode then StatsAggregator.generate_files () ;
+    if Config.equal_analyzer Config.analyzer Config.Crashcontext then
+      Crashcontext.crashcontext_epilogue ~in_buck_mode ;
+    if Config.fail_on_bug then fail_on_issue_epilogue () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
   ()
 

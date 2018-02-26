@@ -130,13 +130,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if is_direct_dereference then
           (* direct dereference without intermediate variable *)
           F.asprintf
-            "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
+            "The return value of %s is annotated with %a and is dereferenced without being \
+             checked for null at %a"
             (MF.monospaced_to_string simplified_pname)
             MF.pp_monospaced annotation Location.pp loc
         else
           (* dereference with intermediate variable *)
           F.asprintf
-            "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
+            "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without \
+             being checked for null at %a"
             (MF.wrap_monospaced AccessPath.pp)
             ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp
             loc

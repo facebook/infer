@@ -284,7 +284,7 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
         "@\n%a@\n@?"
         (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ml_loc)
         () ;
-      if err_kind <> Exceptions.Kerror then
+      if err_kind <> Exceptions.Kerror then (
         let warn_str =
           let pp fmt =
             Format.fprintf fmt "%s %a" error.name.IssueType.unique_id Localise.pp_error_desc
@@ -301,6 +301,6 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
           | Exceptions.Kinfo | Exceptions.Kadvice | Exceptions.Klike ->
               L.d_info
         in
-        d warn_str ; L.d_ln ()
+        d warn_str ; L.d_ln () )
     in
     if should_print_now then print_now ()

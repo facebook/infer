@@ -52,8 +52,8 @@ let decl_ref_or_selector_name an =
       "The reference " ^ Ctl_parser_types.ast_node_name decl_an
   | _ ->
       L.(die ExternalError)
-        "decl_ref_or_selector_name must be called with a DeclRefExpr or an ObjCMessageExpr, but got %s"
-        (tag_name_of_node an)
+        "decl_ref_or_selector_name must be called with a DeclRefExpr or an ObjCMessageExpr, but \
+         got %s" (tag_name_of_node an)
 
 
 let iphoneos_target_sdk_version context _ =

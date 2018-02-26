@@ -118,21 +118,21 @@ let run_clang clang_command read =
 
 let run_plugin_and_frontend source_path frontend clang_cmd =
   let clang_plugin_cmd = ClangCommand.with_plugin_args clang_cmd in
-  ( if debug_mode then
-      (* -cc1 clang commands always set -o explicitly *)
-      let basename = source_path ^ ".ast" in
-      (* Emit the clang command with the extra args piped to infer-as-clang *)
-      let frontend_script_fname = Printf.sprintf "%s.sh" basename in
-      let debug_script_out = Out_channel.create frontend_script_fname in
-      let debug_script_fmt = Format.formatter_of_out_channel debug_script_out in
-      let biniou_fname = Printf.sprintf "%s.biniou" basename in
-      Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n"
-        (ClangCommand.command_to_run clang_plugin_cmd)
-        biniou_fname ;
-      Format.fprintf debug_script_fmt
-        "bdump -x -d \"%s/clang_ast.dict\" -w '!!DUMMY!!' %s \\@\n  > %s.bdump" Config.etc_dir
-        biniou_fname basename ;
-      Out_channel.close debug_script_out ) ;
+  if debug_mode then (
+    (* -cc1 clang commands always set -o explicitly *)
+    let basename = source_path ^ ".ast" in
+    (* Emit the clang command with the extra args piped to infer-as-clang *)
+    let frontend_script_fname = Printf.sprintf "%s.sh" basename in
+    let debug_script_out = Out_channel.create frontend_script_fname in
+    let debug_script_fmt = Format.formatter_of_out_channel debug_script_out in
+    let biniou_fname = Printf.sprintf "%s.biniou" basename in
+    Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n"
+      (ClangCommand.command_to_run clang_plugin_cmd)
+      biniou_fname ;
+    Format.fprintf debug_script_fmt
+      "bdump -x -d \"%s/clang_ast.dict\" -w '!!DUMMY!!' %s \\@\n  > %s.bdump" Config.etc_dir
+      biniou_fname basename ;
+    Out_channel.close debug_script_out ) ;
   run_clang clang_plugin_cmd frontend
 
 

@@ -172,8 +172,10 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `Real | `Imag | `Extension | `Coawait ->
       let uok = Clang_ast_j.string_of_unary_operator_kind uoi.Clang_ast_t.uoi_kind in
       L.(debug Capture Medium)
-        "@\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...@\n"
-        uok ;
+        "@\n\
+         WARNING: Missing translation for Unary Operator Kind %s. The construct has been \
+         ignored...@\n\
+         " uok ;
       (e, [])
 
 

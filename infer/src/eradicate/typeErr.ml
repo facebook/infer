@@ -447,8 +447,8 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         in
         ( IssueType.eradicate_inconsistent_subclass_parameter_annotation
         , Format.asprintf
-            "%s parameter %a of method %a is not %a but is declared %ain the parent class method %a."
-            (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
+            "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
+             %a." (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true pn)
             MF.pp_monospaced "@Nullable" MF.pp_monospaced "@Nullable" MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)

@@ -153,14 +153,14 @@ and isel_match isel1 sub vars isel2 =
   | (idx1, se1') :: isel1', (idx2, se2') :: isel2' ->
       let idx2 = Sil.exp_sub (`Exp sub) idx2 in
       let sanity_check = not (List.exists ~f:(fun id -> Sil.ident_in_exp id idx2) vars) in
-      if not sanity_check then
+      if not sanity_check then (
         let pe = Pp.text in
         L.internal_error "@[.... Sanity Check Failure while Matching Index-Strexps ....@\n" ;
         L.internal_error "@[<4>    IDX1: %a, STREXP1: %a@\n" (Sil.pp_exp_printenv pe) idx1
           (Sil.pp_sexp pe) se1' ;
         L.internal_error "@[<4>    IDX2: %a, STREXP2: %a@\n@." (Sil.pp_exp_printenv pe) idx2
           (Sil.pp_sexp pe) se2' ;
-        assert false
+        assert false )
       else if Exp.equal idx1 idx2 then
         match strexp_match se1' sub vars se2' with
         | None ->

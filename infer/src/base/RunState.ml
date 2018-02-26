@@ -45,8 +45,10 @@ let load_and_validate () =
       (fun err_msg ->
         Error
           (Printf.sprintf
-             "Incompatible results directory '%s':\n%s\nWas '%s' created using an older version of infer?"
-             Config.results_dir err_msg Config.results_dir) )
+             "Incompatible results directory '%s':\n\
+              %s\n\
+              Was '%s' created using an older version of infer?" Config.results_dir err_msg
+             Config.results_dir) )
       msg
   in
   if Sys.file_exists state_file_path <> `Yes then error "save state not found"

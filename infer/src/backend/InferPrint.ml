@@ -226,7 +226,7 @@ module IssuesJson = struct
     if key.in_footprint && error_filter source_file key.err_desc key.err_name
        && should_report_source_file
        && should_report key.err_kind key.err_name key.err_desc err_data.err_class
-    then
+    then (
       let kind = Exceptions.err_kind_string key.err_kind in
       let bug_type = key.err_name.IssueType.unique_id in
       let file = SourceFile.to_string source_file in
@@ -278,7 +278,7 @@ module IssuesJson = struct
         ; access= err_data.access }
       in
       if not !is_first_item then pp "," else is_first_item := false ;
-      pp "%s@?" (Jsonbug_j.string_of_jsonbug bug)
+      pp "%s@?" (Jsonbug_j.string_of_jsonbug bug) )
 
 
   (** Write bug report in JSON format *)

@@ -615,16 +615,25 @@ type summary =
 
 let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes; wobbly_paths} =
   F.fprintf fmt
-    "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\nWobbly Paths: %a@\n"
-    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
+    "@\n\
+     Threads: %a, Locks: %a @\n\
+     Accesses %a @\n\
+     Ownership: %a @\n\
+     Return Attributes: %a @\n\
+     Wobbly Paths: %a@\n\
+     " ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
     OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
     StabilityDomain.pp wobbly_paths
 
 
 let pp fmt {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
   F.fprintf fmt
-    "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\nNon-stable Paths: %a@\n"
-    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
+    "Threads: %a, Locks: %a @\n\
+     Accesses %a @\n \
+     Ownership: %a @\n\
+     Attributes: %a @\n\
+     Non-stable Paths: %a@\n\
+     " ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map StabilityDomain.pp wobbly_paths
 
 

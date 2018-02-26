@@ -25,7 +25,9 @@ let filter_parsed_linters_developer parsed_linters =
     match Config.linter with
     | None ->
         L.(die UserError)
-          "In linters developer mode you should debug only one linter at a time. This is important for debugging the rule. Pass the flag --linter <name> to specify the linter you want to debug."
+          "In linters developer mode you should debug only one linter at a time. This is \
+           important for debugging the rule. Pass the flag --linter <name> to specify the linter \
+           you want to debug."
     | Some lint ->
         List.filter ~f:(fun (rule: linter) -> String.equal rule.issue_desc.id lint) parsed_linters
   else parsed_linters

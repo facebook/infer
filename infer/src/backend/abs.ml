@@ -1039,7 +1039,7 @@ let check_junk ?original_prop pname tenv prop =
           List.rev sigma_done
       | hpred :: sigma_todo' ->
           let entries = Sil.hpred_entries hpred in
-          if should_remove_hpred entries then
+          if should_remove_hpred entries then (
             let part = if fp_part then "footprint" else "normal" in
             L.d_strln (".... Prop with garbage in " ^ part ^ " part ....") ;
             L.d_increase_indent 1 ;
@@ -1159,7 +1159,7 @@ let check_junk ?original_prop pname tenv prop =
                 leaks_reported := alloc_attribute :: !leaks_reported )
             in
             if not ignore_leak then report_leak () ;
-            remove_junk_recursive sigma_done sigma_todo'
+            remove_junk_recursive sigma_done sigma_todo' )
           else remove_junk_recursive (hpred :: sigma_done) sigma_todo'
     in
     remove_junk_recursive [] sigma

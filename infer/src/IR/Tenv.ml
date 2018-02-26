@@ -96,11 +96,11 @@ let load_global () : t option =
 
 let store_to_filename tenv tenv_filename =
   Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
-  if Config.debug_mode then
+  if Config.debug_mode then (
     let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
     let out_channel = Out_channel.create debug_filename in
     let fmt = Format.formatter_of_out_channel out_channel in
-    Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel
+    Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel )
 
 
 let store source_file tenv = tenv_filename_of_source_file source_file |> store_to_filename tenv

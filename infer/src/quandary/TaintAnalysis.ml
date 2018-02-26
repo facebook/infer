@@ -747,8 +747,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (* invariant 1: sinks with no footprint sources are dead and should be forgotten *)
         if Sources.Footprint.is_empty footprint_sources && not (Sinks.is_empty sinks) then
           Logging.die InternalError
-            "Trace %a associated with %a tracks sinks even though no more sources can flow into them"
-            Sinks.pp sinks AccessPath.Abs.pp access_path ;
+            "Trace %a associated with %a tracks sinks even though no more sources can flow into \
+             them" Sinks.pp sinks AccessPath.Abs.pp access_path ;
         (* invariant 2: we should never have sinks without sources *)
         if Sources.is_empty sources && not (Sinks.is_empty sinks) then
           Logging.die InternalError "We have sinks %a associated with %a, but no sources" Sinks.pp

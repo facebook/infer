@@ -102,10 +102,10 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
   let was_copied () =
     let captured_src = Filename.concat infer_out_src Config.captured_dir_name in
     let captured_dst = Filename.concat infer_out_dst Config.captured_dir_name in
-    if Sys.file_exists captured_src = `Yes && Sys.is_directory captured_src = `Yes then
+    if Sys.file_exists captured_src = `Yes && Sys.is_directory captured_src = `Yes then (
       let captured_files = Array.to_list (Sys.readdir captured_src) in
       num_captured_files := List.length captured_files ;
-      List.for_all ~f:(fun file -> check_file (Filename.concat captured_dst file)) captured_files
+      List.for_all ~f:(fun file -> check_file (Filename.concat captured_dst file)) captured_files )
     else true
   in
   let was_modified () = String.Set.mem !modified_targets target in

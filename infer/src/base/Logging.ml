@@ -313,7 +313,9 @@ let setup_log_file () =
       reset_formatters () ;
       if CLOpt.is_originator && preexisting_logfile then
         phase
-          "============================================================@\n= New infer execution begins@\n============================================================"
+          "============================================================@\n\
+           = New infer execution begins@\n\
+           ============================================================"
 
 
 (** type of printable elements *)

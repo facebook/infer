@@ -27,8 +27,8 @@ let checkout revision =
   match script_opt with
   | None ->
       L.(die UserError)
-        "Please specify a script to checkout the %a revision of your project using --checkout-%a <script>."
-        pp_revision revision pp_revision revision
+        "Please specify a script to checkout the %a revision of your project using --checkout-%a \
+         <script>." pp_revision revision pp_revision revision
   | Some script ->
       L.progress "Checking out %a version:@\n  %s@\n" pp_revision revision script ;
       let (), exit_or_signal = Utils.with_process_in script Utils.consume_in in

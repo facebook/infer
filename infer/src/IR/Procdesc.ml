@@ -786,8 +786,8 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
         source_file
     | None ->
         Logging.die InternalError
-          "specialize_with_block_args ahould only be called with defined procedures, but we cannot find the captured file of procname %a"
-          Typ.Procname.pp pname
+          "specialize_with_block_args ahould only be called with defined procedures, but we \
+           cannot find the captured file of procname %a" Typ.Procname.pp pname
   in
   let resolved_attributes =
     { callee_attributes with

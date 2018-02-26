@@ -450,7 +450,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {empty_res_trans with exps= [(Exp.Sizeof sizeof_data, sizeof_typ)]}
     | k ->
         L.(debug Capture Medium)
-          "@\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression ignored, returned -1... @\n"
+          "@\n\
+           WARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression \
+           ignored, returned -1... @\n\
+           "
           (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k) ;
         {empty_res_trans with exps= [(Exp.minus_one, typ)]}
 
@@ -1007,7 +1010,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_callee = instruction trans_state_callee fun_exp_stmt in
     let sil_fe, _ =
       extract_exp_from_list res_trans_callee.exps
-        "WARNING: The translation of fun_exp did not return an expression.Returning -1. NEED TO BE FIXED"
+        "WARNING: The translation of fun_exp did not return an expression.Returning -1. NEED TO \
+         BE FIXED"
     in
     let callee_pname_opt =
       match sil_fe with Exp.Const Const.Cfun pn -> Some pn | _ -> None
@@ -1042,8 +1046,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else
             (* FIXME(t21762295) this is reachable *)
             CFrontend_config.incorrect_assumption __POS__ si.Clang_ast_t.si_source_range
-              "In call to %a: stmt_list and res_trans_par.exps must have same size but they don't:@\nstmt_list(%d)=[%a]@\nres_trans_par.exps(%d)=[%a]@\n"
-              Typ.Procname.pp procname (List.length params) (Pp.seq Exp.pp)
+              "In call to %a: stmt_list and res_trans_par.exps must have same size but they don't:@\n\
+               stmt_list(%d)=[%a]@\n\
+               res_trans_par.exps(%d)=[%a]@\n\
+               " Typ.Procname.pp procname (List.length params) (Pp.seq Exp.pp)
               (List.map ~f:fst params) (List.length params_stmt)
               (Pp.seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
               params_stmt
@@ -2413,7 +2419,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let stmt =
       extract_stmt_from_singleton stmt_list
-        "WARNING: We expect only one element in stmt list defining the operand in UnaryOperator. NEED FIXING@\n"
+        "WARNING: We expect only one element in stmt list defining the operand in UnaryOperator. \
+         NEED FIXING@\n\
+         "
     in
     let trans_state' = {trans_state_pri with succ_nodes= []} in
     let res_trans_stmt = instruction trans_state' stmt in
@@ -2524,7 +2532,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           {empty_res_trans with root_nodes= [ret_node]; leaf_nodes= []}
       | _ ->
           L.(debug Capture Verbose)
-            "@\nWARNING: Missing translation of Return Expression. Return Statement ignored. Need fixing!@\n" ;
+            "@\n\
+             WARNING: Missing translation of Return Expression. Return Statement ignored. Need \
+             fixing!@\n\
+             " ;
           {empty_res_trans with root_nodes= succ_nodes}
     in
     (* We expect a return with only one expression *)

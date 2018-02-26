@@ -61,13 +61,13 @@ module Val = struct
 
 
   let join : t -> t -> t =
-    fun x y ->
-      if phys_equal x y then x
-      else
-        { itv= Itv.join x.itv y.itv
-        ; powloc= PowLoc.join x.powloc y.powloc
-        ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
-        ; traces= TraceSet.join x.traces y.traces }
+   fun x y ->
+    if phys_equal x y then x
+    else
+      { itv= Itv.join x.itv y.itv
+      ; powloc= PowLoc.join x.powloc y.powloc
+      ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
+      ; traces= TraceSet.join x.traces y.traces }
 
 
   let rec joins : t list -> t = function [] -> bot | [a] -> a | a :: b -> join a (joins b)
@@ -97,8 +97,8 @@ module Val = struct
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
   let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
-    fun ?(unsigned= false) pname new_sym_num ->
-      {bot with itv= Itv.make_sym ~unsigned pname new_sym_num}
+   fun ?(unsigned= false) pname new_sym_num ->
+    {bot with itv= Itv.make_sym ~unsigned pname new_sym_num}
 
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top}
@@ -108,37 +108,37 @@ module Val = struct
   let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv}
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
-    fun f x y -> {bot with itv= f x.itv y.itv}
+   fun f x y -> {bot with itv= f x.itv y.itv}
 
 
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
-    fun f x y ->
-      if has_pointer x || has_pointer y then {bot with itv= Itv.unknown_bool} else lift_itv f x y
+   fun f x y ->
+    if has_pointer x || has_pointer y then {bot with itv= Itv.unknown_bool} else lift_itv f x y
 
 
   let plus : t -> t -> t =
-    fun x y ->
-      { x with
-        itv= Itv.plus x.itv y.itv
-      ; arrayblk= ArrayBlk.plus_offset x.arrayblk y.itv
-      ; traces= TraceSet.join x.traces y.traces }
+   fun x y ->
+    { x with
+      itv= Itv.plus x.itv y.itv
+    ; arrayblk= ArrayBlk.plus_offset x.arrayblk y.itv
+    ; traces= TraceSet.join x.traces y.traces }
 
 
   let minus : t -> t -> t =
-    fun x y ->
-      let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
-      let a = ArrayBlk.minus_offset x.arrayblk y.itv in
-      {bot with itv= n; arrayblk= a; traces= TraceSet.join x.traces y.traces}
+   fun x y ->
+    let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
+    let a = ArrayBlk.minus_offset x.arrayblk y.itv in
+    {bot with itv= n; arrayblk= a; traces= TraceSet.join x.traces y.traces}
 
 
   let mult : t -> t -> t =
-    fun x y -> {(lift_itv Itv.mult x y) with traces= TraceSet.join x.traces y.traces}
+   fun x y -> {(lift_itv Itv.mult x y) with traces= TraceSet.join x.traces y.traces}
 
 
   let div : t -> t -> t =
-    fun x y -> {(lift_itv Itv.div x y) with traces= TraceSet.join x.traces y.traces}
+   fun x y -> {(lift_itv Itv.div x y) with traces= TraceSet.join x.traces y.traces}
 
 
   let mod_sem : t -> t -> t = lift_itv Itv.mod_sem
@@ -168,17 +168,17 @@ module Val = struct
   let lift_prune2
       : (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate) -> t
         -> t -> t =
-    fun f g x y ->
-      { x with
-        itv= f x.itv y.itv
-      ; arrayblk= g x.arrayblk y.arrayblk
-      ; traces= TraceSet.join x.traces y.traces }
+   fun f g x y ->
+    { x with
+      itv= f x.itv y.itv
+    ; arrayblk= g x.arrayblk y.arrayblk
+    ; traces= TraceSet.join x.traces y.traces }
 
 
   let prune_zero : t -> t = lift_prune1 Itv.prune_zero
 
   let prune_comp : Binop.t -> t -> t -> t =
-    fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
+   fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
 
 
   let prune_eq : t -> t -> t = lift_prune2 Itv.prune_eq ArrayBlk.prune_eq
@@ -186,7 +186,7 @@ module Val = struct
   let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_eq
 
   let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t =
-    fun f x y -> {bot with arrayblk= f x.arrayblk y.itv; traces= TraceSet.join x.traces y.traces}
+   fun f x y -> {bot with arrayblk= f x.arrayblk y.itv; traces= TraceSet.join x.traces y.traces}
 
 
   let plus_pi : t -> t -> t = fun x y -> lift_pi ArrayBlk.plus_offset x y
@@ -194,54 +194,53 @@ module Val = struct
   let minus_pi : t -> t -> t = fun x y -> lift_pi ArrayBlk.minus_offset x y
 
   let minus_pp : t -> t -> t =
-    fun x y ->
-      (* when we cannot precisely follow the physical memory model, return top *)
-      if not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk
-         || not (PowLoc.is_bot y.powloc) && ArrayBlk.is_bot y.arrayblk
-      then {bot with itv= Itv.top}
-      else
-        {bot with itv= ArrayBlk.diff x.arrayblk y.arrayblk; traces= TraceSet.join x.traces y.traces}
+   fun x y ->
+    (* when we cannot precisely follow the physical memory model, return top *)
+    if not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk
+       || not (PowLoc.is_bot y.powloc) && ArrayBlk.is_bot y.arrayblk
+    then {bot with itv= Itv.top}
+    else
+      {bot with itv= ArrayBlk.diff x.arrayblk y.arrayblk; traces= TraceSet.join x.traces y.traces}
 
 
   let get_symbols : t -> Itv.Symbol.t list =
-    fun x -> List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
+   fun x -> List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
 
 
   let normalize : t -> t =
-    fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
+   fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
 
 
   let subst
       : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t
         -> t =
-    fun x (bound_map, trace_map) location ->
-      let symbols = get_symbols x in
-      let traces_caller =
-        List.fold symbols
-          ~f:(fun traces symbol ->
-            try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces
-            )
-          ~init:TraceSet.empty
-      in
-      let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
-      {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
-      |> normalize
+   fun x (bound_map, trace_map) location ->
+    let symbols = get_symbols x in
+    let traces_caller =
+      List.fold symbols
+        ~f:(fun traces symbol ->
+          try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces )
+        ~init:TraceSet.empty
+    in
+    let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
+    {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
+    |> normalize
 
 
   (* normalize bottom *)
 
   let add_trace_elem : Trace.elem -> t -> t =
-    fun elem x ->
-      let traces = TraceSet.add_elem elem x.traces in
-      {x with traces}
+   fun elem x ->
+    let traces = TraceSet.add_elem elem x.traces in
+    {x with traces}
 
 
   let pp_summary : F.formatter -> t -> unit =
-    fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
+   fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
 
 
   let set_array_size : Itv.t -> t -> t =
-    fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
+   fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
 
 
   module Itv = struct
@@ -261,18 +260,18 @@ module Stack = struct
   let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.bot
 
   let find_set : PowLoc.t -> astate -> Val.t =
-    fun locs mem ->
-      let find_join loc acc = Val.join acc (find loc mem) in
-      PowLoc.fold find_join locs Val.bot
+   fun locs mem ->
+    let find_join loc acc = Val.join acc (find loc mem) in
+    PowLoc.fold find_join locs Val.bot
 
 
   let remove_temps : Ident.t list -> astate -> astate =
-    fun temps mem ->
-      let remove_temp mem temp =
-        let temp_loc = Loc.of_id temp in
-        remove temp_loc mem
-      in
-      List.fold temps ~init:mem ~f:remove_temp
+   fun temps mem ->
+    let remove_temp mem temp =
+      let temp_loc = Loc.of_id temp in
+      remove temp_loc mem
+    in
+    List.fold temps ~init:mem ~f:remove_temp
 end
 
 module Heap = struct
@@ -287,35 +286,35 @@ module Heap = struct
   let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.Itv.top
 
   let find_set : PowLoc.t -> astate -> Val.t =
-    fun locs mem ->
-      let find_join loc acc = Val.join acc (find loc mem) in
-      PowLoc.fold find_join locs Val.bot
+   fun locs mem ->
+    let find_join loc acc = Val.join acc (find loc mem) in
+    PowLoc.fold find_join locs Val.bot
 
 
   let transform : f:(Val.t -> Val.t) -> PowLoc.t -> astate -> astate =
-    fun ~f locs mem -> PowLoc.fold (fun loc -> find loc mem |> f |> add loc) locs mem
+   fun ~f locs mem -> PowLoc.fold (fun loc -> find loc mem |> f |> add loc) locs mem
 
 
   let strong_update : PowLoc.t -> Val.t -> astate -> astate =
-    fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
+   fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
 
 
   let weak_update : PowLoc.t -> Val.t -> astate -> astate =
-    fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
+   fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
 
 
   let pp_summary : F.formatter -> astate -> unit =
-    fun fmt mem ->
-      let pp_map fmt (k, v) = F.fprintf fmt "%a -> %a" Loc.pp k Val.pp_summary v in
-      F.fprintf fmt "@[<v 2>{ " ;
-      F.pp_print_list pp_map fmt (bindings mem) ;
-      F.fprintf fmt " }@]"
+   fun fmt mem ->
+    let pp_map fmt (k, v) = F.fprintf fmt "%a -> %a" Loc.pp k Val.pp_summary v in
+    F.fprintf fmt "@[<v 2>{ " ;
+    F.pp_print_list pp_map fmt (bindings mem) ;
+    F.fprintf fmt " }@]"
 
 
   let get_return : astate -> Val.t =
-    fun mem ->
-      let mem = filter (fun l _ -> Loc.is_return l) mem in
-      if is_empty mem then Val.bot else snd (choose mem)
+   fun mem ->
+    let mem = filter (fun l _ -> Loc.is_return l) mem in
+    if is_empty mem then Val.bot else snd (choose mem)
 end
 
 module AliasTarget = struct
@@ -356,56 +355,56 @@ module AliasMap = struct
   let bot : t = M.empty
 
   let ( <= ) : lhs:t -> rhs:t -> bool =
-    fun ~lhs ~rhs ->
-      let is_in_rhs k v =
-        match M.find k rhs with v' -> AliasTarget.equal v v' | exception Not_found -> false
-      in
-      M.for_all is_in_rhs lhs
+   fun ~lhs ~rhs ->
+    let is_in_rhs k v =
+      match M.find k rhs with v' -> AliasTarget.equal v v' | exception Not_found -> false
+    in
+    M.for_all is_in_rhs lhs
 
 
   let join : t -> t -> t =
-    fun x y ->
-      let join_v _ v1_opt v2_opt =
-        match (v1_opt, v2_opt) with
-        | None, None ->
-            None
-        | Some v, None | None, Some v ->
-            Some v
-        | Some v1, Some v2 ->
-            if AliasTarget.equal v1 v2 then Some v1 else assert false
-      in
-      M.merge join_v x y
+   fun x y ->
+    let join_v _ v1_opt v2_opt =
+      match (v1_opt, v2_opt) with
+      | None, None ->
+          None
+      | Some v, None | None, Some v ->
+          Some v
+      | Some v1, Some v2 ->
+          if AliasTarget.equal v1 v2 then Some v1 else assert false
+    in
+    M.merge join_v x y
 
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
-    fun ~prev ~next ~num_iters:_ -> join prev next
+   fun ~prev ~next ~num_iters:_ -> join prev next
 
 
   let pp : F.formatter -> t -> unit =
-    fun fmt x ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
-      (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
-      F.fprintf fmt "@[<hov 2>{ @," ;
-      F.pp_print_list ~pp_sep pp1 fmt (M.bindings x) ;
-      F.fprintf fmt " }@]" ;
-      F.fprintf fmt "@]"
+   fun fmt x ->
+    let pp_sep fmt () = F.fprintf fmt ", @," in
+    let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
+    (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
+    F.fprintf fmt "@[<hov 2>{ @," ;
+    F.pp_print_list ~pp_sep pp1 fmt (M.bindings x) ;
+    F.fprintf fmt " }@]" ;
+    F.fprintf fmt "@]"
 
 
   let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc m -> M.add id loc m
 
   let store : Loc.t -> Exp.t -> t -> t =
-    fun l _ m -> M.filter (fun _ y -> not (AliasTarget.use l y)) m
+   fun l _ m -> M.filter (fun _ y -> not (AliasTarget.use l y)) m
 
 
   let find : Ident.t -> t -> AliasTarget.t option =
-    fun k m -> try Some (M.find k m) with Not_found -> None
+   fun k m -> try Some (M.find k m) with Not_found -> None
 
 
   let remove_temps : Ident.t list -> t -> t =
-    fun temps m ->
-      let remove_temp m temp = M.remove temp m in
-      List.fold temps ~init:m ~f:remove_temp
+   fun temps m ->
+    let remove_temp m temp = M.remove temp m in
+    List.fold temps ~init:m ~f:remove_temp
 end
 
 module AliasRet = struct
@@ -414,40 +413,40 @@ module AliasRet = struct
   let bot = Bot
 
   let ( <= ) : lhs:astate -> rhs:astate -> bool =
-    fun ~lhs ~rhs ->
-      match (lhs, rhs) with
-      | Bot, _ | _, Top ->
-          true
-      | Top, _ | _, Bot ->
-          false
-      | L loc1, L loc2 ->
-          AliasTarget.equal loc1 loc2
+   fun ~lhs ~rhs ->
+    match (lhs, rhs) with
+    | Bot, _ | _, Top ->
+        true
+    | Top, _ | _, Bot ->
+        false
+    | L loc1, L loc2 ->
+        AliasTarget.equal loc1 loc2
 
 
   let join : astate -> astate -> astate =
-    fun x y ->
-      match (x, y) with
-      | Top, _ | _, Top ->
-          Top
-      | Bot, a | a, Bot ->
-          a
-      | L loc1, L loc2 ->
-          if AliasTarget.equal loc1 loc2 then x else Top
+   fun x y ->
+    match (x, y) with
+    | Top, _ | _, Top ->
+        Top
+    | Bot, a | a, Bot ->
+        a
+    | L loc1, L loc2 ->
+        if AliasTarget.equal loc1 loc2 then x else Top
 
 
   let widen : prev:astate -> next:astate -> num_iters:int -> astate =
-    fun ~prev ~next ~num_iters:_ -> join prev next
+   fun ~prev ~next ~num_iters:_ -> join prev next
 
 
   let pp : F.formatter -> astate -> unit =
-    fun fmt x ->
-      match x with
-      | Top ->
-          F.fprintf fmt "T"
-      | L loc ->
-          AliasTarget.pp fmt loc
-      | Bot ->
-          F.fprintf fmt "_|_"
+   fun fmt x ->
+    match x with
+    | Top ->
+        F.fprintf fmt "T"
+    | L loc ->
+        AliasTarget.pp fmt loc
+    | Bot ->
+        F.fprintf fmt "_|_"
 
 
   let find : astate -> AliasTarget.t option = fun x -> match x with L loc -> Some loc | _ -> None
@@ -459,7 +458,7 @@ module Alias = struct
   let bot : astate = (AliasMap.bot, AliasRet.bot)
 
   let lift : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
-    fun f a -> (f (fst a), snd a)
+   fun f a -> (f (fst a), snd a)
 
 
   let lift_v : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f (fst a)
@@ -469,31 +468,31 @@ module Alias = struct
   let find_ret : astate -> AliasTarget.t option = fun x -> AliasRet.find (snd x)
 
   let load : Ident.t -> AliasTarget.t -> astate -> astate =
-    fun id loc -> lift (AliasMap.load id loc)
+   fun id loc -> lift (AliasMap.load id loc)
 
 
   let store_simple : Loc.t -> Exp.t -> astate -> astate =
-    fun loc e a ->
-      let a = lift (AliasMap.store loc e) a in
-      match e with
-      | Exp.Var l when Loc.is_return loc ->
-          let update_ret retl = (fst a, AliasRet.L retl) in
-          Option.value_map (find l a) ~default:a ~f:update_ret
-      | _ ->
-          a
+   fun loc e a ->
+    let a = lift (AliasMap.store loc e) a in
+    match e with
+    | Exp.Var l when Loc.is_return loc ->
+        let update_ret retl = (fst a, AliasRet.L retl) in
+        Option.value_map (find l a) ~default:a ~f:update_ret
+    | _ ->
+        a
 
 
   let store_empty : Val.t -> Loc.t -> Exp.t -> astate -> astate =
-    fun formal loc e a ->
-      let a = lift (AliasMap.store loc e) a in
-      let locs = Val.get_all_locs formal in
-      if PowLoc.is_singleton locs then
-        (fst a, AliasRet.L (AliasTarget.of_empty (PowLoc.min_elt locs)))
-      else a
+   fun formal loc e a ->
+    let a = lift (AliasMap.store loc e) a in
+    let locs = Val.get_all_locs formal in
+    if PowLoc.is_singleton locs then
+      (fst a, AliasRet.L (AliasTarget.of_empty (PowLoc.min_elt locs)))
+    else a
 
 
   let remove_temps : Ident.t list -> astate -> astate =
-    fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
+   fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
 end
 
 module PrunePairs = struct
@@ -605,26 +604,26 @@ module MemReach = struct
 
 
   let join : t -> t -> t =
-    fun x y ->
-      { stack= Stack.join x.stack y.stack
-      ; heap= Heap.join x.heap y.heap
-      ; alias= Alias.join x.alias y.alias
-      ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune }
+   fun x y ->
+    { stack= Stack.join x.stack y.stack
+    ; heap= Heap.join x.heap y.heap
+    ; alias= Alias.join x.alias y.alias
+    ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune }
 
 
   let pp : F.formatter -> t -> unit =
-    fun fmt x ->
-      F.fprintf fmt "Stack:@;" ;
-      F.fprintf fmt "%a@;" Stack.pp x.stack ;
-      F.fprintf fmt "Heap:@;" ;
-      F.fprintf fmt "%a" Heap.pp x.heap
+   fun fmt x ->
+    F.fprintf fmt "Stack:@;" ;
+    F.fprintf fmt "%a@;" Stack.pp x.stack ;
+    F.fprintf fmt "Heap:@;" ;
+    F.fprintf fmt "%a" Heap.pp x.heap
 
 
   let pp_summary : F.formatter -> t -> unit =
-    fun fmt x ->
-      F.fprintf fmt "@[<v 0>Parameters:@," ;
-      F.fprintf fmt "%a" Heap.pp_summary x.heap ;
-      F.fprintf fmt "@]"
+   fun fmt x ->
+    F.fprintf fmt "@[<v 0>Parameters:@," ;
+    F.fprintf fmt "%a" Heap.pp_summary x.heap ;
+    F.fprintf fmt "@]"
 
 
   let find_stack : Loc.t -> t -> Val.t = fun k m -> Stack.find k m.stack
@@ -636,32 +635,32 @@ module MemReach = struct
   let find_heap_set : PowLoc.t -> t -> Val.t = fun k m -> Heap.find_set k m.heap
 
   let find_set : PowLoc.t -> t -> Val.t =
-    fun k m -> Val.join (find_stack_set k m) (find_heap_set k m)
+   fun k m -> Val.join (find_stack_set k m) (find_heap_set k m)
 
 
   let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
-    fun k m ->
-      match Alias.find k m.alias with
-      | Some AliasTarget.Simple l ->
-          Some l
-      | Some AliasTarget.Empty _ | None ->
-          None
+   fun k m ->
+    match Alias.find k m.alias with
+    | Some AliasTarget.Simple l ->
+        Some l
+    | Some AliasTarget.Empty _ | None ->
+        None
 
 
   let find_ret_alias : t -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
-    fun id loc m -> {m with alias= Alias.load id loc m.alias}
+   fun id loc m -> {m with alias= Alias.load id loc m.alias}
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
-    fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
+   fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
 
 
   let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
-    fun formal loc e m -> {m with alias= Alias.store_empty formal loc e m.alias}
+   fun formal loc e m -> {m with alias= Alias.store_empty formal loc e m.alias}
 
 
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v m -> {m with stack= Stack.add k v m.stack}
@@ -669,73 +668,72 @@ module MemReach = struct
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v m -> {m with heap= Heap.add k v m.heap}
 
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
-    fun p v m -> {m with heap= Heap.strong_update p v m.heap}
+   fun p v m -> {m with heap= Heap.strong_update p v m.heap}
 
 
   let transform_heap : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-    fun ~f p m -> {m with heap= Heap.transform ~f p m.heap}
+   fun ~f p m -> {m with heap= Heap.transform ~f p m.heap}
 
 
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
-    fun p v m -> {m with heap= Heap.weak_update p v m.heap}
+   fun p v m -> {m with heap= Heap.weak_update p v m.heap}
 
 
   let get_return : t -> Val.t = fun m -> Heap.get_return m.heap
 
   let can_strong_update : PowLoc.t -> bool =
-    fun ploc ->
-      if always_strong_update then true
-      else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
-      else false
+   fun ploc ->
+    if always_strong_update then true
+    else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
+    else false
 
 
   let update_mem : PowLoc.t -> Val.t -> t -> t =
-    fun ploc v s ->
-      if can_strong_update ploc then strong_update_heap ploc v s
-      else
-        let () =
-          L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
-        in
-        weak_update_heap ploc v s
+   fun ploc v s ->
+    if can_strong_update ploc then strong_update_heap ploc v s
+    else
+      let () =
+        L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
+      in
+      weak_update_heap ploc v s
 
 
   let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-    fun ~f ploc s -> transform_heap ~f ploc s
+   fun ~f ploc s -> transform_heap ~f ploc s
 
 
   let remove_temps : Ident.t list -> t -> t =
-    fun temps m ->
-      {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
+   fun temps m ->
+    {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
 
 
   let set_prune_pairs : PrunePairs.t -> t -> t =
-    fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
+   fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
 
 
   let apply_latest_prune : Exp.t -> t -> t =
-    fun e m ->
-      match (m.latest_prune, e) with
-      | LatestPrune.V (x, prunes, _), Exp.Var r
-      | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
-        match find_simple_alias r m with
-        | Some Loc.Var Var.ProgramVar y when Pvar.equal x y ->
-            List.fold_left prunes ~init:m ~f:(fun acc (l, v) ->
-                update_mem (PowLoc.singleton l) v acc )
-        | _ ->
-            m )
+   fun e m ->
+    match (m.latest_prune, e) with
+    | LatestPrune.V (x, prunes, _), Exp.Var r
+    | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
+      match find_simple_alias r m with
+      | Some Loc.Var Var.ProgramVar y when Pvar.equal x y ->
+          List.fold_left prunes ~init:m ~f:(fun acc (l, v) -> update_mem (PowLoc.singleton l) v acc)
       | _ ->
-          m
+          m )
+    | _ ->
+        m
 
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
-    fun e1 e2 m ->
-      match (e1, e2, m.latest_prune) with
-      | Lvar x, Const Const.Cint i, LatestPrune.Latest p ->
-          if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
-          else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
-          else {m with latest_prune= LatestPrune.Top}
-      | _, _, _ ->
-          {m with latest_prune= LatestPrune.Top}
+   fun e1 e2 m ->
+    match (e1, e2, m.latest_prune) with
+    | Lvar x, Const Const.Cint i, LatestPrune.Latest p ->
+        if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
+        else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
+        else {m with latest_prune= LatestPrune.Top}
+    | _, _, _ ->
+        {m with latest_prune= LatestPrune.Top}
 end
 
 module Mem = struct
@@ -748,60 +746,60 @@ module Mem = struct
   let init : t = NonBottom MemReach.init
 
   let f_lift_default : 'a -> (MemReach.t -> 'a) -> t -> 'a =
-    fun default f m -> match m with Bottom -> default | NonBottom m' -> f m'
+   fun default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
 
   let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
-    fun f -> f_lift_default Bottom (fun m' -> NonBottom (f m'))
+   fun f -> f_lift_default Bottom (fun m' -> NonBottom (f m'))
 
 
   let pp_summary : F.formatter -> t -> unit =
-    fun fmt m ->
-      match m with
-      | Bottom ->
-          F.fprintf fmt "unreachable"
-      | NonBottom m' ->
-          MemReach.pp_summary fmt m'
+   fun fmt m ->
+    match m with
+    | Bottom ->
+        F.fprintf fmt "unreachable"
+    | NonBottom m' ->
+        MemReach.pp_summary fmt m'
 
 
   let find_stack : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_stack k)
 
   let find_stack_set : PowLoc.t -> t -> Val.t =
-    fun k -> f_lift_default Val.bot (MemReach.find_stack_set k)
+   fun k -> f_lift_default Val.bot (MemReach.find_stack_set k)
 
 
   let find_heap : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_heap k)
 
   let find_heap_set : PowLoc.t -> t -> Val.t =
-    fun k -> f_lift_default Val.bot (MemReach.find_heap_set k)
+   fun k -> f_lift_default Val.bot (MemReach.find_heap_set k)
 
 
   let find_set : PowLoc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_set k)
 
   let find_alias : Ident.t -> t -> AliasTarget.t option =
-    fun k -> f_lift_default None (MemReach.find_alias k)
+   fun k -> f_lift_default None (MemReach.find_alias k)
 
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
-    fun k -> f_lift_default None (MemReach.find_simple_alias k)
+   fun k -> f_lift_default None (MemReach.find_simple_alias k)
 
 
   let find_ret_alias : t -> AliasTarget.t option = f_lift_default None MemReach.find_ret_alias
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
-    fun id loc -> f_lift (MemReach.load_alias id loc)
+   fun id loc -> f_lift (MemReach.load_alias id loc)
 
 
   let load_simple_alias : Ident.t -> Loc.t -> t -> t =
-    fun id loc -> load_alias id (AliasTarget.Simple loc)
+   fun id loc -> load_alias id (AliasTarget.Simple loc)
 
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
-    fun loc e -> f_lift (MemReach.store_simple_alias loc e)
+   fun loc e -> f_lift (MemReach.store_simple_alias loc e)
 
 
   let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
-    fun formal loc e -> f_lift (MemReach.store_empty_alias formal loc e)
+   fun formal loc e -> f_lift (MemReach.store_empty_alias formal loc e)
 
 
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_stack k v)
@@ -809,11 +807,11 @@ module Mem = struct
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_heap k v)
 
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
-    fun p v -> f_lift (MemReach.strong_update_heap p v)
+   fun p v -> f_lift (MemReach.strong_update_heap p v)
 
 
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
-    fun p v -> f_lift (MemReach.weak_update_heap p v)
+   fun p v -> f_lift (MemReach.weak_update_heap p v)
 
 
   let get_return : t -> Val.t = f_lift_default Val.bot MemReach.get_return
@@ -821,25 +819,25 @@ module Mem = struct
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
 
   let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-    fun ~f ploc -> f_lift (MemReach.transform_mem ~f ploc)
+   fun ~f ploc -> f_lift (MemReach.transform_mem ~f ploc)
 
 
   let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
 
   let set_prune_pairs : PrunePairs.t -> t -> t =
-    fun prune_pairs -> f_lift (MemReach.set_prune_pairs prune_pairs)
+   fun prune_pairs -> f_lift (MemReach.set_prune_pairs prune_pairs)
 
 
   let apply_latest_prune : Exp.t -> t -> t = fun e -> f_lift (MemReach.apply_latest_prune e)
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
-    fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
+   fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
 
 
   let update_mem_in_prune : PrunePairs.t ref -> Loc.t -> Val.t -> t -> t =
-    fun prune_pairs lv v m ->
-      prune_pairs := (lv, v) :: !prune_pairs ;
-      update_mem (PowLoc.singleton lv) v m
+   fun prune_pairs lv v m ->
+    prune_pairs := (lv, v) :: !prune_pairs ;
+    update_mem (PowLoc.singleton lv) v m
 end
 
 module Summary = struct
@@ -856,17 +854,16 @@ module Summary = struct
   let pp_symbol_map : F.formatter -> t -> unit = fun fmt s -> Mem.pp_summary fmt (get_input s)
 
   let pp_return : F.formatter -> t -> unit =
-    fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
+   fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
 
 
   let pp_summary : F.formatter -> t -> unit =
-    fun fmt s ->
-      F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s PO.ConditionSet.pp_summary
-        (get_cond_set s)
+   fun fmt s ->
+    F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s PO.ConditionSet.pp_summary
+      (get_cond_set s)
 
 
   let pp : F.formatter -> t -> unit =
-    fun fmt (entry_mem, exit_mem, condition_set) ->
-      F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp
-        condition_set
+   fun fmt (entry_mem, exit_mem, condition_set) ->
+    F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp condition_set
 end

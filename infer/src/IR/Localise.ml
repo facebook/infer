@@ -261,8 +261,8 @@ let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   in
   let problem_str =
     Printf.sprintf
-      "could be %s which results in a call to %s with %d arguments instead of %d (%s indicates that the last argument of this variadic %s has been reached)"
-      nil_null
+      "could be %s which results in a call to %s with %d arguments instead of %d (%s indicates \
+       that the last argument of this variadic %s has been reached)" nil_null
       (Typ.Procname.to_simplified_string pn)
       arg_number (total_args - 1) nil_null function_method
   in
@@ -389,9 +389,11 @@ let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
   in
   let msg =
     Format.asprintf
-      "The field %a is annotated with %a, but the lock %a is not held during the access to the field %s. Since the current method is non-private, it can be called from outside the current class without synchronization. Consider wrapping the access in a %s block or making the method private."
-      MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str MF.pp_monospaced guarded_by_str
-      line_info syncronized_str
+      "The field %a is annotated with %a, but the lock %a is not held during the access to the \
+       field %s. Since the current method is non-private, it can be called from outside the \
+       current class without synchronization. Consider wrapping the access in a %s block or \
+       making the method private." MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str
+      MF.pp_monospaced guarded_by_str line_info syncronized_str
   in
   {no_desc with descriptions= [msg]}
 
@@ -403,10 +405,12 @@ let desc_fragment_retains_view fragment_typ fieldname fld_typ pname : error_desc
       (format_typ fragment_typ) (format_field fieldname) (format_typ fld_typ) (format_method pname)
   in
   let consequences =
-    "If this Fragment is placed on the back stack, a reference to this (probably dead) View will be retained."
+    "If this Fragment is placed on the back stack, a reference to this (probably dead) View will \
+     be retained."
   in
   let advice =
-    "In general, it is a good idea to initialize View's in onCreateView, then nullify them in onDestroyView."
+    "In general, it is a good idea to initialize View's in onCreateView, then nullify them in \
+     onDestroyView."
   in
   {no_desc with descriptions= [problem; consequences; advice]}
 

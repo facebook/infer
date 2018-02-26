@@ -181,13 +181,13 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ | TVar _, _ ->
         fail t off __POS__
   in
-  ( if Config.trace_rearrange then
-      let _, se, _ = res in
-      L.d_strln "exiting create_struct_values, returning" ;
-      Sil.d_sexp se ;
-      L.d_decrease_indent 1 ;
-      L.d_ln () ;
-      L.d_ln () ) ;
+  if Config.trace_rearrange then (
+    let _, se, _ = res in
+    L.d_strln "exiting create_struct_values, returning" ;
+    Sil.d_sexp se ;
+    L.d_decrease_indent 1 ;
+    L.d_ln () ;
+    L.d_ln () ) ;
   res
 
 
@@ -327,7 +327,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
     let array_default = Sil.Earray (array_len, array_cont, inst_arr) in
     let typ_default = Typ.mk_array ~default:typ_array typ_cont ?length:typ_array_len in
     [([], array_default, typ_default)]
-  else if !Config.footprint then
+  else if !Config.footprint then (
     let atoms, elem_se, elem_typ =
       create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst
     in
@@ -337,7 +337,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
     in
     let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
     let typ_new = Typ.mk_array ~default:typ_array elem_typ ?length:typ_array_len in
-    [(atoms, array_new, typ_new)]
+    [(atoms, array_new, typ_new)] )
   else
     let res_new =
       if array_is_full then []
