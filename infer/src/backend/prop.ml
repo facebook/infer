@@ -2480,28 +2480,18 @@ let prop_iter_fav_add fav iter =
 (** Find fav of the iterator *)
 let prop_iter_fav iter = Sil.fav_imperative_to_functional prop_iter_fav_add iter
 
-(** Free vars of the iterator except the current hpred (and footprint). *)
-let prop_iter_noncurr_fav_add fav iter =
-  sigma_fav_add fav iter.pit_old ;
-  sigma_fav_add fav iter.pit_new ;
-  Sil.sub_fav_add fav iter.pit_sub ;
-  pi_fav_add fav iter.pit_pi
-
-
 (** Extract the sigma part of the footprint *)
 let prop_iter_get_footprint_sigma iter = iter.pit_sigma_fp
 
 (** Replace the sigma part of the footprint *)
 let prop_iter_replace_footprint_sigma iter sigma = {iter with pit_sigma_fp= sigma}
 
-let prop_iter_noncurr_fav iter = Sil.fav_imperative_to_functional prop_iter_noncurr_fav_add iter
-
-let rec strexp_gc_fields (fav: Sil.fav) (se: Sil.strexp) =
+let rec strexp_gc_fields (se: Sil.strexp) =
   match se with
   | Eexp _ ->
       Some se
   | Estruct (fsel, inst) ->
-      let fselo = List.map ~f:(fun (f, se) -> (f, strexp_gc_fields fav se)) fsel in
+      let fselo = List.map ~f:(fun (f, se) -> (f, strexp_gc_fields se)) fsel in
       let fsel' =
         let fselo' = List.filter ~f:(function _, Some _ -> true | _ -> false) fselo in
         List.map ~f:(function f, seo -> (f, unSome seo)) fselo'
@@ -2512,17 +2502,14 @@ let rec strexp_gc_fields (fav: Sil.fav) (se: Sil.strexp) =
       Some se
 
 
-let hpred_gc_fields (fav: Sil.fav) (hpred: Sil.hpred) : Sil.hpred =
+let hpred_gc_fields (hpred: Sil.hpred) : Sil.hpred =
   match hpred with
-  | Hpointsto (e, se, te)
-    -> (
-      Sil.exp_fav_add fav e ;
-      Sil.exp_fav_add fav te ;
-      match strexp_gc_fields fav se with
-      | None ->
-          hpred
-      | Some se' ->
-          if Sil.equal_strexp se se' then hpred else Hpointsto (e, se', te) )
+  | Hpointsto (e, se, te) -> (
+    match strexp_gc_fields se with
+    | None ->
+        hpred
+    | Some se' ->
+        if Sil.equal_strexp se se' then hpred else Hpointsto (e, se', te) )
   | Hlseg _ | Hdllseg _ ->
       hpred
 
@@ -2535,10 +2522,7 @@ let rec prop_iter_map f iter =
 
 (** Collect garbage fields. *)
 let prop_iter_gc_fields iter =
-  let f iter' =
-    let fav = prop_iter_noncurr_fav iter' in
-    hpred_gc_fields fav iter'.pit_curr
-  in
+  let f iter' = hpred_gc_fields iter'.pit_curr in
   prop_iter_map f iter
 
 
