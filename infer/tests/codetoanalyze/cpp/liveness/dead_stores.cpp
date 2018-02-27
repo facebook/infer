@@ -130,12 +130,6 @@ void by_ref1_ok(int& ref) { ref = 7; }
 
 void by_ref2_ok(int& ref) { ref++; }
 
-int capture_by_ref3_ok() {
-  int x = 1;
-  [&](auto y) { x += y; }(3);
-  return x;
-}
-
 int plus_plus_ok() {
   int x = 1;
   return ++x;
@@ -181,6 +175,37 @@ int capture_by_ref2_ok() {
     y = x;
   }();
   return x + y;
+}
+
+int capture_by_ref3_ok() {
+  int x = 1;
+  [&](auto y) { x += y; }(3);
+  return x;
+}
+
+int capture_by_ref4_ok() {
+  int x = 1;
+  auto lambda = [&] { return x; };
+  x = 2; // not a dead store; updates captured x
+  return lambda();
+}
+
+int dead_store_before_capture_by_ref_bad() {
+  int x = 1; // this is dead. should report it even though x is captured by ref
+             // later on
+  x = 2;
+  auto lambda = [&] { return x; };
+  x = 2;
+  return lambda();
+}
+
+// frontend can't tell the difference between capture by ref and capture by
+// value yet.
+int FN_capture_by_value_bad() {
+  int x = 1;
+  auto lambda = [=] { return x; };
+  x = 2; // this is dead
+  return lambda();
 }
 
 int FN_capture_by_ref_reuseBad() {

@@ -119,6 +119,9 @@ val lt : t -> t -> t
 val get_vars : t -> Ident.t list * Pvar.t list
 (** Extract the ids and pvars from an expression *)
 
+val fold_captured : f:('a -> Pvar.t -> 'a) -> t -> 'a -> 'a
+(** Extract the program variables captured by this expression *)
+
 val pp_printenv : Pp.env -> (Pp.env -> F.formatter -> Typ.t -> unit) -> F.formatter -> t -> unit
 
 val pp : F.formatter -> t -> unit

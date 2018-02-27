@@ -13,7 +13,8 @@ module L = Logging
 
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
-module Domain = AbstractDomain.FiniteSet (Var)
+module VarSet = AbstractDomain.FiniteSet (Var)
+module Domain = VarSet
 
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)
@@ -95,11 +96,32 @@ let matcher_scope_guard =
   |> QualifiedCppName.Match.of_fuzzy_qual_names
 
 
+module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = VarSet
+
+  type extras = ProcData.no_extras
+
+  let exec_instr astate _ _ instr =
+    List.fold (Sil.instr_get_exps instr)
+      ~f:(fun acc exp ->
+        Exp.fold_captured ~f:(fun acc pvar -> Domain.add (Var.of_pvar pvar) acc) exp acc )
+      ~init:astate
+end
+
+module CapturedByRefAnalyzer =
+  AbstractInterpreter.Make (ProcCfg.Exceptional) (CapturedByRefTransferFunctions)
+
+let get_captured_by_ref_invariant_map proc_desc proc_data =
+  let cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
+  CapturedByRefAnalyzer.exec_cfg cfg proc_data ~initial:VarSet.empty ~debug:false
+
+
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
+  let proc_data = ProcData.make_default proc_desc tenv in
+  let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map =
-    Analyzer.exec_cfg cfg (ProcData.make_default proc_desc tenv) ~initial:Domain.empty ~debug:true
-  in
+  let invariant_map = Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty ~debug:false in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
@@ -119,9 +141,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | _ ->
         false
   in
-  let should_report pvar typ live_vars =
+  let should_report pvar typ live_vars captured_by_ref_vars =
     not
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+      || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
       || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
       || is_scope_guard typ || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in
@@ -134,24 +157,36 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     let exn = Exceptions.Checkers (IssueType.dead_store, Localise.verbatim_desc message) in
     Reporting.log_error summary ~loc ~ltr exn
   in
-  let report_dead_store live_vars = function
+  let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store (Lvar pvar, typ, rhs_exp, loc)
-      when should_report pvar typ live_vars && not (is_sentinel_exp rhs_exp) ->
+      when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp) ->
         log_report pvar typ loc
     | Sil.Call
         (None, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), (Exp.Lvar pvar, typ) :: _, loc, _)
-      when Typ.Procname.is_constructor pname && should_report pvar typ live_vars ->
+      when Typ.Procname.is_constructor pname
+           && should_report pvar typ live_vars captured_by_ref_vars ->
         log_report pvar typ loc
     | _ ->
         ()
   in
   let report_on_node node =
+    let captured_by_ref_vars =
+      match
+        CapturedByRefAnalyzer.extract_post
+          (ProcCfg.Exceptional.id (CFG.underlying_node node))
+          captured_by_ref_invariant_map
+      with
+      | Some post ->
+          post
+      | None ->
+          VarSet.empty
+    in
     List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
         match node_id_opt with
         | Some node_id -> (
           match Analyzer.extract_pre node_id invariant_map with
           | Some live_vars ->
-              report_dead_store live_vars instr
+              report_dead_store live_vars captured_by_ref_vars instr
           | None ->
               () )
         | None ->

@@ -197,6 +197,23 @@ let get_vars exp =
   get_vars_ exp ([], [])
 
 
+let fold_captured ~f exp acc =
+  let rec fold_captured_ exp captured_acc =
+    match exp with
+    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Exn e | Sizeof {dynamic_length= Some e} ->
+        fold_captured_ e captured_acc
+    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        fold_captured_ e1 captured_acc |> fold_captured_ e2
+    | Closure {captured_vars} ->
+        List.fold captured_vars
+          ~f:(fun acc (_, captured_pvar, _) -> f acc captured_pvar)
+          ~init:captured_acc
+    | Const _ | Lvar _ | Var _ | Sizeof _ ->
+        captured_acc
+  in
+  fold_captured_ exp acc
+
+
 (** Pretty print an expression. *)
 let rec pp_ pe pp_t f e =
   let pp_exp = pp_ pe pp_t in
