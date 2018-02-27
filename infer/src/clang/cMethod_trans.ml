@@ -486,6 +486,7 @@ let is_value {Clang_ast_t.qt_type_ptr} =
         | Some FunctionNoProtoType _
         | Some ObjCObjectPointerType _
         | Some NoneType _
+        | Some DependentAddressSpaceType _
         (* These types I don't know what they are. Be conservative and treat them as non value types *)
         | Some ObjCTypeParamType _
         | Some PipeType _

@@ -15,10 +15,9 @@ val get_record_typename : ?tenv:Tenv.t -> Clang_ast_t.decl -> Typ.Name.t
 
 val add_types_from_decl_to_tenv : Tenv.t -> Clang_ast_t.decl -> Typ.desc
 
-(* Adds the predefined types objc_class which is a struct, *)
-(* and Class, which is a pointer to objc_class. *)
-
 val add_predefined_types : Tenv.t -> unit
+(** Add the predefined types objc_class which is a struct, and Class, which is a pointer to
+    objc_class. *)
 
 val qual_type_to_sil_type : Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 

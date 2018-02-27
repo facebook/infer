@@ -30,17 +30,6 @@ digraph cfg {
 	
 
 	 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" -> "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" ;
-"div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_1" [label="1: Start div0_fun\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
-	
-
-	 "div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_1" -> "div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_3" ;
-"div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_2" [label="2: Exit div0_fun \n  " color=yellow style=filled]
-	
-
-"div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_3" [label="3:  Return Stmt \n   *&return:int=(1 / 0) [line 19, column 18]\n " shape="box"]
-	
-
-	 "div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_3" -> "div0_fun#2527227853465305967.2e5cae3a3cba8aac956bae4ee8f04218_2" ;
 "div0_templ<A>#3392200936327226954.953c7991c92a71a697b380b40ee16cec_1" [label="1: Start div0_templ<A>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
@@ -85,17 +74,6 @@ digraph cfg {
 	
 
 	 "div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_3" -> "div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_2" ;
-"div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_1" [label="1: Start A_div0\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
-	
-
-	 "div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_1" -> "div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_3" ;
-"div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_2" [label="2: Exit A_div0 \n  " color=yellow style=filled]
-	
-
-"div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_3" [label="3:  Return Stmt \n   *&return:int=(1 / 0) [line 11, column 16]\n " shape="box"]
-	
-
-	 "div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_3" -> "div0#A#(13584343834474447238).86039fe8b473c93613d16ba01251732b_2" ;
 "div0#B<int>#(9546261644456360892).132a3992ba75c40ad8966e1504521d7d_1" [label="1: Start B<int>_div0\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
 	
 

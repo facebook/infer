@@ -95,6 +95,7 @@ module Nodes = struct
     | `Or
     | `LAnd
     | `LOr
+    | `Cmp
     | `Comma ->
         false
 end

@@ -47,26 +47,4 @@ digraph cfg {
 	
 
 	 "X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_9" -> "X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_5" ;
-"begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_1" [label="1: Start std::initializer_list<int>_begin\nFormals:  this:std::initializer_list<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 87, column 5]\n " color=yellow style=filled]
-	
-
-	 "begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_1" -> "begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_3" ;
-"begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_2" [label="2: Exit std::initializer_list<int>_begin \n  " color=yellow style=filled]
-	
-
-"begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_3" [label="3:  Return Stmt \n   n$0=*&this:std::initializer_list<int> const * [line 89, column 48]\n  n$1=*n$0.__begin_:int const * [line 89, column 48]\n  *&return:int const *=n$1 [line 89, column 41]\n " shape="box"]
-	
-
-	 "begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_3" -> "begin#initializer_list<int>#std#(13723715755918736548).65e91b39b4a18334df4ab6fcebc9626c_2" ;
-"end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_1" [label="1: Start std::initializer_list<int>_end\nFormals:  this:std::initializer_list<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 91, column 5]\n " color=yellow style=filled]
-	
-
-	 "end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_1" -> "end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_3" ;
-"end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_2" [label="2: Exit std::initializer_list<int>_end \n  " color=yellow style=filled]
-	
-
-"end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_3" [label="3:  Return Stmt \n   n$0=*&this:std::initializer_list<int> const * [line 93, column 48]\n  n$1=*n$0.__begin_:int const * [line 93, column 48]\n  n$2=*&this:std::initializer_list<int> const * [line 93, column 59]\n  n$3=*n$2.__size_:unsigned long [line 93, column 59]\n  *&return:int const *=(n$1 + n$3) [line 93, column 41]\n " shape="box"]
-	
-
-	 "end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_3" -> "end#initializer_list<int>#std#(17457336561148167662).71ab51b73def3fc4c022ec4075346bdb_2" ;
 }

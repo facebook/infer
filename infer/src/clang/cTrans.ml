@@ -956,8 +956,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if List.exists ~f:(Exp.equal var_exp) res_trans_e2.initd_exps then ([], [])
           else
             let exp_op, instr_bin =
-              CArithmetic_trans.binary_operation_instruction binary_operator_info var_exp typ
-                sil_e2 sil_loc
+              CArithmetic_trans.binary_operation_instruction stmt_info.Clang_ast_t.si_source_range
+                binary_operator_info var_exp typ sil_e2 sil_loc
             in
             (* Create a node if the priority if free and there are instructions *)
             let creating_node =

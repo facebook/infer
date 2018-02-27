@@ -17,7 +17,7 @@ module F = Format
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
-let sanitize_name = Str.global_replace (Str.regexp "[/ ]") "_"
+let sanitize_name s = Str.global_replace (Str.regexp "[/ ]") "_" s
 
 let get_qual_name qual_name_list =
   List.map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_rev_list

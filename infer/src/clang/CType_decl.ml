@@ -131,7 +131,7 @@ let rec get_struct_fields tenv decl =
   List.concat (base_class_fields @ List.map ~f:do_one_decl decl_list)
 
 
-(* For a record declaration it returns/constructs the type *)
+(** For a record declaration it returns/constructs the type *)
 and get_record_declaration_type tenv decl =
   let definition_decl = get_record_definition decl in
   match get_record_custom_type tenv definition_decl with

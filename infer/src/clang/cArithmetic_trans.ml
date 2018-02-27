@@ -16,11 +16,11 @@ module L = Logging
 (* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
 (* "instructions" is not empty when the binary operator is actually a statement like an *)
 (* assignment. *)
-let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
+let compound_assignment_binary_operation_instruction boi_kind e1 typ e2 loc =
   let id = Ident.create_fresh Ident.knormal in
   let instr1 = Sil.Load (id, e1, typ, loc) in
   let e_res, instr_op =
-    match boi.Clang_ast_t.boi_kind with
+    match boi_kind with
     | `AddAssign ->
         let e1_plus_e2 = Exp.BinOp (Binop.PlusA, Exp.Var id, e2) in
         (e1, [Sil.Store (e1, typ, e1_plus_e2, loc)])
@@ -51,17 +51,14 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
     | `XorAssign ->
         let e1_xor_e2 = Exp.BinOp (Binop.BXor, Exp.Var id, e2) in
         (e1, [Sil.Store (e1, typ, e1_xor_e2, loc)])
-    | _ ->
-        assert false
   in
   (e_res, instr1 :: instr_op)
 
 
-(* Returns a pair ([binary_expression], instructions). "binary_expression" *)
-(* is returned when we are calculating an expression "instructions" is not *)
-(* empty when the binary operator is actually a statement like an          *)
-(* assignment.                                                             *)
-let binary_operation_instruction boi e1 typ e2 loc =
+(** Returns a pair ([binary_expression], instructions). "binary_expression" is returned when we are
+   calculating an expression "instructions" is not empty when the binary operator is actually a
+   statement like an assignment. *)
+let binary_operation_instruction source_range boi e1 typ e2 loc =
   let binop_exp op = Exp.BinOp (op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
   (* Note: Pointers to members that are not statically known are not
@@ -112,19 +109,22 @@ let binary_operation_instruction boi e1 typ e2 loc =
       (binop_exp Binop.LOr, [])
   | `Assign ->
       (e1, [Sil.Store (e1, typ, e2, loc)])
+  | `Cmp ->
+      CFrontend_config.unimplemented __POS__ source_range "C++20 spaceship operator <=>"
+      (* C++20 spaceship operator <=>, TODO *)
   | `Comma ->
       (e2, []) (* C99 6.5.17-2 *)
-  | `MulAssign
-  | `DivAssign
-  | `RemAssign
-  | `AddAssign
-  | `SubAssign
-  | `ShlAssign
-  | `ShrAssign
-  | `AndAssign
-  | `XorAssign
-  | `OrAssign ->
-      compound_assignment_binary_operation_instruction boi e1 typ e2 loc
+  | ( `MulAssign
+    | `DivAssign
+    | `RemAssign
+    | `AddAssign
+    | `SubAssign
+    | `ShlAssign
+    | `ShrAssign
+    | `AndAssign
+    | `XorAssign
+    | `OrAssign ) as boi_kind ->
+      compound_assignment_binary_operation_instruction boi_kind e1 typ e2 loc
 
 
 let unary_operation_instruction translation_unit_context uoi e typ loc =
@@ -243,6 +243,8 @@ let bin_op_to_string boi =
       "XorAssign"
   | `OrAssign ->
       "OrAssign"
+  | `Cmp ->
+      "Cmp"
   | `Comma ->
       "Comma"
 
