@@ -185,7 +185,7 @@ let fail_on_issue_exit_code = 2
 
 let frontend_stats_dir_name = "frontend_stats"
 
-let global_tenv_filename = "global.tenv"
+let global_tenv_filename = ".global.tenv"
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true

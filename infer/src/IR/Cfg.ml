@@ -99,7 +99,6 @@ let load source =
       |> Option.map ~f:SQLite.deserialize )
 
 
-(** Save the .attr files for the procedures in the cfg. *)
 let save_attributes source_file cfg =
   let save_proc _ pdesc =
     let attributes = Procdesc.get_attributes pdesc in
@@ -202,14 +201,12 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
   Procdesc.iter_nodes node_inline_synthetic_methods pdesc
 
 
-(** Inline the java synthetic methods in the cfg *)
 let inline_java_synthetic_methods cfg =
   let f pname pdesc = if Typ.Procname.is_java pname then proc_inline_synthetic_methods cfg pdesc in
   Typ.Procname.Hash.iter f cfg
 
 
-(** compute the list of procedures added or changed in [cfg_new] over [cfg_old] *)
-let mark_unchanged_pdescs cfg_new cfg_old =
+let mark_unchanged_pdescs ~cfg_old ~cfg_new =
   let pdescs_eq (pd1: Procdesc.t) (pd2: Procdesc.t) =
     (* map of exp names in pd1 -> exp names in pd2 *)
     let exp_map = ref Exp.Map.empty in
@@ -266,35 +263,6 @@ let mark_unchanged_pdescs cfg_new cfg_old =
     with Not_found -> ()
   in
   Typ.Procname.Hash.iter mark_pdesc_if_unchanged cfg_new
-
-
-let store_statement =
-  ResultsDatabase.register_statement
-    "INSERT OR REPLACE INTO source_files VALUES (:source, :cfgs, :proc_names, :timestamp)"
-
-
-let store source_file cfg =
-  inline_java_synthetic_methods cfg ;
-  ( if Config.incremental_procs then
-      match load source_file with Some old_cfg -> mark_unchanged_pdescs cfg old_cfg | None -> () ) ;
-  (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
-     OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
-     sure that all attributes were written to disk (but not necessarily flushed) *)
-  save_attributes source_file cfg ;
-  ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
-      SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
-      (* :source *)
-      |> SqliteUtils.check_sqlite_error db ~log:"store bind source file" ;
-      SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
-      (* :cfg *)
-      |> SqliteUtils.check_sqlite_error db ~log:"store bind cfg" ;
-      get_all_proc_names cfg |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 3
-      (* :proc_names *)
-      |> SqliteUtils.check_sqlite_error db ~log:"store bind proc names" ;
-      Sqlite3.bind store_stmt 4 (Sqlite3.Data.INT Int64.one)
-      (* :freshly_captured *)
-      |> SqliteUtils.check_sqlite_error db ~log:"store freshness" ;
-      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 
 let pp_proc_signatures fmt cfg =

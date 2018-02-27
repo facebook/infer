@@ -51,8 +51,7 @@ let do_source_file (translation_unit_context: CFrontend_config.translation_unit_
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   NullabilityPreanalysis.analysis cfg tenv ;
-  Cfg.store source_file cfg ;
-  Tenv.store source_file tenv ;
+  SourceFiles.add source_file cfg (FileLocal tenv) ;
   if Config.debug_mode then Cfg.check_cfg_connectedness cfg ;
   if Config.debug_mode || Config.testing_mode || Config.frontend_tests
      || Option.is_some Config.icfg_dotty_outfile

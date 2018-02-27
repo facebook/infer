@@ -9,6 +9,44 @@
 open! IStd
 module L = Logging
 
+let store_statement =
+  ResultsDatabase.register_statement
+    {|
+  INSERT OR REPLACE INTO source_files
+  VALUES (:source, :cfgs, :tenv, :proc_names, :freshly_captured) |}
+
+
+let add source_file cfg tenv =
+  Cfg.inline_java_synthetic_methods cfg ;
+  ( if Config.incremental_procs then
+      match Cfg.load source_file with
+      | Some cfg_old ->
+          Cfg.mark_unchanged_pdescs ~cfg_old ~cfg_new:cfg
+      | None ->
+          () ) ;
+  (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
+     OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
+     sure that all attributes were written to disk (but not necessarily flushed) *)
+  Cfg.save_attributes source_file cfg ;
+  ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
+      SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
+      (* :source *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind source file" ;
+      Cfg.SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
+      (* :cfg *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind cfg" ;
+      Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 3
+      (* :tenv *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind type environment" ;
+      Cfg.get_all_proc_names cfg |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 4
+      (* :proc_names *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store bind proc names" ;
+      Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
+      (* :freshly_captured *)
+      |> SqliteUtils.check_sqlite_error db ~log:"store freshness" ;
+      SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" db store_stmt )
+
+
 let get_all () =
   let db = ResultsDatabase.get_database () in
   Sqlite3.prepare db "SELECT source_file FROM source_files"

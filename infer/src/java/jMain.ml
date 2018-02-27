@@ -29,7 +29,7 @@ let init_global_state source_file =
 
 
 let store_icfg source_file cfg =
-  Cfg.store source_file cfg ;
+  SourceFiles.add source_file cfg Tenv.Global ;
   if Config.debug_mode || Config.frontend_tests then Dotty.print_icfg_dotty source_file cfg ;
   ()
 

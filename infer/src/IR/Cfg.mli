@@ -18,9 +18,6 @@ type t = Procdesc.t Typ.Procname.Hash.t
 val load : SourceFile.t -> t option
 (** Load the cfgs of the procedures of a source file *)
 
-val store : SourceFile.t -> t -> unit
-(** Save a cfg into the database *)
-
 val get_all_proc_names : t -> Typ.Procname.t list
 (** get all the keys from the hashtable *)
 
@@ -38,4 +35,16 @@ val iter_all_nodes : ?sorted:bool -> (Procdesc.t -> Procdesc.Node.t -> unit) -> 
 val check_cfg_connectedness : t -> unit
 (** checks whether a cfg is connected or not *)
 
+val save_attributes : SourceFile.t -> t -> unit
+(** Save the .attr files for the procedures in the cfg. *)
+
+val inline_java_synthetic_methods : t -> unit
+(** Inline the java synthetic methods in the cfg (in-place) *)
+
+val mark_unchanged_pdescs : cfg_old:t -> cfg_new:t -> unit
+(** compute the list of procedures added or changed in [cfg_new] over [cfg_old] and record the
+   [changed] attribute in-place in the new cfg. *)
+
 val pp_proc_signatures : Format.formatter -> t -> unit
+
+module SQLite : SqliteUtils.Data with type t = t

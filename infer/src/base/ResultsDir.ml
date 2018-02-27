@@ -11,9 +11,7 @@ open! PVariant
 module CLOpt = CommandLineOption
 module L = Logging
 
-let results_dir_dir_markers =
-  List.map ~f:(Filename.concat Config.results_dir) [Config.captured_dir_name; Config.specs_dir_name]
-
+let results_dir_dir_markers = [Config.results_dir ^/ Config.specs_dir_name]
 
 let is_results_dir ~check_correct_version () =
   let not_found = ref "" in

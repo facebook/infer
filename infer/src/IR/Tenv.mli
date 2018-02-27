@@ -23,9 +23,6 @@ val load : SourceFile.t -> t option
 val load_global : unit -> t option
 (** load the global type environment (Java) *)
 
-val store : SourceFile.t -> t -> unit
-(** Save a type environment into a file *)
-
 val store_global : t -> unit
 (** save a global type environment (Java) *)
 
@@ -46,3 +43,7 @@ val pp : Format.formatter -> t -> unit  [@@warning "-32"]
 
 val language_is : t -> Language.t -> bool
 (** Test the language from which the types in the tenv were translated *)
+
+type per_file = Global | FileLocal of t
+
+module SQLite : SqliteUtils.Data with type t = per_file
