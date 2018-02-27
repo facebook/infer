@@ -1014,12 +1014,8 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
     let is_full_trace = TraceElem.is_direct final_sink in
     let is_pvar_base initial_sink =
       let access_path = Access.get_access_path (PathDomain.Sink.kind initial_sink) in
-      Option.value_map ~default:false access_path ~f:(fun ap ->
-          match ap with
-          | (Var.LogicalVar _, _), _ ->
-              false
-          | (Var.ProgramVar pvar, _), _ ->
-              not (Pvar.is_frontend_tmp pvar) )
+      Option.value_map ~default:false access_path ~f:(fun ((var, _), _) ->
+          Var.appears_in_source_code var )
     in
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
        trace, it's probably going to be too confusing to be actionable. Skip it.

@@ -30,6 +30,10 @@ val is_return : t -> bool
 
 val is_footprint : t -> bool
 
+val appears_in_source_code : t -> bool
+(** return true if this variable appears in source code (i.e., is not a LogicalVar or a
+    frontend-generated ProgramVar) *)
+
 val get_footprint_index : t -> int option
 
 val pp : Format.formatter -> t -> unit

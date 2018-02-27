@@ -29,6 +29,12 @@ let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -
 
 let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_footprint id
 
+let appears_in_source_code = function
+  | LogicalVar _ ->
+      false
+  | ProgramVar pvar ->
+      not (Pvar.is_frontend_tmp pvar)
+
 let pp fmt = function ProgramVar pv -> Pvar.pp Pp.text fmt pv | LogicalVar id -> Ident.pp fmt id
 
 let get_footprint_index t =
