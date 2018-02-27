@@ -8,7 +8,7 @@
 TESTS_DIR = ../../..
 
 ANALYZER = linters
-CLANG_OPTIONS = -c
+CLANG_OPTIONS = -c -fobjc-arc
 INFER_OPTIONS = --linters-def-folder checks --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
