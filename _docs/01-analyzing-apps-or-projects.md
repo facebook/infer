@@ -24,9 +24,19 @@ infer run -- ./gradlew <gradle task, e.g. "build">
 
 ### Buck
 
+Running:
 ```bash
 infer run -- buck <buck target>
 ```
+will compute the list of Infer warnings in the targets passed as argument.
+
+Running:
+```bash
+infer run -- buck --deep <buck target>
+```
+will compute the list of Infer warnings in the targets passed as argument and all the transitive dependencies.
+
+The distinction between `--deep` and the normal Buck complation mode is only supported for Java projects. For the other kinds of projects, the `--deep` option has no effect.
 
 ### Maven
 ```bash
