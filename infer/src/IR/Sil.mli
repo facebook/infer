@@ -407,10 +407,6 @@ val hpred_entries : hpred -> Exp.t list
 
 (** {2 Function for computing lexps in sigma} *)
 
-val exp_fpv : Exp.t -> Pvar.t list
-
-(** {2 Functions for computing free non-program variables} *)
-
 (** Type of free variables. These include primed, normal and footprint variables.
     We remember the order in which variables are added. *)
 type fav

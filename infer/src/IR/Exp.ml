@@ -290,3 +290,27 @@ let is_objc_block_closure = function
       Typ.Procname.is_objc_block name
   | _ ->
       false
+
+
+let rec gen_program_vars =
+  let open Sequence.Generator in
+  function
+    | Lvar name ->
+        yield name
+    | Const _ | Var _ | Sizeof {dynamic_length= None} ->
+        return ()
+    | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+        gen_program_vars e
+    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        gen_program_vars e1 >>= fun () -> gen_program_vars e2
+    | Closure {captured_vars} ->
+        let rec aux = function
+          | (_, p, _) :: tl ->
+              yield p >>= fun () -> aux tl
+          | [] ->
+              return ()
+        in
+        aux captured_vars
+
+
+let program_vars e = Sequence.Generator.run (gen_program_vars e)

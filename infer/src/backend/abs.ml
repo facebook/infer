@@ -82,8 +82,6 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.exp_subst) =
     let sigma = p_leftover.Prop.sigma in
     (sigma_fav_list sigma, sigma_fav_in_pvars_list sigma)
   in
-  let fpv_inst_of_base = Sil.exp_fpv inst_of_base in
-  let fpv_insts_of_private_ids = List.concat_map ~f:Sil.exp_fpv insts_of_private_ids in
   (*
   let fav_inst_of_base = Sil.exp_fav_list inst_of_base in
   L.out "@[.... application of condition ....@\n@.";
@@ -91,7 +89,8 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.exp_subst) =
   L.out "@[<4>  public ids : %a@\n@." pp_exp_list insts_of_public_ids;
   *)
   (* (not (IList.intersect compare fav_inst_of_base fav_in_pvars)) && *)
-  List.is_empty fpv_inst_of_base && List.is_empty fpv_insts_of_private_ids
+  Exp.program_vars inst_of_base |> Sequence.is_empty
+  && List.for_all ~f:(fun e -> Exp.program_vars e |> Sequence.is_empty) insts_of_private_ids
   && not (List.exists ~f:Ident.is_normal fav_insts_of_private_ids)
   && not (IList.intersect Ident.compare fav_insts_of_private_ids fav_p_leftover)
   && not (IList.intersect Ident.compare fav_insts_of_private_ids fav_insts_of_public_ids)

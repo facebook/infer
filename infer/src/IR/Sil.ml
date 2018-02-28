@@ -1013,32 +1013,6 @@ let hpred_list_get_lexps (filter: Exp.t -> bool) (hlist: hpred list) : Exp.t lis
 
 let hpred_entries hpred = hpred_get_lexp [] hpred
 
-(** {2 Functions for computing program variables} *)
-let rec exp_fpv e =
-  match (e : Exp.t) with
-  | Var _ ->
-      []
-  | Exn e ->
-      exp_fpv e
-  | Closure {captured_vars} ->
-      List.map ~f:(fun (_, pvar, _) -> pvar) captured_vars
-  | Const _ ->
-      []
-  | Cast (_, e) | UnOp (_, e, _) ->
-      exp_fpv e
-  | BinOp (_, e1, e2) ->
-      exp_fpv e1 @ exp_fpv e2
-  | Lvar name ->
-      [name]
-  | Lfield (e, _, _) ->
-      exp_fpv e
-  | Lindex (e1, e2) ->
-      exp_fpv e1 @ exp_fpv e2
-  (* TODO: Sizeof length expressions may contain variables, do not ignore them. *)
-  | Sizeof _ ->
-      []
-
-
 (** {2 Functions for computing free non-program variables} *)
 
 (** Type of free variables. These include primed, normal and footprint variables.
