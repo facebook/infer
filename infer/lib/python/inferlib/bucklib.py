@@ -95,24 +95,27 @@ def prepare_build(args):
     return temp_files, infer_script.name
 
 
-def get_normalized_targets(targets):
+def get_normalized_targets(buck_args):
     """ Use buck to convert a list of input targets/aliases
         into a set of the (transitive) target deps for all inputs"""
 
-    # this expands the targets passed on the command line, then filters away
-    # targets that are not Java/Android. you need to change this if you
-    # care about something other than Java/Android
-    TARGET_TYPES = "kind('^(android|java)_library$', deps('%s'))"
-    BUCK_GET_JAVA_TARGETS = ['buck', 'query', TARGET_TYPES]
-    buck_cmd = BUCK_GET_JAVA_TARGETS + targets
-
+    if buck_args.deep:
+        # this expands the targets passed on the command line, then filters
+        # away targets that are not Java/Android. You need to change this if
+        # you care about something other than Java/Android
+        TARGET_TYPES = "kind('^(android|java)_library$', deps('%s'))"
+        BUCK_GET_JAVA_TARGETS = ['buck', 'query', TARGET_TYPES]
+        buck_cmd = BUCK_GET_JAVA_TARGETS + buck_args.targets
+    else:
+        BUCK_RESOLVE_ALIASES = ['buck', 'targets', '--resolve-alias']
+        buck_cmd = BUCK_RESOLVE_ALIASES + buck_args.targets
     try:
         targets = filter(
             lambda line: len(line) > 0,
             subprocess.check_output(buck_cmd).decode().strip().split('\n'))
         return targets
     except subprocess.CalledProcessError as e:
-        logging.error('Error while expanding targets with {0}'.format(
+        logging.error('Error while resolving targets with {0}'.format(
             buck_cmd))
         raise e
 
@@ -128,14 +131,19 @@ def load_json_report(opened_jar):
         raise NotFoundInJar
 
 
-def get_output_jars(targets):
+def get_output_jars(buck_args, targets):
     if len(targets) == 0:
         return []
-    else:
+    elif buck_args.deep:
         audit_output = subprocess.check_output(
             ['buck', 'audit', 'classpath'] + targets)
-        classpath_jars = audit_output.strip().split('\n')
-        return filter(os.path.isfile, classpath_jars)
+        targets_jars = audit_output.strip().split('\n')
+    else:
+        targets_output = subprocess.check_output(
+            ['buck', 'targets', '--show-output'] + targets)
+        targets_jars = [entry.split()[1] for entry in
+                        targets_output.decode().strip().split('\n')]
+    return filter(os.path.isfile, targets_jars)
 
 
 def get_key(e):
@@ -150,13 +158,13 @@ def merge_reports(report, collected):
             collected[key] = e
 
 
-def collect_results(args, start_time, targets):
+def collect_results(buck_args, infer_args, start_time, targets):
     """Walks through buck-out/, collects results for the different buck targets
     and stores them in in args.infer_out/results.json.
     """
     collected_reports = {}
 
-    for path in get_output_jars(targets):
+    for path in get_output_jars(buck_args, targets):
         try:
             with zipfile.ZipFile(path) as jar:
                 report = load_json_report(jar)
@@ -166,15 +174,16 @@ def collect_results(args, start_time, targets):
         except zipfile.BadZipfile:
             logging.warn('Bad zip file %s', path)
 
-    json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
+    json_report = os.path.join(infer_args.infer_out,
+                               config.JSON_REPORT_FILENAME)
 
     with open(json_report, 'w') as file_out:
         json.dump(collected_reports.values(), file_out)
 
-    bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
-    issues.print_and_save_errors(args.infer_out, args.project_root,
-                                 json_report, bugs_out, args.pmd_xml,
-                                 console_out=not args.quiet)
+    bugs_out = os.path.join(infer_args.infer_out, config.BUGS_FILENAME)
+    issues.print_and_save_errors(infer_args.infer_out, infer_args.project_root,
+                                 json_report, bugs_out, infer_args.pmd_xml,
+                                 console_out=not infer_args.quiet)
 
 
 def cleanup(temp_files):
@@ -240,8 +249,7 @@ class Wrapper:
         self.timer.start('Computing library targets')
         base_cmd, buck_args = parse_buck_command(buck_cmd)
         self.buck_args = buck_args
-        self.normalized_targets = get_normalized_targets(
-            buck_args.targets)
+        self.normalized_targets = get_normalized_targets(buck_args)
         self.temp_files = []
         # write targets to file to avoid passing too many command line args
         with tempfile.NamedTemporaryFile(delete=False,
@@ -253,7 +261,8 @@ class Wrapper:
 
     def _collect_results(self, start_time):
         self.timer.start('Collecting results ...')
-        collect_results(self.infer_args, start_time, self.normalized_targets)
+        collect_results(self.buck_args, self.infer_args, start_time,
+                        self.normalized_targets)
         self.timer.stop('Done')
 
     def run(self):

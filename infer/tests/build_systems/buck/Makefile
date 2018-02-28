@@ -22,7 +22,7 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(call silent_on_success,Compiling Buck Java tests,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
-	$(BUCK) build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --deep --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
@@ -30,4 +30,4 @@ infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(call silent_on_success,Testing Buck Java integration,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
 	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
-	  $(BUCK) build --no-cache $(BUCK_TARGET))
+	  $(BUCK) build --deep --no-cache $(BUCK_TARGET))
