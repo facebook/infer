@@ -2671,16 +2671,35 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
-    let translate_normal_capture pvar_typ (trans_results_acc, captured_vars_acc) =
+    let translate_normal_capture ~is_by_ref ((pvar, typ) as pvar_typ)
+        (trans_results_acc, captured_vars_acc) =
       let loc = CLocation.get_sil_location stmt_info context in
-      let id, instr = assign_captured_var loc pvar_typ in
-      let trans_results = {empty_res_trans with instrs= [instr]} in
-      ( trans_results :: trans_results_acc
-      , (Exp.Var id, fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
+      if is_by_ref then (trans_results_acc, (Exp.Lvar pvar, pvar, typ) :: captured_vars_acc)
+      else
+        let id, instr = assign_captured_var loc pvar_typ in
+        let trans_results = {empty_res_trans with instrs= [instr]} in
+        (trans_results :: trans_results_acc, (Exp.Var id, pvar, typ) :: captured_vars_acc)
     in
     let translate_captured
-        {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this}
-        ((trans_results_acc, captured_vars_acc) as acc) =
+        { Clang_ast_t.lci_captured_var
+        ; lci_init_captured_vardecl
+        ; lci_capture_this
+        ; lci_capture_kind } ((trans_results_acc, captured_vars_acc) as acc) =
+      let is_by_ref =
+        (* see http://en.cppreference.com/w/cpp/language/lambda *)
+        match lci_capture_kind with
+        | `LCK_ByRef (* explicit with [&x] or implicit with [&] *)
+        | `LCK_This (* explicit with [this] or implicit with [&] *)
+        | `LCK_VLAType
+        (* capture a variable-length array by reference. we probably don't handle
+                          this correctly elsewhere, but it's definitely not captured by value! *) ->
+            true
+        | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
+            (* [=] captures this by reference and everything else by value *)
+            lci_capture_this
+        | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
+            false
+      in
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl ->
           (* capture and init *)
@@ -2690,12 +2709,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Some captured_var_decl_ref, None ->
           (* just capture *)
           let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
-          translate_normal_capture pvar_typ acc
+          translate_normal_capture ~is_by_ref pvar_typ acc
       | None, None ->
           if lci_capture_this then
             (* captured [this] *)
             let this_typ = get_this_pvar_typ stmt_info context in
-            translate_normal_capture this_typ acc
+            translate_normal_capture ~is_by_ref this_typ acc
           else acc
       | None, Some _ ->
           CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
