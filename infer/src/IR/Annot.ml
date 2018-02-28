@@ -28,7 +28,10 @@ let final = {class_name= "final"; parameters= []}
 (** Pretty print an annotation. *)
 let prefix = match Language.curr_language_is Java with true -> "@" | false -> "_"
 
-let pp fmt annotation = F.fprintf fmt "%s%s" prefix annotation.class_name
+let pp fmt annotation =
+  F.fprintf fmt "%s%s%s" prefix annotation.class_name
+    (String.concat ~sep:"," annotation.parameters)
+
 
 module Map = PrettyPrintable.MakePPMap (struct
   type nonrec t = t
