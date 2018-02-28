@@ -144,6 +144,8 @@ val eradicate_return_value_not_present : t
 
 val eradicate_value_not_present : t
 
+val expensive_execution_time_call : t
+
 val failure_exe : t
 
 val field_should_be_nullable : t

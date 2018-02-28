@@ -98,7 +98,11 @@ let all_checkers =
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Language.Clang)]}
   ; { name= "uninitialized variables"
     ; active= Config.uninit
-    ; callbacks= [(Procedure Uninit.checker, Language.Clang)] } ]
+    ; callbacks= [(Procedure Uninit.checker, Language.Clang)] }
+  ; { name= "cost analysis"
+    ; active= Config.cost
+    ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
+    } ]
 
 
 let get_active_checkers () =

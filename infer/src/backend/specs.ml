@@ -269,7 +269,8 @@ type payload =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
   ; typestate: unit TypeState.t option
-  ; uninit: UninitDomain.summary option }
+  ; uninit: UninitDomain.summary option
+  ; cost: CostDomain.summary option }
 
 type summary =
   { phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
@@ -411,14 +412,15 @@ let pp_payload pe fmt
     ; litho
     ; buffer_overrun
     ; annot_map
-    ; uninit } =
+    ; uninit
+    ; cost } =
   let pp_opt prefix pp fmt = function
     | Some x ->
         F.fprintf fmt "%s: %a@\n" prefix pp x
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "PrePosts" (pp_specs pe))
     (Option.map ~f:NormSpec.tospecs preposts)
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
@@ -435,6 +437,8 @@ let pp_payload pe fmt
     annot_map
     (pp_opt "Uninitialised" UninitDomain.pp_summary)
     uninit
+    (pp_opt "Cost" CostDomain.pp_summary)
+    cost
 
 
 let pp_summary_text fmt summary =
@@ -623,7 +627,8 @@ let empty_payload =
   ; racerd= None
   ; litho= None
   ; buffer_overrun= None
-  ; uninit= None }
+  ; uninit= None
+  ; cost= None }
 
 
 (** [init_summary (depend_list, nodes,

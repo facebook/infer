@@ -105,7 +105,8 @@ type payload =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
   ; typestate: unit TypeState.t option
-  ; uninit: UninitDomain.summary option }
+  ; uninit: UninitDomain.summary option
+  ; cost: CostDomain.summary option }
 
 (** Procedure summary *)
 type summary =

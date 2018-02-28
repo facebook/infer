@@ -116,7 +116,7 @@ let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) pp =
 
 let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
-let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:";" pp f l
+let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:"; " pp f l
 
 (** Print the current time and date in a format similar to the "date" command *)
 let current_time f () =

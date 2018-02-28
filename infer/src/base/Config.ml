@@ -673,6 +673,7 @@ and ( annotation_reachability
     , biabduction
     , bufferoverrun
     , check_nullable
+    , cost
     , crashcontext
     , eradicate
     , fragment_retains_view
@@ -710,6 +711,7 @@ and ( annotation_reachability
   and check_nullable =
     mk_checker ~long:"check-nullable"
       "checks that values annotated with nullable are always checked for null before dereference"
+  and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
   and crashcontext =
     mk_checker ~long:"crashcontext"
       "the crashcontext checker for Java stack trace context reconstruction"
@@ -783,6 +785,7 @@ and ( annotation_reachability
   , biabduction
   , bufferoverrun
   , check_nullable
+  , cost
   , crashcontext
   , eradicate
   , fragment_retains_view
@@ -2360,6 +2363,8 @@ and cluster_cmdline = !cluster
 and compute_analytics = !compute_analytics
 
 and continue_capture = !continue
+
+and cost = !cost
 
 and current_to_previous_script = !current_to_previous_script
 
