@@ -151,6 +151,21 @@ def get_key(e):
             e[issues.JSON_INDEX_LINE], e[issues.JSON_INDEX_QUALIFIER])
 
 
+def remove_eradicate_conflicts(report):
+    eradicate_warnings = {
+        (e[issues.JSON_INDEX_FILENAME], e[issues.JSON_INDEX_LINE])
+        for e in report
+        if e[issues.JSON_INDEX_TYPE] == 'ERADICATE_NULL_METHOD_CALL' or
+        e[issues.JSON_INDEX_TYPE] == 'ERADICATE_NULL_FIELD_ACCESS'}
+    if eradicate_warnings == set():
+        return report
+    else:
+        return [e for e in report
+                if e[issues.JSON_INDEX_TYPE] != 'NULL_DEREFERENCE' or
+                (e[issues.JSON_INDEX_FILENAME], e[issues.JSON_INDEX_LINE])
+                not in eradicate_warnings]
+
+
 def merge_reports(report, collected):
     for e in report:
         key = get_key(e)
@@ -168,6 +183,8 @@ def collect_results(buck_args, infer_args, start_time, targets):
         try:
             with zipfile.ZipFile(path) as jar:
                 report = load_json_report(jar)
+                if not infer_args.no_filtering:
+                    report = remove_eradicate_conflicts(report)
                 merge_reports(report, collected_reports)
         except NotFoundInJar:
             pass

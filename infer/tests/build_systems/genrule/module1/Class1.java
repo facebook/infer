@@ -15,6 +15,9 @@ public abstract class Class1 {
 
   public @Nullable Object field1;
 
+  public int x;
+  public @Nullable Class1 field2;
+
   public static @Nullable String returnsNull() {
     return null;
   }
@@ -28,4 +31,7 @@ public abstract class Class1 {
 
   public native @Nullable Object nativeMayReturnNull();
 
+  public Object unannotatedReturnNull() {
+    return null;
+  }
 }

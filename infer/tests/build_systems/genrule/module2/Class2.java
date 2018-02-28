@@ -15,7 +15,7 @@ import genrule.module1.SkipImplementationClass1;
 
 public class Class2 {
 
-  @Nullable Object field2;
+  @Nullable Object field;
 
   void localNPE2Bad() {
     Object obj = null;
@@ -48,11 +48,18 @@ public class Class2 {
   }
 
   void dereferenceLocalNullableFieldBad() {
-    field2.toString();
+    field.toString();
   }
 
-  void dereferenceInterTargetFieldBad(Class1 class1) {
+  void dereferenceInterTargetField1Bad(Class1 class1) {
     class1.field1.toString();
   }
 
+  int dereferenceInterTargetField2Bad(Class1 class1) {
+    return class1.field2.x;
+  }
+
+  void dereferenceUnannotatedMethodReturningNullBad(Class1 class1) {
+    class1.unannotatedReturnNull().toString();
+  }
 }
