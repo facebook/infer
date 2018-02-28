@@ -122,8 +122,8 @@ val get_vars : t -> Ident.t list * Pvar.t list
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
 
-val fold_captured : f:('a -> Pvar.t -> 'a) -> t -> 'a -> 'a
-(** Extract the program variables captured by this expression *)
+val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
+(** Fold over the expressions captured by this expression. *)
 
 val pp_printenv : Pp.env -> (Pp.env -> F.formatter -> Typ.t -> unit) -> F.formatter -> t -> unit
 

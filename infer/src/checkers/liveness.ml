@@ -105,7 +105,16 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr astate _ _ instr =
     List.fold (Sil.instr_get_exps instr)
       ~f:(fun acc exp ->
-        Exp.fold_captured ~f:(fun acc pvar -> Domain.add (Var.of_pvar pvar) acc) exp acc )
+        Exp.fold_captured exp
+          ~f:(fun acc exp ->
+            match exp with
+            | Exp.Lvar pvar ->
+                (* captured by reference, add *)
+                Domain.add (Var.of_pvar pvar) acc
+            | _ ->
+                (* captured by value or init-capture, skip *)
+                acc )
+          acc )
       ~init:astate
 end
 

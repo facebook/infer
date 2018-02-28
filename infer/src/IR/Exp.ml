@@ -206,7 +206,7 @@ let fold_captured ~f exp acc =
         fold_captured_ e1 captured_acc |> fold_captured_ e2
     | Closure {captured_vars} ->
         List.fold captured_vars
-          ~f:(fun acc (_, captured_pvar, _) -> f acc captured_pvar)
+          ~f:(fun acc (captured_exp, _, _) -> f acc captured_exp)
           ~init:captured_acc
     | Const _ | Lvar _ | Var _ | Sizeof _ ->
         captured_acc

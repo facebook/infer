@@ -199,9 +199,7 @@ int dead_store_before_capture_by_ref_bad() {
   return lambda();
 }
 
-// frontend can't tell the difference between capture by ref and capture by
-// value yet.
-int FN_capture_by_value_bad() {
+int capture_by_value_bad() {
   int x = 1;
   auto lambda = [=] { return x; };
   x = 2; // this is dead
