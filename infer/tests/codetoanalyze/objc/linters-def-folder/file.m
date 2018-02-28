@@ -32,5 +32,10 @@
 @interface C : NSObject
 @end
 
-@implementation C
+@implementation C {
+  __strong A* _app1;
+  __weak A* _app2;
+  A* _app3;
+  __unsafe_unretained A* _app4;
+}
 @end

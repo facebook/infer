@@ -1041,6 +1041,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_property_pointer_type an
   | "is_strong_property", [], an ->
       CPredicates.is_strong_property an
+  | "is_strong_ivar", [], an ->
+      CPredicates.is_strong_ivar an
   | "is_unop_with_kind", [kind], an ->
       CPredicates.is_unop_with_kind an kind
   | "is_weak_property", [], an ->

@@ -514,6 +514,8 @@ and c_type_equal c_type abs_ctype =
       typename_equal tdi.tti_decl_ptr ae
   | TypedefType (ti, _), ObjCGenProt _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
+  | AttributedType (ti, _), Pointer _ -> (
+    match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )
   | _, _ ->
       display_equality_warning () ; false
 

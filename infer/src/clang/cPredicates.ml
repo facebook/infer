@@ -723,6 +723,41 @@ let has_type_const_ptr_to_objc_class node =
       false
 
 
+(* Return the lifetime of the pointer of an expression if it is of type AttributedType *)
+(* This is useful to check the lifetime of ivars *)
+(* @returns objc_lifetime_attr *)
+let get_ivar_lifetime an =
+  match get_ast_node_type_ptr an with
+  | Some pt -> (
+    match CAst_utils.get_type pt with
+    | Some c_type
+      -> (
+        L.(debug Linters Medium) "@\nChecking type: `%s`\n" (Clang_ast_j.string_of_c_type c_type) ;
+        let open Clang_ast_t in
+        match c_type with
+        | AttributedType (_, attr_info) ->
+            Some attr_info.Clang_ast_t.ati_lifetime
+        | ObjCObjectPointerType _ ->
+            Some `OCL_Strong
+        | _ ->
+            L.(debug Linters Medium) "Pointer is not of type AttributedType...@\n" ;
+            None )
+    | _ ->
+        L.(debug Linters Medium) "Couldn't find type....\n" ;
+        None )
+  | _ ->
+      L.(debug Linters Medium) "Couldn't find pointer...@\n" ;
+      None
+
+
+let is_strong_ivar an =
+  match get_ivar_lifetime an with
+  | Some lifetime -> (
+    match lifetime with `OCL_Strong | `OCL_Autoreleasing | `OCL_None -> true | _ -> false )
+  | _ ->
+      false
+
+
 let is_decl node =
   match node with Ctl_parser_types.Decl _ -> true | Ctl_parser_types.Stmt _ -> false
 
