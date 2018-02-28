@@ -10,48 +10,59 @@
 open! IStd
 module F = Format
 module L = Logging
+module VarSet = AbstractDomain.FiniteSet (Var)
 
-type permission =
-  | TransferOwnership
-      (** permission to permanently transfer ownership (e.g. call a destructor, delete, or free) *)
-  | Read  (** permission to read *)
+module CapabilityDomain = struct
+  type astate =
+    | Invalid  (** neither owned nor borrowed; we can't do anything with this value *)
+    | BorrowedFrom of VarSet.astate
+        (** not owned, but borrowed from existing reference(s). for now, permits both reads and writes *)
+    | Owned
+        (** owned. permits reads, writes, and ownership transfer (e.g. call a destructor, delete, or free) *)
 
-module Permission = struct
-  type astate = permission
-
+  (** Owned <= BorrowedFrom <= Invalid *)
   let ( <= ) ~lhs ~rhs =
     match (lhs, rhs) with
-    | Read, TransferOwnership ->
+    | _, Invalid ->
         true
-    | Read, Read | TransferOwnership, TransferOwnership ->
+    | Invalid, _ ->
+        false
+    | BorrowedFrom s1, BorrowedFrom s2 ->
+        VarSet.( <= ) ~lhs:s1 ~rhs:s2
+    | Owned, _ ->
         true
-    | TransferOwnership, Read ->
+    | _, Owned ->
         false
 
 
   let join astate1 astate2 =
-    match (astate1, astate2) with
-    | Read, Read ->
-        Read
-    | TransferOwnership, _ | _, TransferOwnership ->
-        TransferOwnership
+    if phys_equal astate1 astate2 then astate1
+    else
+      match (astate1, astate2) with
+      | BorrowedFrom s1, BorrowedFrom s2 ->
+          BorrowedFrom (VarSet.union s1 s2)
+      | Owned, astate | astate, Owned ->
+          astate
+      | Invalid, _ | _, Invalid ->
+          Invalid
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let pp fmt = function
-    | TransferOwnership ->
-        F.fprintf fmt "TransferOwnership"
-    | Read ->
-        F.fprintf fmt "Read"
+    | Invalid ->
+        F.fprintf fmt "Invalid"
+    | BorrowedFrom vars ->
+        F.fprintf fmt "BorrowedFrom(%a)" VarSet.pp vars
+    | Owned ->
+        F.fprintf fmt "Owned"
 end
 
-(** map from variable to permission required based on the way the variable is used. for example, if
-    we see delete x, then x needs permission "TransferOwnership" *)
+(** map from program variable to its capability *)
 module Domain = struct
-  include AbstractDomain.Map (Var) (Permission)
+  include AbstractDomain.Map (Var) (CapabilityDomain)
 
-  let log_use_after_lifetime var loc summary =
+  let report_use_after_lifetime var loc summary =
     let message =
       F.asprintf "Variable %a is used after its lifetime has ended at %a" Var.pp var Location.pp
         loc
@@ -61,24 +72,35 @@ module Domain = struct
     Reporting.log_error summary ~loc ~ltr exn
 
 
-  (* don't allow strong updates via add; only remove *)
-  let add var new_permission loc summary astate =
-    let permission =
-      try
-        let old_permission = find var astate in
-        ( match (old_permission, new_permission) with
-        | TransferOwnership, (Read | TransferOwnership) ->
-            log_use_after_lifetime var loc summary
-        | _ ->
-            () ) ;
-        Permission.join new_permission old_permission
-      with Not_found -> new_permission
-    in
-    add var permission astate
+  (* complain if we do not have the right capability to access [var] *)
+  let check_var_lifetime var loc summary astate =
+    let open CapabilityDomain in
+    match find var astate with
+    | Invalid ->
+        report_use_after_lifetime var loc summary
+    | BorrowedFrom borrowed_vars ->
+        (* warn if any of the borrowed vars are Invalid *)
+        let is_invalid v =
+          match find v astate with
+          | Invalid ->
+              true
+          | BorrowedFrom _
+          (* TODO: can do deeper checking here, but have to worry about borrow cycles *)
+          | Owned ->
+              false
+          | exception Not_found ->
+              false
+        in
+        if VarSet.exists is_invalid borrowed_vars then report_use_after_lifetime var loc summary
+    | Owned ->
+        ()
+    | exception Not_found ->
+        ()
 
 
   let access_path_add_read ((base_var, _), _) loc summary astate =
-    add base_var Read loc summary astate
+    check_var_lifetime base_var loc summary astate ;
+    astate
 
 
   let exp_add_reads exp loc summary astate =
@@ -128,7 +150,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
     | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _))], _, loc)
       when transfers_ownership callee_pname ->
-        Domain.add lhs_var TransferOwnership loc summary astate
+        Domain.check_var_lifetime lhs_var loc summary astate ;
+        Domain.add lhs_var CapabilityDomain.Invalid astate
     | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _)); rhs_exp], _, loc)
       when String.equal (Typ.Procname.get_method callee_pname) "operator=" ->
         Domain.handle_var_assign lhs_var rhs_exp loc summary astate
@@ -142,7 +165,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | _ ->
               L.die InternalError "Unexpected: constructor called on %a" HilExp.pp lhs_exp
         in
-        Domain.actuals_add_reads actuals loc summary astate |> Domain.remove constructed_var
+        Domain.actuals_add_reads actuals loc summary astate
+        |> Domain.add constructed_var CapabilityDomain.Owned
     | Call (ret_opt, _, actuals, _, loc)
       -> (
         let astate' = Domain.actuals_add_reads actuals loc summary astate in
