@@ -271,7 +271,7 @@ let mk ?(deprecated= []) ?(parse_mode= InferCommand) ?(in_help= []) ~long ?short
   let closure = mk_setter variable in
   let setter str =
     try closure str with exc ->
-      raise (Arg.Bad ("bad value " ^ str ^ " for flag " ^ long ^ " (" ^ Exn.to_string exc ^ ")"))
+      raise (Arg.Bad (F.sprintf "bad value %s for flag %s (%s)" str long (Exn.to_string exc)))
   in
   let spec = mk_spec setter in
   let doc =

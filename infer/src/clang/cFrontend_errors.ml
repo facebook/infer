@@ -433,7 +433,9 @@ let expand_checkers macro_map path_map checkers =
   List.map ~f:expand_one_checker checkers
 
 
-let get_err_log translation_unit_context method_decl_opt =
+(** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
+let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parser_types.ast_node)
+    (issue_desc: CIssue.issue_desc) linters_def_file =
   let procname =
     match method_decl_opt with
     | Some method_decl ->
@@ -441,13 +443,7 @@ let get_err_log translation_unit_context method_decl_opt =
     | None ->
         Typ.Procname.Linters_dummy_method
   in
-  LintIssues.get_err_log procname
-
-
-(** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parser_types.ast_node)
-    (issue_desc: CIssue.issue_desc) linters_def_file =
-  let errlog = get_err_log translation_unit_context method_decl_opt in
+  let errlog = LintIssues.get_err_log procname in
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in
@@ -462,7 +458,7 @@ let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parse
         CAst_utils.generate_key_stmt st
   in
   let key = Utils.better_hash key_str in
-  Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
+  Reporting.log_issue_from_errlog procname err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
 

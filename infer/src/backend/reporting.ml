@@ -16,8 +16,8 @@ type log_t =
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-    ?access exn =
+let log_issue_from_errlog procname err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file
+    ?doc_url ?access exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let loc = match loc with None -> State.get_loc () | Some loc -> loc in
@@ -32,14 +32,15 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
       match session with None -> (State.get_session () :> int) | Some session -> session
     in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url ?access
-      exn
+    Errlog.log_issue procname err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url
+      ?access exn
 
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     ?access exn =
+  let procname = Specs.get_proc_name summary in
   let is_java_generated_method =
-    match Specs.get_proc_name summary with
+    match procname with
     | Typ.Procname.Java java_pname ->
         Typ.Procname.Java.is_generated java_pname
     | _ ->
@@ -53,8 +54,8 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else
     let err_log = Specs.get_err_log summary in
-    log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-      ?access exn
+    log_issue_from_errlog procname err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file
+      ?doc_url ?access exn
 
 
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr

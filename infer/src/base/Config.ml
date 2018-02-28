@@ -596,7 +596,8 @@ and ( analysis_blacklist_files_containing_options
       let var = CLOpt.mk_string_list ~deprecated ~long ~meta ~f:mirror "" in
       match source_of_truth with
       | Some var ->
-          (* if the analyzer already has a variable associated to it, use it *) var
+          (* if the analyzer already has a variable associated to it, use it *)
+          var
       | None ->
           (* record the variable associated to the analyzer if this is the first time we see this
              analyzer *)

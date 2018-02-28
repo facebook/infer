@@ -71,6 +71,30 @@ end = struct
         new_id
 end
 
+type analysis_issue =
+  { bug_kind: string
+  ; bug_type: string
+  ; exception_triggered_location: string option
+  ; lang: string
+  ; procedure_name: string
+  ; source_location: Location.t }
+
+let create_analysis_issue_row base record =
+  let open JsonBuilder in
+  base |> add_string ~key:"bug_kind" ~data:record.bug_kind
+  |> add_string ~key:"bug_type" ~data:record.bug_type
+  |> add_string_opt ~key:"exception_triggered_location" ~data:record.exception_triggered_location
+  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string ~key:"procedure_name" ~data:record.procedure_name
+  |> add_string ~key:"source_location"
+       ~data:
+         (String.concat
+            [ string_of_int record.source_location.line
+            ; ":"
+            ; string_of_int record.source_location.col ])
+  |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_location.file)
+
+
 type analysis_stats =
   { analysis_nodes_visited: int
   ; analysis_status: SymOp.failure_kind option
@@ -175,6 +199,7 @@ let create_procedures_translated_row base record =
 
 
 type event =
+  | AnalysisIssue of analysis_issue
   | AnalysisStats of analysis_stats
   | CallTrace of call_trace
   | FrontendException of frontend_exception
@@ -183,6 +208,8 @@ type event =
 
 let string_of_event event =
   match event with
+  | AnalysisIssue _ ->
+      "AnalysisIssue"
   | AnalysisStats _ ->
       "AnalysisStats"
   | CallTrace _ ->
@@ -236,6 +263,8 @@ module LoggerImpl : S = struct
       |> add_int ~key:"time" ~data:(int_of_float (Unix.time ()))
     in
     ( match event with
+    | AnalysisIssue record ->
+        create_analysis_issue_row base record
     | AnalysisStats record ->
         create_analysis_stats_row base record
     | CallTrace record ->

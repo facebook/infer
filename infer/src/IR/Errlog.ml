@@ -234,8 +234,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file ?doc_url
-    ?access exn =
+let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file
+    ?doc_url ?access exn =
   let error = Exceptions.recognize_exception exn in
   let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
   let hide_java_loc_zero =
@@ -249,12 +249,24 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
     | _ ->
         false
   in
-  let log_it =
+  let exn_developer = Exceptions.equal_visibility error.visibility Exceptions.Exn_developer in
+  let should_report =
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
-    || Config.developer_mode
-       && Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
+    || Config.developer_mode && exn_developer
   in
-  if log_it && not hide_java_loc_zero && not hide_memory_error then
+  ( if exn_developer then
+      let issue =
+        EventLogger.AnalysisIssue
+          (* TODO: Add clang_method_kind field (T26423401) *)
+          { bug_type= error.name.IssueType.unique_id
+          ; bug_kind= Exceptions.err_kind_string err_kind
+          ; exception_triggered_location= Option.map ~f:Logging.ml_loc_to_string error.ml_loc
+          ; lang= Typ.Procname.get_language procname |> Language.to_explicit_string
+          ; procedure_name= Typ.Procname.to_string procname
+          ; source_location= loc }
+      in
+      EventLogger.log issue ) ;
+  if should_report && not hide_java_loc_zero && not hide_memory_error then
     let added =
       let node_id_key = {node_id; node_key} in
       let err_data =

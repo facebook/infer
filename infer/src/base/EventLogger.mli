@@ -7,6 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type analysis_issue =
+  { bug_kind: string
+  ; bug_type: string
+  ; exception_triggered_location: string option
+  ; lang: string
+  ; procedure_name: string
+  ; source_location: Location.t }
+
 type analysis_stats =
   { analysis_nodes_visited: int
   ; analysis_status: SymOp.failure_kind option
@@ -42,6 +50,7 @@ type procedures_translated =
   ; source_file: SourceFile.t }
 
 type event =
+  | AnalysisIssue of analysis_issue
   | AnalysisStats of analysis_stats
   | CallTrace of call_trace
   | FrontendException of frontend_exception
