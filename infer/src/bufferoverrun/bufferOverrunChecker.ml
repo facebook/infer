@@ -44,7 +44,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
    fun pname tenv node location loc typ ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
     let new_alloc_num = BoUtils.counter_gen 1 in
-    let rec decl_sym_val pname tenv node location ~depth ~is_last_field loc typ mem =
+    let rec decl_sym_val pname tenv node location ~depth ~may_last_field loc typ mem =
       if depth > max_depth then mem
       else
         let depth = depth + 1 in
@@ -64,35 +64,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Dom.Mem.add_heap loc v mem
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr
-              ~decl_sym_val:(decl_sym_val ~is_last_field:false)
+              ~decl_sym_val:(decl_sym_val ~may_last_field)
               pname tenv node location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length} ->
             let size =
               match length with
-              | Some length when is_last_field && (IntLit.iszero length || IntLit.isone length) ->
+              | Some length when may_last_field && (IntLit.iszero length || IntLit.isone length) ->
                   Some (Itv.make_sym pname new_sym_num)
               | _ ->
                   Option.map ~f:Itv.of_int_lit length
             in
             let offset = Itv.zero in
             BoUtils.Exec.decl_sym_arr
-              ~decl_sym_val:(decl_sym_val ~is_last_field:false)
+              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
               pname tenv node location ~depth loc elt ~offset ?size ~inst_num ~new_sym_num
               ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch typename with
           | Some {Models.declare_symbolic} ->
               let model_env = Models.mk_model_env pname node location tenv in
-              declare_symbolic ~decl_sym_val:(decl_sym_val ~is_last_field) model_env ~depth loc
+              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) model_env ~depth loc
                 ~inst_num ~new_sym_num ~new_alloc_num mem
           | None ->
-              let decl_fld ~is_last_field mem (fn, typ, _) =
+              let decl_fld ~may_last_field mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc ~fn in
-                decl_sym_val pname tenv node location ~depth loc_fld typ ~is_last_field mem
+                decl_sym_val pname tenv node location ~depth loc_fld typ ~may_last_field mem
               in
               let decl_flds str =
-                IList.fold_last ~f:(decl_fld ~is_last_field:false)
-                  ~f_last:(decl_fld ~is_last_field) ~init:mem str.Typ.Struct.fields
+                IList.fold_last ~f:(decl_fld ~may_last_field:false)
+                  ~f_last:(decl_fld ~may_last_field) ~init:mem str.Typ.Struct.fields
               in
               let opt_struct = Tenv.lookup tenv typename in
               Option.value_map opt_struct ~default:mem ~f:decl_flds )
@@ -103,7 +103,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 (CFG.loc node) ;
             mem
     in
-    decl_sym_val pname tenv node location ~depth:0 ~is_last_field:false loc typ mem
+    decl_sym_val pname tenv node location ~depth:0 ~may_last_field:true loc typ mem
 
 
   let declare_symbolic_parameters
