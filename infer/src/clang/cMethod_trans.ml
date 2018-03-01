@@ -175,9 +175,8 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
   let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
   let is_cpp_nothrow = is_cpp_nothrow function_method_decl_info in
   let access = decl_info.Clang_ast_t.di_access in
-  CMethod_signature.make_ms procname parameters tp attributes source_range method_kind
-    ~is_cpp_virtual ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt
-    return_param_type_opt access
+  CMethodSignature.mk procname parameters tp attributes source_range method_kind ~is_cpp_virtual
+    ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt return_param_type_opt access
 
 
 let get_init_list_instrs method_decl_info =
@@ -247,20 +246,19 @@ let method_signature_of_pointer trans_unit_ctx tenv pointer =
 let get_method_name_from_clang tenv ms_opt =
   match ms_opt with
   | Some ms -> (
-    match CAst_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_parent ms) with
+    match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_parent with
     | Some decl
       -> (
         ignore (CType_decl.add_types_from_decl_to_tenv tenv decl) ;
         match ObjcCategory_decl.get_base_class_name_from_category decl with
         | Some class_typename ->
-            let procname = CMethod_signature.ms_get_name ms in
+            let procname = ms.CMethodSignature.name in
             let new_procname = Typ.Procname.replace_class procname class_typename in
-            CMethod_signature.ms_set_name ms new_procname ;
-            Some ms
+            Some new_procname
         | None ->
-            Some ms )
+            Some ms.CMethodSignature.name )
     | None ->
-        Some ms )
+        Some ms.CMethodSignature.name )
   | None ->
       None
 
@@ -294,7 +292,7 @@ let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr
   | Some pointer -> (
     match method_signature_of_pointer trans_unit_ctx tenv pointer with
     | Some ms -> (
-      match CMethod_signature.ms_get_name ms with
+      match ms.CMethodSignature.name with
       | Typ.Procname.ObjC_Cpp objc_cpp ->
           Some (Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp)
       | _ ->
@@ -344,19 +342,14 @@ let get_formal_parameters tenv ms =
         let should_add_pointer name ms =
           let is_objc_self =
             String.equal name CFrontend_config.self
-            && CFrontend_config.equal_clang_lang
-                 (CMethod_signature.ms_get_lang ms)
-                 CFrontend_config.ObjC
+            && CFrontend_config.equal_clang_lang ms.CMethodSignature.lang CFrontend_config.ObjC
           in
           let is_cxx_this =
             String.equal name CFrontend_config.this
-            && CFrontend_config.equal_clang_lang
-                 (CMethod_signature.ms_get_lang ms)
-                 CFrontend_config.CPP
+            && CFrontend_config.equal_clang_lang ms.CMethodSignature.lang CFrontend_config.CPP
           in
           is_objc_self
-          && ProcAttributes.clang_method_kind_equal
-               (CMethod_signature.ms_get_method_kind ms)
+          && ProcAttributes.clang_method_kind_equal ms.CMethodSignature.method_kind
                ProcAttributes.OBJC_INSTANCE
           || is_cxx_this
         in
@@ -368,11 +361,11 @@ let get_formal_parameters tenv ms =
         let typ = CType_decl.qual_type_to_sil_type tenv qt in
         (mangled, typ) :: defined_parameters pl'
   in
-  defined_parameters (CMethod_signature.ms_get_args ms)
+  defined_parameters ms.CMethodSignature.args
 
 
 let get_return_type tenv ms =
-  let return_type = CMethod_signature.ms_get_ret_type ms in
+  let return_type = ms.CMethodSignature.ret_type in
   CType_decl.qual_type_to_sil_type tenv return_type
 
 
@@ -520,7 +513,7 @@ let get_byval_args_indices ~shift args =
 
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
-  match CAst_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_property_opt ms) with
+  match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
   | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info)
     -> (
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
@@ -528,7 +521,7 @@ let get_objc_property_accessor tenv ms =
       | Some ObjCIvarDecl (_, {ni_name}, _, _, _)
         -> (
           let class_tname =
-            match CMethod_signature.ms_get_name ms with
+            match ms.CMethodSignature.name with
             | Typ.Procname.ObjC_Cpp objc_cpp ->
                 Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp
             | _ ->
@@ -542,9 +535,9 @@ let get_objc_property_accessor tenv ms =
                 List.find ~f:(fun (name, _, _) -> Typ.Fieldname.equal name field_name) fields
               in
               match field_opt with
-              | Some field when CMethod_signature.ms_is_getter ms ->
+              | Some field when CMethodSignature.is_getter ms ->
                   Some (ProcAttributes.Objc_getter field)
-              | Some field when CMethod_signature.ms_is_setter ms ->
+              | Some field when CMethodSignature.is_setter ms ->
                   Some (ProcAttributes.Objc_setter field)
               | _ ->
                   None )
@@ -560,17 +553,15 @@ let get_objc_property_accessor tenv ms =
 let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg tenv ms fbody
     captured =
   let defined = not (Int.equal (List.length fbody) 0) in
-  let proc_name = CMethod_signature.ms_get_name ms in
+  let proc_name = ms.CMethodSignature.name in
   let pname = Typ.Procname.to_string proc_name in
-  let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
-  let method_ret_type = CMethod_signature.ms_get_ret_type ms in
-  let method_annotation =
-    sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) method_ret_type
-  in
-  let clang_method_kind = CMethod_signature.ms_get_method_kind ms in
-  let is_cpp_nothrow = CMethod_signature.ms_is_cpp_nothrow ms in
+  let attributes = sil_func_attributes_of_attributes ms.CMethodSignature.attributes in
+  let method_ret_type = ms.CMethodSignature.ret_type in
+  let method_annotation = sil_method_annotation_of_args ms.CMethodSignature.args method_ret_type in
+  let clang_method_kind = ms.CMethodSignature.method_kind in
+  let is_cpp_nothrow = ms.CMethodSignature.is_cpp_nothrow in
   let access =
-    match CMethod_signature.ms_get_access ms with
+    match ms.CMethodSignature.access with
     | `None ->
         PredSymb.Default
     | `Private ->
@@ -586,16 +577,14 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_mangled @ formals in
     let const_formals =
-      get_const_args_indices ~shift:(List.length captured_mangled)
-        (CMethod_signature.ms_get_args ms)
+      get_const_args_indices ~shift:(List.length captured_mangled) ms.CMethodSignature.args
     in
     let by_vals =
-      get_byval_args_indices ~shift:(List.length captured_mangled)
-        (CMethod_signature.ms_get_args ms)
+      get_byval_args_indices ~shift:(List.length captured_mangled) ms.CMethodSignature.args
     in
-    let source_range = CMethod_signature.ms_get_loc ms in
+    let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname ;
-    L.(debug Capture Verbose) "@\nms = %s@\n@." (CMethod_signature.ms_to_string ms) ;
+    L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
     L.(debug Capture Verbose)
       "@\nbyvals = [ %s ]@\n@."
       (String.concat ~sep:", " (List.map by_vals ~f:string_of_int)) ;
@@ -662,7 +651,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
            [] []) ;
-      CMethod_signature.ms_get_name callee_ms
+      callee_ms.CMethodSignature.name
   | None ->
       let callee_name, method_kind =
         match class_name_opt with

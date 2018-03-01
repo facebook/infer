@@ -42,8 +42,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let proc_name =
       match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
-      | Some ms ->
-          CMethod_signature.ms_get_name ms
+      | Some name ->
+          name
       | None ->
           (* fall back to our method resolution if clang's fails *)
           let class_name =
@@ -66,12 +66,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
              context.tenv ms [] []) ;
-        (CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual)
+        (ms.CMethodSignature.name, CMethod_trans.MCNoVirtual)
     | None, Some ms ->
         ignore
           (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
              context.tenv ms [] []) ;
-        if CMethod_signature.ms_is_getter ms || CMethod_signature.ms_is_setter ms then
+        if CMethodSignature.is_getter ms || CMethodSignature.is_setter ms then
           (proc_name, CMethod_trans.MCNoVirtual)
         else (proc_name, mc_type)
     | _ ->
@@ -589,7 +589,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let is_instance_method =
       match ms_opt with
       | Some ms -> (
-        match CMethod_signature.ms_get_method_kind ms with
+        match ms.CMethodSignature.method_kind with
         | ProcAttributes.CPP_INSTANCE | ProcAttributes.OBJC_INSTANCE ->
             true
         | _ ->
@@ -599,7 +599,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (* might happen for methods that are not exported yet (some templates). *)
     in
     let is_cpp_virtual =
-      match ms_opt with Some ms -> CMethod_signature.ms_is_cpp_virtual ms | _ -> false
+      match ms_opt with Some ms -> ms.CMethodSignature.is_cpp_virtual | _ -> false
     in
     let extra_exps, extra_instrs =
       if is_instance_method then
@@ -644,18 +644,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if is_inner_destructor then
             match ms_opt with
             | Some ms ->
-                let procname = CMethod_signature.ms_get_name ms in
+                let procname = ms.CMethodSignature.name in
                 let new_method_name =
                   Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
                 in
                 let ms' =
-                  CMethod_signature.replace_name_ms ms
-                    (Typ.Procname.objc_cpp_replace_method_name procname new_method_name)
+                  {ms with name= Typ.Procname.objc_cpp_replace_method_name procname new_method_name}
                 in
                 ignore
                   (CMethod_trans.create_local_procdesc context.translation_unit_context context.cfg
                      context.tenv ms' [] []) ;
-                CMethod_signature.ms_get_name ms'
+                ms'.CMethodSignature.name
             | None ->
                 CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
                   method_name

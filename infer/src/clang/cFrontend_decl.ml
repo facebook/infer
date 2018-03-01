@@ -59,7 +59,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     incr CFrontend_config.procedures_attempted ;
     let recover () =
       Typ.Procname.Hash.remove cfg procname ;
-      let method_kind = CMethod_signature.ms_get_method_kind ms in
+      let method_kind = ms.CMethodSignature.method_kind in
       CMethod_trans.create_external_procdesc cfg procname method_kind None
     in
     let pp_context fmt () =
@@ -108,8 +108,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       match body_opt with
       | Some body ->
           (* Only in the case the function declaration has a defined body we create a procdesc *)
-          let procname = CMethod_signature.ms_get_name ms in
-          let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
+          let procname = ms.CMethodSignature.name in
+          let return_param_typ_opt = ms.CMethodSignature.return_param_typ in
           if CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] captured_vars
           then
             add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms
@@ -129,8 +129,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       in
       match body_opt with
       | Some body ->
-          let procname = CMethod_signature.ms_get_name ms in
-          let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
+          let procname = ms.CMethodSignature.name in
+          let return_param_typ_opt = ms.CMethodSignature.return_param_typ in
           let ms', procname' =
             if is_destructor then (
               (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
@@ -145,10 +145,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                 Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
               in
               let ms' =
-                CMethod_signature.replace_name_ms ms
-                  (Typ.Procname.objc_cpp_replace_method_name procname new_method_name)
+                {ms with name= Typ.Procname.objc_cpp_replace_method_name procname new_method_name}
               in
-              let procname' = CMethod_signature.ms_get_name ms' in
+              let procname' = ms'.CMethodSignature.name in
               (ms', procname') )
             else (ms, procname)
           in
@@ -340,7 +339,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               Option.value_exn (Pvar.get_initializer_pname global)
             in
             let ms =
-              CMethod_signature.make_ms procname [] Ast_expressions.create_void_type []
+              CMethodSignature.mk procname [] Ast_expressions.create_void_type []
                 decl_info.Clang_ast_t.di_source_range ProcAttributes.C_FUNCTION
                 trans_unit_ctx.CFrontend_config.lang None None None `None
             in

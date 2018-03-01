@@ -25,8 +25,6 @@ val inter : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 val fold_last : 'a list -> init:'b -> f:('b -> 'a -> 'b) -> f_last:('b -> 'a -> 'b) -> 'b
 (** like fold, but apply f_last to the last element *)
 
-val to_string : ('a -> string) -> 'a list -> string
-
 val uncons_exn : 'a list -> 'a * 'a list
 (** deconstruct a list, like hd_exn and tl_exn *)
 

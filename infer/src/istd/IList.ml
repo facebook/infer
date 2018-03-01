@@ -93,11 +93,6 @@ let rec fold_last l ~init ~f ~f_last =
       fold_last tl ~init:(f init hd) ~f ~f_last
 
 
-let to_string f l =
-  let rec aux l = match l with [] -> "" | [s] -> f s | s :: rest -> f s ^ ", " ^ aux rest in
-  "[" ^ aux l ^ "]"
-
-
 let uncons_exn = function [] -> failwith "uncons_exn" | hd :: tl -> (hd, tl)
 
 let append_no_duplicates eq list1 list2 =

@@ -24,7 +24,7 @@ val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 
 val create_local_procdesc :
   ?set_objc_accessor_attr:bool -> CFrontend_config.translation_unit_context -> Cfg.t -> Tenv.t
-  -> CMethod_signature.method_signature -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool
+  -> CMethodSignature.t -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool
 
 val create_external_procdesc :
   Cfg.t -> Typ.Procname.t -> ProcAttributes.clang_method_kind -> (Typ.t * Typ.t list) option
@@ -43,14 +43,13 @@ val get_class_name_method_call_from_clang :
 val method_signature_of_decl :
   CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.decl
   -> CModule_type.block_data option
-  -> CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
+  -> CMethodSignature.t * Clang_ast_t.stmt option * CModule_type.instr_type list
 
 val method_signature_of_pointer :
   CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.pointer
-  -> CMethod_signature.method_signature option
+  -> CMethodSignature.t option
 
-val get_method_name_from_clang :
-  Tenv.t -> CMethod_signature.method_signature option -> CMethod_signature.method_signature option
+val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Typ.Procname.t option
 
 val create_procdesc_with_pointer :
   CContext.t -> Clang_ast_t.pointer -> Typ.Name.t option -> string -> Typ.Procname.t

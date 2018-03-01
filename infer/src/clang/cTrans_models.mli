@@ -29,4 +29,4 @@ val is_modeled_attribute : string -> bool
 
 val get_predefined_model_method_signature :
   Typ.Name.t -> string -> (Typ.Name.t -> string -> Typ.Procname.ObjC_Cpp.kind -> Typ.Procname.t)
-  -> CFrontend_config.clang_lang -> CMethod_signature.method_signature option
+  -> CFrontend_config.clang_lang -> CMethodSignature.t option
