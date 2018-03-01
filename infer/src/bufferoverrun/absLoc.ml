@@ -64,6 +64,9 @@ module Loc = struct
         Mangled.equal (Pvar.get_name x) Ident.name_return
     | _ ->
         false
+
+
+  let is_field_of ~loc ~field_loc = match field_loc with Field (l, _) -> equal loc l | _ -> false
 end
 
 module PowLoc = struct

@@ -734,6 +734,28 @@ module MemReach = struct
         else {m with latest_prune= LatestPrune.Top}
     | _, _, _ ->
         {m with latest_prune= LatestPrune.Top}
+
+
+  let get_new_heap_locs : prev:t -> next:t -> PowLoc.t =
+   fun ~prev ~next ->
+    let add_loc loc _val acc = if Heap.mem loc prev.heap then acc else PowLoc.add loc acc in
+    Heap.fold add_loc next.heap PowLoc.empty
+
+
+  let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
+    let add_reachable1 ~root loc v acc =
+      if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
+      else if Loc.is_field_of ~loc:root ~field_loc:loc then PowLoc.add loc acc
+      else acc
+    in
+    let rec add_from_locs heap locs acc = PowLoc.fold (add_from_loc heap) locs acc
+    and add_from_loc heap loc acc =
+      if PowLoc.mem loc acc then acc
+      else
+        let reachable_locs = Heap.fold (add_reachable1 ~root:loc) heap PowLoc.empty in
+        add_from_locs heap reachable_locs (PowLoc.add loc acc)
+    in
+    fun locs m -> add_from_locs m.heap locs PowLoc.empty
 end
 
 module Mem = struct
@@ -747,6 +769,15 @@ module Mem = struct
 
   let f_lift_default : 'a -> (MemReach.t -> 'a) -> t -> 'a =
    fun default f m -> match m with Bottom -> default | NonBottom m' -> f m'
+
+
+  let f_lift_default2 : 'a -> (MemReach.t -> MemReach.t -> 'a) -> t -> t -> 'a =
+   fun default f m1 m2 ->
+    match (m1, m2) with
+    | Bottom, _ | _, Bottom ->
+        default
+    | NonBottom m1', NonBottom m2' ->
+        f m1' m2'
 
 
   let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
@@ -815,6 +846,17 @@ module Mem = struct
 
 
   let get_return : t -> Val.t = f_lift_default Val.bot MemReach.get_return
+
+  let get_new_heap_locs : prev:t -> next:t -> PowLoc.t =
+   fun ~prev ~next ->
+    f_lift_default2 PowLoc.empty
+      (fun m1 m2 -> MemReach.get_new_heap_locs ~prev:m1 ~next:m2)
+      prev next
+
+
+  let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
+   fun locs -> f_lift_default PowLoc.empty (MemReach.get_reachable_locs_from locs)
+
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
 

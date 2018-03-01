@@ -63,9 +63,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             Dom.Mem.add_heap loc v mem
         | Typ.Tptr (typ, _) ->
-            BoUtils.Exec.decl_sym_arr
-              ~decl_sym_val:(decl_sym_val ~may_last_field)
-              pname tenv node location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
+            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname tenv node
+              location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length} ->
             let size =
               match length with
@@ -119,7 +118,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
 
 
-  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem ret_alias location =
+  let instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem subst_map mem ret_alias
+      location =
+    let copy_reachable_new_locs_from locs mem =
+      let copy loc acc =
+        let v =
+          Dom.Mem.find_heap loc callee_exit_mem |> (fun v -> Dom.Val.subst v subst_map location)
+          |> Dom.Val.add_trace_elem (Trace.Return location)
+        in
+        Dom.Mem.add_heap loc v acc
+      in
+      let new_locs = Dom.Mem.get_new_heap_locs ~prev:callee_entry_mem ~next:callee_exit_mem in
+      let reachable_locs = Dom.Mem.get_reachable_locs_from locs callee_exit_mem in
+      PowLoc.fold copy (PowLoc.inter new_locs reachable_locs) mem
+    in
     match ret with
     | Some (id, _) ->
         let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
@@ -129,6 +141,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
         Dom.Val.subst ret_val subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
         |> Fn.flip (Dom.Mem.add_stack ret_var) mem
+        |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
     | None ->
         mem
 
@@ -184,7 +197,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let subst_map, ret_alias =
           Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias
         in
-        instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem ret_alias location
+        instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem subst_map caller_mem
+          ret_alias location
         |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location
     | None ->
         caller_mem

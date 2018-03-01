@@ -157,7 +157,7 @@ void flexible_array5_Good() {
   t->set_child(Tree::NewLeaf(), 2);
 }
 
-void flexible_array5_Bad_FN() {
+void flexible_array5_Bad() {
   Tree* t = Tree::NewNode(3);
   t->set_child(Tree::NewLeaf(), 5);
 }
@@ -172,4 +172,16 @@ void flexible_array_param_Good() {
 void flexible_array_param_Bad() {
   my_class4* x = (my_class4*)malloc(sizeof(my_class4) + 2 * sizeof(int));
   flexible_array_param_access(x);
+}
+
+char* my_malloc() { return (char*)malloc(sizeof(my_class4) + 4 * sizeof(int)); }
+
+void return_class_Good() {
+  my_class4* x = (my_class4*)my_malloc();
+  x->b[3] = 0;
+}
+
+void return_class_Bad() {
+  my_class4* x = (my_class4*)my_malloc();
+  x->b[5] = 0;
 }
