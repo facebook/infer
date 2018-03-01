@@ -297,17 +297,13 @@ let rec gen_free_vars =
   function
     | Var id ->
         yield id
-    | Cast (_, e)
-    | Exn e
-    | Lfield (e, _, _)
-    (* do nothing since we only count non-program variables *)
-    | UnOp (_, e, _) ->
+    | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
         gen_free_vars e
     | Closure {captured_vars} ->
         ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_free_vars e)
     | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
     | Lvar _
-    | Sizeof _ (* TODO: Sizeof length expressions may contain variables, do not ignore them. *) ->
+    | Sizeof {dynamic_length= None} ->
         return ()
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         gen_free_vars e1 >>= fun () -> gen_free_vars e2
