@@ -19,10 +19,6 @@ val remove_irrelevant_duplicates : ('a -> 'a -> int) -> ('a -> bool) -> 'a list 
 val merge_sorted_nodup : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list -> 'a list
 (** The function works on sorted lists without duplicates *)
 
-val intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
-(** Returns whether there is an intersection in the elements of the two lists.
-    The compare function is required to sort the lists. *)
-
 val inter : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 (** [inter cmp xs ys] are the elements in both [xs] and [ys], sorted according to [cmp]. *)
 

@@ -292,6 +292,31 @@ let is_objc_block_closure = function
       false
 
 
+let rec gen_free_vars =
+  let open Sequence.Generator in
+  function
+    | Var id ->
+        yield id
+    | Cast (_, e)
+    | Exn e
+    | Lfield (e, _, _)
+    (* do nothing since we only count non-program variables *)
+    | UnOp (_, e, _) ->
+        gen_free_vars e
+    | Closure {captured_vars} ->
+        ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_free_vars e)
+    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
+    | Lvar _
+    | Sizeof _ (* TODO: Sizeof length expressions may contain variables, do not ignore them. *) ->
+        return ()
+    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        gen_free_vars e1 >>= fun () -> gen_free_vars e2
+
+
+let free_vars e = Sequence.Generator.run (gen_free_vars e)
+
+let ident_mem e id = free_vars e |> Sequence.exists ~f:(Ident.equal id)
+
 let rec gen_program_vars =
   let open Sequence.Generator in
   function
@@ -304,13 +329,7 @@ let rec gen_program_vars =
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         gen_program_vars e1 >>= fun () -> gen_program_vars e2
     | Closure {captured_vars} ->
-        let rec aux = function
-          | (_, p, _) :: tl ->
-              yield p >>= fun () -> aux tl
-          | [] ->
-              return ()
-        in
-        aux captured_vars
+        ISequence.gen_sequence_list captured_vars ~f:(fun (_, p, _) -> yield p)
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)

@@ -44,7 +44,7 @@ let equal_sigma sigma1 sigma2 =
 
 let sigma_get_start_lexps_sort sigma =
   let exp_compare_neg e1 e2 = -Exp.compare e1 e2 in
-  let filter e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
+  let filter e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
   List.sort ~cmp:exp_compare_neg lexps
 
@@ -576,7 +576,7 @@ module Rename : sig
 
   val lookup_list_todo : side -> Exp.t list -> Exp.t list
 
-  val to_subst_proj : side -> Sil.fav -> Sil.exp_subst
+  val to_subst_proj : side -> unit Ident.HashQueue.t -> Sil.exp_subst
 
   val to_subst_emb : side -> Sil.exp_subst
   (*
@@ -596,7 +596,7 @@ end = struct
     let f = function
       | Exp.Var id, e, _ | e, Exp.Var id, _ ->
           Ident.is_footprint id
-          && Sil.fav_for_all (Sil.exp_fav e) (fun id -> not (Ident.is_primed id))
+          && Exp.free_vars e |> Sequence.for_all ~f:(fun id -> not (Ident.is_primed id))
       | _ ->
           false
     in
@@ -684,7 +684,9 @@ end = struct
 
   let to_subst_proj (side: side) vars =
     let renaming_restricted =
-      List.filter ~f:(function _, _, Exp.Var i -> Sil.fav_mem vars i | _ -> assert false) !tbl
+      List.filter
+        ~f:(function _, _, Exp.Var i -> Ident.HashQueue.mem vars i | _ -> assert false)
+        !tbl
     in
     let sub_list_side =
       List.map
@@ -780,13 +782,9 @@ end = struct
             L.d_ln () ) ;
           Some (a_res, a_op)
     in
-    let exp_contains_only_normal_ids e =
-      let fav = Sil.exp_fav e in
-      Sil.fav_for_all fav Ident.is_normal
-    in
+    let exp_contains_only_normal_ids e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
     let atom_contains_only_normal_ids a =
-      let fav = Sil.atom_fav a in
-      Sil.fav_for_all fav Ident.is_normal
+      Sil.atom_free_vars a |> Sequence.for_all ~f:Ident.is_normal
     in
     let normal_ids_only = atom_contains_only_normal_ids atom_in in
     if normal_ids_only then Some (atom_in, atom_in)
@@ -840,15 +838,14 @@ end = struct
     | Some res ->
         res
     | None ->
-        let fav1 = Sil.exp_fav e1 in
-        let fav2 = Sil.exp_fav e2 in
-        let no_ren1 = not (Sil.fav_exists fav1 can_rename) in
-        let no_ren2 = not (Sil.fav_exists fav2 can_rename) in
         let some_primed () =
-          Sil.fav_exists fav1 Ident.is_primed || Sil.fav_exists fav2 Ident.is_primed
+          Exp.free_vars e1 |> Sequence.exists ~f:Ident.is_primed
+          || Exp.free_vars e2 |> Sequence.exists ~f:Ident.is_primed
         in
         let e =
-          if no_ren1 && no_ren2 then
+          if not (Exp.free_vars e1 |> Sequence.exists ~f:can_rename)
+             && not (Exp.free_vars e2 |> Sequence.exists ~f:can_rename)
+          then
             if Exp.equal e1 e2 then e1 else ( L.d_strln "failure reason 13" ; raise Sil.JoinFail )
           else
             match default_op with
@@ -1432,7 +1429,7 @@ let same_pred (hpred1: Sil.hpred) (hpred2: Sil.hpred) : bool =
 let sigma_renaming_check (lhs: side) (sigma: Prop.sigma) (sigma_new: Prop.sigma) =
   (* apply the lhs / rhs of the renaming to sigma,
    * and check that the renaming of primed vars is injective *)
-  let fav_sigma = Prop.sigma_fav sigma_new in
+  let fav_sigma = Prop.sigma_free_vars sigma_new |> Ident.hashqueue_of_sequence in
   let sub = Rename.to_subst_proj lhs fav_sigma in
   let sigma' = Prop.sigma_sub (`Exp sub) sigma_new in
   equal_sigma sigma sigma'
@@ -1840,8 +1837,8 @@ let pi_partial_meet tenv (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.
   let dom1 = Ident.idlist_to_idset (Sil.sub_domain sub1) in
   let dom2 = Ident.idlist_to_idset (Sil.sub_domain sub2) in
   let handle_atom sub dom atom =
-    let fav_list = Sil.fav_to_list (Sil.atom_fav atom) in
-    if List.for_all ~f:(fun id -> Ident.Set.mem id dom) fav_list then Sil.atom_sub (`Exp sub) atom
+    if Sil.atom_free_vars atom |> Sequence.for_all ~f:(fun id -> Ident.Set.mem id dom) then
+      Sil.atom_sub (`Exp sub) atom
     else ( L.d_str "handle_atom failed on " ; Sil.d_atom atom ; L.d_ln () ; raise Sil.JoinFail )
   in
   let f1 p' atom = Prop.prop_atom_and tenv p' (handle_atom sub1 dom1 atom) in
@@ -1870,7 +1867,7 @@ let eprop_partial_meet tenv (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
     let sub1 = ep1.Prop.sub in
     let sub2 = ep2.Prop.sub in
     let range1 = Sil.sub_range sub1 in
-    let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
+    let f e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
     Sil.equal_exp_subst sub1 sub2 && List.for_all ~f range1
   in
   if not (sub_check ()) then ( L.d_strln "sub_check() failed" ; raise Sil.JoinFail )
@@ -1920,7 +1917,7 @@ let eprop_partial_join' tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed 
     let sub2 = ep2.Prop.sub in
     let sub_common, sub1_only, sub2_only = Sil.sub_symmetric_difference sub1 sub2 in
     let sub_common_normal, sub_common_other =
-      let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
+      let f e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
       Sil.sub_range_partition f sub_common
     in
     let eqs1, eqs2 =
@@ -1970,12 +1967,14 @@ let footprint_partial_join' tenv (p1: Prop.normal Prop.t) (p2: Prop.normal Prop.
     let efp = eprop_partial_join' tenv JoinState.Pre fp1 fp2 in
     let pi_fp =
       let pi_fp0 = Prop.get_pure efp in
-      let f a = Sil.fav_for_all (Sil.atom_fav a) Ident.is_footprint in
+      let f a = Sil.atom_free_vars a |> Sequence.for_all ~f:Ident.is_footprint in
       List.filter ~f pi_fp0
     in
     let sigma_fp =
       let sigma_fp0 = efp.Prop.sigma in
-      let f a = Sil.fav_exists (Sil.hpred_fav a) (fun a -> not (Ident.is_footprint a)) in
+      let f a =
+        Sil.hpred_free_vars a |> Sequence.exists ~f:(fun a -> not (Ident.is_footprint a))
+      in
       if List.exists ~f sigma_fp0 then ( L.d_strln "failure reason 66" ; raise Sil.JoinFail ) ;
       sigma_fp0
     in

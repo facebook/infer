@@ -1346,7 +1346,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
           [ Abs.remove_redundant_array_elements current_pname tenv
               (Abs.abstract current_pname tenv prop_) ]
   | Sil.Remove_temps (temps, _) ->
-      ret_old_path [Prop.exist_quantify tenv (Sil.fav_from_list temps) prop_]
+      ret_old_path [Prop.exist_quantify tenv temps prop_]
   | Sil.Declare_locals (ptl, _) ->
       let sigma_locals =
         let add_None (x, typ) =
@@ -1742,9 +1742,10 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let prop_primed_to_normal p =
     (* Rename primed vars with fresh normal vars, and return them *)
-    let fav = Prop.prop_fav p in
-    Sil.fav_filter_ident fav Ident.is_primed ;
-    let ids_primed = Sil.fav_to_list fav in
+    let ids_primed =
+      Prop.free_vars p |> Sequence.filter ~f:Ident.is_primed |> Ident.hashqueue_of_sequence
+      |> Ident.HashQueue.keys
+    in
     let ids_primed_normal =
       List.map ~f:(fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed
     in
@@ -1752,18 +1753,16 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
       Sil.subst_of_list (List.map ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal)
     in
     let p' = Prop.normalize tenv (Prop.prop_sub ren_sub p) in
-    let fav_normal = Sil.fav_from_list (List.map ~f:snd ids_primed_normal) in
+    let fav_normal = List.map ~f:snd ids_primed_normal in
     (p', fav_normal)
   in
   let prop_normal_to_primed fav_normal p =
     (* rename given normal vars to fresh primed *)
-    if List.is_empty (Sil.fav_to_list fav_normal) then p else Prop.exist_quantify tenv fav_normal p
+    if List.is_empty fav_normal then p else Prop.exist_quantify tenv fav_normal p
   in
   try
     let pre_process_prop p =
-      let p', fav =
-        if Sil.instr_is_auxiliary instr then (p, Sil.fav_new ()) else prop_primed_to_normal p
-      in
+      let p', fav = if Sil.instr_is_auxiliary instr then (p, []) else prop_primed_to_normal p in
       let p'' =
         let map_res_action e ra =
           (* update the vpath in resource attributes *)

@@ -119,6 +119,14 @@ val lt : t -> t -> t
 val get_vars : t -> Ident.t list * Pvar.t list
 (** Extract the ids and pvars from an expression *)
 
+val free_vars : t -> Ident.t Sequence.t
+(** all the idents appearing in the expression *)
+
+val gen_free_vars : t -> (unit, Ident.t) Sequence.Generator.t
+
+val ident_mem : t -> Ident.t -> bool
+(** true if the identifier appears in the expression *)
+
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
 

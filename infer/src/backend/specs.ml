@@ -40,11 +40,14 @@ module Jprop = struct
 
   let to_prop = function Prop (_, p) -> p | Joined (_, p, _, _) -> p
 
-  let rec fav_add_dfs tenv fav = function
-    | Prop (_, p) ->
-        Prop.prop_fav_add_dfs tenv fav p
-    | Joined (_, p, jp1, jp2) ->
-        Prop.prop_fav_add_dfs tenv fav p ; fav_add_dfs tenv fav jp1 ; fav_add_dfs tenv fav jp2
+  let rec sorted_gen_free_vars tenv =
+    let open Sequence.Generator in
+    function
+      | Prop (_, p) ->
+          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
+      | Joined (_, p, jp1, jp2) ->
+          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
+          >>= fun () -> sorted_gen_free_vars tenv jp1 >>= fun () -> sorted_gen_free_vars tenv jp2
 
 
   let rec normalize tenv = function
@@ -94,12 +97,16 @@ module Jprop = struct
     L.add_print_action (L.PTjprop_list, Obj.repr (shallow, jplist))
 
 
-  let rec fav_add fav = function
-    | Prop (_, p) ->
-        Prop.prop_fav_add fav p
-    | Joined (_, p, jp1, jp2) ->
-        Prop.prop_fav_add fav p ; fav_add fav jp1 ; fav_add fav jp2
+  let rec gen_free_vars =
+    let open Sequence.Generator in
+    function
+      | Prop (_, p) ->
+          Prop.gen_free_vars p
+      | Joined (_, p, jp1, jp2) ->
+          Prop.gen_free_vars p >>= fun () -> gen_free_vars jp1 >>= fun () -> gen_free_vars jp2
 
+
+  let free_vars jp = Sequence.Generator.run (gen_free_vars jp)
 
   let rec jprop_sub sub = function
     | Prop (n, p) ->
@@ -190,12 +197,15 @@ end = struct
 
   let tospecs specs = specs
 
-  let spec_fav tenv (spec: Prop.normal spec) : Sil.fav =
-    let fav = Sil.fav_new () in
-    Jprop.fav_add_dfs tenv fav spec.pre ;
-    List.iter ~f:(fun (p, _) -> Prop.prop_fav_add_dfs tenv fav p) spec.posts ;
-    fav
+  let gen_free_vars tenv (spec: Prop.normal spec) =
+    let open Sequence.Generator in
+    Jprop.sorted_gen_free_vars tenv spec.pre
+    >>= fun () ->
+    ISequence.gen_sequence_list spec.posts ~f:(fun (p, _) ->
+        Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars )
 
+
+  let free_vars tenv spec = Sequence.Generator.run (gen_free_vars tenv spec)
 
   let spec_sub tenv sub spec =
     { pre= Jprop.normalize tenv (Jprop.jprop_sub sub spec.pre)
@@ -206,8 +216,7 @@ end = struct
 
   (** Convert spec into normal form w.r.t. variable renaming *)
   let normalize tenv (spec: Prop.normal spec) : Prop.normal spec =
-    let fav = spec_fav tenv spec in
-    let idlist = Sil.fav_to_list fav in
+    let idlist = free_vars tenv spec |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let count = ref 0 in
     let sub =
       Sil.subst_of_list

@@ -365,15 +365,13 @@ let do_after_node node = Printer.node_finish_session node
 
 (** Return the list of normal ids occurring in the instructions *)
 let instrs_get_normal_vars instrs =
-  let fav = Sil.fav_new () in
-  let do_instr instr =
-    let do_e e = Sil.exp_fav_add fav e in
-    let exps = Sil.instr_get_exps instr in
-    List.iter ~f:do_e exps
+  let do_instr res instr =
+    Sil.instr_get_exps instr
+    |> List.fold_left ~init:res ~f:(fun res e ->
+           Exp.free_vars e |> Sequence.filter ~f:Ident.is_normal
+           |> Ident.hashqueue_of_sequence ~init:res )
   in
-  List.iter ~f:do_instr instrs ;
-  Sil.fav_filter_ident fav Ident.is_normal ;
-  Sil.fav_to_list fav
+  List.fold_left ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
 
 
 (** Perform symbolic execution for a node starting from an initial prop *)
@@ -571,13 +569,13 @@ let compute_visited vset =
 let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pname = Procdesc.get_proc_name pdesc in
   let sub =
-    let fav = Sil.fav_new () in
-    Paths.PathSet.iter (fun prop _ -> Prop.prop_fav_add fav prop) pathset ;
-    let sub_list =
-      List.map
-        ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.knormal)))
-        (Sil.fav_to_list fav)
+    let fav =
+      Paths.PathSet.fold
+        (fun prop _ res -> Prop.free_vars prop |> Ident.hashqueue_of_sequence ~init:res)
+        pathset (Ident.HashQueue.create ())
+      |> Ident.HashQueue.keys
     in
+    let sub_list = List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.knormal))) fav in
     Sil.exp_subst_of_list sub_list
   in
   let pre_post_visited_list =
@@ -736,7 +734,7 @@ let initial_prop_from_emp tenv curr_f = initial_prop tenv curr_f Prop.prop_emp t
 (** Construct an initial prop from an existing pre with formals *)
 let initial_prop_from_pre tenv curr_f pre =
   if !Config.footprint then
-    let vars = Sil.fav_to_list (Prop.prop_fav pre) in
+    let vars = Prop.free_vars pre |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let sub_list =
       List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.kfootprint))) vars
     in

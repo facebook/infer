@@ -65,20 +65,6 @@ let rec merge_sorted_nodup compare res xs1 xs2 =
       else merge_sorted_nodup compare (x2 :: res) xs1 xs2'
 
 
-let intersect compare l1 l2 =
-  let l1_sorted = List.sort compare l1 in
-  let l2_sorted = List.sort compare l2 in
-  let rec f l1 l2 =
-    match (l1, l2) with
-    | [], _ | _, [] ->
-        false
-    | x1 :: l1', x2 :: l2' ->
-        let x_comparison = compare x1 x2 in
-        if x_comparison = 0 then true else if x_comparison < 0 then f l1' l2 else f l1 l2'
-  in
-  f l1_sorted l2_sorted
-
-
 let inter compare xs ys =
   let rev_sort xs = List.sort (fun x y -> compare y x) xs in
   let rev_xs = rev_sort xs in

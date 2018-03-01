@@ -110,10 +110,12 @@ let spec_rename_vars pname spec =
     | Specs.Jprop.Joined (n, p, jp1, jp2) ->
         Specs.Jprop.Joined (n, prop_add_callee_suffix p, jp1, jp2)
   in
-  let fav = Sil.fav_new () in
-  Specs.Jprop.fav_add fav spec.Specs.pre ;
-  List.iter ~f:(fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts ;
-  let ids = Sil.fav_to_list fav in
+  let fav =
+    let fav = Specs.Jprop.free_vars spec.Specs.pre |> Ident.hashqueue_of_sequence in
+    List.fold_left spec.Specs.posts ~init:fav ~f:(fun fav (p, _) ->
+        Prop.free_vars p |> Ident.hashqueue_of_sequence ~init:fav )
+  in
+  let ids = Ident.HashQueue.keys fav in
   let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
   let ren_sub = Sil.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
   let pre' = Specs.Jprop.jprop_sub ren_sub spec.Specs.pre in
@@ -154,9 +156,7 @@ let spec_find_rename trace_call summary : (int * Prop.exposed Specs.spec) list *
 let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
     frame_typ missing_typ =
   let hpred_has_only_footprint_vars hpred =
-    let fav = Sil.fav_new () in
-    Sil.hpred_fav_add fav hpred ;
-    Sil.fav_for_all fav Ident.is_footprint
+    Sil.hpred_free_vars hpred |> Sequence.for_all ~f:Ident.is_footprint
   in
   let sub = Sil.sub_join sub1 sub2 in
   let sub1_inverse =
@@ -168,28 +168,29 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
     Sil.exp_subst_of_list_duplicates sub1_inverse_list
   in
   let fav_actual_pre =
-    let fav_sub2 =
-      (* vars which represent expansions of fields *)
-      let fav = Sil.fav_new () in
-      List.iter ~f:(Sil.exp_fav_add fav) (Sil.sub_range sub2) ;
-      let filter id = Int.equal (Ident.get_stamp id) (-1) in
-      Sil.fav_filter_ident fav filter ; fav
-    in
-    let fav_pre = Prop.prop_fav actual_pre in
-    Sil.ident_list_fav_add (Sil.fav_to_list fav_sub2) fav_pre ;
-    fav_pre
+    let fav_pre = Prop.free_vars actual_pre |> Ident.hashqueue_of_sequence in
+    let filter id = Int.equal (Ident.get_stamp id) (-1) in
+    (* vars which represent expansions of fields *)
+    Sil.sub_range sub2
+    |> List.fold_left ~init:fav_pre ~f:(fun res e ->
+           Exp.free_vars e |> Sequence.filter ~f:filter |> Ident.hashqueue_of_sequence ~init:res )
   in
-  let fav_missing = Prop.sigma_fav (Prop.sigma_sub (`Exp sub) missing_sigma) in
-  Prop.pi_fav_add fav_missing (Prop.pi_sub (`Exp sub) missing_pi) ;
   let fav_missing_primed =
-    let filter id = Ident.is_primed id && not (Sil.fav_mem fav_actual_pre id) in
-    Sil.fav_copy_filter_ident fav_missing filter
+    let filter id = Ident.is_primed id && not (Ident.HashQueue.mem fav_actual_pre id) in
+    let fav =
+      Prop.sigma_sub (`Exp sub) missing_sigma |> Prop.sigma_free_vars |> Sequence.filter ~f:filter
+      |> Ident.hashqueue_of_sequence
+    in
+    Prop.pi_sub (`Exp sub) missing_pi |> Prop.pi_free_vars |> Sequence.filter ~f:filter
+    |> Ident.hashqueue_of_sequence ~init:fav |> Ident.HashQueue.keys
   in
-  let fav_missing_fld = Prop.sigma_fav (Prop.sigma_sub (`Exp sub) missing_fld) in
+  let fav_missing_fld =
+    Prop.sigma_sub (`Exp sub) missing_fld |> Prop.sigma_free_vars |> Ident.hashqueue_of_sequence
+  in
   let map_var_to_pre_var_or_fresh id =
     match Sil.exp_sub (`Exp sub1_inverse) (Exp.Var id) with
     | Exp.Var id' ->
-        if Sil.fav_mem fav_actual_pre id' || Ident.is_path id'
+        if Ident.HashQueue.mem fav_actual_pre id' || Ident.is_path id'
            (* a path id represents a position in the pre *)
         then Exp.Var id'
         else Exp.Var (Ident.create_fresh Ident.kprimed)
@@ -197,16 +198,11 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
         assert false
   in
   let sub_list = Sil.sub_to_list sub in
-  let fav_sub_list =
-    let fav_sub = Sil.fav_new () in
-    List.iter ~f:(fun (_, e) -> Sil.exp_fav_add fav_sub e) sub_list ;
-    Sil.fav_to_list fav_sub
-  in
   let sub1 =
     let f id =
-      if Sil.fav_mem fav_actual_pre id then (id, Exp.Var id)
+      if Ident.HashQueue.mem fav_actual_pre id then (id, Exp.Var id)
       else if Ident.is_normal id then (id, map_var_to_pre_var_or_fresh id)
-      else if Sil.fav_mem fav_missing_fld id then (id, Exp.Var id)
+      else if Ident.HashQueue.mem fav_missing_fld id then (id, Exp.Var id)
       else if Ident.is_footprint id then (id, Exp.Var id)
       else
         let dom1 = Sil.sub_domain sub1 in
@@ -214,7 +210,7 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
         let dom2 = Sil.sub_domain sub2 in
         let rng2 = Sil.sub_range sub2 in
         let vars_actual_pre =
-          List.map ~f:(fun id -> Exp.Var id) (Sil.fav_to_list fav_actual_pre)
+          List.map ~f:(fun id -> Exp.Var id) (Ident.HashQueue.keys fav_actual_pre)
         in
         L.d_str "fav_actual_pre: " ;
         Sil.d_exp_list vars_actual_pre ;
@@ -236,11 +232,16 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
         L.d_ln () ;
         assert false
     in
+    let fav_sub_list =
+      List.fold_left sub_list ~init:(Ident.HashQueue.create ()) ~f:(fun fav (_, e) ->
+          Exp.free_vars e |> Ident.hashqueue_of_sequence ~init:fav )
+      |> Ident.HashQueue.keys
+    in
     Sil.subst_of_list (List.map ~f fav_sub_list)
   in
   let sub2_list =
     let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint)) in
-    List.map ~f (Sil.fav_to_list fav_missing_primed)
+    List.map ~f fav_missing_primed
   in
   let sub_list' = List.map ~f:(fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
   let sub' = Sil.subst_of_list (sub2_list @ sub_list') in
@@ -683,8 +684,7 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop: 'a Prop.t) pi_new sigm
     | [] ->
         current_pi
     | a :: new_pi' ->
-        let fav = Prop.pi_fav [a] in
-        if Sil.fav_exists fav (fun id -> not (Ident.is_footprint id)) then (
+        if Sil.atom_free_vars a |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id)) then (
           L.d_warning "dropping atom with non-footprint variable" ;
           L.d_ln () ;
           Sil.d_atom a ;
@@ -1187,18 +1187,17 @@ let remove_constant_string_class tenv prop =
     and remove pointsto's whose lhs is a constant string *)
 let quantify_path_idents_remove_constant_strings tenv (prop: Prop.normal Prop.t)
     : Prop.normal Prop.t =
-  let fav = Prop.prop_fav prop in
-  Sil.fav_filter_ident fav Ident.is_path ;
-  remove_constant_string_class tenv (Prop.exist_quantify tenv fav prop)
+  let ids_queue =
+    Prop.free_vars prop |> Sequence.filter ~f:Ident.is_path |> Ident.hashqueue_of_sequence
+  in
+  let ids_list = Ident.HashQueue.keys ids_queue in
+  remove_constant_string_class tenv (Prop.exist_quantify tenv ~ids_queue ids_list prop)
 
 
 (** Strengthen the footprint by adding pure facts from the current part *)
 let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
   let is_footprint_atom_not_attribute a =
-    not (Attribute.is_pred a)
-    &&
-    let a_fav = Sil.atom_fav a in
-    Sil.fav_for_all a_fav Ident.is_footprint
+    not (Attribute.is_pred a) && Sil.atom_free_vars a |> Sequence.for_all ~f:Ident.is_footprint
   in
   let pure = Prop.get_pure p in
   let new_footprint_atoms = List.filter ~f:is_footprint_atom_not_attribute pure in

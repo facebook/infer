@@ -324,12 +324,12 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
   in
   let p'' =
     let res = ref p' in
-    let p'_fav = Prop.prop_fav p' in
+    let p'_fav = Prop.free_vars p' |> Ident.set_of_sequence in
     let do_var (v, freshv) =
       (* static locals are not stack-allocated *)
       if not (Pvar.is_static_local v) then
         (* the address of a de-allocated stack var in in the post *)
-        if Sil.fav_mem p'_fav freshv then (
+        if Ident.Set.mem freshv p'_fav then (
           stack_vars_address_in_post := v :: !stack_vars_address_in_post ;
           let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
           res := add_or_replace tenv !res pred )

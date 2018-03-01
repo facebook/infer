@@ -1127,7 +1127,7 @@ end = struct
 
   let implication_rhs = ref (Prop.expose Prop.prop_emp)
 
-  let fav_in_array_len = ref (Sil.fav_new ())
+  let fav_in_array_len = ref Ident.Set.empty
 
   (* free variables in array len position *)
   let bounds_checks = ref []
@@ -1149,15 +1149,13 @@ end = struct
 
   (** free vars in array len position in current strexp part of prop *)
   let prop_fav_len prop =
-    let fav = Sil.fav_new () in
-    let do_hpred = function
+    let do_hpred fav = function
       | Sil.Hpointsto (_, Sil.Earray ((Exp.Var _ as len), _, _), _) ->
-          Sil.exp_fav_add fav len
+          Exp.free_vars len |> Ident.set_of_sequence ~init:fav
       | _ ->
-          ()
+          fav
     in
-    List.iter ~f:do_hpred prop.Prop.sigma ;
-    fav
+    List.fold_left ~init:Ident.Set.empty ~f:do_hpred prop.Prop.sigma
 
 
   let reset lhs rhs =
@@ -1191,8 +1189,8 @@ end = struct
   (** atom considered array bounds check if it contains vars present in array length position in the
       pre *)
   let atom_is_array_bounds_check atom =
-    let fav_a = Sil.atom_fav atom in
-    Prop.atom_is_inequality atom && Sil.fav_exists fav_a (fun a -> Sil.fav_mem !fav_in_array_len a)
+    Prop.atom_is_inequality atom
+    && Sil.atom_free_vars atom |> Sequence.exists ~f:(fun id -> Ident.Set.mem id !fav_in_array_len)
 
 
   let get_bounds_checks () = !bounds_checks
@@ -1368,10 +1366,8 @@ let exp_imply tenv calc_missing (subs: subst2) e1_in e2_in : subst2 =
     | e1, Exp.Var v2 ->
         let occurs_check v e =
           (* check whether [v] occurs in normalized [e] *)
-          if Sil.fav_mem (Sil.exp_fav e) v
-             && Sil.fav_mem
-                  (Sil.exp_fav (Prop.exp_normalize_prop ~destructive:true tenv Prop.prop_emp e))
-                  v
+          if Exp.ident_mem e v
+             && Exp.ident_mem (Prop.exp_normalize_prop ~destructive:true tenv Prop.prop_emp e) v
           then raise (IMPL_EXC ("occurs check", subs, EXC_FALSE_EXPS (e1, e2)))
         in
         if Ident.is_primed v2 then
@@ -1723,7 +1719,7 @@ let hpred_has_primed_lhs sub hpred =
     | Exp.BinOp (Binop.PlusPI, e1, _) ->
         find_primed e1
     | _ ->
-        Sil.fav_exists (Sil.exp_fav e) Ident.is_primed
+        Exp.free_vars e |> Sequence.exists ~f:Ident.is_primed
   in
   let exp_has_primed e = find_primed (Sil.exp_sub sub e) in
   match hpred with
@@ -2565,7 +2561,9 @@ let check_array_bounds tenv (sub1, sub2) prop =
 let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2 =
   try
     ProverState.reset prop1 prop2 ;
-    let filter (id, e) = Ident.is_normal id && Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
+    let filter (id, e) =
+      Ident.is_normal id && Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal
+    in
     let sub1_base = Sil.sub_filter_pair ~f:filter prop1.Prop.sub in
     let pi1, pi2 = (Prop.get_pure prop1, Prop.get_pure prop2) in
     let sigma1, sigma2 = (prop1.Prop.sigma, prop2.Prop.sigma) in

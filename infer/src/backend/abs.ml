@@ -40,12 +40,6 @@ let sigma_rewrite tenv p r : Prop.normal Prop.t option =
         Some (Prop.normalize tenv p_new)
 
 
-let sigma_fav_list sigma = Sil.fav_to_list (Prop.sigma_fav sigma)
-
-let sigma_fav_in_pvars = Sil.fav_imperative_to_functional Prop.sigma_fav_in_pvars_add
-
-let sigma_fav_in_pvars_list sigma = Sil.fav_to_list (sigma_fav_in_pvars sigma)
-
 (******************** Start of SLL abstraction rules  *****************)
 let create_fresh_primeds_ls para =
   let id_base = Ident.create_fresh Ident.kprimed in
@@ -76,24 +70,30 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.exp_subst) =
     let insts_of_private_ids = Sil.sub_range inst_private in
     (insts_of_private_ids, insts_of_public_ids, inst_of_base)
   in
-  let fav_insts_of_public_ids = List.concat_map ~f:Sil.exp_fav_list insts_of_public_ids in
-  let fav_insts_of_private_ids = List.concat_map ~f:Sil.exp_fav_list insts_of_private_ids in
-  let fav_p_leftover, _ =
-    let sigma = p_leftover.Prop.sigma in
-    (sigma_fav_list sigma, sigma_fav_in_pvars_list sigma)
-  in
   (*
   let fav_inst_of_base = Sil.exp_fav_list inst_of_base in
   L.out "@[.... application of condition ....@\n@.";
   L.out "@[<4>  private ids : %a@\n@." pp_exp_list insts_of_private_ids;
   L.out "@[<4>  public ids : %a@\n@." pp_exp_list insts_of_public_ids;
   *)
-  (* (not (IList.intersect compare fav_inst_of_base fav_in_pvars)) && *)
   Exp.program_vars inst_of_base |> Sequence.is_empty
   && List.for_all ~f:(fun e -> Exp.program_vars e |> Sequence.is_empty) insts_of_private_ids
-  && not (List.exists ~f:Ident.is_normal fav_insts_of_private_ids)
-  && not (IList.intersect Ident.compare fav_insts_of_private_ids fav_p_leftover)
-  && not (IList.intersect Ident.compare fav_insts_of_private_ids fav_insts_of_public_ids)
+  &&
+  let fav_insts_of_private_ids =
+    Sequence.of_list insts_of_private_ids |> Sequence.concat_map ~f:Exp.free_vars
+    |> Sequence.memoize
+  in
+  not (Sequence.exists fav_insts_of_private_ids ~f:Ident.is_normal)
+  &&
+  let fav_insts_of_private_ids = Ident.set_of_sequence fav_insts_of_private_ids in
+  let intersects_fav_insts_of_private_ids s =
+    Sequence.exists s ~f:(fun id -> Ident.Set.mem id fav_insts_of_private_ids)
+  in
+  (* [fav_insts_of_private_ids] does not intersect the free vars in [p_leftover.sigma] *)
+  Prop.sigma_free_vars p_leftover.Prop.sigma |> Fn.non intersects_fav_insts_of_private_ids
+  && (* [fav_insts_of_private_ids] does not intersect the free vars in [insts_of_public_ids] *)
+     List.for_all insts_of_public_ids ~f:(fun e ->
+         Exp.free_vars e |> Fn.non intersects_fav_insts_of_private_ids )
 
 
 let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para: Sil.hpara) =
@@ -860,15 +860,15 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
   let do_pure pure =
     let pi_filtered =
       let sigma = p.Prop.sigma in
-      let fav_sigma = Prop.sigma_fav sigma in
-      let fav_nonpure = Prop.prop_fav_nonpure p in
+      let fav_sigma = Prop.sigma_free_vars sigma |> Ident.set_of_sequence in
+      let fav_nonpure = Prop.non_pure_free_vars p |> Ident.set_of_sequence in
       (* vars in current and footprint sigma *)
       let filter atom =
-        let fav' = Sil.atom_fav atom in
-        Sil.fav_for_all fav' (fun id ->
-            if Ident.is_primed id then Sil.fav_mem fav_sigma id
-            else if Ident.is_footprint id then Sil.fav_mem fav_nonpure id
-            else true )
+        Sil.atom_free_vars atom
+        |> Sequence.for_all ~f:(fun id ->
+               if Ident.is_primed id then Ident.Set.mem id fav_sigma
+               else if Ident.is_footprint id then Ident.Set.mem id fav_nonpure
+               else true )
       in
       List.filter ~f:filter pure
     in
@@ -908,27 +908,20 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
 let abstract_gc tenv p =
   let pi = p.Prop.pi in
   let p_without_pi = Prop.normalize tenv (Prop.set p ~pi:[]) in
-  let fav_p_without_pi = Prop.prop_fav p_without_pi in
+  let fav_p_without_pi = Prop.free_vars p_without_pi |> Ident.set_of_sequence in
   (* let weak_filter atom =
      let fav_atom = atom_fav atom in
      IList.intersect compare fav_p_without_pi fav_atom in *)
+  let check fav_seq =
+    Sequence.is_empty fav_seq
+    || (* non-empty intersection with [fav_p_without_pi] *)
+       Sequence.exists fav_seq ~f:(fun id -> Ident.Set.mem id fav_p_without_pi)
+  in
   let strong_filter = function
     | Sil.Aeq (e1, e2) | Sil.Aneq (e1, e2) ->
-        let fav_e1 = Sil.exp_fav e1 in
-        let fav_e2 = Sil.exp_fav e2 in
-        let intersect_e1 _ =
-          IList.intersect Ident.compare (Sil.fav_to_list fav_e1) (Sil.fav_to_list fav_p_without_pi)
-        in
-        let intersect_e2 _ =
-          IList.intersect Ident.compare (Sil.fav_to_list fav_e2) (Sil.fav_to_list fav_p_without_pi)
-        in
-        let no_fav_e1 = Sil.fav_is_empty fav_e1 in
-        let no_fav_e2 = Sil.fav_is_empty fav_e2 in
-        (no_fav_e1 || intersect_e1 ()) && (no_fav_e2 || intersect_e2 ())
+        check (Exp.free_vars e1) && check (Exp.free_vars e2)
     | (Sil.Apred _ | Anpred _) as a ->
-        let fav_a = Sil.atom_fav a in
-        Sil.fav_is_empty fav_a
-        || IList.intersect Ident.compare (Sil.fav_to_list fav_a) (Sil.fav_to_list fav_p_without_pi)
+        check (Sil.atom_free_vars a)
   in
   let new_pi = List.filter ~f:strong_filter pi in
   let prop = Prop.normalize tenv (Prop.set p ~pi:new_pi) in
@@ -950,11 +943,10 @@ end)
 
 (** find the id's in sigma reachable from the given roots *)
 let sigma_reachable root_fav sigma =
-  let fav_to_set fav = Ident.idlist_to_idset (Sil.fav_to_list fav) in
-  let reach_set = ref (fav_to_set root_fav) in
+  let reach_set = ref root_fav in
   let edges = ref [] in
   let do_hpred hpred =
-    let hp_fav_set = fav_to_set (Sil.hpred_fav hpred) in
+    let hp_fav_set = Sil.hpred_free_vars hpred |> Ident.set_of_sequence in
     let add_entry e = edges := (e, hp_fav_set) :: !edges in
     List.iter ~f:add_entry (Sil.hpred_entries hpred)
   in
@@ -1012,9 +1004,6 @@ let check_observer_is_unsubscribed_deallocation tenv prop e =
 
 
 let check_junk ?original_prop pname tenv prop =
-  let fav_sub_sigmafp = Sil.fav_new () in
-  Sil.sub_fav_add fav_sub_sigmafp prop.Prop.sub ;
-  Prop.sigma_fav_add fav_sub_sigmafp prop.Prop.sigma_fp ;
   let leaks_reported = ref [] in
   let remove_junk_once fp_part fav_root sigma =
     let id_considered_reachable =
@@ -1025,7 +1014,7 @@ let check_junk ?original_prop pname tenv prop =
     let should_remove_hpred entries =
       let predicate = function
         | Exp.Var id ->
-            (Ident.is_primed id || Ident.is_footprint id) && not (Sil.fav_mem fav_root id)
+            (Ident.is_primed id || Ident.is_footprint id) && not (Ident.Set.mem id fav_root)
             && not (id_considered_reachable id)
         | _ ->
             false
@@ -1169,8 +1158,14 @@ let check_junk ?original_prop pname tenv prop =
     if Int.equal (List.length sigma') (List.length sigma) then sigma'
     else remove_junk fp_part fav_root sigma'
   in
-  let sigma_new = remove_junk false fav_sub_sigmafp prop.Prop.sigma in
-  let sigma_fp_new = remove_junk true (Sil.fav_new ()) prop.Prop.sigma_fp in
+  let sigma_new =
+    let fav_sub = Sil.exp_subst_free_vars prop.Prop.sub |> Ident.set_of_sequence in
+    let fav_sub_sigmafp =
+      Prop.sigma_free_vars prop.Prop.sigma_fp |> Ident.set_of_sequence ~init:fav_sub
+    in
+    remove_junk false fav_sub_sigmafp prop.Prop.sigma
+  in
+  let sigma_fp_new = remove_junk true Ident.Set.empty prop.Prop.sigma_fp in
   if Prop.equal_sigma prop.Prop.sigma sigma_new && Prop.equal_sigma prop.Prop.sigma_fp sigma_fp_new
   then prop
   else Prop.normalize tenv (Prop.set prop ~sigma:sigma_new ~sigma_fp:sigma_fp_new)

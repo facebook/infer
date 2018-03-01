@@ -379,11 +379,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
     handle_case [] [] array_cont
 
 
-let exp_has_only_footprint_ids e =
-  let fav = Sil.exp_fav e in
-  Sil.fav_filter_ident fav (fun id -> not (Ident.is_footprint id)) ;
-  Sil.fav_is_empty fav
-
+let exp_has_only_footprint_ids e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_footprint
 
 let laundry_offset_for_footprint max_stamp offs_in =
   let rec laundry offs_seen eqs offs =
@@ -543,12 +539,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
   check_offset se offset
 
 
-let fav_max_stamp fav =
-  let max_stamp = ref 0 in
-  let f id = max_stamp := max !max_stamp (Ident.get_stamp id) in
-  List.iter ~f (Sil.fav_to_list fav) ;
-  max_stamp
-
+let id_max_stamp curr_max id = max curr_max (Ident.get_stamp id)
 
 (** [prop_iter_extend_ptsto iter lexp] extends the current psto
     predicate in [iter] with enough fields to follow the path in
@@ -560,12 +551,11 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     Sil.d_exp lexp ;
     L.d_ln () ) ;
   let offset = Sil.exp_get_offsets lexp in
-  let max_stamp = fav_max_stamp (Prop.prop_iter_fav iter) in
-  let max_stamp_val = !max_stamp in
+  let max_stamp = Prop.prop_iter_free_vars iter |> Sequence.fold ~init:0 ~f:id_max_stamp in
   let extend_footprint_pred = function
     | Sil.Hpointsto (e, se, te) ->
         let atoms_se_te_list =
-          strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp_val) se te
+          strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp) se te
             offset inst
         in
         List.map
@@ -575,8 +565,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
       match hpara.Sil.body with
       | (Sil.Hpointsto (e', se', te')) :: body_rest ->
           let atoms_se_te_list =
-            strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp_val) se'
-              te' offset inst
+            strexp_extend_values pname tenv orig_prop true Ident.kfootprint (ref max_stamp) se' te'
+              offset inst
           in
           let atoms_body_list =
             List.map
@@ -624,7 +614,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     in
     let iter_list =
       let atoms_se_te_list =
-        strexp_extend_values pname tenv orig_prop false extend_kind max_stamp se te offset inst
+        strexp_extend_values pname tenv orig_prop false extend_kind (ref max_stamp) se te offset
+          inst
       in
       List.map ~f:(atoms_se_te_to_iter e) atoms_se_te_list
     in
@@ -702,9 +693,9 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     that [root(lexp): typ] is the current hpred of the iterator. typ
     is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
-  let max_stamp = fav_max_stamp (Prop.prop_footprint_fav prop) in
+  let max_stamp = Prop.footprint_free_vars prop |> Sequence.fold ~init:0 ~f:id_max_stamp in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv prop (lexp, typ) max_stamp inst
+    mk_ptsto_exp_footprint pname tenv prop (lexp, typ) (ref max_stamp) inst
   in
   L.d_strln "++++ Adding footprint frame" ;
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto) ;
@@ -1068,9 +1059,11 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
     L.d_str "typ:" ;
     Typ.d_full typ ;
     L.d_ln () ) ;
-  let max_stamp = fav_max_stamp (Prop.prop_iter_footprint_fav iter) in
+  let max_stamp =
+    Prop.prop_iter_footprint_free_vars iter |> Sequence.fold ~init:0 ~f:id_max_stamp
+  in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst
+    mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) (ref max_stamp) inst
   in
   L.d_strln "++++ Adding footprint frame" ;
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto) ;
@@ -1147,10 +1140,10 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
       check_field_splitting () ;
       match Prop.prop_iter_current tenv iter with
       | Sil.Hpointsto (e, se, te), offset ->
-          let max_stamp = fav_max_stamp (Prop.prop_iter_fav iter) in
+          let max_stamp = Prop.prop_iter_free_vars iter |> Sequence.fold ~init:0 ~f:id_max_stamp in
           let atoms_se_te_list =
-            strexp_extend_values pname tenv orig_prop false Ident.kprimed max_stamp se te offset
-              inst
+            strexp_extend_values pname tenv orig_prop false Ident.kprimed (ref max_stamp) se te
+              offset inst
           in
           let handle_case (atoms', se', te') =
             let iter' =

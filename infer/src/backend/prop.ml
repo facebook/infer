@@ -28,6 +28,9 @@ type normal
 (** kind for exposed props *)
 type exposed
 
+(** kind for sorted props *)
+type sorted
+
 type pi = Sil.atom list [@@deriving compare]
 
 type sigma = Sil.hpred list [@@deriving compare]
@@ -56,6 +59,8 @@ module Core : sig
 
   val unsafe_cast_to_normal : exposed t -> normal t
   (** Cast an exposed prop to a normalized one by just changing the type *)
+
+  val unsafe_cast_to_sorted : exposed t -> sorted t
 end = struct
   (** A proposition. The following invariants are mantained. [sub] is of
       the form id1 = e1 ... idn = en where: the id's are distinct and do not
@@ -84,11 +89,17 @@ end = struct
 
 
   let unsafe_cast_to_normal (p: exposed t) : normal t = (p :> normal t)
+
+  let unsafe_cast_to_sorted (p: exposed t) : sorted t = (p :> sorted t)
 end
 
 include Core
 
 (** {2 Basic Functions for Propositions} *)
+
+let expose (p: normal t) : exposed t = Obj.magic p
+
+let expose_sorted (p: sorted t) : exposed t = Obj.magic p
 
 (** {1 Functions for Comparison} *)
 
@@ -357,44 +368,45 @@ let d_proplist_with_typ (pl: 'a t list) = L.add_print_action (PTprop_list_with_t
 
 (** {1 Functions for computing free non-program variables} *)
 
-let pi_fav_add fav pi = List.iter ~f:(Sil.atom_fav_add fav) pi
+let pi_gen_free_vars pi = ISequence.gen_sequence_list pi ~f:Sil.atom_gen_free_vars
 
-let pi_fav = Sil.fav_imperative_to_functional pi_fav_add
+let pi_free_vars pi = Sequence.Generator.run (pi_gen_free_vars pi)
 
-let sigma_fav_add fav sigma = List.iter ~f:(Sil.hpred_fav_add fav) sigma
+let sigma_gen_free_vars sigma = ISequence.gen_sequence_list sigma ~f:Sil.hpred_gen_free_vars
 
-let sigma_fav = Sil.fav_imperative_to_functional sigma_fav_add
+let sigma_free_vars sigma = Sequence.Generator.run (sigma_gen_free_vars sigma)
 
-let prop_footprint_fav_add fav prop = sigma_fav_add fav prop.sigma_fp ; pi_fav_add fav prop.pi_fp
-
-(** Find fav of the footprint part of the prop *)
-let prop_footprint_fav prop = Sil.fav_imperative_to_functional prop_footprint_fav_add prop
-
-let prop_fav_add fav prop =
-  sigma_fav_add fav prop.sigma ;
-  sigma_fav_add fav prop.sigma_fp ;
-  Sil.sub_fav_add fav prop.sub ;
-  pi_fav_add fav prop.pi ;
-  pi_fav_add fav prop.pi_fp
+(** Find free variables in the footprint part of the prop *)
+let footprint_gen_free_vars {sigma_fp; pi_fp} =
+  Sequence.Generator.(sigma_gen_free_vars sigma_fp >>= fun () -> pi_gen_free_vars pi_fp)
 
 
-let prop_fav p = Sil.fav_imperative_to_functional prop_fav_add p
+let footprint_free_vars prop = Sequence.Generator.run (footprint_gen_free_vars prop)
+
+let gen_free_vars {sigma; sigma_fp; sub; pi; pi_fp} =
+  let open Sequence.Generator in
+  sigma_gen_free_vars sigma
+  >>= fun () ->
+  sigma_gen_free_vars sigma_fp
+  >>= fun () ->
+  Sil.exp_subst_gen_free_vars sub
+  >>= fun () -> pi_gen_free_vars pi >>= fun () -> pi_gen_free_vars pi_fp
+
+
+let free_vars prop = Sequence.Generator.run (gen_free_vars prop)
+
+let exposed_gen_free_vars prop = gen_free_vars (unsafe_cast_to_normal prop)
+
+let sorted_gen_free_vars prop = exposed_gen_free_vars (expose_sorted prop)
+
+let sorted_free_vars prop = Sequence.Generator.run (sorted_gen_free_vars prop)
 
 (** free vars of the prop, excluding the pure part *)
-let prop_fav_nonpure_add fav prop = sigma_fav_add fav prop.sigma ; sigma_fav_add fav prop.sigma_fp
-
-(** free vars, except pi and sub, of current and footprint parts *)
-let prop_fav_nonpure = Sil.fav_imperative_to_functional prop_fav_nonpure_add
-
-let hpred_fav_in_pvars_add fav (hpred: Sil.hpred) =
-  match hpred with
-  | Hpointsto (Lvar _, sexp, _) ->
-      Sil.strexp_fav_add fav sexp
-  | Hpointsto _ | Hlseg _ | Hdllseg _ ->
-      ()
+let non_pure_gen_free_vars {sigma; sigma_fp} =
+  Sequence.Generator.(sigma_gen_free_vars sigma >>= fun () -> sigma_gen_free_vars sigma_fp)
 
 
-let sigma_fav_in_pvars_add fav sigma = List.iter ~f:(hpred_fav_in_pvars_add fav) sigma
+let non_pure_free_vars prop = Sequence.Generator.run (non_pure_gen_free_vars prop)
 
 (** {2 Functions for Subsitition} *)
 
@@ -1629,17 +1641,18 @@ module Normalize = struct
   let footprint_normalize tenv prop =
     let nsigma = sigma_normalize tenv Sil.sub_empty prop.sigma_fp in
     let npi = pi_normalize tenv Sil.sub_empty nsigma prop.pi_fp in
-    let fp_vars =
-      let fav = pi_fav npi in
-      sigma_fav_add fav nsigma ; fav
+    let ids_primed =
+      let fav =
+        pi_free_vars npi |> Sequence.filter ~f:Ident.is_primed |> Ident.hashqueue_of_sequence
+      in
+      sigma_free_vars nsigma |> Sequence.filter ~f:Ident.is_primed
+      |> Ident.hashqueue_of_sequence ~init:fav |> Ident.HashQueue.keys
     in
-    Sil.fav_filter_ident fp_vars Ident.is_primed ;
     (* only keep primed vars *)
     let npi', nsigma' =
-      if Sil.fav_is_empty fp_vars then (npi, nsigma)
+      if List.is_empty ids_primed then (npi, nsigma)
       else
         (* replace primed vars by fresh footprint vars *)
-        let ids_primed = Sil.fav_to_list fp_vars in
         let ids_footprint =
           List.map ~f:(fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed
         in
@@ -1655,7 +1668,7 @@ module Normalize = struct
 
   (** This function assumes that if (x,Exp.Var(y)) in sub, then compare x y = 1 *)
   let sub_normalize sub =
-    let f (id, e) = not (Ident.is_primed id) && not (Sil.ident_in_exp id e) in
+    let f (id, e) = not (Ident.is_primed id) && not (Exp.ident_mem e id) in
     let sub' = Sil.sub_filter_pair ~f sub in
     if Sil.equal_exp_subst sub sub' then sub else sub'
 
@@ -1667,7 +1680,7 @@ module Normalize = struct
     else
       let p' =
         match a' with
-        | Aeq (Var i, e) when Sil.ident_in_exp i e ->
+        | Aeq (Var i, e) when Exp.ident_mem e i ->
             p
         | Aeq (Var i, e) ->
             let sub_list = [(i, e)] in
@@ -1698,7 +1711,7 @@ module Normalize = struct
       else
         let p'' =
           match a' with
-          | Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e) ->
+          | Aeq (Exp.Var i, e) when not (Exp.ident_mem e i) ->
               let mysub = Sil.subst_of_list [(i, e)] in
               let sigma_fp' = sigma_normalize tenv mysub p'.sigma_fp in
               let pi_fp' = a' :: pi_normalize tenv mysub sigma_fp' p'.pi_fp in
@@ -1854,7 +1867,7 @@ end
 
 let sigma_get_start_lexps_sort sigma =
   let exp_compare_neg e1 e2 = -Exp.compare e1 e2 in
-  let filter e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
+  let filter e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
   List.sort ~cmp:exp_compare_neg lexps
 
@@ -1908,17 +1921,15 @@ let sigma_dfs_sort tenv sigma =
   final () ; sigma'
 
 
-let prop_dfs_sort tenv p =
+let dfs_sort tenv p : sorted t =
   let sigma = p.sigma in
   let sigma' = sigma_dfs_sort tenv sigma in
   let sigma_fp = p.sigma_fp in
   let sigma_fp' = sigma_dfs_sort tenv sigma_fp in
   let p' = set p ~sigma:sigma' ~sigma_fp:sigma_fp' in
   (* L.out "@[<2>P SORTED:@\n%a@\n@." pp_prop p'; *)
-  p'
+  unsafe_cast_to_sorted p'
 
-
-let prop_fav_add_dfs tenv fav prop = prop_fav_add fav (prop_dfs_sort tenv prop)
 
 let rec strexp_get_array_indices acc (se: Sil.strexp) =
   match se with
@@ -1946,7 +1957,14 @@ let sigma_get_array_indices sigma =
   List.rev indices
 
 
-let compute_reindexing fav_add get_id_offset list =
+let compute_reindexing_from_indices list =
+  let get_id_offset (e: Exp.t) =
+    match e with
+    | BinOp (PlusA, Var id, Const Cint offset) ->
+        if Ident.is_primed id then Some (id, offset) else None
+    | _ ->
+        None
+  in
   let rec select list_passed list_seen = function
     | [] ->
         list_passed
@@ -1957,10 +1975,9 @@ let compute_reindexing fav_add get_id_offset list =
           | None ->
               list_passed
           | Some (id, _) ->
-              let fav = Sil.fav_new () in
-              List.iter ~f:(fav_add fav) list_seen ;
-              List.iter ~f:(fav_add fav) list_passed ;
-              if Sil.fav_exists fav (Ident.equal id) then list_passed else x :: list_passed
+              let find_id_in_list l = List.exists l ~f:(fun e -> Exp.ident_mem e id) in
+              if find_id_in_list list_seen || find_id_in_list list_passed then list_passed
+              else x :: list_passed
         in
         let list_seen_new = x :: list_seen in
         select list_passed_new list_seen_new list_rest
@@ -1977,18 +1994,6 @@ let compute_reindexing fav_add get_id_offset list =
   Sil.exp_subst_of_list reindexing
 
 
-let compute_reindexing_from_indices indices =
-  let get_id_offset (e: Exp.t) =
-    match e with
-    | BinOp (PlusA, Var id, Const Cint offset) ->
-        if Ident.is_primed id then Some (id, offset) else None
-    | _ ->
-        None
-  in
-  let fav_add = Sil.exp_fav_add in
-  compute_reindexing fav_add get_id_offset indices
-
-
 let apply_reindexing tenv (exp_subst: Sil.exp_subst) prop =
   let subst = `Exp exp_subst in
   let nsigma = Normalize.sigma_normalize tenv subst prop.sigma in
@@ -1997,7 +2002,7 @@ let apply_reindexing tenv (exp_subst: Sil.exp_subst) prop =
     let dom_subst = List.map ~f:fst (Sil.sub_to_list exp_subst) in
     let in_dom_subst id = List.exists ~f:(Ident.equal id) dom_subst in
     let sub' = Sil.sub_filter (fun id -> not (in_dom_subst id)) prop.sub in
-    let contains_substituted_id e = Sil.fav_exists (Sil.exp_fav e) in_dom_subst in
+    let contains_substituted_id e = Exp.free_vars e |> Sequence.exists ~f:in_dom_subst in
     let sub_eqs, sub_keep = Sil.sub_range_partition contains_substituted_id sub' in
     let eqs = Sil.sub_to_list sub_eqs in
     let atoms =
@@ -2034,9 +2039,8 @@ let prop_rename_array_indices tenv prop =
     apply_reindexing tenv subst prop
 
 
-let compute_renaming fav =
-  let ids = Sil.fav_to_list fav in
-  let ids_primed, ids_nonprimed = List.partition_tf ~f:Ident.is_primed ids in
+let compute_renaming free_vars =
+  let ids_primed, ids_nonprimed = List.partition_tf ~f:Ident.is_primed free_vars in
   let ids_footprint = List.filter ~f:Ident.is_footprint ids_nonprimed in
   let id_base_primed = Ident.create Ident.kprimed 0 in
   let id_base_footprint = Ident.create Ident.kfootprint 0 in
@@ -2149,7 +2153,9 @@ and hpred_captured_ren ren (hpred: Sil.hpred) : Sil.hpred =
 
 
 and hpara_ren (para: Sil.hpara) : Sil.hpara =
-  let av = Sil.hpara_shallow_av para in
+  let av =
+    Sil.hpara_shallow_free_vars para |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys
+  in
   let ren = compute_renaming av in
   let root = ident_captured_ren ren para.root in
   let next = ident_captured_ren ren para.next in
@@ -2160,7 +2166,9 @@ and hpara_ren (para: Sil.hpara) : Sil.hpara =
 
 
 and hpara_dll_ren (para: Sil.hpara_dll) : Sil.hpara_dll =
-  let av = Sil.hpara_dll_shallow_av para in
+  let av =
+    Sil.hpara_dll_shallow_free_vars para |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys
+  in
   let ren = compute_renaming av in
   let iF = ident_captured_ren ren para.cell in
   let oF = ident_captured_ren ren para.flink in
@@ -2182,10 +2190,8 @@ let prop_rename_primed_footprint_vars tenv (p: normal t) : normal t =
   let p = prop_rename_array_indices tenv p in
   let bound_vars =
     let filter id = Ident.is_footprint id || Ident.is_primed id in
-    let p_dfs = prop_dfs_sort tenv p in
-    let fvars_in_p = prop_fav p_dfs in
-    Sil.fav_filter_ident fvars_in_p filter ;
-    fvars_in_p
+    dfs_sort tenv p |> sorted_free_vars |> Sequence.filter ~f:filter |> Ident.hashqueue_of_sequence
+    |> Ident.HashQueue.keys
   in
   let ren = compute_renaming bound_vars in
   let sub' = sub_captured_ren ren p.sub in
@@ -2206,8 +2212,6 @@ let prop_rename_primed_footprint_vars tenv (p: normal t) : normal t =
   unsafe_cast_to_normal p'
 
 
-let expose (p: normal t) : exposed t = Obj.magic p
-
 (** Apply subsitution to prop. *)
 let prop_sub subst (prop: 'a t) : exposed t =
   let pi = pi_sub subst (prop.pi @ pi_of_subst prop.sub) in
@@ -2222,11 +2226,10 @@ let prop_ren_sub tenv (ren_sub: Sil.exp_subst) (prop: normal t) : normal t =
   Normalize.normalize tenv (prop_sub (`Exp ren_sub) prop)
 
 
-(** Existentially quantify the [fav] in [prop].
-    [fav] should not contain any primed variables. *)
-let exist_quantify tenv fav (prop: normal t) : normal t =
-  let ids = Sil.fav_to_list fav in
-  if List.exists ~f:Ident.is_primed ids then assert false ;
+(** Existentially quantify the [ids] in [prop]. [ids] should not contain any primed variables. If
+   [ids_queue] is passed then the function uses it instead of [ids] for membership tests. *)
+let exist_quantify tenv ?ids_queue ids (prop: normal t) : normal t =
+  assert (not (List.exists ~f:Ident.is_primed ids)) ;
   (* sanity check *)
   if List.is_empty ids then prop
   else
@@ -2234,8 +2237,15 @@ let exist_quantify tenv fav (prop: normal t) : normal t =
     let ren_sub = Sil.exp_subst_of_list (List.map ~f:gen_fresh_id_sub ids) in
     let prop' =
       (* throw away x=E if x becomes x_ *)
-      let mem_idlist i = List.exists ~f:(fun id -> Ident.equal i id) in
-      let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
+      let filter =
+        match ids_queue with
+        | Some q ->
+            (* this is more efficient than a linear scan of [ids] *)
+            fun id -> not (Ident.HashQueue.mem q id)
+        | None ->
+            fun id -> not (List.mem ~equal:Ident.equal ids id)
+      in
+      let sub = Sil.sub_filter filter prop.sub in
       if Sil.equal_exp_subst sub prop.sub then prop else unsafe_cast_to_normal (set prop ~sub)
     in
     (*
@@ -2257,28 +2267,25 @@ let prop_expmap (fe: Exp.t -> Exp.t) prop =
   set prop ~pi ~sigma ~pi_fp ~sigma_fp
 
 
-(** convert identifiers in fav to kind [k] *)
-let vars_make_unprimed tenv fav prop =
-  let ids = Sil.fav_to_list fav in
+(** convert the normal vars to primed vars *)
+let prop_normal_vars_to_primed_vars tenv p =
+  let ids_queue =
+    free_vars p |> Sequence.filter ~f:Ident.is_normal |> Ident.hashqueue_of_sequence
+  in
+  exist_quantify tenv ~ids_queue (Ident.HashQueue.keys ids_queue) p
+
+
+(** convert the primed vars to normal vars. *)
+let prop_primed_vars_to_normal_vars tenv (prop: normal t) : normal t =
+  let ids =
+    free_vars prop |> Sequence.filter ~f:Ident.is_primed |> Ident.hashqueue_of_sequence
+    |> Ident.HashQueue.keys
+  in
   let ren_sub =
     Sil.exp_subst_of_list
       (List.map ~f:(fun i -> (i, Exp.Var (Ident.create_fresh Ident.knormal))) ids)
   in
   prop_ren_sub tenv ren_sub prop
-
-
-(** convert the normal vars to primed vars. *)
-let prop_normal_vars_to_primed_vars tenv p =
-  let fav = prop_fav p in
-  Sil.fav_filter_ident fav Ident.is_normal ;
-  exist_quantify tenv fav p
-
-
-(** convert the primed vars to normal vars. *)
-let prop_primed_vars_to_normal_vars tenv (p: normal t) : normal t =
-  let fav = prop_fav p in
-  Sil.fav_filter_ident fav Ident.is_primed ;
-  vars_make_unprimed tenv fav p
 
 
 let from_pi pi = set prop_emp ~pi
@@ -2412,7 +2419,7 @@ let prop_iter_make_id_primed tenv id iter =
         (List.rev pairs_unpid, List.rev pairs_pid)
     | (eq :: eqs_cur: pi) ->
       match eq with
-      | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
+      | Aeq (Var id1, e1) when Exp.ident_mem e1 id1 ->
           L.internal_error "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n" ;
           L.internal_error "Broken Assumption: id notin e for all (id,e) in sub@\n" ;
           L.internal_error "(id,e) : (%a,%a)@\n" Ident.pp id1 Exp.pp e1 ;
@@ -2457,28 +2464,32 @@ let prop_iter_make_id_primed tenv id iter =
   ; pit_new= sigma_sub sub_use iter.pit_new }
 
 
-let prop_iter_footprint_fav_add fav iter =
-  sigma_fav_add fav iter.pit_sigma_fp ;
-  pi_fav_add fav iter.pit_pi_fp
-
-
 (** Find fav of the footprint part of the iterator *)
-let prop_iter_footprint_fav iter =
-  Sil.fav_imperative_to_functional prop_iter_footprint_fav_add iter
+let prop_iter_footprint_gen_free_vars {pit_sigma_fp; pit_pi_fp} =
+  Sequence.Generator.(sigma_gen_free_vars pit_sigma_fp >>= fun () -> pi_gen_free_vars pit_pi_fp)
 
 
-let prop_iter_fav_add fav iter =
-  Sil.sub_fav_add fav iter.pit_sub ;
-  pi_fav_add fav iter.pit_pi ;
-  pi_fav_add fav (List.map ~f:snd iter.pit_newpi) ;
-  sigma_fav_add fav iter.pit_old ;
-  sigma_fav_add fav iter.pit_new ;
-  Sil.hpred_fav_add fav iter.pit_curr ;
-  prop_iter_footprint_fav_add fav iter
+let prop_iter_footprint_free_vars iter =
+  Sequence.Generator.run (prop_iter_footprint_gen_free_vars iter)
 
 
 (** Find fav of the iterator *)
-let prop_iter_fav iter = Sil.fav_imperative_to_functional prop_iter_fav_add iter
+let prop_iter_gen_free_vars ({pit_sub; pit_pi; pit_newpi; pit_old; pit_new; pit_curr} as iter) =
+  let open Sequence.Generator in
+  Sil.exp_subst_gen_free_vars pit_sub
+  >>= fun () ->
+  pi_gen_free_vars pit_pi
+  >>= fun () ->
+  pi_gen_free_vars (List.map ~f:snd pit_newpi)
+  >>= fun () ->
+  sigma_gen_free_vars pit_old
+  >>= fun () ->
+  sigma_gen_free_vars pit_new
+  >>= fun () ->
+  Sil.hpred_gen_free_vars pit_curr >>= fun () -> prop_iter_footprint_gen_free_vars iter
+
+
+let prop_iter_free_vars iter = Sequence.Generator.run (prop_iter_gen_free_vars iter)
 
 (** Extract the sigma part of the footprint *)
 let prop_iter_get_footprint_sigma iter = iter.pit_sigma_fp

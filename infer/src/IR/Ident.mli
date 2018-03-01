@@ -39,6 +39,8 @@ module Hash : Caml.Hashtbl.S with type key = t
 (** Map with ident as key. *)
 module Map : Caml.Map.S with type key = t
 
+module HashQueue : Hash_queue.S with type Key.t = t
+
 module NameGenerator : sig
   type t
 
@@ -134,3 +136,7 @@ val to_string : t -> string
 
 val pp_list : Format.formatter -> t list -> unit
 (** Pretty print a list of identifiers. *)
+
+val hashqueue_of_sequence : ?init:unit HashQueue.t -> t Sequence.t -> unit HashQueue.t
+
+val set_of_sequence : ?init:Set.t -> t Sequence.t -> Set.t

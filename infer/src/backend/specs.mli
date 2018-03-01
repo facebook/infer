@@ -31,8 +31,7 @@ module Jprop : sig
   val d_list : bool -> Prop.normal t list -> unit
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
 
-  val fav_add : Sil.fav -> 'a t -> unit
-  (** Add fav to a jprop *)
+  val free_vars : Prop.normal t -> Ident.t Sequence.t
 
   val filter : ('a t -> 'b option) -> 'a t list -> 'b list
   (** [jprop_filter filter joinedprops] applies [filter] to the elements

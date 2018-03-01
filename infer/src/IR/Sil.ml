@@ -1015,144 +1015,61 @@ let hpred_entries hpred = hpred_get_lexp [] hpred
 
 (** {2 Functions for computing free non-program variables} *)
 
-(** Type of free variables. These include primed, normal and footprint variables.
-    We keep a count of how many types the variables appear. *)
-type fav = Ident.t list ref
-
-let fav_new () = ref []
-
-(** Emptyness check. *)
-let fav_is_empty fav = match !fav with [] -> true | _ -> false
-
-(** Check whether a predicate holds for all elements. *)
-let fav_for_all fav predicate = List.for_all ~f:predicate !fav
-
-(** Check whether a predicate holds for some elements. *)
-let fav_exists fav predicate = List.exists ~f:predicate !fav
-
-(** flag to indicate whether fav's are stored in duplicate form.
-    Only to be used with fav_to_list *)
-let fav_duplicates = ref false
-
-(** extend [fav] with a [id] *)
-let ( ++ ) fav id =
-  if !fav_duplicates || not (List.exists ~f:(Ident.equal id) !fav) then fav := id :: !fav
+let atom_gen_free_vars =
+  let open Sequence.Generator in
+  function
+    | Aeq (e1, e2) | Aneq (e1, e2) ->
+        Exp.gen_free_vars e1 >>= fun () -> Exp.gen_free_vars e2
+    | Apred (_, es) | Anpred (_, es) ->
+        ISequence.gen_sequence_list es ~f:Exp.gen_free_vars
 
 
-(** extend [fav] with ident list [idl] *)
-let ( +++ ) fav idl = List.iter ~f:(fun id -> fav ++ id) idl
+let atom_free_vars a = Sequence.Generator.run (atom_gen_free_vars a)
 
-(** add identity lists to fav *)
-let ident_list_fav_add idl fav = fav +++ idl
-
-(** Convert a list to a fav. *)
-let fav_from_list l =
-  let fav = fav_new () in
-  let _ = List.iter ~f:(fun id -> fav ++ id) l in
-  fav
-
-
-(** Convert a [fav] to a list of identifiers while preserving the order
-    that the identifiers were added to [fav]. *)
-let fav_to_list fav = List.rev !fav
-
-(** Pretty print a fav. *)
-let pp_fav f fav = Pp.seq Ident.pp f (fav_to_list fav)
-
-(** Turn a xxx_fav_add function into a xxx_fav function *)
-let fav_imperative_to_functional f x =
-  let fav = fav_new () in
-  let _ = f fav x in
-  fav
+let rec strexp_gen_free_vars =
+  let open Sequence.Generator in
+  function
+    | Eexp (e, _) ->
+        Exp.gen_free_vars e
+    | Estruct (fld_se_list, _) ->
+        ISequence.gen_sequence_list fld_se_list ~f:(fun (_, se) -> strexp_gen_free_vars se)
+    | Earray (len, idx_se_list, _) ->
+        Exp.gen_free_vars len
+        >>= fun () ->
+        ISequence.gen_sequence_list idx_se_list ~f:(fun (e, se) ->
+            Exp.gen_free_vars e >>= fun () -> strexp_gen_free_vars se )
 
 
-(** [fav_filter_ident fav f] only keeps [id] if [f id] is true. *)
-let fav_filter_ident fav filter = fav := List.filter ~f:filter !fav
-
-(** Like [fav_filter_ident] but return a copy. *)
-let fav_copy_filter_ident fav filter = ref (List.filter ~f:filter !fav)
-
-let fav_mem fav id = List.exists ~f:(Ident.equal id) !fav
-
-let rec exp_fav_add fav e =
-  match (e : Exp.t) with
-  | Var id ->
-      fav ++ id
-  | Exn e ->
-      exp_fav_add fav e
-  | Closure {captured_vars} ->
-      List.iter ~f:(fun (e, _, _) -> exp_fav_add fav e) captured_vars
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) ->
-      ()
-  | Cast (_, e) | UnOp (_, e, _) ->
-      exp_fav_add fav e
-  | BinOp (_, e1, e2) ->
-      exp_fav_add fav e1 ; exp_fav_add fav e2
-  | Lvar _ ->
-      ()
-  | Lfield (e, _, _) (* do nothing since we only count non-program variables *) ->
-      exp_fav_add fav e
-  | Lindex (e1, e2) ->
-      exp_fav_add fav e1 ; exp_fav_add fav e2
-  (* TODO: Sizeof length expressions may contain variables, do not ignore them. *)
-  | Sizeof _ ->
-      ()
+let hpred_gen_free_vars =
+  let open Sequence.Generator in
+  function
+    | Hpointsto (base, sexp, te) ->
+        Exp.gen_free_vars base
+        >>= fun () -> strexp_gen_free_vars sexp >>= fun () -> Exp.gen_free_vars te
+    | Hlseg (_, _, e1, e2, elist) ->
+        Exp.gen_free_vars e1
+        >>= fun () ->
+        Exp.gen_free_vars e2 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
+    | Hdllseg (_, _, e1, e2, e3, e4, elist) ->
+        Exp.gen_free_vars e1
+        >>= fun () ->
+        Exp.gen_free_vars e2
+        >>= fun () ->
+        Exp.gen_free_vars e3
+        >>= fun () ->
+        Exp.gen_free_vars e4 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
 
 
-let exp_fav = fav_imperative_to_functional exp_fav_add
+let hpred_free_vars h = Sequence.Generator.run (hpred_gen_free_vars h)
 
-let exp_fav_list e = fav_to_list (exp_fav e)
-
-let ident_in_exp id e =
-  let fav = fav_new () in
-  exp_fav_add fav e ; fav_mem fav id
-
-
-let atom_fav_add fav = function
-  | Aeq (e1, e2) | Aneq (e1, e2) ->
-      exp_fav_add fav e1 ; exp_fav_add fav e2
-  | Apred (_, es) | Anpred (_, es) ->
-      List.iter ~f:(fun e -> exp_fav_add fav e) es
-
-
-let atom_fav = fav_imperative_to_functional atom_fav_add
-
-let rec strexp_fav_add fav = function
-  | Eexp (e, _) ->
-      exp_fav_add fav e
-  | Estruct (fld_se_list, _) ->
-      List.iter ~f:(fun (_, se) -> strexp_fav_add fav se) fld_se_list
-  | Earray (len, idx_se_list, _) ->
-      exp_fav_add fav len ;
-      List.iter ~f:(fun (e, se) -> exp_fav_add fav e ; strexp_fav_add fav se) idx_se_list
-
-
-let hpred_fav_add fav = function
-  | Hpointsto (base, sexp, te) ->
-      exp_fav_add fav base ; strexp_fav_add fav sexp ; exp_fav_add fav te
-  | Hlseg (_, _, e1, e2, elist) ->
-      exp_fav_add fav e1 ;
-      exp_fav_add fav e2 ;
-      List.iter ~f:(exp_fav_add fav) elist
-  | Hdllseg (_, _, e1, e2, e3, e4, elist) ->
-      exp_fav_add fav e1 ;
-      exp_fav_add fav e2 ;
-      exp_fav_add fav e3 ;
-      exp_fav_add fav e4 ;
-      List.iter ~f:(exp_fav_add fav) elist
-
-
-let hpred_fav = fav_imperative_to_functional hpred_fav_add
-
-(** This function should be used before adding a new
-    index to Earray. The [exp] is the newly created
-    index. This function "cleans" [exp] according to whether it is
-    the footprint or current part of the prop.
-    The function faults in the re - execution mode, as an internal check of the tool. *)
+(** This function should be used before adding a new index to Earray. The [exp] is the newly created
+   index. This function "cleans" [exp] according to whether it is the footprint or current part of
+   the prop.  The function faults in the re - execution mode, as an internal check of the tool. *)
 let array_clean_new_index footprint_part new_idx =
-  if footprint_part && not !Config.footprint then assert false ;
-  let fav = exp_fav new_idx in
-  if footprint_part && fav_exists fav (fun id -> not (Ident.is_footprint id)) then (
+  assert (not (footprint_part && not !Config.footprint)) ;
+  if footprint_part
+     && Exp.free_vars new_idx |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
+  then (
     L.d_warning
       ( "Array index " ^ Exp.to_string new_idx
       ^ " has non-footprint vars: replaced by fresh footprint var" ) ;
@@ -1164,28 +1081,37 @@ let array_clean_new_index footprint_part new_idx =
 
 (** {2 Functions for computing all free or bound non-program variables} *)
 
-let hpara_shallow_av_add fav para =
-  List.iter ~f:(hpred_fav_add fav) para.body ;
-  fav ++ para.root ;
-  fav ++ para.next ;
-  fav +++ para.svars ;
-  fav +++ para.evars
-
-
-let hpara_dll_shallow_av_add fav para =
-  List.iter ~f:(hpred_fav_add fav) para.body_dll ;
-  fav ++ para.cell ;
-  fav ++ para.blink ;
-  fav ++ para.flink ;
-  fav +++ para.svars_dll ;
-  fav +++ para.evars_dll
-
-
 (** Variables in hpara, excluding bound vars in the body *)
-let hpara_shallow_av = fav_imperative_to_functional hpara_shallow_av_add
+let hpara_shallow_gen_free_vars {body; root; next; svars; evars} =
+  let open Sequence.Generator in
+  ISequence.gen_sequence_list ~f:hpred_gen_free_vars body
+  >>= fun () ->
+  yield root
+  >>= fun () ->
+  yield next
+  >>= fun () ->
+  ISequence.gen_sequence_list ~f:yield svars
+  >>= fun () -> ISequence.gen_sequence_list ~f:yield evars
+
+
+let hpara_shallow_free_vars h = Sequence.Generator.run (hpara_shallow_gen_free_vars h)
 
 (** Variables in hpara_dll, excluding bound vars in the body *)
-let hpara_dll_shallow_av = fav_imperative_to_functional hpara_dll_shallow_av_add
+let hpara_dll_shallow_gen_free_vars {body_dll; cell; blink; flink; svars_dll; evars_dll} =
+  let open Sequence.Generator in
+  ISequence.gen_sequence_list ~f:hpred_gen_free_vars body_dll
+  >>= fun () ->
+  yield cell
+  >>= fun () ->
+  yield blink
+  >>= fun () ->
+  yield flink
+  >>= fun () ->
+  ISequence.gen_sequence_list ~f:yield svars_dll
+  >>= fun () -> ISequence.gen_sequence_list ~f:yield evars_dll
+
+
+let hpara_dll_shallow_free_vars h = Sequence.Generator.run (hpara_dll_shallow_gen_free_vars h)
 
 (** {2 Functions for Substitution} *)
 
@@ -1200,7 +1126,6 @@ type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
 
 type subst_fun = [`Exp of Ident.t -> Exp.t | `Typ of (Typ.t -> Typ.t) * (Typ.Name.t -> Typ.Name.t)]
 
-(** Equality for substitutions. *)
 let equal_exp_subst = [%compare.equal : exp_subst]
 
 let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
@@ -1308,11 +1233,13 @@ let extend_sub sub id exp : exp_subst option =
   if mem_sub id sub then None else Some (List.merge ~cmp:compare sub [(id, exp)])
 
 
-(** Free auxilary variables in the domain and range of the
-    substitution. *)
-let sub_fav_add fav (sub: exp_subst) =
-  List.iter ~f:(fun (id, e) -> fav ++ id ; exp_fav_add fav e) sub
+(** Free auxilary variables in the domain and range of the substitution. *)
+let exp_subst_gen_free_vars sub =
+  let open Sequence.Generator in
+  ISequence.gen_sequence_list sub ~f:(fun (id, e) -> yield id >>= fun () -> Exp.gen_free_vars e)
 
+
+let exp_subst_free_vars sub = Sequence.Generator.run (exp_subst_gen_free_vars sub)
 
 let rec exp_sub_ids (f: subst_fun) exp =
   let f_typ x = match f with `Exp _ -> x | `Typ (f, _) -> f x in

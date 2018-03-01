@@ -236,3 +236,23 @@ let pp f id = F.fprintf f "%s" (to_string id)
 
 (** pretty printer for lists of identifiers *)
 let pp_list = Pp.comma_seq pp
+
+module HashQueue = Hash_queue.Make (struct
+  type nonrec t = t
+
+  let compare = compare
+
+  let hash = Hashtbl.hash
+
+  let sexp_of_t id = Sexp.of_string (to_string id)
+end)
+
+let hashqueue_of_sequence ?init s =
+  let q = match init with None -> HashQueue.create () | Some q0 -> q0 in
+  Sequence.iter s ~f:(fun id ->
+      let _ : [`Key_already_present | `Ok] = HashQueue.enqueue q id () in
+      () ) ;
+  q
+
+
+let set_of_sequence ?(init= Set.empty) s = Sequence.fold s ~init ~f:(fun ids id -> Set.add id ids)

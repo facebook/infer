@@ -195,7 +195,9 @@ let create_type tenv n_lexp typ prop =
             let sigma_fp = prop.Prop.sigma_fp in
             let prop' = Prop.set prop ~sigma:(hpred :: sigma) in
             let prop'' =
-              let has_normal_variables = Sil.fav_exists (Sil.exp_fav n_lexp) Ident.is_normal in
+              let has_normal_variables =
+                Exp.free_vars n_lexp |> Sequence.exists ~f:Ident.is_normal
+              in
               if is_undefined_opt tenv prop n_lexp || has_normal_variables then prop'
               else Prop.set prop' ~sigma_fp:(hpred :: sigma_fp)
             in

@@ -586,7 +586,7 @@ let check_after_array_abstraction tenv prop =
     if !Config.footprint then
       let path = StrexpMatch.path_from_exp_offsets root offs in
       index_is_pointed_to tenv prop path ind
-    else not (Sil.fav_exists (Sil.exp_fav ind) Ident.is_primed)
+    else not (Exp.free_vars ind |> Sequence.exists ~f:Ident.is_primed)
   in
   let rec check_se root offs typ = function
     | Sil.Eexp _ ->
@@ -631,21 +631,19 @@ let remove_redundant_elements tenv prop =
   Prop.d_prop prop ;
   L.d_ln () ;
   let occurs_at_most_once : Ident.t -> bool =
-    (* the variable occurs at most once in the footprint or current part *)
-    let fav_curr = Sil.fav_new () in
-    let fav_foot = Sil.fav_new () in
-    Sil.fav_duplicates := true ;
-    Sil.sub_fav_add fav_curr prop.Prop.sub ;
-    Prop.pi_fav_add fav_curr prop.Prop.pi ;
-    Prop.sigma_fav_add fav_curr prop.Prop.sigma ;
-    Prop.pi_fav_add fav_foot prop.Prop.pi_fp ;
-    Prop.sigma_fav_add fav_foot prop.Prop.sigma_fp ;
-    let favl_curr = Sil.fav_to_list fav_curr in
-    let favl_foot = Sil.fav_to_list fav_foot in
-    Sil.fav_duplicates := false ;
-    let num_occur l id = List.length (List.filter ~f:(fun id' -> Ident.equal id id') l) in
-    let at_most_once v = num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in
-    at_most_once
+    let fav_curr =
+      let ( @@@ ) = Sequence.append in
+      Sil.exp_subst_free_vars prop.Prop.sub @@@ Prop.pi_free_vars prop.Prop.pi
+      @@@ Prop.sigma_free_vars prop.Prop.sigma
+    in
+    let fav_foot =
+      Sequence.append (Prop.pi_free_vars prop.Prop.pi_fp) (Prop.sigma_free_vars prop.Prop.sigma_fp)
+    in
+    let at_most_once seq id =
+      Sequence.filter seq ~f:(Ident.equal id) |> Sequence.length_is_bounded_by ~max:1
+    in
+    let at_most_once_in_curr_or_foot v = at_most_once fav_curr v && at_most_once fav_foot v in
+    at_most_once_in_curr_or_foot
   in
   let modified = ref false in
   let filter_redundant_e_se fp_part (e, se) =

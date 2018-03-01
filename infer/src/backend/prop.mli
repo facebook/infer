@@ -20,6 +20,9 @@ type normal
 (** kind for exposed props *)
 type exposed
 
+(** kind for sorted props *)
+type sorted
+
 (** Proposition. *)
 
 type pi = Sil.atom list
@@ -93,33 +96,21 @@ val pp_proplist_with_typ : Pp.env -> Format.formatter -> normal t list -> unit
 
 val d_proplist_with_typ : 'a t list -> unit
 
-val pi_fav : atom list -> fav
-(** Compute free non-program variables of pi *)
+val pi_free_vars : pi -> Ident.t Sequence.t
 
-val pi_fav_add : fav -> atom list -> unit
+val sigma_free_vars : sigma -> Ident.t Sequence.t
 
-val sigma_fav_add : fav -> hpred list -> unit
-(** Compute free non-program variables of sigma *)
+val free_vars : normal t -> Ident.t Sequence.t
 
-val sigma_fav : hpred list -> fav
+val gen_free_vars : normal t -> (unit, Ident.t) Sequence.Generator.t
 
-val sigma_fav_in_pvars_add : fav -> hpred list -> unit
-(** returns free non-program variables that are used to express
-    the contents of stack variables *)
+val footprint_free_vars : normal t -> Ident.t Sequence.t
 
-val prop_fav_add : fav -> 'a t -> unit
-(** Compute free non-program variables of prop *)
+val sorted_gen_free_vars : sorted t -> (unit, Ident.t) Sequence.Generator.t
 
-val prop_fav_add_dfs : Tenv.t -> fav -> 'a t -> unit
-(** Compute free non-program variables of prop, visited in depth first order *)
+val non_pure_free_vars : normal t -> Ident.t Sequence.t
 
-val prop_fav : normal t -> fav
-
-val prop_fav_nonpure : normal t -> fav
-(** free vars, except pi and sub, of current and footprint parts *)
-
-val prop_footprint_fav : 'a t -> fav
-(** Find fav of the footprint part of the prop *)
+val dfs_sort : Tenv.t -> normal t -> sorted t
 
 val pi_sub : subst -> atom list -> atom list
 (** Apply substitution for pi *)
@@ -266,7 +257,8 @@ val prop_expand : Tenv.t -> normal t -> normal t list
 
 (** {2 Functions for existentially quantifying and unquantifying variables} *)
 
-val exist_quantify : Tenv.t -> fav -> normal t -> normal t
+val exist_quantify :
+  Tenv.t -> ?ids_queue:unit Ident.HashQueue.t -> Ident.t list -> normal t -> normal t
 (** Existentially quantify the [ids] in [prop]. *)
 
 val prop_normal_vars_to_primed_vars : Tenv.t -> normal t -> normal t
@@ -317,10 +309,10 @@ val prop_iter_update_current : 'a prop_iter -> hpred -> 'a prop_iter
 val prop_iter_prev_then_insert : 'a prop_iter -> hpred -> 'a prop_iter
 (** Insert before the current element of the iterator. *)
 
-val prop_iter_footprint_fav : 'a prop_iter -> fav
+val prop_iter_footprint_free_vars : 'a prop_iter -> Ident.t Sequence.t
 (** Find fav of the footprint part of the iterator *)
 
-val prop_iter_fav : 'a prop_iter -> fav
+val prop_iter_free_vars : 'a prop_iter -> Ident.t Sequence.t
 (** Find fav of the iterator *)
 
 val prop_iter_get_footprint_sigma : 'a prop_iter -> hpred list

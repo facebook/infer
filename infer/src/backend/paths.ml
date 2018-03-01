@@ -632,7 +632,8 @@ end = struct
     (!el1, !el2)
 
 
-  (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
+  (** It's the caller's responsibility to ensure that [Prop.prop_rename_primed_footprint_vars] was
+     called on the prop *)
   let add_renamed_prop (p: Prop.normal Prop.t) (path: Path.t) (ps: t) : t =
     let path_new =
       try

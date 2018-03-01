@@ -250,8 +250,7 @@ let get_prop_tenv_pdesc () = !gs.last_prop_tenv_pdesc
 (** extract the footprint of the prop, and turn it into a normalized precondition using spec variables *)
 let extract_pre p tenv pdesc abstract_fun =
   let sub =
-    let fav = Prop.prop_fav p in
-    let idlist = Sil.fav_to_list fav in
+    let idlist = Prop.free_vars p |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let count = ref 0 in
     Sil.subst_of_list
       (List.map

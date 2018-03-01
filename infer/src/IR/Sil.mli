@@ -405,81 +405,22 @@ val hpred_list_get_lexps : (Exp.t -> bool) -> hpred list -> Exp.t list
 
 val hpred_entries : hpred -> Exp.t list
 
-(** {2 Function for computing lexps in sigma} *)
+val atom_free_vars : atom -> Ident.t Sequence.t
 
-(** Type of free variables. These include primed, normal and footprint variables.
-    We remember the order in which variables are added. *)
-type fav
+val atom_gen_free_vars : atom -> (unit, Ident.t) Sequence.Generator.t
 
-val fav_duplicates : bool ref
-(** flag to indicate whether fav's are stored in duplicate form.
-    Only to be used with fav_to_list *)
+val hpred_free_vars : hpred -> Ident.t Sequence.t
 
-val pp_fav : F.formatter -> fav -> unit  [@@warning "-32"]
-(** Pretty print a fav. *)
+val hpred_gen_free_vars : hpred -> (unit, Ident.t) Sequence.Generator.t
 
-val fav_new : unit -> fav
-(** Create a new [fav]. *)
+val hpara_shallow_free_vars : hpara -> Ident.t Sequence.t
 
-val fav_is_empty : fav -> bool
-(** Emptyness check. *)
-
-val fav_for_all : fav -> (Ident.t -> bool) -> bool
-(** Check whether a predicate holds for all elements. *)
-
-val fav_exists : fav -> (Ident.t -> bool) -> bool
-(** Check whether a predicate holds for some elements. *)
-
-val fav_mem : fav -> Ident.t -> bool
-(** Membership test fot [fav] *)
-
-val fav_from_list : Ident.t list -> fav
-(** Convert a list to a fav. *)
-
-val fav_to_list : fav -> Ident.t list
-(** Convert a [fav] to a list of identifiers while preserving the order
-    that identifiers were added to [fav]. *)
-
-val fav_imperative_to_functional : (fav -> 'a -> unit) -> 'a -> fav
-(** Turn a xxx_fav_add function into a xxx_fav function *)
-
-val fav_filter_ident : fav -> (Ident.t -> bool) -> unit
-(** [fav_filter_ident fav f] only keeps [id] if [f id] is true. *)
-
-val fav_copy_filter_ident : fav -> (Ident.t -> bool) -> fav
-(** Like [fav_filter_ident] but return a copy. *)
-
-val ident_list_fav_add : Ident.t list -> fav -> unit
-(** add identifier list to fav *)
-
-val exp_fav_add : fav -> Exp.t -> unit
-(** [exp_fav_add fav exp] extends [fav] with the free variables of [exp] *)
-
-val exp_fav : Exp.t -> fav
-
-val exp_fav_list : Exp.t -> Ident.t list
-
-val ident_in_exp : Ident.t -> Exp.t -> bool
-
-val strexp_fav_add : fav -> strexp -> unit
-
-val atom_fav_add : fav -> atom -> unit
-
-val atom_fav : atom -> fav
-
-val hpred_fav_add : fav -> hpred -> unit
-
-val hpred_fav : hpred -> fav
-
-val hpara_shallow_av : hpara -> fav
-(** Variables in hpara, excluding bound vars in the body *)
-
-val hpara_dll_shallow_av : hpara_dll -> fav
+val hpara_dll_shallow_free_vars : hpara_dll -> Ident.t Sequence.t
 (** Variables in hpara_dll, excluding bound vars in the body *)
 
 (** {2 Substitution} *)
 
-type exp_subst [@@deriving compare]
+type exp_subst = private (Ident.t * Exp.t) list [@@deriving compare]
 
 type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
 
@@ -557,9 +498,9 @@ val sub_map : (Ident.t -> Ident.t) -> (Exp.t -> Exp.t) -> exp_subst -> exp_subst
 val extend_sub : exp_subst -> Ident.t -> Exp.t -> exp_subst option
 (** Extend substitution and return [None] if not possible. *)
 
-val sub_fav_add : fav -> exp_subst -> unit
-(** Free auxilary variables in the domain and range of the
-    substitution. *)
+val exp_subst_free_vars : exp_subst -> Ident.t Sequence.t
+
+val exp_subst_gen_free_vars : exp_subst -> (unit, Ident.t) Sequence.Generator.t
 
 (** substitution functions
     WARNING: these functions do not ensure that the results are normalized. *)

@@ -152,7 +152,7 @@ and isel_match isel1 sub vars isel2 =
       None
   | (idx1, se1') :: isel1', (idx2, se2') :: isel2' ->
       let idx2 = Sil.exp_sub (`Exp sub) idx2 in
-      let sanity_check = not (List.exists ~f:(fun id -> Sil.ident_in_exp id idx2) vars) in
+      let sanity_check = not (List.exists ~f:(fun id -> Exp.ident_mem idx2 id) vars) in
       if not sanity_check then (
         let pe = Pp.text in
         L.internal_error "@[.... Sanity Check Failure while Matching Index-Strexps ....@\n" ;
@@ -202,9 +202,7 @@ let rec instantiate_to_emp p condition (sub: Sil.exp_subst) vars = function
             None
         | Sil.Hlseg (_, _, e1, e2, _)
           -> (
-            let fully_instantiated =
-              not (List.exists ~f:(fun id -> Sil.ident_in_exp id e1) vars)
-            in
+            let fully_instantiated = not (List.exists ~f:(fun id -> Exp.ident_mem e1 id) vars) in
             if not fully_instantiated then None
             else
               let e1' = Sil.exp_sub (`Exp sub) e1 in
@@ -215,8 +213,7 @@ let rec instantiate_to_emp p condition (sub: Sil.exp_subst) vars = function
                   instantiate_to_emp p condition sub_new vars_leftover hpats )
         | Sil.Hdllseg (_, _, iF, oB, oF, iB, _) ->
             let fully_instantiated =
-              not
-                (List.exists ~f:(fun id -> Sil.ident_in_exp id iF || Sil.ident_in_exp id oB) vars)
+              not (List.exists ~f:(fun id -> Exp.ident_mem iF id || Exp.ident_mem oB id) vars)
             in
             if not fully_instantiated then None
             else
@@ -338,7 +335,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
       let filter = gen_filter_lseg k2 para2 e_start2 e_end2 es_shared2 in
       let do_emp_lseg _ =
         let fully_instantiated_start2 =
-          not (List.exists ~f:(fun id -> Sil.ident_in_exp id e_start2) vars)
+          not (List.exists ~f:(fun id -> Exp.ident_mem e_start2 id) vars)
         in
         if not fully_instantiated_start2 then None
         else
@@ -407,7 +404,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
       let filter = gen_filter_dllseg k2 para2 iF2 oB2 oF2 iB2 es_shared2 in
       let do_emp_dllseg _ =
         let fully_instantiated_iFoB2 =
-          not (List.exists ~f:(fun id -> Sil.ident_in_exp id iF2 || Sil.ident_in_exp id oB2) vars)
+          not (List.exists ~f:(fun id -> Exp.ident_mem iF2 id || Exp.ident_mem oB2 id) vars)
         in
         if not fully_instantiated_iFoB2 then None
         else
@@ -425,9 +422,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
               prop_match_with_impl_sub tenv p condition sub_new vars_leftover hpat_next hpats_rest
       in
       let do_para_dllseg _ =
-        let fully_instantiated_iF2 =
-          not (List.exists ~f:(fun id -> Sil.ident_in_exp id iF2) vars)
-        in
+        let fully_instantiated_iF2 = not (List.exists ~f:(fun id -> Exp.ident_mem iF2 id) vars) in
         if not fully_instantiated_iF2 then None
         else
           let iF2' = Sil.exp_sub (`Exp sub) iF2 in
