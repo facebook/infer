@@ -82,7 +82,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Pvar.is_global pv && not (Pvar.is_static_local pv) && not (Pvar.is_pod pv)
       && not (Pvar.is_compile_constant pv) && not (is_compile_time_constructed pdesc pv)
     in
-    Exp.get_vars e |> snd |> List.filter ~f:is_dangerous_global |> GlobalVarSet.of_list
+    Exp.program_vars e
+    |> Sequence.fold ~init:GlobalVarSet.empty ~f:(fun gset g ->
+           if is_dangerous_global g then GlobalVarSet.add g gset else gset )
 
 
   let filter_global_accesses initialized =

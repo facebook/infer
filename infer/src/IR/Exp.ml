@@ -173,30 +173,6 @@ let le e1 e2 = BinOp (Le, e1, e2)
 (** Create expression [e1 < e2] *)
 let lt e1 e2 = BinOp (Lt, e1, e2)
 
-(** Extract the ids and pvars from an expression *)
-let get_vars exp =
-  let rec get_vars_ exp vars =
-    match exp with
-    | Lvar pvar ->
-        (fst vars, pvar :: snd vars)
-    | Var id ->
-        (id :: fst vars, snd vars)
-    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Exn e | Sizeof {dynamic_length= Some e} ->
-        get_vars_ e vars
-    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-        get_vars_ e1 vars |> get_vars_ e2
-    | Closure {captured_vars} ->
-        List.fold
-          ~f:(fun vars_acc (captured_exp, _, _) -> get_vars_ captured_exp vars_acc)
-          ~init:vars captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) ->
-        vars
-    | Sizeof _ ->
-        vars
-  in
-  get_vars_ exp ([], [])
-
-
 let fold_captured ~f exp acc =
   let rec fold_captured_ exp captured_acc =
     match exp with

@@ -24,15 +24,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = ProcData.no_extras
 
-  (* add all of the vars read in [exp] to the live set *)
+  (** add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
-    let ids, pvars = Exp.get_vars exp in
     let astate' =
-      List.fold ~f:(fun astate_acc id -> Domain.add (Var.of_id id) astate_acc) ~init:astate ids
+      Exp.free_vars exp
+      |> Sequence.fold ~init:astate ~f:(fun astate_acc id -> Domain.add (Var.of_id id) astate_acc)
     in
-    List.fold
-      ~f:(fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc)
-      ~init:astate' pvars
+    Exp.program_vars exp
+    |> Sequence.fold ~init:astate' ~f:(fun astate_acc pvar ->
+           Domain.add (Var.of_pvar pvar) astate_acc )
 
 
   let add_live_actuals actuals call_exp live_acc =

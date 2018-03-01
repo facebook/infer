@@ -116,9 +116,6 @@ val le : t -> t -> t
 val lt : t -> t -> t
 (** Create expression [e1 < e2] *)
 
-val get_vars : t -> Ident.t list * Pvar.t list
-(** Extract the ids and pvars from an expression *)
-
 val free_vars : t -> Ident.t Sequence.t
 (** all the idents appearing in the expression *)
 
