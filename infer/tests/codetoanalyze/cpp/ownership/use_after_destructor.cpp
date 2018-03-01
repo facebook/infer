@@ -51,21 +51,26 @@ void double_destructor_bad() {
   // undefined behavior
 }
 
-// frontend does the right thing here, but we need to propagate permissions from
-// tmp to s
-int FN_use_after_scope1_bad() {
+int use_after_destructor_bad() {
+  S s{1};
+  s.~S();
+  int ret = s.f;
+  s = S{2};
+  return ret;
+}
+
+void use_after_scope1_bad() {
   S s;
   {
     S tmp{1};
     s = tmp;
-  } // destructor runs here
-  return s.f;
+  } // destructor for tmp runs here
+  // destructor for s here; second time the value held by s has been desructed
 }
 
-int FN_use_after_scope2_bad() {
+void FN_use_after_scope2_bad() {
   S s;
   {
     s = S{1};
   } // destructor runs here, but our frontend currently doesn't insert it
-  return s.f;
 }

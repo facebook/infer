@@ -20,6 +20,11 @@ module CapabilityDomain = struct
     | Owned
         (** owned. permits reads, writes, and ownership transfer (e.g. call a destructor, delete, or free) *)
 
+  let make_borrowed_vars vars =
+    assert (not (VarSet.is_empty vars)) ;
+    BorrowedFrom vars
+
+
   (** Owned <= BorrowedFrom <= Invalid *)
   let ( <= ) ~lhs ~rhs =
     match (lhs, rhs) with
@@ -117,9 +122,40 @@ module Domain = struct
       ~init:astate
 
 
+  let borrow lhs_var rhs_exp astate =
+    let rhs_vars =
+      List.fold (HilExp.get_access_paths rhs_exp)
+        ~f:(fun acc ((var, _), _) -> VarSet.add var acc)
+        ~init:VarSet.empty
+    in
+    (* borrow all of the vars read on the rhs *)
+    if VarSet.is_empty rhs_vars then remove lhs_var astate
+    else add lhs_var (CapabilityDomain.make_borrowed_vars rhs_vars) astate
+
+
   (* handle assigning directly to a base var *)
   let handle_var_assign lhs_var rhs_exp loc summary astate =
-    exp_add_reads rhs_exp loc summary astate |> remove lhs_var
+    if Var.is_return lhs_var then exp_add_reads rhs_exp loc summary astate
+    else
+      match rhs_exp with
+      | HilExp.AccessExpression AccessExpression.AddressOf address_taken_exp ->
+          borrow lhs_var (AccessExpression address_taken_exp) astate
+      | HilExp.AccessExpression AccessExpression.Base (rhs_var, _)
+        when not (Var.appears_in_source_code rhs_var) -> (
+        try
+          (* assume assignments with non-source vars on the RHS transfer capabilities to the LHS
+             var *)
+          (* copy capability from RHS to LHS *)
+          let base_capability = find rhs_var astate in
+          add lhs_var base_capability astate
+        with Not_found ->
+          (* no existing capability on RHS. don't make any assumptions about LHS capability *)
+          remove lhs_var astate )
+      | HilExp.AccessExpression AccessExpression.Base _ ->
+          borrow lhs_var rhs_exp astate
+      | _ ->
+          (* TODO: support capability transfer between source vars, other assignment modes *)
+          exp_add_reads rhs_exp loc summary astate |> remove lhs_var
 end
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -127,6 +163,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = Domain
 
   type extras = Specs.summary
+
+  let acquires_ownership pname =
+    (* TODO: support new[], malloc, others? *)
+    Typ.Procname.equal pname BuiltinDecl.__new
+
 
   let transfers_ownership pname =
     (* TODO: support delete[], free, and (in some cases) std::move *)
@@ -148,6 +189,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* assign to field, array, indirectly with &/*, or a combination *)
         Domain.exp_add_reads rhs_exp loc summary astate
         |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
+    | Call (Some (lhs_var, _), Direct callee_pname, actuals, _, loc)
+      when acquires_ownership callee_pname ->
+        Domain.actuals_add_reads actuals loc summary astate
+        |> Domain.add lhs_var CapabilityDomain.Owned
+    | Call (None, Direct callee_pname, lhs_exp :: actuals, _, loc)
+      when Typ.Procname.is_constructor callee_pname
+      -> (
+        (* similar to acquires ownership case *)
+        let astate' = Domain.actuals_add_reads actuals loc summary astate in
+        (* frontend translates constructors as assigning-by-ref to first actual *)
+        match lhs_exp with
+        | AccessExpression
+            ( AccessExpression.AddressOf Base (constructed_var, _)
+            | Base (constructed_var, _)
+            (* TODO: get rid of second case once AccessExpression conversion is complete *) ) ->
+            Domain.add constructed_var CapabilityDomain.Owned astate'
+        | _ ->
+            astate' )
     | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _))], _, loc)
       when transfers_ownership callee_pname ->
         Domain.check_var_lifetime lhs_var loc summary astate ;
@@ -155,18 +214,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _)); rhs_exp], _, loc)
       when String.equal (Typ.Procname.get_method callee_pname) "operator=" ->
         Domain.handle_var_assign lhs_var rhs_exp loc summary astate
-    | Call (None, Direct callee_pname, lhs_exp :: actuals, _, loc)
-      when Typ.Procname.is_constructor callee_pname ->
-        (* frontend translates constructors as assigning-by-ref to first actual *)
-        let constructed_var =
-          match lhs_exp with
-          | AccessExpression Base (var, _) ->
-              var
-          | _ ->
-              L.die InternalError "Unexpected: constructor called on %a" HilExp.pp lhs_exp
-        in
-        Domain.actuals_add_reads actuals loc summary astate
-        |> Domain.add constructed_var CapabilityDomain.Owned
     | Call (ret_opt, _, actuals, _, loc)
       -> (
         let astate' = Domain.actuals_add_reads actuals loc summary astate in
