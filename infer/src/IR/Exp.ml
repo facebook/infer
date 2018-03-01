@@ -325,7 +325,7 @@ let rec gen_program_vars =
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         gen_program_vars e1 >>= fun () -> gen_program_vars e2
     | Closure {captured_vars} ->
-        ISequence.gen_sequence_list captured_vars ~f:(fun (_, p, _) -> yield p)
+        ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_program_vars e)
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
