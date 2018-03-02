@@ -294,7 +294,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   end
 
   module Procname = struct
-    let dispatch : model ProcnameDispatcher.dispatcher =
+    let dispatch : model ProcnameDispatcher.Procname.dispatcher =
       let open ProcnameDispatcher.Procname in
       let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
       let std_array0 = mk_std_array () in
@@ -324,7 +324,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
   end
 
   module TypName = struct
-    let dispatch : typ_model ProcnameDispatcher.typ_dispatcher =
+    let dispatch : typ_model ProcnameDispatcher.TypName.dispatcher =
       let open ProcnameDispatcher.TypName in
       make_dispatcher
         [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ

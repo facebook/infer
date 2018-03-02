@@ -23,11 +23,6 @@ type accept_more
 
 type 'marker mtyp = Typ.t
 
-(** Little abstraction over arguments: currently actual args, we'll want formal args later *)
-module FuncArg : sig
-  type t = Exp.t * Typ.t
-end
-
 (* Intermediate matcher types *)
 
 type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
@@ -41,18 +36,6 @@ type ( 'f_in
      , 'list_constraint ) template_arg
 
 type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
-
-type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
-
-type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
-
-type 'f matcher
-
-type 'f dispatcher = Typ.Procname.t -> FuncArg.t list -> 'f option
-
-type 'f typ_matcher
-
-type 'f typ_dispatcher = Typ.name -> 'f option
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
   - [C/C++ function/method] --> [f]
@@ -70,6 +53,13 @@ type 'f typ_dispatcher = Typ.name -> 'f option
 *)
 
 module type Common = sig
+  type 'f matcher
+
+  type 'f dispatcher
+
+  val make_dispatcher : 'f matcher list -> 'f dispatcher
+  (** Combines matchers to create a dispatcher *)
+
   (* Template arguments *)
 
   val any_typ :
@@ -167,7 +157,16 @@ module type Common = sig
 end
 
 module Procname : sig
-  include Common
+  (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
+  module FuncArg : sig
+    type t = Exp.t * Typ.t
+  end
+
+  include Common with type 'f dispatcher = Typ.Procname.t -> FuncArg.t list -> 'f option
+
+  type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+
+  type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
 
   (* Function args *)
 
@@ -199,9 +198,6 @@ module Procname : sig
   val typ3 :
     'marker -> (unit, _, 'f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg
   (** Matches third captured type *)
-
-  val make_dispatcher : 'f matcher list -> 'f dispatcher
-  (** Combines matchers to create a dispatcher *)
 
   val ( $+ ) :
     ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
@@ -279,22 +275,19 @@ end
 [@@warning "-32"]
 
 module TypName : sig
-  include Common
-
-  val make_dispatcher : 'f typ_matcher list -> 'f typ_dispatcher
+  include Common with type 'f dispatcher = Typ.name -> 'f option
 
   val ( >--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in
-    -> 'f_out typ_matcher
+    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
 
   val ( <>--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
 
   val ( &--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
 
   val ( &::.*--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out typ_matcher
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
         accepts ALL function arguments, binds the function *)
 end
