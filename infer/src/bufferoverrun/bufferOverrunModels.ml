@@ -293,9 +293,9 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
       {declare_local; declare_symbolic}
   end
 
-  module Procname = struct
-    let dispatch : model ProcnameDispatcher.Procname.dispatcher =
-      let open ProcnameDispatcher.Procname in
+  module Call = struct
+    let dispatch : model ProcnameDispatcher.Call.dispatcher =
+      let open ProcnameDispatcher.Call in
       let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
       let std_array0 = mk_std_array () in
       let std_array2 = mk_std_array () in

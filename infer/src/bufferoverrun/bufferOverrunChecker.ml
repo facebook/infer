@@ -250,7 +250,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Call (ret, Const Cfun callee_pname, params, location, _)
         -> (
           let model_env = Models.mk_model_env callee_pname node location tenv ?ret in
-          match Models.Procname.dispatch callee_pname params with
+          match Models.Call.dispatch callee_pname params with
           | Some {Models.exec} ->
               exec model_env mem
           | None ->
@@ -415,7 +415,7 @@ module Report = struct
           | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
               add_condition pname exp location mem cond_set
           | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
-            match Models.Procname.dispatch callee_pname params with
+            match Models.Call.dispatch callee_pname params with
             | Some {Models.check} ->
                 check (Models.mk_model_env pname node location tenv) mem cond_set
             | None ->

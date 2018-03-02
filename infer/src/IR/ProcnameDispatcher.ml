@@ -440,7 +440,7 @@ module Common = struct
   let ( <>:: ) name_matcher name = name_matcher <! () >:: name
 end
 
-module Procname = struct
+module Call = struct
   include Common
 
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)

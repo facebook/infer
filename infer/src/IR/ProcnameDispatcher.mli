@@ -156,7 +156,7 @@ module type Common = sig
   (** Separates names (accepts NO template arguments on the left one) *)
 end
 
-module Procname : sig
+module Call : sig
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg : sig
     type t = Exp.t * Typ.t
