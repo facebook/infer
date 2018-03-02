@@ -13,9 +13,10 @@ open! IStd
 
 type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
+val add_no_duplicates_fields : Typ.Struct.field -> Typ.Struct.field list -> Typ.Struct.field list
+
 val append_no_duplicates_fields :
-  (Typ.Fieldname.t * Typ.t * Annot.Item.t) list -> (Typ.Fieldname.t * Typ.t * Annot.Item.t) list
-  -> (Typ.Fieldname.t * Typ.t * Annot.Item.t) list
+  Typ.Struct.field list -> Typ.Struct.field list -> Typ.Struct.field list
 
 val swap_elements_list : 'a list -> 'a list
 
