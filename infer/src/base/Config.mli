@@ -679,3 +679,6 @@ val print_usage_exit : unit -> 'a
 (** Miscellanous *)
 
 val register_late_epilogue : (unit -> unit) -> unit
+
+val java_package_is_external : string -> bool
+(** Check if a Java package is external to the repository *)

@@ -17,5 +17,8 @@
        "sources": ["UserDefinedSource1", "UserDefinedSource2"],
        "sink": "UserDefinedSink"
     }
+  ],
+  "external-java-packages": [
+    "external."
   ]
 }

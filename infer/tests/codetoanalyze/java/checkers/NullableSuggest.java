@@ -8,6 +8,8 @@
  */
 
 package codetoanalyze.java.checkers;
+
+import external.library.SomeClass;
 import javax.annotation.Nullable;
 
 public class NullableSuggest {
@@ -124,6 +126,15 @@ public class NullableSuggest {
           }
         }
       };
+  }
+
+  boolean checkExternalFieldForNullOk(SomeClass parameter) {
+    if (parameter.field == null) {
+      // Does not report here. The field belongs to an external library so the
+      // warning would not be actionable.
+      return true;
+    }
+    return false;
   }
 
 }

@@ -1245,6 +1245,14 @@ and eradicate_verbose =
   CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
 
 
+and external_java_packages =
+  CLOpt.mk_string_list ~long:"external-java-packages"
+    ~in_help:InferCommand.([(Analyze, manual_java)])
+    ~meta:"prefix"
+    "Specify a list of Java package prefixes for external Java packages. If set, the analysis \
+     will not report non-actionable warnings on those packages."
+
+
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
     ~in_help:InferCommand.([(Run, manual_generic)])
@@ -2417,6 +2425,8 @@ and eradicate_debug = !eradicate_debug
 
 and eradicate_verbose = !eradicate_verbose
 
+and external_java_packages = !external_java_packages
+
 and fail_on_bug = !fail_on_bug
 
 and fcp_apple_clang = !fcp_apple_clang
@@ -2818,3 +2828,12 @@ let pp_simple = ref true
 let reset_abs_val () = abs_val := abs_val_orig
 
 let run_with_abs_val_equal_zero f x = set_reference_and_call_function abs_val 0 f x
+
+(** Check if a Java package is external to the repository *)
+let java_package_is_external package =
+  match external_java_packages with
+  | [] ->
+      false
+  | _ ->
+      List.exists external_java_packages ~f:(fun (prefix: string) ->
+          String.is_prefix package ~prefix )

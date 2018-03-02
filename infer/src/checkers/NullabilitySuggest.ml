@@ -151,31 +151,24 @@ let pretty_field_name proc_data field_name =
       Typ.Fieldname.to_string field_name
 
 
-(* Checks if a field name stems from a class outside domain of what is analyzed by
- * Infer, by seeing if we can get an on-demand summary for it. *)
-let is_outside_codebase proc_desc tenv field_name =
-  match Procdesc.get_proc_name proc_desc with
+(* Checks if a field name stems from a class outside the domain of what is analyzed by Infer *)
+let is_outside_codebase proc_name field_name =
+  match proc_name with
   | Typ.Procname.Java _ ->
       let class_name = Typ.Fieldname.Java.get_class field_name in
-      let class_type = Typ.Name.Java.from_string class_name in
-      let class_struct = Tenv.lookup tenv class_type in
-      let first_method =
-        Option.bind ~f:(fun (cls: Typ.Struct.t) -> List.hd cls.methods) class_struct
-      in
-      let summary =
-        Option.bind ~f:(Ondemand.analyze_proc_name ~caller_pdesc:proc_desc) first_method
-      in
-      Option.is_none summary
+      let package, _ = Typ.Name.Java.split_classname class_name in
+      Option.exists ~f:Config.java_package_is_external package
   | _ ->
       false
 
 
 let checker {Callbacks.summary; proc_desc; tenv} =
-  let annotation = Localise.nullable_annotation_name (Procdesc.get_proc_name proc_desc) in
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let annotation = Localise.nullable_annotation_name proc_name in
   let report astate (proc_data: extras ProcData.t) =
     let report_access_path ap udchain =
       match AccessPath.get_field_and_annotation ap proc_data.tenv with
-      | Some (field_name, _) when is_outside_codebase proc_desc tenv field_name ->
+      | Some (field_name, _) when is_outside_codebase proc_name field_name ->
           (* Skip reporting when the field is outside the analyzed codebase *)
           ()
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->

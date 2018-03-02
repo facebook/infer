@@ -14,6 +14,6 @@ INFER_OPTIONS = \
   --suggest-nullable --check-nullable --racerd \
 
 INFERPRINT_OPTIONS = --issues-tests
-SOURCES = $(wildcard *.java)
+SOURCES = $(wildcard *.java) $(wildcard $(TESTS_DIR)/external/library/*.java)
 
 include $(TESTS_DIR)/javac.make
