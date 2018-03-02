@@ -814,30 +814,41 @@ module Call = struct
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
 end
 
-module TypName = struct
+module type NameCommon = sig
   include Common
 
-  type 'f matcher = {on_templated_name: templated_name -> 'f option}
+  val ( >--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
 
-  type 'f dispatcher = Typ.name -> 'f option
+  val ( <>--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+
+  val ( &--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+
+  val ( &::.*--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+        accepts ALL function arguments, binds the function *)
+end
+
+module NameCommon = struct
+  include Common
+
+  type 'f matcher =
+    {on_templated_name: templated_name -> 'f option; on_objc_cpp: objc_cpp -> 'f option}
 
   let make_matcher : ('f_in, 'f_out, _, _, _, non_empty) path_matcher -> 'f_in -> 'f_out matcher =
    fun m f ->
-    let {on_templated_name} : ('f_in, 'f_out, _, _, _, non_empty) path_matcher = m in
+    let {on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}}
+          : ('f_in, 'f_out, _, _, _, non_empty) path_matcher =
+      m
+    in
     let on_templated_name templated_name =
       templated_name |> on_templated_name f |> Option.map ~f:fst
     in
-    {on_templated_name}
-
-
-  let make_dispatcher : 'f matcher list -> 'f dispatcher =
-   fun matchers typname ->
-    match templated_name_of_class_name typname with
-    | exception DoNotHandleJavaYet ->
-        None
-    | templated_name ->
-        List.find_map matchers ~f:(fun (matcher: _ matcher) ->
-            matcher.on_templated_name templated_name )
+    let on_objc_cpp objc_cpp = objc_cpp |> on_objc_cpp f |> Option.map ~f:fst in
+    {on_templated_name; on_objc_cpp}
 
 
   let ( &-->! ) path_matcher f = make_matcher path_matcher f
@@ -849,4 +860,39 @@ module TypName = struct
   let ( &--> ) name_matcher f = name_matcher <...>! () &-->! f
 
   let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () &-->! f
+end
+
+module ProcName = struct
+  include NameCommon
+
+  type 'f dispatcher = Typ.Procname.t -> 'f option
+
+  let make_dispatcher : 'f matcher list -> 'f dispatcher =
+   fun matchers ->
+    let on_objc_cpp objc_cpp =
+      List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_objc_cpp objc_cpp)
+    in
+    let on_c (c: c) =
+      let template_args = template_args_of_template_spec_info c.template_args in
+      let templated_name = (c.name, template_args) in
+      List.find_map matchers ~f:(fun (matcher: _ matcher) ->
+          matcher.on_templated_name templated_name )
+    in
+    fun procname ->
+      match procname with ObjC_Cpp objc_cpp -> on_objc_cpp objc_cpp | C c -> on_c c | _ -> None
+end
+
+module TypName = struct
+  include NameCommon
+
+  type 'f dispatcher = Typ.name -> 'f option
+
+  let make_dispatcher : 'f matcher list -> 'f dispatcher =
+   fun matchers typname ->
+    match templated_name_of_class_name typname with
+    | exception DoNotHandleJavaYet ->
+        None
+    | templated_name ->
+        List.find_map matchers ~f:(fun (matcher: _ matcher) ->
+            matcher.on_templated_name templated_name )
 end

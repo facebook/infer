@@ -156,6 +156,28 @@ module type Common = sig
   (** Separates names (accepts NO template arguments on the left one) *)
 end
 
+module type NameCommon = sig
+  include Common
+
+  val ( >--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
+
+  val ( <>--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+
+  val ( &--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+
+  val ( &::.*--> ) :
+    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+        accepts ALL function arguments, binds the function *)
+end
+
+module ProcName : NameCommon with type 'f dispatcher = Typ.Procname.t -> 'f option
+
+module TypName : NameCommon with type 'f dispatcher = Typ.name -> 'f option
+
 module Call : sig
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg : sig
@@ -271,24 +293,5 @@ module Call : sig
   (** Ends function arguments, accepts NO more function arguments.
     If the args do not match, raise an internal error.
  *)
-end
-[@@warning "-32"]
-
-module TypName : sig
-  include Common with type 'f dispatcher = Typ.name -> 'f option
-
-  val ( >--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
-
-  val ( <>--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
-
-  val ( &--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
-
-  val ( &::.*--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
-  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
-        accepts ALL function arguments, binds the function *)
 end
 [@@warning "-32"]
