@@ -44,9 +44,9 @@ A* rec2(F f, A* a = nullptr) {
   return a->getptr();
 }
 
-int test_rec2_ok_FP() {
+int test_rec2_ok() {
   F f;
-  return rec2(f)->f; // PRECONDITION_NOT_MET
+  return rec2(f)->f;
 }
 
 } // namespace recursive_call
