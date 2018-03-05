@@ -20,6 +20,8 @@ val create : unit -> t
 val load : SourceFile.t -> t option
 (** Load a type environment for a source file *)
 
+val store_debug_file_for_source : SourceFile.t -> t -> unit
+
 val load_global : unit -> t option
 (** load the global type environment (Java) *)
 

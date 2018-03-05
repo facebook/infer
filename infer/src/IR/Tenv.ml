@@ -122,13 +122,23 @@ let load source =
              |> function Global -> load_global () | FileLocal tenv -> Some tenv ) )
 
 
+let store_debug_file tenv tenv_filename =
+  let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
+  let out_channel = Out_channel.create debug_filename in
+  let fmt = Format.formatter_of_out_channel out_channel in
+  Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel
+
+
+let store_debug_file_for_source source_file tenv =
+  let tenv_filename_of_source_file =
+    DB.source_dir_get_internal_file (DB.source_dir_from_source_file source_file) ".tenv"
+  in
+  store_debug_file tenv tenv_filename_of_source_file
+
+
 let store_to_filename tenv tenv_filename =
   Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
-  if Config.debug_mode then (
-    let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
-    let out_channel = Out_channel.create debug_filename in
-    let fmt = Format.formatter_of_out_channel out_channel in
-    Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel )
+  if Config.debug_mode then store_debug_file tenv tenv_filename
 
 
 let store_global tenv =

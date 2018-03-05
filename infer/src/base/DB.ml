@@ -60,6 +60,15 @@ type source_dir = string [@@deriving compare]
 (** expose the source dir as a string *)
 let source_dir_to_string source_dir = source_dir
 
+(** get the path to an internal file with the given extention (.tenv, ...) *)
+let source_dir_get_internal_file source_dir extension =
+  let source_dir_name =
+    append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir))
+  in
+  let fname = source_dir_name ^ extension in
+  Filename.concat source_dir fname
+
+
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
   Filename.concat Config.captured_dir (source_file_encoding source_file)
