@@ -518,16 +518,13 @@ let get_objc_property_accessor tenv ms =
     -> (
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
       match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-      | Some ObjCIvarDecl (_, {ni_name}, _, _, _)
+      | Some ObjCIvarDecl (_, name_decl_info, _, _, _)
         -> (
           let class_tname =
-            match ms.CMethodSignature.name with
-            | Typ.Procname.ObjC_Cpp objc_cpp ->
-                Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp
-            | _ ->
-                assert false
+            Typ.Name.Objc.from_qual_name
+              (QualifiedCppName.from_field_qualified_name name_decl_info)
           in
-          let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
+          let field_name = CGeneral_utils.mk_class_field_name class_tname name_decl_info.ni_name in
           match Tenv.lookup tenv class_tname with
           | Some {fields}
             -> (

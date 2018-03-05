@@ -46,6 +46,14 @@ let of_rev_list = ident
 
 let cpp_separator = "::"
 
+let from_field_qualified_name name_decl_info =
+  match name_decl_info.Clang_ast_t.ni_qual_name with
+  | _ :: rest ->
+      rest
+  | _ ->
+      L.(die InternalError) "expected non-empty qualified name"
+
+
 (* define [cpp_separator_regex] here to compute it once *)
 let cpp_separator_regex = Str.regexp_string cpp_separator
 
