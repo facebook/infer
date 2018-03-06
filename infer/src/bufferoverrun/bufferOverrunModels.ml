@@ -109,7 +109,22 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check}
 
 
-  let realloc = malloc
+  let realloc src_exp size_exp =
+    let {exec= malloc_exec; check= malloc_check} = malloc size_exp in
+    let exec ({ret; tenv} as model_env) mem =
+      let mem = malloc_exec model_env mem in
+      match ret with
+      | Some (id, _) ->
+          let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+          let typ, _, _, _ = get_malloc_info size_exp in
+          let tgt_locs = Dom.Val.get_all_locs (Dom.Mem.find_stack (Loc.of_id id) mem) in
+          let src_locs = Dom.Val.get_all_locs (Sem.eval src_exp mem) in
+          BoUtils.Exec.structural_copy tenv typ ~tgt_locs ~src_locs mem
+      | _ ->
+          mem
+    in
+    {exec; check= malloc_check}
+
 
   let placement_new allocated_mem_exp =
     let exec {ret} mem =
@@ -310,7 +325,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         ; -"__new" <>$ capt_exp $+...$--> malloc
         ; -"__new_array" <>$ capt_exp $+...$--> malloc
         ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
-        ; -"realloc" <>$ any_arg $+ capt_exp $+...$--> realloc
+        ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
         ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
         ; -"strlen" <>--> by_value Dom.Val.Itv.nat
         ; -"boost" &:: "split" $ capt_arg_of_typ (-"std" &:: "vector") $+ any_arg $+ any_arg

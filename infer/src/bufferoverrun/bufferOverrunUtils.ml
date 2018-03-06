@@ -47,6 +47,9 @@ module type S = sig
     val init_array_fields :
       Tenv.t -> Typ.Procname.t -> CFG.node -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t
       -> Dom.Mem.astate -> Dom.Mem.astate
+
+    val structural_copy :
+      Tenv.t -> Typ.t -> tgt_locs:PowLoc.t -> src_locs:PowLoc.t -> Dom.Mem.astate -> Dom.Mem.astate
   end
 
   module Check : sig
@@ -166,6 +169,28 @@ module Make (CFG : ProcCfg.S) = struct
             mem
       in
       init_fields typ locs 1 ?dyn_length mem
+
+
+    let rec structural_copy tenv typ ~tgt_locs ~src_locs mem =
+      match typ with
+      | {Typ.desc= Tint _} | {Typ.desc= Tfloat _} | {Typ.desc= Tvoid} | {Typ.desc= Tptr _} ->
+          let v = Dom.Mem.find_heap_set src_locs mem in
+          Dom.Mem.strong_update_heap tgt_locs v mem
+      | {Typ.desc= Tarray {elt}} ->
+          let tgt_locs = Dom.Val.get_all_locs (Dom.Mem.find_heap_set tgt_locs mem) in
+          let src_locs = Dom.Val.get_all_locs (Dom.Mem.find_heap_set src_locs mem) in
+          structural_copy tenv elt ~tgt_locs ~src_locs mem
+      | {Typ.desc= Tstruct typename} -> (
+        match Tenv.lookup tenv typename with
+        | Some str ->
+            List.fold str.Typ.Struct.fields ~init:mem ~f:(fun mem (fn, typ, _) ->
+                let tgt_locs = PowLoc.append_field tgt_locs ~fn in
+                let src_locs = PowLoc.append_field src_locs ~fn in
+                structural_copy tenv typ ~tgt_locs ~src_locs mem )
+        | None ->
+            mem )
+      | _ ->
+          mem
   end
 
   module Check = struct

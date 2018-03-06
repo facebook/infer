@@ -13,6 +13,8 @@ codetoanalyze/cpp/bufferoverrun/external.cpp, extern_bad, 5, BUFFER_OVERRUN_L5, 
 codetoanalyze/cpp/bufferoverrun/external.cpp, extern_bad, 10, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [30, 30] Size: [10, 10]]
 codetoanalyze/cpp/bufferoverrun/folly_split.cpp, folly_split::do_not_ignore_empty_Bad, 3, BUFFER_OVERRUN_L4, [Call,Call,Call,ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, 0] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/function_call.cpp, call_by_ref_bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: [-1, -1] Size: [10, 10]]
+codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [5, 5] Size: [5, 5]]
+codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Good_FP, 6, BUFFER_OVERRUN_L5, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [-oo, +oo] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_foo_Bad, 1, CONDITION_ALWAYS_TRUE, []
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_foo_Bad, 6, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [10, 10] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_goo, 1, CONDITION_ALWAYS_TRUE, []
