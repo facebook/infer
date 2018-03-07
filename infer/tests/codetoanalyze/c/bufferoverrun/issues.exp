@@ -42,6 +42,7 @@ codetoanalyze/c/bufferoverrun/issue_kinds.c, l3_concrete_overrun_Bad, 2, BUFFER_
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l3_concrete_underrun_Bad, 2, BUFFER_OVERRUN_L3, [ArrayDeclaration,Call,Assignment,Return,ArrayAccess: Offset: [-1, 9] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l4_widened_no_overrun_Good_FP, 3, BUFFER_OVERRUN_L4, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, +oo] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l4_widened_overrun_Bad, 3, BUFFER_OVERRUN_L4, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, +oo] Size: [10, 10]]
+codetoanalyze/c/bufferoverrun/issue_kinds.c, l5_external_Warn_Bad, 2, BUFFER_OVERRUN_L5, [Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l5_external_Warn_Bad, 2, BUFFER_OVERRUN_L5, [ArrayDeclaration,ArrayAccess: Offset: [-oo, +oo] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, s2_symbolic_widened_Bad, 3, BUFFER_OVERRUN_S2, [Offset: [s$0, +oo] Size: [s$0, s$1]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, s2_symbolic_widened_Good_FP, 3, BUFFER_OVERRUN_S2, [Offset: [s$0, +oo] Size: [s$0, s$1]]

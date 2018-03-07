@@ -42,7 +42,7 @@ void realloc_struct1_Good() {
   buf2[buf2[0].x[0]].x[0] = 0;
 }
 
-void realloc_struct1_Bad_FN() {
+void realloc_struct1_Bad() {
   struct S1* buf1 = (struct S1*)malloc(2 * sizeof(struct S1));
   buf1[0].x[0] = 5;
   struct S1* buf2 = (struct S1*)realloc(buf1, 5 * sizeof(struct S1));
@@ -64,7 +64,7 @@ void realloc_struct2_Good() {
   buf2[buf2[0].s.x].s.x = 0;
 }
 
-void realloc_struct2_Bad_FN() {
+void realloc_struct2_Bad() {
   struct S3* buf1 = (struct S3*)malloc(2 * sizeof(struct S3));
   buf1[0].s.x = 5;
   struct S3* buf2 = (struct S3*)realloc(buf1, 5 * sizeof(struct S3));

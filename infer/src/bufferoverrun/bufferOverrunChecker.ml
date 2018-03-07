@@ -316,7 +316,7 @@ module Report = struct
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
-  let add_condition
+  let rec add_condition
       : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
    fun pname exp location mem cond_set ->
@@ -328,7 +328,9 @@ module Report = struct
         BoUtils.Check.array_access ~arr ~arr_traces ~idx:Itv.zero ~idx_traces:TraceSet.empty
           ~is_plus:true pname location cond_set
     | Exp.Lindex (array_exp, index_exp) ->
-        BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
+        cond_set |> add_condition pname array_exp location mem
+        |> add_condition pname index_exp location mem
+        |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
     | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2) ->
         let v_arr = Sem.eval e1 mem in
         let arr = Dom.Val.get_array_blk v_arr in
@@ -337,8 +339,15 @@ module Report = struct
         let idx = Dom.Val.get_itv v_idx in
         let idx_traces = Dom.Val.get_traces v_idx in
         let is_plus = Binop.equal bop Binop.PlusA in
-        BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location
-          cond_set
+        cond_set |> add_condition pname e1 location mem |> add_condition pname e2 location mem
+        |> BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location
+    | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
+        add_condition pname e location mem cond_set
+    | Exp.BinOp (_, e1, e2) ->
+        cond_set |> add_condition pname e1 location mem |> add_condition pname e2 location mem
+    | Exp.Closure {captured_vars} ->
+        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
+            add_condition pname e location mem cond_set )
     | _ ->
         cond_set
 
