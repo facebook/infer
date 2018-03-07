@@ -140,7 +140,18 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
     | Closure closure ->
         let environment =
           List.map
-            ~f:(fun (value, pvar, typ) -> (AccessPath.base_of_pvar pvar typ, of_sil_ value typ))
+            ~f:(fun (value, pvar, typ) ->
+              (* TODO: this is a hack than can disappear once we have proper AccessExpressions (t23176430) *)
+              let typ' =
+                match value with
+                | Exp.Lvar pvar1 when Pvar.equal pvar1 pvar ->
+                    (* captured by reference, change type to pointer *)
+                    {typ with Typ.desc= Typ.Tptr (typ, Typ.Pk_pointer)}
+                | _ ->
+                    (* capture by value *)
+                    typ
+              in
+              (AccessPath.base_of_pvar pvar typ', of_sil_ value typ') )
             closure.captured_vars
         in
         Closure (closure.name, environment)

@@ -1,3 +1,5 @@
+codetoanalyze/cpp/ownership/closures.cpp, implicit_ref_capture_destroy_invoke_bad, 6, USE_AFTER_LIFETIME, [Use of invalid variable]
+codetoanalyze/cpp/ownership/closures.cpp, ref_capture_destroy_invoke_bad, 6, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, delete_in_branch_bad, 5, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, delete_in_loop_bad, 3, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, deref_deleted_bad, 3, USE_AFTER_LIFETIME, [Use of invalid variable]

@@ -63,6 +63,15 @@ module CapabilityDomain = struct
         F.fprintf fmt "Owned"
 end
 
+let rec is_function_typ = function
+  | {Typ.desc= Tptr (t, _)} ->
+      is_function_typ t
+  | {Typ.desc= Tstruct typename} ->
+      String.is_prefix ~prefix:"std::function" (Typ.Name.name typename)
+  | _ ->
+      false
+
+
 (** map from program variable to its capability *)
 module Domain = struct
   include AbstractDomain.Map (Var) (CapabilityDomain)
@@ -103,10 +112,15 @@ module Domain = struct
         ()
 
 
-  let access_path_add_read ((base_var, _), _) loc summary astate =
-    check_var_lifetime base_var loc summary astate ;
+  let base_add_read (base_var, typ) loc summary astate =
+    (* don't warn if it's a read of a std::function type. we model closures as borrowing their
+       captured vars, but simply reading a closure doesn't actually use these vars. this means that
+       we'll miss bugs involving invalid uses of std::function's, but that seems ok *)
+    if not (is_function_typ typ) then check_var_lifetime base_var loc summary astate ;
     astate
 
+
+  let access_path_add_read (base, _) loc summary astate = base_add_read base loc summary astate
 
   let exp_add_reads exp loc summary astate =
     List.fold
@@ -122,15 +136,19 @@ module Domain = struct
       ~init:astate
 
 
-  let borrow lhs_var rhs_exp astate =
+  let borrow_vars lhs_var rhs_vars astate =
+    (* borrow all of the vars read on the rhs *)
+    if VarSet.is_empty rhs_vars then remove lhs_var astate
+    else add lhs_var (CapabilityDomain.make_borrowed_vars rhs_vars) astate
+
+
+  let borrow_exp lhs_var rhs_exp astate =
     let rhs_vars =
       List.fold (HilExp.get_access_paths rhs_exp)
         ~f:(fun acc ((var, _), _) -> VarSet.add var acc)
         ~init:VarSet.empty
     in
-    (* borrow all of the vars read on the rhs *)
-    if VarSet.is_empty rhs_vars then remove lhs_var astate
-    else add lhs_var (CapabilityDomain.make_borrowed_vars rhs_vars) astate
+    borrow_vars lhs_var rhs_vars astate
 
 
   (* handle assigning directly to a base var *)
@@ -139,7 +157,7 @@ module Domain = struct
     else
       match rhs_exp with
       | HilExp.AccessExpression AccessExpression.AddressOf address_taken_exp ->
-          borrow lhs_var (AccessExpression address_taken_exp) astate
+          borrow_exp lhs_var (AccessExpression address_taken_exp) astate
       | HilExp.AccessExpression AccessExpression.Base (rhs_var, _)
         when not (Var.appears_in_source_code rhs_var) -> (
         try
@@ -152,7 +170,16 @@ module Domain = struct
           (* no existing capability on RHS. don't make any assumptions about LHS capability *)
           remove lhs_var astate )
       | HilExp.AccessExpression AccessExpression.Base _ ->
-          borrow lhs_var rhs_exp astate
+          borrow_exp lhs_var rhs_exp astate
+      | HilExp.Closure (_, captured_vars) ->
+          (* TODO: can be folded into the case above once we have proper AccessExpressions *)
+          let vars_captured_by_ref =
+            List.fold captured_vars
+              ~f:(fun acc ((var, typ), _) ->
+                match typ.Typ.desc with Typ.Tptr _ -> VarSet.add var acc | _ -> acc )
+              ~init:VarSet.empty
+          in
+          borrow_vars lhs_var vars_captured_by_ref astate
       | _ ->
           (* TODO: support capability transfer between source vars, other assignment modes *)
           exp_add_reads rhs_exp loc summary astate |> remove lhs_var
@@ -207,13 +234,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.add constructed_var CapabilityDomain.Owned astate'
         | _ ->
             astate' )
-    | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _))], _, loc)
+    | Call (_, Direct callee_pname, [(AccessExpression Base ((lhs_var, _) as lhs_base))], _, loc)
       when transfers_ownership callee_pname ->
-        Domain.check_var_lifetime lhs_var loc summary astate ;
-        Domain.add lhs_var CapabilityDomain.Invalid astate
-    | Call (_, Direct callee_pname, [(AccessExpression Base (lhs_var, _)); rhs_exp], _, loc)
-      when String.equal (Typ.Procname.get_method callee_pname) "operator=" ->
+        Domain.base_add_read lhs_base loc summary astate
+        |> Domain.add lhs_var CapabilityDomain.Invalid
+    | Call
+        ( _
+        , Direct Typ.Procname.ObjC_Cpp callee_pname
+        , [(AccessExpression Base (lhs_var, _)); rhs_exp]
+        , _
+        , loc )
+      when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname ->
+        (* TODO: once we go interprocedural, this case should only apply for operator='s with an
+           empty summary *)
         Domain.handle_var_assign lhs_var rhs_exp loc summary astate
+    | Call
+        ( _
+        , Direct Typ.Procname.ObjC_Cpp callee_pname
+        , (AccessExpression Base (lhs_var, _)) :: _
+        , _
+        , loc )
+      when Typ.Procname.ObjC_Cpp.is_cpp_lambda callee_pname ->
+        (* invoking a lambda; check that it's captured vars are valid *)
+        Domain.check_var_lifetime lhs_var loc summary astate ;
+        astate
     | Call (ret_opt, _, actuals, _, loc)
       -> (
         let astate' = Domain.actuals_add_reads actuals loc summary astate in
