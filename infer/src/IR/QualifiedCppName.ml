@@ -46,8 +46,8 @@ let of_rev_list = ident
 
 let cpp_separator = "::"
 
-let from_field_qualified_name name_decl_info =
-  match name_decl_info.Clang_ast_t.ni_qual_name with
+let from_field_qualified_name qual_name =
+  match qual_name with
   | _ :: rest ->
       rest
   | _ ->

@@ -522,7 +522,8 @@ let get_objc_property_accessor tenv ms =
         -> (
           let class_tname =
             Typ.Name.Objc.from_qual_name
-              (QualifiedCppName.from_field_qualified_name name_decl_info)
+              (QualifiedCppName.from_field_qualified_name
+                 (QualifiedCppName.of_rev_list name_decl_info.ni_qual_name))
           in
           let field_name = CGeneral_utils.mk_class_field_name class_tname name_decl_info.ni_name in
           match Tenv.lookup tenv class_tname with

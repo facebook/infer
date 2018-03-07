@@ -47,7 +47,7 @@ val of_list : string list -> t
 val of_rev_list : string list -> t
 (** given reversed list of qualifiers, produce qualified name (ie. ["move", "std"] for std::move )*)
 
-val from_field_qualified_name : Clang_ast_t.named_decl_info -> t
+val from_field_qualified_name : t -> t
 
 val pp : Format.formatter -> t -> unit
 
