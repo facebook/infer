@@ -7,11 +7,11 @@ digraph cfg {
 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_2" [label="2: Exit test_typename \n  " color=yellow style=filled]
 	
 
-"test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" [label="3:  DeclStmt \n   *&z:void=_t$0 [line 16, column 3]\n " shape="box"]
+"test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" [label="3:  DeclStmt \n   *&z:int=3 [line 16, column 3]\n " shape="box"]
 	
 
 	 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" -> "test_typename.b2359812ef4a83b4e2638a11e6c522b3_2" ;
-"test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" [label="4:  DeclStmt \n   *&x:void=_t$1 [line 15, column 3]\n " shape="box"]
+"test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" [label="4:  DeclStmt \n   *&x:int=2 [line 15, column 3]\n " shape="box"]
 	
 
 	 "test_typename.b2359812ef4a83b4e2638a11e6c522b3_4" -> "test_typename.b2359812ef4a83b4e2638a11e6c522b3_3" ;

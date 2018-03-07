@@ -2943,6 +2943,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     call_function_with_args "GCCAsmStmt" pname trans_state
 
 
+  and genericSelectionExprUnknown_trans trans_state =
+    let pname = Typ.Procname.from_string_c_fun CFrontend_config.infer_generic_selection_expr in
+    call_function_with_args "GenericSelectionExpr" pname trans_state
+
+
   and objc_cxx_throw_trans trans_state =
     call_function_with_args "ObjCCPPThrow" BuiltinDecl.objc_cpp_throw trans_state
 
@@ -3272,8 +3277,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxDefaultExpr_trans trans_state default_expr_info
     | ImplicitValueInitExpr (stmt_info, _, _) ->
         implicitValueInitExpr_trans trans_state stmt_info
-    | GenericSelectionExpr _
-    (* to be fixed when we dump the right info in the ast *)
+    | GenericSelectionExpr (stmt_info, stmts, _, gse_info) -> (
+      match gse_info.gse_value with
+      | Some value ->
+          instruction trans_state value
+      | None ->
+          genericSelectionExprUnknown_trans trans_state stmt_info stmts )
     | SizeOfPackExpr _ ->
         {empty_res_trans with exps= [(Exp.get_undefined false, Typ.mk Tvoid)]}
     | GCCAsmStmt (stmt_info, stmts) ->

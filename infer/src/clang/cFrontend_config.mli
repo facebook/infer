@@ -88,6 +88,8 @@ val infer_skip_fun : string
 
 val infer_skip_gcc_asm_stmt : string
 
+val infer_generic_selection_expr : string
+
 val init : string
 
 val is_kind_of_class : string

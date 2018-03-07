@@ -93,6 +93,8 @@ let infer_skip_fun = "__infer_skip_function"
 
 let infer_skip_gcc_asm_stmt = "__infer_skip_gcc_asm_stmt"
 
+let infer_generic_selection_expr = "__infer_generic_selection_expr"
+
 let init = "init"
 
 let is_kind_of_class = "isKindOfClass:"
