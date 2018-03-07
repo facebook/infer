@@ -11,14 +11,31 @@ open! IStd
 
 type t =
   | Base of AccessPath.base
-  | Offset of t * AccessPath.access
-  (* field/array access *)
+  | FieldOffset of t * Typ.Fieldname.t
+  (* field access *)
+  | ArrayOffset of t * Typ.t * t list
+  (* array access *)
   | AddressOf of t
-  (* & *)
+  (* address of operator & *)
   | Dereference of t
-  (* * *)
+  (* dereference operator * *)
   [@@deriving compare]
 
 val to_access_path : t -> AccessPath.t
 
-val of_access_path : AccessPath.t -> t
+val to_access_paths : t list -> AccessPath.t list
+
+val of_id : Ident.t -> Typ.t -> t
+(** create an access expression from an ident *)
+
+val get_base : t -> AccessPath.base
+
+val get_typ : t -> Tenv.t -> Typ.t option
+
+val pp : Format.formatter -> t -> unit
+
+val equal : t -> t -> bool
+
+val of_lhs_exp :
+  include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t option
+(** convert [lhs_exp] to an access expression, resolving identifiers using [f_resolve_id] *)

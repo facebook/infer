@@ -67,13 +67,10 @@ struct
            "dump" all of the temporaries out of the id map, then execute the unlock instruction. *)
         let actual_state' =
           IdAccessPathMapDomain.fold
-            (fun id access_path astate_acc ->
+            (fun id access_expr astate_acc ->
               let lhs_access_path = AccessExpression.Base (id, Typ.mk Typ.Tvoid) in
               let dummy_assign =
-                HilInstr.Assign
-                  ( lhs_access_path
-                  , HilExp.AccessExpression (AccessExpression.of_access_path access_path)
-                  , loc )
+                HilInstr.Assign (lhs_access_path, HilExp.AccessExpression access_expr, loc)
               in
               TransferFunctions.exec_instr astate_acc extras node dummy_assign )
             id_map actual_state

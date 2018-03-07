@@ -466,7 +466,7 @@ module StabilityDomain = struct
 
 
   let add_wobbly_path_exp exp paths =
-    let access_paths = HilExp.get_access_paths exp in
+    let access_paths = AccessExpression.to_access_paths (HilExp.get_access_exprs exp) in
     List.fold ~f:(fun acc p -> add_path p acc) access_paths ~init:paths
 
 
@@ -529,9 +529,9 @@ module StabilityDomain = struct
       | Some formal_index -> (
         match List.nth actuals formal_index with
         | Some actual_exp -> (
-          match HilExp.get_access_paths actual_exp with
+          match HilExp.get_access_exprs actual_exp with
           | [actual] ->
-              AccessPath.append actual accesses
+              AccessPath.append (AccessExpression.to_access_path actual) accesses
           | _ ->
               path )
         | None ->

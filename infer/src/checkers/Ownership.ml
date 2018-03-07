@@ -124,8 +124,9 @@ module Domain = struct
 
   let exp_add_reads exp loc summary astate =
     List.fold
-      ~f:(fun acc access_path -> access_path_add_read access_path loc summary acc)
-      (HilExp.get_access_paths exp) ~init:astate
+      ~f:(fun acc access_expr ->
+        access_path_add_read (AccessExpression.to_access_path access_expr) loc summary acc )
+      (HilExp.get_access_exprs exp) ~init:astate
 
 
   let actuals_add_reads actuals loc summary astate =
@@ -144,8 +145,10 @@ module Domain = struct
 
   let borrow_exp lhs_var rhs_exp astate =
     let rhs_vars =
-      List.fold (HilExp.get_access_paths rhs_exp)
-        ~f:(fun acc ((var, _), _) -> VarSet.add var acc)
+      List.fold (HilExp.get_access_exprs rhs_exp)
+        ~f:(fun acc access_expr ->
+          let (var, _), _ = AccessExpression.to_access_path access_expr in
+          VarSet.add var acc )
         ~init:VarSet.empty
     in
     borrow_vars lhs_var rhs_vars astate

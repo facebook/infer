@@ -11,13 +11,13 @@ open! IStd
 module F = Format
 module L = Logging
 
-type call = Direct of Typ.Procname.t | Indirect of AccessPath.t [@@deriving compare]
+type call = Direct of Typ.Procname.t | Indirect of AccessExpression.t [@@deriving compare]
 
 let pp_call fmt = function
   | Direct pname ->
       Typ.Procname.pp fmt pname
-  | Indirect access_path ->
-      F.fprintf fmt "*%a" AccessPath.pp access_path
+  | Indirect access_expr ->
+      F.fprintf fmt "*%a" AccessExpression.pp access_expr
 
 
 type t =
@@ -28,9 +28,7 @@ type t =
 
 let pp fmt = function
   | Assign (access_expr, exp, loc) ->
-      F.fprintf fmt "%a := %a [%a]" AccessPath.pp
-        (AccessExpression.to_access_path access_expr)
-        HilExp.pp exp Location.pp loc
+      F.fprintf fmt "%a := %a [%a]" AccessExpression.pp access_expr HilExp.pp exp Location.pp loc
   | Assume (exp, _, _, loc) ->
       F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
   | Call (ret_opt, call, actuals, _, loc) ->
@@ -39,25 +37,31 @@ let pp fmt = function
       F.fprintf fmt "%a%a(%a) [%a]" pp_ret ret_opt pp_call call pp_actuals actuals Location.pp loc
 
 
-type translation = Instr of t | Bind of Var.t * AccessPath.t | Unbind of Var.t list | Ignore
+type translation =
+  | Instr of t
+  | Bind of Var.t * AccessExpression.t
+  | Unbind of Var.t list
+  | Ignore
 
 (* convert an SIL instruction into an HIL instruction. the [f_resolve_id] function should map an SSA
    temporary variable to the access path it represents. evaluating the HIL instruction should
    produce the same result as evaluating the SIL instruction and replacing the temporary variables
    using [f_resolve_id]. *)
 let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
-  let exp_of_sil = HilExp.of_sil ~include_array_indexes ~f_resolve_id in
-  let analyze_id_assignment lhs_id rhs_exp rhs_typ loc =
-    let rhs_hil_exp = exp_of_sil rhs_exp rhs_typ in
+  let exp_of_sil ?(add_deref= false) =
+    HilExp.of_sil ~include_array_indexes ~f_resolve_id ~add_deref
+  in
+  let analyze_id_assignment ?(add_deref= false) lhs_id rhs_exp rhs_typ loc =
+    let rhs_hil_exp = exp_of_sil ~add_deref rhs_exp rhs_typ in
     match rhs_hil_exp with
     | AccessExpression rhs_access_expr ->
-        Bind (lhs_id, AccessExpression.to_access_path rhs_access_expr)
+        Bind (lhs_id, rhs_access_expr)
     | _ ->
         Instr (Assign (AccessExpression.Base (lhs_id, rhs_typ), rhs_hil_exp, loc))
   in
   match instr with
   | Load (lhs_id, rhs_exp, rhs_typ, loc) ->
-      analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ loc
+      analyze_id_assignment ~add_deref:true (Var.of_id lhs_id) rhs_exp rhs_typ loc
   | Store (Lvar lhs_pvar, lhs_typ, rhs_exp, loc) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call
@@ -70,7 +74,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_access_expr =
-        match exp_of_sil lhs_exp typ with
+        match exp_of_sil ~add_deref:true lhs_exp typ with
         | AccessExpression access_expr ->
             access_expr
         | BinaryOperator (_, exp0, exp1) -> (
@@ -79,14 +83,14 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
                one pointer type represented as an access path. just use that access path and forget
                about the arithmetic. if you need to model this more precisely, you should be using
                SIL instead *)
-            HilExp.get_access_paths exp0
+            HilExp.get_access_exprs exp0
           with
           | ap :: _ ->
-              AccessExpression.of_access_path ap
+              ap
           | [] ->
-            match HilExp.get_access_paths exp1 with
+            match HilExp.get_access_exprs exp1 with
             | ap :: _ ->
-                AccessExpression.of_access_path ap
+                ap
             | [] ->
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
@@ -110,7 +114,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
         | Constant Cfun procname | Closure (procname, _) ->
             Direct procname
         | AccessExpression access_expr ->
-            Indirect (AccessExpression.to_access_path access_expr)
+            Indirect access_expr
         | call_exp ->
             L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
       in

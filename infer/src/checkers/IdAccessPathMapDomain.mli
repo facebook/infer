@@ -13,7 +13,7 @@ open! IStd
 
 module IdMap = Var.Map
 
-type astate = AccessPath.t IdMap.t
+type astate = AccessExpression.t IdMap.t
 
 include module type of IdMap
 

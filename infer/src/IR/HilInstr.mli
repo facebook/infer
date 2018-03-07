@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 (** type of a procedure call; either direct or via function pointer *)
-type call = Direct of Typ.Procname.t | Indirect of AccessPath.t [@@deriving compare]
+type call = Direct of Typ.Procname.t | Indirect of AccessExpression.t [@@deriving compare]
 
 type t =
   | Assign of AccessExpression.t * HilExp.t * Location.t
@@ -27,11 +27,11 @@ val pp : F.formatter -> t -> unit
 (** Result of translating an SIL instruction *)
 type translation =
   | Instr of t  (** HIL instruction to execute *)
-  | Bind of Var.t * AccessPath.t  (** add binding to identifier map *)
+  | Bind of Var.t * AccessExpression.t  (** add binding to identifier map *)
   | Unbind of Var.t list  (** remove binding from identifier map *)
   | Ignore  (** no-op *)
 
 val of_sil :
-  include_array_indexes:bool -> f_resolve_id:(Var.t -> AccessPath.t option) -> Sil.instr
+  include_array_indexes:bool -> f_resolve_id:(Var.t -> AccessExpression.t option) -> Sil.instr
   -> translation
 (** Convert an SIL instruction to an HIL instruction *)

@@ -24,7 +24,7 @@ type t =
 
 let rec pp fmt = function
   | AccessExpression access_expr ->
-      AccessPath.pp fmt (AccessExpression.to_access_path access_expr)
+      AccessExpression.pp fmt access_expr
   | UnaryOperator (op, e, _) ->
       F.fprintf fmt "%s%a" (Unop.str op) pp e
   | BinaryOperator (op, e1, e2) ->
@@ -53,7 +53,7 @@ let rec pp fmt = function
 
 let rec get_typ tenv = function
   | AccessExpression access_expr ->
-      AccessPath.get_typ (AccessExpression.to_access_path access_expr) tenv
+      AccessExpression.get_typ access_expr tenv
   | UnaryOperator (_, _, typ_opt) ->
       typ_opt
   | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _) ->
@@ -92,39 +92,39 @@ let rec get_typ tenv = function
       Some (Typ.mk (Typ.Tint Typ.IUInt))
 
 
-let get_access_paths exp0 =
-  let rec get_access_paths_ exp acc =
+let get_access_exprs exp0 =
+  let rec get_access_exprs_ exp acc =
     match exp with
     | AccessExpression ae ->
-        AccessExpression.to_access_path ae :: acc
+        ae :: acc
     | Cast (_, e) | UnaryOperator (_, e, _) | Exception e | Sizeof (_, Some e) ->
-        get_access_paths_ e acc
+        get_access_exprs_ e acc
     | BinaryOperator (_, e1, e2) ->
-        get_access_paths_ e1 acc |> get_access_paths_ e2
+        get_access_exprs_ e1 acc |> get_access_exprs_ e2
     | Closure (_, captured) ->
-        List.fold captured ~f:(fun acc (_, e) -> get_access_paths_ e acc) ~init:acc
+        List.fold captured ~f:(fun acc (_, e) -> get_access_exprs_ e acc) ~init:acc
     | Constant _ | Sizeof _ ->
         acc
   in
-  get_access_paths_ exp0 []
+  get_access_exprs_ exp0 []
 
 
 (* convert an SIL expression into an HIL expression. the [f_resolve_id] function should map an SSA
    temporary variable to the access path it represents. evaluating the HIL expression should
    produce the same result as evaluating the SIL expression and replacing the temporary variables
    using [f_resolve_id] *)
-let of_sil ~include_array_indexes ~f_resolve_id exp typ =
+let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
   let rec of_sil_ (exp: Exp.t) typ =
     match exp with
     | Var id ->
-        let ap =
+        let ae =
           match f_resolve_id (Var.of_id id) with
-          | Some access_path ->
-              access_path
+          | Some access_expr ->
+              if add_deref then AccessExpression.Dereference access_expr else access_expr
           | None ->
-              AccessPath.of_id id typ
+              AccessExpression.of_id id typ
         in
-        AccessExpression (AccessExpression.of_access_path ap)
+        AccessExpression ae
     | UnOp (op, e, typ_opt) ->
         UnaryOperator (op, of_sil_ e typ, typ_opt)
     | BinOp (op, e0, e1) ->
@@ -156,9 +156,9 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
         in
         Closure (closure.name, environment)
     | Lfield (root_exp, fld, root_exp_typ) -> (
-      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
-      | Some access_path ->
-          AccessExpression (AccessExpression.of_access_path access_path)
+      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_expr ->
+          AccessExpression access_expr
       | None ->
           (* unsupported field expression: represent with a dummy variable *)
           of_sil_
@@ -173,9 +173,9 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
          literal, e.g. using `const_cast<char*>` *)
         of_sil_ (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
     | Lindex (root_exp, index_exp) -> (
-      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
-      | Some access_path ->
-          AccessExpression (AccessExpression.of_access_path access_path)
+      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_expr ->
+          AccessExpression access_expr
       | None ->
           (* unsupported index expression: represent with a dummy variable *)
           of_sil_
@@ -183,9 +183,9 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
                , index_exp )) typ )
     | Lvar _ ->
-      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
-      | Some access_path ->
-          AccessExpression (AccessExpression.of_access_path access_path)
+      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_expr ->
+          AccessExpression access_expr
       | None ->
           L.(die InternalError) "Couldn't convert var expression %a to access path" Exp.pp exp
   in

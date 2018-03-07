@@ -164,9 +164,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 add_field_access pre
     in
     List.fold
-      ~f:(fun acc (base, accesses) ->
+      ~f:(fun acc access_expr ->
+        let base, accesses = AccessExpression.to_access_path access_expr in
         if is_static_access (fst base) then acc else add_field_accesses (base, []) acc accesses )
-      ~init:accesses (HilExp.get_access_paths exp)
+      ~init:accesses (HilExp.get_access_exprs exp)
 
 
   let is_synchronized_container callee_pname ((_, (base_typ: Typ.t)), accesses) tenv =
@@ -584,7 +585,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
             astate.ownership proc_data
         in
-        let rhs_access_paths = HilExp.get_access_paths rhs_exp in
+        let rhs_access_paths =
+          AccessExpression.to_access_paths (HilExp.get_access_exprs rhs_exp)
+        in
         let is_functional =
           not (List.is_empty rhs_access_paths)
           && List.for_all
@@ -607,10 +610,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                report spurious read/write races *)
             rhs_accesses
           else
-            add_access
-              (AccessExpression (AccessExpression.of_access_path lhs_access_path))
-              loc ~is_write_access:true rhs_accesses astate.locks astate.threads astate.ownership
-              proc_data
+            add_access (AccessExpression lhs_access_expr) loc ~is_write_access:true rhs_accesses
+              astate.locks astate.threads astate.ownership proc_data
         in
         let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
         let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
@@ -674,9 +675,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             astate.threads astate.ownership proc_data
         in
         let astate' =
-          match HilExp.get_access_paths assume_exp with
-          | [access_path]
+          match HilExp.get_access_exprs assume_exp with
+          | [access_expr]
             -> (
+              let access_path = AccessExpression.to_access_path access_expr in
               let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
               match eval_bexp access_path assume_exp with
               | Some bool_value ->
