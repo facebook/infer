@@ -711,8 +711,8 @@ module Bound = struct
 
   let subst_ub x map = subst ~subst_pos:SubstUpperBound x map
 
-  let plus_l : t -> t -> t =
-   fun x y ->
+  let plus : default:t -> t -> t -> t =
+   fun ~default x y ->
     match (x, y) with
     | _, _ when is_zero x ->
         y
@@ -731,31 +731,12 @@ module Bound = struct
     | Linear (c2, x2), MinMax (c1, Minus, Min, d1, _) ->
         Linear (c1 - d1 + c2, x2)
     | _, _ ->
-        MInf
+        default
 
 
-  let plus_u : t -> t -> t =
-   fun x y ->
-    match (x, y) with
-    | _, _ when is_zero x ->
-        y
-    | _, _ when is_zero y ->
-        x
-    | Linear (c1, x1), Linear (c2, x2) ->
-        Linear (c1 + c2, SymLinear.plus x1 x2)
-    | MinMax (c1, sign, min_max, d1, x1), Linear (c2, x2)
-    | Linear (c2, x2), MinMax (c1, sign, min_max, d1, x1)
-      when SymLinear.is_zero x2 ->
-        mk_MinMax (c1 + c2, sign, min_max, d1, x1)
-    | MinMax (c1, Plus, Min, d1, _), Linear (c2, x2)
-    | Linear (c2, x2), MinMax (c1, Plus, Min, d1, _) ->
-        Linear (c1 + d1 + c2, x2)
-    | MinMax (c1, Minus, Max, d1, _), Linear (c2, x2)
-    | Linear (c2, x2), MinMax (c1, Minus, Max, d1, _) ->
-        Linear (c1 - d1 + c2, x2)
-    | _, _ ->
-        PInf
+  let plus_l = plus ~default:MInf
 
+  let plus_u = plus ~default:PInf
 
   let mult_const : t -> NonZeroInt.t -> t option =
    fun x n ->
@@ -787,15 +768,15 @@ module Bound = struct
         None
 
 
-  let neg : t -> t option = function
+  let neg : t -> t = function
     | MInf ->
-        Some PInf
+        PInf
     | PInf ->
-        Some MInf
+        MInf
     | Linear (c, x) ->
-        Some (Linear (-c, SymLinear.neg x))
+        Linear (-c, SymLinear.neg x)
     | MinMax (c, sign, min_max, d, x) ->
-        Some (mk_MinMax (-c, Sign.neg sign, min_max, d, x))
+        mk_MinMax (-c, Sign.neg sign, min_max, d, x)
 
 
   let get_symbols : t -> Symbol.t list = function
@@ -942,9 +923,7 @@ module ItvPure = struct
 
   let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
 
-  let is_true : t -> bool =
-   fun (l, u) -> Bound.le (Bound.of_int 1) l || Bound.le u (Bound.of_int (-1))
-
+  let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
 
   let is_false : t -> bool = is_zero
 
@@ -954,10 +933,12 @@ module ItvPure = struct
 
   let is_le_zero : t -> bool = fun (_, ub) -> Bound.le ub Bound.zero
 
+  let range : t -> Bound.t = fun (l, u) -> Bound.plus_u (Bound.plus_u u Bound.one) (Bound.neg l)
+
   let neg : t -> t =
    fun (l, u) ->
-    let l' = Option.value ~default:Bound.MInf (Bound.neg u) in
-    let u' = Option.value ~default:Bound.PInf (Bound.neg l) in
+    let l' = Bound.neg u in
+    let u' = Bound.neg l in
     (l', u')
 
 
@@ -1281,6 +1262,8 @@ let zero = NonBottom ItvPure.zero
 let le : lhs:t -> rhs:t -> bool = ( <= )
 
 let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
+
+let _range : t -> Bound.t = function Bottom -> Bound.zero | NonBottom itv -> ItvPure.range itv
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
