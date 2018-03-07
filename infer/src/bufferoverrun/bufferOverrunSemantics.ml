@@ -206,7 +206,7 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.Cast (_, e) ->
           eval e mem
       | Exp.Lfield (e, fn, _) ->
-          eval e mem |> Val.get_array_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
+          eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
       | Exp.Lindex (e1, e2) ->
           eval_lindex e1 e2 mem
       | Exp.Sizeof {nbytes= Some size} ->
@@ -217,13 +217,23 @@ module Make (CFG : ProcCfg.S) = struct
           Val.Itv.top
 
 
+  (* NOTE: multidimensional array is not supported yet *)
   and eval_lindex array_exp index_exp mem =
-    let arr = Val.plus_pi (eval array_exp mem) (eval index_exp mem) in
-    let ploc =
-      if ArrayBlk.is_bot (Val.get_array_blk arr) then PowLoc.unknown else Val.get_all_locs arr
-    in
-    (* NOTE: multidimensional array is not supported yet *)
-    Val.join (Val.of_pow_loc ploc) arr
+    let array_v, index_v = (eval array_exp mem, eval index_exp mem) in
+    let arr = Val.plus_pi array_v index_v in
+    if ArrayBlk.is_bot (Val.get_array_blk arr) then
+      match array_exp with
+      | Exp.Lfield _ when not (PowLoc.is_bot (Val.get_pow_loc array_v)) ->
+          (* It handles the case accessing an array field of struct,
+             e.g., x.f[n] .  Since our abstract domain distinguishes
+             memory sections for each array fields in struct, it finds
+             the memory section using the abstract memory, though the
+             memory lookup is not required to evaluate the address of
+             x.f[n] in the concrete semantics.  *)
+          Mem.find_set (Val.get_pow_loc array_v) mem
+      | _ ->
+          Val.of_pow_loc PowLoc.unknown
+    else arr
 
 
   and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Val.t =
