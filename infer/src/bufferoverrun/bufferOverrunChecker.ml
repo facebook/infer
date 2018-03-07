@@ -534,20 +534,18 @@ module Report = struct
     PO.ConditionSet.check_all ~report cond_set
 end
 
+let extract_post inv_map node =
+  let id = CFG.id node in
+  Analyzer.extract_post id inv_map
+
+
 let compute_post
     : Specs.summary -> Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
- fun summary {pdesc; tenv; extras= get_pdesc} ->
+ fun summary ({pdesc} as pdata) ->
   let cfg = CFG.from_pdesc pdesc in
-  let pdata = ProcData.make pdesc tenv get_pdesc in
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
-  let entry_mem =
-    let entry_id = CFG.id (CFG.start_node cfg) in
-    Analyzer.extract_post entry_id inv_map
-  in
-  let exit_mem =
-    let exit_id = CFG.id (CFG.exit_node cfg) in
-    Analyzer.extract_post exit_id inv_map
-  in
+  let entry_mem = extract_post inv_map (CFG.start_node cfg) in
+  let exit_mem = extract_post inv_map (CFG.exit_node cfg) in
   let cond_set = Report.collect summary pdata inv_map in
   Report.report_errors summary pdesc cond_set ;
   match (entry_mem, exit_mem) with
@@ -565,8 +563,8 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
 
 let checker : Callbacks.proc_callback_args -> Specs.summary =
  fun {proc_desc; tenv; summary; get_proc_desc} ->
-  let proc_data = ProcData.make proc_desc tenv get_proc_desc in
   Preanal.do_preanalysis proc_desc tenv ;
+  let proc_data = ProcData.make proc_desc tenv get_proc_desc in
   match compute_post summary proc_data with
   | Some post ->
       ( if Config.bo_debug >= 1 then
