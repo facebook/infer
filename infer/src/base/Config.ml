@@ -176,6 +176,8 @@ let default_in_zip_results_dir = "infer"
 (** Dotty output filename **)
 let dotty_output = "icfg.dot"
 
+let driver_stats_dir_name = "driver_stats"
+
 let duplicates_filename = "duplicates.txt"
 
 let events_dir_name = "events"

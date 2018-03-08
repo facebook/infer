@@ -91,6 +91,8 @@ val classpath : string option
 
 val cpp_extra_include_dir : string
 
+val driver_stats_dir_name : string
+
 val duplicates_filename : string
 
 val relative_cpp_models_dir : string
