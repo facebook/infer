@@ -132,14 +132,13 @@ end
 module Loops : sig
   type loop_kind =
     | For of
-        Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt  (** init, decl_stmt, condition, increment and body *)
-    | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
-        (** decl_stmt, condition and body *)
-    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (** condition and body *)
+        { init: Clang_ast_t.stmt
+        ; decl_stmt: Clang_ast_t.stmt
+        ; condition: Clang_ast_t.stmt
+        ; increment: Clang_ast_t.stmt
+        ; body: Clang_ast_t.stmt }
+    | While of {decl_stmt: Clang_ast_t.stmt; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
+    | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
   val get_cond : loop_kind -> Clang_ast_t.stmt
 

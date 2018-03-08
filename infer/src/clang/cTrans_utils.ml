@@ -250,21 +250,20 @@ end
 module Loops = struct
   type loop_kind =
     | For of
-        Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt
-        * Clang_ast_t.stmt  (** init, decl_stmt, condition, increment and body *)
-    | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
-        (** decl_stmt, condition and body *)
-    | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (** condition and body *)
+        { init: Clang_ast_t.stmt
+        ; decl_stmt: Clang_ast_t.stmt
+        ; condition: Clang_ast_t.stmt
+        ; increment: Clang_ast_t.stmt
+        ; body: Clang_ast_t.stmt }
+    | While of {decl_stmt: Clang_ast_t.stmt; condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
+    | DoWhile of {condition: Clang_ast_t.stmt; body: Clang_ast_t.stmt}
 
   let get_body loop_kind =
-    match loop_kind with For (_, _, _, _, body) | While (_, _, body) | DoWhile (_, body) -> body
+    match loop_kind with For {body} | While {body} | DoWhile {body} -> body
 
 
   let get_cond loop_kind =
-    match loop_kind with For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
+    match loop_kind with For {condition} | While {condition} | DoWhile {condition} -> condition
 end
 
 module Scope = struct

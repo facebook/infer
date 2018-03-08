@@ -1919,10 +1919,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let continuation_cond = mk_cond_continuation outer_continuation in
     let init_incr_nodes =
       match loop_kind with
-      | Loops.For (init, _, _, incr, _) ->
+      | Loops.For {init; increment} ->
           let trans_state' = {trans_state with succ_nodes= [join_node]; continuation} in
           let res_trans_init = instruction trans_state' init in
-          let res_trans_incr = instruction trans_state' incr in
+          let res_trans_incr = instruction trans_state' increment in
           Some (res_trans_init.root_nodes, res_trans_incr.root_nodes)
       | _ ->
           None
@@ -1930,20 +1930,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let cond_stmt = Loops.get_cond loop_kind in
     let trans_state_cond = {trans_state with continuation= continuation_cond; succ_nodes= []} in
     let res_trans_cond = cond_trans ~negate_cond:false trans_state_cond cond_stmt in
-    let decl_stmt_opt =
-      match loop_kind with
-      | Loops.For (_, decl_stmt, _, _, _) ->
-          Some decl_stmt
-      | Loops.While (decl_stmt_opt, _, _) ->
-          decl_stmt_opt
-      | _ ->
-          None
-    in
     let res_trans_decl =
-      match decl_stmt_opt with
-      | Some decl_stmt ->
+      match loop_kind with
+      | Loops.For {decl_stmt} | Loops.While {decl_stmt} ->
           declStmt_in_condition_trans trans_state decl_stmt res_trans_cond
-      | _ ->
+      | Loops.DoWhile _ ->
           res_trans_cond
     in
     let body_succ_nodes =
@@ -2005,18 +1996,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with root_nodes; leaf_nodes= prune_nodes_f}
 
 
-  and forStmt_trans trans_state init decl_stmt cond incr body stmt_info =
-    let for_kind = Loops.For (init, decl_stmt, cond, incr, body) in
+  and forStmt_trans trans_state ~init ~decl_stmt ~condition ~increment ~body stmt_info =
+    let for_kind = Loops.For {init; decl_stmt; condition; increment; body} in
     loop_instruction trans_state for_kind stmt_info
 
 
-  and whileStmt_trans trans_state decl_stmt cond body stmt_info =
-    let while_kind = Loops.While (Some decl_stmt, cond, body) in
+  and whileStmt_trans trans_state ~decl_stmt ~condition ~body stmt_info =
+    let while_kind = Loops.While {decl_stmt; condition; body} in
     loop_instruction trans_state while_kind stmt_info
 
 
-  and doStmt_trans trans_state stmt_info cond body =
-    let dowhile_kind = Loops.DoWhile (cond, body) in
+  and doStmt_trans trans_state ~condition ~body stmt_info =
+    let dowhile_kind = Loops.DoWhile {condition; body} in
     loop_instruction trans_state dowhile_kind stmt_info
 
 
@@ -3137,12 +3128,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           instr
     | StmtExpr (_, stmt_list, _) ->
         stmtExpr_trans trans_state stmt_list
-    | ForStmt (stmt_info, [init; decl_stmt; cond; incr; body]) ->
-        forStmt_trans trans_state init decl_stmt cond incr body stmt_info
-    | WhileStmt (stmt_info, [decl_stmt; cond; body]) ->
-        whileStmt_trans trans_state decl_stmt cond body stmt_info
-    | DoStmt (stmt_info, [body; cond]) ->
-        doStmt_trans trans_state stmt_info cond body
+    | ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
+        forStmt_trans trans_state ~init ~decl_stmt ~condition ~increment ~body stmt_info
+    | WhileStmt (stmt_info, [decl_stmt; condition; body]) ->
+        whileStmt_trans trans_state ~decl_stmt ~condition ~body stmt_info
+    | DoStmt (stmt_info, [body; condition]) ->
+        doStmt_trans trans_state ~condition ~body stmt_info
     | CXXForRangeStmt (stmt_info, stmt_list) ->
         cxxForRangeStmt_trans trans_state stmt_info stmt_list
     | ObjCForCollectionStmt (stmt_info, [item; items; body]) ->
