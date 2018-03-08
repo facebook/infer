@@ -123,7 +123,7 @@ module T = struct
     | Tint of ikind  (** integer type *)
     | Tfloat of fkind  (** float type *)
     | Tvoid  (** void type *)
-    | Tfun of bool  (** function type with noreturn attribute *)
+    | Tfun of {no_return: bool}  (** function type with noreturn attribute *)
     | Tptr of t * ptr_kind  (** pointer type *)
     | Tstruct of name  (** structured value type name *)
     | TVar of string  (** type variable (ie. C++ template variables) *)
@@ -218,9 +218,9 @@ let rec pp_full pe f typ =
         F.fprintf f "%s" (fkind_to_string fk)
     | Tvoid ->
         F.fprintf f "void"
-    | Tfun false ->
+    | Tfun {no_return= false} ->
         F.fprintf f "_fn_"
-    | Tfun true ->
+    | Tfun {no_return= true} ->
         F.fprintf f "_fn_noreturn_"
     | Tptr (({desc= Tarray _ | Tfun _} as typ), pk) ->
         F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
@@ -700,9 +700,9 @@ module Procname = struct
 
   module ObjC_Cpp = struct
     type kind =
-      | CPPMethod of string option
-      | CPPConstructor of (string option * bool)
-      | CPPDestructor of string option
+      | CPPMethod of {mangled: string option}
+      | CPPConstructor of {mangled: string option; is_constexpr: bool}
+      | CPPDestructor of {mangled: string option}
       | ObjCClassMethod
       | ObjCInstanceMethod
       | ObjCInternalMethod
@@ -752,18 +752,18 @@ module Procname = struct
           is_objc_dealloc name.method_name
 
 
-    let is_constexpr = function {kind= CPPConstructor (_, true)} -> true | _ -> false
+    let is_constexpr = function {kind= CPPConstructor {is_constexpr= true}} -> true | _ -> false
 
     let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
     let is_operator_equal {method_name} = String.is_substring ~substring:"operator=" method_name
 
     let kind_to_verbose_string = function
-      | CPPMethod m | CPPDestructor m ->
-          "(" ^ (match m with None -> "" | Some s -> s) ^ ")"
-      | CPPConstructor (m, is_constexpr) ->
-          "{" ^ (match m with None -> "" | Some s -> s)
-          ^ (if is_constexpr then "|constexpr" else "") ^ "}"
+      | CPPMethod {mangled} | CPPDestructor {mangled} ->
+          "(" ^ Option.value ~default:"" mangled ^ ")"
+      | CPPConstructor {mangled; is_constexpr} ->
+          "{" ^ Option.value ~default:"" mangled ^ (if is_constexpr then "|constexpr" else "")
+          ^ "}"
       | ObjCClassMethod ->
           "class"
       | ObjCInstanceMethod ->
@@ -1127,9 +1127,10 @@ module Procname = struct
 end
 
 module Fieldname = struct
-  type clang_field_info = {class_name: Name.t; field_name: string} [@@deriving compare]
-
-  type t = Clang of clang_field_info | Java of string [@@deriving compare]
+  type t =
+    | Clang of {class_name: Name.t; field_name: string}
+    | Java of string
+    [@@deriving compare]
 
   let equal = [%compare.equal : t]
 

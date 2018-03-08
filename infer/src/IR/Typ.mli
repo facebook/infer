@@ -74,7 +74,7 @@ and desc =
   | Tint of ikind  (** integer type *)
   | Tfloat of fkind  (** float type *)
   | Tvoid  (** void type *)
-  | Tfun of bool  (** function type with noreturn attribute *)
+  | Tfun of {no_return: bool}  (** function type with noreturn attribute *)
   | Tptr of t * ptr_kind  (** pointer type *)
   | Tstruct of name  (** structured value type name *)
   | TVar of string  (** type variable (ie. C++ template variables) *)
@@ -339,9 +339,9 @@ module Procname : sig
 
   module ObjC_Cpp : sig
     type kind =
-      | CPPMethod of string option  (** with mangling *)
-      | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
-      | CPPDestructor of string option  (** with mangling *)
+      | CPPMethod of {mangled: string option}
+      | CPPConstructor of {mangled: string option; is_constexpr: bool}
+      | CPPDestructor of {mangled: string option}
       | ObjCClassMethod
       | ObjCInstanceMethod
       | ObjCInternalMethod

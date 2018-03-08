@@ -16,7 +16,7 @@ let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
   let assert_empty = invariant "{ }" in
-  let fun_ptr_typ = Typ.mk (Tptr (Typ.mk (Tfun false), Pk_pointer)) in
+  let fun_ptr_typ = Typ.mk (Tptr (Typ.mk (Tfun {no_return= false}), Pk_pointer)) in
   let closure_exp captured_pvars =
     let mk_captured_var str = (Exp.Var (ident_of_str str), pvar_of_str str, dummy_typ) in
     let captured_vars = List.map ~f:mk_captured_var captured_pvars in

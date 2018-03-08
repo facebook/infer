@@ -105,11 +105,11 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
   let method_kind =
     match meth_decl with
     | Some Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr}) ->
-        Typ.Procname.ObjC_Cpp.CPPConstructor (mangled, xmdi_is_constexpr)
+        Typ.Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
     | Some Clang_ast_t.CXXDestructorDecl _ ->
-        Typ.Procname.ObjC_Cpp.CPPDestructor mangled
+        Typ.Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
-        Typ.Procname.ObjC_Cpp.CPPMethod mangled
+        Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
   in
   let template_info, is_generic_model =
     match meth_decl with
