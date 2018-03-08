@@ -110,20 +110,25 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let realloc src_exp size_exp =
-    let {exec= malloc_exec; check= malloc_check} = malloc size_exp in
-    let exec ({ret; tenv} as model_env) mem =
-      let mem = malloc_exec model_env mem in
+    let exec {ret; location; tenv} mem =
       match ret with
       | Some (id, _) ->
           let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
-          let typ, _, _, _ = get_malloc_info size_exp in
-          let tgt_locs = Dom.Val.get_all_locs (Dom.Mem.find_stack (Loc.of_id id) mem) in
-          let src_locs = Dom.Val.get_all_locs (Sem.eval src_exp mem) in
-          BoUtils.Exec.structural_copy tenv typ ~tgt_locs ~src_locs mem
+          let typ, _, length0, dyn_length = get_malloc_info size_exp in
+          let length = Sem.eval length0 mem in
+          let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+          let v =
+            Sem.eval src_exp mem |> Dom.Val.set_array_size (Dom.Val.get_itv length)
+            |> Dom.Val.set_traces traces
+          in
+          let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
+          Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
+              let dyn_length = Dom.Val.get_itv (Sem.eval dyn_length mem) in
+              BoUtils.Exec.set_dyn_length tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
       | _ ->
           mem
-    in
-    {exec; check= malloc_check}
+    and check = check_alloc_size size_exp in
+    {exec; check}
 
 
   let placement_new allocated_mem_exp =

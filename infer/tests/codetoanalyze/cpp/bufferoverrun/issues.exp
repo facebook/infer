@@ -15,6 +15,7 @@ codetoanalyze/cpp/bufferoverrun/folly_split.cpp, folly_split::do_not_ignore_empt
 codetoanalyze/cpp/bufferoverrun/function_call.cpp, call_by_ref_bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: [-1, -1] Size: [10, 10]]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [5, 5] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_Good_FP, 6, BUFFER_OVERRUN_L5, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [-oo, +oo] Size: [5, 5]]
+codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_flexible_array_Bad, 4, BUFFER_OVERRUN_L1, [Offset: [7, 7] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_struct1_Bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [5, 5] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/realloc.cpp, realloc_struct2_Bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [5, 5] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_foo_Bad, 1, CONDITION_ALWAYS_TRUE, []
