@@ -40,7 +40,17 @@ module Val = struct
         TraceSet.pp x.traces
 
 
-  let unknown : t = {bot with itv= Itv.top; powloc= PowLoc.unknown; arrayblk= ArrayBlk.unknown}
+  let unknown : traces:TraceSet.t -> t =
+   fun ~traces -> {itv= Itv.top; powloc= PowLoc.unknown; arrayblk= ArrayBlk.unknown; traces}
+
+
+  let unknown_from : callee_pname:_ -> location:_ -> t =
+   fun ~callee_pname ~location ->
+    let traces =
+      Trace.UnknownFrom (callee_pname, location) |> Trace.singleton |> TraceSet.singleton
+    in
+    unknown ~traces
+
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true

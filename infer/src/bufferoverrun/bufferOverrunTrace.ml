@@ -19,6 +19,7 @@ module BoTrace = struct
     | Call of Location.t
     | Return of Location.t
     | SymAssign of Loc.t * Location.t
+    | UnknownFrom of Typ.Procname.t * Location.t
     [@@deriving compare]
 
   type t = {length: int; trace: elem list} [@@deriving compare]
@@ -46,6 +47,8 @@ module BoTrace = struct
         F.fprintf fmt "Return (%a)" Location.pp_file_pos location
     | SymAssign (loc, location) ->
         F.fprintf fmt "SymAssign (%a, %a)" Loc.pp loc Location.pp_file_pos location
+    | UnknownFrom (pname, location) ->
+        F.fprintf fmt "UnknownFrom (%a, %a)" Typ.Procname.pp pname Location.pp_file_pos location
 
 
   let pp : F.formatter -> t -> unit =

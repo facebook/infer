@@ -262,8 +262,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 L.(debug BufferOverrun Verbose)
                   "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                   location ;
-                Models.model_by_value Dom.Val.unknown model_env mem
-                |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
+                let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
+                Models.model_by_value val_unknown model_env mem
+                |> Dom.Mem.add_heap Loc.unknown val_unknown )
       | Declare_locals (locals, location) ->
           (* array allocation in stack e.g., int arr[10] *)
           let rec decl_local pname node location loc typ ~inst_num ~dimension mem =
@@ -508,6 +509,9 @@ module Report = struct
           else
             let desc = Format.asprintf "Parameter: %a" Loc.pp loc in
             (Errlog.make_trace_element depth location desc [] :: trace, depth)
+      | Trace.UnknownFrom (pname, location) ->
+          let desc = Format.asprintf "Unknown value from: %a" Typ.Procname.pp pname in
+          (Errlog.make_trace_element depth location desc [] :: trace, depth)
     in
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
