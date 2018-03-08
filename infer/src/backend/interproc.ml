@@ -1173,7 +1173,7 @@ let perform_transition proc_cfg tenv proc_name =
           "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name ;
         let error = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ error.name.IssueType.unique_id in
-        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ml_loc_opt error.ml_loc ;
+        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;
         []
     in
     transition_footprint_re_exe tenv proc_name joined_pres

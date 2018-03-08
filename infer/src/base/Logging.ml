@@ -257,17 +257,23 @@ let external_error fmt = log ~to_console:true external_error_file_fmts fmt
 let internal_error fmt = log ~to_console:true internal_error_file_fmts fmt
 
 (** Type of location in ml source: __POS__ *)
-type ml_loc = string * int * int * int
+type ocaml_pos = string * int * int * int
 
 (** Convert a ml location to a string *)
-let ml_loc_to_string (file, lnum, cnum, enum) = Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
+let ocaml_pos_to_string (file, lnum, cnum, enum) =
+  Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
+
 
 (** Pretty print a location of ml source *)
-let pp_ml_loc fmt ml_loc = F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
+let pp_ocaml_pos fmt ocaml_pos = F.fprintf fmt "%s" (ocaml_pos_to_string ocaml_pos)
 
-let pp_ml_loc_opt fmt ml_loc_opt =
+let pp_ocaml_pos_opt fmt ocaml_pos_opt =
   if Config.developer_mode then
-    match ml_loc_opt with None -> () | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
+    match ocaml_pos_opt with
+    | None ->
+        ()
+    | Some ocaml_pos ->
+        F.fprintf fmt "(%a)" pp_ocaml_pos ocaml_pos
 
 
 let log_of_kind error fmt =

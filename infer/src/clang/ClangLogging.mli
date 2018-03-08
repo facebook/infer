@@ -10,5 +10,5 @@
 open! IStd
 
 val log_caught_exception :
-  CFrontend_config.translation_unit_context -> string -> CFrontend_config.ocaml_pos
+  CFrontend_config.translation_unit_context -> string -> Logging.ocaml_pos
   -> Clang_ast_t.source_location * Clang_ast_t.source_location -> string option -> unit

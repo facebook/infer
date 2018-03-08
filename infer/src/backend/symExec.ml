@@ -1382,7 +1382,11 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
       reraise_if exn ~f:(fun () -> not mask_errors || not (SymOp.exn_not_failure exn)) ;
       let error = Exceptions.recognize_exception exn in
       let loc =
-        match error.ml_loc with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
+        match error.ocaml_pos with
+        | Some ocaml_pos ->
+            "at " ^ L.ocaml_pos_to_string ocaml_pos
+        | None ->
+            ""
       in
       L.d_warning
         (F.sprintf "Generated Instruction Failed with: %s%s" error.name.IssueType.unique_id loc) ;

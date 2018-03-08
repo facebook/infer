@@ -585,7 +585,7 @@ let extract_stmt_from_singleton stmt_list warning_string =
 module Self = struct
   exception SelfClassException of
     { class_name: Typ.Name.t
-    ; position: CFrontend_config.ocaml_pos
+    ; position: Logging.ocaml_pos
     ; source_range: Clang_ast_t.source_range }
 
   let add_self_parameter_for_super_instance stmt_info context procname loc mei =

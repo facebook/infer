@@ -34,7 +34,7 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.
     and return the line number and path position *)
 
 val create_cast_exception :
-  Tenv.t -> Logging.ml_loc -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
+  Tenv.t -> Logging.ocaml_pos -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
 (** raise a cast exception *)
 
 val prop_is_exn : Typ.Procname.t -> 'a Prop.t -> bool

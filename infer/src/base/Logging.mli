@@ -64,13 +64,13 @@ val debug : debug_kind -> debug_level -> ('a, F.formatter, unit) format -> 'a
 (** log debug info *)
 
 (** Type of location in ml source: __POS__ *)
-type ml_loc = string * int * int * int
+type ocaml_pos = string * int * int * int
 
-val ml_loc_to_string : ml_loc -> string
-(** Convert a ml location to a string *)
+val ocaml_pos_to_string : ocaml_pos -> string
+(** Convert an ocaml position to a string *)
 
-val pp_ml_loc_opt : F.formatter -> ml_loc option -> unit
-(** Pretty print a location of ml source *)
+val pp_ocaml_pos_opt : F.formatter -> ocaml_pos option -> unit
+(** Pretty print a position in ocaml source *)
 
 (** log management *)
 

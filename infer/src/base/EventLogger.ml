@@ -74,7 +74,7 @@ end
 type analysis_issue =
   { bug_kind: string
   ; bug_type: string
-  ; exception_triggered_location: string option
+  ; exception_triggered_location: Logging.ocaml_pos option
   ; lang: string
   ; procedure_name: string
   ; source_location: Location.t }
@@ -83,7 +83,8 @@ let create_analysis_issue_row base record =
   let open JsonBuilder in
   base |> add_string ~key:"bug_kind" ~data:record.bug_kind
   |> add_string ~key:"bug_type" ~data:record.bug_type
-  |> add_string_opt ~key:"exception_triggered_location" ~data:record.exception_triggered_location
+  |> add_string_opt ~key:"exception_triggered_location"
+       ~data:(Option.map ~f:Logging.ocaml_pos_to_string record.exception_triggered_location)
   |> add_string ~key:"lang" ~data:record.lang
   |> add_string ~key:"procedure_name" ~data:record.procedure_name
   |> add_string ~key:"source_location"
@@ -152,8 +153,7 @@ let create_call_trace_row base record =
 
 type frontend_exception =
   { ast_node: string option
-  ; exception_file: string
-  ; exception_line: int
+  ; exception_triggered_location: Logging.ocaml_pos
   ; exception_type: string
   ; lang: string
   ; source_location_start: Location.t
@@ -163,7 +163,7 @@ let create_frontend_exception_row base record =
   let open JsonBuilder in
   base |> add_string_opt ~key:"ast_node" ~data:record.ast_node
   |> add_string ~key:"exception_triggered_location"
-       ~data:(String.concat [record.exception_file; ":"; string_of_int record.exception_line])
+       ~data:(Logging.ocaml_pos_to_string record.exception_triggered_location)
   |> add_string ~key:"exception_type" ~data:record.exception_type
   |> add_string ~key:"lang" ~data:record.lang
   |> add_string ~key:"source_location_start_file"

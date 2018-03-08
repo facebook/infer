@@ -10,7 +10,7 @@
 type analysis_issue =
   { bug_kind: string
   ; bug_type: string
-  ; exception_triggered_location: string option
+  ; exception_triggered_location: Logging.ocaml_pos option
   ; lang: string
   ; procedure_name: string
   ; source_location: Location.t }
@@ -36,8 +36,7 @@ type call_trace =
 
 type frontend_exception =
   { ast_node: string option
-  ; exception_file: string
-  ; exception_line: int
+  ; exception_triggered_location: Logging.ocaml_pos
   ; exception_type: string
   ; lang: string
   ; source_location_start: Location.t

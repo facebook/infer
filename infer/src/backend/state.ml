@@ -330,7 +330,7 @@ let process_execution_failures (log_issue: log_issue) pname =
     | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions ->
         let error = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
-        let exn' = Exceptions.Analysis_stops (desc', error.ml_loc) in
+        let exn' = Exceptions.Analysis_stops (desc', error.ocaml_pos) in
         log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
     | _ ->
         ()

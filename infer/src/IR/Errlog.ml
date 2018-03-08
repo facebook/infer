@@ -80,7 +80,7 @@ type err_data =
   { node_id_key: node_id_key
   ; session: int
   ; loc: Location.t
-  ; loc_in_ml_source: L.ml_loc option
+  ; loc_in_ml_source: L.ocaml_pos option
   ; loc_trace: loc_trace
   ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
@@ -260,7 +260,7 @@ let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?lin
           (* TODO: Add clang_method_kind field (T26423401) *)
           { bug_type= error.name.IssueType.unique_id
           ; bug_kind= Exceptions.err_kind_string err_kind
-          ; exception_triggered_location= Option.map ~f:Logging.ml_loc_to_string error.ml_loc
+          ; exception_triggered_location= error.ocaml_pos
           ; lang= Typ.Procname.get_language procname |> Language.to_explicit_string
           ; procedure_name= Typ.Procname.to_string procname
           ; source_location= loc }
@@ -273,7 +273,7 @@ let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?lin
         { node_id_key
         ; session
         ; loc
-        ; loc_in_ml_source= error.ml_loc
+        ; loc_in_ml_source= error.ocaml_pos
         ; loc_trace= ltr
         ; err_class= error.category
         ; visibility= error.visibility
@@ -294,7 +294,7 @@ let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?lin
     let print_now () =
       L.(debug Analysis Medium)
         "@\n%a@\n@?"
-        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ml_loc)
+        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ocaml_pos)
         () ;
       if err_kind <> Exceptions.Kerror then (
         let warn_str =

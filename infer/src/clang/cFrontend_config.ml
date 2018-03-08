@@ -20,11 +20,9 @@ let string_of_clang_lang (lang: clang_lang) : string =
 
 let equal_clang_lang = [%compare.equal : clang_lang]
 
-type ocaml_pos = string * int * int * int
-
 type exception_details =
   { msg: string
-  ; position: ocaml_pos
+  ; position: Logging.ocaml_pos
   ; source_range: Clang_ast_t.source_range
   ; ast_node: string option }
 

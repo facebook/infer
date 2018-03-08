@@ -51,7 +51,7 @@ type err_data = private
   { node_id_key: node_id_key
   ; session: int
   ; loc: Location.t
-  ; loc_in_ml_source: Logging.ml_loc option
+  ; loc_in_ml_source: Logging.ocaml_pos option
   ; loc_trace: loc_trace
   ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
