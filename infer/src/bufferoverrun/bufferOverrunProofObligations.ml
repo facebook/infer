@@ -311,7 +311,7 @@ module ConditionTrace = struct
       match ct.cond_trace with
       | Inter (_, pname, location) ->
           let pname = Typ.Procname.to_string pname in
-          F.fprintf fmt "at %a by call %s() at %a (%a)" pp_location ct pname Location.pp_file_pos
+          F.fprintf fmt "at %a by call to %s at %a (%a)" pp_location ct pname Location.pp_file_pos
             location ValTraceSet.pp ct.val_traces
       | Intra _ ->
           F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
@@ -322,7 +322,7 @@ module ConditionTrace = struct
     match ct.cond_trace with
     | Inter (_, pname, _)
       when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
-        F.fprintf fmt " %@ %a by call %a " pp_location ct MF.pp_monospaced
+        F.fprintf fmt " %@ %a by call to %a " pp_location ct MF.pp_monospaced
           (Typ.Procname.to_string pname ^ "()")
     | _ ->
         ()

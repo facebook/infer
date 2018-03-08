@@ -488,21 +488,22 @@ module Report = struct
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
-   fun trace desc ->
+   fun trace issue_desc ->
     let f elem (trace, depth) =
       match elem with
-      | Trace.Assign location ->
-          (Errlog.make_trace_element depth location "Assignment" [] :: trace, depth)
+      | Trace.ArrAccess location ->
+          let desc = "ArrayAccess: " ^ issue_desc in
+          (Errlog.make_trace_element depth location desc [] :: trace, depth)
       | Trace.ArrDecl location ->
           (Errlog.make_trace_element depth location "ArrayDeclaration" [] :: trace, depth)
+      | Trace.Assign location ->
+          (Errlog.make_trace_element depth location "Assignment" [] :: trace, depth)
       | Trace.Call location ->
           (Errlog.make_trace_element depth location "Call" [] :: trace, depth + 1)
       | Trace.Return location ->
           (Errlog.make_trace_element (depth - 1) location "Return" [] :: trace, depth - 1)
       | Trace.SymAssign _ ->
           (trace, depth)
-      | Trace.ArrAccess location ->
-          (Errlog.make_trace_element depth location ("ArrayAccess: " ^ desc) [] :: trace, depth)
     in
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 

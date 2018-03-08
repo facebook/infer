@@ -33,18 +33,18 @@ module BoTrace = struct
   let pp_elem : F.formatter -> elem -> unit =
    fun fmt elem ->
     match elem with
-    | Assign location ->
-        F.fprintf fmt "Assign (%a)" Location.pp_file_pos location
+    | ArrAccess location ->
+        F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos location
     | ArrDecl location ->
         F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos location
+    | Assign location ->
+        F.fprintf fmt "Assign (%a)" Location.pp_file_pos location
     | Call location ->
         F.fprintf fmt "Call (%a)" Location.pp_file_pos location
     | Return location ->
         F.fprintf fmt "Return (%a)" Location.pp_file_pos location
     | SymAssign location ->
         F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos location
-    | ArrAccess location ->
-        F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos location
 
 
   let pp : F.formatter -> t -> unit =
@@ -62,7 +62,7 @@ module Set = struct
     else if is_empty y then x
     else
       let tx, ty = (min_elt x, min_elt y) in
-      if Pervasives.( <= ) tx.length ty.length then x else y
+      if Int.( <= ) tx.length ty.length then x else y
 
 
   let choose_shortest set = min_elt set
