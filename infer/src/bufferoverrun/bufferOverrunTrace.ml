@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open AbsLoc
 module F = Format
 
 module BoTrace = struct
@@ -17,7 +18,7 @@ module BoTrace = struct
     | Assign of Location.t
     | Call of Location.t
     | Return of Location.t
-    | SymAssign of Location.t
+    | SymAssign of Loc.t * Location.t
     [@@deriving compare]
 
   type t = {length: int; trace: elem list} [@@deriving compare]
@@ -43,8 +44,8 @@ module BoTrace = struct
         F.fprintf fmt "Call (%a)" Location.pp_file_pos location
     | Return location ->
         F.fprintf fmt "Return (%a)" Location.pp_file_pos location
-    | SymAssign location ->
-        F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos location
+    | SymAssign (loc, location) ->
+        F.fprintf fmt "SymAssign (%a, %a)" Loc.pp loc Location.pp_file_pos location
 
 
   let pp : F.formatter -> t -> unit =

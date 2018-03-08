@@ -49,6 +49,15 @@ module Loc = struct
 
   let is_var = function Var _ -> true | _ -> false
 
+  let rec contains_allocsite = function
+    | Var _ ->
+        false
+    | Allocsite _ ->
+        true
+    | Field (loc, _) ->
+        contains_allocsite loc
+
+
   let of_var v = Var v
 
   let of_allocsite a = Allocsite a

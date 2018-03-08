@@ -53,13 +53,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let unsigned = Typ.ikind_is_unsigned ikind in
             let v =
               Dom.Val.make_sym ~unsigned pname new_sym_num
-              |> Dom.Val.add_trace_elem (Trace.SymAssign location)
+              |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             Dom.Mem.add_heap loc v mem
         | Typ.Tfloat _ ->
             let v =
               Dom.Val.make_sym pname new_sym_num
-              |> Dom.Val.add_trace_elem (Trace.SymAssign location)
+              |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             Dom.Mem.add_heap loc v mem
         | Typ.Tptr (typ, _) ->
@@ -502,8 +502,12 @@ module Report = struct
           (Errlog.make_trace_element depth location "Call" [] :: trace, depth + 1)
       | Trace.Return location ->
           (Errlog.make_trace_element (depth - 1) location "Return" [] :: trace, depth - 1)
-      | Trace.SymAssign _ ->
-          (trace, depth)
+      | Trace.SymAssign (loc, location) ->
+          if Loc.contains_allocsite loc then (* ugly, don't show *)
+            (trace, depth)
+          else
+            let desc = Format.asprintf "Parameter: %a" Loc.pp loc in
+            (Errlog.make_trace_element depth location desc [] :: trace, depth)
     in
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 

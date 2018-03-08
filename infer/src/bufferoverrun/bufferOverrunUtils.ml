@@ -123,7 +123,7 @@ module Make (CFG : ProcCfg.S) = struct
       let offset = option_value offset itv_make_sym in
       let size = option_value size itv_make_sym in
       let alloc_num = new_alloc_num () in
-      let elem = Trace.SymAssign location in
+      let elem = Trace.SymAssign (loc, location) in
       let arr =
         Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
         |> Dom.Val.add_trace_elem elem
