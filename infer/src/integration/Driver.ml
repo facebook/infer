@@ -127,10 +127,8 @@ let clean_results_dir () =
 
 
 let register_perf_stats_report () =
-  let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
-  let stats_base = Config.perf_stats_prefix ^ ".json" in
-  let stats_file = Filename.concat stats_dir stats_base in
-  PerfStats.register_report_at_exit stats_file
+  let filename = F.sprintf "%s.json" Config.perf_stats_prefix in
+  PerfStats.register_report_at_exit filename Config.backend_stats_dir_name
 
 
 let reset_duplicates_file () =

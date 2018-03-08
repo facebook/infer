@@ -43,6 +43,26 @@ type frontend_exception =
   ; source_location_start: Location.t
   ; source_location_end: Location.t }
 
+type performance_stats =
+  { lang: string
+  ; source_file: SourceFile.t option
+  ; stats_type: string
+  ; real_time: float
+  ; user_time: float
+  ; sys_time: float
+  ; children_user_time: float
+  ; children_sys_time: float
+  ; minor_heap_mem: float
+  ; promoted_minor_heap_mem: float
+  ; major_heap_mem: float
+  ; total_allocated_mem: float
+  ; minor_collections: int
+  ; major_collections: int
+  ; heap_compactions: int
+  ; top_heap_size: int
+  ; stack_size: int
+  ; minor_heap_size: int }
+
 type procedures_translated =
   { lang: string
   ; procedures_translated_failed: int
@@ -54,6 +74,7 @@ type event =
   | AnalysisStats of analysis_stats
   | CallTrace of call_trace
   | FrontendException of frontend_exception
+  | PerformanceStats of performance_stats
   | ProceduresTranslatedSummary of procedures_translated
   | UncaughtException of exn * int  (** exception, exitcode *)
 

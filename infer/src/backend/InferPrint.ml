@@ -867,9 +867,8 @@ let get_summary_iterator () =
 
 
 let register_perf_stats_report () =
-  let stats_dir = Filename.concat Config.results_dir Config.reporting_stats_dir_name in
-  let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ ".json") in
-  PerfStats.register_report_at_exit stats_file
+  let filename = F.sprintf "%s.json" Config.perf_stats_prefix in
+  PerfStats.register_report_at_exit filename Config.reporting_stats_dir_name
 
 
 (** Although the out_file is an Option type, the None option is strictly meant for the

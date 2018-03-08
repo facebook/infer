@@ -156,8 +156,8 @@ let main ~changed_files ~makefile =
 
 
 let register_perf_stats_report () =
-  let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
-  let cluster = match Config.cluster_cmdline with Some cl -> "_" ^ cl | None -> "" in
-  let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json" in
-  let stats_file = Filename.concat stats_dir stats_base in
-  PerfStats.register_report_at_exit stats_file
+  let cluster =
+    match Config.cluster_cmdline with Some cl -> "_" ^ Filename.basename cl | None -> ""
+  in
+  let filename = F.sprintf "%s%s.json" Config.perf_stats_prefix cluster in
+  PerfStats.register_report_at_exit filename Config.backend_stats_dir_name

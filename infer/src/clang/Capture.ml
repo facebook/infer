@@ -8,6 +8,7 @@
  *)
 open! IStd
 module CLOpt = CommandLineOption
+module F = Format
 module L = Logging
 
 (** enable debug mode (to get more data saved to disk for future inspections) *)
@@ -24,11 +25,9 @@ let validate_decl_from_channel chan =
 
 
 let register_perf_stats_report source_file =
-  let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
   let abbrev_source_file = DB.source_file_encoding source_file in
-  let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  Unix.mkdir_p stats_dir ;
-  PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
+  let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
+  PerfStats.register_report_at_exit filename ~source_file Config.frontend_stats_dir_name
 
 
 let init_global_state_for_capture_and_linters source_file =

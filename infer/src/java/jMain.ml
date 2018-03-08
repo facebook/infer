@@ -11,13 +11,13 @@
 open! IStd
 open! PVariant
 open Javalib_pack
+module F = Format
 module L = Logging
 
 let register_perf_stats_report source_file =
-  let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
   let abbrev_source_file = DB.source_file_encoding source_file in
-  let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
+  let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
+  PerfStats.register_report_at_exit filename ~source_file Config.frontend_stats_dir_name
 
 
 let init_global_state source_file =

@@ -15,7 +15,7 @@ let empty = []
 
 let add_int t ~key ~data = (key, `Int data) :: t
 
-let _add_float t ~key ~data = (key, `Float data) :: t
+let add_float t ~key ~data = (key, `Float data) :: t
 
 let add_string t ~key ~data = (key, `String data) :: t
 

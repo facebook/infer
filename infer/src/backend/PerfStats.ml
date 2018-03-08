@@ -10,6 +10,7 @@
 (** Performance Statistics gathering and reporting *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 type perf_stats =
@@ -102,34 +103,69 @@ let aggregate s =
     ; ("minor_heap_kb", StatisticsToolbox.to_json aggr_minor_heap_kb) ]
 
 
-let stats () =
-  let words_to_kb n = n *. float_of_int (Sys.word_size / 8) /. 1024. in
+let stats source_file stats_type =
+  let bytes_per_word = Sys.word_size / 8 in
+  let words_to_bytes n = n *. float_of_int bytes_per_word in
+  let words_to_kb n = words_to_bytes n /. 1024. in
   let words_to_mb n = words_to_kb n /. 1024. in
   let words_to_gb n = words_to_mb n /. 1024. in
   let gc_stats = Gc.quick_stat () in
   let allocated_words = gc_stats.minor_words +. gc_stats.major_words -. gc_stats.promoted_words in
   let gc_ctrl = Gc.get () in
   let exit_times = Unix.times () in
-  { rtime= Mtime_clock.elapsed () |> Mtime.Span.to_s
-  ; utime= exit_times.tms_utime -. Utils.initial_times.tms_utime
-  ; stime= exit_times.tms_stime -. Utils.initial_times.tms_stime
-  ; cutime= exit_times.tms_cutime -. Utils.initial_times.tms_cutime
-  ; cstime= exit_times.tms_cstime -. Utils.initial_times.tms_cstime
-  ; minor_gb= words_to_gb gc_stats.minor_words
-  ; promoted_gb= words_to_gb gc_stats.promoted_words
-  ; major_gb= words_to_gb gc_stats.major_words
-  ; allocated_gb= words_to_gb allocated_words
-  ; minor_collections= gc_stats.minor_collections
-  ; major_collections= gc_stats.major_collections
-  ; compactions= gc_stats.compactions
-  ; top_heap_gb= words_to_gb (float_of_int gc_stats.top_heap_words)
-  ; stack_kb= words_to_kb (float_of_int gc_stats.stack_size)
-  ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size) }
+  let rtime = Mtime_clock.elapsed () |> Mtime.Span.to_s in
+  let utime = exit_times.tms_utime -. Utils.initial_times.tms_utime in
+  let stime = exit_times.tms_stime -. Utils.initial_times.tms_stime in
+  let cutime = exit_times.tms_cutime -. Utils.initial_times.tms_cutime in
+  let cstime = exit_times.tms_cstime -. Utils.initial_times.tms_cstime in
+  let stats =
+    { rtime
+    ; utime
+    ; stime
+    ; cutime
+    ; cstime
+    ; minor_gb= words_to_gb gc_stats.minor_words
+    ; promoted_gb= words_to_gb gc_stats.promoted_words
+    ; major_gb= words_to_gb gc_stats.major_words
+    ; allocated_gb= words_to_gb allocated_words
+    ; minor_collections= gc_stats.minor_collections
+    ; major_collections= gc_stats.major_collections
+    ; compactions= gc_stats.compactions
+    ; top_heap_gb= words_to_gb (float_of_int gc_stats.top_heap_words)
+    ; stack_kb= words_to_kb (float_of_int gc_stats.stack_size)
+    ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size) }
+  in
+  (* We log number of bytes instead of a larger unit in EventLogger so the EventLogger output can
+    display in whatever format fits best *)
+  let stats_event =
+    EventLogger.PerformanceStats
+      { lang= Language.to_explicit_string !Language.curr_language
+      ; source_file
+      ; stats_type
+      ; real_time= rtime
+      ; user_time= utime
+      ; sys_time= stime
+      ; children_user_time= cutime
+      ; children_sys_time= cstime
+      ; minor_heap_mem= words_to_bytes gc_stats.minor_words
+      ; promoted_minor_heap_mem= words_to_bytes gc_stats.promoted_words
+      ; major_heap_mem= words_to_bytes gc_stats.major_words
+      ; total_allocated_mem= words_to_bytes allocated_words
+      ; minor_collections= gc_stats.minor_collections
+      ; major_collections= gc_stats.major_collections
+      ; heap_compactions= gc_stats.compactions
+      ; top_heap_size= gc_stats.top_heap_words * bytes_per_word
+      ; stack_size= gc_stats.stack_size * bytes_per_word
+      ; minor_heap_size= gc_ctrl.minor_heap_size * bytes_per_word }
+  in
+  (stats, stats_event)
 
 
-let report_at_exit file () =
+let report_at_exit file source_file stats_type () =
   try
-    let json_stats = to_json (stats ()) in
+    let stats, stats_event = stats source_file stats_type in
+    let json_stats = to_json stats in
+    EventLogger.log stats_event ;
     try
       Unix.mkdir_p (Filename.dirname file) ;
       (* the same report may be registered across different infer processes *)
@@ -146,10 +182,14 @@ let report_at_exit file () =
 
 
 let register_report_at_exit =
-  (* take care of not double-registering the same perf stat report *)
   let registered_files = String.Table.create ~size:4 () in
-  fun file ->
+  fun filename ?source_file dirname ->
+    let dir = Filename.concat Config.results_dir dirname in
+    let file = Filename.concat dir filename in
+    (* take care of not double-registering the same perf stat report *)
     if not (Hashtbl.mem registered_files file) then (
       String.Table.set registered_files ~key:file ~data:() ;
       if not Config.buck_cache_mode then
-        Epilogues.register ~f:(report_at_exit file) ("stats reporting in " ^ file) )
+        Epilogues.register
+          ~f:(report_at_exit file source_file dirname)
+          ("stats reporting in " ^ file) )

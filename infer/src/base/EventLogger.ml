@@ -184,6 +184,50 @@ let create_frontend_exception_row base record =
             ; string_of_int record.source_location_end.col ])
 
 
+type performance_stats =
+  { lang: string
+  ; source_file: SourceFile.t option
+  ; stats_type: string
+  ; real_time: float
+  ; user_time: float
+  ; sys_time: float
+  ; children_user_time: float
+  ; children_sys_time: float
+  ; minor_heap_mem: float
+  ; promoted_minor_heap_mem: float
+  ; major_heap_mem: float
+  ; total_allocated_mem: float
+  ; minor_collections: int
+  ; major_collections: int
+  ; heap_compactions: int
+  ; top_heap_size: int
+  ; stack_size: int
+  ; minor_heap_size: int }
+
+let create_performance_stats_row base record =
+  let open JsonBuilder in
+  base |> add_string ~key:"lang" ~data:record.lang
+  |> add_string_opt ~key:"source_file"
+       ~data:(Option.map ~f:SourceFile.to_rel_path record.source_file)
+  |> add_string ~key:"stats_type" ~data:record.stats_type
+  |> add_float ~key:"real_time" ~data:record.real_time
+  |> add_float ~key:"user_time" ~data:record.user_time
+  |> add_float ~key:"sys_time" ~data:record.sys_time
+  |> add_float ~key:"children_user_time" ~data:record.children_user_time
+  |> add_float ~key:"children_sys_time" ~data:record.children_sys_time
+  |> add_float ~key:"minor_heap_mem" ~data:record.minor_heap_mem
+  |> add_float ~key:"promoted_minor_heap_mem" ~data:record.promoted_minor_heap_mem
+  |> add_float ~key:"major_heap_mem" ~data:record.major_heap_mem
+  |> add_float ~key:"total_allocated_mem" ~data:record.total_allocated_mem
+  |> add_int ~key:"minor_collections" ~data:record.minor_collections
+  |> add_int ~key:"major_collections" ~data:record.major_collections
+  |> add_int ~key:"heap_compactions" ~data:record.heap_compactions
+  |> add_int ~key:"top_heap_size" ~data:record.top_heap_size
+  |> add_int ~key:"stack_size" ~data:record.stack_size
+  |> add_int ~key:"minor_heap_size" ~data:record.minor_heap_size
+  |> add_string ~key:"stats_type" ~data:record.stats_type
+
+
 type procedures_translated =
   { lang: string
   ; procedures_translated_failed: int
@@ -203,6 +247,7 @@ type event =
   | AnalysisStats of analysis_stats
   | CallTrace of call_trace
   | FrontendException of frontend_exception
+  | PerformanceStats of performance_stats
   | ProceduresTranslatedSummary of procedures_translated
   | UncaughtException of exn * int
 
@@ -216,6 +261,8 @@ let string_of_event event =
       "CallTrace"
   | FrontendException _ ->
       "FrontendException"
+  | PerformanceStats _ ->
+      "PerformanceStats"
   | ProceduresTranslatedSummary _ ->
       "ProceduresTranslatedSummary"
   | UncaughtException _ ->
@@ -271,6 +318,8 @@ module LoggerImpl : S = struct
         create_call_trace_row base record
     | FrontendException record ->
         create_frontend_exception_row base record
+    | PerformanceStats record ->
+        create_performance_stats_row base record
     | ProceduresTranslatedSummary record ->
         create_procedures_translated_row base record
     | UncaughtException (exn, exitcode) ->
