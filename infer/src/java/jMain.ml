@@ -141,12 +141,14 @@ let main load_sources_and_classes =
   let classpath, sources, classes =
     match load_sources_and_classes with
     | `FromVerboseOut verbose_out_file ->
-        JClasspath.load_from_verbose_output verbose_out_file
+        let classpath, sources, classes = JClasspath.load_from_verbose_output verbose_out_file in
+        if String.Map.is_empty sources then
+          L.(die InternalError) "Failed to load any Java source code"
+        else (classpath, sources, classes)
     | `FromArguments path ->
         JClasspath.load_from_arguments path
   in
-  if String.Map.is_empty sources then L.(die UserError) "Failed to load any Java source code"
-  else do_all_files classpath sources classes
+  do_all_files classpath sources classes
 
 
 let from_arguments path = main (`FromArguments path)
