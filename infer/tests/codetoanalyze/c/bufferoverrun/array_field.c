@@ -23,3 +23,16 @@ void array_field_access_Bad(struct S1 x, struct S1 y) {
   x.f[0] = 1;
   a[y.f[0]] = 0;
 }
+
+void decreasing_pointer_Good(struct S1* x) {
+  int* p = &(x->f[1]);
+  p--;
+  *p = 0;
+}
+
+void decreasing_pointer_Bad(struct S1* x) {
+  int* p = &(x->f[1]);
+  p--;
+  p--;
+  *p = 0;
+}

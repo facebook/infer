@@ -2,6 +2,7 @@ codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_Bad, 2, BUFFER_OVERRUN_L3, 
 codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_neg_Bad, 2, BUFFER_OVERRUN_L3, [ArrayDeclaration,ArrayAccess: Offset: [-4, 4] Size: [5, 5]]
 codetoanalyze/c/bufferoverrun/array_dynlength.c, init_variable_array, 3, BUFFER_OVERRUN_L2, [Offset: [3xs$0 + 1, 3xs$1 + 1] Size: [3xs$0 + 1, 3xs$1 + 1]]
 codetoanalyze/c/bufferoverrun/array_field.c, array_field_access_Bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [20, 20] Size: [10, 10]]
+codetoanalyze/c/bufferoverrun/array_field.c, decreasing_pointer_Bad, 4, BUFFER_OVERRUN_L1, [Assignment,Assignment,Assignment,ArrayAccess: Offset: [-1, -1] Size: [2, 2]]
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 4, CONDITION_ALWAYS_TRUE, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 13, CONDITION_ALWAYS_TRUE, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 16, BUFFER_OVERRUN_L2, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, 10] Size: [10, 10]]

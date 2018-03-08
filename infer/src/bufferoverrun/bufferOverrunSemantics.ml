@@ -230,7 +230,7 @@ module Make (CFG : ProcCfg.S) = struct
              the memory section using the abstract memory, though the
              memory lookup is not required to evaluate the address of
              x.f[n] in the concrete semantics.  *)
-          Mem.find_set (Val.get_pow_loc array_v) mem
+          Val.plus_pi (Mem.find_set (Val.get_pow_loc array_v) mem) index_v
       | _ ->
           Val.of_pow_loc PowLoc.unknown
     else arr
