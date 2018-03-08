@@ -21,8 +21,8 @@ let register_perf_stats_report source_file =
 
 
 let init_global_state source_file =
-  if Config.developer_mode then register_perf_stats_report source_file ;
   Language.curr_language := Language.Java ;
+  register_perf_stats_report source_file ;
   DB.Results_dir.init source_file ;
   Ident.NameGenerator.reset () ;
   JContext.reset_exn_node_table ()

@@ -977,7 +977,7 @@ let main ~report_json =
     ; (Stats, init_stats_format_list ())
     ; (Summary, []) ]
   in
-  if Config.developer_mode then register_perf_stats_report () ;
+  register_perf_stats_report () ;
   init_files formats_by_report_kind ;
   match Config.from_json_report with
   | Some fname ->

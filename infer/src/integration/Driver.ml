@@ -542,7 +542,7 @@ let run_prologue mode =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS" ;
-  if Config.developer_mode then register_perf_stats_report () ;
+  register_perf_stats_report () ;
   ()
 
 

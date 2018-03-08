@@ -128,7 +128,7 @@ let () =
             F.fprintf fmt "of cluster %s" (Filename.basename cluster)
       in
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
-      if Config.developer_mode then InferAnalyze.register_perf_stats_report () ;
+      InferAnalyze.register_perf_stats_report () ;
       Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
   | Report ->
       InferPrint.main ~report_json:None

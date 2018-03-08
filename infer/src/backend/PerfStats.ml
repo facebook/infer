@@ -166,16 +166,18 @@ let report_at_exit file source_file stats_type () =
     let stats, stats_event = stats source_file stats_type in
     let json_stats = to_json stats in
     EventLogger.log stats_event ;
-    try
-      Unix.mkdir_p (Filename.dirname file) ;
-      (* the same report may be registered across different infer processes *)
-      Utils.write_file_with_locking file ~f:(fun stats_oc ->
-          Yojson.Basic.pretty_to_channel stats_oc json_stats )
-    with exc ->
-      L.internal_error "Info: failed to write stats to %s@\n%s@\n%s@\n%s@." file
-        (Exn.to_string exc)
-        (Yojson.Basic.pretty_to_string json_stats)
-        (Printexc.get_backtrace ())
+    (* We always log to EventLogger, but json files are unnecessary to log outside of developer mode *)
+    if Config.developer_mode then
+      try
+        Unix.mkdir_p (Filename.dirname file) ;
+        (* the same report may be registered across different infer processes *)
+        Utils.write_file_with_locking file ~f:(fun stats_oc ->
+            Yojson.Basic.pretty_to_channel stats_oc json_stats )
+      with exc ->
+        L.internal_error "Info: failed to write stats to %s@\n%s@\n%s@\n%s@." file
+          (Exn.to_string exc)
+          (Yojson.Basic.pretty_to_string json_stats)
+          (Printexc.get_backtrace ())
   with exc ->
     L.internal_error "Info: failed to compute stats for %s@\n%s@\n%s@." file (Exn.to_string exc)
       (Printexc.get_backtrace ())
