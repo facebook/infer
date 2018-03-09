@@ -1,1 +1,1 @@
-build_systems/codetoanalyze/hello.c, test, 2, NULL_DEREFERENCE, [start of procedure test()]
+build_systems/codetoanalyze/hello.c, test, 2, NULL_DEREFERENCE, ERROR, [start of procedure test()]

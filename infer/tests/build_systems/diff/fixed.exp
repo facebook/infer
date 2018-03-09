@@ -1,1 +1,1 @@
-src/hello.c, test3, 3, MEMORY_LEAK, [start of procedure test3(),Condition is true]
+src/hello.c, test3, 3, MEMORY_LEAK, ERROR, [start of procedure test3(),Condition is true]

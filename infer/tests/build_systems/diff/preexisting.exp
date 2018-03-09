@@ -1,1 +1,1 @@
-src/hello.c, test1, 2, NULL_DEREFERENCE, [start of procedure test1()]
+src/hello.c, test1, 2, NULL_DEREFERENCE, ERROR, [start of procedure test1()]

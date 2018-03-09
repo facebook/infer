@@ -1,1 +1,1 @@
-hello2.c, test2, 2, NULL_DEREFERENCE, [start of procedure test2()]
+hello2.c, test2, 2, NULL_DEREFERENCE, ERROR, [start of procedure test2()]

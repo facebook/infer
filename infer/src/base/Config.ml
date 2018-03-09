@@ -1421,6 +1421,7 @@ and issues_fields =
       ; `Issue_field_procedure
       ; `Issue_field_line_offset
       ; `Issue_field_bug_type
+      ; `Issue_field_kind
       ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PVariant.( = )
     "Fields to emit with $(b,--issues-tests)"
 

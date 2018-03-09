@@ -1,1 +1,1 @@
-make/utf8_in_function_names.c, test_성공, 2, NULL_DEREFERENCE, [start of procedure test_성공()]
+make/utf8_in_function_names.c, test_성공, 2, NULL_DEREFERENCE, ERROR, [start of procedure test_성공()]
