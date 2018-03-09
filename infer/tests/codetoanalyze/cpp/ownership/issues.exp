@@ -1,4 +1,5 @@
 codetoanalyze/cpp/ownership/closures.cpp, implicit_ref_capture_destroy_invoke_bad, 6, USE_AFTER_LIFETIME, [Use of invalid variable]
+codetoanalyze/cpp/ownership/closures.cpp, reassign_lambda_capture_destroy_invoke_bad, 7, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/closures.cpp, ref_capture_destroy_invoke_bad, 6, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, delete_in_branch_bad, 5, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, delete_in_loop_bad, 3, USE_AFTER_LIFETIME, [Use of invalid variable]
@@ -10,4 +11,3 @@ codetoanalyze/cpp/ownership/use_after_delete.cpp, use_in_branch_bad, 4, USE_AFTE
 codetoanalyze/cpp/ownership/use_after_delete.cpp, use_in_loop_bad, 4, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_destructor.cpp, double_destructor_bad, 5, USE_AFTER_LIFETIME, [Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_destructor.cpp, use_after_destructor_bad, 3, USE_AFTER_LIFETIME, [Use of invalid variable]
-codetoanalyze/cpp/ownership/use_after_destructor.cpp, use_after_scope1_bad, 7, USE_AFTER_LIFETIME, [Use of invalid variable]

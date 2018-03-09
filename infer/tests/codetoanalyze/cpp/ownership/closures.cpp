@@ -32,6 +32,16 @@ int implicit_ref_capture_destroy_invoke_bad() {
   return f();
 }
 
+int reassign_lambda_capture_destroy_invoke_bad() {
+  std::function<int()> f;
+  {
+    auto s = S();
+    auto tmp = [&] { return s.f; };
+    f = tmp;
+  }
+  return f();
+}
+
 // frontend doesn't understand difference between capture-by-value and
 // capture-by-ref, need to fix
 int value_capture_destroy_invoke_ok() {

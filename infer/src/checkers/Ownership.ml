@@ -155,7 +155,7 @@ module Domain = struct
 
 
   (* handle assigning directly to a base var *)
-  let handle_var_assign lhs_var rhs_exp loc summary astate =
+  let handle_var_assign (lhs_var, lhs_typ) rhs_exp loc summary astate =
     if Var.is_return lhs_var then exp_add_reads rhs_exp loc summary astate
     else
       match rhs_exp with
@@ -172,7 +172,10 @@ module Domain = struct
         with Not_found ->
           (* no existing capability on RHS. don't make any assumptions about LHS capability *)
           remove lhs_var astate )
-      | HilExp.AccessExpression AccessExpression.Base _ ->
+      | HilExp.AccessExpression AccessExpression.Base (_, rhs_typ)
+        when is_function_typ lhs_typ || is_function_typ rhs_typ ->
+          (* an assignment borrows if the LHS/RHS is a function type, but for now assume that it
+             copies resources correctly for any other type. eventually, we'll check this assumption *)
           borrow_exp lhs_var rhs_exp astate
       | HilExp.Closure (_, captured_vars) ->
           (* TODO: can be folded into the case above once we have proper AccessExpressions *)
@@ -213,8 +216,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
-    | Assign (Base (lhs_var, _), rhs_exp, loc) ->
-        Domain.handle_var_assign lhs_var rhs_exp loc summary astate
+    | Assign (Base lhs_base, rhs_exp, loc) ->
+        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
     | Assign (lhs_access_exp, rhs_exp, loc) ->
         (* assign to field, array, indirectly with &/*, or a combination *)
         Domain.exp_add_reads rhs_exp loc summary astate
@@ -244,13 +247,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call
         ( _
         , Direct Typ.Procname.ObjC_Cpp callee_pname
-        , [(AccessExpression Base (lhs_var, _)); rhs_exp]
+        , [(AccessExpression Base lhs_base); rhs_exp]
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname ->
         (* TODO: once we go interprocedural, this case should only apply for operator='s with an
            empty summary *)
-        Domain.handle_var_assign lhs_var rhs_exp loc summary astate
+        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
     | Call
         ( _
         , Direct Typ.Procname.ObjC_Cpp callee_pname
