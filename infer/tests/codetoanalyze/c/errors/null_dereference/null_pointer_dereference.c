@@ -129,3 +129,11 @@ void function_call_returns_allocated_pointer() {
   assign(p, 42);
   free(p);
 }
+
+void sizeof_expr_ok(void) {
+  struct Person* p = malloc(sizeof *p);
+  if (p) {
+    p->age = 42;
+  }
+  free(p);
+}
