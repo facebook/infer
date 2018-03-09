@@ -279,6 +279,8 @@ let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 
+let potential_deadlock = from_string "DEADLOCK"
+
 let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
 
 let precondition_not_met = from_string "PRECONDITION_NOT_MET"

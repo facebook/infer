@@ -105,7 +105,8 @@ type payload =
   ; siof: SiofDomain.astate option
   ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option
-  ; cost: CostDomain.summary option }
+  ; cost: CostDomain.summary option
+  ; deadlock: DeadlockDomain.summary option }
 
 (** Procedure summary *)
 type summary =

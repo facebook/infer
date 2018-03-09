@@ -473,6 +473,8 @@ let d_list (tl: t list) = L.add_print_action (L.PTtyp_list, Obj.repr tl)
 
 let name typ = match typ.desc with Tstruct name -> Some name | _ -> None
 
+let inner_name typ = match typ.desc with Tptr ({desc= Tstruct name}, _) -> Some name | _ -> None
+
 let unsome s = function
   | Some default_typ ->
       default_typ

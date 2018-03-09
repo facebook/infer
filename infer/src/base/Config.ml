@@ -678,6 +678,7 @@ and ( annotation_reachability
     , check_nullable
     , cost
     , crashcontext
+    , deadlock
     , eradicate
     , fragment_retains_view
     , immutable_cast
@@ -718,6 +719,7 @@ and ( annotation_reachability
   and crashcontext =
     mk_checker ~long:"crashcontext"
       "the crashcontext checker for Java stack trace context reconstruction"
+  and deadlock = mk_checker ~long:"deadlock" ~default:false "deadlock analysis"
   and eradicate =
     mk_checker ~long:"eradicate" "the eradicate @Nullable checker for Java annotations"
   and fragment_retains_view =
@@ -790,6 +792,7 @@ and ( annotation_reachability
   , check_nullable
   , cost
   , crashcontext
+  , deadlock
   , eradicate
   , fragment_retains_view
   , immutable_cast
@@ -2386,6 +2389,8 @@ and cxx = !cxx
 and cxx_infer_headers = !cxx_infer_headers
 
 and cxx_scope_guards = !cxx_scope_guards
+
+and deadlock = !deadlock
 
 and debug_level_analysis = !debug_level_analysis
 

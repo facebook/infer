@@ -314,6 +314,8 @@ val cxx_infer_headers : bool
 
 val cxx_scope_guards : Yojson.Basic.json
 
+val deadlock : bool
+
 val debug_level_analysis : int
 
 val debug_level_capture : int

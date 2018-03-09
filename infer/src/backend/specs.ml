@@ -279,7 +279,8 @@ type payload =
   ; siof: SiofDomain.astate option
   ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option
-  ; cost: CostDomain.summary option }
+  ; cost: CostDomain.summary option
+  ; deadlock: DeadlockDomain.summary option }
 
 type summary =
   { phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
@@ -422,14 +423,15 @@ let pp_payload pe fmt
     ; buffer_overrun
     ; annot_map
     ; uninit
-    ; cost } =
+    ; cost
+    ; deadlock } =
   let pp_opt prefix pp fmt = function
     | Some x ->
         F.fprintf fmt "%s: %a@\n" prefix pp x
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "PrePosts" (pp_specs pe))
     (Option.map ~f:NormSpec.tospecs preposts)
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
@@ -448,6 +450,8 @@ let pp_payload pe fmt
     uninit
     (pp_opt "Cost" CostDomain.pp_summary)
     cost
+    (pp_opt "Deadlock" DeadlockDomain.pp_summary)
+    deadlock
 
 
 let pp_summary_text fmt summary =
@@ -637,7 +641,8 @@ let empty_payload =
   ; litho= None
   ; buffer_overrun= None
   ; uninit= None
-  ; cost= None }
+  ; cost= None
+  ; deadlock= None }
 
 
 (** [init_summary (depend_list, nodes,

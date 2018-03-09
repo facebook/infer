@@ -15,6 +15,8 @@ type t = private LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compar
 
 val equal : t -> t -> bool
 
+val compare_modulo_this : t -> t -> int
+
 val of_id : Ident.t -> t
 
 val of_pvar : Pvar.t -> t

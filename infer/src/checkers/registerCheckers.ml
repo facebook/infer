@@ -102,7 +102,10 @@ let all_checkers =
   ; { name= "cost analysis"
     ; active= Config.cost
     ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
-    } ]
+    }
+  ; { name= "Deadlock analysis"
+    ; active= Config.deadlock
+    ; callbacks= [(Procedure Deadlock.analyze_procedure, Language.Java)] } ]
 
 
 let get_active_checkers () =

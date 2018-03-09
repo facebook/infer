@@ -196,6 +196,8 @@ val parameter_not_null_checked : t
 
 val pointer_size_mismatch : t
 
+val potential_deadlock : t  [@@warning "-32"]
+
 val precondition_not_found : t
 
 val precondition_not_met : t
