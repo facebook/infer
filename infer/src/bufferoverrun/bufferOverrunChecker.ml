@@ -308,6 +308,8 @@ end
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 module CFG = Analyzer.TransferFunctions.CFG
 
+type invariant_map = Analyzer.invariant_map
+
 module Report = struct
   (* I'd like to avoid rebuilding this :(
     Everything depend on CFG only because of `get_allocsite` *)
@@ -542,6 +544,13 @@ module Report = struct
     in
     PO.ConditionSet.check_all ~report cond_set
 end
+
+let compute_invariant_map : Callbacks.proc_callback_args -> Analyzer.invariant_map =
+ fun {proc_desc; tenv; get_proc_desc} ->
+  Preanal.do_preanalysis proc_desc tenv ;
+  let pdata = ProcData.make proc_desc tenv get_proc_desc in
+  Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata
+
 
 let extract_post inv_map node =
   let id = CFG.id node in

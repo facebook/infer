@@ -187,6 +187,7 @@ module ItvPureCost = struct
 end
 
 module EnvDomain = AbstractDomain.Map (Exp) (ItvPureCost)
+module EnvDomainBO = AbstractDomain.Map (Exp) (Itv)
 
 module SemanticDomain = struct
   include AbstractDomain.Pair (EnvDomain) (Alias)
@@ -346,9 +347,6 @@ module SemanticDomain = struct
     | _ ->
         L.die InternalError " @\n Incomplete Sem function. Dies with e= %a @\n" Exp.pp e
 
-
-  let pp fmt (env, alias) =
-    F.fprintf fmt "@\n env: %a @\n alias: [ %a ] @\n" EnvDomain.pp env Alias.pp alias
 end
 
 type summary = {post: Cost.astate}

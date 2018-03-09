@@ -38,9 +38,7 @@ module TransferFunctionsSemantics (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = CostDomain.SemanticDomain
 
-  type extras = ProcData.no_extras
-
-  let exec_instr ((env, alias) as astate: Domain.astate) {ProcData.tenv} _ instr =
+  let _exec_instr ((env, alias) as astate: Domain.astate) {ProcData.tenv} _ instr =
     let astate' =
       match instr with
       | Sil.Store (lhs, {Typ.desc= Tint _}, rhs, _) ->
@@ -86,9 +84,6 @@ module TransferFunctionsSemantics (CFG : ProcCfg.S) = struct
     astate'
 end
 
-(* TODO: use inferbo for the parametric version *)
-module AnalyzerSemantics = AbstractInterpreter.Make (CFG) (TransferFunctionsSemantics)
-
 (* Map associating to each node a bound on the number of times it can be executed.
    This bound is computed using environments (map: val -> values), using the following
    observation: the number of environments associated with a program point is an upperbound
@@ -111,34 +106,71 @@ module BoundMap = struct
     L.(debug Analysis Medium) "@\n******* END Bound Map **** @\n\n"
 
 
+  let convert (mem: BufferOverrunDomain.Mem.astate) : CostDomain.EnvDomainBO.astate =
+    let open AbstractDomain.Types in
+    match mem with
+    | Bottom ->
+        assert false
+    | NonBottom {BufferOverrunDomain.MemReach.heap} ->
+        let env =
+          BufferOverrunDomain.Heap.fold
+            (fun loc data acc ->
+              match loc with
+              | AbsLoc.Loc.Var Var.LogicalVar id ->
+                  let key = Exp.Var id in
+                  CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
+              | AbsLoc.Loc.Var Var.ProgramVar v ->
+                  let key = Exp.Lvar v in
+                  CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
+              | _ ->
+                  acc )
+            heap CostDomain.EnvDomainBO.empty
+        in
+        env
+
+
   let compute_upperbound_map cfg invariant_map =
+    let range itv =
+      let rng = Itv._range itv in
+      match Itv.Bound.is_const rng with
+      | Some r ->
+          CostDomain.Cost.nth r
+      | _ ->
+          (* TODO: write code for the non constant case *)
+          L.(debug Analysis Medium)
+            "@\n [Range computation]: Can't determine a range for itv = %a. Returning Top@\n"
+            Itv.Bound.pp rng ;
+          Top
+    in
     let compute_node_upper_bound node =
       let node_id = Procdesc.Node.get_id node in
+      let entry_mem_opt = BufferOverrunChecker.extract_post invariant_map node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
           bound_map := Int.Map.set !bound_map ~key:(node_id :> int) ~data:CostDomain.Cost.one
       | _ ->
-        match AnalyzerSemantics.extract_post node_id invariant_map with
-        | Some (env, _) ->
+        match entry_mem_opt with
+        | Some entry_mem ->
+            let env = convert entry_mem in
             (* bound = env(v1) *... * env(vn) *)
             let bound =
-              CostDomain.EnvDomain.fold
+              CostDomain.EnvDomainBO.fold
                 (fun exp itv acc ->
                   let itv' =
                     match exp with
                     | Exp.Lvar _ ->
                         itv
                     | Exp.Var _ ->
-                        CostDomain.ItvPureCost.of_int 1
+                        Itv.one
                     (* For temp var we give [1,1] so it doesn't count*)
                     | _ ->
                         assert false
                   in
-                  let itv_range = CostDomain.ItvPureCost.range itv' in
+                  let itv_range = range itv' in
                   L.(debug Analysis Medium)
-                    "@\n>>>LB =%a and UB =%a UB-LB =%a for node = %i @\n\n" CostDomain.Cost.pp
-                    (fst itv') CostDomain.Cost.pp (snd itv') CostDomain.Cost.pp itv_range
-                    (node_id :> int) ;
+                    "@\n>>>For node = %i :   itv=%a  range=%a  @\n\n"
+                    (node_id :> int)
+                    Itv.pp itv' CostDomain.Cost.pp itv_range ;
                   CostDomain.Cost.mult acc itv_range )
                 env CostDomain.Cost.one
             in
@@ -430,6 +462,7 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
 end
 
 module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunctionsNodesBasicCost)
+module RepSet = AbstractDomain.FiniteSet (Int)
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
    It uses the basic cost of the nodes (computed previously by AnalyzerNodesBasicCost)
@@ -437,93 +470,114 @@ module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunction
 *)
 module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module Domain = CostDomain.CostSingleIteration
+  module CSI = CostDomain.CostSingleIteration
+  module Domain = AbstractDomain.Pair (CSI) (RepSet)
 
   type extras =
     (* extras: (map with basic costs, min trees map, summary ) *)
     AnalyzerNodesBasicCost.invariant_map * CostDomain.Cost.astate Int.Map.t * Specs.summary
 
-  let report_cost summary instr cost =
-    match instr with
-    | Sil.Call (_, _, _, loc, _) when not (Domain.( <= ) ~lhs:cost ~rhs:expensive_threshold) ->
-        let ltr = [Errlog.make_trace_element 0 loc "" []] in
-        let message =
-          F.asprintf
-            "This instruction is expensive (estimated cost %a). Its execution time is likely \
-             above the acceptable treshold " Domain.pp cost
-        in
-        let exn =
-          Exceptions.Checkers
-            (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
-        in
-        Reporting.log_error summary ~loc ~ltr exn
-    | Sil.Load (_, _, _, loc)
-    | Sil.Store (_, _, _, loc)
-    | Sil.Call (_, _, _, loc, _)
-    | Sil.Prune (_, loc, _, _)
-      when not (Domain.( <= ) ~lhs:cost ~rhs:expensive_threshold) ->
-        let ltr = [Errlog.make_trace_element 0 loc "" []] in
-        let message =
-          F.asprintf
-            "The execution time from the beginning of the function is above the acceptable \
-             treshold (estimated cost %a up to here)" Domain.pp cost
-        in
-        let exn =
-          Exceptions.Checkers
-            (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
-        in
-        Reporting.log_error summary ~loc ~ltr exn
+  let report_cost summary instr cost nid reported_so_far =
+    match cost with
+    | Top ->
+        (cost, reported_so_far)
+        (* We don't report when the cost Top as it corresponds to 'don't know'*)
     | _ ->
-        ()
+        let above_expensive_threshold = not (CSI.( <= ) ~lhs:cost ~rhs:expensive_threshold) in
+        match instr with
+        | Sil.Call (_, _, _, loc, _) when above_expensive_threshold ->
+            let ltr = [Errlog.make_trace_element 0 loc "" []] in
+            let message =
+              F.asprintf
+                "This instruction is expensive (estimated cost %a). Its execution time is likely \
+                 above the acceptable treshold " CSI.pp cost
+            in
+            let exn =
+              Exceptions.Checkers
+                (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
+            in
+            Reporting.log_error summary ~loc ~ltr exn ;
+            (cost, RepSet.add nid reported_so_far)
+        | Sil.Load (_, _, _, loc)
+        | Sil.Store (_, _, _, loc)
+        | Sil.Call (_, _, _, loc, _)
+        | Sil.Prune (_, loc, _, _)
+          when above_expensive_threshold ->
+            let ltr = [Errlog.make_trace_element 0 loc "" []] in
+            let message =
+              F.asprintf
+                "The execution time from the beginning of the function is above the acceptable \
+                 treshold (estimated cost %a up to here)" CSI.pp cost
+            in
+            let exn =
+              Exceptions.Checkers
+                (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
+            in
+            Reporting.log_error summary ~loc ~ltr exn ;
+            (cost, RepSet.add nid reported_so_far)
+        | _ ->
+            (cost, reported_so_far)
 
 
-  let exec_instr (_: Domain.astate) {ProcData.extras} (node: CFG.node) instr : Domain.astate =
+  (* get a list of nodes and check if we have already reported for at
+   least one of them. In that case no need to report again. *)
+  let should_report preds reported_so_far =
+    List.for_all
+      ~f:(fun n ->
+        let n_id = (Procdesc.Node.get_id n :> int) in
+        not (RepSet.mem n_id reported_so_far) )
+      preds
+
+
+  let exec_instr (astate: Domain.astate) {ProcData.extras} (node: CFG.node) instr : Domain.astate =
     let invariant_map_cost, trees, summary = extras in
-    let map_cost m : Domain.astate =
+    let und_node = CFG.underlying_node node in
+    let node_id = Procdesc.Node.get_id und_node in
+    let preds = Procdesc.Node.get_preds und_node in
+    let map_cost m : CSI.astate =
       CostDomain.NodeInstructionToCostMap.fold
         (fun (nid, idx) c acc ->
           match Int.Map.find trees nid with
           | Some t ->
-              let c_node = Domain.mult c t in
+              let c_node = CSI.mult c t in
               L.(debug Analysis Medium)
-                "@\n  [AnalizerWCTE] Adding cost: (%i,%i) --> c =%a  t = %a @\n" nid idx Domain.pp
-                c Domain.pp t ;
-              let c_node' = Domain.plus acc c_node in
+                "@\n  [AnalizerWCTE] Adding cost: (%i,%i) --> c =%a  t = %a @\n" nid idx CSI.pp c
+                CSI.pp t ;
+              let c_node' = CSI.plus acc c_node in
               L.(debug Analysis Medium)
                 "@\n  [AnalizerWCTE] Adding cost: (%i,%i) --> c_node=%a  cost = %a @\n" nid idx
-                Domain.pp c_node Domain.pp c_node' ;
-              report_cost summary instr c_node' ;
+                CSI.pp c_node CSI.pp c_node' ;
               c_node'
           | _ ->
               assert false )
-        m Domain.zero
+        m CSI.zero
     in
-    let astate' =
-      let node_id = Procdesc.Node.get_id (CFG.underlying_node node) in
+    let cost_node =
       match AnalyzerNodesBasicCost.extract_post node_id invariant_map_cost with
       | Some node_map ->
           L.(debug Analysis Medium)
             "@\n AnalizerWCTE] Final map for node: %a @\n" Procdesc.Node.pp_id node_id ;
-          let map_cost = map_cost node_map in
-          map_cost
+          map_cost node_map
       | _ ->
           assert false
     in
     L.(debug Analysis Medium)
-      "@\n>>>AnalizerWCTE] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr Domain.pp astate' ;
+      "@\n>>>AnalizerWCTE] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr CSI.pp cost_node ;
+    let reported_so_far = snd astate in
+    let astate' =
+      if should_report (und_node :: preds) reported_so_far then
+        report_cost summary instr cost_node (node_id :> int) reported_so_far
+      else (cost_node, reported_so_far)
+    in
     astate'
 end
 
 module AnalyzerWCET = AbstractInterpreter.Make (CFG) (TransferFunctionsWCET)
 
-let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
+let checker ({Callbacks.tenv; summary; proc_desc} as proc_callback_args) : Specs.summary =
   let cfg = CFG.from_pdesc proc_desc in
   (* computes the semantics: node -> (environment, alias map) *)
-  let semantics_invariant_map =
-    AnalyzerSemantics.exec_cfg cfg
-      (ProcData.make_default proc_desc tenv)
-      ~initial:(CostDomain.EnvDomain.empty, []) ~debug:true
-  in
+  let semantics_invariant_map = BufferOverrunChecker.compute_invariant_map proc_callback_args in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   BoundMap.compute_upperbound_map cfg semantics_invariant_map ;
   let constraints = StructuralConstraints.compute_structural_constraints cfg in
@@ -542,14 +596,15 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       (ProcData.make_default proc_desc tenv)
       ~initial:CostDomain.NodeInstructionToCostMap.empty ~debug:true
   in
+  let initWCET = (CostDomain.CostSingleIteration.zero, RepSet.empty) in
   let invariant_map_WCETFinal =
     (* Final map with nodes cost *)
     AnalyzerWCET.exec_cfg cfg
       (ProcData.make proc_desc tenv (invariant_map_NodesBasicCost, trees_valuation, summary))
-      ~initial:CostDomain.CostSingleIteration.zero ~debug:true
+      ~initial:initWCET ~debug:true
   in
   match AnalyzerWCET.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map_WCETFinal with
-  | Some exit_cost ->
+  | Some (exit_cost, _) ->
       Summary.update_summary {post= exit_cost} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (

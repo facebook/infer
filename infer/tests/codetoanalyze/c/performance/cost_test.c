@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-int foo() {
+// Cost: 5
+int foo_OK() {
   int i, j;
   i = 17;
   j = 31;
@@ -14,31 +15,34 @@ int foo() {
   return i + j + 3 + 7;
 }
 
-int bar() {
+// Cost: 17
+int bar_OK() {
 
   int j = 0;
 
   j++;
   j++;
   j++;
-  j = foo();
+  j = foo_OK();
   j++;
 
   return j;
 }
 
-int cond(int i) {
+// Cost: 25
+int cond_OK(int i) {
   int x;
 
   if (i < 0) {
-    x = bar();
+    x = bar_OK();
   } else {
     x = 1;
   }
   return x;
 }
 
-void alias() {
+// Cost: 5
+void alias_OK() {
 
   int i, j;
 
@@ -46,7 +50,8 @@ void alias() {
   i = ++i;
 }
 
-void alias2() {
+// Cost: 6
+void alias2_OK() {
 
   int i, j, z;
 
@@ -57,20 +62,45 @@ void alias2() {
   i = z;
 }
 
-int loop0() {
+// Cost: 1004
+int loop0_bad() {
 
   for (int i = 0; i < 100; i++) {
-    alias2();
+    alias2_OK();
   }
   return 0;
 }
 
+// Cost: 1006
+int loop1_bad() {
+
+  int k = 100;
+  for (int i = 0; i < k; i++) {
+    alias2_OK();
+  }
+  return 0;
+}
+
+// This is currently evaluated to Top as the analysis is not powerful enough
+int FN_loop2(int k) {
+
+  for (int i = 0; i < k; i++) {
+    alias2_OK();
+  }
+  return 0;
+}
+
+// Cost: 218
+// Shows that calling many times non expensive function can
+// result in an expensive computation
 int main() {
 
-  int k;
+  int k1, k2, k3, k4;
 
-  cond(2);
-  k = bar() + foo() * 2;
-
+  cond_OK(2);
+  k1 = bar_OK() + foo_OK() + cond_OK(15) * 2;
+  k2 = bar_OK() + foo_OK() + cond_OK(17) * 3;
+  k3 = bar_OK() + foo_OK() + cond_OK(11) * 3;
+  k4 = bar_OK() + foo_OK() + cond_OK(19) * 3;
   return 0;
 }

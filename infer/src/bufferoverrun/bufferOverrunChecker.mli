@@ -10,3 +10,9 @@
 open! IStd
 
 val checker : Callbacks.proc_callback_t
+
+type invariant_map
+
+val compute_invariant_map : Callbacks.proc_callback_args -> invariant_map
+
+val extract_post : invariant_map -> Procdesc.Node.t -> BufferOverrunDomain.Mem.astate option
