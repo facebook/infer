@@ -1,0 +1,1 @@
+codetoanalyze/objcpp/errors/retain_cycles/RetainCycleWithStruct.mm, main_bad, 2, RETAIN_CYCLE, [start of procedure main_bad(),start of procedure tracer,start of procedure _State,return from a call to _State__State,start of procedure initWithAnimation:,Condition is true,return from a call to Tracer_initWithAnimation:,return from a call to Animation_tracer]
