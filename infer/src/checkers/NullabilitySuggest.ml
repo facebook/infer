@@ -155,9 +155,7 @@ let pretty_field_name proc_data field_name =
 let is_outside_codebase proc_name field_name =
   match proc_name with
   | Typ.Procname.Java _ ->
-      let class_name = Typ.Fieldname.Java.get_class field_name in
-      let package, _ = Typ.Name.Java.split_classname class_name in
-      Option.exists ~f:Config.java_package_is_external package
+      Typ.Name.Java.is_external_classname (Typ.Fieldname.Java.get_class field_name)
   | _ ->
       false
 

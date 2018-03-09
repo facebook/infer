@@ -6,5 +6,8 @@
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
+  ],
+  "external-java-packages" : [
+    "com.racerd.donotreport"
   ]
 }

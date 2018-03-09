@@ -481,6 +481,8 @@ module Models = struct
       ( match pn with
       | Typ.Procname.Java java_pname ->
           Typ.Procname.Java.is_class_initializer java_pname
+          || Typ.Name.Java.is_external (Typ.Procname.Java.get_class_type_name java_pname)
+      (* third party code may be hard to change, not useful to report races there *)
       | _ ->
           false )
     && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)

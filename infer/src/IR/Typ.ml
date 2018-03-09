@@ -435,6 +435,14 @@ module Name = struct
           is_int
       | None ->
           false
+
+
+    let is_external_classname name_string =
+      let package, _ = split_classname name_string in
+      Option.exists ~f:Config.java_package_is_external package
+
+
+    let is_external t = is_external_classname (name t)
   end
 
   module Cpp = struct
