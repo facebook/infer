@@ -432,23 +432,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state expr_info unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | (`SizeOf | `SizeOfWithSize _) as size ->
-        let qt_opt =
-          CAst_utils.type_from_unary_expr_or_type_trait_expr_info
-            unary_expr_or_type_trait_expr_info
-        in
-        let sizeof_typ =
-          match qt_opt with Some qt -> CType_decl.qual_type_to_sil_type tenv qt | None -> typ
-          (* Some default type since the type is missing *)
-        in
+        let qt = unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_qual_type in
+        let sizeof_typ = CType_decl.qual_type_to_sil_type tenv qt in
         let nbytes = match size with `SizeOfWithSize nbytes -> Some nbytes | _ -> None in
         let sizeof_data =
           {Exp.typ= sizeof_typ; nbytes; dynamic_length= None; subtype= Subtype.exact}
         in
         {empty_res_trans with exps= [(Exp.Sizeof sizeof_data, sizeof_typ)]}
     | k ->
+        let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
         L.(debug Capture Medium)
           "@\n\
            WARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression \

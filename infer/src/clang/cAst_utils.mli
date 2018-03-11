@@ -19,9 +19,6 @@ val dummy_stmt_info : unit -> Clang_ast_t.stmt_info
 
 val get_fresh_pointer : unit -> Clang_ast_t.pointer
 
-val type_from_unary_expr_or_type_trait_expr_info :
-  Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
-
 val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
 val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option

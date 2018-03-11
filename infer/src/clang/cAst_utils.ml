@@ -77,10 +77,6 @@ let dummy_stmt () =
   Clang_ast_t.NullStmt ({Clang_ast_t.si_pointer= pointer; si_source_range= source_range}, [])
 
 
-let type_from_unary_expr_or_type_trait_expr_info info =
-  match info.Clang_ast_t.uttei_qual_type with Some tp -> Some tp | None -> None
-
-
 let get_decl decl_ptr = Int.Table.find ClangPointers.pointer_decl_table decl_ptr
 
 let get_decl_opt decl_ptr_opt =
