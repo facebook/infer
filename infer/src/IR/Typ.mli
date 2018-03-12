@@ -386,6 +386,9 @@ module Procname : sig
     val is_destructor : t -> bool
     (** Check if this is a dealloc method. *)
 
+    val is_inner_destructor : t -> bool
+    (** Check if this is a frontend-generated "inner" destructor (see D5834555/D7189239) *)
+
     val is_constexpr : t -> bool
     (** Check if this is a constexpr function. *)
 

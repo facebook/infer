@@ -96,3 +96,20 @@ void destruct_twice_ok() {
     p = tmp;
   } // destructor for tmp
 } // destructor for p runs here, but it's harmless
+
+class Subclass : virtual POD {
+  int* f;
+  Subclass() { f = new int; }
+
+  /** frontend code for this destructor will be:
+   * ~Subclass:
+   *  __infer_inner_destructor_~Subclass(this)
+   *  __infer_inner_destructor_~POD(this)
+   *
+   * __infer_inner_destructor_~Subclass:
+   *  delete f;
+   *
+   * We need to be careful not to warn that this has been double-destructed
+   */
+  ~Subclass() { delete f; }
+};

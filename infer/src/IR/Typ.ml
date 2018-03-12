@@ -762,6 +762,11 @@ module Procname = struct
           is_objc_dealloc name.method_name
 
 
+    let is_inner_destructor ({method_name} as pname) =
+      is_destructor pname
+      && String.is_prefix ~prefix:Config.clang_inner_destructor_prefix method_name
+
+
     let is_constexpr = function {kind= CPPConstructor {is_constexpr= true}} -> true | _ -> false
 
     let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name

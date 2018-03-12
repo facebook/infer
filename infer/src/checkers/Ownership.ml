@@ -209,6 +209,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match pname with
     | Typ.Procname.ObjC_Cpp clang_pname ->
         Typ.Procname.ObjC_Cpp.is_destructor clang_pname
+        && not
+             (* Our frontend generates synthetic inner destructors to model invocation of base class
+             destructors correctly; see D5834555/D7189239 *)
+             (Typ.Procname.ObjC_Cpp.is_inner_destructor clang_pname)
     | _ ->
         false
 
