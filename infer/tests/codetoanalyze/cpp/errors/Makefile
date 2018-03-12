@@ -67,6 +67,7 @@ SOURCES = \
   $(wildcard subtyping/*.cpp) \
   $(wildcard templates/*.cpp) \
   $(wildcard types/*.cpp) \
+	$(wildcard use_after_free/*.cpp) \
   $(wildcard vector/*.cpp) \
 
 include $(TESTS_DIR)/clang.make
