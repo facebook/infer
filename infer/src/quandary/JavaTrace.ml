@@ -63,6 +63,15 @@ module SourceKind = struct
 
   let get pname actuals tenv =
     let return = None in
+    let get_external_source class_name method_name =
+      (* check the list of externally specified sources *)
+      let procedure = class_name ^ "." ^ method_name in
+      List.find_map
+        ~f:(fun (procedure_regex, kind) ->
+          if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
+          else None )
+        external_sources
+    in
     match pname with
     | Typ.Procname.Java pname -> (
       match (Typ.Procname.Java.get_class_name pname, Typ.Procname.Java.get_method pname) with
@@ -102,24 +111,11 @@ module SourceKind = struct
                 Some (UserControlledString, return)
             | "android.widget.EditText", "getText" ->
                 Some (UserControlledString, return)
-            | _ ->
-                None
+            | class_name, method_name ->
+                get_external_source class_name method_name
           in
-          let kind_opt =
-            PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-              (Typ.Name.Java.from_string class_name)
-          in
-          match kind_opt with
-          | Some _ ->
-              kind_opt
-          | None ->
-              (* check the list of externally specified sources *)
-              let procedure = class_name ^ "." ^ method_name in
-              List.find_map
-                ~f:(fun (procedure_regex, kind) ->
-                  if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
-                  else None )
-                external_sources )
+          PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
+            (Typ.Name.Java.from_string class_name) )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       match (* accessed global will be passed to us as the only parameter *)
             actuals with
@@ -335,6 +331,22 @@ module SinkKind = struct
           if first_index < List.length actuals then Some (kind, IntSet.singleton first_index)
           else None
         in
+        let get_external_sink class_name method_name =
+          (* check the list of externally specified sinks *)
+          let procedure = class_name ^ "." ^ method_name in
+          List.find_map
+            ~f:(fun (procedure_regex, kind, index) ->
+              if Str.string_match procedure_regex procedure 0 then
+                let kind = of_string kind in
+                try
+                  let n = int_of_string index in
+                  taint_nth n kind
+                with Failure _ ->
+                  (* couldn't parse the index, just taint everything *)
+                  taint_all kind
+              else None )
+            external_sinks
+        in
         match
           (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
         with
@@ -407,20 +419,7 @@ module SinkKind = struct
               | "java.lang.Runtime", "exec" ->
                   taint_nth 0 ShellExec
               | class_name, method_name ->
-                  (* check the list of externally specified sinks *)
-                  let procedure = class_name ^ "." ^ method_name in
-                  List.find_map
-                    ~f:(fun (procedure_regex, kind, index) ->
-                      if Str.string_match procedure_regex procedure 0 then
-                        let kind = of_string kind in
-                        try
-                          let n = int_of_string index in
-                          taint_nth n kind
-                        with Failure _ ->
-                          (* couldn't parse the index, just taint everything *)
-                          taint_all kind
-                      else None )
-                    external_sinks
+                  get_external_sink class_name method_name
             in
             PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
               (Typ.Name.Java.from_string class_name) )

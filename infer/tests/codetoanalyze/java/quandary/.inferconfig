@@ -4,6 +4,10 @@
     {
       "procedure": "codetoanalyze.java.quandary.ExternalSpecs.privateData*",
       "kind": "PrivateData"
+    },
+    {
+      "procedure": "codetoanalyze.java.quandary.InterfaceSpec.source",
+      "kind": "PrivateData"
     }
   ],
   "quandary-sinks": [
@@ -18,6 +22,10 @@
     },
     {
       "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sinkThatPropagates",
+      "kind": "Logging"
+    },
+    {
+      "procedure": "codetoanalyze.java.quandary.InterfaceSpec.sink",
       "kind": "Logging"
     }
   ],

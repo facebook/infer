@@ -125,3 +125,28 @@ public class ExternalSpecs {
   }
 
 }
+
+interface InterfaceSpec {
+
+  // marked as source in .inferconfig
+  public Object source();
+
+  // marked as sink in .inferconfig
+  public void sink(Object o);
+}
+
+class InterfaceSpecImpl implements InterfaceSpec {
+
+  @Override
+  public Object source() {
+    return null;
+  }
+
+  @Override
+  public void sink(Object o) {}
+
+  public void externalSpecBad() {
+    sink(source());
+  }
+
+}
