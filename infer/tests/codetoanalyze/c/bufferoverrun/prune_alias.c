@@ -107,3 +107,36 @@ void FP_prune_alias_exp_Ok(int x) {
     a[1] = 0;
   }
 }
+
+#include <stdlib.h>
+
+void prune_arrblk_ne(int* x) {
+  int* y = x + 10;
+
+  if (x != y) {
+    x[5] = 1;
+  }
+}
+
+void call_prune_arrblk_ne_Ok() {
+  int* x = (int*)malloc(sizeof(int) * 10);
+  prune_arrblk_ne(x);
+}
+
+void call_prune_arrblk_ne_Bad() {
+  int* x = (int*)malloc(sizeof(int) * 5);
+  prune_arrblk_ne(x);
+}
+
+void prune_arrblk_eq(int* x) {
+  int* y = x + 10;
+
+  if (x == y) {
+    x[5] = 1; /* unreachable */
+  }
+}
+
+void FP_call_prune_arrblk_eq_Ok() {
+  int* x = (int*)malloc(sizeof(int) * 5);
+  prune_arrblk_eq(x);
+}

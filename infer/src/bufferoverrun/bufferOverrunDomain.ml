@@ -193,7 +193,7 @@ module Val = struct
 
   let prune_eq : t -> t -> t = lift_prune2 Itv.prune_eq ArrayBlk.prune_eq
 
-  let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_eq
+  let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_ne
 
   let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t =
    fun f x y -> {bot with arrayblk= f x.arrayblk y.itv; traces= TraceSet.join x.traces y.traces}
