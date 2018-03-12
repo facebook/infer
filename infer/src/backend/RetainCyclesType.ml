@@ -20,7 +20,7 @@ type retain_cycle_edge_objc =
 
 type retain_cycle_edge =
   | Object of retain_cycle_edge_objc
-  | Block of Typ.Procname.t
+  | Block of Typ.Procname.t * Pvar.t
   [@@deriving compare]
 
 let retain_cycle_edge_equal = [%compare.equal : retain_cycle_edge]
@@ -116,7 +116,7 @@ let pp_dotty fmt cycle =
         Format.fprintf fmt "%s_%a"
           (Typ.to_string obj.rc_from.rc_node_typ)
           Typ.Fieldname.pp obj.rc_field.rc_field_name
-    | Block name ->
+    | Block (name, _) ->
         Format.fprintf fmt "%s" (Typ.Procname.to_unique_id name)
   in
   let pp_dotty_field fmt element =

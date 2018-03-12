@@ -29,6 +29,7 @@ codetoanalyze/objc/errors/field_superclass/SubtypingExample.m, subtyping_test, 0
 codetoanalyze/objc/errors/initialization/struct_initlistexpr.c, field_set_correctly, 2, DIVIDE_BY_ZERO, ERROR, [start of procedure field_set_correctly()]
 codetoanalyze/objc/errors/initialization/struct_initlistexpr.c, implicit_expr_set_correctly, 3, DIVIDE_BY_ZERO, ERROR, [start of procedure implicit_expr_set_correctly()]
 codetoanalyze/objc/errors/initialization/struct_initlistexpr.c, point_coords_set_correctly, 2, DIVIDE_BY_ZERO, ERROR, [start of procedure point_coords_set_correctly()]
+codetoanalyze/objc/errors/memory_leaks_benchmark/RetainCycleBlockCapturedVar.m, LinkResolver_test_bad, 3, RETAIN_CYCLE, ERROR, [start of procedure test_bad]
 codetoanalyze/objc/errors/memory_leaks_benchmark/RetainCycleBlocks.m, call_retain_self_in_block_cycle, 2, RETAIN_CYCLE, ERROR, [start of procedure call_retain_self_in_block_cycle(),start of procedure retain_self_in_block,return from a call to RCBlock_retain_self_in_block]
 codetoanalyze/objc/errors/memory_leaks_benchmark/RetainCycleBlocks.m, retain_a_in_block_cycle, 5, RETAIN_CYCLE, ERROR, [start of procedure retain_a_in_block_cycle()]
 codetoanalyze/objc/errors/memory_leaks_benchmark/RetainCycleBlocks.m, retain_a_in_block_cycle, 5, RETAIN_CYCLE, ERROR, [start of procedure retain_a_in_block_cycle()]

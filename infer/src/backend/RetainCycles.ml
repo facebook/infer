@@ -41,8 +41,8 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
           MF.monospaced_to_string
             (Format.sprintf "%s->%s" (from_exp_str obj)
                (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
-      | Block _ ->
-          Format.sprintf "a block"
+      | Block (_, var) ->
+          Format.sprintf "a block that captures %s" (MF.monospaced_to_string (Pvar.to_string var))
     in
     Format.sprintf "(%d) %s%s" index cycle_item_str location_str
   in
@@ -107,16 +107,15 @@ let add_cycle found_cycles rev_path =
 let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
-      if List.exists
-           ~f:(fun (e, _, typ) ->
-             match typ.Typ.desc with
-             | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-                 false
-             | _ ->
-                 Exp.equal e root_node.RetainCyclesType.rc_node_exp )
-           captured_vars
-      then Some name
-      else None
+      List.find_map
+        ~f:(fun (e, var, typ) ->
+          match typ.Typ.desc with
+          | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+              None
+          | _ ->
+              if Exp.equal e root_node.RetainCyclesType.rc_node_exp then Some (name, var) else None
+          )
+        captured_vars
   | _ ->
       None
 
@@ -148,8 +147,8 @@ let get_cycles found_cycles root tenv prop =
             (* cycle with a block *)
             let cycle_opt = get_cycle_blocks root_node f_exp in
             if edge_is_strong tenv obj_edge && Option.is_some cycle_opt then
-              let procname = Option.value_exn cycle_opt in
-              let edge2 = Block procname in
+              let procname, captured_var = Option.value_exn cycle_opt in
+              let edge2 = Block (procname, captured_var) in
               let rev_path' = edge2 :: edge :: rev_path in
               add_cycle found_cycles rev_path'
             else
