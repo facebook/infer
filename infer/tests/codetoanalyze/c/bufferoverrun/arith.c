@@ -80,3 +80,35 @@ int division_of_zero_Good(int x) {
   i /= 2;
   return i;
 }
+
+/* While the most precise return value is
+   - "2*i+1"    if 0 <= i < 10,
+   - "0"        o.w.
+   Inferbo returns [1+min(-1,s0),10+max(-10,s1)] where i is [s0,s1]. */
+int plus_linear_min(int i) { /* i |-> [s0,s1] */
+  int linear = i + 1; /* linear |-> [s0+1,s1+1] */
+  if (i >= 0 && i < 10) { /* i |-> [max(0,s0),min(9,s1)] */
+    return linear + i; /* return |-> [s0+1,s1+10] */
+  }
+  return 0;
+}
+
+void plus_linear_min_Good() {
+  int a[20];
+  a[plus_linear_min(9)] = 1;
+}
+
+void plus_linear_min_Bad() {
+  int a[19];
+  a[plus_linear_min(9)] = 1;
+}
+
+void plus_linear_min2_Good_FP() {
+  int a[10];
+  a[plus_linear_min(4)] = 1;
+}
+
+void plus_linear_min3_Good_FP() {
+  int a[20];
+  a[plus_linear_min(15)] = 1;
+}

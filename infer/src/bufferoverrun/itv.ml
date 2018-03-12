@@ -711,8 +711,8 @@ module Bound = struct
 
   let subst_ub x map = subst ~subst_pos:SubstUpperBound x map
 
-  let plus : default:t -> t -> t -> t =
-   fun ~default x y ->
+  let plus_common : f:(t -> t -> t) -> t -> t -> t =
+   fun ~f x y ->
     match (x, y) with
     | _, _ when is_zero x ->
         y
@@ -724,19 +724,35 @@ module Bound = struct
     | Linear (c2, x2), MinMax (c1, sign, min_max, d1, x1)
       when SymLinear.is_zero x2 ->
         mk_MinMax (c1 + c2, sign, min_max, d1, x1)
-    | MinMax (c1, Plus, Max, d1, _), Linear (c2, x2)
-    | Linear (c2, x2), MinMax (c1, Plus, Max, d1, _) ->
-        Linear (c1 + d1 + c2, x2)
-    | MinMax (c1, Minus, Min, d1, _), Linear (c2, x2)
-    | Linear (c2, x2), MinMax (c1, Minus, Min, d1, _) ->
-        Linear (c1 - d1 + c2, x2)
-    | _, _ ->
-        default
+    | _ ->
+        f x y
 
 
-  let plus_l = plus ~default:MInf
+  let plus_l : t -> t -> t =
+    plus_common ~f:(fun x y ->
+        match (x, y) with
+        | MinMax (c1, Plus, Max, d1, _), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Plus, Max, d1, _) ->
+            Linear (c1 + d1 + c2, x2)
+        | MinMax (c1, Minus, Min, d1, _), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Minus, Min, d1, _) ->
+            Linear (c1 - d1 + c2, x2)
+        | _, _ ->
+            MInf )
 
-  let plus_u = plus ~default:PInf
+
+  let plus_u : t -> t -> t =
+    plus_common ~f:(fun x y ->
+        match (x, y) with
+        | MinMax (c1, Plus, Min, d1, _), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Plus, Min, d1, _) ->
+            Linear (c1 + d1 + c2, x2)
+        | MinMax (c1, Minus, Max, d1, _), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Minus, Max, d1, _) ->
+            Linear (c1 - d1 + c2, x2)
+        | _, _ ->
+            PInf )
+
 
   let mult_const : t -> NonZeroInt.t -> t option =
    fun x n ->
