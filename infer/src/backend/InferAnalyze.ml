@@ -153,11 +153,3 @@ let main ~changed_files ~makefile =
         List.iteri ~f:analyze_cluster clusters_to_analyze ;
         L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ) ;
       output_json_makefile_stats clusters_to_analyze
-
-
-let register_perf_stats_report () =
-  let cluster =
-    match Config.cluster_cmdline with Some cl -> "_" ^ Filename.basename cl | None -> ""
-  in
-  let filename = F.sprintf "%s%s.json" Config.perf_stats_prefix cluster in
-  PerfStats.register_report_at_exit filename Config.backend_stats_dir_name

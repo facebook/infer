@@ -118,6 +118,12 @@ let dump_duplicate_procs (exe_env: Exe_env.t) procs =
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
 
+let create_perf_stats_report source_file =
+  let abbrev_source_file = DB.source_file_encoding source_file in
+  let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
+  PerfStats.report_now filename ~source_file Config.backend_stats_dir_name
+
+
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks (exe_env: Exe_env.t) =
   let saved_language = !Language.curr_language in
@@ -146,6 +152,8 @@ let iterate_callbacks (exe_env: Exe_env.t) =
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
   iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;
+  (* Perf logging needs to remain at the end - after analysis work is complete *)
+  create_perf_stats_report exe_env.source_file ;
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Language.curr_language := saved_language

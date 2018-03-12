@@ -161,7 +161,7 @@ let stats source_file stats_type =
   (stats, stats_event)
 
 
-let report_at_exit file source_file stats_type () =
+let report file source_file stats_type () =
   try
     let stats, stats_event = stats source_file stats_type in
     let json_stats = to_json stats in
@@ -183,15 +183,21 @@ let report_at_exit file source_file stats_type () =
       (Printexc.get_backtrace ())
 
 
-let register_report_at_exit =
-  let registered_files = String.Table.create ~size:4 () in
-  fun filename ?source_file dirname ->
-    let dir = Filename.concat Config.results_dir dirname in
-    let file = Filename.concat dir filename in
-    (* take care of not double-registering the same perf stat report *)
-    if not (Hashtbl.mem registered_files file) then (
-      String.Table.set registered_files ~key:file ~data:() ;
-      if not Config.buck_cache_mode then
-        Epilogues.register
-          ~f:(report_at_exit file source_file dirname)
-          ("stats reporting in " ^ file) )
+let registered_files = ref String.Set.empty
+
+let handle_report filename ?source_file dirname ~f =
+  let relative_path = Filename.concat dirname filename in
+  let absolute_path = Filename.concat Config.results_dir relative_path in
+  (* make sure to not double register the same perf stat report *)
+  if not (String.Set.mem !registered_files relative_path) then (
+    registered_files := String.Set.add !registered_files relative_path ;
+    f (report absolute_path source_file dirname) )
+
+
+let report_now filename ?source_file dirname =
+  handle_report filename ?source_file dirname ~f:(fun report_f -> report_f ())
+
+
+let register_report_at_exit filename ?source_file dirname =
+  handle_report filename ?source_file dirname ~f:(fun report_f ->
+      Epilogues.register ~f:report_f ("stats reporting in " ^ Filename.concat dirname filename) )
