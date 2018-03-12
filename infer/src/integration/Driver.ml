@@ -534,7 +534,9 @@ let mode_from_command_line =
 
 
 let run_prologue mode =
-  if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
+  if CLOpt.is_originator then (
+    L.environment_info "%a@\n" Config.pp_version () ;
+    register_perf_stats_report () ) ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file () ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
@@ -542,7 +544,6 @@ let run_prologue mode =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS" ;
-  register_perf_stats_report () ;
   ()
 
 
