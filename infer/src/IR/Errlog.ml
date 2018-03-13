@@ -249,7 +249,13 @@ let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?lin
     | _ ->
         false
   in
-  let exn_developer = Exceptions.equal_visibility error.visibility Exceptions.Exn_developer in
+  let report_developer_exn exn =
+    match exn with Exceptions.Dummy_exception _ -> false | _ -> true
+  in
+  let exn_developer =
+    Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
+    && report_developer_exn exn
+  in
   let should_report =
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
     || Config.developer_mode && exn_developer

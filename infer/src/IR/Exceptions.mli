@@ -65,6 +65,8 @@ exception Condition_always_true_false of Localise.error_desc * bool * Logging.oc
 
 exception Custom_error of string * Localise.error_desc
 
+exception Dummy_exception of Localise.error_desc
+
 exception Dangling_pointer_dereference of
   PredSymb.dangling_kind option * Localise.error_desc * Logging.ocaml_pos
 
@@ -118,7 +120,7 @@ exception Precondition_not_found of Localise.error_desc * Logging.ocaml_pos
 
 exception Precondition_not_met of Localise.error_desc * Logging.ocaml_pos
 
-exception Retain_cycle of Sil.hpred * Localise.error_desc * Logging.ocaml_pos
+exception Retain_cycle of Localise.error_desc * Logging.ocaml_pos
 
 exception Registered_observer_being_deallocated of Localise.error_desc * Logging.ocaml_pos
 

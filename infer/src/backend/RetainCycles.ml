@@ -18,11 +18,11 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
     let index = index_ + 1 in
     let node = State.get_node () in
     let from_exp_str edge_obj =
-      match Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp with
-      | Some de ->
+      ignore (Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp) ;
+      (* | Some de ->
           DecompiledExp.to_string de
-      | None ->
-          Format.sprintf "(object of type %s)" (Typ.to_string edge_obj.rc_from.rc_node_typ)
+      | None -> TODO (T26707784): fix issues with DecompiledExp.to_string *)
+      Format.sprintf "(object of type %s)" (Typ.to_string edge_obj.rc_from.rc_node_typ)
     in
     let location_str =
       match edge with
@@ -168,26 +168,24 @@ let get_cycles found_cycles root tenv prop =
     | _ ->
         found_cycles
   in
-  L.d_strln "Looking for cycle with root expression: " ;
-  Sil.d_hpred root ;
-  L.d_strln "" ;
   match root with
-  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) ->
+  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) when Sil.is_objc_object root ->
       let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
       dfs ~found_cycles ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]
   | _ ->
-      L.d_strln "Root exp is not an allocated object. No cycle found" ;
       found_cycles
 
 
-(* Find all the cycles available with root hpred, up to a limit of 10 *)
-let get_retain_cycles hpred tenv prop_ =
-  try get_cycles RetainCyclesType.Set.empty hpred tenv prop_ with Max_retain_cycles cycles ->
-    cycles
+(* Find all the cycles available in prop, up to a limit of 10 *)
+let get_retain_cycles tenv prop =
+  let get_retain_cycles_with_root acc_set root = get_cycles acc_set root tenv prop in
+  let sigma = prop.Prop.sigma in
+  try List.fold ~f:get_retain_cycles_with_root sigma ~init:RetainCyclesType.Set.empty
+  with Max_retain_cycles cycles -> cycles
 
 
-let exn_retain_cycle tenv hpred cycle =
+let exn_retain_cycle tenv cycle =
   let retain_cycle = desc_retain_cycle tenv cycle in
   let cycle_dotty = Format.asprintf "%a" RetainCyclesType.pp_dotty cycle in
   if Config.debug_mode then (
@@ -196,23 +194,24 @@ let exn_retain_cycle tenv hpred cycle =
     let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
     RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
   let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) (Some cycle_dotty) in
-  Exceptions.Retain_cycle (hpred, desc, __POS__)
+  Exceptions.Retain_cycle (desc, __POS__)
 
 
-let report_cycle tenv pname hpred original_prop =
+let report_cycle tenv pname prop =
   (* When there is a cycle in objc we ignore it
         only if it's empty or it has weak or unsafe_unretained fields.
         Otherwise we report a retain cycle. *)
-  let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
-  let prop = remove_opt original_prop in
-  let cycles = get_retain_cycles hpred tenv prop in
+  let cycles = get_retain_cycles tenv prop in
   RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
   match Specs.get_summary pname with
   | Some summary ->
-      RetainCyclesType.Set.iter
-        (fun cycle ->
-          let exn = exn_retain_cycle tenv hpred cycle in
-          Reporting.log_error summary exn )
-        cycles
+      if RetainCyclesType.Set.cardinal cycles > 0 then (
+        RetainCyclesType.Set.iter
+          (fun cycle ->
+            let exn = exn_retain_cycle tenv cycle in
+            Reporting.log_error summary exn )
+          cycles ;
+        (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
+        raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )
   | None ->
       ()

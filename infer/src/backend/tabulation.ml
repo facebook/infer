@@ -1236,7 +1236,7 @@ let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
 
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results =
+let exe_call_postprocess tenv ret_id trace_call caller_pname callee_pname callee_attrs loc results =
   let filter_valid_res = function Invalid_res _ -> false | Valid_res _ -> true in
   let valid_res0, invalid_res0 = List.partition_tf ~f:filter_valid_res results in
   let valid_res =
@@ -1366,6 +1366,10 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
           List.iter ~f:print_pi (List.map ~f:fst cover) ;
           List.concat_map ~f:snd cover )
   in
+  if !Config.footprint then
+    List.iter
+      ~f:(fun (prop, _) -> RetainCycles.report_cycle tenv caller_pname prop)
+      res_with_path_idents ;
   trace_call CR_success ;
   let res =
     List.map
@@ -1416,4 +1420,5 @@ let exe_function_call callee_summary tenv ret_id_opt caller_pdesc callee_pname l
       formal_params
   in
   let results = List.map ~f:exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_id_opt trace_call callee_pname callee_attrs loc results
+  exe_call_postprocess tenv ret_id_opt trace_call caller_pname callee_pname callee_attrs loc
+    results

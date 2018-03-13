@@ -1003,7 +1003,7 @@ let check_observer_is_unsubscribed_deallocation tenv prop e =
       ()
 
 
-let check_junk ?original_prop pname tenv prop =
+let check_junk pname tenv prop =
   let leaks_reported = ref [] in
   let remove_junk_once fp_part fav_root sigma =
     let id_considered_reachable =
@@ -1096,9 +1096,7 @@ let check_junk ?original_prop pname tenv prop =
               | Some PredSymb.Awont_leak, Rmemory _ ->
                   (true, exn_leak)
               | Some _, Rmemory Mobjc ->
-                  RetainCycles.report_cycle tenv pname hpred original_prop ;
                   (true, exn_leak)
-                  (* we report now inside RetainCycles, here we ignore the leak *)
               | (Some _, Rmemory Mnew | Some _, Rmemory Mnew_array)
                 when Language.curr_language_is Clang ->
                   (is_none ml_bucket_opt, exn_leak)
@@ -1112,13 +1110,6 @@ let check_junk ?original_prop pname tenv prop =
                   (false, exn_leak)
               | Some _, Rlock ->
                   (false, exn_leak)
-              | _ when Sil.is_objc_object hpred ->
-                  (* When it's a cycle and it is an Objective-C object then
-                        we have a retain cycle. Objc object may not have the
-                        Mobjc qualifier when added in footprint doing abduction *)
-                  RetainCycles.report_cycle tenv pname hpred original_prop ;
-                  (true, exn_leak)
-                  (* we report now inside RetainCycles, here we ignore the leak *)
               | _ ->
                   (Language.curr_language_is Java, exn_leak)
             in
@@ -1173,16 +1164,16 @@ let check_junk ?original_prop pname tenv prop =
 
 (** Check whether the prop contains junk.
     If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
-let abstract_junk ?original_prop pname tenv prop =
+let abstract_junk pname tenv prop =
   Absarray.array_abstraction_performed := false ;
-  check_junk ~original_prop pname tenv prop
+  check_junk pname tenv prop
 
 
 (** Remove redundant elements in an array, and check for junk afterwards *)
 let remove_redundant_array_elements pname tenv prop =
   Absarray.array_abstraction_performed := false ;
   let prop' = Absarray.remove_redundant_elements tenv prop in
-  check_junk ~original_prop:(Some prop) pname tenv prop'
+  check_junk pname tenv prop'
 
 
 let abstract_prop pname tenv ~(rename_primed: bool) ~(from_abstract_footprint: bool) p =
@@ -1197,7 +1188,7 @@ let abstract_prop pname tenv ~(rename_primed: bool) ~(from_abstract_footprint: b
   let abs_p = abs_rules_apply tenv array_abs_p in
   let abs_p = abstract_gc tenv abs_p in
   (* abstraction might enable more gc *)
-  let abs_p = check_junk ~original_prop:(Some p) pname tenv abs_p in
+  let abs_p = check_junk pname tenv abs_p in
   let ren_abs_p =
     if rename_primed then Prop.prop_rename_primed_footprint_vars tenv abs_p else abs_p
   in

@@ -67,6 +67,8 @@ exception Condition_always_true_false of Localise.error_desc * bool * L.ocaml_po
 
 exception Custom_error of string * Localise.error_desc
 
+exception Dummy_exception of Localise.error_desc
+
 exception Dangling_pointer_dereference of
   PredSymb.dangling_kind option * Localise.error_desc * L.ocaml_pos
 
@@ -115,7 +117,7 @@ exception Precondition_not_found of Localise.error_desc * L.ocaml_pos
 
 exception Precondition_not_met of Localise.error_desc * L.ocaml_pos
 
-exception Retain_cycle of Sil.hpred * Localise.error_desc * L.ocaml_pos
+exception Retain_cycle of Localise.error_desc * L.ocaml_pos
 
 exception Registered_observer_being_deallocated of Localise.error_desc * L.ocaml_pos
 
@@ -271,6 +273,14 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
+      ; category= Checker }
+  | Dummy_exception desc ->
+      { name= IssueType.from_string "Analysis stops"
+      ; description= desc
+      ; ocaml_pos= None
+      ; visibility= Exn_developer
+      ; severity= Low
+      ; kind= Some Kinfo
       ; category= Checker }
   | Dangling_pointer_dereference (dko, desc, ocaml_pos) ->
       let visibility =
@@ -494,7 +504,7 @@ let recognize_exception exn =
       ; kind= Some Kwarning
       ; category= Nocat }
       (* always a warning *)
-  | Retain_cycle (_, desc, ocaml_pos) ->
+  | Retain_cycle (desc, ocaml_pos) ->
       { name= IssueType.retain_cycle
       ; description= desc
       ; ocaml_pos= Some ocaml_pos

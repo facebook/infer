@@ -1032,7 +1032,11 @@ let execute_store ?(report_deref_errors= true) pname pdesc tenv lhs_exp typ rhs_
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
-    List.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
+    let prop_list =
+      List.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
+    in
+    if !Config.footprint then List.iter ~f:(RetainCycles.report_cycle tenv pname) prop_list ;
+    prop_list
   with Rearrange.ARRAY_ACCESS -> if Int.equal Config.array_level 0 then assert false else [prop_]
 
 
@@ -1791,7 +1795,7 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
           (* but force them into either branch *)
           p'
       | _ ->
-          check_deallocate_static_memory (Abs.abstract_junk ~original_prop:p pname tenv p')
+          check_deallocate_static_memory (Abs.abstract_junk pname tenv p')
     in
     L.d_str "Instruction " ;
     Sil.d_instr instr ;

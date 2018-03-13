@@ -18,9 +18,7 @@ type rules
 val abstract : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Abstract a proposition. *)
 
-val abstract_junk :
-  ?original_prop:Prop.normal Prop.t -> Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t
-  -> Prop.normal Prop.t
+val abstract_junk : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Check whether the prop contains junk.
     If it does, and [Config.allowleak] is true, remove the junk,
     otherwise raise a Leak exception. *)
