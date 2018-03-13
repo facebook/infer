@@ -1064,6 +1064,29 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
     props
 
 
+let add_missing_field_to_tenv tenv callee_pname hpreds =
+  match Ondemand.get_proc_desc callee_pname with
+  | Some pdesc ->
+      let attrs = Procdesc.get_attributes pdesc in
+      let source_file = attrs.ProcAttributes.loc.Location.file in
+      let callee_tenv_opt = Tenv.load source_file in
+      let add_field_in_hpred hpred =
+        match (callee_tenv_opt, hpred) with
+        | ( Some callee_tenv
+          , Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) ) -> (
+          match Tenv.lookup callee_tenv name with
+          | Some {fields} ->
+              List.iter ~f:(fun field -> Tenv.add_field tenv name field) fields
+          | None ->
+              () )
+        | _ ->
+            ()
+      in
+      List.iter ~f:add_field_in_hpred hpreds
+  | None ->
+      ()
+
+
 (** Perform symbolic execution for a single spec *)
 let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path_pre
     (spec: Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
@@ -1156,10 +1179,12 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
             | _ ->
                 false
           in
-          (* missing fields minus hidden fields *)
-          let missing_fld_not_objc_class =
-            List.filter ~f:(fun hp -> not (hpred_missing_objc_class hp)) missing_fld
+          let missing_fld_objc_class, missing_fld_not_objc_class =
+            List.partition_tf ~f:(fun hp -> hpred_missing_objc_class hp) missing_fld
           in
+          if missing_fld_objc_class <> [] then (
+            L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
+            add_missing_field_to_tenv tenv callee_pname missing_fld_objc_class ) ;
           if not !Config.footprint && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )
