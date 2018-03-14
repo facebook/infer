@@ -32,7 +32,9 @@ val log_info_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
     DEPRECATED as it can create race conditions between checkers.
     Use log_info instead *)
 
-val log_issue_from_errlog : Typ.Procname.t -> Exceptions.err_kind -> log_issue_from_errlog
+val log_issue_from_errlog :
+  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.err_kind
+  -> log_issue_from_errlog
 (** Report an issue of a given kind  in the given error log. *)
 
 val log_error : Specs.summary -> log_t

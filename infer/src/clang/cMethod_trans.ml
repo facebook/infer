@@ -349,7 +349,7 @@ let get_formal_parameters tenv ms =
             && CFrontend_config.equal_clang_lang ms.CMethodSignature.lang CFrontend_config.CPP
           in
           is_objc_self
-          && ProcAttributes.clang_method_kind_equal ms.CMethodSignature.method_kind
+          && ProcAttributes.equal_clang_method_kind ms.CMethodSignature.method_kind
                ProcAttributes.OBJC_INSTANCE
           || is_cxx_this
         in

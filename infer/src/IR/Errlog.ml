@@ -234,8 +234,9 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file
-    ?doc_url ?access exn =
+let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_key) session ltr
+    ?linters_def_file ?doc_url ?access exn =
+  let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
   let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
   let hide_java_loc_zero =
@@ -263,11 +264,11 @@ let log_issue procname err_kind err_log loc (node_id, node_key) session ltr ?lin
   ( if exn_developer then
       let issue =
         EventLogger.AnalysisIssue
-          (* TODO: Add clang_method_kind field (T26423401) *)
           { bug_type= error.name.IssueType.unique_id
           ; bug_kind= Exceptions.err_kind_string err_kind
+          ; clang_method_kind= (match lang with Language.Clang -> clang_method_kind | _ -> None)
           ; exception_triggered_location= error.ocaml_pos
-          ; lang= Typ.Procname.get_language procname |> Language.to_explicit_string
+          ; lang= Language.to_explicit_string lang
           ; procedure_name= Typ.Procname.to_string procname
           ; source_location= loc }
       in

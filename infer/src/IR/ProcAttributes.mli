@@ -23,7 +23,7 @@ type clang_method_kind =
   | C_FUNCTION
   [@@deriving compare]
 
-val clang_method_kind_equal : clang_method_kind -> clang_method_kind -> bool
+val equal_clang_method_kind : clang_method_kind -> clang_method_kind -> bool
 
 val string_of_clang_method_kind : clang_method_kind -> string
 

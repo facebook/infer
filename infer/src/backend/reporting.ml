@@ -16,8 +16,11 @@ type log_t =
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-let log_issue_from_errlog procname err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file
-    ?doc_url ?access exn =
+let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
+    ?linters_def_file ?doc_url ?access exn =
+  let clang_method_kind =
+    Option.map clang_method_kind ~f:ProcAttributes.string_of_clang_method_kind
+  in
   let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let loc = match loc with None -> State.get_loc () | Some loc -> loc in
@@ -32,13 +35,15 @@ let log_issue_from_errlog procname err_kind err_log ?loc ?node_id ?session ?ltr 
       match session with None -> (State.get_session () :> int) | Some session -> session
     in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Errlog.log_issue procname err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url
-      ?access exn
+    Errlog.log_issue procname ?clang_method_kind err_kind err_log loc node_id session ltr
+      ?linters_def_file ?doc_url ?access exn
 
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     ?access exn =
-  let procname = Specs.get_proc_name summary in
+  let attrs = Specs.get_attributes summary in
+  let procname = attrs.proc_name in
+  let clang_method_kind = attrs.clang_method_kind in
   let is_java_generated_method =
     match procname with
     | Typ.Procname.Java java_pname ->
@@ -54,8 +59,8 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else
     let err_log = Specs.get_err_log summary in
-    log_issue_from_errlog procname err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file
-      ?doc_url ?access exn
+    log_issue_from_errlog procname ~clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
+      ?linters_def_file ?doc_url ?access exn
 
 
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr

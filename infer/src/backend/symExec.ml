@@ -1277,7 +1277,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                             prop path
                       | None, false ->
                           let is_objc_instance_method =
-                            ProcAttributes.clang_method_kind_equal
+                            ProcAttributes.equal_clang_method_kind
                               attrs.ProcAttributes.clang_method_kind ProcAttributes.OBJC_INSTANCE
                           in
                           skip_call ~is_objc_instance_method ~reason:"function or method not found"

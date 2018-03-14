@@ -93,5 +93,6 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-  Typ.Procname.t -> Exceptions.err_kind -> t -> Location.t -> int * Caml.Digest.t -> int
-  -> loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
+  Typ.Procname.t -> ?clang_method_kind:string -> Exceptions.err_kind -> t -> Location.t
+  -> int * Caml.Digest.t -> int -> loc_trace -> ?linters_def_file:string -> ?doc_url:string
+  -> ?access:string -> exn -> unit

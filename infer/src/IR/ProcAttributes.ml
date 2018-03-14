@@ -33,7 +33,7 @@ type clang_method_kind =
   | C_FUNCTION
   [@@deriving compare]
 
-let clang_method_kind_equal = [%compare.equal : clang_method_kind]
+let equal_clang_method_kind = [%compare.equal : clang_method_kind]
 
 let string_of_clang_method_kind = function
   | CPP_INSTANCE ->

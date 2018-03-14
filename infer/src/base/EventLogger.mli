@@ -10,6 +10,7 @@
 type analysis_issue =
   { bug_kind: string
   ; bug_type: string
+  ; clang_method_kind: string option
   ; exception_triggered_location: Logging.ocaml_pos option
   ; lang: string
   ; procedure_name: string

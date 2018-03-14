@@ -74,6 +74,7 @@ end
 type analysis_issue =
   { bug_kind: string
   ; bug_type: string
+  ; clang_method_kind: string option
   ; exception_triggered_location: Logging.ocaml_pos option
   ; lang: string
   ; procedure_name: string
@@ -83,6 +84,7 @@ let create_analysis_issue_row base record =
   let open JsonBuilder in
   base |> add_string ~key:"bug_kind" ~data:record.bug_kind
   |> add_string ~key:"bug_type" ~data:record.bug_type
+  |> add_string_opt ~key:"clang_method_kind" ~data:record.clang_method_kind
   |> add_string_opt ~key:"exception_triggered_location"
        ~data:(Option.map ~f:Logging.ocaml_pos_to_string record.exception_triggered_location)
   |> add_string ~key:"lang" ~data:record.lang
