@@ -217,10 +217,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
+  let is_aggregate (_, typ) =
+    match typ.Typ.desc with
+    | Tstruct _ ->
+        (* TODO: we could compute this precisely by recursively checking all of the fields of the
+           type, but that's going to be expensive. will add it to the frontend instead *)
+        true
+    | _ ->
+        false
+
+
   let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
     | Assign (Base lhs_base, rhs_exp, loc) ->
+        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
+    | Assign (FieldOffset (Base lhs_base, _), rhs_exp, loc) when is_aggregate lhs_base ->
+        (* assume assigning to any field of an aggregate struct re-initalizes the struct *)
         Domain.handle_var_assign lhs_base rhs_exp loc summary astate
     | Assign (lhs_access_exp, rhs_exp, loc) ->
         (* assign to field, array, indirectly with &/*, or a combination *)
