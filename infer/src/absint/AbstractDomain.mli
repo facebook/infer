@@ -134,3 +134,20 @@ module CountDomain (MaxCount : MaxCount) : sig
   val add : astate -> astate -> astate
   (** capped sum of two states *)
 end
+
+(** Domain whose members are stacks of elements (lists, last pushed is head of the list),
+    partially ordered by the prefix relation ([c;b;a] <= [b;a]), and whose join computes the
+    longest common prefix (so [c;b;a] join [f;g;b;c;a] = [a]), so the top element is the empty
+    stack. *)
+module StackDomain (Element : PrettyPrintable.PrintableOrderedType) : sig
+  include S with type astate = Element.t list
+
+  val push : Element.t -> astate -> astate
+
+  val pop : astate -> astate
+  (** throws exception on empty *)
+
+  val empty : astate
+
+  val is_empty : astate -> bool
+end

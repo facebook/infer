@@ -12,69 +12,57 @@ module F = Format
 
 (** Abstraction of a path that represents a lock, special-casing equality and comparisons
     to work over type, base variable modulo this and access list *)
-module LockIdentity : sig
-  type t = AccessPath.t [@@deriving compare]
-
-  val pp : F.formatter -> t -> unit  [@@warning "-32"]
-end
+module LockIdentity : PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
 
 (** A lock event.  Equality/comparison disregards the call trace but includes location. *)
 module LockEvent : sig
-  type t = private
-    {lock: LockIdentity.t; loc: Location.t; trace: CallSite.t list}
-    [@@deriving compare]
+  type t = private {lock: LockIdentity.t; loc: Location.t; trace: CallSite.t list}
+
+  include PrettyPrintable.PrintableOrderedType with type t := t
 
   val owner_class : t -> Typ.name option
-    [@@warning "-32"]
   (** Class of the root variable of the path representing the lock *)
-
-  val pp : F.formatter -> t -> unit  [@@warning "-32"]
 end
 
-module LockStack : AbstractDomain.WithBottom with type astate = LockEvent.t list
+module LockState : AbstractDomain.WithBottom
 
 (** Represents either
 - the existence of a program path from the current method to the eventual acquisition of a lock
-  ("after"), or,
-- the "before" lock being taken *in the current method* and, before its release, the eventual
-  acquisition of "after" *)
+  ("eventually"), or,
+- the "first" lock being taken *in the current method* and, before its release, the eventual
+  acquisition of "eventually" *)
 module LockOrder : sig
-  type t = private {before: LockEvent.t option; after: LockEvent.t} [@@deriving compare]
+  type t = private {first: LockEvent.t option; eventually: LockEvent.t}
 
-  val pp : F.formatter -> t -> unit
+  include PrettyPrintable.PrintableOrderedType with type t := t
 
   val get_pair : t -> (LockEvent.t * LockEvent.t) option
-    [@@warning "-32"]
-  (** return the pair (b, after) if before is Some b *)
+  (** return the pair (b, eventually) if first is Some b *)
 
-  val may_deadlock : t -> t -> bool  [@@warning "-32"]
+  val may_deadlock : t -> t -> bool
+  (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
+      variable name at the root of each path. *)
 
-  val make_loc_trace : t -> Errlog.loc_trace  [@@warning "-32"]
+  val make_loc_trace : t -> Errlog.loc_trace
 end
 
 module LockOrderDomain : sig
-  include module type of PrettyPrintable.MakePPSet (LockOrder)
+  include PrettyPrintable.PPSet with type elt = LockOrder.t
 
   include AbstractDomain.WithBottom with type astate = t
 end
 
-module LockState : sig
-  include AbstractDomain.WithBottom with type astate = LockStack.astate * LockOrderDomain.astate
+include AbstractDomain.WithBottom
 
-  val lock : HilExp.t list -> astate -> Location.t -> astate  [@@warning "-32"]
+val acquire : LockIdentity.t -> astate -> Location.t -> astate
 
-  val unlock : HilExp.t list -> astate -> astate  [@@warning "-32"]
-
-  val integrate_summary :
-    caller_state:astate -> callee_summary:LockOrderDomain.t -> Typ.Procname.t -> Location.t
-    -> astate
-    [@@warning "-32"]
-
-  val to_summary : astate -> LockOrderDomain.t  [@@warning "-32"]
-end
+val release : LockIdentity.t -> astate -> astate
 
 type summary = LockOrderDomain.astate
 
-include AbstractDomain.WithBottom with type astate = LockState.astate
-
 val pp_summary : F.formatter -> summary -> unit
+
+val to_summary : astate -> summary
+
+val integrate_summary :
+  caller_state:astate -> callee_summary:summary -> Typ.Procname.t -> Location.t -> astate

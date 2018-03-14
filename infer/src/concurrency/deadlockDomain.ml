@@ -9,46 +9,6 @@
 open! IStd
 module F = Format
 
-module StackDomain (Element : PrettyPrintable.PrintableOrderedType) = struct
-  type astate = Element.t list [@@deriving compare]
-
-  let push = List.cons
-
-  let pop = List.tl_exn
-
-  let is_empty = List.is_empty
-
-  let empty = []
-
-  let pp fmt x = Pp.semicolon_seq Element.pp fmt x
-
-  let ( <= ) ~lhs ~rhs =
-    let rec aux lhs rhs =
-      match (lhs, rhs) with
-      | [], _ ->
-          true
-      | _, [] ->
-          false
-      | x :: xs, y :: ys ->
-          Int.equal 0 (Element.compare x y) && aux xs ys
-    in
-    aux (List.rev lhs) (List.rev rhs)
-
-
-  let join lhs rhs =
-    let rec aux acc a b =
-      match (a, b) with
-      | [], _ | _, [] ->
-          acc
-      | x :: xs, y :: ys ->
-          if not (Int.equal 0 (Element.compare x y)) then [] else aux (x :: acc) xs ys
-    in
-    aux [] (List.rev lhs) (List.rev rhs)
-
-
-  let widen ~prev ~next ~num_iters:_ = join prev next
-end
-
 module LockIdentity = struct
   type t = AccessPath.t
 
@@ -66,8 +26,12 @@ module LockIdentity = struct
 
   let equal lock lock' = Int.equal 0 (compare lock lock')
 
+  let equal_modulo_base ((_, typ), aclist) ((_, typ'), aclist') =
+    Typ.equal typ typ' && AccessPath.equal_access_list aclist aclist'
+
+
   let pp fmt (((_, typ), _) as lock) =
-    Format.fprintf fmt "locks %a in class %a" AccessPath.pp lock (Typ.pp Pp.text) typ
+    Format.fprintf fmt "locks %a in class %a" AccessPath.pp lock (Typ.pp_full Pp.text) typ
 end
 
 module LockEvent = struct
@@ -83,14 +47,13 @@ module LockEvent = struct
 
   let locks_equal e e' = LockIdentity.equal e.lock e'.lock
 
-  let pp_trace fmt = function
-    | [] ->
-        ()
-    | trace ->
-        Format.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
-
-
   let pp fmt e =
+    let pp_trace fmt = function
+      | [] ->
+          ()
+      | trace ->
+          Format.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
+    in
     Format.fprintf fmt "%a at %a%a" LockIdentity.pp e.lock Location.pp e.loc pp_trace e.trace
 
 
@@ -101,7 +64,7 @@ module LockEvent = struct
 
   let make lock loc = {lock; loc; trace= []}
 
-  let make_loc_trace e =
+  let make_loc_trace ?(reverse= false) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], 0) ~f:(fun (tr, ns) callsite ->
           let elem_descr =
@@ -112,43 +75,50 @@ module LockEvent = struct
     in
     let endpoint_descr = Format.asprintf "Lock acquisition: %a" LockIdentity.pp e.lock in
     let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
-    List.rev (endpoint :: call_trace)
+    let res = endpoint :: call_trace in
+    if reverse then res else List.rev res
 end
 
 module LockOrder = struct
-  type t = {before: LockEvent.t option; after: LockEvent.t} [@@deriving compare]
+  type t = {first: LockEvent.t option; eventually: LockEvent.t} [@@deriving compare]
 
   let pp fmt o =
-    match o.before with
+    match o.first with
     | None ->
-        Format.fprintf fmt "Eventually %a" LockEvent.pp o.after
+        Format.fprintf fmt "Eventually %a" LockEvent.pp o.eventually
     | Some lock ->
         Format.fprintf fmt "First %a and before releasing it %a" LockEvent.pp lock LockEvent.pp
-          o.after
+          o.eventually
 
 
-  let get_pair elem = match elem.before with None -> None | Some b -> Some (b, elem.after)
+  let get_pair elem = match elem.first with None -> None | Some b -> Some (b, elem.eventually)
 
   let may_deadlock elem elem' =
-    match (elem.before, elem'.before) with
+    let locks_equal_modulo_base e e' =
+      LockIdentity.equal_modulo_base e.LockEvent.lock e'.LockEvent.lock
+    in
+    match (elem.first, elem'.first) with
     | Some b, Some b' ->
-        LockEvent.locks_equal b elem'.after && LockEvent.locks_equal b' elem.after
+        locks_equal_modulo_base b elem'.eventually && locks_equal_modulo_base b' elem.eventually
     | _, _ ->
         false
 
 
-  let make_eventually_locks after = {before= None; after}
+  let make_eventually_locks eventually = {first= None; eventually}
 
-  let make_holds_and_locks b after = {before= Some b; after}
+  let make_holds_and_locks b eventually = {first= Some b; eventually}
 
   let with_callsite callsite o =
-    {o with after= {o.after with LockEvent.trace= callsite :: o.after.LockEvent.trace}}
+    { o with
+      eventually= {o.eventually with LockEvent.trace= callsite :: o.eventually.LockEvent.trace} }
 
 
   let make_loc_trace o =
-    let before_trace = Option.value_map o.before ~default:[] ~f:LockEvent.make_loc_trace in
-    let after_trace = LockEvent.make_loc_trace o.after in
-    List.append before_trace after_trace
+    let first_trace =
+      Option.value_map o.first ~default:[] ~f:(LockEvent.make_loc_trace ~reverse:true)
+    in
+    let eventually_trace = LockEvent.make_loc_trace o.eventually in
+    List.rev_append first_trace eventually_trace
 end
 
 module LockOrderDomain = struct
@@ -159,73 +129,86 @@ module LockOrderDomain = struct
 
 
   let is_eventually_locked lock lo =
-    exists (fun pair -> LockEvent.locks_equal pair.LockOrder.after lock) lo
+    exists (fun pair -> LockEvent.locks_equal pair.LockOrder.eventually lock) lo
 end
 
-module LockStack = StackDomain (LockEvent)
+module LockStack = AbstractDomain.StackDomain (LockEvent)
 
 module LockState = struct
-  include AbstractDomain.Pair (LockStack) (LockOrderDomain)
+  include AbstractDomain.InvertedMap (LockIdentity) (LockStack)
 
-  let empty = (LockStack.empty, LockOrderDomain.empty)
+  let is_taken lock map = try not (find lock map |> LockStack.is_empty) with Not_found -> false
 
-  let is_empty (ls, lo) = LockStack.is_empty ls && LockOrderDomain.is_empty lo
+  let acquire lock_event map =
+    let lock_id = lock_event.LockEvent.lock in
+    let current_value = try find lock_id map with Not_found -> LockStack.empty in
+    let new_value = LockStack.push lock_event current_value in
+    add lock_id new_value map
 
-  (* for every lock b held locally, add a pair (b, lock_event), plus (None, lock_event) *)
-  let add_order_pairs ls lock_event acc =
-    (* add no pairs whatsoever if we already hold that lock *)
-    if List.exists ls ~f:(LockEvent.locks_equal lock_event) then acc
+
+  let release lock_id map =
+    let current_value = try find lock_id map with Not_found -> LockStack.empty in
+    if LockStack.is_empty current_value then map
     else
-      let add_eventually_locks acc =
-        (* don't add an eventually-locks pair if there is already another with same endpoint*)
-        if LockOrderDomain.is_eventually_locked lock_event acc then acc
-        else
-          let elem = LockOrder.make_eventually_locks lock_event in
-          LockOrderDomain.add elem acc
-      in
-      let add_holds_and_locks acc before =
-        (* never add a pair of the form (a,a) -- should never happen due to the check above *)
-        let elem = LockOrder.make_holds_and_locks before lock_event in
-        LockOrderDomain.add elem acc
-      in
-      List.fold ls ~init:acc ~f:add_holds_and_locks |> add_eventually_locks
+      let new_value = LockStack.pop current_value in
+      if LockStack.is_empty new_value then remove lock_id map else add lock_id new_value map
 
 
-  let lock actuals ((ls, lo) as astate) loc =
-    match actuals with
-    | (HilExp.AccessExpression exp) :: _ ->
-        let newlock_event = LockEvent.make (AccessExpression.to_access_path exp) loc in
-        let lo' =
-          (* do not add any order pairs if we already hold the lock *)
-          if List.exists ls ~f:(LockEvent.locks_equal newlock_event) then lo
-          else add_order_pairs ls newlock_event lo
-        in
-        let ls' = LockStack.push newlock_event ls in
-        (ls', lo')
-    | _ ->
-        astate
-
-
-  let unlock _ (ls, lo) = ((if LockStack.is_empty ls then ls else LockStack.pop ls), lo)
-
-  let integrate_summary ~caller_state:(ls, lo) ~callee_summary callee_pname loc =
-    (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
-       l is held locally *)
-    let do_elem elem acc =
-      Option.value_map elem.LockOrder.before ~default:acc ~f:(fun b -> add_order_pairs ls b acc)
-      |> add_order_pairs ls elem.LockOrder.after
-    in
-    let callsite = CallSite.make callee_pname loc in
-    (* add callsite to the "after" trace *)
-    let elems = LockOrderDomain.with_callsite callsite callee_summary in
-    let lo' = LockOrderDomain.fold do_elem elems lo in
-    (ls, lo')
-
-
-  let to_summary astate = snd astate
+  let fold_over_events f map init =
+    let ff _ lock_state acc = List.fold lock_state ~init:acc ~f in
+    fold ff map init
 end
 
-include LockState
+include AbstractDomain.Pair (LockState) (LockOrderDomain)
+
+let empty = (LockState.empty, LockOrderDomain.empty)
+
+let is_empty (ls, lo) = LockState.is_empty ls && LockOrderDomain.is_empty lo
+
+(* for every lock b held locally, add a pair (b, lock_event), plus (None, lock_event) *)
+let add_order_pairs ls lock_event acc =
+  (* add no pairs whatsoever if we already hold that lock *)
+  if LockState.is_taken lock_event.LockEvent.lock ls then acc
+  else
+    let add_eventually_locks acc =
+      (* don't add an eventually-locks pair if there is already another with same endpoint*)
+      if LockOrderDomain.is_eventually_locked lock_event acc then acc
+      else
+        let elem = LockOrder.make_eventually_locks lock_event in
+        LockOrderDomain.add elem acc
+    in
+    let add_holds_and_locks acc first =
+      (* never add a pair of the form (a,a) -- should never happen due to the check above *)
+      let elem = LockOrder.make_holds_and_locks first lock_event in
+      LockOrderDomain.add elem acc
+    in
+    LockState.fold_over_events add_holds_and_locks ls acc |> add_eventually_locks
+
+
+let acquire lockid (ls, lo) loc =
+  let newlock_event = LockEvent.make lockid loc in
+  let lo' = add_order_pairs ls newlock_event lo in
+  let ls' = LockState.acquire newlock_event ls in
+  (ls', lo')
+
+
+let release lockid (ls, lo) = (LockState.release lockid ls, lo)
+
+let integrate_summary ~caller_state:(ls, lo) ~callee_summary callee_pname loc =
+  (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
+     l is held locally *)
+  let do_elem elem acc =
+    Option.value_map elem.LockOrder.first ~default:acc ~f:(fun b -> add_order_pairs ls b acc)
+    |> add_order_pairs ls elem.LockOrder.eventually
+  in
+  let callsite = CallSite.make callee_pname loc in
+  (* add callsite to the "eventually" trace *)
+  let elems = LockOrderDomain.with_callsite callsite callee_summary in
+  let lo' = LockOrderDomain.fold do_elem elems lo in
+  (ls, lo')
+
+
+let to_summary astate = snd astate
 
 type summary = LockOrderDomain.astate
 
