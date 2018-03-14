@@ -244,8 +244,6 @@ def parse_buck_command(args):
         base_cmd_without_targets = [p for p in buck_args
                                     if p not in parsed_args.targets]
         buck_build_command = ['buck', build_keyword]
-        if not parsed_args.deep:
-            buck_build_command.append('--deep')
         base_cmd = buck_build_command + base_cmd_without_targets
         return base_cmd, parsed_args
 
