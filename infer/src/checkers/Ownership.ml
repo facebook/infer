@@ -227,6 +227,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
+  let is_early_return call_exp =
+    match call_exp with
+    | HilInstr.Direct pname ->
+        Typ.Procname.equal pname BuiltinDecl.exit
+        || Typ.Procname.equal pname BuiltinDecl.objc_cpp_throw
+        || Typ.Procname.equal pname BuiltinDecl.abort
+    | _ ->
+        false
+
+
   let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
@@ -281,10 +291,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* invoking a lambda; check that it's captured vars are valid *)
         Domain.check_var_lifetime lhs_var loc summary astate ;
         astate
-    | Call (ret_opt, _, actuals, _, loc)
+    | Call (ret_opt, call_exp, actuals, _, loc)
       -> (
         let astate' = Domain.actuals_add_reads actuals loc summary astate in
-        match ret_opt with Some (base_var, _) -> Domain.remove base_var astate' | None -> astate' )
+        if is_early_return call_exp then
+          (* thrown exception, abort(), or exit; return _|_ *)
+          Domain.empty
+        else
+          match ret_opt with
+          | Some (base_var, _) ->
+              Domain.remove base_var astate'
+          | None ->
+              astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
 end

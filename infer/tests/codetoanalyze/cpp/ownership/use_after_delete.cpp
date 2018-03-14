@@ -98,3 +98,30 @@ void use_in_loop_bad() {
     s->f = i;
   }
 }
+
+S* gated_delete_abort_ok(bool b) {
+  auto s = new S{1};
+  if (b) {
+    delete s;
+    std::abort();
+  }
+  return s;
+}
+
+S* gated_exit_abort_ok(bool b) {
+  auto s = new S{1};
+  if (b) {
+    delete s;
+    exit(1);
+  }
+  return s;
+}
+
+S* gated_delete_throw_ok(bool b) {
+  auto s = new S{1};
+  if (b) {
+    delete s;
+    throw 5;
+  }
+  return s;
+}
