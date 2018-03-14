@@ -13,12 +13,22 @@ open! IStd
 
 type perf_stats
 
+type stats_type =
+  | ClangLinters
+  | ClangFrontend
+  | ClangFrontendLinters
+  | JavaFrontend
+  | PythonFrontend
+  | Backend
+  | Reporting
+  | Driver
+
 val from_json : Yojson.Basic.json -> perf_stats
 
 val aggregate : perf_stats list -> Yojson.Basic.json
 
-val report_now : string -> ?source_file:SourceFile.t -> string -> unit
+val report_now : string -> ?source_file:SourceFile.t -> stats_type -> unit
 (** Create performance report immediately *)
 
-val register_report_at_exit : string -> ?source_file:SourceFile.t -> string -> unit
+val register_report_at_exit : string -> ?source_file:SourceFile.t -> stats_type -> unit
 (** Create performance report when the current process terminates *)

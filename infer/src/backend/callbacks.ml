@@ -121,7 +121,7 @@ let dump_duplicate_procs (exe_env: Exe_env.t) procs =
 let create_perf_stats_report source_file =
   let abbrev_source_file = DB.source_file_encoding source_file in
   let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
-  PerfStats.report_now filename ~source_file Config.backend_stats_dir_name
+  PerfStats.report_now filename ~source_file PerfStats.Backend
 
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)

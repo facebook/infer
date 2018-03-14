@@ -30,6 +30,54 @@ type perf_stats =
   ; stack_kb: float
   ; minor_heap_kb: float }
 
+type stats_type =
+  | ClangLinters
+  | ClangFrontend
+  | ClangFrontendLinters
+  | JavaFrontend
+  | PythonFrontend
+  | Backend
+  | Reporting
+  | Driver
+
+let dirname_of_stats_type = function
+  | ClangLinters ->
+      Config.frontend_stats_dir_name
+  | ClangFrontend ->
+      Config.frontend_stats_dir_name
+  | ClangFrontendLinters ->
+      Config.frontend_stats_dir_name
+  | JavaFrontend ->
+      Config.frontend_stats_dir_name
+  | PythonFrontend ->
+      Config.frontend_stats_dir_name
+  | Backend ->
+      Config.backend_stats_dir_name
+  | Reporting ->
+      Config.reporting_stats_dir_name
+  | Driver ->
+      Config.driver_stats_dir_name
+
+
+let string_of_stats_type = function
+  | ClangLinters ->
+      "linters"
+  | ClangFrontend ->
+      "clang_frontend"
+  | ClangFrontendLinters ->
+      "clang_frontend_and_linters"
+  | JavaFrontend ->
+      "java_frontend"
+  | PythonFrontend ->
+      "python_frontend"
+  | Backend ->
+      "backend"
+  | Reporting ->
+      "reporting"
+  | Driver ->
+      "driver"
+
+
 let to_json ps =
   `Assoc
     [ ("rtime", `Float ps.rtime)
@@ -141,7 +189,7 @@ let stats source_file stats_type =
     EventLogger.PerformanceStats
       { lang= Language.to_explicit_string !Language.curr_language
       ; source_file
-      ; stats_type
+      ; stats_type= string_of_stats_type stats_type
       ; real_time= rtime
       ; user_time= utime
       ; sys_time= stime
@@ -185,19 +233,20 @@ let report file source_file stats_type () =
 
 let registered_files = ref String.Set.empty
 
-let handle_report filename ?source_file dirname ~f =
+let handle_report filename ?source_file stats_type ~f =
+  let dirname = dirname_of_stats_type stats_type in
   let relative_path = Filename.concat dirname filename in
   let absolute_path = Filename.concat Config.results_dir relative_path in
   (* make sure to not double register the same perf stat report *)
   if not (String.Set.mem !registered_files relative_path) then (
     registered_files := String.Set.add !registered_files relative_path ;
-    f (report absolute_path source_file dirname) )
+    f (report absolute_path source_file stats_type) relative_path )
 
 
-let report_now filename ?source_file dirname =
-  handle_report filename ?source_file dirname ~f:(fun report_f -> report_f ())
+let report_now filename ?source_file stats_type =
+  handle_report filename ?source_file stats_type ~f:(fun report _ -> report ())
 
 
-let register_report_at_exit filename ?source_file dirname =
-  handle_report filename ?source_file dirname ~f:(fun report_f ->
-      Epilogues.register ~f:report_f ("stats reporting in " ^ Filename.concat dirname filename) )
+let register_report_at_exit filename ?source_file stats_type =
+  handle_report filename ?source_file stats_type ~f:(fun report relative_path ->
+      Epilogues.register ~f:report ("stats reporting in " ^ relative_path) )
