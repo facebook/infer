@@ -164,9 +164,8 @@ module ArrayAccessCondition = struct
 
   let filter1 : t -> bool =
    fun c ->
-    ItvPure.is_top c.idx || ItvPure.is_top c.size || Itv.Bound.eq (ItvPure.lb c.idx) Itv.Bound.MInf
-    || Itv.Bound.eq (ItvPure.lb c.size) Itv.Bound.MInf
-    || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
+    ItvPure.is_top c.idx || ItvPure.is_top c.size || ItvPure.is_lb_infty c.idx
+    || ItvPure.is_lb_infty c.size || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
 
 
   let filter2 : t -> bool =

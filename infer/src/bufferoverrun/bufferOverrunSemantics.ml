@@ -539,16 +539,10 @@ module Make (CFG : ProcCfg.S) = struct
         -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t =
    fun pairs ->
     let add_pair (bound_map, trace_map) (formal, actual, traces) =
-      match formal with
-      | Itv.Bound.Linear (_, se1) when Itv.SymLinear.is_zero se1 ->
-          (bound_map, trace_map)
-      | Itv.Bound.Linear (0, se1) ->
-          let symbol = Itv.SymLinear.get_one_symbol se1 in
-          (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
-      | Itv.Bound.MinMax (0, Itv.Bound.Plus, Itv.Bound.Max, 0, symbol) ->
-          (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
-      | _ ->
-          assert false
+      if Itv.Bound.is_const formal |> Option.is_some then (bound_map, trace_map)
+      else
+        let symbol = Itv.Bound.get_one_symbol formal in
+        (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
     in
     List.fold ~f:add_pair ~init:(Itv.SubstMap.empty, Itv.SubstMap.empty) pairs
 

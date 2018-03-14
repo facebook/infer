@@ -831,6 +831,8 @@ module ItvPure = struct
 
   let ub : t -> Bound.t = snd
 
+  let is_lb_infty : t -> bool = function MInf, _ -> true | _ -> false
+
   let is_finite : t -> bool =
    fun (l, u) ->
     match (Bound.is_const l, Bound.is_const u) with Some _, Some _ -> true | _, _ -> false
