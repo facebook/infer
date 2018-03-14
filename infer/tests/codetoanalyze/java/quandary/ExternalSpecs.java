@@ -102,6 +102,31 @@ public class ExternalSpecs {
     return sanitized;
   }
 
+  void FN_sanitizeOneBranchBad(boolean b) {
+    Object source = InferTaint.inferSecretSource();
+    Object o;
+    if (b) {
+      o = sanitizer(source);
+    } else {
+      o = source;
+    }
+    InferTaint.inferSensitiveSink(o);
+  }
+
+  Object sanitizeOneBranchInCallee(Object o, boolean b) {
+    if (b) {
+      return sanitizer(o);
+    } else {
+      return o;
+    }
+  }
+
+  void FN_sanitizerWeakUpdateBad(boolean b) {
+    Object source = InferTaint.inferSecretSource();
+    Object o = sanitizeOneBranchInCallee(source, b);
+    InferTaint.inferSensitiveSink(o);
+  }
+
   // if theres' a procedure with the same name defined in .inferconfig as a sink on parameter 1,
   // we shouldn't crash
   public static void loggingSink1() {}
