@@ -36,11 +36,9 @@ let line_range_of_pdesc pdesc =
   let ploc = Procdesc.get_loc pdesc in
   let start_line = ploc.Location.line in
   let end_line =
-    Procdesc.fold_instrs
-      (fun acc _ instr ->
+    Procdesc.fold_instrs pdesc ~init:start_line ~f:(fun acc _ instr ->
         let new_loc = Sil.instr_get_loc instr in
         max acc new_loc.Location.line )
-      start_line pdesc
   in
   {Stacktree_j.start_line; end_line}
 

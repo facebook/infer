@@ -136,10 +136,10 @@ val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 val did_preanalysis : t -> bool
 (** true if we ran the preanalysis on the CFG associated with [t] *)
 
-val fold_instrs : ('a -> Node.t -> Sil.instr -> 'a) -> 'a -> t -> 'a
+val fold_instrs : t -> init:'accum -> f:('accum -> Node.t -> Sil.instr -> 'accum) -> 'accum
 (** fold over all nodes and their instructions *)
 
-val fold_nodes : ('a -> Node.t -> 'a) -> 'a -> t -> 'a
+val fold_nodes : t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
 (** fold over all nodes *)
 
 val from_proc_attributes : ProcAttributes.t -> t

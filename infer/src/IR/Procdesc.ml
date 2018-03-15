@@ -297,13 +297,13 @@ let iter_instrs f pdesc =
   iter_nodes do_node pdesc
 
 
-let fold_nodes f acc pdesc = List.fold ~f ~init:acc (List.rev (get_nodes pdesc))
+let fold_nodes pdesc ~init ~f = List.fold ~f ~init (List.rev (get_nodes pdesc))
 
-let fold_instrs f acc pdesc =
+let fold_instrs pdesc ~init ~f =
   let fold_node acc node =
     List.fold ~f:(fun acc instr -> f acc node instr) ~init:acc (Node.get_instrs node)
   in
-  fold_nodes fold_node acc pdesc
+  fold_nodes ~f:fold_node ~init pdesc
 
 
 (** iterate between two nodes or until we reach a branching structure *)

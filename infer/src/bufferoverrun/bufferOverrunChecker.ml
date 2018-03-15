@@ -487,7 +487,7 @@ module Report = struct
   let collect : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
    fun summary ({pdesc} as pdata) inv_map ->
     let add_node1 acc node = collect_node summary pdata inv_map acc node in
-    Procdesc.fold_nodes add_node1 PO.ConditionSet.empty pdesc
+    Procdesc.fold_nodes pdesc ~f:add_node1 ~init:PO.ConditionSet.empty
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =

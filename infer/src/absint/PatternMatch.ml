@@ -326,7 +326,8 @@ let get_fields_nullified procdesc =
         (nullified_flds, this_ids)
   in
   let nullified_flds, _ =
-    Procdesc.fold_instrs collect_nullified_flds (Typ.Fieldname.Set.empty, Ident.Set.empty) procdesc
+    Procdesc.fold_instrs procdesc ~f:collect_nullified_flds
+      ~init:(Typ.Fieldname.Set.empty, Ident.Set.empty)
   in
   nullified_flds
 
