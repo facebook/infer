@@ -27,6 +27,11 @@
     {
       "procedure": "codetoanalyze.java.quandary.InterfaceSpec.sink",
       "kind": "Logging"
+    },
+    {
+      "procedure": "codetoanalyze.java.quandary.ConstructorSink.<init>",
+      "kind": "Other",
+      "index": "0"
     }
   ],
   "quandary-sanitizers": [

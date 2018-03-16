@@ -8,7 +8,10 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
+
+exception ParseError of string
 
 (* internally it uses reversed list to store qualified name, for example: ["get", "shared_ptr<int>", "std"]*)
 type t = string list [@@deriving compare]
@@ -27,13 +30,15 @@ let strip_template_args quals =
 let append_template_args_to_last quals ~args =
   match quals with
   | [last; _] when String.contains last '<' ->
-      L.(die InternalError)
-        "expected qualified name without template args, but got %s, the last qualifier of %s" last
-        (String.concat ~sep:", " quals)
+      raise
+        (ParseError
+           (F.sprintf
+              "expected qualified name without template args, but got %s, the last qualifier of %s"
+              last (String.concat ~sep:", " quals)))
   | last :: rest ->
       (last ^ args) :: rest
   | [] ->
-      L.(die InternalError) "expected non-empty qualified name"
+      raise (ParseError "expected non-empty qualified name")
 
 
 let to_list = List.rev
@@ -51,7 +56,7 @@ let from_field_qualified_name qual_name =
   | _ :: rest ->
       rest
   | _ ->
-      L.(die InternalError) "expected non-empty qualified name"
+      raise (ParseError "expected non-empty qualified name")
 
 
 (* define [cpp_separator_regex] here to compute it once *)
@@ -93,7 +98,7 @@ module Match = struct
     List.iter colon_splits ~f:(fun s ->
         (* Filter out the '<' in operator< and operator<= *)
         if not (String.is_prefix s ~prefix:"operator<") && String.contains s '<' then
-          L.(die InternalError) "Unexpected template in fuzzy qualified name %s." qual_name ) ;
+          raise (ParseError ("Unexpected template in fuzzy qualified name %s." ^ qual_name)) ) ;
     of_qual_string qual_name
 
 

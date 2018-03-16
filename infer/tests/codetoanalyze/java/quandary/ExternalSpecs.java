@@ -175,3 +175,15 @@ class InterfaceSpecImpl implements InterfaceSpec {
   }
 
 }
+
+class ConstructorSink {
+
+  // specified as a source in .inferconfig
+  public ConstructorSink(Object o) {
+  }
+
+  public static ConstructorSink constructorSinkBad() {
+    Object source = InferTaint.inferSecretSource();
+    return new ConstructorSink(source);
+  }
+}

@@ -11,6 +11,16 @@ open! IStd
 module F = Format
 module L = Logging
 
+let parse_clang_procedure procedure kind index =
+  try Some (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index)
+  with QualifiedCppName.ParseError _ ->
+    (* Java and Clang sources/sinks live in the same inferconfig entry. If we try to parse a Java
+         procedure that happens to be an invalid Clang qualified name (e.g., MyClass.<init>),
+         parsing will crash. In the future, we can avoid this by requiring JSON source/sink
+         specifications to indicate the language *)
+    None
+
+
 module SourceKind = struct
   type t =
     | CommandLineFlag of (Var.t * Typ.desc)  (** source that was read from a command line flag *)
@@ -40,9 +50,9 @@ module SourceKind = struct
 
 
   let external_sources =
-    List.map
+    List.filter_map
       ~f:(fun {QuandaryConfig.Source.procedure; kind; index} ->
-        (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index) )
+        parse_clang_procedure procedure kind index )
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
 
@@ -215,9 +225,9 @@ module SinkKind = struct
 
 
   let external_sinks =
-    List.map
+    List.filter_map
       ~f:(fun {QuandaryConfig.Sink.procedure; kind; index} ->
-        (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index) )
+        parse_clang_procedure procedure kind index )
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
 

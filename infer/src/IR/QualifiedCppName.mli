@@ -9,6 +9,8 @@
 
 open! IStd
 
+exception ParseError of string
+
 type t [@@deriving compare]
 
 val empty : t
