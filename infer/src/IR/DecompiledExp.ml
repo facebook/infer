@@ -42,8 +42,19 @@ let rec to_string = function
       to_string de1 ^ "[" ^ to_string de2 ^ "]"
   | Dbinop (op, de1, de2) ->
       "(" ^ to_string de1 ^ Binop.str Pp.text op ^ to_string de2 ^ ")"
-  | Dconst Cfun pn ->
-      Typ.Procname.to_simplified_string pn
+  | Dconst Cfun pn
+    -> (
+      let procname_str = Typ.Procname.to_simplified_string pn in
+      match pn with
+      | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
+      | Typ.Procname.ObjC_Cpp {kind= ObjCClassMethod} -> (
+        match String.lsplit2 ~on:':' procname_str with
+        | Some (base_name, _) ->
+            base_name
+        | None ->
+            procname_str )
+      | _ ->
+          procname_str )
   | Dconst c ->
       Const.to_string c
   | Dderef de ->
