@@ -158,23 +158,23 @@ let tests =
       assert_bool "aps2 <= aps1" (AccessPathDomains.Set.( <= ) ~lhs:aps2 ~rhs:aps1) ;
       assert_bool "aps1 <= aps3" (AccessPathDomains.Set.( <= ) ~lhs:aps1 ~rhs:aps3) ;
       assert_bool "not aps3 <= aps1" (not (AccessPathDomains.Set.( <= ) ~lhs:aps3 ~rhs:aps1)) ;
-      assert_eq (AccessPathDomains.Set.join aps1 aps1) "{ &x*, &x }" ;
-      assert_eq (AccessPathDomains.Set.join aps1 aps2) "{ &x*, &x, &x.f }" ;
-      assert_eq (AccessPathDomains.Set.join aps1 aps3) "{ &x*, &x, &x.f, &y.f }" ;
+      assert_eq (AccessPathDomains.Set.join aps1 aps1) "{ x*, x }" ;
+      assert_eq (AccessPathDomains.Set.join aps1 aps2) "{ x*, x, x.f }" ;
+      assert_eq (AccessPathDomains.Set.join aps1 aps3) "{ x*, x, x.f, y.f }" ;
       let widen s1 s2 = AccessPathDomains.Set.widen ~prev:s1 ~next:s2 ~num_iters:10 in
-      assert_eq (widen aps1 aps1) "{ &x*, &x }" ;
-      assert_eq (widen aps2 aps3) "{ &x*, &y.f*, &x, &x.f }" ;
+      assert_eq (widen aps1 aps1) "{ x*, x }" ;
+      assert_eq (widen aps2 aps3) "{ x*, y.f*, x, x.f }" ;
       let aps_prev = AccessPathDomains.Set.of_list [x_exact; y_exact] in
       (* { x, y } *)
       let aps_next = AccessPathDomains.Set.of_list [y_exact; yF_exact] in
       (* { y. y.f } *)
       (* { x, y } \/ { y, y.f } = { y.f*, x, y } *)
-      assert_eq (widen aps_prev aps_next) "{ &y.f*, &x, &y }" ;
+      assert_eq (widen aps_prev aps_next) "{ y.f*, x, y }" ;
       (* { y, y.f } \/ { x, y } = { x*, y, y.f } *)
-      assert_eq (widen aps_next aps_prev) "{ &x*, &y, &y.f }" ;
-      assert_eq (AccessPathDomains.Set.normalize aps1) "{ &x* }" ;
-      assert_eq (AccessPathDomains.Set.normalize aps2) "{ &x* }" ;
-      assert_eq (AccessPathDomains.Set.normalize aps3) "{ &x*, &y.f }"
+      assert_eq (widen aps_next aps_prev) "{ x*, y, y.f }" ;
+      assert_eq (AccessPathDomains.Set.normalize aps1) "{ x* }" ;
+      assert_eq (AccessPathDomains.Set.normalize aps2) "{ x* }" ;
+      assert_eq (AccessPathDomains.Set.normalize aps3) "{ x*, y.f }"
     in
     "domain" >:: domain_test_
   in

@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
@@ -43,7 +44,13 @@ let appears_in_source_code = function
   | ProgramVar pvar ->
       not (Pvar.is_frontend_tmp pvar)
 
-let pp fmt = function ProgramVar pv -> Pvar.pp Pp.text fmt pv | LogicalVar id -> Ident.pp fmt id
+
+let pp fmt = function
+  | ProgramVar pv ->
+      F.fprintf fmt "%s" (Pvar.get_simplified_name pv)
+  | LogicalVar id ->
+      Ident.pp fmt id
+
 
 let get_footprint_index t =
   match t with LogicalVar id when is_footprint t -> Some (Ident.get_stamp id) | _ -> None

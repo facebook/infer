@@ -129,7 +129,7 @@ let tests =
     ; ( "source flows to var"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"
-        ; invariant "{ ret_id$0* => (SOURCE -> ?), &var* => (SOURCE -> ?) }" ] )
+        ; invariant "{ ret_id$0* => (SOURCE -> ?), var* => (SOURCE -> ?) }" ] )
     ; ( "source flows to field"
       , [ assign_to_source "ret_id"
         ; assign_id_to_field "base_id" "f" "ret_id"
@@ -142,11 +142,11 @@ let tests =
         ; invariant
             "{ base_id$0.f* => (SOURCE -> ?),\n  \
              ret_id$0* => (SOURCE -> ?),\n  \
-             &var* => (SOURCE -> ?) }" ] )
+             var* => (SOURCE -> ?) }" ] )
     ; ( "source flows to var then cleared"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"
-        ; invariant "{ ret_id$0* => (SOURCE -> ?), &var* => (SOURCE -> ?) }"
+        ; invariant "{ ret_id$0* => (SOURCE -> ?), var* => (SOURCE -> ?) }"
         ; assign_to_non_source "non_source_id"
         ; var_assign_id "var" "non_source_id"
         ; invariant "{ ret_id$0* => (SOURCE -> ?) }" ] )

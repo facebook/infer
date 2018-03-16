@@ -28,22 +28,22 @@ let tests =
     Exp.zero
   in
   let test_list =
-    [ ("basic_live", [invariant "{ &b }"; id_assign_var "a" "b"])
+    [ ("basic_live", [invariant "{ b }"; id_assign_var "a" "b"])
     ; ( "basic_live_then_dead"
-      , [assert_empty; var_assign_int "b" 1; invariant "{ &b }"; id_assign_var "a" "b"] )
+      , [assert_empty; var_assign_int "b" 1; invariant "{ b }"; id_assign_var "a" "b"] )
     ; ( "iterative_live"
-      , [ invariant "{ &b, &f, &d }"
+      , [ invariant "{ b, f, d }"
         ; id_assign_var "e" "f"
-        ; invariant "{ &b, &d }"
+        ; invariant "{ b, d }"
         ; id_assign_var "c" "d"
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "live_kill_live"
-      , [ invariant "{ &b }"
+      , [ invariant "{ b }"
         ; id_assign_var "c" "b"
         ; assert_empty
         ; var_assign_int "b" 1
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
     ; ("basic_live_load", [invariant "{ y$0 }"; id_assign_id "x" "y"])
     ; ( "basic_live_then_kill_load"
@@ -52,10 +52,10 @@ let tests =
       , (* this is *x = y, which is a read of both x and y *)
         [invariant "{ x$0, y$0 }"; id_set_id "x" "y"] )
     ; ( "if_exp_live"
-      , [assert_empty; var_assign_int "x" 1; invariant "{ &x }"; If (var_of_str "x", [], [])] )
+      , [assert_empty; var_assign_int "x" 1; invariant "{ x }"; If (var_of_str "x", [], [])] )
     ; ( "while_exp_live"
-      , [assert_empty; var_assign_int "x" 1; invariant "{ &x }"; While (var_of_str "x", [])] )
-    ; ("call_params_live", [invariant "{ &b, &a, &c }"; call_unknown_no_ret ["a"; "b"; "c"]])
+      , [assert_empty; var_assign_int "x" 1; invariant "{ x }"; While (var_of_str "x", [])] )
+    ; ("call_params_live", [invariant "{ b, a, c }"; call_unknown_no_ret ["a"; "b"; "c"]])
     ; ( "dead_after_call_with_retval"
       , [ assert_empty
         ; call_unknown (Some ("y", Typ.mk (Tint IInt))) []
@@ -64,42 +64,41 @@ let tests =
     ; ( "closure_captured_live"
       , [invariant "{ b$0, c$0 }"; var_assign_exp ~rhs_typ:fun_ptr_typ "a" (closure_exp ["b"; "c"])]
       )
-    ; ( "if_conservative_live1"
-      , [invariant "{ &b }"; If (unknown_cond, [id_assign_var "a" "b"], [])] )
+    ; ("if_conservative_live1", [invariant "{ b }"; If (unknown_cond, [id_assign_var "a" "b"], [])])
     ; ( "if_conservative_live2"
-      , [ invariant "{ &b, &d }"
-        ; If (unknown_cond, [id_assign_var "a" "b"], [id_assign_var "c" "d"]) ] )
+      , [invariant "{ b, d }"; If (unknown_cond, [id_assign_var "a" "b"], [id_assign_var "c" "d"])]
+      )
     ; ( "if_conservative_kill"
-      , [ invariant "{ &b }"
+      , [ invariant "{ b }"
         ; If (unknown_cond, [var_assign_int "b" 1], [])
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "if_conservative_kill_live"
-      , [ invariant "{ &b, &d }"
+      , [ invariant "{ b, d }"
         ; If (unknown_cond, [var_assign_int "b" 1], [id_assign_var "c" "d"])
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "if_precise1"
       , [ assert_empty
         ; If
             ( unknown_cond
-            , [var_assign_int "b" 1; invariant "{ &b }"; id_assign_var "a" "b"]
-            , [var_assign_int "d" 1; invariant "{ &d }"; id_assign_var "c" "d"] ) ] )
+            , [var_assign_int "b" 1; invariant "{ b }"; id_assign_var "a" "b"]
+            , [var_assign_int "d" 1; invariant "{ d }"; id_assign_var "c" "d"] ) ] )
     ; ( "if_precise2"
       , [ assert_empty
         ; If (unknown_cond, [var_assign_int "b" 2], [var_assign_int "b" 1])
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
-    ; ("loop_as_if1", [invariant "{ &b }"; While (unknown_cond, [id_assign_var "a" "b"])])
+    ; ("loop_as_if1", [invariant "{ b }"; While (unknown_cond, [id_assign_var "a" "b"])])
     ; ( "loop_as_if2"
-      , [ invariant "{ &b }"
+      , [ invariant "{ b }"
         ; While (unknown_cond, [var_assign_int "b" 1])
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "loop_before_after"
-      , [ invariant "{ &b, &d }"
+      , [ invariant "{ b, d }"
         ; While (unknown_cond, [id_assign_var "b" "d"])
-        ; invariant "{ &b }"
+        ; invariant "{ b }"
         ; id_assign_var "a" "b" ] ) ]
     |> TestInterpreter.create_tests ProcData.empty_extras ~initial:Liveness.Domain.empty
   in
