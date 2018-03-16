@@ -593,11 +593,11 @@ module Procname = struct
 
     let get_method j = j.method_name
 
-    let replace_method j mname = {j with method_name= mname}
+    let replace_method_name method_name j = {j with method_name}
 
-    let replace_return_type j ret_type = {j with return_type= Some ret_type}
+    let replace_parameters parameters j = {j with parameters}
 
-    let replace_parameters j parameters = {j with parameters}
+    let replace_return_type ret_type j = {j with return_type= Some ret_type}
 
     let get_return_type j = return_type_to_string j Verbose
 

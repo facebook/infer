@@ -620,7 +620,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.Java.
         (Typ.Procname.Java.get_parameters resolved_pname_java)
       |> List.rev
     in
-    Typ.Procname.Java.replace_parameters resolved_pname_java resolved_params
+    Typ.Procname.Java.replace_parameters resolved_params resolved_pname_java
   in
   let resolved_pname_java, other_args =
     let pname = Typ.Procname.Java pname_java

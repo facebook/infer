@@ -542,12 +542,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           let handle_model callee_pname access_tree model =
             let is_variadic =
               match callee_pname with
-              | Typ.Procname.Java pname -> (
-                match List.rev (Typ.Procname.Java.get_parameters pname) with
-                | (_, "java.lang.Object[]") :: _ ->
-                    true
-                | _ ->
-                    false )
+              | Typ.Procname.Java pname ->
+                  Typ.Procname.Java.is_vararg pname
               | _ ->
                   false
             in

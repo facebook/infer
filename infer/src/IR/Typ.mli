@@ -286,10 +286,13 @@ module Procname : sig
     (** Create a Java procedure name from its
         class_name method_name args_type_name return_type_name method_kind. *)
 
-    val replace_parameters : t -> java_type list -> t
+    val replace_method_name : string -> t -> t
+    (** Replace the method name of an existing java procname. *)
+
+    val replace_parameters : java_type list -> t -> t
     (** Replace the parameters of a java procname. *)
 
-    val replace_return_type : t -> java_type -> t
+    val replace_return_type : java_type -> t -> t
     (** Replace the method of a java procname. *)
 
     val get_class_name : t -> string
@@ -309,9 +312,6 @@ module Procname : sig
 
     val get_parameters : t -> java_type list
     (** Return the parameters of a java procedure name. *)
-
-    val replace_method : t -> string -> t
-    (** Replace the method name of an existing java procname. *)
 
     val get_return_typ : t -> typ
     (** Return the return type of [pname_java]. return Tvoid if there's no return type *)

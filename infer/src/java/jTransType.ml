@@ -180,10 +180,7 @@ let rec string_of_type vt =
         JBasics.cn_name cn
 
 
-let package_to_string p =
-  let rec aux p = match p with [] -> "" | [p] -> p | p :: rest -> p ^ "." ^ aux rest in
-  match p with [] -> None | _ -> Some (aux p)
-
+let package_to_string = function [] -> None | p -> Some (String.concat ~sep:"." p)
 
 let cn_to_java_type cn = (package_to_string (JBasics.cn_package cn), JBasics.cn_simple_name cn)
 

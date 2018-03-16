@@ -709,11 +709,9 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         let pname_get_from_pname_put pname_put =
           let object_t = (Some "java.lang", "Object") in
           let parameters = [object_t] in
-          Typ.Procname.Java.replace_parameters
-            (Typ.Procname.Java.replace_return_type
-               (Typ.Procname.Java.replace_method pname_put "get")
-               object_t)
-            parameters
+          pname_put |> Typ.Procname.Java.replace_method_name "get"
+          |> Typ.Procname.Java.replace_return_type object_t
+          |> Typ.Procname.Java.replace_parameters parameters
         in
         match call_params with
         | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _
@@ -917,9 +915,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                   (DExp.Dconst Const.Cfun Typ.Procname.Java pname_java, args, loc, call_flags) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
-                  Typ.Procname.Java.replace_return_type
-                    (Typ.Procname.Java.replace_method pname_java "get")
-                    object_t
+                  pname_java |> Typ.Procname.Java.replace_method_name "get"
+                  |> Typ.Procname.Java.replace_return_type object_t
                 in
                 let fun_dexp = DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java')) in
                 Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
