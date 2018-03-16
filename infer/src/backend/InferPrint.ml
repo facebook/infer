@@ -50,9 +50,9 @@ let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (
   let base_filename = Filename.basename filename in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
   let location_independent_qualifier =
-    (* Removing the line and column information from the error message to make the
-       hash invariant when moving the source code in the file *)
-    Str.global_replace (Str.regexp "\\(line\\|column\\)\\ [0-9]+") "_" qualifier
+    (* Removing the line,column, and infer temporary variable (e.g., n$67) information from the
+       error message to make the hash invariant when moving the source code in the file *)
+    Str.global_replace (Str.regexp "\\(line \\|column \\|n\\$\\)[0-9]+") "_" qualifier
   in
   Utils.better_hash
     (kind, type_str, hashable_procedure_name, base_filename, location_independent_qualifier)
