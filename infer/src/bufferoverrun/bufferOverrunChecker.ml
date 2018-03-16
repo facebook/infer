@@ -15,7 +15,6 @@ open AbsLoc
 open! AbstractDomain.Types
 module L = Logging
 module Dom = BufferOverrunDomain
-module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
@@ -316,71 +315,9 @@ module Report = struct
   module BoUtils = BufferOverrunUtils.Make (CFG)
   module Sem = BoUtils.Sem
   module Models = BufferOverrunModels.Make (BoUtils)
+  module PO = BufferOverrunProofObligations
 
   type extras = Typ.Procname.t -> Procdesc.t option
-
-  let rec add_condition
-      : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
-        -> PO.ConditionSet.t =
-   fun pname exp location mem cond_set ->
-    match exp with
-    | Exp.Var _ ->
-        let v = Sem.eval exp mem in
-        let arr = Dom.Val.get_array_blk v in
-        let arr_traces = Dom.Val.get_traces v in
-        BoUtils.Check.array_access ~arr ~arr_traces ~idx:Itv.zero ~idx_traces:TraceSet.empty
-          ~is_plus:true pname location cond_set
-    | Exp.Lindex (array_exp, index_exp) ->
-        cond_set |> add_condition pname array_exp location mem
-        |> add_condition pname index_exp location mem
-        |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
-    | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2) ->
-        let v_arr = Sem.eval e1 mem in
-        let arr = Dom.Val.get_array_blk v_arr in
-        let arr_traces = Dom.Val.get_traces v_arr in
-        let v_idx = Sem.eval e2 mem in
-        let idx = Dom.Val.get_itv v_idx in
-        let idx_traces = Dom.Val.get_traces v_idx in
-        let is_plus = Binop.equal bop Binop.PlusA in
-        cond_set |> add_condition pname e1 location mem |> add_condition pname e2 location mem
-        |> BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location
-    | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
-        add_condition pname e location mem cond_set
-    | Exp.BinOp (_, e1, e2) ->
-        cond_set |> add_condition pname e1 location mem |> add_condition pname e2 location mem
-    | Exp.Closure {captured_vars} ->
-        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
-            add_condition pname e location mem cond_set )
-    | _ ->
-        cond_set
-
-
-  let instantiate_cond
-      : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
-        -> Summary.payload -> Location.t -> PO.ConditionSet.t =
-   fun tenv caller_pname callee_pdesc params caller_mem summary location ->
-    let callee_entry_mem = Dom.Summary.get_input summary in
-    let callee_cond = Dom.Summary.get_cond_set summary in
-    match callee_pdesc with
-    | Some pdesc ->
-        let subst_map, _ =
-          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
-        in
-        let pname = Procdesc.get_proc_name pdesc in
-        PO.ConditionSet.subst callee_cond subst_map caller_pname pname location
-    | _ ->
-        callee_cond
-
-
-  let print_debug_info : Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t -> unit =
-   fun instr pre cond_set ->
-    L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
-    L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
-    L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr ;
-    L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" PO.ConditionSet.pp cond_set ;
-    L.(debug BufferOverrun Verbose) "@]@\n" ;
-    L.(debug BufferOverrun Verbose) "================================@\n@."
-
 
   module ExitStatement = struct
     let non_significant_instr = function
@@ -413,81 +350,166 @@ module Report = struct
           false
   end
 
-  let rec collect_instrs
+  let check_unreachable_code summary tenv node instr rem_instrs (mem, mem') =
+    match (mem, mem') with
+    | NonBottom _, Bottom -> (
+      match instr with
+      | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
+          ()
+      | Sil.Prune (cond, location, true_branch, _) ->
+          let i = match cond with Exp.Const Const.Cint i -> i | _ -> IntLit.zero in
+          let desc = Errdesc.explain_condition_always_true_false tenv i cond node location in
+          let exn = Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
+          Reporting.log_warning summary ~loc:location exn
+      (* special case for `exit` when we're at the end of a block / procedure *)
+      | Sil.Call (_, Const Cfun pname, _, _, _)
+        when String.equal (Typ.Procname.get_method pname) "exit"
+             && ExitStatement.is_end_of_block_or_procedure node rem_instrs ->
+          ()
+      | _ ->
+          let location = Sil.instr_get_loc instr in
+          let desc = Errdesc.explain_unreachable_code_after location in
+          let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
+          Reporting.log_error summary ~loc:location exn )
+    | _ ->
+        ()
+
+
+  let check_binop_array_access
+      : Typ.Procname.t -> is_plus:bool -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate
+        -> PO.ConditionSet.t -> PO.ConditionSet.t =
+   fun pname ~is_plus ~e1 ~e2 location mem cond_set ->
+    let v_arr = Sem.eval e1 mem in
+    let arr = Dom.Val.get_array_blk v_arr in
+    let arr_traces = Dom.Val.get_traces v_arr in
+    let v_idx = Sem.eval e2 mem in
+    let idx = Dom.Val.get_itv v_idx in
+    let idx_traces = Dom.Val.get_traces v_idx in
+    BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location cond_set
+
+
+  let check_binop
+      : Typ.Procname.t -> bop:Binop.t -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate
+        -> PO.ConditionSet.t -> PO.ConditionSet.t =
+   fun pname ~bop ~e1 ~e2 location mem cond_set ->
+    match bop with
+    | Binop.PlusA ->
+        check_binop_array_access pname ~is_plus:true ~e1 ~e2 location mem cond_set
+    | Binop.MinusA ->
+        check_binop_array_access pname ~is_plus:false ~e1 ~e2 location mem cond_set
+    | _ ->
+        cond_set
+
+
+  let rec check_expr
+      : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
+   fun pname exp location mem cond_set ->
+    match exp with
+    | Exp.Var _ ->
+        let v = Sem.eval exp mem in
+        let arr = Dom.Val.get_array_blk v in
+        let arr_traces = Dom.Val.get_traces v in
+        BoUtils.Check.array_access ~arr ~arr_traces ~idx:Itv.zero ~idx_traces:TraceSet.empty
+          ~is_plus:true pname location cond_set
+    | Exp.Lindex (array_exp, index_exp) ->
+        cond_set |> check_expr pname array_exp location mem
+        |> check_expr pname index_exp location mem
+        |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
+    | Exp.BinOp (bop, e1, e2) ->
+        cond_set |> check_expr pname e1 location mem |> check_expr pname e2 location mem
+        |> check_binop pname ~bop ~e1 ~e2 location mem
+    | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
+        check_expr pname e location mem cond_set
+    | Exp.Closure {captured_vars} ->
+        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
+            check_expr pname e location mem cond_set )
+    | Exp.Lvar _ | Exp.Const _ | Exp.Sizeof _ ->
+        cond_set
+
+
+  let instantiate_cond
+      : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
+        -> Summary.payload -> Location.t -> PO.ConditionSet.t =
+   fun tenv caller_pname callee_pdesc params caller_mem summary location ->
+    let callee_entry_mem = Dom.Summary.get_input summary in
+    let callee_cond = Dom.Summary.get_cond_set summary in
+    match callee_pdesc with
+    | Some pdesc ->
+        let subst_map, _ =
+          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
+        in
+        let pname = Procdesc.get_proc_name pdesc in
+        PO.ConditionSet.subst callee_cond subst_map caller_pname pname location
+    | _ ->
+        callee_cond
+
+
+  let check_instr
+      : extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
+   fun {pdesc; tenv; extras} node instr mem cond_set ->
+    let pname = Procdesc.get_proc_name pdesc in
+    match instr with
+    | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
+        check_expr pname exp location mem cond_set
+    | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
+      match Models.Call.dispatch callee_pname params with
+      | Some {Models.check} ->
+          check (Models.mk_model_env pname node location tenv) mem cond_set
+      | None ->
+        match Summary.read_summary pdesc callee_pname with
+        | Some callee_summary ->
+            let callee = extras callee_pname in
+            instantiate_cond tenv pname callee params mem callee_summary location
+            |> PO.ConditionSet.join cond_set
+        | _ ->
+            cond_set )
+    | _ ->
+        cond_set
+
+
+  let print_debug_info : Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t -> unit =
+   fun instr pre cond_set ->
+    L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
+    L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
+    L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr ;
+    L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" PO.ConditionSet.pp cond_set ;
+    L.(debug BufferOverrun Verbose) "@]@\n" ;
+    L.(debug BufferOverrun Verbose) "================================@\n@."
+
+
+  let rec check_instrs
       : Specs.summary -> extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun summary ({pdesc; tenv; extras} as pdata) node instrs mem cond_set ->
+   fun summary ({tenv} as pdata) node instrs mem cond_set ->
     match instrs with
     | [] ->
         cond_set
     | instr :: rem_instrs ->
-        let pname = Procdesc.get_proc_name pdesc in
-        let cond_set =
-          match instr with
-          | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
-              add_condition pname exp location mem cond_set
-          | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
-            match Models.Call.dispatch callee_pname params with
-            | Some {Models.check} ->
-                check (Models.mk_model_env pname node location tenv) mem cond_set
-            | None ->
-              match Summary.read_summary pdesc callee_pname with
-              | Some callee_summary ->
-                  let callee = extras callee_pname in
-                  instantiate_cond tenv pname callee params mem callee_summary location
-                  |> PO.ConditionSet.join cond_set
-              | _ ->
-                  cond_set )
-          | _ ->
-              cond_set
-        in
+        let cond_set = check_instr pdata node instr mem cond_set in
         let mem' = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
-        let () =
-          match (mem, mem') with
-          | NonBottom _, Bottom -> (
-            match instr with
-            | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
-                ()
-            | Sil.Prune (cond, location, true_branch, _) ->
-                let i = match cond with Exp.Const Const.Cint i -> i | _ -> IntLit.zero in
-                let desc = Errdesc.explain_condition_always_true_false tenv i cond node location in
-                let exn =
-                  Exceptions.Condition_always_true_false (desc, not true_branch, __POS__)
-                in
-                Reporting.log_warning summary ~loc:location exn
-            (* special case for `exit` when we're at the end of a block / procedure *)
-            | Sil.Call (_, Const Cfun pname, _, _, _)
-              when String.equal (Typ.Procname.get_method pname) "exit"
-                   && ExitStatement.is_end_of_block_or_procedure node rem_instrs ->
-                ()
-            | _ ->
-                let location = Sil.instr_get_loc instr in
-                let desc = Errdesc.explain_unreachable_code_after location in
-                let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
-                Reporting.log_error summary ~loc:location exn )
-          | _ ->
-              ()
-        in
+        let () = check_unreachable_code summary tenv node instr rem_instrs (mem, mem') in
         print_debug_info instr mem' cond_set ;
-        collect_instrs summary pdata node rem_instrs mem' cond_set
+        check_instrs summary pdata node rem_instrs mem' cond_set
 
 
-  let collect_node
+  let check_node
       : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t
         -> CFG.node -> PO.ConditionSet.t =
    fun summary pdata inv_map cond_set node ->
     match Analyzer.extract_pre (CFG.id node) inv_map with
     | Some mem ->
         let instrs = CFG.instrs node in
-        collect_instrs summary pdata node instrs mem cond_set
+        check_instrs summary pdata node instrs mem cond_set
     | _ ->
         cond_set
 
 
-  let collect : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
+  let check_proc
+      : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
    fun summary ({pdesc} as pdata) inv_map ->
-    let add_node1 acc node = collect_node summary pdata inv_map acc node in
-    Procdesc.fold_nodes pdesc ~f:add_node1 ~init:PO.ConditionSet.empty
+    Procdesc.fold_nodes pdesc ~f:(check_node summary pdata inv_map) ~init:PO.ConditionSet.empty
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
@@ -564,7 +586,7 @@ let compute_post
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let entry_mem = extract_post inv_map (CFG.start_node cfg) in
   let exit_mem = extract_post inv_map (CFG.exit_node cfg) in
-  let cond_set = Report.collect summary pdata inv_map in
+  let cond_set = Report.check_proc summary pdata inv_map in
   Report.report_errors summary pdesc cond_set ;
   match (entry_mem, exit_mem) with
   | Some entry_mem, Some exit_mem ->
