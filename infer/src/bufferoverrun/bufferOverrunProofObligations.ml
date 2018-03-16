@@ -117,6 +117,8 @@ module ArrayAccessCondition = struct
     ItvPure.have_similar_bounds lidx ridx && ItvPure.have_similar_bounds lsiz rsiz
 
 
+  let has_infty {idx; size} = ItvPure.has_infty idx || ItvPure.has_infty size
+
   let xcompare ~lhs:{idx= lidx; size= lsiz} ~rhs:{idx= ridx; size= rsiz} =
     let idxcmp = ItvPure.xcompare ~lhs:lidx ~rhs:ridx in
     let sizcmp = ItvPure.xcompare ~lhs:lsiz ~rhs:rsiz in
@@ -257,6 +259,8 @@ module Condition = struct
         false
 
 
+  let has_infty = function ArrayAccess c -> ArrayAccessCondition.has_infty c | _ -> false
+
   let xcompare ~lhs ~rhs =
     match (lhs, rhs) with
     | AllocSize lhs, AllocSize rhs ->
@@ -341,6 +345,12 @@ module ConditionTrace = struct
       ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces location
     in
     {ct with cond_trace= Inter (caller_pname, callee_pname, location); val_traces}
+
+
+  let has_unknown ct = ValTraceSet.has_unknown ct.val_traces
+
+  let check : t -> IssueType.t option =
+   fun ct -> if has_unknown ct then Some IssueType.buffer_overrun_u5 else None
 end
 
 module ConditionSet = struct
@@ -441,12 +451,22 @@ module ConditionSet = struct
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
+  let set_buffer_overrun_u5 cwt issue_type =
+    if ( IssueType.equal issue_type IssueType.buffer_overrun_l3
+       || IssueType.equal issue_type IssueType.buffer_overrun_l4
+       || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
+       && Condition.has_infty cwt.cond
+    then Option.value (ConditionTrace.check cwt.trace) ~default:issue_type
+    else issue_type
+
+
   let check_all ~report condset =
     List.iter condset ~f:(fun cwt ->
         match Condition.check cwt.cond with
         | None ->
             ()
         | Some issue_type ->
+            let issue_type = set_buffer_overrun_u5 cwt issue_type in
             report cwt.cond cwt.trace issue_type )
 
 

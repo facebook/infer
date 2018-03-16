@@ -55,6 +55,11 @@ module BoTrace = struct
    fun fmt t ->
     let pp_sep fmt () = F.fprintf fmt " :: " in
     F.pp_print_list ~pp_sep pp_elem fmt t.trace
+
+
+  let is_unknown_elem = function UnknownFrom _ -> true | _ -> false
+
+  let has_unknown x = List.exists x.trace ~f:is_unknown_elem
 end
 
 module Set = struct
@@ -105,6 +110,9 @@ module Set = struct
               add new_trace traces )
             arr_traces traces )
         idx_traces empty
+
+
+  let has_unknown t = exists BoTrace.has_unknown t
 end
 
 include BoTrace

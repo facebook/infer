@@ -82,6 +82,8 @@ module ItvPure : sig
 
   val have_similar_bounds : t -> t -> bool
 
+  val has_infty : t -> bool
+
   val make_positive : t -> t
 
   val join : t -> t -> t

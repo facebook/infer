@@ -104,6 +104,8 @@ let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
 
 let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
+let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
+
 let cannot_star = from_string "Cannot_star"
 
 let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY"

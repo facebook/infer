@@ -158,3 +158,37 @@ void alloc_may_be_big_Bad() { malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1); }
 void alloc_may_be_big_Good_FP() {
   malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1);
 }
+
+void l1_unknown_function_Bad() {
+  int a[5];
+  int idx = unknown_function() * 10;
+  if (10 <= idx) {
+    if (idx <= 10) {
+      a[idx] = 0;
+    }
+  }
+}
+
+int zero_to_infty() {
+  int r = 0;
+  for (int i = 0; i < zero_or_ten(0); i++) {
+    r++;
+  }
+  return r;
+}
+
+/* Inferbo raises U5 alarm because
+   - the pair of offset:[10,10] and size:[5,+oo] is belong to L3
+   - the offset value is from an unknown function
+   - there is at least one infinity bound (in size).
+   However, it should ideally raise L3, because the infinity is not
+   from the unknown function. */
+void False_Issue_Type_l3_unknown_function_Bad() {
+  int* a = (int*)malloc((zero_to_infty() + 5) * sizeof(int));
+  int idx = unknown_function() * 10;
+  if (10 <= idx) {
+    if (idx <= 10) {
+      a[idx] = 0;
+    }
+  }
+}

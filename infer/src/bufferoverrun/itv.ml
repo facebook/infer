@@ -840,6 +840,8 @@ module ItvPure = struct
 
   let have_similar_bounds (l1, u1) (l2, u2) = Bound.are_similar l1 l2 && Bound.are_similar u1 u2
 
+  let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
+
   let subst : t -> Bound.t bottom_lifted SubstMap.t -> t bottom_lifted =
    fun x map ->
     match (Bound.subst_lb (lb x) map, Bound.subst_ub (ub x) map) with

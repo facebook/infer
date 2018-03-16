@@ -55,6 +55,8 @@ val buffer_overrun_l5 : t
 
 val buffer_overrun_s2 : t
 
+val buffer_overrun_u5 : t
+
 val cannot_star : t
 
 val checkers_allocates_memory : t
