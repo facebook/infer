@@ -231,15 +231,19 @@ type callee_status = Translated | Missing of JBasics.class_name * JBasics.method
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
+type classpath = {path: string; channel: Javalib.class_path}
+
 type program =
-  { classpath: Javalib.class_path
+  { classpath: classpath
   ; models: classmap
   ; mutable classmap: classmap
   ; callees: callee_status Typ.Procname.Hash.t }
 
 let get_classmap program = program.classmap
 
-let get_classpath program = program.classpath
+let get_classpath_channel program = program.classpath.channel
+
+let get_classpath program = program.classpath.path
 
 let get_models program = program.models
 
@@ -261,15 +265,20 @@ let iter_missing_callees program ~f =
   Typ.Procname.Hash.iter select program.callees
 
 
-let cleanup program = Javalib.close_class_path program.classpath
+let cleanup program = Javalib.close_class_path program.classpath.channel
 
 let lookup_node cn program =
   try Some (JBasics.ClassMap.find cn (get_classmap program)) with Not_found ->
     try
-      let jclass = javalib_get_class (get_classpath program) cn in
+      let jclass = javalib_get_class (get_classpath_channel program) cn in
       add_class cn jclass program ; Some jclass
     with
-    | JBasics.No_class_found _ | JBasics.Class_structure_error _ | Invalid_argument _ ->
+    | JBasics.No_class_found class_name ->
+        L.internal_error "ERROR: class \"%s\" not found with classpath %s@." class_name
+          (get_classpath program) ;
+        None
+    | (JBasics.Class_structure_error _ | Invalid_argument _) as exn ->
+        L.internal_error "ERROR: %s@." (Exn.to_string exn) ;
         None
 
 
@@ -291,7 +300,7 @@ let load_program classpath classes =
     else collect_classes JBasics.ClassMap.empty !models_jar
   in
   let program =
-    { classpath= Javalib.class_path classpath
+    { classpath= {path= classpath; channel= Javalib.class_path classpath}
     ; models
     ; classmap= JBasics.ClassMap.empty
     ; callees= Typ.Procname.Hash.create 128 }
