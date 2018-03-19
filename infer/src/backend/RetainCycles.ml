@@ -18,11 +18,20 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
     let index = index_ + 1 in
     let node = State.get_node () in
     let from_exp_str edge_obj =
-      ignore (Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp) ;
-      (* | Some de ->
-          DecompiledExp.to_string de
-      | None -> TODO (T26707784): fix issues with DecompiledExp.to_string *)
-      Format.sprintf "(object of type %s)" (Typ.to_string edge_obj.rc_from.rc_node_typ)
+      let type_str =
+        MF.monospaced_to_string (Format.sprintf "%s*" (Typ.to_string edge_obj.rc_from.rc_node_typ))
+      in
+      match Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp with
+      | Some de
+        -> (
+          let decomp = DecompiledExp.to_string de in
+          match de with
+          | DecompiledExp.Dretcall _ ->
+              Format.sprintf "object %s of type %s" decomp type_str
+          | _ ->
+              Format.sprintf "%s of type %s" (MF.monospaced_to_string decomp) type_str )
+      | None ->
+          Format.sprintf "object of type %s" type_str
     in
     let location_str =
       match edge with
@@ -38,9 +47,8 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
     let cycle_item_str =
       match edge with
       | Object obj ->
-          MF.monospaced_to_string
-            (Format.sprintf "%s->%s" (from_exp_str obj)
-               (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
+          Format.sprintf "%s --> %s" (from_exp_str obj)
+            (MF.monospaced_to_string (Typ.Fieldname.to_string obj.rc_field.rc_field_name))
       | Block (_, var) ->
           Format.sprintf "a block that captures %s" (MF.monospaced_to_string (Pvar.to_string var))
     in

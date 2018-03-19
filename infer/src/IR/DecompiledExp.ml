@@ -40,6 +40,10 @@ let split_var_clang var_name =
   match String.rsplit2 ~on:'.' var_name with Some (_, name) -> name | _ -> var_name
 
 
+let builtin_functions_to_string pn =
+  if Typ.Procname.equal pn BuiltinDecl.__objc_alloc_no_fail then Some "alloc" else None
+
+
 (** convert a dexp to a string *)
 let rec to_string = function
   | Darray (de1, de2) ->
@@ -49,16 +53,20 @@ let rec to_string = function
   | Dconst Cfun pn
     -> (
       let procname_str = Typ.Procname.to_simplified_string pn in
-      match pn with
-      | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
-      | Typ.Procname.ObjC_Cpp {kind= ObjCClassMethod} -> (
-        match String.lsplit2 ~on:':' procname_str with
-        | Some (base_name, _) ->
-            base_name
-        | None ->
+      match builtin_functions_to_string pn with
+      | Some str ->
+          str
+      | None ->
+        match pn with
+        | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
+        | Typ.Procname.ObjC_Cpp {kind= ObjCClassMethod} -> (
+          match String.lsplit2 ~on:':' procname_str with
+          | Some (base_name, _) ->
+              base_name
+          | None ->
+              procname_str )
+        | _ ->
             procname_str )
-      | _ ->
-          procname_str )
   | Dconst c ->
       Const.to_string c
   | Dderef de ->
