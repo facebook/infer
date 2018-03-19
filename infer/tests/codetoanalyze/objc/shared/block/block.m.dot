@@ -18,7 +18,7 @@ digraph cfg {
 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" [label="2: Exit objc_blockmain1_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 35, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 35, column 16]\n  *&return:int=(n$5 - n$6) [line 35, column 5]\n " shape="box"]
+"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 35, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int [line 35, column 16]\n  *&return:int=(n$5 - n$6) [line 35, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
@@ -57,7 +57,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_9" -> "main1.38f534a9576db7ec6ebcbca8c111f942_8" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_10" [label="10:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int=3 [line 12, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_10" [label="10:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int=3 [line 12, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_10" -> "main1.38f534a9576db7ec6ebcbca8c111f942_9" ;
@@ -91,7 +91,7 @@ digraph cfg {
 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" [label="2: Exit objc_blockobjc_blockmain1_2_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" [label="3:  Return Stmt \n   n$17=*&z:int [line 25, column 14]\n  n$18=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 25, column 18]\n  n$19=*&x:int [line 25, column 22]\n  n$20=*&bla:int [line 25, column 26]\n  *&return:int=(((n$17 + n$18) + n$19) + n$20) [line 25, column 7]\n " shape="box"]
+"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" [label="3:  Return Stmt \n   n$17=*&z:int [line 25, column 14]\n  n$18=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int [line 25, column 18]\n  n$19=*&x:int [line 25, column 22]\n  n$20=*&bla:int [line 25, column 26]\n  *&return:int=(((n$17 + n$18) + n$19) + n$20) [line 25, column 7]\n " shape="box"]
 	
 
 	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" ;

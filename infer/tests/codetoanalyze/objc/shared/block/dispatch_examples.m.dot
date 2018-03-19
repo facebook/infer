@@ -7,15 +7,15 @@ digraph cfg {
 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_2" [label="2: Exit DispatchEx_dispatch_once_example \n  " color=yellow style=filled]
 	
 
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example_a:DispatchEx* [line 33, column 10]\n  n$2=*n$1.x:int [line 33, column 10]\n  *&return:int=n$2 [line 33, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" [label="3:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx* [line 33, column 10]\n  n$2=*n$1.x:int [line 33, column 10]\n  *&return:int=n$2 [line 33, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_2" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" [label="4:  Call _fun__dispatch_once \n   _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example_onceToken:long*,(_fun_objc_blockDispatchEx_dispatch_once_example_1):_fn_(*)) block_params [line 29, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" [label="4:  Call _fun__dispatch_once \n   _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.onceToken:long*,(_fun_objc_blockDispatchEx_dispatch_once_example_1):_fn_(*)) block_params [line 29, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_3" ;
-"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example_a:DispatchEx*=null [line 25, column 3]\n " shape="box"]
+"dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx*=null [line 25, column 3]\n " shape="box"]
 	
 
 	 "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_5" -> "dispatch_once_example#DispatchEx#class.d3456446b1a2d5355c1767887cc8b62c_4" ;
@@ -26,7 +26,7 @@ digraph cfg {
 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" [label="2: Exit DispatchEx_dispatch_async_example \n  " color=yellow style=filled]
 	
 
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" [label="3:  Return Stmt \n   n$6=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example_a:DispatchEx* [line 43, column 10]\n  n$7=*n$6.x:int [line 43, column 10]\n  *&return:int=n$7 [line 43, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" [label="3:  Return Stmt \n   n$6=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx* [line 43, column 10]\n  n$7=*n$6.x:int [line 43, column 10]\n  *&return:int=n$7 [line 43, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_2" ;
@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_3" ;
-"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example_a:DispatchEx*=null [line 37, column 3]\n " shape="box"]
+"dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx*=null [line 37, column 3]\n " shape="box"]
 	
 
 	 "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_5" -> "dispatch_async_example#DispatchEx#class.5c5d7347be2a9654ad7e32514189fe54_4" ;
@@ -45,7 +45,7 @@ digraph cfg {
 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" [label="2: Exit DispatchEx_dispatch_after_example \n  " color=yellow style=filled]
 	
 
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example_a:DispatchEx* [line 54, column 10]\n  n$13=*n$12.x:int [line 54, column 10]\n  *&return:int=n$13 [line 54, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx* [line 54, column 10]\n  n$13=*n$12.x:int [line 54, column 10]\n  *&return:int=n$13 [line 54, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_2" ;
@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_3" ;
-"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example_a:DispatchEx*=null [line 47, column 3]\n " shape="box"]
+"dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx*=null [line 47, column 3]\n " shape="box"]
 	
 
 	 "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_5" -> "dispatch_after_example#DispatchEx#class.1d25856bd99eb1ef683c8f65ff46d05d_4" ;
@@ -64,7 +64,7 @@ digraph cfg {
 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" [label="2: Exit DispatchEx_dispatch_group_example \n  " color=yellow style=filled]
 	
 
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" [label="3:  Return Stmt \n   n$19=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example_a:DispatchEx* [line 63, column 10]\n  n$20=*n$19.x:int [line 63, column 10]\n  *&return:int=n$20 [line 63, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" [label="3:  Return Stmt \n   n$19=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx* [line 63, column 10]\n  n$20=*n$19.x:int [line 63, column 10]\n  *&return:int=n$20 [line 63, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_2" ;
@@ -72,7 +72,7 @@ digraph cfg {
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_3" ;
-"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example_a:DispatchEx*=null [line 58, column 3]\n " shape="box"]
+"dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx*=null [line 58, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_5" -> "dispatch_group_example#DispatchEx#class.f420a75c58eda6d3f0e5e05fadabfc18_4" ;
@@ -83,7 +83,7 @@ digraph cfg {
 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" [label="2: Exit DispatchEx_dispatch_group_notify_example \n  " color=yellow style=filled]
 	
 
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" [label="3:  Return Stmt \n   n$25=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example_a:DispatchEx* [line 72, column 10]\n  n$26=*n$25.x:int [line 72, column 10]\n  *&return:int=n$26 [line 72, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" [label="3:  Return Stmt \n   n$25=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx* [line 72, column 10]\n  n$26=*n$25.x:int [line 72, column 10]\n  *&return:int=n$26 [line 72, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_2" ;
@@ -91,7 +91,7 @@ digraph cfg {
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_3" ;
-"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example_a:DispatchEx*=null [line 67, column 3]\n " shape="box"]
+"dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx*=null [line 67, column 3]\n " shape="box"]
 	
 
 	 "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_5" -> "dispatch_group_notify_example#DispatchEx#class.f5cf54b07621c319cf7ead3b217760ed_4" ;
@@ -102,7 +102,7 @@ digraph cfg {
 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" [label="2: Exit DispatchEx_dispatch_barrier_example \n  " color=yellow style=filled]
 	
 
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" [label="3:  Return Stmt \n   n$31=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example_a:DispatchEx* [line 81, column 10]\n  n$32=*n$31.x:int [line 81, column 10]\n  *&return:int=n$32 [line 81, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" [label="3:  Return Stmt \n   n$31=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx* [line 81, column 10]\n  n$32=*n$31.x:int [line 81, column 10]\n  *&return:int=n$32 [line 81, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_2" ;
@@ -110,7 +110,7 @@ digraph cfg {
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_3" ;
-"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example_a:DispatchEx*=null [line 76, column 3]\n " shape="box"]
+"dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" [label="5:  DeclStmt \n   *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx*=null [line 76, column 3]\n " shape="box"]
 	
 
 	 "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_5" -> "dispatch_barrier_example#DispatchEx#class.a541a40f2f04e29019c58e563f7544d8_4" ;
@@ -121,11 +121,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_2" [label="2: Exit objc_blockDispatchEx_dispatch_once_example_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example_a:DispatchEx* [line 31, column 5]\n  *n$3.x:int=10 [line 31, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx* [line 31, column 5]\n  *n$3.x:int=10 [line 31, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" -> "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_2" ;
-"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 30, column 10]\n  n$5=_fun_DispatchEx_init(n$4:DispatchEx*) virtual [line 30, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example_a:DispatchEx*=n$5 [line 30, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 30, column 10]\n  n$5=_fun_DispatchEx_init(n$4:DispatchEx*) virtual [line 30, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_once_example.a:DispatchEx*=n$5 [line 30, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_4" -> "objc_blockDispatchEx_dispatch_once_example_1.4b4341cb61d8b8d8f01e95edf36e4961_3" ;
@@ -136,11 +136,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_2" [label="2: Exit objc_blockDispatchEx_dispatch_async_example_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example_a:DispatchEx* [line 41, column 20]\n  *n$9.x:int=10 [line 41, column 20]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx* [line 41, column 20]\n  *n$9.x:int=10 [line 41, column 20]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" -> "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_2" ;
-"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" [label="4:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 40, column 25]\n  n$11=_fun_DispatchEx_init(n$10:DispatchEx*) virtual [line 40, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example_a:DispatchEx*=n$11 [line 40, column 20]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" [label="4:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 40, column 25]\n  n$11=_fun_DispatchEx_init(n$10:DispatchEx*) virtual [line 40, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_async_example.a:DispatchEx*=n$11 [line 40, column 20]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_4" -> "objc_blockDispatchEx_dispatch_async_example_2.6510e5756fbcdafec0a18e8d5493346b_3" ;
@@ -151,11 +151,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_2" [label="2: Exit objc_blockDispatchEx_dispatch_after_example_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$16=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example_a:DispatchEx* [line 52, column 20]\n  *n$16.x:int=10 [line 52, column 20]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$16=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx* [line 52, column 20]\n  *n$16.x:int=10 [line 52, column 20]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" -> "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_2" ;
-"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" [label="4:  BinaryOperatorStmt: Assign \n   n$17=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 51, column 25]\n  n$18=_fun_DispatchEx_init(n$17:DispatchEx*) virtual [line 51, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example_a:DispatchEx*=n$18 [line 51, column 20]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" [label="4:  BinaryOperatorStmt: Assign \n   n$17=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 51, column 25]\n  n$18=_fun_DispatchEx_init(n$17:DispatchEx*) virtual [line 51, column 24]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_after_example.a:DispatchEx*=n$18 [line 51, column 20]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_4" -> "objc_blockDispatchEx_dispatch_after_example_3.380a17f45400d49d71ce1ba1c29a6ba4_3" ;
@@ -166,11 +166,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_2" [label="2: Exit objc_blockDispatchEx_dispatch_group_example_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" [label="3:  BinaryOperatorStmt: Assign \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example_a:DispatchEx* [line 61, column 5]\n  *n$22.x:int=10 [line 61, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" [label="3:  BinaryOperatorStmt: Assign \n   n$22=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx* [line 61, column 5]\n  *n$22.x:int=10 [line 61, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" -> "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_2" ;
-"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" [label="4:  BinaryOperatorStmt: Assign \n   n$23=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 60, column 10]\n  n$24=_fun_DispatchEx_init(n$23:DispatchEx*) virtual [line 60, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example_a:DispatchEx*=n$24 [line 60, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" [label="4:  BinaryOperatorStmt: Assign \n   n$23=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 60, column 10]\n  n$24=_fun_DispatchEx_init(n$23:DispatchEx*) virtual [line 60, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_example.a:DispatchEx*=n$24 [line 60, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_4" -> "objc_blockDispatchEx_dispatch_group_example_4.65d6b4827e06dfbede68939492105a46_3" ;
@@ -181,11 +181,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_2" [label="2: Exit objc_blockDispatchEx_dispatch_group_notify_example_5 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$28=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example_a:DispatchEx* [line 70, column 5]\n  *n$28.x:int=10 [line 70, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$28=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx* [line 70, column 5]\n  *n$28.x:int=10 [line 70, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" -> "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_2" ;
-"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" [label="4:  BinaryOperatorStmt: Assign \n   n$29=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 69, column 10]\n  n$30=_fun_DispatchEx_init(n$29:DispatchEx*) virtual [line 69, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example_a:DispatchEx*=n$30 [line 69, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" [label="4:  BinaryOperatorStmt: Assign \n   n$29=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 69, column 10]\n  n$30=_fun_DispatchEx_init(n$29:DispatchEx*) virtual [line 69, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_group_notify_example.a:DispatchEx*=n$30 [line 69, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_4" -> "objc_blockDispatchEx_dispatch_group_notify_example_5.ded89d749d973a9d57680f9d68afb8a0_3" ;
@@ -196,11 +196,11 @@ digraph cfg {
 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_2" [label="2: Exit objc_blockDispatchEx_dispatch_barrier_example_6 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" [label="3:  BinaryOperatorStmt: Assign \n   n$34=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example_a:DispatchEx* [line 79, column 5]\n  *n$34.x:int=10 [line 79, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" [label="3:  BinaryOperatorStmt: Assign \n   n$34=*&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx* [line 79, column 5]\n  *n$34.x:int=10 [line 79, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" -> "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_2" ;
-"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" [label="4:  BinaryOperatorStmt: Assign \n   n$35=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 78, column 10]\n  n$36=_fun_DispatchEx_init(n$35:DispatchEx*) virtual [line 78, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example_a:DispatchEx*=n$36 [line 78, column 5]\n " shape="box"]
+"objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" [label="4:  BinaryOperatorStmt: Assign \n   n$35=_fun___objc_alloc_no_fail(sizeof(t=DispatchEx):unsigned long) [line 78, column 10]\n  n$36=_fun_DispatchEx_init(n$35:DispatchEx*) virtual [line 78, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_examples.m>$DispatchEx_dispatch_barrier_example.a:DispatchEx*=n$36 [line 78, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_4" -> "objc_blockDispatchEx_dispatch_barrier_example_6.644987ff1e6d0e0008d4ccdb7e8538ee_3" ;

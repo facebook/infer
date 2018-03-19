@@ -158,7 +158,7 @@ let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname o
           if var_decl_info.Clang_ast_t.vdi_is_static_local then
             Some
               (fun name_string _ ->
-                Mangled.from_string (Typ.Procname.to_string outer_procname ^ "_" ^ name_string) )
+                Mangled.from_string (Typ.Procname.to_string outer_procname ^ "." ^ name_string) )
           else None
         in
         mk_sil_global_var trans_unit_ctx ?mk_name decl_info named_decl_info var_decl_info qt

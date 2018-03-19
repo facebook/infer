@@ -7,7 +7,7 @@ digraph cfg {
 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:objc_object* [line 25, column 10]\n  *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object* [line 25, column 10]\n  *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]
 	
 
 	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" ;
@@ -33,7 +33,7 @@ digraph cfg {
 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" [label="2: Exit A_test2 \n  " color=yellow style=filled]
 	
 
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$5=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:objc_object* [line 44, column 10]\n  *&return:objc_object*=n$5 [line 44, column 3]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$5=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 44, column 10]\n  *&return:objc_object*=n$5 [line 44, column 3]\n " shape="box"]
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" ;
@@ -41,7 +41,7 @@ digraph cfg {
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  BinaryOperatorStmt: Assign \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 38, column 21]\n  n$8=_fun_NSBundleResourceRequest_init(n$7:A*) virtual [line 38, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:objc_object*=n$8 [line 38, column 3]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  BinaryOperatorStmt: Assign \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 38, column 21]\n  n$8=_fun_NSBundleResourceRequest_init(n$7:A*) virtual [line 38, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object*=n$8 [line 38, column 3]\n " shape="box"]
 	
 
 	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" ;
@@ -52,7 +52,7 @@ digraph cfg {
 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" [label="2: Exit A_test3 \n  " color=yellow style=filled]
 	
 
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$9=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 55, column 10]\n  *&return:int=n$9 [line 55, column 3]\n " shape="box"]
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$9=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 55, column 10]\n  *&return:int=n$9 [line 55, column 3]\n " shape="box"]
 	
 
 	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" ;
@@ -67,7 +67,7 @@ digraph cfg {
 "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_2" [label="2: Exit objc_blockA_test_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 21, column 23]\n  n$2=_fun_NSBundleResourceRequest_init(n$1:A*) virtual [line 21, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:objc_object*=n$2 [line 21, column 5]\n " shape="box"]
+"objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 21, column 23]\n  n$2=_fun_NSBundleResourceRequest_init(n$1:A*) virtual [line 21, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test.sharedInstance:objc_object*=n$2 [line 21, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_3" -> "objc_blockA_test_1.91b00d7c265c98d7bfda34cc42ad73ed_2" ;
@@ -78,7 +78,7 @@ digraph cfg {
 "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_2" [label="2: Exit objc_blockA_test_leak_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 31, column 23]\n  n$4=_fun_NSBundleResourceRequest_init(n$3:A*) virtual [line 31, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak_sharedInstance:objc_object*=n$4 [line 31, column 5]\n " shape="box"]
+"objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 31, column 23]\n  n$4=_fun_NSBundleResourceRequest_init(n$3:A*) virtual [line 31, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak.sharedInstance:objc_object*=n$4 [line 31, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_3" -> "objc_blockA_test_leak_2.5b3de3f9ef0695311853bace3ed320b8_2" ;
@@ -89,7 +89,7 @@ digraph cfg {
 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" [label="2: Exit objc_blockA_test2_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$6=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:objc_object* [line 41, column 12]\n  *&p:objc_object*=n$6 [line 41, column 5]\n " shape="box"]
+"objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" [label="3:  DeclStmt \n   n$6=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2.sharedInstance:objc_object* [line 41, column 12]\n  *&p:objc_object*=n$6 [line 41, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_3" -> "objc_blockA_test2_3.d73da2e84cb701fb03b2fbe656a01a1b_2" ;
@@ -100,7 +100,7 @@ digraph cfg {
 "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_2" [label="2: Exit objc_blockA_test3_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" [label="3:  UnaryOperator \n   n$10=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 52, column 5]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int=(n$10 + 1) [line 52, column 5]\n " shape="box"]
+"objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" [label="3:  UnaryOperator \n   n$10=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int [line 52, column 5]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3.i:int=(n$10 + 1) [line 52, column 5]\n " shape="box"]
 	
 
 	 "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_3" -> "objc_blockA_test3_4.645dc6f18a9ea7bd77a195ea083890a4_2" ;

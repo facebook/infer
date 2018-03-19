@@ -7,7 +7,7 @@ digraph cfg {
 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" [label="2: Exit objc_blockDispatchInMacroTest_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 23, column 10]\n  n$2=_fun_NSObject_init(n$1:NSObject*) virtual [line 23, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject*=n$2 [line 23, column 10]\n " shape="box"]
+"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 23, column 10]\n  n$2=_fun_NSObject_init(n$1:NSObject*) virtual [line 23, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 23, column 10]\n " shape="box"]
 	
 
 	 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" -> "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" ;
@@ -18,11 +18,11 @@ digraph cfg {
 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_2" [label="2: Exit DispatchInMacroTest \n  " color=yellow style=filled]
 	
 
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" [label="3:  Fallback node \n   n$0=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23, column 10]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" [label="3:  Fallback node \n   n$0=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject* [line 23, column 10]\n " shape="box"]
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" ;
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_once_token:long*,(_fun_objc_blockDispatchInMacroTest_1):_fn_(*)) block_params [line 23, column 10]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   _fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.once_token:long*,(_fun_objc_blockDispatchInMacroTest_1):_fn_(*)) block_params [line 23, column 10]\n " shape="box"]
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;

@@ -36,6 +36,10 @@ type vpath = t option
 
 let eradicate_java () = Config.eradicate && Language.curr_language_is Java
 
+let split_var_clang var_name =
+  match String.rsplit2 ~on:'.' var_name with Some (_, name) -> name | _ -> var_name
+
+
 (** convert a dexp to a string *)
 let rec to_string = function
   | Darray (de1, de2) ->
@@ -105,10 +109,13 @@ let rec to_string = function
       if Language.curr_language_is Java then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
       else to_string de ^ "." ^ Typ.Fieldname.to_string f
   | Dpvar pv ->
-      Mangled.to_string (Pvar.get_name pv)
+      let var_name = Mangled.to_string (Pvar.get_name pv) in
+      if Language.curr_language_is Clang then split_var_clang var_name else var_name
   | Dpvaraddr pv ->
+      let var_name = Mangled.to_string (Pvar.get_name pv) in
       let s =
         if eradicate_java () then Pvar.get_simplified_name pv
+        else if Language.curr_language_is Clang then split_var_clang var_name
         else Mangled.to_string (Pvar.get_name pv)
       in
       let ampersand = if eradicate_java () then "" else "&" in
