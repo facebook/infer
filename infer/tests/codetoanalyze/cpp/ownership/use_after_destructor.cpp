@@ -113,3 +113,33 @@ class Subclass : virtual POD {
    */
   ~Subclass() { delete f; }
 };
+
+void basic_placement_new_ok() {
+  S* ptr = new S(1);
+  S* tptr = new (ptr) S(1);
+  tptr->~S();
+  delete[] ptr;
+}
+
+S* destruct_pointer_contents_then_placement_new1_ok(S* s) {
+  s->~S();
+  new (s) S(1);
+  return s;
+}
+
+// need better heap abstraction to catch this example and the next
+S* FN_placement_new_aliasing1_bad() {
+  S* s = new S(1);
+  s->~S();
+  auto alias = new (s) S(2);
+  delete alias; // this deletes s too
+  return s; // bad, returning freed memory
+}
+
+S* FN_placement_new_aliasing2_bad() {
+  S* s = new S(1);
+  s->~S();
+  auto alias = new (s) S(2);
+  delete s; // this deletes alias too
+  return alias; // bad, returning freed memory
+}

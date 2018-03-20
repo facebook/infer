@@ -267,6 +267,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* assign to field, array, indirectly with &/*, or a combination *)
         Domain.exp_add_reads rhs_exp loc summary astate
         |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
+    | Call (Some (lhs_var, _), Direct callee_pname, actuals, _, _)
+      when Typ.Procname.equal callee_pname BuiltinDecl.__placement_new -> (
+      match
+        (* placement new creates an alias between lhs_var and placement_var. model as lhs_var
+           borrowing from placement_var *)
+        Option.bind ~f:extract_base_var (List.last actuals)
+      with
+      | Some (placement_var, _) ->
+          Domain.add placement_var CapabilityDomain.Owned astate
+          |> Domain.borrow_vars lhs_var (VarSet.singleton placement_var)
+      | None ->
+          astate )
     | Call (_, Direct callee_pname, [(AccessExpression Base ((lhs_var, _) as lhs_base))], _, loc)
       when transfers_ownership callee_pname ->
         Domain.base_add_read lhs_base loc summary astate
