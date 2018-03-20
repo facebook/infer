@@ -14,7 +14,9 @@ module VarSet = AbstractDomain.FiniteSet (Var)
 
 module CapabilityDomain = struct
   type astate =
-    | Invalid  (** neither owned nor borrowed; we can't do anything with this value *)
+    | InvalidatedAt of Location.t
+        (** neither owned nor borrowed; we can't safely do anything with this value. tagged with the
+        location where invalidation occurred. *)
     | BorrowedFrom of VarSet.astate
         (** not owned, but borrowed from existing reference(s). for now, permits both reads and writes *)
     | Owned
@@ -25,19 +27,23 @@ module CapabilityDomain = struct
     BorrowedFrom vars
 
 
-  (** Owned <= BorrowedFrom <= Invalid *)
+  (** Owned <= BorrowedFrom <= InvalidatedAt *)
   let ( <= ) ~lhs ~rhs =
-    match (lhs, rhs) with
-    | _, Invalid ->
-        true
-    | Invalid, _ ->
-        false
-    | BorrowedFrom s1, BorrowedFrom s2 ->
-        VarSet.( <= ) ~lhs:s1 ~rhs:s2
-    | Owned, _ ->
-        true
-    | _, Owned ->
-        false
+    if phys_equal lhs rhs then true
+    else
+      match (lhs, rhs) with
+      | InvalidatedAt loc1, InvalidatedAt loc2 ->
+          Location.compare loc1 loc2 <= 0
+      | _, InvalidatedAt _ ->
+          true
+      | InvalidatedAt _, _ ->
+          false
+      | BorrowedFrom s1, BorrowedFrom s2 ->
+          VarSet.( <= ) ~lhs:s1 ~rhs:s2
+      | Owned, _ ->
+          true
+      | _, Owned ->
+          false
 
 
   let join astate1 astate2 =
@@ -48,15 +54,18 @@ module CapabilityDomain = struct
           BorrowedFrom (VarSet.union s1 s2)
       | Owned, astate | astate, Owned ->
           astate
-      | Invalid, _ | _, Invalid ->
-          Invalid
+      | InvalidatedAt loc1, InvalidatedAt loc2 ->
+          (* pick the "higher" program point that occurs syntactically later *)
+          if Location.compare loc1 loc2 >= 0 then astate1 else astate2
+      | (InvalidatedAt _ as invalid), _ | _, (InvalidatedAt _ as invalid) ->
+          invalid
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let pp fmt = function
-    | Invalid ->
-        F.fprintf fmt "Invalid"
+    | InvalidatedAt loc ->
+        F.fprintf fmt "InvalidatedAt(%a)" Location.pp loc
     | BorrowedFrom vars ->
         F.fprintf fmt "BorrowedFrom(%a)" VarSet.pp vars
     | Owned ->
@@ -76,36 +85,39 @@ let rec is_function_typ = function
 module Domain = struct
   include AbstractDomain.Map (Var) (CapabilityDomain)
 
-  let report_use_after_lifetime var loc summary =
+  let report_use_after_lifetime var ~use_loc ~invalidated_loc summary =
     let message =
-      F.asprintf "Variable %a is used after its lifetime has ended at %a" Var.pp var Location.pp
-        loc
+      F.asprintf "Variable %a is used at line %a after its lifetime ended at %a" Var.pp var
+        Location.pp use_loc Location.pp invalidated_loc
     in
-    let ltr = [Errlog.make_trace_element 0 loc "Use of invalid variable" []] in
+    let ltr =
+      [ Errlog.make_trace_element 0 invalidated_loc "End of variable lifetime" []
+      ; Errlog.make_trace_element 0 use_loc "Use of invalid variable" [] ]
+    in
     let exn = Exceptions.Checkers (IssueType.use_after_lifetime, Localise.verbatim_desc message) in
-    Reporting.log_error summary ~loc ~ltr exn
+    Reporting.log_error summary ~loc:use_loc ~ltr exn
 
 
   (* complain if we do not have the right capability to access [var] *)
-  let check_var_lifetime var loc summary astate =
+  let check_var_lifetime var use_loc summary astate =
     let open CapabilityDomain in
     match find var astate with
-    | Invalid ->
-        report_use_after_lifetime var loc summary
+    | InvalidatedAt invalidated_loc ->
+        report_use_after_lifetime var ~use_loc ~invalidated_loc summary
     | BorrowedFrom borrowed_vars ->
         (* warn if any of the borrowed vars are Invalid *)
-        let is_invalid v =
+        let report_invalidated v =
           match find v astate with
-          | Invalid ->
-              true
+          | InvalidatedAt invalidated_loc ->
+              report_use_after_lifetime var ~use_loc ~invalidated_loc summary
           | BorrowedFrom _
           (* TODO: can do deeper checking here, but have to worry about borrow cycles *)
           | Owned ->
-              false
+              ()
           | exception Not_found ->
-              false
+              ()
         in
-        if VarSet.exists is_invalid borrowed_vars then report_use_after_lifetime var loc summary
+        VarSet.iter report_invalidated borrowed_vars
     | Owned ->
         ()
     | exception Not_found ->
@@ -282,7 +294,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, [(AccessExpression Base ((lhs_var, _) as lhs_base))], _, loc)
       when transfers_ownership callee_pname ->
         Domain.base_add_read lhs_base loc summary astate
-        |> Domain.add lhs_var CapabilityDomain.Invalid
+        |> Domain.add lhs_var (CapabilityDomain.InvalidatedAt loc)
     | Call
         ( _
         , Direct Typ.Procname.ObjC_Cpp callee_pname

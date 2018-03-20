@@ -23,3 +23,23 @@ void aggregate_reassign_ok() {
     arr[0] = s; // shouldn't be flagged as a use-after-lifetime
   }
 }
+
+int multiple_invalidations_branch_bad(int n, int* ptr) {
+  if (n == 7) {
+    delete ptr;
+  } else {
+    delete ptr;
+  }
+  return *ptr;
+}
+
+int multiple_invalidations_loop_bad(int n, int* ptr) {
+  for (int i = 0; i < n; i++) {
+    if (i == 7) {
+      delete ptr;
+    } else {
+      delete ptr;
+    }
+  }
+  return *ptr;
+}
