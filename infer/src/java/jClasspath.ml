@@ -45,11 +45,12 @@ let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_
 let split_classpath cp = Str.split (Str.regexp JFile.sep) cp
 
 let append_path classpath path =
-  if Sys.file_exists path = `Yes then
-    let root = Unix.getcwd () in
-    let full_path = Utils.filename_to_absolute ~root path in
+  let full_path = Utils.filename_to_absolute ~root:Config.project_root path in
+  if Sys.file_exists full_path = `Yes then
     if Int.equal (String.length classpath) 0 then full_path else classpath ^ JFile.sep ^ full_path
-  else classpath
+  else (
+    L.debug Capture Medium "Path %s not found" full_path ;
+    classpath )
 
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
