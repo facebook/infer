@@ -294,4 +294,10 @@ public class NullMethodCall {
       nullableParameter.toString();
     }
   }
+
+  String customPreconditionsCheckNotNullOkay() {
+    MyPreconditions.checkNotNull(nullableField);
+    return nullableField.toString();
+  }
+
 }

@@ -843,22 +843,14 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 TypeState.set_extension typestate1 extension'
               else typestate1
             in
-            let has_method pn name =
-              match pn with
-              | Typ.Procname.Java pn_java ->
-                  String.equal (Typ.Procname.Java.get_method pn_java) name
-              | _ ->
-                  false
-            in
             if Models.is_check_not_null callee_pname then
-              do_preconditions_check_not_null
-                (Models.get_check_not_null_parameter callee_pname)
-                ~is_vararg:false typestate2
-            else if has_method callee_pname "checkNotNull"
-                    && Typ.Procname.Java.is_vararg callee_pname_java
-            then
-              let last_parameter = List.length call_params in
-              do_preconditions_check_not_null last_parameter ~is_vararg:true typestate2
+              if Typ.Procname.Java.is_vararg callee_pname_java then
+                let last_parameter = List.length call_params in
+                do_preconditions_check_not_null last_parameter ~is_vararg:true typestate2
+              else
+                do_preconditions_check_not_null
+                  (Models.get_check_not_null_parameter callee_pname)
+                  ~is_vararg:false typestate2
             else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname
             then do_preconditions_check_state typestate2
             else if Models.is_mapPut callee_pname then do_map_put typestate2

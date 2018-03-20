@@ -107,6 +107,14 @@ end
 
 (* Inference *)
 
+let match_method_name pn name =
+  match pn with
+  | Typ.Procname.Java pn_java ->
+      String.equal (Typ.Procname.Java.get_method pn_java) name
+  | _ ->
+      false
+
+
 let table_has_procedure table proc_name =
   let proc_id = Typ.Procname.to_unique_id proc_name in
   try
@@ -167,12 +175,16 @@ let is_modelled_nullable proc_name =
 
 
 (** Check if the procedure is one of the known Preconditions.checkNotNull. *)
-let is_check_not_null proc_name = table_has_procedure check_not_null_table proc_name
+let is_check_not_null proc_name =
+  table_has_procedure check_not_null_table proc_name || match_method_name proc_name "checkNotNull"
+
 
 (** Parameter number for a procedure known to be a checkNotNull *)
 let get_check_not_null_parameter proc_name =
   let proc_id = Typ.Procname.to_unique_id proc_name in
-  try Hashtbl.find check_not_null_parameter_table proc_id with Not_found -> 0
+  try Hashtbl.find check_not_null_parameter_table proc_id with Not_found ->
+    (* Assume the check is on the first parameter unless modeled otherwise *)
+    1
 
 
 (** Check if the procedure is one of the known Preconditions.checkState. *)
