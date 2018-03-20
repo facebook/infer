@@ -155,4 +155,12 @@ public class ReturnNotNullable {
   Object $generatedReturnsNullOk() {
     return null;
   }
+
+  int field;
+
+  int returnsZero() {
+    field = 0;
+    return field;
+  }
+
 }

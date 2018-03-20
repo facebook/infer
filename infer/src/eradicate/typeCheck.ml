@@ -147,6 +147,11 @@ type checks = {eradicate: bool; check_extension: bool; check_ret_type: check_ret
 let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref
     (curr_pdesc: Procdesc.t) typestate e tr_default loc : TypeState.range =
   match e with
+  | _ when Exp.is_null_literal e ->
+      let typ, ta, locs = tr_default in
+      if PatternMatch.type_is_class typ then
+        (typ, TypeAnnotation.const AnnotatedSignature.Nullable true (TypeOrigin.Const loc), locs)
+      else (typ, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), locs)
   | Exp.Lvar pvar -> (
     match TypeState.lookup_pvar pvar typestate with
     | Some tr ->
@@ -159,13 +164,6 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
         TypeState.range_add_locs tr [loc]
     | None ->
         tr_default )
-  | Exp.Const Const.Cint i when IntLit.iszero i ->
-      let typ, _, locs = tr_default in
-      if PatternMatch.type_is_class typ then
-        (typ, TypeAnnotation.const AnnotatedSignature.Nullable true (TypeOrigin.Const loc), locs)
-      else
-        let t, ta, ll = tr_default in
-        (t, TypeAnnotation.with_origin ta (TypeOrigin.Const loc), ll)
   | Exp.Exn e1 ->
       typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
         typestate e1 tr_default loc
