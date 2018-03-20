@@ -197,9 +197,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Specs.summary
 
-  let acquires_ownership pname =
-    (* TODO: support new[], malloc, others? *)
-    Typ.Procname.equal pname BuiltinDecl.__new
+  let extract_base_var = function
+    | HilExp.AccessExpression AddressOf Base base
+    | AccessExpression Base base
+    (* TODO: get rid of second case once AccessExpression conversion is complete *) ->
+        Some base
+    | _ ->
+        None
+
+
+  (* return Some (base) if the given call expressions acquires ownership of a base in [return_opt]
+     or [actuals]; None otherwise *)
+  let acquires_ownership call_exp return_opt actuals =
+    match call_exp with
+    | HilInstr.Direct pname ->
+        (* TODO: support new[], malloc, others? *)
+        if Typ.Procname.equal pname BuiltinDecl.__new then return_opt
+        else if Typ.Procname.is_constructor pname then
+          Option.bind (List.hd actuals) ~f:extract_base_var
+        else None
+    | HilInstr.Indirect _ ->
+        None
 
 
   let transfers_ownership pname =
@@ -249,24 +267,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* assign to field, array, indirectly with &/*, or a combination *)
         Domain.exp_add_reads rhs_exp loc summary astate
         |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
-    | Call (Some (lhs_var, _), Direct callee_pname, actuals, _, loc)
-      when acquires_ownership callee_pname ->
-        Domain.actuals_add_reads actuals loc summary astate
-        |> Domain.add lhs_var CapabilityDomain.Owned
-    | Call (None, Direct callee_pname, lhs_exp :: actuals, _, loc)
-      when Typ.Procname.is_constructor callee_pname
-      -> (
-        (* similar to acquires ownership case *)
-        let astate' = Domain.actuals_add_reads actuals loc summary astate in
-        (* frontend translates constructors as assigning-by-ref to first actual *)
-        match lhs_exp with
-        | AccessExpression
-            ( AccessExpression.AddressOf Base (constructed_var, _)
-            | Base (constructed_var, _)
-            (* TODO: get rid of second case once AccessExpression conversion is complete *) ) ->
-            Domain.add constructed_var CapabilityDomain.Owned astate'
-        | _ ->
-            astate' )
     | Call (_, Direct callee_pname, [(AccessExpression Base ((lhs_var, _) as lhs_base))], _, loc)
       when transfers_ownership callee_pname ->
         Domain.base_add_read lhs_base loc summary astate
@@ -294,15 +294,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_opt, call_exp, actuals, _, loc)
       -> (
         let astate' = Domain.actuals_add_reads actuals loc summary astate in
-        if is_early_return call_exp then
-          (* thrown exception, abort(), or exit; return _|_ *)
-          Domain.empty
-        else
-          match ret_opt with
-          | Some (base_var, _) ->
-              Domain.remove base_var astate'
-          | None ->
-              astate' )
+        match acquires_ownership call_exp ret_opt actuals with
+        | Some (owned_var, _) ->
+            Domain.add owned_var CapabilityDomain.Owned astate'
+        | None ->
+            if is_early_return call_exp then
+              (* thrown exception, abort(), or exit; return _|_ *)
+              Domain.empty
+            else
+              match ret_opt with
+              | Some (base_var, _) ->
+                  Domain.remove base_var astate'
+              | None ->
+                  astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
 end
