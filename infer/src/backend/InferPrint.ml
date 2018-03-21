@@ -866,6 +866,11 @@ let get_summary_iterator () =
   iterate
 
 
+let register_perf_stats_report () =
+  let filename = F.sprintf "%s.json" Config.perf_stats_prefix in
+  PerfStats.register_report_at_exit filename PerfStats.Reporting
+
+
 (** Although the out_file is an Option type, the None option is strictly meant for the
   logs format_kind, and all other formats should contain an outfile value. *)
 let mk_format format_kind fname =
@@ -964,17 +969,6 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   finalize_and_close_files formats_by_report_kind stats
 
 
-let register_perf_stats_report () =
-  let fname = F.sprintf "%s.json" Config.perf_stats_prefix in
-  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
-  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) fname PerfStats.Reporting
-
-
-let report_perf_stats () =
-  let fname = F.sprintf "%s.json" Config.perf_stats_prefix in
-  PerfStats.get_reporter fname PerfStats.Reporting ()
-
-
 let main ~report_json =
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
@@ -985,9 +979,8 @@ let main ~report_json =
   in
   register_perf_stats_report () ;
   init_files formats_by_report_kind ;
-  ( match Config.from_json_report with
+  match Config.from_json_report with
   | Some fname ->
       pp_json_report_by_report_kind formats_by_report_kind fname
   | None ->
-      pp_summary_and_issues formats_by_report_kind issue_formats ) ;
-  report_perf_stats ()
+      pp_summary_and_issues formats_by_report_kind issue_formats
