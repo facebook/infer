@@ -84,7 +84,14 @@ let edge_is_strong tenv obj_edge =
         || String.equal Config.assign att )
       params
   in
-  let weak_edge =
+  let weak_edge_by_type =
+    match obj_edge.rc_from.rc_node_typ.Typ.desc with
+    | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+        true
+    | _ ->
+        false
+  in
+  let weak_edge_by_field =
     match get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name with
     | Some ia ->
         List.exists
@@ -97,7 +104,7 @@ let edge_is_strong tenv obj_edge =
         true
     (* Assume the edge is weak if the type cannot be found in the tenv, to avoid FPs *)
   in
-  not weak_edge
+  not (weak_edge_by_type || weak_edge_by_field)
 
 
 exception Max_retain_cycles of RetainCyclesType.Set.t
@@ -128,6 +135,23 @@ let get_cycle_blocks root_node exp =
       None
 
 
+let get_weak_alias_type prop e =
+  let sigma = prop.Prop.sigma in
+  let check_weak_alias hpred =
+    match hpred with
+    | Sil.Hpointsto (_, Sil.Eexp (e', _), Sizeof {typ}) -> (
+      match typ.Typ.desc with
+      | (Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained))
+        when Exp.equal e' e ->
+          Some typ
+      | _ ->
+          None )
+    | _ ->
+        None
+  in
+  List.find_map ~f:check_weak_alias sigma
+
+
 let get_cycles found_cycles root tenv prop =
   let open RetainCyclesType in
   let sigma = prop.Prop.sigma in
@@ -138,6 +162,13 @@ let get_cycles found_cycles root tenv prop =
   in
   (* Perform a dfs of a graph stopping when e_root is reached. Returns the set of cycles reached. *)
   let rec dfs ~found_cycles ~root_node ~from_node ~rev_path ~fields ~visited =
+    let from_node =
+      match get_weak_alias_type prop from_node.rc_node_exp with
+      | Some typ ->
+          {from_node with rc_node_typ= typ}
+      | None ->
+          from_node
+    in
     match fields with
     | [] ->
         found_cycles

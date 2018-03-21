@@ -19,11 +19,18 @@
 
 @implementation CADisplay
 
-- init {
+- (instancetype)init {
   _displayLink =
       [CADisplayLink displayLinkWithTarget:self selector:@selector(bla)];
 
   return self;
+}
+
+- (void)cycle_weak_good {
+  __weak __typeof__(self) weakSelf = self;
+  _displayLink =
+      [CADisplayLink displayLinkWithTarget:weakSelf
+                                  selector:@selector(handleDisplayLink:)];
 }
 
 - (void)bla{};
@@ -32,10 +39,6 @@
   // unregister displayLink target
   [_displayLink invalidate];
 };
-
-- (void)dealloc {
-  [super dealloc];
-}
 
 @end
 
@@ -49,5 +52,4 @@ void testNoCycle() {
 
   CADisplay* a = [[CADisplay alloc] init];
   [a invalidate]; // break the cycle
-  [a dealloc];
 }

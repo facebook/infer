@@ -65,7 +65,6 @@ SOURCES_BUCKET_ALL = \
   field_superclass/field.c \
   global_const/global_const.m \
   initialization/compound_literal.c \
-  memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
   memory_leaks_benchmark/RetainCycleStaticVar.m \
   npe/blockenum.m \
   npe/nil_param.m \
@@ -89,6 +88,7 @@ SOURCES_ARC = \
   field_superclass/SubtypingExample.m \
 	blocks_in_heap/BlockInHeap.m \
   initialization/struct_initlistexpr.c \
+	memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
 	memory_leaks_benchmark/RetainCycleExampleWeak.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/retain_cycle.m \
