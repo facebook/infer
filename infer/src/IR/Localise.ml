@@ -27,7 +27,7 @@ module Tags = struct
   (* line where value was dereferenced *)
   let escape_to = "escape_to"
 
-  (* expression wher a value escapes to *)
+  (* expression where a value escapes to *)
   let line = "line"
 
   (* 2nd Java type *)
@@ -60,18 +60,16 @@ module Tags = struct
 end
 
 type error_desc =
-  {descriptions: string list; advice: string option; tags: Tags.t; dotty: string option}
+  {descriptions: string list; tags: Tags.t; dotty: string option}
   [@@deriving compare]
 
 (** empty error description *)
-let no_desc : error_desc = {descriptions= []; advice= None; tags= []; dotty= None}
+let no_desc : error_desc = {descriptions= []; tags= []; dotty= None}
 
 (** verbatim desc from a string, not to be used for user-visible descs *)
 let verbatim_desc s = {no_desc with descriptions= [s]}
 
-let custom_desc_with_advice description advice tags =
-  {no_desc with descriptions= [description]; advice= Some advice; tags}
-
+let custom_desc description tags = {no_desc with descriptions= [description]; tags}
 
 (** pretty print an error description *)
 let pp_error_desc fmt err_desc =
@@ -740,7 +738,7 @@ let desc_retain_cycle cycle_str loc cycle_dotty =
     Format.sprintf "Retain cycle %s involving the following objects:%s" (at_line tags loc)
       cycle_str
   in
-  {no_desc with descriptions= [desc]; tags= !tags; dotty= cycle_dotty}
+  {descriptions= [desc]; tags= !tags; dotty= cycle_dotty}
 
 
 let registered_observer_being_deallocated_str obj_str =

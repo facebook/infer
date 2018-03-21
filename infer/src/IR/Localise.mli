@@ -18,7 +18,7 @@ end
 
 (** description field of error messages *)
 type error_desc =
-  {descriptions: string list; advice: string option; tags: Tags.t; dotty: string option}
+  {descriptions: string list; tags: Tags.t; dotty: string option}
   [@@deriving compare]
 
 val no_desc : error_desc
@@ -27,8 +27,8 @@ val no_desc : error_desc
 val verbatim_desc : string -> error_desc
 (** verbatim desc from a string, not to be used for user-visible descs *)
 
-val custom_desc_with_advice : string -> string -> (string * string) list -> error_desc
-(** verbatim desc with advice and custom tags *)
+val custom_desc : string -> (string * string) list -> error_desc
+(** verbatim desc with custom tags *)
 
 module BucketLevel : sig
   val b1 : string

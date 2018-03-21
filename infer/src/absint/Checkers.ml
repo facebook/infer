@@ -16,13 +16,11 @@ module F = Format
 
 (** State that persists in the .specs files. *)
 module ST = struct
-  let report_error tenv proc_name proc_desc kind loc ?(advice= None) ?(field_name= None)
-      ?(origin_loc= None) ?(exception_kind= fun k d -> Exceptions.Checkers (k, d))
-      ?(always_report= false) description =
+  let report_error tenv proc_name proc_desc kind loc ?(field_name= None) ?(origin_loc= None)
+      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(always_report= false) description =
     let lookup = Tenv.lookup tenv in
     let localized_description =
-      Localise.custom_desc_with_advice description (Option.value ~default:"" advice)
-        [("always_report", string_of_bool always_report)]
+      Localise.custom_desc description [("always_report", string_of_bool always_report)]
     in
     let exn = exception_kind kind localized_description in
     let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in

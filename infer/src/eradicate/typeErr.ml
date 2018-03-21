@@ -268,15 +268,14 @@ end
 (* Strict *)
 
 type st_report_error =
-  Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?advice:string option
-  -> ?field_name:Typ.Fieldname.t option -> ?origin_loc:Location.t option
-  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn) -> ?always_report:bool -> string
-  -> unit
+  Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
+  -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
+  -> ?always_report:bool -> string -> unit
 
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error: st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
-  let kind, description, advice, field_name, origin_loc =
+  let kind, description, field_name, origin_loc =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
         let name =
@@ -286,9 +285,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         ( name
         , P.sprintf "The condition %s is always %b according to the existing annotations."
             (Option.value s_opt ~default:"") b
-        , Some
-            ( "Consider adding a " ^ MF.monospaced_to_string "@Nullable"
-            ^ " annotation or removing the redundant check." )
         , None
         , None )
     | Field_not_initialized (fn, pn) ->
@@ -306,7 +302,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced "@Nullable"
-        , None
         , Some fn
         , None )
     | Field_not_mutable (fn, (origin_description, origin_loc, _)) ->
@@ -314,7 +309,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , Format.asprintf "Field %a is modified but is not declared %a. %s" MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             MF.pp_monospaced "@Mutable" origin_description
-        , None
         , None
         , origin_loc )
     | Field_annotation_inconsistent (ann, fn, (origin_description, origin_loc, _)) ->
@@ -333,7 +327,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
                   (Typ.Fieldname.to_simplified_string fn)
                   MF.pp_monospaced "@Present" origin_description )
         in
-        (kind_s, description, None, None, origin_loc)
+        (kind_s, description, None, origin_loc)
     | Field_over_annotated (fn, pn) ->
         let constructor_name =
           if Typ.Procname.is_constructor pn then "the constructor"
@@ -349,7 +343,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             constructor_name MF.pp_monospaced "@Nullable"
-        , None
         , Some fn
         , None )
     | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed) ->
@@ -359,7 +352,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             (Option.value s_opt ~default:"") at_index MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
             origin_description
-        , None
         , None
         , origin_loc )
     | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _)) ->
@@ -378,7 +370,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
                   (Typ.Procname.to_simplified_string pn)
                   MF.pp_monospaced "@Present" origin_description )
         in
-        (kind_s, description, None, None, origin_loc)
+        (kind_s, description, None, origin_loc)
     | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, origin_loc, _)) ->
         let kind_s, description =
           match ann with
@@ -397,7 +389,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
                   (Typ.Procname.to_simplified_string pn)
                   n MF.pp_monospaced s origin_desc )
         in
-        (kind_s, description, None, None, origin_loc)
+        (kind_s, description, None, origin_loc)
     | Return_annotation_inconsistent (ann, pn, (origin_description, origin_loc, _)) ->
         let kind_s, description =
           match ann with
@@ -415,13 +407,12 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
                   (Typ.Procname.to_simplified_string pn)
                   MF.pp_monospaced "@Present" origin_description )
         in
-        (kind_s, description, None, None, origin_loc)
+        (kind_s, description, None, origin_loc)
     | Return_over_annotated pn ->
         ( IssueType.eradicate_return_over_annotated
         , Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
             (Typ.Procname.to_simplified_string pn)
             MF.pp_monospaced "@Nullable"
-        , None
         , None
         , None )
     | Inconsistent_subclass_return_annotation (pn, opn) ->
@@ -431,7 +422,6 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             (Typ.Procname.to_simplified_string ~withclass:true pn)
             MF.pp_monospaced "@Nullable" MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
-        , None
         , None
         , None )
     | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
@@ -453,11 +443,10 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             MF.pp_monospaced "@Nullable" MF.pp_monospaced "@Nullable" MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
         , None
-        , None
         , None )
   in
   let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
-  st_report_error pname pdesc kind loc ~advice ~field_name ~origin_loc
+  st_report_error pname pdesc kind loc ~field_name ~origin_loc
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
     ~always_report description
 

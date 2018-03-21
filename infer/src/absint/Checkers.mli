@@ -14,7 +14,7 @@ open! IStd
 (** State that persists in the .specs files. *)
 module ST : sig
   val report_error :
-    Tenv.t -> Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?advice:string option
+    Tenv.t -> Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t
     -> ?field_name:Typ.Fieldname.t option -> ?origin_loc:Location.t option
     -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn) -> ?always_report:bool -> string
     -> unit
