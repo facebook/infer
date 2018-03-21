@@ -143,3 +143,9 @@ S* FN_placement_new_aliasing2_bad() {
   delete s; // this deletes alias too
   return alias; // bad, returning freed memory
 }
+
+void destructor_in_loop_ok() {
+  for (int i = 0; i < 10; i++) {
+    S s(1);
+  }
+}

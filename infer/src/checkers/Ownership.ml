@@ -209,24 +209,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Specs.summary
 
-  let extract_base_var = function
-    | HilExp.AccessExpression AddressOf Base base
-    | AccessExpression Base base
-    (* TODO: get rid of second case once AccessExpression conversion is complete *) ->
-        Some base
-    | _ ->
-        None
-
-
-  (* return Some (base) if the given call expressions acquires ownership of a base in [return_opt]
-     or [actuals]; None otherwise *)
-  let acquires_ownership call_exp return_opt actuals =
+  let acquire_ownership call_exp return_opt actuals loc summary astate =
     match call_exp with
     | HilInstr.Direct pname ->
         (* TODO: support new[], malloc, others? *)
-        if Typ.Procname.equal pname BuiltinDecl.__new then return_opt
+        if Typ.Procname.equal pname BuiltinDecl.__new then
+          let astate' = Domain.actuals_add_reads actuals loc summary astate in
+          match return_opt with
+          | Some return_base ->
+              Some (Domain.add (fst return_base) CapabilityDomain.Owned astate')
+          | None ->
+              Some astate'
+        else if Typ.Procname.equal pname BuiltinDecl.__placement_new then
+          match (List.rev actuals, return_opt) with
+          | (HilExp.AccessExpression Base placement_base) :: other_actuals, Some return_base ->
+              (* placement new creates an alias between return var and placement var. model as
+                 return borrowing from placement *)
+              Domain.actuals_add_reads other_actuals loc summary astate
+              |> Domain.add (fst placement_base) CapabilityDomain.Owned
+              |> Domain.borrow_vars (fst return_base) (VarSet.singleton (fst placement_base))
+              |> Option.some
+          | _ ->
+              L.die InternalError "Placement new without placement arg and/or return"
         else if Typ.Procname.is_constructor pname then
-          Option.bind (List.hd actuals) ~f:extract_base_var
+          match actuals with
+          | (HilExp.AccessExpression Base constructed_base) :: other_actuals ->
+              let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
+              Some (Domain.add (fst constructed_base) CapabilityDomain.Owned astate')
+          | _ ->
+              Some astate
         else None
     | HilInstr.Indirect _ ->
         None
@@ -279,18 +290,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* assign to field, array, indirectly with &/*, or a combination *)
         Domain.exp_add_reads rhs_exp loc summary astate
         |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
-    | Call (Some (lhs_var, _), Direct callee_pname, actuals, _, _)
-      when Typ.Procname.equal callee_pname BuiltinDecl.__placement_new -> (
-      match
-        (* placement new creates an alias between lhs_var and placement_var. model as lhs_var
-           borrowing from placement_var *)
-        Option.bind ~f:extract_base_var (List.last actuals)
-      with
-      | Some (placement_var, _) ->
-          Domain.add placement_var CapabilityDomain.Owned astate
-          |> Domain.borrow_vars lhs_var (VarSet.singleton placement_var)
-      | None ->
-          astate )
     | Call (_, Direct callee_pname, [(AccessExpression Base ((lhs_var, _) as lhs_base))], _, loc)
       when transfers_ownership callee_pname ->
         Domain.base_add_read lhs_base loc summary astate
@@ -315,22 +314,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* invoking a lambda; check that it's captured vars are valid *)
         Domain.check_var_lifetime lhs_var loc summary astate ;
         astate
-    | Call (ret_opt, call_exp, actuals, _, loc)
-      -> (
-        let astate' = Domain.actuals_add_reads actuals loc summary astate in
-        match acquires_ownership call_exp ret_opt actuals with
-        | Some (owned_var, _) ->
-            Domain.add owned_var CapabilityDomain.Owned astate'
-        | None ->
-            if is_early_return call_exp then
-              (* thrown exception, abort(), or exit; return _|_ *)
-              Domain.empty
-            else
-              match ret_opt with
-              | Some (base_var, _) ->
-                  Domain.remove base_var astate'
-              | None ->
-                  astate' )
+    | Call (ret_opt, call_exp, actuals, _, loc) -> (
+      match acquire_ownership call_exp ret_opt actuals loc summary astate with
+      | Some astate' ->
+          astate'
+      | None ->
+          if is_early_return call_exp then
+            (* thrown exception, abort(), or exit; return _|_ *)
+            Domain.empty
+          else
+            let astate' = Domain.actuals_add_reads actuals loc summary astate in
+            match ret_opt with Some base -> Domain.remove (fst base) astate' | None -> astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
 end
