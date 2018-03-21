@@ -13,12 +13,12 @@ open! IStd
 (** Symbolic Execution *)
 
 val node :
-  (exn -> unit) -> Tenv.t -> ProcCfg.Exceptional.t -> ProcCfg.Exceptional.node -> Paths.PathSet.t
-  -> Paths.PathSet.t
+  (exn -> unit) -> Exe_env.t -> Tenv.t -> ProcCfg.Exceptional.t -> ProcCfg.Exceptional.node
+  -> Paths.PathSet.t -> Paths.PathSet.t
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 
 val instrs :
-  ?mask_errors:bool -> Tenv.t -> Procdesc.t -> Sil.instr list
+  ?mask_errors:bool -> Exe_env.t -> Tenv.t -> Procdesc.t -> Sil.instr list
   -> (Prop.normal Prop.t * Paths.Path.t) list -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of a sequence of instructions.
     If errors occur and [mask_errors] is true, just treat as skip. *)
@@ -26,7 +26,7 @@ val instrs :
 val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of the divergent pure computation. *)
 
-val proc_call : Specs.summary -> Builtin.t
+val proc_call : Exe_env.t -> Specs.summary -> Builtin.t
 
 val unknown_or_scan_call :
   is_scan:bool -> reason:string -> Typ.t option -> Annot.Item.t -> Builtin.t

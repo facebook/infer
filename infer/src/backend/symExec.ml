@@ -1041,7 +1041,7 @@ let execute_store ?(report_deref_errors= true) pname pdesc tenv lhs_exp typ rhs_
 
 
 (** Execute [instr] with a symbolic heap [prop].*)
-let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
+let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
     : (Prop.normal Prop.t * Paths.Path.t) list =
   let current_pname = Procdesc.get_proc_name current_pdesc in
   State.set_instr instr_ ;
@@ -1096,7 +1096,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
           ; ret_id
           ; args= actual_args
           ; proc_name= callee_pname
-          ; loc }
+          ; loc
+          ; exe_env }
     in
     if is_objc_instance_method then
       handle_objc_instance_method_call_or_skip current_pdesc tenv actual_args path callee_pname
@@ -1104,7 +1105,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
     else skip_res ()
   in
   let call_args prop_ proc_name args ret_id loc =
-    {Builtin.pdesc= current_pdesc; instr; tenv; prop_; path; ret_id; args; proc_name; loc}
+    {Builtin.pdesc= current_pdesc; instr; tenv; prop_; path; ret_id; args; proc_name; loc; exe_env}
   in
   match instr with
   | Sil.Load (id, rhs_exp, typ, loc) ->
@@ -1173,7 +1174,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
           | Some resolved_summary ->
             match reason_to_skip resolved_summary with
             | None ->
-                proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc)
+                proc_call exe_env resolved_summary
+                  (call_args prop_ callee_pname norm_args ret_id loc)
             | Some reason ->
                 let proc_attrs = Specs.get_attributes resolved_summary in
                 let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
@@ -1199,7 +1201,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
               match reason_to_skip callee_summary with
               | None ->
                   let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
-                  proc_call callee_summary handled_args
+                  proc_call exe_env callee_summary handled_args
               | Some reason ->
                   let proc_attrs = Specs.get_attributes callee_summary in
                   let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
@@ -1229,7 +1231,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                 normalize_params tenv current_pname prop_r extended_actual_params
               in
               Logging.d_strln "Calling method specialized with blocks... " ;
-              proc_call resolved_summary
+              proc_call exe_env resolved_summary
                 (call_args prop_r resolved_pname n_extended_actual_params ret_id loc)
           | None ->
               (* Generic fun call with known name *)
@@ -1273,8 +1275,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                             (sym_exec_objc_accessor objc_accessor ret_type)
                       | None, true ->
                           (* If it's an alloc model, call alloc rather than skipping *)
-                          sym_exec_alloc_model callee_pname ret_type tenv ret_id current_pdesc loc
-                            prop path
+                          sym_exec_alloc_model exe_env callee_pname ret_type tenv ret_id
+                            current_pdesc loc prop path
                       | None, false ->
                           let is_objc_instance_method =
                             ProcAttributes.equal_clang_method_kind
@@ -1287,7 +1289,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                       skip_call ~reason:"function or method not found" prop path resolved_pname
                         ret_annots loc ret_id ret_typ_opt n_actual_params
                 else
-                  proc_call
+                  proc_call exe_env
                     (Option.value_exn resolved_summary_opt)
                     (call_args prop resolved_pname n_actual_params ret_id loc)
               in
@@ -1320,7 +1322,8 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
             ; ret_id
             ; args= n_actual_params
             ; proc_name= callee_pname
-            ; loc } )
+            ; loc
+            ; exe_env } )
   | Sil.Nullify (pvar, _)
     -> (
       let eprop = Prop.expose prop_ in
@@ -1377,12 +1380,12 @@ and diverge prop path =
 
 (** Symbolic execution of a sequence of instructions.
     If errors occur and [mask_errors] is true, just treat as skip. *)
-and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
+and instrs ?(mask_errors= false) exe_env tenv pdesc instrs ppl =
   let exe_instr instr (p, path) =
     L.d_str "Executing Generated Instruction " ;
     Sil.d_instr instr ;
     L.d_ln () ;
-    try sym_exec tenv pdesc instr p path with exn ->
+    try sym_exec exe_env tenv pdesc instr p path with exn ->
       reraise_if exn ~f:(fun () -> not mask_errors || not (SymOp.exn_not_failure exn)) ;
       let error = Exceptions.recognize_exception exn in
       let loc =
@@ -1575,7 +1578,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
 
 
 and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos)
-    {Builtin.pdesc; tenv; prop_; path; args; proc_name; loc} =
+    {Builtin.pdesc; tenv; prop_; path; args; proc_name; loc; exe_env} =
   (* from clang's lib/Sema/SemaExpr.cpp: *)
   (* "nullPos" is the number of formal parameters at the end which *)
   (* effectively count as part of the variadic arguments.  This is *)
@@ -1594,7 +1597,7 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
-    try instrs tenv pdesc [load_instr] result with e when SymOp.exn_not_failure e ->
+    try instrs exe_env tenv pdesc [load_instr] result with e when SymOp.exn_not_failure e ->
       reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
       let err_desc =
@@ -1674,7 +1677,7 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
   f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop |> List.map ~f:(fun p -> (p, path))
 
 
-and sym_exec_alloc_model pname ret_typ tenv ret_id pdesc loc prop path : Builtin.ret_typ =
+and sym_exec_alloc_model exe_env pname ret_typ tenv ret_id pdesc loc prop path : Builtin.ret_typ =
   let alloc_source_function_arg = (Exp.Const (Const.Cfun pname), Typ.mk Tvoid) in
   let args =
     let sizeof_exp =
@@ -1686,11 +1689,11 @@ and sym_exec_alloc_model pname ret_typ tenv ret_id pdesc loc prop path : Builtin
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.malloc_no_fail) in
   let alloc_instr = Sil.Call (ret_id, alloc_fun, args, loc, CallFlags.default) in
   L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
-  instrs tenv pdesc [alloc_instr] [(prop, path)]
+  instrs exe_env tenv pdesc [alloc_instr] [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)
-and proc_call callee_summary
+and proc_call exe_env callee_summary
     {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc} =
   let caller_pname = Procdesc.get_proc_name pdesc in
   let callee_attrs = Specs.get_attributes callee_summary in
@@ -1737,15 +1740,15 @@ and proc_call callee_summary
   | Language.Clang, ProcAttributes.OBJC_INSTANCE ->
       handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname
         loc path
-        (Tabulation.exe_function_call callee_summary)
+        (Tabulation.exe_function_call exe_env callee_summary)
   | _ ->
       (* non-objective-c method call. Standard tabulation *)
-      Tabulation.exe_function_call callee_summary tenv ret_id pdesc callee_pname loc actual_params
-        pre path
+      Tabulation.exe_function_call exe_env callee_summary tenv ret_id pdesc callee_pname loc
+        actual_params pre path
 
 
 (** perform symbolic execution for a single prop, and check for junk *)
-and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t), path)
+and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t), path)
     : Paths.PathSet.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let prop_primed_to_normal p =
@@ -1804,7 +1807,8 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
     let res_list =
       Config.run_with_abs_val_equal_zero
         (* no exp abstraction during sym exe *)
-          (fun () -> sym_exec tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path )
+          (fun () ->
+          sym_exec exe_env tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path )
         ()
     in
     let res_list_nojunk =
@@ -1829,7 +1833,7 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
-let node handle_exn tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.PathSet.t)
+let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.PathSet.t)
     : Paths.PathSet.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
@@ -1843,7 +1847,7 @@ let node handle_exn tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.
         Sil.d_instr instr ;
         L.d_strln " due to exception" ;
         Paths.PathSet.from_renamed_list [(p, tr)] )
-      else sym_exec_wrapper handle_exn tenv proc_cfg instr (p, tr)
+      else sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr (p, tr)
     in
     Paths.PathSet.union pset2 pset1
   in

@@ -20,7 +20,8 @@ type args =
   ; ret_id: (Ident.t * Typ.t) option
   ; args: (Exp.t * Typ.t) list
   ; proc_name: Typ.Procname.t
-  ; loc: Location.t }
+  ; loc: Location.t
+  ; exe_env: Exe_env.t }
 
 type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
 

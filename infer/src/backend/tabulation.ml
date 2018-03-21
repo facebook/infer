@@ -1084,37 +1084,29 @@ let missing_sigma_need_adding_to_tenv tenv hpreds =
   List.exists hpreds ~f:missing_hpred_need_adding_to_tenv
 
 
-let add_missing_field_to_tenv ~missing_sigma caller_tenv callee_pname hpreds =
+let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hpreds =
   (* if hpreds are missing_sigma, we may not need to add the fields to the tenv, so we check that first *)
   let add_fields =
     if missing_sigma then missing_sigma_need_adding_to_tenv caller_tenv hpreds else true
   in
   if add_fields then
-    match Ondemand.get_proc_desc callee_pname with
-    | Some pdesc ->
-        let attrs = Procdesc.get_attributes pdesc in
-        let source_file = attrs.ProcAttributes.loc.Location.file in
-        let callee_tenv_opt = Tenv.load source_file in
-        let add_field_in_hpred hpred =
-          match (callee_tenv_opt, hpred) with
-          | ( Some callee_tenv
-            , Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) )
-                -> (
-            match Tenv.lookup callee_tenv name with
-            | Some {fields} ->
-                List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
-            | None ->
-                () )
-          | _ ->
-              ()
-        in
-        List.iter ~f:add_field_in_hpred hpreds
-    | None ->
-        ()
+    let callee_tenv = Exe_env.get_tenv exe_env callee_pname in
+    let add_field_in_hpred hpred =
+      match hpred with
+      | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) -> (
+        match Tenv.lookup callee_tenv name with
+        | Some {fields} ->
+            List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
+        | None ->
+            () )
+      | _ ->
+          ()
+    in
+    List.iter ~f:add_field_in_hpred hpreds
 
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path_pre
+let exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path_pre
     (spec: Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let posts = mk_posts tenv ret_id_opt prop callee_pname spec.Specs.posts in
@@ -1213,10 +1205,11 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
           in
           if missing_fld_objc_class <> [] then (
             L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
-            add_missing_field_to_tenv ~missing_sigma:false tenv callee_pname missing_fld_objc_class ) ;
+            add_missing_field_to_tenv ~missing_sigma:false exe_env tenv callee_pname
+              missing_fld_objc_class ) ;
           if missing_sigma_objc_class <> [] then (
             L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
-            add_missing_field_to_tenv ~missing_sigma:true tenv callee_pname
+            add_missing_field_to_tenv ~missing_sigma:true exe_env tenv callee_pname
               missing_sigma_objc_class ) ;
           if not !Config.footprint && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
@@ -1435,8 +1428,8 @@ let exe_call_postprocess tenv ret_id trace_call caller_pname callee_pname callee
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call callee_summary tenv ret_id_opt caller_pdesc callee_pname loc actual_params
-    prop path =
+let exe_function_call exe_env callee_summary tenv ret_id_opt caller_pdesc callee_pname loc
+    actual_params prop path =
   let callee_attrs = Specs.get_attributes callee_summary in
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let trace_call = log_call_trace caller_pname callee_pname loc in
@@ -1449,8 +1442,8 @@ let exe_function_call callee_summary tenv ret_id_opt caller_pdesc callee_pname l
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path spec actual_params
-      formal_params
+    exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path spec
+      actual_params formal_params
   in
   let results = List.map ~f:exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id_opt trace_call caller_pname callee_pname callee_attrs loc

@@ -375,14 +375,15 @@ let instrs_get_normal_vars instrs =
 
 
 (** Perform symbolic execution for a node starting from an initial prop *)
-let do_symbolic_execution proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.node)
+let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.node)
     (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
   State.mark_execution_start node ;
   let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs) ;
   let pset =
-    SymExec.node handle_exn tenv proc_cfg node (Paths.PathSet.from_renamed_list [(prop, path)])
+    SymExec.node handle_exn exe_env tenv proc_cfg node
+      (Paths.PathSet.from_renamed_list [(prop, path)])
   in
   L.d_strln ".... After Symbolic Execution ...." ;
   Propset.d prop (Paths.PathSet.to_propset tenv pset) ;
@@ -400,7 +401,7 @@ let mark_visited summary node =
   else stats.Specs.nodes_visited_re <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_re
 
 
-let forward_tabulate tenv proc_cfg wl =
+let forward_tabulate exe_env tenv proc_cfg wl =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let handle_exn_node curr_node exn =
     Exceptions.print_exception_html "Failure of symbolic execution: " exn ;
@@ -456,7 +457,7 @@ let forward_tabulate tenv proc_cfg wl =
     L.d_increase_indent 1 ;
     try
       State.reset_diverging_states_node () ;
-      let pset = do_symbolic_execution proc_cfg handle_exn tenv curr_node prop path in
+      let pset = do_symbolic_execution exe_env proc_cfg handle_exn tenv curr_node prop path in
       let normal_succ_nodes = ProcCfg.Exceptional.normal_succs proc_cfg curr_node in
       let exn_succ_nodes = ProcCfg.Exceptional.exceptional_succs proc_cfg curr_node in
       propagate_nodes_divergence tenv proc_cfg pset normal_succ_nodes exn_succ_nodes wl ;
@@ -746,8 +747,8 @@ let initial_prop_from_pre tenv curr_f pre =
 
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop wl tenv proc_cfg init_node (precondition: Prop.normal Specs.Jprop.t)
-    : Prop.normal Specs.spec option =
+let execute_filter_prop exe_env wl tenv proc_cfg init_node
+    (precondition: Prop.normal Specs.Jprop.t) : Prop.normal Specs.spec option =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
@@ -765,7 +766,7 @@ let execute_filter_prop wl tenv proc_cfg init_node (precondition: Prop.normal Sp
   try
     Worklist.add wl init_node ;
     ignore (path_set_put_todo wl init_node init_edgeset) ;
-    forward_tabulate tenv proc_cfg wl ;
+    forward_tabulate exe_env tenv proc_cfg wl ;
     do_before_node 0 init_node ;
     L.d_strln_color Green
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
@@ -812,7 +813,7 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exceptional.t)
+let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exceptional.t)
     : exe_phase =
   let pname = Specs.get_proc_name summary in
   let start_node = ProcCfg.Exceptional.start_node proc_cfg in
@@ -844,7 +845,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
       L.d_decrease_indent 1 ;
       Worklist.add wl start_node ;
       ignore (path_set_put_todo wl start_node init_edgeset) ;
-      forward_tabulate tenv proc_cfg wl
+      forward_tabulate exe_env tenv proc_cfg wl
     in
     let get_results (wl: Worklist.t) () =
       State.process_execution_failures Reporting.log_warning_deprecated pname ;
@@ -872,7 +873,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
     let go () =
       let filter p =
         let wl = path_set_create_worklist proc_cfg in
-        let speco = execute_filter_prop wl tenv proc_cfg start_node p in
+        let speco = execute_filter_prop exe_env wl tenv proc_cfg start_node p in
         (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in
@@ -1112,12 +1113,12 @@ let update_summary tenv prev_summary specs phase res =
 
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc tenv proc_cfg : Specs.summary =
+let analyze_proc exe_env tenv proc_cfg : Specs.summary =
   let proc_desc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let proc_name = Procdesc.get_proc_name proc_desc in
   reset_global_values proc_desc ;
   let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
-  let go, get_results = perform_analysis_phase tenv summary proc_cfg in
+  let go, get_results = perform_analysis_phase exe_env tenv summary proc_cfg in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let updated_summary = update_summary tenv summary specs phase res in
@@ -1185,22 +1186,22 @@ let perform_transition proc_cfg tenv proc_name =
       ()
 
 
-let analyze_procedure_aux tenv proc_desc =
+let analyze_procedure_aux exe_env tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   Preanal.do_preanalysis proc_desc tenv ;
-  let summaryfp = Config.run_in_footprint_mode (analyze_proc tenv) proc_cfg in
+  let summaryfp = Config.run_in_footprint_mode (analyze_proc exe_env tenv) proc_cfg in
   Specs.add_summary proc_name summaryfp ;
   perform_transition proc_cfg tenv proc_name ;
-  let summaryre = Config.run_in_re_execution_mode (analyze_proc tenv) proc_cfg in
+  let summaryre = Config.run_in_re_execution_mode (analyze_proc exe_env tenv) proc_cfg in
   Specs.add_summary proc_name summaryre ;
   summaryre
 
 
-let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
+let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
-  ( try ignore (analyze_procedure_aux tenv proc_desc) with exn ->
+  ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->
       reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name

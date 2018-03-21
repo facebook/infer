@@ -19,7 +19,8 @@ type proc_callback_args =
   ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
   ; summary: Specs.summary
-  ; proc_desc: Procdesc.t }
+  ; proc_desc: Procdesc.t
+  ; exe_env: Exe_env.t }
 
 type proc_callback_t = proc_callback_args -> Specs.summary
 
@@ -67,7 +68,7 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
   List.fold ~init:summary
     ~f:(fun summary (language, resolved, proc_callback) ->
       if Language.equal language procedure_language && (resolved || not is_specialized) then
-        proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
+        proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc; exe_env}
       else summary )
     !procedure_callbacks
 

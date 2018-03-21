@@ -18,12 +18,12 @@ module F = Format
 type t = Builtin.registered
 
 (** model va_arg as always returning 0 *)
-let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; ret_id; args; loc}
+let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; ret_id; args; loc; exe_env}
     : Builtin.ret_typ =
   match (args, ret_id) with
   | [_; _; (lexp3, typ3)], _ ->
       let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
-      SymExec.instrs ~mask_errors:true tenv pdesc [instr'] [(prop_, path)]
+      SymExec.instrs ~mask_errors:true exe_env tenv pdesc [instr'] [(prop_, path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -615,7 +615,7 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
   else [(prop_alloc, path)]
 
 
-let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc} as r) : Builtin.ret_typ =
+let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r) : Builtin.ret_typ =
   match args with
   | type_info_exp :: rest
     -> (
@@ -636,14 +636,15 @@ let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc} as r) : Builti
           let set_instr =
             Sil.Store (field_exp, Typ.mk Tvoid, Exp.Const (Const.Cstr typ_string), loc)
           in
-          SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
+          SymExec.instrs ~mask_errors:true exe_env tenv pdesc [set_instr] res
       | _ ->
           res )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_pthread_create ({Builtin.tenv; prop_; path; args} as builtin_args) : Builtin.ret_typ =
+let execute_pthread_create ({Builtin.tenv; prop_; path; args; exe_env} as builtin_args)
+    : Builtin.ret_typ =
   match args with
   | [_; _; start_routine; arg]
     -> (
@@ -659,7 +660,8 @@ let execute_pthread_create ({Builtin.tenv; prop_; path; args} as builtin_args) :
           | None ->
               assert false
           | Some callee_summary ->
-              SymExec.proc_call callee_summary {builtin_args with args= [(routine_arg, snd arg)]} )
+              SymExec.proc_call exe_env callee_summary
+                {builtin_args with args= [(routine_arg, snd arg)]} )
       | _ ->
           L.d_str "pthread_create: unknown function " ;
           Sil.d_exp routine_name ;
@@ -747,7 +749,7 @@ let execute___infer_assume {Builtin.tenv; prop_; path; args} : Builtin.ret_typ =
 
 
 (* creates a named error state *)
-let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc} : Builtin.ret_typ =
+let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ =
   let error_str =
     match args with
     | [(lexp_msg, _)] -> (
@@ -762,11 +764,11 @@ let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc} : Builtin
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv pdesc [set_instr] [(prop_, path)]
 
 
 (* translate builtin assertion failure *)
-let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc} : Builtin.ret_typ =
+let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ =
   let error_str =
     match List.length args with
     | 4 ->
@@ -777,10 +779,11 @@ let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc} : Builti
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv pdesc [set_instr] [(prop_, path)]
 
 
-let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt {Builtin.pdesc; tenv; ret_id; loc} =
+let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
+    {Builtin.pdesc; tenv; ret_id; loc; exe_env} =
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.__objc_alloc_no_fail) in
   let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
   let sizeof_typ = Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
@@ -794,7 +797,7 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt {Builtin.pdesc; tenv
   let alloc_instr =
     Sil.Call (ret_id, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)
   in
-  SymExec.instrs tenv pdesc [alloc_instr] symb_state
+  SymExec.instrs exe_env tenv pdesc [alloc_instr] symb_state
 
 
 (* NSArray models *)
