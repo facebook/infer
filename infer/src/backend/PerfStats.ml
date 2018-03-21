@@ -29,6 +29,8 @@ type time_perf = {rtime: float; utime: float; stime: float; cutime: float; cstim
 
 type perf_stats = {mem: mem_perf option; time: time_perf option}
 
+type stats_kind = Time of Mtime_clock.counter * Unix.process_times | Memory | TimeAndMemory
+
 type stats_type =
   | ClangLinters
   | ClangFrontend
@@ -230,13 +232,16 @@ let compute_mem_stats () =
   (stats, mem)
 
 
-let compute_time_stats () =
+let compute_time_stats ?rtime_counter (initial_times: Unix.process_times) =
   let exit_times = Unix.times () in
-  let rtime = Mtime_clock.elapsed () |> Mtime.Span.to_s in
-  let utime = exit_times.tms_utime -. Utils.initial_times.tms_utime in
-  let stime = exit_times.tms_stime -. Utils.initial_times.tms_stime in
-  let cutime = exit_times.tms_cutime -. Utils.initial_times.tms_cutime in
-  let cstime = exit_times.tms_cstime -. Utils.initial_times.tms_cstime in
+  let rtime_span = Mtime_clock.elapsed () in
+  let rtime =
+    Option.value_map ~default:rtime_span ~f:Mtime_clock.count rtime_counter |> Mtime.Span.to_s
+  in
+  let utime = exit_times.tms_utime -. initial_times.tms_utime in
+  let stime = exit_times.tms_stime -. initial_times.tms_stime in
+  let cutime = exit_times.tms_cutime -. initial_times.tms_cutime in
+  let cstime = exit_times.tms_cstime -. initial_times.tms_cstime in
   let stats = Some {rtime; utime; stime; cutime; cstime} in
   let time =
     Some
@@ -249,9 +254,16 @@ let compute_time_stats () =
   (stats, time)
 
 
-let compute_stats ?(include_mem= true) ?(include_time= true) source_file stats_type =
-  let mem, mem_perf = if include_mem then compute_mem_stats () else (None, None) in
-  let time, time_perf = if include_time then compute_time_stats () else (None, None) in
+let compute_stats stats_kind source_file stats_type =
+  let (mem, mem_perf), (time, time_perf) =
+    match stats_kind with
+    | Time (rtime_counter, initial_times) ->
+        ((None, None), compute_time_stats ~rtime_counter initial_times)
+    | Memory ->
+        (compute_mem_stats (), (None, None))
+    | TimeAndMemory ->
+        (compute_mem_stats (), compute_time_stats Utils.initial_times)
+  in
   let stats = {mem; time} in
   let stats_event =
     EventLogger.PerformanceStats
@@ -264,9 +276,9 @@ let compute_stats ?(include_mem= true) ?(include_time= true) source_file stats_t
   (stats, stats_event)
 
 
-let report ?include_mem ?include_time file source_file stats_type () =
+let report stats_kind source_file file stats_type () =
   try
-    let stats, stats_event = compute_stats ?include_mem ?include_time source_file stats_type in
+    let stats, stats_event = compute_stats stats_kind source_file stats_type in
     let json_stats = to_json stats in
     EventLogger.log stats_event ;
     (* We always log to EventLogger, but json files are unnecessary to log outside of developer mode *)
@@ -286,24 +298,34 @@ let report ?include_mem ?include_time file source_file stats_type () =
       (Printexc.get_backtrace ())
 
 
-let registered_files = ref String.Set.empty
+let registered = String.Table.create ~size:4 ()
 
-let handle_report ?include_mem ?include_time filename ?source_file stats_type ~f =
+let get_relative_path filename stats_type =
   let dirname = dirname_of_stats_type stats_type in
-  let relative_path = Filename.concat dirname filename in
+  Filename.concat dirname filename
+
+
+let register_report stats_kind ?source_file filename stats_type =
+  let relative_path = get_relative_path filename stats_type in
   let absolute_path = Filename.concat Config.results_dir relative_path in
+  let f = report stats_kind source_file absolute_path stats_type in
   (* make sure to not double register the same perf stat report *)
-  if not (String.Set.mem !registered_files relative_path) then (
-    registered_files := String.Set.add !registered_files relative_path ;
-    f (report ?include_mem ?include_time absolute_path source_file stats_type) relative_path )
+  match String.Table.add registered ~key:relative_path ~data:f with
+  | `Ok ->
+      ()
+  | `Duplicate ->
+      L.d_warning "Attempting to register same perf stats report multiple times"
 
 
-let report_now ?include_mem ?include_time filename ?source_file stats_type =
-  handle_report ?include_mem ?include_time filename ?source_file stats_type ~f:(fun report _ ->
-      report () )
+let dummy_reporter () = ()
+
+let get_reporter filename stats_type =
+  let relative_path = get_relative_path filename stats_type in
+  String.Table.find registered relative_path |> Option.value ~default:dummy_reporter
 
 
-let register_report_at_exit ?include_mem ?include_time filename ?source_file stats_type =
-  handle_report ?include_mem ?include_time filename ?source_file stats_type ~f:
-    (fun report relative_path ->
-      Epilogues.register ~f:report ("stats reporting in " ^ relative_path) )
+let register_report_at_exit ?source_file filename stats_type =
+  register_report TimeAndMemory ?source_file filename stats_type ;
+  Epilogues.register
+    ~f:(get_reporter filename stats_type)
+    (string_of_stats_type stats_type ^ "stats reporting in " ^ filename)

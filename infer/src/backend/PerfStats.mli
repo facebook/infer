@@ -13,6 +13,8 @@ open! IStd
 
 type perf_stats
 
+type stats_kind = Time of Mtime_clock.counter * Unix.process_times | Memory | TimeAndMemory
+
 type stats_type =
   | ClangLinters
   | ClangFrontend
@@ -27,12 +29,11 @@ val from_json : Yojson.Basic.json -> perf_stats
 
 val aggregate : perf_stats list -> Yojson.Basic.json
 
-val report_now :
-  ?include_mem:bool -> ?include_time:bool -> string -> ?source_file:SourceFile.t -> stats_type
-  -> unit
-(** Create performance report immediately *)
+val register_report : stats_kind -> ?source_file:SourceFile.t -> string -> stats_type -> unit
+(** Register performance reporting function *)
 
-val register_report_at_exit :
-  ?include_mem:bool -> ?include_time:bool -> string -> ?source_file:SourceFile.t -> stats_type
-  -> unit
+val get_reporter : string -> stats_type -> unit -> unit
+(** Get reporting function that can be called at any time to create a performance report *)
+
+val register_report_at_exit : ?source_file:SourceFile.t -> string -> stats_type -> unit
 (** Create performance report when the current process terminates *)
