@@ -1,4 +1,4 @@
-B ../_build/default/istd
+B _build/default/istd/.InferStdlib.objs
 PKG ANSITerminal
 PKG atdgen
 PKG cmdliner

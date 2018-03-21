@@ -182,7 +182,7 @@ fi
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 # check the version of OCaml
-AC_ASSERT_OCAML_MIN_VERSION([4.05.0])
+AC_ASSERT_OCAML_MIN_VERSION([4.06.1])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
 AC_CHECK_TOOL([OCAMLBUILD], [ocamlbuild], [no])
 AC_ASSERT_PROG([ocamlbuild], [$OCAMLBUILD])

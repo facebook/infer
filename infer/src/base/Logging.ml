@@ -33,6 +33,7 @@ let dup_formatter fmt1 fmt2 =
   let f = copy_formatter fmt1 in
   F.pp_set_formatter_out_functions f
     { F.out_string= (fun s p n -> out_funs1.out_string s p n ; out_funs2.out_string s p n)
+    ; out_indent= (fun n -> out_funs1.out_indent n ; out_funs2.out_indent n)
     ; out_flush= (fun () -> out_funs1.out_flush () ; out_funs2.out_flush ())
     ; out_newline= (fun () -> out_funs1.out_newline () ; out_funs2.out_newline ())
     ; out_spaces= (fun n -> out_funs1.out_spaces n ; out_funs2.out_spaces n) } ;
@@ -74,6 +75,7 @@ let mk_file_formatter file_fmt category0 =
     print_prefix_if_newline () ;
     out_functions_orig.out_string s p n
   in
+  let out_indent n = print_prefix_if_newline () ; out_functions_orig.out_indent n in
   let out_newline () =
     print_prefix_if_newline () ;
     out_functions_orig.out_newline () ;
@@ -81,7 +83,7 @@ let mk_file_formatter file_fmt category0 =
   in
   let out_spaces n = print_prefix_if_newline () ; out_functions_orig.out_spaces n in
   F.pp_set_formatter_out_functions f
-    {F.out_string; out_flush= out_functions_orig.out_flush; out_newline; out_spaces} ;
+    {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces} ;
   f
 
 

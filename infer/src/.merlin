@@ -1,6 +1,8 @@
-B _build/default
-B _build/default/atd
-B _build/default/istd
+B _build/default/.InferModules.objs
+B _build/default/.infer.eobjs
+B _build/default/.infertop.eobjs
+B _build/default/atd/.InferGenerated.objs
+B _build/default/istd/.InferStdlib.objs
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
 FLG -w +a-4-9-40-41-42-44-45-48-60
 FLG -open InferStdlib -open InferGenerated -open InferModules -open IStd

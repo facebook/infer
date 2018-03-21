@@ -4,6 +4,11 @@
 ;; wants to write "S ." in .merlin but that makes merlin use the
 ;; copied source files in _build/ instead of only using the original
 ;; files.
+;;
+;; The generated .merlin also doesn't know about the ppx used. This is
+;; because some of our source files use some ppx and others do not, and
+;; since jbuilder is trying to find a configuration that works for all the
+;; files it only keeps the pxx common to all files.
 
 (context ((switch @OPAMSWITCH@) (name default)))
 (context ((switch @OPAMSWITCH@) (name opt)))

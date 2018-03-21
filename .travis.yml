@@ -11,7 +11,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install opam; fi
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 60 ./build-infer.sh --yes java --opam-switch 4.05.0 --only-setup-opam; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 60 ./build-infer.sh --yes java --opam-switch 4.06.1 --only-setup-opam; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam config env`; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam pin add -y --no-action -k git infer .; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y infer; fi
