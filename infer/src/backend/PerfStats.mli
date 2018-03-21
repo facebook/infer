@@ -27,8 +27,12 @@ val from_json : Yojson.Basic.json -> perf_stats
 
 val aggregate : perf_stats list -> Yojson.Basic.json
 
-val report_now : string -> ?source_file:SourceFile.t -> stats_type -> unit
+val report_now :
+  ?include_mem:bool -> ?include_time:bool -> string -> ?source_file:SourceFile.t -> stats_type
+  -> unit
 (** Create performance report immediately *)
 
-val register_report_at_exit : string -> ?source_file:SourceFile.t -> stats_type -> unit
+val register_report_at_exit :
+  ?include_mem:bool -> ?include_time:bool -> string -> ?source_file:SourceFile.t -> stats_type
+  -> unit
 (** Create performance report when the current process terminates *)

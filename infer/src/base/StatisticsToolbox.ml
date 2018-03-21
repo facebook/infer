@@ -31,29 +31,34 @@ let to_json s =
 
 
 let compute_statistics values =
-  let num_elements = List.length values in
-  let sum = List.fold ~f:(fun acc v -> acc +. v) ~init:0.0 values in
-  let average = sum /. float_of_int num_elements in
-  let values_arr = Array.of_list values in
-  Array.sort
-    ~cmp:(fun a b -> if Float.equal a b then 0 else if a -. b < 0.0 then -1 else 1)
-    values_arr ;
-  let percentile pct =
-    assert (pct >= 0.0 && pct <= 1.0) ;
-    assert (num_elements > 0) ;
-    let max_index = num_elements - 1 in
-    let pct_index = float_of_int max_index *. pct in
-    let low_index = int_of_float (Pervasives.floor pct_index) in
-    let high_index = int_of_float (Pervasives.ceil pct_index) in
-    let low = values_arr.(low_index) in
-    let high = values_arr.(high_index) in
-    (low +. high) /. 2.0
-  in
-  { sum
-  ; avg= average
-  ; min= percentile 0.0
-  ; p10= percentile 0.10
-  ; median= percentile 0.50
-  ; p75= percentile 0.75
-  ; max= percentile 1.0
-  ; count= num_elements }
+  match values with
+  | [] ->
+      None
+  | _ :: _ as values ->
+      let num_elements = List.length values in
+      let sum = List.fold ~f:(fun acc v -> acc +. v) ~init:0.0 values in
+      let average = sum /. float_of_int num_elements in
+      let values_arr = Array.of_list values in
+      Array.sort
+        ~cmp:(fun a b -> if Float.equal a b then 0 else if a -. b < 0.0 then -1 else 1)
+        values_arr ;
+      let percentile pct =
+        assert (pct >= 0.0 && pct <= 1.0) ;
+        assert (num_elements > 0) ;
+        let max_index = num_elements - 1 in
+        let pct_index = float_of_int max_index *. pct in
+        let low_index = int_of_float (Pervasives.floor pct_index) in
+        let high_index = int_of_float (Pervasives.ceil pct_index) in
+        let low = values_arr.(low_index) in
+        let high = values_arr.(high_index) in
+        (low +. high) /. 2.0
+      in
+      Some
+        { sum
+        ; avg= average
+        ; min= percentile 0.0
+        ; p10= percentile 0.10
+        ; median= percentile 0.50
+        ; p75= percentile 0.75
+        ; max= percentile 1.0
+        ; count= num_elements }

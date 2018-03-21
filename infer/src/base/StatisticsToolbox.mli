@@ -13,4 +13,4 @@ type t
 
 val to_json : t -> Yojson.Basic.json
 
-val compute_statistics : float list -> t
+val compute_statistics : float list -> t option

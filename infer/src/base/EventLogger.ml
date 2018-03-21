@@ -186,16 +186,8 @@ let create_frontend_exception_row base record =
             ; string_of_int record.source_location_end.col ])
 
 
-type performance_stats =
-  { lang: string
-  ; source_file: SourceFile.t option
-  ; stats_type: string
-  ; real_time: float
-  ; user_time: float
-  ; sys_time: float
-  ; children_user_time: float
-  ; children_sys_time: float
-  ; minor_heap_mem: float
+type mem_perf =
+  { minor_heap_mem: float
   ; promoted_minor_heap_mem: float
   ; major_heap_mem: float
   ; total_allocated_mem: float
@@ -206,28 +198,47 @@ type performance_stats =
   ; stack_size: int
   ; minor_heap_size: int }
 
+type time_perf =
+  { real_time: float
+  ; user_time: float
+  ; sys_time: float
+  ; children_user_time: float
+  ; children_sys_time: float }
+
+type performance_stats =
+  { lang: string
+  ; source_file: SourceFile.t option
+  ; stats_type: string
+  ; mem_perf: mem_perf option
+  ; time_perf: time_perf option }
+
 let create_performance_stats_row base record =
   let open JsonBuilder in
+  let add_mem_perf t =
+    Option.value_map ~default:t record.mem_perf ~f:(fun mem_perf ->
+        t |> add_float ~key:"minor_heap_mem" ~data:mem_perf.minor_heap_mem
+        |> add_float ~key:"promoted_minor_heap_mem" ~data:mem_perf.promoted_minor_heap_mem
+        |> add_float ~key:"major_heap_mem" ~data:mem_perf.major_heap_mem
+        |> add_float ~key:"total_allocated_mem" ~data:mem_perf.total_allocated_mem
+        |> add_int ~key:"minor_collections" ~data:mem_perf.minor_collections
+        |> add_int ~key:"major_collections" ~data:mem_perf.major_collections
+        |> add_int ~key:"heap_compactions" ~data:mem_perf.heap_compactions
+        |> add_int ~key:"top_heap_size" ~data:mem_perf.top_heap_size
+        |> add_int ~key:"stack_size" ~data:mem_perf.stack_size
+        |> add_int ~key:"minor_heap_size" ~data:mem_perf.minor_heap_size )
+  in
+  let add_time_perf t =
+    Option.value_map ~default:t record.time_perf ~f:(fun time_perf ->
+        t |> add_float ~key:"real_time" ~data:time_perf.real_time
+        |> add_float ~key:"user_time" ~data:time_perf.user_time
+        |> add_float ~key:"sys_time" ~data:time_perf.sys_time
+        |> add_float ~key:"children_user_time" ~data:time_perf.children_user_time
+        |> add_float ~key:"children_sys_time" ~data:time_perf.children_sys_time )
+  in
   base |> add_string ~key:"lang" ~data:record.lang
   |> add_string_opt ~key:"source_file"
        ~data:(Option.map ~f:SourceFile.to_rel_path record.source_file)
-  |> add_string ~key:"stats_type" ~data:record.stats_type
-  |> add_float ~key:"real_time" ~data:record.real_time
-  |> add_float ~key:"user_time" ~data:record.user_time
-  |> add_float ~key:"sys_time" ~data:record.sys_time
-  |> add_float ~key:"children_user_time" ~data:record.children_user_time
-  |> add_float ~key:"children_sys_time" ~data:record.children_sys_time
-  |> add_float ~key:"minor_heap_mem" ~data:record.minor_heap_mem
-  |> add_float ~key:"promoted_minor_heap_mem" ~data:record.promoted_minor_heap_mem
-  |> add_float ~key:"major_heap_mem" ~data:record.major_heap_mem
-  |> add_float ~key:"total_allocated_mem" ~data:record.total_allocated_mem
-  |> add_int ~key:"minor_collections" ~data:record.minor_collections
-  |> add_int ~key:"major_collections" ~data:record.major_collections
-  |> add_int ~key:"heap_compactions" ~data:record.heap_compactions
-  |> add_int ~key:"top_heap_size" ~data:record.top_heap_size
-  |> add_int ~key:"stack_size" ~data:record.stack_size
-  |> add_int ~key:"minor_heap_size" ~data:record.minor_heap_size
-  |> add_string ~key:"stats_type" ~data:record.stats_type
+  |> add_string ~key:"stats_type" ~data:record.stats_type |> add_mem_perf |> add_time_perf
 
 
 type procedures_translated =

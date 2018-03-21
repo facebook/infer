@@ -43,16 +43,8 @@ type frontend_exception =
   ; source_location_start: Location.t
   ; source_location_end: Location.t }
 
-type performance_stats =
-  { lang: string
-  ; source_file: SourceFile.t option
-  ; stats_type: string
-  ; real_time: float
-  ; user_time: float
-  ; sys_time: float
-  ; children_user_time: float
-  ; children_sys_time: float
-  ; minor_heap_mem: float
+type mem_perf =
+  { minor_heap_mem: float
   ; promoted_minor_heap_mem: float
   ; major_heap_mem: float
   ; total_allocated_mem: float
@@ -62,6 +54,20 @@ type performance_stats =
   ; top_heap_size: int
   ; stack_size: int
   ; minor_heap_size: int }
+
+type time_perf =
+  { real_time: float
+  ; user_time: float
+  ; sys_time: float
+  ; children_user_time: float
+  ; children_sys_time: float }
+
+type performance_stats =
+  { lang: string
+  ; source_file: SourceFile.t option
+  ; stats_type: string
+  ; mem_perf: mem_perf option
+  ; time_perf: time_perf option }
 
 type procedures_translated =
   { lang: string
