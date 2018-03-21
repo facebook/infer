@@ -1064,27 +1064,53 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
     props
 
 
-let add_missing_field_to_tenv tenv callee_pname hpreds =
-  match Ondemand.get_proc_desc callee_pname with
-  | Some pdesc ->
-      let attrs = Procdesc.get_attributes pdesc in
-      let source_file = attrs.ProcAttributes.loc.Location.file in
-      let callee_tenv_opt = Tenv.load source_file in
-      let add_field_in_hpred hpred =
-        match (callee_tenv_opt, hpred) with
-        | ( Some callee_tenv
-          , Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) ) -> (
-          match Tenv.lookup callee_tenv name with
-          | Some {fields} ->
-              List.iter ~f:(fun field -> Tenv.add_field tenv name field) fields
-          | None ->
-              () )
-        | _ ->
-            ()
-      in
-      List.iter ~f:add_field_in_hpred hpreds
-  | None ->
-      ()
+let missing_sigma_need_adding_to_tenv tenv hpreds =
+  let field_is_missing struc (field, _) =
+    not
+      (List.exists struc.Typ.Struct.fields ~f:(fun (fname, _, _) -> Typ.Fieldname.equal fname field))
+  in
+  let missing_hpred_need_adding_to_tenv hpred =
+    match hpred with
+    | Sil.Hpointsto (_, Sil.Estruct (missing_fields, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}})
+          -> (
+      match Tenv.lookup tenv name with
+      | Some struc ->
+          List.exists ~f:(field_is_missing struc) missing_fields
+      | _ ->
+          false )
+    | _ ->
+        false
+  in
+  List.exists hpreds ~f:missing_hpred_need_adding_to_tenv
+
+
+let add_missing_field_to_tenv ~missing_sigma caller_tenv callee_pname hpreds =
+  (* if hpreds are missing_sigma, we may not need to add the fields to the tenv, so we check that first *)
+  let add_fields =
+    if missing_sigma then missing_sigma_need_adding_to_tenv caller_tenv hpreds else true
+  in
+  if add_fields then
+    match Ondemand.get_proc_desc callee_pname with
+    | Some pdesc ->
+        let attrs = Procdesc.get_attributes pdesc in
+        let source_file = attrs.ProcAttributes.loc.Location.file in
+        let callee_tenv_opt = Tenv.load source_file in
+        let add_field_in_hpred hpred =
+          match (callee_tenv_opt, hpred) with
+          | ( Some callee_tenv
+            , Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) )
+                -> (
+            match Tenv.lookup callee_tenv name with
+            | Some {fields} ->
+                List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
+            | None ->
+                () )
+          | _ ->
+              ()
+        in
+        List.iter ~f:add_field_in_hpred hpreds
+    | None ->
+        ()
 
 
 (** Perform symbolic execution for a single spec *)
@@ -1182,9 +1208,16 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
           let missing_fld_objc_class, missing_fld_not_objc_class =
             List.partition_tf ~f:(fun hp -> hpred_missing_objc_class hp) missing_fld
           in
+          let missing_sigma_objc_class =
+            List.filter ~f:(fun hp -> hpred_missing_objc_class hp) missing_sigma
+          in
           if missing_fld_objc_class <> [] then (
             L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
-            add_missing_field_to_tenv tenv callee_pname missing_fld_objc_class ) ;
+            add_missing_field_to_tenv ~missing_sigma:false tenv callee_pname missing_fld_objc_class ) ;
+          if missing_sigma_objc_class <> [] then (
+            L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
+            add_missing_field_to_tenv ~missing_sigma:true tenv callee_pname
+              missing_sigma_objc_class ) ;
           if not !Config.footprint && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )

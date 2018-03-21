@@ -8,15 +8,33 @@
  */
 #import "TimeSpent.h"
 #import "AnalyticsTimeSpent.h"
+#import "ListAdapter.h"
 
 @interface TimeSpent () {
   AnalyticsTimeSpent* _timeSpent;
 }
 @end
 
-@implementation TimeSpent
+@implementation TimeSpent {
+  ListAdapter* _listAdapter;
+}
+
 - (instancetype)init {
   _timeSpent = [[AnalyticsTimeSpent alloc] initWithDelegate:self];
+  return self;
+}
+
+- (instancetype)init_good {
+  if (self = [super init]) {
+    _listAdapter.dataSource = self;
+  }
+  return self;
+}
+
+- (instancetype)init_bad {
+  if (self = [super init]) {
+    _listAdapter.dataSourceStrong = self;
+  }
   return self;
 }
 
