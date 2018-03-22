@@ -137,6 +137,11 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     system((const char*)this);
   }
 
+  void service_return_param_ok(std::string& _return) {
+    // dummy return object should not be treated as tainted
+    system(_return.c_str());
+  }
+
  private:
   void private_not_endpoint_ok(std::string formal) { system(formal.c_str()); }
 };

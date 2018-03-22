@@ -145,12 +145,14 @@ module SourceKind = struct
         PatternMatch.supertype_exists tenv is_thrift_service_ typename
       in
       (* taint all formals except for [this] *)
-      let taint_all_but_this ~make_source =
+      let taint_all_but_this_and_return ~make_source =
         List.map
           ~f:(fun (name, typ) ->
             let taint =
               match Mangled.to_string name with
-              | "this" ->
+              | "this" | "_return" ->
+                  (* thrift methods implement returning values using dummy _return parameters that
+                     the C++ code assigns to. these are sinks, not sources *)
                   None
               | _ ->
                   Some (make_source name typ.Typ.desc)
@@ -166,9 +168,10 @@ module SourceKind = struct
               (Typ.Procname.get_method pname)
           in
           if String.Set.mem endpoints qualified_pname then
-            taint_all_but_this ~make_source:(fun name desc -> UserControlledEndpoint (name, desc))
+            taint_all_but_this_and_return ~make_source:(fun name desc ->
+                UserControlledEndpoint (name, desc) )
           else if is_thrift_service cpp_pname then
-            taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc))
+            taint_all_but_this_and_return ~make_source:(fun name desc -> Endpoint (name, desc))
           else Source.all_formals_untainted pdesc
       | _ ->
           Source.all_formals_untainted pdesc
