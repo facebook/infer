@@ -275,6 +275,9 @@ type st_report_error =
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error: st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
+  let nullable_annotation = "@Nullable" in
+  let mutable_annotation = "@Mutable" in
+  let present_annotation = "@Present" in
   let kind, description, field_name, origin_loc =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
@@ -301,14 +304,14 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , Format.asprintf "Field %a is not initialized in %s and is not declared %a"
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
-            constructor_name MF.pp_monospaced "@Nullable"
+            constructor_name MF.pp_monospaced nullable_annotation
         , Some fn
         , None )
     | Field_not_mutable (fn, (origin_description, origin_loc, _)) ->
         ( IssueType.eradicate_field_not_mutable
         , Format.asprintf "Field %a is modified but is not declared %a. %s" MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
-            MF.pp_monospaced "@Mutable" origin_description
+            MF.pp_monospaced mutable_annotation origin_description
         , None
         , origin_loc )
     | Field_annotation_inconsistent (ann, fn, (origin_description, origin_loc, _)) ->
@@ -318,14 +321,14 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
               ( IssueType.eradicate_field_not_nullable
               , Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
                   (Typ.Fieldname.to_simplified_string fn)
-                  MF.pp_monospaced "@Nullable" origin_description )
+                  MF.pp_monospaced nullable_annotation origin_description )
           | AnnotatedSignature.Present ->
               ( IssueType.eradicate_field_value_absent
               , Format.asprintf
                   "Field %a is assigned a possibly absent value but is declared %a. %s"
                   MF.pp_monospaced
                   (Typ.Fieldname.to_simplified_string fn)
-                  MF.pp_monospaced "@Present" origin_description )
+                  MF.pp_monospaced present_annotation origin_description )
         in
         (kind_s, description, None, origin_loc)
     | Field_over_annotated (fn, pn) ->
@@ -342,7 +345,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , Format.asprintf "Field %a is always initialized in %s but is declared %a"
             MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn)
-            constructor_name MF.pp_monospaced "@Nullable"
+            constructor_name MF.pp_monospaced nullable_annotation
         , Some fn
         , None )
     | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed) ->
@@ -368,7 +371,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
               , Format.asprintf "The value of %a in the call to %a is not %a. %s" MF.pp_monospaced
                   (Option.value s_opt ~default:"") MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced "@Present" origin_description )
+                  MF.pp_monospaced present_annotation origin_description )
         in
         (kind_s, description, None, origin_loc)
     | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, origin_loc, _)) ->
@@ -398,21 +401,21 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
               , Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
                   MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced "@Nullable" origin_description )
+                  MF.pp_monospaced nullable_annotation origin_description )
           | AnnotatedSignature.Present ->
               ( IssueType.eradicate_return_value_not_present
               , Format.asprintf
                   "Method %a may return an absent value but it is annotated with %a. %s"
                   MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn)
-                  MF.pp_monospaced "@Present" origin_description )
+                  MF.pp_monospaced present_annotation origin_description )
         in
         (kind_s, description, None, origin_loc)
     | Return_over_annotated pn ->
         ( IssueType.eradicate_return_over_annotated
         , Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
             (Typ.Procname.to_simplified_string pn)
-            MF.pp_monospaced "@Nullable"
+            MF.pp_monospaced nullable_annotation
         , None
         , None )
     | Inconsistent_subclass_return_annotation (pn, opn) ->
@@ -420,7 +423,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
             MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true pn)
-            MF.pp_monospaced "@Nullable" MF.pp_monospaced
+            MF.pp_monospaced nullable_annotation MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
         , None
         , None )
@@ -440,7 +443,8 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
              %a." (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true pn)
-            MF.pp_monospaced "@Nullable" MF.pp_monospaced "@Nullable" MF.pp_monospaced
+            MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
+            MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true opn)
         , None
         , None )
