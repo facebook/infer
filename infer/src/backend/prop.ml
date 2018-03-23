@@ -1078,7 +1078,7 @@ module Normalize = struct
     in
     let e' = eval e in
     (* L.d_str "sym_eval "; Sil.d_exp e; L.d_str" --> "; Sil.d_exp e'; L.d_ln (); *)
-    e'
+    if Exp.equal e e' then e else e'
 
 
   let exp_normalize ?destructive tenv sub exp =
@@ -1089,9 +1089,12 @@ module Normalize = struct
 
   let texp_normalize tenv sub (exp: Exp.t) : Exp.t =
     match exp with
-    | Sizeof ({dynamic_length} as sizeof_data) ->
-        Sizeof
-          {sizeof_data with dynamic_length= Option.map ~f:(exp_normalize tenv sub) dynamic_length}
+    | Sizeof {dynamic_length= None} ->
+        exp
+    | Sizeof ({dynamic_length= Some dyn_len} as sizeof_data) ->
+        let dyn_len' = exp_normalize tenv sub dyn_len in
+        if phys_equal dyn_len dyn_len' then exp
+        else Sizeof {sizeof_data with dynamic_length= Some dyn_len'}
     | _ ->
         exp_normalize tenv sub exp
 
@@ -1282,25 +1285,30 @@ module Normalize = struct
       | _ ->
           (e1, e2, false)
     in
-    let handle_boolean_operation from_equality e1 e2 : Sil.atom =
+    let handle_boolean_operation orig_a from_equality e1 e2 : Sil.atom =
       let ne1 = exp_normalize tenv sub e1 in
       let ne2 = exp_normalize tenv sub e2 in
       let ne1', ne2', op_negated = handle_unary_negation ne1 ne2 in
       let e1', e2' = normalize_eq (ne1', ne2') in
       let e1'', e2'' = exp_reorder e1' e2' in
       let use_equality = if op_negated then not from_equality else from_equality in
-      if use_equality then Aeq (e1'', e2'') else Aneq (e1'', e2'')
+      if Bool.equal use_equality from_equality && phys_equal e1 e1'' && phys_equal e2 e2'' then
+        orig_a
+      else if use_equality then Aeq (e1'', e2'')
+      else Aneq (e1'', e2'')
     in
     let a' : Sil.atom =
       match a with
       | Aeq (e1, e2) ->
-          handle_boolean_operation true e1 e2
+          handle_boolean_operation a true e1 e2
       | Aneq (e1, e2) ->
-          handle_boolean_operation false e1 e2
-      | Apred (a, es) ->
-          Apred (a, List.map ~f:(fun e -> exp_normalize tenv sub e) es)
-      | Anpred (a, es) ->
-          Anpred (a, List.map ~f:(fun e -> exp_normalize tenv sub e) es)
+          handle_boolean_operation a false e1 e2
+      | Apred (tag, es) ->
+          let es' = IList.map_changed es ~equal:Exp.equal ~f:(fun e -> exp_normalize tenv sub e) in
+          if phys_equal es es' then a else Apred (tag, es')
+      | Anpred (tag, es) ->
+          let es' = IList.map_changed es ~equal:Exp.equal ~f:(fun e -> exp_normalize tenv sub e) in
+          if phys_equal es es' then a else Anpred (tag, es')
     in
     if atom_is_inequality a' then inequality_normalize tenv a' else a'
 
@@ -1325,32 +1333,46 @@ module Normalize = struct
   let rec strexp_normalize tenv sub (se: Sil.strexp) : Sil.strexp =
     match se with
     | Eexp (e, inst) ->
-        Eexp (exp_normalize tenv sub e, inst)
+        let e' = exp_normalize tenv sub e in
+        if phys_equal e e' then se else Eexp (e', inst)
     | Estruct (fld_cnts, inst) -> (
       match fld_cnts with
       | [] ->
           se
-      | _ ->
+      | _ :: _ ->
           let fld_cnts' =
-            List.map ~f:(fun (fld, cnt) -> (fld, strexp_normalize tenv sub cnt)) fld_cnts
+            IList.map_changed fld_cnts
+              ~equal:[%compare.equal : Typ.Fieldname.t * Sil.strexp]
+              ~f:(fun ((fld, cnt) as x) ->
+                let cnt' = strexp_normalize tenv sub cnt in
+                if phys_equal cnt cnt' then x else (fld, cnt') )
           in
-          let fld_cnts'' = List.sort ~cmp:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts' in
-          Estruct (fld_cnts'', inst) )
+          if phys_equal fld_cnts fld_cnts'
+             && List.is_sorted ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts
+          then se
+          else
+            let fld_cnts'' = List.sort ~cmp:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts' in
+            Estruct (fld_cnts'', inst) )
     | Earray (len, idx_cnts, inst) ->
         let len' = exp_normalize_noabs tenv sub len in
         match idx_cnts with
         | [] ->
             if Exp.equal len len' then se else Earray (len', idx_cnts, inst)
-        | _ ->
+        | _ :: _ ->
             let idx_cnts' =
-              List.map
-                ~f:(fun (idx, cnt) ->
+              IList.map_changed idx_cnts
+                ~equal:[%compare.equal : Exp.t * Sil.strexp]
+                ~f:(fun ((idx, cnt) as x) ->
                   let idx' = exp_normalize tenv sub idx in
-                  (idx', strexp_normalize tenv sub cnt) )
-                idx_cnts
+                  let cnt' = strexp_normalize tenv sub cnt in
+                  if phys_equal idx idx' && phys_equal cnt cnt' then x else (idx', cnt') )
             in
-            let idx_cnts'' = List.sort ~cmp:[%compare : Exp.t * Sil.strexp] idx_cnts' in
-            Earray (len', idx_cnts'', inst)
+            if phys_equal idx_cnts idx_cnts'
+               && List.is_sorted ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts
+            then se
+            else
+              let idx_cnts'' = List.sort ~cmp:[%compare : Exp.t * Sil.strexp] idx_cnts' in
+              Earray (len', idx_cnts'', inst)
 
 
   (** Exp.Construct a pointsto. *)
