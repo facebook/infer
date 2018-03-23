@@ -283,6 +283,7 @@ clean:
 #	only existed in previous versions get removed as well
 	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.bc,.exe} $(INFER_BIN_ALIASES) \
 	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
+	$(REMOVE) $(BIN_DIR)/llvm_sil
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_*
 	$(REMOVE) mod_dep.dot

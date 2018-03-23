@@ -103,6 +103,7 @@ buck-out/
 /infer/bin/infer-run
 /infer/bin/InferCreateTraceViewLinks
 /infer/bin/InferUnit
+/infer/bin/llvm_sil
 /infer/man
 
 /infer/src/base/Version.ml

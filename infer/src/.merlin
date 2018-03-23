@@ -36,6 +36,7 @@ PKG findlib.top
 PKG jane-street-headers
 PKG javalib
 PKG lambda-term
+PKG llair
 PKG lwt
 PKG lwt.log
 PKG lwt.react
