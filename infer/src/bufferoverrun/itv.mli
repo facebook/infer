@@ -20,9 +20,17 @@ module SubstMap : Caml.Map.S with type key = Symbol.t
 module Bound : sig
   type t [@@deriving compare]
 
+  type astate = t
+
   val pp : F.formatter -> t -> unit
 
   val zero : t
+
+  val one : t
+
+  val pinf : t
+
+  val of_int : int -> t
 
   val is_const : t -> int option
 
@@ -37,6 +45,18 @@ module Bound : sig
   val le : t -> t -> bool
 
   val lt : t -> t -> bool
+
+  val plus_u : t -> t -> t
+
+  val join : t -> t -> t
+
+  val min : t -> t -> t
+
+  val mult : t -> t -> t
+
+  val widen : prev:t -> next:t -> num_iters:'a -> t
+
+  val ( <= ) : lhs:t -> rhs:t -> bool
 end
 
 module ItvPure : sig
@@ -165,7 +185,7 @@ val eq : t -> t -> bool
 
 val le : lhs:t -> rhs:t -> bool
 
-val _range : t -> Bound.t
+val range : t -> Bound.t
 
 val div : t -> t -> t
 

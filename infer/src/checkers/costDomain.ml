@@ -83,7 +83,7 @@ module Cost = struct
         NonTop (c1' - c2')
 
 
-  let mult c1 c2 =
+  let _mult c1 c2 =
     match (c1, c2) with Top, _ | _, Top -> Top | NonTop c1', NonTop c2' -> NonTop (c1' * c2')
 
 
@@ -105,7 +105,7 @@ module Cost = struct
         NonTop (Int.max c1' c2')
 
 
-  let one = NonTop 1
+  let _one = NonTop 1
 
   let zero = NonTop 0
 
@@ -133,7 +133,7 @@ module IntPair = struct
 end
 
 (* Map (node,instr) -> basic cost  *)
-module NodeInstructionToCostMap = AbstractDomain.Map (IntPair) (Cost)
+module NodeInstructionToCostMap = AbstractDomain.Map (IntPair) (Itv.Bound)
 
 module ItvPureCost = struct
   (** (l, u) represents the closed interval [-l; u] (of course infinite bounds are open) *)
@@ -346,9 +346,8 @@ module SemanticDomain = struct
         sem_unop op res1
     | _ ->
         L.die InternalError " @\n Incomplete Sem function. Dies with e= %a @\n" Exp.pp e
-
 end
 
-type summary = {post: Cost.astate}
+type summary = {post: Itv.Bound.t}
 
-let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" Cost.pp post
+let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" Itv.Bound.pp post

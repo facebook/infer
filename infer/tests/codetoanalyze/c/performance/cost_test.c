@@ -90,10 +90,19 @@ int FN_loop2(int k) {
   return 0;
 }
 
+// This is currently evaluated to Top as the analysis is not powerful enough
+int FN_loop3(int k) {
+
+  for (int i = k; i < k + 15; i++) {
+    alias2_OK();
+  }
+  return 0;
+}
+
 // Cost: 218
 // Shows that calling many times non expensive function can
 // result in an expensive computation
-int main() {
+int main_bad() {
 
   int k1, k2, k3, k4;
 

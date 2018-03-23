@@ -294,6 +294,8 @@ module Bound = struct
     | PInf
     [@@deriving compare]
 
+  type astate = t
+
   let equal = [%compare.equal : t]
 
   let pp : F.formatter -> t -> unit =
@@ -659,6 +661,10 @@ module Bound = struct
           default
 
 
+  let join : t -> t -> t = ub ~default:PInf
+
+  let min : t -> t -> t = lb ~default:MInf
+
   let widen_l : t -> t -> t =
    fun x y ->
     if equal x PInf || equal y PInf then L.(die InternalError) "Lower bound cannot be +oo."
@@ -673,11 +679,17 @@ module Bound = struct
     else PInf
 
 
+  let widen ~prev ~next ~num_iters:_ = widen_u prev next
+
+  let ( <= ) ~lhs ~rhs = le lhs rhs
+
   let zero : t = Linear (0, SymLinear.zero)
 
   let one : t = Linear (1, SymLinear.zero)
 
   let mone : t = Linear (-1, SymLinear.zero)
+
+  let pinf : t = PInf
 
   let is_some_const : int -> t -> bool =
    fun c x -> match x with Linear (c', y) -> Int.equal c c' && SymLinear.is_zero y | _ -> false
@@ -765,6 +777,20 @@ module Bound = struct
         Some (Linear (c * (n :> int), SymLinear.mult_const x' n))
     | _ ->
         None
+
+
+  let mult : t -> t -> t =
+   fun x y ->
+    let res_opt =
+      match (is_const x, is_const y) with
+      | _, Some n -> (
+        match NonZeroInt.of_int n with Some n' -> mult_const x n' | _ -> Some zero )
+      | Some n, _ -> (
+        match NonZeroInt.of_int n with Some n' -> mult_const y n' | _ -> Some zero )
+      | _, _ ->
+          None
+    in
+    Option.value res_opt ~default:PInf
 
 
   let div_const : t -> NonZeroInt.t -> t option =
@@ -1283,7 +1309,7 @@ let le : lhs:t -> rhs:t -> bool = ( <= )
 
 let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
 
-let _range : t -> Bound.t = function Bottom -> Bound.zero | NonBottom itv -> ItvPure.range itv
+let range : t -> Bound.t = function Bottom -> Bound.zero | NonBottom itv -> ItvPure.range itv
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
