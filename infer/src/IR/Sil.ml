@@ -1263,7 +1263,8 @@ let rec exp_sub_ids (f: subst_fun) exp =
   | Closure c ->
       let captured_vars =
         IList.map_changed
-          (fun ((e, pvar, typ) as captured) ->
+          ~equal:[%compare.equal : Exp.t * Pvar.t * Typ.t]
+          ~f:(fun ((e, pvar, typ) as captured) ->
             let e' = exp_sub_ids f e in
             let typ' = f_typ typ in
             if phys_equal e' e && phys_equal typ typ' then captured else (e', pvar, typ') )
@@ -1361,7 +1362,8 @@ let instr_sub_ids ~sub_id_binders f instr =
       let fun_exp' = exp_sub_ids f fun_exp in
       let actuals' =
         IList.map_changed
-          (fun ((actual, typ) as actual_pair) ->
+          ~equal:[%compare.equal : Exp.t * Typ.t]
+          ~f:(fun ((actual, typ) as actual_pair) ->
             let actual' = exp_sub_ids f actual in
             let typ' = sub_typ typ in
             if phys_equal actual' actual && phys_equal typ typ' then actual_pair
@@ -1375,12 +1377,13 @@ let instr_sub_ids ~sub_id_binders f instr =
       let exp' = exp_sub_ids f exp in
       if phys_equal exp' exp then instr else Prune (exp', loc, true_branch, if_kind)
   | Remove_temps (ids, loc) ->
-      let ids' = IList.map_changed sub_id ids in
+      let ids' = IList.map_changed ~equal:Ident.equal ~f:sub_id ids in
       if phys_equal ids' ids then instr else Remove_temps (ids', loc)
   | Declare_locals (locals, loc) ->
       let locals' =
         IList.map_changed
-          (fun ((name, typ) as local_var) ->
+          ~equal:[%compare.equal : Pvar.t * Typ.t]
+          ~f:(fun ((name, typ) as local_var) ->
             let typ' = sub_typ typ in
             if phys_equal typ typ' then local_var else (name, typ') )
           locals

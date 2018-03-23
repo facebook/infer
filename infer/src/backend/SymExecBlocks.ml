@@ -9,21 +9,22 @@
 
 open! IStd
 
-(* Given two lists of tuples (exp1, var1, typ1) and (exp2, var2, typ2)
-append the lists avoiding duplicates, where if the variables exist we check their
-equality, otherwise we check the equality of the expressions. This is to avoid
-adding the same captured variable twice. *)
-let append_no_duplicates_vars list1 list2 =
-  let eq (exp1, var1_opt, _) (exp2, var2_opt, _) =
+(* Given two lists of tuples (exp1, var1, typ1) and (exp2, var2, typ2) append the lists avoiding
+   duplicates, where if the variables exist we check their equality, otherwise we check the equality
+   of the expressions. This is to avoid adding the same captured variable twice. *)
+let append_no_duplicates_vars =
+  let cmp (exp1, var1_opt, _) (exp2, var2_opt, _) =
     match (var1_opt, var2_opt) with
     | Some var1, Some var2 ->
-        Pvar.equal var1 var2
+        Pvar.compare var1 var2
     | None, None ->
-        Exp.equal exp1 exp2
-    | _ ->
-        false
+        Exp.compare exp1 exp2
+    | Some _, None ->
+        1
+    | None, Some _ ->
+        -1
   in
-  IList.append_no_duplicates eq list1 list2
+  Staged.unstage (IList.append_no_duplicates ~cmp)
 
 
 (* Given a list of actual parameters for a function, replaces the closures with the

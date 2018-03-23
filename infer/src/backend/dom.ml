@@ -1824,7 +1824,7 @@ let pi_partial_join tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop
     List.fold ~f:(handle_atom_with_widening Rhs p1 pi1) ~init:[] pi2
   in
   if Config.trace_join then ( L.d_str "atom_list2: " ; Prop.d_pi atom_list2 ; L.d_ln () ) ;
-  let atom_list_combined = IList.inter Sil.compare_atom atom_list1 atom_list2 in
+  let atom_list_combined = IList.inter ~cmp:Sil.compare_atom atom_list1 atom_list2 in
   if Config.trace_join then (
     L.d_str "atom_list_combined: " ; Prop.d_pi atom_list_combined ; L.d_ln () ) ;
   atom_list_combined
@@ -1862,7 +1862,7 @@ let eprop_partial_meet tenv (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
   let sigma2 = ep2.Prop.sigma in
   let es1 = sigma_get_start_lexps_sort sigma1 in
   let es2 = sigma_get_start_lexps_sort sigma2 in
-  let es = IList.merge_sorted_nodup Exp.compare [] es1 es2 in
+  let es = IList.merge_sorted_nodup ~cmp:Exp.compare ~res:[] es1 es2 in
   let sub_check _ =
     let sub1 = ep1.Prop.sub in
     let sub2 = ep2.Prop.sub in

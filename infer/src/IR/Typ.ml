@@ -157,6 +157,8 @@ module T = struct
 
   let equal_quals = [%compare.equal : type_quals]
 
+  let equal_template_arg = [%compare.equal : template_arg]
+
   let equal = [%compare.equal : t]
 
   let hash = Hashtbl.hash
@@ -308,7 +310,7 @@ and sub_tname subst tname =
         | TInt _ | TNull | TNullPtr | TOpaque ->
             typ_opt
       in
-      let args' = IList.map_changed sub_typ_opt args in
+      let args' = IList.map_changed ~equal:equal_template_arg ~f:sub_typ_opt args in
       if phys_equal args args' then tname else CppClass (name, Template {mangled; args= args'})
   | _ ->
       tname

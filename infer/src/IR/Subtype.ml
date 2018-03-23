@@ -41,7 +41,7 @@ let sub_type tname_subst st_pair =
   let st, kind = st_pair in
   match st with
   | Subtypes tnames ->
-      let tnames' = IList.map_changed tname_subst tnames in
+      let tnames' = IList.map_changed ~equal:Typ.Name.equal ~f:tname_subst tnames in
       if phys_equal tnames tnames' then st_pair else (Subtypes tnames', kind)
   | Exact ->
       st_pair

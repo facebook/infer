@@ -67,7 +67,7 @@ let pp ext fmt typestate =
 
 let type_join typ1 typ2 = if PatternMatch.type_is_object typ1 then typ2 else typ1
 
-let locs_join locs1 locs2 = IList.merge_sorted_nodup Location.compare [] locs1 locs2
+let locs_join locs1 locs2 = IList.merge_sorted_nodup ~cmp:Location.compare ~res:[] locs1 locs2
 
 (** Add a list of locations to a range. *)
 let range_add_locs (typ, ta, locs1) locs2 =

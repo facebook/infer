@@ -84,6 +84,10 @@ let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_s
   (supers, fields)
 
 
+let append_no_duplicates_typ_name =
+  Staged.unstage (IList.append_no_duplicates ~cmp:Typ.Name.compare)
+
+
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
@@ -107,7 +111,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
     match Tenv.lookup tenv interface_name with
     | Some {fields; supers} ->
         ( CGeneral_utils.append_no_duplicates_fields decl_fields fields
-        , IList.append_no_duplicates Typ.Name.equal decl_supers supers )
+        , append_no_duplicates_typ_name decl_supers supers )
     | _ ->
         (decl_fields, decl_supers)
   in

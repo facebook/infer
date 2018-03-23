@@ -530,12 +530,12 @@ end = struct
           ()
     in
     iter_shortest_sequence g pos_opt path ;
-    let compare lt1 lt2 =
-      let n = Int.compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
-      if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc
+    let equal lt1 lt2 =
+      [%compare.equal : int * Location.t]
+        (lt1.Errlog.lt_level, lt1.Errlog.lt_loc) (lt2.Errlog.lt_level, lt2.Errlog.lt_loc)
     in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
-    IList.remove_irrelevant_duplicates compare relevant (List.rev !trace)
+    IList.remove_irrelevant_duplicates ~equal ~f:relevant (List.rev !trace)
 end
 
 (* =============== END of the Path module ===============*)

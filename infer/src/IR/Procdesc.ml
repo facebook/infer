@@ -736,6 +736,12 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
   f_instr_list
 
 
+let append_no_duplicates_formals_and_annot =
+  Staged.unstage
+    (IList.append_no_duplicates ~cmp:(fun ((name1, _), _) ((name2, _), _) ->
+         Mangled.compare name1 name2 ))
+
+
 let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
   let callee_attributes = get_attributes callee_pdesc in
   (* Substitution from a block parameter to the block name and the new formals
@@ -763,11 +769,6 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     let new_formals_blocks_captured_vars_with_annots =
       let formals_annots =
         List.zip_exn callee_attributes.formals (snd callee_attributes.method_annotation)
-      in
-      let append_no_duplicates_formals_and_annot list1 list2 =
-        IList.append_no_duplicates
-          (fun ((name1, _), _) ((name2, _), _) -> Mangled.equal name1 name2)
-          list1 list2
       in
       List.fold formals_annots ~init:[] ~f:(fun acc ((param_name, typ), annot) ->
           try

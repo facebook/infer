@@ -26,11 +26,11 @@ let rec swap_elements_list l =
       assert false
 
 
-let append_no_duplicates_annotations list1 list2 =
-  let equal (annot1, _) (annot2, _) =
-    String.equal annot1.Annot.class_name annot2.Annot.class_name
+let append_no_duplicates_annotations =
+  let cmp (annot1, _) (annot2, _) =
+    String.compare annot1.Annot.class_name annot2.Annot.class_name
   in
-  IList.append_no_duplicates equal list1 list2
+  Staged.unstage (IList.append_no_duplicates ~cmp)
 
 
 let add_no_duplicates_fields field_tuple l =
