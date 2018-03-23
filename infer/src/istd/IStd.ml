@@ -10,14 +10,6 @@
 include Core
 
 module List_ = struct
-  let rec fold_until ~init ~f l =
-    match (l, init) with
-    | _, `Stop init' | [], `Continue init' ->
-        init'
-    | h :: t, `Continue _ ->
-        fold_until ~init:(f init h) ~f t
-
-
   let merge_dedup l1 l2 ~compare =
     let rec loop acc l1 l2 =
       match (l1, l2) with

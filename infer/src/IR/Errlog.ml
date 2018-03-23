@@ -48,21 +48,20 @@ let make_trace_element lt_level lt_loc lt_description lt_node_tags =
 type loc_trace = loc_trace_elem list
 
 let compute_local_exception_line loc_trace =
-  let compute_local_exception_line state step =
-    match state with
-    | `Stop _ ->
-        state
-    | `Continue (last_known_step_at_level_zero_opt, line_opt) ->
-        let last_known_step_at_level_zero_opt' =
-          if Int.equal step.lt_level 0 then Some step else last_known_step_at_level_zero_opt
-        in
-        match last_known_step_at_level_zero_opt' with
-        | Some step_zero when contains_exception step ->
-            `Stop (last_known_step_at_level_zero_opt', Some step_zero.lt_loc.line)
-        | _ ->
-            `Continue (last_known_step_at_level_zero_opt', line_opt)
+  let open Base.Continue_or_stop in
+  let compute_local_exception_line (last_known_step_at_level_zero_opt, line_opt) step =
+    let last_known_step_at_level_zero_opt' =
+      if Int.equal step.lt_level 0 then Some step else last_known_step_at_level_zero_opt
+    in
+    match last_known_step_at_level_zero_opt' with
+    | Some step_zero when contains_exception step ->
+        Stop (Some step_zero.lt_loc.line)
+    | _ ->
+        Continue (last_known_step_at_level_zero_opt', line_opt)
   in
-  snd (List_.fold_until ~init:(`Continue (None, None)) ~f:compute_local_exception_line loc_trace)
+  match List.fold_until ~init:(None, None) ~f:compute_local_exception_line loc_trace with
+  | Finished (_, line_opt) | Stopped_early line_opt ->
+      line_opt
 
 
 type node_id_key = {node_id: int; node_key: Caml.Digest.t}
