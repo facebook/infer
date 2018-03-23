@@ -496,9 +496,12 @@ include Trace.Make (struct
     | (Endpoint _ | Intent | UserControlledString | UserControlledURI), CreateIntent ->
         (* creating Intent from user-congrolled data *)
         Some IssueType.untrusted_intent_creation
-    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), CreateFile ->
+    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), CreateFile ->
         (* user-controlled file creation; may be vulnerable to path traversal + more *)
         Some IssueType.untrusted_file
+    | Endpoint _, CreateFile ->
+        (* user-controlled file creation; may be vulnerable to path traversal + more *)
+        Some IssueType.untrusted_file_risk
     | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)
       , Deserialization ) ->
         (* shouldn't let anyone external control what we deserialize *)
@@ -518,8 +521,10 @@ include Trace.Make (struct
         Some IssueType.create_intent_from_uri
     | PrivateData, Logging ->
         Some IssueType.logging_private_data
-    | (Endpoint _ | Intent | UserControlledString | UserControlledURI), ShellExec ->
+    | (Intent | UserControlledString | UserControlledURI), ShellExec ->
         Some IssueType.shell_injection
+    | Endpoint _, ShellExec ->
+        Some IssueType.shell_injection_risk
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
