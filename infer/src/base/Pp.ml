@@ -137,8 +137,7 @@ let to_string ~f fmt x = string fmt (f x)
 let cli_args fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;
-    seq ~sep:"" ~print_env:{text with break_lines= true} string fmt
-      (List.map args ~f:Escape.escape_in_single_quotes) ;
+    seq ~sep:"" ~print_env:{text with break_lines= true} string fmt args ;
     F.fprintf fmt "@]@\n"
   in
   let rec pp_argfile_args in_argfiles fmt args =

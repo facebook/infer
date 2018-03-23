@@ -44,9 +44,9 @@ let compile compiler build_prog build_args =
   let cli_file_args = cli_args @ ["@" ^ args_file] in
   let args = prog_args @ cli_file_args in
   L.(debug Capture Quiet) "Current working directory: '%s'@." (Sys.getcwd ()) ;
-  let verbose_out_file = Filename.temp_file "javac_" ".out" in
+  let verbose_out_file = Filename.temp_file "javac" ".out" in
   let try_run cmd error_k =
-    let shell_cmd = Utils.shell_escape_command cmd in
+    let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
     let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_out_file in
     L.(debug Capture Quiet) "Trying to execute: %s@." shell_cmd_redirected ;
     match Utils.with_process_in shell_cmd_redirected In_channel.input_all with

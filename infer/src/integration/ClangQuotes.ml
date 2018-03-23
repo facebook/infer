@@ -32,9 +32,13 @@ let quote style =
 let mk_arg_file prefix style args =
   let file = Filename.temp_file prefix ".txt" in
   let write_args outc =
-    List.map ~f:(quote style) args |> String.concat ~sep:" " |> Out_channel.output_string outc
+    List.iter
+      ~f:(fun arg ->
+        quote style arg |> Out_channel.output_string outc ;
+        Out_channel.newline outc )
+      args
   in
-  Utils.with_file_out file ~f:write_args |> ignore ;
+  Utils.with_file_out file ~f:write_args ;
   L.(debug Capture Medium) "Clang options stored in file %s@\n" file ;
   if not Config.debug_mode then Utils.unlink_file_on_exit file ;
   file

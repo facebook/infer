@@ -208,29 +208,8 @@ let with_process_in command read =
   do_finally_swallow_timeout ~f ~finally
 
 
-let shell_escape_command =
-  let no_quote_needed = Str.regexp "^[A-Za-z0-9-_%/:,.]+$" in
-  let easy_single_quotable = Str.regexp "^[^']+$" in
-  let easy_double_quotable = Str.regexp "^[^$`\\!]+$" in
-  let escape = function
-    | "" ->
-        "''"
-    | arg ->
-        if Str.string_match no_quote_needed arg 0 then arg
-        else if Str.string_match easy_single_quotable arg 0 then F.sprintf "'%s'" arg
-        else if Str.string_match easy_double_quotable arg 0 then
-          arg |> Escape.escape_double_quotes |> F.sprintf "\"%s\""
-        else
-          (* ends on-going single quote, output single quote inside double quotes, then open a new single
-       quote *)
-          arg |> Escape.escape_map (function '\'' -> Some "'\"'\"'" | _ -> None)
-          |> F.sprintf "'%s'"
-  in
-  fun cmd -> List.map ~f:escape cmd |> String.concat ~sep:" "
-
-
 let with_process_lines ~(debug: ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp_prefix ~f =
-  let shell_cmd = shell_escape_command cmd in
+  let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
   let verbose_err_file = Filename.temp_file tmp_prefix ".err" in
   let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_err_file in
   debug "Trying to execute: %s@\n%!" shell_cmd_redirected ;

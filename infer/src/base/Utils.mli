@@ -66,8 +66,6 @@ val echo_in : In_channel.t -> unit
 
 val with_process_in : string -> (In_channel.t -> 'a) -> 'a * Unix.Exit_or_signal.t
 
-val shell_escape_command : string list -> string
-
 val with_process_lines :
   debug:((string -> unit, Format.formatter, unit) format -> string -> unit) -> cmd:string list
   -> tmp_prefix:string -> f:(string list -> 'res) -> 'res

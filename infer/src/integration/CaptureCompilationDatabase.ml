@@ -12,17 +12,18 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Logging
 
-type cmd = {cwd: string; prog: string; args: string}
-
 let create_cmd (compilation_data: CompilationDatabase.compilation_data) =
-  let swap_command cmd =
+  let swap_executable cmd =
     if String.is_suffix ~suffix:"++" cmd then Config.wrappers_dir ^/ "clang++"
     else Config.wrappers_dir ^/ "clang"
   in
   let arg_file =
-    ClangQuotes.mk_arg_file "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args]
+    ClangQuotes.mk_arg_file "cdb_clang_args" ClangQuotes.EscapedNoQuotes
+      compilation_data.escaped_arguments
   in
-  {cwd= compilation_data.dir; prog= swap_command compilation_data.command; args= arg_file}
+  { CompilationDatabase.directory= compilation_data.directory
+  ; executable= swap_executable compilation_data.executable
+  ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] }
 
 
 (* A sentinel is a file which indicates that a failure occurred in another infer process.
@@ -33,7 +34,7 @@ let sentinel_exists sentinel_opt =
   Option.value_map ~default:false sentinel_opt ~f:file_exists
 
 
-let invoke_cmd ~fail_sentinel cmd =
+let invoke_cmd ~fail_sentinel (cmd: CompilationDatabase.compilation_data) =
   let create_sentinel_if_needed () =
     let create_empty_file fname = Utils.with_file_out ~f:(fun _ -> ()) fname in
     Option.iter fail_sentinel ~f:create_empty_file
@@ -42,9 +43,9 @@ let invoke_cmd ~fail_sentinel cmd =
   else
     try
       let pid =
-        let prog = cmd.prog in
-        let argv = [prog; "@" ^ cmd.args; "-fsyntax-only"] in
-        Spawn.(spawn ~cwd:(Path cmd.cwd) ~prog ~argv ())
+        let open Spawn in
+        spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable
+          ~argv:(cmd.executable :: cmd.escaped_arguments) ()
       in
       match Unix.waitpid (Pid.of_int pid) with
       | Ok () ->

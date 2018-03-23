@@ -927,7 +927,7 @@ let parse ?config_file ~usage action initial_command =
          environment contributes to the length of the command to be run. If the environment + CLI is
          too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
          to prevent this from happening *)
-      let file = Filename.temp_file "args_" "" in
+      let file = Filename.temp_file "args" "" in
       Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
       if not !keep_args_file then Utils.unlink_file_on_exit file ;
       "@" ^ file )
