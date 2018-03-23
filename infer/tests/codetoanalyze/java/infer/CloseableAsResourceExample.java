@@ -213,7 +213,8 @@ public class CloseableAsResourceExample {
     resourceMap.put(key, res);
   }
 
-  void notClearinglocalMapContainingResourcesBad() {
+  // this case is not supported
+  void FN_notClearinglocalMapContainingResourcesBad() {
     HashMap<Integer, Closeable> map = new HashMap<>();
     SomeResource res = new SomeResource();
     Integer key = 42;

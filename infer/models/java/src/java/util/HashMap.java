@@ -29,7 +29,6 @@ public abstract class HashMap<K,V> {
 
   private K lastKey1 = null;
   private K lastKey2 = null;
-  private boolean containsResources = false;
 
   public boolean containsKey(K key) {
     // doesn't actually check if _containsKey(key). If you just put a
@@ -55,10 +54,8 @@ public abstract class HashMap<K,V> {
 
   public V put(K key, V value) {
     if (value instanceof Closeable) {
-      // Transfer the resource ownership to the container
+      // assume the resource will be handled correctly in this case
       InferBuiltins.__set_mem_attribute(value);
-      InferBuiltins.__set_file_attribute(this);
-      containsResources = true;
     }
     pushKey(key);
 
@@ -77,10 +74,6 @@ public abstract class HashMap<K,V> {
   public void clear() {
     lastKey1 = null;
     lastKey2 = null;
-    if (containsResources) {
-      InferBuiltins.__set_mem_attribute(this);
-    }
-    containsResources = false;
   }
 
   /** some sort of circular buffer simulator */
