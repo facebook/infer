@@ -237,8 +237,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add placement_base CapabilityDomain.Owned
               |> Domain.borrow_vars return_base (VarSet.singleton placement_base) |> Option.some
+          | _ :: other_actuals, Some return_base ->
+              Domain.actuals_add_reads other_actuals loc summary astate
+              |> Domain.add return_base CapabilityDomain.Owned |> Option.some
           | _ ->
-              L.die InternalError "Placement new without placement arg and/or return"
+              L.die InternalError "Placement new without placement or return in %a %a"
+                Typ.Procname.pp pname Location.pp loc
         else if Typ.Procname.is_constructor pname then
           match actuals with
           | (HilExp.AccessExpression Base constructed_base) :: other_actuals ->

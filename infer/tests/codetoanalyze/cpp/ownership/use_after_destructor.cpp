@@ -144,6 +144,16 @@ S* FN_placement_new_aliasing2_bad() {
   return alias; // bad, returning freed memory
 }
 
+void placement_new_non_var_ok() {
+  struct M {
+    S* s;
+  } m;
+  m.s = new S(1);
+  m.s->~S();
+  new (m.s) S(2);
+  delete m.s;
+}
+
 void destructor_in_loop_ok() {
   for (int i = 0; i < 10; i++) {
     S s(1);
