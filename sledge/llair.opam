@@ -1,0 +1,16 @@
+opam-version: "1.2"
+maintainer: "Josh Berdine <jjb@fb.com>"
+authors: "Josh Berdine <jjb@fb.com>"
+build: [
+  ["tools/gen_version.sh" "src/version.ml" version]
+  [make "jbuilds"]
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "cmdliner"
+  "core_kernel" {>= "v0.10.0"}
+  "jbuilder" {build}
+  "llvm" {build & = "7.0.0"}
+  "ppx_compare" {>= "v0.10.0"}
+  "zarith"
+]

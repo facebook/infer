@@ -1,0 +1,13 @@
+.merlin
+/llvm/
+/model/cxxabi.bc
+/src/import/jbuild
+/src/jbuild
+/src/llair/jbuild
+/src/trace/jbuild
+/src/version.ml
+/test/*/*.bc
+/test/*/*.bc.err
+/test/*/*.bc.out
+_build
+jbuild-workspace

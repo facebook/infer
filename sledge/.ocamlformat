@@ -1,0 +1,4 @@
+break-string-literals wrap
+margin 77
+sparse false
+wrap-comments true

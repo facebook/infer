@@ -1,0 +1,2 @@
+BasedOnStyle: llvm
+PointerAlignment: Left

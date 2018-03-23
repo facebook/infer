@@ -1,0 +1,145 @@
+* llvm
+** squash the debug loc commits
+** squash the Token enum, GlobalIFunc, and instr enum commits
+** reword isLiteral commit to mention OCaml API
+* trace and ppx_trace
+** if a traced fun has a type annotation
+copy it to the left arg of |> and to the arg of Trace.retn
+** use toplevel module name
+rather than nearest enclosing
+** use name of enclosing function that is a structure item
+rather than nearest enclosing
+** implement fine-grained control over which functions get traced
+* import
+** make types of [fail] and [warn] consistent
+** ? undeprecate Caml.Printexc
+- or is there some other way to use Printexc.get_raw_backtrace and Printexc.raise_with_backtrace
+** implement the rest of the Array operations in Vector
+** find some way to keep interface of Vector in sync with Array
+* config
+** document cli
+* llair
+** move Exp.t to Exp.T.t and remove Exp.Global.init
+** ? add lazy_t to all types which might be inhabited by cyclic values
+** define Label module for Exp.Label and Llair.label, to unify how functions and blocks are named
+** check/ensure that generated names do not clash
+- name ^ ".ti" xlate_instr LandingPad
+** ? expose the roots computed by Llair.mk
+** ? change blocks to take all free variables as args
++ currently the scope of an identifier bound by e.g. Load is the continuation of the inst as well as all the conts that it dominates, this is somewhat messy
++ build a table from blocks to conts
++ build a table from blocks to free vars
++ need a fixed-point computation for blocks to vars table
++ to xlate a block
+  - get the terminator
+  - if all the destination blocks except the current block are already in the table
+    * then
+      - xlate block itself like now
+        + when get to the terminal
+        + look up free vars vector of the jump destinaton in table
+        + map over the vector
+          * if the var is the name of a PHI instr
+            - find and translate the arg for the src block of the jmp instr
+              use the find_map of find_jump_args
+          * else use the var
+        + use this vector for the jump args
+      - compute the free vars of its code
+      - use this vector for the cont params
+      - add free vars to table
+      - add block to cont mapping to table
+    * else recurse over the destination blocks except the current block
++ after entry block (and recursively everything reachable from it) is xlated, map over the function block list looking up from the table to get order of conts to match order of blocks
+** ? format #line directives in programs
+** ? function types could include the types of throw continuation args
+but they are currently the same for all functions: i8*
+* frontend
+** kill the frontend memo tables when translate returns
+** translate %malloc to alloc
+- call Llvm.use_begin to see if the result is immediately cast
+- call Llvm.size_of on the cast-to type
+- divide to compute the number of elements
+- fall back to the i8* return type of malloc
+** translate %free to free
+** hoist alloca's to the beginning of the entry block whenever possible
+** clean up translation of intrinsics
+separation between xlate_intrinsic (which translates an intrinsic function name to an expression constructor) and the Call case of xlate_instr (which translates calls to intrinsic functions to instructions) is not clear
+** extract struct field names from llvm debug info
+** normalize cfg
+- remove unreachable blocks
+- combine blocks with cmnd= []; term= Unreachable into one
+** support variadic functions
+- lower by implementing in terms of the core
+- implement the va_list type as a pair or pointers into a stack represented as a linked-list, one pointer to the current element and one to the head
+- a call to a variadic function pushes the args in reverse order, so that the first arg is at the top of the stack, and passes a pointer to the top as the last arg to the callee
+- va_start intrinsic returns a pointer to the first va arg, by just projecting the current pointer from the last arg
+- va_arg instruction returns the current va arg using argument va_list pointer to the stack, and sets the argument va_list current pointer to the next stack element
+- va_copy is just a pointer copy of the source to destination va_list arguments, creating another pointer into the stack of va args, the head pointer of copies is null
+- va_end deallocates the list starting from the head pointer
+** support dynamic sized stack allocation (alloca in non-entry blocks) 
+- lower by implementing in terms of the core
+- add a linked list of stack slots data structure
+- each element contains
+  + a pointer to some memory allocated for that slot's contents
+  + a pointer to the next older slot
+  + a pointer to the beginning of the function's stack frame
+- add a global variable that always points to the head of the stack
+- alloca in non-entry blocks adds an element and stores the result of alloc in it, sets next, and uses the frame pointer of the previous head
+- function call adds a 'frame sentinel' element whose frame pointer points to itself, slot pointer is null (but used for va_arg below)
+- function return (and other popping terminators) traverses the stack, popping elements, calling free on the slot pointers, until the element pointed to by the frame pointer is encountered
+- stacksave intrinsic returns a pointer to a stack element
+- stackrestore intrinsic pops the stack like return but only back to the argument pointer
+** handle inline asm enough to over-approximate control-flow
+- inline asm can take addresses of blocks as args, that can be jumped to
+- treating inline asm conservatively requires considering these control flows
+** support missing intrinsics
+** support vector operations
+- by lowering into multiple scalar operations
+- most cases handled by Frontend.transform
+- tests have a few exceptions, possibly for only unrealistic code
+** combine scan_locs and scan_names into a single pass
+** exceptions
+- is it correct to translate landingpad clauses not matching to unreachable, or should the exception be re-thrown
+- check suspicious translation of landingpads
+  The translation of landingpads with cleanup and other clauses ignores the other clauses. This seems suspicious, is this semantics correct?
+- handle subtyping
+  + xlate_instr on LandingPad uses Eq and Ne of type_info values. This ignores subtyping. Subtyping info is encoded into the type_info values.
+- ? implement c++ abi functions instead of using libcxxabi
+  + implement eh abi in C
+  + see cxxabi https://libcxxabi.llvm.org/spec.html and itanium abi http://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html
+  + __cxa_call_unexpected
+    - translate to Unreachable, possibly warn
+  + __cxa_get_exception_ptr
+    - translate as identity function
+  + __cxa_allocate_exception
+    - translate to Alloc of exception struct type
+  + __cxa_begin_catch
+    - increment handler count of arg
+    - add arg to caught stack unless it is already there (next not null iff in stack)
+    - return arg
+  + __cxa_rethrow
+    - set rethrown field of top of caught stack, std::terminate if stack empty
+    - call __cxa_throw on top of caught stack
+  + __cxa_end_catch
+    - find top of caught stack
+    - decrement its handler count
+      + if handler count reaches 0
+        - remove from stack
+        - if rethrown flag not set
+          + call destructor
+          + deallocate memory allocated by __cxa_allocate_exception
+** improve treatment of Typ.is_sized on Opaque types
+so that xlate_type can preserve sizedness, e.g. add a post-condition that Typ.is_sized iff Llvm.type_is_sized
+** run translate in a forked subprocess
+- so that when llvm crashes it does not take down sledge and an error can be returned
+- will require serializing an deserializing the translated program
+- alternatively: install a signal handler to catch and recover from crashes from llvm
+** scalarizer does not work on functions with [optnone] attribute
+- repro: llvm/Transforms/FunctionAttrs/optnone-simple.ll
+- one solution: pre-process llvm to remove [optnone] attributes before running scalarizer pass
+** ? move is_zero to Exp
+** ? remove Exp.Nondet, replace with free variables
+it is not obvious whether it will be simpler to use free variables instead of Nondet in the frontend, or to treat Nondet as a single-occurrence existential variable in the analyzer
+** llvm bugs?
+- Why aren't shufflevector instructions with zeroinitializer masks eliminated by the scalarizer pass?
+* symbolic execution
+* build
