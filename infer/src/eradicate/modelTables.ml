@@ -178,7 +178,8 @@ let mapPut_list =
 (** Models for @Nullable annotations *)
 let annotated_list_nullable =
   check_not_null_list @ check_state_list @ check_argument_list
-  @ [ (n1, "android.os.Parcel.writeList(java.util.List):void")
+  @ [ (o1, "android.app.AlarmManager.cancel(android.app.PendingIntent):void")
+    ; (n1, "android.os.Parcel.writeList(java.util.List):void")
     ; (n2, "android.os.Parcel.writeParcelable(android.os.Parcelable,int):void")
     ; (n1, "android.os.Parcel.writeString(java.lang.String):void")
     ; ( (o, [o; o; n; n; n])

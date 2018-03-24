@@ -11,13 +11,15 @@ package codetoanalyze.java.eradicate;
 
 import com.google.common.base.Preconditions;
 
-import java.lang.System;
-import javax.annotation.Nullable;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import com.facebook.infer.annotation.Assertions;
-
+import java.lang.System;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nullable;
+
 
 public class NullMethodCall {
 
@@ -298,6 +300,11 @@ public class NullMethodCall {
   String customPreconditionsCheckNotNullOkay() {
     MyPreconditions.checkNotNull(nullableField);
     return nullableField.toString();
+  }
+
+  void nullMethodCallWithAlarmManager(
+      AlarmManager manager, @Nullable PendingIntent intent) {
+    manager.cancel(intent);
   }
 
 }
