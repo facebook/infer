@@ -347,35 +347,37 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     match plus_node with Plus (_ :: _ :: _) -> true | _ -> false
 
 
-  (* TO DO: rewrite in a functional way rather than imperative T26418766 *)
   let rec minimum_propagation (q: int) (visited: Int.Set.t) (constraints: Exp.t list) =
-    let node = ref (Min []) in
-    let worklist : int Stack.t = Stack.create () in
-    Stack.push worklist q ;
-    let branch = ref [] in
-    let visited_acc = ref visited in
-    while not (Stack.is_empty worklist) do
-      let k =
-        match Stack.pop worklist with Some k' -> k' | None -> assert false
-        (* we cant be here *)
-      in
-      if Int.Set.mem !visited_acc k then ()
-      else (
-        visited_acc := Int.Set.add !visited_acc k ;
-        node := add_leaf !node k (BoundMap.upperbound k) ;
-        let k_constraints_upperbound = get_k_single_constraints constraints k in
-        List.iter
-          ~f:(fun ub_id -> if not (Int.Set.mem !visited_acc ub_id) then Stack.push worklist ub_id)
-          k_constraints_upperbound ;
-        let k_sum_constraints = get_k_sum_constraints constraints k in
-        List.iter
-          ~f:(fun set_addend ->
-            if Int.Set.is_empty (Int.Set.inter set_addend !visited_acc) then
-              branch := add_without_rep set_addend !branch )
-          k_sum_constraints )
-    done ;
-    List.iter
-      ~f:(fun addend ->
+    let rec build_min node branch visited_acc worklist =
+      match worklist with
+      | [] ->
+          (node, branch, visited_acc)
+      | k :: rest ->
+          if Int.Set.mem visited_acc k then build_min node branch visited_acc rest
+          else
+            let visited_acc = Int.Set.add visited_acc k in
+            let node = add_leaf node k (BoundMap.upperbound k) in
+            let k_constraints_upperbound = get_k_single_constraints constraints k in
+            let worklist =
+              List.filter
+                ~f:(fun ub_id -> not (Int.Set.mem visited_acc ub_id))
+                k_constraints_upperbound
+              |> List.rev_append worklist
+            in
+            let k_sum_constraints = get_k_sum_constraints constraints k in
+            let branch =
+              List.fold_left
+                ~f:(fun branch set_addend ->
+                  if Int.Set.is_empty (Int.Set.inter set_addend visited_acc) then
+                    add_without_rep set_addend branch
+                  else branch )
+                ~init:branch k_sum_constraints
+            in
+            build_min node branch visited_acc worklist
+    in
+    let node, branch, visited_res = build_min (Min []) [] visited [q] in
+    List.fold_left
+      ~f:(fun i_node addend ->
         if Int.Set.length addend < 2 then assert false
         else (
           L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Int.Set.length addend) ;
@@ -384,14 +386,13 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
         let plus_node =
           Set.fold
             ~f:(fun acc n ->
-              let child = minimum_propagation n !visited_acc constraints in
+              let child = minimum_propagation n visited_res constraints in
               add_child acc child )
             ~init:(Plus []) addend
         in
         (* without this check it would add plus node with just one child, and give wrong results *)
-        if is_well_formed_plus_node plus_node then node := add_child !node plus_node )
-      !branch ;
-    !node
+        if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
+      ~init:node branch
 
 
   let compute_trees_from_contraints cfg constraints =
