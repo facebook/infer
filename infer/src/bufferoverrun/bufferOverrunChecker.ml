@@ -31,11 +31,13 @@ module Summary = Summary.Make (struct
   let read_payload (summary: Specs.summary) = summary.payload.buffer_overrun
 end)
 
+type extras = {get_proc_desc: Typ.Procname.t -> Procdesc.t option}
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
 
-  type extras = Typ.Procname.t -> Procdesc.t option
+  type nonrec extras = extras
 
   let declare_symbolic_val
       : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> Loc.t -> Typ.typ -> inst_num:int
@@ -217,7 +219,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate =
-   fun mem {pdesc; tenv; extras} node instr ->
+   fun mem {pdesc; tenv; extras= {get_proc_desc}} node instr ->
     let pname = Procdesc.get_proc_name pdesc in
     let output_mem =
       match instr with
@@ -257,7 +259,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | None ->
           match Summary.read_summary pdesc callee_pname with
           | Some summary ->
-              let callee = extras callee_pname in
+              let callee = get_proc_desc callee_pname in
               instantiate_mem tenv ret callee callee_pname params mem summary location
           | None ->
               L.(debug BufferOverrun Verbose)
@@ -315,7 +317,7 @@ type invariant_map = Analyzer.invariant_map
 module Report = struct
   module PO = BufferOverrunProofObligations
 
-  type extras = Typ.Procname.t -> Procdesc.t option
+  type nonrec extras = extras
 
   module ExitStatement = struct
     let non_significant_instr = function
@@ -439,7 +441,7 @@ module Report = struct
   let check_instr
       : extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
-   fun {pdesc; tenv; extras} node instr mem cond_set ->
+   fun {pdesc; tenv; extras= {get_proc_desc}} node instr mem cond_set ->
     let pname = Procdesc.get_proc_name pdesc in
     match instr with
     | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
@@ -452,7 +454,7 @@ module Report = struct
       | None ->
         match Summary.read_summary pdesc callee_pname with
         | Some callee_summary ->
-            let callee = extras callee_pname in
+            let callee = get_proc_desc callee_pname in
             instantiate_cond tenv pname callee params mem callee_summary location
             |> PO.ConditionSet.join cond_set
         | _ ->
@@ -562,7 +564,7 @@ end
 let compute_invariant_map : Callbacks.proc_callback_args -> Analyzer.invariant_map =
  fun {proc_desc; tenv; get_proc_desc} ->
   Preanal.do_preanalysis proc_desc tenv ;
-  let pdata = ProcData.make proc_desc tenv get_proc_desc in
+  let pdata = ProcData.make proc_desc tenv {get_proc_desc} in
   Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata
 
 
@@ -596,7 +598,7 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
 let checker : Callbacks.proc_callback_args -> Specs.summary =
  fun {proc_desc; tenv; summary; get_proc_desc} ->
   Preanal.do_preanalysis proc_desc tenv ;
-  let proc_data = ProcData.make proc_desc tenv get_proc_desc in
+  let proc_data = ProcData.make proc_desc tenv {get_proc_desc} in
   match compute_post summary proc_data with
   | Some post ->
       ( if Config.bo_debug >= 1 then
