@@ -350,9 +350,11 @@ module Report = struct
           false
   end
 
-  let check_unreachable_code summary tenv node instr rem_instrs (mem, mem') =
-    match (mem, mem') with
-    | NonBottom _, Bottom -> (
+  let check_unreachable_code summary tenv node instr rem_instrs mem =
+    match mem with
+    | NonBottom _ ->
+        ()
+    | Bottom ->
       match instr with
       | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
           ()
@@ -370,9 +372,7 @@ module Report = struct
           let location = Sil.instr_get_loc instr in
           let desc = Errdesc.explain_unreachable_code_after location in
           let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
-          Reporting.log_error summary ~loc:location exn )
-    | _ ->
-        ()
+          Reporting.log_error summary ~loc:location exn
 
 
   let check_binop_array_access
@@ -483,15 +483,15 @@ module Report = struct
       : Specs.summary -> extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary ({tenv} as pdata) node instrs mem cond_set ->
-    match instrs with
-    | [] ->
+    match (mem, instrs) with
+    | _, [] | Bottom, _ ->
         cond_set
-    | instr :: rem_instrs ->
+    | NonBottom _, instr :: rem_instrs ->
         let cond_set = check_instr pdata node instr mem cond_set in
-        let mem' = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
-        let () = check_unreachable_code summary tenv node instr rem_instrs (mem, mem') in
-        print_debug_info instr mem' cond_set ;
-        check_instrs summary pdata node rem_instrs mem' cond_set
+        let mem = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
+        let () = check_unreachable_code summary tenv node instr rem_instrs mem in
+        print_debug_info instr mem cond_set ;
+        check_instrs summary pdata node rem_instrs mem cond_set
 
 
   let check_node
