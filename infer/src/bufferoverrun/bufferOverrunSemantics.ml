@@ -333,7 +333,7 @@ module Make (CFG : ProcCfg.S) = struct
     let allocsite = get_allocsite pdesc node inst_num dimension in
     let int_stride = match stride0 with None -> sizeof typ | Some stride -> stride in
     let stride = Itv.of_int int_stride in
-    ArrayBlk.make allocsite offset size stride |> Val.of_array_blk
+    ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk
 
 
   let prune_unop : PrunePairs.t ref -> Exp.t -> Mem.astate -> Mem.astate =

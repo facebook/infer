@@ -21,7 +21,9 @@ module ArrInfo = struct
 
   let top : t = {offset= Itv.top; size= Itv.top; stride= Itv.top}
 
-  let make : Itv.t * Itv.t * Itv.t -> t = fun (o, s, stride) -> {offset= o; size= s; stride}
+  let make : offset:Itv.t -> size:Itv.t -> stride:Itv.t -> t =
+   fun ~offset ~size ~stride -> {offset; size; stride}
+
 
   let join : t -> t -> t =
    fun a1 a2 ->
@@ -102,8 +104,8 @@ let unknown : astate = add Allocsite.unknown ArrInfo.top bot
 
 let is_bot : astate -> bool = is_empty
 
-let make : Allocsite.t -> Itv.t -> Itv.t -> Itv.t -> astate =
- fun a o sz st -> add a (ArrInfo.make (o, sz, st)) bot
+let make : Allocsite.t -> offset:Itv.t -> size:Itv.t -> stride:Itv.t -> astate =
+ fun a ~offset ~size ~stride -> singleton a (ArrInfo.make ~offset ~size ~stride)
 
 
 let offsetof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.offset) a Itv.bot
