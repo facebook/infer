@@ -144,11 +144,7 @@ let iterate_callbacks (exe_env: Exe_env.t) =
     SourceFiles.proc_names_of_source exe_env.source_file
   in
   if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env procs_to_analyze ;
-  let analyze_proc_name pname =
-    Option.iter
-      ~f:(fun pdesc -> ignore (Ondemand.analyze_proc_desc pdesc))
-      (Ondemand.get_proc_desc pname)
-  in
+  let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Specs.summary option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
   iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;

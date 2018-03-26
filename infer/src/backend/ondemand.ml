@@ -168,25 +168,29 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
         log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
 
 
-let analyze_proc_desc ?caller_pdesc callee_pdesc =
+let analyze_proc ?caller_pdesc callee_pdesc =
+  let callbacks = Option.value_exn !callbacks_ref in
+  Some (run_proc_analysis callbacks.analyze_ondemand ~caller_pdesc callee_pdesc)
+
+
+let analyze_proc_desc ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
     try Typ.Procname.Hash.find cache callee_pname with Not_found ->
       let summary_option =
-        let callbacks = Option.value_exn !callbacks_ref in
         let proc_attributes = Procdesc.get_attributes callee_pdesc in
         if should_be_analyzed callee_pname proc_attributes then
-          Some (run_proc_analysis callbacks.analyze_ondemand ~caller_pdesc callee_pdesc)
+          analyze_proc ~caller_pdesc callee_pdesc
         else Specs.get_summary callee_pname
       in
       Typ.Procname.Hash.add cache callee_pname summary_option ;
       summary_option
 
 
-(** analyze_proc_name curr_pdesc proc_name performs an on-demand analysis of proc_name triggered
-    during the analysis of curr_pname *)
+(** analyze_proc_name ?caller_pdesc proc_name performs an on-demand analysis of proc_name triggered
+    during the analysis of caller_pdesc *)
 let analyze_proc_name ?caller_pdesc callee_pname =
   if is_active callee_pname then None
   else
@@ -197,7 +201,7 @@ let analyze_proc_name ?caller_pdesc callee_pname =
         if procedure_should_be_analyzed callee_pname then
           match callbacks.get_proc_desc callee_pname with
           | Some callee_pdesc ->
-              analyze_proc_desc ?caller_pdesc callee_pdesc
+              analyze_proc ?caller_pdesc callee_pdesc
           | None ->
               Specs.get_summary callee_pname
         else Specs.get_summary callee_pname

@@ -20,7 +20,7 @@ type callbacks = {analyze_ondemand: analyze_ondemand; get_proc_desc: get_proc_de
 val get_proc_desc : get_proc_desc
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 
-val analyze_proc_desc : ?caller_pdesc:Procdesc.t -> Procdesc.t -> Specs.summary option
+val analyze_proc_desc : caller_pdesc:Procdesc.t -> Procdesc.t -> Specs.summary option
 (** [analyze_proc_desc ~caller_pdesc callee_pdesc] performs an on-demand analysis of callee_pdesc
    triggered during the analysis of caller_pdesc *)
 
