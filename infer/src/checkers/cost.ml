@@ -28,61 +28,6 @@ let expensive_threshold = Itv.Bound.of_int 200
 (* CFG module used in several other modules  *)
 module CFG = ProcCfg.Normal
 
-(* Transfer function computing the semantics of the program.
-   Here semantics means: for each node a pair (env, alias) where
-   1. env is an 'environment', i.e. a map from variables to values
-   2  alias is an alias map.
-*)
-module TransferFunctionsSemantics (CFG : ProcCfg.S) = struct
-  module CFG = CFG
-  module Domain = CostDomain.SemanticDomain
-
-  let _exec_instr ((env, alias) as astate: Domain.astate) {ProcData.tenv} _ instr =
-    let astate' =
-      match instr with
-      | Sil.Store (lhs, {Typ.desc= Tint _}, rhs, _) ->
-          let env' = CostDomain.SemanticDomain.update_env env lhs rhs in
-          let alias' = CostDomain.SemanticDomain.update_alias tenv alias lhs rhs in
-          (env', alias')
-      | Sil.Load (id, rhs, {Typ.desc= Tint _}, _) ->
-          let env' = CostDomain.SemanticDomain.update_env env (Exp.Var id) rhs in
-          let alias' = CostDomain.SemanticDomain.update_alias tenv alias (Exp.Var id) rhs in
-          (env', alias')
-      | Sil.Prune (e, _, _, _) -> (
-        match CostDomain.SemanticDomain.sem env e with
-        | Some e', Some v ->
-            L.(debug Analysis Medium) "@\n e'= %a, v=%a @\n" Exp.pp e' CostDomain.ItvPureCost.pp v ;
-            let v' =
-              match CostDomain.EnvDomain.find_opt e' env with
-              | Some v_pre ->
-                  L.(debug Analysis Medium) "@\n>>>Starting meet 2 \n" ;
-                  let meet = CostDomain.ItvPureCost.meet v_pre v in
-                  L.(debug Analysis Medium)
-                    "@\n>>> Result Meet v_pre= %a   e_val= %a --> %a\n" CostDomain.ItvPureCost.pp
-                    v_pre CostDomain.ItvPureCost.pp v CostDomain.ItvPureCost.pp meet ;
-                  if CostDomain.ItvPureCost.is_empty meet then v else meet
-              | None ->
-                  v
-            in
-            let env' = CostDomain.EnvDomain.add e' v' env in
-            L.(debug Analysis Medium)
-              "@\n e'= %a, v'=%a @\n" Exp.pp e' CostDomain.ItvPureCost.pp v' ;
-            let env'' = CostDomain.SemanticDomain.update_alias_env env' alias e' in
-            (env'', alias)
-        | _ ->
-            (env, alias) )
-      | Sil.Load _
-      | Sil.Store _
-      | Sil.Call _
-      | Sil.Declare_locals _
-      | Remove_temps _
-      | Abstract _
-      | Nullify _ ->
-          astate
-    in
-    astate'
-end
-
 (* Map associating to each node a bound on the number of times it can be executed.
    This bound is computed using environments (map: val -> values), using the following
    observation: the number of environments associated with a program point is an upperbound
