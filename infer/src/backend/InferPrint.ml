@@ -965,14 +965,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
 
 
 let register_perf_stats_report () =
-  let fname = F.sprintf "%s.json" Config.perf_stats_prefix in
   let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
-  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) fname PerfStats.Reporting
-
-
-let report_perf_stats () =
-  let fname = F.sprintf "%s.json" Config.perf_stats_prefix in
-  PerfStats.get_reporter fname PerfStats.Reporting ()
+  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) PerfStats.Reporting
 
 
 let main ~report_json =
@@ -990,4 +984,4 @@ let main ~report_json =
       pp_json_report_by_report_kind formats_by_report_kind fname
   | None ->
       pp_summary_and_issues formats_by_report_kind issue_formats ) ;
-  report_perf_stats ()
+  PerfStats.get_reporter PerfStats.Reporting ()

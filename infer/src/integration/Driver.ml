@@ -126,11 +126,6 @@ let clean_results_dir () =
   delete_temp_results Config.results_dir
 
 
-let register_perf_stats_report () =
-  let filename = F.sprintf "%s.json" Config.perf_stats_prefix in
-  PerfStats.register_report_at_exit filename PerfStats.Driver
-
-
 let reset_duplicates_file () =
   let start = Config.results_dir ^/ Config.duplicates_filename in
   let delete () = Unix.unlink start in
@@ -536,7 +531,7 @@ let mode_from_command_line =
 let run_prologue mode =
   if CLOpt.is_originator then (
     L.environment_info "%a@\n" Config.pp_version () ;
-    register_perf_stats_report () ) ;
+    PerfStats.register_report_at_exit PerfStats.Driver ) ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file () ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,

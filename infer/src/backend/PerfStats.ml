@@ -41,23 +41,49 @@ type stats_type =
   | Reporting
   | Driver
 
-let dirname_of_stats_type = function
-  | ClangLinters _ ->
-      Config.frontend_stats_dir_name
-  | ClangFrontend _ ->
-      Config.frontend_stats_dir_name
-  | ClangFrontendLinters _ ->
-      Config.frontend_stats_dir_name
-  | JavaFrontend _ ->
-      Config.frontend_stats_dir_name
-  | PythonFrontend _ ->
-      Config.frontend_stats_dir_name
-  | Backend _ ->
-      Config.backend_stats_dir_name
-  | Reporting ->
-      Config.reporting_stats_dir_name
-  | Driver ->
-      Config.driver_stats_dir_name
+let source_file_of_stats_type = function
+  | ClangLinters source_file
+  | ClangFrontend source_file
+  | ClangFrontendLinters source_file
+  | JavaFrontend source_file
+  | PythonFrontend source_file
+  | Backend source_file ->
+      Some source_file
+  | _ ->
+      None
+
+
+let relative_path_of_stats_type stats_type =
+  let abbrev_source_file =
+    Option.map ~f:DB.source_file_encoding (source_file_of_stats_type stats_type)
+  in
+  let filename =
+    match abbrev_source_file with
+    | Some abbrev ->
+        F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev
+    | None ->
+        F.sprintf "%s.json" Config.perf_stats_prefix
+  in
+  let dirname =
+    match stats_type with
+    | ClangLinters _ ->
+        Config.frontend_stats_dir_name
+    | ClangFrontend _ ->
+        Config.frontend_stats_dir_name
+    | ClangFrontendLinters _ ->
+        Config.frontend_stats_dir_name
+    | JavaFrontend _ ->
+        Config.frontend_stats_dir_name
+    | PythonFrontend _ ->
+        Config.frontend_stats_dir_name
+    | Backend _ ->
+        Config.backend_stats_dir_name
+    | Reporting ->
+        Config.reporting_stats_dir_name
+    | Driver ->
+        Config.driver_stats_dir_name
+  in
+  Filename.concat dirname filename
 
 
 let string_of_stats_type = function
@@ -77,18 +103,6 @@ let string_of_stats_type = function
       "reporting"
   | Driver ->
       "driver"
-
-
-let source_file_of_stats_type = function
-  | ClangLinters source_file
-  | ClangFrontend source_file
-  | ClangFrontendLinters source_file
-  | JavaFrontend source_file
-  | PythonFrontend source_file
-  | Backend source_file ->
-      Some source_file
-  | _ ->
-      None
 
 
 let to_json ps =
@@ -312,13 +326,8 @@ let report stats_kind file stats_type () =
 
 let registered = String.Table.create ~size:4 ()
 
-let get_relative_path filename stats_type =
-  let dirname = dirname_of_stats_type stats_type in
-  Filename.concat dirname filename
-
-
-let register_report stats_kind filename stats_type =
-  let relative_path = get_relative_path filename stats_type in
+let register_report stats_kind stats_type =
+  let relative_path = relative_path_of_stats_type stats_type in
   let absolute_path = Filename.concat Config.results_dir relative_path in
   let f = report stats_kind absolute_path stats_type in
   (* make sure to not double register the same perf stat report *)
@@ -331,13 +340,13 @@ let register_report stats_kind filename stats_type =
 
 let dummy_reporter () = ()
 
-let get_reporter filename stats_type =
-  let relative_path = get_relative_path filename stats_type in
+let get_reporter stats_type =
+  let relative_path = relative_path_of_stats_type stats_type in
   String.Table.find registered relative_path |> Option.value ~default:dummy_reporter
 
 
-let register_report_at_exit filename stats_type =
-  register_report TimeAndMemory filename stats_type ;
-  Epilogues.register
-    ~f:(get_reporter filename stats_type)
-    (string_of_stats_type stats_type ^ "stats reporting in " ^ filename)
+let register_report_at_exit stats_type =
+  let relative_path = relative_path_of_stats_type stats_type in
+  register_report TimeAndMemory stats_type ;
+  Epilogues.register ~f:(get_reporter stats_type)
+    (string_of_stats_type stats_type ^ "stats reporting in " ^ relative_path)

@@ -29,11 +29,11 @@ val from_json : Yojson.Basic.json -> perf_stats
 
 val aggregate : perf_stats list -> Yojson.Basic.json
 
-val register_report : stats_kind -> string -> stats_type -> unit
+val register_report : stats_kind -> stats_type -> unit
 (** Register performance reporting function *)
 
-val get_reporter : string -> stats_type -> unit -> unit
+val get_reporter : stats_type -> unit -> unit
 (** Get reporting function that can be called at any time to create a performance report *)
 
-val register_report_at_exit : string -> stats_type -> unit
+val register_report_at_exit : stats_type -> unit
 (** Create performance report when the current process terminates *)

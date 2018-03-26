@@ -25,8 +25,6 @@ let validate_decl_from_channel chan =
 
 
 let register_perf_stats_report source_file =
-  let abbrev_source_file = DB.source_file_encoding source_file in
-  let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
   let stats_type =
     match (Config.capture, Config.linters) with
     | true, true ->
@@ -38,7 +36,7 @@ let register_perf_stats_report source_file =
     | false, false ->
         Logging.(die UserError) "Clang frontend should be run in capture and/or linters mode."
   in
-  PerfStats.register_report_at_exit filename stats_type
+  PerfStats.register_report_at_exit stats_type
 
 
 let init_global_state_for_capture_and_linters source_file =

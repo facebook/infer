@@ -14,15 +14,9 @@ open Javalib_pack
 module F = Format
 module L = Logging
 
-let register_perf_stats_report source_file =
-  let abbrev_source_file = DB.source_file_encoding source_file in
-  let filename = F.sprintf "%s_%s.json" Config.perf_stats_prefix abbrev_source_file in
-  PerfStats.register_report_at_exit filename (PerfStats.JavaFrontend source_file)
-
-
 let init_global_state source_file =
   Language.curr_language := Language.Java ;
-  register_perf_stats_report source_file ;
+  PerfStats.register_report_at_exit (PerfStats.JavaFrontend source_file) ;
   DB.Results_dir.init source_file ;
   Ident.NameGenerator.reset () ;
   JContext.reset_exn_node_table ()
