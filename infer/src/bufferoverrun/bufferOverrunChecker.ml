@@ -246,24 +246,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Prune (exp, _, _, _) ->
           Sem.prune exp mem
-      | Call (ret, Const Cfun callee_pname, params, location, _)
-        -> (
-          let model_env = Models.mk_model_env callee_pname node location tenv ?ret in
-          match Models.Call.dispatch callee_pname params with
-          | Some {Models.exec} ->
-              exec model_env mem
+      | Call (ret, Const Cfun callee_pname, params, location, _) -> (
+        match Models.Call.dispatch callee_pname params with
+        | Some {Models.exec} ->
+            let model_env = Models.mk_model_env callee_pname node location tenv ?ret in
+            exec model_env mem
+        | None ->
+          match Summary.read_summary pdesc callee_pname with
+          | Some summary ->
+              let callee = extras callee_pname in
+              instantiate_mem tenv ret callee callee_pname params mem summary location
           | None ->
-            match Summary.read_summary pdesc callee_pname with
-            | Some summary ->
-                let callee = extras callee_pname in
-                instantiate_mem tenv ret callee callee_pname params mem summary location
-            | None ->
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
-                  location ;
-                let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
-                Models.model_by_value val_unknown model_env mem
-                |> Dom.Mem.add_heap Loc.unknown val_unknown )
+              L.(debug BufferOverrun Verbose)
+                "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
+                location ;
+              let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
+              Models.model_by_value val_unknown ret mem |> Dom.Mem.add_heap Loc.unknown val_unknown
+        )
       | Declare_locals (locals, location) ->
           (* array allocation in stack e.g., int arr[10] *)
           let rec decl_local pname node location loc typ ~inst_num ~dimension mem =

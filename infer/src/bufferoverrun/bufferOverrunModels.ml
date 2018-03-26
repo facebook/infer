@@ -167,7 +167,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check}
 
 
-  let model_by_value value {ret} mem =
+  let model_by_value value ret mem =
     match ret with
     | Some (id, _) ->
         Dom.Mem.add_stack (Loc.of_id id) value mem
@@ -177,7 +177,10 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         mem
 
 
-  let by_value value = {exec= model_by_value value; check= no_check}
+  let by_value value =
+    let exec {ret} mem = model_by_value value ret mem in
+    {exec; check= no_check}
+
 
   let bottom =
     let exec _model_env _mem = Bottom in
