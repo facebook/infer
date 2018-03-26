@@ -32,27 +32,27 @@ type perf_stats = {mem: mem_perf option; time: time_perf option}
 type stats_kind = Time of Mtime_clock.counter * Unix.process_times | Memory | TimeAndMemory
 
 type stats_type =
-  | ClangLinters
-  | ClangFrontend
-  | ClangFrontendLinters
-  | JavaFrontend
-  | PythonFrontend
-  | Backend
+  | ClangLinters of SourceFile.t
+  | ClangFrontend of SourceFile.t
+  | ClangFrontendLinters of SourceFile.t
+  | JavaFrontend of SourceFile.t
+  | PythonFrontend of SourceFile.t
+  | Backend of SourceFile.t
   | Reporting
   | Driver
 
 let dirname_of_stats_type = function
-  | ClangLinters ->
+  | ClangLinters _ ->
       Config.frontend_stats_dir_name
-  | ClangFrontend ->
+  | ClangFrontend _ ->
       Config.frontend_stats_dir_name
-  | ClangFrontendLinters ->
+  | ClangFrontendLinters _ ->
       Config.frontend_stats_dir_name
-  | JavaFrontend ->
+  | JavaFrontend _ ->
       Config.frontend_stats_dir_name
-  | PythonFrontend ->
+  | PythonFrontend _ ->
       Config.frontend_stats_dir_name
-  | Backend ->
+  | Backend _ ->
       Config.backend_stats_dir_name
   | Reporting ->
       Config.reporting_stats_dir_name
@@ -61,22 +61,34 @@ let dirname_of_stats_type = function
 
 
 let string_of_stats_type = function
-  | ClangLinters ->
+  | ClangLinters _ ->
       "linters"
-  | ClangFrontend ->
+  | ClangFrontend _ ->
       "clang_frontend"
-  | ClangFrontendLinters ->
+  | ClangFrontendLinters _ ->
       "clang_frontend_and_linters"
-  | JavaFrontend ->
+  | JavaFrontend _ ->
       "java_frontend"
-  | PythonFrontend ->
+  | PythonFrontend _ ->
       "python_frontend"
-  | Backend ->
+  | Backend _ ->
       "backend"
   | Reporting ->
       "reporting"
   | Driver ->
       "driver"
+
+
+let source_file_of_stats_type = function
+  | ClangLinters source_file
+  | ClangFrontend source_file
+  | ClangFrontendLinters source_file
+  | JavaFrontend source_file
+  | PythonFrontend source_file
+  | Backend source_file ->
+      Some source_file
+  | _ ->
+      None
 
 
 let to_json ps =
@@ -254,7 +266,7 @@ let compute_time_stats ?rtime_counter (initial_times: Unix.process_times) =
   (stats, time)
 
 
-let compute_stats stats_kind source_file stats_type =
+let compute_stats stats_kind stats_type =
   let (mem, mem_perf), (time, time_perf) =
     match stats_kind with
     | Time (rtime_counter, initial_times) ->
@@ -268,7 +280,7 @@ let compute_stats stats_kind source_file stats_type =
   let stats_event =
     EventLogger.PerformanceStats
       { lang= Language.to_explicit_string !Language.curr_language
-      ; source_file
+      ; source_file= source_file_of_stats_type stats_type
       ; stats_type= string_of_stats_type stats_type
       ; mem_perf
       ; time_perf }
@@ -276,9 +288,9 @@ let compute_stats stats_kind source_file stats_type =
   (stats, stats_event)
 
 
-let report stats_kind source_file file stats_type () =
+let report stats_kind file stats_type () =
   try
-    let stats, stats_event = compute_stats stats_kind source_file stats_type in
+    let stats, stats_event = compute_stats stats_kind stats_type in
     let json_stats = to_json stats in
     EventLogger.log stats_event ;
     (* We always log to EventLogger, but json files are unnecessary to log outside of developer mode *)
@@ -305,10 +317,10 @@ let get_relative_path filename stats_type =
   Filename.concat dirname filename
 
 
-let register_report stats_kind ?source_file filename stats_type =
+let register_report stats_kind filename stats_type =
   let relative_path = get_relative_path filename stats_type in
   let absolute_path = Filename.concat Config.results_dir relative_path in
-  let f = report stats_kind source_file absolute_path stats_type in
+  let f = report stats_kind absolute_path stats_type in
   (* make sure to not double register the same perf stat report *)
   match String.Table.add registered ~key:relative_path ~data:f with
   | `Ok ->
@@ -324,8 +336,8 @@ let get_reporter filename stats_type =
   String.Table.find registered relative_path |> Option.value ~default:dummy_reporter
 
 
-let register_report_at_exit ?source_file filename stats_type =
-  register_report TimeAndMemory ?source_file filename stats_type ;
+let register_report_at_exit filename stats_type =
+  register_report TimeAndMemory filename stats_type ;
   Epilogues.register
     ~f:(get_reporter filename stats_type)
     (string_of_stats_type stats_type ^ "stats reporting in " ^ filename)

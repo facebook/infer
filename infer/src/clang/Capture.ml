@@ -30,15 +30,15 @@ let register_perf_stats_report source_file =
   let stats_type =
     match (Config.capture, Config.linters) with
     | true, true ->
-        PerfStats.ClangFrontendLinters
+        PerfStats.ClangFrontendLinters source_file
     | true, false ->
-        PerfStats.ClangFrontend
+        PerfStats.ClangFrontend source_file
     | false, true ->
-        PerfStats.ClangLinters
+        PerfStats.ClangLinters source_file
     | false, false ->
         Logging.(die UserError) "Clang frontend should be run in capture and/or linters mode."
   in
-  PerfStats.register_report_at_exit filename ~source_file stats_type
+  PerfStats.register_report_at_exit filename stats_type
 
 
 let init_global_state_for_capture_and_linters source_file =
