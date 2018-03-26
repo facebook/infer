@@ -13,8 +13,11 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
-module L = Logging
+module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
+module L = Logging
+module Models = BufferOverrunModels
+module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
@@ -31,9 +34,6 @@ end)
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
-  module BoUtils = BufferOverrunUtils.Make (CFG)
-  module Sem = BoUtils.Sem
-  module Models = BufferOverrunModels.Make (BoUtils)
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
@@ -313,11 +313,6 @@ module CFG = Analyzer.TransferFunctions.CFG
 type invariant_map = Analyzer.invariant_map
 
 module Report = struct
-  (* I'd like to avoid rebuilding this :(
-    Everything depend on CFG only because of `get_allocsite` *)
-  module BoUtils = BufferOverrunUtils.Make (CFG)
-  module Sem = BoUtils.Sem
-  module Models = BufferOverrunModels.Make (BoUtils)
   module PO = BufferOverrunProofObligations
 
   type extras = Typ.Procname.t -> Procdesc.t option
