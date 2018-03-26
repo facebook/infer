@@ -316,7 +316,7 @@ module LoggerImpl : S = struct
       |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
       |> add_string ~key:"infer_commit" ~data:Version.commit
       |> add_int ~key:"is_originator" ~data:(if CLOpt.is_originator then 1 else 0)
-      |> add_int ~key:"pid" ~data:(pid ())
+      |> add_string_opt ~key:"job_id" ~data:Config.job_id |> add_int ~key:"pid" ~data:(pid ())
       |> add_string ~key:"run_identifier" ~data:(get_log_identifier ())
       |> add_int ~key:"sequence" ~data:(!sequence_ctr - 1)
       |> add_string ~key:"sysname" ~data:sysname

@@ -443,6 +443,8 @@ val java_jar_compiler : string option
 
 val javac_classes_out : string
 
+val job_id : string option
+
 val jobs : int
 
 val join_cond : int

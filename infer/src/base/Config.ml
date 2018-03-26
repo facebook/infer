@@ -1450,6 +1450,8 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
+and job_id = CLOpt.mk_string_opt ~long:"job-id" "Specify the job ID of this Infer run."
+
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
     ~in_help:InferCommand.([(Analyze, manual_generic)])
@@ -2507,6 +2509,8 @@ and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
 
 and javac_classes_out = !javac_classes_out
+
+and job_id = !job_id
 
 and jobs = !jobs
 
