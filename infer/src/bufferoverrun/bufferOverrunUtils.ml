@@ -25,26 +25,26 @@ module type S = sig
     val load_val : Ident.t -> Dom.Val.astate -> Dom.Mem.astate -> Dom.Mem.astate
 
     type decl_local =
-      Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> inst_num:int -> dimension:int
-      -> Dom.Mem.astate -> Dom.Mem.astate * int
+      Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t -> inst_num:int
+      -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
 
     val decl_local_array :
-      decl_local:decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t
+      decl_local:decl_local -> Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t
       -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
       -> Dom.Mem.astate * int
 
     type decl_sym_val =
-      Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int -> Loc.t -> Typ.t
+      Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t
       -> Dom.Mem.astate -> Dom.Mem.astate
 
     val decl_sym_arr :
-      decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int
-      -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
+      decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t
+      -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
       -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
       -> Dom.Mem.astate
 
     val init_array_fields :
-      Tenv.t -> Typ.Procname.t -> CFG.node -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t
+      Tenv.t -> Typ.Procname.t -> node_hash:int -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t
       -> Dom.Mem.astate -> Dom.Mem.astate
 
     val set_dyn_length : Tenv.t -> Typ.t -> PowLoc.t -> Itv.t -> Dom.Mem.astate -> Dom.Mem.astate
@@ -71,41 +71,41 @@ module Make (CFG : ProcCfg.S) = struct
 
 
     type decl_local =
-      Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> inst_num:int -> dimension:int
-      -> Dom.Mem.astate -> Dom.Mem.astate * int
+      Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t -> inst_num:int
+      -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
 
     let decl_local_array
-        : decl_local:decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t
+        : decl_local:decl_local -> Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t
           -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int
           -> Dom.Mem.astate -> Dom.Mem.astate * int =
-     fun ~decl_local pname node location loc typ ~length ?stride ~inst_num ~dimension mem ->
+     fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
       let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
       let arr =
-        Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
+        Sem.eval_array_alloc pname ~node_hash typ Itv.zero size ?stride inst_num dimension
         |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
       in
       let mem =
         if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem
         else Dom.Mem.add_heap loc arr mem
       in
-      let loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension) in
+      let loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash inst_num dimension) in
       let mem, _ =
-        decl_local pname node location loc typ ~inst_num ~dimension:(dimension + 1) mem
+        decl_local pname ~node_hash location loc typ ~inst_num ~dimension:(dimension + 1) mem
       in
       (mem, inst_num + 1)
 
 
     type decl_sym_val =
-      Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int -> Loc.t -> Typ.t
+      Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t
       -> Dom.Mem.astate -> Dom.Mem.astate
 
     let decl_sym_arr
-        : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t
+        : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t
           -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
           -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
           -> Dom.Mem.astate =
-     fun ~decl_sym_val pname tenv node location ~depth loc typ ?offset ?size ~inst_num ~new_sym_num
-         ~new_alloc_num mem ->
+     fun ~decl_sym_val pname tenv ~node_hash location ~depth loc typ ?offset ?size ~inst_num
+         ~new_sym_num ~new_alloc_num mem ->
       let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
       let itv_make_sym () = Itv.make_sym pname new_sym_num in
       let offset = option_value offset itv_make_sym in
@@ -113,15 +113,15 @@ module Make (CFG : ProcCfg.S) = struct
       let alloc_num = Itv.Counter.next new_alloc_num in
       let elem = Trace.SymAssign (loc, location) in
       let arr =
-        Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
+        Sem.eval_array_alloc pname ~node_hash typ offset size inst_num alloc_num
         |> Dom.Val.add_trace_elem elem
       in
       let mem = Dom.Mem.add_heap loc arr mem in
-      let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num) in
-      decl_sym_val pname tenv node location ~depth deref_loc typ mem
+      let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash inst_num alloc_num) in
+      decl_sym_val pname tenv ~node_hash location ~depth deref_loc typ mem
 
 
-    let init_array_fields tenv pname node typ locs ?dyn_length mem =
+    let init_array_fields tenv pname ~node_hash typ locs ?dyn_length mem =
       let rec init_field locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
         let field_loc = PowLoc.append_field locs ~fn:field_name in
         let mem =
@@ -135,7 +135,8 @@ module Make (CFG : ProcCfg.S) = struct
               in
               let stride = Option.map stride ~f:IntLit.to_int in
               let v =
-                Sem.eval_array_alloc pname node typ ?stride Itv.zero length inst_num dimension
+                Sem.eval_array_alloc pname ~node_hash typ ?stride Itv.zero length inst_num
+                  dimension
               in
               Dom.Mem.strong_update_heap field_loc v mem
           | _ ->

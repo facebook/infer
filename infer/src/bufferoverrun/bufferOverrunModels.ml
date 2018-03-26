@@ -22,12 +22,12 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   type model_env =
     { pname: Typ.Procname.t
-    ; node: CFG.node
+    ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
     ; ret: (Ident.t * Typ.t) option }
 
-  let mk_model_env pname node location ?ret tenv = {pname; node; location; tenv; ret}
+  let mk_model_env pname node_hash location ?ret tenv = {pname; node_hash; location; tenv; ret}
 
   type exec_fun = model_env -> Dom.Mem.astate -> Dom.Mem.astate
 
@@ -73,19 +73,19 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         PO.ConditionSet.add_alloc_size pname location ~length traces cond_set
 
 
-  let set_uninitialized node (typ: Typ.t) ploc mem =
+  let set_uninitialized location (typ: Typ.t) ploc mem =
     match typ.desc with
     | Tint _ | Tfloat _ ->
         Dom.Mem.weak_update_heap ploc Dom.Val.Itv.top mem
     | _ ->
         L.(debug BufferOverrun Verbose)
           "/!\\ Do not know how to uninitialize type %a at %a@\n" (Typ.pp Pp.text) typ Location.pp
-          (CFG.loc node) ;
+          location ;
         mem
 
 
   let malloc size_exp =
-    let exec {pname; ret; node; location; tenv} mem =
+    let exec {pname; ret; node_hash; location; tenv} mem =
       match ret with
       | Some (id, _) ->
           let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -93,16 +93,16 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           let length = Sem.eval length0 mem in
           let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
           let v =
-            Sem.eval_array_alloc pname node typ ?stride Itv.zero (Dom.Val.get_itv length) 0 1
+            Sem.eval_array_alloc pname ~node_hash typ ?stride Itv.zero (Dom.Val.get_itv length) 0 1
             |> Dom.Val.set_traces traces
           in
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
-          |> set_uninitialized node typ (Dom.Val.get_array_locs v)
-          |> BoUtils.Exec.init_array_fields tenv pname node typ (Dom.Val.get_array_locs v)
+          |> set_uninitialized location typ (Dom.Val.get_array_locs v)
+          |> BoUtils.Exec.init_array_fields tenv pname ~node_hash typ (Dom.Val.get_array_locs v)
                ?dyn_length
       | _ ->
           L.(debug BufferOverrun Verbose)
-            "/!\\ Do not know where to model malloc at %a@\n" Location.pp (CFG.loc node) ;
+            "/!\\ Do not know where to model malloc at %a@\n" Location.pp location ;
           mem
     and check = check_alloc_size size_exp in
     {exec; check}
@@ -197,14 +197,14 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
 
   let set_array_length array length_exp =
-    let exec {pname; node} mem =
+    let exec {pname; node_hash; location} mem =
       match array with
       | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
           let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
           let stride = Option.map ~f:IntLit.to_int stride in
-          let v = Sem.eval_array_alloc pname node elt ?stride Itv.zero length 0 1 in
+          let v = Sem.eval_array_alloc pname ~node_hash elt ?stride Itv.zero length 0 1 in
           mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
-          |> set_uninitialized node elt (Dom.Val.get_array_locs v)
+          |> set_uninitialized location elt (Dom.Val.get_array_locs v)
       | _ ->
           L.(die InternalError) "Unexpected type of first argument for __set_array_length()"
     and check = check_alloc_size length_exp in
@@ -254,18 +254,18 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   module StdArray = struct
     let typ typ length =
-      let declare_local ~decl_local {pname; node; location} loc ~inst_num ~dimension mem =
+      let declare_local ~decl_local {pname; node_hash; location} loc ~inst_num ~dimension mem =
         (* should this be deferred to the constructor? *)
         let length = Some (IntLit.of_int64 length) in
-        BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length ~inst_num
-          ~dimension mem
+        BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
+          ~inst_num ~dimension mem
       in
-      let declare_symbolic ~decl_sym_val {pname; tenv; node; location} ~depth loc ~inst_num
+      let declare_symbolic ~decl_sym_val {pname; tenv; node_hash; location} ~depth loc ~inst_num
           ~new_sym_num ~new_alloc_num mem =
         let offset = Itv.zero in
         let size = Itv.of_int64 length in
-        BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ ~offset
-          ~size ~inst_num ~new_sym_num ~new_alloc_num mem
+        BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv ~node_hash location ~depth loc typ
+          ~offset ~size ~inst_num ~new_sym_num ~new_alloc_num mem
       in
       {declare_local; declare_symbolic}
 

@@ -318,19 +318,20 @@ module Make (CFG : ProcCfg.S) = struct
         Val.bot
 
 
-  let get_allocsite : Typ.Procname.t -> CFG.node -> int -> int -> string =
-   fun proc_name node inst_num dimension ->
+  let get_allocsite : Typ.Procname.t -> node_hash:int -> int -> int -> string =
+   fun proc_name ~node_hash inst_num dimension ->
     let proc_name = Typ.Procname.to_string proc_name in
-    let node_num = CFG.hash node |> string_of_int in
+    let node_num = string_of_int node_hash in
     let inst_num = string_of_int inst_num in
     let dimension = string_of_int dimension in
     proc_name ^ "-" ^ node_num ^ "-" ^ inst_num ^ "-" ^ dimension |> Allocsite.make
 
 
   let eval_array_alloc
-      : Typ.Procname.t -> CFG.node -> Typ.t -> ?stride:int -> Itv.t -> Itv.t -> int -> int -> Val.t =
-   fun pdesc node typ ?stride:stride0 offset size inst_num dimension ->
-    let allocsite = get_allocsite pdesc node inst_num dimension in
+      : Typ.Procname.t -> node_hash:int -> Typ.t -> ?stride:int -> Itv.t -> Itv.t -> int -> int
+        -> Val.t =
+   fun pdesc ~node_hash typ ?stride:stride0 offset size inst_num dimension ->
+    let allocsite = get_allocsite pdesc ~node_hash inst_num dimension in
     let int_stride = match stride0 with None -> sizeof typ | Some stride -> stride in
     let stride = Itv.of_int int_stride in
     ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk
