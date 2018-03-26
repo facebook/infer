@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module F = Format
 module L = Logging
 

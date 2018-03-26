@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open! PVariant
 module F = Format
 module L = Logging
 

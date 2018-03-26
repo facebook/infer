@@ -409,7 +409,7 @@ let builtin_type_kind_assoc =
 
 
 let builtin_equal (bi: Clang_ast_t.builtin_type_kind) (abi: builtin_kind) =
-  match List.Assoc.find ~equal:PVariant.( = ) builtin_type_kind_assoc bi with
+  match List.Assoc.find ~equal:PolyVariantEqual.( = ) builtin_type_kind_assoc bi with
   | Some assoc_abi when equal_builtin_kind assoc_abi abi ->
       true
   | _ ->

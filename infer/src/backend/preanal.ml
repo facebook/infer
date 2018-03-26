@@ -9,7 +9,6 @@
  *)
 
 open! IStd
-open! PVariant
 module L = Logging
 
 (** add instructions to perform abstraction *)

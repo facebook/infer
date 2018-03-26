@@ -41,7 +41,7 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translatio
       log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp e.class_name
   | exn ->
       let trace = Backtrace.get () in
-      reraise_if exn ~f:(fun () ->
+      IExn.reraise_if exn ~f:(fun () ->
           L.internal_error "%a: %a@\n%!" pp_context () Exn.pp exn ;
           not Config.keep_going ) ;
       log_and_recover ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn

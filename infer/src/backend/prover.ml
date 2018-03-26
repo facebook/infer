@@ -17,7 +17,7 @@ module F = Format
 
 let decrease_indent_when_exception thunk =
   try thunk () with exn when SymOp.exn_not_failure exn ->
-    reraise_after exn ~f:(fun () -> L.d_decrease_indent 1)
+    IExn.reraise_after exn ~f:(fun () -> L.d_decrease_indent 1)
 
 
 let compute_max_from_nonempty_int_list l = uw (List.max_elt ~cmp:IntLit.compare_value l)

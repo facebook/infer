@@ -30,7 +30,7 @@ let create_cmd (compilation_data: CompilationDatabase.compilation_data) =
    Because infer processes run in parallel but do not share any memory, we use the
    filesystem to signal failures across processes. *)
 let sentinel_exists sentinel_opt =
-  let file_exists sentinel = PVariant.( = ) (Sys.file_exists sentinel) `Yes in
+  let file_exists sentinel = PolyVariantEqual.( = ) (Sys.file_exists sentinel) `Yes in
   Option.value_map ~default:false sentinel_opt ~f:file_exists
 
 

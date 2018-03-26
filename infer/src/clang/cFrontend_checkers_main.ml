@@ -103,7 +103,7 @@ let rec get_responds_to_selector stmt =
     when List.mem ~equal:String.equal responToSelectorMethods mdi.Clang_ast_t.omei_selector ->
       [method_name]
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
-    when PVariant.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
+    when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
       List.append (get_responds_to_selector stmt1) (get_responds_to_selector stmt2)
   | ImplicitCastExpr (_, [stmt], _, _)
   | ParenExpr (_, [stmt], _)
@@ -146,13 +146,15 @@ let rec get_current_os_version stmt =
   let open Clang_ast_t in
   match stmt with
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
-    when PVariant.( = ) bo_info.Clang_ast_t.boi_kind `GE && is_core_foundation_version_number stmt1 ->
+    when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `GE
+         && is_core_foundation_version_number stmt1 ->
       Option.to_list (current_os_version_constant stmt2)
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
-    when PVariant.( = ) bo_info.Clang_ast_t.boi_kind `LE && is_core_foundation_version_number stmt2 ->
+    when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `LE
+         && is_core_foundation_version_number stmt2 ->
       Option.to_list (current_os_version_constant stmt1)
   | BinaryOperator (_, [stmt1; stmt2], _, bo_info)
-    when PVariant.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
+    when PolyVariantEqual.( = ) bo_info.Clang_ast_t.boi_kind `LAnd ->
       List.append (get_current_os_version stmt1) (get_current_os_version stmt2)
   | ImplicitCastExpr (_, [stmt], _, _)
   | ParenExpr (_, [stmt], _)

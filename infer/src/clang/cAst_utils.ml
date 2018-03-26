@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 
 (** Functions for transformations of ast nodes *)
 

@@ -4,7 +4,7 @@
      {|
 (library
  ((name InferStdlib)
-  (flags (%s))
+  (flags (%s -open Core))
   (ocamlopt_flags (%s))
   (libraries (%s))
  ))

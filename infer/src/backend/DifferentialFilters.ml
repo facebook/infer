@@ -236,7 +236,7 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
     ~(interesting_paths: SourceFile.t list option) : Differential.t =
   let paths_filter = interesting_paths_filter interesting_paths in
   let apply_paths_filter_if_needed label issues =
-    if List.exists ~f:(PVariant.( = ) label) Config.differential_filter_set then
+    if List.exists ~f:(PolyVariantEqual.( = ) label) Config.differential_filter_set then
       paths_filter issues
     else issues
   in

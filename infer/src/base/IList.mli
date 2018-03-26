@@ -33,3 +33,5 @@ val append_no_duplicates : cmp:('a -> 'a -> int) -> ('a list -> 'a list -> 'a li
 (** [append_no_duplicates list1 list2], assuming that list1 and list2 have no duplicates on their
     own, it computes list1 @ (filtered list2), so it keeps the order of both lists and has no
     duplicates. *)
+
+val merge_dedup : 'a list -> 'a list -> compare:('a -> 'a -> int) -> 'a list

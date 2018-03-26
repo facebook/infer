@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module L = Logging
 
 let count_newlines (path: string) : int =

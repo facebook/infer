@@ -308,7 +308,7 @@ let setup_log_file () =
         in
         (* assumes the results dir exists already *)
         let logfile_path = results_dir ^/ Config.log_file in
-        let preexisting_logfile = PVariant.( = ) (Sys.file_exists logfile_path) `Yes in
+        let preexisting_logfile = PolyVariantEqual.( = ) (Sys.file_exists logfile_path) `Yes in
         let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
         let file_fmt =
           let f = F.formatter_of_out_channel chan in

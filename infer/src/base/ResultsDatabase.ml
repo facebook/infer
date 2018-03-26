@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open! PVariant
 module L = Logging
 
 let database : Sqlite3.db option ref = ref None

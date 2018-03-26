@@ -29,10 +29,10 @@ let try_finally ~f ~finally =
   | r ->
       finally () ; r
   | exception (Analysis_failure_exe _ as f_exn) ->
-      reraise_after f_exn ~f:(fun () ->
+      IExn.reraise_after f_exn ~f:(fun () ->
           try finally () with _ -> (* swallow in favor of the original exception *) () )
   | exception f_exn ->
-      reraise_after f_exn ~f:(fun () ->
+      IExn.reraise_after f_exn ~f:(fun () ->
           try finally ()
           with
           | finally_exn

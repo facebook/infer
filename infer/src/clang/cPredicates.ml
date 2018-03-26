@@ -247,7 +247,7 @@ let decl_ref_name ?kind name st =
         let has_right_name = ALVar.compare_str_with_alexp ndi.ni_name name in
         match kind with
         | Some decl_kind ->
-            has_right_name && PVariant.( = ) dr.Clang_ast_t.dr_kind decl_kind
+            has_right_name && PolyVariantEqual.( = ) dr.Clang_ast_t.dr_kind decl_kind
         | None ->
             has_right_name )
     | _ ->
@@ -288,7 +288,7 @@ let is_enum_constant_of_enum an name =
         | Some (_, stripped_qual_name) -> (
           match QualifiedCppName.extract_last stripped_qual_name with
           | Some (enum_name, _) ->
-              PVariant.( = ) dr.Clang_ast_t.dr_kind `EnumConstant
+              PolyVariantEqual.( = ) dr.Clang_ast_t.dr_kind `EnumConstant
               && ALVar.compare_str_with_alexp enum_name name
           | _ ->
               false )
@@ -356,7 +356,7 @@ let is_ivar_atomic an =
       match CAst_utils.get_decl ivar_pointer with
       | Some d ->
           let attributes = get_ivar_attributes d in
-          List.exists ~f:(PVariant.( = ) `Atomic) attributes
+          List.exists ~f:(PolyVariantEqual.( = ) `Atomic) attributes
       | _ ->
           false )
   | _ ->

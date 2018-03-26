@@ -1164,7 +1164,7 @@ let is_sub_empty = function
 (** Join two substitutions into one.
     For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
 let sub_join sub1 sub2 =
-  let sub = List_.merge_dedup ~compare:compare_ident_exp sub1 sub2 in
+  let sub = IList.merge_dedup ~compare:compare_ident_exp sub1 sub2 in
   assert (sub_no_duplicated_ids sub) ;
   sub
 

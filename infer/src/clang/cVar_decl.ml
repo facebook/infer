@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open! PVariant
 
 (** Process variable declarations by saving them as local or global variables.  *)
 

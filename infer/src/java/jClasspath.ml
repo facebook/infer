@@ -9,7 +9,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 open Javalib_pack
 module L = Logging
 

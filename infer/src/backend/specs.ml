@@ -9,7 +9,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module Hashtbl = Caml.Hashtbl
 
 (** Specifications and spec table *)

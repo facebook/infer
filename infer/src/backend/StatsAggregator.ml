@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module L = Logging
 
 let aggregated_stats_filename = "aggregated_stats.json"

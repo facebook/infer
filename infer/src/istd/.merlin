@@ -16,4 +16,5 @@ PKG yojson
 PKG zip
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
 FLG -w +a-4-9-40-41-42-44-45-48-60
+FLG -open Core
 S .

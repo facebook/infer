@@ -121,3 +121,19 @@ let append_no_duplicates (type a) ~(cmp: a -> a -> int) =
             if Set.mem set1 x then res_rev else x :: res_rev )
       in
       List.rev res_rev )
+
+
+let merge_dedup l1 l2 ~compare =
+  let rec loop acc l1 l2 =
+    match (l1, l2) with
+    | [], l2 ->
+        List.rev_append acc l2
+    | l1, [] ->
+        List.rev_append acc l1
+    | h1 :: t1, h2 :: t2 ->
+        let cmp = compare h1 h2 in
+        if Int.equal cmp 0 then loop (h1 :: acc) t1 t2
+        else if cmp < 0 then loop (h1 :: acc) t1 l2
+        else loop (h2 :: acc) l1 t2
+  in
+  loop [] l1 l2

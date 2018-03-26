@@ -9,7 +9,6 @@
  *)
 
 open! IStd
-open! PVariant
 module Hashtbl = Caml.Hashtbl
 
 (** Interprocedural Analysis *)
@@ -464,7 +463,8 @@ let forward_tabulate exe_env tenv proc_cfg wl =
       L.d_decrease_indent 1 ;
       L.d_ln ()
     with exn ->
-      reraise_if exn ~f:(fun () -> not !Config.footprint || not (Exceptions.handle_exception exn)) ;
+      IExn.reraise_if exn ~f:(fun () ->
+          not !Config.footprint || not (Exceptions.handle_exception exn) ) ;
       handle_exn exn ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
@@ -494,7 +494,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
       if !handle_exn_called then Printer.force_delayed_prints () ;
       do_after_node curr_node
     with exn ->
-      reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
+      IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       handle_exn_node curr_node exn ;
       Printer.force_delayed_prints () ;
       do_after_node curr_node ;
@@ -1202,6 +1202,6 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summ
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
   ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->
-      reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
+      IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name

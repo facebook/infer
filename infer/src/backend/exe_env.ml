@@ -9,7 +9,6 @@
  *)
 
 open! IStd
-open! PVariant
 module Hashtbl = Caml.Hashtbl
 
 (** Support for Execution environments *)

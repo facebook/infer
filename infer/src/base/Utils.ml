@@ -8,7 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module F = Format
 module Hashtbl = Caml.Hashtbl
 module L = Die
@@ -163,7 +163,7 @@ let read_json_file path =
 let do_finally_swallow_timeout ~f ~finally =
   let res =
     try f () with exc ->
-      reraise_after exc ~f:(fun () ->
+      IExn.reraise_after exc ~f:(fun () ->
           try finally () |> ignore with _ -> (* swallow in favor of the original exception *) () )
   in
   let res' = finally () in
@@ -254,7 +254,7 @@ let realpath ?(warn_on_error= true) path =
         Hashtbl.add realpath_cache path (Ok realpath) ;
         realpath
     | exception (Unix.Unix_error (code, _, arg) as exn) ->
-        reraise_after exn ~f:(fun () ->
+        IExn.reraise_after exn ~f:(fun () ->
             if warn_on_error then
               F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
                 (Unix.Error.message code) ;

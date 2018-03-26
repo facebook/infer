@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 
 (** Translates instructions: (statements and expressions) from the ast into sil *)
 

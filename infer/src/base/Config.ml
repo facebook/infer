@@ -9,7 +9,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
@@ -1167,7 +1167,7 @@ and differential_filter_files =
 
 
 and differential_filter_set =
-  CLOpt.mk_symbol_seq ~long:"differential-filter-set" ~eq:PVariant.( = )
+  CLOpt.mk_symbol_seq ~long:"differential-filter-set" ~eq:PolyVariantEqual.( = )
     "Specify which set of the differential results is filtered with the modified files provided \
      through the $(b,--differential-modified-files) argument. By default it is applied to all \
      sets ($(b,introduced), $(b,fixed), and $(b,preexisting))"
@@ -1372,7 +1372,7 @@ and help =
 and help_format =
   CLOpt.mk_symbol ~long:"help-format"
     ~symbols:[("auto", `Auto); ("groff", `Groff); ("pager", `Pager); ("plain", `Plain)]
-    ~eq:PVariant.( = ) ~default:`Auto
+    ~eq:PolyVariantEqual.( = ) ~default:`Auto
     ~in_help:(List.map InferCommand.all_commands ~f:(fun command -> (command, manual_generic)))
     "Show this help in the specified format. $(b,auto) sets the format to $(b,plain) if the \
      environment variable $(b,TERM) is \"dumb\" or undefined, and to $(b,pager) otherwise."
@@ -1422,7 +1422,7 @@ and issues_fields =
       ; `Issue_field_line_offset
       ; `Issue_field_bug_type
       ; `Issue_field_kind
-      ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PVariant.( = )
+      ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
     "Fields to emit with $(b,--issues-tests)"
 
 
@@ -1556,7 +1556,7 @@ and ml_buckets =
     {|Specify the memory leak buckets to be checked in C++:
 - $(b,cpp) from C++ code
 |}
-    ~symbols:ml_bucket_symbols ~eq:PVariant.( = )
+    ~symbols:ml_bucket_symbols ~eq:PolyVariantEqual.( = )
 
 
 and modified_targets =
@@ -1765,8 +1765,8 @@ and report_formatter =
   CLOpt.mk_symbol ~long:"report-formatter"
     ~in_help:InferCommand.([(Report, manual_generic)])
     ~default:`Phabricator_formatter
-    ~symbols:[("none", `No_formatter); ("phabricator", `Phabricator_formatter)] ~eq:PVariant.( = )
-    "Which formatter to use when emitting the report"
+    ~symbols:[("none", `No_formatter); ("phabricator", `Phabricator_formatter)]
+    ~eq:PolyVariantEqual.( = ) "Which formatter to use when emitting the report"
 
 
 and report_hook =

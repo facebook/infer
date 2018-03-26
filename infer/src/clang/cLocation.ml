@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 

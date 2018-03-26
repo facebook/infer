@@ -8,7 +8,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module MF = MarkupFormatter
 
 let get_source_range an =

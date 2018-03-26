@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open! PVariant
 
 (** Module for on-demand analysis. *)
 
@@ -155,7 +154,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     let final_summary = postprocess summary in
     restore_global_state old_state ; final_summary
   with exn ->
-    reraise_if exn ~f:(fun () -> restore_global_state old_state ; not Config.keep_going) ;
+    IExn.reraise_if exn ~f:(fun () -> restore_global_state old_state ; not Config.keep_going) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
       callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
     match exn with

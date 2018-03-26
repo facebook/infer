@@ -70,7 +70,7 @@ let compile compiler build_prog build_args =
             (Unix.Exit_or_signal.to_string_hum (Error err))
             shell_cmd log verbose_errlog )
     | exception exn ->
-        reraise_if exn ~f:(fun () ->
+        IExn.reraise_if exn ~f:(fun () ->
             match error_k with
             | Some k ->
                 L.(debug Capture Quiet) "*** Failed: %a!@\n" Exn.pp exn ;

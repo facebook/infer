@@ -9,7 +9,7 @@
  *)
 
 open! IStd
-open! PVariant
+open PolyVariantEqual
 
 (** Database of analysis results *)
 

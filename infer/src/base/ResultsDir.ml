@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-open! PVariant
+open PolyVariantEqual
 module CLOpt = CommandLineOption
 module L = Logging
 

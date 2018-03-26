@@ -103,7 +103,7 @@ Error: This variant expression is expected to have type 'a list
 
 - Polymorphic equality is disabled; use type-specific equality instead, even for primitive types
   (e.g., `Int.equal`). However, if your module uses a lot of polymorphic variants with no arguments
-  you may safely `open! PVariant`.
+  you may safely `open PolyVariantEqual`.
 
   If you try and use polymorphic equality `=` in your code you will get a compilation error, such as:
 ```
@@ -117,8 +117,8 @@ Error: This expression has type int but an expression was expected of type
 - Check that your code compiles without warnings with `make -j test_build` (this also runs as part
   of `make test`).
 
-- Apart from `IStd` and `PVariant`, refrain from globally `open`ing modules. Using local open
-  instead when it improves readability: `let open MyModule in ...`.
+- Apart from `IStd` and `PolyVariantEqual`, refrain from globally `open`ing modules. Using
+  local open instead when it improves readability: `let open MyModule in ...`.
 
 - Avoid the use of module aliases, except for the following commonly-aliased modules. Use
   module aliases consistently (e.g., do not alias `L` to a module other than `Logging`).
@@ -156,7 +156,7 @@ Follow `clang-format` (see ".clang-format" at the root of the repository).
 
 ## Testing your Changes
 
-- Make sure infer builds: `make -j `. Refer to the [installation
+- Make sure infer builds: `make -j test_build`. Refer to the [installation
   document](https://github.com/facebook/infer/blob/master/INSTALL.md) for details.
 
 - Run the tests: `make -j 4 test` (adjust 4 to the number of cores available of your machine). The
