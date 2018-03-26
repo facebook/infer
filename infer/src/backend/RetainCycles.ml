@@ -19,7 +19,9 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
     let node = State.get_node () in
     let from_exp_str edge_obj =
       let type_str =
-        MF.monospaced_to_string (Format.sprintf "%s*" (Typ.to_string edge_obj.rc_from.rc_node_typ))
+        let typ_str = Typ.to_string edge_obj.rc_from.rc_node_typ in
+        if String.equal typ_str "objc_object" then MF.monospaced_to_string "id"
+        else MF.monospaced_to_string (Format.sprintf "%s*" typ_str)
       in
       match Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp with
       | Some de
