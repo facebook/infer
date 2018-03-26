@@ -259,6 +259,8 @@ module Val = struct
     let m1_255 = of_itv Itv.m1_255
 
     let top = of_itv Itv.top
+
+    let zero = of_itv Itv.zero
   end
 end
 

@@ -382,13 +382,9 @@ module Report = struct
       : Typ.Procname.t -> is_plus:bool -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun pname ~is_plus ~e1 ~e2 location mem cond_set ->
-    let v_arr = Sem.eval e1 mem in
-    let arr = Dom.Val.get_array_blk v_arr in
-    let arr_traces = Dom.Val.get_traces v_arr in
-    let v_idx = Sem.eval e2 mem in
-    let idx = Dom.Val.get_itv v_idx in
-    let idx_traces = Dom.Val.get_traces v_idx in
-    BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location cond_set
+    let arr = Sem.eval e1 mem in
+    let idx = Sem.eval e2 mem in
+    BoUtils.Check.array_access ~arr ~idx ~is_plus pname location cond_set
 
 
   let check_binop
@@ -410,11 +406,8 @@ module Report = struct
    fun pname exp location mem cond_set ->
     match exp with
     | Exp.Var _ ->
-        let v = Sem.eval exp mem in
-        let arr = Dom.Val.get_array_blk v in
-        let arr_traces = Dom.Val.get_traces v in
-        BoUtils.Check.array_access ~arr ~arr_traces ~idx:Itv.zero ~idx_traces:TraceSet.empty
-          ~is_plus:true pname location cond_set
+        let arr = Sem.eval exp mem in
+        BoUtils.Check.array_access ~arr ~idx:Dom.Val.Itv.zero ~is_plus:true pname location cond_set
     | Exp.Lindex (array_exp, index_exp) ->
         cond_set |> check_expr pname array_exp location mem
         |> check_expr pname index_exp location mem

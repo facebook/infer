@@ -181,15 +181,19 @@ module Make (CFG : ProcCfg.S) = struct
   end
 
   module Check = struct
-    let array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location cond_set =
-      let size = ArrayBlk.sizeof arr in
-      let offset = ArrayBlk.offsetof arr in
-      let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
+    let array_access ~arr ~idx ~is_plus pname location cond_set =
+      let arr_blk = Dom.Val.get_array_blk arr in
+      let arr_traces = Dom.Val.get_traces arr in
+      let size = ArrayBlk.sizeof arr_blk in
+      let offset = ArrayBlk.offsetof arr_blk in
+      let idx_itv = Dom.Val.get_itv idx in
+      let idx_traces = Dom.Val.get_traces idx in
+      let idx_in_blk = (if is_plus then Itv.plus else Itv.minus) offset idx_itv in
       L.(debug BufferOverrun Verbose) "@[<v 2>Add condition :@," ;
-      L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr ;
-      L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx ;
+      L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr_blk ;
+      L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx_in_blk ;
       L.(debug BufferOverrun Verbose) "@]@." ;
-      match (size, idx) with
+      match (size, idx_in_blk) with
       | NonBottom size, NonBottom idx ->
           let traces = TraceSet.merge ~arr_traces ~idx_traces location in
           PO.ConditionSet.add_array_access pname location ~size ~idx traces cond_set
@@ -199,12 +203,8 @@ module Make (CFG : ProcCfg.S) = struct
 
     let lindex ~array_exp ~index_exp mem pname location cond_set =
       let locs = Sem.eval_locs array_exp mem |> Dom.Val.get_all_locs in
-      let v_arr = Dom.Mem.find_set locs mem in
-      let arr = Dom.Val.get_array_blk v_arr in
-      let arr_traces = Dom.Val.get_traces v_arr in
-      let v_idx = Sem.eval index_exp mem in
-      let idx = Dom.Val.get_itv v_idx in
-      let idx_traces = Dom.Val.get_traces v_idx in
-      array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus:true pname location cond_set
+      let arr = Dom.Mem.find_set locs mem in
+      let idx = Sem.eval index_exp mem in
+      array_access ~arr ~idx ~is_plus:true pname location cond_set
   end
 end
