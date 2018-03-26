@@ -506,10 +506,8 @@ let res_dir_specs_filename pname =
 
 
 (** paths to the .specs file for the given procedure in the current spec libraries *)
-let specs_library_filenames pname =
-  List.map
-    ~f:(fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
-    Config.specs_library
+let specs_library_filename specs_dir pname =
+  DB.filename_from_string (Filename.concat specs_dir (specs_filename pname))
 
 
 (** paths to the .specs file for the given procedure in the models folder *)
@@ -529,44 +527,36 @@ let summary_serializer : summary Serialization.serializer =
 let load_summary specs_file = Serialization.read_from_file summary_serializer specs_file
 
 (** Load procedure summary for the given procedure name and update spec table *)
-let load_summary_to_spec_table proc_name =
-  let add summ = add_summary proc_name summ ; true in
-  let load_summary_models models_dir =
-    match load_summary models_dir with None -> false | Some summ -> add summ
-  in
-  let rec load_summary_libs = function
-    (* try to load the summary from a list of libs *)
-    | [] ->
-        false
-    | spec_path :: spec_paths ->
-      match load_summary spec_path with
-      | None ->
-          load_summary_libs spec_paths
-      | Some summ ->
-          add summ
+let load_summary_to_spec_table =
+  let rec or_load_summary_libs specs_dirs proc_name summ_opt =
+    match (summ_opt, specs_dirs) with
+    | Some _, _ | _, [] ->
+        summ_opt
+    | None, specs_dir :: specs_dirs ->
+        load_summary (specs_library_filename specs_dir proc_name)
+        |> or_load_summary_libs specs_dirs proc_name
   in
   let load_summary_ziplibs zip_specs_filename =
     let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
-    match ZipLib.load summary_serializer zip_specs_path with
-    | None ->
-        false
-    | Some summary ->
-        add summary
+    ZipLib.load summary_serializer zip_specs_path
   in
-  let default_spec_dir = res_dir_specs_filename proc_name in
-  match load_summary default_spec_dir with
-  | None ->
-      (* search on models, libzips, and libs *)
-      load_summary_models (specs_models_filename proc_name)
-      || load_summary_ziplibs (specs_filename proc_name)
-      || load_summary_libs (specs_library_filenames proc_name)
-  | Some summ ->
-      add summ
+  let or_from f_load f_filenames proc_name summ_opt =
+    match summ_opt with Some _ -> summ_opt | None -> f_load (f_filenames proc_name)
+  in
+  fun proc_name ->
+    let summ_opt =
+      None |> or_from load_summary res_dir_specs_filename proc_name
+      |> or_from load_summary specs_models_filename proc_name
+      |> or_from load_summary_ziplibs specs_filename proc_name
+      |> or_load_summary_libs Config.specs_library proc_name
+    in
+    Option.iter ~f:(add_summary proc_name) summ_opt ;
+    summ_opt
 
 
-let rec get_summary proc_name =
+let get_summary proc_name =
   try Some (Typ.Procname.Hash.find spec_tbl proc_name) with Not_found ->
-    if load_summary_to_spec_table proc_name then get_summary proc_name else None
+    load_summary_to_spec_table proc_name
 
 
 let get_summary_unsafe s proc_name =
