@@ -41,11 +41,11 @@ module CFG = ProcCfg.Normal
 
 *)
 module BoundMap = struct
-  let bound_map : Itv.Bound.t Int.Map.t ref = ref Int.Map.empty
+  type t = Itv.Bound.t Int.Map.t
 
-  let print_upper_bound_map () =
+  let print_upper_bound_map bound_map =
     L.(debug Analysis Medium) "@\n\n******* Bound Map ITV **** @\n" ;
-    Int.Map.iteri !bound_map ~f:(fun ~key:nid ~data:b ->
+    Int.Map.iteri bound_map ~f:(fun ~key:nid ~data:b ->
         L.(debug Analysis Medium) "@\n node: %i --> bound = %a @\n" nid Itv.Bound.pp b ) ;
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
@@ -77,12 +77,12 @@ module BoundMap = struct
     let fparam = Procdesc.get_formals pdesc in
     let pname = Procdesc.get_proc_name pdesc in
     let fparam' = List.map ~f:(fun (m, _) -> Exp.Lvar (Pvar.mk m pname)) fparam in
-    let compute_node_upper_bound node =
+    let compute_node_upper_bound bound_map node =
       let node_id = Procdesc.Node.get_id node in
       let entry_mem_opt = BufferOverrunChecker.extract_post invariant_map node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
-          bound_map := Int.Map.set !bound_map ~key:(node_id :> int) ~data:Itv.Bound.one
+          Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.one
       | _ ->
         match entry_mem_opt with
         | Some entry_mem ->
@@ -116,16 +116,16 @@ module BoundMap = struct
               "@\n>>>Setting bound for node = %i  to %a@\n\n"
               (node_id :> int)
               Itv.Bound.pp bound ;
-            bound_map := Int.Map.set !bound_map ~key:(node_id :> int) ~data:bound
+            Int.Map.set bound_map ~key:(node_id :> int) ~data:bound
         | _ ->
-            bound_map := Int.Map.set !bound_map ~key:(node_id :> int) ~data:Itv.Bound.zero
+            Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.zero
     in
-    List.iter (CFG.nodes pdesc) ~f:compute_node_upper_bound ;
-    print_upper_bound_map ()
+    let bound_map = List.fold (CFG.nodes pdesc) ~f:compute_node_upper_bound ~init:Int.Map.empty in
+    print_upper_bound_map bound_map ; bound_map
 
 
-  let upperbound nid =
-    match Int.Map.find !bound_map nid with
+  let upperbound bound_map nid =
+    match Int.Map.find bound_map nid with
     | Some bound ->
         bound
     | None ->
@@ -292,7 +292,8 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     match plus_node with Plus (_ :: _ :: _) -> true | _ -> false
 
 
-  let rec minimum_propagation (q: int) (visited: Int.Set.t) (constraints: Exp.t list) =
+  let rec minimum_propagation (bound_map: BoundMap.t) (q: int) (visited: Int.Set.t)
+      (constraints: Exp.t list) =
     let rec build_min node branch visited_acc worklist =
       match worklist with
       | [] ->
@@ -301,7 +302,7 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
           if Int.Set.mem visited_acc k then build_min node branch visited_acc rest
           else
             let visited_acc = Int.Set.add visited_acc k in
-            let node = add_leaf node k (BoundMap.upperbound k) in
+            let node = add_leaf node k (BoundMap.upperbound bound_map k) in
             let k_constraints_upperbound = get_k_single_constraints constraints k in
             let worklist =
               List.filter
@@ -331,7 +332,7 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
         let plus_node =
           Set.fold
             ~f:(fun acc n ->
-              let child = minimum_propagation n visited_res constraints in
+              let child = minimum_propagation bound_map n visited_res constraints in
               add_child acc child )
             ~init:(Plus []) addend
         in
@@ -340,12 +341,12 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
       ~init:node branch
 
 
-  let compute_trees_from_contraints cfg constraints =
+  let compute_trees_from_contraints bound_map cfg constraints =
     let min_trees =
       List.fold
         ~f:(fun acc n ->
           let nid = (Procdesc.Node.get_id n :> int) in
-          (nid, minimum_propagation nid Int.Set.empty constraints) :: acc )
+          (nid, minimum_propagation bound_map nid Int.Set.empty constraints) :: acc )
         ~init:[] (CFG.nodes cfg)
     in
     List.iter ~f:(fun (n, t) -> L.(debug Analysis Medium) "@\n node %i = %a @\n" n pp t) min_trees ;
@@ -515,9 +516,9 @@ let checker ({Callbacks.tenv; summary; proc_desc} as proc_callback_args) : Specs
   (* computes the semantics: node -> (environment, alias map) *)
   let semantics_invariant_map = BufferOverrunChecker.compute_invariant_map proc_callback_args in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
-  BoundMap.compute_upperbound_map cfg semantics_invariant_map ;
+  let bound_map = BoundMap.compute_upperbound_map cfg semantics_invariant_map in
   let constraints = StructuralConstraints.compute_structural_constraints cfg in
-  let min_trees = MinTree.compute_trees_from_contraints cfg constraints in
+  let min_trees = MinTree.compute_trees_from_contraints bound_map cfg constraints in
   let trees_valuation =
     List.fold
       ~f:(fun acc (n, t) ->
