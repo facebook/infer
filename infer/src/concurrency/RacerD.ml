@@ -501,13 +501,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         ~callee_astate:locks
                     in
                     let threads =
-                      match (astate.threads, threads) with
-                      | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _ ->
-                          ThreadsDomain.AnyThreadButSelf
-                      | _, ThreadsDomain.AnyThread ->
-                          astate.threads
+                      (* if we know the callee runs on the main thread, assume the caller does too.
+                         otherwise, keep the caller's thread context *)
+                      match threads with
+                      | ThreadsDomain.AnyThreadButSelf ->
+                          threads
                       | _ ->
-                          ThreadsDomain.join threads astate.threads
+                          astate.threads
                     in
                     let accesses =
                       add_callee_accesses astate accesses locks threads actuals callee_pname pdesc
