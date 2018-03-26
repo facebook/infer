@@ -528,6 +528,11 @@ let mode_from_command_line =
         mode_of_build_command (List.rev Config.rest) )
 
 
+let register_perf_stats_report stats_type =
+  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
+  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) stats_type
+
+
 let run_prologue mode =
   if CLOpt.is_originator then (
     L.environment_info "%a@\n" Config.pp_version () ;

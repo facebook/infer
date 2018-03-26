@@ -37,7 +37,9 @@ type stats_type =
   | ClangFrontendLinters of SourceFile.t
   | JavaFrontend of SourceFile.t
   | PythonFrontend of SourceFile.t
+  | TotalFrontend
   | Backend of SourceFile.t
+  | TotalBackend
   | Reporting
   | Driver
 
@@ -76,7 +78,11 @@ let relative_path_of_stats_type stats_type =
         Config.frontend_stats_dir_name
     | PythonFrontend _ ->
         Config.frontend_stats_dir_name
+    | TotalFrontend ->
+        Config.frontend_stats_dir_name
     | Backend _ ->
+        Config.backend_stats_dir_name
+    | TotalBackend ->
         Config.backend_stats_dir_name
     | Reporting ->
         Config.reporting_stats_dir_name
@@ -97,8 +103,12 @@ let string_of_stats_type = function
       "java_frontend"
   | PythonFrontend _ ->
       "python_frontend"
+  | TotalFrontend ->
+      "total_frontend"
   | Backend _ ->
       "backend"
+  | TotalBackend ->
+      "total_backend"
   | Reporting ->
       "reporting"
   | Driver ->

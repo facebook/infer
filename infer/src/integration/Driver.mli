@@ -34,6 +34,8 @@ val mode_from_command_line : mode Lazy.t
 val mode_of_build_command : string list -> mode
 (** driver mode computed from the build command alone, eg [["buck"; "build"; ...]] gives [PythonCapture (BBuck, ["buck"; "build"; ...])] *)
 
+val register_perf_stats_report : PerfStats.stats_type -> unit
+
 val run_prologue : mode -> unit
 (** prepare the environment for running the given mode *)
 
