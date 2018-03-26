@@ -93,7 +93,8 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
           let length = Sem.eval length0 mem in
           let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
           let v =
-            Sem.eval_array_alloc pname ~node_hash typ ?stride Itv.zero (Dom.Val.get_itv length) 0 1
+            Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero
+              ~size:(Dom.Val.get_itv length) ~inst_num:0 ~dimension:1
             |> Dom.Val.set_traces traces
           in
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
@@ -202,7 +203,10 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
       | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
           let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
           let stride = Option.map ~f:IntLit.to_int stride in
-          let v = Sem.eval_array_alloc pname ~node_hash elt ?stride Itv.zero length 0 1 in
+          let v =
+            Sem.eval_array_alloc pname ~node_hash elt ~stride ~offset:Itv.zero ~size:length
+              ~inst_num:0 ~dimension:1
+          in
           mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
           |> set_uninitialized location elt (Dom.Val.get_array_locs v)
       | _ ->

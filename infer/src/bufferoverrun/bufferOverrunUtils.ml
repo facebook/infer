@@ -81,14 +81,15 @@ module Make (CFG : ProcCfg.S) = struct
      fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
       let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
       let arr =
-        Sem.eval_array_alloc pname ~node_hash typ Itv.zero size ?stride inst_num dimension
+        Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero ~size ~inst_num
+          ~dimension
         |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
       in
       let mem =
         if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem
         else Dom.Mem.add_heap loc arr mem
       in
-      let loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash inst_num dimension) in
+      let loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension) in
       let mem, _ =
         decl_local pname ~node_hash location loc typ ~inst_num ~dimension:(dimension + 1) mem
       in
@@ -113,11 +114,14 @@ module Make (CFG : ProcCfg.S) = struct
       let alloc_num = Itv.Counter.next new_alloc_num in
       let elem = Trace.SymAssign (loc, location) in
       let arr =
-        Sem.eval_array_alloc pname ~node_hash typ offset size inst_num alloc_num
+        Sem.eval_array_alloc pname ~node_hash typ ~stride:None ~offset ~size ~inst_num
+          ~dimension:alloc_num
         |> Dom.Val.add_trace_elem elem
       in
       let mem = Dom.Mem.add_heap loc arr mem in
-      let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash inst_num alloc_num) in
+      let deref_loc =
+        Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num)
+      in
       decl_sym_val pname tenv ~node_hash location ~depth deref_loc typ mem
 
 
@@ -135,8 +139,8 @@ module Make (CFG : ProcCfg.S) = struct
               in
               let stride = Option.map stride ~f:IntLit.to_int in
               let v =
-                Sem.eval_array_alloc pname ~node_hash typ ?stride Itv.zero length inst_num
-                  dimension
+                Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero ~size:length
+                  ~inst_num ~dimension
               in
               Dom.Mem.strong_update_heap field_loc v mem
           | _ ->
