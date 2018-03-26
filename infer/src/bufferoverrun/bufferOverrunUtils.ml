@@ -21,8 +21,6 @@ module type S = sig
 
   module Sem : module type of BufferOverrunSemantics.Make (CFG)
 
-  type counter = unit -> int
-
   module Exec : sig
     val load_val : Ident.t -> Dom.Val.astate -> Dom.Mem.astate -> Dom.Mem.astate
 
@@ -41,8 +39,9 @@ module type S = sig
 
     val decl_sym_arr :
       decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> depth:int
-      -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int -> new_sym_num:counter
-      -> new_alloc_num:counter -> Dom.Mem.astate -> Dom.Mem.astate
+      -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
+      -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
+      -> Dom.Mem.astate
 
     val init_array_fields :
       Tenv.t -> Typ.Procname.t -> CFG.node -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t
@@ -61,18 +60,6 @@ end
 module Make (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Sem = BufferOverrunSemantics.Make (CFG)
-
-  type counter = unit -> int
-
-  let counter_gen init : counter =
-    let num_ref = ref init in
-    let get_num () =
-      let v = !num_ref in
-      num_ref := v + 1 ;
-      v
-    in
-    get_num
-
 
   module Exec = struct
     let load_val id val_ mem =
@@ -115,14 +102,15 @@ module Make (CFG : ProcCfg.S) = struct
     let decl_sym_arr
         : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t
           -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
-          -> new_sym_num:counter -> new_alloc_num:counter -> Dom.Mem.astate -> Dom.Mem.astate =
+          -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
+          -> Dom.Mem.astate =
      fun ~decl_sym_val pname tenv node location ~depth loc typ ?offset ?size ~inst_num ~new_sym_num
          ~new_alloc_num mem ->
       let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
       let itv_make_sym () = Itv.make_sym pname new_sym_num in
       let offset = option_value offset itv_make_sym in
       let size = option_value size itv_make_sym in
-      let alloc_num = new_alloc_num () in
+      let alloc_num = Itv.Counter.next new_alloc_num in
       let elem = Trace.SymAssign (loc, location) in
       let arr =
         Sem.eval_array_alloc pname node typ offset size inst_num alloc_num

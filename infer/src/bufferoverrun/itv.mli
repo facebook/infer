@@ -11,6 +11,14 @@ open! IStd
 open! AbstractDomain.Types
 module F = Format
 
+module Counter : sig
+  type t
+
+  val make : int -> t
+
+  val next : t -> int
+end
+
 module Symbol : sig
   type t
 end
@@ -165,7 +173,7 @@ val of_int_lit : IntLit.t -> t
 
 val of_int64 : Int64.t -> t
 
-val make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+val make_sym : ?unsigned:bool -> Typ.Procname.t -> Counter.t -> t
 
 val lb : t -> Bound.t
 

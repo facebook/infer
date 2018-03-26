@@ -41,8 +41,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   type declare_symbolic_fun =
     decl_sym_val:BoUtils.Exec.decl_sym_val -> model_env -> depth:int -> Loc.t -> inst_num:int
-    -> new_sym_num:BoUtils.counter -> new_alloc_num:BoUtils.counter -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate
 
   type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
 

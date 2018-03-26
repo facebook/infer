@@ -106,7 +106,7 @@ module Val = struct
 
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
-  let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
+  let make_sym : ?unsigned:bool -> Typ.Procname.t -> Itv.Counter.t -> t =
    fun ?(unsigned= false) pname new_sym_num ->
     {bot with itv= Itv.make_sym ~unsigned pname new_sym_num}
 

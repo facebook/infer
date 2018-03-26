@@ -39,10 +39,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let declare_symbolic_val
       : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> Loc.t -> Typ.typ -> inst_num:int
-        -> new_sym_num:(unit -> int) -> Domain.t -> Domain.t =
+        -> new_sym_num:Itv.Counter.t -> Domain.t -> Domain.t =
    fun pname tenv node location loc typ ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
-    let new_alloc_num = BoUtils.counter_gen 1 in
+    let new_alloc_num = Itv.Counter.make 1 in
     let rec decl_sym_val pname tenv node location ~depth ~may_last_field loc typ mem =
       if depth > max_depth then mem
       else
@@ -108,7 +108,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> inst_num:int -> (Pvar.t * Typ.t) list
         -> Dom.Mem.astate -> Dom.Mem.astate =
    fun pname tenv node location ~inst_num formals mem ->
-    let new_sym_num = BoUtils.counter_gen 0 in
+    let new_sym_num = Itv.Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
       let mem = declare_symbolic_val pname tenv node location loc typ ~inst_num ~new_sym_num mem in

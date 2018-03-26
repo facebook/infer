@@ -15,6 +15,23 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 
+module Counter = struct
+  type t = unit -> int
+
+  let make : int -> t =
+   fun init ->
+    let num_ref = ref init in
+    let get_num () =
+      let v = !num_ref in
+      num_ref := v + 1 ;
+      v
+    in
+    get_num
+
+
+  let next : t -> int = fun counter -> counter ()
+end
+
 exception Not_one_symbol
 
 module Symbol = struct
@@ -925,10 +942,10 @@ module ItvPure = struct
 
   let of_int n = of_bound (Bound.of_int n)
 
-  let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
+  let make_sym : unsigned:bool -> Typ.Procname.t -> Counter.t -> t =
    fun ~unsigned pname new_sym_num ->
-    let lower = Bound.of_sym (SymLinear.make ~unsigned pname (new_sym_num ())) in
-    let upper = Bound.of_sym (SymLinear.make ~unsigned pname (new_sym_num ())) in
+    let lower = Bound.of_sym (SymLinear.make ~unsigned pname (Counter.next new_sym_num)) in
+    let upper = Bound.of_sym (SymLinear.make ~unsigned pname (Counter.next new_sym_num)) in
     (lower, upper)
 
 
@@ -1345,7 +1362,7 @@ let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> Counter.t -> t =
  fun ?(unsigned= false) pname new_sym_num ->
   NonBottom (ItvPure.make_sym ~unsigned pname new_sym_num)
 
