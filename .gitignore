@@ -160,7 +160,6 @@ infer/src/.project
 /infer/src/istd/jbuild
 /infer/src/scripts/jbuild
 /infer/src/jbuild-workspace
-.merlin
 
 # generated when looking for dead code
 /infer/src/deadcode/.depend
