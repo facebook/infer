@@ -247,7 +247,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let mem = Dom.Mem.update_latest_prune exp1 exp2 mem in
           mem
       | Prune (exp, _, _, _) ->
-          Sem.prune exp mem
+          Sem.Prune.prune exp mem
       | Call (ret, Const Cfun callee_pname, params, location, _) -> (
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->

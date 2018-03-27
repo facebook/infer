@@ -886,12 +886,6 @@ module Mem = struct
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
    fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
-
-
-  let update_mem_in_prune : PrunePairs.t ref -> Loc.t -> Val.t -> t -> t =
-   fun prune_pairs lv v m ->
-    prune_pairs := (lv, v) :: !prune_pairs ;
-    update_mem (PowLoc.singleton lv) v m
 end
 
 module Summary = struct
