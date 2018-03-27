@@ -1,10 +1,10 @@
-B _build/default/.InferModules.objs
-B _build/default/.infer.eobjs
-B _build/default/.infertop.eobjs
-B _build/default/atd/.InferGenerated.objs
-B _build/default/base/.InferBase.objs
-B _build/default/IR/.InferIR.objs
-B _build/default/istd/.InferStdlib.objs
+B ../_build/default/.InferModules.objs
+B ../_build/default/.infer.eobjs
+B ../_build/default/.infertop.eobjs
+B ../_build/default/atd/.InferGenerated.objs
+B ../_build/default/base/.InferBase.objs
+B ../_build/default/IR/.InferIR.objs
+B ../_build/default/istd/.InferStdlib.objs
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
 FLG -w +a-4-9-40-41-42-44-45-48-60
 FLG -open Core -open InferStdlib -open InferGenerated -open InferModules -open IStd -open InferBase -open InferIR
@@ -38,7 +38,6 @@ PKG findlib.top
 PKG jane-street-headers
 PKG javalib
 PKG lambda-term
-PKG llair
 PKG lwt
 PKG lwt.log
 PKG lwt.react
@@ -73,22 +72,22 @@ PKG yojson
 PKG zed
 PKG zip
 S .
-S IR
-S absint
-S atd
-S backend
-S base
-S bufferoverrun
-S checkers
-S clang
-S concurrency
-S eradicate
-S facebook
-S integration
-S istd
-S java
-S labs
-S python
-S quandary
-S unit
-S unit/clang
+S ../IR
+S ../absint
+S ../atd
+S ../backend
+S ../base
+S ../bufferoverrun
+S ../checkers
+S ../clang
+S ../concurrency
+S ../eradicate
+S ../facebook
+S ../integration
+S ../istd
+S ../java
+S ../labs
+S ../python
+S ../quandary
+S ../unit
+S ../unit/clang

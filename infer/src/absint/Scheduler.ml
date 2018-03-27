@@ -16,14 +16,12 @@ module type S = sig
 
   type t
 
-  (* schedule the successors of [node] *)
-
   val schedule_succs : t -> CFG.node -> t
-
-  (* remove and return the node with the highest priority, the ids of its visited
-     predecessors, and the new schedule *)
+  (** schedule the successors of [node] *)
 
   val pop : t -> (CFG.node * CFG.id list * t) option
+  (** remove and return the node with the highest priority, the ids of its visited
+      predecessors, and the new schedule *)
 
   val empty : CFG.t -> t
 end
@@ -32,8 +30,8 @@ module type Make = functor (CFG : ProcCfg.S) -> sig
   include S with module CFG = CFG
 end
 
-(* simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
-   and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
+(** simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
+    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module M = ProcCfg.NodeIdMap (CFG)
@@ -42,12 +40,10 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     module IdSet = ProcCfg.NodeIdSet (CFG)
 
     type t =
-      { node: CFG.node
-      ; (* node whose instructions will be analyzed *)
-      visited_preds: IdSet.t
-      ; (* predecessors of [node] we have already visited in current iter *)
-      priority: int
-      (* |preds| - |visited preds|. *) }
+      { node: CFG.node  (** node whose instructions will be analyzed *)
+      ; visited_preds: IdSet.t
+            (** predecessors of [node] we have already visited in current iter *)
+      ; priority: int  (** |preds| - |visited preds|. *) }
 
     let node t = t.node
 
@@ -65,7 +61,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       {node; visited_preds; priority}
 
 
-    (* add [node_id] to the visited preds for [t] *)
+    (** add [node_id] to the visited preds for [t] *)
     let add_visited_pred cfg t node_id =
       let visited_preds' = IdSet.add node_id t.visited_preds in
       let priority' = compute_priority cfg t.node visited_preds' in
@@ -74,7 +70,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
 
   type t = {worklist: WorkUnit.t M.t; cfg: CFG.t}
 
-  (* schedule the succs of [node] for analysis *)
+  (** schedule the succs of [node] for analysis *)
   let schedule_succs t node =
     let node_id = CFG.id node in
     (* mark [node] as a visited pred of [node_to_schedule] and schedule it *)
@@ -91,10 +87,10 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     {t with worklist= new_worklist}
 
 
-  (* remove and return the node with the highest priority (note that smaller integers have higher
-     priority), the ids of its visited predecessors, and new schedule *)
   (* TODO: could do this slightly more efficiently by keeping a list of priority zero nodes for
      quick popping, and do a linear search only when this list is empty *)
+  (** remove and return the node with the highest priority (note that smaller integers have higher
+     priority), the ids of its visited predecessors, and new schedule *)
   let pop t =
     try
       let init_id, init_work = M.min_binding t.worklist in

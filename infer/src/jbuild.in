@@ -86,6 +86,7 @@ let stanzas =
   (ocamlopt_flags (%s))
   (libraries (utop InferModules))
   (modules (Infertop))
+  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
   (link_flags (-linkall -warn-error -31))))
 |}
         (String.concat " " infer_cflags)
