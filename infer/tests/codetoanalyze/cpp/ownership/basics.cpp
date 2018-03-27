@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <string>
+
 struct Aggregate {
   int i;
 
@@ -21,6 +23,34 @@ void aggregate_reassign_ok() {
     // assign with curly bracket syntax doesn't call constructor; need to
     // recognize that this is a reassignment anyway
     arr[0] = s; // shouldn't be flagged as a use-after-lifetime
+  }
+}
+
+struct AggregateWithConstructedField {
+  std::string str;
+};
+
+void aggregate_reassign2_ok() {
+  AggregateWithConstructedField arr[10];
+  for (int i = 0; i < 10; i++) {
+    // this is translated as string(&(a.str), "hi"). need to make sure this is
+    // treated the same as initializing a
+    AggregateWithConstructedField a{"hi"};
+    arr[i] = a;
+  }
+}
+
+struct NestedAggregate {
+  AggregateWithConstructedField a;
+};
+
+void aggregate_reassign3_ok() {
+  NestedAggregate arr[10];
+  for (int i = 0; i < 10; i++) {
+    // this is translated as std::basic_string(&(a.str), "hi"). need to make
+    // sure this is treated the same as initializing a
+    NestedAggregate a{{"hi"}};
+    arr[i] = a;
   }
 }
 

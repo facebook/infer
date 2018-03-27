@@ -218,6 +218,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Specs.summary
 
+  let is_aggregate (_, typ) =
+    match typ.Typ.desc with
+    | Tstruct _ ->
+        (* TODO: we could compute this precisely by recursively checking all of the fields of the
+           type, but that's going to be expensive. will add it to the frontend instead *)
+        true
+    | _ ->
+        false
+
+
+  let get_assigned_base (access_expression: AccessExpression.t) =
+    match access_expression with
+    | Base base ->
+        Some base
+    | _ ->
+        let base = AccessExpression.get_base access_expression in
+        (* assume assigning to any field of an aggregate struct re-initalizes the struct *)
+        Option.some_if (is_aggregate base) base
+
+
   let acquire_ownership call_exp return_opt actuals loc summary astate =
     match call_exp with
     | HilInstr.Direct pname ->
@@ -245,9 +265,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 Typ.Procname.pp pname Location.pp loc
         else if Typ.Procname.is_constructor pname then
           match actuals with
-          | (HilExp.AccessExpression Base constructed_base) :: other_actuals ->
-              let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
-              Some (Domain.add constructed_base CapabilityDomain.Owned astate')
+          | (HilExp.AccessExpression access_expression) :: other_actuals -> (
+            match get_assigned_base access_expression with
+            | Some constructed_base ->
+                let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
+                Some (Domain.add constructed_base CapabilityDomain.Owned astate')
+            | None ->
+                Some astate )
           | _ ->
               Some astate
         else None
@@ -270,16 +294,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let is_aggregate (_, typ) =
-    match typ.Typ.desc with
-    | Tstruct _ ->
-        (* TODO: we could compute this precisely by recursively checking all of the fields of the
-           type, but that's going to be expensive. will add it to the frontend instead *)
-        true
-    | _ ->
-        false
-
-
   let is_early_return call_exp =
     match call_exp with
     | HilInstr.Direct pname ->
@@ -293,15 +307,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
-    | Assign (Base lhs_base, rhs_exp, loc) ->
-        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
-    | Assign (FieldOffset (Base lhs_base, _), rhs_exp, loc) when is_aggregate lhs_base ->
-        (* assume assigning to any field of an aggregate struct re-initalizes the struct *)
-        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
-    | Assign (lhs_access_exp, rhs_exp, loc) ->
-        (* assign to field, array, indirectly with &/*, or a combination *)
-        Domain.exp_add_reads rhs_exp loc summary astate
-        |> Domain.access_path_add_read (AccessExpression.to_access_path lhs_access_exp) loc summary
+    | Assign (lhs_access_exp, rhs_exp, loc) -> (
+      match get_assigned_base lhs_access_exp with
+      | Some lhs_base ->
+          Domain.handle_var_assign lhs_base rhs_exp loc summary astate
+      | None ->
+          (* assign to field, array, indirectly with &/*, or a combination *)
+          Domain.exp_add_reads rhs_exp loc summary astate
+          |> Domain.access_path_add_read
+               (AccessExpression.to_access_path lhs_access_exp)
+               loc summary )
     | Call (_, Direct callee_pname, [(AccessExpression Base lhs_base)], _, loc)
       when transfers_ownership callee_pname ->
         Domain.base_add_read lhs_base loc summary astate
