@@ -1199,6 +1199,8 @@ let analyze_procedure_aux exe_env tenv proc_desc =
 
 
 let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summary =
+  (* make sure models have been registered *)
+  BuiltinDefn.init () ;
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
   ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->

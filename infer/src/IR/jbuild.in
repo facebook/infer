@@ -3,8 +3,8 @@
 ;; Format.sprintf
      {|
 (library
- ((name InferStdlib)
-  (flags (%s -open Core))
+ ((name InferIR)
+  (flags (%s -open Core -open InferStdlib -open IStd -open InferGenerated -open InferBase))
   (ocamlopt_flags (%s))
   (libraries (%s))
   (preprocess (pps (ppx_compare)))
@@ -12,5 +12,5 @@
 |}
      (String.concat " " common_cflags)
      (String.concat " " common_optflags)
-     (String.concat " " common_libraries)
+     (String.concat " " ("InferBase" :: common_libraries))
    |> Jbuild_plugin.V1.send

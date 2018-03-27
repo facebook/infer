@@ -95,7 +95,7 @@ all: infer
 
 GENERATED_FROM_AUTOCONF = jbuild.common jbuild-workspace base/Version.ml
 
-GENERATED_JBUILDS += jbuild atd/jbuild istd/jbuild scripts/jbuild
+GENERATED_JBUILDS += jbuild atd/jbuild base/jbuild IR/jbuild istd/jbuild scripts/jbuild
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_JBUILDS) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -265,7 +265,9 @@ $(GENERATED_JBUILDS): jbuild.common
 
 jbuild: jbuild.in
 atd/jbuild: atd/jbuild.in
+base/jbuild: base/jbuild.in
 deadcode/jbuild: deadcode/jbuild.in
+IR/jbuild: IR/jbuild.in
 istd/jbuild: istd/jbuild.in
 scripts/jbuild: scripts/jbuild.in
 

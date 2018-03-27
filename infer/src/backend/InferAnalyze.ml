@@ -100,7 +100,6 @@ let register_active_checkers () =
 
 
 let main ~changed_files ~makefile =
-  BuiltinDefn.init () ;
   ( match Config.modified_targets with
   | Some file ->
       MergeCapture.record_modified_targets_from_file file

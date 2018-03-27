@@ -12,8 +12,6 @@ module F = Format
 
 (** Pretty Printing} *)
 
-module CLOpt = CommandLineOption
-
 (** Kind of simple printing: default or with full types *)
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 

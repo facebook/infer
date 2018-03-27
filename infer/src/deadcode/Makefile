@@ -46,7 +46,7 @@ ml_src_files_without_mli:=$(shell cd .. && for i in */*.ml */*/*.ml; do [ -f $${
 depend:
 	cd .. && \
 	ocamldep -native \
-	  -I IR -I absint -I atd -I backend -I base -I bufferoverrun -I checkers \
+	  -I IR -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers \
 	  -I clang -I concurrency -I eradicate -I facebook -I integration -I istd \
 	  -I java -I labs -I python -I quandary -I unit -I unit/clang -I deadcode \
 	   $(ml_src_files) > deadcode/.depend
@@ -105,7 +105,7 @@ $(ml_src_files_without_mli:.ml=.cmx):
 # root .cmx to include all the code. Any code not used in the construction of these "root .cmx" will
 # be considered dead.
 .PHONY: flatten_infer
-flatten_infer: backend/infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.cmx
+flatten_infer: infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.cmx
 	$(QUIET)echo "see results in $(ALL_INFER_IN_ONE_FILE_ML)"
 
 .PHONY: detect_dead_code

@@ -10,13 +10,12 @@ let source_dirs =
        ; (if python && facebook then "python" else "python_stubs")
        ; "absint"
        ; "backend"
-       ; "base"
+       ; "biabduction"
        ; "bufferoverrun"
        ; "checkers"
        ; "concurrency"
        ; "eradicate"
        ; "integration"
-       ; "IR"
        ; "labs"
        ; "quandary"
        ; "unit" ] )
@@ -27,10 +26,20 @@ let infer_binaries =
 
 
 let infer_cflags =
-  common_cflags @ ["-open"; "InferStdlib"; "-open"; "IStd"; "-open"; "InferGenerated"]
+  common_cflags
+  @ [ "-open"
+    ; "Core"
+    ; "-open"
+    ; "InferStdlib"
+    ; "-open"
+    ; "IStd"
+    ; "-open"
+    ; "InferGenerated"
+    ; "-open"
+    ; "InferIR"
+    ; "-open"
+    ; "InferBase" ]
 
-
-let infer_libraries = "InferStdlib" :: "InferGenerated" :: common_libraries
 
 (** The build stanzas to be passed to jbuilder *)
 let stanzas =
@@ -52,7 +61,7 @@ let stanzas =
 |}
         (String.concat " " infer_cflags)
         (String.concat " " common_optflags)
-        (String.concat " " infer_libraries)
+        (String.concat " " ("InferIR" :: common_libraries))
         (String.concat " " infer_binaries)
     ; Format.sprintf
         {|

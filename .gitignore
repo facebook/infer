@@ -155,6 +155,8 @@ infer/src/.project
 /infer/src/jbuild.common
 /infer/src/jbuild
 /infer/src/atd/jbuild
+/infer/src/base/jbuild
+/infer/src/IR/jbuild
 /infer/src/istd/jbuild
 /infer/src/scripts/jbuild
 /infer/src/jbuild-workspace
