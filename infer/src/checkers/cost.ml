@@ -419,17 +419,18 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
   let report_cost summary instr (cost: Itv.Bound.t) nid reported_so_far =
     let mk_message () =
       F.asprintf
-        "The excetution time from the beginning of the function up to this program point is \
-         likely above the acceptable threshold of %a (estimated cost %a)" Itv.Bound.pp
-        expensive_threshold Itv.Bound.pp cost
+        "The execution time from the beginning of the function up to this program point is likely \
+         above the acceptable threshold of %a (estimated cost %a)" Itv.Bound.pp expensive_threshold
+        Itv.Bound.pp cost
     in
     match cost with
     | b when Itv.Bound.is_not_infty b
       -> (
         let above_expensive_threshold = not (Itv.Bound.le cost expensive_threshold) in
+        let cost_desc = F.asprintf "with estimated cost %a" Itv.Bound.pp cost in
         match instr with
         | Sil.Call (_, _, _, loc, _) when above_expensive_threshold ->
-            let ltr = [Errlog.make_trace_element 0 loc "" []] in
+            let ltr = [Errlog.make_trace_element 0 loc cost_desc []] in
             let exn =
               Exceptions.Checkers
                 (IssueType.expensive_execution_time_call, Localise.verbatim_desc (mk_message ()))
@@ -441,7 +442,7 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
         | Sil.Call (_, _, _, loc, _)
         | Sil.Prune (_, loc, _, _)
           when above_expensive_threshold ->
-            let ltr = [Errlog.make_trace_element 0 loc "" []] in
+            let ltr = [Errlog.make_trace_element 0 loc cost_desc []] in
             let exn =
               Exceptions.Checkers
                 (IssueType.expensive_execution_time_call, Localise.verbatim_desc (mk_message ()))
