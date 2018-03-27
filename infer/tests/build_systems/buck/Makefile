@@ -22,13 +22,13 @@ include $(TESTS_DIR)/infer.make
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(call silent_on_success,Compiling Buck Java tests,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(BUCK) build --deep --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java integration,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(INFER_BIN) $(INFER_OPTIONS) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --deep --no-cache $(BUCK_TARGET))

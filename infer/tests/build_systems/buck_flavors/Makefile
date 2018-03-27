@@ -20,12 +20,11 @@ include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck flavors integration,\
-	NO_BUCKD=1 \
 	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) &&\
 	$(INFER_BIN) $(INFER_OPTIONS) --merge analyze)

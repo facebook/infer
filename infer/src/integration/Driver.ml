@@ -544,6 +544,8 @@ let run_prologue mode =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS" ;
+  (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
+  Unix.putenv ~key:"NO_BUCKD" ~data:"1" ;
   ()
 
 

@@ -19,13 +19,13 @@ include $(TESTS_DIR)/infer.make
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(call silent_on_success,Compiling Buck cross module test tests,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java cross module integration,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

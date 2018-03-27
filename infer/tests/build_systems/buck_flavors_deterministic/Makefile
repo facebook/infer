@@ -20,18 +20,16 @@ include $(TESTS_DIR)/base.make
 
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 differences.exp.test: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Running Buck flavors capture a first time,\
-	NO_BUCKD=1 \
 	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
 	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-1.sha)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Running Buck flavors capture a second time,\
-	NO_BUCKD=1 \
 	$(INFER_BIN) $(INFER_OPTIONS) capture --flavors --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET) && \
 	find buck-out/gen/src/infer-out-* -type f | xargs cat | $(SHASUM) > capture_hash-2.sha)

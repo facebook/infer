@@ -18,13 +18,13 @@ include $(TESTS_DIR)/infer.make
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(call silent_on_success,Compiling thread-safety trace tests,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing thread-safety trace tests with Buck,\
-	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
+	INFER_BIN=$(INFER_BIN) \
 	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

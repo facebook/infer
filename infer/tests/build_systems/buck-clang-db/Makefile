@@ -21,7 +21,6 @@ include $(TESTS_DIR)/infer.make
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)cd $(SOURCE_DIR) && \
 	$(call silent_on_success,Testing Buck Clang compilation database integration,\
-	  NO_BUCKD=1 \
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o $(CURDIR)/$(@D) \
 	  --buck-compilation-database no-deps \
 	  -- $(BUCK) build --no-cache '//clang_compilation_database:Hel lo#default' @clang_compilation_database/buck_target_hello_test.txt)

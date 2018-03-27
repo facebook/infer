@@ -20,11 +20,10 @@ include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(SOURCES)
 	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing infer-run Buck flavors integration,\
-	NO_BUCKD=1 \
 	$(INFER_BIN) $(INFER_OPTIONS) run --flavors --results-dir $(CURDIR)/infer-out --reactive -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

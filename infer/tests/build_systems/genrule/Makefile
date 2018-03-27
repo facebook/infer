@@ -27,7 +27,7 @@ include $(TESTS_DIR)/infer.make
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(call silent_on_success,Compiling Buck genrule for Java sources,\
-	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 .PHONY: genrule
 genrule: $(JSON_REPORT)
@@ -37,7 +37,7 @@ $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES) $(MAKEFILE_LIST)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck genrule for Java integration,\
-	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 $(BUCK) build --no-cache $(INFER_TARGET))
+	INFER_BIN="$(INFER_BIN)" $(BUCK) build --no-cache $(INFER_TARGET))
 	$(QUIET)touch $@
 
 report.json: $(JSON_REPORT) $(MAKEFILE_LIST)

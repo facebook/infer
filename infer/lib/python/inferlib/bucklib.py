@@ -72,10 +72,6 @@ def prepare_build(args):
         logging.error('Could not find infer')
         raise e
 
-    # disable the Buck daemon as changes in the Buck config
-    # may be missed otherwise
-    os.environ['NO_BUCKD'] = '1'
-
     # Create a script to be called by buck
     infer_script = None
     with tempfile.NamedTemporaryFile(delete=False,
