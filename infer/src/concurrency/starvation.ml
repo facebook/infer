@@ -14,18 +14,18 @@ module MF = MarkupFormatter
 let debug fmt = F.kasprintf L.d_strln fmt
 
 module Summary = Summary.Make (struct
-  type payload = DeadlockDomain.summary
+  type payload = StarvationDomain.summary
 
   let update_payload post (summary: Specs.summary) =
-    {summary with payload= {summary.payload with deadlock= Some post}}
+    {summary with payload= {summary.payload with starvation= Some post}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.deadlock
+  let read_payload (summary: Specs.summary) = summary.payload.starvation
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module Domain = DeadlockDomain
+  module Domain = StarvationDomain
 
   type extras = ProcData.no_extras
 
@@ -77,7 +77,7 @@ let get_class_of_pname = function
 let should_report_if_same_class _ = true
 
 (* currently short-circuited until non-determinism in reporting is dealt with *)
-(* DeadlockDomain.(
+(* StarvationDomain.(
     LockOrder.get_pair caller_elem
     |> false_if_none ~f:(fun (b, a) ->
            let b_class_opt, a_class_opt = (LockEvent.owner_class b, LockEvent.owner_class a) in
@@ -87,7 +87,7 @@ let should_report_if_same_class _ = true
                ) ) )) *)
 
 let make_loc_trace pname trace_id start_loc elem =
-  let open DeadlockDomain in
+  let open StarvationDomain in
   let header = Printf.sprintf "[Trace %d]" trace_id in
   let trace = LockOrder.make_loc_trace elem in
   let first_step = List.hd_exn trace in
@@ -105,7 +105,7 @@ let get_summary caller_pdesc callee_pdesc =
 
 
 let report_deadlocks get_proc_desc tenv pdesc summary =
-  let open DeadlockDomain in
+  let open StarvationDomain in
   let process_callee_elem caller_pdesc caller_elem callee_pdesc elem =
     if LockOrder.may_deadlock caller_elem elem && should_report_if_same_class caller_elem then (
       debug "Possible deadlock:@.%a@.%a@." LockOrder.pp caller_elem LockOrder.pp elem ;
@@ -119,9 +119,7 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
       let error_message =
         Format.asprintf "Potential deadlock (%a ; %a)" LockIdentity.pp lock LockIdentity.pp lock'
       in
-      let exn =
-        Exceptions.Checkers (IssueType.potential_deadlock, Localise.verbatim_desc error_message)
-      in
+      let exn = Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message) in
       let first_trace = List.rev (make_loc_trace caller_pname 1 caller_loc caller_elem) in
       let second_trace = make_loc_trace callee_pname 2 callee_loc elem in
       let ltr = List.rev_append first_trace second_trace in
@@ -158,21 +156,21 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let proc_data = ProcData.make_default proc_desc tenv in
   let initial =
-    if not (Procdesc.is_java_synchronized proc_desc) then DeadlockDomain.empty
+    if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
     else
       let attrs = Procdesc.get_attributes proc_desc in
       List.hd attrs.ProcAttributes.formals
-      |> Option.value_map ~default:DeadlockDomain.empty ~f:(fun (name, typ) ->
+      |> Option.value_map ~default:StarvationDomain.empty ~f:(fun (name, typ) ->
              let pvar = Pvar.mk name (Procdesc.get_proc_name proc_desc) in
              let path = (AccessPath.base_of_pvar pvar typ, []) in
-             DeadlockDomain.acquire path DeadlockDomain.empty (Procdesc.get_loc proc_desc) )
+             StarvationDomain.acquire path StarvationDomain.empty (Procdesc.get_loc proc_desc) )
   in
   match Analyzer.compute_post proc_data ~initial with
   | None ->
       summary
   | Some lock_state ->
-      let lock_order = DeadlockDomain.to_summary lock_state in
+      let lock_order = StarvationDomain.to_summary lock_state in
       let updated_summary = Summary.update_summary lock_order summary in
-      Option.iter updated_summary.Specs.payload.deadlock
+      Option.iter updated_summary.Specs.payload.starvation
         ~f:(report_deadlocks get_proc_desc tenv proc_desc) ;
       updated_summary

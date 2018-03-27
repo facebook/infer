@@ -106,7 +106,7 @@ type payload =
   ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
-  ; deadlock: DeadlockDomain.summary option }
+  ; starvation: StarvationDomain.summary option }
 
 (** Procedure summary *)
 type summary =

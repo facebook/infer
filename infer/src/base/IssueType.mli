@@ -198,8 +198,6 @@ val parameter_not_null_checked : t
 
 val pointer_size_mismatch : t
 
-val potential_deadlock : t  [@@warning "-32"]
-
 val precondition_not_found : t
 
 val precondition_not_met : t
@@ -233,6 +231,8 @@ val sql_injection : t
 val sql_injection_risk : t
 
 val stack_variable_address_escape : t
+
+val starvation : t
 
 val static_initialization_order_fiasco : t
 

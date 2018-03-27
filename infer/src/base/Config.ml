@@ -678,7 +678,6 @@ and ( annotation_reachability
     , check_nullable
     , cost
     , crashcontext
-    , deadlock
     , eradicate
     , fragment_retains_view
     , immutable_cast
@@ -691,6 +690,7 @@ and ( annotation_reachability
     , racerd
     , resource_leak
     , siof
+    , starvation
     , suggest_nullable
     , uninit ) =
   let mk_checker ?(default= false) ?(deprecated= []) ~long doc =
@@ -719,7 +719,6 @@ and ( annotation_reachability
   and crashcontext =
     mk_checker ~long:"crashcontext"
       "the crashcontext checker for Java stack trace context reconstruction"
-  and deadlock = mk_checker ~long:"deadlock" ~default:false "deadlock analysis"
   and eradicate =
     mk_checker ~long:"eradicate" "the eradicate @Nullable checker for Java annotations"
   and fragment_retains_view =
@@ -747,6 +746,7 @@ and ( annotation_reachability
   and siof =
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
+  and starvation = mk_checker ~long:"starvation" ~default:false "starvation analysis"
   and suggest_nullable =
     mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" in
@@ -792,7 +792,6 @@ and ( annotation_reachability
   , check_nullable
   , cost
   , crashcontext
-  , deadlock
   , eradicate
   , fragment_retains_view
   , immutable_cast
@@ -805,6 +804,7 @@ and ( annotation_reachability
   , racerd
   , resource_leak
   , siof
+  , starvation
   , suggest_nullable
   , uninit )
 
@@ -2393,8 +2393,6 @@ and cxx_infer_headers = !cxx_infer_headers
 
 and cxx_scope_guards = !cxx_scope_guards
 
-and deadlock = !deadlock
-
 and debug_level_analysis = !debug_level_analysis
 
 and debug_level_capture = !debug_level_capture
@@ -2690,6 +2688,8 @@ and sqlite_vfs = !sqlite_vfs
 and stacktrace = !stacktrace
 
 and stacktraces_dir = !stacktraces_dir
+
+and starvation = !starvation
 
 and stats_report = !stats_report
 

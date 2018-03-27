@@ -314,8 +314,6 @@ val cxx_infer_headers : bool
 
 val cxx_scope_guards : Yojson.Basic.json
 
-val deadlock : bool
-
 val debug_level_analysis : int
 
 val debug_level_capture : int
@@ -595,6 +593,8 @@ val sqlite_vfs : string option
 val stacktrace : string option
 
 val stacktraces_dir : string option
+
+val starvation : bool
 
 val stats_report : string option
 

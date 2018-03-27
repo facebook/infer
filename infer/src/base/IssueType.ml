@@ -281,8 +281,6 @@ let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 
-let potential_deadlock = from_string "DEADLOCK"
-
 let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
 
 let precondition_not_met = from_string "PRECONDITION_NOT_MET"
@@ -316,6 +314,8 @@ let sql_injection = from_string "SQL_INJECTION"
 let sql_injection_risk = from_string "SQL_INJECTION_RISK"
 
 let stack_variable_address_escape = from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
+
+let starvation = from_string "STARVATION"
 
 let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
 
