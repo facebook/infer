@@ -28,6 +28,68 @@ let expensive_threshold = Itv.Bound.of_int 200
 (* CFG module used in several other modules  *)
 module CFG = ProcCfg.Normal
 
+module NodesBasicCostDomain = struct
+  include AbstractDomain.Pair (BufferOverrunDomain.Mem) (CostDomain.NodeInstructionToCostMap)
+
+  let init = (BufferOverrunDomain.Mem.init, CostDomain.NodeInstructionToCostMap.empty)
+end
+
+(* Compute a map (node,instruction) -> basic_cost, where basic_cost is the
+   cost known for a certain operation. For example for basic operation we
+   set it to 1 and for function call we take it from the spec of the function.
+   The nodes in the domain of the map are those in the path reaching the current node.
+*)
+module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module InferboTransferFunctions = BufferOverrunChecker.TransferFunctions (CFG)
+  module Domain = NodesBasicCostDomain
+
+  type extras = InferboTransferFunctions.extras
+
+  let cost_atomic_instruction = Itv.Bound.one
+
+  let instr_idx (node: CFG.node) instr =
+    match CFG.instrs node with
+    | [] ->
+        0
+    | instrs ->
+        List.find_mapi_exn
+          ~f:(fun idx i -> if Sil.equal_instr i instr then Some idx else None)
+          instrs
+
+
+  let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
+      {ProcData.pdesc} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
+    let nid_int = (Procdesc.Node.get_id (CFG.underlying_node node) :> int) in
+    let instr_idx = instr_idx node instr in
+    let key = (nid_int, instr_idx) in
+    let astate' =
+      match instr with
+      | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) -> (
+        match Summary.read_summary pdesc callee_pname with
+        | Some {post= cost_callee} ->
+            CostDomain.NodeInstructionToCostMap.add key cost_callee astate
+        | None ->
+            CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate )
+      | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
+          CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
+      | _ ->
+          astate
+    in
+    L.(debug Analysis Medium)
+      "@\n>>>Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr
+      CostDomain.NodeInstructionToCostMap.pp astate' ;
+    astate'
+
+
+  let exec_instr (inferbo_mem, costmap) pdata node instr =
+    let inferbo_mem = InferboTransferFunctions.exec_instr inferbo_mem pdata node instr in
+    let costmap = exec_instr_cost inferbo_mem costmap pdata node instr in
+    (inferbo_mem, costmap)
+end
+
+module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunctionsNodesBasicCost)
+
 (* Map associating to each node a bound on the number of times it can be executed.
    This bound is computed using environments (map: val -> values), using the following
    observation: the number of environments associated with a program point is an upperbound
@@ -73,52 +135,54 @@ module BoundMap = struct
         env
 
 
-  let compute_upperbound_map pdesc invariant_map =
+  let compute_upperbound_map pdesc invariant_map_NodesBasicCost =
     let fparam = Procdesc.get_formals pdesc in
     let pname = Procdesc.get_proc_name pdesc in
     let fparam' = List.map ~f:(fun (m, _) -> Exp.Lvar (Pvar.mk m pname)) fparam in
     let compute_node_upper_bound bound_map node =
       let node_id = Procdesc.Node.get_id node in
-      let entry_mem_opt = BufferOverrunChecker.extract_post invariant_map node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
           Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.one
       | _ ->
-        match entry_mem_opt with
-        | Some entry_mem ->
-            let env = convert entry_mem in
-            (* bound = env(v1) *... * env(vn) *)
-            let bound =
-              CostDomain.EnvDomainBO.fold
-                (fun exp itv acc ->
-                  let itv' =
-                    match exp with
-                    | Exp.Var _ ->
-                        Itv.one
-                    (* For temp var we give [1,1] so it doesn't count*)
-                    | Exp.Lvar _
-                      when List.mem fparam' exp ~equal:Exp.equal ->
-                        Itv.one
-                    | Exp.Lvar _ ->
-                        itv
-                    | _ ->
-                        assert false
-                  in
-                  let range = Itv.range itv' in
-                  L.(debug Analysis Medium)
-                    "@\n>>>For node = %i :  exp=%a  itv=%a   range =%a @\n\n"
-                    (node_id :> int)
-                    Exp.pp exp Itv.pp itv' Itv.Bound.pp range ;
-                  Itv.Bound.mult acc range )
-                env Itv.Bound.one
-            in
-            L.(debug Analysis Medium)
-              "@\n>>>Setting bound for node = %i  to %a@\n\n"
-              (node_id :> int)
-              Itv.Bound.pp bound ;
-            Int.Map.set bound_map ~key:(node_id :> int) ~data:bound
-        | _ ->
-            Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.zero
+          let entry_state_opt =
+            AnalyzerNodesBasicCost.extract_post node_id invariant_map_NodesBasicCost
+          in
+          match entry_state_opt with
+          | Some (entry_mem, _) ->
+              let env = convert entry_mem in
+              (* bound = env(v1) *... * env(vn) *)
+              let bound =
+                CostDomain.EnvDomainBO.fold
+                  (fun exp itv acc ->
+                    let itv' =
+                      match exp with
+                      | Exp.Var _ ->
+                          Itv.one
+                      (* For temp var we give [1,1] so it doesn't count*)
+                      | Exp.Lvar _
+                        when List.mem fparam' exp ~equal:Exp.equal ->
+                          Itv.one
+                      | Exp.Lvar _ ->
+                          itv
+                      | _ ->
+                          assert false
+                    in
+                    let range = Itv.range itv' in
+                    L.(debug Analysis Medium)
+                      "@\n>>>For node = %i :  exp=%a  itv=%a   range =%a @\n\n"
+                      (node_id :> int)
+                      Exp.pp exp Itv.pp itv' Itv.Bound.pp range ;
+                    Itv.Bound.mult acc range )
+                  env Itv.Bound.one
+              in
+              L.(debug Analysis Medium)
+                "@\n>>>Setting bound for node = %i  to %a@\n\n"
+                (node_id :> int)
+                Itv.Bound.pp bound ;
+              Int.Map.set bound_map ~key:(node_id :> int) ~data:bound
+          | _ ->
+              Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.zero
     in
     let bound_map = List.fold (CFG.nodes pdesc) ~f:compute_node_upper_bound ~init:Int.Map.empty in
     print_upper_bound_map bound_map ; bound_map
@@ -353,52 +417,6 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     min_trees
 end
 
-(* Compute a map (node,instruction) -> basic_cost, where basic_cost is the
-   cost known for a certain operation. For example for basic operation we
-   set it to 1 and for function call we take it from the spec of the function.
-   The nodes in the domain of the map are those in the path reaching the current node.
-*)
-module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
-  module CFG = CFG
-  module Domain = CostDomain.NodeInstructionToCostMap
-
-  type extras = ProcData.no_extras
-
-  let cost_atomic_instruction = Itv.Bound.one
-
-  let instr_idx (node: CFG.node) instr =
-    match CFG.instrs node with
-    | [] ->
-        0
-    | instrs ->
-        List.find_mapi_exn
-          ~f:(fun idx i -> if Sil.equal_instr i instr then Some idx else None)
-          instrs
-
-
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc} (node: CFG.node) instr : Domain.astate =
-    let nid_int = (Procdesc.Node.get_id (CFG.underlying_node node) :> int) in
-    let instr_idx = instr_idx node instr in
-    let key = (nid_int, instr_idx) in
-    let astate' =
-      match instr with
-      | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) -> (
-        match Summary.read_summary pdesc callee_pname with
-        | Some {post= cost_callee} ->
-            Domain.add key cost_callee astate
-        | None ->
-            Domain.add key cost_atomic_instruction astate )
-      | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
-          Domain.add key cost_atomic_instruction astate
-      | _ ->
-          astate
-    in
-    L.(debug Analysis Medium)
-      "@\n>>>Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr Domain.pp astate' ;
-    astate'
-end
-
-module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunctionsNodesBasicCost)
 module ReportedOnNodes = AbstractDomain.FiniteSet (Int)
 
 type extras_TransferFunctionsWCET =
@@ -491,7 +509,7 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
     in
     let cost_node =
       match AnalyzerNodesBasicCost.extract_post node_id invariant_map_cost with
-      | Some node_map ->
+      | Some (_, node_map) ->
           L.(debug Analysis Medium)
             "@\n AnalizerWCTE] Final map for node: %a @\n" Procdesc.Node.pp_id node_id ;
           map_cost node_map
@@ -513,11 +531,15 @@ end
 module AnalyzerWCET = AbstractInterpreter.Make (CFG) (TransferFunctionsWCET)
 
 let checker ({Callbacks.tenv; summary; proc_desc} as proc_callback_args) : Specs.summary =
+  Preanal.do_preanalysis proc_desc tenv ;
+  let proc_data = ProcData.make_default proc_desc tenv in
   let cfg = CFG.from_pdesc proc_desc in
-  (* computes the semantics: node -> (environment, alias map) *)
-  let semantics_invariant_map = BufferOverrunChecker.compute_invariant_map proc_callback_args in
+  let invariant_map_NodesBasicCost =
+    (*compute_WCET cfg invariant_map min_trees in *)
+    AnalyzerNodesBasicCost.exec_cfg cfg proc_data ~initial:NodesBasicCostDomain.init ~debug:true
+  in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
-  let bound_map = BoundMap.compute_upperbound_map cfg semantics_invariant_map in
+  let bound_map = BoundMap.compute_upperbound_map cfg invariant_map_NodesBasicCost in
   let constraints = StructuralConstraints.compute_structural_constraints cfg in
   let min_trees = MinTree.compute_trees_from_contraints bound_map cfg constraints in
   let trees_valuation =
@@ -527,12 +549,6 @@ let checker ({Callbacks.tenv; summary; proc_desc} as proc_callback_args) : Specs
         L.(debug Analysis Medium) "@\n   Tree %i eval to %a @\n" n Itv.Bound.pp res ;
         Int.Map.set acc ~key:n ~data:res )
       ~init:Int.Map.empty min_trees
-  in
-  let invariant_map_NodesBasicCost =
-    (*compute_WCET cfg invariant_map min_trees in *)
-    AnalyzerNodesBasicCost.exec_cfg cfg
-      (ProcData.make_default proc_desc tenv)
-      ~initial:CostDomain.NodeInstructionToCostMap.empty ~debug:true
   in
   let initWCET = (Itv.Bound.zero, ReportedOnNodes.empty) in
   let invariant_map_WCETFinal =

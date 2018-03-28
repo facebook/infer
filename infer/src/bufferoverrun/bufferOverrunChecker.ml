@@ -310,8 +310,6 @@ end
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 module CFG = Analyzer.TransferFunctions.CFG
 
-type invariant_map = Analyzer.invariant_map
-
 module Report = struct
   module PO = BufferOverrunProofObligations
 
@@ -558,13 +556,6 @@ module Report = struct
     in
     PO.ConditionSet.check_all ~report cond_set
 end
-
-let compute_invariant_map : Callbacks.proc_callback_args -> Analyzer.invariant_map =
- fun {proc_desc; tenv} ->
-  Preanal.do_preanalysis proc_desc tenv ;
-  let pdata = ProcData.make_default proc_desc tenv in
-  Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata
-
 
 let extract_post inv_map node =
   let id = CFG.id node in
