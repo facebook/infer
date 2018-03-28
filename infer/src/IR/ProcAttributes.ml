@@ -56,6 +56,10 @@ type objc_accessor_type =
   | Objc_setter of Typ.Struct.field
   [@@deriving compare]
 
+let kind_of_objc_accessor_type accessor =
+  match accessor with Objc_getter _ -> "getter" | Objc_setter _ -> "setter"
+
+
 type var_attribute = Modify_in_block [@@deriving compare]
 
 let var_attribute_equal = [%compare.equal : var_attribute]

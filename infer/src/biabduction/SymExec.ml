@@ -1271,7 +1271,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                           (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
                           handle_objc_instance_method_call n_actual_params n_actual_params prop
                             tenv ret_id current_pdesc callee_pname loc path
-                            (sym_exec_objc_accessor objc_accessor ret_type)
+                            (sym_exec_objc_accessor callee_pname objc_accessor ret_type)
                       | None, true ->
                           (* If it's an alloc model, call alloc rather than skipping *)
                           sym_exec_alloc_model exe_env callee_pname ret_type tenv ret_id
@@ -1661,8 +1661,8 @@ and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args prop path
-    : Builtin.ret_typ =
+and sym_exec_objc_accessor callee_pname property_accesor ret_typ tenv ret_id pdesc _ loc args prop
+    path : Builtin.ret_typ =
   let f_accessor =
     match property_accesor with
     | ProcAttributes.Objc_getter field ->
@@ -1673,6 +1673,12 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
   (* we want to execute in the context of the current procedure, not in the context of callee_pname,
      since this is the procname of the setter/getter method *)
   let cur_pname = Procdesc.get_proc_name pdesc in
+  let path_description =
+    F.sprintf "Executing synthesized %s %s"
+      (ProcAttributes.kind_of_objc_accessor_type property_accesor)
+      (Typ.Procname.to_simplified_string callee_pname)
+  in
+  let path = Paths.Path.add_description path path_description in
   f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop |> List.map ~f:(fun p -> (p, path))
 
 

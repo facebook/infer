@@ -32,6 +32,8 @@ type objc_accessor_type =
   | Objc_setter of Typ.Struct.field
   [@@deriving compare]
 
+val kind_of_objc_accessor_type : objc_accessor_type -> string
+
 type var_attribute =
   | Modify_in_block
   (* __block attribute of Objective-C variables, means that it will be modified inside a block *)
