@@ -58,7 +58,7 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
           instrs
 
 
-  let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
+  let exec_instr_cost _inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
       {ProcData.pdesc} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
     let nid_int = (Procdesc.Node.get_id (CFG.underlying_node node) :> int) in
     let instr_idx = instr_idx node instr in
@@ -530,7 +530,7 @@ end
 
 module AnalyzerWCET = AbstractInterpreter.Make (CFG) (TransferFunctionsWCET)
 
-let checker ({Callbacks.tenv; summary; proc_desc} as proc_callback_args) : Specs.summary =
+let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   Preanal.do_preanalysis proc_desc tenv ;
   let proc_data = ProcData.make_default proc_desc tenv in
   let cfg = CFG.from_pdesc proc_desc in
