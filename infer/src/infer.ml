@@ -20,12 +20,8 @@ let run driver_mode =
   let open Driver in
   run_prologue driver_mode ;
   let changed_files = read_config_changed_files () in
-  register_perf_stats_report PerfStats.TotalFrontend ;
   capture driver_mode ~changed_files ;
-  PerfStats.get_reporter PerfStats.TotalFrontend () ;
-  register_perf_stats_report PerfStats.TotalBackend ;
   analyze_and_report driver_mode ~changed_files ;
-  PerfStats.get_reporter PerfStats.TotalBackend () ;
   run_epilogue driver_mode
 
 
@@ -132,9 +128,7 @@ let () =
             F.fprintf fmt "of cluster %s" (Filename.basename cluster)
       in
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
-      Driver.register_perf_stats_report PerfStats.TotalBackend ;
-      Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ()) ;
-      PerfStats.get_reporter PerfStats.TotalBackend ()
+      Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
   | Report ->
       InferPrint.main ~report_json:None
   | ReportDiff ->

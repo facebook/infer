@@ -62,6 +62,11 @@ let clean_compilation_command mode =
       None
 
 
+let register_perf_stats_report stats_type =
+  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
+  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) stats_type
+
+
 (* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
    get rid of non-deterministic outputs.*)
 let clean_results_dir () =
@@ -208,6 +213,7 @@ let capture ~changed_files mode =
       (* pretend prog is the root directory of the project *)
       PythonMain.go args
   | PythonCapture (build_system, build_cmd) ->
+      register_perf_stats_report PerfStats.TotalFrontend ;
       L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
       let in_buck_mode = Config.equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
@@ -282,7 +288,8 @@ let capture ~changed_files mode =
                 Config.print_usage_exit ()
             | status ->
                 command_error_handling ~always_die:true ~prog:infer_py ~args status)
-        ()
+        () ;
+      PerfStats.get_reporter PerfStats.TotalFrontend ()
   | XcodeXcpretty (prog, args) ->
       L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
@@ -312,9 +319,11 @@ let run_parallel_analysis ~changed_files : unit =
 
 
 let execute_analyze ~changed_files =
+  register_perf_stats_report PerfStats.TotalBackend ;
   if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
     InferAnalyze.main ~changed_files ~makefile:""
-  else run_parallel_analysis ~changed_files
+  else run_parallel_analysis ~changed_files ;
+  PerfStats.get_reporter PerfStats.TotalBackend ()
 
 
 let report ?(suppress_console= false) () =
@@ -526,11 +535,6 @@ let mode_from_command_line =
         BuckGenrule path
     | None ->
         mode_of_build_command (List.rev Config.rest) )
-
-
-let register_perf_stats_report stats_type =
-  let rtime_span, initial_times = (Mtime_clock.counter (), Unix.times ()) in
-  PerfStats.register_report (PerfStats.Time (rtime_span, initial_times)) stats_type
 
 
 let run_prologue mode =
