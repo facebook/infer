@@ -968,7 +968,7 @@ and current_to_previous_script =
 
 
 and cxx_infer_headers =
-  CLOpt.mk_bool ~long:"cxx-infer-headers" ~default:true
+  CLOpt.mk_bool ~long:"cxx-infer-headers" ~default:false
     ~in_help:InferCommand.([(Capture, manual_clang)])
     "Include C++ header models during compilation. Infer swaps some C++ headers for its own in \
      order to get a better model of, eg, the standard library. This can sometimes cause \

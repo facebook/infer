@@ -12,7 +12,7 @@ ANALYZER = checkers
 # use our own clang's standard library so that the tests are uniform across distributions
 CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c
 INFER_OPTIONS = --biabduction-only --ml-buckets cpp --debug-exceptions --project-root $(TESTS_DIR) \
-                --pmd-xml --report-custom-error
+                --pmd-xml --report-custom-error --cxx-infer-headers
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
