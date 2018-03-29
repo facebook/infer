@@ -9,9 +9,16 @@
 open! IStd
 module F = Format
 module L = Logging
-module MF = MarkupFormatter
 
 let debug fmt = F.kasprintf L.d_strln fmt
+
+let is_java_static pname =
+  match pname with
+  | Typ.Procname.Java java_pname ->
+      Typ.Procname.Java.is_static java_pname
+  | _ ->
+      false
+
 
 module Summary = Summary.Make (struct
   type payload = StarvationDomain.summary
@@ -22,6 +29,16 @@ module Summary = Summary.Make (struct
 
   let read_payload (summary: Specs.summary) = summary.payload.starvation
 end)
+
+(* using an indentifier for a class object, create an access path representing that lock;
+   this is for synchronizing on class objects only *)
+let lock_of_class class_id =
+  let ident = Ident.create_normal class_id 0 in
+  let type_name = Typ.Name.Java.from_string "java.lang.Class" in
+  let typ = Typ.mk (Typ.Tstruct type_name) in
+  let typ' = Typ.mk (Typ.Tptr (typ, Typ.Pk_pointer)) in
+  AccessPath.of_id ident typ'
+
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -42,6 +59,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             (* ignore paths on local or logical variables *)
             None )
+      | (HilExp.Constant Const.Cclass class_id) :: _ ->
+          (* this is a synchronized/lock(CLASSNAME.class) construct *)
+          Some (lock_of_class class_id)
       | _ ->
           None
     in
@@ -164,17 +184,22 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
 
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
+  let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
   let initial =
     if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
     else
-      let attrs = Procdesc.get_attributes proc_desc in
-      List.hd attrs.ProcAttributes.formals
-      |> Option.value_map ~default:StarvationDomain.empty ~f:(fun (name, typ) ->
-             let pvar = Pvar.mk name (Procdesc.get_proc_name proc_desc) in
-             let path = (AccessPath.base_of_pvar pvar typ, []) in
-             StarvationDomain.acquire path StarvationDomain.empty (Procdesc.get_loc proc_desc) )
+      let loc = Procdesc.get_loc proc_desc in
+      let lock =
+        if is_java_static pname then
+          (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
+          get_class_of_pname pname
+          |> Option.map ~f:(fun tn -> Typ.Name.name tn |> Ident.string_to_name |> lock_of_class)
+        else FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
+      in
+      Option.value_map lock ~default:StarvationDomain.empty ~f:(fun path ->
+          StarvationDomain.acquire path StarvationDomain.empty loc )
   in
   match Analyzer.compute_post proc_data ~initial with
   | None ->
