@@ -1034,7 +1034,6 @@ let execute_store ?(report_deref_errors= true) pname pdesc tenv lhs_exp typ rhs_
     let prop_list =
       List.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
     in
-    if !Config.footprint then List.iter ~f:(RetainCycles.report_cycle tenv pname) prop_list ;
     prop_list
   with Rearrange.ARRAY_ACCESS -> if Int.equal Config.array_level 0 then assert false else [prop_]
 
@@ -1792,6 +1791,12 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
     let post_process_result fav_normal p path =
       let p' = prop_normal_to_primed fav_normal p in
       State.set_path path None ;
+      (* Check for retain cycles after assignments and method calls *)
+      ( match instr with
+      | (Sil.Store _ | Sil.Call _) when !Config.footprint ->
+          List.iter ~f:(RetainCycles.report_cycle tenv pname) [p]
+      | _ ->
+          () ) ;
       let node_has_abstraction node =
         let instr_is_abstraction = function Sil.Abstract _ -> true | _ -> false in
         List.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
