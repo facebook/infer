@@ -27,13 +27,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = StarvationDomain
 
-  type extras = ProcData.no_extras
+  type extras = FormalMap.t
 
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc} _ (instr: HilInstr.t) =
+  let exec_instr (astate: Domain.astate) {ProcData.pdesc; extras} _ (instr: HilInstr.t) =
     let open RacerDConfig in
+    let is_formal base = FormalMap.is_formal base extras in
     let get_path actuals =
-      List.hd actuals |> Option.value_map ~default:[] ~f:HilExp.get_access_exprs |> List.hd
-      |> Option.map ~f:AccessExpression.to_access_path
+      match actuals with
+      | (HilExp.AccessExpression access_exp) :: _ -> (
+        match AccessExpression.to_access_path access_exp with
+        | (((Var.ProgramVar pvar, _) as base), _) as path
+          when is_formal base || Pvar.is_global pvar ->
+            Some path
+        | _ ->
+            (* ignore paths on local or logical variables *)
+            None )
+      | _ ->
+          None
     in
     match instr with
     | Call (_, Direct callee_pname, actuals, _, loc) -> (
@@ -154,7 +164,8 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
 
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
-  let proc_data = ProcData.make_default proc_desc tenv in
+  let formals = FormalMap.make proc_desc in
+  let proc_data = ProcData.make proc_desc tenv formals in
   let initial =
     if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
     else
