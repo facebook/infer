@@ -983,10 +983,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         {res_trans_to_parent with exps= exp_to_parent}
     | _ ->
+        (* Binary operator should have two operands *)
         assert false
 
 
-  (* Binary operator should have two operands *)
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
