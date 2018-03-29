@@ -79,6 +79,8 @@ let rec get_typ t tenv : Typ.t option =
 let rec pp fmt = function
   | Base (pvar, _) ->
       Var.pp fmt pvar
+  | FieldOffset (Dereference ae, fld) ->
+      F.fprintf fmt "%a->%a" pp ae Typ.Fieldname.pp fld
   | FieldOffset (ae, fld) ->
       F.fprintf fmt "%a.%a" pp ae Typ.Fieldname.pp fld
   | ArrayOffset (ae, _, []) ->
@@ -97,28 +99,64 @@ let base_of_id id typ = (Var.of_id id, typ)
 
 let base_of_pvar pvar typ = (Var.of_pvar pvar, typ)
 
-let of_pvar pvar typ = Base (base_of_pvar pvar typ)
+let of_pvar pvar typ = AddressOf (Base (base_of_pvar pvar typ))
 
 let of_id id typ = Base (base_of_id id typ)
 
+(* cancel out consective *&'s *)
+let rec normalize t =
+  match t with
+  | Base _ ->
+      t
+  | Dereference AddressOf t1 ->
+      normalize t1
+  | FieldOffset (t1, fieldname) ->
+      let t1' = normalize t1 in
+      if phys_equal t1 t1' then t else normalize (FieldOffset (t1', fieldname))
+  | ArrayOffset (t1, typ, tlist) ->
+      let t1' = normalize t1 in
+      let tlist' = IList.map_changed ~f:normalize ~equal tlist in
+      if phys_equal t1 t1' && phys_equal tlist tlist' then t
+      else normalize (ArrayOffset (t1', typ, tlist'))
+  | Dereference t1 ->
+      let t1' = normalize t1 in
+      if phys_equal t1 t1' then t else normalize (Dereference t1')
+  | AddressOf t1 ->
+      let t1' = normalize t1 in
+      if phys_equal t1 t1' then t else normalize (AddressOf t1')
+
+
 (* Adapted from AccessPath.of_exp. *)
-let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
+let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
   let rec of_exp_ exp typ (add_accesses: t -> t) acc : t list =
     match exp with
     | Exp.Var id -> (
       match f_resolve_id (Var.of_id id) with
       | Some access_expr ->
-          add_accesses access_expr :: acc
+          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          add_accesses access_expr' :: acc
       | None ->
-          add_accesses (of_id id typ) :: acc )
+          let access_expr = of_id id typ in
+          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          add_accesses access_expr' :: acc )
     | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar -> (
       match f_resolve_id (Var.of_pvar pvar) with
       | Some access_expr ->
-          add_accesses access_expr :: acc
+          (* do not need to add deref here as it was added implicitly in the binding *)
+          (* but need to remove it if add_deref is false *)
+          let access_expr' =
+            if not add_deref then match access_expr with Dereference ae -> ae | _ -> assert false
+            else access_expr
+          in
+          add_accesses access_expr' :: acc
       | None ->
-          add_accesses (of_pvar pvar typ) :: acc )
+          let access_expr = of_pvar pvar typ in
+          let access_expr' = if add_deref then Dereference access_expr else access_expr in
+          add_accesses access_expr' :: acc )
     | Exp.Lvar pvar ->
-        add_accesses (of_pvar pvar typ) :: acc
+        let access_expr = of_pvar pvar typ in
+        let access_expr' = if add_deref then Dereference access_expr else access_expr in
+        add_accesses access_expr' :: acc
     | Exp.Lfield (root_exp, fld, root_exp_typ) ->
         let add_field_access_expr access_expr = add_accesses (FieldOffset (access_expr, fld)) in
         of_exp_ root_exp root_exp_typ add_field_access_expr acc
@@ -142,12 +180,15 @@ let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
     | Exp.Const _ | Closure _ | Sizeof _ ->
         acc
   in
-  of_exp_ exp0 typ0 Fn.id []
+  IList.map_changed ~f:normalize ~equal (of_exp_ exp0 typ0 Fn.id [])
 
 
-let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
-  match of_exp ~include_array_indexes lhs_exp typ ~f_resolve_id with
-  | [lhs_ae] ->
-      Some lhs_ae
+let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
+  match lhs_exp with
+  | (Exp.Lfield _ | Exp.Lindex _) when not add_deref
+    -> (
+      let res = of_exp ~include_array_indexes ~add_deref:true lhs_exp typ ~f_resolve_id in
+      match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
   | _ ->
-      None
+      let res = of_exp ~include_array_indexes ~add_deref lhs_exp typ ~f_resolve_id in
+      match res with [lhs_ae] -> Some lhs_ae | _ -> None

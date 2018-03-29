@@ -120,9 +120,12 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
         let ae =
           match f_resolve_id (Var.of_id id) with
           | Some access_expr ->
-              if add_deref then AccessExpression.Dereference access_expr else access_expr
+              if add_deref then AccessExpression.normalize (Dereference access_expr)
+              else access_expr
           | None ->
-              AccessExpression.of_id id typ
+              let access_expr = AccessExpression.of_id id typ in
+              if add_deref then AccessExpression.normalize (Dereference access_expr)
+              else access_expr
         in
         AccessExpression ae
     | UnOp (op, e, typ_opt) ->
@@ -156,7 +159,9 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
         in
         Closure (closure.name, environment)
     | Lfield (root_exp, fld, root_exp_typ) -> (
-      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      match
+        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
+      with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
@@ -173,7 +178,9 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
          literal, e.g. using `const_cast<char*>` *)
         of_sil_ (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
     | Lindex (root_exp, index_exp) -> (
-      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      match
+        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
+      with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
@@ -183,7 +190,9 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
                , index_exp )) typ )
     | Lvar _ ->
-      match AccessExpression.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      match
+        AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
+      with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->

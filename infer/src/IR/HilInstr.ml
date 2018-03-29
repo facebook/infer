@@ -63,6 +63,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   | Load (lhs_id, rhs_exp, rhs_typ, loc) ->
       analyze_id_assignment ~add_deref:true (Var.of_id lhs_id) rhs_exp rhs_typ loc
   | Store (Lvar lhs_pvar, lhs_typ, rhs_exp, loc) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
+      (* do not need to add deref here as it is added implicitly in of_pvar by forgetting the & *)
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call
       ( Some (ret_id, _)
