@@ -87,7 +87,7 @@ OCAML_GENERATED_SOURCES += $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
 endif
 
 OCAML_SOURCES = \
-  $(wildcard */[a-zA-Z]*.ml */[a-zA-Z]*.ml[ily]) \
+  $(wildcard */[a-zA-Z]*.ml */[a-zA-Z]*.ml[ily] *.ml *.ml[ily]) \
   $(OCAML_GENERATED_SOURCES)
 
 .PHONY: all
