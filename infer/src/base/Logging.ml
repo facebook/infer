@@ -163,6 +163,8 @@ let log ~to_console ?(to_file= true) (lazy formatters) =
 
 let debug_file_fmts = register_formatter "debug"
 
+let debug_dev_file_fmts = register_formatter "local debug"
+
 let environment_info_file_fmts = register_formatter "environment"
 
 let external_warning_file_fmts = register_formatter "extern warn"
@@ -217,6 +219,8 @@ type debug_level = Quiet | Medium | Verbose [@@deriving compare]
 let debug_level_of_int n =
   if n <= 0 then Quiet else if Int.equal n 1 then Medium else (* >= 2 *) Verbose
 
+
+let debug_dev fmt = log ~to_console:true debug_dev_file_fmts fmt
 
 let analysis_debug_level = debug_level_of_int Config.debug_level_analysis
 
