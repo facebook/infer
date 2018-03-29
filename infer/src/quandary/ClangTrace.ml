@@ -449,43 +449,24 @@ include Trace.Make (struct
     | _ when List.mem sanitizers Sanitizer.All ~equal:Sanitizer.equal ->
         (* the All sanitizer clears any form of taint; don't report *)
         None
-    | UserControlledEndpoint (_, typ), CreateFile ->
-        Option.some_if
-          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
-          IssueType.untrusted_file
-    | Endpoint (_, typ), CreateFile ->
+    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), CreateFile ->
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.untrusted_file_risk
-    | UserControlledEndpoint (_, typ), URL ->
-        Option.some_if
-          (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
-          IssueType.untrusted_url
-    | Endpoint (_, typ), URL ->
+    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), URL ->
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
     | (CommandLineFlag _ | EnvironmentVariable | ReadFile), URL ->
         None
-    | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), SQL ->
-        if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
-          Some IssueType.sql_injection
-        else
-          (* no injection risk, but still user-controlled *)
-          Some IssueType.user_controlled_sql_risk
-    | Endpoint (_, typ), SQL ->
+    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQL ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
           (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
           Some IssueType.sql_injection_risk
         else
           (* no injection risk, but still user-controlled *)
           Some IssueType.user_controlled_sql_risk
-    | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), ShellExec ->
-        (* we know the user controls the endpoint, so it's code injection without a sanitizer *)
-        Option.some_if
-          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
-          IssueType.shell_injection
-    | Endpoint (_, typ), ShellExec ->
+    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
@@ -500,14 +481,24 @@ include Trace.Make (struct
         (* untrusted flag, environment var, or file data flowing to buffer *)
         Some IssueType.quandary_taint_error
     | (EnvironmentVariable | ReadFile | Other), ShellExec ->
-        (* untrusted flag, environment var, or file data flowing to shell *)
+        (* environment var, or file data flowing to shell *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeShell sanitizers)
+          IssueType.shell_injection
+    | CommandLineFlag (_, typ), ShellExec ->
+        (* untrusted flag, flowing to shell *)
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection
     | (EnvironmentVariable | ReadFile | Other), SQL ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeSQL sanitizers)
+          IssueType.sql_injection
+    | CommandLineFlag (_, typ), SQL ->
+        (* untrusted flag, flowing to shell *)
+        Option.some_if
+          (is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers)
           IssueType.sql_injection
     | Other, URL ->
         (* untrusted flag, environment var, or file data flowing to URL *)

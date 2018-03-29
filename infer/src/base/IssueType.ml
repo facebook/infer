@@ -351,8 +351,6 @@ let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
 
 let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
 
-let untrusted_url = from_string "UNTRUSTED_URL"
-
 let untrusted_url_risk = from_string "UNTRUSTED_URL_RISK"
 
 let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"

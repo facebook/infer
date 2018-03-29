@@ -262,8 +262,6 @@ val untrusted_file_risk : t
 
 val untrusted_intent_creation : t
 
-val untrusted_url : t
-
 val untrusted_url_risk : t
 
 val untrusted_variable_length_array : t
