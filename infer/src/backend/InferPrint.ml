@@ -45,7 +45,13 @@ let error_desc_to_plain_string error_desc =
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
 
-let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (filename: string)
+let compute_key (bug_type: string) (proc_name: Typ.Procname.t) (filename: string) =
+  let base_filename = Filename.basename filename
+  and simple_procedure_name = Typ.Procname.get_method proc_name in
+  String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
+
+
+let compute_hash (kind: string) (bug_type: string) (proc_name: Typ.Procname.t) (filename: string)
     (qualifier: string) =
   let base_filename = Filename.basename filename in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
@@ -55,7 +61,7 @@ let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (
     Str.global_replace (Str.regexp "\\(line \\|column \\|n\\$\\)[0-9]+") "_" qualifier
   in
   Utils.better_hash
-    (kind, type_str, hashable_procedure_name, base_filename, location_independent_qualifier)
+    (kind, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
   |> Caml.Digest.to_hex
 
 
@@ -266,7 +272,8 @@ module IssuesJson = struct
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
-        ; key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
+        ; node_key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
+        ; key= compute_key bug_type procname file
         ; hash= compute_hash kind bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc

@@ -13,8 +13,9 @@ let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "b
     ?(qualifier= "qualifier") ?(severity= "severity") ?(visibility= "visibility") ?(line= 1)
     ?(column= 1) ?(procedure= "procedure") ?(procedure_id= "procedure_id")
     ?(procedure_start_line= 1) ?(file= "file/at/a/certain/path.java") ?(bug_trace= [])
-    ?(key= "1234") ?(hash= "1") ?(dotty= None) ?(infer_source_loc= None)
-    ?(linters_def_file= Some "file/at/certain/path.al") ?doc_url () : Jsonbug_t.jsonbug =
+    ?(node_key= "File|method|TYPE") ?(key= "1234") ?(hash= "1") ?(dotty= None)
+    ?(infer_source_loc= None) ?(linters_def_file= Some "file/at/certain/path.al") ?doc_url ()
+    : Jsonbug_t.jsonbug =
   { bug_class
   ; kind
   ; bug_type
@@ -28,6 +29,7 @@ let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "b
   ; procedure_start_line
   ; file
   ; bug_trace
+  ; node_key
   ; key
   ; hash
   ; dotty

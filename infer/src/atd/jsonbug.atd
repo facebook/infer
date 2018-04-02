@@ -29,6 +29,7 @@ type jsonbug = {
   file : string;
   bug_trace : json_trace_item list;
   key : string;
+  node_key : string;
   hash : string;
   ?dotty : string option;
   ?infer_source_loc: loc option;
