@@ -117,8 +117,6 @@ val global_tenv_filename : string
 
 val idempotent_getters : bool
 
-val incremental_procs : bool
-
 val infer_py_argparse_error_exit_code : int
 
 val infer_top_results_dir_env_var : string

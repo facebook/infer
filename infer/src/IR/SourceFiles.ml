@@ -18,12 +18,6 @@ let store_statement =
 
 let add source_file cfg tenv =
   Cfg.inline_java_synthetic_methods cfg ;
-  ( if Config.incremental_procs then
-      match Cfg.load source_file with
-      | Some cfg_old ->
-          Cfg.mark_unchanged_pdescs ~cfg_old ~cfg_new:cfg
-      | None ->
-          () ) ;
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)

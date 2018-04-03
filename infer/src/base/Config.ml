@@ -192,10 +192,6 @@ let global_tenv_filename = ".global.tenv"
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
-(** If true, changes to code are checked at the procedure level; if false, at the file
-    level *)
-let incremental_procs = true
-
 (** Our Python script does its own argument parsing and will fail with this error on failure *)
 let infer_py_argparse_error_exit_code = 22
 

@@ -41,10 +41,6 @@ val save_attributes : SourceFile.t -> t -> unit
 val inline_java_synthetic_methods : t -> unit
 (** Inline the java synthetic methods in the cfg (in-place) *)
 
-val mark_unchanged_pdescs : cfg_old:t -> cfg_new:t -> unit
-(** compute the list of procedures added or changed in [cfg_new] over [cfg_old] and record the
-   [changed] attribute in-place in the new cfg. *)
-
 val pp_proc_signatures : Format.formatter -> t -> unit
 
 module SQLite : SqliteUtils.Data with type t = t

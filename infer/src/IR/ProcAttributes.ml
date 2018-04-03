@@ -69,7 +69,6 @@ type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@
 type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
-  ; mutable changed: bool  (** true if proc has changed since last analysis *)
   ; mutable did_preanalysis: bool  (** true if we performed preanalysis on the CFG for this proc *)
   ; err_log: Errlog.t  (** Error log for the procedure *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
@@ -100,7 +99,6 @@ type t =
 let default proc_name =
   { access= PredSymb.Default
   ; captured= []
-  ; changed= true
   ; did_preanalysis= false
   ; err_log= Errlog.empty ()
   ; exceptions= []

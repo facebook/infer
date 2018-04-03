@@ -206,65 +206,6 @@ let inline_java_synthetic_methods cfg =
   Typ.Procname.Hash.iter f cfg
 
 
-let mark_unchanged_pdescs ~cfg_old ~cfg_new =
-  let pdescs_eq (pd1: Procdesc.t) (pd2: Procdesc.t) =
-    (* map of exp names in pd1 -> exp names in pd2 *)
-    let exp_map = ref Exp.Map.empty in
-    (* map of node id's in pd1 -> node id's in pd2 *)
-    let node_map = ref Procdesc.NodeMap.empty in
-    (* formals are the same if their types are the same *)
-    let formals_eq formals1 formals2 =
-      List.equal ~equal:(fun (_, typ1) (_, typ2) -> Typ.equal typ1 typ2) formals1 formals2
-    in
-    let nodes_eq n1s n2s =
-      (* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
-         with [exp_map] and [id_map] *)
-      let node_eq (n1: Procdesc.Node.t) (n2: Procdesc.Node.t) =
-        let compare_id (n1: Procdesc.Node.t) (n2: Procdesc.Node.t) =
-          try
-            let n1_mapping = Procdesc.NodeMap.find n1 !node_map in
-            Procdesc.Node.compare n1_mapping n2
-          with Not_found ->
-            (* assume id's are equal and enforce by adding to [id_map] *)
-            node_map := Procdesc.NodeMap.add n1 n2 !node_map ;
-            0
-        in
-        let instrs_eq instrs1 instrs2 =
-          List.equal
-            ~equal:(fun i1 i2 ->
-              let n, exp_map' = Sil.compare_structural_instr i1 i2 !exp_map in
-              exp_map := exp_map' ;
-              Int.equal n 0 )
-            instrs1 instrs2
-        in
-        Int.equal (compare_id n1 n2) 0
-        && List.equal ~equal:Procdesc.Node.equal (Procdesc.Node.get_succs n1)
-             (Procdesc.Node.get_succs n2)
-        && List.equal ~equal:Procdesc.Node.equal (Procdesc.Node.get_preds n1)
-             (Procdesc.Node.get_preds n2)
-        && instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
-      in
-      try List.for_all2_exn ~f:node_eq n1s n2s with Invalid_argument _ -> false
-    in
-    let att1 = Procdesc.get_attributes pd1 and att2 = Procdesc.get_attributes pd2 in
-    Bool.equal att1.is_defined att2.is_defined && Typ.equal att1.ret_type att2.ret_type
-    && formals_eq att1.formals att2.formals
-    && nodes_eq (Procdesc.get_nodes pd1) (Procdesc.get_nodes pd2)
-  in
-  let mark_pdesc_if_unchanged pname (new_pdesc: Procdesc.t) =
-    try
-      let old_pdesc = Typ.Procname.Hash.find cfg_old pname in
-      let changed =
-        (* in continue_capture mode keep the old changed bit *)
-        Config.continue_capture && (Procdesc.get_attributes old_pdesc).changed
-        || not (pdescs_eq old_pdesc new_pdesc)
-      in
-      (Procdesc.get_attributes new_pdesc).changed <- changed
-    with Not_found -> ()
-  in
-  Typ.Procname.Hash.iter mark_pdesc_if_unchanged cfg_new
-
-
 let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_proc_descs cfg) in
