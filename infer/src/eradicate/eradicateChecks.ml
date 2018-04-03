@@ -15,9 +15,6 @@ module L = Logging
 (* do not report RETURN_NOT_NULLABLE if the return is annotated @Nonnull *)
 let return_nonnull_silent = true
 
-(* if true, check calls to libraries (i.e. not modelled and source not available) *)
-let check_library_calls = false
-
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
   match Typ.Struct.get_field_type_and_annotation ~lookup fn typ with
@@ -386,8 +383,8 @@ type resolved_param =
   ; propagates_nullable: bool }
 
 (** Check the parameters of a call. *)
-let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_summary_opt
-    callee_attributes resolved_params loc instr_ref : unit =
+let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes
+    resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let tot_param_num = List.length resolved_params in
   let check {num= param_num; formal= s1, ta1, t1; actual= orig_e2, ta2} =
@@ -424,10 +421,11 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_s
       if Config.eradicate_optional_present then check_ann AnnotatedSignature.Present )
   in
   let should_check_parameters =
-    if check_library_calls then true
-    else
-      Models.is_modelled_nullable callee_pname || callee_attributes.ProcAttributes.is_defined
-      || Option.is_some callee_summary_opt
+    match callee_pname with
+    | Typ.Procname.Java java_pname ->
+        not (Typ.Procname.Java.is_external java_pname) || Models.is_modelled_nullable callee_pname
+    | _ ->
+        false
   in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)

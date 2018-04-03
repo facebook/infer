@@ -344,6 +344,9 @@ module Procname : sig
 
     val is_class_initializer : t -> bool
     (** Check if this is a class initializer. *)
+
+    val is_external : t -> bool
+    (** Check if the method belongs to one of the specified external packages *)
   end
 
   module ObjC_Cpp : sig

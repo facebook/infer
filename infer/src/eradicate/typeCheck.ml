@@ -831,7 +831,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 (typecheck_expr find_canonical_duplicate calls_this checks) ;
             if checks.eradicate then
               EradicateChecks.check_call_parameters tenv find_canonical_duplicate curr_pdesc node
-                callee_summary_opt callee_attributes resolved_params loc instr_ref ;
+                callee_attributes resolved_params loc instr_ref ;
             let typestate2 =
               if checks.check_extension then
                 let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in

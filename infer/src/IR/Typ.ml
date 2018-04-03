@@ -708,6 +708,11 @@ module Procname = struct
       Note: currently only checks that the last argument has type Object[]. *)
     let is_vararg {parameters} =
       match List.last parameters with Some (_, "java.lang.Object[]") -> true | _ -> false
+
+
+    let is_external java_pname =
+      let package = get_package java_pname in
+      Option.exists ~f:Config.java_package_is_external package
   end
 
   module ObjC_Cpp = struct
