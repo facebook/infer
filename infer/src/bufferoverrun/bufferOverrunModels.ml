@@ -223,7 +223,7 @@ module Split = struct
     let vector_size_locs =
       Sem.eval vector_exp mem |> Dom.Val.get_all_locs |> PowLoc.append_field ~fn:size_field
     in
-    Dom.Mem.transform_mem ~f:(Dom.Val.plus increment) vector_size_locs mem
+    Dom.Mem.transform_mem ~f:(Dom.Val.plus_a increment) vector_size_locs mem
 end
 
 module Boost = struct

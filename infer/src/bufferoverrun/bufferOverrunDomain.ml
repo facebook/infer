@@ -80,8 +80,6 @@ module Val = struct
       ; traces= TraceSet.join x.traces y.traces }
 
 
-  let rec joins : t list -> t = function [] -> bot | [a] -> a | a :: b -> join a (joins b)
-
   let get_itv : t -> Itv.t = fun x -> x.itv
 
   let get_pow_loc : t -> PowLoc.t = fun x -> x.powloc
@@ -128,19 +126,12 @@ module Val = struct
     if has_pointer x || has_pointer y then {bot with itv= Itv.unknown_bool} else lift_itv f x y
 
 
-  let plus : t -> t -> t =
-   fun x y ->
-    { x with
-      itv= Itv.plus x.itv y.itv
-    ; arrayblk= ArrayBlk.plus_offset x.arrayblk y.itv
-    ; traces= TraceSet.join x.traces y.traces }
+  let plus_a : t -> t -> t =
+   fun x y -> {(lift_itv Itv.plus x y) with traces= TraceSet.join x.traces y.traces}
 
 
-  let minus : t -> t -> t =
-   fun x y ->
-    let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
-    let a = ArrayBlk.minus_offset x.arrayblk y.itv in
-    {bot with itv= n; arrayblk= a; traces= TraceSet.join x.traces y.traces}
+  let minus_a : t -> t -> t =
+   fun x y -> {(lift_itv Itv.minus x y) with traces= TraceSet.join x.traces y.traces}
 
 
   let mult : t -> t -> t =
