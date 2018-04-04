@@ -930,18 +930,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* becomes the successor of the nodes that may be created when     *)
         (* translating the operands.                                       *)
         let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
-        let var_exp, var_exp_typ =
+        let (var_exp, var_exp_typ) as e1_with_typ =
           extract_exp_from_list res_trans_e1.exps
             "@\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...@\n"
         in
-        let trans_state'' = {trans_state' with var_exp_typ= Some (var_exp, var_exp_typ)} in
+        let trans_state'' = {trans_state' with var_exp_typ= Some e1_with_typ} in
         let res_trans_e2 =
           (* translation of s2 is done taking care of block special case *)
           exec_with_block_priority_exception
             (exec_with_self_exception instruction)
             trans_state'' s2 stmt_info
         in
-        let sil_e2, _ =
+        let e2_with_typ =
           extract_exp_from_list res_trans_e2.exps
             "@\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...@\n"
         in
@@ -950,7 +950,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else
             let exp_op, instr_bin =
               CArithmetic_trans.binary_operation_instruction stmt_info.Clang_ast_t.si_source_range
-                binary_operator_info var_exp typ sil_e2 sil_loc
+                binary_operator_info e1_with_typ typ e2_with_typ sil_loc
             in
             (* Create a node if the priority if free and there are instructions *)
             let creating_node =

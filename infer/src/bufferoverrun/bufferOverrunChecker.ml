@@ -385,9 +385,9 @@ module Report = struct
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun pname ~bop ~e1 ~e2 location mem cond_set ->
     match bop with
-    | Binop.PlusA ->
+    | Binop.PlusPI ->
         check_binop_array_access pname ~is_plus:true ~e1 ~e2 location mem cond_set
-    | Binop.MinusA ->
+    | Binop.MinusPI ->
         check_binop_array_access pname ~is_plus:false ~e1 ~e2 location mem cond_set
     | _ ->
         cond_set

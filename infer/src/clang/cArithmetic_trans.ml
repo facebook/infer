@@ -16,16 +16,18 @@ module L = Logging
 (* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
 (* "instructions" is not empty when the binary operator is actually a statement like an *)
 (* assignment. *)
-let compound_assignment_binary_operation_instruction boi_kind e1 typ e2 loc =
+let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 loc =
   let id = Ident.create_fresh Ident.knormal in
   let instr1 = Sil.Load (id, e1, typ, loc) in
   let e_res, instr_op =
     match boi_kind with
     | `AddAssign ->
-        let e1_plus_e2 = Exp.BinOp (Binop.PlusA, Exp.Var id, e2) in
+        let bop = if Typ.is_pointer t1 then Binop.PlusPI else Binop.PlusA in
+        let e1_plus_e2 = Exp.BinOp (bop, Exp.Var id, e2) in
         (e1, [Sil.Store (e1, typ, e1_plus_e2, loc)])
     | `SubAssign ->
-        let e1_sub_e2 = Exp.BinOp (Binop.MinusA, Exp.Var id, e2) in
+        let bop = if Typ.is_pointer t1 then Binop.MinusPI else Binop.MinusA in
+        let e1_sub_e2 = Exp.BinOp (bop, Exp.Var id, e2) in
         (e1, [Sil.Store (e1, typ, e1_sub_e2, loc)])
     | `MulAssign ->
         let e1_mul_e2 = Exp.BinOp (Binop.Mult, Exp.Var id, e2) in
@@ -58,8 +60,10 @@ let compound_assignment_binary_operation_instruction boi_kind e1 typ e2 loc =
 (** Returns a pair ([binary_expression], instructions). "binary_expression" is returned when we are
    calculating an expression "instructions" is not empty when the binary operator is actually a
    statement like an assignment. *)
-let binary_operation_instruction source_range boi e1 typ e2 loc =
-  let binop_exp op = Exp.BinOp (op, e1, e2) in
+let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ (e2, t2) loc =
+  let binop_exp ?(change_order= false) op =
+    if change_order then Exp.BinOp (op, e2, e1) else Exp.BinOp (op, e1, e2)
+  in
   match boi.Clang_ast_t.boi_kind with
   (* Note: Pointers to members that are not statically known are not
      expressible in Sil. The translation of the PtrMem ops treats the field as
@@ -72,7 +76,9 @@ let binary_operation_instruction source_range boi e1 typ e2 loc =
       let id = Ident.create_fresh Ident.knormal in
       (Exp.BinOp (PlusPI, Exp.Var id, e2), [Sil.Load (id, e1, typ, loc)])
   | `Add ->
-      (binop_exp Binop.PlusA, [])
+      if Typ.is_pointer t1 then (binop_exp Binop.PlusPI, [])
+      else if Typ.is_pointer t2 then (binop_exp ~change_order:true Binop.PlusPI, [])
+      else (binop_exp Binop.PlusA, [])
   | `Mul ->
       (binop_exp Binop.Mult, [])
   | `Div ->
@@ -80,7 +86,9 @@ let binary_operation_instruction source_range boi e1 typ e2 loc =
   | `Rem ->
       (binop_exp Binop.Mod, [])
   | `Sub ->
-      (binop_exp Binop.MinusA, [])
+      if Typ.is_pointer t1 then
+        if Typ.is_pointer t2 then (binop_exp Binop.MinusPP, []) else (binop_exp Binop.MinusPI, [])
+      else (binop_exp Binop.MinusA, [])
   | `Shl ->
       (binop_exp Binop.Shiftlt, [])
   | `Shr ->
@@ -124,7 +132,7 @@ let binary_operation_instruction source_range boi e1 typ e2 loc =
     | `AndAssign
     | `XorAssign
     | `OrAssign ) as boi_kind ->
-      compound_assignment_binary_operation_instruction boi_kind e1 typ e2 loc
+      compound_assignment_binary_operation_instruction boi_kind e1_with_typ typ e2 loc
 
 
 let unary_operation_instruction translation_unit_context uoi e typ loc =
@@ -133,12 +141,14 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let e_plus_1 = Exp.BinOp (Binop.PlusA, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
+      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA in
+      let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       (Exp.Var id, [instr1; Sil.Store (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let e_plus_1 = Exp.BinOp (Binop.PlusA, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
+      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA in
+      let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_plus_1
       in
@@ -146,12 +156,14 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let e_minus_1 = Exp.BinOp (Binop.MinusA, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
+      let bop = if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA in
+      let e_minus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       (Exp.Var id, [instr1; Sil.Store (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let e_minus_1 = Exp.BinOp (Binop.MinusA, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
+      let bop = if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA in
+      let e_minus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_minus_1
       in
