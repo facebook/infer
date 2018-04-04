@@ -186,8 +186,15 @@ module Val = struct
 
   let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_ne
 
+  let is_pointer_to_non_array x = not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk
+
+  (* In the pointer arithmetics, it returns top, if we cannot
+     precisely follow the physical memory model, e.g., (&x + 1). *)
   let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t =
-   fun f x y -> {bot with arrayblk= f x.arrayblk y.itv; traces= TraceSet.join x.traces y.traces}
+   fun f x y ->
+    let traces = TraceSet.join x.traces y.traces in
+    if is_pointer_to_non_array x then {bot with itv= Itv.top; traces}
+    else {bot with arrayblk= f x.arrayblk y.itv; traces}
 
 
   let plus_pi : t -> t -> t = fun x y -> lift_pi ArrayBlk.plus_offset x y
@@ -196,12 +203,11 @@ module Val = struct
 
   let minus_pp : t -> t -> t =
    fun x y ->
-    (* when we cannot precisely follow the physical memory model, return top *)
-    if not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk
-       || not (PowLoc.is_bot y.powloc) && ArrayBlk.is_bot y.arrayblk
-    then {bot with itv= Itv.top}
-    else
-      {bot with itv= ArrayBlk.diff x.arrayblk y.arrayblk; traces= TraceSet.join x.traces y.traces}
+    let itv =
+      if is_pointer_to_non_array x && is_pointer_to_non_array y then Itv.top
+      else ArrayBlk.diff x.arrayblk y.arrayblk
+    in
+    {bot with itv; traces= TraceSet.join x.traces y.traces}
 
 
   let get_symbols : t -> Itv.Symbol.t list =

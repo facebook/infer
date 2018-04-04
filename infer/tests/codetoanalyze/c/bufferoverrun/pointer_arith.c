@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-void FN_pointer_arith_bad() {
+void pointer_arith_bad() {
   char arr[10];
   int x = 0;
   if (&x - 1 == 0)
