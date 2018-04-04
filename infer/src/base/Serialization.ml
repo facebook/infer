@@ -60,7 +60,7 @@ let create_serializer (key: Key.t) : 'a serializer =
     else Some value
   in
   let read_from_string (str: string) : 'a option =
-    try read_data (Marshal.from_string str 0) "string" with Sys_error _ -> None
+    read_data (Marshal.from_string str 0) "string"
   in
   (* The reads happen without synchronization.
      The writes are synchronized with a .lock file. *)
