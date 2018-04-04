@@ -164,26 +164,13 @@ module Domain = struct
     else add lhs_base (CapabilityDomain.make_borrowed_vars rhs_vars) astate
 
 
-  let borrow_exp lhs_var rhs_exp astate =
-    let rhs_vars =
-      List.fold (HilExp.get_access_exprs rhs_exp)
-        ~f:(fun acc access_expr ->
-          let var, _ = AccessExpression.to_access_path access_expr in
-          VarSet.add var acc )
-        ~init:VarSet.empty
-    in
-    borrow_vars lhs_var rhs_vars astate
-
-
   (* handle assigning directly to a base var *)
-  let handle_var_assign ((lhs_var, lhs_typ) as lhs_base) rhs_exp loc summary astate =
-    if Var.is_return lhs_var then exp_add_reads rhs_exp loc summary astate
+  let handle_var_assign lhs_base rhs_exp loc summary astate =
+    if Var.is_return (fst lhs_base) then exp_add_reads rhs_exp loc summary astate
     else
       match rhs_exp with
-      | HilExp.AccessExpression AccessExpression.AddressOf address_taken_exp ->
-          borrow_exp lhs_base (AccessExpression address_taken_exp) astate
-      | HilExp.AccessExpression AccessExpression.Base ((rhs_var, _) as rhs_base)
-        when not (Var.appears_in_source_code rhs_var) -> (
+      | HilExp.AccessExpression (Base rhs_base | AddressOf Base rhs_base)
+        when not (Var.appears_in_source_code (fst rhs_base)) -> (
         try
           (* assume assignments with non-source vars on the RHS transfer capabilities to the LHS
              var *)
@@ -193,11 +180,6 @@ module Domain = struct
         with Not_found ->
           (* no existing capability on RHS. don't make any assumptions about LHS capability *)
           remove lhs_base astate )
-      | HilExp.AccessExpression AccessExpression.Base (_, rhs_typ)
-        when is_function_typ lhs_typ || is_function_typ rhs_typ ->
-          (* an assignment borrows if the LHS/RHS is a function type, but for now assume that it
-             copies resources correctly for any other type. eventually, we'll check this assumption *)
-          borrow_exp lhs_base rhs_exp astate
       | HilExp.Closure (_, captured_vars) ->
           (* TODO: can be folded into the case above once we have proper AccessExpressions *)
           let vars_captured_by_ref =
@@ -210,6 +192,10 @@ module Domain = struct
       | _ ->
           (* TODO: support capability transfer between source vars, other assignment modes *)
           exp_add_reads rhs_exp loc summary astate |> remove lhs_base
+
+
+  let release_ownership base loc summary astate =
+    base_add_read base loc summary astate |> add base (CapabilityDomain.InvalidatedAt loc)
 end
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -265,7 +251,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 Typ.Procname.pp pname Location.pp loc
         else if Typ.Procname.is_constructor pname then
           match actuals with
-          | (HilExp.AccessExpression access_expression) :: other_actuals -> (
+          | (HilExp.AccessExpression AccessExpression.AddressOf access_expression) :: other_actuals
+                -> (
             match get_assigned_base access_expression with
             | Some constructed_base ->
                 let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
@@ -279,11 +266,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         None
 
 
-  let transfers_ownership pname =
-    (* TODO: support delete[], free, and (in some cases) std::move *)
-    Typ.Procname.equal pname BuiltinDecl.__delete
-    ||
-    match pname with
+  let is_destructor = function
     | Typ.Procname.ObjC_Cpp clang_pname ->
         Typ.Procname.ObjC_Cpp.is_destructor clang_pname
         && not
@@ -318,13 +301,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                (AccessExpression.to_access_path lhs_access_exp)
                loc summary )
     | Call (_, Direct callee_pname, [(AccessExpression Base lhs_base)], _, loc)
-      when transfers_ownership callee_pname ->
-        Domain.base_add_read lhs_base loc summary astate
-        |> Domain.add lhs_base (CapabilityDomain.InvalidatedAt loc)
+      when Typ.Procname.equal callee_pname BuiltinDecl.__delete ->
+        (* TODO: support delete[], free, and (in some cases) std::move *)
+        Domain.release_ownership lhs_base loc summary astate
+    | Call (_, Direct callee_pname, [(AccessExpression AddressOf Base lhs_base)], _, loc)
+      when is_destructor callee_pname ->
+        Domain.release_ownership lhs_base loc summary astate
     | Call
         ( _
         , Direct Typ.Procname.ObjC_Cpp callee_pname
-        , [(AccessExpression Base lhs_base); rhs_exp]
+        , [(AccessExpression AddressOf Base lhs_base); rhs_exp]
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname ->
@@ -334,7 +320,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call
         ( _
         , Direct Typ.Procname.ObjC_Cpp callee_pname
-        , (AccessExpression Base lhs_base) :: _
+        , (AccessExpression AddressOf Base lhs_base) :: _
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_cpp_lambda callee_pname ->

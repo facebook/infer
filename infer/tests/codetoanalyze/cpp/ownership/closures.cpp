@@ -32,7 +32,7 @@ int implicit_ref_capture_destroy_invoke_bad() {
   return f();
 }
 
-int reassign_lambda_capture_destroy_invoke_bad() {
+int FN_reassign_lambda_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();

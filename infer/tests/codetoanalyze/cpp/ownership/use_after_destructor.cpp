@@ -136,7 +136,7 @@ S* FN_placement_new_aliasing1_bad() {
   return s; // bad, returning freed memory
 }
 
-S* FN_placement_new_aliasing2_bad() {
+S* placement_new_aliasing2_bad() {
   S* s = new S(1);
   s->~S();
   auto alias = new (s) S(2);

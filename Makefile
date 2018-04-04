@@ -50,8 +50,8 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend c_performance \
-  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary \
-  cpp_racerd cpp_siof cpp_uninit  cpp_nullable cpp_conflicts \
+  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_ownership cpp_quandary \
+  cpp_racerd cpp_siof cpp_uninit cpp_nullable cpp_conflicts \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
