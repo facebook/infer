@@ -24,9 +24,9 @@ struct some_struct {
 
 void FN_static_stride_bad() {
   struct some_struct a[10];
-  struct some_struct *x, *y;
-  x = &(a[5]);
-  y = &(a[4]);
+  char *x, *y;
+  x = (char*)&(a[5]);
+  y = (char*)&(a[4]);
   if (sizeof(struct some_struct) == x - y) {
     int a[0];
     a[1]; // report
