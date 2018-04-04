@@ -393,27 +393,33 @@ module Report = struct
         cond_set
 
 
-  let rec check_expr
+  let check_expr
       : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
    fun pname exp location mem cond_set ->
+    let rec check_sub_expr exp cond_set =
+      match exp with
+      | Exp.Lindex (array_exp, index_exp) ->
+          cond_set |> check_sub_expr array_exp |> check_sub_expr index_exp
+          |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
+      | Exp.BinOp (_, e1, e2) ->
+          cond_set |> check_sub_expr e1 |> check_sub_expr e2
+      | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
+          check_sub_expr e cond_set
+      | Exp.Closure {captured_vars} ->
+          List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
+              check_sub_expr e cond_set )
+      | Exp.Var _ | Exp.Lvar _ | Exp.Const _ | Exp.Sizeof _ ->
+          cond_set
+    in
+    let cond_set = check_sub_expr exp cond_set in
     match exp with
     | Exp.Var _ ->
         let arr = Sem.eval exp mem in
         BoUtils.Check.array_access ~arr ~idx:Dom.Val.Itv.zero ~is_plus:true pname location cond_set
-    | Exp.Lindex (array_exp, index_exp) ->
-        cond_set |> check_expr pname array_exp location mem
-        |> check_expr pname index_exp location mem
-        |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
     | Exp.BinOp (bop, e1, e2) ->
-        cond_set |> check_expr pname e1 location mem |> check_expr pname e2 location mem
-        |> check_binop pname ~bop ~e1 ~e2 location mem
-    | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
-        check_expr pname e location mem cond_set
-    | Exp.Closure {captured_vars} ->
-        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
-            check_expr pname e location mem cond_set )
-    | Exp.Lvar _ | Exp.Const _ | Exp.Sizeof _ ->
+        check_binop pname ~bop ~e1 ~e2 location mem cond_set
+    | _ ->
         cond_set
 
 
