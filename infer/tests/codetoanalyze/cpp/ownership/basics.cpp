@@ -8,6 +8,7 @@
  */
 
 #include <string>
+#include <vector>
 
 struct Aggregate {
   int i;
@@ -72,4 +73,16 @@ int multiple_invalidations_loop_bad(int n, int* ptr) {
     }
   }
   return *ptr;
+}
+
+Aggregate* pointer_arithmetic_ok(Aggregate* a) {
+  a->~Aggregate();
+  a++;
+  return a;
+}
+
+void iterator_pointer_arithmetic_ok(std::vector<Aggregate> v) {
+  for (auto it = v.begin(); it != v.end(); ++it) {
+    it->~Aggregate();
+  }
 }
