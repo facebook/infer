@@ -15,6 +15,8 @@ module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module ValTraceSet = BufferOverrunTrace.Set
 
+type checked_condition = {report_issue_type: IssueType.t option; propagate: bool}
+
 module AllocSizeCondition = struct
   type t = ItvPure.astate
 
@@ -62,23 +64,30 @@ module AllocSizeCondition = struct
   let check length =
     match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
     | `Equal | `RightSubsumesLeft ->
-        Some IssueType.inferbo_alloc_is_zero
+        {report_issue_type= Some IssueType.inferbo_alloc_is_zero; propagate= false}
     | `LeftSmallerThanRight ->
-        Some IssueType.inferbo_alloc_is_negative
+        {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
     | _ ->
       match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
       | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
-          Some IssueType.inferbo_alloc_is_negative
+          {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
       | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.lb length) ->
-          Some IssueType.inferbo_alloc_may_be_negative
-      | _ ->
+          {report_issue_type= Some IssueType.inferbo_alloc_may_be_negative; propagate= true}
+      | cmp_mone ->
         match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
         | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
-            Some IssueType.inferbo_alloc_is_big
+            {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
         | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.ub length) ->
-            Some IssueType.inferbo_alloc_may_be_big
-        | _ ->
-            None
+            {report_issue_type= Some IssueType.inferbo_alloc_may_be_big; propagate= true}
+        | cmp_big ->
+            let propagate =
+              match (cmp_mone, cmp_big) with
+              | `NotComparable, _ | _, `NotComparable ->
+                  true
+              | _ ->
+                  false
+            in
+            {report_issue_type= None; propagate}
 
 
   let subst bound_map length =
@@ -194,7 +203,7 @@ module ArrayAccessCondition = struct
 
 
   (* check buffer overrun and return its confidence *)
-  let check : t -> IssueType.t option =
+  let check : t -> checked_condition =
    fun c ->
     (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
     let c' = set_size_pos c in
@@ -202,21 +211,28 @@ module ArrayAccessCondition = struct
     let not_overrun = ItvPure.lt_sem c'.idx c'.size in
     let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
     (* il >= 0 and iu < sl, definitely not an error *)
-    if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
-      (* iu < 0 or il >= su, definitely an error *)
+    if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then
+      {report_issue_type= None; propagate= false} (* iu < 0 or il >= su, definitely an error *)
     else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
-      Some IssueType.buffer_overrun_l1 (* su <= iu < +oo, most probably an error *)
+      {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
+      (* su <= iu < +oo, most probably an error *)
     else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
             && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
-    then Some IssueType.buffer_overrun_l2 (* symbolic il >= sl, probably an error *)
+    then {report_issue_type= Some IssueType.buffer_overrun_l2; propagate= false}
+      (* symbolic il >= sl, probably an error *)
     else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
             && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
-    then Some IssueType.buffer_overrun_s2 (* other symbolic bounds are probably too noisy *)
-    else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size) then
-      None
-    else if filter1 c then Some IssueType.buffer_overrun_l5
-    else if filter2 c then Some IssueType.buffer_overrun_l4
-    else Some IssueType.buffer_overrun_l3
+    then {report_issue_type= Some IssueType.buffer_overrun_s2; propagate= true}
+    else
+      (* other symbolic bounds are probably too noisy *)
+      let is_symbolic = ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size in
+      let report_issue_type =
+        if Config.bo_debug <= 3 && is_symbolic then None
+        else if filter1 c then Some IssueType.buffer_overrun_l5
+        else if filter2 c then Some IssueType.buffer_overrun_l4
+        else Some IssueType.buffer_overrun_l3
+      in
+      {report_issue_type; propagate= is_symbolic}
 
 
   let subst : Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t -> t option =
@@ -461,13 +477,11 @@ module ConditionSet = struct
 
 
   let check_all ~report condset =
-    List.iter condset ~f:(fun cwt ->
-        match Condition.check cwt.cond with
-        | None ->
-            ()
-        | Some issue_type ->
-            let issue_type = set_buffer_overrun_u5 cwt issue_type in
-            report cwt.cond cwt.trace issue_type )
+    List.filter condset ~f:(fun cwt ->
+        let {report_issue_type; propagate} = Condition.check cwt.cond in
+        report_issue_type |> Option.map ~f:(set_buffer_overrun_u5 cwt)
+        |> Option.iter ~f:(report cwt.cond cwt.trace) ;
+        propagate )
 
 
   let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace

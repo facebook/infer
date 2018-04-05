@@ -536,7 +536,7 @@ module Report = struct
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
 
-  let report_errors : Specs.summary -> Procdesc.t -> PO.ConditionSet.t -> unit =
+  let report_errors : Specs.summary -> Procdesc.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc cond_set ->
     let pname = Procdesc.get_proc_name pdesc in
     let report cond trace issue_type =
@@ -575,8 +575,7 @@ let compute_post
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let entry_mem = extract_post inv_map (CFG.start_node cfg) in
   let exit_mem = extract_post inv_map (CFG.exit_node cfg) in
-  let cond_set = Report.check_proc summary pdata inv_map in
-  Report.report_errors summary pdesc cond_set ;
+  let cond_set = Report.check_proc summary pdata inv_map |> Report.report_errors summary pdesc in
   match (entry_mem, exit_mem) with
   | Some entry_mem, Some exit_mem ->
       Some (entry_mem, exit_mem, cond_set)
