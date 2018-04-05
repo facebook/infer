@@ -49,3 +49,15 @@ void FN_pointer_arith4_Bad(int x) {
 }
 
 void call_pointer_arith4_Bad() { FN_pointer_arith4_Bad(100); }
+
+#include <stdio.h>
+#include <stdlib.h>
+
+void FP_pointer_arith5_Ok() {
+  char buf[1024];
+  fgets(buf, 1024, stdin);
+  size_t len = strlen(buf);
+  if (len < sizeof(buf) - 3) {
+    (buf + len)[sizeof(buf) - len - 1] = '\0';
+  }
+}
