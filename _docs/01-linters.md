@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/linters.html
 ---
 
-For iOS apps, we provide a linters framework. These are checks about the syntax of the program; it could be about a property, or about code inside one method, or that a class or method have certain properties. We provide [a few checks](/docs/linters-bug-types.html) and we have developed a domain specific language (DSL) to make it easier to write checks.
+For C/C++ and Objective-C languages, we provide a linters framework. These are checks about the syntax of the program; it could be about a property, or about code inside one method, or that a class or method have certain properties. We provide [a few checks](/docs/linters-bug-types.html) and we have developed a domain specific language (DSL) to make it easier to write checks.
 
 - [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
 - [Getting the clang AST](/docs/linters.html#clang_ast)
@@ -43,10 +43,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
 
 One of the major advantage of Infer when compared with other static analyzers is the fact it performs sophisticated inter-procedural/inter-file analysis. That is, Infer can detect bugs which involve tracking values through many procedure calls and the procedures may live in different files. These may be very subtle bugs and designing static analyses to do that is quite involved and normally requires deep static analysis expertise.
 
-However, there are many important software bugs that are confined in the code of a single procedure (called intra-procedural). To detect these bugs simpler analyses may suffice which do not require deep technical expertise in static analysis. Often these bugs can be expressed by referring to the syntax of the program, or the types of certain expressions. We have defined a new language to easily design checkers which identify these kind of bugs. The language is called AL (AST Language) and its main feature is the ability to reason about the Abstract Syntax Tree of a program in a concise declarative way. AL's checkers are interpreted by Infer to analyze programs. Thus, to detect new kind of bugs in Infer one can just write a check in AL without any knowledge of the internal of Infer.
-
-Once the new linter is added to the linters' file it will then work out of the box without the need to recompile Infer. Moreover to modify and/or debug your linters is enough to just update the linters' file.
-
+However, there are many important software bugs that are confined in the code of a single procedure (called intra-procedural). To detect these bugs simpler analyses may suffice which do not require deep technical expertise in static analysis. Often these bugs can be expressed by referring to the syntax of the program, or the types of certain expressions. We have defined a new language to easily design checkers which identify these kind of bugs. The language is called AL (AST Language) and its main feature is the ability to reason about the Abstract Syntax Tree of a program in a concise declarative way. AL's checkers are interpreted by Infer to analyze programs. Thus, to detect new kind of bugs in Infer one can just write a check in AL. We will see in more detail later, that for writing AL formulas we also need predicates: simple functions that check a property of the AST. Predicates are written in OCaml inside Infer, thus it requires a bit of OCaml knowledge and getting familiar with the OCaml data structure for the clang AST. 
 
 <a name="clang_ast">**Getting the clang AST**</a>  
 
@@ -65,7 +62,7 @@ For this you need to install an OCaml package `biniou` with `opam install biniou
 Then, the AST can be created by Infer in debug mode. Call Infer with
 
 ```bash
-infer -a linters --debug -- <build command>
+infer --debug -- <build command>
 ```
 
 This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with `bash File.m.ast.sh` and a file `/path/to/File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
@@ -129,7 +126,7 @@ DEFINE-CHECKER id_of_the_checker = {
   };
 ```
 
-The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags. `name` and `doc_url` are used only for Phabricator comments at the moment. 
+The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags. `name` and `doc_url` are used only for CI comments at the moment (in Phabricator). 
 
 <a name="paths">**Defining Paths**</a> 
 
@@ -164,7 +161,7 @@ In an AL file, the command above import and make available all the macros and pa
 
 <a name="predicates">**AL Predicates**</a> 
 
-The simplest formulas we can write are predicates. They are defined inside Infer. We provide a [library](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli), and can add more as needed. Here are the currently defined predicates:
+The simplest formulas we can write are predicates. They are defined inside Infer. We provide a [library](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli), but if the predicate that you require is not available, you will need to extend the library. Here are the some of the currently defined predicates:
 
 ```
 call_class_method ("class_name", "method_name")
@@ -532,8 +529,7 @@ When you write the message of your rule, you may want to specify which particula
 
 <a name="testing">**Testing your rule**</a>
 
-To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer to print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and the debug info will be only 
-about your linter.
+To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode --linter <LINTER_NAME>` to Infer to print debug information and only run the linter you are developing, so it will be faster and the debug info will be only about your linter.
 
 To test your code, write a small example that triggers the rule. Then, run your code with
 
