@@ -157,11 +157,9 @@ let inferbo_min e1 e2 =
 
 let inferbo_set_size e1 e2 =
   let exec _model_env mem =
-    let locs = Sem.eval_locs e1 mem |> Dom.Val.get_pow_loc in
+    let locs = Sem.eval e1 mem |> Dom.Val.get_pow_loc in
     let size = Sem.eval e2 mem |> Dom.Val.get_itv in
-    let arr = Dom.Mem.find_heap_set locs mem in
-    let arr = Dom.Val.set_array_size size arr in
-    Dom.Mem.strong_update_heap locs arr mem
+    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_size size) locs mem
   and check = check_alloc_size e2 in
   {exec; check}
 

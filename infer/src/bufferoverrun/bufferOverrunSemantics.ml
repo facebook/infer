@@ -290,23 +290,28 @@ and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
       Val.lor_sem v1 v2
 
 
-let rec eval_locs : Exp.t -> Mem.astate -> Val.t =
+(* It returns the array value of the input expression.  For example,
+   when "x" is a program variable, (eval_arr "x") returns array blocks
+   the "x" is pointing to, on the other hand, (eval "x") returns the
+   abstract location of "x". *)
+let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
  fun exp mem ->
   match exp with
   | Exp.Var id -> (
     match Mem.find_alias id mem with
     | Some AliasTarget.Simple loc ->
-        PowLoc.singleton loc |> Val.of_pow_loc
+        Mem.find_heap loc mem
     | Some AliasTarget.Empty _ | None ->
         Val.bot )
   | Exp.Lvar pvar ->
-      pvar |> Loc.of_pvar |> PowLoc.singleton |> Val.of_pow_loc
+      Mem.find_set (PowLoc.singleton (Loc.of_pvar pvar)) mem
   | Exp.BinOp (bop, e1, e2) ->
       eval_binop bop e1 e2 mem
   | Exp.Cast (_, e) ->
-      eval_locs e mem
+      eval_arr e mem
   | Exp.Lfield (e, fn, _) ->
-      eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
+      let locs = eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
+      Mem.find_heap_set locs mem
   | Exp.Lindex (e1, e2) ->
       let arr = eval e1 mem in
       let idx = eval e2 mem in

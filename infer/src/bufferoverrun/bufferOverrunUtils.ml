@@ -159,8 +159,7 @@ module Check = struct
 
 
   let lindex ~array_exp ~index_exp mem pname location cond_set =
-    let locs = Sem.eval_locs array_exp mem |> Dom.Val.get_all_locs in
-    let arr = Dom.Mem.find_set locs mem in
+    let arr = Sem.eval_arr array_exp mem in
     let idx = Sem.eval index_exp mem in
     array_access ~arr ~idx ~is_plus:true pname location cond_set
 end
