@@ -1139,6 +1139,27 @@ let exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc p
       , missing_fld
       , frame_typ
       , missing_typ ) ->
+      (* check if a missing_fld hpred is from a dyn language (ObjC) *)
+      let hpred_missing_objc_class = function
+        | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ}) ->
+            Typ.is_objc_class typ
+        | _ ->
+            false
+      in
+      let missing_fld_objc_class, missing_fld_not_objc_class =
+        List.partition_tf ~f:(fun hp -> hpred_missing_objc_class hp) missing_fld
+      in
+      let missing_sigma_objc_class =
+        List.filter ~f:(fun hp -> hpred_missing_objc_class hp) missing_sigma
+      in
+      if missing_fld_objc_class <> [] then (
+        L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
+        add_missing_field_to_tenv ~missing_sigma:false exe_env tenv callee_pname
+          missing_fld_objc_class ) ;
+      if missing_sigma_objc_class <> [] then (
+        L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
+        add_missing_field_to_tenv ~missing_sigma:true exe_env tenv callee_pname
+          missing_sigma_objc_class ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
         Reporting.log_warning_deprecated caller_pname exn
@@ -1190,27 +1211,6 @@ let exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc p
           Invalid_res (Dereference_error (deref_error, desc, pjoin))
       | None ->
           let split = do_split () in
-          (* check if a missing_fld hpred is from a dyn language (ObjC) *)
-          let hpred_missing_objc_class = function
-            | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ}) ->
-                Typ.is_objc_class typ
-            | _ ->
-                false
-          in
-          let missing_fld_objc_class, missing_fld_not_objc_class =
-            List.partition_tf ~f:(fun hp -> hpred_missing_objc_class hp) missing_fld
-          in
-          let missing_sigma_objc_class =
-            List.filter ~f:(fun hp -> hpred_missing_objc_class hp) missing_sigma
-          in
-          if missing_fld_objc_class <> [] then (
-            L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
-            add_missing_field_to_tenv ~missing_sigma:false exe_env tenv callee_pname
-              missing_fld_objc_class ) ;
-          if missing_sigma_objc_class <> [] then (
-            L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
-            add_missing_field_to_tenv ~missing_sigma:true exe_env tenv callee_pname
-              missing_sigma_objc_class ) ;
           if not !Config.footprint && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )
