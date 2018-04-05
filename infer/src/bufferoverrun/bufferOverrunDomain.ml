@@ -116,31 +116,25 @@ module Val = struct
   let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv}
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
-   fun f x y -> {bot with itv= f x.itv y.itv}
+   fun f x y -> {bot with itv= f x.itv y.itv; traces= TraceSet.join x.traces y.traces}
 
 
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
    fun f x y ->
-    if has_pointer x || has_pointer y then {bot with itv= Itv.unknown_bool} else lift_itv f x y
+    if has_pointer x || has_pointer y then
+      {bot with itv= Itv.unknown_bool; traces= TraceSet.join x.traces y.traces}
+    else lift_itv f x y
 
 
-  let plus_a : t -> t -> t =
-   fun x y -> {(lift_itv Itv.plus x y) with traces= TraceSet.join x.traces y.traces}
+  let plus_a : t -> t -> t = lift_itv Itv.plus
 
+  let minus_a : t -> t -> t = lift_itv Itv.minus
 
-  let minus_a : t -> t -> t =
-   fun x y -> {(lift_itv Itv.minus x y) with traces= TraceSet.join x.traces y.traces}
+  let mult : t -> t -> t = lift_itv Itv.mult
 
-
-  let mult : t -> t -> t =
-   fun x y -> {(lift_itv Itv.mult x y) with traces= TraceSet.join x.traces y.traces}
-
-
-  let div : t -> t -> t =
-   fun x y -> {(lift_itv Itv.div x y) with traces= TraceSet.join x.traces y.traces}
-
+  let div : t -> t -> t = lift_itv Itv.div
 
   let mod_sem : t -> t -> t = lift_itv Itv.mod_sem
 

@@ -31,7 +31,7 @@ codetoanalyze/cpp/bufferoverrun/relation.cpp, call2_plus_params_Bad, 0, BUFFER_O
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_foo_Bad, 1, CONDITION_ALWAYS_TRUE, WARNING, []
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_foo_Bad, 6, BUFFER_OVERRUN_L1, ERROR, [ArrayDeclaration,ArrayAccess: Offset: [10, 10] Size: [5, 5]]
 codetoanalyze/cpp/bufferoverrun/remove_temps.cpp, C_goo, 1, CONDITION_ALWAYS_TRUE, WARNING, []
-codetoanalyze/cpp/bufferoverrun/repro1.cpp, LM<TFM>_lI, 2, BUFFER_OVERRUN_L5, ERROR, [Call,Assignment,Return,Assignment,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: [0, +oo] Size: [0, +oo]]
+codetoanalyze/cpp/bufferoverrun/repro1.cpp, LM<TFM>_lI, 2, BUFFER_OVERRUN_L5, ERROR, [Call,Call,Assignment,Return,Assignment,Return,Assignment,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: [0, +oo] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/repro1.cpp, LM<TFM>_uI_FP, 0, BUFFER_OVERRUN_S2, ERROR, [Parameter: bi,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: [-1+max(1, s$4), -1+max(1, s$5)] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/repro1.cpp, LM<TFM>_u_FP, 5, BUFFER_OVERRUN_S2, ERROR, [Call,Parameter: bi,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: [-1+max(1, s$8), -1+max(1, s$9)] Size: [0, +oo]]
 codetoanalyze/cpp/bufferoverrun/repro1.cpp, ral_FP, 3, BUFFER_OVERRUN_S2, ERROR, [Call,Call,Parameter: bi,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: [-1+max(1, s$4), -1+max(1, s$5)] Size: [0, +oo]]

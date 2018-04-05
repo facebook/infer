@@ -1,5 +1,5 @@
-codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_Bad, 2, BUFFER_OVERRUN_L3, ERROR, [ArrayDeclaration,ArrayAccess: Offset: [-4, 4] Size: [5, 5]]
-codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_neg_Bad, 2, BUFFER_OVERRUN_L3, ERROR, [ArrayDeclaration,ArrayAccess: Offset: [-4, 4] Size: [5, 5]]
+codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_Bad, 2, BUFFER_OVERRUN_L3, ERROR, [ArrayDeclaration,Parameter: i,ArrayAccess: Offset: [-4, 4] Size: [5, 5]]
+codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_neg_Bad, 2, BUFFER_OVERRUN_L3, ERROR, [ArrayDeclaration,Parameter: i,ArrayAccess: Offset: [-4, 4] Size: [5, 5]]
 codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min2_Good_FP, 2, BUFFER_OVERRUN_L2, ERROR, [ArrayDeclaration,Call,Assignment,Return,ArrayAccess: Offset: [0, 14] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min3_Good_FP, 2, BUFFER_OVERRUN_L2, ERROR, [ArrayDeclaration,Call,Assignment,Return,ArrayAccess: Offset: [0, 25] Size: [20, 20]]
 codetoanalyze/c/bufferoverrun/arith.c, plus_linear_min_Bad, 2, BUFFER_OVERRUN_L2, ERROR, [ArrayDeclaration,Call,Assignment,Return,ArrayAccess: Offset: [0, 19] Size: [19, 19]]
