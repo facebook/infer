@@ -1,3 +1,5 @@
+codetoanalyze/cpp/uninit/default_constr.cpp, init_bad, 3, UNINITIALIZED_VALUE, ERROR, []
+codetoanalyze/cpp/uninit/default_constr.cpp, init_bad, 3, UNINITIALIZED_VALUE, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad, 4, UNINITIALIZED_VALUE, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad2, 4, UNINITIALIZED_VALUE, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad3, 4, UNINITIALIZED_VALUE, ERROR, []

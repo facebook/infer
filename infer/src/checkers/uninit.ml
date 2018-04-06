@@ -195,6 +195,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         acc
 
 
+  (* true if a function initializes at least a param or a field of a struct param *)
+  let function_initializes_some_formal_params pdesc call =
+    match Summary.read_summary pdesc call with
+    | Some {pre= initialized_formal_params; post= _} ->
+        not (D.is_empty initialized_formal_params)
+    | _ ->
+        false
+
+
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
       (instr: HilInstr.t) =
     let update_prepost (((_, lhs_typ), apl) as lhs_ap) rhs =
@@ -232,8 +241,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with uninit_vars= D.empty}
-    | Call (_, HilInstr.Direct call, _, _, _) when is_dummy_constructor_of_a_struct call ->
-        astate
+    | Call (_, HilInstr.Direct call, [(HilExp.AccessExpression AddressOf Base base)], _, _)
+      when is_dummy_constructor_of_a_struct call ->
+        (* if it's a default constructor, we use the following heuristic: we assume that it initializes 
+    correctly all fields when there is an implementation of the constructor that initilizes at least one
+    field. If there is no explicit implementation we cannot assume fields are initialized *)
+        if function_initializes_some_formal_params pdesc call then
+          let uninit_vars' =
+            (* in HIL/SIL the default constructor has only one param: the struct *)
+            remove_all_fields tenv base astate.uninit_vars
+          in
+          {astate with uninit_vars= uninit_vars'}
+        else astate
     | Call (_, HilInstr.Direct call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
