@@ -12,10 +12,14 @@ TESTS_DIR = ../..
 MODIFIED_FILES_FILE = filter_files.test.txt
 DIFFERENTIAL_ARGS = --differential-filter-files $(MODIFIED_FILES_FILE) \
 	--differential-filter-set "fixed,preexisting"
+SOURCES = $(wildcard src/com/example/*.java.current src/com/example/*.java.previous \
+	 src/com/example/*.java.unchanged)
 SRC_OBJECT_FILES = src/com/example/*.java src/com/example/*.class com/
 CLEAN_EXTRA = $(SRC_OBJECT_FILES) $(MODIFIED_FILES_FILE)
 
-include ../../differential.make
+include $(TESTS_DIR)/differential.make
+
+$(CURRENT_REPORT) $(PREVIOUS_REPORT): $(JAVA_DEPS)
 
 .PHONY: compare_reports replace_reports
 compare_reports: current.exp.test previous.exp.test

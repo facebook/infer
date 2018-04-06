@@ -8,9 +8,12 @@
 # E2E test involving the skip_duplicated_types_on_filenames filter
 
 TESTS_DIR = ../..
+SOURCES = $(wildcard src/*.java.current src/*.java.previous)
 CLEAN_EXTRA = src/Diff*.java src/Diff*.java *.class
 
-include ../../differential.make
+include $(TESTS_DIR)/differential.make
+
+$(CURRENT_REPORT) $(PREVIOUS_REPORT): $(JAVA_DEPS)
 
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java

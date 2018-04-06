@@ -7,11 +7,12 @@
 
 TESTS_DIR = ../..
 INFER_OUT = infer-out
-include $(TESTS_DIR)/differential.make
-
+SOURCES = $(SRC_DIR)/some_bugs.c $(SRC_DIR)/some_different_bugs.c
 DIFFERENTIAL_ARGS = --differential-filter-files changed_files.txt
 
-include ../../differential.make
+include $(TESTS_DIR)/differential.make
+
+$(CURRENT_REPORT) $(PREVIOUS_REPORT): $(CLANG_DEPS)
 
 BUCK_TARGET = //src:hello
 INFER_OPTIONS = $(DIFFERENTIAL_ARGS) --flavors --reactive --debug-exceptions
