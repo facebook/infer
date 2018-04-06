@@ -25,7 +25,7 @@ module Target = struct
         L.(die ExternalError) "cannot parse target %s" target
 
 
-  let to_string {name; flavors} = F.asprintf "%s#%a" name (Pp.comma_seq Pp.string) flavors
+  let to_string {name; flavors} = F.asprintf "%s#%a" name (Pp.comma_seq F.pp_print_string) flavors
 
   let add_flavor_internal target flavor =
     if List.mem ~equal:String.equal target.flavors flavor then
@@ -104,7 +104,7 @@ module Query = struct
 
   let rec pp fmt = function
     | Target s ->
-        Pp.string fmt s
+        F.pp_print_string fmt s
     | Kind {pattern; expr} ->
         F.fprintf fmt "kind(%s, %a)" pattern pp expr
     | Deps {depth= None; expr} ->
@@ -112,7 +112,7 @@ module Query = struct
     | Deps {depth= Some depth; expr} ->
         F.fprintf fmt "deps(%a, %d)" pp expr depth
     | Set sl ->
-        F.fprintf fmt "set(%a)" (Pp.seq Pp.string) sl
+        F.fprintf fmt "set(%a)" (Pp.seq F.pp_print_string) sl
     | Union exprs ->
         Pp.seq ~sep:" + " pp fmt exprs
 
@@ -154,7 +154,7 @@ let resolve_alias_targets aliases =
   let tmp_prefix = "buck_targets_" in
   let on_result_lines =
     die_if_empty (fun die ->
-        die "*** No alias found for: '%a'." (Pp.seq ~sep:"', '" Pp.string) aliases )
+        die "*** No alias found for: '%a'." (Pp.seq ~sep:"', '" F.pp_print_string) aliases )
   in
   Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:on_result_lines
 
@@ -175,8 +175,9 @@ let split_buck_command buck_cmd =
       (command, args)
   | _ ->
       L.(die UserError)
-        "ERROR: cannot parse buck command `%a`. Expected %a." (Pp.seq Pp.string) buck_cmd
-        (Pp.seq ~sep:" or " Pp.string) accepted_buck_commands
+        "ERROR: cannot parse buck command `%a`. Expected %a." (Pp.seq F.pp_print_string) buck_cmd
+        (Pp.seq ~sep:" or " F.pp_print_string)
+        accepted_buck_commands
 
 
 (** Given a list of arguments return the extended list of arguments where
@@ -238,7 +239,8 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
   match targets with
   | [] ->
       L.(die UserError)
-        "ERROR: no targets found in Buck command `%a`." (Pp.seq Pp.string) original_buck_args
+        "ERROR: no targets found in Buck command `%a`." (Pp.seq F.pp_print_string)
+        original_buck_args
   | _ ->
       let rev_not_targets = parsed_args.rev_not_targets' in
       let targets =

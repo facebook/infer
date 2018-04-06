@@ -126,16 +126,19 @@ let current_time f () =
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 let elapsed_time fmt () = Mtime.Span.pp fmt (Mtime_clock.elapsed ())
 
-let string fmt s = F.fprintf fmt "%s" s
+let option pp fmt = function
+  | None ->
+      F.pp_print_string fmt "None"
+  | Some x ->
+      F.fprintf fmt "Some %a" pp x
 
-let option pp fmt = function None -> string fmt "None" | Some x -> F.fprintf fmt "Some %a" pp x
 
-let to_string ~f fmt x = string fmt (f x)
+let to_string ~f fmt x = F.pp_print_string fmt (f x)
 
 let cli_args fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;
-    seq ~sep:"" ~print_env:{text with break_lines= true} string fmt args ;
+    seq ~sep:"" ~print_env:{text with break_lines= true} F.pp_print_string fmt args ;
     F.fprintf fmt "@]@\n"
   in
   let rec pp_argfile_args in_argfiles fmt args =

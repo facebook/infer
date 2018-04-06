@@ -254,11 +254,11 @@ and pp_template_spec_info pe f = function
         | TInt i ->
             Int64.pp f i
         | TNull ->
-            Pp.string f "null"
+            F.pp_print_string f "null"
         | TNullPtr ->
-            Pp.string f "NullPtr"
+            F.pp_print_string f "NullPtr"
         | TOpaque ->
-            Pp.string f "Opaque"
+            F.pp_print_string f "Opaque"
       in
       F.fprintf f "%s%a%s" (escape pe "<") (Pp.comma_seq pp_arg_opt) args (escape pe ">")
 

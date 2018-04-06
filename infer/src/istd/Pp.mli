@@ -64,8 +64,6 @@ val color_string : color -> string
 
 val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
 
-val string : F.formatter -> string -> unit
-
 val cli_args : F.formatter -> string list -> unit
 (** pretty print command line arguments, expanding argument files to print their contents *)
 

@@ -107,7 +107,7 @@ let get_compilation_database_files_buck ~prog ~args =
              ("--config" :: "*//cxx.pch_enabled=false" :: targets_args)
       in
       Logging.(debug Linters Quiet)
-        "Processed buck command is: 'buck %a'@\n" (Pp.seq Pp.string) build_args ;
+        "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
         prog
@@ -121,7 +121,9 @@ let get_compilation_database_files_buck ~prog ~args =
             L.(die ExternalError) "There are no files to process, exiting"
         | lines ->
             L.(debug Capture Quiet)
-              "Reading compilation database from:@\n%a@\n" (Pp.seq ~sep:"\n" Pp.string) lines ;
+              "Reading compilation database from:@\n%a@\n"
+              (Pp.seq ~sep:"\n" F.pp_print_string)
+              lines ;
             (* this assumes that flavors do not contain spaces *)
             let split_regex = Str.regexp "#[^ ]* " in
             let scan_output compilation_database_files line =
@@ -139,7 +141,7 @@ let get_compilation_database_files_buck ~prog ~args =
         ~cmd:buck_targets_shell ~tmp_prefix:"buck_targets_" ~f:on_target_lines
   | _ ->
       Process.print_error_and_exit "Incorrect buck command: %s %a. Please use buck build <targets>"
-        prog (Pp.seq Pp.string) args
+        prog (Pp.seq F.pp_print_string) args
 
 
 (** Compute the compilation database files. *)

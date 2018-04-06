@@ -276,7 +276,7 @@ let capture ~changed_files mode =
                 let all_args = List.rev_append rev_not_targets targets in
                 let updated_buck_cmd = prog :: command :: Buck.store_args_in_file all_args in
                 Logging.(debug Capture Quiet)
-                  "Processed buck command '%a'@\n" (Pp.seq Pp.string) updated_buck_cmd ;
+                  "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
                 updated_buck_cmd )
             else build_cmd ) )
       in
