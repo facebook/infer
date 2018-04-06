@@ -8,24 +8,48 @@
  *)
 open! IStd
 
-type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t} [@@deriving compare]
+type retain_cycle_node = {rc_node_exp: Exp.t; rc_node_typ: Typ.t}
 
-type retain_cycle_field_objc =
-  {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}
-  [@@deriving compare]
+type retain_cycle_field = {rc_field_name: Typ.Fieldname.t; rc_field_inst: Sil.inst}
 
-type retain_cycle_edge_objc =
-  {rc_from: retain_cycle_node; rc_field: retain_cycle_field_objc}
-  [@@deriving compare]
+type retain_cycle_edge_obj = {rc_from: retain_cycle_node; rc_field: retain_cycle_field}
 
-type retain_cycle_edge =
-  | Object of retain_cycle_edge_objc
-  | Block of Typ.Procname.t * Pvar.t
-  [@@deriving compare]
+type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Typ.Procname.t * Pvar.t
 
-let retain_cycle_edge_equal = [%compare.equal : retain_cycle_edge]
+type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
 
-type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list} [@@deriving compare]
+let compare_retain_cycle_node (node1: retain_cycle_node) (node2: retain_cycle_node) =
+  Typ.compare node1.rc_node_typ node2.rc_node_typ
+
+
+let compare_retain_cycle_field (node1: retain_cycle_field) (node2: retain_cycle_field) =
+  Typ.Fieldname.compare node1.rc_field_name node2.rc_field_name
+
+
+let compare_retain_cycle_edge_obj (obj1: retain_cycle_edge_obj) (obj2: retain_cycle_edge_obj) =
+  let obj1_pair = Tuple.T2.create obj1.rc_from obj1.rc_field in
+  let obj2_pair = Tuple.T2.create obj2.rc_from obj2.rc_field in
+  Tuple.T2.compare ~cmp1:compare_retain_cycle_node ~cmp2:compare_retain_cycle_field obj1_pair
+    obj2_pair
+
+
+let compare_retain_cycle_edge (edge1: retain_cycle_edge) (edge2: retain_cycle_edge) =
+  match (edge1, edge2) with
+  | Object edge_obj1, Object edge_obj2 ->
+      compare_retain_cycle_edge_obj edge_obj1 edge_obj2
+  | Block (procname1, _), Block (procname2, _) ->
+      Typ.Procname.compare procname1 procname2
+  | Object _, Block _ ->
+      1
+  | Block _, Object _ ->
+      -1
+
+
+let equal_retain_cycle_edge = [%compare.equal : retain_cycle_edge]
+
+let compare (rc1: t) (rc2: t) =
+  List.compare compare_retain_cycle_edge rc1.rc_elements rc2.rc_elements
+
 
 module Set = Caml.Set.Make (struct
   type nonrec t = t
@@ -45,7 +69,7 @@ let _retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
 
-let retain_cycle_field_to_string (field: retain_cycle_field_objc) =
+let retain_cycle_field_to_string (field: retain_cycle_field) =
   Format.sprintf "%s[%s]"
     (Typ.Fieldname.to_string field.rc_field_name)
     (Sil.inst_to_string field.rc_field_inst)
@@ -76,7 +100,7 @@ let find_minimum_element cycle =
 let shift cycle head : t =
   let rec shift_elements rev_tail elements =
     match elements with
-    | hd :: rest when not (retain_cycle_edge_equal hd head) ->
+    | hd :: rest when not (equal_retain_cycle_edge hd head) ->
         shift_elements (hd :: rev_tail) rest
     | _ ->
         elements @ List.rev rev_tail
