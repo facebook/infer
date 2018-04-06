@@ -181,11 +181,27 @@ test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
 	$(MAKE_SOURCE) test)
 
-# depend on test_build so that we do not run them in parallel
-.PHONY: deadcode
-deadcode: src_build_common test_build
+# deadcode analysis: only do the deadcode detection on Facebook builds and if GNU sed is available
+.PHONY: real_deadcode
+real_deadcode: src_build_common
 	$(QUIET)$(call silent_on_success,Testing there is no dead OCaml code,\
 	$(MAKE) -C $(SRC_DIR)/deadcode)
+
+.PHONY: deadcode
+deadcode:
+ifeq ($(IS_FACEBOOK_TREE),no)
+	$(QUIET)echo "Deadcode detection only works in Facebook builds, skipping"
+endif
+ifeq ($(GNU_SED),no)
+	$(QUIET)echo "Deadcode detection only works with GNU sed installed, skipping"
+endif
+
+ifeq ($(IS_FACEBOOK_TREE),yes)
+ifneq ($(GNU_SED),no)
+deadcode: real_deadcode
+endif
+endif
+
 
 .PHONY: toplevel
 toplevel: src_build_common
@@ -397,11 +413,6 @@ endif
 test: crash_if_not_all_analyzers_enabled config_tests
 ifeq (,$(findstring s,$(MAKEFLAGS)))
 	$(QUIET)echo "$(TERM_INFO)ALL TESTS PASSED$(TERM_RESET)"
-endif
-ifeq ($(IS_FACEBOOK_TREE),yes)
-ifneq ($(GNU_SED),no)
-test: deadcode
-endif
 endif
 
 .PHONY: quick-test
