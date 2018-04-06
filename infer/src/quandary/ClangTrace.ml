@@ -179,17 +179,17 @@ module SourceKind = struct
 
   let pp fmt = function
     | Endpoint (formal_name, _) ->
-        F.fprintf fmt "Endpoint[%s]" (Mangled.to_string formal_name)
+        F.fprintf fmt "Endpoint\\[%s\\]" (Mangled.to_string formal_name)
     | EnvironmentVariable ->
         F.fprintf fmt "EnvironmentVariable"
     | ReadFile ->
         F.fprintf fmt "File"
     | CommandLineFlag (var, _) ->
-        F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
+        F.fprintf fmt "CommandLineFlag\\[%a\\]" Var.pp var
     | Other ->
         F.fprintf fmt "Other"
     | UserControlledEndpoint (formal_name, _) ->
-        F.fprintf fmt "UserControlledEndpoint[%s]" (Mangled.to_string formal_name)
+        F.fprintf fmt "UserControlledEndpoint\\[%s\\]" (Mangled.to_string formal_name)
 end
 
 module CppSource = Source.Make (SourceKind)

@@ -247,7 +247,7 @@ module SourceKind = struct
       | DrawableResource pvar ->
           Pvar.to_string pvar
       | Endpoint (formal_name, _) ->
-          F.asprintf "Endpoint[%s]" (Mangled.to_string formal_name)
+          F.asprintf "Endpoint\\[%s\\]" (Mangled.to_string formal_name)
       | Intent ->
           "Intent"
       | IntentFromURI ->
