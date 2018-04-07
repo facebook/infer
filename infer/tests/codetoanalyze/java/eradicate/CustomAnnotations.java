@@ -16,7 +16,7 @@ import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.FalseOnNull;
 import com.facebook.infer.annotation.PropagatesNullable;
 import com.facebook.infer.annotation.TrueOnNull;
-
+import com.google.common.base.Strings;
 
 public class CustomAnnotations {
 
@@ -69,7 +69,6 @@ public class CustomAnnotations {
       }
     }
   }
-
 
   // Tests for the annotation @PropagatesNullable
   class TestPropagatesNullable {
@@ -124,6 +123,21 @@ public class CustomAnnotations {
 
     void m12Good() {
       m12("", "").length();
+    }
+  }
+
+  class TestModeledTrueOnNull {
+
+    void testIsEmptyOrNullOk(@Nullable String string) {
+      if (!Strings.isNullOrEmpty(string)) {
+        string.contains("Infer");
+      }
+    }
+
+    void testIsEmptyOrNullBad(@Nullable String string) {
+      if (Strings.isNullOrEmpty(string)) {
+        string.contains("Infer");
+      }
     }
   }
 }

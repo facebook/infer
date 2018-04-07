@@ -158,7 +158,8 @@ let optional_isPresent_list : ((_ * bool list) * _) list =
 
 (** Models for boolean functions that return true on null. *)
 let true_on_null_list : ((_ * bool list) * _) list =
-  [(n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")]
+  [ (n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")
+  ; (n1, "com.google.common.base.Strings.isNullOrEmpty(java.lang.String):boolean") ]
 
 
 (** Models for Map.containsKey *)
