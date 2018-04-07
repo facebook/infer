@@ -33,6 +33,13 @@ module UseDefChain = struct
         F.fprintf fmt "NullDefCompare(%a, %a)" Location.pp loc AccessPath.pp ap
     | DependsOn (loc, ap) ->
         F.fprintf fmt "DependsOn(%a, %a)" Location.pp loc AccessPath.pp ap
+
+
+  module Set = Caml.Set.Make (struct
+    type t = astate
+
+    let compare = compare_astate
+  end)
 end
 
 module Domain = AbstractDomain.Map (AccessPath) (UseDefChain)
@@ -117,7 +124,7 @@ let make_error_trace astate ap ud =
         "Variable"
   in
   let open UseDefChain in
-  let rec error_trace_impl depth ap = function
+  let rec error_trace_impl seen depth ap = function
     | NullDefAssign (loc, src) ->
         let msg = F.sprintf "%s is assigned null here" (name_of src) in
         let ltr = [Errlog.make_trace_element depth loc msg []] in
@@ -127,16 +134,20 @@ let make_error_trace astate ap ud =
         let ltr = [Errlog.make_trace_element depth loc msg []] in
         Some (loc, ltr)
     | DependsOn (loc, dep) ->
-      try
-        let ud' = Domain.find dep astate in
-        let msg = F.sprintf "%s could be assigned here" (name_of ap) in
-        let trace_elem = Errlog.make_trace_element depth loc msg [] in
-        Option.map
-          (error_trace_impl (depth + 1) dep ud')
-          ~f:(fun (_, trace) -> (loc, trace_elem :: trace))
-      with Not_found -> None
+      match Domain.find dep astate with
+      | exception Not_found ->
+          None
+      | ud' when Set.mem ud' seen ->
+          None
+      | ud' ->
+          let msg = F.sprintf "%s could be assigned here" (name_of ap) in
+          let trace_elem = Errlog.make_trace_element depth loc msg [] in
+          let seen' = Set.add ud' seen in
+          Option.map
+            (error_trace_impl seen' (depth + 1) dep ud')
+            ~f:(fun (_, trace) -> (loc, trace_elem :: trace))
   in
-  error_trace_impl 0 ap ud
+  error_trace_impl Set.empty 0 ap ud
 
 
 let pretty_field_name proc_data field_name =
