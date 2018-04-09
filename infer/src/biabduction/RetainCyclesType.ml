@@ -65,6 +65,14 @@ let is_inst_rearrange node =
       false
 
 
+let is_isa_field node =
+  match node with
+  | Object obj ->
+      String.equal (Typ.Fieldname.to_string obj.rc_field.rc_field_name) "isa"
+  | Block _ ->
+      false
+
+
 let _retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
@@ -115,15 +123,18 @@ let normalize_cycle cycle =
 
 
 let create_cycle cycle =
-  match cycle with
-  | [hd] ->
-      if is_inst_rearrange hd then (* cycles of length 1 created at rearrange are not real *)
+  (*isa is an internal field not accessible or writable, so it doesn't make sense in a cycle *)
+  if List.exists ~f:is_isa_field cycle then None
+  else
+    match cycle with
+    | [hd] ->
+        if is_inst_rearrange hd then None
+          (* cycles of length 1 created at rearrange are not real *)
+        else Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
+    | hd :: _ ->
+        Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
+    | [] ->
         None
-      else Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
-  | hd :: _ ->
-      Some (normalize_cycle {rc_elements= cycle; rc_head= hd})
-  | [] ->
-      None
 
 
 let pp_dotty fmt cycle =
