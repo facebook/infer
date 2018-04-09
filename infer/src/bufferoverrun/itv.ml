@@ -53,7 +53,7 @@ module Symbol = struct
   let is_unsigned : t -> bool = fun x -> x.unsigned
 end
 
-module SubstMap = Caml.Map.Make (Symbol)
+module SymbolMap = PrettyPrintable.MakePPMap (Symbol)
 
 module NonZeroInt : sig
   type t = private int [@@deriving compare]
@@ -721,7 +721,7 @@ module Bound = struct
 
 
   (* substitution symbols in ``x'' with respect to ``map'' *)
-  let subst : subst_pos:subst_pos_t -> t -> t bottom_lifted SubstMap.t -> t bottom_lifted =
+  let subst : subst_pos:subst_pos_t -> t -> t bottom_lifted SymbolMap.t -> t bottom_lifted =
    fun ~subst_pos x map ->
     let subst_helper s y x =
       let y' =
@@ -733,7 +733,7 @@ module Bound = struct
       in
       subst1 ~subst_pos x s y'
     in
-    SubstMap.fold subst_helper map (NonBottom x)
+    SymbolMap.fold subst_helper map (NonBottom x)
 
 
   let subst_lb x map = subst ~subst_pos:SubstLowerBound x map
@@ -885,7 +885,7 @@ module ItvPure = struct
 
   let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
 
-  let subst : t -> Bound.t bottom_lifted SubstMap.t -> t bottom_lifted =
+  let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t bottom_lifted =
    fun x map ->
     match (Bound.subst_lb (lb x) map, Bound.subst_ub (ub x) map) with
     | NonBottom l, NonBottom u ->
@@ -1407,7 +1407,7 @@ let prune_eq : t -> t -> t = lift2_opt ItvPure.prune_eq
 
 let prune_ne : t -> t -> t = lift2_opt ItvPure.prune_ne
 
-let subst : t -> Bound.t bottom_lifted SubstMap.t -> t =
+let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t =
  fun x map -> match x with NonBottom x' -> ItvPure.subst x' map | _ -> x
 
 

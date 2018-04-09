@@ -548,15 +548,15 @@ let get_matching_pairs
 
 let subst_map_of_pairs
     : (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
-      -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t =
+      -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t =
  fun pairs ->
   let add_pair (bound_map, trace_map) (formal, actual, traces) =
     if Itv.Bound.is_const formal |> Option.is_some then (bound_map, trace_map)
     else
       let symbol = Itv.Bound.get_one_symbol formal in
-      (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
+      (Itv.SymbolMap.add symbol actual bound_map, Itv.SymbolMap.add symbol traces trace_map)
   in
-  List.fold ~f:add_pair ~init:(Itv.SubstMap.empty, Itv.SubstMap.empty) pairs
+  List.fold ~f:add_pair ~init:(Itv.SymbolMap.empty, Itv.SymbolMap.empty) pairs
 
 
 let rec list_fold2_def
@@ -576,7 +576,7 @@ let rec list_fold2_def
 let get_subst_map
     : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
       -> callee_ret_alias:AliasTarget.t option
-      -> (Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t)
+      -> (Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t)
          * AliasTarget.t option =
  fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias ->
   let add_pair (formal, typ) actual (l, ret_alias) =

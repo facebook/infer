@@ -235,7 +235,7 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst : Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t -> t option =
+  let subst : Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> t -> t option =
    fun bound_map c ->
     match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
     | NonBottom idx, NonBottom size ->
@@ -450,7 +450,7 @@ module ConditionSet = struct
         | Some cond ->
             let traces_caller =
               List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
-                  match Itv.SubstMap.find symbol trace_map with
+                  match Itv.SymbolMap.find symbol trace_map with
                   | symbol_trace ->
                       ValTraceSet.join symbol_trace val_traces
                   | exception Not_found ->

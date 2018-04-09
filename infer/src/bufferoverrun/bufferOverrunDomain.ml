@@ -213,14 +213,15 @@ module Val = struct
 
 
   let subst
-      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t
+      : t -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t -> Location.t
         -> t =
    fun x (bound_map, trace_map) location ->
     let symbols = get_symbols x in
     let traces_caller =
       List.fold symbols
         ~f:(fun traces symbol ->
-          try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces )
+          try TraceSet.join (Itv.SymbolMap.find symbol trace_map) traces with Not_found -> traces
+          )
         ~init:TraceSet.empty
     in
     let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in

@@ -23,7 +23,7 @@ module Symbol : sig
   type t
 end
 
-module SubstMap : Caml.Map.S with type key = Symbol.t
+module SymbolMap : PrettyPrintable.PPMap with type key = Symbol.t
 
 module Bound : sig
   type t [@@deriving compare]
@@ -133,7 +133,7 @@ module ItvPure : sig
 
   val get_symbols : t -> Symbol.t list
 
-  val subst : t -> Bound.t bottom_lifted SubstMap.t -> t bottom_lifted
+  val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t bottom_lifted
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)
@@ -235,4 +235,4 @@ val prune_eq : t -> t -> t
 
 val prune_ne : t -> t -> t
 
-val subst : t -> Bound.t bottom_lifted SubstMap.t -> t
+val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t
