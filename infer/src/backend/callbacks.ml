@@ -46,8 +46,11 @@ let register_cluster_callback language (callback: cluster_callback_t) =
 
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
-  let tenv = Exe_env.get_tenv exe_env proc_name in
-  Option.map ~f:(fun proc_desc -> (tenv, proc_desc)) (Exe_env.get_proc_desc exe_env proc_name)
+  Option.map
+    ~f:(fun proc_desc ->
+      let tenv = Exe_env.get_tenv exe_env proc_name in
+      (tenv, proc_desc) )
+    (Exe_env.get_proc_desc exe_env proc_name)
 
 
 let get_language proc_name =
@@ -78,18 +81,19 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
-  let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
-  let environment = {procedures; get_proc_desc} in
-  let language_matches language =
-    match procedures with
-    | (_, pdesc) :: _ ->
-        Language.equal language (get_language (Procdesc.get_proc_name pdesc))
-    | _ ->
-        true
-  in
-  List.iter
-    ~f:(fun {language; callback} -> if language_matches language then callback environment)
-    !cluster_callbacks
+  if !cluster_callbacks <> [] then
+    let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
+    let environment = {procedures; get_proc_desc} in
+    let language_matches language =
+      match procedures with
+      | (_, pdesc) :: _ ->
+          Language.equal language (get_language (Procdesc.get_proc_name pdesc))
+      | _ ->
+          true
+    in
+    List.iter
+      ~f:(fun {language; callback} -> if language_matches language then callback environment)
+      !cluster_callbacks
 
 
 let dump_duplicate_procs (exe_env: Exe_env.t) procs =
