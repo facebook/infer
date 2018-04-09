@@ -31,7 +31,7 @@ type cluster_callback_args =
 
 type cluster_callback_t = cluster_callback_args -> unit
 
-val register_procedure_callback : ?dynamic_dispath:bool -> Language.t -> proc_callback_t -> unit
+val register_procedure_callback : ?dynamic_dispatch:bool -> Language.t -> proc_callback_t -> unit
 (** register a procedure callback *)
 
 val register_cluster_callback : Language.t -> cluster_callback_t -> unit

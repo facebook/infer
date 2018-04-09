@@ -28,16 +28,20 @@ type cluster_callback_args =
 
 type cluster_callback_t = cluster_callback_args -> unit
 
+type procedure_callback = {dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
+
+type cluster_callback = {language: Language.t; callback: cluster_callback_t}
+
 let procedure_callbacks = ref []
 
 let cluster_callbacks = ref []
 
-let register_procedure_callback ?(dynamic_dispath= false) language (callback: proc_callback_t) =
-  procedure_callbacks := (language, dynamic_dispath, callback) :: !procedure_callbacks
+let register_procedure_callback ?(dynamic_dispatch= false) language (callback: proc_callback_t) =
+  procedure_callbacks := {dynamic_dispatch; language; callback} :: !procedure_callbacks
 
 
 let register_cluster_callback language (callback: cluster_callback_t) =
-  cluster_callbacks := (language, callback) :: !cluster_callbacks
+  cluster_callbacks := {language; callback} :: !cluster_callbacks
 
 
 (** Collect what we need to know about a procedure for the analysis. *)
@@ -65,9 +69,9 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
-    ~f:(fun summary (language, resolved, proc_callback) ->
-      if Language.equal language procedure_language && (resolved || not is_specialized) then
-        proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc; exe_env}
+    ~f:(fun summary {dynamic_dispatch; language; callback} ->
+      if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized)
+      then callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc; exe_env}
       else summary )
     !procedure_callbacks
 
@@ -84,8 +88,7 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
         true
   in
   List.iter
-    ~f:(fun (language_opt, cluster_callback) ->
-      if language_matches language_opt then cluster_callback environment )
+    ~f:(fun {language; callback} -> if language_matches language then callback environment)
     !cluster_callbacks
 
 

@@ -120,7 +120,7 @@ let register checkers =
       | Procedure procedure_cb ->
           Callbacks.register_procedure_callback language procedure_cb
       | DynamicDispatch procedure_cb ->
-          Callbacks.register_procedure_callback ~dynamic_dispath:true language procedure_cb
+          Callbacks.register_procedure_callback ~dynamic_dispatch:true language procedure_cb
       | Cluster cluster_cb ->
           Callbacks.register_cluster_callback language cluster_cb
     in
