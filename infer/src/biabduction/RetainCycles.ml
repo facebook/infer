@@ -65,17 +65,16 @@ let edge_is_strong tenv obj_edge =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation (t: Typ.t) fn =
     match t.desc with
-    | Tstruct name
-      -> (
-        let equal_fn (fn', _, _) = Typ.Fieldname.equal fn fn' in
-        match Tenv.lookup tenv name with
-        | Some {fields; statics} ->
-            let find fields =
-              List.find ~f:equal_fn fields |> Option.value_map ~f:trd3 ~default:[]
-            in
-            Some (find fields @ find statics)
+    | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some {fields} -> (
+        match List.find ~f:(fun (fn', _, _) -> Typ.Fieldname.equal fn fn') fields with
         | None ->
-            None )
+            None
+        | Some (_, _, ann) ->
+            Some ann (* Only returns annotations when the type and field are found in the tenv *) )
+      | None ->
+          None )
     | _ ->
         None
   in
@@ -104,7 +103,7 @@ let edge_is_strong tenv obj_edge =
           ia
     | None ->
         true
-    (* Assume the edge is weak if the type cannot be found in the tenv, to avoid FPs *)
+    (* Assume the edge is weak if the type or field cannot be found in the tenv, to avoid FPs *)
   in
   not (weak_edge_by_type || weak_edge_by_field)
 
