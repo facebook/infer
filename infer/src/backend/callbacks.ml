@@ -53,14 +53,10 @@ let get_procedure_definition exe_env proc_name =
     (Exe_env.get_proc_desc exe_env proc_name)
 
 
-let get_language proc_name =
-  if Typ.Procname.is_java proc_name then Language.Java else Language.Clang
-
-
 (** Invoke all registered procedure callbacks on the given procedure. *)
 let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let procedure_language = get_language proc_name in
+  let procedure_language = Typ.Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let get_procs_in_file proc_name =
     match Exe_env.get_cfg exe_env proc_name with
@@ -87,7 +83,7 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
     let language_matches language =
       match procedures with
       | (_, pdesc) :: _ ->
-          Language.equal language (get_language (Procdesc.get_proc_name pdesc))
+          Language.equal language (Typ.Procname.get_language (Procdesc.get_proc_name pdesc))
       | _ ->
           true
     in
