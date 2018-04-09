@@ -341,8 +341,7 @@ module ConditionTrace = struct
     match ct.cond_trace with
     | Inter (_, pname, _)
       when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
-        F.fprintf fmt " %@ %a by call to %a " pp_location ct MF.pp_monospaced
-          (Typ.Procname.to_string pname ^ "()")
+        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string pname ^ "()")
     | _ ->
         ()
 
