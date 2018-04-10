@@ -377,18 +377,16 @@ module Bound = struct
   let is_mone_symbol : t -> bool = fun x -> get_mone_symbol_opt x <> None
 
   let mk_MinMax (c, sign, m, d, s) =
-    if Symbol.is_unsigned s then
+    if Symbol.is_unsigned s && d <= 0 then
       match m with
-      | Min when d <= 0 ->
+      | Min ->
           of_int (Sign.eval_int sign c d)
-      | Max when d <= 0 -> (
+      | Max ->
         match sign with
         | Plus ->
             Linear (c, SymLinear.singleton_one s)
         | Minus ->
-            Linear (c, SymLinear.singleton_minus_one s) )
-      | _ ->
-          MinMax (c, sign, m, d, s)
+            Linear (c, SymLinear.singleton_minus_one s)
     else MinMax (c, sign, m, d, s)
 
 
