@@ -1150,6 +1150,8 @@ module ItvPure = struct
         Bound.lt u l
 
 
+  let normalize : t -> t bottom_lifted = fun x -> if is_invalid x then Bottom else NonBottom x
+
   let prune_le : t -> t -> t =
    fun x y ->
     match (x, y) with
@@ -1217,9 +1219,9 @@ module ItvPure = struct
 
   let prune_ne_zero : t -> t = fun x -> prune_diff x Bound.zero
 
-  let prune_comp : Binop.t -> t -> t -> t option =
+  let prune_comp : Binop.t -> t -> t -> t bottom_lifted =
    fun c x y ->
-    if is_invalid y then Some x
+    if is_invalid y then NonBottom x
     else
       let x =
         match c with
@@ -1234,12 +1236,16 @@ module ItvPure = struct
         | _ ->
             assert false
       in
-      if is_invalid x then None else Some x
+      normalize x
 
 
-  let prune_eq : t -> t -> t option =
+  let prune_eq : t -> t -> t bottom_lifted =
    fun x y ->
-    match prune_comp Binop.Le x y with None -> None | Some x' -> prune_comp Binop.Ge x' y
+    match prune_comp Binop.Le x y with
+    | Bottom ->
+        Bottom
+    | NonBottom x' ->
+        prune_comp Binop.Ge x' y
 
 
   let prune_eq_zero : t -> t =
@@ -1248,12 +1254,12 @@ module ItvPure = struct
     prune_ge x' zero
 
 
-  let prune_ne : t -> t -> t option =
+  let prune_ne : t -> t -> t bottom_lifted =
    fun x (l, u) ->
-    if is_invalid (l, u) then Some x
+    if is_invalid (l, u) then NonBottom x
     else
       let x = if Bound.eq l u then prune_diff x l else x in
-      if is_invalid x then None else Some x
+      normalize x
 
 
   let get_symbols : t -> Symbol.t list =
@@ -1262,9 +1268,6 @@ module ItvPure = struct
 
   let make_positive : t -> t =
    fun ((l, u) as x) -> if Bound.lt l Bound.zero then (Bound.zero, u) else x
-
-
-  let normalize : t -> t option = fun (l, u) -> if is_invalid (l, u) then None else Some (l, u)
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -1334,13 +1337,7 @@ let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
 
 
-let lift1_opt : (ItvPure.t -> ItvPure.t option) -> t -> t =
- fun f -> function
-  | Bottom ->
-      Bottom
-  | NonBottom x ->
-    match f x with None -> Bottom | Some v -> NonBottom v
-
+let bind1 : (ItvPure.t -> t) -> t -> t = fun f -> function Bottom -> Bottom | NonBottom x -> f x
 
 let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
  fun f x y ->
@@ -1351,13 +1348,9 @@ let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
       NonBottom (f x y)
 
 
-let lift2_opt : (ItvPure.t -> ItvPure.t -> ItvPure.t option) -> t -> t -> t =
+let bind2 : (ItvPure.t -> ItvPure.t -> t) -> t -> t -> t =
  fun f x y ->
-  match (x, y) with
-  | Bottom, _ | _, Bottom ->
-      Bottom
-  | NonBottom x, NonBottom y ->
-    match f x y with Some v -> NonBottom v | None -> Bottom
+  match (x, y) with Bottom, _ | _, Bottom -> Bottom | NonBottom x, NonBottom y -> f x y
 
 
 let plus : t -> t -> t = lift2 ItvPure.plus
@@ -1405,11 +1398,11 @@ let prune_eq_zero : t -> t = lift1 ItvPure.prune_eq_zero
 
 let prune_ne_zero : t -> t = lift1 ItvPure.prune_ne_zero
 
-let prune_comp : Binop.t -> t -> t -> t = fun comp -> lift2_opt (ItvPure.prune_comp comp)
+let prune_comp : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_comp comp)
 
-let prune_eq : t -> t -> t = lift2_opt ItvPure.prune_eq
+let prune_eq : t -> t -> t = bind2 ItvPure.prune_eq
 
-let prune_ne : t -> t -> t = lift2_opt ItvPure.prune_ne
+let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne
 
 let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t =
  fun x map -> match x with NonBottom x' -> ItvPure.subst x' map | _ -> x
@@ -1422,4 +1415,4 @@ let get_symbols : t -> Symbol.t list = function
       ItvPure.get_symbols x
 
 
-let normalize : t -> t = lift1_opt ItvPure.normalize
+let normalize : t -> t = bind1 ItvPure.normalize
