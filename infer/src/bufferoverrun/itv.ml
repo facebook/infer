@@ -32,6 +32,18 @@ module Counter = struct
   let next : t -> int = fun counter -> counter ()
 end
 
+module Boolean = struct
+  type t = Bottom | False | True | Top [@@deriving compare]
+
+  let top = Top
+
+  let equal = [%compare.equal : t]
+
+  let is_false = function False -> true | _ -> false
+
+  let is_true = function True -> true | _ -> false
+end
+
 exception Not_one_symbol
 
 module Symbol = struct
@@ -312,8 +324,6 @@ module Bound = struct
     [@@deriving compare]
 
   type astate = t
-
-  let equal = [%compare.equal : t]
 
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
@@ -682,16 +692,20 @@ module Bound = struct
 
   let widen_l : t -> t -> t =
    fun x y ->
-    if equal x PInf || equal y PInf then L.(die InternalError) "Lower bound cannot be +oo."
-    else if le x y then x
-    else MInf
+    match (x, y) with
+    | PInf, _ | _, PInf ->
+        L.(die InternalError) "Lower bound cannot be +oo."
+    | _ ->
+        if le x y then x else MInf
 
 
   let widen_u : t -> t -> t =
    fun x y ->
-    if equal x MInf || equal y MInf then L.(die InternalError) "Upper bound cannot be -oo."
-    else if le y x then x
-    else PInf
+    match (x, y) with
+    | MInf, _ | _, MInf ->
+        L.(die InternalError) "Upper bound cannot be -oo."
+    | _ ->
+        if le y x then x else PInf
 
 
   let widen ~prev ~next ~num_iters:_ = widen_u prev next
@@ -711,8 +725,6 @@ module Bound = struct
 
 
   let is_zero : t -> bool = is_some_const 0
-
-  let is_one : t -> bool = is_some_const 1
 
   let is_const : t -> int option =
    fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
@@ -866,8 +878,6 @@ module ItvPure = struct
 
   type t = astate
 
-  let equal = [%compare.equal : astate]
-
   let lb : t -> Bound.t = fst
 
   let ub : t -> Bound.t = snd
@@ -980,8 +990,6 @@ module ItvPure = struct
         None
 
 
-  let is_one : t -> bool = fun (l, u) -> Bound.is_one l && Bound.is_one u
-
   let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
 
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
@@ -1003,8 +1011,8 @@ module ItvPure = struct
     (l', u')
 
 
-  let lnot : t -> t =
-   fun x -> if is_true x then false_sem else if is_false x then true_sem else unknown_bool
+  let lnot : t -> Boolean.t =
+   fun x -> if is_true x then Boolean.False else if is_false x then Boolean.True else Boolean.Top
 
 
   let plus : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.plus_l l1 l2, Bound.plus_u u1 u2)
@@ -1099,46 +1107,46 @@ module ItvPure = struct
         top
 
 
-  let lt_sem : t -> t -> t =
+  let lt_sem : t -> t -> Boolean.t =
    fun (l1, u1) (l2, u2) ->
-    if Bound.lt u1 l2 then true_sem else if Bound.le u2 l1 then false_sem else unknown_bool
+    if Bound.lt u1 l2 then Boolean.True else if Bound.le u2 l1 then Boolean.False else Boolean.Top
 
 
-  let gt_sem : t -> t -> t = fun x y -> lt_sem y x
+  let gt_sem : t -> t -> Boolean.t = fun x y -> lt_sem y x
 
-  let le_sem : t -> t -> t =
+  let le_sem : t -> t -> Boolean.t =
    fun (l1, u1) (l2, u2) ->
-    if Bound.le u1 l2 then true_sem else if Bound.lt u2 l1 then false_sem else unknown_bool
+    if Bound.le u1 l2 then Boolean.True else if Bound.lt u2 l1 then Boolean.False else Boolean.Top
 
 
-  let ge_sem : t -> t -> t = fun x y -> le_sem y x
+  let ge_sem : t -> t -> Boolean.t = fun x y -> le_sem y x
 
-  let eq_sem : t -> t -> t =
+  let eq_sem : t -> t -> Boolean.t =
    fun (l1, u1) (l2, u2) ->
-    if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then true_sem
-    else if Bound.lt u1 l2 || Bound.lt u2 l1 then false_sem
-    else unknown_bool
+    if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then Boolean.True
+    else if Bound.lt u1 l2 || Bound.lt u2 l1 then Boolean.False
+    else Boolean.Top
 
 
-  let ne_sem : t -> t -> t =
+  let ne_sem : t -> t -> Boolean.t =
    fun (l1, u1) (l2, u2) ->
-    if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then false_sem
-    else if Bound.lt u1 l2 || Bound.lt u2 l1 then true_sem
-    else unknown_bool
+    if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then Boolean.False
+    else if Bound.lt u1 l2 || Bound.lt u2 l1 then Boolean.True
+    else Boolean.Top
 
 
-  let land_sem : t -> t -> t =
+  let land_sem : t -> t -> Boolean.t =
    fun x y ->
-    if is_true x && is_true y then true_sem
-    else if is_false x || is_false y then false_sem
-    else unknown_bool
+    if is_true x && is_true y then Boolean.True
+    else if is_false x || is_false y then Boolean.False
+    else Boolean.Top
 
 
-  let lor_sem : t -> t -> t =
+  let lor_sem : t -> t -> Boolean.t =
    fun x y ->
-    if is_true x || is_true y then true_sem
-    else if is_false x && is_false y then false_sem
-    else unknown_bool
+    if is_true x || is_true y then Boolean.True
+    else if is_false x && is_false y then Boolean.False
+    else Boolean.Top
 
 
   let min_sem : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb l1 l2, Bound.lb ~default:u1 u1 u2)
@@ -1302,15 +1310,7 @@ let ub : t -> Bound.t = function
       L.(die InternalError) "upper bound of bottom"
 
 
-let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
-
-let of_int_lit n = try of_int (IntLit.to_int n) with _ -> top
-
-let of_int64 : Int64.t -> astate =
- fun n -> Int64.to_int n |> Option.value_map ~f:of_int ~default:top
-
-
-let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
+let false_sem = NonBottom ItvPure.false_sem
 
 let m1_255 = NonBottom ItvPure.m1_255
 
@@ -1320,9 +1320,32 @@ let one = NonBottom ItvPure.one
 
 let pos = NonBottom ItvPure.pos
 
+let true_sem = NonBottom ItvPure.true_sem
+
 let unknown_bool = NonBottom ItvPure.unknown_bool
 
 let zero = NonBottom ItvPure.zero
+
+let of_bool = function
+  | Boolean.Bottom ->
+      bot
+  | Boolean.False ->
+      false_sem
+  | Boolean.True ->
+      true_sem
+  | Boolean.Top ->
+      unknown_bool
+
+
+let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
+
+let of_int_lit n = try of_int (IntLit.to_int n) with _ -> top
+
+let of_int64 : Int64.t -> astate =
+ fun n -> Int64.to_int n |> Option.value_map ~f:of_int ~default:top
+
+
+let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 
 let le : lhs:t -> rhs:t -> bool = ( <= )
 
@@ -1334,7 +1357,13 @@ let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)
 
 
-let bind1 : (ItvPure.t -> t) -> t -> t = fun f -> function Bottom -> Bottom | NonBottom x -> f x
+let bind1_gen : bot:'a -> (ItvPure.t -> 'a) -> t -> 'a =
+ fun ~bot f x -> match x with Bottom -> bot | NonBottom x -> f x
+
+
+let bind1 : (ItvPure.t -> t) -> t -> t = bind1_gen ~bot:Bottom
+
+let bind1b : (ItvPure.t -> Boolean.t) -> t -> Boolean.t = bind1_gen ~bot:Boolean.Bottom
 
 let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
  fun f x y ->
@@ -1345,9 +1374,15 @@ let lift2 : (ItvPure.t -> ItvPure.t -> ItvPure.t) -> t -> t -> t =
       NonBottom (f x y)
 
 
-let bind2 : (ItvPure.t -> ItvPure.t -> t) -> t -> t -> t =
- fun f x y ->
-  match (x, y) with Bottom, _ | _, Bottom -> Bottom | NonBottom x, NonBottom y -> f x y
+let bind2_gen : bot:'a -> (ItvPure.t -> ItvPure.t -> 'a) -> t -> t -> 'a =
+ fun ~bot f x y ->
+  match (x, y) with Bottom, _ | _, Bottom -> bot | NonBottom x, NonBottom y -> f x y
+
+
+let bind2 : (ItvPure.t -> ItvPure.t -> t) -> t -> t -> t = bind2_gen ~bot:Bottom
+
+let bind2b : (ItvPure.t -> ItvPure.t -> Boolean.t) -> t -> t -> Boolean.t =
+  bind2_gen ~bot:Boolean.Bottom
 
 
 let plus : t -> t -> t = lift2 ItvPure.plus
@@ -1361,7 +1396,7 @@ let make_sym : ?unsigned:bool -> Typ.Procname.t -> Counter.t -> t =
 
 let neg : t -> t = lift1 ItvPure.neg
 
-let lnot : t -> t = lift1 ItvPure.lnot
+let lnot : t -> Boolean.t = bind1b ItvPure.lnot
 
 let mult : t -> t -> t = lift2 ItvPure.mult
 
@@ -1373,21 +1408,21 @@ let shiftlt : t -> t -> t = lift2 ItvPure.shiftlt
 
 let shiftrt : t -> t -> t = lift2 ItvPure.shiftrt
 
-let lt_sem : t -> t -> t = lift2 ItvPure.lt_sem
+let lt_sem : t -> t -> Boolean.t = bind2b ItvPure.lt_sem
 
-let gt_sem : t -> t -> t = lift2 ItvPure.gt_sem
+let gt_sem : t -> t -> Boolean.t = bind2b ItvPure.gt_sem
 
-let le_sem : t -> t -> t = lift2 ItvPure.le_sem
+let le_sem : t -> t -> Boolean.t = bind2b ItvPure.le_sem
 
-let ge_sem : t -> t -> t = lift2 ItvPure.ge_sem
+let ge_sem : t -> t -> Boolean.t = bind2b ItvPure.ge_sem
 
-let eq_sem : t -> t -> t = lift2 ItvPure.eq_sem
+let eq_sem : t -> t -> Boolean.t = bind2b ItvPure.eq_sem
 
-let ne_sem : t -> t -> t = lift2 ItvPure.ne_sem
+let ne_sem : t -> t -> Boolean.t = bind2b ItvPure.ne_sem
 
-let land_sem : t -> t -> t = lift2 ItvPure.land_sem
+let land_sem : t -> t -> Boolean.t = bind2b ItvPure.land_sem
 
-let lor_sem : t -> t -> t = lift2 ItvPure.lor_sem
+let lor_sem : t -> t -> Boolean.t = bind2b ItvPure.lor_sem
 
 let min_sem : t -> t -> t = lift2 ItvPure.min_sem
 

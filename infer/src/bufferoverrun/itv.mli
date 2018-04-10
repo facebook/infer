@@ -19,6 +19,18 @@ module Counter : sig
   val next : t -> int
 end
 
+module Boolean : sig
+  type t
+
+  val top : t
+
+  val equal : t -> t -> bool
+
+  val is_false : t -> bool
+
+  val is_true : t -> bool
+end
+
 module Symbol : sig
   type t
 end
@@ -84,8 +96,6 @@ module ItvPure : sig
 
   val ub : t -> Bound.t
 
-  val is_false : t -> bool
-
   val is_finite : t -> bool
 
   val is_invalid : t -> bool
@@ -94,19 +104,11 @@ module ItvPure : sig
 
   val is_nat : t -> bool
 
-  val is_one : t -> bool
-
   val is_symbolic : t -> bool
 
   val is_top : t -> bool
 
-  val is_true : t -> bool
-
-  val is_zero : t -> bool
-
   val ( <= ) : lhs:t -> rhs:t -> bool
-
-  val equal : t -> t -> bool
 
   val have_similar_bounds : t -> t -> bool
 
@@ -116,9 +118,9 @@ module ItvPure : sig
 
   val join : t -> t -> t
 
-  val le_sem : t -> t -> t
+  val le_sem : t -> t -> Boolean.t
 
-  val lt_sem : t -> t -> t
+  val lt_sem : t -> t -> Boolean.t
 
   val widen : prev:t -> next:t -> num_iters:int -> t
 
@@ -158,11 +160,10 @@ val pos : t
 val top : t
 (** [-oo, +oo] *)
 
-val unknown_bool : t
-(** [0, 1] *)
-
 val zero : t
 (** 0 *)
+
+val of_bool : Boolean.t -> t
 
 val of_int : int -> t
 
@@ -178,8 +179,6 @@ val ub : t -> Bound.t
 
 val is_false : t -> bool
 
-val lnot : t -> t
-
 val neg : t -> t
 
 val normalize : t -> t
@@ -189,6 +188,8 @@ val get_symbols : t -> Symbol.t list
 val eq : t -> t -> bool
 
 val le : lhs:t -> rhs:t -> bool
+
+val lnot : t -> Boolean.t
 
 val range : t -> Bound.t
 
@@ -204,25 +205,25 @@ val shiftlt : t -> t -> t
 
 val shiftrt : t -> t -> t
 
-val eq_sem : t -> t -> t
+val eq_sem : t -> t -> Boolean.t
 
-val ge_sem : t -> t -> t
+val ge_sem : t -> t -> Boolean.t
 
-val gt_sem : t -> t -> t
+val gt_sem : t -> t -> Boolean.t
 
-val land_sem : t -> t -> t
+val land_sem : t -> t -> Boolean.t
 
-val le_sem : t -> t -> t
+val le_sem : t -> t -> Boolean.t
 
-val lor_sem : t -> t -> t
+val lor_sem : t -> t -> Boolean.t
 
-val lt_sem : t -> t -> t
+val lt_sem : t -> t -> Boolean.t
 
 val min_sem : t -> t -> t
 
 val mod_sem : t -> t -> t
 
-val ne_sem : t -> t -> t
+val ne_sem : t -> t -> Boolean.t
 
 val prune_eq_zero : t -> t
 

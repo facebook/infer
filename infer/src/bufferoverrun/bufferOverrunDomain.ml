@@ -113,7 +113,7 @@ module Val = struct
 
   let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv}
 
-  let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv}
+  let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool}
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
    fun f x y -> {bot with itv= f x.itv y.itv; traces= TraceSet.join x.traces y.traces}
@@ -121,11 +121,11 @@ module Val = struct
 
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
 
-  let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
+  let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.Boolean.t) -> t -> t -> t =
    fun f x y ->
-    if has_pointer x || has_pointer y then
-      {bot with itv= Itv.unknown_bool; traces= TraceSet.join x.traces y.traces}
-    else lift_itv f x y
+    let b = if has_pointer x || has_pointer y then Itv.Boolean.top else f x.itv y.itv in
+    let itv = Itv.of_bool b in
+    {bot with itv; traces= TraceSet.join x.traces y.traces}
 
 
   let plus_a : t -> t -> t = lift_itv Itv.plus
@@ -154,9 +154,9 @@ module Val = struct
 
   let ne_sem : t -> t -> t = lift_cmp_itv Itv.ne_sem
 
-  let land_sem : t -> t -> t = lift_itv Itv.land_sem
+  let land_sem : t -> t -> t = lift_cmp_itv Itv.land_sem
 
-  let lor_sem : t -> t -> t = lift_itv Itv.lor_sem
+  let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem
 
   let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
 

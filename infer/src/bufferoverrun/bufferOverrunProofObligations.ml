@@ -43,14 +43,14 @@ module AllocSizeCondition = struct
     | (`LeftSmallerThanRight | `RightSmallerThanLeft) as cmp ->
         let lpos = ItvPure.le_sem ItvPure.zero lhs in
         let rpos = ItvPure.le_sem ItvPure.zero rhs in
-        if not (ItvPure.equal lpos rpos) then `NotComparable
-        else if ItvPure.is_true lpos then
+        if not (Itv.Boolean.equal lpos rpos) then `NotComparable
+        else if Itv.Boolean.is_true lpos then
           match cmp with
           | `LeftSmallerThanRight ->
               `RightSubsumesLeft
           | `RightSmallerThanLeft ->
               `LeftSubsumesRight
-        else if ItvPure.is_false lpos then
+        else if Itv.Boolean.is_false lpos then
           match cmp with
           | `LeftSmallerThanRight ->
               `LeftSubsumesRight
@@ -147,8 +147,8 @@ module ArrayAccessCondition = struct
     | (`LeftSmallerThanRight | `RightSmallerThanLeft), _ ->
         let lidxpos = ItvPure.le_sem ItvPure.zero lidx in
         let ridxpos = ItvPure.le_sem ItvPure.zero ridx in
-        if not (ItvPure.equal lidxpos ridxpos) then `NotComparable
-        else if ItvPure.is_true lidxpos then
+        if not (Itv.Boolean.equal lidxpos ridxpos) then `NotComparable
+        else if Itv.Boolean.is_true lidxpos then
           (* both idx >= 0 *)
           match (idxcmp, sizcmp) with
           | `LeftSmallerThanRight, (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft) ->
@@ -157,7 +157,7 @@ module ArrayAccessCondition = struct
               `LeftSubsumesRight
           | _ ->
               `NotComparable
-        else if ItvPure.is_false lidxpos then
+        else if Itv.Boolean.is_false lidxpos then
           (* both idx < 0, size doesn't matter *)
           match idxcmp with
           | `LeftSmallerThanRight ->
@@ -211,9 +211,9 @@ module ArrayAccessCondition = struct
     let not_overrun = ItvPure.lt_sem c'.idx c'.size in
     let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
     (* il >= 0 and iu < sl, definitely not an error *)
-    if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then
+    if Itv.Boolean.is_true not_overrun && Itv.Boolean.is_true not_underrun then
       {report_issue_type= None; propagate= false} (* iu < 0 or il >= su, definitely an error *)
-    else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
+    else if Itv.Boolean.is_false not_overrun || Itv.Boolean.is_false not_underrun then
       {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
     else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
