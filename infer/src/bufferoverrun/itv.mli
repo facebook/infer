@@ -143,9 +143,6 @@ type t = astate [@@deriving compare]
 val bot : t
 (** _|_ *)
 
-val false_sem : t
-(** 0 *)
-
 val m1_255 : t
 (** [-1, 255] *)
 
@@ -227,7 +224,9 @@ val mod_sem : t -> t -> t
 
 val ne_sem : t -> t -> t
 
-val prune_zero : t -> t
+val prune_eq_zero : t -> t
+
+val prune_ne_zero : t -> t
 
 val prune_comp : Binop.t -> t -> t -> t
 

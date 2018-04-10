@@ -170,7 +170,9 @@ module Val = struct
     ; traces= TraceSet.join x.traces y.traces }
 
 
-  let prune_zero : t -> t = lift_prune1 Itv.prune_zero
+  let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero
+
+  let prune_ne_zero : t -> t = lift_prune1 Itv.prune_ne_zero
 
   let prune_comp : Binop.t -> t -> t -> t =
    fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)

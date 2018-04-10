@@ -1208,14 +1208,14 @@ module ItvPure = struct
 
   let prune_gt : t -> t -> t = fun x y -> prune_ge x (plus y one)
 
-  let diff : t -> Bound.t -> t =
+  let prune_diff : t -> Bound.t -> t =
    fun (l, u) b ->
     if Bound.eq l b then (Bound.plus_l l Bound.one, u)
     else if Bound.eq u b then (l, Bound.plus_u u Bound.mone)
     else (l, u)
 
 
-  let prune_zero : t -> t = fun x -> diff x Bound.zero
+  let prune_ne_zero : t -> t = fun x -> prune_diff x Bound.zero
 
   let prune_comp : Binop.t -> t -> t -> t option =
    fun c x y ->
@@ -1242,11 +1242,17 @@ module ItvPure = struct
     match prune_comp Binop.Le x y with None -> None | Some x' -> prune_comp Binop.Ge x' y
 
 
+  let prune_eq_zero : t -> t =
+   fun x ->
+    let x' = prune_le x zero in
+    prune_ge x' zero
+
+
   let prune_ne : t -> t -> t option =
    fun x (l, u) ->
     if is_invalid (l, u) then Some x
     else
-      let x = if Bound.eq l u then diff x l else x in
+      let x = if Bound.eq l u then prune_diff x l else x in
       if is_invalid x then None else Some x
 
 
@@ -1305,8 +1311,6 @@ let of_int64 : Int64.t -> astate =
 
 
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
-
-let false_sem = NonBottom ItvPure.false_sem
 
 let m1_255 = NonBottom ItvPure.m1_255
 
@@ -1397,7 +1401,9 @@ let lor_sem : t -> t -> t = lift2 ItvPure.lor_sem
 
 let min_sem : t -> t -> t = lift2 ItvPure.min_sem
 
-let prune_zero : t -> t = lift1 ItvPure.prune_zero
+let prune_eq_zero : t -> t = lift1 ItvPure.prune_eq_zero
+
+let prune_ne_zero : t -> t = lift1 ItvPure.prune_ne_zero
 
 let prune_comp : Binop.t -> t -> t -> t = fun comp -> lift2_opt (ItvPure.prune_comp comp)
 

@@ -355,12 +355,11 @@ module Prune = struct
       match Mem.find_alias x mem with
       | Some AliasTarget.Simple lv ->
           let v = Mem.find_heap lv mem in
-          let v' = Val.prune_zero v in
+          let v' = Val.prune_ne_zero v in
           update_mem_in_prune lv v' astate
       | Some AliasTarget.Empty lv ->
           let v = Mem.find_heap lv mem in
-          let itv_v = Itv.prune_eq (Val.get_itv v) Itv.zero in
-          let v' = Val.modify_itv itv_v v in
+          let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
       | None ->
           astate )
@@ -368,8 +367,7 @@ module Prune = struct
       match Mem.find_alias x mem with
       | Some AliasTarget.Simple lv ->
           let v = Mem.find_heap lv mem in
-          let itv_v = Itv.prune_eq (Val.get_itv v) Itv.false_sem in
-          let v' = Val.modify_itv itv_v v in
+          let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
       | Some AliasTarget.Empty lv ->
           let v = Mem.find_heap lv mem in
