@@ -497,6 +497,11 @@ module Alias = struct
 
   let remove_temps : Ident.t list -> astate -> astate =
    fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
+
+
+  let pp : F.formatter -> astate -> unit =
+   fun fmt (aliasmap, aliasret) ->
+    F.fprintf fmt "AliasMap:@;%a@;AliasRet:@;%a@;" AliasMap.pp aliasmap AliasRet.pp aliasret
 end
 
 module PrunePairs = struct
@@ -617,10 +622,7 @@ module MemReach = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    F.fprintf fmt "Stack:@;" ;
-    F.fprintf fmt "%a@;" Stack.pp x.stack ;
-    F.fprintf fmt "Heap:@;" ;
-    F.fprintf fmt "%a" Heap.pp x.heap
+    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" Stack.pp x.stack Heap.pp x.heap Alias.pp x.alias
 
 
   let pp_summary : F.formatter -> t -> unit =
