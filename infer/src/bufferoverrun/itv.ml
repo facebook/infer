@@ -1210,14 +1210,14 @@ module ItvPure = struct
 
   let prune_gt : t -> t -> t = fun x y -> prune_ge x (plus y one)
 
-  let prune_diff : t -> Bound.t -> t =
-   fun (l, u) b ->
-    if Bound.eq l b then (Bound.plus_l l Bound.one, u)
-    else if Bound.eq u b then (l, Bound.plus_u u Bound.mone)
-    else (l, u)
+  let prune_diff : t -> Bound.t -> t bottom_lifted =
+   fun ((l, u) as itv) b ->
+    if Bound.eq l b then normalize (Bound.plus_l l Bound.one, u)
+    else if Bound.eq u b then normalize (l, Bound.plus_u u Bound.mone)
+    else NonBottom itv
 
 
-  let prune_ne_zero : t -> t = fun x -> prune_diff x Bound.zero
+  let prune_ne_zero : t -> t bottom_lifted = fun x -> prune_diff x Bound.zero
 
   let prune_comp : Binop.t -> t -> t -> t bottom_lifted =
    fun c x y ->
@@ -1248,18 +1248,15 @@ module ItvPure = struct
         prune_comp Binop.Ge x' y
 
 
-  let prune_eq_zero : t -> t =
+  let prune_eq_zero : t -> t bottom_lifted =
    fun x ->
     let x' = prune_le x zero in
-    prune_ge x' zero
+    prune_ge x' zero |> normalize
 
 
   let prune_ne : t -> t -> t bottom_lifted =
    fun x (l, u) ->
-    if is_invalid (l, u) then NonBottom x
-    else
-      let x = if Bound.eq l u then prune_diff x l else x in
-      normalize x
+    if is_invalid (l, u) then NonBottom x else if Bound.eq l u then prune_diff x l else NonBottom x
 
 
   let get_symbols : t -> Symbol.t list =
@@ -1394,9 +1391,9 @@ let lor_sem : t -> t -> t = lift2 ItvPure.lor_sem
 
 let min_sem : t -> t -> t = lift2 ItvPure.min_sem
 
-let prune_eq_zero : t -> t = lift1 ItvPure.prune_eq_zero
+let prune_eq_zero : t -> t = bind1 ItvPure.prune_eq_zero
 
-let prune_ne_zero : t -> t = lift1 ItvPure.prune_ne_zero
+let prune_ne_zero : t -> t = bind1 ItvPure.prune_ne_zero
 
 let prune_comp : Binop.t -> t -> t -> t = fun comp -> bind2 (ItvPure.prune_comp comp)
 
