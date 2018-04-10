@@ -244,8 +244,6 @@ let get_classmap program = program.classmap
 
 let get_classpath_channel program = program.classpath.channel
 
-let get_classpath program = program.classpath.path
-
 let get_models program = program.models
 
 let add_class cn jclass program =
@@ -274,9 +272,8 @@ let lookup_node cn program =
       let jclass = javalib_get_class (get_classpath_channel program) cn in
       add_class cn jclass program ; Some jclass
     with
-    | JBasics.No_class_found class_name ->
-        L.internal_error "ERROR: class \"%s\" not found with classpath %s@." class_name
-          (get_classpath program) ;
+    | JBasics.No_class_found _ ->
+        (* TODO (tonyhu) T28155039 Figure out when and what to log *)
         None
     | (JBasics.Class_structure_error _ | Invalid_argument _) as exn ->
         L.internal_error "ERROR: %s@." (Exn.to_string exn) ;
