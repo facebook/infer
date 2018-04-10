@@ -307,8 +307,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     output_mem
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
-module CFG = Analyzer.TransferFunctions.CFG
+module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
+module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
 module Report = struct
   module PO = BufferOverrunProofObligations
