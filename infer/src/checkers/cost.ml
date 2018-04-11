@@ -232,15 +232,15 @@ module StructuralConstraints = struct
           Exp.BinOp (Binop.PlusA, exp_nid n, sum_nodes')
     in
     let compute_node_constraints acc node =
-      let constrants_preds_succs gets_preds_succs =
+      let constraints_preds_succs gets_preds_succs =
         match gets_preds_succs node with
         | [] ->
             []
         | res_nodes ->
             [Exp.BinOp (Binop.Le, exp_nid node, exp_sum res_nodes)]
       in
-      let preds_con = constrants_preds_succs Procdesc.Node.get_preds in
-      let succs_con = constrants_preds_succs Procdesc.Node.get_succs in
+      let preds_con = constraints_preds_succs Procdesc.Node.get_preds in
+      let succs_con = constraints_preds_succs Procdesc.Node.get_succs in
       preds_con @ succs_con @ acc
     in
     let constraints = List.fold (CFG.nodes cfg) ~f:compute_node_constraints ~init:[] in
@@ -496,11 +496,11 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
           | Some t ->
               let c_node = Itv.Bound.mult c t in
               L.(debug Analysis Medium)
-                "@\n  [AnalizerWCTE] Adding cost: (%i,%i) --> c =%a  t = %a @\n" nid idx
+                "@\n  [AnalyzerWCET] Adding cost: (%i,%i) --> c =%a  t = %a @\n" nid idx
                 Itv.Bound.pp c Itv.Bound.pp t ;
               let c_node' = Itv.Bound.plus_u acc c_node in
               L.(debug Analysis Medium)
-                "@\n  [AnalizerWCTE] Adding cost: (%i,%i) --> c_node=%a  cost = %a @\n" nid idx
+                "@\n  [AnalyzerWCET] Adding cost: (%i,%i) --> c_node=%a  cost = %a @\n" nid idx
                 Itv.Bound.pp c_node Itv.Bound.pp c_node' ;
               c_node'
           | _ ->
@@ -511,13 +511,13 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
       match AnalyzerNodesBasicCost.extract_post node_id invariant_map_cost with
       | Some (_, node_map) ->
           L.(debug Analysis Medium)
-            "@\n AnalizerWCTE] Final map for node: %a @\n" Procdesc.Node.pp_id node_id ;
+            "@\n AnalyzerWCET] Final map for node: %a @\n" Procdesc.Node.pp_id node_id ;
           map_cost node_map
       | _ ->
           assert false
     in
     L.(debug Analysis Medium)
-      "@\n>>>AnalizerWCTE] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr Itv.Bound.pp
+      "@\n>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr Itv.Bound.pp
       cost_node ;
     let reported_so_far = snd astate in
     let astate' =
