@@ -705,7 +705,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       let do_map_put typestate' =
         (* Get the proc name for map.get() from map.put() *)
         let pname_get_from_pname_put pname_put =
-          let object_t = (Some "java.lang", "Object") in
+          let object_t = Typ.Name.Java.Split.java_lang_object in
           let parameters = [object_t] in
           pname_put |> Typ.Procname.Java.replace_method_name "get"
           |> Typ.Procname.Java.replace_return_type object_t
@@ -904,7 +904,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 DExp.Dretcall
                   (DExp.Dconst Const.Cfun Typ.Procname.Java pname_java, args, loc, call_flags) ->
                 let pname_java' =
-                  let object_t = (Some "java.lang", "Object") in
+                  let object_t = Typ.Name.Java.Split.java_lang_object in
                   pname_java |> Typ.Procname.Java.replace_method_name "get"
                   |> Typ.Procname.Java.replace_return_type object_t
                 in

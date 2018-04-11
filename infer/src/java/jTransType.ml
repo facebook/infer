@@ -182,16 +182,20 @@ let rec string_of_type vt =
 
 let package_to_string = function [] -> None | p -> Some (String.concat ~sep:"." p)
 
-let cn_to_java_type cn = (package_to_string (JBasics.cn_package cn), JBasics.cn_simple_name cn)
+let cn_to_java_type cn =
+  Typ.Name.Java.Split.make
+    ?package:(package_to_string (JBasics.cn_package cn))
+    (JBasics.cn_simple_name cn)
+
 
 let vt_to_java_type vt =
   match vt with
   | JBasics.TBasic bt ->
-      (None, string_of_basic_type bt)
+      Typ.Name.Java.Split.make (string_of_basic_type bt)
   | JBasics.TObject ot ->
     match ot with
     | JBasics.TArray vt ->
-        (None, string_of_type vt ^ "[]")
+        Typ.Name.Java.Split.make (string_of_type vt ^ "[]")
     | JBasics.TClass cn ->
         cn_to_java_type cn
 
@@ -201,7 +205,7 @@ let method_signature_names ms =
     match JBasics.ms_rtype ms with
     | None ->
         if String.equal (JBasics.ms_name ms) JConfig.constructor_name then None
-        else Some (None, JConfig.void)
+        else Some (Typ.Name.Java.Split.make JConfig.void)
     | Some vt ->
         Some (vt_to_java_type vt)
   in

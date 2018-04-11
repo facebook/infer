@@ -388,6 +388,33 @@ module Name = struct
   end
 
   module Java = struct
+    module Split = struct
+      (** e.g. {type_name="int"; package=None} for primitive types
+      * or {type_name="PrintWriter"; package=Some "java.io"} for objects.
+      *)
+      type t = {package: string option; type_name: string}
+
+      let make ?package type_name = {type_name; package}
+
+      (** Given a package.class_name string, it looks for the latest dot and split the string
+                in two (package, class_name) *)
+      let of_string package_classname =
+        match String.rsplit2 package_classname ~on:'.' with
+        | Some (package, type_name) ->
+            {type_name; package= Some package}
+        | None ->
+            {type_name= package_classname; package= None}
+
+
+      let package {package} = package
+
+      let type_name {type_name} = type_name
+
+      let java_lang_object = make ~package:"java.lang" "Object"
+
+      let java_lang_string = make ~package:"java.lang" "String"
+    end
+
     let from_string name_str = JavaClass (Mangled.from_string name_str)
 
     let from_package_class package_name class_name =
@@ -403,29 +430,19 @@ module Name = struct
 
     let java_lang_cloneable = from_string "java.lang.Cloneable"
 
-    (** Given a package.class_name string, it looks for the latest dot and split the string
-        in two (package, class_name) *)
-    let split_classname package_classname =
-      match String.rsplit2 package_classname ~on:'.' with
-      | Some (x, y) ->
-          (Some x, y)
-      | None ->
-          (None, package_classname)
-
-
-    let split_typename typename = split_classname (name typename)
+    let split_typename typename = Split.of_string (name typename)
 
     let get_outer_class class_name =
-      let package_name, class_name_no_package = split_typename class_name in
-      match String.rsplit2 ~on:'$' class_name_no_package with
+      let {Split.package; type_name} = split_typename class_name in
+      match String.rsplit2 ~on:'$' type_name with
       | Some (parent_class, _) ->
-          Some (from_package_class (Option.value ~default:"" package_name) parent_class)
+          Some (from_package_class (Option.value ~default:"" package) parent_class)
       | None ->
           None
 
 
     let is_anonymous_inner_class_name class_name =
-      let class_name_no_package = snd (split_typename class_name) in
+      let class_name_no_package = Split.type_name (split_typename class_name) in
       match String.rsplit2 class_name_no_package ~on:'$' with
       | Some (_, s) ->
           let is_int =
@@ -440,7 +457,7 @@ module Name = struct
 
 
     let is_external_classname name_string =
-      let package, _ = split_classname name_string in
+      let {Split.package} = Split.of_string name_string in
       Option.exists ~f:Config.java_package_is_external package
 
 
@@ -541,10 +558,9 @@ module Procname = struct
       [@@deriving compare]
 
     (* TODO: use Mangled.t here *)
-    type java_type = string option * string
-
-    (* compare in inverse order *)
-    let compare_java_type (p1, c1) (p2, c2) = [%compare : string * string option] (c1, p1) (c2, p2)
+    type java_type = Name.Java.Split.t =
+      {package: string option; type_name: string}
+      [@@deriving compare]
 
     (** Type of java procedure names. *)
     type t =
@@ -562,10 +578,10 @@ module Procname = struct
     (** A type is a pair (package, type_name) that is translated in a string package.type_name *)
     let type_to_string_verbosity p verbosity =
       match p with
-      | None, typ ->
-          typ
-      | Some p, cls ->
-          if is_verbose verbosity then p ^ "." ^ cls else cls
+      | {package= Some package; type_name} when is_verbose verbosity ->
+          package ^ "." ^ type_name
+      | {type_name} ->
+          type_name
 
 
     (** Given a list of types, it creates a unique string of types separated by commas *)
@@ -589,9 +605,9 @@ module Procname = struct
 
     let get_class_type_name j = j.class_name
 
-    let get_simple_class_name j = snd (Name.Java.split_classname (get_class_name j))
+    let get_simple_class_name j = Name.Java.Split.(j |> get_class_name |> of_string |> type_name)
 
-    let get_package j = fst (Name.Java.split_classname (get_class_name j))
+    let get_package j = Name.Java.Split.(j |> get_class_name |> of_string |> package)
 
     let get_method j = j.method_name
 
@@ -707,7 +723,7 @@ module Procname = struct
     (** Check if the proc name has the type of a java vararg.
       Note: currently only checks that the last argument has type Object[]. *)
     let is_vararg {parameters} =
-      match List.last parameters with Some (_, "java.lang.Object[]") -> true | _ -> false
+      match List.last parameters with Some {type_name= "java.lang.Object[]"} -> true | _ -> false
 
 
     let is_external java_pname =

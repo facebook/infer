@@ -612,7 +612,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.Java.
         ~f:(fun accu (arg_exp, _) name ->
           match resolve_typename prop arg_exp with
           | Some class_name ->
-              Typ.Name.Java.split_classname (Typ.Name.name class_name) :: accu
+              Typ.Name.Java.Split.of_string (Typ.Name.name class_name) :: accu
           | None ->
               name :: accu )
         ~init:[] args
@@ -695,7 +695,7 @@ let call_constructor_url_update_args pname actual_params =
     Typ.Procname.Java
       (Typ.Procname.Java.make
          (Typ.Name.Java.from_string "java.net.URL")
-         None "<init>" [(Some "java.lang", "String")] Typ.Procname.Java.Non_Static)
+         None "<init>" [Typ.Name.Java.Split.java_lang_string] Typ.Procname.Java.Non_Static)
   in
   if Typ.Procname.equal url_pname pname then
     match actual_params with

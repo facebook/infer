@@ -153,6 +153,20 @@ module Name : sig
   end
 
   module Java : sig
+    module Split : sig
+      type t
+
+      val make : ?package:string -> string -> t
+
+      val of_string : string -> t
+      (** Given a package.class_name string, look for the latest dot and split the string
+        in two (package, class_name). *)
+
+      val java_lang_object : t
+
+      val java_lang_string : t
+    end
+
     val from_string : string -> t
     (** Create a typename from a Java classname in the form "package.class" *)
 
@@ -167,10 +181,6 @@ module Name : sig
 
     val is_external : t -> bool
     (** return true if the typename is in the .inferconfig list of external classes *)
-
-    val split_classname : string -> string option * string
-    (** Given a package.class_name string, look for the latest dot and split the string
-        in two (package, class_name). *)
 
     val get_outer_class : t -> t option
     (** Given an inner classname like C$Inner1$Inner2, return Some C$Inner1. If the class is not an
@@ -279,8 +289,7 @@ module Procname : sig
 
     type t [@@deriving compare]
 
-    (** e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects *)
-    type java_type = string option * string
+    type java_type = Name.Java.Split.t
 
     val make : Name.t -> java_type option -> string -> java_type list -> kind -> t
     (** Create a Java procedure name from its
