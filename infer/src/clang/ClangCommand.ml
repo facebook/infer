@@ -10,7 +10,12 @@
 open! IStd
 module L = Logging
 
-type t = {exec: string; argv: string list; orig_argv: string list; quoting_style: ClangQuotes.style}
+type t =
+  { exec: string
+  ; argv: string list
+  ; orig_argv: string list
+  ; quoting_style: ClangQuotes.style
+  ; is_driver: bool }
 
 (** bad for every clang invocation *)
 let clang_blacklisted_flags =
@@ -49,7 +54,11 @@ let can_attach_ast_exporter cmd =
   let is_supported_language cmd =
     match value_of_option cmd "-x" with
     | None ->
-        L.external_warning "malformed -cc1 command has no \"-x\" flag!" ;
+        if cmd.is_driver then (* let's continue and ask clang -### *) true
+        else (
+          L.external_warning "malformed -cc1 command has no \"-x\" flag!" ;
+          false )
+    | Some "cuda" ->
         false
     | Some lang when String.is_prefix ~prefix:"assembler" lang ->
         false
@@ -58,8 +67,11 @@ let can_attach_ast_exporter cmd =
   in
   (* -Eonly is -cc1 flag that gets produced by 'clang -M -### ...' *)
   let is_preprocessor_only cmd = has_flag cmd "-E" || has_flag cmd "-Eonly" in
-  has_flag cmd "-cc1" && is_supported_language cmd && not (is_preprocessor_only cmd)
+  (cmd.is_driver || has_flag cmd "-cc1") && is_supported_language cmd
+  && not (is_preprocessor_only cmd)
 
+
+let may_capture cmd = can_attach_ast_exporter cmd
 
 let argv_cons a b = a :: b
 
@@ -174,14 +186,14 @@ let clang_cc1_cmd_sanitizer cmd =
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
 
 
-let mk quoting_style ~prog ~args =
+let mk ~is_driver quoting_style ~prog ~args =
   (* Some arguments break the compiler so they need to be removed even before the normalization step *)
   let blacklisted_flags_with_arg = ["-index-store-path"] in
   let sanitized_args =
     filter_and_replace_unsupported_args ~blacklisted_flags:clang_blacklisted_flags
       ~blacklisted_flags_with_arg args
   in
-  {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style}
+  {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style; is_driver}
 
 
 let to_unescaped_args cmd =

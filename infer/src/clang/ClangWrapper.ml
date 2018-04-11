@@ -13,7 +13,11 @@
 open! IStd
 module L = Logging
 
-type action_item = Command of ClangCommand.t | ClangError of string | ClangWarning of string
+type action_item =
+  | CanonicalCommand of ClangCommand.t  (** commands output by [clang -###] *)
+  | DriverCommand of ClangCommand.t  (** commands prior to [clang -###] treatment *)
+  | ClangError of string
+  | ClangWarning of string
 
 let clang_ignore_regex = Option.map ~f:Str.regexp Config.clang_ignore_regex
 
@@ -50,10 +54,10 @@ let check_for_existing_file args =
     check_for_existing_file_arg all_args
 
 
-(** Given a list of arguments for clang [args], return a list of new commands to run according to
-    the results of `clang -### [args]`. *)
-let normalize ~prog ~args : action_item list =
-  let cmd = ClangCommand.mk ClangQuotes.SingleQuotes ~prog ~args in
+(** Given a clang command, return a list of new commands to run according to the results of `clang
+   -### [args]`. *)
+let clang_driver_action_items : ClangCommand.t -> action_item list =
+ fun cmd ->
   let clang_hashhashhash =
     Printf.sprintf "%s 2>&1"
       ( ClangCommand.prepend_arg "-###" cmd
@@ -77,14 +81,14 @@ let normalize ~prog ~args : action_item list =
   let normalized_commands = ref [] in
   let one_line line =
     if String.is_prefix ~prefix:" \"" line then
-      Command
+      CanonicalCommand
         ( match
             (* massage line to remove edge-cases for splitting *)
             "\"" ^ line ^ " \"" |> (* split by whitespace *)
                                    Str.split (Str.regexp_string "\" \"")
           with
         | prog :: args ->
-            ClangCommand.mk ClangQuotes.EscapedDoubleQuotes ~prog ~args
+            ClangCommand.mk ~is_driver:false ClangQuotes.EscapedDoubleQuotes ~prog ~args
         | [] ->
             L.(die InternalError) "ClangWrapper: argv cannot be empty" )
     else if Str.string_match (Str.regexp "clang[^ :]*: warning: ") line 0 then ClangWarning line
@@ -114,6 +118,13 @@ let normalize ~prog ~args : action_item list =
   !normalized_commands
 
 
+(** Given a list of arguments for clang [args], return a list of new commands to run according to
+    the results of `clang -### [args]` if the command can be analysed. *)
+let normalize ~prog ~args : action_item list =
+  let cmd = ClangCommand.mk ~is_driver:true ClangQuotes.SingleQuotes ~prog ~args in
+  if ClangCommand.may_capture cmd then clang_driver_action_items cmd else [DriverCommand cmd]
+
+
 let exec_action_item ~prog ~args = function
   | ClangError error ->
       (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
@@ -128,8 +139,15 @@ let exec_action_item ~prog ~args = function
          *** Infer needs a working compilation command to run." prog Pp.cli_args args error
   | ClangWarning warning ->
       L.external_warning "%s@\n" warning
-  | Command clang_cmd ->
+  | CanonicalCommand clang_cmd ->
       Capture.capture clang_cmd
+  | DriverCommand clang_cmd ->
+      if Option.is_none Config.buck_compilation_database
+         || Config.skip_analysis_in_path_skips_compilation
+      then Capture.run_clang clang_cmd Utils.echo_in
+      else
+        L.debug Capture Quiet "Skipping seemingly uninteresting clang driver command %s@\n"
+          (ClangCommand.command_to_run clang_cmd)
 
 
 let exe ~prog ~args =
