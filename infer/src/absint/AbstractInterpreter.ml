@@ -42,7 +42,7 @@ module MakeNoCFG
     (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
 struct
   module CFG = Scheduler.CFG
-  module InvariantMap = ProcCfg.NodeIdMap (CFG)
+  module InvariantMap = CFG.IdMap
   module TransferFunctions = TransferFunctions
   module Domain = TransferFunctions.Domain
 

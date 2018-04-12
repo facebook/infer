@@ -35,6 +35,17 @@ module MockNode = struct
   let compare_id = Int.compare
 
   let pp_id fmt i = F.fprintf fmt "%i" i
+
+  module OrderedId = struct
+    type t = id
+
+    let compare = compare_id
+
+    let pp = pp_id
+  end
+
+  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
+  module IdSet = PrettyPrintable.MakePPSet (OrderedId)
 end
 
 module MockProcCfg = struct

@@ -34,10 +34,10 @@ end
     and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module M = ProcCfg.NodeIdMap (CFG)
+  module M = CFG.IdMap
 
   module WorkUnit = struct
-    module IdSet = ProcCfg.NodeIdSet (CFG)
+    module IdSet = CFG.IdSet
 
     type t =
       { node: CFG.node  (** node whose instructions will be analyzed *)

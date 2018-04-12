@@ -50,9 +50,9 @@ end
 module MakeNoCFG
     (Scheduler : Scheduler.S)
     (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) :
-  S with module TransferFunctions = TransferFunctions
+  S with module TransferFunctions = TransferFunctions and module InvariantMap = Scheduler.CFG.IdMap
 
 (** create an intraprocedural abstract interpreter from a CFG and functors for creating a scheduler/
     transfer functions from a CFG *)
 module Make (CFG : ProcCfg.S) (MakeTransferFunctions : TransferFunctions.MakeSIL) :
-  S with module TransferFunctions = MakeTransferFunctions(CFG)
+  S with module TransferFunctions = MakeTransferFunctions(CFG) and module InvariantMap = CFG.IdMap

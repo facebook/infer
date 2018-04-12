@@ -33,6 +33,10 @@ module type Node = sig
   val compare_id : id -> id -> int
 
   val pp_id : Format.formatter -> id -> unit
+
+  module IdMap : PrettyPrintable.PPMap with type key = id
+
+  module IdSet : PrettyPrintable.PPSet with type elt = id
 end
 
 module type S = sig
@@ -102,7 +106,3 @@ module Backward (Base : S) : S with type t = Base.t and type node = Base.node an
 
 module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = DefaultNode.id) :
   S with type t = Base.t and type node = Base.node and type id = Base.id * index
-
-module NodeIdMap (CFG : S) : Caml.Map.S with type key = CFG.id
-
-module NodeIdSet (CFG : S) : Caml.Set.S with type elt = CFG.id

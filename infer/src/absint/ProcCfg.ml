@@ -34,6 +34,10 @@ module type Node = sig
   val compare_id : id -> id -> int
 
   val pp_id : F.formatter -> id -> unit
+
+  module IdMap : PrettyPrintable.PPMap with type key = id
+
+  module IdSet : PrettyPrintable.PPSet with type elt = id
 end
 
 module DefaultNode = struct
@@ -54,6 +58,17 @@ module DefaultNode = struct
   let compare_id = Procdesc.Node.compare_id
 
   let pp_id = Procdesc.Node.pp_id
+
+  module OrderedId = struct
+    type t = id
+
+    let compare = compare_id
+
+    let pp = pp_id
+  end
+
+  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
+  module IdSet = PrettyPrintable.MakePPSet (OrderedId)
 end
 
 module InstrNode = struct
@@ -84,6 +99,18 @@ module InstrNode = struct
         Procdesc.Node.pp_id fmt id
     | Instr_index i ->
         F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id i
+
+
+  module OrderedId = struct
+    type t = id
+
+    let compare = compare_id
+
+    let pp = pp_id
+  end
+
+  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
+  module IdSet = PrettyPrintable.MakePPSet (OrderedId)
 end
 
 module type S = sig
@@ -275,7 +302,13 @@ end
 
 module OneInstrPerNode (Base : S with type node = Procdesc.Node.t and type id = Procdesc.Node.id) =
 struct
-  include (Base : module type of Base with type id := Procdesc.Node.id and type t = Base.t)
+  include (
+    Base :
+      module type of Base
+      with type id := Procdesc.Node.id
+       and type t = Base.t
+       and module IdMap := Base.IdMap
+       and module IdSet := Base.IdSet )
 
   type id = Base.id * index
 
@@ -289,15 +322,3 @@ struct
         (instr, Some id) )
       (instrs t)
 end
-
-module NodeIdMap (CFG : S) = Caml.Map.Make (struct
-  type t = CFG.id
-
-  let compare = CFG.compare_id
-end)
-
-module NodeIdSet (CFG : S) = Caml.Set.Make (struct
-  type t = CFG.id
-
-  let compare = CFG.compare_id
-end)
