@@ -53,12 +53,11 @@ let iter_all_nodes ?(sorted= false) f cfg =
     |> List.iter ~f:(fun (d, n) -> f d n)
 
 
-(** checks whether a cfg is connected or not *)
-let check_cfg_connectedness cfg =
+let is_proc_cfg_connected proc_desc =
   let is_exit_node n =
     match Procdesc.Node.get_kind n with Procdesc.Node.Exit_node _ -> true | _ -> false
   in
-  let broken_node n =
+  let is_broken_node n =
     let succs = Procdesc.Node.get_succs n in
     let preds = Procdesc.Node.get_preds n in
     match Procdesc.Node.get_kind n with
@@ -74,13 +73,7 @@ let check_cfg_connectedness cfg =
       (* if the if brances end with a return *)
       match succs with [n'] when is_exit_node n' -> false | _ -> Int.equal (List.length preds) 0
   in
-  let do_pdesc pname pd =
-    let nodes = Procdesc.get_nodes pd in
-    (* TODO (T20302015): also check the CFGs for the C-like procedures *)
-    if not Config.keep_going && Typ.Procname.is_java pname && List.exists ~f:broken_node nodes then
-      L.(die InternalError) "Broken CFG on %a" Typ.Procname.pp pname
-  in
-  Typ.Procname.Hash.iter do_pdesc cfg
+  not (List.exists ~f:is_broken_node (Procdesc.get_nodes proc_desc))
 
 
 let load_statement =

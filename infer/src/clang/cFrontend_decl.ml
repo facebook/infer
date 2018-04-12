@@ -84,7 +84,12 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           let proc_attributes = Procdesc.get_attributes procdesc in
           Procdesc.Node.add_locals_ret_declaration start_node proc_attributes
             (Procdesc.get_locals procdesc) ;
-          Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes []
+          Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [] ;
+          if not (Cfg.is_proc_cfg_connected procdesc) then
+            let lang =
+              CFrontend_config.string_of_clang_lang trans_unit_ctx.CFrontend_config.lang
+            in
+            ClangLogging.log_broken_cfg procdesc __POS__ ~lang
       | _ ->
           ()
       | exception Not_found ->
