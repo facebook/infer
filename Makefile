@@ -285,7 +285,7 @@ ocaml_unit_test: test_build
 	INFER_ARGS=--results-dir^infer-out-unit-tests $(BUILD_DIR)/test/inferunit.bc)
 
 define silence_make
-  $(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target")
+  $(1) 2> >(grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target')
 endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
