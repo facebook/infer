@@ -28,6 +28,12 @@ let expensive_threshold = Itv.Bound.of_int 200
 (* CFG module used in several other modules  *)
 module CFG = ProcCfg.Normal
 
+module Node = struct
+  include ProcCfg.DefaultNode
+
+  let equal_id = [%compare.equal : id]
+end
+
 module NodesBasicCostDomain = struct
   include AbstractDomain.Pair (BufferOverrunDomain.Mem) (CostDomain.NodeInstructionToCostMap)
 
@@ -103,12 +109,15 @@ module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunction
 
 *)
 module BoundMap = struct
-  type t = Itv.Bound.t Int.Map.t
+  type t = Itv.Bound.t Node.IdMap.t
 
   let print_upper_bound_map bound_map =
     L.(debug Analysis Medium) "@\n\n******* Bound Map ITV **** @\n" ;
-    Int.Map.iteri bound_map ~f:(fun ~key:nid ~data:b ->
-        L.(debug Analysis Medium) "@\n node: %i --> bound = %a @\n" nid Itv.Bound.pp b ) ;
+    Node.IdMap.iter
+      (fun nid b ->
+        L.(debug Analysis Medium) "@\n node: %a --> bound = %a @\n" Node.pp_id nid Itv.Bound.pp b
+        )
+      bound_map ;
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
 
@@ -143,7 +152,7 @@ module BoundMap = struct
       let node_id = Procdesc.Node.get_id node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
-          Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.one
+          Node.IdMap.add node_id Itv.Bound.one bound_map
       | _ ->
           let entry_state_opt =
             AnalyzerNodesBasicCost.extract_post node_id invariant_map_NodesBasicCost
@@ -180,21 +189,23 @@ module BoundMap = struct
                 "@\n>>>Setting bound for node = %i  to %a@\n\n"
                 (node_id :> int)
                 Itv.Bound.pp bound ;
-              Int.Map.set bound_map ~key:(node_id :> int) ~data:bound
+              Node.IdMap.add node_id bound bound_map
           | _ ->
-              Int.Map.set bound_map ~key:(node_id :> int) ~data:Itv.Bound.zero
+              Node.IdMap.add node_id Itv.Bound.zero bound_map
     in
-    let bound_map = List.fold (CFG.nodes pdesc) ~f:compute_node_upper_bound ~init:Int.Map.empty in
+    let bound_map =
+      List.fold (CFG.nodes pdesc) ~f:compute_node_upper_bound ~init:Node.IdMap.empty
+    in
     print_upper_bound_map bound_map ; bound_map
 
 
   let upperbound bound_map nid =
-    match Int.Map.find bound_map nid with
+    match Node.IdMap.find_opt nid bound_map with
     | Some bound ->
         bound
     | None ->
         L.(debug Analysis Medium)
-          "@\n\n[WARNING] Bound not found for node %i, returning Top @\n" nid ;
+          "@\n\n[WARNING] Bound not found for node %a, returning Top @\n" Node.pp_id nid ;
         Itv.Bound.pinf
 end
 
@@ -205,9 +216,36 @@ end
    equal to the sum of the number of times nodes n1,..., nk can be executed.
 *)
 module StructuralConstraints = struct
+  type rhs = Single of Node.id | Sum of Node.IdSet.t
+
+  type t = {lhs: Node.id; rhs: rhs}
+
+  let is_single ~lhs:expected_lhs = function
+    | {lhs; rhs= Single single} when Node.equal_id lhs expected_lhs ->
+        Some single
+    | _ ->
+        None
+
+
+  let is_sum ~lhs:expected_lhs = function
+    | {lhs; rhs= Sum sum} when Node.equal_id lhs expected_lhs ->
+        Some sum
+    | _ ->
+        None
+
+
+  let pp_rhs fmt = function
+    | Single nid ->
+        Node.pp_id fmt nid
+    | Sum nidset ->
+        Pp.seq ~sep:" + " Node.pp_id fmt (Node.IdSet.elements nidset)
+
+
+  let pp fmt {lhs; rhs} = F.fprintf fmt "%a <= %a" Node.pp_id lhs pp_rhs rhs
+
   let print_constraint_list constraints =
     L.(debug Analysis Medium) "@\n\n******* Structural Constraints **** @\n" ;
-    List.iter ~f:(fun c -> L.(debug Analysis Medium) "@\n    %a   @\n" Exp.pp c) constraints ;
+    List.iter ~f:(fun c -> L.(debug Analysis Medium) "@\n    %a   @\n" pp c) constraints ;
     L.(debug Analysis Medium) "@\n******* END Structural Constraints **** @\n\n"
 
 
@@ -217,31 +255,22 @@ module StructuralConstraints = struct
      i<=Sum_{j \in Successors(i)} j
 *)
   let compute_structural_constraints cfg =
-    let exp_nid n =
-      let nid = (Procdesc.Node.get_id n :> int) in
-      Exp.Const (Cint (IntLit.of_int nid))
-    in
-    let rec exp_sum nodes =
-      match nodes with
-      | [] ->
-          assert false (* this cannot happen here *)
-      | [n] ->
-          exp_nid n
-      | n :: nodes' ->
-          let sum_nodes' = exp_sum nodes' in
-          Exp.BinOp (Binop.PlusA, exp_nid n, sum_nodes')
-    in
     let compute_node_constraints acc node =
-      let constraints_preds_succs gets_preds_succs =
-        match gets_preds_succs node with
+      let constraints_append node get_nodes tail =
+        match get_nodes node with
         | [] ->
-            []
-        | res_nodes ->
-            [Exp.BinOp (Binop.Le, exp_nid node, exp_sum res_nodes)]
+            tail
+        | [single] ->
+            {lhs= CFG.id node; rhs= Single (CFG.id single)} :: tail
+        | nodes ->
+            let sum =
+              List.fold nodes ~init:Node.IdSet.empty ~f:(fun idset node ->
+                  Node.IdSet.add (CFG.id node) idset )
+            in
+            {lhs= CFG.id node; rhs= Sum sum} :: tail
       in
-      let preds_con = constraints_preds_succs Procdesc.Node.get_preds in
-      let succs_con = constraints_preds_succs Procdesc.Node.get_succs in
-      preds_con @ succs_con @ acc
+      acc |> constraints_append node Procdesc.Node.get_preds
+      |> constraints_append node Procdesc.Node.get_succs
     in
     let constraints = List.fold (CFG.nodes cfg) ~f:compute_node_constraints ~init:[] in
     print_constraint_list constraints ; constraints
@@ -256,7 +285,7 @@ end
 
 *)
 module MinTree = struct
-  type mt_node = Leaf of (int * Itv.Bound.t) | Min of mt_node list | Plus of mt_node list
+  type mt_node = Leaf of (Node.id * Itv.Bound.t) | Min of mt_node list | Plus of mt_node list
 
   let add_leaf node nid leaf =
     let leaf' = Leaf (nid, leaf) in
@@ -268,7 +297,7 @@ module MinTree = struct
   let rec pp fmt node =
     match node with
     | Leaf (nid, c) ->
-        F.fprintf fmt "%i:%a" nid Itv.Bound.pp c
+        F.fprintf fmt "%a:%a" Node.pp_id nid Itv.Bound.pp c
     | Min l ->
         F.fprintf fmt "Min(%a)" (Pp.comma_seq pp) l
     | Plus l ->
@@ -285,39 +314,13 @@ module MinTree = struct
 
   (* finds the subset of constraints of the form x_k <= x_j *)
   let get_k_single_constraints constraints k =
-    List.filter_map
-      ~f:(fun c ->
-        match c with
-        (* constraint x_k <= x_j is represented by k<=j *)
-        | Exp.BinOp (Binop.Le, Exp.Const Cint k', Exp.Const Cint nid)
-          when Int.equal k (IntLit.to_int k') ->
-            Some (IntLit.to_int nid)
-        | _ ->
-            None )
-      constraints
+    List.filter_map constraints ~f:(StructuralConstraints.is_single ~lhs:k)
 
 
   (* finds the subset of constraints of the form x_k <= x_j1 +...+ x_jn and
 return the addends of the sum x_j1+x_j2+..+x_j_n*)
   let get_k_sum_constraints constraints k =
-    let rec addends e =
-      match e with
-      | Exp.Const Cint nid ->
-          Int.Set.singleton (IntLit.to_int nid)
-      | Exp.BinOp (Binop.PlusA, e1, e2) ->
-          Int.Set.union (addends e1) (addends e2)
-      | _ ->
-          assert false
-    in
-    List.filter_map
-      ~f:(fun c ->
-        match c with
-        | Exp.BinOp (Binop.Le, Exp.Const Cint k', (Exp.BinOp (Binop.PlusA, _, _) as sum_exp))
-          when Int.equal k (IntLit.to_int k') ->
-            Some (addends sum_exp)
-        | _ ->
-            None )
-      constraints
+    List.filter_map constraints ~f:(StructuralConstraints.is_sum ~lhs:k)
 
 
   let rec evaluate_tree t =
@@ -348,7 +351,7 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     | [] ->
         [s]
     | s' :: tail ->
-        if Int.Set.equal s s' then list_of_sets else s' :: add_without_rep s tail
+        if Node.IdSet.equal s s' then list_of_sets else s' :: add_without_rep s tail
 
 
   (*  a plus node is well formed if has at least two addends *)
@@ -356,21 +359,21 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     match plus_node with Plus (_ :: _ :: _) -> true | _ -> false
 
 
-  let rec minimum_propagation (bound_map: BoundMap.t) (q: int) (visited: Int.Set.t)
-      (constraints: Exp.t list) =
+  let rec minimum_propagation (bound_map: BoundMap.t) (q: Node.id) (visited: Node.IdSet.t)
+      (constraints: StructuralConstraints.t list) =
     let rec build_min node branch visited_acc worklist =
       match worklist with
       | [] ->
           (node, branch, visited_acc)
       | k :: rest ->
-          if Int.Set.mem visited_acc k then build_min node branch visited_acc rest
+          if Node.IdSet.mem k visited_acc then build_min node branch visited_acc rest
           else
-            let visited_acc = Int.Set.add visited_acc k in
+            let visited_acc = Node.IdSet.add k visited_acc in
             let node = add_leaf node k (BoundMap.upperbound bound_map k) in
             let k_constraints_upperbound = get_k_single_constraints constraints k in
             let worklist =
               List.filter
-                ~f:(fun ub_id -> not (Int.Set.mem visited_acc ub_id))
+                ~f:(fun ub_id -> not (Node.IdSet.mem ub_id visited_acc))
                 k_constraints_upperbound
               |> List.rev_append worklist
             in
@@ -378,7 +381,7 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
             let branch =
               List.fold_left
                 ~f:(fun branch set_addend ->
-                  if Int.Set.is_empty (Int.Set.inter set_addend visited_acc) then
+                  if Node.IdSet.is_empty (Node.IdSet.inter set_addend visited_acc) then
                     add_without_rep set_addend branch
                   else branch )
                 ~init:branch k_sum_constraints
@@ -388,17 +391,17 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     let node, branch, visited_res = build_min (Min []) [] visited [q] in
     List.fold_left
       ~f:(fun i_node addend ->
-        if Int.Set.length addend < 2 then assert false
+        if Node.IdSet.cardinal addend < 2 then assert false
         else (
-          L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Int.Set.length addend) ;
-          Int.Set.iter ~f:(fun e -> L.(debug Analysis Medium) " %i, " e) addend ;
+          L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
+          Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
           L.(debug Analysis Medium) " }@\n " ) ;
         let plus_node =
-          Set.fold
-            ~f:(fun acc n ->
+          Node.IdSet.fold
+            (fun n acc ->
               let child = minimum_propagation bound_map n visited_res constraints in
               add_child acc child )
-            ~init:(Plus []) addend
+            addend (Plus [])
         in
         (* without this check it would add plus node with just one child, and give wrong results *)
         if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
@@ -408,12 +411,14 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
   let compute_trees_from_contraints bound_map cfg constraints =
     let min_trees =
       List.fold
-        ~f:(fun acc n ->
-          let nid = (Procdesc.Node.get_id n :> int) in
-          (nid, minimum_propagation bound_map nid Int.Set.empty constraints) :: acc )
+        ~f:(fun acc node ->
+          let nid = Node.id node in
+          (nid, minimum_propagation bound_map nid Node.IdSet.empty constraints) :: acc )
         ~init:[] (CFG.nodes cfg)
     in
-    List.iter ~f:(fun (n, t) -> L.(debug Analysis Medium) "@\n node %i = %a @\n" n pp t) min_trees ;
+    List.iter
+      ~f:(fun (nid, t) -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
+      min_trees ;
     min_trees
 end
 
@@ -421,7 +426,7 @@ module ReportedOnNodes = AbstractDomain.FiniteSet (Int)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; min_trees_map: Itv.Bound.t Int.Map.t
+  ; min_trees_map: Itv.Bound.t Node.IdMap.t
   ; summary: Specs.summary }
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -489,8 +494,7 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
     let map_cost m : Itv.Bound.t =
       CostDomain.NodeInstructionToCostMap.fold
         (fun ((node_id, _) as instr_node_id) c acc ->
-          let nid = (node_id :> int) in
-          let t = Int.Map.find_exn trees nid in
+          let t = Node.IdMap.find node_id trees in
           let c_node = Itv.Bound.mult c t in
           L.(debug Analysis Medium)
             "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" ProcCfg.InstrNode.pp_id
@@ -504,7 +508,6 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
     in
     let und_node = CFG.underlying_node node in
     let node_id = Procdesc.Node.get_id und_node in
-    let preds = Procdesc.Node.get_preds und_node in
     let cost_node =
       match AnalyzerNodesBasicCost.extract_post node_id invariant_map_cost with
       | Some (_, node_map) ->
@@ -519,6 +522,7 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
       cost_node ;
     let reported_so_far = snd astate in
     let astate' =
+      let preds = Procdesc.Node.get_preds und_node in
       if should_report (und_node :: preds) reported_so_far then
         report_cost summary instr cost_node (node_id :> int) reported_so_far
       else (cost_node, reported_so_far)
@@ -542,11 +546,11 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let min_trees = MinTree.compute_trees_from_contraints bound_map cfg constraints in
   let trees_valuation =
     List.fold
-      ~f:(fun acc (n, t) ->
+      ~f:(fun acc (nid, t) ->
         let res = MinTree.evaluate_tree t in
-        L.(debug Analysis Medium) "@\n   Tree %i eval to %a @\n" n Itv.Bound.pp res ;
-        Int.Map.set acc ~key:n ~data:res )
-      ~init:Int.Map.empty min_trees
+        L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid Itv.Bound.pp res ;
+        Node.IdMap.add nid res acc )
+      ~init:Node.IdMap.empty min_trees
   in
   let initWCET = (Itv.Bound.zero, ReportedOnNodes.empty) in
   let invariant_map_WCETFinal =
