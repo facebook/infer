@@ -243,7 +243,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with uninit_vars= D.empty}
     | Call (_, HilInstr.Direct call, [(HilExp.AccessExpression AddressOf Base base)], _, _)
       when is_dummy_constructor_of_a_struct call ->
-        (* if it's a default constructor, we use the following heuristic: we assume that it initializes 
+        (* if it's a default constructor, we use the following heuristic: we assume that it initializes
     correctly all fields when there is an implementation of the constructor that initilizes at least one
     field. If there is no explicit implementation we cannot assume fields are initialized *)
         if function_initializes_some_formal_params pdesc call then
@@ -292,7 +292,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 end
 
-module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
+module CFG = ProcCfg.NormalOneInstrPerNode
 module Analyzer =
   AbstractInterpreter.Make (CFG) (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
 

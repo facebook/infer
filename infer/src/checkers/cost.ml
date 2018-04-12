@@ -60,9 +60,9 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
 
   let exec_instr_cost _inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
       {ProcData.pdesc} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
-    let nid_int = (Procdesc.Node.get_id (CFG.underlying_node node) :> int) in
+    let nid_int = Procdesc.Node.get_id (CFG.underlying_node node) in
     let instr_idx = instr_idx node instr in
-    let key = (nid_int, instr_idx) in
+    let key = (nid_int, ProcCfg.Instr_index instr_idx) in
     let astate' =
       match instr with
       | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) -> (
@@ -486,27 +486,25 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
 
   let exec_instr (astate: Domain.astate) {ProcData.extras} (node: CFG.node) instr : Domain.astate =
     let {basic_cost_map= invariant_map_cost; min_trees_map= trees; summary} = extras in
+    let map_cost m : Itv.Bound.t =
+      CostDomain.NodeInstructionToCostMap.fold
+        (fun ((node_id, _) as instr_node_id) c acc ->
+          let nid = (node_id :> int) in
+          let t = Int.Map.find_exn trees nid in
+          let c_node = Itv.Bound.mult c t in
+          L.(debug Analysis Medium)
+            "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" ProcCfg.InstrNode.pp_id
+            instr_node_id Itv.Bound.pp c Itv.Bound.pp t ;
+          let c_node' = Itv.Bound.plus_u acc c_node in
+          L.(debug Analysis Medium)
+            "@\n  [AnalyzerWCET] Adding cost: (%a) --> c_node=%a  cost = %a @\n"
+            ProcCfg.InstrNode.pp_id instr_node_id Itv.Bound.pp c_node Itv.Bound.pp c_node' ;
+          c_node' )
+        m Itv.Bound.zero
+    in
     let und_node = CFG.underlying_node node in
     let node_id = Procdesc.Node.get_id und_node in
     let preds = Procdesc.Node.get_preds und_node in
-    let map_cost m : Itv.Bound.t =
-      CostDomain.NodeInstructionToCostMap.fold
-        (fun (nid, idx) c acc ->
-          match Int.Map.find trees nid with
-          | Some t ->
-              let c_node = Itv.Bound.mult c t in
-              L.(debug Analysis Medium)
-                "@\n  [AnalyzerWCET] Adding cost: (%i,%i) --> c =%a  t = %a @\n" nid idx
-                Itv.Bound.pp c Itv.Bound.pp t ;
-              let c_node' = Itv.Bound.plus_u acc c_node in
-              L.(debug Analysis Medium)
-                "@\n  [AnalyzerWCET] Adding cost: (%i,%i) --> c_node=%a  cost = %a @\n" nid idx
-                Itv.Bound.pp c_node Itv.Bound.pp c_node' ;
-              c_node'
-          | _ ->
-              assert false )
-        m Itv.Bound.zero
-    in
     let cost_node =
       match AnalyzerNodesBasicCost.extract_post node_id invariant_map_cost with
       | Some (_, node_map) ->

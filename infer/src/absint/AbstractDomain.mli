@@ -86,6 +86,15 @@ module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) : sig
 end
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
+    Every element implicitly maps to bottom unless it is explicitly bound to something else.
+    Uses PPMap as the underlying map *)
+module MapOfPPMap (PPMap : PrettyPrintable.PPMap) (ValueDomain : S) : sig
+  include module type of PPMap with type key = PPMap.key
+
+  include WithBottom with type astate = ValueDomain.astate t
+end
+
+(** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else *)
 module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) : sig
   include module type of PrettyPrintable.MakePPMap (Key)

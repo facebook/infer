@@ -312,7 +312,13 @@ struct
 
   type id = Base.id * index
 
-  include (InstrNode : module type of InstrNode with type t := node and type id := id)
+  include (
+    InstrNode :
+      Node
+      with type t := node
+       and type id := id
+       and module IdMap = InstrNode.IdMap
+       and module IdSet = InstrNode.IdSet )
 
   (* keep the invariants before/after each instruction *)
   let instr_ids t =
@@ -322,3 +328,5 @@ struct
         (instr, Some id) )
       (instrs t)
 end
+
+module NormalOneInstrPerNode = OneInstrPerNode (Normal)

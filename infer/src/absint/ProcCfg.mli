@@ -105,4 +105,11 @@ module Exceptional :
 module Backward (Base : S) : S with type t = Base.t and type node = Base.node and type id = Base.id
 
 module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = DefaultNode.id) :
-  S with type t = Base.t and type node = Base.node and type id = Base.id * index
+  S
+  with type t = Base.t
+   and type node = Base.node
+   and type id = InstrNode.id
+   and module IdMap = InstrNode.IdMap
+   and module IdSet = InstrNode.IdSet
+
+module NormalOneInstrPerNode : module type of OneInstrPerNode (Normal)

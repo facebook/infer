@@ -55,15 +55,8 @@ module Cost = struct
   let pp_u = pp
 end
 
-module IntPair = struct
-  (* Represents node id,instr index within node *)
-  include AbstractDomain.Pair (IntCost) (IntCost)
-
-  type t = IntCost.astate * IntCost.astate [@@deriving compare]
-end
-
 (* Map (node,instr) -> basic cost  *)
-module NodeInstructionToCostMap = AbstractDomain.Map (IntPair) (Itv.Bound)
+module NodeInstructionToCostMap = AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (Itv.Bound)
 
 module ItvPureCost = struct
   (** (l, u) represents the closed interval [-l; u] (of course infinite bounds are open) *)

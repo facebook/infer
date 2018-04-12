@@ -307,7 +307,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     output_mem
 end
 
-module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
+module CFG = ProcCfg.NormalOneInstrPerNode
 module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
 module Report = struct

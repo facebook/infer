@@ -180,8 +180,7 @@ module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
-  module M = PrettyPrintable.MakePPMap (Key)
+module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
   include M
 
   type astate = ValueDomain.astate M.t
@@ -228,6 +227,9 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
 
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end
+
+module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) =
+  MapOfPPMap (PrettyPrintable.MakePPMap (Key)) (ValueDomain)
 
 module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
   module M = PrettyPrintable.MakePPMap (Key)
