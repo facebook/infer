@@ -177,7 +177,6 @@ pre-compiled here:
 fi
 # end if($enable_c_analyzers)
 
-
 # OCaml dependencies
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])

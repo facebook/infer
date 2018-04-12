@@ -29,10 +29,10 @@ print: capture
 
 .PHONY: test
 test: capture
-	$(QUIET)for file in $(SOURCES) ; do \
-	  diff -u $$file.dot $$file.test.dot || error=1 ; \
+	$(QUIET)error=0; for file in $(SOURCES) ; do \
+	  diff -u "$$file.dot" "$$file.test.dot" || error=1 ; \
 	done ; \
-	if [ 0$$error -eq 1 ]; then exit 1; fi
+	if [ $$error = 1 ]; then exit 1; fi
 
 .PHONY: replace
 replace: capture

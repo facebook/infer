@@ -285,8 +285,7 @@ ocaml_unit_test: test_build
 	INFER_ARGS=--results-dir^infer-out-unit-tests $(BUILD_DIR)/test/inferunit.bc)
 
 define silence_make
-  ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \
-  ; exit $${PIPESTATUS[0]})
+  $(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target")
 endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
@@ -424,7 +423,7 @@ test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%
 .PHONY: uninstall
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
-	$(REMOVE) $(DESTDIR)$(bindir)/infer
+	$(REMOVE) $(DESTDIR)$(bindir)/infer*
 	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
 	$(REMOVE) $(foreach manual,$(INFER_MANUALS_GZIPPED),\
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
@@ -435,112 +434,101 @@ test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_cle
 .PHONY: install
 install: infer $(INFER_MANUALS_GZIPPED)
 # create directory structure
-	test -d      $(DESTDIR)$(bindir) || \
-	  $(MKDIR_P) $(DESTDIR)$(bindir)
-	test -d      $(DESTDIR)$(mandir)/man1 || \
-	  $(MKDIR_P) $(DESTDIR)$(mandir)/man1
-	test -d      $(DESTDIR)$(libdir)/infer/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/
+	test -d      '$(DESTDIR)$(bindir)' || \
+	  $(MKDIR_P) '$(DESTDIR)$(bindir)'
+	test -d      '$(DESTDIR)$(mandir)/man1' || \
+	  $(MKDIR_P) '$(DESTDIR)$(mandir)/man1'
+	test -d      '$(DESTDIR)$(libdir)/infer/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/'
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	test -d      $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/
-	$(QUIET)for i in $$(find facebook-clang-plugins/clang/install -type d); do \
-	  test -d      $(DESTDIR)$(libdir)/infer/$$i || \
-	    $(MKDIR_P) $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/
-	$(QUIET)for i in $$(find infer/models/cpp/include/ -type d); do \
-	  test -d      $(DESTDIR)$(libdir)/infer/$$i || \
-	    $(MKDIR_P) $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules
-	test -d      $(DESTDIR)$(libdir)/infer/infer/etc/ || \
-		$(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/etc
+	test -d      '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/'
+	find facebook-clang-plugins/clang/install -type d -print0 | xargs -0 -I \{\} \
+	  $(SHELL) -c "test -d '$(DESTDIR)$(libdir)'/infer/{} || \
+	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/{}"
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/'
+	find infer/models/cpp/include -type d -print0 | xargs -0 -I \{\} \
+	  $(SHELL) -c "test -d '$(DESTDIR)$(libdir)'/infer/{} || \
+	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/{}"
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/etc/' || \
+		$(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/etc'
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/java/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/java/
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/java/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/java/'
 endif
-	test -d      $(DESTDIR)$(libdir)/infer/infer/annotations/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/annotations/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/specs/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/specs/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/python/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/python/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/
-	test -d      $(DESTDIR)$(libdir)/infer/infer/bin/ || \
-	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/bin/
-
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/annotations/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/annotations/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/specs/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/specs/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/python/inferlib/capture/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/bin/'
 # copy files
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(INSTALL_DATA) -C          facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib \
-	  $(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
-	$(QUIET)for i in $$(find facebook-clang-plugins/clang/install -not -type d); do \
-	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	$(QUIET)for i in $$(find infer/lib/clang_wrappers/*); do \
-	  $(INSTALL_PROGRAM) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
+	$(INSTALL_DATA) -C          'facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib' \
+	  '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib'
+	find facebook-clang-plugins/clang/install -not -type d -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	find infer/lib/clang_wrappers/* -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 #	  only for files that point to infer
-	(cd $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/ && \
-	 $(foreach cc,$(shell find $(LIB_DIR)/wrappers -type l), \
-	  [ $(cc) -ef $(INFER_BIN) ] && \
-	  $(REMOVE) $(notdir $(cc)) && \
-	  $(LN_S) ../../bin/infer $(notdir $(cc));))
-	$(QUIET)for i in $$(find infer/lib/specs/*); do \
-	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	$(QUIET)for i in $$(find infer/models/cpp/include/ -not -type d); do \
-		$(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	$(INSTALL_DATA) -C          infer/lib/linter_rules/linters.al \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al
-	$(INSTALL_DATA) -C          infer/etc/clang_ast.dict \
-	  $(DESTDIR)$(libdir)/infer/infer/etc/clang_ast.dict
+	(cd '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' && \
+	 $(foreach cc,$(shell find '$(LIB_DIR)/wrappers' -type l), \
+	  [ $(cc) -ef '$(INFER_BIN)' ] && \
+	  $(REMOVE) '$(notdir $(cc))' && \
+	  $(LN_S) ../../bin/infer '$(notdir $(cc))';))
+	find infer/lib/specs/* -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	find infer/models/cpp/include -not -type d -print0 | xargs -0 -I \{\} \
+		$(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	$(INSTALL_DATA) -C          'infer/lib/linter_rules/linters.al' \
+	  '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al'
+	$(INSTALL_DATA) -C          'infer/etc/clang_ast.dict' \
+	  '$(DESTDIR)$(libdir)/infer/infer/etc/clang_ast.dict'
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(INSTALL_DATA) -C          infer/annotations/annotations.jar \
-	  $(DESTDIR)$(libdir)/infer/infer/annotations/annotations.jar
-	$(QUIET)for i in infer/lib/java/*.jar; do \
-	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
-	$(INSTALL_PROGRAM) -C      $(LIB_DIR)/wrappers/javac \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/wrappers/
+	$(INSTALL_DATA) -C          'infer/annotations/annotations.jar' \
+	  '$(DESTDIR)$(libdir)/infer/infer/annotations/annotations.jar'
+	find infer/lib/java/*.jar -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/wrappers/javac \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/wrappers/
 endif
-	$(QUIET)for i in $$(find infer/lib/python/inferlib/* -type f); do \
-	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(libdir)/infer/$$i; \
-	done
+	find infer/lib/python/inferlib/* -type f -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	$(INSTALL_PROGRAM) -C       infer/lib/python/infer.py \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/python/infer.py
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/infer.py
 	$(INSTALL_PROGRAM) -C       infer/lib/python/inferTraceBugs \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/python/inferTraceBugs
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/inferTraceBugs
 	$(INSTALL_PROGRAM) -C       infer/lib/python/report.py \
-	  $(DESTDIR)$(libdir)/infer/infer/lib/python/report.py
-	$(INSTALL_PROGRAM) -C $(INFER_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
-	(cd $(DESTDIR)$(bindir)/ && \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/python/report.py
+	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
+	(cd '$(DESTDIR)$(bindir)/' && \
 	 $(REMOVE) infer && \
-	 $(LN_S) $(libdir_relative_to_bindir)/infer/infer/bin/infer infer)
+	 $(LN_S) '$(libdir_relative_to_bindir)'/infer/infer/bin/infer infer)
 	for alias in $(INFER_COMMANDS); do \
-	  (cd $(DESTDIR)$(bindir)/ && \
-	   $(REMOVE) $$alias && \
-	   $(LN_S) infer $$alias); done
+	  (cd '$(DESTDIR)$(bindir)'/ && \
+	   $(REMOVE) "$$alias" && \
+	   $(LN_S) infer "$$alias"); done
 	for alias in $(INFER_COMMANDS); do \
-	  (cd $(DESTDIR)$(libdir)/infer/infer/bin && \
-	   $(REMOVE) $$alias && \
-	   $(LN_S) infer $$alias); done
-	$(QUIET)for i in $(MAN_DIR)/man1/*; do \
-	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(mandir)/man1/$$(basename $$i); \
-	done
-
+	  (cd '$(DESTDIR)$(libdir)'/infer/infer/bin && \
+	   $(REMOVE) "$$alias" && \
+	   $(LN_S) infer "$$alias"); done
+	find '$(MAN_DIR)'/man1 -print0 | xargs -0 \
+	  $(SHELL) -c '$(INSTALL_DATA) -C $$1 "$(DESTDIR)$(mandir)/man1/$$(basename $$1)"'
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook install
+	$(MAKE) -C facebook install
 endif
 
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
