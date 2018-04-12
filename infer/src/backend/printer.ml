@@ -347,7 +347,7 @@ let node_start_session node session =
 let node_finish_session node =
   if not Config.only_cheap_debug then force_delayed_prints () else L.reset_delayed_prints () ;
   if Config.write_html then (
-    F.fprintf !curr_html_formatter "</LISTING>%a" Io_infer.Html.pp_end_color () ;
+    F.fprintf !curr_html_formatter "</LISTING>%a@?" Io_infer.Html.pp_end_color () ;
     let source = (Procdesc.Node.get_loc node).file in
     NodesHtml.finish_node
       (Procdesc.Node.get_proc_name node)
