@@ -166,6 +166,8 @@ val inferbo_alloc_may_be_big : t
 
 val inferbo_alloc_may_be_negative : t
 
+val infinite_execution_time_call : t
+
 val inherently_dangerous_function : t
 
 val interface_not_thread_safe : t

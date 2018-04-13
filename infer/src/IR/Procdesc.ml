@@ -219,7 +219,7 @@ type t =
   ; mutable nodes: Node.t list  (** list of nodes of this procedure *)
   ; mutable nodes_num: int  (** number of nodes *)
   ; mutable start_node: Node.t  (** start node of this procedure *)
-  ; mutable exit_node: Node.t  (** exit node of ths procedure *)
+  ; mutable exit_node: Node.t  (** exit node of this procedure *)
   ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
   [@@deriving compare]
 

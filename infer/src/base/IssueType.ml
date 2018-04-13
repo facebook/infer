@@ -249,6 +249,8 @@ let inferbo_alloc_may_be_big = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_
 
 let inferbo_alloc_may_be_negative = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_NEGATIVE"
 
+let infinite_execution_time_call = from_string ~enabled:false "INFINITE_EXECUTION_TIME_CALL"
+
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
 let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"

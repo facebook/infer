@@ -442,6 +442,8 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
 
   type extras = extras_TransferFunctionsWCET
 
+  (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
+   Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
   let report_cost summary instr (cost: Itv.Bound.t) nid reported_so_far =
     let mk_message () =
       F.asprintf
@@ -481,7 +483,6 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
         (cost, reported_so_far)
 
 
-  (* We don't report when the cost is Top as it corresponds to 'don't know'*)
   (* get a list of nodes and check if we have already reported for at
      least one of them. In that case no need to report again. *)
   let should_report preds reported_so_far =
@@ -538,6 +539,19 @@ end
 
 module AnalyzerWCET = AbstractInterpreter.Make (CFG) (TransferFunctionsWCET)
 
+let check_and_report_infinity cost proc_desc summary =
+  if not (Itv.Bound.is_not_infty cost) then
+    let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+    let message =
+      F.asprintf "The execution time of the function %a cannot be computed" Typ.Procname.pp
+        (Procdesc.get_proc_name proc_desc)
+    in
+    let exn =
+      Exceptions.Checkers (IssueType.infinite_execution_time_call, Localise.verbatim_desc message)
+    in
+    Reporting.log_error ~loc summary exn
+
+
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   Preanal.do_preanalysis proc_desc tenv ;
   let proc_data = ProcData.make_default proc_desc tenv in
@@ -568,6 +582,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   match AnalyzerWCET.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map_WCETFinal with
   | Some (exit_cost, _) ->
+      check_and_report_infinity exit_cost proc_desc summary ;
       Summary.update_summary {post= exit_cost} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (

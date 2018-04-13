@@ -1,3 +1,5 @@
+codetoanalyze/c/performance/cost_test.c, FN_loop2, 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
+codetoanalyze/c/performance/cost_test.c, FN_loop3, 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
 codetoanalyze/c/performance/cost_test.c, loop0_bad, 2, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 1002]
 codetoanalyze/c/performance/cost_test.c, loop0_bad, 3, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 1002]
 codetoanalyze/c/performance/cost_test.c, loop0_bad, 5, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 1004]
