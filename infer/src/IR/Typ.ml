@@ -692,7 +692,11 @@ module Procname = struct
 
     let is_close {method_name} = String.equal method_name "close"
 
-    let is_class_initializer {method_name} = String.equal method_name "<clinit>"
+    let constructor_method_name = "<init>"
+
+    let class_initializer_method_name = "<clinit>"
+
+    let is_class_initializer {method_name} = String.equal method_name class_initializer_method_name
 
     let is_anonymous_inner_class_constructor {class_name} =
       Name.Java.is_anonymous_inner_class_name class_name
@@ -949,7 +953,7 @@ module Procname = struct
   (** [is_constructor pname] returns true if [pname] is a constructor *)
   let is_constructor = function
     | Java js ->
-        String.equal js.method_name "<init>"
+        String.equal js.method_name Java.constructor_method_name
     | ObjC_Cpp {kind= CPPConstructor _} ->
         true
     | ObjC_Cpp {kind; method_name} when ObjC_Cpp.is_objc_kind kind ->

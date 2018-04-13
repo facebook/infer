@@ -165,6 +165,10 @@ module Name : sig
       val java_lang_object : t
 
       val java_lang_string : t
+
+      val package : t -> string option
+
+      val type_name : t -> string
     end
 
     val from_string : string -> t
@@ -290,6 +294,12 @@ module Procname : sig
     type t [@@deriving compare]
 
     type java_type = Name.Java.Split.t
+
+    val constructor_method_name : string
+
+    val class_initializer_method_name : string
+
+    val compare_java_type : java_type -> java_type -> int
 
     val make : Name.t -> java_type option -> string -> java_type list -> kind -> t
     (** Create a Java procedure name from its

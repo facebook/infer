@@ -35,6 +35,7 @@ let () =
         ; BoundedCallTreeTests.tests
         ; DifferentialTests.tests
         ; DifferentialFiltersTests.tests
+        ; JavaProfilerSamplesTest.tests
         ; ProcCfgTests.tests
         ; LivenessTests.tests
         ; SchedulerTests.tests
