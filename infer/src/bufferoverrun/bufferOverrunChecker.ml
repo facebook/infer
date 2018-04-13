@@ -305,6 +305,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     print_debug_info instr mem output_mem ;
     output_mem
+
+
+  let pp_session_name node fmt = F.fprintf fmt "bufferoverrun %a" CFG.pp_id (CFG.id node)
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode

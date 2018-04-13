@@ -174,6 +174,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            at_least_nonbottom
     | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "siof"
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)

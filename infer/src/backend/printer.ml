@@ -328,7 +328,7 @@ let force_delayed_prints () =
 
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-let start_session node (loc: Location.t) proc_name session source =
+let start_session ~pp_name node (loc: Location.t) proc_name session source =
   let node_id = Procdesc.Node.get_id node in
   if NodesHtml.start_node
        (node_id :> int)
@@ -339,18 +339,18 @@ let start_session node (loc: Location.t) proc_name session source =
       Pp.Green
       (Procdesc.Node.pp_instrs (Pp.html Green) None ~sub_instrs:true)
       node Io_infer.Html.pp_end_color () ;
-  F.fprintf !curr_html_formatter "%a%a" Io_infer.Html.pp_hline ()
+  F.fprintf !curr_html_formatter "%a%a %t" Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
-    ((node_id :> int), session, loc.Location.line) ;
+    ((node_id :> int), session, loc.Location.line) pp_name ;
   F.fprintf !curr_html_formatter "<LISTING>%a" Io_infer.Html.pp_start_color Pp.Black
 
 
-let node_start_session node session =
+let node_start_session ~pp_name node session =
   if Config.write_html then
     let loc = Procdesc.Node.get_loc node in
     let source = loc.Location.file in
     let pname = Procdesc.Node.get_proc_name node in
-    start_session node loc pname session source
+    start_session ~pp_name node loc pname session source
 
 
 (** Finish a session, and perform delayed print actions if required *)

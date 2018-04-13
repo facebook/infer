@@ -88,6 +88,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Indirect _, _, _, _) ->
         (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "resource leaks"
 end
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)

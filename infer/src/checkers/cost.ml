@@ -92,6 +92,9 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
     let inferbo_mem = InferboTransferFunctions.exec_instr inferbo_mem pdata node instr in
     let costmap = exec_instr_cost inferbo_mem costmap pdata node instr in
     (inferbo_mem, costmap)
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "cost(basic)"
 end
 
 module AnalyzerNodesBasicCost = AbstractInterpreter.Make (CFG) (TransferFunctionsNodesBasicCost)
@@ -528,6 +531,9 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
       else (cost_node, reported_so_far)
     in
     astate'
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "cost(wcet)"
 end
 
 module AnalyzerWCET = AbstractInterpreter.Make (CFG) (TransferFunctionsWCET)

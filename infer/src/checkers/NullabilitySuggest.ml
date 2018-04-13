@@ -109,6 +109,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         else astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "nullability suggest"
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)

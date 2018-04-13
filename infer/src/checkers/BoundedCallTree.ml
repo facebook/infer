@@ -141,6 +141,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | Sil.Load _ | Store _ | Prune _ | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "crashcontext"
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

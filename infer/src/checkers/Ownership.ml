@@ -340,6 +340,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match ret_opt with Some base -> Domain.remove base astate' | None -> astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "ownership"
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)

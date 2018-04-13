@@ -55,6 +55,8 @@ module PathCountTransferFunctions (CFG : ProcCfg.S) = struct
 
   (* just propagate the current path count *)
   let exec_instr astate _ _ _ = astate
+
+  let pp_session_name _node _fmt = ()
 end
 
 module NormalTestInterpreter = AnalyzerTester.Make (ProcCfg.Normal) (PathCountTransferFunctions)

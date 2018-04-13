@@ -19,6 +19,8 @@ module type S = sig
   type instr
 
   val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> instr -> Domain.astate
+
+  val pp_session_name : CFG.node -> Format.formatter -> unit
 end
 
 module type SIL = sig

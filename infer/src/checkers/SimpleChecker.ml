@@ -75,6 +75,9 @@ module Make (Spec : Spec) : S = struct
         (fun astate acc ->
           Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc )
         astate_set Domain.empty
+
+
+    let pp_session_name _node fmt = F.pp_print_string fmt "simple checker"
   end
 
   module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

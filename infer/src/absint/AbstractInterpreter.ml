@@ -76,7 +76,10 @@ struct
       in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
       let instr_ids = match CFG.instr_ids node with [] -> [(Sil.skip_instr, None)] | l -> l in
-      if debug then NodePrinter.start_session (CFG.underlying_node node) ;
+      if debug then
+        NodePrinter.start_session
+          ~pp_name:(TransferFunctions.pp_session_name node)
+          (CFG.underlying_node node) ;
       let astate_post, inv_map_post = List.fold ~f:compute_post ~init:(pre, inv_map) instr_ids in
       if debug then (
         let instrs = List.map ~f:fst instr_ids in

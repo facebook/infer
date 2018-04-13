@@ -103,8 +103,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
 
       let join = TypeState.join Extension.ext
 
+      let pp_name fmt = F.pp_print_string fmt "eradicate"
+
       let do_node tenv node typestate =
-        NodePrinter.start_session node ;
+        NodePrinter.start_session ~pp_name node ;
         State.set_node node ;
         let typestates_succ, typestates_exn =
           TypeCheck.typecheck_node tenv Extension.ext calls_this checks idenv get_proc_desc

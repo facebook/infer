@@ -40,4 +40,6 @@ module type S = sig
   val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 
   val of_summary_access_tree : QuandarySummary.AccessTree.t -> AccessTree.t
+
+  val name : string
 end

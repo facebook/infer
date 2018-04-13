@@ -36,7 +36,7 @@ val force_delayed_prints : unit -> unit
 val node_finish_session : Procdesc.Node.t -> unit
 (** Finish a session, and perform delayed print actions if required *)
 
-val node_start_session : Procdesc.Node.t -> int -> unit
+val node_start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> int -> unit
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
 
 val write_proc_html : Procdesc.t -> unit

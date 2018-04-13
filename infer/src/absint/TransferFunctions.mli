@@ -26,6 +26,9 @@ module type S = sig
 
   val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> instr -> Domain.astate
   (** {A} instr {A'}. [node] is the node of the current instruction *)
+
+  val pp_session_name : CFG.node -> Format.formatter -> unit
+  (** print session name for HTML debug *)
 end
 
 module type SIL = sig

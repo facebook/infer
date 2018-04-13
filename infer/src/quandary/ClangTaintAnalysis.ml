@@ -102,4 +102,6 @@ include TaintAnalysis.Make (struct
 
 
   let is_taintable_type _ = true
+
+  let name = "clang"
 end)

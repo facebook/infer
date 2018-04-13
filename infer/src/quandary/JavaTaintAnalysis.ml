@@ -90,4 +90,7 @@ include TaintAnalysis.Make (struct
           false )
     | _ ->
         false
+
+
+  let name = "java"
 end)

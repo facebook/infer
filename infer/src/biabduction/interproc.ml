@@ -353,11 +353,13 @@ let reset_prop_metrics () =
 
 exception RE_EXE_ERROR
 
+let pp_name fmt = F.pp_print_string fmt "interproc"
+
 let do_before_node session node =
   State.set_node node ;
   State.set_session session ;
   L.reset_delayed_prints () ;
-  Printer.node_start_session node (session :> int)
+  Printer.node_start_session ~pp_name node (session :> int)
 
 
 let do_after_node node = Printer.node_finish_session node

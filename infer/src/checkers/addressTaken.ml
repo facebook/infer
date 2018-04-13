@@ -50,6 +50,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         List.fold ~f:add_actual_by_ref ~init:astate actuals
     | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
         astate
+
+
+  let pp_session_name _node fmt = Format.pp_print_string fmt "address taken"
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

@@ -724,6 +724,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           analyze_call Domain.empty called_pname
       | _ ->
           astate
+
+
+    let pp_session_name =
+      let name = F.sprintf "quandary(%s)" TaintSpecification.name in
+      fun (_node: CFG.node) fmt -> F.pp_print_string fmt name
   end
 
   module HilConfig : LowerHil.HilConfig = struct

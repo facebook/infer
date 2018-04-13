@@ -76,6 +76,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> exp_add_live call_exp |> add_live_actuals actuals call_exp
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
+
+
+  let pp_session_name node fmt = F.fprintf fmt "liveness %a" CFG.pp_id (CFG.id node)
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
@@ -116,6 +119,9 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
                 acc )
           acc )
       ~init:astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "captured by ref"
 end
 
 module CapturedByRefAnalyzer =

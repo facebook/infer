@@ -290,6 +290,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with uninit_vars}
     | Call _ | Assume _ ->
         astate
+
+
+  let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.pp_id (CFG.id node)
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode

@@ -440,6 +440,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         L.(die InternalError) "Expecting a return identifier"
     | _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "annotation reachability"
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

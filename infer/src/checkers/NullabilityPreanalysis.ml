@@ -58,6 +58,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate )
     | _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "nullability preanalysis"
 end
 
 (* Tracks when block variables of ObjC classes have been assigned to in constructors *)

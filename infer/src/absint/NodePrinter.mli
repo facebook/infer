@@ -11,7 +11,7 @@ open! IStd
 
 (** Simplified html node printer for checkers *)
 
-val start_session : Procdesc.Node.t -> unit
+val start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> unit
 (** To be called before analyzing a node *)
 
 val finish_session : Procdesc.Node.t -> unit

@@ -279,6 +279,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         with Not_found -> astate )
     | _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "litho"
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)

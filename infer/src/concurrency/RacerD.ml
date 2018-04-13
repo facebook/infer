@@ -697,6 +697,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
       | _ ->
           astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "racerd"
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)

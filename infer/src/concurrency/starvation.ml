@@ -82,6 +82,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  Domain.integrate_summary ~caller_state:astate ~callee_summary callee_pname loc ) )
     | _ ->
         astate
+
+
+  let pp_session_name _node fmt = F.pp_print_string fmt "starvation"
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)

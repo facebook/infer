@@ -56,6 +56,8 @@ module MockTaintAnalysis = TaintAnalysis.Make (struct
   let is_taintable_type _ = true
 
   let get_model _ _ _ _ _ = None
+
+  let name = ""
 end)
 
 module TestInterpreter =

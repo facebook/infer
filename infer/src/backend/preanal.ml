@@ -107,6 +107,9 @@ module NullifyTransferFunctions = struct
             "Should not add nullify instructions before running nullify analysis!"
     in
     if is_last_instr_in_node instr node then postprocess astate' node extras else astate'
+
+
+  let pp_session_name _node fmt = Format.pp_print_string fmt "nullify"
 end
 
 module NullifyAnalysis =
