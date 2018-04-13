@@ -82,7 +82,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
 <body>
 |}
     in
-    F.fprintf fmt "%s" s ; (fd, fmt)
+    F.pp_print_string fmt s ; (fd, fmt)
 
 
   (** Get the full html filename from a path *)
@@ -125,48 +125,40 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
 
 
   (** Print a horizontal line *)
-  let pp_hline fmt () = F.fprintf fmt "<hr width=\"100%%\">@\n"
+  let pp_hline fmt () = F.pp_print_string fmt "<hr width=\"100%\">\n"
 
   (** Print start color *)
-  let pp_start_color fmt color = F.fprintf fmt "%s" ("<span class='" ^ Pp.color_string color ^ "'>")
+  let pp_start_color fmt color = F.fprintf fmt "<span class='%s'>" (Pp.color_string color)
 
   (** Print end color *)
-  let pp_end_color fmt () = F.fprintf fmt "%s" "</span>"
+  let pp_end_color fmt () = F.pp_print_string fmt "</span>"
 
   let pp_link ?(name= None) ?(pos= None) ~path fmt text =
-    let pos_str = match pos with None -> "" | Some s -> "#" ^ s in
-    let escaped_path = List.map ~f:Escape.escape_url path in
     let link_str =
+      let escaped_path = List.map ~f:Escape.escape_url path in
       DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Rel escaped_path)
-      ^ ".html" ^ pos_str
     in
-    let name_str = match name with None -> "" | Some n -> "name=\"" ^ n ^ "\"" in
-    let pr_str = "<a " ^ name_str ^ "href=\"" ^ link_str ^ "\">" ^ text ^ "</a>" in
-    F.fprintf fmt " %s" pr_str
+    let pp_name fmt = Option.iter ~f:(F.fprintf fmt "name=\"%s\" ") in
+    let pp_pos fmt = Option.iter ~f:(F.fprintf fmt "#%s") in
+    F.fprintf fmt "<a %ahref=\"%s.html%a\">%s</a>" pp_name name link_str pp_pos pos text
 
 
   (** File name for the node, given the procedure name and node id *)
-  let node_filename pname id = Typ.Procname.to_filename pname ^ "_node" ^ string_of_int id
+  let node_filename pname id = F.sprintf "%s_node%d" (Typ.Procname.to_filename pname) id
 
   (** Print an html link to the given node. *)
   let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
-    let display_name =
-      (if String.equal description "" then "N" else String.sub description ~pos:0 ~len:1) ^ "_"
-      ^ string_of_int id
-    in
     let node_fname = node_filename pname id in
-    let style_class =
-      if not isvisited then "dangling" else if isproof then "visitedproof" else "visited"
-    in
     let node_text =
-      let pp fmt =
-        Format.fprintf fmt
-          "<span class='%s'>%s<span class='expansion'>node%d preds:%a succs:%a exn:%a \
-           %s%s</span></span>" style_class display_name id (Pp.seq Format.pp_print_int) preds
-          (Pp.seq Format.pp_print_int) succs (Pp.seq Format.pp_print_int) exn description
-          (if not isvisited then "\nNOT VISITED" else "")
+      let descr = if String.equal description "" then "N" else String.prefix description 1 in
+      let style_class =
+        if not isvisited then "dangling" else if isproof then "visitedproof" else "visited"
       in
-      F.asprintf "%t" pp
+      F.asprintf
+        "<span class='%s'>%s_%d<span class='expansion'>node%d preds:%a succs:%a exn:%a \
+         %s%s</span></span>" style_class descr id id (Pp.seq F.pp_print_int) preds
+        (Pp.seq F.pp_print_int) succs (Pp.seq F.pp_print_int) exn description
+        (if not isvisited then "\nNOT VISITED" else "")
     in
     pp_link ~path:(path_to_root @ ["nodes"; node_fname]) fmt node_text
 
@@ -193,15 +185,17 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
   let pp_session_link ?(with_name= false) ?proc_name source path_to_root fmt
       (node_id, session, linenum) =
     let node_name = "node" ^ string_of_int node_id in
-    let node_fname =
-      match proc_name with Some pname -> node_filename pname node_id | None -> node_name
-    in
-    let path_to_node = path_to_root @ ["nodes"; node_fname] in
     let pos = "session" ^ string_of_int session in
+    let text = F.sprintf "%s#%s" node_name pos in
+    let path_to_node =
+      let node_fname =
+        match proc_name with Some pname -> node_filename pname node_id | None -> node_name
+      in
+      path_to_root @ ["nodes"; node_fname]
+    in
     pp_link
       ~name:(if with_name then Some pos else None)
-      ~pos:(Some pos) ~path:path_to_node fmt
-      (node_name ^ "#" ^ pos) ;
+      ~pos:(Some pos) ~path:path_to_node fmt text ;
     F.fprintf fmt "(%a)" (pp_line_link source path_to_root) linenum
 end
 
