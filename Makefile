@@ -444,14 +444,14 @@ install: infer $(INFER_MANUALS_GZIPPED)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/'
-	find facebook-clang-plugins/clang/install -type d -print0 | xargs -0 -I \{\} \
-	  $(SHELL) -c "test -d '$(DESTDIR)$(libdir)'/infer/{} || \
-	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/{}"
+	find facebook-clang-plugins/clang/install -type d -print0 | xargs -0 -n 1 \
+	  $(SHELL) -x -c "test -d '$(DESTDIR)$(libdir)'/infer/\$$1 || \
+	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/'
-	find infer/models/cpp/include -type d -print0 | xargs -0 -I \{\} \
-	  $(SHELL) -c "test -d '$(DESTDIR)$(libdir)'/infer/{} || \
-	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/{}"
+	find infer/models/cpp/include -type d -print0 | xargs -0 -n 1 \
+	  $(SHELL) -x -c "test -d '$(DESTDIR)$(libdir)'/infer/\$$1 || \
+	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/etc/' || \
@@ -526,9 +526,20 @@ endif
 	  (cd '$(DESTDIR)$(libdir)'/infer/infer/bin && \
 	   $(REMOVE) "$$alias" && \
 	   $(LN_S) infer "$$alias"); done
-	find '$(MAN_DIR)'/man1 -print0 | xargs -0 \
-	  $(SHELL) -c '$(INSTALL_DATA) -C $$1 "$(DESTDIR)$(mandir)/man1/$$(basename $$1)"'
+	$(foreach man,$(INFER_MANUAL_GZIPPED), \
+	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))')
 ifeq ($(IS_FACEBOOK_TREE),yes)
+ifdef DESTDIR
+ifeq (,$(findstring :/,:$(DESTDIR)))
+#	DESTDIR is set and relative
+	$(MAKE) -C facebook install 'DESTDIR=../$(DESTDIR)'
+endif
+else
+#	DESTDIR is set and absolute
+	$(MAKE) -C facebook install
+endif
+else
+#	DESTDIR not set
 	$(MAKE) -C facebook install
 endif
 
