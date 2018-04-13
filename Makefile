@@ -11,6 +11,7 @@ default: infer
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
+ORIG_SHELL_BUILD_MODE = $(BUILD_MODE)
 # override this for faster builds (but slower infer)
 BUILD_MODE ?= opt
 
@@ -635,17 +636,17 @@ devsetup: Makefile.autoconf
 # 	expand all occurrences of "~" in PATH and MANPATH
 	$(QUIET)infer_repo_is_in_path=$$(echo $${PATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/bin; echo $$?); \
 	infer_repo_is_in_manpath=$$(echo $${MANPATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/man; echo $$?); \
-	if [ "$$infer_repo_is_in_path" != "0" ] || [ "$$infer_repo_is_in_manpath" != "0" ]; then \
-	  shell_config_file="<could not auto-detect, please fill in yourself>"; \
-	  if [ $$(basename "$(ORIG_SHELL)") = "bash" ]; then \
-	    if [ "$(PLATFORM)" = "Linux" ]; then \
-	      shell_config_file="$$HOME"/.bashrc; \
-	    else \
-	      shell_config_file="$$HOME"/.bash_profile; \
-	    fi; \
-	  elif [ $$(basename "$(ORIG_SHELL)") = "zsh" ]; then \
-	    shell_config_file="$$HOME"/.zshrc; \
+	shell_config_file="<could not auto-detect, please fill in yourself>"; \
+	if [ $$(basename "$(ORIG_SHELL)") = "bash" ]; then \
+	  if [ "$(PLATFORM)" = "Linux" ]; then \
+	    shell_config_file="$$HOME"/.bashrc; \
+	  else \
+	    shell_config_file="$$HOME"/.bash_profile; \
 	  fi; \
+	elif [ $$(basename "$(ORIG_SHELL)") = "zsh" ]; then \
+	  shell_config_file="$$HOME"/.zshrc; \
+	fi; \
+	if [ "$$infer_repo_is_in_path" != "0" ] || [ "$$infer_repo_is_in_manpath" != "0" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: `infer` is not in your PATH or MANPATH. If you are hacking on infer, you may$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: want to make infer executables and manuals available in your terminal. Type$(TERM_RESET)' >&2; \
@@ -665,16 +666,17 @@ devsetup: Makefile.autoconf
 	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"$(TERM_RESET)\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
 	fi; \
-	test "$$BUILD_MODE" = "default" || \
+	if [ -z "$(ORIG_SHELL_BUILD_MODE)" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Set `BUILD_MODE=default` in your shell to disable flambda by default.$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: Compiling with flambda is ~5 times slower than without, so unless you are$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: testing infer on a very large project it will not be worth it. Use the$(TERM_RESET)' >&2; \
-	  echo '$(TERM_INFO)*** NOTE: commands below to set the default build mode. You can then use `make BUILD_MODE=opt`$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: commands below to set the default build mode. You can then use `make opt`$(TERM_RESET)' >&2; \
 	  echo '$(TERM_INFO)*** NOTE: when you really do want to enable flambda.$(TERM_RESET)' >&2; \
 	  echo >&2; \
 	  printf "$(TERM_INFO)  export BUILD_MODE=default$(TERM_RESET)\n" >&2; \
-	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=default' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2
+	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=default' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2; \
+	fi
 	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
