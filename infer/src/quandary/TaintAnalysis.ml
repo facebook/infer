@@ -464,7 +464,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 List.map ~f:(fun index_ae -> HilExp.AccessExpression index_ae) indexes
               in
               let sinks =
-                TraceDomain.Sink.get dummy_call_site dummy_actuals proc_data.ProcData.tenv
+                TraceDomain.Sink.get dummy_call_site dummy_actuals CallFlags.default
+                  proc_data.ProcData.tenv
               in
               let astate_acc_result =
                 match sinks with
@@ -533,7 +534,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           |> add_sinks_for_access_path lhs_access_expr loc |> exec_write lhs_access_expr rhs_exp
       | Assume (assume_exp, _, _, loc) ->
           add_sources_sinks_for_exp assume_exp loc astate
-      | Call (ret_opt, Direct called_pname, actuals, _, callee_loc) ->
+      | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
           let astate =
             List.fold
               ~f:(fun acc exp -> add_sources_sinks_for_exp exp callee_loc acc)
@@ -666,7 +667,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let astate_with_sink =
               if List.is_empty actuals then astate
               else
-                match TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv with
+                match
+                  TraceDomain.Sink.get call_site actuals call_flags proc_data.ProcData.tenv
+                with
                 | Some sink ->
                     add_sink sink actuals astate proc_data call_site
                 | None ->

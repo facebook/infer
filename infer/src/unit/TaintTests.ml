@@ -32,7 +32,7 @@ module MockTrace = Trace.Make (struct
   module Sink = Sink.Make (struct
     include MockTraceElem
 
-    let get pname _ _ =
+    let get pname _ _ _ =
       if String.is_prefix ~prefix:"SINK" (Typ.Procname.to_string pname) then
         Some (CallSite.make pname Location.dummy, IntSet.singleton 0)
       else None

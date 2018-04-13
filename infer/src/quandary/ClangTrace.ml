@@ -271,7 +271,7 @@ module SinkKind = struct
       external_sinks
 
 
-  let get pname actuals _ =
+  let get pname actuals _ _ =
     let is_buffer_like pname =
       (* assume it's a buffer class if it's "vector-y", "array-y", or "string-y". don't want to
          report on accesses to maps etc., but also want to recognize custom vectors like fbvector

@@ -14,13 +14,13 @@ module L = Logging
 module type Kind = sig
   include TraceElem.Kind
 
-  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * IntSet.t) option
+  val get : Typ.Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) option
 end
 
 module type S = sig
   include TraceElem.S
 
-  val get : CallSite.t -> HilExp.t list -> Tenv.t -> t option
+  val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t option
 
   val indexes : t -> IntSet.t
 end
@@ -38,8 +38,8 @@ module Make (Kind : Kind) = struct
 
   let make ?(indexes= IntSet.empty) kind site = {kind; site; indexes}
 
-  let get site actuals tenv =
-    match Kind.get (CallSite.pname site) actuals tenv with
+  let get site actuals call_flags tenv =
+    match Kind.get (CallSite.pname site) actuals call_flags tenv with
     | Some (kind, indexes) ->
         Some {kind; site; indexes}
     | None ->

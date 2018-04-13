@@ -309,7 +309,7 @@ module SinkKind = struct
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
 
-  let get pname actuals tenv =
+  let get pname actuals _ tenv =
     match pname with
     | Typ.Procname.Java java_pname
       -> (
