@@ -34,7 +34,7 @@ Follow the [install from source](docs/getting-started.html#install-from-source) 
 ```sh
 wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/Dockerfile
 wget -O run.sh https://raw.githubusercontent.com/facebook/infer/master/docker/run.sh
-sh run.sh
+sudo sh run.sh
 ```
 
 ## Try Infer in your browser
