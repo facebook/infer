@@ -147,7 +147,8 @@ module BoundMap = struct
         env
 
 
-  let compute_upperbound_map pdesc invariant_map_NodesBasicCost =
+  let compute_upperbound_map pdesc invariant_map_NodesBasicCost data_invariant_map
+      control_invariant_map =
     let fparam = Procdesc.get_formals pdesc in
     let pname = Procdesc.get_proc_name pdesc in
     let fparam' = List.map ~f:(fun (m, _) -> Exp.Lvar (Pvar.mk m pname)) fparam in
@@ -163,6 +164,13 @@ module BoundMap = struct
           match entry_state_opt with
           | Some (entry_mem, _) ->
               let env = convert entry_mem in
+              (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
+              let all_deps =
+                Control.compute_all_deps data_invariant_map control_invariant_map node
+              in
+              L.(debug Analysis Medium)
+                "@\n>>> All dependencies for node = %a : %a  @\n\n" Procdesc.Node.pp node
+                Control.VarSet.pp all_deps ;
               (* bound = env(v1) *... * env(vn) *)
               let bound =
                 CostDomain.EnvDomainBO.fold
@@ -175,8 +183,11 @@ module BoundMap = struct
                       | Exp.Lvar _
                         when List.mem fparam' exp ~equal:Exp.equal ->
                           Itv.one
-                      | Exp.Lvar _ ->
+                      | Exp.Lvar pvar when Control.VarSet.mem (Var.of_pvar pvar) all_deps ->
                           itv
+                      | Exp.Lvar _ ->
+                          (* For a var that doesn't affect control flow directly or indirectly, we give [1,1] so it doesn't count *)
+                          Itv.one
                       | _ ->
                           assert false
                     in
@@ -556,12 +567,24 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   Preanal.do_preanalysis proc_desc tenv ;
   let proc_data = ProcData.make_default proc_desc tenv in
   let cfg = CFG.from_pdesc proc_desc in
+  (* computes the data dependencies: node -> (var -> var set) *)
+  let data_dep_invariant_map =
+    Control.DataDepAnalyzer.exec_cfg cfg proc_data ~initial:Control.DataDepMap.empty ~debug:true
+  in
+  (* computes the control dependencies: node -> var set *)
+  let control_dep_invariant_map =
+    Control.ControlDepAnalyzer.exec_cfg cfg proc_data ~initial:Control.ControlDepSet.empty
+      ~debug:true
+  in
   let invariant_map_NodesBasicCost =
     (*compute_WCET cfg invariant_map min_trees in *)
     AnalyzerNodesBasicCost.exec_cfg cfg proc_data ~initial:NodesBasicCostDomain.init ~debug:true
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
-  let bound_map = BoundMap.compute_upperbound_map cfg invariant_map_NodesBasicCost in
+  let bound_map =
+    BoundMap.compute_upperbound_map cfg invariant_map_NodesBasicCost data_dep_invariant_map
+      control_dep_invariant_map
+  in
   let constraints = StructuralConstraints.compute_structural_constraints cfg in
   let min_trees = MinTree.compute_trees_from_contraints bound_map cfg constraints in
   let trees_valuation =
