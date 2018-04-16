@@ -885,7 +885,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
       List.find_map
         ~f:(fun hpred ->
           match hpred with
-          | Sil.Hpointsto (Exp.Lvar pv, _, exp) when Pvar.equal pv abduced_ret_pv ->
+          | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (exp, _), _) when Pvar.equal pv abduced_ret_pv ->
               Some exp
           | _ ->
               None )

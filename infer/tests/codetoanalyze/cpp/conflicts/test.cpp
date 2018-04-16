@@ -30,5 +30,5 @@ int test3_bad() {
   for (int i = 0; i < 10; i++) {
     p = nullableMethod();
   }
-  return p->get(); // not reported by the biabduction analysis
+  return p->get(); // reported by the biabduction analysis
 }
