@@ -279,6 +279,17 @@ ifeq ($(IS_RELEASE_TREE),no)
 	  CLANG_INCLUDES=$(CLANG_INCLUDES))
 endif
 
+.PHONY: clang_plugin_test
+clang_plugin_test: clang_setup
+		$(QUIET)$(call silent_on_success,Running clang plugin tests,\
+		$(MAKE) -C $(FCP_DIR)/libtooling test \
+		  CC=$(CC) CXX=$(CXX) \
+		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+		  CLANG_PREFIX=$(CLANG_PREFIX) \
+		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
