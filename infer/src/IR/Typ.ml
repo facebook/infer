@@ -1156,7 +1156,7 @@ module Procname = struct
 
 
     let serialize pname =
-      let default () = Sqlite3.Data.TEXT (to_filename pname) in
+      let default () = Sqlite3.Data.BLOB (Marshal.to_string pname []) in
       Base.Hashtbl.find_or_add pname_to_key pname ~default
 
 

@@ -19,6 +19,7 @@ let database_fullpath = Config.results_dir ^/ database_filename
 let procedures_schema =
   {|CREATE TABLE IF NOT EXISTS procedures
   ( proc_name TEXT PRIMARY KEY
+  , proc_name_hum TEXT
   , attr_kind INTEGER NOT NULL
   , source_file TEXT NOT NULL
   , proc_attributes BLOB NOT NULL )|}

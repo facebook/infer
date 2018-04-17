@@ -55,7 +55,7 @@ let replace_statement =
   ResultsDatabase.register_statement
     {|
 INSERT OR REPLACE INTO procedures
-SELECT :pname, :akind, :sfile, :pattr
+SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr
 FROM (
   SELECT NULL
   FROM (
@@ -67,15 +67,18 @@ FROM (
         OR (attr_kind = :akind AND source_file < :sfile) )|}
 
 
-let replace pname_blob akind loc_file attr_blob =
+let replace pname pname_blob akind loc_file attr_blob =
   ResultsDatabase.with_registered_statement replace_statement ~f:(fun db replace_stmt ->
       Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
       |> SqliteUtils.check_sqlite_error db ~log:"replace bind pname" ;
-      Sqlite3.bind replace_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
+      Sqlite3.bind replace_stmt 2
+        (* :proc_name_hum *) (Sqlite3.Data.TEXT (Typ.Procname.to_string pname))
+      |> SqliteUtils.check_sqlite_error db ~log:"replace bind proc_name_hum" ;
+      Sqlite3.bind replace_stmt 3 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
       |> SqliteUtils.check_sqlite_error db ~log:"replace bind attribute kind" ;
-      Sqlite3.bind replace_stmt 3 (* :sfile *) loc_file
+      Sqlite3.bind replace_stmt 4 (* :sfile *) loc_file
       |> SqliteUtils.check_sqlite_error db ~log:"replace bind source file" ;
-      Sqlite3.bind replace_stmt 4 (* :pattr *) attr_blob
+      Sqlite3.bind replace_stmt 5 (* :pattr *) attr_blob
       |> SqliteUtils.check_sqlite_error db ~log:"replace bind proc attributes" ;
       SqliteUtils.sqlite_unit_step db ~finalize:false ~log:"Attributes.replace" replace_stmt )
 
@@ -126,7 +129,7 @@ let store (attr: ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
   let key = Typ.Procname.SQLite.serialize attr.proc_name in
   if should_try_to_update key pkind then
-    replace key pkind
+    replace attr.proc_name key pkind
       (SourceFile.SQLite.serialize attr.loc.Location.file)
       (ProcAttributes.SQLite.serialize attr)
 
