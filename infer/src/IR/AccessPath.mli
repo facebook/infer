@@ -22,9 +22,9 @@ type access =
       representedas (x, [f; g]) *)
 and t = base * access list [@@deriving compare]
 
-val truncate : t -> t
-(** remove the last access of the access path if the access list is non-empty. returns the
-      original access path if the access list is empty *)
+val truncate : t -> t * access option
+(** remove and return the last access of the access path if the access list is non-empty. returns 
+    the original access path * None if the access list is empty *)
 
 val get_last_access : t -> access option
 (** get the last access in the list. returns None if the list is empty *)

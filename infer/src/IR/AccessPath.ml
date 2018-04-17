@@ -54,11 +54,12 @@ module Raw = struct
 
   let equal = [%compare.equal : t]
 
-  let truncate = function
-    | base, [] | base, [_] ->
-        (base, [])
-    | base, accesses ->
-        (base, List.rev (List.tl_exn (List.rev accesses)))
+  let truncate ((base, accesses) as t) =
+    match List.rev accesses with
+    | [] ->
+        (t, None)
+    | last_access :: accesses ->
+        ((base, List.rev accesses), Some last_access)
 
 
   let lookup_field_type_annot tenv base_typ field_name =

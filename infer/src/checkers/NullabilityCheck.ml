@@ -214,9 +214,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     (remove_call_sites ap aps, updated_pnames)
 
 
-  let rec longest_nullable_prefix ap ((nulable_aps, _) as astate) =
-    try Some (ap, NullableAP.find ap nulable_aps) with Not_found ->
-      match ap with _, [] -> None | p -> longest_nullable_prefix (AccessPath.truncate p) astate
+  let rec longest_nullable_prefix ap ((nullable_aps, _) as astate) =
+    try Some (ap, NullableAP.find ap nullable_aps) with Not_found ->
+      match ap with
+      | _, [] ->
+          None
+      | p ->
+          longest_nullable_prefix (fst (AccessPath.truncate p)) astate
 
 
   let check_ap proc_data loc ap astate =

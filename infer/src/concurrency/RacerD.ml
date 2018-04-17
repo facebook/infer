@@ -89,11 +89,40 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (ownership', attribute_map')
 
 
-  let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
+  (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
+       (b) volatile *)
+  let is_safe_access access prefix_path tenv =
+    match (access, AccessPath.get_typ prefix_path tenv) with
+    | ( AccessPath.FieldAccess fieldname
+      , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
+      match Tenv.lookup tenv typename with
+      | Some struct_typ ->
+          Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
+          || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
+          || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
+      | None ->
+          false )
+    | _ ->
+        false
+
+
+  let add_unannotated_call_access pname actuals (call_flags: CallFlags.t) loc tenv ~locks ~threads
       attribute_map (proc_data: extras ProcData.t) =
     let open RacerDConfig in
     let thread_safe_or_thread_confined annot =
       Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
+    in
+    let is_receiver_safe = function
+      | (HilExp.AccessExpression receiver_access_exp) :: _
+        -> (
+          let receiver_access_path = AccessExpression.to_access_path receiver_access_exp in
+          match AccessPath.truncate receiver_access_path with
+          | receiver_prefix, Some receiver_field ->
+              is_safe_access receiver_field receiver_prefix tenv
+          | _ ->
+              false )
+      | _ ->
+          false
     in
     if call_flags.cf_interface && Typ.Procname.is_java pname
        && not (Models.is_java_library pname || Models.is_builder_function pname)
@@ -101,6 +130,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           thread-safe (would be unreasonable to ask everyone to annotate them) *)
        && not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname)
        && not (Models.has_return_annot thread_safe_or_thread_confined pname)
+       && not (is_receiver_safe actuals)
     then
       let open Domain in
       let pre = AccessData.make locks threads False proc_data.pdesc in
@@ -117,22 +147,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           false
     in
-    (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
-       (b) volatile *)
-    let is_safe_access access prefix_path tenv =
-      match (access, AccessPath.get_typ prefix_path tenv) with
-      | ( AccessPath.FieldAccess fieldname
-        , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
-        match Tenv.lookup tenv typename with
-        | Some struct_typ ->
-            Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
-            || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
-            || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
-        | None ->
-            false )
-      | _ ->
-          false
-    in
+    (* TODO: simplify this with AccessPath.truncate *)
     let rec add_field_accesses prefix_path access_acc = function
       | [] ->
           access_acc
@@ -411,7 +426,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
       -> (
         let accesses_with_unannotated_calls =
-          add_unannotated_call_access callee_pname call_flags loc tenv ~locks:astate.locks
+          add_unannotated_call_access callee_pname actuals call_flags loc tenv ~locks:astate.locks
             ~threads:astate.threads astate.accesses proc_data
         in
         let accesses =
@@ -980,7 +995,7 @@ let get_contaminated_race_message access wobbly_paths =
     (* Access paths rooted in static variables are always race-prone,
          hence do not complain about contamination. *)
       when not (access_path |> fst |> fst |> ignore_var) ->
-        let proper_prefix_path = AccessPath.truncate access_path in
+        let proper_prefix_path, _ = AccessPath.truncate access_path in
         let base, accesses = proper_prefix_path in
         let rec prefix_in_wobbly_paths prefix = function
           | [] ->

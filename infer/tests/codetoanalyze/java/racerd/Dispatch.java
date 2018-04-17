@@ -89,3 +89,17 @@ class Some {
     d.callUnderLock(i);
   }
 }
+
+@ThreadSafe
+class ThreadConfinedField {
+    @ThreadConfined(ThreadConfined.ANY) UnannotatedInterface mThreadConfined;
+    UnannotatedInterface mNormal;
+
+    void interfaceCallOnThreadConfinedFieldOk() {
+        mThreadConfined.foo();
+    }
+
+    void interfaceCallOnNormalFieldBad() {
+        mNormal.foo();
+    }
+}
