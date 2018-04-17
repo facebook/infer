@@ -56,6 +56,9 @@ val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
 val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 
+val with_intermediate_temp_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
+(** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid write-write races *)
+
 val write_json_to_file : string -> Yojson.Basic.json -> unit
 
 val consume_in : In_channel.t -> unit
@@ -100,9 +103,6 @@ val rmtree : string -> unit
 val try_finally_swallow_timeout : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 (** Calls [f] then [finally] even if [f] raised an exception. The original exception is reraised afterwards.
     Where possible use [SymOp.try_finally] to avoid swallowing timeouts. *)
-
-val yield : unit -> unit
-(** try to give the control back to the OS without sleeping too much *)
 
 val better_hash : 'a -> Caml.Digest.t
 (** Hashtbl.hash only hashes the first 10 meaningful values, [better_hash] uses everything. *)

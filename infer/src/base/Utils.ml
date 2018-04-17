@@ -189,6 +189,18 @@ let with_file_out file ~f =
   try_finally_swallow_timeout ~f ~finally
 
 
+let with_intermediate_temp_file_out file ~f =
+  let temp_filename, temp_oc =
+    Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" ""
+  in
+  let f () = f temp_oc in
+  let finally () =
+    Out_channel.close temp_oc ;
+    Unix.rename ~src:temp_filename ~dst:file
+  in
+  try_finally_swallow_timeout ~f ~finally
+
+
 let write_json_to_file destfile json =
   with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
 
@@ -327,10 +339,6 @@ let rec rmtree name =
       Unix.unlink name
   | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
       ()
-
-
-let yield () =
-  Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
 
 
 let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.string
