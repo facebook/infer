@@ -55,6 +55,14 @@ let compare_modulo_this x y =
 
 let equal = [%compare.equal : t]
 
+let get_declaring_function pv =
+  match pv.pv_kind with
+  | Local_var n | Callee_var n | Abduced_retvar (n, _) | Abduced_ref_param (n, _, _) ->
+      Some n
+  | Global_var _ | Seed_var ->
+      None
+
+
 let pp_translation_unit fmt = function None -> () | Some fname -> SourceFile.pp fmt fname
 
 let pp_ f pv =

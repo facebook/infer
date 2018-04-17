@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2018 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+import java.lang.Object;
+
+class InnerClass {
+  synchronized void outerInnerOk(InnerClassA a) {
+    a.foo();
+  }
+
+  synchronized void bar() {}
+
+  synchronized void outerInnerBad(InnerClassA a) {
+    a.baz();
+  }
+
+  class InnerClassA {
+    void foo() {
+      synchronized(InnerClass.this) {}
+    }
+
+    void outerInnerOk() {
+      synchronized(InnerClass.this) {
+        InnerClass.this.bar();
+      }
+    }
+
+    synchronized void baz() {}
+
+    synchronized void innerOuterBad() {
+      InnerClass.this.bar();
+    }
+
+    // ctrs generate different access paths so test these too
+    // following should not be flagged
+    InnerClassA() {
+      synchronized(InnerClass.this) {
+        InnerClass.this.bar();
+      }
+    }
+
+    // following should be flagged with outer_inner_bad()
+    InnerClassA(Object o) {
+      synchronized(this) {
+        InnerClass.this.bar();
+      }
+    }
+  }
+}

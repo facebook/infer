@@ -55,7 +55,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match AccessExpression.to_access_path access_exp with
         | (((Var.ProgramVar pvar, _) as base), _) as path
           when is_formal base || Pvar.is_global pvar ->
-            Some path
+            Some (AccessPath.inner_class_normalize path)
         | _ ->
             (* ignore paths on local or logical variables *)
             None )

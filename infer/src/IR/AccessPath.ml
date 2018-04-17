@@ -261,3 +261,49 @@ module BaseMap = PrettyPrintable.MakePPMap (struct
 
   let pp = pp_base
 end)
+
+(* transform an access path that starts on "this" of an inner class but which breaks out to
+   access outer class fields to the outermost one *)
+let inner_class_normalize p =
+  let open Typ in
+  let is_synthetic_this pvar = Pvar.get_simplified_name pvar |> String.is_prefix ~prefix:"this$" in
+  let mk_pvar_as name pvar = Pvar.get_declaring_function pvar |> Option.map ~f:(Pvar.mk name) in
+  let aux = function
+    (* (this:InnerClass* ).(this$n:OuterClassAccessor).f. ... -> (this:OuterClass* ).f . ... *)
+    | Some
+        ( ( (Var.ProgramVar pvar as root)
+          , ({desc= Tptr (({desc= Tstruct name} as cls), pkind)} as ptr) )
+        , (FieldAccess first) :: accesses )
+      when Pvar.is_this pvar && Fieldname.Java.is_outer_instance first ->
+        Name.Java.get_outer_class name
+        |> Option.map ~f:(fun outer_name ->
+               let outer_class = mk ~default:cls (Tstruct outer_name) in
+               let outer_ptr = mk ~default:ptr (Tptr (outer_class, pkind)) in
+               ((root, outer_ptr), accesses) )
+    (* this$n.(this$m:OuterClassAccessor).f ... -> (this$m:OuterClass* ).f . ... *)
+    (* happens in ctrs only *)
+    | Some
+        ( (Var.ProgramVar pvar, ({desc= Tptr (({desc= Tstruct name} as cls), pkind)} as ptr))
+        , (FieldAccess first) :: accesses )
+      when is_synthetic_this pvar && Fieldname.Java.is_outer_instance first ->
+        Name.Java.get_outer_class name
+        |> Option.bind ~f:(fun outer_name ->
+               let outer_class = mk ~default:cls (Tstruct outer_name) in
+               let outer_ptr = mk ~default:ptr (Tptr (outer_class, pkind)) in
+               let varname = Fieldname.to_flat_string first |> Mangled.from_string in
+               mk_pvar_as varname pvar
+               |> Option.map ~f:(fun new_pvar ->
+                      let base = base_of_pvar new_pvar outer_ptr in
+                      (base, accesses) ) )
+    (* this$n.f ... -> this.f . ... *)
+    (* happens in ctrs only *)
+    | Some ((Var.ProgramVar pvar, typ), all_accesses)
+      when is_synthetic_this pvar ->
+        let varname = Mangled.from_string "this" in
+        mk_pvar_as varname pvar
+        |> Option.map ~f:(fun new_pvar -> (base_of_pvar new_pvar typ, all_accesses))
+    | _ ->
+        None
+  in
+  let rec loop path_opt = match aux path_opt with None -> path_opt | res -> loop res in
+  loop (Some p) |> Option.value ~default:p

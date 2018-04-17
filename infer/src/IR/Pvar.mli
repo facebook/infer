@@ -29,6 +29,9 @@ val compare_modulo_this : t -> t -> int
 val equal : t -> t -> bool
 (** Equality for pvar's *)
 
+val get_declaring_function : t -> Typ.Procname.t option
+(** if not a global, return function declaring var *)
+
 val d : t -> unit
 (** Dump a program variable. *)
 

@@ -61,6 +61,17 @@ val append : t -> access list -> t
 val is_prefix : t -> t -> bool
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 
+val inner_class_normalize : t -> t
+(** transform an access path that starts on "this" of an inner class but which breaks out to
+   access outer class fields to the outermost one.
+   Cases handled (recursively):
+- (this:InnerClass* ).(this$n:OuterClassAccessor).f. ... -> (this:OuterClass* ).f . ...
+- this$n.(this$m:OuterClassAccessor).f ... -> (this$m:OuterClass* ).f . ...
+  (happens in ctrs only)
+- this$n.f ... -> this.f . ...
+  (happens in ctrs only)
+*)
+
 val equal : t -> t -> bool
 
 val equal_base : base -> base -> bool
