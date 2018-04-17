@@ -20,6 +20,10 @@ let is_java_static pname =
       false
 
 
+let is_on_main_thread pn =
+  RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
+
+
 module Summary = Summary.Make (struct
   type payload = StarvationDomain.summary
 
@@ -77,9 +81,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | LockedIfTrue ->
           astate
       | NoEffect ->
-          Summary.read_summary pdesc callee_pname
-          |> Option.value_map ~default:astate ~f:(fun callee_summary ->
-                 Domain.integrate_summary ~caller_state:astate ~callee_summary callee_pname loc ) )
+          if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
+          else
+            Summary.read_summary pdesc callee_pname
+            |> Option.value_map ~default:astate ~f:(fun callee_summary ->
+                   Domain.integrate_summary ~caller_state:astate ~callee_summary callee_pname loc
+               ) )
     | _ ->
         astate
 
@@ -140,7 +147,7 @@ let get_summary caller_pdesc callee_pdesc =
   |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
 
 
-let report_deadlocks get_proc_desc tenv pdesc summary =
+let report_deadlocks get_proc_desc tenv pdesc (summary, _) =
   let open StarvationDomain in
   let process_callee_elem caller_pdesc caller_elem callee_pdesc elem =
     if LockOrder.may_deadlock caller_elem elem && should_report_if_same_class caller_elem then (
@@ -188,7 +195,7 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
                     let proc_descs = List.rev_filter_map methods ~f:get_proc_desc in
                     let summaries = List.rev_filter_map proc_descs ~f:(get_summary pdesc) in
                     (* for each summary related to the endpoint, analyse and report on its pairs *)
-                    List.iter summaries ~f:(fun (callee_pdesc, summary) ->
+                    List.iter summaries ~f:(fun (callee_pdesc, (summary, _)) ->
                         LockOrderDomain.iter (process_callee_elem pdesc elem callee_pdesc) summary
                     ) ) )
   in

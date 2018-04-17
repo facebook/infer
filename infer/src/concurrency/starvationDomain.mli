@@ -60,7 +60,9 @@ val acquire : LockIdentity.t -> astate -> Location.t -> astate
 
 val release : LockIdentity.t -> astate -> astate
 
-type summary = LockOrderDomain.astate
+val set_on_main_thread : astate -> astate
+
+type summary = LockOrderDomain.astate * bool
 
 val pp_summary : F.formatter -> summary -> unit
 

@@ -207,11 +207,14 @@ module LockState = struct
     fold ff map init
 end
 
-include AbstractDomain.Pair (LockState) (LockOrderDomain)
+module MainThreadDomain = AbstractDomain.BooleanOr
+include AbstractDomain.Pair (AbstractDomain.Pair (LockState) (LockOrderDomain)) (MainThreadDomain)
 
-let empty = (LockState.empty, LockOrderDomain.empty)
+let empty = ((LockState.empty, LockOrderDomain.empty), false)
 
-let is_empty (ls, lo) = LockState.is_empty ls && LockOrderDomain.is_empty lo
+let is_empty ((ls, lo), main) =
+  LockState.is_empty ls && LockOrderDomain.is_empty lo && MainThreadDomain.is_empty main
+
 
 (* for every lock b held locally, add a pair (b, lock_event), plus (None, lock_event) *)
 let add_order_pairs ls lock_event acc =
@@ -233,16 +236,17 @@ let add_order_pairs ls lock_event acc =
     LockState.fold_over_events add_first_and_eventually ls acc |> add_eventually
 
 
-let acquire lockid (ls, lo) loc =
+let acquire lockid ((ls, lo), main) loc =
   let newlock_event = LockEvent.make_acquire lockid loc in
   let lo' = add_order_pairs ls newlock_event lo in
   let ls' = LockState.acquire lockid newlock_event ls in
-  (ls', lo')
+  ((ls', lo'), main)
 
 
-let release lockid (ls, lo) = (LockState.release lockid ls, lo)
+let release lockid ((ls, lo), main) = ((LockState.release lockid ls, lo), main)
 
-let integrate_summary ~caller_state:(ls, lo) ~callee_summary callee_pname loc =
+let integrate_summary ~caller_state:((ls, lo), main) ~callee_summary callee_pname loc =
+  let callee_lo, callee_main = callee_summary in
   (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
      l is held locally *)
   let do_elem elem acc =
@@ -251,13 +255,17 @@ let integrate_summary ~caller_state:(ls, lo) ~callee_summary callee_pname loc =
   in
   let callsite = CallSite.make callee_pname loc in
   (* add callsite to the "eventually" trace *)
-  let elems = LockOrderDomain.with_callsite callsite callee_summary in
+  let elems = LockOrderDomain.with_callsite callsite callee_lo in
   let lo' = LockOrderDomain.fold do_elem elems lo in
-  (ls, lo')
+  let main' = MainThreadDomain.join main callee_main in
+  ((ls, lo'), main')
 
 
-let to_summary astate = snd astate
+let set_on_main_thread (sum, _) = (sum, true)
 
-type summary = LockOrderDomain.astate
+let to_summary ((_, lo), main) = (lo, main)
 
-let pp_summary = LockOrderDomain.pp
+type summary = LockOrderDomain.astate * MainThreadDomain.astate
+
+let pp_summary fmt (lo, main) =
+  F.fprintf fmt "LockOrder: %a, MainThread: %a" LockOrderDomain.pp lo MainThreadDomain.pp main
