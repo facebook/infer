@@ -1160,6 +1160,11 @@ module Procname = struct
       Base.Hashtbl.find_or_add pname_to_key pname ~default
 
 
+    let deserialize : Sqlite3.Data.t -> t = function[@warning "-8"]
+      | Sqlite3.Data.BLOB b ->
+          Marshal.from_string b 0
+
+
     let clear_cache () = Base.Hashtbl.clear pname_to_key
   end
 

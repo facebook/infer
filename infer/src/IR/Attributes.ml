@@ -6,15 +6,27 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open! IStd
+module F = Format
 module L = Logging
 
 type attributes_kind = ProcUndefined | ProcObjCAccessor | ProcDefined [@@deriving compare]
 
-let int64_of_attributes_kind =
-  (* only allocate this once *)
-  let int64_two = Int64.of_int 2 in
-  function ProcUndefined -> Int64.zero | ProcObjCAccessor -> Int64.one | ProcDefined -> int64_two
+let equal_attributes_kind = [%compare.equal : attributes_kind]
+
+let attributes_kind_to_int64 =
+  [(ProcUndefined, Int64.zero); (ProcObjCAccessor, Int64.one); (ProcDefined, Int64.of_int 2)]
+
+
+let int64_of_attributes_kind a =
+  List.Assoc.find_exn ~equal:equal_attributes_kind attributes_kind_to_int64 a
+
+
+let deserialize_attributes_kind =
+  let int64_to_attributes_kind = List.Assoc.inverse attributes_kind_to_int64 in
+  function[@warning "-8"]
+    | Sqlite3.Data.INT n -> List.Assoc.find_exn ~equal:Int64.equal int64_to_attributes_kind n
 
 
 let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
@@ -134,3 +146,12 @@ let find_file_capturing_procedure pname =
             `Source
       in
       (source_file, origin) )
+
+
+let pp_attributes_kind f = function
+  | ProcUndefined ->
+      F.pp_print_string f "<undefined>"
+  | ProcObjCAccessor ->
+      F.pp_print_string f "<ObjC accessor>"
+  | ProcDefined ->
+      F.pp_print_string f "<defined>"

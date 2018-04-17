@@ -464,6 +464,8 @@ module Procname : sig
   module SQLite : sig
     val serialize : t -> Sqlite3.Data.t
 
+    val deserialize : Sqlite3.Data.t -> t
+
     val clear_cache : unit -> unit
   end
 

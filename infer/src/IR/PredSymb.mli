@@ -18,6 +18,8 @@ module F = Format
 
 type func_attribute = FA_sentinel of int * int [@@deriving compare]
 
+val pp_func_attribute : F.formatter -> func_attribute -> unit
+
 val get_sentinel_func_attribute_value : func_attribute list -> (int * int) option
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 
@@ -25,6 +27,8 @@ val get_sentinel_func_attribute_value : func_attribute list -> (int * int) optio
 type access = Default | Public | Private | Protected [@@deriving compare]
 
 val equal_access : access -> access -> bool
+
+val string_of_access : access -> string
 
 type mem_kind =
   | Mmalloc  (** memory allocated with malloc *)

@@ -145,6 +145,13 @@ let () =
       run (Lazy.force Driver.mode_from_command_line)
   | Diff ->
       Diff.diff (Lazy.force Driver.mode_from_command_line)
+  | Explore when Config.procedures ->
+      L.result "%a"
+        Config.(
+          Procedures.pp_all ?filter:procedures_filter ~proc_name:procedures_name
+            ~attr_kind:procedures_definedness ~source_file:procedures_source_file
+            ~proc_attributes:procedures_attributes)
+        ()
   | Explore ->
       let if_some key opt args =
         match opt with None -> args | Some arg -> key :: string_of_int arg :: args

@@ -60,11 +60,31 @@ let kind_of_objc_accessor_type accessor =
   match accessor with Objc_getter _ -> "getter" | Objc_setter _ -> "setter"
 
 
+let pp_objc_accessor_type fmt objc_accessor_type =
+  let fieldname, typ, annots =
+    match objc_accessor_type with Objc_getter field | Objc_setter field -> field
+  in
+  F.fprintf fmt "%s<%a:%a@,[%a]>"
+    (kind_of_objc_accessor_type objc_accessor_type)
+    Typ.Fieldname.pp fieldname (Typ.pp Pp.text) typ
+    (Pp.semicolon_seq (Pp.pair ~fst:Annot.pp ~snd:F.pp_print_bool))
+    annots
+
+
 type var_attribute = Modify_in_block [@@deriving compare]
+
+let string_of_var_attribute = function Modify_in_block -> "<Modify_in_block>"
 
 let var_attribute_equal = [%compare.equal : var_attribute]
 
 type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
+
+let pp_var_data fmt {name; typ; attributes} =
+  F.fprintf fmt "{@[<h>name=@ %a;@,typ=@ %a;@,attributes=@ %a@]}" Mangled.pp name (Typ.pp Pp.text)
+    typ
+    (Pp.semicolon_seq (Pp.to_string ~f:string_of_var_attribute))
+    attributes
+
 
 type t =
   { access: PredSymb.access  (** visibility access *)
@@ -124,6 +144,64 @@ let default proc_name =
   ; proc_name
   ; ret_type= Typ.mk Typ.Tvoid
   ; source_file_captured= SourceFile.invalid __FILE__ }
+
+
+let pp_parameters = Pp.semicolon_seq (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp Pp.text))
+
+let pp fmt attributes =
+  let[@warning "+9"] { access
+                     ; captured
+                     ; did_preanalysis
+                     ; err_log
+                     ; exceptions
+                     ; formals
+                     ; const_formals
+                     ; by_vals
+                     ; func_attributes
+                     ; is_abstract
+                     ; is_bridge_method
+                     ; is_defined
+                     ; is_cpp_noexcept_method
+                     ; is_java_synchronized_method
+                     ; is_model
+                     ; is_specialized
+                     ; is_synthetic_method
+                     ; clang_method_kind
+                     ; loc
+                     ; translation_unit
+                     ; locals
+                     ; method_annotation
+                     ; objc_accessor
+                     ; proc_flags
+                     ; proc_name
+                     ; ret_type
+                     ; source_file_captured } =
+    attributes
+  in
+  Format.fprintf fmt
+    "{@[access= %a;@ captured= [@[%a@]];@ did_preanalysis= %b;@ err_log= [@[%a%a@]];@ exceptions= \
+     [@[%a@]];@ formals= [@[%a@]];@ const_formals= [@[%a@]];@ by_vals= [@[%a@]];@ \
+     func_attributes= [@[%a@]];@ is_abstract= %b;@ is_bridge_method= %b;@ is_defined= %b;@ \
+     is_cpp_noexcept_method= %b;@ is_java_synchronized_method= %b;@ is_model= %b;@ \
+     is_specialized= %b;@ is_synthetic_method= %b;@ clang_method_kind= %a;@ loc= %a;@ \
+     translation_unit= %a;@ locals= [@[%a@]];@ method_annotation= %a;@ objc_accessor= %a;@ \
+     proc_flags= [@[%a@]];@ proc_name= %a;@ ret_type= %a;@ source_file_captured=%a@]}"
+    (Pp.to_string ~f:PredSymb.string_of_access)
+    access pp_parameters captured did_preanalysis Errlog.pp_errors err_log Errlog.pp_warnings
+    err_log
+    (Pp.semicolon_seq F.pp_print_string)
+    exceptions pp_parameters formals (Pp.semicolon_seq F.pp_print_int) const_formals
+    (Pp.semicolon_seq F.pp_print_int) by_vals
+    (Pp.semicolon_seq PredSymb.pp_func_attribute)
+    func_attributes is_abstract is_bridge_method is_defined is_cpp_noexcept_method
+    is_java_synchronized_method is_model is_specialized is_synthetic_method
+    (Pp.to_string ~f:string_of_clang_method_kind)
+    clang_method_kind Location.pp loc (Pp.option SourceFile.pp) translation_unit
+    (Pp.semicolon_seq pp_var_data) locals (Annot.Method.pp "") method_annotation
+    (Pp.option pp_objc_accessor_type) objc_accessor
+    (Pp.hashtbl ~key:F.pp_print_string ~value:F.pp_print_string)
+    proc_flags Typ.Procname.pp proc_name (Typ.pp Pp.text) ret_type SourceFile.pp
+    source_file_captured
 
 
 module SQLite = SqliteUtils.MarshalledData (struct

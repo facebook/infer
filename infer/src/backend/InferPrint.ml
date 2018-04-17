@@ -593,7 +593,7 @@ module PreconditionStats = struct
     L.result "Procedures with data constraints: %d@." !nr_dataconstraints
 end
 
-(* Wrapper of an issue that compares all parts except the procname *)
+(** Wrapper of an issue that compares all parts except the procname *)
 module Issue = struct
   type err_data_ = Errlog.err_data
 

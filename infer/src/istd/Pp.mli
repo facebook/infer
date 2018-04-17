@@ -87,3 +87,11 @@ val current_time : F.formatter -> unit -> unit
 
 val elapsed_time : F.formatter -> unit -> unit
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
+
+val pair :
+  fst:(F.formatter -> 'a -> unit) -> snd:(F.formatter -> 'b -> unit) -> F.formatter -> 'a * 'b
+  -> unit
+
+val hashtbl :
+  key:(F.formatter -> 'a -> unit) -> value:(F.formatter -> 'b -> unit) -> F.formatter
+  -> ('a, 'b) Caml.Hashtbl.t -> unit

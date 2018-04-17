@@ -181,6 +181,18 @@ val pp_version : Format.formatter -> unit -> unit
 
 val proc_stats_filename : string
 
+val procedures : bool
+
+val procedures_attributes : bool
+
+val procedures_definedness : bool
+
+val procedures_filter : string option
+
+val procedures_name : bool
+
+val procedures_source_file : bool
+
 val property_attributes : string
 
 val report : bool

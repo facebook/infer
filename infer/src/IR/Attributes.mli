@@ -11,6 +11,10 @@
 
 open! IStd
 
+type attributes_kind
+
+val deserialize_attributes_kind : Sqlite3.Data.t -> attributes_kind
+
 val store : ProcAttributes.t -> unit
 (** Save .attr file for the procedure into the attributes database. *)
 
@@ -24,3 +28,5 @@ val find_file_capturing_procedure : Typ.Procname.t -> (SourceFile.t * [`Include 
 (** Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. *)
+
+val pp_attributes_kind : Format.formatter -> attributes_kind -> unit

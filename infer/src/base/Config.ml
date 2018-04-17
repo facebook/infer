@@ -1667,11 +1667,54 @@ and print_using_diff =
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
 
 
+and procedures =
+  CLOpt.mk_bool ~long:"procedures"
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "Print functions and methods discovered by infer"
+
+
+and procedures_attributes =
+  CLOpt.mk_bool ~long:"procedures-attributes"
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "Print the attributes of each procedure in the output of $(b,--procedures)"
+
+
+and procedures_definedness =
+  CLOpt.mk_bool ~long:"procedures-definedness" ~default:true
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "Include procedures definedness in the output of $(b,--procedures), i.e. whether the \
+     procedure definition was found, or only the procedure declaration, or the procedure is an \
+     auto-generated Objective-C accessor"
+
+
+and procedures_filter =
+  CLOpt.mk_string_opt ~long:"procedures-filter" ~meta:"filter"
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "With $(b,--procedures), only print functions and methods (procedures) matching the specified \
+     $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns \
+     are interpreted by SQLite: use $(b,_) to match any one character and $(b,%) to match any \
+     sequence of characters. For instance, to keep only methods named \"foo\", one can use the \
+     filter \"%:foo\"."
+
+
+and procedures_name =
+  CLOpt.mk_bool ~long:"procedures-name"
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "Include procedures names in the output of $(b,--procedures)"
+
+
 and procedures_per_process =
   CLOpt.mk_int ~long:"procedures-per-process" ~default:1000 ~meta:"int"
     "Specify the number of procedures to analyze per process when using \
      $(b,--per-procedure-parallelism).  If 0 is specified, each file is divided into $(b,--jobs) \
      groups of procedures."
+
+
+and procedures_source_file =
+  CLOpt.mk_bool ~long:"procedures-source-file" ~default:true
+    ~in_help:InferCommand.([(Explore, manual_generic)])
+    "Include the source file in which the procedure definition or declaration was found in the \
+     output of $(b,--procedures)"
 
 
 and procs_csv =
@@ -2607,7 +2650,19 @@ and print_types = !print_types
 
 and print_using_diff = !print_using_diff
 
+and procedures = !procedures
+
+and procedures_attributes = !procedures_attributes
+
+and procedures_definedness = !procedures_definedness
+
+and procedures_filter = !procedures_filter
+
+and procedures_name = !procedures_name
+
 and procedures_per_process = !procedures_per_process
+
+and procedures_source_file = !procedures_source_file
 
 and procs_csv = !procs_csv
 

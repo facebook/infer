@@ -77,4 +77,6 @@ type t =
 val default : Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)
 
+val pp : Format.formatter -> t -> unit
+
 module SQLite : SqliteUtils.Data with type t = t

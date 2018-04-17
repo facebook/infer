@@ -18,10 +18,23 @@ type func_attribute =
   | FA_sentinel of int * int  (** __attribute__((sentinel(int, int))) *)
   [@@deriving compare]
 
+let pp_func_attribute fmt = function FA_sentinel (i, j) -> F.fprintf fmt "sentinel(%d,%d)" i j
+
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected [@@deriving compare]
 
 let equal_access = [%compare.equal : access]
+
+let string_of_access = function
+  | Default ->
+      "<Default>"
+  | Public ->
+      "<Public>"
+  | Private ->
+      "<Private>"
+  | Protected ->
+      "<Protected>"
+
 
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 let get_sentinel_func_attribute_value attr_list =
