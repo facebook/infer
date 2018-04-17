@@ -15,6 +15,8 @@ val any_thread : string
 
 val expensive : string
 
+val inject_prop : string
+
 val no_allocation : string
 
 val nullable : string

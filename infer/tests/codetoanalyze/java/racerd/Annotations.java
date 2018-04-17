@@ -62,6 +62,11 @@ import com.facebook.infer.annotation.ThreadSafe;
 @interface MyThreadSafeAlias2 {
 }
 
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.CLASS)
+@interface InjectProp {
+}
+
 interface Interface {
 
   @Functional Object functionalMethod();
@@ -396,6 +401,10 @@ class Annotations implements Interface {
 
   public void synchronizedMapOk2(Annotations a) {
     a.mSynchronizedMap.put(new Object(), new Object());
+  }
+
+  public void injectPropOk(@InjectProp Obj o) {
+    o.f = 7;
   }
 
 }

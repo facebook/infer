@@ -47,6 +47,8 @@ let initializer_ = "Initializer"
 
 let inject = "Inject"
 
+let inject_prop = "InjectProp"
+
 let inject_view = "InjectView"
 
 let mutable_ = "Mutable"

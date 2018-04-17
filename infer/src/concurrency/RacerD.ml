@@ -730,6 +730,7 @@ let empty_post : RacerDDomain.summary =
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let open RacerDConfig in
+  let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
@@ -761,8 +762,17 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         | _ ->
             OwnershipDomain.empty
       in
+      let is_owned_formal {Annot.class_name} =
+        (* @InjectProp allocates a fresh object to bind to the parameter *)
+        String.is_suffix ~suffix:Annotations.inject_prop class_name
+      in
       let add_conditional_owned_formal acc (formal, formal_index) =
-        OwnershipDomain.add (formal, []) (OwnershipAbstractValue.make_owned_if formal_index) acc
+        let ownership_value =
+          if Annotations.ma_has_annotation_with method_annotation is_owned_formal then
+            OwnershipAbstractValue.owned
+          else OwnershipAbstractValue.make_owned_if formal_index
+        in
+        OwnershipDomain.add (formal, []) ownership_value acc
       in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
