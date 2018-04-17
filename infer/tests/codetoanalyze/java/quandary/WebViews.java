@@ -9,6 +9,7 @@
 
 package codetoanalyze.java.quandary;
 
+import java.io.File;
 import java.net.URISyntaxException;
 
 import android.app.Activity;
@@ -65,6 +66,10 @@ public class WebViews {
     public WebResourceResponse shouldInterceptRequest(WebView w, WebResourceRequest request) {
       mActivity.startActivity(new Intent("action", request.getUrl())); // should report
       return null;
+    }
+
+    File webResourceToFileBad(WebResourceRequest request) {
+      return new File(request.getUrl().getPath());
     }
 
     @Override

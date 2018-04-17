@@ -109,6 +109,8 @@ module SourceKind = struct
             | ( ("android.content.ClipboardManager" | "android.text.ClipboardManager")
               , ("getPrimaryClip" | "getText") ) ->
                 Some (UserControlledString, return)
+            | "android.webkit.WebResourceRequest", "getUrl" ->
+                Some (UserControlledURI, return)
             | "android.widget.EditText", "getText" ->
                 Some (UserControlledString, return)
             | class_name, method_name ->
