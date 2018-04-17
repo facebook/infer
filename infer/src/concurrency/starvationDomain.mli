@@ -16,7 +16,9 @@ module LockIdentity : PrettyPrintable.PrintableOrderedType with type t = AccessP
 
 (** A lock event.  Equality/comparison disregards the call trace but includes location. *)
 module LockEvent : sig
-  type t = private {lock: LockIdentity.t; loc: Location.t; trace: CallSite.t list}
+  type event_t = private LockAcquire of LockIdentity.t | MayBlock of string
+
+  type t = private {event: event_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 

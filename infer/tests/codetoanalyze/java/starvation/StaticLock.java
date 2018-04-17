@@ -8,26 +8,26 @@
  */
 
 class StaticLock {
-  static synchronized void static_synced() {}
+  static synchronized void staticSynced() {}
 
-  void lock_same_class_one_way_ok() {
+  void lockSameClassOneWayOk() {
     synchronized(StaticLock.class) {
-      static_synced();
+      staticSynced();
     }
   }
 
-  static synchronized void lock_same_class_another_way_ok() {
+  static synchronized void lockSameClassAnotherWayOk() {
     synchronized(StaticLock.class) {
     }
   }
 
-  void lock_other_class_one_way_bad() {
-    synchronized(Object.class) {
+  void lockOtherClassOneWayBad() {
+    synchronized(StaticLock.class) {
       synchronized(this) {}
     }
   }
 
-  synchronized void lock_other_class_another_way_bad() {
-    static_synced();
+  synchronized void lockOtherClassAnotherWayNad() {
+    staticSynced();
   }
 }

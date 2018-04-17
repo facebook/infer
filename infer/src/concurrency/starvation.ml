@@ -119,17 +119,20 @@ let should_report_if_same_class _ = true
                    not (Typ.Name.equal first_class eventually_class) || LockEvent.compare b a >= 0
                ) ) )) *)
 
-let make_loc_trace pname trace_id start_loc elem =
-  let open StarvationDomain in
-  let header = Printf.sprintf "[Trace %d]" trace_id in
-  let trace = LockOrder.make_loc_trace elem in
+let make_trace_with_header ?(header= "") elem start_loc pname =
+  let trace = StarvationDomain.LockOrder.make_loc_trace elem in
   let first_step = List.hd_exn trace in
   if Location.equal first_step.Errlog.lt_loc start_loc then
-    let trace_descr = header ^ " " ^ first_step.Errlog.lt_description in
+    let trace_descr = header ^ first_step.Errlog.lt_description in
     Errlog.make_trace_element 0 start_loc trace_descr [] :: List.tl_exn trace
   else
-    let trace_descr = Format.asprintf "%s Method start: %a" header Typ.Procname.pp pname in
+    let trace_descr = Format.asprintf "%sMethod start: %a" header Typ.Procname.pp pname in
     Errlog.make_trace_element 0 start_loc trace_descr [] :: trace
+
+
+let make_loc_trace pname trace_id start_loc elem =
+  let header = Printf.sprintf "[Trace %d] " trace_id in
+  make_trace_with_header ~header elem start_loc pname
 
 
 let get_summary caller_pdesc callee_pdesc =
@@ -146,18 +149,25 @@ let report_deadlocks get_proc_desc tenv pdesc summary =
       let callee_loc = Procdesc.get_loc callee_pdesc in
       let caller_pname = Procdesc.get_proc_name caller_pdesc in
       let callee_pname = Procdesc.get_proc_name callee_pdesc in
-      let lock, lock' =
-        (caller_elem.LockOrder.eventually.LockEvent.lock, elem.LockOrder.eventually.LockEvent.lock)
-      in
-      let error_message =
-        Format.asprintf "Potential deadlock (%a ; %a)" LockIdentity.pp lock LockIdentity.pp lock'
-      in
-      let exn = Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message) in
-      let first_trace = List.rev (make_loc_trace caller_pname 1 caller_loc caller_elem) in
-      let second_trace = make_loc_trace callee_pname 2 callee_loc elem in
-      let ltr = List.rev_append first_trace second_trace in
-      Specs.get_summary caller_pname
-      |> Option.iter ~f:(fun summary -> Reporting.log_error summary ~loc:caller_loc ~ltr exn) )
+      match
+        ( caller_elem.LockOrder.eventually.LockEvent.event
+        , elem.LockOrder.eventually.LockEvent.event )
+      with
+      | LockEvent.LockAcquire lock, LockEvent.LockAcquire lock' ->
+          let error_message =
+            Format.asprintf "Potential deadlock (%a ; %a)" LockIdentity.pp lock LockIdentity.pp
+              lock'
+          in
+          let exn =
+            Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
+          in
+          let first_trace = List.rev (make_loc_trace caller_pname 1 caller_loc caller_elem) in
+          let second_trace = make_loc_trace callee_pname 2 callee_loc elem in
+          let ltr = List.rev_append first_trace second_trace in
+          Specs.get_summary caller_pname
+          |> Option.iter ~f:(fun summary -> Reporting.log_error summary ~loc:caller_loc ~ltr exn)
+      | _, _ ->
+          () )
   in
   let report_pair current_class elem =
     LockOrder.get_pair elem

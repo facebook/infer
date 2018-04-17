@@ -8,6 +8,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 module LockIdentity = struct
   type t = AccessPath.t
@@ -26,54 +27,94 @@ module LockIdentity = struct
 
   let equal lock lock' = Int.equal 0 (compare lock lock')
 
-  let equal_modulo_base ((_, typ), aclist) ((_, typ'), aclist') =
-    Typ.equal typ typ' && AccessPath.equal_access_list aclist aclist'
+  let equal_modulo_base (((root, typ), aclist) as l) (((root', typ'), aclist') as l') =
+    if phys_equal l l' then true
+    else
+      match (root, root') with
+      | Var.LogicalVar _, Var.LogicalVar _ ->
+          (* only class objects are supposed to appear as idents *)
+          equal l l'
+      | Var.ProgramVar _, Var.ProgramVar _ ->
+          Typ.equal typ typ' && AccessPath.equal_access_list aclist aclist'
+      | _, _ ->
+          false
 
 
   let pp fmt (((_, typ), _) as lock) =
-    Format.fprintf fmt "locks %a in class %a" AccessPath.pp lock (Typ.pp_full Pp.text) typ
+    F.fprintf fmt "Locks %a in class %a" AccessPath.pp lock (Typ.pp_full Pp.text) typ
 end
 
 module LockEvent = struct
-  type t = {lock: LockIdentity.t; loc: Location.t; trace: CallSite.t list}
+  type event_t = LockAcquire of LockIdentity.t | MayBlock of string [@@deriving compare]
+
+  let pp_event fmt = function
+    | LockAcquire lock ->
+        LockIdentity.pp fmt lock
+    | MayBlock msg ->
+        F.pp_print_string fmt msg
+
+
+  type t = {event: event_t; loc: Location.t; trace: CallSite.t list}
+
+  let is_lock_event e = match e.event with LockAcquire _ -> true | _ -> false
 
   (* ignore trace when comparing *)
   let compare e e' =
     if phys_equal e e' then 0
     else
-      let res = LockIdentity.compare e.lock e'.lock in
+      let res = compare_event_t e.event e'.event in
       if not (Int.equal res 0) then res else Location.compare e.loc e'.loc
 
 
-  let locks_equal e e' = LockIdentity.equal e.lock e'.lock
+  let locks_equal e e' =
+    match (e.event, e'.event) with
+    | LockAcquire lock, LockAcquire lock' ->
+        LockIdentity.equal lock lock'
+    | _, _ ->
+        false
+
+
+  let locks_equal_modulo_base e e' =
+    match (e.event, e'.event) with
+    | LockAcquire lock, LockAcquire lock' ->
+        LockIdentity.equal_modulo_base lock lock'
+    | _, _ ->
+        false
+
 
   let pp fmt e =
     let pp_trace fmt = function
       | [] ->
           ()
       | trace ->
-          Format.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
+          F.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
     in
-    Format.fprintf fmt "%a at %a%a" LockIdentity.pp e.lock Location.pp e.loc pp_trace e.trace
+    F.fprintf fmt "%a at %a%a" pp_event e.event Location.pp e.loc pp_trace e.trace
 
 
   let owner_class e =
-    let (_, typ), _ = e.lock in
-    Typ.inner_name typ
+    match e.event with
+    | LockAcquire lock ->
+        let (_, typ), _ = lock in
+        Typ.inner_name typ
+    | _ ->
+        None
 
 
-  let make lock loc = {lock; loc; trace= []}
+  let make_acquire lock loc = {event= LockAcquire lock; loc; trace= []}
+
+  let _make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
 
   let make_loc_trace ?(reverse= false) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], 0) ~f:(fun (tr, ns) callsite ->
           let elem_descr =
-            Format.asprintf "Method call: %a" Typ.Procname.pp (CallSite.pname callsite)
+            F.asprintf "Method call: %a" Typ.Procname.pp (CallSite.pname callsite)
           in
           let elem = Errlog.make_trace_element ns (CallSite.loc callsite) elem_descr [] in
           (elem :: tr, ns + 1) )
     in
-    let endpoint_descr = Format.asprintf "Lock acquisition: %a" LockIdentity.pp e.lock in
+    let endpoint_descr = F.asprintf "%a" pp_event e.event in
     let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
     let res = endpoint :: call_trace in
     if reverse then res else List.rev res
@@ -85,28 +126,29 @@ module LockOrder = struct
   let pp fmt o =
     match o.first with
     | None ->
-        Format.fprintf fmt "Eventually %a" LockEvent.pp o.eventually
+        F.fprintf fmt "Eventually %a" LockEvent.pp o.eventually
     | Some lock ->
-        Format.fprintf fmt "First %a and before releasing it %a" LockEvent.pp lock LockEvent.pp
+        F.fprintf fmt "First %a and before releasing it %a" LockEvent.pp lock LockEvent.pp
           o.eventually
 
 
   let get_pair elem = match elem.first with None -> None | Some b -> Some (b, elem.eventually)
 
   let may_deadlock elem elem' =
-    let locks_equal_modulo_base e e' =
-      LockIdentity.equal_modulo_base e.LockEvent.lock e'.LockEvent.lock
-    in
     match (elem.first, elem'.first) with
     | Some b, Some b' ->
-        locks_equal_modulo_base b elem'.eventually && locks_equal_modulo_base b' elem.eventually
+        LockEvent.locks_equal_modulo_base b elem'.eventually
+        && LockEvent.locks_equal_modulo_base b' elem.eventually
     | _, _ ->
         false
 
 
-  let make_eventually_locks eventually = {first= None; eventually}
+  let make_eventually eventually = {first= None; eventually}
 
-  let make_holds_and_locks b eventually = {first= Some b; eventually}
+  let make_first_and_eventually b eventually =
+    if not (LockEvent.is_lock_event b) then L.(die InternalError) "Expected a lock event first." ;
+    {first= Some b; eventually}
+
 
   let with_callsite callsite o =
     { o with
@@ -129,7 +171,8 @@ module LockOrderDomain = struct
 
 
   let is_eventually_locked lock lo =
-    exists (fun pair -> LockEvent.locks_equal pair.LockOrder.eventually lock) lo
+    LockEvent.is_lock_event lock
+    && exists (fun pair -> LockEvent.locks_equal pair.LockOrder.eventually lock) lo
 end
 
 module LockStack = AbstractDomain.StackDomain (LockEvent)
@@ -137,10 +180,15 @@ module LockStack = AbstractDomain.StackDomain (LockEvent)
 module LockState = struct
   include AbstractDomain.InvertedMap (LockIdentity) (LockStack)
 
-  let is_taken lock map = try not (find lock map |> LockStack.is_empty) with Not_found -> false
+  let is_taken lock_event map =
+    match lock_event.LockEvent.event with
+    | LockEvent.LockAcquire lock -> (
+      try not (find lock map |> LockStack.is_empty) with Not_found -> false )
+    | _ ->
+        false
 
-  let acquire lock_event map =
-    let lock_id = lock_event.LockEvent.lock in
+
+  let acquire lock_id lock_event map =
     let current_value = try find lock_id map with Not_found -> LockStack.empty in
     let new_value = LockStack.push lock_event current_value in
     add lock_id new_value map
@@ -168,27 +216,27 @@ let is_empty (ls, lo) = LockState.is_empty ls && LockOrderDomain.is_empty lo
 (* for every lock b held locally, add a pair (b, lock_event), plus (None, lock_event) *)
 let add_order_pairs ls lock_event acc =
   (* add no pairs whatsoever if we already hold that lock *)
-  if LockState.is_taken lock_event.LockEvent.lock ls then acc
+  if LockState.is_taken lock_event ls then acc
   else
-    let add_eventually_locks acc =
+    let add_eventually acc =
       (* don't add an eventually-locks pair if there is already another with same endpoint*)
       if LockOrderDomain.is_eventually_locked lock_event acc then acc
       else
-        let elem = LockOrder.make_eventually_locks lock_event in
+        let elem = LockOrder.make_eventually lock_event in
         LockOrderDomain.add elem acc
     in
-    let add_holds_and_locks acc first =
+    let add_first_and_eventually acc first =
       (* never add a pair of the form (a,a) -- should never happen due to the check above *)
-      let elem = LockOrder.make_holds_and_locks first lock_event in
+      let elem = LockOrder.make_first_and_eventually first lock_event in
       LockOrderDomain.add elem acc
     in
-    LockState.fold_over_events add_holds_and_locks ls acc |> add_eventually_locks
+    LockState.fold_over_events add_first_and_eventually ls acc |> add_eventually
 
 
 let acquire lockid (ls, lo) loc =
-  let newlock_event = LockEvent.make lockid loc in
+  let newlock_event = LockEvent.make_acquire lockid loc in
   let lo' = add_order_pairs ls newlock_event lo in
-  let ls' = LockState.acquire newlock_event ls in
+  let ls' = LockState.acquire lockid newlock_event ls in
   (ls', lo')
 
 
