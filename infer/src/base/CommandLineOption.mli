@@ -18,7 +18,7 @@ type parse_mode =
   | InferCommand  (** parse arguments as arguments for infer *)
   | Javac  (** parse arguments passed to the Java compiler *)
   | NoParse  (** all arguments are anonymous arguments, no parsing is attempted *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val is_originator : bool
 

@@ -10,9 +10,8 @@
 open! IStd
 
 (** type of string used for localisation *)
-type t = private
-  {unique_id: string; mutable enabled: bool; mutable hum: string}
-  [@@deriving compare]
+type t = private {unique_id: string; mutable enabled: bool; mutable hum: string}
+[@@deriving compare]
 
 val equal : t -> t -> bool
 

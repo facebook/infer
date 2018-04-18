@@ -70,7 +70,9 @@ module MockProcCfg = struct
         ~f:(fun (_, succs) -> List.exists ~f:(fun node -> equal_id (id node) node_id) succs)
         t
       |> List.map ~f:fst
-    with Not_found -> []
+    with
+    | Not_found_s _ | Caml.Not_found ->
+        []
 
 
   let nodes t = List.map ~f:fst t

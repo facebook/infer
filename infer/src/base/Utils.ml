@@ -260,7 +260,7 @@ let realpath_cache = Hashtbl.create 1023
 
 let realpath ?(warn_on_error= true) path =
   match Hashtbl.find realpath_cache path with
-  | exception Not_found -> (
+  | exception Caml.Not_found -> (
     match Filename.realpath path with
     | realpath ->
         Hashtbl.add realpath_cache path (Ok realpath) ;
@@ -303,7 +303,7 @@ let compare_versions v1 v2 =
 
 let write_file_with_locking ?(delete= false) ~f:do_write fname =
   Unix.with_file
-    ~mode:Unix.([O_WRONLY; O_CREAT])
+    ~mode:Unix.[O_WRONLY; O_CREAT]
     fname
     ~f:(fun file_descr ->
       if Unix.flock file_descr Unix.Flock_command.lock_exclusive then (
@@ -326,9 +326,10 @@ let rec rmtree name =
       let rec rmdir dir =
         match Unix.readdir_opt dir with
         | Some entry ->
-            if not
-                 ( String.equal entry Filename.current_dir_name
-                 || String.equal entry Filename.parent_dir_name )
+            if
+              not
+                ( String.equal entry Filename.current_dir_name
+                || String.equal entry Filename.parent_dir_name )
             then rmtree (name ^/ entry) ;
             rmdir dir
         | None ->

@@ -35,18 +35,20 @@ let setup () =
       ResultsDir.remove_results_dir () ; ResultsDir.create_results_dir ()
   | Capture | Compile | Run ->
       let driver_mode = Lazy.force Driver.mode_from_command_line in
-      if Config.(
-           (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
+      if
+        Config.(
+          (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
               avoid getting errors because some of their contents is missing (removed by
               [Driver.clean_results_dir ()]). *)
-           buck && flavors)
-         || not
-              ( Driver.(equal_mode driver_mode Analyze)
-              || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
+          buck && flavors)
+        || not
+             ( Driver.(equal_mode driver_mode Analyze)
+             || Config.(continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
-      if CLOpt.is_originator && not Config.continue_capture
-         && not Driver.(equal_mode driver_mode Analyze)
+      if
+        CLOpt.is_originator && not Config.continue_capture
+        && not Driver.(equal_mode driver_mode Analyze)
       then SourceFiles.mark_all_stale ()
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"

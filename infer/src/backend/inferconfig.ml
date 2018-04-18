@@ -41,7 +41,7 @@ let is_matching patterns source_file =
   let path = SourceFile.to_rel_path source_file in
   List.exists
     ~f:(fun pattern ->
-      try Int.equal (Str.search_forward pattern path 0) 0 with Not_found -> false )
+      try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
     patterns
 
 
@@ -61,7 +61,7 @@ module FileContainsStringMatcher = struct
   let file_contains regexp file_in =
     let rec loop () =
       try Str.search_forward regexp (In_channel.input_line_exn file_in) 0 >= 0 with
-      | Not_found ->
+      | Caml.Not_found ->
           loop ()
       | End_of_file ->
           false
@@ -75,7 +75,7 @@ module FileContainsStringMatcher = struct
       let source_map = ref SourceFile.Map.empty in
       let regexp = Str.regexp (String.concat ~sep:"\\|" s_patterns) in
       fun source_file ->
-        try SourceFile.Map.find source_file !source_map with Not_found ->
+        try SourceFile.Map.find source_file !source_map with Caml.Not_found ->
           try
             let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
             let pattern_found = file_contains regexp file_in in
@@ -103,7 +103,11 @@ module FileOrProcMatcher = struct
       let pattern_map =
         List.fold
           ~f:(fun map pattern ->
-            let previous = try String.Map.find_exn map pattern.class_name with Not_found -> [] in
+            let previous =
+              try String.Map.find_exn map pattern.class_name with
+              | Not_found_s _ | Caml.Not_found ->
+                  []
+            in
             String.Map.set ~key:pattern.class_name ~data:(pattern :: previous) map )
           ~init:String.Map.empty m_patterns
       in
@@ -116,7 +120,9 @@ module FileOrProcMatcher = struct
             ~f:(fun p ->
               match p.method_name with None -> true | Some m -> String.equal m method_name )
             class_patterns
-        with Not_found -> false
+        with
+        | Not_found_s _ | Caml.Not_found ->
+            false
       in
       fun _ proc_name ->
         match proc_name with Typ.Procname.Java pname_java -> do_java pname_java | _ -> false
@@ -245,9 +251,9 @@ let patterns_of_json_with_key (json_key, json) =
       List.fold ~f:loop ~init:default_source_contains assoc
     in
     match detect_pattern assoc with
-    | Ok Method_pattern (language, _) ->
+    | Ok (Method_pattern (language, _)) ->
         Ok (Method_pattern (language, create_method_pattern assoc))
-    | Ok Source_contains (language, _) ->
+    | Ok (Source_contains (language, _)) ->
         Ok (Source_contains (language, create_string_contains assoc))
     | Error _ as error ->
         error

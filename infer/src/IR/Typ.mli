@@ -29,7 +29,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val ikind_is_char : ikind -> bool
 (** Check whether the integer kind is a char *)
@@ -42,7 +42,7 @@ type fkind =
   | FFloat  (** [float] *)
   | FDouble  (** [double] *)
   | FLongDouble  (** [long double] *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (** kind of pointer *)
 type ptr_kind =
@@ -51,7 +51,7 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
 
@@ -80,7 +80,7 @@ and desc =
   | TVar of string  (** type variable (ie. C++ template variables) *)
   | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
       (** array type with statically fixed length and stride *)
-  [@@deriving compare]
+[@@deriving compare]
 
 and name =
   | CStruct of QualifiedCppName.t
@@ -92,7 +92,7 @@ and name =
   | JavaClass of Mangled.t
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
-  [@@deriving compare]
+[@@deriving compare]
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque [@@deriving compare]
 
@@ -104,7 +104,7 @@ and template_spec_info =
                 mangling is not guaranteed to be unique to a single type. All the information in
                 the template arguments is also needed for uniqueness. *)
       ; args: template_arg list }
-  [@@deriving compare]
+[@@deriving compare]
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)
@@ -376,7 +376,7 @@ module Procname : sig
       | ObjCClassMethod
       | ObjCInstanceMethod
       | ObjCInternalMethod
-      [@@deriving compare]
+    [@@deriving compare]
 
     (** Type of Objective C and C++ procedure names: method signatures. *)
     type t =
@@ -385,7 +385,7 @@ module Procname : sig
       ; kind: kind
       ; template_args: template_spec_info
       ; is_generic_model: bool }
-      [@@deriving compare]
+    [@@deriving compare]
 
     val make : Name.t -> string -> kind -> template_spec_info -> is_generic_model:bool -> t
     (** Create an objc procedure name from a class_name and method_name. *)
@@ -444,7 +444,7 @@ module Procname : sig
     | Block of block_name
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
-    [@@deriving compare]
+  [@@deriving compare]
 
   val block_name_of_procname : t -> block_name
 

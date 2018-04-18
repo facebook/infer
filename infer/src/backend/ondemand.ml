@@ -177,7 +177,7 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
-    try Typ.Procname.Hash.find cache callee_pname with Not_found ->
+    try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
       let summary_option =
         let proc_attributes = Procdesc.get_attributes callee_pdesc in
         if should_be_analyzed callee_pname proc_attributes then
@@ -194,7 +194,7 @@ let analyze_proc_name ?caller_pdesc callee_pname =
   if is_active callee_pname then None
   else
     let cache = Lazy.force cached_results in
-    try Typ.Procname.Hash.find cache callee_pname with Not_found ->
+    try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
       let summary_option =
         let callbacks = Option.value_exn !callbacks_ref in
         if procedure_should_be_analyzed callee_pname then

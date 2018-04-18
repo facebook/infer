@@ -16,7 +16,7 @@ module UseDefChain = struct
     | DependsOn of (Location.t * AccessPath.t)
     | NullDefCompare of (Location.t * AccessPath.t)
     | NullDefAssign of (Location.t * AccessPath.t)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let ( <= ) ~lhs ~rhs = compare_astate lhs rhs <= 0
 
@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let nullable_usedef_chain_of exp lhs astate loc =
     match exp with
-    | HilExp.Constant Cint n when IntLit.isnull n ->
+    | HilExp.Constant (Cint n) when IntLit.isnull n ->
         Some (UseDefChain.NullDefAssign (loc, lhs))
     | HilExp.AccessExpression access_expr -> (
       try
@@ -75,7 +75,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             None
         | _ ->
             Some (UseDefChain.DependsOn (loc, ap))
-      with Not_found -> None )
+      with Caml.Not_found -> None )
     | _ ->
         None
 
@@ -119,9 +119,9 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (Transf
 let make_error_trace astate ap ud =
   let name_of ap =
     match AccessPath.get_last_access ap with
-    | Some AccessPath.FieldAccess field_name ->
+    | Some (AccessPath.FieldAccess field_name) ->
         "Field " ^ Typ.Fieldname.to_flat_string field_name
-    | Some AccessPath.ArrayAccess _ ->
+    | Some (AccessPath.ArrayAccess _) ->
         "Some array element"
     | None ->
         "Variable"
@@ -138,7 +138,7 @@ let make_error_trace astate ap ud =
         Some (loc, ltr)
     | DependsOn (loc, dep) ->
       match Domain.find dep astate with
-      | exception Not_found ->
+      | exception Caml.Not_found ->
           None
       | ud' when Set.mem ud' seen ->
           None

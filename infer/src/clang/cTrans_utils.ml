@@ -102,7 +102,7 @@ end
 
 module GotoLabel = struct
   let find_goto_label context label sil_loc =
-    try Hashtbl.find context.CContext.label_map label with Not_found ->
+    try Hashtbl.find context.CContext.label_map label with Caml.Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
       let new_node = Nodes.create_node (Procdesc.Node.Skip_node node_name) [] sil_loc context in
       Hashtbl.add context.CContext.label_map label new_node ;
@@ -134,11 +134,11 @@ type priority_node = Free | Busy of Clang_ast_t.pointer
 type trans_state =
   { context: CContext.t
   ; (* current context of the translation *)
-  succ_nodes: Procdesc.Node.t list
+    succ_nodes: Procdesc.Node.t list
   ; (* successor nodes in the cfg *)
-  continuation: continuation option
+    continuation: continuation option
   ; (* current continuation *)
-  priority: priority_node
+    priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option }
 
@@ -146,13 +146,13 @@ type trans_state =
 type trans_result =
   { root_nodes: Procdesc.Node.t list
   ; (* Top cfg nodes (root) created by the translation *)
-  leaf_nodes: Procdesc.Node.t list
+    leaf_nodes: Procdesc.Node.t list
   ; (* Bottom cfg nodes (leaf) created by the translate *)
-  instrs: Sil.instr list
+    instrs: Sil.instr list
   ; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
-  exps: (Exp.t * Typ.t) list
+    exps: (Exp.t * Typ.t) list
   ; (* SIL expressions resulting from translation of clang stmt *)
-  initd_exps: Exp.t list
+    initd_exps: Exp.t list
   ; is_cpp_call_virtual: bool }
 
 (* Empty result translation *)
@@ -584,10 +584,11 @@ let extract_stmt_from_singleton stmt_list warning_string =
 
 
 module Self = struct
-  exception SelfClassException of
-    { class_name: Typ.Name.t
-    ; position: Logging.ocaml_pos
-    ; source_range: Clang_ast_t.source_range }
+  exception
+    SelfClassException of
+      { class_name: Typ.Name.t
+      ; position: Logging.ocaml_pos
+      ; source_range: Clang_ast_t.source_range }
 
   let add_self_parameter_for_super_instance stmt_info context procname loc mei =
     if is_superinstance mei then

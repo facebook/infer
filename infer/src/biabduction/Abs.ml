@@ -22,7 +22,7 @@ type rule =
   ; r_root: Match.hpred_pat
   ; r_sigma: Match.hpred_pat list
   ; (* sigma should be in a specific order *)
-  r_new_sigma: Sil.hpred list
+    r_new_sigma: Sil.hpred list
   ; r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Sil.exp_subst -> Sil.atom list
   ; r_condition: Prop.normal Prop.t -> Sil.exp_subst -> bool }
 
@@ -65,7 +65,7 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.exp_subst) =
     let inst_private, inst_public = Sil.sub_domain_partition f inst in
     let insts_of_public_ids = Sil.sub_range inst_public in
     let inst_of_base =
-      try Sil.sub_find (Ident.equal id_base) inst_public with Not_found -> assert false
+      try Sil.sub_find (Ident.equal id_base) inst_public with Caml.Not_found -> assert false
     in
     let insts_of_private_ids = Sil.sub_range inst_private in
     (insts_of_private_ids, insts_of_public_ids, inst_of_base)
@@ -550,9 +550,9 @@ let discover_para_candidates tenv p =
   let rec get_edges_sigma = function
     | [] ->
         ()
-    | (Sil.Hlseg _) :: sigma_rest | (Sil.Hdllseg _) :: sigma_rest ->
+    | Sil.Hlseg _ :: sigma_rest | Sil.Hdllseg _ :: sigma_rest ->
         get_edges_sigma sigma_rest
-    | (Sil.Hpointsto (root, se, te)) :: sigma_rest ->
+    | Sil.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
         get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
   in
@@ -600,9 +600,9 @@ let discover_para_dll_candidates tenv p =
   let rec get_edges_sigma = function
     | [] ->
         ()
-    | (Sil.Hlseg _) :: sigma_rest | (Sil.Hdllseg _) :: sigma_rest ->
+    | Sil.Hlseg _ :: sigma_rest | Sil.Hdllseg _ :: sigma_rest ->
         get_edges_sigma sigma_rest
-    | (Sil.Hpointsto (root, se, te)) :: sigma_rest ->
+    | Sil.Hpointsto (root, se, te) :: sigma_rest ->
         let rec_flds = typ_get_recursive_flds tenv te in
         get_edges_strexp rec_flds root se ; get_edges_sigma sigma_rest
   in
@@ -877,15 +877,15 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
         ~f:(fun pi a ->
           match a with
           (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-          | Sil.Aeq (Exp.Const Const.Cint i, Exp.BinOp (Binop.Lt, _, _))
-          | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const Const.Cint i)
-          | Sil.Aeq (Exp.Const Const.Cint i, Exp.BinOp (Binop.Le, _, _))
-          | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const Const.Cint i)
+          | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, _, _))
+          | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i))
+          | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, _, _))
+          | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i))
             when IntLit.isone i ->
               a :: pi
           | Sil.Aeq (Exp.Var name, e) when not (Ident.is_primed name) -> (
             match e with Exp.Var _ | Exp.Const _ -> a :: pi | _ -> pi )
-          | Sil.Aneq (Var _, _) | Sil.Apred (_, (Var _) :: _) | Anpred (_, (Var _) :: _) ->
+          | Sil.Aneq (Var _, _) | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) ->
               a :: pi
           | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ ->
               pi )
@@ -982,14 +982,14 @@ let sigma_reachable root_fav sigma =
 let check_observer_is_unsubscribed_deallocation tenv prop e =
   let pvar_opt =
     match Attribute.get_resource tenv prop e with
-    | Some Apred (Aresource {ra_vpath= Some Dpvar pvar}, _) ->
+    | Some (Apred (Aresource {ra_vpath= Some (Dpvar pvar)}, _)) ->
         Some pvar
     | _ ->
         None
   in
   let loc = State.get_loc () in
   match Attribute.get_observer tenv prop e with
-  | Some Apred (Aobserver, _) -> (
+  | Some (Apred (Aobserver, _)) -> (
     match pvar_opt with
     | Some pvar when Config.nsnotification_center_checker_backend ->
         L.d_strln
@@ -1043,19 +1043,19 @@ let check_junk pname tenv prop =
               let do_entry e =
                 check_observer_is_unsubscribed_deallocation tenv prop e ;
                 match Attribute.get_wontleak tenv prop e with
-                | Some Apred ((Awont_leak as a), _) ->
+                | Some (Apred ((Awont_leak as a), _)) ->
                     L.d_strln "WONT_LEAK" ;
                     res := Some a
                 | _ ->
                   match Attribute.get_resource tenv prop e with
-                  | Some Apred ((Aresource {ra_kind= Racquire} as a), _) ->
+                  | Some (Apred ((Aresource {ra_kind= Racquire} as a), _)) ->
                       L.d_str "ATTRIBUTE: " ;
                       PredSymb.d_attribute a ;
                       L.d_ln () ;
                       res := Some a
                   | _ ->
                     match Attribute.get_undef tenv prop e with
-                    | Some Apred ((Aundef _ as a), _) ->
+                    | Some (Apred ((Aundef _ as a), _)) ->
                         L.d_strln "UNDEF" ;
                         res := Some a
                     | _ ->
@@ -1123,7 +1123,7 @@ let check_junk pname tenv prop =
                 | Some _, None | None, Some _ ->
                     false
               in
-              is_none alloc_attribute && !leaks_reported <> []
+              (is_none alloc_attribute && !leaks_reported <> [])
               || (* None attribute only reported if it's the first one *)
                  List.mem ~equal:attr_opt_equal !leaks_reported alloc_attribute
             in

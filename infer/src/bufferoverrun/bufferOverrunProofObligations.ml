@@ -176,7 +176,7 @@ module ArrayAccessCondition = struct
   let filter1 : t -> bool =
    fun c ->
     ItvPure.is_top c.idx || ItvPure.is_top c.size || ItvPure.is_lb_infty c.idx
-    || ItvPure.is_lb_infty c.size || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
+    || ItvPure.is_lb_infty c.size || (ItvPure.is_nat c.idx && ItvPure.is_nat c.size)
 
 
   let filter2 : t -> bool =
@@ -216,12 +216,14 @@ module ArrayAccessCondition = struct
     else if Itv.Boolean.is_false not_overrun || Itv.Boolean.is_false not_underrun then
       {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
-    else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-            && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
+    else if
+      Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+      && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
     then {report_issue_type= Some IssueType.buffer_overrun_l2; propagate= false}
       (* symbolic il >= sl, probably an error *)
-    else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
-            && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
+    else if
+      Itv.Bound.is_symbolic (ItvPure.lb c.idx)
+      && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
     then {report_issue_type= Some IssueType.buffer_overrun_s2; propagate= true}
     else
       (* other symbolic bounds are probably too noisy *)
@@ -312,14 +314,14 @@ module ConditionTrace = struct
   type cond_trace =
     | Intra of Typ.Procname.t
     | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
-    [@@deriving compare]
+  [@@deriving compare]
 
   type t =
     { proc_name: Typ.Procname.t
     ; location: Location.t
     ; cond_trace: cond_trace
     ; val_traces: ValTraceSet.t }
-    [@@deriving compare]
+  [@@deriving compare]
 
   let pp_location : F.formatter -> t -> unit = fun fmt ct -> Location.pp_file_pos fmt ct.location
 
@@ -453,7 +455,7 @@ module ConditionSet = struct
                   match Itv.SymbolMap.find symbol trace_map with
                   | symbol_trace ->
                       ValTraceSet.join symbol_trace val_traces
-                  | exception Not_found ->
+                  | exception Caml.Not_found ->
                       val_traces )
             in
             let make_call_and_subst trace =
@@ -467,10 +469,11 @@ module ConditionSet = struct
 
 
   let set_buffer_overrun_u5 cwt issue_type =
-    if ( IssueType.equal issue_type IssueType.buffer_overrun_l3
-       || IssueType.equal issue_type IssueType.buffer_overrun_l4
-       || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
-       && Condition.has_infty cwt.cond
+    if
+      ( IssueType.equal issue_type IssueType.buffer_overrun_l3
+      || IssueType.equal issue_type IssueType.buffer_overrun_l4
+      || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
+      && Condition.has_infty cwt.cond
     then Option.value (ConditionTrace.check cwt.trace) ~default:issue_type
     else issue_type
 

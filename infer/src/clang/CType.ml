@@ -38,10 +38,10 @@ let is_class typ =
 let rec return_type_of_function_qual_type (qual_type: Clang_ast_t.qual_type) =
   let open Clang_ast_t in
   match CAst_utils.get_type qual_type.qt_type_ptr with
-  | Some FunctionProtoType (_, function_type_info, _)
-  | Some FunctionNoProtoType (_, function_type_info) ->
+  | Some (FunctionProtoType (_, function_type_info, _))
+  | Some (FunctionNoProtoType (_, function_type_info)) ->
       function_type_info.Clang_ast_t.fti_return_type
-  | Some BlockPointerType (_, in_qual) ->
+  | Some (BlockPointerType (_, in_qual)) ->
       return_type_of_function_qual_type in_qual
   | Some _ ->
       L.(debug Capture Verbose)
@@ -60,7 +60,7 @@ let return_type_of_function_type qual_type = return_type_of_function_qual_type q
 let is_block_type {Clang_ast_t.qt_type_ptr} =
   let open Clang_ast_t in
   match CAst_utils.get_desugared_type qt_type_ptr with
-  | Some BlockPointerType _ ->
+  | Some (BlockPointerType _) ->
       true
   | _ ->
       false
@@ -68,9 +68,9 @@ let is_block_type {Clang_ast_t.qt_type_ptr} =
 
 let is_reference_type {Clang_ast_t.qt_type_ptr} =
   match CAst_utils.get_desugared_type qt_type_ptr with
-  | Some Clang_ast_t.LValueReferenceType _ ->
+  | Some (Clang_ast_t.LValueReferenceType _) ->
       true
-  | Some Clang_ast_t.RValueReferenceType _ ->
+  | Some (Clang_ast_t.RValueReferenceType _) ->
       true
   | _ ->
       false

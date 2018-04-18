@@ -55,7 +55,7 @@ let get_base_class_name_from_category decl =
   match base_class_pointer_opt with
   | Some decl_ref -> (
     match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
-    | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
+    | Some (ObjCInterfaceDecl (_, name_info, _, _, _)) ->
         Some (Typ.Name.Objc.from_qual_name (CAst_utils.get_qualified_name name_info))
     | _ ->
         None )

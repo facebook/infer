@@ -19,13 +19,14 @@ module F = Format
 type failure_stats =
   { mutable instr_fail: int
   ; (* number of instruction failures since the current node started *)
-  mutable instr_ok: int
+    mutable instr_ok: int
   ; (* number of instruction successes since the current node started *)
-  mutable node_fail: int
+    mutable node_fail: int
   ; (* number of node failures (i.e. at least one instruction failure) *)
-  mutable node_ok: int
+    mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
-  mutable first_failure: (Location.t * (int * Caml.Digest.t) * int * Errlog.loc_trace * exn) option
+    mutable first_failure:
+      (Location.t * (int * Caml.Digest.t) * int * Errlog.loc_trace * exn) option
   (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
@@ -72,7 +73,7 @@ let reset_diverging_states_node () = !gs.diverging_states_node <- Paths.PathSet.
 let reset () = gs := initial ()
 
 let get_failure_stats node =
-  try NodeHash.find !gs.failure_map node with Not_found ->
+  try NodeHash.find !gs.failure_map node with Caml.Not_found ->
     let fs = {instr_fail= 0; instr_ok= 0; node_fail= 0; node_ok= 0; first_failure= None} in
     NodeHash.add !gs.failure_map node fs ;
     fs
@@ -189,7 +190,7 @@ let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
     let do_node node =
       let normalized_instrs = instrs_normalize (Procdesc.Node.get_instrs node) in
       let key = get_key node in
-      let s = try M.find key !m with Not_found -> S.empty in
+      let s = try M.find key !m with Caml.Not_found -> S.empty in
       if S.cardinal s > E.threshold then raise E.Threshold ;
       let s' = S.add (node, normalized_instrs) s in
       m := M.add key s' !m
@@ -207,7 +208,7 @@ let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
         | [this], others ->
             (this, others)
         | _ ->
-            raise Not_found
+            raise Caml.Not_found
       in
       let duplicates =
         let equal_normalized_instrs (_, normalized_instrs') =
@@ -218,7 +219,7 @@ let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
       List.fold
         ~f:(fun nset (node', _) -> Procdesc.NodeSet.add node' nset)
         ~init:Procdesc.NodeSet.empty duplicates
-    with Not_found -> Procdesc.NodeSet.singleton node
+    with Caml.Not_found -> Procdesc.NodeSet.singleton node
   in
   find_duplicate_nodes
 

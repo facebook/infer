@@ -11,11 +11,13 @@ open! IStd
 
 (** To be used in 'list_constraint *)
 type accept_more
- and end_of_list
+
+and end_of_list
 
 (** To be used in 'emptyness *)
 type empty
- and non_empty
+
+and non_empty
 
 (* Type shorthands *)
 
@@ -344,11 +346,7 @@ module Common = struct
   let any_typ
       : ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, accept_more) template_arg =
     let eat_template_arg (f, captured_types, template_args) =
-      match template_args with
-      | (Typ.TType _) :: rest ->
-          Some (f, captured_types, rest)
-      | _ ->
-          None
+      match template_args with Typ.TType _ :: rest -> Some (f, captured_types, rest) | _ -> None
     in
     {eat_template_arg; add_marker= add_no_marker}
 
@@ -367,7 +365,7 @@ module Common = struct
    fun marker ->
     let eat_template_arg (f, captured_types, template_args) =
       match template_args with
-      | (Typ.TType ty) :: rest ->
+      | Typ.TType ty :: rest ->
           let captured_types () = (ty, captured_types ()) in
           Some (f ty, captured_types, rest)
       | _ ->
@@ -388,11 +386,7 @@ module Common = struct
         , accept_more )
         template_arg =
     let eat_template_arg (f, captured_types, template_args) =
-      match template_args with
-      | (Typ.TInt i) :: rest ->
-          Some (f i, captured_types, rest)
-      | _ ->
-          None
+      match template_args with Typ.TInt i :: rest -> Some (f i, captured_types, rest) | _ -> None
     in
     {eat_template_arg; add_marker= add_no_marker}
 

@@ -45,13 +45,13 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?supers ?annots name =
 
 (** Look up a name in the global type environment. *)
 let lookup tenv name : Typ.Struct.t option =
-  try Some (TypenameHash.find tenv name) with Not_found ->
+  try Some (TypenameHash.find tenv name) with Caml.Not_found ->
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
     match (name : Typ.Name.t) with
     | CStruct m -> (
-      try Some (TypenameHash.find tenv (CppClass (m, NoTemplate))) with Not_found -> None )
+      try Some (TypenameHash.find tenv (CppClass (m, NoTemplate))) with Caml.Not_found -> None )
     | CppClass (m, NoTemplate) -> (
-      try Some (TypenameHash.find tenv (CStruct m)) with Not_found -> None )
+      try Some (TypenameHash.find tenv (CStruct m)) with Caml.Not_found -> None )
     | _ ->
         None
 
@@ -65,7 +65,7 @@ let add_field tenv class_tn_name field =
   match lookup tenv class_tn_name with
   | Some ({fields} as struct_typ) ->
       if not (List.mem ~equal:equal_fields fields field) then
-        let new_fields = List.merge [field] fields ~cmp:compare_fields in
+        let new_fields = List.merge [field] fields ~compare:compare_fields in
         ignore (mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name)
   | _ ->
       ()
@@ -154,7 +154,7 @@ let language_is tenv lang =
   match TypenameHash.iter (fun n -> raise (Found n)) tenv with
   | () ->
       false
-  | exception Found JavaClass _ ->
+  | exception Found (JavaClass _) ->
       Language.equal lang Java
   | exception Found _ ->
       Language.equal lang Clang

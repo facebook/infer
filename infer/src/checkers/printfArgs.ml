@@ -81,7 +81,7 @@ let format_arguments (printf: printf_signature) (args: (Exp.t * Typ.t) list)
     : string option * Exp.t list * Exp.t option =
   let format_string =
     match List.nth_exn args printf.format_pos with
-    | Exp.Const Const.Cstr fmt, _ ->
+    | Exp.Const (Const.Cstr fmt), _ ->
         Some fmt
     | _ ->
         None
@@ -102,7 +102,7 @@ let rec format_string_type_names (fmt_string: string) (start: int) : string list
     let fmt_match = Str.matched_string fmt_string in
     let fmt_type = String.sub fmt_match ~pos:(String.length fmt_match - 1) ~len:1 in
     fmt_type :: format_string_type_names fmt_string (Str.match_end ())
-  with Not_found -> []
+  with Caml.Not_found -> []
 
 
 let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
@@ -139,30 +139,30 @@ let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =
     match (instrs, nvar) with
-    | (Sil.Load (id, Exp.Lvar iv, _, _)) :: _, Exp.Var nid when Ident.equal id nid ->
+    | Sil.Load (id, Exp.Lvar iv, _, _) :: _, Exp.Var nid when Ident.equal id nid ->
         iv
     | _ :: is, _ ->
         array_ivar is nvar
     | _ ->
-        raise Not_found
+        raise Caml.Not_found
   in
   let rec fixed_nvar_type_name instrs nvar =
     match nvar with
     | Exp.Var nid -> (
       match instrs with
-      | (Sil.Load (id, Exp.Lvar _, t, _)) :: _ when Ident.equal id nid ->
+      | Sil.Load (id, Exp.Lvar _, t, _) :: _ when Ident.equal id nid ->
           PatternMatch.get_type_name t
       | _ :: is ->
           fixed_nvar_type_name is nvar
       | _ ->
-          raise Not_found )
+          raise Caml.Not_found )
     | Exp.Const c ->
         PatternMatch.java_get_const_type_name c
     | _ ->
         L.(die InternalError) "Could not resolve fixed type name"
   in
   match instr with
-  | Sil.Call (_, Exp.Const Const.Cfun pn, args, cl, _) -> (
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), args, cl, _) -> (
     match printf_like_function pn with
     | Some printf -> (
       try

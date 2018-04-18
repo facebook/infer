@@ -59,7 +59,7 @@ module Val = struct
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
 
 
-  let equal x y = phys_equal x y || ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
+  let equal x y = phys_equal x y || (( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x)
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
@@ -222,8 +222,8 @@ module Val = struct
     let traces_caller =
       List.fold symbols
         ~f:(fun traces symbol ->
-          try TraceSet.join (Itv.SymbolMap.find symbol trace_map) traces with Not_found -> traces
-          )
+          try TraceSet.join (Itv.SymbolMap.find symbol trace_map) traces with Caml.Not_found ->
+            traces )
         ~init:TraceSet.empty
     in
     let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
@@ -263,7 +263,7 @@ module Stack = struct
 
   let bot = empty
 
-  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.bot
+  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Caml.Not_found -> Val.bot
 
   let find_set : PowLoc.t -> astate -> Val.t =
    fun locs mem ->
@@ -289,7 +289,9 @@ module Heap = struct
 
   let bot = empty
 
-  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.Itv.top
+  let find : Loc.t -> astate -> Val.t =
+   fun l m -> try find l m with Caml.Not_found -> Val.Itv.top
+
 
   let find_set : PowLoc.t -> astate -> Val.t =
    fun locs mem ->
@@ -363,7 +365,7 @@ module AliasMap = struct
   let ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
     let is_in_rhs k v =
-      match M.find k rhs with v' -> AliasTarget.equal v v' | exception Not_found -> false
+      match M.find k rhs with v' -> AliasTarget.equal v v' | exception Caml.Not_found -> false
     in
     M.for_all is_in_rhs lhs
 
@@ -403,9 +405,7 @@ module AliasMap = struct
    fun l _ m -> M.filter (fun _ y -> not (AliasTarget.use l y)) m
 
 
-  let find : Ident.t -> t -> AliasTarget.t option =
-   fun k m -> try Some (M.find k m) with Not_found -> None
-
+  let find : Ident.t -> t -> AliasTarget.t option = fun k m -> M.find_opt k m
 
   let remove_temps : Ident.t list -> t -> t =
    fun temps m ->
@@ -514,7 +514,7 @@ module PrunePairs = struct
     type t = Loc.t * Val.t
 
     let equal ((l1, v1) as x) ((l2, v2) as y) =
-      phys_equal x y || Loc.equal l1 l2 && Val.equal v1 v2
+      phys_equal x y || (Loc.equal l1 l2 && Val.equal v1 v2)
   end
 
   type t = PrunePair.t list
@@ -651,9 +651,9 @@ module MemReach = struct
   let find_simple_alias : Ident.t -> t -> Loc.t option =
    fun k m ->
     match Alias.find k m.alias with
-    | Some AliasTarget.Simple l ->
+    | Some (AliasTarget.Simple l) ->
         Some l
-    | Some AliasTarget.Empty _ | None ->
+    | Some (AliasTarget.Empty _) | None ->
         None
 
 
@@ -725,7 +725,7 @@ module MemReach = struct
     | LatestPrune.V (x, prunes, _), Exp.Var r
     | LatestPrune.V (x, _, prunes), Exp.UnOp (Unop.LNot, Exp.Var r, _) -> (
       match find_simple_alias r m with
-      | Some Loc.Var Var.ProgramVar y when Pvar.equal x y ->
+      | Some (Loc.Var (Var.ProgramVar y)) when Pvar.equal x y ->
           List.fold_left prunes ~init:m ~f:(fun acc (l, v) -> update_mem (PowLoc.singleton l) v acc)
       | _ ->
           m )
@@ -736,7 +736,7 @@ module MemReach = struct
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
    fun e1 e2 m ->
     match (e1, e2, m.latest_prune) with
-    | Lvar x, Const Const.Cint i, LatestPrune.Latest p ->
+    | Lvar x, Const (Const.Cint i), LatestPrune.Latest p ->
         if IntLit.isone i then {m with latest_prune= LatestPrune.TrueBranch (x, p)}
         else if IntLit.iszero i then {m with latest_prune= LatestPrune.FalseBranch (x, p)}
         else {m with latest_prune= LatestPrune.Top}

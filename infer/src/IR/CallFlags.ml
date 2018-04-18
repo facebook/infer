@@ -22,7 +22,7 @@ type t =
   ; cf_is_objc_block: bool
   ; cf_targets: Typ.Procname.t list
   ; cf_with_block_parameters: bool }
-  [@@deriving compare]
+[@@deriving compare]
 
 let pp f cf =
   if cf.cf_virtual then F.fprintf f " virtual" ;

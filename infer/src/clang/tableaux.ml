@@ -50,7 +50,8 @@ let add_formula_to_valuation k s =
 
 
 let get_node_valuation k =
-  try NodesValuationHashtbl.find k !global_nodes_valuation with Not_found -> CTLFormulaSet.empty
+  try NodesValuationHashtbl.find k !global_nodes_valuation with Caml.Not_found ->
+    CTLFormulaSet.empty
 
 
 let is_decl_allowed lcxt decl =
@@ -88,7 +89,7 @@ let update_linter_context_map an linter_context_map =
           (*L.(debug Linters Medium) "@\n Updating linter map for node %i with '%b'"
               (Ctl_parser_types.ast_node_pointer an)  res; *)
           ClosureHashtbl.add phi res acc_map
-      with Not_found ->
+      with Caml.Not_found ->
         Logging.die InternalError "Every linter condition should have an entry in the map." )
     | _ ->
         acc_map
@@ -253,15 +254,15 @@ let add_valid_formulae an checker lcxt cl =
         add_in_set phi acc_set
     | EU (trans, phi1, phi2)
       when is_valid phi2 acc_set
-           || is_valid phi1 acc_set && exists_formula_in_successor_nodes an checker trans phi ->
+           || (is_valid phi1 acc_set && exists_formula_in_successor_nodes an checker trans phi) ->
         add_in_set phi acc_set
     | AG _ | AX _ | AF _ | AU _ | EH _ | ET _ | Implies _ ->
         Logging.die InternalError
           "@\n \
            We should not have operators AG, AX, AF, AU, EH, ET.\n  \
            Failing with formula @\n   \
-           %a@\n\
-           " CTL.Debug.pp_formula phi
+           %a@\n"
+          CTL.Debug.pp_formula phi
     | _ ->
         acc_set
   in
@@ -301,7 +302,7 @@ let report_issue an lcxt linter (*npo_condition*) =
 
 
 let check_linter_map linter_map_contex phi =
-  try ClosureHashtbl.find phi linter_map_contex with Not_found ->
+  try ClosureHashtbl.find phi linter_map_contex with Caml.Not_found ->
     Logging.die InternalError "@\n ERROR: linter_map must have an entry for each formula"
 
 
@@ -325,7 +326,7 @@ let build_valuation an lcxt linter_map_context =
       build_transition_set npo_condition ; *)
     let normalized_condition = normalize linter.condition in
     let is_state_only, cl =
-      try ClosureHashtbl.find normalized_condition !closure_map with Not_found ->
+      try ClosureHashtbl.find normalized_condition !closure_map with Caml.Not_found ->
         let cl' = formula_closure normalized_condition in
         let is_state_only = is_state_only_formula normalized_condition in
         (*print_closure cl' ; *)
@@ -340,7 +341,8 @@ let build_valuation an lcxt linter_map_context =
   in
   List.iter
     ~f:(fun (linter: linter) ->
-      if CIssue.should_run_check linter.issue_desc.CIssue.mode
-         && check_linter_map linter_map_context linter.condition
+      if
+        CIssue.should_run_check linter.issue_desc.CIssue.mode
+        && check_linter_map linter_map_context linter.condition
       then do_one_check linter )
     !parsed_linters

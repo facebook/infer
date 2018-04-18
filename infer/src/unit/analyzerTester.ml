@@ -248,7 +248,7 @@ struct
         try
           let state = M.find node_id inv_map in
           F.asprintf "%a" pp_state state.post
-        with Not_found -> "_|_"
+        with Caml.Not_found -> "_|_"
       in
       if inv_str <> post_str then
         let error_msg =

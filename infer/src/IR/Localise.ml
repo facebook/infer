@@ -59,9 +59,8 @@ module Tags = struct
   let get tags tag = List.Assoc.find ~equal:String.equal tags tag
 end
 
-type error_desc =
-  {descriptions: string list; tags: Tags.t; dotty: string option}
-  [@@deriving compare]
+type error_desc = {descriptions: string list; tags: Tags.t; dotty: string option}
+[@@deriving compare]
 
 (** empty error description *)
 let no_desc : error_desc = {descriptions= []; tags= []; dotty= None}
@@ -115,7 +114,7 @@ let error_desc_set_bucket err_desc bucket =
 
 let error_desc_is_reportable_bucket err_desc =
   let issue_bucket = error_desc_get_bucket err_desc in
-  let high_buckets = BucketLevel.([b1; b2]) in
+  let high_buckets = BucketLevel.[b1; b2] in
   Option.value_map issue_bucket ~default:false ~f:(fun b ->
       List.mem ~equal:String.equal high_buckets b )
 
@@ -126,7 +125,9 @@ let get_value_line_tag tags =
     let value = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.value) tags) in
     let line = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.line) tags) in
     Some [value; line]
-  with Not_found -> None
+  with
+  | Not_found_s _ | Caml.Not_found ->
+      None
 
 
 (** extract from desc a value on which to apply polymorphic hash and equality *)
@@ -260,7 +261,8 @@ let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   let problem_str =
     Printf.sprintf
       "could be %s which results in a call to %s with %d arguments instead of %d (%s indicates \
-       that the last argument of this variadic %s has been reached)" nil_null
+       that the last argument of this variadic %s has been reached)"
+      nil_null
       (Typ.Procname.to_simplified_string pn)
       arg_number (total_args - 1) nil_null function_method
   in
@@ -390,8 +392,9 @@ let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
       "The field %a is annotated with %a, but the lock %a is not held during the access to the \
        field %s. Since the current method is non-private, it can be called from outside the \
        current class without synchronization. Consider wrapping the access in a %s block or \
-       making the method private." MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str
-      MF.pp_monospaced guarded_by_str line_info syncronized_str
+       making the method private."
+      MF.pp_monospaced accessed_fld_str MF.pp_monospaced annot_str MF.pp_monospaced guarded_by_str
+      line_info syncronized_str
   in
   {no_desc with descriptions= [msg]}
 
@@ -440,13 +443,13 @@ let access_desc access_opt =
   match access_opt with
   | None ->
       []
-  | Some Last_accessed (n, _) ->
+  | Some (Last_accessed (n, _)) ->
       let line_str = string_of_int n in
       ["last accessed on line " ^ line_str]
-  | Some Last_assigned (n, _) ->
+  | Some (Last_assigned (n, _)) ->
       let line_str = string_of_int n in
       ["last assigned on line " ^ line_str]
-  | Some Returned_from_call _ ->
+  | Some (Returned_from_call _) ->
       []
   | Some Initialized_automatically ->
       ["initialized automatically"]
@@ -455,7 +458,7 @@ let access_desc access_opt =
 let dereference_string proc_name deref_str value_str access_opt loc =
   let tags = deref_str.tags in
   Tags.update tags Tags.value value_str ;
-  let is_call_access = match access_opt with Some Returned_from_call _ -> true | _ -> false in
+  let is_call_access = match access_opt with Some (Returned_from_call _) -> true | _ -> false in
   let value_desc =
     String.concat ~sep:""
       [ (match deref_str.value_pre with Some s -> s ^ " " | _ -> "")
@@ -662,14 +665,14 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     in
     let typ_str =
       match hpred_type_opt with
-      | Some Exp.Sizeof {typ= {desc= Tstruct name}} when Typ.Name.is_class name ->
+      | Some (Exp.Sizeof {typ= {desc= Tstruct name}}) when Typ.Name.is_class name ->
           " of type " ^ MF.monospaced_to_string (Typ.Name.name name) ^ " "
       | _ ->
           " "
     in
     let desc_str =
       match resource_opt with
-      | Some PredSymb.Rmemory _ ->
+      | Some (PredSymb.Rmemory _) ->
           mem_dyn_allocated ^ to_ ^ value_str
       | Some PredSymb.Rfile ->
           "resource" ^ typ_str ^ "acquired" ^ to_ ^ value_str
@@ -686,7 +689,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
   let is_not_rxxx_after =
     let rxxx =
       match resource_opt with
-      | Some PredSymb.Rmemory _ ->
+      | Some (PredSymb.Rmemory _) ->
           reachable
       | Some PredSymb.Rfile | Some PredSymb.Rlock ->
           released

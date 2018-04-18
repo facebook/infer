@@ -82,7 +82,7 @@ let iter_call_chains_with_suffix ~f call_suffix astate =
           if not (is_cycle call) then unroll_call_ call (acc', visited')
           else f receiver.access_path acc' )
         calls'
-    with Not_found -> f receiver.access_path acc'
+    with Caml.Not_found -> f receiver.access_path acc'
   in
   unroll_call_ call_suffix ([], Typ.Procname.Set.empty)
 

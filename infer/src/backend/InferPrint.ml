@@ -229,9 +229,10 @@ module IssuesJson = struct
     let should_report_source_file =
       not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
     in
-    if key.in_footprint && error_filter source_file key.err_desc key.err_name
-       && should_report_source_file
-       && should_report key.err_kind key.err_name key.err_desc err_data.err_class
+    if
+      key.in_footprint && error_filter source_file key.err_desc key.err_name
+      && should_report_source_file
+      && should_report key.err_kind key.err_name key.err_desc err_data.err_class
     then (
       let kind = Exceptions.err_kind_string key.err_kind in
       let bug_type = key.err_name.IssueType.unique_id in
@@ -366,8 +367,9 @@ module IssuesTxt = struct
       | None ->
           err_data.loc.Location.file
     in
-    if key.in_footprint && error_filter source_file key.err_desc key.err_name
-       && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
+    if
+      key.in_footprint && error_filter source_file key.err_desc key.err_name
+      && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
     then
       Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.err_kind
         key.err_name key.err_desc None fmt ()
@@ -420,7 +422,7 @@ module Stats = struct
 
 
   let process_loc loc stats =
-    try Hashtbl.find stats.files loc.Location.file with Not_found ->
+    try Hashtbl.find stats.files loc.Location.file with Caml.Not_found ->
       Hashtbl.add stats.files loc.Location.file ()
 
 
@@ -493,7 +495,7 @@ module Stats = struct
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
     let is_timeout =
-      match Specs.(summary.stats.stats_failure) with None | Some FKcrash _ -> false | _ -> true
+      match Specs.(summary.stats.stats_failure) with None | Some (FKcrash _) -> false | _ -> true
     in
     stats.nprocs <- stats.nprocs + 1 ;
     stats.nspecs <- stats.nspecs + List.length specs ;
@@ -609,7 +611,7 @@ module Issue = struct
 
   type t =
     {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
-    [@@deriving compare]
+  [@@deriving compare]
 
   (* If two issues are identical except for their procnames, they are probably duplicate reports on
      two different instantiations of the same template. We don't want to spam users by reporting
@@ -798,7 +800,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
       in
       let sorted_report =
         let report = Jsonbug_j.report_of_string (String.concat ~sep:"\n" report_lines) in
-        List.sort ~cmp:tests_jsonbug_compare report
+        List.sort ~compare:tests_jsonbug_compare report
       in
       let pp_report_by_report_kind (report_kind, format_list) =
         match (report_kind, format_list) with
@@ -861,7 +863,7 @@ let spec_files_from_cmdline () =
 
 (** Create an iterator which loads spec files one at a time *)
 let get_summary_iterator () =
-  let sorted_spec_files = List.sort ~cmp:String.compare (spec_files_from_cmdline ()) in
+  let sorted_spec_files = List.sort ~compare:String.compare (spec_files_from_cmdline ()) in
   let do_spec f fname =
     match Specs.load_summary (DB.filename_from_string fname) with
     | None ->
@@ -954,8 +956,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   let iterate_summaries = get_summary_iterator () in
   let all_issues = ref [] in
   iterate_summaries (fun summary ->
-      all_issues
-      := process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
+      all_issues :=
+        process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
   List.iter
     ~f:(fun ({Issue.proc_name} as issue) ->
       let error_filter = error_filter filters proc_name in

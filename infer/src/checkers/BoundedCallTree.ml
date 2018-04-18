@@ -100,7 +100,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate proc_data _ = function
-    | Sil.Call (_, Const Const.Cfun pn, _, loc, _)
+    | Sil.Call (_, Const (Const.Cfun pn), _, loc, _)
       -> (
         let get_proc_desc = proc_data.ProcData.extras.get_proc_desc in
         let traces = proc_data.ProcData.extras.stacktraces in

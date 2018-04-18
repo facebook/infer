@@ -111,7 +111,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let pname = Procdesc.get_proc_name pdesc in
       let annotation = Localise.nullable_annotation_name pname in
       let call_site =
-        try CallSites.min_elt call_sites with Not_found ->
+        try CallSites.min_elt call_sites with Caml.Not_found ->
           L.(die InternalError)
             "Expecting a least one element in the set of call sites when analyzing %a"
             Typ.Procname.pp pname
@@ -209,13 +209,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         CallSites.fold
           (fun call_site s -> NullCheckedPname.add (CallSite.pname call_site) s)
           call_sites checked_pnames
-      with Not_found -> checked_pnames
+      with Caml.Not_found -> checked_pnames
     in
     (remove_call_sites ap aps, updated_pnames)
 
 
   let rec longest_nullable_prefix ap ((nullable_aps, _) as astate) =
-    try Some (ap, NullableAP.find ap nullable_aps) with Not_found ->
+    try Some (ap, NullableAP.find ap nullable_aps) with Caml.Not_found ->
       match ap with
       | _, [] ->
           None
@@ -238,7 +238,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | [arg] when HilExp.is_null_literal arg ->
         astate
-    | (HilExp.AccessExpression access_expr) :: other_args ->
+    | HilExp.AccessExpression access_expr :: other_args ->
         let ap = AccessExpression.to_access_path access_expr in
         check_nil_in_objc_container proc_data loc other_args (check_ap proc_data loc ap astate)
     | _ :: other_args ->
@@ -265,7 +265,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when NullCheckedPname.mem callee_pname checked_pnames ->
         (* Do not report nullable when the method has already been checked for null *)
         remove_nullable_ap (ret_var, []) astate
-    | Call (_, Direct callee_pname, (HilExp.AccessExpression receiver) :: _, _, _)
+    | Call (_, Direct callee_pname, HilExp.AccessExpression receiver :: _, _, _)
       when Models.is_check_not_null callee_pname ->
         assume_pnames_notnull (AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
@@ -275,7 +275,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              Annotations.ia_is_nullable ->
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
-    | Call (_, Direct callee_pname, (HilExp.AccessExpression receiver) :: _, _, loc)
+    | Call (_, Direct callee_pname, HilExp.AccessExpression receiver :: _, _, loc)
       when is_non_objc_instance_method callee_pname ->
         check_ap proc_data loc (AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
@@ -283,7 +283,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call
         ( Some ((_, ret_typ) as ret_var)
         , Direct callee_pname
-        , (HilExp.AccessExpression receiver) :: _
+        , HilExp.AccessExpression receiver :: _
         , _
         , _ )
       when Typ.is_pointer ret_typ && is_objc_instance_method callee_pname -> (
@@ -311,7 +311,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (* Add the lhs to the list of nullable values if the rhs is nullable *)
             let ap = AccessExpression.to_access_path access_expr in
             add_nullable_ap lhs (find_nullable_ap ap astate) astate
-          with Not_found ->
+          with Caml.Not_found ->
             (* Remove the lhs from the list of nullable values if the rhs is not nullable *)
             remove_nullable_ap lhs astate )
         | _ ->

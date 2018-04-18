@@ -25,7 +25,7 @@ module JNI : sig
       | FullyQualifiedClass of (string * string)
       | Array of t
       | Method of (t list * t)
-      [@@deriving compare]
+    [@@deriving compare]
 
     val equal : t -> t -> bool
 

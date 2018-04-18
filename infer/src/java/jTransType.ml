@@ -287,7 +287,7 @@ let collect_models_class_fields classpath_field_map cn cf fields =
           (Typ.pp_full Pp.text) classpath_ft (Typ.pp_full Pp.text) field_type
       in
       fields
-  with Not_found ->
+  with Caml.Not_found ->
     if Javalib.is_static_field (Javalib.ClassField cf) then
       ((field_name, field_type, annotation) :: static, nonstatic)
     else (static, (field_name, field_type, annotation) :: nonstatic)
@@ -309,7 +309,7 @@ let add_model_fields program classpath_fields cn =
           jclass classpath_fields
     | _ ->
         classpath_fields
-  with Not_found -> classpath_fields
+  with Caml.Not_found -> classpath_fields
 
 
 let rec get_all_fields program tenv cn =
@@ -319,7 +319,7 @@ let rec get_all_fields program tenv cn =
   in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
-    | Some Javalib.JClass jclass ->
+    | Some (Javalib.JClass jclass) ->
         let superclass_fields =
           match jclass.Javalib.c_super_class with
           | None ->
@@ -337,7 +337,7 @@ let rec get_all_fields program tenv cn =
           |> rev_pair
         in
         Javalib.cf_fold (collect_class_field classname) (Javalib.JClass jclass) super_fields
-    | Some Javalib.JInterface jinterface ->
+    | Some (Javalib.JInterface jinterface) ->
         let interface_fields =
           Javalib.if_fold (collect_interface_field classname) (Javalib.JInterface jinterface) []
         in

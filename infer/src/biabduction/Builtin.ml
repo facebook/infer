@@ -41,7 +41,7 @@ let check_register_populated () =
 
 (** get the symbolic execution handler associated to the builtin function name *)
 let get name : t option =
-  try Some (Typ.Procname.Hash.find builtin_functions name) with Not_found ->
+  try Some (Typ.Procname.Hash.find builtin_functions name) with Caml.Not_found ->
     check_register_populated () ; None
 
 
@@ -55,7 +55,7 @@ let register proc_name sym_exe_fun : registered =
 let pp_registered fmt () =
   let builtin_names = ref [] in
   Typ.Procname.Hash.iter (fun name _ -> builtin_names := name :: !builtin_names) builtin_functions ;
-  builtin_names := List.sort ~cmp:Typ.Procname.compare !builtin_names ;
+  builtin_names := List.sort ~compare:Typ.Procname.compare !builtin_names ;
   let pp pname = Format.fprintf fmt "%a@\n" Typ.Procname.pp pname in
   Format.fprintf fmt "Registered builtins:@\n  @[" ;
   List.iter ~f:pp !builtin_names ;

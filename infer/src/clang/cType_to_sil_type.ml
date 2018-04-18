@@ -98,7 +98,7 @@ and type_desc_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
   | Some type_ptr -> (
     match CAst_utils.get_type type_ptr with
-    | Some Clang_ast_t.ObjCObjectPointerType (_, qual_type) ->
+    | Some (Clang_ast_t.ObjCObjectPointerType (_, qual_type)) ->
         let typ = qual_type_to_sil_type translate_decl tenv qual_type in
         Typ.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
     | _ ->
@@ -166,7 +166,8 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
 and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
   let open Clang_ast_t in
   let typ = Clang_ast_extend.DeclPtr decl_ptr in
-  try Clang_ast_extend.TypePointerMap.find typ !CFrontend_config.sil_types_map with Not_found ->
+  try Clang_ast_extend.TypePointerMap.find typ !CFrontend_config.sil_types_map
+  with Caml.Not_found ->
     match CAst_utils.get_decl decl_ptr with
     | Some (CXXRecordDecl _ as d)
     | Some (RecordDecl _ as d)
@@ -191,7 +192,7 @@ and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
 
 and clang_type_ptr_to_type_desc translate_decl tenv type_ptr =
   try Clang_ast_extend.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
-  with Not_found ->
+  with Caml.Not_found ->
     match CAst_utils.get_type type_ptr with
     | Some c_type ->
         let type_desc = type_desc_of_c_type translate_decl tenv c_type in

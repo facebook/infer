@@ -29,7 +29,7 @@ let create proc_desc =
 
 let lookup map_ id =
   let map = Lazy.force map_ in
-  try Some (Ident.Hash.find map id) with Not_found -> None
+  Ident.Hash.find_opt map id
 
 
 let expand_expr idenv e =

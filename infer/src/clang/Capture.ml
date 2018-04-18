@@ -117,7 +117,7 @@ let run_clang clang_command read =
   match Utils.with_process_in (ClangCommand.command_to_run clang_command) read with
   | res, Ok () ->
       res
-  | _, Error `Exit_non_zero n ->
+  | _, Error (`Exit_non_zero n) ->
       (* exit with the same error code as clang in case of compilation failure *)
       exit_with_error n
   | _ ->
@@ -152,15 +152,16 @@ let cc1_capture clang_cmd =
     Utils.filename_to_absolute ~root (List.last_exn orig_argv)
   in
   L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path ;
-  if Config.equal_analyzer Config.analyzer Config.CompileOnly
-     || not Config.skip_analysis_in_path_skips_compilation
-        && CLocation.is_file_blacklisted source_path
+  if
+    Config.equal_analyzer Config.analyzer Config.CompileOnly
+    || not Config.skip_analysis_in_path_skips_compilation
+       && CLocation.is_file_blacklisted source_path
   then (
     L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path ;
     (* We still need to run clang, but we don't have to attach the plugin. *)
     run_clang clang_cmd Utils.consume_in )
-  else if Config.skip_analysis_in_path_skips_compilation
-          && CLocation.is_file_blacklisted source_path
+  else if
+    Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
   then (
     L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )

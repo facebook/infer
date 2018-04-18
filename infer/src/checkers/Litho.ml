@@ -204,7 +204,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match Var.get_footprint_index var with
           | Some footprint_index -> (
             match List.nth actuals footprint_index with
-            | Some HilExp.AccessExpression actual_access_expr ->
+            | Some (HilExp.AccessExpression actual_access_expr) ->
                 Some
                   (Domain.LocalAccessPath.make
                      (AccessExpression.to_access_path actual_access_expr)
@@ -231,28 +231,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call
         ( (Some return_base as ret_opt)
         , Direct (Typ.Procname.Java java_callee_procname as callee_procname)
-        , ((HilExp.AccessExpression receiver_ae) :: _ as actuals)
+        , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , _ ) ->
         let summary = Summary.read_summary proc_data.pdesc callee_procname in
         let receiver =
           Domain.LocalAccessPath.make (AccessExpression.to_access_path receiver_ae) caller_pname
         in
-        if ( LithoFramework.is_component_builder callee_procname proc_data.tenv
-           (* track Builder's in order to check required prop's *)
-           || GraphQLGetters.is_function callee_procname summary
-           || (* track GraphQL getters in order to report graphql field accesses *)
-              Domain.mem receiver astate
-              (* track anything called on a receiver we're already tracking *) )
-           && not (Typ.Procname.Java.is_static java_callee_procname)
-           && not
-                ( LithoFramework.is_function callee_procname
-                && not (LithoFramework.is_function caller_pname) )
-           (* don't track Litho client -> Litho framework calls; we want to use the summaries *)
+        if
+          ( LithoFramework.is_component_builder callee_procname proc_data.tenv
+          (* track Builder's in order to check required prop's *)
+          || GraphQLGetters.is_function callee_procname summary
+          || (* track GraphQL getters in order to report graphql field accesses *)
+             Domain.mem receiver astate
+             (* track anything called on a receiver we're already tracking *) )
+          && not (Typ.Procname.Java.is_static java_callee_procname)
+          && not
+               ( LithoFramework.is_function callee_procname
+               && not (LithoFramework.is_function caller_pname) )
+          (* don't track Litho client -> Litho framework calls; we want to use the summaries *)
         then
           let return_access_path = Domain.LocalAccessPath.make (return_base, []) caller_pname in
           let return_calls =
-            (try Domain.find return_access_path astate with Not_found -> Domain.CallSet.empty)
+            ( try Domain.find return_access_path astate with Caml.Not_found -> Domain.CallSet.empty
+            )
             |> Domain.CallSet.add (Domain.MethodCall.make receiver callee_procname)
           in
           Domain.add return_access_path return_calls astate
@@ -276,7 +278,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         try
           let call_set = Domain.find rhs_access_path astate in
           Domain.remove rhs_access_path astate |> Domain.add lhs_access_path call_set
-        with Not_found -> astate )
+        with Caml.Not_found -> astate )
     | _ ->
         astate
 

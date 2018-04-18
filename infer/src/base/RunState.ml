@@ -27,7 +27,7 @@ let add_run_to_sequence () =
     ; date= run_time_string
     ; command= Config.command }
   in
-  Runstate_t.(state := {(!state) with run_sequence= run :: !state.run_sequence})
+  Runstate_t.(state := {!state with run_sequence= run :: !state.run_sequence})
 
 
 let state_filename = ".infer_runstate.json"
@@ -47,17 +47,18 @@ let load_and_validate () =
           (Printf.sprintf
              "Incompatible results directory '%s':\n\
               %s\n\
-              Was '%s' created using an older version of infer?" Config.results_dir err_msg
-             Config.results_dir) )
+              Was '%s' created using an older version of infer?"
+             Config.results_dir err_msg Config.results_dir) )
       msg
   in
   if Sys.file_exists state_file_path <> `Yes then error "save state not found"
   else
     try
       let loaded_state = Ag_util.Json.from_file Runstate_j.read_t state_file_path in
-      if not
-           (String.equal !state.Runstate_t.results_dir_format
-              loaded_state.Runstate_t.results_dir_format)
+      if
+        not
+          (String.equal !state.Runstate_t.results_dir_format
+             loaded_state.Runstate_t.results_dir_format)
       then
         error "Incompatible formats: found\n  %s\n\nbut expected this format:\n  %s\n\n"
           loaded_state.results_dir_format !state.Runstate_t.results_dir_format

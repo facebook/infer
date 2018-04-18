@@ -26,7 +26,7 @@ module Node = struct
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
-    [@@deriving compare]
+  [@@deriving compare]
 
   let equal_nodekind = [%compare.equal : nodekind]
 
@@ -221,7 +221,7 @@ type t =
   ; mutable start_node: Node.t  (** start node of this procedure *)
   ; mutable exit_node: Node.t  (** exit node of this procedure *)
   ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 let from_proc_attributes attributes =
   let pname_opt = Some attributes.ProcAttributes.proc_name in
@@ -428,9 +428,9 @@ let pp_variable_list fmt etl =
 
 let pp_objc_accessor fmt accessor =
   match accessor with
-  | Some ProcAttributes.Objc_getter field ->
+  | Some (ProcAttributes.Objc_getter field) ->
       Format.fprintf fmt "Getter of %a, " (Typ.Struct.pp_field Pp.text) field
-  | Some ProcAttributes.Objc_setter field ->
+  | Some (ProcAttributes.Objc_setter field) ->
       Format.fprintf fmt "Setter of %a, " (Typ.Struct.pp_field Pp.text) field
   | None ->
       ()
@@ -520,7 +520,7 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
         []
     | node :: other_node ->
         let converted_node =
-          try NodeMap.find node !node_map with Not_found ->
+          try NodeMap.find node !node_map with Caml.Not_found ->
             let new_node = convert_node node
             and successors = Node.get_succs node
             and exn_nodes = Node.get_exn node in
@@ -553,7 +553,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
   in
   let subst_map = ref Ident.Map.empty in
   let redirect_typename origin_id =
-    try Some (Ident.Map.find origin_id !subst_map) with Not_found -> None
+    try Some (Ident.Map.find origin_id !subst_map) with Caml.Not_found -> None
   in
   let convert_instr instrs = function
     | Sil.Load
@@ -562,7 +562,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         , {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
         , loc ) ->
         let specialized_typname =
-          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions with Not_found ->
+          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions with Caml.Not_found ->
             origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
@@ -570,7 +570,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
     | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc) ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
-          with Not_found -> origin_typ
+          with Caml.Not_found -> origin_typ
         in
         Sil.Load (id, convert_exp origin_exp, updated_typ, loc) :: instrs
     | Sil.Load (id, origin_exp, origin_typ, loc) ->
@@ -582,7 +582,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         set_instr :: instrs
     | Sil.Call
         ( return_ids
-        , Exp.Const Const.Cfun Typ.Procname.Java callee_pname_java
+        , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java))
         , (Exp.Var id, _) :: origin_args
         , loc
         , call_flags )
@@ -715,7 +715,8 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         in
         let instrs = remove_temps_instrs :: call_instr :: load_instrs @ instrs in
         (instrs, id_map)
-      with Not_found -> convert_generic_call return_ids (Exp.Var id) origin_args loc call_flags )
+      with Caml.Not_found ->
+        convert_generic_call return_ids (Exp.Var id) origin_args loc call_flags )
     | Sil.Call (return_ids, origin_call_exp, origin_args, loc, call_flags) ->
         convert_generic_call return_ids origin_call_exp origin_args loc call_flags
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
@@ -775,8 +776,8 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
             let _, captured = Mangled.Map.find param_name substitutions in
             append_no_duplicates_formals_and_annot acc
               (List.map captured ~f:(fun captured_var -> (captured_var, Annot.Item.empty)))
-          with Not_found -> append_no_duplicates_formals_and_annot acc [((param_name, typ), annot)]
-      )
+          with Caml.Not_found ->
+            append_no_duplicates_formals_and_annot acc [((param_name, typ), annot)] )
     in
     List.unzip new_formals_blocks_captured_vars_with_annots
   in
@@ -788,7 +789,8 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     | None ->
         Logging.die InternalError
           "specialize_with_block_args ahould only be called with defined procedures, but we \
-           cannot find the captured file of procname %a" Typ.Procname.pp pname
+           cannot find the captured file of procname %a"
+          Typ.Procname.pp pname
   in
   let resolved_attributes =
     { callee_attributes with

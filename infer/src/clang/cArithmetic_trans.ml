@@ -186,8 +186,8 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       L.(debug Capture Medium)
         "@\n\
          WARNING: Missing translation for Unary Operator Kind %s. The construct has been \
-         ignored...@\n\
-         " uok ;
+         ignored...@\n"
+        uok ;
       (e, [])
 
 
@@ -263,7 +263,7 @@ let bin_op_to_string boi =
 
 let sil_const_plus_one const =
   match const with
-  | Exp.Const Const.Cint n ->
+  | Exp.Const (Const.Cint n) ->
       Exp.Const (Const.Cint (IntLit.add n IntLit.one))
   | _ ->
       Exp.BinOp (Binop.PlusA, const, Exp.Const (Const.Cint IntLit.one))

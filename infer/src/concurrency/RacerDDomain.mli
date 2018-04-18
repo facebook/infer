@@ -18,7 +18,7 @@ module Access : sig
     | ContainerWrite of AccessPath.t * Typ.Procname.t  (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   val matches : caller:t -> callee:t -> bool
   (** returns true if the caller access matches the callee access after accounting for mismatch
@@ -97,7 +97,7 @@ module OwnershipAbstractValue : sig
     | Owned  (** Owned value; bottom of the lattice *)
     | OwnedIf of IntSet.t  (** Owned if the formals at the given indexes are owned in the caller *)
     | Unowned  (** Unowned value; top of the lattice *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   val owned : astate
 
@@ -123,14 +123,14 @@ module Choice : sig
   type t =
     | OnMainThread  (** the current procedure is running on the main thread *)
     | LockHeld  (** a lock is currently held *)
-    [@@deriving compare]
+  [@@deriving compare]
 end
 
 module Attribute : sig
   type t =
     | Functional  (** holds a value returned from a callee marked @Functional *)
     | Choice of Choice.t  (** holds a boolean choice variable *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 
@@ -161,7 +161,7 @@ module AccessData : sig
           (** Conjunction of "formal index must be owned" predicates.
                                          true if empty *)
       | False
-      [@@deriving compare]
+    [@@deriving compare]
 
     val is_true : t -> bool
     (** return [true] if the precondition evaluates to true *)
@@ -169,9 +169,8 @@ module AccessData : sig
     val pp : F.formatter -> t -> unit  [@@warning "-32"]
   end
 
-  type t = private
-    {thread: bool; lock: bool; ownership_precondition: Precondition.t}
-    [@@deriving compare]
+  type t = private {thread: bool; lock: bool; ownership_precondition: Precondition.t}
+  [@@deriving compare]
 
   val make : LocksDomain.astate -> ThreadsDomain.astate -> Precondition.t -> Procdesc.t -> t
 

@@ -20,7 +20,7 @@ type t =
   | Constant of Const.t
   | Cast of Typ.t * t
   | Sizeof of Typ.t * t option
-  [@@deriving compare]
+[@@deriving compare]
 
 let rec pp fmt = function
   | AccessExpression access_expr ->
@@ -34,7 +34,7 @@ let rec pp fmt = function
   | Closure (pname, captured) ->
       let pp_item fmt (base, exp) =
         match exp with
-        | AccessExpression Base b when AccessPath.equal_base b base ->
+        | AccessExpression (Base b) when AccessPath.equal_base b base ->
             F.fprintf fmt "%a captured" AccessPath.pp_base b
         | _ ->
             F.fprintf fmt "%a captured as %a" AccessPath.pp_base base pp exp
@@ -70,19 +70,19 @@ let rec get_typ tenv = function
         None )
   | Exception t ->
       get_typ tenv t
-  | Closure _ | Constant Cfun _ ->
+  | Closure _ | Constant (Cfun _) ->
       (* We don't have a way to represent function types *)
       None
-  | Constant Cint _ ->
+  | Constant (Cint _) ->
       (* TODO: handle signedness *)
       Some (Typ.mk (Typ.Tint Typ.IInt))
-  | Constant Cfloat _ ->
+  | Constant (Cfloat _) ->
       Some (Typ.mk (Typ.Tfloat Typ.FFloat))
-  | Constant Cclass _ ->
+  | Constant (Cclass _) ->
       (* TODO: this only happens in Java. We probably need to change it to `Cclass of Typ.Name.t`
          to give a useful result here *)
       None
-  | Constant Cstr _ ->
+  | Constant (Cstr _) ->
       (* TODO: this will need to behave differently depending on whether we're in C++ or Java *)
       None
   | Cast (typ, _) ->
@@ -171,7 +171,7 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
                , fld
                , root_exp_typ )) typ )
-    | Lindex (Const Cstr s, index_exp) ->
+    | Lindex (Const (Cstr s), index_exp) ->
         (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
          for the string literal. if you actually need to see the value of the string literal in the
          analysis, you should probably be using SIL. this is unsound if the code modifies the
@@ -201,11 +201,11 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
   of_sil_ exp typ
 
 
-let is_null_literal = function Constant Cint n -> IntLit.isnull n | _ -> false
+let is_null_literal = function Constant (Cint n) -> IntLit.isnull n | _ -> false
 
 let rec eval_arithmetic_binop op e1 e2 =
   match (eval e1, eval e2) with
-  | Some Const.Cint i1, Some Const.Cint i2 ->
+  | Some (Const.Cint i1), Some (Const.Cint i2) ->
       Some (Const.Cint (op i1 i2))
   | _ ->
       None

@@ -28,7 +28,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
-  [@@deriving compare]
+[@@deriving compare]
 (* In formulas below prefix
    "E" means "exists a path"
    "A" means "for all path" *)
@@ -67,7 +67,7 @@ type t =
   | ET of ALVar.alexp list * transitions option * t
       (** ET[T][l] phi <=> there exists a descentant an of the current node such that an is of type in set T
           making a transition to a node an' via label l, such that in an phi holds. *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (* "set" clauses are used for defining mandatory variables that will be used
    by when reporting issues: eg for defining the condition.
@@ -98,8 +98,7 @@ type clause =
   | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
 
 type ctl_checker =
-  {id: string; (* Checker's id *)
-  definitions: clause list (* A list of let/set definitions *)}
+  {id: string; (* Checker's id *) definitions: clause list (* A list of let/set definitions *)}
 
 type al_file =
   { import_files: string list

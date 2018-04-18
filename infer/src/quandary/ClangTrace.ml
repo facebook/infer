@@ -30,7 +30,7 @@ module SourceKind = struct
     | Other  (** for testing or uncategorized sources *)
     | UserControlledEndpoint of (Mangled.t * Typ.desc)
         (** source originating from formal of an endpoint that is known to hold user-controlled data *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -102,7 +102,7 @@ module SourceKind = struct
         in
         (* accessed global will be passed to us as the only parameter *)
         match actuals with
-        | [(HilExp.AccessExpression access_expr)] ->
+        | [HilExp.AccessExpression access_expr] ->
             let access_path = AccessExpression.to_access_path access_expr in
             if is_gflag access_path then
               let (global_pvar, _), _ = access_path in
@@ -204,7 +204,7 @@ module SinkKind = struct
     | StackAllocation  (** stack memory allocation *)
     | URL  (** URL creation *)
     | Other  (** for testing or uncategorized sinks *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -321,7 +321,7 @@ module SinkKind = struct
           match List.nth actuals 1 with
           | Some exp -> (
             match HilExp.eval exp with
-            | Some Const.Cint i ->
+            | Some (Const.Cint i) ->
                 (* check if the data kind might be CURLOPT_URL *)
                 if controls_request (IntLit.to_int i) then taint_after_nth 1 URL actuals else None
             | _ ->
@@ -383,7 +383,7 @@ module CppSanitizer = struct
     | EscapeSQL  (** escape string to sanitize SQL queries *)
     | EscapeURL  (** escape string to sanitize URLs (e.g., prevent injecting GET/POST params) *)
     | All  (** sanitizes all forms of taint *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let equal = [%compare.equal : t]
 

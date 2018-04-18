@@ -20,7 +20,7 @@ let add_enum_constant_to_map_if_needed decl_pointer pred_decl_opt =
   try
     ignore (CAst_utils.get_enum_constant_exp decl_pointer) ;
     true
-  with Not_found ->
+  with Caml.Not_found ->
     CAst_utils.add_enum_constant decl_pointer pred_decl_opt ;
     false
 

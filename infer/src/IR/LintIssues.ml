@@ -16,7 +16,7 @@ let errLogMap = ref Typ.Procname.Map.empty
 let exists_issues () = not (Typ.Procname.Map.is_empty !errLogMap)
 
 let get_err_log procname =
-  try Typ.Procname.Map.find procname !errLogMap with Not_found ->
+  try Typ.Procname.Map.find procname !errLogMap with Caml.Not_found ->
     let errlog = Errlog.empty () in
     errLogMap := Typ.Procname.Map.add procname errlog !errLogMap ;
     errlog
@@ -42,19 +42,19 @@ let load_issues_to_errlog_map dir =
     let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
     match load_issues file with
     | Some map ->
-        errLogMap
-        := Typ.Procname.Map.merge
-             (fun _ issues1 issues2 ->
-               match (issues1, issues2) with
-               | Some issues1, Some issues2 ->
-                   Errlog.update issues1 issues2 ; Some issues1
-               | Some issues1, None ->
-                   Some issues1
-               | None, Some issues2 ->
-                   Some issues2
-               | None, None ->
-                   None )
-             !errLogMap map
+        errLogMap :=
+          Typ.Procname.Map.merge
+            (fun _ issues1 issues2 ->
+              match (issues1, issues2) with
+              | Some issues1, Some issues2 ->
+                  Errlog.update issues1 issues2 ; Some issues1
+              | Some issues1, None ->
+                  Some issues1
+              | None, Some issues2 ->
+                  Some issues2
+              | None, None ->
+                  None )
+            !errLogMap map
     | None ->
         ()
   in

@@ -16,7 +16,7 @@ type base = Var.t * Typ.t [@@deriving compare]
 type access =
   | ArrayAccess of Typ.t * t list  (** array element type with list of access paths in index *)
   | FieldAccess of Typ.Fieldname.t  (** field name *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is
       representedas (x, [f; g]) *)
@@ -92,7 +92,7 @@ module Abs : sig
   type t =
     | Abstracted of raw  (** abstraction of heap reachable from an access path, e.g. x.f* *)
     | Exact of raw  (** precise representation of an access path, e.g. x.f.g *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   val equal : t -> t -> bool
 

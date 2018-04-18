@@ -195,7 +195,7 @@ let get_cycles found_cycles root tenv prop =
               match get_points_to f_exp with
               | None ->
                   found_cycles
-              | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te})
+              | Some (Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}))
                 when edge_is_strong tenv obj_edge ->
                   let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
                   dfs ~found_cycles ~root_node ~from_node:rc_to ~rev_path:(edge :: rev_path)

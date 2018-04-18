@@ -67,7 +67,7 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
       prop.Prop.sigma
   in
   match hpred_opt with
-  | Some Sil.Hpointsto (_, Sil.Earray (len, _, _), _) ->
+  | Some (Sil.Hpointsto (_, Sil.Earray (len, _, _), _)) ->
       Some (len, prop)
   | Some _ ->
       None (* e points to something but not an array *)
@@ -131,7 +131,7 @@ let execute___set_array_length {Builtin.tenv; pdesc; prop_; path; ret_id; args} 
             prop.Prop.sigma
         in
         match hpred with
-        | [(Sil.Hpointsto (e, Sil.Earray (_, esel, inst), t))] ->
+        | [Sil.Hpointsto (e, Sil.Earray (_, esel, inst), t)] ->
             let hpred' = Sil.Hpointsto (e, Sil.Earray (n_len, esel, inst), t) in
             let prop' = Prop.set prop ~sigma:(hpred' :: sigma') in
             [(Prop.normalize tenv prop', path)]
@@ -248,7 +248,7 @@ let replace_ptsto_texp tenv prop root_e texp =
         sigma
     in
     match sigma1 with
-    | [(Sil.Hpointsto (e, se, _))] ->
+    | [Sil.Hpointsto (e, se, _)] ->
         Sil.Hpointsto (e, se, texp) :: sigma2
     | _ ->
         sigma
@@ -351,7 +351,7 @@ let execute___cast builtin_args : Builtin.ret_typ =
 let set_resource_attribute tenv prop path n_lexp loc ra_res =
   let prop' =
     match Attribute.get_resource tenv prop n_lexp with
-    | Some Apred (Aresource ra, _) ->
+    | Some (Apred (Aresource ra, _)) ->
         Attribute.add_or_replace tenv prop (Apred (Aresource {ra with ra_res}, [n_lexp]))
     | _ ->
         let pname = PredSymb.mem_alloc_pname PredSymb.Mnew in
@@ -573,7 +573,7 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
     | [(size_exp, _)] ->
         (* for malloc and __new *)
         (size_exp, PredSymb.mem_alloc_pname mk)
-    | [(size_exp, _); (Exp.Const Const.Cfun pname, _)] ->
+    | [(size_exp, _); (Exp.Const (Const.Cfun pname), _)] ->
         (size_exp, pname)
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__)
@@ -721,7 +721,7 @@ let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id; args} : B
       let n_lexp2, prop___ = check_arith_norm_exp tenv pname lexp2 prop__ in
       let n_lexp3, prop = check_arith_norm_exp tenv pname lexp3 prop___ in
       match (n_lexp1, n_lexp2, n_lexp3) with
-      | Exp.Const Const.Cstr str1, Exp.Const Const.Cstr str2, Exp.Const Const.Cint n_sil
+      | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil)
         -> (
           let n = IntLit.to_int n_sil in
           try
@@ -729,7 +729,7 @@ let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id; args} : B
             let n_part = List.nth_exn parts n in
             let res = Exp.Const (Const.Cstr n_part) in
             [(return_result tenv res prop ret_id, path)]
-          with Not_found -> assert false )
+          with Caml.Not_found -> assert false )
       | _ ->
           [(prop, path)] )
   | _ ->
@@ -754,7 +754,7 @@ let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} 
     match args with
     | [(lexp_msg, _)] -> (
       match Prop.exp_normalize_prop tenv prop_ lexp_msg with
-      | Exp.Const Const.Cstr str ->
+      | Exp.Const (Const.Cstr str) ->
           str
       | _ ->
           assert false )

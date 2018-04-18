@@ -15,7 +15,8 @@ let main ~input ~output =
   try
     let program = Frontend.translate input in
     Option.iter output ~f:(function
-      | "-" -> Format.printf "%a@." Llair.fmt program
+      | "-" ->
+          Format.printf "%a@." Llair.fmt program
       | filename ->
           Out_channel.with_file filename ~f:(fun oc ->
               let ff = Format.formatter_of_out_channel oc in
@@ -28,10 +29,10 @@ let main ~input ~output =
         Format.printf "@\nRESULT: Invalid input: %s@." msg
     | Unimplemented msg ->
         Format.printf "@\nRESULT: Unimplemented: %s@." msg
-    | Failure msg -> Format.printf "@\nRESULT: Internal error: %s@." msg
+    | Failure msg ->
+        Format.printf "@\nRESULT: Internal error: %s@." msg
     | _ ->
-        Format.printf "@\nRESULT: Unknown error: %s@."
-          (Caml.Printexc.to_string exn) ) ;
+        Format.printf "@\nRESULT: Unknown error: %s@." (Caml.Printexc.to_string exn) ) ;
     Caml.Printexc.raise_with_backtrace exn bt
 
 

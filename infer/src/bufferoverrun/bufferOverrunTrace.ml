@@ -20,7 +20,7 @@ module BoTrace = struct
     | Return of Location.t
     | SymAssign of Loc.t * Location.t
     | UnknownFrom of Typ.Procname.t * Location.t
-    [@@deriving compare]
+  [@@deriving compare]
 
   type t = {length: int; trace: elem list} [@@deriving compare]
 

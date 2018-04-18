@@ -26,7 +26,7 @@ module Domain = struct
         astate
     | NonBottom _ ->
         let sink_map =
-          try AnnotReachabilityDomain.find annot annot_map with Not_found ->
+          try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
             AnnotReachabilityDomain.SinkMap.empty
         in
         let sink_map' =
@@ -121,7 +121,7 @@ let method_overrides_annot annot tenv pname = method_overrides (method_has_annot
 let lookup_annotation_calls ~caller_pdesc annot pname =
   match Ondemand.analyze_proc_name ~caller_pdesc pname with
   | Some {Specs.payload= {Specs.annot_map= Some annot_map}} -> (
-    try AnnotReachabilityDomain.find annot annot_map with Not_found ->
+    try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
       AnnotReachabilityDomain.SinkMap.empty )
   | _ ->
       AnnotReachabilityDomain.SinkMap.empty
@@ -197,7 +197,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
               let loc = CallSite.loc call_site in
               if Typ.Procname.Set.mem p visited then accu
               else ((p, loc) :: unseen, Typ.Procname.Set.add p visited)
-            with Not_found -> accu )
+            with Caml.Not_found -> accu )
           next_calls ([], visited_pnames)
       in
       List.iter ~f:(loop fst_call_loc updated_callees (new_trace, new_stack_str)) unseen_callees
@@ -210,7 +210,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
         loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc)
-      with Not_found -> () )
+      with Caml.Not_found -> () )
     sink_map
 
 
@@ -228,7 +228,7 @@ let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
   try
     let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
     List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot) src_annot_list
-  with Not_found -> ()
+  with Caml.Not_found -> ()
 
 
 (* New implementation starts here *)
@@ -398,8 +398,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let check_call tenv callee_pname caller_pname call_site astate =
     List.fold ~init:astate
       ~f:(fun astate (spec: AnnotationSpec.t) ->
-        if spec.sink_predicate tenv callee_pname
-           && not (spec.sanitizer_predicate tenv caller_pname)
+        if
+          spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
         then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
         else astate )
       annot_specs
@@ -421,9 +421,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate {ProcData.pdesc; tenv} _ = function
-    | Sil.Call (Some (id, _), Const Cfun callee_pname, _, _, _) when is_unlikely callee_pname ->
+    | Sil.Call (Some (id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
-    | Sil.Call (_, Const Cfun callee_pname, _, call_loc, _) ->
+    | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name pdesc in
         let call_site = CallSite.make callee_pname call_loc in
         check_call tenv callee_pname caller_pname call_site astate

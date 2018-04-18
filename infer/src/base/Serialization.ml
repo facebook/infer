@@ -35,14 +35,14 @@ let create_serializer (key: Key.t) : 'a serializer =
     if key <> key' then (
       L.user_error
         "Wrong key in when loading data from %s -- are you running infer with results coming from \
-         a previous version of infer?@\n\
-         " source_msg ;
+         a previous version of infer?@\n"
+        source_msg ;
       None )
     else if version <> version' then (
       L.user_error
         "Wrong version in when loading data from %s -- are you running infer with results coming \
-         from a previous version of infer?@\n\
-         " source_msg ;
+         from a previous version of infer?@\n"
+        source_msg ;
       None )
     else Some value
   in

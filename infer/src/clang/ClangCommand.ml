@@ -153,9 +153,9 @@ let clang_cc1_cmd_sanitizer cmd =
           (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
           Unix.mkdir_p (Filename.dirname arg) ;
           arg )
-        else if String.equal option "-dependency-file"
-                && Option.is_some Config.buck_compilation_database
-                (* In compilation database mode, dependency files are not assumed to exist *)
+        else if
+          String.equal option "-dependency-file" && Option.is_some Config.buck_compilation_database
+          (* In compilation database mode, dependency files are not assumed to exist *)
         then "/dev/null"
         else if String.equal option "-isystem" then
           match include_override_regex with

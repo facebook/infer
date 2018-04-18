@@ -152,7 +152,7 @@ let make_binary_stmt stmt1 stmt2 stmt_info expr_info boi =
 let make_next_object_exp stmt_info item items =
   let var_decl_ref, var_type =
     match item with
-    | Clang_ast_t.DeclStmt (_, _, [(Clang_ast_t.VarDecl (di, name_info, var_qual_type, _))]) ->
+    | Clang_ast_t.DeclStmt (_, _, [Clang_ast_t.VarDecl (di, name_info, var_qual_type, _)]) ->
         let decl_ptr = di.Clang_ast_t.di_pointer in
         let decl_ref = make_decl_ref_qt `Var decl_ptr name_info false var_qual_type in
         let stmt_info_var =

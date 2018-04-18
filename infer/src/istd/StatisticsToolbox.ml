@@ -40,7 +40,7 @@ let compute_statistics values =
       let average = sum /. float_of_int num_elements in
       let values_arr = Array.of_list values in
       Array.sort
-        ~cmp:(fun a b -> if Float.equal a b then 0 else if a -. b < 0.0 then -1 else 1)
+        ~compare:(fun a b -> if Float.equal a b then 0 else if a -. b < 0.0 then -1 else 1)
         values_arr ;
       let percentile pct =
         assert (pct >= 0.0 && pct <= 1.0) ;

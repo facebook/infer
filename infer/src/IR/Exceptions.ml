@@ -17,7 +17,7 @@ type visibility =
   | Exn_user  (** always add to error log *)
   | Exn_developer  (** only add to error log in developer mode *)
   | Exn_system  (** never add to error log *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_visibility = [%compare.equal : visibility]
 
@@ -69,8 +69,8 @@ exception Custom_error of string * Localise.error_desc
 
 exception Dummy_exception of Localise.error_desc
 
-exception Dangling_pointer_dereference of
-  PredSymb.dangling_kind option * Localise.error_desc * L.ocaml_pos
+exception
+  Dangling_pointer_dereference of PredSymb.dangling_kind option * Localise.error_desc * L.ocaml_pos
 
 exception Deallocate_stack_variable of Localise.error_desc
 
@@ -98,8 +98,9 @@ exception Internal_error of Localise.error_desc
 
 exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 
-exception Leak of
-  bool * Sil.hpred * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
+exception
+  Leak of
+    bool * Sil.hpred * (visibility * Localise.error_desc) * bool * PredSymb.resource * L.ocaml_pos
 
 exception Missing_fld of Typ.Fieldname.t * L.ocaml_pos
 

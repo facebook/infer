@@ -245,7 +245,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let matching_sink, _ = List.find_exn ~f:snd matching_sinks in
             expand_sink matching_sink (Sink.indexes matching_sink)
               (matching_sink :: report_acc, seen_acc')
-          with Not_found ->
+          with
+          | Not_found_s _ | Caml.Not_found ->
             (* didn't find a sink whose indexes match; this can happen when taint flows in via a
                global. pick any sink whose kind matches *)
             match matching_sinks with
@@ -392,7 +393,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             (projected_ap_opt, Option.value ~default:TaintDomain.empty_node caller_node_opt)
         | Var.LogicalVar id when Ident.is_footprint id -> (
           match List.nth actuals (Ident.get_stamp id) with
-          | Some HilExp.AccessExpression actual_ae ->
+          | Some (HilExp.AccessExpression actual_ae) ->
               let projected_ap =
                 project ~formal_ap ~actual_ap:(AccessExpression.to_access_path actual_ae)
               in
@@ -565,10 +566,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               let filtered_footprint =
                 TraceDomain.Sources.Footprint.fold
                   (fun acc access_path (is_mem, _) ->
-                    if is_mem
-                       && Option.exists
-                            (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
-                            ~f:should_taint_typ
+                    if
+                      is_mem
+                      && Option.exists
+                           (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
+                           ~f:should_taint_typ
                     then TraceDomain.Sources.Footprint.add_trace access_path true acc
                     else acc )
                   sources.footprint TraceDomain.Sources.Footprint.empty
@@ -593,14 +595,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   propagate_to_access_path (AccessPath.Abs.Abstracted (ret_ap, [])) actuals
                     astate_acc
               | ( TaintSpec.Propagate_to_receiver
-                , (AccessExpression receiver_ae) :: (_ :: _ as other_actuals)
+                , AccessExpression receiver_ae :: (_ :: _ as other_actuals)
                 , _ ) ->
                   propagate_to_access_path
                     (AccessPath.Abs.Abstracted (AccessExpression.to_access_path receiver_ae))
                     other_actuals astate_acc
               | TaintSpec.Propagate_to_actual actual_index, _, _ -> (
                 match List.nth actuals actual_index with
-                | Some HilExp.AccessExpression actual_ae ->
+                | Some (HilExp.AccessExpression actual_ae) ->
                     propagate_to_access_path
                       (AccessPath.Abs.Abstracted (AccessExpression.to_access_path actual_ae))
                       actuals astate_acc
@@ -616,9 +618,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | "operator=" when not (Typ.Procname.is_java callee_pname) -> (
               match (* treat unknown calls to C++ operator= as assignment *)
                     actuals with
-              | [(AccessExpression lhs_access_expr); rhs_exp] ->
+              | [AccessExpression lhs_access_expr; rhs_exp] ->
                   exec_write lhs_access_expr rhs_exp access_tree
-              | [(AccessExpression lhs_access_expr); rhs_exp; (HilExp.AccessExpression access_expr)]
+              | [AccessExpression lhs_access_expr; rhs_exp; HilExp.AccessExpression access_expr]
                 -> (
                   let dummy_ret_access_expr = access_expr in
                   match dummy_ret_access_expr with
@@ -651,7 +653,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                    assigning to it. understand this pattern by pretending it's the return value *)
                 List.last actuals
               with
-              | Some HilExp.AccessExpression access_expr -> (
+              | Some (HilExp.AccessExpression access_expr) -> (
                 match AccessExpression.to_access_path access_expr with
                 | ((Var.ProgramVar pvar, _) as ret_base), [] when Pvar.is_frontend_tmp pvar ->
                     Some ret_base
@@ -756,7 +758,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         if Sources.Footprint.is_empty footprint_sources && not (Sinks.is_empty sinks) then
           Logging.die InternalError
             "Trace %a associated with %a tracks sinks even though no more sources can flow into \
-             them" Sinks.pp sinks AccessPath.Abs.pp access_path ;
+             them"
+            Sinks.pp sinks AccessPath.Abs.pp access_path ;
         (* invariant 2: we should never have sinks without sources *)
         if Sources.is_empty sources && not (Sinks.is_empty sinks) then
           Logging.die InternalError "We have sinks %a associated with %a, but no sources" Sinks.pp
@@ -769,12 +772,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
            corresponding footprint source. a trace like this is a waste of space, since we can
            lazily create it if/when someone actually tries to read the access path instead *)
         (* TODO: tmp to focus on invariant 1 *)
-        if false && AccessPath.Abs.is_exact access_path && Sinks.is_empty sinks
-           && Sources.Footprint.mem access_path footprint_sources
-           && Sources.Footprint.exists
-                (fun footprint_access_path (is_mem, _) ->
-                  is_mem && AccessPath.Abs.equal access_path footprint_access_path )
-                footprint_sources
+        if
+          false && AccessPath.Abs.is_exact access_path && Sinks.is_empty sinks
+          && Sources.Footprint.mem access_path footprint_sources
+          && Sources.Footprint.exists
+               (fun footprint_access_path (is_mem, _) ->
+                 is_mem && AccessPath.Abs.equal access_path footprint_access_path )
+               footprint_sources
         then
           Logging.die InternalError
             "The trace associated with %a consists only of its footprint source: %a"
@@ -844,7 +848,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 let base' = (Var.of_formal_index formal_index, snd base) in
                 let joined_node =
                   try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
-                  with Not_found -> node
+                  with Caml.Not_found -> node
                 in
                 if is_empty_node joined_node then acc
                 else AccessPath.BaseMap.add base' joined_node acc

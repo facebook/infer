@@ -422,7 +422,7 @@ module Make (Spec : Spec) = struct
       (* sort passthroughs by ascending line number to create a coherent trace *)
       let sorted_passthroughs =
         List.sort
-          ~cmp:(fun passthrough1 passthrough2 ->
+          ~compare:(fun passthrough1 passthrough2 ->
             let loc1 = CallSite.loc (Passthrough.site passthrough1) in
             let loc2 = CallSite.loc (Passthrough.site passthrough2) in
             Int.compare loc1.Location.line loc2.Location.line )

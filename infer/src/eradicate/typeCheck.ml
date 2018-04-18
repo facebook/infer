@@ -91,7 +91,7 @@ module ComplexExpressions = struct
           dexp_to_string de ^ "." ^ Typ.Fieldname.to_string f
       | DExp.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ Binop.str Pp.text op ^ dexp_to_string de2 ^ ")"
-      | DExp.Dconst Const.Cfun pn ->
+      | DExp.Dconst (Const.Cfun pn) ->
           Typ.Procname.to_unique_id pn
       | DExp.Dconst c ->
           F.asprintf "%a" (Const.pp Pp.text) c
@@ -236,7 +236,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       match Idenv.expand_expr idenv e with
       | Exp.Lvar pvar when name_is_temporary (Pvar.to_string pvar) -> (
         match pvar_get_origin pvar with
-        | Some TypeOrigin.Formal s ->
+        | Some (TypeOrigin.Formal s) ->
             let pvar' = Pvar.mk s curr_pname in
             Some (Exp.Lvar pvar')
         | _ ->
@@ -278,7 +278,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
     (* Convert a function call to a pvar. *)
     let handle_function_call call_node id =
       match Errdesc.find_normal_variable_funcall call_node id with
-      | Some (Exp.Const Const.Cfun pn, _, _, _)
+      | Some (Exp.Const (Const.Cfun pn), _, _, _)
         when not (ComplexExpressions.procname_used_in_condition pn) -> (
         match ComplexExpressions.exp_to_string tenv node' exp with
         | None ->
@@ -374,9 +374,10 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
   let constructor_check_calls_this calls_this pn =
     match (curr_pname, pn) with
     | Typ.Procname.Java curr_pname_java, Typ.Procname.Java pn_java ->
-        if String.equal
-             (Typ.Procname.Java.get_class_name curr_pname_java)
-             (Typ.Procname.Java.get_class_name pn_java)
+        if
+          String.equal
+            (Typ.Procname.Java.get_class_name curr_pname_java)
+            (Typ.Procname.Java.get_class_name pn_java)
         then calls_this := true
     | _ ->
         ()
@@ -412,8 +413,9 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
   in
   (* Drop parameters from the signature which we do not check in a call. *)
   let drop_unchecked_signature_params proc_attributes annotated_signature =
-    if Typ.Procname.is_constructor proc_attributes.ProcAttributes.proc_name
-       && proc_attributes.ProcAttributes.is_synthetic_method
+    if
+      Typ.Procname.is_constructor proc_attributes.ProcAttributes.proc_name
+      && proc_attributes.ProcAttributes.is_synthetic_method
     then
       List.take annotated_signature.AnnotatedSignature.params
         (List.length annotated_signature.AnnotatedSignature.params - 1)
@@ -492,19 +494,19 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             typestate1
       in
       check_field_assign () ; typestate2
-  | Sil.Call (Some (id, _), Exp.Const Const.Cfun pn, [(_, typ)], loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
       TypeState.add_id id
         (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New, [loc])
         typestate
       (* new never returns null *)
-  | Sil.Call (Some (id, _), Exp.Const Const.Cfun pn, (e, typ) :: _, loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors typestate e loc ;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
       (* cast copies the type of the first argument *)
       TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc) typestate'
-  | Sil.Call (Some (id, _), Exp.Const Const.Cfun pn, [(array_exp, t)], loc, _)
+  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
       let _, ta, _ =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
@@ -520,11 +522,11 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         ( Typ.mk (Tint Typ.IInt)
         , TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New
         , [loc] ) typestate
-  | Sil.Call (_, Exp.Const Const.Cfun pn, _, _, _) when BuiltinDecl.is_declared pn ->
+  | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
       ( ret_id
-      , Exp.Const Const.Cfun (Typ.Procname.Java callee_pname_java as callee_pname)
+      , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java as callee_pname))
       , etl_
       , loc
       , cflags ) ->
@@ -647,8 +649,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         in
         let handle_negated_condition cond_node =
           let do_instr = function[@warning "-57"]
-            | Sil.Prune (Exp.BinOp (Binop.Eq, cond_e_, Exp.Const Const.Cint i), _, _, _)
-            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, cond_e_), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, cond_e_, Exp.Const (Const.Cint i)), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), cond_e_), _, _, _)
               when IntLit.iszero i
               -> (
                 let cond_e = Idenv.expand_expr_temps idenv cond_node cond_e_ in
@@ -690,7 +692,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 | Some (node', id) ->
                     let () =
                       match Errdesc.find_normal_variable_funcall node' id with
-                      | Some (Exp.Const Const.Cfun pn, [e], _, _)
+                      | Some (Exp.Const (Const.Cfun pn), [e], _, _)
                         when ComplexExpressions.procname_optional_isPresent pn ->
                           handle_optional_isPresent node' e
                       | _ ->
@@ -869,7 +871,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
           match e with
           | Exp.Var id -> (
             match Errdesc.find_normal_variable_funcall node' id with
-            | Some (Exp.Const Const.Cfun pn, e1 :: _, _, _) when filter_callee pn ->
+            | Some (Exp.Const (Const.Cfun pn), e1 :: _, _, _) when filter_callee pn ->
                 Some e1
             | _ ->
                 None )
@@ -901,8 +903,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         let handle_containsKey e =
           let map_dexp = function
             | Some
-                DExp.Dretcall
-                  (DExp.Dconst Const.Cfun Typ.Procname.Java pname_java, args, loc, call_flags) ->
+                (DExp.Dretcall
+                  (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
                 let pname_java' =
                   let object_t = Typ.Name.Java.Split.java_lang_object in
                   pname_java |> Typ.Procname.Java.replace_method_name "get"
@@ -945,8 +947,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
               typestate2
         in
         match[@warning "-57"] c with
-        | Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, e)
-        | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i)
+        | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
+        | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
           when IntLit.iszero i
           -> (
             typecheck_expr_for_errors typestate e loc ;
@@ -972,8 +974,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 else typestate2
             | _ ->
                 typestate2 )
-        | Exp.BinOp (Binop.Ne, Exp.Const Const.Cint i, e)
-        | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i)
+        | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
+        | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
           when IntLit.iszero i
           -> (
             typecheck_expr_for_errors typestate e loc ;
@@ -1083,9 +1085,10 @@ let typecheck_node tenv ext calls_this checks idenv get_proc_desc curr_pname cur
   let noreturn = ref false in
   let handle_exceptions typestate instr =
     match instr with
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) when Models.is_noreturn callee_pname ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _)
+      when Models.is_noreturn callee_pname ->
         noreturn := true
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
         let callee_attributes_opt = Specs.proc_resolve_attributes callee_pname in
         (* check if the call might throw an exception *)
         let has_exceptions =

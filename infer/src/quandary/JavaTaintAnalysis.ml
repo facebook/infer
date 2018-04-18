@@ -82,7 +82,7 @@ include TaintAnalysis.Make (struct
 
   let is_taintable_type typ =
     match typ.Typ.desc with
-    | Typ.Tptr ({desc= Tstruct JavaClass typename}, _) | Tstruct JavaClass typename -> (
+    | Typ.Tptr ({desc= Tstruct (JavaClass typename)}, _) | Tstruct (JavaClass typename) -> (
       match Mangled.to_string_full typename with
       | "android.content.Intent" | "android.net.Uri" | "java.lang.String" | "java.net.URI" ->
           true

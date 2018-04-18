@@ -17,7 +17,7 @@ module F = Format
 
 let rec fldlist_assoc fld = function
   | [] ->
-      raise Not_found
+      raise Caml.Not_found
   | (fld', x, _) :: l ->
       if Typ.Fieldname.equal fld fld' then x else fldlist_assoc fld l
 
@@ -36,12 +36,13 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
   | Tstruct name, Off_fld (fld, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields; statics} -> (
-      try fldlist_assoc fld (fields @ statics) with Not_found -> fail Typ.Fieldname.to_string fld )
+      try fldlist_assoc fld (fields @ statics) with Caml.Not_found ->
+        fail Typ.Fieldname.to_string fld )
     | None ->
         fail Typ.Fieldname.to_string fld )
   | Tarray {elt}, Off_index _ ->
       elt
-  | _, Off_index Const Cint i when IntLit.iszero i ->
+  | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
       typ
   | _ ->
       fail Sil.offset_to_string off
@@ -104,11 +105,11 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
       let offlist' = Sil.Off_index Exp.zero :: offlist in
       apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst
         lookup_inst
-  | (Sil.Off_fld _) :: _, Sil.Earray _, _ ->
+  | Sil.Off_fld _ :: _, Sil.Earray _, _ ->
       let offlist_new = Sil.Off_index Exp.zero :: offlist in
       apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst
         lookup_inst
-  | (Sil.Off_fld (fld, fld_typ)) :: offlist', Sil.Estruct (fsel, inst'), Typ.Tstruct name -> (
+  | Sil.Off_fld (fld, fld_typ) :: offlist', Sil.Estruct (fsel, inst'), Typ.Tstruct name -> (
     match Tenv.lookup tenv name with
     | Some ({fields} as struct_typ)
       -> (
@@ -137,10 +138,10 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
     | None ->
         pp_error () ;
         assert false )
-  | (Sil.Off_fld _) :: _, _, _ ->
+  | Sil.Off_fld _ :: _, _, _ ->
       pp_error () ;
       assert false
-  | ( (Sil.Off_index idx) :: offlist'
+  | ( Sil.Off_index idx :: offlist'
     , Sil.Earray (len, esel, inst1)
     , Typ.Tarray {elt= t'; length= len'; stride= stride'} )
     -> (
@@ -164,7 +165,7 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
           L.d_strln " not materialized -- returning nondeterministic value" ;
           let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
           (res_e', strexp, typ, None) )
-  | (Sil.Off_index _) :: _, _, _ ->
+  | Sil.Off_index _ :: _, _, _ ->
       (* This case should not happen. The rearrangement should
          have materialized all the accessed cells. *)
       pp_error () ;
@@ -261,7 +262,7 @@ let prune_ne tenv ~positive e1 e2 prop =
 *)
 let prune_ineq tenv ~is_strict ~positive prop e1 e2 =
   if Exp.equal e1 e2 then
-    if positive && not is_strict || not positive && is_strict then Propset.singleton tenv prop
+    if (positive && not is_strict) || (not positive && is_strict) then Propset.singleton tenv prop
     else Propset.empty
   else
     (* build the pruning condition and its negation, as explained in
@@ -288,7 +289,7 @@ let rec prune tenv ~positive condition prop =
   match Prop.exp_normalize_prop ~destructive:true tenv prop condition with
   | Exp.Var _ | Exp.Lvar _ ->
       prune_ne tenv ~positive condition Exp.zero prop
-  | Exp.Const Const.Cint i when IntLit.iszero i ->
+  | Exp.Const (Const.Cint i) when IntLit.iszero i ->
       if positive then Propset.empty else Propset.singleton tenv prop
   | Exp.Const (Const.Cint _ | Const.Cstr _ | Const.Cclass _) | Exp.Sizeof _ ->
       if positive then Propset.singleton tenv prop else Propset.empty
@@ -300,15 +301,15 @@ let rec prune tenv ~positive condition prop =
       prune tenv ~positive:(not positive) condition' prop
   | Exp.UnOp _ ->
       assert false
-  | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive:(not positive) e prop
-  | Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive:(not positive) e prop
   | Exp.BinOp (Binop.Eq, e1, e2) ->
       prune_ne tenv ~positive:(not positive) e1 e2 prop
-  | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive e prop
-  | Exp.BinOp (Binop.Ne, Exp.Const Const.Cint i, e) when IntLit.iszero i && not (IntLit.isnull i) ->
+  | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e) when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive e prop
   | Exp.BinOp (Binop.Ne, e1, e2) ->
       prune_ne tenv ~positive e1 e2 prop
@@ -373,17 +374,17 @@ let check_constant_string_dereference lexp =
     Exp.int (IntLit.of_int c)
   in
   match lexp with
-  | Exp.BinOp (Binop.PlusPI, Exp.Const Const.Cstr s, e) | Exp.Lindex (Exp.Const Const.Cstr s, e) ->
+  | Exp.BinOp (Binop.PlusPI, Exp.Const (Const.Cstr s), e) | Exp.Lindex (Exp.Const (Const.Cstr s), e) ->
       let value =
         match e with
-        | Exp.Const Const.Cint n
+        | Exp.Const (Const.Cint n)
           when IntLit.geq n IntLit.zero && IntLit.leq n (IntLit.of_int (String.length s)) ->
             string_lookup s n
         | _ ->
             Exp.get_undefined false
       in
       Some value
-  | Exp.Const Const.Cstr s ->
+  | Exp.Const (Const.Cstr s) ->
       Some (string_lookup s IntLit.zero)
   | _ ->
       None
@@ -392,12 +393,12 @@ let check_constant_string_dereference lexp =
 (** Normalize an expression and check for arithmetic problems *)
 let check_arith_norm_exp tenv pname exp prop =
   match Attribute.find_arithmetic_problem tenv (State.get_path_pos ()) prop exp with
-  | Some Attribute.Div0 div, prop' ->
+  | Some (Attribute.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero tenv div (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       Reporting.log_warning_deprecated pname exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
-  | Some Attribute.UminusUnsigned (e, typ), prop' ->
+  | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
         Errdesc.explain_unary_minus_applied_to_unsigned_expression tenv e typ (State.get_node ())
           (State.get_loc ())
@@ -421,19 +422,19 @@ let check_already_dereferenced tenv pname cond prop =
         Some id
     | Exp.UnOp (Unop.LNot, e, _) ->
         is_check_zero e
-    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Const Const.Cint i, Exp.Var id)
-    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Var id, Exp.Const Const.Cint i)
+    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Const (Const.Cint i), Exp.Var id)
+    | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Var id, Exp.Const (Const.Cint i))
       when IntLit.iszero i ->
         Some id
     (* These two patterns appear frequently in Prune nodes *)
     | Exp.BinOp
         ( (Binop.Eq | Binop.Ne)
-        , Exp.BinOp (Binop.Eq, Exp.Var id, Exp.Const Const.Cint i)
-        , Exp.Const Const.Cint j )
+        , Exp.BinOp (Binop.Eq, Exp.Var id, Exp.Const (Const.Cint i))
+        , Exp.Const (Const.Cint j) )
     | Exp.BinOp
         ( (Binop.Eq | Binop.Ne)
-        , Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, Exp.Var id)
-        , Exp.Const Const.Cint j )
+        , Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), Exp.Var id)
+        , Exp.Const (Const.Cint j) )
       when IntLit.iszero i && IntLit.iszero j ->
         Some id
     | _ ->
@@ -443,7 +444,7 @@ let check_already_dereferenced tenv pname cond prop =
     match is_check_zero cond with
     | Some id -> (
       match find_hpred (Prop.exp_normalize_prop tenv prop (Exp.Var id)) with
-      | Some Sil.Hpointsto (_, se, _) -> (
+      | Some (Sil.Hpointsto (_, se, _)) -> (
         match Tabulation.find_dereference_without_null_check_in_sexp se with
         | Some n ->
             Some (id, n)
@@ -470,11 +471,11 @@ let check_already_dereferenced tenv pname cond prop =
     raising an exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
-    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [(Lvar pv)])
+    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [Lvar pv])
       when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
-    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [(Const Cstr s)]) ->
+    | Sil.Apred (Aresource ({ra_kind= Rrelease} as ra), [Const (Cstr s)]) ->
         let freed_desc = Errdesc.explain_deallocate_constant_string s ra in
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ ->
@@ -534,14 +535,14 @@ let resolve_typename prop receiver_exp =
     let rec loop = function
       | [] ->
           None
-      | (Sil.Hpointsto (e, _, typexp)) :: _ when Exp.equal e receiver_exp ->
+      | Sil.Hpointsto (e, _, typexp) :: _ when Exp.equal e receiver_exp ->
           Some typexp
       | _ :: hpreds ->
           loop hpreds
     in
     loop prop.Prop.sigma
   in
-  match typexp_opt with Some Exp.Sizeof {typ= {desc= Tstruct name}} -> Some name | _ -> None
+  match typexp_opt with Some (Exp.Sizeof {typ= {desc= Tstruct name}}) -> Some name | _ -> None
 
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the receiver type T_formal
@@ -699,13 +700,14 @@ let call_constructor_url_update_args pname actual_params =
   in
   if Typ.Procname.equal url_pname pname then
     match actual_params with
-    | [this; (Exp.Const Const.Cstr s, atype)]
+    | [this; (Exp.Const (Const.Cstr s), atype)]
       -> (
         let parts = Str.split (Str.regexp_string "://") s in
         match parts with
         | frst :: _ ->
-            if String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
-               || String.equal frst "mailto" || String.equal frst "jar"
+            if
+              String.equal frst "http" || String.equal frst "ftp" || String.equal frst "https"
+              || String.equal frst "mailto" || String.equal frst "jar"
             then [this; (Exp.Const (Const.Cstr frst), atype)]
             else actual_params
         | _ ->
@@ -735,8 +737,9 @@ let receiver_self receiver prop =
    a check for null, which is considered good practice.  *)
 let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver =
   let current_pname = Procdesc.get_proc_name pdesc in
-  if Typ.Procname.is_constructor callee_pname && receiver_self receiver pre && !Config.footprint
-     && Typ.Procname.is_constructor current_pname
+  if
+    Typ.Procname.is_constructor callee_pname && receiver_self receiver pre && !Config.footprint
+    && Typ.Procname.is_constructor current_pname
   then
     match ret_id with
     | Some (ret_id, _) ->
@@ -804,8 +807,9 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
   else
     match force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver with
     | [] ->
-        if !Config.footprint && Option.is_none (Attribute.get_undef tenv pre receiver)
-           && not (Rearrange.is_only_pt_by_fld_or_param_nonnull pdesc tenv pre receiver)
+        if
+          !Config.footprint && Option.is_none (Attribute.get_undef tenv pre receiver)
+          && not (Rearrange.is_only_pt_by_fld_or_param_nonnull pdesc tenv pre receiver)
         then
           let res_null =
             (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
@@ -1113,8 +1117,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
       let check_condition_always_true_false () =
-        if !Language.curr_language <> Language.Clang
-           || Config.report_condition_always_true_in_clang
+        if
+          !Language.curr_language <> Language.Clang || Config.report_condition_always_true_in_clang
         then
           let report_condition_always_true_false i =
             let skip_loop =
@@ -1131,7 +1135,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
             true_branch && not skip_loop
           in
           match Prop.exp_normalize_prop tenv Prop.prop_emp cond with
-          | Exp.Const Const.Cint i when report_condition_always_true_false i ->
+          | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
               let node = State.get_node () in
               let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
               let exn =
@@ -1146,7 +1150,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
       check_condition_always_true_false () ;
       let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
-  | Sil.Call (ret_id, Exp.Const Const.Cfun callee_pname, actual_params, loc, call_flags) -> (
+  | Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), actual_params, loc, call_flags) -> (
     match Builtin.get callee_pname with
     | Some exec_builtin ->
         exec_builtin (call_args prop_ callee_pname actual_params ret_id loc)
@@ -1245,9 +1249,10 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                 else [(prop_r, path)]
               in
               let do_call (prop, path) =
-                if Option.value_map
-                     ~f:(fun summary -> is_some (reason_to_skip summary))
-                     ~default:true resolved_summary_opt
+                if
+                  Option.value_map
+                    ~f:(fun summary -> is_some (reason_to_skip summary))
+                    ~default:true resolved_summary_opt
                 then
                   let ret_annots =
                     match resolved_summary_opt with
@@ -1295,8 +1300,9 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) ->
       (* Call via function pointer *)
       let prop_r, n_actual_params = normalize_params tenv current_pname prop_ actual_params in
-      if call_flags.CallFlags.cf_is_objc_block
-         && not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp)
+      if
+        call_flags.CallFlags.cf_is_objc_block
+        && not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp)
       then Rearrange.check_call_to_objc_block_error tenv current_pdesc prop_r fun_exp loc ;
       Rearrange.check_dereference_error tenv current_pdesc prop_r fun_exp loc ;
       if call_flags.CallFlags.cf_noreturn then (
@@ -1331,7 +1337,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar' | _ -> false)
           eprop.Prop.sigma
       with
-      | [(Sil.Hpointsto (e, se, typ))], sigma' ->
+      | [Sil.Hpointsto (e, se, typ)], sigma' ->
           let sigma'' =
             let se' = execute_nullify_se se in
             Sil.Hpointsto (e, se', typ) :: sigma'
@@ -1520,9 +1526,10 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
     | ObjC_Cpp cpp_name ->
         (* FIXME: we need to work around a frontend hack for std::shared_ptr
          * to silent some of the uninitialization warnings *)
-        if String.is_suffix ~suffix:"_std__shared_ptr" (Typ.Procname.to_string callee_pname)
-           (* Abduced parameters for the empty destructor body cause `Cannot star` *)
-           || Typ.Procname.ObjC_Cpp.is_destructor cpp_name
+        if
+          String.is_suffix ~suffix:"_std__shared_ptr" (Typ.Procname.to_string callee_pname)
+          (* Abduced parameters for the empty destructor body cause `Cannot star` *)
+          || Typ.Procname.ObjC_Cpp.is_destructor cpp_name
         then false
         else true
     | _ ->
@@ -1849,9 +1856,10 @@ let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
-      if Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
-         && ProcCfg.Exceptional.kind node <> Procdesc.Node.exn_handler_kind
-         (* skip normal instructions if an exception was thrown,
+      if
+        Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
+        && ProcCfg.Exceptional.kind node <> Procdesc.Node.exn_handler_kind
+        (* skip normal instructions if an exception was thrown,
             unless this is an exception handler node *)
       then (
         L.d_str "Skipping instr " ;

@@ -22,7 +22,7 @@ type t =
   | Sizeof of Typ.t * t option
       (** C-style sizeof(), and also used to treate a type as an expression. Refer to [Exp] module for
       canonical documentation *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val pp : F.formatter -> t -> unit
 

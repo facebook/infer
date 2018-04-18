@@ -102,9 +102,9 @@ let get_curr_class_ptr stmt_info curr_class =
   in
   (* Resolve categories to their class names *)
   match CAst_utils.get_decl decl_ptr with
-  | Some ObjCCategoryDecl (_, _, _, _, ocdi) ->
+  | Some (ObjCCategoryDecl (_, _, _, _, ocdi)) ->
       get_ptr_from_decl_ref ocdi.odi_class_interface
-  | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
+  | Some (ObjCCategoryImplDecl (_, _, _, _, ocidi)) ->
       get_ptr_from_decl_ref ocidi.ocidi_class_interface
   | _ ->
       decl_ptr
@@ -126,12 +126,13 @@ let add_block_static_var context block_name static_var_typ =
       let new_static_vars, duplicate =
         try
           let static_vars = Typ.Procname.Map.find block_name outer_context.blocks_static_vars in
-          if List.mem
-               ~equal:(fun (var1, _) (var2, _) -> Pvar.equal var1 var2)
-               static_vars static_var_typ
+          if
+            List.mem
+              ~equal:(fun (var1, _) (var2, _) -> Pvar.equal var1 var2)
+              static_vars static_var_typ
           then (static_vars, true)
           else (static_var_typ :: static_vars, false)
-        with Not_found -> ([static_var_typ], false)
+        with Caml.Not_found -> ([static_var_typ], false)
       in
       if not duplicate then
         let blocks_static_vars =

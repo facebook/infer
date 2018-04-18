@@ -77,7 +77,7 @@ end = struct
 
   let create () : t = Hashtbl.create 11
 
-  let find table i = try Hashtbl.find table i with Not_found -> Paths.PathSet.empty
+  let find table i = try Hashtbl.find table i with Caml.Not_found -> Paths.PathSet.empty
 
   let add table i dset = Hashtbl.replace table i dset
 end
@@ -104,7 +104,7 @@ module Worklist = struct
   let add (wl: t) (node: Procdesc.Node.t) : unit =
     let visits =
       (* recover visit count if it was visited before *)
-      try Procdesc.NodeMap.find node wl.visit_map with Not_found -> 0
+      try Procdesc.NodeMap.find node wl.visit_map with Caml.Not_found -> 0
     in
     wl.todo_set <- NodeVisitSet.add {node; visits} wl.todo_set
 
@@ -117,7 +117,7 @@ module Worklist = struct
       wl.visit_map <- Procdesc.NodeMap.add min.node (min.visits + 1) wl.visit_map ;
       (* increase the visits *)
       min.node
-    with Not_found ->
+    with Caml.Not_found ->
       L.internal_error "@\n...Work list is empty! Impossible to remove edge...@\n" ;
       assert false
 end
@@ -133,7 +133,7 @@ let path_set_create_worklist proc_cfg =
 
 let htable_retrieve (htable: (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key: Procdesc.Node.id)
     : Paths.PathSet.t =
-  try Hashtbl.find htable key with Not_found ->
+  try Hashtbl.find htable key with Caml.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
     Paths.PathSet.empty
 
@@ -164,7 +164,8 @@ let path_set_checkout_todo (wl: Worklist.t) (node: Procdesc.Node.t) : Paths.Path
     let new_visited = Paths.PathSet.union visited todo in
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited ;
     todo
-  with Not_found -> L.die InternalError "could not find todo for node %a" Procdesc.Node.pp node
+  with Caml.Not_found ->
+    L.die InternalError "could not find todo for node %a" Procdesc.Node.pp node
 
 
 (* =============== END of the edge_set object =============== *)
@@ -559,7 +560,7 @@ let compute_visited vset =
     let node_loc = Procdesc.Node.get_loc n in
     let instrs_loc = List.map ~f:Sil.instr_get_loc (ProcCfg.Exceptional.instrs n) in
     let lines = List.map ~f:(fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
-    List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~cmp:Int.compare lines)
+    List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~compare:Int.compare lines)
   in
   let do_node n =
     res := Specs.Visitedset.add (Procdesc.Node.get_id n, node_get_all_lines n) !res
@@ -604,7 +605,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
-        try Pmap.find pre map with Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty)
+        try Pmap.find pre map with Caml.Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty)
       in
       let new_posts =
         match post with
@@ -1050,11 +1051,12 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
   in
   let re_exe_filter old_spec =
     (* filter out pres which failed re-exe *)
-    if Specs.equal_phase phase Specs.RE_EXECUTION
-       && not
-            (List.exists
-               ~f:(fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
-               new_specs)
+    if
+      Specs.equal_phase phase Specs.RE_EXECUTION
+      && not
+           (List.exists
+              ~f:(fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
+              new_specs)
     then (
       changed := true ;
       current_specs := SpecMap.remove old_spec.Specs.pre !current_specs )
@@ -1070,21 +1072,21 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
       in
       if not (Paths.PathSet.equal old_post new_post) then (
         changed := true ;
-        current_specs
-        := SpecMap.add spec.Specs.pre (new_post, new_visited)
-             (SpecMap.remove spec.Specs.pre !current_specs) )
-    with Not_found ->
+        current_specs :=
+          SpecMap.add spec.Specs.pre (new_post, new_visited)
+            (SpecMap.remove spec.Specs.pre !current_specs) )
+    with Caml.Not_found ->
       changed := true ;
-      current_specs
-      := SpecMap.add spec.Specs.pre
-           (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) !current_specs
+      current_specs :=
+        SpecMap.add spec.Specs.pre
+          (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) !current_specs
   in
   let res = ref [] in
   let convert pre (post_set, visited) =
-    res
-    := Specs.spec_normalize tenv
-         {Specs.pre; Specs.posts= Paths.PathSet.elements post_set; Specs.visited}
-       :: !res
+    res :=
+      Specs.spec_normalize tenv
+        {Specs.pre; Specs.posts= Paths.PathSet.elements post_set; Specs.visited}
+      :: !res
   in
   List.iter ~f:re_exe_filter old_specs ;
   (* filter out pre's which failed re-exe *)

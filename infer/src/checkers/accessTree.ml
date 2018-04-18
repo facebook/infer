@@ -94,7 +94,8 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
   module BaseMap = AccessPath.BaseMap
 
   type node = (TraceDomain.astate * tree)
- and tree = Subtree of node AccessMap.t | Star
+
+  and tree = Subtree of node AccessMap.t | Star
 
   type t = node BaseMap.t
 
@@ -173,7 +174,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
           (* input query was [ap]*, and [trace] is the trace associated with [ap]. get the traces
              associated with the children of [ap] in [tree] and join them with [trace] *)
           Some (join_all_traces trace subtree, subtree)
-    | exception Not_found ->
+    | exception Caml.Not_found ->
         None
 
 
@@ -191,7 +192,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
               try
                 let rhs_v = AccessMap.find k rhs_subtree in
                 access_tree_lteq lhs_v rhs_v
-              with Not_found -> false )
+              with Caml.Not_found -> false )
             lhs_subtree
       | _, Star ->
           true
@@ -207,7 +208,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
           try
             let rhs_v = BaseMap.find k rhs in
             access_tree_lteq lhs_v rhs_v
-          with Not_found -> false )
+          with Caml.Not_found -> false )
         lhs
 
 
@@ -298,7 +299,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
               access_tree_add_trace_ ~seen_array_access accesses empty_starred_leaf depth'
             else
               let access_node =
-                try AccessMap.find access subtree with Not_found -> empty_normal_leaf
+                try AccessMap.find access subtree with Caml.Not_found -> empty_normal_leaf
               in
               (* once we encounter a subtree rooted in an array access, we have to do weak updates in
                the entire subtree. the reason: if I do x[i].f.g = <interesting trace>, then
@@ -327,7 +328,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
     let base, accesses = AccessPath.Abs.extract ap in
     let is_exact = AccessPath.Abs.is_exact ap in
     let base_node =
-      try BaseMap.find base tree with Not_found ->
+      try BaseMap.find base tree with Caml.Not_found ->
         (* note: we interpret max_depth <= 0 as max_depth = 1 *)
         if Config.max_depth > 1 then empty_normal_leaf else empty_starred_leaf
     in

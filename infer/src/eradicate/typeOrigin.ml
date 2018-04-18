@@ -18,7 +18,7 @@ type proc_origin =
   ; loc: Location.t
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }
-  [@@deriving compare]
+[@@deriving compare]
 
 type t =
   | Const of Location.t
@@ -28,7 +28,7 @@ type t =
   | New
   | ONone
   | Undef
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 

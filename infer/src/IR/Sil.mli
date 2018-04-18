@@ -26,7 +26,7 @@ type if_kind =
   | Ik_land_lor  (** obtained from translation of && or || *)
   | Ik_while
   | Ik_switch
-  [@@deriving compare]
+[@@deriving compare]
 
 (** An instruction. *)
 type instr =
@@ -53,7 +53,7 @@ type instr =
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
   | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_instr : instr -> instr -> bool
 
@@ -73,7 +73,7 @@ type atom =
   | Aneq of Exp.t * Exp.t  (** disequality *)
   | Apred of PredSymb.t * Exp.t list  (** predicate symbol applied to exps *)
   | Anpred of PredSymb.t * Exp.t list  (** negated predicate symbol applied to exps *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_atom : atom -> atom -> bool
 
@@ -83,7 +83,7 @@ val atom_has_local_addr : atom -> bool
 type lseg_kind =
   | Lseg_NE  (** nonempty (possibly circular) listseg *)
   | Lseg_PE  (** possibly empty (possibly circular) listseg *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_lseg_kind : lseg_kind -> lseg_kind -> bool
 
@@ -107,7 +107,7 @@ type inst =
   | Itaint
   | Iupdate of zero_flag * null_case_flag * int * PredSymb.path_pos
   | Ireturn_from_call of int
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_inst : inst -> inst -> bool
 
@@ -159,7 +159,7 @@ type 'inst strexp0 =
           For instance, x |->[10 | e1: v1] implies that e1 <= 9.
           Second, if two indices appear in an array, they should be different.
           For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
-  [@@deriving compare]
+[@@deriving compare]
 
 type strexp = inst strexp0
 
@@ -191,11 +191,11 @@ type 'inst hpred0 =
       primed identifiers, and include all the free primed identifiers in body.
       body should not contain any non - primed identifiers or program
       variables (i.e. pvars). *)
-  [@@deriving compare]
+[@@deriving compare]
 
 and 'inst hpara0 =
   {root: Ident.t; next: Ident.t; svars: Ident.t list; evars: Ident.t list; body: 'inst hpred0 list}
-  [@@deriving compare]
+[@@deriving compare]
 
 (** parameter for the higher-order doubly-linked list predicates.
     Assume that all the free identifiers in body_dll should belong to
@@ -207,7 +207,7 @@ and 'inst hpara_dll0 =
   ; svars_dll: Ident.t list
   ; evars_dll: Ident.t list
   ; body_dll: 'inst hpred0 list }
-  [@@deriving compare]
+[@@deriving compare]
 
 type hpred = inst hpred0
 

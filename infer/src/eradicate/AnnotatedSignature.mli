@@ -14,7 +14,7 @@ open! IStd
 type t =
   { ret: Annot.Item.t * Typ.t  (** Annotated return type. *)
   ; params: (Mangled.t * Annot.Item.t * Typ.t) list  (** Annotated parameters. *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 type annotation = Nullable | Present [@@deriving compare]
 

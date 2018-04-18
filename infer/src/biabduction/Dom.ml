@@ -37,8 +37,8 @@ let equal_sigma sigma1 sigma2 =
         if Sil.equal_hpred hpred1 hpred2 then f sigma1_rest' sigma2_rest'
         else ( L.d_strln "failure reason 2" ; raise Sil.JoinFail )
   in
-  let sigma1_sorted = List.sort ~cmp:Sil.compare_hpred sigma1 in
-  let sigma2_sorted = List.sort ~cmp:Sil.compare_hpred sigma2 in
+  let sigma1_sorted = List.sort ~compare:Sil.compare_hpred sigma1 in
+  let sigma2_sorted = List.sort ~compare:Sil.compare_hpred sigma2 in
   f sigma1_sorted sigma2_sorted
 
 
@@ -46,7 +46,7 @@ let sigma_get_start_lexps_sort sigma =
   let exp_compare_neg e1 e2 = -Exp.compare e1 e2 in
   let filter e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
-  List.sort ~cmp:exp_compare_neg lexps
+  List.sort ~compare:exp_compare_neg lexps
 
 
 (** {2 Utility functions for side} *)
@@ -100,7 +100,7 @@ end = struct
   let lookup' tbl e default =
     match e with
     | Exp.Var _ -> (
-      try Hashtbl.find tbl e with Not_found -> Hashtbl.replace tbl e default ; default )
+      try Hashtbl.find tbl e with Caml.Not_found -> Hashtbl.replace tbl e default ; default )
     | _ ->
         assert false
 
@@ -378,11 +378,11 @@ module CheckMeet : InfoLossCheckerSig = struct
     match (es, e) with
     | [], _ ->
         true
-    | [(Exp.Const _)], Exp.Lvar _ ->
+    | [Exp.Const _], Exp.Lvar _ ->
         false
-    | [(Exp.Const _)], Exp.Var _ ->
+    | [Exp.Const _], Exp.Var _ ->
         not (Exp.Set.mem e lexps)
-    | [(Exp.Const _)], _ ->
+    | [Exp.Const _], _ ->
         assert false
     | [_], Exp.Lvar _ | [_], Exp.Var _ ->
         true
@@ -498,10 +498,10 @@ end = struct
   let minus2_to_2 = List.map ~f:IntLit.of_int [-2; -1; 0; 1; 2]
 
   let get_induced_pi tenv () =
-    let t_sorted = List.sort ~cmp:entry_compare !t in
+    let t_sorted = List.sort ~compare:entry_compare !t in
     let add_and_chk_eq e1 e1' n =
       match (e1, e1') with
-      | Exp.Const Const.Cint n1, Exp.Const Const.Cint n1' ->
+      | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n1') ->
           IntLit.eq (n1 ++ n) n1'
       | _ ->
           false
@@ -538,7 +538,7 @@ end = struct
     let eqs, t_minimal = f_eqs [] [] t_sorted in
     let f_ineqs acc (e1, e2, e) =
       match (e1, e2) with
-      | Exp.Const Const.Cint n1, Exp.Const Const.Cint n2 ->
+      | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n2) ->
           let strict_lower1, upper1 =
             if IntLit.leq n1 n2 then (n1 -- IntLit.one, n2) else (n2 -- IntLit.one, n1)
           in
@@ -640,11 +640,11 @@ end = struct
     let res = ref [] in
     let f v =
       match (v, side) with
-      | (Exp.BinOp (Binop.PlusA, e1', Exp.Const Const.Cint i), e2, e'), Lhs when Exp.equal e e1' ->
+      | (Exp.BinOp (Binop.PlusA, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs when Exp.equal e e1' ->
           let c' = Exp.int (IntLit.neg i) in
           let v' = (e1', Exp.BinOp (Binop.PlusA, e2, c'), Exp.BinOp (Binop.PlusA, e', c')) in
           res := v' :: !res
-      | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const Const.Cint i), e'), Rhs when Exp.equal e e2' ->
+      | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const (Const.Cint i)), e'), Rhs when Exp.equal e e2' ->
           let c' = Exp.int (IntLit.neg i) in
           let v' = (Exp.BinOp (Binop.PlusA, e1, c'), e2', Exp.BinOp (Binop.PlusA, e', c')) in
           res := v' :: !res
@@ -694,7 +694,7 @@ end = struct
         renaming_restricted
     in
     let sub_list_side_sorted =
-      List.sort ~cmp:(fun (_, e) (_, e') -> Exp.compare e e') sub_list_side
+      List.sort ~compare:(fun (_, e) (_, e') -> Exp.compare e e') sub_list_side
     in
     let rec find_duplicates = function
       | (_, e) :: ((_, e') :: _ as t) ->
@@ -722,7 +722,7 @@ end = struct
     in
     let sub_list_sorted =
       let compare (i, _) (i', _) = Ident.compare i i' in
-      List.sort ~cmp:compare sub_list
+      List.sort ~compare sub_list
     in
     let rec find_duplicates = function
       | (i, _) :: ((i', _) :: _ as t) ->
@@ -812,13 +812,13 @@ end = struct
       | Sil.Aeq (e', (Exp.Var id as e))
         when exp_contains_only_normal_ids e' && not (Ident.is_normal id) ->
           build_other_atoms (fun e0 -> Prop.mk_eq tenv e0 e') side e
-      | Sil.Aeq (Exp.BinOp (Binop.Le, e, e'), Exp.Const Const.Cint i)
-      | Sil.Aeq (Exp.Const Const.Cint i, Exp.BinOp (Binop.Le, e, e'))
+      | Sil.Aeq (Exp.BinOp (Binop.Le, e, e'), Exp.Const (Const.Cint i))
+      | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, e, e'))
         when IntLit.isone i && exp_contains_only_normal_ids e' ->
           let construct e0 = Prop.mk_inequality tenv (Exp.BinOp (Binop.Le, e0, e')) in
           build_other_atoms construct side e
-      | Sil.Aeq (Exp.BinOp (Binop.Lt, e', e), Exp.Const Const.Cint i)
-      | Sil.Aeq (Exp.Const Const.Cint i, Exp.BinOp (Binop.Lt, e', e))
+      | Sil.Aeq (Exp.BinOp (Binop.Lt, e', e), Exp.Const (Const.Cint i))
+      | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, e', e))
         when IntLit.isone i && exp_contains_only_normal_ids e' ->
           let construct e0 = Prop.mk_inequality tenv (Exp.BinOp (Binop.Lt, e', e0)) in
           build_other_atoms construct side e
@@ -843,8 +843,9 @@ end = struct
           || Exp.free_vars e2 |> Sequence.exists ~f:Ident.is_primed
         in
         let e =
-          if not (Exp.free_vars e1 |> Sequence.exists ~f:can_rename)
-             && not (Exp.free_vars e2 |> Sequence.exists ~f:can_rename)
+          if
+            not (Exp.free_vars e1 |> Sequence.exists ~f:can_rename)
+            && not (Exp.free_vars e2 |> Sequence.exists ~f:can_rename)
           then
             if Exp.equal e1 e2 then e1 else ( L.d_strln "failure reason 13" ; raise Sil.JoinFail )
           else
@@ -927,7 +928,7 @@ let hpred_construct_fresh side =
 (** {2 Join and Meet for Ids} *)
 
 let ident_same_kind_primed_footprint id1 id2 =
-  Ident.is_primed id1 && Ident.is_primed id2 || Ident.is_footprint id1 && Ident.is_footprint id2
+  (Ident.is_primed id1 && Ident.is_primed id2) || (Ident.is_footprint id1 && Ident.is_footprint id2)
 
 
 let ident_partial_join (id1: Ident.t) (id2: Ident.t) =
@@ -998,12 +999,12 @@ let rec exp_partial_join (e1: Exp.t) (e2: Exp.t) : Exp.t =
   | Exp.Var id1, Exp.BinOp (Binop.PlusA, Exp.Var id2, Exp.Const _)
     when ident_same_kind_primed_footprint id1 id2 ->
       Rename.extend e1 e2 Rename.ExtFresh
-  | Exp.BinOp (Binop.PlusA, Exp.Var id1, Exp.Const Const.Cint c1), Exp.Const Const.Cint c2
+  | Exp.BinOp (Binop.PlusA, Exp.Var id1, Exp.Const (Const.Cint c1)), Exp.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
       let e_res = Rename.extend (Exp.Var id1) (Exp.int c2') Rename.ExtFresh in
       Exp.BinOp (Binop.PlusA, e_res, Exp.int c1)
-  | Exp.Const Const.Cint c1, Exp.BinOp (Binop.PlusA, Exp.Var id2, Exp.Const Const.Cint c2)
+  | Exp.Const (Const.Cint c1), Exp.BinOp (Binop.PlusA, Exp.Var id2, Exp.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
       let e_res = Rename.extend (Exp.int c1') (Exp.Var id2) Rename.ExtFresh in
@@ -1615,7 +1616,7 @@ let rec sigma_partial_join' tenv mode (sigma_acc: Prop.sigma) (sigma1_in: Prop.s
         CheckJoin.add Rhs iF2 iB2 ;
         (* add equality iF2=iB2 *)
         sigma_partial_join' tenv mode sigma_acc' sigma1' sigma2
-    | Some Sil.Hpointsto _, Some Sil.Hpointsto _ ->
+    | Some (Sil.Hpointsto _), Some (Sil.Hpointsto _) ->
         assert false
     (* Should be handled by a guarded case *)
   with Todo.Empty ->
@@ -1707,7 +1708,7 @@ let pi_partial_join tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop
     (* find some array length in the prop, to be used as heuritic for upper bound in widening *)
     let len_list = ref [] in
     let do_hpred = function
-      | Sil.Hpointsto (_, Sil.Earray (Exp.Const Const.Cint n, _, _), _) ->
+      | Sil.Hpointsto (_, Sil.Earray (Exp.Const (Const.Cint n), _, _), _) ->
           if IntLit.geq n IntLit.one then len_list := n :: !len_list
       | _ ->
           ()
@@ -1718,7 +1719,7 @@ let pi_partial_join tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop
   let bounds =
     let bounds1 = get_array_len ep1 in
     let bounds2 = get_array_len ep2 in
-    let bounds_sorted = List.sort ~cmp:IntLit.compare_value (bounds1 @ bounds2) in
+    let bounds_sorted = List.sort ~compare:IntLit.compare_value (bounds1 @ bounds2) in
     List.rev (List.remove_consecutive_duplicates ~equal:IntLit.eq bounds_sorted)
   in
   let widening_atom a =

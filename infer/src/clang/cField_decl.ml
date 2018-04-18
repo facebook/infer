@@ -78,7 +78,7 @@ let get_fields qual_type_to_sil_type tenv class_tname decl_list =
         let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
         let property_attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
         match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-        | Some ObjCIvarDecl (_, name_info, qual_type, _, _) ->
+        | Some (ObjCIvarDecl (_, name_info, qual_type, _, _)) ->
             let field = get_sil_field name_info qual_type property_attributes in
             CGeneral_utils.add_no_duplicates_fields field fields
         | _ ->

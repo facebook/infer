@@ -27,7 +27,7 @@ type mode =
   | Python of string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_mode = [%compare.equal : mode]
 
@@ -110,9 +110,10 @@ let clean_results_dir () =
       match Unix.readdir_opt dir with
       | Some entry ->
           if should_delete_dir entry then Utils.rmtree (name ^/ entry)
-          else if not
-                    ( String.equal entry Filename.current_dir_name
-                    || String.equal entry Filename.parent_dir_name )
+          else if
+            not
+              ( String.equal entry Filename.current_dir_name
+              || String.equal entry Filename.parent_dir_name )
           then delete_temp_results (name ^/ entry) ;
           cleandir dir
           (* next entry *)
@@ -176,12 +177,12 @@ let check_xcpretty () =
 
 let capture_with_compilation_database db_files =
   let root = Unix.getcwd () in
-  Config.clang_compilation_dbs
-  := List.map db_files ~f:(function
-       | `Escaped fname ->
-           `Escaped (Utils.filename_to_absolute ~root fname)
-       | `Raw fname ->
-           `Raw (Utils.filename_to_absolute ~root fname) ) ;
+  Config.clang_compilation_dbs :=
+    List.map db_files ~f:(function
+      | `Escaped fname ->
+          `Escaped (Utils.filename_to_absolute ~root fname)
+      | `Raw fname ->
+          `Raw (Utils.filename_to_absolute ~root fname) ) ;
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
@@ -282,7 +283,7 @@ let capture ~changed_files mode =
       in
       run_command ~prog:infer_py ~args
         ~cleanup:(function
-            | Error `Exit_non_zero exit_code
+            | Error (`Exit_non_zero exit_code)
               when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
                 (* swallow infer.py argument parsing error *)
                 Config.print_usage_exit ()

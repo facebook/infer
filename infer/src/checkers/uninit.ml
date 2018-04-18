@@ -98,8 +98,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match e with
         | HilExp.AccessExpression access_expr ->
             let (var, t), al = AccessExpression.to_access_path access_expr in
-            if should_report_var pdesc tenv uninit_vars ((var, t), al) && not (Typ.is_pointer t)
-               && not (is_struct_field_passed_by_ref call t al idx)
+            if
+              should_report_var pdesc tenv uninit_vars ((var, t), al) && not (Typ.is_pointer t)
+              && not (is_struct_field_passed_by_ref call t al idx)
             then report_intra ((var, t), al) loc (snd extras)
             else ()
         | _ ->
@@ -174,9 +175,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         None
     | Some (fparam, t) ->
         let var_fparam = Var.of_pvar (Pvar.mk fparam callee_pname) in
-        if D.exists
-             (fun (base, _) -> AccessPath.equal_base base (var_fparam, t))
-             init_formal_params
+        if
+          D.exists (fun (base, _) -> AccessPath.equal_base base (var_fparam, t)) init_formal_params
         then Some var_fparam
         else None
 
@@ -207,8 +207,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
       (instr: HilInstr.t) =
     let update_prepost (((_, lhs_typ), apl) as lhs_ap) rhs =
-      if FormalMap.is_formal (fst lhs_ap) (fst extras) && Typ.is_pointer lhs_typ
-         && (not (is_pointer_assignment tenv lhs_ap rhs) || List.length apl > 0)
+      if
+        FormalMap.is_formal (fst lhs_ap) (fst extras) && Typ.is_pointer lhs_typ
+        && (not (is_pointer_assignment tenv lhs_ap rhs) || List.length apl > 0)
       then
         let pre' = D.add lhs_ap (fst astate.prepost) in
         let post = snd astate.prepost in
@@ -241,7 +242,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with uninit_vars= D.empty}
-    | Call (_, HilInstr.Direct call, [(HilExp.AccessExpression AddressOf Base base)], _, _)
+    | Call (_, HilInstr.Direct call, [HilExp.AccessExpression (AddressOf (Base base))], _, _)
       when is_dummy_constructor_of_a_struct call ->
         (* if it's a default constructor, we use the following heuristic: we assume that it initializes
     correctly all fields when there is an implementation of the constructor that initilizes at least one

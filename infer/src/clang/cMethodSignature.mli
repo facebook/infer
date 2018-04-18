@@ -26,7 +26,7 @@ type t =
   ; pointer_to_parent: Clang_ast_t.pointer option
   ; pointer_to_property_opt: Clang_ast_t.pointer option
   ; (* If set then method is a getter/setter *)
-  return_param_typ: Typ.t option }
+    return_param_typ: Typ.t option }
 
 val is_getter : t -> bool
 

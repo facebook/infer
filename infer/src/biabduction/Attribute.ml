@@ -391,7 +391,7 @@ let find_equal_formal_path tenv e prop =
       Some vfs
   | None ->
     match get_objc_null tenv prop e with
-    | Some Apred (Aobjc_null, [_; vfs]) ->
+    | Some (Apred (Aobjc_null, [_; vfs])) ->
         Some vfs
     | _ ->
         None

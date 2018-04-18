@@ -26,7 +26,7 @@ module JNI = struct
     | FullyQualifiedClass of (string * string)
     | Array of t
     | Method of (t list * t)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
@@ -171,9 +171,9 @@ module JNI = struct
           if collected_symbols then
             L.(die UserError "No symbols were reduced during a scan, failed parsing input")
           else (* no more symbols in input, terminate *) List.rev jnis
-      | (Terminal t) :: tl when not collected_symbols && not in_method ->
+      | Terminal t :: tl when not collected_symbols && not in_method ->
           reduce_aux ~symbols:tl ~unchanged_symbols ~in_method ~jnis_in_method ~jnis:(t :: jnis)
-      | (NonTerminal SymMethod method_jnis) :: (Terminal t) :: tl ->
+      | NonTerminal (SymMethod method_jnis) :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Method (method_jnis, t)) :: tl in
           let new_symbols =
             List.rev_append (all_collected_symbols_so_far ()) transformed_symbols
@@ -183,7 +183,7 @@ module JNI = struct
       | (NonTerminal SymMethodOpen as nt) :: tl ->
           reduce_aux ~symbols:tl ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
             ~in_method:true ~jnis_in_method:[] ~jnis
-      | (NonTerminal SymArray) :: (Terminal t) :: tl ->
+      | NonTerminal SymArray :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Array t) :: tl in
           let new_symbols =
             List.rev_append (all_collected_symbols_so_far ()) transformed_symbols
@@ -193,7 +193,7 @@ module JNI = struct
       | (NonTerminal SymArray as nt) :: tl ->
           reduce_aux ~symbols:tl ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
             ~in_method:false ~jnis_in_method:[] ~jnis
-      | (NonTerminal SymMethodClose) :: tl ->
+      | NonTerminal SymMethodClose :: tl ->
           let new_method_non_terminal = NonTerminal (SymMethod (List.rev jnis_in_method)) in
           (* the first symbol in unchanged_symbols is the SymMethodOpen, remove it *)
           let new_unchanged_symbols = tl_or_empty unchanged_symbols in
@@ -227,7 +227,7 @@ module JNI = struct
 
   let parse_method_str str =
     match parse_str str with
-    | [(Method m)] ->
+    | [Method m] ->
         m
     | _ ->
         L.(die UserError "The input provided did not parse as one JNI method signature")
@@ -268,8 +268,9 @@ let create ~classname ~methodname ~signature ~kind =
   let args, ret_typ = JNI.parse_method_str signature in
   let java_type_args = List.map ~f:JNI.to_java_type args in
   let java_type_ret_typ =
-    if String.equal methodname Typ.Procname.Java.constructor_method_name
-       || String.equal methodname Typ.Procname.Java.class_initializer_method_name
+    if
+      String.equal methodname Typ.Procname.Java.constructor_method_name
+      || String.equal methodname Typ.Procname.Java.class_initializer_method_name
     then None
     else Some (JNI.to_java_type ret_typ)
   in
@@ -290,12 +291,12 @@ let from_json_string str =
   in
   let rec parse_json j acc =
     match j with
-    | (`Assoc
+    | `Assoc
         [ ("class", `String classname)
         ; _
         ; ("method", `String methodname)
         ; ("signature", `String signature)
-        ; _ ])
+        ; _ ]
       :: tl ->
         let static_procname = create_static ~classname ~methodname ~signature in
         let non_static_procname = create_non_static ~classname ~methodname ~signature in

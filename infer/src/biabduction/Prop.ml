@@ -47,7 +47,7 @@ module Core : sig
     ; pi: pi  (** pure part *)
     ; sigma_fp: sigma  (** abduced spatial part *)
     ; pi_fp: pi  (** abduced pure part *) }
-    [@@deriving compare]
+  [@@deriving compare]
 
   val prop_emp : normal t
   (** Proposition [true /\ emp]. *)
@@ -75,7 +75,7 @@ end = struct
     ; pi: pi  (** pure part *)
     ; sigma_fp: sigma  (** abduced spatial part *)
     ; pi_fp: pi  (** abduced pure part *) }
-    [@@deriving compare]
+  [@@deriving compare]
 
   (** Proposition [true /\ emp]. *)
   let prop_emp : normal t = {sub= Sil.exp_sub_empty; pi= []; sigma= []; pi_fp= []; sigma_fp= []}
@@ -198,7 +198,7 @@ let sigma_get_stack_nonstack only_local_vars sigma =
 let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt sg_ =
-    let sg = List.sort ~cmp:Sil.compare_hpred sg_ in
+    let sg = List.sort ~compare:Sil.compare_hpred sg_ in
     if sg <> [] then
       Format.fprintf fmt "%a" (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) sg
   in
@@ -236,7 +236,7 @@ let get_pure_extended p =
             let old_id = Ident.Map.find pid primed_map in
             let new_atom = Sil.Aeq (Var id, Var old_id) in
             (new_atom :: atoms, primed_map)
-          with Not_found -> (atoms, Ident.Map.add pid id primed_map)
+          with Caml.Not_found -> (atoms, Ident.Map.add pid id primed_map)
         in
         match base_atom with
         | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id0 && not (Ident.is_primed id1) ->
@@ -423,7 +423,7 @@ let sigma_sub subst sigma =
 (** Return [true] if the atom is an inequality *)
 let atom_is_inequality (atom: Sil.atom) =
   match atom with
-  | Aeq (BinOp ((Le | Lt), _, _), Const Cint i) when IntLit.isone i ->
+  | Aeq (BinOp ((Le | Lt), _, _), Const (Cint i)) when IntLit.isone i ->
       true
   | _ ->
       false
@@ -432,7 +432,7 @@ let atom_is_inequality (atom: Sil.atom) =
 (** If the atom is [e<=n] return [e,n] *)
 let atom_exp_le_const (atom: Sil.atom) =
   match atom with
-  | Aeq (BinOp (Le, e1, Const Cint n), Const Cint i) when IntLit.isone i ->
+  | Aeq (BinOp (Le, e1, Const (Cint n)), Const (Cint i)) when IntLit.isone i ->
       Some (e1, n)
   | _ ->
       None
@@ -441,7 +441,7 @@ let atom_exp_le_const (atom: Sil.atom) =
 (** If the atom is [n<e] return [n,e] *)
 let atom_const_lt_exp (atom: Sil.atom) =
   match atom with
-  | Aeq (BinOp (Lt, Const Cint n, e1), Const Cint i) when IntLit.isone i ->
+  | Aeq (BinOp (Lt, Const (Cint n), e1), Const (Cint i)) when IntLit.isone i ->
       Some (n, e1)
   | _ ->
       None
@@ -478,8 +478,8 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
       if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
         L.die InternalError
           "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also \
-           of type struct %a: %a:%a" Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path)
-          Typ.Name.pp name ;
+           of type struct %a: %a:%a"
+          Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path) Typ.Name.pp name ;
       match (struct_init_mode, Tenv.lookup tenv name) with
       | Fld_init, Some {fields} ->
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
@@ -521,13 +521,13 @@ let replace_array_contents (hpred: Sil.hpred) esel : Sil.hpred =
 (** remove duplicate atoms and redundant inequalities from a sorted pi *)
 let rec pi_sorted_remove_redundant (pi: pi) =
   match pi with
-  | (Aeq (BinOp (Le, e1, Const Cint n1), Const Cint i1) as a1)
-    :: (Aeq (BinOp (Le, e2, Const Cint n2), Const Cint i2)) :: rest
+  | (Aeq (BinOp (Le, e1, Const (Cint n1)), Const (Cint i1)) as a1)
+    :: Aeq (BinOp (Le, e2, Const (Cint n2)), Const (Cint i2)) :: rest
     when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* second inequality redundant *)
       pi_sorted_remove_redundant (a1 :: rest)
-  | (Aeq (BinOp (Lt, Const Cint n1, e1), Const Cint i1))
-    :: (Aeq (BinOp (Lt, Const Cint n2, e2), Const Cint i2) as a2) :: rest
+  | Aeq (BinOp (Lt, Const (Cint n1), e1), Const (Cint i1))
+    :: (Aeq (BinOp (Lt, Const (Cint n2), e2), Const (Cint i2)) as a2) :: rest
     when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* first inequality redundant *)
       pi_sorted_remove_redundant (a2 :: rest)
@@ -615,9 +615,9 @@ module Normalize = struct
         match sigma1 with
         | [] ->
             set
-        | (Hpointsto (e, _, _)) :: sigma' | (Hlseg (Sil.Lseg_NE, _, e, _, _)) :: sigma' ->
+        | Hpointsto (e, _, _) :: sigma' | Hlseg (Sil.Lseg_NE, _, e, _, _) :: sigma' ->
             f_alloc (Exp.Set.add e set) sigma'
-        | (Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _)) :: sigma' ->
+        | Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma' ->
             f_alloc (Exp.Set.add iF (Exp.Set.add iB set)) sigma'
         | _ :: sigma' ->
             f_alloc set sigma'
@@ -630,12 +630,12 @@ module Normalize = struct
           (List.rev eqs_zero, List.rev sigma_passed)
       | (Hpointsto _ as hpred) :: sigma' ->
           f eqs_zero (hpred :: sigma_passed) sigma'
-      | (Hlseg (Lseg_PE, _, e1, e2, _)) :: sigma'
+      | Hlseg (Lseg_PE, _, e1, e2, _) :: sigma'
         when Exp.equal e1 Exp.zero || Exp.Set.mem e1 alloc_set ->
           f (Sil.Aeq (e1, e2) :: eqs_zero) sigma_passed sigma'
       | (Hlseg _ as hpred) :: sigma' ->
           f eqs_zero (hpred :: sigma_passed) sigma'
-      | (Hdllseg (Lseg_PE, _, iF, oB, oF, iB, _)) :: sigma'
+      | Hdllseg (Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
         when Exp.equal iF Exp.zero || Exp.Set.mem iF alloc_set || Exp.equal iB Exp.zero
              || Exp.Set.mem iB alloc_set ->
           f (Sil.Aeq (iF, oF) :: Sil.Aeq (iB, oB) :: eqs_zero) sigma_passed sigma'
@@ -652,14 +652,14 @@ module Normalize = struct
           List.rev sigma_passed
       | (Hpointsto _ as hpred) :: sigma' ->
           f (hpred :: sigma_passed) sigma'
-      | (Hlseg (Lseg_PE, para, f1, f2, shared)) :: sigma'
-        when Exp.equal e1 f1 && Exp.equal e2 f2 || Exp.equal e2 f1 && Exp.equal e1 f2 ->
+      | Hlseg (Lseg_PE, para, f1, f2, shared) :: sigma'
+        when (Exp.equal e1 f1 && Exp.equal e2 f2) || (Exp.equal e2 f1 && Exp.equal e1 f2) ->
           f (Sil.Hlseg (Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
       | (Hlseg _ as hpred) :: sigma' ->
           f (hpred :: sigma_passed) sigma'
-      | (Hdllseg (Lseg_PE, para, iF, oB, oF, iB, shared)) :: sigma'
-        when Exp.equal e1 iF && Exp.equal e2 oF || Exp.equal e2 iF && Exp.equal e1 oF
-             || Exp.equal e1 iB && Exp.equal e2 oB || Exp.equal e2 iB && Exp.equal e1 oB ->
+      | Hdllseg (Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
+        when (Exp.equal e1 iF && Exp.equal e2 oF) || (Exp.equal e2 iF && Exp.equal e1 oF)
+             || (Exp.equal e1 iB && Exp.equal e2 oB) || (Exp.equal e2 iB && Exp.equal e1 oB) ->
           f (Sil.Hdllseg (Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
       | (Hdllseg _ as hpred) :: sigma' ->
           f (hpred :: sigma_passed) sigma'
@@ -699,9 +699,9 @@ module Normalize = struct
           eval e1
       | UnOp (Unop.LNot, e1, topt) -> (
         match eval e1 with
-        | Const Cint i when IntLit.iszero i ->
+        | Const (Cint i) when IntLit.iszero i ->
             Exp.one
-        | Const Cint _ ->
+        | Const (Cint _) ->
             Exp.zero
         | UnOp (LNot, e1', _) ->
             e1'
@@ -711,9 +711,9 @@ module Normalize = struct
         match eval e1 with
         | UnOp (Neg, e2', _) ->
             e2'
-        | Const Cint i ->
+        | Const (Cint i) ->
             Exp.int (IntLit.neg i)
-        | Const Cfloat v ->
+        | Const (Cfloat v) ->
             Exp.float ~-.v
         | Var id ->
             UnOp (Neg, Var id, topt)
@@ -723,31 +723,31 @@ module Normalize = struct
         match eval e1 with
         | UnOp (BNot, e2', _) ->
             e2'
-        | Const Cint i ->
+        | Const (Cint i) ->
             Exp.int (IntLit.lognot i)
         | e1' ->
             if abs then Exp.get_undefined false else UnOp (BNot, e1', topt) )
       | BinOp (Le, e1, e2) -> (
         match (eval e1, eval e2) with
-        | Const Cint n, Const Cint m ->
+        | Const (Cint n), Const (Cint m) ->
             Exp.bool (IntLit.leq n m)
-        | Const Cfloat v, Const Cfloat w ->
+        | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (v <= w)
-        | BinOp (PlusA, e3, Const Cint n), Const Cint m ->
+        | BinOp (PlusA, e3, Const (Cint n)), Const (Cint m) ->
             BinOp (Le, e3, Exp.int (m -- n))
         | e1', e2' ->
             Exp.le e1' e2' )
       | BinOp (Lt, e1, e2) -> (
         match (eval e1, eval e2) with
-        | Const Cint n, Const Cint m ->
+        | Const (Cint n), Const (Cint m) ->
             Exp.bool (IntLit.lt n m)
-        | Const Cfloat v, Const Cfloat w ->
+        | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (v < w)
-        | Const Cint n, BinOp (MinusA, f1, f2) ->
+        | Const (Cint n), BinOp (MinusA, f1, f2) ->
             BinOp (Le, BinOp (MinusA, f2, f1), Exp.int (IntLit.minus_one -- n))
-        | BinOp (MinusA, f1, f2), Const Cint n ->
+        | BinOp (MinusA, f1, f2), Const (Cint n) ->
             Exp.le (BinOp (MinusA, f1, f2)) (Exp.int (n -- IntLit.one))
-        | BinOp (PlusA, e3, Const Cint n), Const Cint m ->
+        | BinOp (PlusA, e3, Const (Cint n)), Const (Cint m) ->
             BinOp (Lt, e3, Exp.int (m -- n))
         | e1', e2' ->
             Exp.lt e1' e2' )
@@ -757,11 +757,11 @@ module Normalize = struct
           eval (Exp.lt e2 e1)
       | BinOp (Eq, e1, e2) -> (
         match (eval e1, eval e2) with
-        | Const Cint n, Const Cint m ->
+        | Const (Cint n), Const (Cint m) ->
             Exp.bool (IntLit.eq n m)
-        | Const Cfloat v, Const Cfloat w ->
+        | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (Float.equal v w)
-        | Const Cint _, Exp.Lvar _ | Exp.Lvar _, Const Cint _ ->
+        | Const (Cint _), Exp.Lvar _ | Exp.Lvar _, Const (Cint _) ->
             (* Comparing pointer with nonzero integer is undefined behavior in ISO C++ *)
             (* Assume they are not equal *)
             Exp.zero
@@ -769,11 +769,11 @@ module Normalize = struct
             Exp.eq e1' e2' )
       | BinOp (Ne, e1, e2) -> (
         match (eval e1, eval e2) with
-        | Const Cint n, Const Cint m ->
+        | Const (Cint n), Const (Cint m) ->
             Exp.bool (IntLit.neq n m)
-        | Const Cfloat v, Const Cfloat w ->
+        | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (v <> w)
-        | Const Cint _, Exp.Lvar _ | Exp.Lvar _, Const Cint _ ->
+        | Const (Cint _), Exp.Lvar _ | Exp.Lvar _, Const (Cint _) ->
             (* Comparing pointer with nonzero integer is undefined behavior in ISO C++ *)
             (* Assume they are not equal *)
             Exp.one
@@ -784,13 +784,13 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e1'
-          | Const Cint _, _ ->
+          | Const (Cint _), _ ->
               e2'
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               e2'
-          | _, Const Cint _ ->
+          | _, Const (Cint _) ->
               e1'
           | _ ->
               BinOp (LAnd, e1', e2') )
@@ -799,13 +799,13 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e2'
-          | Const Cint _, _ ->
+          | Const (Cint _), _ ->
               e1'
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               e1'
-          | _, Const Cint _ ->
+          | _, Const (Cint _) ->
               e2'
           | _ ->
               BinOp (LOr, e1', e2') )
@@ -826,18 +826,18 @@ module Normalize = struct
           let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
           let ( +++ ) (x: Exp.t) (y: Exp.t) : Exp.t =
             match (x, y) with
-            | _, Const Cint i when IntLit.iszero i ->
+            | _, Const (Cint i) when IntLit.iszero i ->
                 x
-            | Const Cint i, Const Cint j ->
+            | Const (Cint i), Const (Cint j) ->
                 Const (Cint (IntLit.add i j))
             | _ ->
                 BinOp (oplus, x, y)
           in
           let ( --- ) (x: Exp.t) (y: Exp.t) : Exp.t =
             match (x, y) with
-            | _, Const Cint i when IntLit.iszero i ->
+            | _, Const (Cint i) when IntLit.iszero i ->
                 x
-            | Const Cint i, Const Cint j ->
+            | Const (Cint i), Const (Cint j) ->
                 Const (Cint (IntLit.sub i j))
             | _ ->
                 BinOp (ominus, x, y)
@@ -859,19 +859,19 @@ module Normalize = struct
               e2'
           | _, Const c when Const.iszero_int_float c ->
               e1'
-          | Const Cint n, Const Cint m ->
+          | Const (Cint n), Const (Cint m) ->
               Exp.int (n ++ m)
-          | Const Cfloat v, Const Cfloat w ->
+          | Const (Cfloat v), Const (Cfloat w) ->
               Exp.float (v +. w)
           | UnOp (Neg, f1, _), f2 | f2, UnOp (Neg, f1, _) ->
               BinOp (ominus, f2, f1)
-          | BinOp (PlusA, e, Const Cint n1), Const Cint n2
-          | BinOp (PlusPI, e, Const Cint n1), Const Cint n2
-          | Const Cint n2, BinOp (PlusA, e, Const Cint n1)
-          | Const Cint n2, BinOp (PlusPI, e, Const Cint n1) ->
+          | BinOp (PlusA, e, Const (Cint n1)), Const (Cint n2)
+          | BinOp (PlusPI, e, Const (Cint n1)), Const (Cint n2)
+          | Const (Cint n2), BinOp (PlusA, e, Const (Cint n1))
+          | Const (Cint n2), BinOp (PlusPI, e, Const (Cint n1)) ->
               e +++ Exp.int (n1 ++ n2)
-          | BinOp (MinusA, Const Cint n1, e), Const Cint n2
-          | Const Cint n2, BinOp (MinusA, Const Cint n1, e) ->
+          | BinOp (MinusA, Const (Cint n1), e), Const (Cint n2)
+          | Const (Cint n2), BinOp (MinusA, Const (Cint n1), e) ->
               Exp.int (n1 ++ n2) --- e
           | BinOp (MinusA, e1, e2), e3 ->
               (* (e1-e2)+e3 --> e1 + (e3-e2) *)
@@ -902,13 +902,13 @@ module Normalize = struct
                 eval (Exp.UnOp (Neg, e2', None))
             | _, Const c when Const.iszero_int_float c ->
                 e1'
-            | Const Cint n, Const Cint m ->
+            | Const (Cint n), Const (Cint m) ->
                 Exp.int (n -- m)
-            | Const Cfloat v, Const Cfloat w ->
+            | Const (Cfloat v), Const (Cfloat w) ->
                 Exp.float (v -. w)
             | _, UnOp (Neg, f2, _) ->
                 eval (e1 +++ f2)
-            | _, Const Cint n ->
+            | _, Const (Cint n) ->
                 eval (e1' +++ Exp.int (IntLit.neg n))
             | Const _, _ ->
                 e1' --- e2'
@@ -935,9 +935,9 @@ module Normalize = struct
               e1'
           | _, Const c when Const.isminusone_int_float c ->
               eval (Exp.UnOp (Neg, e1', None))
-          | Const Cint n, Const Cint m ->
+          | Const (Cint n), Const (Cint m) ->
               Exp.int (IntLit.mul n m)
-          | Const Cfloat v, Const Cfloat w ->
+          | Const (Cfloat v), Const (Cfloat w) ->
               Exp.float (v *. w)
           | Var _, Var _ ->
               BinOp (Mult, e1', e2')
@@ -956,9 +956,9 @@ module Normalize = struct
               e1'
           | _, Const c when Const.isone_int_float c ->
               e1'
-          | Const Cint n, Const Cint m ->
+          | Const (Cint n), Const (Cint m) ->
               Exp.int (IntLit.div n m)
-          | Const Cfloat v, Const Cfloat w ->
+          | Const (Cfloat v), Const (Cfloat w) ->
               Exp.float (v /. w)
           | ( Sizeof {typ= {desc= Tarray {elt}}; dynamic_length= Some len}
             , Sizeof {typ= elt2; dynamic_length= None} )
@@ -977,13 +977,13 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               Exp.get_undefined false
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e1'
-          | _, Const Cint i when IntLit.isone i ->
+          | _, Const (Cint i) when IntLit.isone i ->
               Exp.zero
-          | Const Cint n, Const Cint m ->
+          | Const (Cint n), Const (Cint m) ->
               Exp.int (IntLit.rem n m)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (Mod, e1', e2') )
@@ -992,14 +992,14 @@ module Normalize = struct
           if abs then Exp.get_undefined false
           else
             match (e1, e2) with
-            | Const Cint n, Const Cint m -> (
+            | Const (Cint n), Const (Cint m) -> (
               try Exp.int (IntLit.shift_left n m) with IntLit.OversizedShift ->
                 BinOp (Shiftlt, eval e1, eval e2) )
-            | _, Const Cint m when IntLit.iszero m ->
+            | _, Const (Cint m) when IntLit.iszero m ->
                 eval e1
-            | _, Const Cint m when IntLit.isone m ->
+            | _, Const (Cint m) when IntLit.isone m ->
                 eval (Exp.BinOp (PlusA, e1, e1))
-            | Const Cint m, _ when IntLit.iszero m ->
+            | Const (Cint m), _ when IntLit.iszero m ->
                 e1
             | _ ->
                 BinOp (Shiftlt, eval e1, eval e2) )
@@ -1008,12 +1008,12 @@ module Normalize = struct
           if abs then Exp.get_undefined false
           else
             match (e1, e2) with
-            | Const Cint n, Const Cint m -> (
+            | Const (Cint n), Const (Cint m) -> (
               try Exp.int (IntLit.shift_right n m) with IntLit.OversizedShift ->
                 BinOp (Shiftrt, eval e1, eval e2) )
-            | _, Const Cint m when IntLit.iszero m ->
+            | _, Const (Cint m) when IntLit.iszero m ->
                 eval e1
-            | Const Cint m, _ when IntLit.iszero m ->
+            | Const (Cint m), _ when IntLit.iszero m ->
                 e1
             | _ ->
                 BinOp (Shiftrt, eval e1, eval e2) )
@@ -1022,11 +1022,11 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e1'
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               e2'
-          | Const Cint i1, Const Cint i2 ->
+          | Const (Cint i1), Const (Cint i2) ->
               Exp.int (IntLit.logand i1 i2)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (BAnd, e1', e2') )
@@ -1035,11 +1035,11 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e2'
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               e1'
-          | Const Cint i1, Const Cint i2 ->
+          | Const (Cint i1), Const (Cint i2) ->
               Exp.int (IntLit.logor i1 i2)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (BOr, e1', e2') )
@@ -1048,11 +1048,11 @@ module Normalize = struct
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
-          | Const Cint i, _ when IntLit.iszero i ->
+          | Const (Cint i), _ when IntLit.iszero i ->
               e2'
-          | _, Const Cint i when IntLit.iszero i ->
+          | _, Const (Cint i) when IntLit.iszero i ->
               e1'
-          | Const Cint i1, Const Cint i2 ->
+          | Const (Cint i1), Const (Cint i2) ->
               Exp.int (IntLit.logxor i1 i2)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (BXor, e1', e2') )
@@ -1106,24 +1106,24 @@ module Normalize = struct
   (** Turn an inequality expression into an atom *)
   let mk_inequality tenv (e: Exp.t) : Sil.atom =
     match e with
-    | BinOp (Le, base, Const Cint n)
+    | BinOp (Le, base, Const (Cint n))
       -> (
         (* base <= n case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
-        | BinOp (PlusA, base', Const Cint n') ->
+        | BinOp (PlusA, base', Const (Cint n')) ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (PlusA, Const Cint n', base') ->
+        | BinOp (PlusA, Const (Cint n'), base') ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, base', Const Cint n') ->
+        | BinOp (MinusA, base', Const (Cint n')) ->
             let new_offset = Exp.int (n ++ n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, Const Cint n', base') ->
+        | BinOp (MinusA, Const (Cint n'), base') ->
             let new_offset = Exp.int (n' -- n -- IntLit.one) in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
@@ -1134,24 +1134,24 @@ module Normalize = struct
             Aeq (new_e, Exp.one)
         | _ ->
             Aeq (e, Exp.one) )
-    | BinOp (Lt, Const Cint n, base)
+    | BinOp (Lt, Const (Cint n), base)
       -> (
         (* n < base case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
-        | BinOp (PlusA, base', Const Cint n') ->
+        | BinOp (PlusA, base', Const (Cint n')) ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (PlusA, Const Const.Cint n', base') ->
+        | BinOp (PlusA, Const (Const.Cint n'), base') ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, base', Const Cint n') ->
+        | BinOp (MinusA, base', Const (Cint n')) ->
             let new_offset = Exp.int (n ++ n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, Const Cint n', base') ->
+        | BinOp (MinusA, Const (Cint n'), base') ->
             let new_offset = Exp.int (n' -- n -- IntLit.one) in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
@@ -1172,7 +1172,7 @@ module Normalize = struct
        integer offset representing inequality [sum(pos) - sum(neg) + off <= 0] *)
     let rec exp_to_posnegoff (e: Exp.t) =
       match e with
-      | Const Cint n ->
+      | Const (Cint n) ->
           ([], [], n)
       | BinOp (PlusA, e1, e2) | BinOp (PlusPI, e1, e2) ->
           let pos1, neg1, n1 = exp_to_posnegoff e1 in
@@ -1190,8 +1190,8 @@ module Normalize = struct
     in
     (* sort and filter out expressions appearing in both the positive and negative part *)
     let normalize_posnegoff (pos, neg, off) =
-      let pos' = List.sort ~cmp:Exp.compare pos in
-      let neg' = List.sort ~cmp:Exp.compare neg in
+      let pos' = List.sort ~compare:Exp.compare pos in
+      let neg' = List.sort ~compare:Exp.compare neg in
       let rec combine pacc nacc = function
         | x :: ps, y :: ng -> (
           match Exp.compare x y with
@@ -1229,7 +1229,7 @@ module Normalize = struct
           BinOp (Le, lhs_e, Exp.int (IntLit.zero -- n))
     in
     let ineq =
-      match a with Aeq (ineq, Const Cint i) when IntLit.isone i -> ineq | _ -> assert false
+      match a with Aeq (ineq, Const (Cint i)) when IntLit.isone i -> ineq | _ -> assert false
     in
     match ineq with
     | BinOp (Le, e1, e2) ->
@@ -1249,15 +1249,15 @@ module Normalize = struct
     let a = Sil.atom_sub sub a0 in
     let rec normalize_eq (eq: Exp.t * Exp.t) =
       match eq with
-      | BinOp (PlusA, e1, Const Cint n1), Const Cint n2
+      | BinOp (PlusA, e1, Const (Cint n1)), Const (Cint n2)
       (* e1+n1==n2 ---> e1==n2-n1 *)
-      | BinOp (PlusPI, e1, Const Cint n1), Const Cint n2 ->
+      | BinOp (PlusPI, e1, Const (Cint n1)), Const (Cint n2) ->
           (e1, Exp.int (n2 -- n1))
-      | BinOp (MinusA, e1, Const Cint n1), Const Cint n2
+      | BinOp (MinusA, e1, Const (Cint n1)), Const (Cint n2)
       (* e1-n1==n2 ---> e1==n1+n2 *)
-      | BinOp (MinusPI, e1, Const Cint n1), Const Cint n2 ->
+      | BinOp (MinusPI, e1, Const (Cint n1)), Const (Cint n2) ->
           (e1, Exp.int (n1 ++ n2))
-      | BinOp (MinusA, Const Cint n1, e1), Const Cint n2 ->
+      | BinOp (MinusA, Const (Cint n1), e1), Const (Cint n2) ->
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
       | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
@@ -1279,7 +1279,7 @@ module Normalize = struct
     in
     let handle_unary_negation (e1: Exp.t) (e2: Exp.t) =
       match (e1, e2) with
-      | (UnOp (LNot, e1', _), Const Cint i | Const Cint i, UnOp (LNot, e1', _))
+      | (UnOp (LNot, e1', _), Const (Cint i) | Const (Cint i), UnOp (LNot, e1', _))
         when IntLit.iszero i ->
           (e1', Exp.zero, true)
       | _ ->
@@ -1316,15 +1316,15 @@ module Normalize = struct
   let normalize_and_strengthen_atom tenv (p: normal t) (a: Sil.atom) : Sil.atom =
     let a' = atom_normalize tenv (`Exp p.sub) a in
     match a' with
-    | Aeq (BinOp (Le, Var id, Const Cint n), Const Cint i) when IntLit.isone i ->
+    | Aeq (BinOp (Le, Var id, Const (Cint n)), Const (Cint i)) when IntLit.isone i ->
         let lower = Exp.int (n -- IntLit.one) in
         let a_lower : Sil.atom = Aeq (BinOp (Lt, lower, Var id), Exp.one) in
         if not (List.mem ~equal:Sil.equal_atom p.pi a_lower) then a' else Aeq (Var id, Exp.int n)
-    | Aeq (BinOp (Lt, Const Cint n, Var id), Const Cint i) when IntLit.isone i ->
+    | Aeq (BinOp (Lt, Const (Cint n), Var id), Const (Cint i)) when IntLit.isone i ->
         let upper = Exp.int (n ++ IntLit.one) in
         let a_upper : Sil.atom = Aeq (BinOp (Le, Var id, upper), Exp.one) in
         if not (List.mem ~equal:Sil.equal_atom p.pi a_upper) then a' else Aeq (Var id, upper)
-    | Aeq (BinOp (Ne, e1, e2), Const Cint i) when IntLit.isone i ->
+    | Aeq (BinOp (Ne, e1, e2), Const (Cint i)) when IntLit.isone i ->
         Aneq (e1, e2)
     | _ ->
         a'
@@ -1347,11 +1347,14 @@ module Normalize = struct
                 let cnt' = strexp_normalize tenv sub cnt in
                 if phys_equal cnt cnt' then x else (fld, cnt') )
           in
-          if phys_equal fld_cnts fld_cnts'
-             && List.is_sorted ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts
+          if
+            phys_equal fld_cnts fld_cnts'
+            && List.is_sorted ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts
           then se
           else
-            let fld_cnts'' = List.sort ~cmp:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts' in
+            let fld_cnts'' =
+              List.sort ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts'
+            in
             Estruct (fld_cnts'', inst) )
     | Earray (len, idx_cnts, inst) ->
         let len' = exp_normalize_noabs tenv sub len in
@@ -1367,11 +1370,12 @@ module Normalize = struct
                   let cnt' = strexp_normalize tenv sub cnt in
                   if phys_equal idx idx' && phys_equal cnt cnt' then x else (idx', cnt') )
             in
-            if phys_equal idx_cnts idx_cnts'
-               && List.is_sorted ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts
+            if
+              phys_equal idx_cnts idx_cnts'
+              && List.is_sorted ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts
             then se
             else
-              let idx_cnts'' = List.sort ~cmp:[%compare : Exp.t * Sil.strexp] idx_cnts' in
+              let idx_cnts'' = List.sort ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts' in
               Earray (len', idx_cnts'', inst)
 
 
@@ -1533,20 +1537,20 @@ module Normalize = struct
 
   and hpara_normalize tenv (para: Sil.hpara) =
     let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) para.body in
-    let sorted_body = List.sort ~cmp:Sil.compare_hpred normalized_body in
+    let sorted_body = List.sort ~compare:Sil.compare_hpred normalized_body in
     {para with body= sorted_body}
 
 
   and hpara_dll_normalize tenv (para: Sil.hpara_dll) =
     let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) para.body_dll in
-    let sorted_body = List.sort ~cmp:Sil.compare_hpred normalized_body in
+    let sorted_body = List.sort ~compare:Sil.compare_hpred normalized_body in
     {para with body_dll= sorted_body}
 
 
   let sigma_normalize tenv sub sigma =
     let sigma' =
       List.map ~f:(hpred_normalize tenv sub) sigma |> make_captured_in_closures_consistent
-      |> List.stable_sort ~cmp:Sil.compare_hpred
+      |> List.stable_sort ~compare:Sil.compare_hpred
     in
     if equal_sigma sigma sigma' then sigma else sigma'
 
@@ -1555,7 +1559,11 @@ module Normalize = struct
     let ineq_list, nonineq_list = List.partition_tf ~f:atom_is_inequality pi in
     let diseq_list =
       let get_disequality_info acc (a: Sil.atom) =
-        match a with Aneq (Const Cint n, e) | Aneq (e, Const Cint n) -> (e, n) :: acc | _ -> acc
+        match a with
+        | Aneq (Const (Cint n), e) | Aneq (e, Const (Cint n)) ->
+            (e, n) :: acc
+        | _ ->
+            acc
       in
       List.fold ~f:get_disequality_info ~init:[] nonineq_list
     in
@@ -1607,7 +1615,7 @@ module Normalize = struct
       List.filter
         ~f:(fun (a: Sil.atom) ->
           match a with
-          | Aneq (Const Cint n, e) | Aneq (e, Const Cint n) ->
+          | Aneq (Const (Cint n), e) | Aneq (e, Const (Cint n)) ->
               not
                 (List.exists
                    ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
@@ -1641,7 +1649,7 @@ module Normalize = struct
     let filter_useful_atom : Sil.atom -> bool =
       let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
       function
-        | Aneq ((Var _ as e), Const Cint n) when IntLit.isnegative n ->
+        | Aneq ((Var _ as e), Const (Cint n)) when IntLit.isnegative n ->
             not (List.exists ~f:(Exp.equal e) (Lazy.force unsigned_exps))
         | Aneq (e1, e2) ->
             not (syntactically_different (e1, e2))
@@ -1651,7 +1659,7 @@ module Normalize = struct
             true
     in
     let pi' =
-      List.stable_sort ~cmp:Sil.compare_atom
+      List.stable_sort ~compare:Sil.compare_atom
         (List.filter ~f:filter_useful_atom nonineq_list @ ineq_list)
     in
     let pi'' = pi_sorted_remove_redundant pi' in
@@ -1891,7 +1899,7 @@ let sigma_get_start_lexps_sort sigma =
   let exp_compare_neg e1 e2 = -Exp.compare e1 e2 in
   let filter e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
-  List.sort ~cmp:exp_compare_neg lexps
+  List.sort ~compare:exp_compare_neg lexps
 
 
 let sigma_dfs_sort tenv sigma =
@@ -1982,7 +1990,7 @@ let sigma_get_array_indices sigma =
 let compute_reindexing_from_indices list =
   let get_id_offset (e: Exp.t) =
     match e with
-    | BinOp (PlusA, Var id, Const Cint offset) ->
+    | BinOp (PlusA, Var id, Const (Cint offset)) ->
         if Ident.is_primed id then Some (id, offset) else None
     | _ ->
         None
@@ -2042,7 +2050,7 @@ let prop_rename_array_indices tenv prop =
     let indices = sigma_get_array_indices prop.sigma in
     let not_same_base_lt_offsets (e1: Exp.t) (e2: Exp.t) =
       match (e1, e2) with
-      | BinOp (PlusA, e1', Const Cint n1'), BinOp (PlusA, e2', Const Cint n2') ->
+      | BinOp (PlusA, e1', Const (Cint n1')), BinOp (PlusA, e2', Const (Cint n2')) ->
           not (Exp.equal e1' e2' && IntLit.lt n1' n2')
       | _ ->
           true
@@ -2081,12 +2089,12 @@ let compute_renaming free_vars =
 
 let rec idlist_assoc id = function
   | [] ->
-      raise Not_found
+      raise Caml.Not_found
   | (i, x) :: l ->
       if Ident.equal i id then x else idlist_assoc id l
 
 
-let ident_captured_ren ren id = try idlist_assoc id ren with Not_found -> id
+let ident_captured_ren ren id = try idlist_assoc id ren with Caml.Not_found -> id
 
 (* If not defined in ren, id should be mapped to itself *)
 
@@ -2322,7 +2330,7 @@ type 'a prop_iter =
   ; pit_pi: pi  (** pure part *)
   ; pit_newpi: (bool * Sil.atom) list  (** newly added atoms. *)
   ; (* The first records !Config.footprint. *)
-  pit_old: sigma  (** sigma already visited *)
+    pit_old: sigma  (** sigma already visited *)
   ; pit_curr: Sil.hpred  (** current element *)
   ; pit_state: 'a  (** state of current element *)
   ; pit_new: sigma  (** sigma not yet visited *)

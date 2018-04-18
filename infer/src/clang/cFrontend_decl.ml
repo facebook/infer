@@ -92,7 +92,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ClangLogging.log_broken_cfg procdesc __POS__ ~lang
       | _ ->
           ()
-      | exception Not_found ->
+      | exception Caml.Not_found ->
           ()
     in
     protect ~f ~recover ~pp_context trans_unit_ctx
@@ -141,8 +141,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
               (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
               (* The destructor wrapper calls the inner destructor which has the actual body *)
-              if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg
-                   tenv ms [body] []
+              if
+                CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
+                  ms [body] []
               then
                 add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
                   is_objc None extra_instrs ~is_destructor_wrapper:true ;
@@ -156,8 +157,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               (ms', procname') )
             else (ms, procname)
           in
-          if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
-               ms' [body] []
+          if
+            CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms'
+              [body] []
           then
             add_method trans_unit_ctx tenv cfg curr_class procname' body ms' return_param_typ_opt
               is_objc None extra_instrs ~is_destructor_wrapper:false
@@ -175,7 +177,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       obj_c_property_impl_decl_info =
     let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
     match CAst_utils.get_decl_opt_with_decl_ref property_decl_opt with
-    | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
+    | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info)) ->
         let process_accessor pointer =
           match CAst_utils.get_decl_opt_with_decl_ref pointer with
           | Some (ObjCMethodDecl _ as dec) ->
@@ -320,7 +322,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
             let class_decl = CAst_utils.get_decl parent_ptr in
             match class_decl with
-            | (Some CXXRecordDecl _ | Some ClassTemplateSpecializationDecl _) when Config.cxx ->
+            | (Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _)) when Config.cxx ->
                 let curr_class = CContext.ContextClsDeclPtr parent_ptr in
                 process_methods trans_unit_ctx tenv cfg curr_class [dec]
             | Some dec ->
@@ -331,7 +333,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                 () )
         | VarDecl (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr} as vdi))
           when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
-               || vdi_is_global && Option.is_some vdi_init_expr ->
+               || (vdi_is_global && Option.is_some vdi_init_expr) ->
             (* create a fake procedure that initializes the global variable so that the variable
               initializer can be analyzed by the backend (eg, the SIOF checker) *)
             let procname =

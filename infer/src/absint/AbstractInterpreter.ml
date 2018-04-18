@@ -49,9 +49,7 @@ struct
   type invariant_map = Domain.astate state InvariantMap.t
 
   (** extract the state of node [n] from [inv_map] *)
-  let extract_state node_id inv_map =
-    try Some (InvariantMap.find node_id inv_map) with Not_found -> None
-
+  let extract_state node_id inv_map = InvariantMap.find_opt node_id inv_map
 
   (** extract the postcondition of node [n] from [inv_map] *)
   let extract_post node_id inv_map =
@@ -106,8 +104,8 @@ struct
         if visit_count' > Config.max_widens then
           L.(die InternalError)
             "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
-             operator or increase the threshold" Config.max_widens Typ.Procname.pp
-            (Procdesc.get_proc_name pdesc) ;
+             operator or increase the threshold"
+            Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
         update_inv_map widened_pre visit_count' )
     else
       (* first time visiting this node *)

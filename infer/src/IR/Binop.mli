@@ -36,7 +36,7 @@ type t =
   | BOr  (** inclusive-or *)
   | LAnd  (** logical and. Does not always evaluate both operands. *)
   | LOr  (** logical or. Does not always evaluate both operands. *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal : t -> t -> bool
 

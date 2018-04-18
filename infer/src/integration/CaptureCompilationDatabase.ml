@@ -75,11 +75,11 @@ let run_compilation_database compilation_database should_capture_file =
       match Config.buck_compilation_database with
       | Some NoDeps when Config.linters ->
           Some fail_sentinel_fname
-      | Some NoDeps | Some Deps _ | None ->
+      | Some NoDeps | Some (Deps _) | None ->
           None
   in
   Utils.rmtree fail_sentinel_fname ;
-  let chunksize = min (List.length compilation_data / Config.jobs + 1) 10 in
+  let chunksize = min ((List.length compilation_data / Config.jobs) + 1) 10 in
   Parmap.pariter ~ncores:Config.jobs ~chunksize (invoke_cmd ~fail_sentinel) sequence ;
   L.progress "@." ;
   L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs ;
@@ -93,7 +93,7 @@ let run_compilation_database compilation_database should_capture_file =
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
   let dep_depth =
-    match Config.buck_compilation_database with Some Deps depth -> Some depth | _ -> None
+    match Config.buck_compilation_database with Some (Deps depth) -> Some depth | _ -> None
   in
   match
     Buck.add_flavors_to_buck_arguments ~filter_kind:`Yes ~dep_depth

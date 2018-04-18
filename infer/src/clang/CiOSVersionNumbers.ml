@@ -50,7 +50,7 @@ let sort_versions versions =
   let compare (version_float1, _) (version_float2, _) =
     Float.compare version_float1 version_float2
   in
-  List.sort ~cmp:compare versions
+  List.sort ~compare versions
 
 
 let version_of number_s : human_readable_version option =

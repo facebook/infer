@@ -59,9 +59,7 @@ let compute_local_exception_line loc_trace =
     | _ ->
         Continue (last_known_step_at_level_zero_opt', line_opt)
   in
-  match List.fold_until ~init:(None, None) ~f:compute_local_exception_line loc_trace with
-  | Finished (_, line_opt) | Stopped_early line_opt ->
-      line_opt
+  List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
 type node_id_key = {node_id: int; node_key: Caml.Digest.t}
@@ -72,7 +70,7 @@ type err_key =
   ; err_name: IssueType.t
   ; err_desc: Localise.error_desc
   ; severity: string }
-  [@@deriving compare]
+[@@deriving compare]
 
 (** Data associated to a specific error *)
 type err_data =
@@ -223,7 +221,7 @@ let add_issue tbl err_key (err_datas: ErrDataSet.t) : bool =
     else (
       ErrLogHash.replace tbl err_key (ErrDataSet.union err_datas current_eds) ;
       true )
-  with Not_found ->
+  with Caml.Not_found ->
     ErrLogHash.add tbl err_key err_datas ;
     true
 
@@ -258,7 +256,7 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
   in
   let should_report =
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
-    || Config.developer_mode && exn_developer
+    || (Config.developer_mode && exn_developer)
   in
   ( if exn_developer then
       let issue =

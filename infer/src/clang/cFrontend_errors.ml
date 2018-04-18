@@ -152,7 +152,7 @@ let rec expand_message_string context message an =
     L.(debug Linters Medium) "Replacing %s in message: @\n %s @\n" ms message ;
     L.(debug Linters Medium) "Resulting message: @\n %s @\n" message' ;
     expand_message_string context message' an
-  with Not_found -> message
+  with Caml.Not_found -> message
 
 
 let remove_new_lines_and_whitespace message =
@@ -253,7 +253,9 @@ let create_parsed_linters linters_def_file checkers : linter list =
 
 let rec apply_substitution f sub =
   let sub_param p =
-    try snd (List.find_exn sub ~f:(fun (a, _) -> ALVar.equal p a)) with Not_found -> p
+    try snd (List.find_exn sub ~f:(fun (a, _) -> ALVar.equal p a)) with
+    | Not_found_s _ | Caml.Not_found ->
+        p
   in
   let sub_list_param ps = List.map ps ~f:sub_param in
   let open CTL in
@@ -321,7 +323,7 @@ let expand_formula phi map_ error_msg_ =
             | None ->
                 L.(die ExternalError)
                   "Formula identifier '%s' is not called with the right number of parameters" name
-        with Not_found -> acc
+        with Caml.Not_found -> acc
         (* in this case it should be a predicate *) )
     | Not f1 ->
         Not (expand f1 map error_msg)
@@ -361,11 +363,11 @@ let rec expand_path paths path_map =
   match paths with
   | [] ->
       []
-  | (ALVar.Var path_var) :: rest -> (
+  | ALVar.Var path_var :: rest -> (
     try
       let paths = ALVar.VarMap.find path_var path_map in
       List.append paths (expand_path rest path_map)
-    with Not_found -> L.(die ExternalError) "Path variable %s not found. " path_var )
+    with Caml.Not_found -> L.(die ExternalError) "Path variable %s not found. " path_var )
   | path :: rest ->
       path :: expand_path rest path_map
 
@@ -509,7 +511,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_type
 (* We decouple the hardcoded checkers from the parsed ones *)
 let invoke_set_of_checkers_on_node context an =
   ( match an with
-  | Ctl_parser_types.Decl Clang_ast_t.TranslationUnitDecl _ ->
+  | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) ->
       (* Don't run parsed linters on TranslationUnitDecl node.
           Because depending on the formula it may give an error at line -1 *)
       ()

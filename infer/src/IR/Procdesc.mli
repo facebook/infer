@@ -28,7 +28,7 @@ module Node : sig
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
-    [@@deriving compare]
+  [@@deriving compare]
 
   val equal_nodekind : nodekind -> nodekind -> bool
 

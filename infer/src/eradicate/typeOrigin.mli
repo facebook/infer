@@ -15,7 +15,7 @@ type proc_origin =
   ; loc: Location.t
   ; annotated_signature: AnnotatedSignature.t
   ; is_library: bool }
-  [@@deriving compare]
+[@@deriving compare]
 
 type t =
   | Const of Location.t  (** A constant in the source *)
@@ -25,7 +25,7 @@ type t =
   | New  (** A new object creation *)
   | ONone  (** No origin is known *)
   | Undef  (** Undefined value before initialization *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal : t -> t -> bool
 

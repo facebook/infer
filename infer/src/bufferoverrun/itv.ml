@@ -175,7 +175,7 @@ module SymLinear = struct
     let le_one_pair s (v1_opt: NonZeroInt.t option) (v2_opt: NonZeroInt.t option) =
       let v1 = Option.value (v1_opt :> int option) ~default:0 in
       let v2 = Option.value (v2_opt :> int option) ~default:0 in
-      Int.equal v1 v2 || Symbol.is_unsigned s && v1 <= v2
+      Int.equal v1 v2 || (Symbol.is_unsigned s && v1 <= v2)
     in
     M.for_all2 le_one_pair x y
 
@@ -237,7 +237,7 @@ module SymLinear = struct
       | Some v, None ->
           Some (NonZeroInt.( * ) v c)
       | Some v1, Some v2 ->
-          NonZeroInt.of_int ((v1 :> int) * (c :> int) + (v2 :> int))
+          NonZeroInt.of_int (((v1 :> int) * (c :> int)) + (v2 :> int))
     in
     M.merge f se1 se2
 
@@ -321,7 +321,7 @@ module Bound = struct
     | Linear of int * SymLinear.t
     | MinMax of int * Sign.t * MinMax.t * int * Symbol.t
     | PInf
-    [@@deriving compare]
+  [@@deriving compare]
 
   type astate = t
 
@@ -428,7 +428,7 @@ module Bound = struct
     let get_default = function SubstLowerBound -> MInf | SubstUpperBound -> PInf in
     let subst1_linears c1 se1 s c2 se2 =
       let coeff = SymLinear.find s se1 in
-      let c' = c1 + (coeff :> int) * c2 in
+      let c' = c1 + ((coeff :> int) * c2) in
       let se1 = SymLinear.remove s se1 in
       let se' = SymLinear.mult_const_plus se2 coeff se1 in
       Linear (c', se')
@@ -571,10 +571,10 @@ module Bound = struct
     | MinMax (c1, Minus, Max, _, x1), MinMax (c2, Minus, Min, _, x2) ->
         c1 <= c2 && Symbol.equal x1 x2
     | MinMax _, Linear (c, se) ->
-        SymLinear.is_ge_zero se && le_opt1 Int.( <= ) (int_ub_of_minmax x) c
+        (SymLinear.is_ge_zero se && le_opt1 Int.( <= ) (int_ub_of_minmax x) c)
         || le_opt1 le (linear_ub_of_minmax x) y
     | Linear (c, se), MinMax _ ->
-        SymLinear.is_le_zero se && le_opt2 Int.( <= ) c (int_lb_of_minmax y)
+        (SymLinear.is_le_zero se && le_opt2 Int.( <= ) c (int_lb_of_minmax y))
         || le_opt2 le x (linear_lb_of_minmax y)
     | _, _ ->
         false

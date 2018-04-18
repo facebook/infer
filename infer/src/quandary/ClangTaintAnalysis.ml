@@ -35,7 +35,7 @@ include TaintAnalysis.Make (struct
       | None, _ when Typ.Procname.is_constructor pname ->
           (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
-      | None, (HilExp.AccessExpression access_expr) :: _ -> (
+      | None, HilExp.AccessExpression access_expr :: _ -> (
         match AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []
           when Pvar.is_frontend_tmp pvar ->

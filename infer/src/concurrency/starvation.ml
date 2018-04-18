@@ -55,7 +55,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_formal base = FormalMap.is_formal base extras in
     let get_path actuals =
       match actuals with
-      | (HilExp.AccessExpression access_exp) :: _ -> (
+      | HilExp.AccessExpression access_exp :: _ -> (
         match AccessExpression.to_access_path access_exp with
         | (((Var.ProgramVar pvar, _) as base), _) as path
           when is_formal base || Pvar.is_global pvar ->
@@ -63,7 +63,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             (* ignore paths on local or logical variables *)
             None )
-      | (HilExp.Constant Const.Cclass class_id) :: _ ->
+      | HilExp.Constant (Const.Cclass class_id) :: _ ->
           (* this is a synchronized/lock(CLASSNAME.class) construct *)
           Some (lock_of_class class_id)
       | _ ->

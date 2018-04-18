@@ -24,8 +24,8 @@ let get_field_annotation tenv fn typ =
       let ia' =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
-        if (Models.Inference.enabled || not Config.eradicate)
-           && Models.Inference.field_is_marked fn
+        if
+          (Models.Inference.enabled || not Config.eradicate) && Models.Inference.field_is_marked fn
         then AnnotatedSignature.mk_ia AnnotatedSignature.Nullable ia
         else ia
       in
@@ -91,7 +91,7 @@ type from_call =
   | From_is_true_on_null  (** returns true on null *)
   | From_optional_isPresent  (** x.isPresent *)
   | From_containsKey  (** x.containsKey *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_from_call = [%compare.equal : from_call]
 
@@ -119,7 +119,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
           false
     in
     let do_instr = function
-      | Sil.Call (_, Exp.Const Const.Cfun pn, [_; (Exp.Sizeof {typ}, _)], _, _)
+      | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof {typ}, _)], _, _)
         when Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ ->
           throwable_found := true
       | _ ->
@@ -278,14 +278,16 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
             if should_check_field_initialization then (
               if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn ;
               (* Check if field is missing annotation. *)
-              if not (nullable_annotated || nonnull_annotated)
-                 && not may_be_assigned_in_final_typestate
+              if
+                not (nullable_annotated || nonnull_annotated)
+                && not may_be_assigned_in_final_typestate
               then
                 report_error tenv find_canonical_duplicate
                   (TypeErr.Field_not_initialized (fn, curr_pname)) None loc curr_pdesc ;
               (* Check if field is over-annotated. *)
-              if Config.eradicate_field_over_annotated && nullable_annotated
-                 && not (may_be_nullable_in_final_typestate ())
+              if
+                Config.eradicate_field_over_annotated && nullable_annotated
+                && not (may_be_nullable_in_final_typestate ())
               then
                 report_error tenv find_canonical_duplicate
                   (TypeErr.Field_over_annotated (fn, curr_pname)) None loc curr_pdesc )

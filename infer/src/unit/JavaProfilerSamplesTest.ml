@@ -68,10 +68,10 @@ let test_jni_parse_str_with_valid_input =
   in
   [ ( "test_jni_parse_str_with_method_signature"
     , "(IZLjava/lang/String;)[C"
-    , T.([Method ([Int; Boolean; FullyQualifiedClass ("java.lang", "String")], Array Char)]) )
+    , T.[Method ([Int; Boolean; FullyQualifiedClass ("java.lang", "String")], Array Char)] )
   ; ( "test_jni_parse_str_with_multiple_separate_types"
     , "I[[[CIJ(I)[C"
-    , T.([Int; Array (Array (Array Char)); Int; Long; Method ([Int], Array Char)]) )
+    , T.[Int; Array (Array (Array Char)); Int; Long; Method ([Int], Array Char)] )
   ; ( "test_jni_parse_str_with_multiple_fully_qualified_classes"
     , "(Laaa/bbb/Ccc;Laaa/bbb/Ccc;)V"
     , let open T in
@@ -80,13 +80,13 @@ let test_jni_parse_str_with_valid_input =
       ] )
   ; ( "test_jni_parse_str_with_complex_method_signature_1"
     , "([[J(I)V)V"
-    , T.([Method ([Array (Array Long); Method ([Int], Void)], Void)]) )
+    , T.[Method ([Array (Array Long); Method ([Int], Void)], Void)] )
   ; ( "test_jni_parse_str_with_complex_method_signature_2"
     , "([C()V)V"
-    , T.([Method ([Array Char; Method ([], Void)], Void)]) )
+    , T.[Method ([Array Char; Method ([], Void)], Void)] )
   ; ( "test_jni_parse_str_with_complex_method_signature_3"
     , "(J[[J)V"
-    , T.([Method ([Long; Array (Array Long)], Void)]) )
+    , T.[Method ([Long; Array (Array Long)], Void)] )
   ; ( "test_jni_parse_str_with_complex_method_signature_4"
     , "([(I(J[[JZ)J)[[[(ILaaa/bbb/Ccc;Z)[C)V"
     , let open T in
@@ -101,7 +101,7 @@ let test_jni_parse_str_with_valid_input =
                                 ([Int; FullyQualifiedClass ("aaa.bbb", "Ccc"); Boolean], Array Char))))
                    )) ]
           , Void ) ] )
-  ; ("test_jni_parse_str_with_empty_method_signature", "()V", T.([Method ([], Void)]))
+  ; ("test_jni_parse_str_with_empty_method_signature", "()V", T.[Method ([], Void)])
   ; ("test_jni_parse_str_with_empty_input", "", []) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )

@@ -75,7 +75,7 @@ type parameter_not_nullable =
   * Location.t
   * (* callee location *)
     origin_descr
-  [@@deriving compare]
+[@@deriving compare]
 
 (** Instance of an error *)
 type err_instance =
@@ -92,7 +92,7 @@ type err_instance =
   | Parameter_annotation_inconsistent of parameter_not_nullable
   | Return_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Procname.t * origin_descr
   | Return_over_annotated of Typ.Procname.t
-  [@@deriving compare]
+[@@deriving compare]
 
 module H = Hashtbl.Make (struct
   type t = err_instance * InstrRef.t option [@@deriving compare]
@@ -441,7 +441,8 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         ( IssueType.eradicate_inconsistent_subclass_parameter_annotation
         , Format.asprintf
             "%s parameter %a of method %a is not %a but is declared %ain the parent class method \
-             %a." (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
+             %a."
+            (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced
             (Typ.Procname.to_simplified_string ~withclass:true pn)
             MF.pp_monospaced nullable_annotation MF.pp_monospaced nullable_annotation
             MF.pp_monospaced

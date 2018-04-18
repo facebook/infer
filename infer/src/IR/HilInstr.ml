@@ -24,7 +24,7 @@ type t =
   | Assign of AccessExpression.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
-  [@@deriving compare]
+[@@deriving compare]
 
 let pp fmt = function
   | Assign (access_expr, exp, loc) ->
@@ -67,7 +67,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call
       ( Some (ret_id, _)
-      , Const Cfun callee_pname
+      , Const (Cfun callee_pname)
       , (target_exp, _) :: (Sizeof {typ= cast_typ}, _) :: _
       , loc
       , _ )
@@ -96,7 +96,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
                   Location.pp_file_pos loc )
-        | Constant Const.Cint i ->
+        | Constant (Const.Cint i) ->
             (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
                debugging. doesn't really matter what we do here, so just create a dummy var *)
             let dummy_base_var =
@@ -112,7 +112,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
       let hil_ret = Option.map ~f:(fun (ret_id, ret_typ) -> (Var.of_id ret_id, ret_typ)) ret_opt in
       let hil_call =
         match exp_of_sil call_exp (Typ.mk Tvoid) with
-        | Constant Cfun procname | Closure (procname, _) ->
+        | Constant (Cfun procname) | Closure (procname, _) ->
             Direct procname
         | AccessExpression access_expr ->
             Indirect access_expr

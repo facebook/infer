@@ -45,7 +45,6 @@ let rec fmt ff typ =
   | Struct {name} | Opaque {name} -> Format.fprintf ff "@[%%%s@]" name
   | Bytes -> Format.fprintf ff "bytes"
 
-
 and fmts ff typs = vector_fmt ",@ " fmt ff typs
 
 let fmt_defn ff = function
@@ -55,7 +54,6 @@ let fmt_defn ff = function
   | Opaque {name} -> Format.fprintf ff "@[<2>%%%s =@ opaque@]" name
   | typ -> fmt ff typ
 
-
 let is_sized = function
   | Function _ | Bytes -> false
   | Integer _ | Float _ | Pointer _ | Array _ | Tuple _ | Struct _ -> true
@@ -64,13 +62,11 @@ let is_sized = function
          as they are not sized but may become sized through linking. *)
       true
 
-
 let rec prim_bit_size_of = function
   | Integer {bits} | Float {bits} -> Some bits
   | Array {elt; len} ->
       Option.map (prim_bit_size_of elt) ~f:(fun n -> n * len)
   | Opaque _ | Function _ | Pointer _ | Tuple _ | Struct _ | Bytes -> None
-
 
 let rec compatible t0 t1 =
   match (t0, t1, prim_bit_size_of t0, prim_bit_size_of t1) with
@@ -90,12 +86,10 @@ let rec compatible t0 t1 =
       true
   | _ -> false
 
-
 let mkFunction ~return ~args =
   assert (
     Option.for_all ~f:is_sized return && Vector.for_all ~f:is_sized args ) ;
   Function {return; args}
-
 
 let mkInteger ~bits = Integer {bits}
 
@@ -107,13 +101,11 @@ let mkArray ~elt ~len =
   assert (is_sized elt) ;
   Array {elt; len}
 
-
 let defns : (string, t) Hashtbl.t = Hashtbl.create (module String) ()
 
 let mkTuple ~packed elts =
   assert (Vector.for_all ~f:is_sized elts) ;
   Tuple {elts; packed}
-
 
 let mkStruct ~name ~packed elt_thks =
   match Hashtbl.find defns name with
@@ -131,7 +123,6 @@ let mkStruct ~name ~packed elt_thks =
           assert (is_sized elt) ;
           elts.(i) <- elt ) ;
       typ
-
 
 let mkOpaque ~name = Opaque {name}
 

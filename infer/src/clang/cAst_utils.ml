@@ -106,8 +106,8 @@ let get_decl_opt_with_decl_ref decl_ref_opt =
 let get_property_of_ivar decl_ptr = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr
 
 let update_sil_types_map type_ptr sil_type =
-  CFrontend_config.sil_types_map
-  := Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
+  CFrontend_config.sil_types_map :=
+    Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
 
 let update_enum_map enum_constant_pointer sil_exp =
@@ -115,16 +115,16 @@ let update_enum_map enum_constant_pointer sil_exp =
     ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
   in
   let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
-  CFrontend_config.enum_map
-  := ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
-       ~data:enum_map_value
+  CFrontend_config.enum_map :=
+    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
+      ~data:enum_map_value
 
 
 let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
   let enum_map_value = (predecessor_pointer_opt, None) in
-  CFrontend_config.enum_map
-  := ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
-       ~data:enum_map_value
+  CFrontend_config.enum_map :=
+    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer
+      ~data:enum_map_value
 
 
 let get_enum_constant_exp enum_constant_pointer =
@@ -180,7 +180,7 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   in
   let annot_name_opt =
     match get_type qt_type_ptr with
-    | Some AttributedType (_, attr_info) ->
+    | Some (AttributedType (_, attr_info)) ->
         if attr_info.ati_attr_kind = `Nullable then Some Annotations.nullable
         else if attr_info.ati_attr_kind = `Nonnull then Some Annotations.nonnull
           (* other annotations go here *)
@@ -193,7 +193,7 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
 
 let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
   match get_decl tti_decl_ptr with
-  | Some TypedefDecl (_, name_decl_info, _, _) ->
+  | Some (TypedefDecl (_, name_decl_info, _, _)) ->
       get_qualified_name name_decl_info
   | _ ->
       QualifiedCppName.empty
@@ -201,7 +201,7 @@ let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
 
 let name_opt_of_typedef_qual_type qual_type =
   match get_type qual_type.Clang_ast_t.qt_type_ptr with
-  | Some Clang_ast_t.TypedefType (_, typedef_type_info) ->
+  | Some (Clang_ast_t.TypedefType (_, typedef_type_info)) ->
       Some (name_of_typedef_type_info typedef_type_info)
   | _ ->
       None
@@ -245,11 +245,11 @@ let get_function_decl_with_body decl_ptr =
   let decl_opt = get_decl decl_ptr in
   let decl_ptr' =
     match decl_opt with
-    | Some FunctionDecl (_, _, _, fdecl_info)
-    | Some CXXMethodDecl (_, _, _, fdecl_info, _)
-    | Some CXXConstructorDecl (_, _, _, fdecl_info, _)
-    | Some CXXConversionDecl (_, _, _, fdecl_info, _)
-    | Some CXXDestructorDecl (_, _, _, fdecl_info, _) ->
+    | Some (FunctionDecl (_, _, _, fdecl_info))
+    | Some (CXXMethodDecl (_, _, _, fdecl_info, _))
+    | Some (CXXConstructorDecl (_, _, _, fdecl_info, _))
+    | Some (CXXConversionDecl (_, _, _, fdecl_info, _))
+    | Some (CXXDestructorDecl (_, _, _, fdecl_info, _)) ->
         fdecl_info.Clang_ast_t.fdi_decl_ptr_with_body
     | _ ->
         Some decl_ptr
@@ -331,13 +331,13 @@ let generate_key_decl decl =
 
 let rec get_super_if decl =
   match decl with
-  | Some Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+  | Some (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       (* Try getting the super ref through the impl info, and fall back to
          getting the if decl first and getting the super ref through it. *)
       let super_ref = get_decl_opt_with_decl_ref impl_decl_info.oidi_super in
       if Option.is_some super_ref then super_ref
       else get_super_if (get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface)
-  | Some Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, interface_decl_info) ->
+  | Some (Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
       get_decl_opt_with_decl_ref interface_decl_info.otdi_super
   | _ ->
       None
@@ -350,7 +350,7 @@ let get_super_ObjCImplementationDecl impl_decl_info =
   let objc_interface_decl_super = get_super_if objc_interface_decl_current in
   let objc_implementation_decl_super =
     match objc_interface_decl_super with
-    | Some ObjCInterfaceDecl (_, _, _, _, interface_decl_info) ->
+    | Some (ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
         get_decl_opt_with_decl_ref interface_decl_info.otdi_implementation
     | _ ->
         None
@@ -362,7 +362,7 @@ let get_impl_decl_info dec =
   match dec with Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi | _ -> None
 
 
-let default_blacklist = CFrontend_config.([nsobject_cl; nsproxy_cl])
+let default_blacklist = CFrontend_config.[nsobject_cl; nsproxy_cl]
 
 let rec is_objc_if_descendant ?(blacklist= default_blacklist) if_decl ancestors =
   (* List of ancestors to check for and list of classes to short-circuit to
@@ -371,7 +371,7 @@ let rec is_objc_if_descendant ?(blacklist= default_blacklist) if_decl ancestors 
     L.(die InternalError) "Blacklist and ancestors must be mutually exclusive."
   else
     match if_decl with
-    | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _) ->
+    | Some (Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)) ->
         let in_list some_list = List.mem ~equal:String.equal some_list ndi.Clang_ast_t.ni_name in
         not (in_list blacklist)
         && (in_list ancestors || is_objc_if_descendant ~blacklist (get_super_if if_decl) ancestors)
@@ -386,12 +386,12 @@ let rec qual_type_to_objc_interface qual_type =
 
 and ctype_to_objc_interface typ_opt =
   match (typ_opt : Clang_ast_t.c_type option) with
-  | Some ObjCInterfaceType (_, decl_ptr) ->
+  | Some (ObjCInterfaceType (_, decl_ptr)) ->
       get_decl decl_ptr
-  | Some ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type)) ->
+  | Some (ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type))) ->
       qual_type_to_objc_interface inner_qual_type
-  | Some FunctionProtoType (_, function_type_info, _)
-  | Some FunctionNoProtoType (_, function_type_info) ->
+  | Some (FunctionProtoType (_, function_type_info, _))
+  | Some (FunctionNoProtoType (_, function_type_info)) ->
       qual_type_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
   | _ ->
       None
@@ -399,7 +399,7 @@ and ctype_to_objc_interface typ_opt =
 
 let if_decl_to_di_pointer_opt if_decl =
   match if_decl with
-  | Some Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _) ->
+  | Some (Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _)) ->
       Some if_decl_info.di_pointer
   | _ ->
       None
@@ -425,7 +425,7 @@ let return_type_matches_class_type result_type interface_decl =
 let is_objc_factory_method ~class_decl:interface_decl ~method_decl:meth_decl_opt =
   let open Clang_ast_t in
   match meth_decl_opt with
-  | Some ObjCMethodDecl (_, _, omdi) ->
+  | Some (ObjCMethodDecl (_, _, omdi)) ->
       not omdi.omdi_is_instance_method
       && return_type_matches_class_type omdi.omdi_result_type interface_decl
   | _ ->
@@ -554,12 +554,13 @@ let get_superclass_curr_class_objc_from_decl (decl: Clang_ast_t.decl) =
       |> Option.map ~f:(fun dr -> dr.Clang_ast_t.dr_decl_pointer)
       |> Option.value_map ~f:get_decl ~default:None
     with
-    | Some ObjCInterfaceDecl (_, _, _, _, otdi) ->
+    | Some (ObjCInterfaceDecl (_, _, _, _, otdi)) ->
         otdi.otdi_super
     | _ ->
         Logging.die InternalError
           "Expected that ObjCImplementationDecl always has a pointer to it's interface, but \
-           wasn't the case with %s" ni.Clang_ast_t.ni_name )
+           wasn't the case with %s"
+          ni.Clang_ast_t.ni_name )
   | ObjCCategoryDecl (_, _, _, _, ocdi) ->
       ocdi.odi_class_interface
   | ObjCCategoryImplDecl (_, _, _, _, ocidi) ->

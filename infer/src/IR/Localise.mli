@@ -17,9 +17,8 @@ module Tags : sig
 end
 
 (** description field of error messages *)
-type error_desc =
-  {descriptions: string list; tags: Tags.t; dotty: string option}
-  [@@deriving compare]
+type error_desc = {descriptions: string list; tags: Tags.t; dotty: string option}
+[@@deriving compare]
 
 val no_desc : error_desc
 (** empty error description *)

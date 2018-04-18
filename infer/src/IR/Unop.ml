@@ -19,7 +19,7 @@ type t =
   | Neg  (** Unary minus *)
   | BNot  (** Bitwise complement (~) *)
   | LNot  (** Logical Not (!) *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 

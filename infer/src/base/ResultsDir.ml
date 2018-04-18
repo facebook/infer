@@ -19,12 +19,12 @@ let is_results_dir ~check_correct_version () =
     List.for_all results_dir_dir_markers ~f:(fun d ->
         Sys.is_directory d = `Yes
         ||
-        (not_found := d ^ "/" ;
-        false) )
+        ( not_found := d ^ "/" ;
+          false ) )
     && ( not check_correct_version || Sys.is_file ResultsDatabase.database_fullpath = `Yes
        ||
-       (not_found := ResultsDatabase.database_fullpath ;
-       false) )
+       ( not_found := ResultsDatabase.database_fullpath ;
+         false ) )
   in
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" !not_found)
 
@@ -42,8 +42,8 @@ let remove_results_dir () =
       Result.iter_error (is_results_dir ~check_correct_version:false ()) ~f:(fun err ->
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
-             ERROR: Please delete '%s' and try again@." Config.results_dir err Config.results_dir
-      ) ;
+             ERROR: Please delete '%s' and try again@."
+            Config.results_dir err Config.results_dir ) ;
     Utils.rmtree Config.results_dir ) ;
   RunState.reset ()
 
@@ -85,7 +85,7 @@ let assert_results_dir advice =
 let delete_capture_and_analysis_data () =
   ResultsDatabase.reset_capture_tables () ;
   let dirs_to_delete =
-    List.map ~f:(Filename.concat Config.results_dir) Config.([captured_dir_name; specs_dir_name])
+    List.map ~f:(Filename.concat Config.results_dir) Config.[captured_dir_name; specs_dir_name]
   in
   List.iter ~f:Utils.rmtree dirs_to_delete ;
   List.iter ~f:Unix.mkdir_p dirs_to_delete ;

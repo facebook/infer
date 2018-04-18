@@ -35,7 +35,7 @@ type kind_of_links =
   | LinkToSSL
   | LinkToDLL
   | LinkRetainCycle
-  [@@deriving compare]
+[@@deriving compare]
 
 (* coordinate identifies a node using two dimension: id is an numerical identifier of the node,*)
 (* lambda identifies in which hpred parameter id lays in*)
@@ -45,7 +45,7 @@ type coordinate = {id: int; lambda: int} [@@deriving compare]
 (* useful for having nodes from within a struct and/or to inside a struct *)
 type link =
   {kind: kind_of_links; src: coordinate; src_fld: string; trg: coordinate; trg_fld: string}
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_link = [%compare.equal : link]
 
@@ -218,7 +218,7 @@ let rec look_up_for_back_pointer e dotnodes lambda =
   match dotnodes with
   | [] ->
       []
-  | (Dotdllseg (coo, _, _, _, e4, _, _, _)) :: dotnodes' ->
+  | Dotdllseg (coo, _, _, _, e4, _, _, _) :: dotnodes' ->
       if Exp.equal e e4 && Int.equal lambda coo.lambda then [coo.id + 1]
       else look_up_for_back_pointer e dotnodes' lambda
   | _ :: dotnodes' ->
@@ -312,7 +312,7 @@ let make_dangling_boxes pe allocated_nodes (sigma_lambda: (Sil.hpred * int) list
     match l with
     | [] ->
         []
-    | (Dotdangling (coo, e, color)) :: l' ->
+    | Dotdangling (coo, e, color) :: l' ->
         if List.exists ~f:(Exp.equal e) seen_exp then filter_duplicate l' seen_exp
         else Dotdangling (coo, e, color) :: filter_duplicate l' (e :: seen_exp)
     | box :: l' ->
@@ -381,7 +381,7 @@ let rec dotty_mk_node pe sigma =
 
 let set_exps_neq_zero pi =
   let f = function
-    | Sil.Aneq (e, Exp.Const Const.Cint i) when IntLit.iszero i ->
+    | Sil.Aneq (e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
         exps_neq_zero := e :: !exps_neq_zero
     | _ ->
         ()
@@ -396,7 +396,7 @@ let box_dangling e =
       ~f:(fun b -> match b with Dotdangling (_, e', _) -> Exp.equal e e' | _ -> false)
       !dangling_dotboxes
   in
-  match entry_e with [] -> None | (Dotdangling (coo, _, _)) :: _ -> Some coo.id | _ -> None
+  match entry_e with [] -> None | Dotdangling (coo, _, _) :: _ -> Some coo.id | _ -> None
 
 
 (* NOTE: this cannot be possible since entry_e can be composed only by Dotdangling, see def of entry_e*)
@@ -423,7 +423,7 @@ let compute_fields_struct sigma =
     match s with
     | [] ->
         ()
-    | (Sil.Hpointsto (_, se, _)) :: s' ->
+    | Sil.Hpointsto (_, se, _) :: s' ->
         do_strexp se false ; fs s'
     | _ :: s' ->
         fs s'
@@ -437,7 +437,7 @@ let compute_struct_exp_nodes sigma =
     match s with
     | [] ->
         ()
-    | (Sil.Hpointsto (e, Sil.Estruct _, _)) :: s' ->
+    | Sil.Hpointsto (e, Sil.Estruct _, _) :: s' ->
         struct_exp_nodes := e :: !struct_exp_nodes ;
         sen s'
     | _ :: s' ->
@@ -490,7 +490,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                 []
             | Some n' ->
                 [(LinkStructToExp, Typ.Fieldname.to_string fn, n', "")] )
-          | [node] | [(Dotpointsto _); node] | [node; (Dotpointsto _)] ->
+          | [node] | [Dotpointsto _; node] | [node; Dotpointsto _] ->
               let n = get_coordinate_id node in
               if List.mem ~equal:Exp.equal !struct_exp_nodes e then
                 let e_no_special_char = strip_special_chars (Exp.to_string e) in
@@ -536,7 +536,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
                 []
             | Some n' ->
                 [(LinkArrayToExp, Exp.to_string idx, n', "")] )
-          | [node] | [(Dotpointsto _); node] | [node; (Dotpointsto _)] ->
+          | [node] | [Dotpointsto _; node] | [node; Dotpointsto _] ->
               let n = get_coordinate_id node in
               if List.mem ~equal:Exp.equal !struct_exp_nodes e then
                 let e_no_special_char = strip_special_chars (Exp.to_string e) in

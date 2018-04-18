@@ -93,7 +93,7 @@ let check_access access_opt de_opt =
     let has_call_or_sets_null node =
       let rec exp_is_null exp =
         match exp with
-        | Exp.Const Const.Cint n ->
+        | Exp.Const (Const.Cint n) ->
             IntLit.iszero n
         | Exp.Cast (_, e) ->
             exp_is_null e
@@ -117,8 +117,9 @@ let check_access access_opt de_opt =
     in
     let local_access_found = ref false in
     let do_node node =
-      if Int.equal (Procdesc.Node.get_loc node).Location.line line_number
-         && has_call_or_sets_null node
+      if
+        Int.equal (Procdesc.Node.get_loc node).Location.line line_number
+        && has_call_or_sets_null node
       then local_access_found := true
     in
     let path, pos_opt = State.get_path () in
@@ -134,14 +135,14 @@ let check_access access_opt de_opt =
     else None
   in
   match access_opt with
-  | Some Localise.Last_assigned (n, ncf) ->
+  | Some (Localise.Last_assigned (n, ncf)) ->
       find_bucket n ncf
-  | Some Localise.Returned_from_call n ->
+  | Some (Localise.Returned_from_call n) ->
       find_bucket n false
-  | Some Localise.Last_accessed (_, is_nullable) when is_nullable ->
+  | Some (Localise.Last_accessed (_, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
   | _ ->
-    match de_opt with Some DecompiledExp.Dconst _ -> Some Localise.BucketLevel.b1 | _ -> None
+    match de_opt with Some (DecompiledExp.Dconst _) -> Some Localise.BucketLevel.b1 | _ -> None
 
 
 let classify_access desc access_opt de_opt is_nullable =

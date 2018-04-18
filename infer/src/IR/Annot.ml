@@ -19,7 +19,7 @@ type parameters = string list [@@deriving compare]
 type t =
   { class_name: string  (** name of the annotation *)
   ; parameters: parameters  (** currently only one string parameter *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 let volatile = {class_name= "volatile"; parameters= []}
 

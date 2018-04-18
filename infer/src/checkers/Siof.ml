@@ -127,22 +127,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Load (_, exp, _, loc) | Store (_, _, exp, loc) | Prune (exp, loc, _, _) ->
         get_globals pdesc exp |> add_globals astate loc
-    | Call (_, Const Cfun callee_pname, _, _, _) when is_whitelisted callee_pname ->
+    | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
         at_least_nonbottom astate
-    | Call (_, Const Cfun callee_pname, _, _, _) when is_modelled callee_pname ->
+    | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->
         let init =
           List.find_map_exn models ~f:(fun {qual_name; initialized_globals} ->
-              if QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
-                 |> Fn.flip QualifiedCppName.Match.match_qualifiers
-                      (Typ.Procname.get_qualifiers callee_pname)
+              if
+                QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
+                |> Fn.flip QualifiedCppName.Match.match_qualifiers
+                     (Typ.Procname.get_qualifiers callee_pname)
               then Some initialized_globals
               else None )
         in
         Domain.join astate (NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
-    | Call (_, Const Cfun (ObjC_Cpp cpp_pname as callee_pname), _ :: actuals_without_self, loc, _)
+    | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
       when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname ->
         add_actuals_globals astate pdesc loc actuals_without_self
-    | Call (_, Const Cfun callee_pname, actuals, loc, _) ->
+    | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
           match Summary.read_summary pdesc callee_pname with
           | Some (NonBottom trace, initialized_by_callee) ->
@@ -271,11 +272,12 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
        to figure this out when analyzing the function, but we might as well use the user's
        specification if it's given to us. This also serves as an optimization as this skips the
        analysis of the function. *)
-    if match pname with
-       | ObjC_Cpp cpp_pname ->
-           Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
-       | _ ->
-           false
+    if
+      match pname with
+      | ObjC_Cpp cpp_pname ->
+          Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
+      | _ ->
+          false
     then Summary.update_summary initial summary
     else
       match Analyzer.compute_post proc_data ~initial with

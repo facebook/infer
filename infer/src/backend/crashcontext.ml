@@ -73,8 +73,9 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
     Utils.directory_fold
       (fun summaries path ->
         (* check if the file is a JSON file under the crashcontext dir *)
-        if Sys.is_directory path <> `Yes && Filename.check_suffix path "json"
-           && String.is_suffix ~suffix:"crashcontext" (Filename.dirname path)
+        if
+          Sys.is_directory path <> `Yes && Filename.check_suffix path "json"
+          && String.is_suffix ~suffix:"crashcontext" (Filename.dirname path)
         then path :: summaries
         else summaries )
       [] root_summaries_dir
@@ -108,7 +109,7 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
         (* trace_fold runs immediately after trace_file_matcher in the
            DB.fold_paths_matching statement below, so we don't need to
            call Str.string_match again. *)
-        | Not_found
+        | Caml.Not_found
         -> assert false
   in
   let input_output_file_pairs =

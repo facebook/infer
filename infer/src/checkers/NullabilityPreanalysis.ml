@@ -31,14 +31,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       try
         let exp = Ident.Hash.find ids_map id in
         Exp.is_null_literal exp
-      with Not_found -> false )
+      with Caml.Not_found -> false )
     | _ ->
         Exp.is_null_literal exp
 
 
   let is_self ids_map id =
     try match Ident.Hash.find ids_map id with Exp.Lvar var -> Pvar.is_self var | _ -> false
-    with Not_found -> false
+    with Caml.Not_found -> false
 
 
   let exec_instr astate (proc_data: Exp.t Ident.Hash.t ProcData.t) _ instr =

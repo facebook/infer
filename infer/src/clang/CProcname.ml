@@ -104,19 +104,19 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr}) ->
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
         Typ.Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
-    | Some Clang_ast_t.CXXDestructorDecl _ ->
+    | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Typ.Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
         Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
   in
   let template_info, is_generic_model =
     match meth_decl with
-    | Some CXXMethodDecl (di, _, _, fdi, _)
-    | Some CXXConstructorDecl (di, _, _, fdi, _)
-    | Some CXXConversionDecl (di, _, _, fdi, _)
-    | Some CXXDestructorDecl (di, _, _, fdi, _) ->
+    | Some (CXXMethodDecl (di, _, _, fdi, _))
+    | Some (CXXConstructorDecl (di, _, _, fdi, _))
+    | Some (CXXConversionDecl (di, _, _, fdi, _))
+    | Some (CXXDestructorDecl (di, _, _, fdi, _)) ->
         let templ_info =
           match tenv with Some t -> get_template_info t fdi | None -> Typ.NoTemplate
         in

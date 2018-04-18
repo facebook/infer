@@ -42,7 +42,7 @@ and t =
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal : t -> t -> bool
 (** Equality for expressions. *)

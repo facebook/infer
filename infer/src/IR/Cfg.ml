@@ -49,7 +49,7 @@ let iter_all_nodes ?(sorted= false) f cfg =
           ~f:(fun desc_nodes node -> (pdesc, node) :: desc_nodes)
           ~init:desc_nodes (Procdesc.get_nodes pdesc) )
       cfg []
-    |> List.sort ~cmp:[%compare : Procdesc.t * Procdesc.Node.t]
+    |> List.sort ~compare:[%compare : Procdesc.t * Procdesc.Node.t]
     |> List.iter ~f:(fun (d, n) -> f d n)
 
 
@@ -135,12 +135,12 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
         (* setter for static fields *)
         let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, e1, loc_call) in
         found instr instr'
-    | Sil.Call (ret_id', Exp.Const Const.Cfun pn, etl', _, cf), _, _
+    | Sil.Call (ret_id', Exp.Const (Const.Cfun pn), etl', _, cf), _, _
       when Bool.equal (is_none ret_id) (is_none ret_id')
            && Int.equal (List.length etl') (List.length etl) ->
         let instr' = Sil.Call (ret_id, Exp.Const (Const.Cfun pn), etl, loc_call, cf) in
         found instr instr'
-    | Sil.Call (ret_id', Exp.Const Const.Cfun pn, etl', _, cf), _, _
+    | Sil.Call (ret_id', Exp.Const (Const.Cfun pn), etl', _, cf), _, _
       when Bool.equal (is_none ret_id) (is_none ret_id')
            && Int.equal (List.length etl' + 1) (List.length etl) ->
         let etl1 =
@@ -163,7 +163,7 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
 (** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. *)
 let proc_inline_synthetic_methods cfg pdesc : unit =
   let instr_inline_synthetic_method = function
-    | Sil.Call (ret_id, Exp.Const Const.Cfun (Typ.Procname.Java java_pn as pn), etl, loc, _) -> (
+    | Sil.Call (ret_id, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _) -> (
       match Typ.Procname.Hash.find cfg pn with
       | pd ->
           let is_access = Typ.Procname.Java.is_access_method java_pn in
@@ -172,7 +172,7 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
           let is_bridge = attributes.is_bridge_method in
           if is_access || is_bridge || is_synthetic then inline_synthetic_method ret_id etl pd loc
           else None
-      | exception Not_found ->
+      | exception Caml.Not_found ->
           None )
     | _ ->
         None
@@ -201,5 +201,5 @@ let inline_java_synthetic_methods cfg =
 
 let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
-  let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_proc_descs cfg) in
+  let sorted_procs = List.sort ~compare:Procdesc.compare (get_all_proc_descs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs

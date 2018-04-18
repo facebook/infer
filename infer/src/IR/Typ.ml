@@ -31,7 +31,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let ikind_to_string = function
   | IChar ->
@@ -78,7 +78,7 @@ type fkind =
   | FFloat  (** [float] *)
   | FDouble  (** [double] *)
   | FLongDouble  (** [long double] *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let fkind_to_string = function
   | FFloat ->
@@ -96,7 +96,7 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_ptr_kind = [%compare.equal : ptr_kind]
 
@@ -129,7 +129,7 @@ module T = struct
     | TVar of string  (** type variable (ie. C++ template variables) *)
     | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
         (** array type with statically fixed length and stride *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   and name =
     | CStruct of QualifiedCppName.t
@@ -138,20 +138,15 @@ module T = struct
     | JavaClass of Mangled.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
-    [@@deriving compare]
+  [@@deriving compare]
 
-  and template_arg =
-    | TType of t
-    | TInt of Int64.t
-    | TNull
-    | TNullPtr
-    | TOpaque
-    [@@deriving compare]
+  and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
+  [@@deriving compare]
 
   and template_spec_info =
     | NoTemplate
     | Template of {mangled: string option; args: template_arg list}
-    [@@deriving compare]
+  [@@deriving compare]
 
   let equal_desc = [%compare.equal : desc]
 
@@ -555,12 +550,11 @@ module Procname = struct
       (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
       | Static
       (* in Java, procedures called with invokestatic *)
-      [@@deriving compare]
+    [@@deriving compare]
 
     (* TODO: use Mangled.t here *)
-    type java_type = Name.Java.Split.t =
-      {package: string option; type_name: string}
-      [@@deriving compare]
+    type java_type = Name.Java.Split.t = {package: string option; type_name: string}
+    [@@deriving compare]
 
     (** Type of java procedure names. *)
     type t =
@@ -569,7 +563,7 @@ module Procname = struct
       ; class_name: Name.t
       ; return_type: java_type option (* option because constructors have no return type *)
       ; kind: kind }
-      [@@deriving compare]
+    [@@deriving compare]
 
     let make class_name return_type method_name parameters kind =
       {class_name; return_type; method_name; parameters; kind}
@@ -743,7 +737,7 @@ module Procname = struct
       | ObjCClassMethod
       | ObjCInstanceMethod
       | ObjCInternalMethod
-      [@@deriving compare]
+    [@@deriving compare]
 
     type t =
       { method_name: string
@@ -751,7 +745,7 @@ module Procname = struct
       ; kind: kind
       ; template_args: template_spec_info
       ; is_generic_model: bool }
-      [@@deriving compare]
+    [@@deriving compare]
 
     let make class_name method_name kind template_args ~is_generic_model =
       {class_name; method_name; kind; template_args; is_generic_model}
@@ -831,7 +825,7 @@ module Procname = struct
     ; mangled: string option
     ; template_args: template_spec_info
     ; is_generic_model: bool }
-    [@@deriving compare]
+  [@@deriving compare]
 
   (** Type of Objective C block names. *)
   type block_name = string [@@deriving compare]
@@ -844,7 +838,7 @@ module Procname = struct
     | Block of block_name
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
-    [@@deriving compare]
+  [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
@@ -1152,7 +1146,6 @@ module Procname = struct
 
           let sexp_of_t p = Sexp.Atom (to_string p)
         end )
-        ()
 
 
     let serialize pname =
@@ -1174,10 +1167,8 @@ module Procname = struct
 end
 
 module Fieldname = struct
-  type t =
-    | Clang of {class_name: Name.t; field_name: string}
-    | Java of string
-    [@@deriving compare]
+  type t = Clang of {class_name: Name.t; field_name: string} | Java of string
+  [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
@@ -1306,7 +1297,8 @@ module Struct = struct
          \tmethods: {%a@\n\
          \t}@\n\
          \tannots: {%a@\n\
-         \t}" Name.pp name
+         \t}"
+        Name.pp name
         (Pp.seq (pp_field pe))
         fields
         (Pp.seq (fun f n -> F.fprintf f "@\n\t\t%a" Name.pp n))

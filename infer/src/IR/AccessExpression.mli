@@ -19,7 +19,7 @@ type t =
   (* address of operator & *)
   | Dereference of t
   (* dereference operator * *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val to_access_path : t -> AccessPath.t
 

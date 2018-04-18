@@ -34,21 +34,21 @@ let fix_method_definition_line linereader proc_name loc =
   let method_is_defined_here linenum =
     match Printer.LineReader.from_file_linenum_original linereader loc.Location.file linenum with
     | None ->
-        raise Not_found
+        raise Caml.Not_found
     | Some line ->
       try
         ignore (Str.search_forward regex line 0) ;
         true
-      with Not_found -> false
+      with Caml.Not_found -> false
   in
   let line = ref loc.Location.line in
   try
     while not (method_is_defined_here !line) do
       line := !line - 1 ;
-      if !line < 0 then raise Not_found
+      if !line < 0 then raise Caml.Not_found
     done ;
     {loc with Location.line= !line}
-  with Not_found -> loc
+  with Caml.Not_found -> loc
 
 
 let get_location source_file impl pc =
@@ -66,9 +66,9 @@ let get_start_location source_file bytecode =
 
 let get_exit_location source_file bytecode =
   let last_line_number =
-    let cmp (_, ln1) (_, ln2) = Int.compare ln1 ln2 in
+    let compare (_, ln1) (_, ln2) = Int.compare ln1 ln2 in
     Option.value_map ~default:(-1)
-      ~f:(fun l -> Option.value_map ~f:snd ~default:(-1) (List.max_elt ~cmp l))
+      ~f:(fun l -> Option.value_map ~f:snd ~default:(-1) (List.max_elt ~compare l))
       bytecode.JCode.c_line_number_table
   in
   {Location.line= last_line_number; col= -1; file= source_file}
@@ -308,7 +308,7 @@ let create_callee_attributes tenv program cn ms procname =
       Some
         { (ProcAttributes.default procname) with
           ProcAttributes.access; exceptions; method_annotation; formals; ret_type; is_abstract }
-    with Not_found -> None
+    with Caml.Not_found -> None
   in
   Option.bind ~f (JClasspath.lookup_node cn program)
 
@@ -649,8 +649,9 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
   in
   let callee_procname =
     let proc = Typ.Procname.from_string_c_fun (JBasics.ms_name ms) in
-    if JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl)
-       && BuiltinDecl.is_declared proc
+    if
+      JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl)
+      && BuiltinDecl.is_declared proc
     then proc
     else JTransType.get_method_procname cn' ms method_kind
   in
@@ -1025,7 +1026,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         Instr call_node
-    | JBir.Check JBir.CheckNullPointer expr when Config.tracing && is_this expr ->
+    | JBir.Check (JBir.CheckNullPointer expr) when Config.tracing && is_this expr ->
         (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)
         let instrs, sil_expr, _ = expression context pc expr in
         let this_not_null_node =
@@ -1033,7 +1034,7 @@ let instruction (context: JContext.t) pc instr : translation =
             (instrs @ [assume_not_null loc sil_expr])
         in
         Instr this_not_null_node
-    | JBir.Check JBir.CheckNullPointer expr when Config.tracing ->
+    | JBir.Check (JBir.CheckNullPointer expr) when Config.tracing ->
         let instrs, sil_expr, _ = expression context pc expr in
         let not_null_node =
           let sil_not_null = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
@@ -1069,7 +1070,7 @@ let instruction (context: JContext.t) pc instr : translation =
           create_node npe_kind npe_instrs
         in
         Prune (not_null_node, throw_npe_node)
-    | JBir.Check JBir.CheckArrayBound (array_expr, index_expr) when Config.tracing ->
+    | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr)) when Config.tracing ->
         let instrs, _, sil_length_expr, sil_index_expr =
           let array_instrs, sil_array_expr, _ = expression context pc array_expr
           and length_instrs, sil_length_expr, _ =
@@ -1128,7 +1129,7 @@ let instruction (context: JContext.t) pc instr : translation =
           create_node out_of_bound_node_kind out_of_bound_instrs
         in
         Prune (in_bound_node, throw_out_of_bound_node)
-    | JBir.Check JBir.CheckCast (expr, object_type) when Config.tracing ->
+    | JBir.Check (JBir.CheckCast (expr, object_type)) when Config.tracing ->
         let sil_type = JTransType.expr_type context expr
         and instrs, sil_expr, _ = expression context pc expr
         and ret_id = Ident.create_fresh Ident.knormal

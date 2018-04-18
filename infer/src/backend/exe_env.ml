@@ -32,7 +32,7 @@ let create_file_data table source =
   match SourceFile.Hash.find table source with
   | file_data ->
       file_data
-  | exception Not_found ->
+  | exception Caml.Not_found ->
       let file_data = new_file_data source in
       SourceFile.Hash.add table source file_data ;
       file_data
@@ -44,7 +44,7 @@ type t =
   ; source_file: SourceFile.t  (** source file being analyzed *) }
 
 let get_file_data exe_env pname =
-  try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Not_found ->
+  try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Caml.Not_found ->
     let source_file_opt =
       match Attributes.load pname with
       | None ->
@@ -114,12 +114,8 @@ let get_cfg exe_env pname =
 (** return the proc desc associated to the procedure *)
 let get_proc_desc exe_env pname =
   match get_cfg exe_env pname with
-  | Some cfg -> (
-    match Typ.Procname.Hash.find cfg pname with
-    | proc_desc ->
-        Some proc_desc
-    | exception Not_found ->
-        None )
+  | Some cfg ->
+      Typ.Procname.Hash.find_opt cfg pname
   | None ->
       None
 

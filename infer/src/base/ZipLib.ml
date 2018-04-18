@@ -35,7 +35,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
       Some data
   | None ->
       None
-  | exception Not_found ->
+  | exception Caml.Not_found ->
       None
 
 
@@ -47,7 +47,7 @@ let load_from_zip serializer zip_path zip_library =
       Some data
   | None ->
       None
-  | exception Not_found ->
+  | exception Caml.Not_found ->
       None
 
 

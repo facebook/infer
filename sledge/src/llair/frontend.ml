@@ -14,7 +14,6 @@ let fmt_llvalue ff t = Format.pp_print_string ff (Llvm.string_of_llvalue t)
 let fmt_llblock ff t =
   Format.pp_print_string ff (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
-
 (* gather debug locations *)
 let (scan_locs: Llvm.llmodule -> unit), (find_loc: Llvm.llvalue -> Loc.t) =
   let loc_of_global g =
@@ -42,8 +41,9 @@ let (scan_locs: Llvm.llmodule -> unit), (find_loc: Llvm.llvalue -> Loc.t) =
   let add ~key ~data =
     Hashtbl.update loc_tbl key ~f:(fun prev ->
         Option.iter prev ~f:(fun loc ->
-            if Option.is_none
-                 (List.find_a_dup ~compare:Loc.compare [loc; data; Loc.none])
+            if
+              Option.is_none
+                (List.find_a_dup ~compare:Loc.compare [loc; data; Loc.none])
             then
               warn "ignoring location %a conflicting with %a for %a" Loc.fmt
                 loc Loc.fmt data fmt_llvalue key ) ;
@@ -79,7 +79,6 @@ let (scan_locs: Llvm.llmodule -> unit), (find_loc: Llvm.llvalue -> Loc.t) =
     Option.value (Hashtbl.find loc_tbl v) ~default:Loc.none
   in
   (scan_locs, find_loc)
-
 
 let (scan_names: Llvm.llmodule -> unit), (find_name: Llvm.llvalue -> string) =
   let name_tbl = Hashtbl.Poly.create () in
@@ -155,14 +154,11 @@ let (scan_names: Llvm.llmodule -> unit), (find_name: Llvm.llvalue -> string) =
   let find_name v = Hashtbl.find_exn name_tbl v in
   (scan_names, find_name)
 
-
 let label_of_block : Llvm.llbasicblock -> string =
  fun blk -> find_name (Llvm.value_of_block blk)
 
-
 let anon_struct_name : (Llvm.lltype, string) Hashtbl.t =
   Hashtbl.Poly.create ()
-
 
 let struct_name : Llvm.lltype -> string =
  fun llt ->
@@ -171,7 +167,6 @@ let struct_name : Llvm.lltype -> string =
   | None ->
       Hashtbl.find_or_add anon_struct_name llt ~default:(fun () ->
           Int.to_string (Hashtbl.length anon_struct_name) )
-
 
 let memo_type : (Llvm.lltype, Typ.t) Hashtbl.t = Hashtbl.Poly.create ()
 
@@ -229,13 +224,11 @@ let rec xlate_type : Llvm.lltype -> Typ.t =
       |>
       [%Trace.retn fun pf -> pf "%a" Typ.fmt_defn] )
 
-
 and xlate_type_opt : Llvm.lltype -> Typ.t option =
  fun llt ->
   match Llvm.classify_type llt with
   | Void -> None
   | _ -> Some (xlate_type llt)
-
 
 let rec is_zero : Exp.t -> bool =
  fun exp ->
@@ -246,10 +239,8 @@ let rec is_zero : Exp.t -> bool =
   | App {op; arg} -> is_zero op && is_zero arg
   | _ -> false
 
-
 let suffix_after_space : string -> string =
  fun str -> String.slice str (String.rindex_exn str ' ' + 1) 0
-
 
 let xlate_int : Llvm.llvalue -> Exp.t =
  fun llv ->
@@ -261,13 +252,11 @@ let xlate_int : Llvm.llvalue -> Exp.t =
   in
   Exp.mkInteger data typ
 
-
 let xlate_float : Llvm.llvalue -> Exp.t =
  fun llv ->
   let typ = xlate_type (Llvm.type_of llv) in
   let data = suffix_after_space (Llvm.string_of_llvalue llv) in
   Exp.mkFloat data typ
-
 
 let xlate_name_opt : Llvm.llvalue -> Var.t option =
  fun instr ->
@@ -278,10 +267,8 @@ let xlate_name_opt : Llvm.llvalue -> Var.t option =
       let loc = find_loc instr in
       Var.mk name typ ~loc )
 
-
 let xlate_name : Llvm.llvalue -> Var.t =
  fun instr -> Option.value_exn (xlate_name_opt instr)
-
 
 let xlate_intrinsic_exp : string -> (Exp.t -> Exp.t) option =
  fun name ->
@@ -289,7 +276,6 @@ let xlate_intrinsic_exp : string -> (Exp.t -> Exp.t) option =
   match name with
   | "llvm.eh.typeid.for" -> Some (fun arg -> Exp.mkCast arg i32)
   | _ -> None
-
 
 let memo_value : (Llvm.llvalue, Exp.t) Hashtbl.t = Hashtbl.Poly.create ()
 
@@ -379,7 +365,6 @@ let rec xlate_value : Llvm.llvalue -> Exp.t =
           "xlate_value translated type %a to %a of %a" Typ.fmt typ Typ.fmt
           typ' fmt_llvalue llv () ;
         pf "%a" Exp.fmt exp] )
-
 
 and xlate_opcode : Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
  fun llv opcode ->
@@ -541,7 +526,6 @@ and xlate_opcode : Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
       fmt_llvalue llv () ;
     pf "%a" Exp.fmt exp]
 
-
 and xlate_global : Llvm.llvalue -> Global.t =
  fun llg ->
   let init =
@@ -553,7 +537,6 @@ and xlate_global : Llvm.llvalue -> Global.t =
   let g = xlate_name llg in
   Global.mk (Var.name g) (Var.typ g) ~loc:(Var.loc g) ?init
 
-
 let xlate_global : Llvm.llvalue -> Global.t =
  fun llg ->
   [%Trace.call fun pf -> pf "%a" fmt_llvalue llg]
@@ -561,7 +544,6 @@ let xlate_global : Llvm.llvalue -> Global.t =
   xlate_global llg
   |>
   [%Trace.retn fun pf -> pf "%a" Global.fmt]
-
 
 type pop_thunk = Loc.t -> Llair.inst list
 
@@ -595,19 +577,19 @@ let pop_stack_frame_of_function
   in
   pop
 
-
 (** construct the types involved in landingpads: i32, std::type_info*, and
     __cxa_exception *)
 let landingpad_typs : Llvm.llvalue -> Typ.t * Typ.t * Typ.t =
  fun instr ->
   let i32 = Typ.mkInteger ~bits:32 in
-  if match xlate_type (Llvm.type_of instr) with
-     | Tuple {elts} | Struct {elts} -> (
-       match Vector.to_array elts with
-       | [|i8p'; i32'|] ->
-           not (Typ.equal Typ.i8p i8p') || not (Typ.equal i32 i32')
-       | _ -> true )
-     | _ -> true
+  if
+    match xlate_type (Llvm.type_of instr) with
+    | Tuple {elts} | Struct {elts} -> (
+      match Vector.to_array elts with
+      | [|i8p'; i32'|] ->
+          not (Typ.equal Typ.i8p i8p') || not (Typ.equal i32 i32')
+      | _ -> true )
+    | _ -> true
   then
     todo "landingpad of type other than {i8*, i32}: %a" fmt_llvalue instr () ;
   let llcontext =
@@ -621,13 +603,11 @@ let landingpad_typs : Llvm.llvalue -> Typ.t * Typ.t * Typ.t =
   let cxa_exception = Llvm.struct_type llcontext [|tip; dtor|] in
   (i32, xlate_type tip, xlate_type cxa_exception)
 
-
 (** construct the argument of a landingpad block, mainly fix the encoding
     scheme for landingpad instruction name to block arg name *)
 let landingpad_arg : Llvm.llvalue -> Var.t =
  fun instr ->
   Var.mk (find_name instr ^ ".exc") Typ.i8p ~loc:(find_loc instr)
-
 
 (** [rev_map_phis ~f blk] returns [(retn_arg, rev_args, pos)] by rev_mapping
     over the prefix of [PHI] instructions at the beginning of [blk].
@@ -684,7 +664,6 @@ let rev_map_phis
   in
   block_args_ false None [] (Llvm.instr_begin blk)
 
-
 (** [trampoline_args jump_instr dest_block] is the actual arguments to which
     the translation of [dest_block] should be partially-applied, to yield a
     trampoline accepting the return parameter of the block and then jumping
@@ -697,7 +676,6 @@ let trampoline_args : Llvm.llvalue -> Llvm.llbasicblock -> Exp.t vector =
           if Poly.equal pred src then Some (xlate_value arg) else None ) )
   |> snd3 |> Vector.of_list_rev
 
-
 (** [unique_pred blk] is the unique predecessor of [blk], or [None] if there
     are 0 or >1 predecessors. *)
 let unique_pred : Llvm.llbasicblock -> Llvm.llvalue option =
@@ -709,12 +687,10 @@ let unique_pred : Llvm.llbasicblock -> Llvm.llvalue option =
     | Some _ -> None )
   | None -> None
 
-
 (** [return_formal_is_used instr] holds if the return value of [instr] is
     used anywhere. *)
 let return_formal_is_used : Llvm.llvalue -> bool =
  fun instr -> Option.is_some (Llvm.use_begin instr)
-
 
 (** [need_return_trampoline instr blk] holds when the return formal of
     [instr] is used, but the returned to block [blk] does not take it as an
@@ -723,7 +699,6 @@ let need_return_trampoline : Llvm.llvalue -> Llvm.llbasicblock -> bool =
  fun instr blk ->
   Option.is_none (fst3 (rev_map_phis blk ~f:Fn.id))
   && Option.is_none (unique_pred blk) && return_formal_is_used instr
-
 
 (** [unique_used_invoke_pred blk] is the unique predecessor of [blk], if it
     is an [Invoke] instruction, whose return value is used. *)
@@ -734,7 +709,6 @@ let unique_used_invoke_pred : Llvm.llbasicblock -> 'a option =
   | Some instr when is_invoke instr && return_formal_is_used instr ->
       Some instr
   | _ -> None
-
 
 (** formal parameters accepted by a block *)
 let block_formals : Llvm.llbasicblock -> Var.t list * _ Llvm.llpos =
@@ -754,7 +728,6 @@ let block_formals : Llvm.llbasicblock -> Var.t list * _ Llvm.llpos =
       (List.rev_append rev_args (Option.to_list instr_arg), pos)
   | At_end blk -> fail "block_formals: %a" fmt_llblock blk ()
 
-
 (** actual arguments passed by a jump to a block *)
 let jump_args : Llvm.llvalue -> Llvm.llbasicblock -> Exp.t vector =
  fun jmp dst ->
@@ -772,7 +745,6 @@ let jump_args : Llvm.llvalue -> Llvm.llbasicblock -> Exp.t vector =
            Exp.mkVar (xlate_name invoke) ))
   in
   Vector.of_list (List.rev_append rev_args (Option.to_list retn_arg))
-
 
 (** An LLVM instruction is translated to a sequence of LLAIR instructions
     and a terminator, plus some additional blocks to which it may refer
@@ -796,7 +768,6 @@ let fmt_code ff (insts, term, blocks) =
     (list_fmt "@ " Llair.Block.fmt)
     blocks
 
-
 let rec xlate_func_name llv =
   match Llvm.classify_value llv with
   | Function ->
@@ -810,7 +781,6 @@ let rec xlate_func_name llv =
   | GlobalIFunc -> todo "ifunc: %a" fmt_llvalue llv ()
   | InlineAsm -> todo "inline asm: %a" fmt_llvalue llv ()
   | _ -> fail "unknown function: %a" fmt_llvalue llv ()
-
 
 let xlate_instr
     : pop_thunk -> Llvm.llvalue
@@ -1012,12 +982,12 @@ let xlate_instr
   | Switch ->
       let key = xlate_value (Llvm.operand instr 0) in
       let cases =
-        let num_cases = Llvm.num_operands instr / 2 - 1 in
+        let num_cases = (Llvm.num_operands instr / 2) - 1 in
         let rec xlate_cases i =
           if i <= num_cases then
             let idx = Llvm.operand instr (2 * i) in
             let blk =
-              Llvm.block_of_value (Llvm.operand instr (2 * i + 1))
+              Llvm.block_of_value (Llvm.operand instr ((2 * i) + 1))
             in
             let num =
               match xlate_value idx with
@@ -1195,7 +1165,6 @@ let xlate_instr
       fail "xlate_instr: %a" fmt_llvalue instr ()
   | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
-
 let rec xlate_instrs : pop_thunk -> _ Llvm.llpos -> code =
  fun pop -> function
   | Before instrI ->
@@ -1205,7 +1174,6 @@ let rec xlate_instrs : pop_thunk -> _ Llvm.llpos -> code =
           let instsI, termI, blocksI = xlate_instrI (instsJ, termJ) in
           (instsI, termI, blocksI @ blocksJN) )
   | At_end blk -> fail "xlate_instrs: %a" fmt_llblock blk ()
-
 
 let xlate_block : pop_thunk -> Llvm.llbasicblock -> Llair.block list =
  fun pop blk ->
@@ -1219,7 +1187,6 @@ let xlate_block : pop_thunk -> Llvm.llbasicblock -> Llair.block list =
   :: blocks
   |>
   [%Trace.retn fun pf blocks -> pf "%s" (List.hd_exn blocks).Llair.lbl]
-
 
 let xlate_function : Llvm.llvalue -> Llair.func =
  fun llf ->
@@ -1259,7 +1226,6 @@ let xlate_function : Llvm.llvalue -> Llair.func =
   |>
   [%Trace.retn fun pf -> pf "@\n%a" Llair.Func.fmt]
 
-
 let transform : Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
@@ -1271,7 +1237,6 @@ let transform : Llvm.llmodule -> unit =
   Llvm.PassManager.run_module llmodule pm |> (ignore : bool -> _) ;
   Llvm.PassManager.dispose pm
 
-
 exception Invalid_llvm of string
 
 let invalid_llvm : string -> 'a =
@@ -1282,7 +1247,6 @@ let invalid_llvm : string -> 'a =
   in
   Format.printf "@\n%s@\n" msg ;
   raise (Invalid_llvm first_line)
-
 
 let translate : string -> Llair.t =
  fun file ->
@@ -1308,8 +1272,9 @@ let translate : string -> Llair.t =
     Llvm.fold_left_functions
       (fun functions llf ->
         let name = Llvm.value_name llf in
-        if String.is_prefix name ~prefix:"__llair_"
-           || String.is_prefix name ~prefix:"llvm."
+        if
+          String.is_prefix name ~prefix:"__llair_"
+          || String.is_prefix name ~prefix:"llvm."
         then functions
         else xlate_function llf :: functions )
       [] llmodule

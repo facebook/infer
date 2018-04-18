@@ -37,7 +37,7 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match Option.map ~f:SourceFile.from_abs_path loc_start.Clang_ast_t.sl_file with
   | Some source_file ->
       SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file
-      || source_file_in_project source_file && not Config.testing_mode
+      || (source_file_in_project source_file && not Config.testing_mode)
   | None ->
       false
 
@@ -71,7 +71,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
     map_file_of SourceFile.is_cpp_model loc_end || map_file_of SourceFile.is_cpp_model loc_start
   in
   map_file_of equal_current_source loc_end || map_file_of equal_current_source loc_start
-  || file_in_models || Config.cxx && map_file_of equal_header_of_current_source loc_start
+  || file_in_models || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
   || Config.cxx && decl_trans_context = `Translation && translate_on_demand
      && not Config.testing_mode
 

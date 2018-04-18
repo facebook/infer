@@ -28,15 +28,15 @@ let edge_is_hpred = function Ehpred _ -> true | Eatom _ -> false | Esub_entry _ 
 
 (** Return the source of the edge *)
 let edge_get_source = function
-  | Ehpred Sil.Hpointsto (e, _, _) ->
+  | Ehpred (Sil.Hpointsto (e, _, _)) ->
       Some e
-  | Ehpred Sil.Hlseg (_, _, e, _, _) ->
+  | Ehpred (Sil.Hlseg (_, _, e, _, _)) ->
       Some e
-  | Ehpred Sil.Hdllseg (_, _, e1, _, _, _, _) ->
+  | Ehpred (Sil.Hdllseg (_, _, e1, _, _, _, _)) ->
       Some e1 (* only one direction supported for now *)
-  | Eatom Sil.Aeq (e1, _) ->
+  | Eatom (Sil.Aeq (e1, _)) ->
       Some e1
-  | Eatom Sil.Aneq (e1, _) ->
+  | Eatom (Sil.Aneq (e1, _)) ->
       Some e1
   | Eatom (Sil.Apred (_, e :: _) | Anpred (_, e :: _)) ->
       Some e
@@ -155,14 +155,14 @@ and compute_esel_diff esel1 esel2 : Obj.t list =
 (** Compute the subobjects in [newedge] which are different from those in [oldedge] *)
 let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list =
   match (oldedge, newedge) with
-  | Ehpred Sil.Hpointsto (_, se1, e1), Ehpred Sil.Hpointsto (_, se2, e2) ->
+  | Ehpred (Sil.Hpointsto (_, se1, e1)), Ehpred (Sil.Hpointsto (_, se2, e2)) ->
       compute_sexp_diff se1 se2 @ compute_exp_diff e1 e2
-  | Eatom Sil.Aeq (_, e1), Eatom Sil.Aeq (_, e2) ->
+  | Eatom (Sil.Aeq (_, e1)), Eatom (Sil.Aeq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom Sil.Aneq (_, e1), Eatom Sil.Aneq (_, e2) ->
+  | Eatom (Sil.Aneq (_, e1)), Eatom (Sil.Aneq (_, e2)) ->
       compute_exp_diff e1 e2
-  | Eatom Sil.Apred (_, es1), Eatom Sil.Apred (_, es2)
-  | Eatom Sil.Anpred (_, es1), Eatom Sil.Anpred (_, es2) ->
+  | Eatom (Sil.Apred (_, es1)), Eatom (Sil.Apred (_, es2))
+  | Eatom (Sil.Anpred (_, es1)), Eatom (Sil.Anpred (_, es2)) ->
       List.concat (try List.map2_exn ~f:compute_exp_diff es1 es2 with Invalid_argument _ -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2

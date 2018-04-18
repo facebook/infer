@@ -17,7 +17,7 @@ module Access = struct
     | ContainerRead of AccessPath.t * Typ.Procname.t
     | ContainerWrite of AccessPath.t * Typ.Procname.t
     | InterfaceCall of Typ.Procname.t
-    [@@deriving compare]
+  [@@deriving compare]
 
   let suffix_matches (_, accesses1) (_, accesses2) =
     match (List.rev accesses1, List.rev accesses2) with
@@ -169,7 +169,7 @@ module LocksDomain = struct
     not (is_empty astate)
 
 
-  let lookup_count lock astate = try find lock astate with Not_found -> LockCount.empty
+  let lookup_count lock astate = try find lock astate with Caml.Not_found -> LockCount.empty
 
   let add_lock astate =
     let count = lookup_count the_only_lock astate in
@@ -182,7 +182,7 @@ module LocksDomain = struct
       let count' = LockCount.decrement count in
       if LockCount.is_empty count' then remove the_only_lock astate
       else add the_only_lock count' astate
-    with Not_found -> astate
+    with Caml.Not_found -> astate
 
 
   let integrate_summary ~caller_astate ~callee_astate =
@@ -330,7 +330,7 @@ module OwnershipDomain = struct
 
   (* Helper function used by both is_owned and get_owned. Not exported.*)
   let get_owned_shallow access_path astate =
-    try find access_path astate with Not_found -> OwnershipAbstractValue.Unowned
+    try find access_path astate with Caml.Not_found -> OwnershipAbstractValue.Unowned
 
 
   (*deep ownership model where only a prefix needs to be owned in the astate*)
@@ -359,7 +359,7 @@ OwnedIf in the astate, else UnOwned
 *)
   let get_owned access_path astate =
     if is_owned access_path astate then OwnershipAbstractValue.Owned
-    else try find access_path astate with Not_found -> OwnershipAbstractValue.Unowned
+    else try find access_path astate with Caml.Not_found -> OwnershipAbstractValue.Unowned
 
 
   let find = `Use_get_owned_instead
@@ -373,7 +373,7 @@ module AttributeMapDomain = struct
 
 
   let has_attribute access_path attribute t =
-    try find access_path t |> AttributeSetDomain.mem attribute with Not_found -> false
+    try find access_path t |> AttributeSetDomain.mem attribute with Caml.Not_found -> false
 
 
   let get_choices access_path t =
@@ -382,12 +382,12 @@ module AttributeMapDomain = struct
       List.filter_map
         ~f:(function Attribute.Choice c -> Some c | _ -> None)
         (AttributeSetDomain.elements attributes)
-    with Not_found -> []
+    with Caml.Not_found -> []
 
 
   let add_attribute access_path attribute t =
     let attribute_set =
-      (try find access_path t with Not_found -> AttributeSetDomain.empty)
+      (try find access_path t with Caml.Not_found -> AttributeSetDomain.empty)
       |> AttributeSetDomain.add attribute
     in
     add access_path attribute_set t
@@ -432,12 +432,15 @@ module AccessDomain = struct
   include AbstractDomain.Map (AccessData) (PathDomain)
 
   let add_access precondition access_path t =
-    let precondition_accesses = try find precondition t with Not_found -> PathDomain.empty in
+    let precondition_accesses =
+      try find precondition t with Caml.Not_found -> PathDomain.empty
+    in
     let precondition_accesses' = PathDomain.add_sink access_path precondition_accesses in
     add precondition precondition_accesses' t
 
 
-  let get_accesses precondition t = try find precondition t with Not_found -> PathDomain.empty
+  let get_accesses precondition t =
+    try find precondition t with Caml.Not_found -> PathDomain.empty
 end
 
 module StabilityDomain = struct
@@ -620,8 +623,8 @@ let pp_summary fmt {threads; locks; accesses; return_ownership; return_attribute
      Accesses %a @\n\
      Ownership: %a @\n\
      Return Attributes: %a @\n\
-     Wobbly Paths: %a@\n\
-     " ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
+     Wobbly Paths: %a@\n"
+    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
     OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
     StabilityDomain.pp wobbly_paths
 
@@ -632,8 +635,8 @@ let pp fmt {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
      Accesses %a @\n \
      Ownership: %a @\n\
      Attributes: %a @\n\
-     Non-stable Paths: %a@\n\
-     " ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
+     Non-stable Paths: %a@\n"
+    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
     ownership AttributeMapDomain.pp attribute_map StabilityDomain.pp wobbly_paths
 
 
@@ -642,7 +645,7 @@ let rec attributes_of_expr attribute_map e =
   match e with
   | HilExp.AccessExpression access_expr -> (
     try AttributeMapDomain.find (AccessExpression.to_access_path access_expr) attribute_map
-    with Not_found -> AttributeSetDomain.empty )
+    with Caml.Not_found -> AttributeSetDomain.empty )
   | Constant _ ->
       AttributeSetDomain.of_list [Attribute.Functional]
   | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->

@@ -144,7 +144,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
-      try Procdesc.NodeSet.min_elt duplicate_nodes with Not_found -> node
+      try Procdesc.NodeSet.min_elt duplicate_nodes with Caml.Not_found -> node
     in
     let typecheck_proc do_checks pname pdesc proc_details_opt =
       let ann_sig, loc, idenv_pn =
@@ -300,9 +300,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let do_final_typestate typestate_opt calls_this =
       let do_typestate typestate =
         let start_node = Procdesc.get_start_node curr_pdesc in
-        if not calls_this
-           (* if 'this(...)' is called, no need to check initialization *)
-           && check_field_initialization && checks.TypeCheck.eradicate
+        if
+          not calls_this
+          (* if 'this(...)' is called, no need to check initialization *)
+          && check_field_initialization && checks.TypeCheck.eradicate
         then
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
             curr_pdesc start_node Initializers.final_initializer_typestates_lazy
@@ -329,12 +330,13 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
     let filter_special_cases () =
-      if ( match proc_name with
-         | Typ.Procname.Java java_pname ->
-             Typ.Procname.Java.is_access_method java_pname
-         | _ ->
-             false )
-         || (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
+      if
+        ( match proc_name with
+        | Typ.Procname.Java java_pname ->
+            Typ.Procname.Java.is_access_method java_pname
+        | _ ->
+            false )
+        || (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else
         let annotated_signature =

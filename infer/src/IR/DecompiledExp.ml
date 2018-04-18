@@ -50,7 +50,7 @@ let rec to_string = function
       to_string de1 ^ "[" ^ to_string de2 ^ "]"
   | Dbinop (op, de1, de2) ->
       "(" ^ to_string de1 ^ Binop.str Pp.text op ^ to_string de2 ^ ")"
-  | Dconst Cfun pn
+  | Dconst (Cfun pn)
     -> (
       let procname_str = Typ.Procname.to_simplified_string pn in
       match builtin_functions_to_string pn with
@@ -78,7 +78,7 @@ let rec to_string = function
         else Pp.comma_seq pp_arg fmt des
       in
       let pp_fun fmt = function
-        | Dconst Cfun pname ->
+        | Dconst (Cfun pname) ->
             let s =
               match pname with
               | Typ.Procname.Java pname_java ->
@@ -92,7 +92,7 @@ let rec to_string = function
       in
       let receiver, args' =
         match args with
-        | (Dpvar pv) :: args' when isvirtual && Pvar.is_this pv ->
+        | Dpvar pv :: args' when isvirtual && Pvar.is_this pv ->
             (None, args')
         | a :: args' when isvirtual ->
             (Some a, args')

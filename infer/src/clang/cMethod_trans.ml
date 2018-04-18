@@ -274,7 +274,8 @@ let get_superclass_curr_class_objc context =
       | None ->
           Logging.die InternalError
             "Expected that the current class ptr in the context is a valid pointer to class decl, \
-             but didn't find declaration, ptr is %d " ptr )
+             but didn't find declaration, ptr is %d "
+            ptr )
     | CContext.ContextNoCls ->
         Logging.die InternalError
           "This should only be called in the context of a class, but got CContext.ContextNoCls"
@@ -374,7 +375,7 @@ let sil_func_attributes_of_attributes attrs =
     match al with
     | [] ->
         List.rev acc
-    | (Clang_ast_t.SentinelAttr attribute_info) :: tl ->
+    | Clang_ast_t.SentinelAttr attribute_info :: tl ->
         let sentinel, null_pos =
           match attribute_info.Clang_ast_t.ai_parameters with
           | [a; b] ->
@@ -397,7 +398,7 @@ let should_create_procdesc cfg procname defined set_objc_accessor_attr =
         Typ.Procname.Hash.remove cfg procname ;
         true )
       else false
-  | exception Not_found ->
+  | exception Caml.Not_found ->
       true
 
 
@@ -410,10 +411,10 @@ let sil_method_annotation_of_args args method_type : Annot.Method.t =
 
 let is_pointer_to_const {Clang_ast_t.qt_type_ptr} =
   match CAst_utils.get_type qt_type_ptr with
-  | Some PointerType (_, {Clang_ast_t.qt_is_const})
-  | Some ObjCObjectPointerType (_, {Clang_ast_t.qt_is_const})
-  | Some RValueReferenceType (_, {Clang_ast_t.qt_is_const})
-  | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
+  | Some (PointerType (_, {Clang_ast_t.qt_is_const}))
+  | Some (ObjCObjectPointerType (_, {Clang_ast_t.qt_is_const}))
+  | Some (RValueReferenceType (_, {Clang_ast_t.qt_is_const}))
+  | Some (LValueReferenceType (_, {Clang_ast_t.qt_is_const})) ->
       qt_is_const
   | _ ->
       false
@@ -429,60 +430,60 @@ let is_value {Clang_ast_t.qt_type_ptr} =
   | Clang_ast_types.TypePtr.Ptr _ ->
       let rec is_value_raw qt_type_ptr =
         match CAst_utils.get_type qt_type_ptr with
-        | Some BuiltinType _
-        | Some ComplexType _
-        | Some DependentSizedExtVectorType _
-        | Some VectorType _
-        | Some ExtVectorType _
-        | Some RecordType _
-        | Some EnumType _
-        | Some InjectedClassNameType _
-        | Some ObjCObjectType _
-        | Some ObjCInterfaceType _ ->
+        | Some (BuiltinType _)
+        | Some (ComplexType _)
+        | Some (DependentSizedExtVectorType _)
+        | Some (VectorType _)
+        | Some (ExtVectorType _)
+        | Some (RecordType _)
+        | Some (EnumType _)
+        | Some (InjectedClassNameType _)
+        | Some (ObjCObjectType _)
+        | Some (ObjCInterfaceType _) ->
             true
-        | Some AdjustedType (_, {Clang_ast_t.qt_type_ptr})
-        | Some DecayedType (_, {Clang_ast_t.qt_type_ptr})
-        | Some ParenType (_, {Clang_ast_t.qt_type_ptr})
-        | Some DecltypeType (_, {Clang_ast_t.qt_type_ptr})
-        | Some AtomicType (_, {Clang_ast_t.qt_type_ptr}) ->
+        | Some (AdjustedType (_, {Clang_ast_t.qt_type_ptr}))
+        | Some (DecayedType (_, {Clang_ast_t.qt_type_ptr}))
+        | Some (ParenType (_, {Clang_ast_t.qt_type_ptr}))
+        | Some (DecltypeType (_, {Clang_ast_t.qt_type_ptr}))
+        | Some (AtomicType (_, {Clang_ast_t.qt_type_ptr})) ->
             is_value_raw qt_type_ptr
-        | Some TypedefType (_, {Clang_ast_t.tti_child_type}) ->
+        | Some (TypedefType (_, {Clang_ast_t.tti_child_type})) ->
             is_value_raw tti_child_type.Clang_ast_t.qt_type_ptr
         (* These types could be value types, and we try our best to resolve them *)
-        | Some AttributedType ({Clang_ast_t.ti_desugared_type}, _)
-        | Some TypeOfExprType {Clang_ast_t.ti_desugared_type}
-        | Some TypeOfType {Clang_ast_t.ti_desugared_type}
-        | Some UnaryTransformType {Clang_ast_t.ti_desugared_type}
-        | Some ElaboratedType {Clang_ast_t.ti_desugared_type}
-        | Some AutoType {Clang_ast_t.ti_desugared_type}
-        | Some DependentNameType {Clang_ast_t.ti_desugared_type}
-        | Some DeducedTemplateSpecializationType {Clang_ast_t.ti_desugared_type}
-        | Some TemplateSpecializationType {Clang_ast_t.ti_desugared_type}
-        | Some DependentTemplateSpecializationType {Clang_ast_t.ti_desugared_type}
-        | Some TemplateTypeParmType {Clang_ast_t.ti_desugared_type}
-        | Some SubstTemplateTypeParmType {Clang_ast_t.ti_desugared_type}
-        | Some SubstTemplateTypeParmPackType {Clang_ast_t.ti_desugared_type}
-        | Some PackExpansionType {Clang_ast_t.ti_desugared_type}
-        | Some UnresolvedUsingType {Clang_ast_t.ti_desugared_type} -> (
+        | Some (AttributedType ({Clang_ast_t.ti_desugared_type}, _))
+        | Some (TypeOfExprType {Clang_ast_t.ti_desugared_type})
+        | Some (TypeOfType {Clang_ast_t.ti_desugared_type})
+        | Some (UnaryTransformType {Clang_ast_t.ti_desugared_type})
+        | Some (ElaboratedType {Clang_ast_t.ti_desugared_type})
+        | Some (AutoType {Clang_ast_t.ti_desugared_type})
+        | Some (DependentNameType {Clang_ast_t.ti_desugared_type})
+        | Some (DeducedTemplateSpecializationType {Clang_ast_t.ti_desugared_type})
+        | Some (TemplateSpecializationType {Clang_ast_t.ti_desugared_type})
+        | Some (DependentTemplateSpecializationType {Clang_ast_t.ti_desugared_type})
+        | Some (TemplateTypeParmType {Clang_ast_t.ti_desugared_type})
+        | Some (SubstTemplateTypeParmType {Clang_ast_t.ti_desugared_type})
+        | Some (SubstTemplateTypeParmPackType {Clang_ast_t.ti_desugared_type})
+        | Some (PackExpansionType {Clang_ast_t.ti_desugared_type})
+        | Some (UnresolvedUsingType {Clang_ast_t.ti_desugared_type}) -> (
           match ti_desugared_type with Some ptr -> is_value_raw ptr | None -> false )
         (* These types are known to be non-value types *)
-        | Some PointerType _
-        | Some BlockPointerType _
-        | Some LValueReferenceType _
-        | Some RValueReferenceType _
-        | Some MemberPointerType _
-        | Some ConstantArrayType _
-        | Some IncompleteArrayType _
-        | Some VariableArrayType _
-        | Some DependentSizedArrayType _
-        | Some FunctionProtoType _
-        | Some FunctionNoProtoType _
-        | Some ObjCObjectPointerType _
-        | Some NoneType _
-        | Some DependentAddressSpaceType _
+        | Some (PointerType _)
+        | Some (BlockPointerType _)
+        | Some (LValueReferenceType _)
+        | Some (RValueReferenceType _)
+        | Some (MemberPointerType _)
+        | Some (ConstantArrayType _)
+        | Some (IncompleteArrayType _)
+        | Some (VariableArrayType _)
+        | Some (DependentSizedArrayType _)
+        | Some (FunctionProtoType _)
+        | Some (FunctionNoProtoType _)
+        | Some (ObjCObjectPointerType _)
+        | Some (NoneType _)
+        | Some (DependentAddressSpaceType _)
         (* These types I don't know what they are. Be conservative and treat them as non value types *)
-        | Some ObjCTypeParamType _
-        | Some PipeType _
+        | Some (ObjCTypeParamType _)
+        | Some (PipeType _)
         | None ->
             false
       in
@@ -514,11 +515,11 @@ let get_byval_args_indices ~shift args =
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
-  | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info)
+  | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info))
     -> (
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
       match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-      | Some ObjCIvarDecl (_, name_decl_info, _, _, _)
+      | Some (ObjCIvarDecl (_, name_decl_info, _, _, _))
         -> (
           let class_tname =
             Typ.Name.Objc.from_qual_name

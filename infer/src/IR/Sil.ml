@@ -26,7 +26,7 @@ type if_kind =
   | Ik_land_lor  (** obtained from translation of && or || *)
   | Ik_while
   | Ik_switch
-  [@@deriving compare]
+[@@deriving compare]
 
 (** An instruction. *)
 type instr =
@@ -53,7 +53,7 @@ type instr =
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
   | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_instr = [%compare.equal : instr]
 
@@ -78,7 +78,7 @@ type atom =
   | Aneq of Exp.t * Exp.t  (** disequality *)
   | Apred of PredSymb.t * Exp.t list  (** predicate symbol applied to exps *)
   | Anpred of PredSymb.t * Exp.t list  (** negated predicate symbol applied to exps *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_atom = [%compare.equal : atom]
 
@@ -94,7 +94,7 @@ let atom_has_local_addr a =
 type lseg_kind =
   | Lseg_NE  (** nonempty (possibly circular) listseg *)
   | Lseg_PE  (** possibly empty (possibly circular) listseg *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_lseg_kind = [%compare.equal : lseg_kind]
 
@@ -118,7 +118,7 @@ type inst =
   | Itaint
   | Iupdate of zero_flag * null_case_flag * int * PredSymb.path_pos
   | Ireturn_from_call of int
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_inst = [%compare.equal : inst]
 
@@ -134,7 +134,7 @@ type 'inst strexp0 =
           For instance, x |->[10 | e1: v1] implies that e1 <= 9.
           Second, if two indices appear in an array, they should be different.
           For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
-  [@@deriving compare]
+[@@deriving compare]
 
 type strexp = inst strexp0
 
@@ -162,11 +162,11 @@ type 'inst hpred0 =
       primed identifiers, and include all the free primed identifiers in body.
       body should not contain any non - primed identifiers or program
       variables (i.e. pvars). *)
-  [@@deriving compare]
+[@@deriving compare]
 
 and 'inst hpara0 =
   {root: Ident.t; next: Ident.t; svars: Ident.t list; evars: Ident.t list; body: 'inst hpred0 list}
-  [@@deriving compare]
+[@@deriving compare]
 
 (** parameter for the higher-order doubly-linked list predicates.
     Assume that all the free identifiers in body_dll should belong to
@@ -178,7 +178,7 @@ and 'inst hpara_dll0 =
   ; svars_dll: Ident.t list
   ; evars_dll: Ident.t list
   ; body_dll: 'inst hpred0 list }
-  [@@deriving compare]
+[@@deriving compare]
 
 type hpred = inst hpred0
 
@@ -434,10 +434,11 @@ let pp_instr pe0 f instr =
 
 let add_with_block_parameters_flag instr =
   match instr with
-  | Call (ret_id, Exp.Const Const.Cfun pname, arg_ts, loc, cf) ->
-      if List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
-         && Typ.Procname.is_clang pname
-         (* to be extended to other methods *)
+  | Call (ret_id, Exp.Const (Const.Cfun pname), arg_ts, loc, cf) ->
+      if
+        List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
+        && Typ.Procname.is_clang pname
+        (* to be extended to other methods *)
       then
         let cf' = {cf with cf_with_block_parameters= true} in
         Call (ret_id, Exp.Const (Const.Cfun pname), arg_ts, loc, cf')
@@ -459,7 +460,7 @@ let pp_instr_list pe fmt instrs =
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
   ( match a with
-  | Aeq (BinOp (op, e1, e2), Const Cint i) when IntLit.isone i ->
+  | Aeq (BinOp (op, e1, e2), Const (Cint i)) when IntLit.isone i ->
       F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp (op, e1, e2))
   | Aeq (e1, e2) ->
       F.fprintf f "%a = %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
@@ -1085,8 +1086,9 @@ let hpred_free_vars h = Sequence.Generator.run (hpred_gen_free_vars h)
    the prop.  The function faults in the re - execution mode, as an internal check of the tool. *)
 let array_clean_new_index footprint_part new_idx =
   assert (not (footprint_part && not !Config.footprint)) ;
-  if footprint_part
-     && Exp.free_vars new_idx |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
+  if
+    footprint_part
+    && Exp.free_vars new_idx |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
   then (
     L.d_warning
       ( "Array index " ^ Exp.to_string new_idx
@@ -1248,7 +1250,7 @@ let mem_sub id sub = List.exists ~f:(fun (id1, _) -> Ident.equal id id1) sub
 (** Extend substitution and return [None] if not possible. *)
 let extend_sub sub id exp : exp_subst option =
   let compare (id1, _) (id2, _) = Ident.compare id1 id2 in
-  if mem_sub id sub then None else Some (List.merge ~cmp:compare sub [(id, exp)])
+  if mem_sub id sub then None else Some (List.merge ~compare sub [(id, exp)])
 
 
 (** Free auxilary variables in the domain and range of the substitution. *)
@@ -1506,7 +1508,9 @@ type sharing_env = {exph: Exp.t Exp.Hash.t; hpredh: hpred HpredInstHash.t}
 let create_sharing_env () = {exph= Exp.Hash.create 3; hpredh= HpredInstHash.create 3}
 
 (** Return a canonical representation of the exp *)
-let exp_compact sh e = try Exp.Hash.find sh.exph e with Not_found -> Exp.Hash.add sh.exph e e ; e
+let exp_compact sh e =
+  try Exp.Hash.find sh.exph e with Caml.Not_found -> Exp.Hash.add sh.exph e e ; e
+
 
 let rec sexp_compact sh se =
   match se with
@@ -1533,7 +1537,7 @@ let hpred_compact_ sh hpred =
 
 
 let hpred_compact sh hpred =
-  try HpredInstHash.find sh.hpredh hpred with Not_found ->
+  try HpredInstHash.find sh.hpredh hpred with Caml.Not_found ->
     let hpred' = hpred_compact_ sh hpred in
     HpredInstHash.add sh.hpredh hpred' hpred' ;
     hpred'
@@ -1570,9 +1574,9 @@ let exp_add_offsets exp offsets =
   let rec f acc = function
     | [] ->
         acc
-    | (Off_fld (fld, typ)) :: offs' ->
+    | Off_fld (fld, typ) :: offs' ->
         f (Exp.Lfield (acc, fld, typ)) offs'
-    | (Off_index e) :: offs' ->
+    | Off_index e :: offs' ->
         f (Exp.Lindex (acc, e)) offs'
   in
   f exp offsets

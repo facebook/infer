@@ -30,7 +30,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let is_transition_to_successor trans =
   match trans with
@@ -65,7 +65,7 @@ type t =
   | EU of transitions option * t * t
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 
@@ -120,8 +120,7 @@ type clause =
   | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
 
 type ctl_checker =
-  {id: string; (* Checker's id *)
-  definitions: clause list (* A list of let/set definitions *)}
+  {id: string; (* Checker's id *) definitions: clause list (* A list of let/set definitions *)}
 
 type al_file =
   { import_files: string list
@@ -256,7 +255,7 @@ module Debug = struct
       let next_level = level + 1 in
       Format.fprintf fmt "%s%s%s %a@\n" spaces prefix node_name pp_node_info root ;
       match root with
-      | Stmt DeclStmt (_, stmts, ([(VarDecl _)] as var_decl)) ->
+      | Stmt (DeclStmt (_, stmts, ([VarDecl _] as var_decl))) ->
           (* handling special case of DeclStmt with VarDecl: emit the VarDecl node
               then emit the statements in DeclStmt as children of VarDecl. This is
               because despite being equal, the statements inside VarDecl and those
@@ -339,11 +338,11 @@ module Debug = struct
         let highlight_style =
           match eval_node.content.eval_result with
           | Eval_undefined ->
-              ANSITerminal.([Bold])
+              ANSITerminal.[Bold]
           | Eval_true ->
-              ANSITerminal.([Bold; green])
+              ANSITerminal.[Bold; green]
           | Eval_false ->
-              ANSITerminal.([Bold; red])
+              ANSITerminal.[Bold; red]
         in
         let ast_node_to_highlight = eval_node.content.ast_node in
         let ast_root, is_last_occurrence =
@@ -656,25 +655,25 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
       match decl with ObjCPropertyDecl (_, _, opdi) -> predicate opdi | _ -> false
     in
     match decl_opt with
-    | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
+    | Some (ObjCCategoryImplDecl (_, _, _, _, ocidi)) ->
         let category_decls =
           match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_category_decl with
-          | Some ObjCCategoryDecl (_, _, decls, _, _) ->
+          | Some (ObjCCategoryDecl (_, _, decls, _, _)) ->
               List.filter ~f:decl_matches decls
           | _ ->
               []
         in
         let class_decls =
           match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
-          | Some ObjCInterfaceDecl (_, _, decls, _, _) ->
+          | Some (ObjCInterfaceDecl (_, _, decls, _, _)) ->
               List.filter ~f:decl_matches decls
           | _ ->
               []
         in
         category_decls @ class_decls
-    | Some ObjCImplementationDecl (_, _, _, _, oidi) -> (
+    | Some (ObjCImplementationDecl (_, _, _, _, oidi)) -> (
       match CAst_utils.get_decl_opt_with_decl_ref oidi.oidi_class_interface with
-      | Some ObjCInterfaceDecl (_, _, decls, _, _) ->
+      | Some (ObjCInterfaceDecl (_, _, decls, _, _)) ->
           List.filter ~f:decl_matches decls
       | _ ->
           [] )
@@ -787,9 +786,9 @@ let transition_stmt_to_decl_via_pointer stmt =
 let transition_via_parameters an =
   let open Clang_ast_t in
   match an with
-  | Decl ObjCMethodDecl (_, _, omdi) ->
+  | Decl (ObjCMethodDecl (_, _, omdi)) ->
       List.map ~f:(fun d -> Decl d) omdi.omdi_parameters
-  | Stmt ObjCMessageExpr (_, stmt_list, _, _) ->
+  | Stmt (ObjCMessageExpr (_, stmt_list, _, _)) ->
       List.map ~f:(fun stmt -> Stmt stmt) stmt_list
   | _ ->
       []
@@ -827,29 +826,29 @@ let transition_via_specified_parameter ~pos an key =
   let apply_decl arg = Decl arg in
   let apply_stmt arg = Stmt arg in
   match an with
-  | Stmt ObjCMessageExpr (_, stmt_list, _, omei) ->
+  | Stmt (ObjCMessageExpr (_, stmt_list, _, omei)) ->
       let method_name = omei.omei_selector in
       let parameter_of_corresp_key =
         if pos then parameter_of_corresp_pos else parameter_of_corresp_name method_name
       in
       let arg_stmt_opt = parameter_of_corresp_key stmt_list key in
       node_opt_to_ast_node_list apply_stmt arg_stmt_opt
-  | Stmt CallExpr (_, _ :: args, _) ->
+  | Stmt (CallExpr (_, _ :: args, _)) ->
       let parameter_of_corresp_key =
         if pos then parameter_of_corresp_pos else invalid_param_name_use ()
       in
       let arg_stmt_opt = parameter_of_corresp_key args key in
       node_opt_to_ast_node_list apply_stmt arg_stmt_opt
-  | Decl ObjCMethodDecl (_, named_decl_info, omdi) ->
+  | Decl (ObjCMethodDecl (_, named_decl_info, omdi)) ->
       let method_name = named_decl_info.ni_name in
       let parameter_of_corresp_key =
         if pos then parameter_of_corresp_pos else parameter_of_corresp_name method_name
       in
       let arg_decl_opt = parameter_of_corresp_key omdi.omdi_parameters key in
       node_opt_to_ast_node_list apply_decl arg_decl_opt
-  | Decl FunctionDecl (_, _, _, fdi)
-  | Decl CXXMethodDecl (_, _, _, fdi, _)
-  | Decl CXXConstructorDecl (_, _, _, fdi, _) ->
+  | Decl (FunctionDecl (_, _, _, fdi))
+  | Decl (CXXMethodDecl (_, _, _, fdi, _))
+  | Decl (CXXConstructorDecl (_, _, _, fdi, _)) ->
       let parameter_of_corresp_key =
         if pos then parameter_of_corresp_pos else invalid_param_name_use ()
       in
@@ -866,9 +865,9 @@ let transition_via_parameter_pos an pos = transition_via_specified_parameter an 
 let transition_via_fields an =
   let open Clang_ast_t in
   match an with
-  | Decl RecordDecl (_, _, _, decls, _, _, _) | Decl CXXRecordDecl (_, _, _, decls, _, _, _, _) ->
+  | Decl (RecordDecl (_, _, _, decls, _, _, _)) | Decl (CXXRecordDecl (_, _, _, decls, _, _, _, _)) ->
       List.filter_map ~f:(fun d -> match d with FieldDecl _ -> Some (Decl d) | _ -> None) decls
-  | Stmt InitListExpr (_, stmts, _) ->
+  | Stmt (InitListExpr (_, stmts, _)) ->
       List.map ~f:(fun stmt -> Stmt stmt) stmts
   | _ ->
       []
@@ -876,7 +875,7 @@ let transition_via_fields an =
 
 let field_has_name name node =
   match node with
-  | Decl FieldDecl (_, name_info, _, _) ->
+  | Decl (FieldDecl (_, name_info, _, _)) ->
       ALVar.compare_str_with_alexp name_info.Clang_ast_t.ni_name name
   | _ ->
       false
@@ -902,10 +901,10 @@ let field_of_corresp_name_from_init_list_expr name init_nodes (expr_info: Clang_
 let transition_via_field_name node name =
   let open Clang_ast_t in
   match node with
-  | Decl RecordDecl _ | Decl CXXRecordDecl _ ->
+  | Decl (RecordDecl _) | Decl (CXXRecordDecl _) ->
       let fields = transition_via_fields node in
       field_of_name name fields
-  | Stmt InitListExpr (_, stmts, expr_info) ->
+  | Stmt (InitListExpr (_, stmts, expr_info)) ->
       let nodes = List.map ~f:(fun stmt -> Stmt stmt) stmts in
       field_of_corresp_name_from_init_list_expr name nodes expr_info
   | _ ->

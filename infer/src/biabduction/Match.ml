@@ -709,7 +709,8 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
             generic_find_partial_iso tenv mode update new_corres sigma_corres todos' sigma_todo )
       | None, _ | _, None ->
           None
-      | Some Sil.Hpointsto (_, _, te1), Some Sil.Hpointsto (_, _, te2) when not (Exp.equal te1 te2) ->
+      | Some (Sil.Hpointsto (_, _, te1)), Some (Sil.Hpointsto (_, _, te2))
+        when not (Exp.equal te1 te2) ->
           None
       | Some (Sil.Hpointsto (_, se1, _) as hpred1), Some (Sil.Hpointsto (_, se2, _) as hpred2) -> (
         match generate_todos_from_strexp mode [] se1 se2 with

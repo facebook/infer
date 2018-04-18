@@ -53,8 +53,9 @@ let do_source_file (translation_unit_context: CFrontend_config.translation_unit_
   NullabilityPreanalysis.analysis cfg tenv ;
   SourceFiles.add source_file cfg (FileLocal tenv) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
-  if Config.debug_mode || Config.testing_mode || Config.frontend_tests
-     || Option.is_some Config.icfg_dotty_outfile
+  if
+    Config.debug_mode || Config.testing_mode || Config.frontend_tests
+    || Option.is_some Config.icfg_dotty_outfile
   then Dotty.print_icfg_dotty source_file cfg ;
   L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg ;
   let procedures_translated_summary =

@@ -19,7 +19,7 @@ let create_handler_table impl =
     try
       let handlers = Hashtbl.find handler_tb pc in
       Hashtbl.replace handler_tb pc (exn_handler :: handlers)
-    with Not_found -> Hashtbl.add handler_tb pc [exn_handler]
+    with Caml.Not_found -> Hashtbl.add handler_tb pc [exn_handler]
   in
   List.iter ~f:collect (JBir.exception_edges impl) ;
   handler_tb
@@ -51,7 +51,7 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
       [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val]
   in
   let create_entry_block handler_list =
-    try ignore (Hashtbl.find catch_block_table handler_list) with Not_found ->
+    try ignore (Hashtbl.find catch_block_table handler_list) with Caml.Not_found ->
       let collect succ_nodes rethrow_exception handler =
         let catch_nodes = get_body_nodes handler.JBir.e_handler in
         let loc =
@@ -161,4 +161,4 @@ let create_exception_handlers context exit_nodes get_body_nodes impl =
         try
           let handler_list = Hashtbl.find handler_table pc in
           Hashtbl.find catch_block_table handler_list
-        with Not_found -> exit_nodes
+        with Caml.Not_found -> exit_nodes

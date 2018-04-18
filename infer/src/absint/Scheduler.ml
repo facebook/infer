@@ -77,7 +77,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let schedule_succ worklist_acc node_to_schedule =
       let id_to_schedule = CFG.id node_to_schedule in
       let old_work =
-        try M.find id_to_schedule worklist_acc with Not_found ->
+        try M.find id_to_schedule worklist_acc with Caml.Not_found ->
           WorkUnit.make t.cfg node_to_schedule
       in
       let new_work = WorkUnit.add_visited_pred t.cfg old_work node_id in
@@ -106,7 +106,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let node = WorkUnit.node max_priority_work in
       let t' = {t with worklist= M.remove (CFG.id node) t.worklist} in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
-    with Not_found -> None
+    with Caml.Not_found -> None
 
 
   let empty cfg = {worklist= M.empty; cfg}

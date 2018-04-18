@@ -54,7 +54,7 @@ let analyze =
     ~synopsis:{|$(b,infer) $(b,analyze) $(i,[options])
 $(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
-    ~see_also:InferCommand.([Report; Run])
+    ~see_also:InferCommand.[Report; Run]
 
 
 let capture =
@@ -78,7 +78,7 @@ $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebui
            intercepts calls to the compiler to read source files, translate them into infer's \
            intermediate representation, and store the result of the translation in the results \
            directory." ]
-    ~see_also:InferCommand.([Analyze; Compile; Run])
+    ~see_also:InferCommand.[Analyze; Compile; Run]
 
 
 let compile =
@@ -112,7 +112,7 @@ let compile =
   cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
   infer capture --compilation-database compile_commands.json|}
       ]
-    ~see_also:InferCommand.([Capture])
+    ~see_also:InferCommand.[Capture]
 
 
 let diff =
@@ -120,7 +120,7 @@ let diff =
     ~short_description:"Report the difference between two versions of a project"
     ~synopsis:"$(b,infer) $(b,diff) $(i,[options])"
     ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
-    ~see_also:InferCommand.([ReportDiff; Run])
+    ~see_also:InferCommand.[ReportDiff; Run]
 
 
 let explore =
@@ -136,7 +136,7 @@ $(b,infer) $(b,explore) $(b,--procedures) $(i,[options])|}
       ; `P
           "If $(b,--procedures) is passed, print information about each procedure captured by \
            infer." ]
-    ~see_also:InferCommand.([Report; Run])
+    ~see_also:InferCommand.[Report; Run]
 
 
 let infer =
@@ -174,9 +174,9 @@ $(b,infer) $(i,[options])|}
                 variable, then from the command line. Options in $(b,%s) take precedence over \
                 options in $(b,%s), and options passed on the command line take precedence over \
                 options in $(b,%s). See the $(i,%s) and $(i,%s) sections of this manual for more \
-                information." inferconfig_file CLOpt.args_env_var CLOpt.args_env_var
-               inferconfig_file CLOpt.args_env_var Cmdliner.Manpage.s_environment
-               Cmdliner.Manpage.s_files)
+                information."
+               inferconfig_file CLOpt.args_env_var CLOpt.args_env_var inferconfig_file
+               CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files)
         ; `P
             "Options can be specified inside an argument file $(i,file) by passing \
              $(b,@)$(i,file) as argument. The format is one option per line, and enclosing single \
@@ -196,8 +196,9 @@ $(b,infer) $(i,[options])|}
              "Extra arguments may be passed to all infer commands using the $(b,%s) environment \
               variable (see the $(i,%s) section). $(b,%s) is expected to contain a string of \
               %c-separated options. For instance, calling `%s=--debug^--print-logs infer` is \
-              equivalent to calling `infer --debug --print-logs`." CLOpt.args_env_var
-             Cmdliner.Manpage.s_options CLOpt.args_env_var CLOpt.env_var_sep CLOpt.args_env_var)
+              equivalent to calling `infer --debug --print-logs`."
+             CLOpt.args_env_var Cmdliner.Manpage.s_options CLOpt.args_env_var CLOpt.env_var_sep
+             CLOpt.args_env_var)
       ; `P
           (Printf.sprintf "$(b,%s): Tells infer where to find the %s file. (See the %s section)"
              inferconfig_env_var inferconfig_file Cmdliner.Manpage.s_files)
@@ -205,13 +206,15 @@ $(b,infer) $(i,[options])|}
           (Printf.sprintf
              "If $(b,%s) is set to \"1\", then infer commands will exit with an error code in \
               some cases when otherwise a simple warning would be emitted on stderr, for instance \
-              if a deprecated form of an option is used." CLOpt.strict_mode_env_var) ]
+              if a deprecated form of an option is used."
+             CLOpt.strict_mode_env_var) ]
     ~files:
       [ `P
           (Printf.sprintf
              "$(b,%s) can be used to store infer options. Its format is that of a JSON record, \
               where fields are infer long-form options, without their leading \"--\", and values \
-              depend on the type of the option:" inferconfig_file)
+              depend on the type of the option:"
+             inferconfig_file)
       ; `Noblank
       ; `P "- for switches options, the value is a JSON boolean (true or false, without quotes)"
       ; `Noblank
@@ -222,13 +225,15 @@ $(b,infer) $(i,[options])|}
       ; `P
           (Printf.sprintf
              "- path options have string values, and are interpreted relative to the location of \
-              the %s file" inferconfig_file)
+              the %s file"
+             inferconfig_file)
       ; `Noblank
       ; `P "- cumulative options are JSON arrays of the appropriate type"
       ; `P
           (Printf.sprintf
              "Infer will look for an $(b,%s) file in the current directory, then its parent, \
-              etc., stopping at the first $(b,%s) file found." inferconfig_file inferconfig_file)
+              etc., stopping at the first $(b,%s) file found."
+             inferconfig_file inferconfig_file)
       ; `P "Example:"
       ; `Pre
           {|  {
@@ -248,7 +253,7 @@ let report =
       ; `P
           "If no specs file are passed on the command line, process all the .specs in the results \
            directory." ]
-    ~see_also:InferCommand.([ReportDiff; Run])
+    ~see_also:InferCommand.[ReportDiff; Run]
 
 
 let reportdiff =
@@ -272,7 +277,7 @@ let reportdiff =
           "- $(b,preexisting.json) contains the issues found in both $(i,previous) and \
            $(i,current)."
       ; `P "All three files follow the same format as normal infer reports." ]
-    ~see_also:InferCommand.([Report])
+    ~see_also:InferCommand.[Report]
 
 
 let events =
@@ -283,7 +288,7 @@ let events =
       [ `P
           "Emit to stdout one JSON object per line, each describing a logged event happened \
            during the execution of Infer" ]
-    ~see_also:InferCommand.([Report; Run])
+    ~see_also:InferCommand.[Report; Run]
 
 
 let run =
@@ -298,7 +303,7 @@ $(b,infer) $(i,[options]) $(b,--) $(i,compile command)|}
            following sequence of commands:"
       ; `Pre {|$(b,infer) $(b,capture) $(i,[options])
 $(b,infer) $(b,analyze) $(i,[options])|} ]
-    ~see_also:InferCommand.([Analyze; Capture; Report])
+    ~see_also:InferCommand.[Analyze; Capture; Report]
 
 
 let command_to_data =

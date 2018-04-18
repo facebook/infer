@@ -14,9 +14,8 @@ open! IStd
 module L = Logging
 module F = Format
 
-type func_attribute =
-  | FA_sentinel of int * int  (** __attribute__((sentinel(int, int))) *)
-  [@@deriving compare]
+type func_attribute = FA_sentinel of int * int  (** __attribute__((sentinel(int, int))) *)
+[@@deriving compare]
 
 let pp_func_attribute fmt = function FA_sentinel (i, j) -> F.fprintf fmt "sentinel(%d,%d)" i j
 
@@ -39,7 +38,7 @@ let string_of_access = function
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 let get_sentinel_func_attribute_value attr_list =
   match attr_list with
-  | (FA_sentinel (sentinel, null_pos)) :: _ ->
+  | FA_sentinel (sentinel, null_pos) :: _ ->
       Some (sentinel, null_pos)
   | [] ->
       None
@@ -50,7 +49,7 @@ type mem_kind =
   | Mnew  (** memory allocated with new *)
   | Mnew_array  (** memory allocated with new[] *)
   | Mobjc  (** memory allocated with objective-c alloc *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (** resource that can be allocated *)
 type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compare]
@@ -67,7 +66,7 @@ type dangling_kind =
       (** pointer is dangling because it is the address
           of a stack variable which went out of scope *)
   | DAminusone  (** pointer is -1 *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (** position in a path: proc name, node id *)
 type path_pos = Typ.Procname.t * int [@@deriving compare]
@@ -124,7 +123,7 @@ type t =
   | Aunsubscribed_observer
       (** denotes an object unsubscribed from observers of a notification center *)
   | Awont_leak  (** value do not participate in memory leak analysis *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 
@@ -163,7 +162,7 @@ type category =
   | ACretval
   | ACobserver
   | ACwontleak
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_category = [%compare.equal : category]
 

@@ -44,7 +44,7 @@ type err_key = private
   ; err_name: IssueType.t
   ; err_desc: Localise.error_desc
   ; severity: string }
-  [@@deriving compare]
+[@@deriving compare]
 
 (** Data associated to a specific error *)
 type err_data = private

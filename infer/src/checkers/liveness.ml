@@ -40,7 +40,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       List.fold exps ~f:(fun acc_ (exp, _) -> exp_add_live exp acc_) ~init:acc
     in
     match call_exp with
-    | Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname) when Typ.Procname.is_constructor pname -> (
+    | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname -> (
       match
         (* first actual passed to a C++ constructor is actually written, not read *)
         actuals
@@ -141,9 +141,9 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
   let is_sentinel_exp = function
-    | Exp.Const Cint i ->
+    | Exp.Const (Cint i) ->
         IntLit.iszero i || IntLit.isnull i
-    | Exp.Const Cfloat 0.0 ->
+    | Exp.Const (Cfloat 0.0) ->
         true
     | _ ->
         false
@@ -177,7 +177,11 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp) ->
         log_report pvar typ loc
     | Sil.Call
-        (None, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), (Exp.Lvar pvar, typ) :: _, loc, _)
+        ( None
+        , Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname))
+        , (Exp.Lvar pvar, typ) :: _
+        , loc
+        , _ )
       when Typ.Procname.is_constructor pname
            && should_report pvar typ live_vars captured_by_ref_vars ->
         log_report pvar typ loc

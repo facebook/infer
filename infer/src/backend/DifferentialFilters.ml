@@ -33,13 +33,13 @@ module FileRenamings = struct
             let current_opt = List.Assoc.find ~equal:String.equal l "current" in
             let previous_opt = List.Assoc.find ~equal:String.equal l "previous" in
             match (current_opt, previous_opt) with
-            | Some `String current, Some `String previous ->
+            | Some (`String current), Some (`String previous) ->
                 {current; previous}
             | None, _ ->
                 raise (Yojson.Json_error "\"current\" field missing")
             | Some _, None ->
                 raise (Yojson.Json_error "\"previous\" field missing")
-            | Some _, Some `String _ ->
+            | Some _, Some (`String _) ->
                 raise (Yojson.Json_error "\"current\" field is not a string")
             | Some _, Some _ ->
                 raise (Yojson.Json_error "\"previous\" field is not a string") )
@@ -48,8 +48,9 @@ module FileRenamings = struct
       with Yojson.Json_error err ->
         L.(die UserError)
           "Error parsing file renamings: %s@\n\
-           Expected JSON object of the following form: '%s', but instead got: '%s'" err
-          "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}" (Yojson.Basic.to_string assoc)
+           Expected JSON object of the following form: '%s', but instead got: '%s'"
+          err "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
+          (Yojson.Basic.to_string assoc)
     in
     match j with
     | `List json_renamings ->
@@ -84,15 +85,17 @@ end
 (** Returns a triple [(l1', dups, l2')] where [dups] is the set of elements of that are in the
     intersection of [l1] and [l2] according to [cmd] and additionally satisfy [pred], and [lN'] is
     [lN] minus [dups]. [dups] contains only one witness for each removed issue, taken from [l1]. *)
-let relative_complements ~cmp ?(pred= fun _ -> true) l1 l2 =
+let relative_complements ~compare ?(pred= fun _ -> true) l1 l2 =
   let rec aux ((out_l1, dups, out_l2) as out) in_l1 in_l2 =
-    let is_last_seen_dup v = match dups with ld :: _ -> Int.equal (cmp ld v) 0 | [] -> false in
+    let is_last_seen_dup v =
+      match dups with ld :: _ -> Int.equal (compare ld v) 0 | [] -> false
+    in
     match (in_l1, in_l2) with
-    | i :: is, f :: fs when Int.equal (cmp i f) 0 ->
+    | i :: is, f :: fs when Int.equal (compare i f) 0 ->
         (* i = f *)
         if pred i then aux (out_l1, i :: dups, out_l2) is fs
         else aux (i :: out_l1, dups, f :: out_l2) is fs
-    | i :: is, f :: _ when cmp i f < 0 ->
+    | i :: is, f :: _ when compare i f < 0 ->
         (* i < f *)
         let out_l1' = if is_last_seen_dup i then out_l1 else i :: out_l1 in
         aux (out_l1', dups, out_l2) is in_l2
@@ -107,8 +110,8 @@ let relative_complements ~cmp ?(pred= fun _ -> true) l1 l2 =
     | _, _ ->
         (List.rev_append in_l1 out_l1, dups, List.rev_append in_l2 out_l2)
   in
-  let l1_sorted = List.sort ~cmp l1 in
-  let l2_sorted = List.sort ~cmp l2 in
+  let l1_sorted = List.sort ~compare l1 in
+  let l2_sorted = List.sort ~compare l2 in
   aux ([], [], []) l1_sorted l2_sorted
 
 
@@ -122,7 +125,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     in
     String.compare f1 f2
   in
-  let cmp ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2) =
+  let compare ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2) =
     [%compare : Caml.Digest.t * string * issue_file_with_renaming]
       (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
       (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
@@ -137,7 +140,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     in
     let fixed_normalized = List.map diff.fixed ~f:(fun f -> (f, None)) in
     let introduced_normalized', preexisting', fixed_normalized' =
-      relative_complements ~cmp introduced_normalized fixed_normalized
+      relative_complements ~compare introduced_normalized fixed_normalized
     in
     let list_map_fst = List.map ~f:fst in
     ( list_map_fst introduced_normalized'
@@ -185,7 +188,7 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
    *)
   let string_of_procedure_id issue = DB.strip_crc issue.Jsonbug_t.procedure_id in
   let extension fname = snd (Filename.split_extension fname) in
-  let cmp (i1: Jsonbug_t.jsonbug) (i2: Jsonbug_t.jsonbug) =
+  let compare (i1: Jsonbug_t.jsonbug) (i2: Jsonbug_t.jsonbug) =
     [%compare : file_extension option * weak_hash * procedure_id]
       (extension i1.file, (i1.kind, i1.bug_type, i1.file, i1.key), string_of_procedure_id i1)
       (extension i2.file, (i2.kind, i2.bug_type, i2.file, i2.key), string_of_procedure_id i2)
@@ -202,12 +205,12 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
       try
         ignore (Str.search_forward java_anon_class_pattern issue.procedure_id 0) ;
         true
-      with Not_found -> false
+      with Caml.Not_found -> false
     in
     is_java_file () && has_anonymous_class_token ()
   in
   let introduced, preexisting, fixed =
-    relative_complements ~cmp ~pred diff.introduced diff.fixed
+    relative_complements ~compare ~pred diff.introduced diff.fixed
   in
   {introduced; fixed; preexisting= preexisting @ diff.preexisting}
 

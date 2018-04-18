@@ -22,7 +22,7 @@ type t = {map: bool AnnotationsMap.t; origin: TypeOrigin.t} [@@deriving compare]
 
 let equal = [%compare.equal : t]
 
-let get_value ann ta = try AnnotationsMap.find ann ta.map with Not_found -> false
+let get_value ann ta = try AnnotationsMap.find ann ta.map with Caml.Not_found -> false
 
 let set_value ann b ta =
   if Bool.equal (get_value ann ta) b then ta else {ta with map= AnnotationsMap.add ann b ta.map}

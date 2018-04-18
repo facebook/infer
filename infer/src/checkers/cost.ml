@@ -71,7 +71,7 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
     let key = (nid_int, ProcCfg.Instr_index instr_idx) in
     let astate' =
       match instr with
-      | Sil.Call (_, Exp.Const Const.Cfun callee_pname, _, _, _) -> (
+      | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) -> (
         match Summary.read_summary pdesc callee_pname with
         | Some {post= cost_callee} ->
             CostDomain.NodeInstructionToCostMap.add key cost_callee astate
@@ -134,10 +134,10 @@ module BoundMap = struct
           BufferOverrunDomain.Heap.fold
             (fun loc data acc ->
               match loc with
-              | AbsLoc.Loc.Var Var.LogicalVar id ->
+              | AbsLoc.Loc.Var (Var.LogicalVar id) ->
                   let key = Exp.Var id in
                   CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
-              | AbsLoc.Loc.Var Var.ProgramVar v ->
+              | AbsLoc.Loc.Var (Var.ProgramVar v) ->
                   let key = Exp.Lvar v in
                   CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
               | _ ->
@@ -459,8 +459,8 @@ module TransferFunctionsWCET (CFG : ProcCfg.S) = struct
     let mk_message () =
       F.asprintf
         "The execution time from the beginning of the function up to this program point is likely \
-         above the acceptable threshold of %a (estimated cost %a)" Itv.Bound.pp expensive_threshold
-        Itv.Bound.pp cost
+         above the acceptable threshold of %a (estimated cost %a)"
+        Itv.Bound.pp expensive_threshold Itv.Bound.pp cost
     in
     match cost with
     | b when Itv.Bound.is_not_infty b

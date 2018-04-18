@@ -37,7 +37,7 @@ val do_filter :
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
   val relative_complements :
-    cmp:('a -> 'a -> int) -> ?pred:('a -> bool) -> 'a list -> 'a list
+    compare:('a -> 'a -> int) -> ?pred:('a -> bool) -> 'a list -> 'a list
     -> 'a list * 'a list * 'a list
 
   val skip_duplicated_types_on_filenames : FileRenamings.t -> Differential.t -> Differential.t

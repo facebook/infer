@@ -46,7 +46,7 @@ module LineReader = struct
 
 
   let file_data (hash: t) fname =
-    try Some (Hashtbl.find hash fname) with Not_found ->
+    try Some (Hashtbl.find hash fname) with Caml.Not_found ->
       try
         let lines_arr = read_file (SourceFile.to_abs_path fname) in
         Hashtbl.add hash fname lines_arr ; Some lines_arr
@@ -330,10 +330,11 @@ let force_delayed_prints () =
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
 let start_session ~pp_name node (loc: Location.t) proc_name session source =
   let node_id = Procdesc.Node.get_id node in
-  if NodesHtml.start_node
-       (node_id :> int)
-       loc proc_name (Procdesc.Node.get_preds node) (Procdesc.Node.get_succs node)
-       (Procdesc.Node.get_exn node) source
+  if
+    NodesHtml.start_node
+      (node_id :> int)
+      loc proc_name (Procdesc.Node.get_preds node) (Procdesc.Node.get_succs node)
+      (Procdesc.Node.get_exn node) source
   then
     F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a" Io_infer.Html.pp_start_color
       Pp.Green
@@ -371,7 +372,7 @@ let write_proc_html pdesc =
   if Config.write_html then (
     let pname = Procdesc.get_proc_name pdesc in
     let source = (Procdesc.get_loc pdesc).file in
-    let nodes = List.sort ~cmp:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
+    let nodes = List.sort ~compare:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
     let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
     let fd, fmt =
       Io_infer.Html.create (DB.Results_dir.Abs_source_dir source) [Typ.Procname.to_filename pname]
@@ -400,7 +401,7 @@ let create_table_err_per_line err_log =
     try
       let set = Hashtbl.find err_per_line err_data.loc.Location.line in
       Hashtbl.replace err_per_line err_data.loc.Location.line (String.Set.add set err_str)
-    with Not_found ->
+    with Caml.Not_found ->
       Hashtbl.add err_per_line err_data.loc.Location.line (String.Set.singleton err_str)
   in
   Errlog.iter add_err err_log ; err_per_line
@@ -415,7 +416,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let proc_name = Procdesc.get_proc_name proc_desc in
   let process_node n =
     let lnum = (Procdesc.Node.get_loc n).Location.line in
-    let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Not_found -> [] in
+    let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Caml.Not_found -> [] in
     Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
   in
   let proc_loc = Procdesc.get_loc proc_desc in
@@ -459,13 +460,13 @@ let write_html_file linereader filename procs =
           raise End_of_file
     in
     let nodes_at_linenum =
-      try Hashtbl.find table_nodes_at_linenum line_number with Not_found -> []
+      try Hashtbl.find table_nodes_at_linenum line_number with Caml.Not_found -> []
     in
     let errors_at_linenum =
       try
         let errset = Hashtbl.find table_err_per_line line_number in
         String.Set.elements errset
-      with Not_found -> []
+      with Caml.Not_found -> []
     in
     F.fprintf fmt "<tr><td class=\"num\" id=\"LINE%d\">%d</td><td class=\"line\">%s " line_number
       line_number line_html ;

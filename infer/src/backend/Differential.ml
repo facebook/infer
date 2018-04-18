@@ -15,9 +15,9 @@ module LocListSet = struct
     type t = Location.t list [@@deriving compare]
   end)
 
-  let mem s xs = not (List.is_empty xs) && mem (List.sort ~cmp:Location.compare xs) s
+  let mem s xs = not (List.is_empty xs) && mem (List.sort ~compare:Location.compare xs) s
 
-  let add s xs = if List.is_empty xs then s else add (List.sort ~cmp:Location.compare xs) s
+  let add s xs = if List.is_empty xs then s else add (List.sort ~compare:Location.compare xs) s
 end
 
 let is_duplicate_report end_locs reported_ends =
@@ -25,21 +25,21 @@ let is_duplicate_report end_locs reported_ends =
 
 
 let sort_by_decreasing_preference_to_report issues =
-  let cmp (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
+  let compare (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
     let n = Int.compare (List.length x.bug_trace) (List.length y.bug_trace) in
     if n <> 0 then n
     else
       let n = String.compare x.hash y.hash in
       if n <> 0 then n else Pervasives.compare x y
   in
-  List.sort ~cmp issues
+  List.sort ~compare issues
 
 
 let sort_by_location issues =
-  let cmp (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
+  let compare (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
     [%compare : string * int * int] (x.file, x.line, x.column) (y.file, y.line, y.column)
   in
-  List.sort ~cmp issues
+  List.sort ~compare issues
 
 
 let dedup (issues: Jsonbug_t.jsonbug list) =

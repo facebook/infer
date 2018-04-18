@@ -48,7 +48,7 @@ and t =
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 
@@ -74,11 +74,11 @@ module Hash = Hashtbl.Make (struct
   let hash = hash
 end)
 
-let is_null_literal = function Const Cint n -> IntLit.isnull n | _ -> false
+let is_null_literal = function Const (Cint n) -> IntLit.isnull n | _ -> false
 
 let is_this = function Lvar pvar -> Pvar.is_this pvar | _ -> false
 
-let is_zero = function Const Cint n -> IntLit.iszero n | _ -> false
+let is_zero = function Const (Cint n) -> IntLit.iszero n | _ -> false
 
 (** {2 Utility Functions for Expressions} *)
 

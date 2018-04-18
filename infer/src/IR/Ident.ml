@@ -54,7 +54,7 @@ type kind =
   | KFootprint
   | KNormal
   | KPrimed
-  [@@deriving compare]
+[@@deriving compare]
 
 let kfootprint = KFootprint
 
@@ -142,7 +142,7 @@ module NameGenerator = struct
         let stamp = NameHash.find !name_map name in
         NameHash.replace !name_map name (stamp + 1) ;
         stamp + 1
-      with Not_found ->
+      with Caml.Not_found ->
         NameHash.add !name_map name 0 ;
         0
     in
@@ -155,7 +155,7 @@ module NameGenerator = struct
       let curr_stamp = NameHash.find !name_map name in
       let new_stamp = max curr_stamp stamp in
       NameHash.replace !name_map name new_stamp
-    with Not_found -> NameHash.add !name_map name stamp
+    with Caml.Not_found -> NameHash.add !name_map name stamp
 end
 
 (** Name used for the return variable *)

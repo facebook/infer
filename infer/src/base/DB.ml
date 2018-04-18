@@ -117,7 +117,7 @@ let update_file_with_lock dir fname update =
   in
   Utils.create_dir dir ;
   let path = Filename.concat dir fname in
-  let fd = Unix.openfile path ~mode:Unix.([O_CREAT; O_SYNC; O_RDWR]) ~perm:0o640 in
+  let fd = Unix.openfile path ~mode:Unix.[O_CREAT; O_SYNC; O_RDWR] ~perm:0o640 in
   Unix.lockf fd ~mode:Unix.F_LOCK ~len:0L ;
   let buf = read_whole_file fd in
   reset_file fd ;
@@ -135,7 +135,7 @@ let update_file_with_lock dir fname update =
 let read_file_with_lock dir fname =
   let path = Filename.concat dir fname in
   try
-    let fd = Unix.openfile path ~mode:Unix.([O_RSYNC; O_RDONLY]) ~perm:0o646 in
+    let fd = Unix.openfile path ~mode:Unix.[O_RSYNC; O_RDONLY] ~perm:0o646 in
     try
       Unix.lockf fd ~mode:Unix.F_RLOCK ~len:0L ;
       let buf = read_whole_file fd in
@@ -223,7 +223,7 @@ module Results_dir = struct
           L.(die InternalError) "create_path"
     in
     let full_fname = Filename.concat (create dir_path) filename in
-    Unix.openfile full_fname ~mode:Unix.([O_WRONLY; O_CREAT; O_TRUNC]) ~perm:0o777
+    Unix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
 end
 
 let is_source_file path =

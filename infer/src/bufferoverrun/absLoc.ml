@@ -24,11 +24,8 @@ module Allocsite = struct
 end
 
 module Loc = struct
-  type t =
-    | Var of Var.t
-    | Allocsite of Allocsite.t
-    | Field of t * Typ.Fieldname.t
-    [@@deriving compare]
+  type t = Var of Var.t | Allocsite of Allocsite.t | Field of t * Typ.Fieldname.t
+  [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
@@ -69,7 +66,7 @@ module Loc = struct
   let append_field l ~fn = Field (l, fn)
 
   let is_return = function
-    | Var Var.ProgramVar x ->
+    | Var (Var.ProgramVar x) ->
         Mangled.equal (Pvar.get_name x) Ident.name_return
     | _ ->
         false

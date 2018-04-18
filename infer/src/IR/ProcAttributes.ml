@@ -31,7 +31,7 @@ type clang_method_kind =
   | OBJC_CLASS
   | BLOCK
   | C_FUNCTION
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal_clang_method_kind = [%compare.equal : clang_method_kind]
 
@@ -51,10 +51,8 @@ let string_of_clang_method_kind = function
 
 
 (** Type for ObjC accessors *)
-type objc_accessor_type =
-  | Objc_getter of Typ.Struct.field
-  | Objc_setter of Typ.Struct.field
-  [@@deriving compare]
+type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
+[@@deriving compare]
 
 let kind_of_objc_accessor_type accessor =
   match accessor with Objc_getter _ -> "getter" | Objc_setter _ -> "setter"
@@ -114,7 +112,7 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 let default proc_name =
   { access= PredSymb.Default

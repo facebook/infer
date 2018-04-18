@@ -106,8 +106,9 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
       while true do
         let line = In_channel.input_line_exn i in
         (* keep only commands and errors *)
-        if Str.string_match commands_or_errors line 0
-           && not (Str.string_match ignored_errors line 0)
+        if
+          Str.string_match commands_or_errors line 0
+          && not (Str.string_match ignored_errors line 0)
         then normalized_commands := one_line line :: !normalized_commands
       done
     with End_of_file -> ()
@@ -136,14 +137,16 @@ let exec_action_item ~prog ~args = function
          Error message:@\n\
          %s@\n\
          @\n\
-         *** Infer needs a working compilation command to run." prog Pp.cli_args args error
+         *** Infer needs a working compilation command to run."
+        prog Pp.cli_args args error
   | ClangWarning warning ->
       L.external_warning "%s@\n" warning
   | CanonicalCommand clang_cmd ->
       Capture.capture clang_cmd
   | DriverCommand clang_cmd ->
-      if Option.is_none Config.buck_compilation_database
-         || Config.skip_analysis_in_path_skips_compilation
+      if
+        Option.is_none Config.buck_compilation_database
+        || Config.skip_analysis_in_path_skips_compilation
       then Capture.run_clang clang_cmd Utils.echo_in
       else
         L.debug Capture Quiet "Skipping seemingly uninteresting clang driver command %s@\n"
@@ -181,7 +184,6 @@ let exe ~prog ~args =
       L.(debug Capture Quiet)
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will \
          run the original command directly:@\n  \
-         %s@\n\
-         "
+         %s@\n"
         (String.concat ~sep:" " @@ prog :: args) ;
     Process.create_process_and_wait ~prog ~args )

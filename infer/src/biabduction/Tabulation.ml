@@ -141,7 +141,7 @@ let spec_find_rename trace_call summary : (int * Prop.exposed Specs.spec) list *
            (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__)) ) ;
     let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
     (List.map ~f specs, formal_parameters)
-  with Not_found ->
+  with Caml.Not_found ->
     L.d_strln
       ("ERROR: found no entry for procedure " ^ Typ.Procname.to_string proc_name ^ ". Give up...") ;
     raise
@@ -190,8 +190,9 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
   let map_var_to_pre_var_or_fresh id =
     match Sil.exp_sub (`Exp sub1_inverse) (Exp.Var id) with
     | Exp.Var id' ->
-        if Ident.HashQueue.mem fav_actual_pre id' || Ident.is_path id'
-           (* a path id represents a position in the pre *)
+        if
+          Ident.HashQueue.mem fav_actual_pre id' || Ident.is_path id'
+          (* a path id represents a position in the pre *)
         then Exp.Var id'
         else Exp.Var (Ident.create_fresh Ident.kprimed)
     | _ ->
@@ -359,19 +360,20 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
           Some (Deref_null pos, desc true (Localise.deref_str_null (Some callee_pname)))
       | None ->
           assert false
-    else if (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
-            (* In that case it raise a dangling pointer dereference *)
-            Attribute.has_dangling_uninit tenv spec_pre e
+    else if
+      (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
+      (* In that case it raise a dangling pointer dereference *)
+      Attribute.has_dangling_uninit tenv spec_pre e
     then Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some PredSymb.DAuninit)))
     else if Exp.equal e_sub Exp.minus_one then
       Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else
       match Attribute.get_resource tenv actual_pre e_sub with
-      | Some Apred (Aresource ({ra_kind= Rrelease} as ra), _) ->
+      | Some (Apred (Aresource ({ra_kind= Rrelease} as ra), _)) ->
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
       | _ ->
         match Attribute.get_undef tenv actual_pre e_sub with
-        | Some Apred (Aundef (s, _, loc, pos), _) ->
+        | Some (Apred (Aundef (s, _, loc, pos), _)) ->
             Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
         | _ ->
             None
@@ -446,7 +448,7 @@ let post_process_post tenv caller_pname callee_pname loc actual_pre
     ((post: Prop.exposed Prop.t), post_path) =
   let actual_pre_has_freed_attribute e =
     match Attribute.get_resource tenv actual_pre e with
-    | Some Apred (Aresource {ra_kind= Rrelease}, _) ->
+    | Some (Apred (Aresource {ra_kind= Rrelease}, _)) ->
         true
     | _ ->
         false
@@ -598,8 +600,8 @@ let hpred_star_fld tenv (hpred1: Sil.hpred) (hpred2: Sil.hpred) : Sil.hpred =
 
 (** Implementation of [*] for the field-splitting model *)
 let sigma_star_fld tenv (sigma1: Sil.hpred list) (sigma2: Sil.hpred list) : Sil.hpred list =
-  let sigma1 = List.stable_sort ~cmp:hpred_lhs_compare sigma1 in
-  let sigma2 = List.stable_sort ~cmp:hpred_lhs_compare sigma2 in
+  let sigma1 = List.stable_sort ~compare:hpred_lhs_compare sigma1 in
+  let sigma2 = List.stable_sort ~compare:hpred_lhs_compare sigma2 in
   (* L.out "@.@. computing %a@.STAR @.%a@.@." pp_sigma sigma1 pp_sigma sigma2; *)
   let rec star sg1 sg2 : Sil.hpred list =
     match (sg1, sg2) with
@@ -640,8 +642,8 @@ let hpred_star_typing (hpred1: Sil.hpred) (_, te2) : Sil.hpred =
 (** Implementation of [*] between predicates and typings *)
 let sigma_star_typ (sigma1: Sil.hpred list) (typings2: (Exp.t * Exp.t) list) : Sil.hpred list =
   let typing_lhs_compare (e1, _) (e2, _) = Exp.compare e1 e2 in
-  let sigma1 = List.stable_sort ~cmp:hpred_lhs_compare sigma1 in
-  let typings2 = List.stable_sort ~cmp:typing_lhs_compare typings2 in
+  let sigma1 = List.stable_sort ~compare:hpred_lhs_compare sigma1 in
+  let typings2 = List.stable_sort ~compare:typing_lhs_compare typings2 in
   let rec star sg1 typ2 : Sil.hpred list =
     match (sg1, typ2) with
     | [], _ ->
@@ -753,7 +755,7 @@ let prop_get_exn_name pname prop =
   let rec search_exn e = function
     | [] ->
         None
-    | (Sil.Hpointsto (e1, _, Sizeof {typ= {desc= Tstruct name}})) :: _ when Exp.equal e1 e ->
+    | Sil.Hpointsto (e1, _, Sizeof {typ= {desc= Tstruct name}}) :: _ when Exp.equal e1 e ->
         Some name
     | _ :: tl ->
         search_exn e tl
@@ -761,7 +763,7 @@ let prop_get_exn_name pname prop =
   let rec find_exn_name hpreds = function
     | [] ->
         None
-    | (Sil.Hpointsto (e1, Sil.Eexp (Exp.Exn e2, _), _)) :: _ when Exp.equal e1 ret_pvar ->
+    | Sil.Hpointsto (e1, Sil.Eexp (Exp.Exn e2, _), _) :: _ when Exp.equal e1 ret_pvar ->
         search_exn e2 hpreds
     | _ :: tl ->
         find_exn_name hpreds tl
@@ -775,7 +777,7 @@ let lookup_custom_errors prop =
   let rec search_error = function
     | [] ->
         None
-    | (Sil.Hpointsto (Exp.Lvar var, Sil.Eexp (Exp.Const Const.Cstr error_str, _), _)) :: _
+    | Sil.Hpointsto (Exp.Lvar var, Sil.Eexp (Exp.Const (Const.Cstr error_str), _), _) :: _
       when Pvar.equal var Sil.custom_error ->
         Some error_str
     | _ :: tl ->
@@ -865,7 +867,7 @@ let combine tenv ret_id (posts: ('a Prop.t * Paths.Path.t) list) actual_pre path
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
         let filter = function
-          | Sil.Aeq (Exp.Var id', Exp.Const Const.Cint i) ->
+          | Sil.Aeq (Exp.Var id', Exp.Const (Const.Cint i)) ->
               Ident.equal id id' && IntLit.isnull i
           | _ ->
               false
@@ -1341,15 +1343,16 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             let desc =
               if List.exists ~f:(function Cannot_combine -> true | _ -> false) invalid_res then
                 call_desc (Some Localise.Pnm_dangling)
-              else if List.exists
-                        ~f:(function
-                            | Prover_checks (check :: _) ->
-                                trace_call CR_not_met ;
-                                let exn = get_check_exn tenv check callee_pname loc __POS__ in
-                                raise exn
-                            | _ ->
-                                false)
-                        invalid_res
+              else if
+                List.exists
+                  ~f:(function
+                      | Prover_checks (check :: _) ->
+                          trace_call CR_not_met ;
+                          let exn = get_check_exn tenv check callee_pname loc __POS__ in
+                          raise exn
+                      | _ ->
+                          false)
+                  invalid_res
               then call_desc (Some Localise.Pnm_bounds)
               else call_desc None
             in
@@ -1407,7 +1410,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
       | _ ->
           false
     in
-    Config.idempotent_getters && Language.curr_language_is Java && is_likely_getter callee_pname
+    (Config.idempotent_getters && Language.curr_language_is Java && is_likely_getter callee_pname)
     || returns_nullable ret_annot
   in
   match ret_id with

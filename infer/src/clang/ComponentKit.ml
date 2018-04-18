@@ -94,11 +94,11 @@ let mutable_local_vars_advice context an =
     let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
       let typ_opt = CAst_utils.get_desugared_type qual_type.qt_type_ptr in
       match (typ_opt : Clang_ast_t.c_type option) with
-      | Some ObjCInterfaceType (_, decl_ptr) | Some RecordType (_, decl_ptr) ->
+      | Some (ObjCInterfaceType (_, decl_ptr)) | Some (RecordType (_, decl_ptr)) ->
           CAst_utils.get_decl decl_ptr
-      | Some PointerType (_, inner_qual_type)
-      | Some ObjCObjectPointerType (_, inner_qual_type)
-      | Some LValueReferenceType (_, inner_qual_type) ->
+      | Some (PointerType (_, inner_qual_type))
+      | Some (ObjCObjectPointerType (_, inner_qual_type))
+      | Some (LValueReferenceType (_, inner_qual_type)) ->
           get_referenced_type inner_qual_type
       | _ ->
           None
@@ -113,9 +113,9 @@ let mutable_local_vars_advice context an =
       in
       let objc_whitelist = ["NSError"] in
       match get_referenced_type qual_type with
-      | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
+      | Some (CXXRecordDecl (_, ndi, _, _, _, _, _, _)) ->
           List.mem ~equal:String.equal cpp_whitelist ndi.ni_name
-      | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+      | Some (ObjCInterfaceDecl (_, ndi, _, _, _)) ->
           List.mem ~equal:String.equal objc_whitelist ndi.ni_name
       | _ ->
           false
@@ -126,7 +126,7 @@ let mutable_local_vars_advice context an =
           (Clang_ast_t.VarDecl (decl_info, named_decl_info, qual_type, _) as decl) ->
           let is_const_ref =
             match CAst_utils.get_type qual_type.qt_type_ptr with
-            | Some LValueReferenceType (_, {Clang_ast_t.qt_is_const}) ->
+            | Some (LValueReferenceType (_, {Clang_ast_t.qt_is_const})) ->
                 qt_is_const
             | _ ->
                 false
@@ -174,7 +174,7 @@ let component_factory_function_advice context an =
   if is_ck_context context an then
     match an with
     | Ctl_parser_types.Decl
-        Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _) ->
+        (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
         let objc_interface = CAst_utils.qual_type_to_objc_interface qual_type in
         if is_component_if objc_interface then
           Some
@@ -207,7 +207,7 @@ let component_with_unconventional_superclass_advice context an =
         if is_component_or_controller_if (Some if_decl) then
           let superclass_name =
             match CAst_utils.get_super_if (Some if_decl) with
-            | Some Clang_ast_t.ObjCInterfaceDecl (_, named_decl_info, _, _, _) ->
+            | Some (Clang_ast_t.ObjCInterfaceDecl (_, named_decl_info, _, _, _)) ->
                 Some named_decl_info.ni_name
             | _ ->
                 None
@@ -246,7 +246,7 @@ let component_with_unconventional_superclass_advice context an =
         assert false
   in
   match an with
-  | Ctl_parser_types.Decl Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
       let if_decl_opt =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
       in
@@ -308,7 +308,7 @@ let component_with_multiple_factory_methods_advice context an =
         assert false
   in
   match an with
-  | Ctl_parser_types.Decl Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info))
     -> (
       let if_decl_opt =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
@@ -327,7 +327,7 @@ let in_ck_class (context: CLintersContext.context) =
 let is_in_factory_method (context: CLintersContext.context) =
   let interface_decl_opt =
     match context.current_objc_class with
-    | Some ObjCImplementationDecl (_, _, _, _, impl_decl_info) ->
+    | Some (ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
     | _ ->
         None
@@ -392,7 +392,7 @@ let rec component_initializer_with_side_effects_advice_ (context: CLintersContex
 
 let component_initializer_with_side_effects_advice (context: CLintersContext.context) an =
   match an with
-  | Ctl_parser_types.Stmt CallExpr (_, called_func_stmt :: _, _) ->
+  | Ctl_parser_types.Stmt (CallExpr (_, called_func_stmt :: _, _)) ->
       component_initializer_with_side_effects_advice_ context called_func_stmt
   | _ ->
       None
@@ -407,7 +407,7 @@ let component_initializer_with_side_effects_advice (context: CLintersContext.con
 let component_file_line_count_info (context: CLintersContext.context) dec =
   let condition = Config.compute_analytics && context.is_ck_translation_unit in
   match dec with
-  | Ctl_parser_types.Decl Clang_ast_t.TranslationUnitDecl _ when condition ->
+  | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) when condition ->
       let source_file = context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
       List.map

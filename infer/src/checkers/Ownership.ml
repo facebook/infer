@@ -123,13 +123,13 @@ module Domain = struct
           (* TODO: can do deeper checking here, but have to worry about borrow cycles *)
           | Owned ->
               ()
-          | exception Not_found ->
+          | exception Caml.Not_found ->
               ()
         in
         VarSet.iter report_invalidated borrowed_vars
     | Owned ->
         ()
-    | exception Not_found ->
+    | exception Caml.Not_found ->
         ()
 
 
@@ -169,7 +169,7 @@ module Domain = struct
     if Var.is_return (fst lhs_base) then exp_add_reads rhs_exp loc summary astate
     else
       match rhs_exp with
-      | HilExp.AccessExpression (Base rhs_base | AddressOf Base rhs_base)
+      | HilExp.AccessExpression (Base rhs_base | AddressOf (Base rhs_base))
         when not (Var.appears_in_source_code (fst rhs_base)) -> (
         try
           (* assume assignments with non-source vars on the RHS transfer capabilities to the LHS
@@ -177,7 +177,7 @@ module Domain = struct
           (* copy capability from RHS to LHS *)
           let base_capability = find rhs_base astate in
           add lhs_base base_capability astate
-        with Not_found ->
+        with Caml.Not_found ->
           (* no existing capability on RHS. don't make any assumptions about LHS capability *)
           remove lhs_base astate )
       | HilExp.Closure (_, captured_vars) ->
@@ -237,7 +237,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Some astate'
         else if Typ.Procname.equal pname BuiltinDecl.__placement_new then
           match (List.rev actuals, return_opt) with
-          | (HilExp.AccessExpression Base placement_base) :: other_actuals, Some return_base ->
+          | HilExp.AccessExpression (Base placement_base) :: other_actuals, Some return_base ->
               (* placement new creates an alias between return var and placement var. model as
                  return borrowing from placement *)
               Domain.actuals_add_reads other_actuals loc summary astate
@@ -251,7 +251,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 Typ.Procname.pp pname Location.pp loc
         else if Typ.Procname.is_constructor pname then
           match actuals with
-          | (HilExp.AccessExpression AccessExpression.AddressOf access_expression) :: other_actuals
+          | HilExp.AccessExpression (AccessExpression.AddressOf access_expression) :: other_actuals
                 -> (
             match get_assigned_base access_expression with
             | Some constructed_base ->
@@ -300,17 +300,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           |> Domain.access_path_add_read
                (AccessExpression.to_access_path lhs_access_exp)
                loc summary )
-    | Call (_, Direct callee_pname, [(AccessExpression Base lhs_base)], _, loc)
+    | Call (_, Direct callee_pname, [AccessExpression (Base lhs_base)], _, loc)
       when Typ.Procname.equal callee_pname BuiltinDecl.__delete ->
         (* TODO: support delete[], free, and (in some cases) std::move *)
         Domain.release_ownership lhs_base loc summary astate
-    | Call (_, Direct callee_pname, [(AccessExpression AddressOf Base lhs_base)], _, loc)
+    | Call (_, Direct callee_pname, [AccessExpression (AddressOf (Base lhs_base))], _, loc)
       when is_destructor callee_pname ->
         Domain.release_ownership lhs_base loc summary astate
     | Call
         ( _
-        , Direct Typ.Procname.ObjC_Cpp callee_pname
-        , [(AccessExpression AddressOf Base lhs_base); rhs_exp]
+        , Direct (Typ.Procname.ObjC_Cpp callee_pname)
+        , [AccessExpression (AddressOf (Base lhs_base)); rhs_exp]
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname ->
@@ -319,8 +319,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.handle_var_assign lhs_base rhs_exp loc summary astate
     | Call
         ( _
-        , Direct Typ.Procname.ObjC_Cpp callee_pname
-        , (AccessExpression AddressOf Base lhs_base) :: _
+        , Direct (Typ.Procname.ObjC_Cpp callee_pname)
+        , AccessExpression (AddressOf (Base lhs_base)) :: _
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_cpp_lambda callee_pname ->

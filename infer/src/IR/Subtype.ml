@@ -19,10 +19,8 @@ let list_to_string list =
   else "- {" ^ String.concat ~sep:", " (List.map ~f:Typ.Name.name list) ^ "}"
 
 
-type t' =
-  | Exact  (** denotes the current type only *)
-  | Subtypes of Typ.Name.t list
-  [@@deriving compare]
+type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t list
+[@@deriving compare]
 
 let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal : t'] st1 st2
 
@@ -99,7 +97,7 @@ end)
 let check_subtype =
   let subtMap = ref SubtypesMap.empty in
   fun tenv c1 c2 ->
-    ( try SubtypesMap.find (c1, c2) !subtMap with Not_found ->
+    ( try SubtypesMap.find (c1, c2) !subtMap with Caml.Not_found ->
         let is_subt = check_subclass_tenv tenv c1 c2 in
         subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
         is_subt
@@ -182,7 +180,7 @@ let normalize_subtypes t_opt c1 c2 flag1 flag2 =
     | Exact ->
         Some (t, new_flag)
     | Subtypes l ->
-        Some (Subtypes (List.sort ~cmp:Typ.Name.compare l), new_flag) )
+        Some (Subtypes (List.sort ~compare:Typ.Name.compare l), new_flag) )
   | None ->
       None
 
@@ -253,8 +251,8 @@ let get_subtypes tenv (c1, ((st1, flag1): t)) (c2, ((st2, flag2): t)) =
             let l2' = updates_head tenv c1 l2 in
             (Some (Subtypes (add_not_subtype tenv c1 l1 l2')), None)
           else (None, Some st1)
-        else if (is_interface tenv c1 || is_known_subtype tenv c2 c1)
-                && no_subtype_in_list tenv c2 l1
+        else if
+          (is_interface tenv c1 || is_known_subtype tenv c2 c1) && no_subtype_in_list tenv c2 l1
         then
           let l1' = updates_head tenv c2 l1 in
           ( Some (Subtypes (add_not_subtype tenv c2 l1' l2))

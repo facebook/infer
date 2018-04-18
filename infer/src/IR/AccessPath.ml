@@ -274,7 +274,7 @@ let inner_class_normalize p =
     | Some
         ( ( (Var.ProgramVar pvar as root)
           , ({desc= Tptr (({desc= Tstruct name} as cls), pkind)} as ptr) )
-        , (FieldAccess first) :: accesses )
+        , FieldAccess first :: accesses )
       when Pvar.is_this pvar && Fieldname.Java.is_outer_instance first ->
         Name.Java.get_outer_class name
         |> Option.map ~f:(fun outer_name ->
@@ -285,7 +285,7 @@ let inner_class_normalize p =
     (* happens in ctrs only *)
     | Some
         ( (Var.ProgramVar pvar, ({desc= Tptr (({desc= Tstruct name} as cls), pkind)} as ptr))
-        , (FieldAccess first) :: accesses )
+        , FieldAccess first :: accesses )
       when is_synthetic_this pvar && Fieldname.Java.is_outer_instance first ->
         Name.Java.get_outer_class name
         |> Option.bind ~f:(fun outer_name ->

@@ -35,7 +35,7 @@ type mem_kind =
   | Mnew  (** memory allocated with new *)
   | Mnew_array  (** memory allocated with new[] *)
   | Mobjc  (** memory allocated with objective-c alloc *)
-  [@@deriving compare]
+[@@deriving compare]
 
 (** resource that can be allocated *)
 type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compare]
@@ -89,7 +89,7 @@ type t =
   | Aunsubscribed_observer
       (** denotes an object unsubscribed from observers of a notification center *)
   | Awont_leak  (** value do not participate in memory leak analysis *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal : t -> t -> bool
 
@@ -110,7 +110,7 @@ type category =
   | ACretval
   | ACobserver
   | ACwontleak
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_category : category -> category -> bool
 

@@ -9,17 +9,8 @@
 open Core
 
 (* NOTE: All variants must be also added to `all_commands` below *)
-type t =
-  | Analyze
-  | Capture
-  | Compile
-  | Diff
-  | Events
-  | Explore
-  | Report
-  | ReportDiff
-  | Run
-  [@@deriving compare]
+type t = Analyze | Capture | Compile | Diff | Events | Explore | Report | ReportDiff | Run
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 

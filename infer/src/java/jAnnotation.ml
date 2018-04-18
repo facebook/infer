@@ -16,7 +16,7 @@ let translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
   let rec translate_value_pair acc (x, value) =
     match value with
-    | JBasics.EVArray ((JBasics.EVCstString s) :: l) ->
+    | JBasics.EVArray (JBasics.EVCstString s :: l) ->
         translate_value_pair (s :: acc) (x, JBasics.EVArray l)
     | JBasics.EVCstString s ->
         s :: acc

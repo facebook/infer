@@ -101,10 +101,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
   let open_out source path =
     let full_fname = get_full_fname source path in
     let fd =
-      Unix.openfile
-        (DB.filename_to_string full_fname)
-        ~mode:Unix.([O_WRONLY; O_APPEND])
-        ~perm:0o777
+      Unix.openfile (DB.filename_to_string full_fname) ~mode:Unix.[O_WRONLY; O_APPEND] ~perm:0o777
     in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in
@@ -156,8 +153,9 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
       in
       F.asprintf
         "<span class='%s'>%s_%d<span class='expansion'>node%d preds:%a succs:%a exn:%a \
-         %s%s</span></span>" style_class descr id id (Pp.seq F.pp_print_int) preds
-        (Pp.seq F.pp_print_int) succs (Pp.seq F.pp_print_int) exn description
+         %s%s</span></span>"
+        style_class descr id id (Pp.seq F.pp_print_int) preds (Pp.seq F.pp_print_int) succs
+        (Pp.seq F.pp_print_int) exn description
         (if not isvisited then "\nNOT VISITED" else "")
     in
     pp_link ~path:(path_to_root @ ["nodes"; node_fname]) fmt node_text

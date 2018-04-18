@@ -84,7 +84,7 @@ let find_comment_start_and_style lines_arr n =
   in
   let is_start line =
     match cur_line_comment with
-    | Some Line _ ->
+    | Some (Line _) ->
         cur_line_comment
     | _ ->
         List.find comment_styles ~f:(function
@@ -148,7 +148,7 @@ let get_fb_year cstart cend lines_arr =
       let fmt_match = Str.matched_string line in
       if String.length fmt_match = 4 then
         try found := Some (int_of_string fmt_match) with _ -> ()
-    with Not_found -> ()
+    with Caml.Not_found -> ()
   in
   for i = cstart to cend do
     let line = lines_arr.(i) in

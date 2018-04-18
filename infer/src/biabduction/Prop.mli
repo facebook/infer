@@ -36,7 +36,7 @@ type 'a t = private
   ; pi: pi  (** pure part *)
   ; sigma_fp: sigma  (** abduced spatial part *)
   ; pi_fp: pi  (** abduced pure part *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
     initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh

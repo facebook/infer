@@ -183,19 +183,19 @@ module LockState = struct
   let is_taken lock_event map =
     match lock_event.LockEvent.event with
     | LockEvent.LockAcquire lock -> (
-      try not (find lock map |> LockStack.is_empty) with Not_found -> false )
+      try not (find lock map |> LockStack.is_empty) with Caml.Not_found -> false )
     | _ ->
         false
 
 
   let acquire lock_id lock_event map =
-    let current_value = try find lock_id map with Not_found -> LockStack.empty in
+    let current_value = try find lock_id map with Caml.Not_found -> LockStack.empty in
     let new_value = LockStack.push lock_event current_value in
     add lock_id new_value map
 
 
   let release lock_id map =
-    let current_value = try find lock_id map with Not_found -> LockStack.empty in
+    let current_value = try find lock_id map with Caml.Not_found -> LockStack.empty in
     if LockStack.is_empty current_value then map
     else
       let new_value = LockStack.pop current_value in

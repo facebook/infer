@@ -121,8 +121,8 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
     match instrs with
-    | (Sil.Call (Some (t1, _), Exp.Const Const.Cfun pn, _, _, _))
-      :: (Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _)) :: is ->
+    | Sil.Call (Some (t1, _), Exp.Const (Const.Cfun pn), _, _, _)
+      :: Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) :: is ->
         Pvar.equal ivar iv && Ident.equal t1 t2
         && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array")
         || initializes_array is
@@ -135,9 +135,9 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   let added_type_name node =
     let rec nvar_type_name nvar instrs =
       match instrs with
-      | (Sil.Load (nv, Exp.Lfield (_, id, t), _, _)) :: _ when Ident.equal nv nvar ->
+      | Sil.Load (nv, Exp.Lfield (_, id, t), _, _) :: _ when Ident.equal nv nvar ->
           get_field_type_name tenv t id
-      | (Sil.Load (nv, _, t, _)) :: _ when Ident.equal nv nvar ->
+      | Sil.Load (nv, _, t, _) :: _ when Ident.equal nv nvar ->
           Some (get_type_name t)
       | _ :: is ->
           nvar_type_name nvar is
@@ -146,10 +146,10 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
     in
     let rec added_nvar array_nvar instrs =
       match instrs with
-      | (Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _)) :: _
+      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _) :: _
         when Ident.equal iv array_nvar ->
           nvar_type_name nvar (Procdesc.Node.get_instrs node)
-      | (Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _)) :: _
+      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _) :: _
         when Ident.equal iv array_nvar ->
           Some (java_get_const_type_name c)
       | _ :: is ->
@@ -159,7 +159,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
     in
     let rec array_nvar instrs =
       match instrs with
-      | (Sil.Load (nv, Exp.Lvar iv, _, _)) :: _ when Pvar.equal iv ivar ->
+      | Sil.Load (nv, Exp.Lvar iv, _, _) :: _ when Pvar.equal iv ivar ->
           added_nvar nv instrs
       | _ :: is ->
           array_nvar is
@@ -176,7 +176,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
       | [n] -> (
         match added_type_name node with Some name -> name :: type_names n | None -> type_names n )
       | _ ->
-          raise Not_found
+          raise Caml.Not_found
   in
   List.rev (type_names call_node)
 
@@ -263,7 +263,7 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
   let res = ref [] in
   let do_instruction _ instr =
     match instr with
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) -> (
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) -> (
       match resolve_attributes callee_pn with
       | Some callee_attributes ->
           if filter callee_pn callee_attributes then res := (callee_pn, callee_attributes) :: !res

@@ -299,9 +299,9 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
   match exp with
   | Exp.Var id -> (
     match Mem.find_alias id mem with
-    | Some AliasTarget.Simple loc ->
+    | Some (AliasTarget.Simple loc) ->
         Mem.find_heap loc mem
-    | Some AliasTarget.Empty _ | None ->
+    | Some (AliasTarget.Empty _) | None ->
         Val.bot )
   | Exp.Lvar pvar ->
       Mem.find_set (PowLoc.singleton (Loc.of_pvar pvar)) mem
@@ -353,11 +353,11 @@ module Prune = struct
     match e with
     | Exp.Var x -> (
       match Mem.find_alias x mem with
-      | Some AliasTarget.Simple lv ->
+      | Some (AliasTarget.Simple lv) ->
           let v = Mem.find_heap lv mem in
           let v' = Val.prune_ne_zero v in
           update_mem_in_prune lv v' astate
-      | Some AliasTarget.Empty lv ->
+      | Some (AliasTarget.Empty lv) ->
           let v = Mem.find_heap lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
@@ -365,11 +365,11 @@ module Prune = struct
           astate )
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias x mem with
-      | Some AliasTarget.Simple lv ->
+      | Some (AliasTarget.Simple lv) ->
           let v = Mem.find_heap lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
-      | Some AliasTarget.Empty lv ->
+      | Some (AliasTarget.Empty lv) ->
           let v = Mem.find_heap lv mem in
           let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
           let v' = Val.modify_itv itv_v v in
@@ -442,9 +442,9 @@ module Prune = struct
       astate |> prune_unreachable e |> prune_unop e |> prune_binop_left e |> prune_binop_right e
     in
     match e with
-    | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
+    | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
         prune_helper e astate
-    | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
+    | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
         prune_helper (Exp.UnOp (Unop.LNot, e, None)) astate
     | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
         prune_helper (Exp.Var x) astate
@@ -497,8 +497,9 @@ let get_matching_pairs
   let add_ret_alias v1 v2 =
     match callee_ret_alias with
     | Some ret_loc ->
-        if PowLoc.is_singleton v1 && PowLoc.is_singleton v2
-           && AliasTarget.use (PowLoc.min_elt v1) ret_loc
+        if
+          PowLoc.is_singleton v1 && PowLoc.is_singleton v2
+          && AliasTarget.use (PowLoc.min_elt v1) ret_loc
         then ret_alias := Some (AliasTarget.replace (PowLoc.min_elt v2) ret_loc)
     | None ->
         ()

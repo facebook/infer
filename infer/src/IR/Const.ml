@@ -20,7 +20,7 @@ type t =
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)
-  [@@deriving compare]
+[@@deriving compare]
 
 let equal = [%compare.equal : t]
 

@@ -153,7 +153,8 @@ let check_no_duplicates desc_list =
     | _ :: tl ->
         check_for_duplicates_ tl
   in
-  check_for_duplicates_ (List.sort ~cmp:(fun (x, _, _) (y, _, _) -> String.compare x y) desc_list)
+  check_for_duplicates_
+    (List.sort ~compare:(fun (x, _, _) (y, _, _) -> String.compare x y) desc_list)
 
 
 let parse_mode_desc_lists = List.map ~f:(fun parse_mode -> (parse_mode, ref [])) all_parse_modes
@@ -192,7 +193,7 @@ let add parse_mode sections desc =
     let sections =
       List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command
     in
-    let prev_contents = try SectionMap.find section !sections with Not_found -> [] in
+    let prev_contents = try SectionMap.find section !sections with Caml.Not_found -> [] in
     sections := SectionMap.add section (desc :: prev_contents) !sections
   in
   List.iter sections ~f:add_to_section ;
@@ -219,7 +220,7 @@ let add parse_mode sections desc =
         in
         (* in the help of `infer` itself, show in which specific commands the option is used *)
         let commands =
-          List.map ~f:fst sections |> List.sort ~cmp:InferCommand.compare
+          List.map ~f:fst sections |> List.sort ~compare:InferCommand.compare
           |> List.remove_consecutive_duplicates ~equal:InferCommand.equal
           |> List.map ~f:(fun cmd ->
                  let exe = InferCommand.to_exe_name cmd in
@@ -620,7 +621,7 @@ let normalize_desc_list speclist =
         let lower_norm s = String.lowercase @@ norm s in
         String.compare (lower_norm x) (lower_norm y)
   in
-  let sort speclist = List.sort ~cmp:compare_specs speclist in
+  let sort speclist = List.sort ~compare:compare_specs speclist in
   sort speclist
 
 
@@ -677,9 +678,9 @@ let set_curr_speclist_for_parse_mode ~usage parse_mode =
   let full_desc_list =
     List.Assoc.find_exn ~equal:equal_parse_mode parse_mode_desc_lists parse_mode
   in
-  curr_speclist
-  := normalize_desc_list !full_desc_list |> List.map ~f:xdesc |> add_or_suppress_help
-     |> to_arg_speclist ;
+  curr_speclist :=
+    normalize_desc_list !full_desc_list |> List.map ~f:xdesc |> add_or_suppress_help
+    |> to_arg_speclist ;
   assert (check_no_duplicates !curr_speclist) ;
   curr_usage
 
@@ -712,7 +713,7 @@ let mk_subcommand command ?on_unknown_arg:(on_unknown = `Reject) ~name ?deprecat
     ?in_help command_doc =
   let switch () =
     curr_command := Some command ;
-    anon_arg_action := {(!anon_arg_action) with on_unknown}
+    anon_arg_action := {!anon_arg_action with on_unknown}
   in
   ( match deprecated_long with
   | Some long ->
@@ -750,8 +751,9 @@ let anon_fun arg =
   if !anon_arg_action.parse_argfiles && String.is_prefix arg ~prefix:"@" then
     (* stop parsing the current args and go look in that argfile *)
     raise (SubArguments (args_from_argfile arg))
-  else if !anon_arg_action.parse_subcommands
-          && List.Assoc.mem !subcommand_actions ~equal:String.equal arg
+  else if
+    !anon_arg_action.parse_subcommands
+    && List.Assoc.mem !subcommand_actions ~equal:String.equal arg
   then
     let command_switch = List.Assoc.find_exn !subcommand_actions ~equal:String.equal arg in
     match (!curr_command, is_originator) with
@@ -796,7 +798,7 @@ let decode_inferconfig_to_argv path =
       in
       decode_json ~inferconfig_dir json_val @ result
     with
-    | Not_found ->
+    | Not_found_s _ | Caml.Not_found ->
         warnf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
         result
     | YBU.Type_error (msg, json) ->
@@ -816,9 +818,9 @@ let encode_argv_to_env argv =
        ~f:(fun arg ->
          not (String.contains arg env_var_sep)
          ||
-         (warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n" env_var_sep
-            arg ;
-         false) )
+         ( warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n"
+             env_var_sep arg ;
+           false ) )
        argv)
 
 

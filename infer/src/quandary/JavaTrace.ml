@@ -21,7 +21,7 @@ module SourceKind = struct
     | PrivateData  (** private user or device-specific data *)
     | UserControlledString  (** data read from a text box or the clipboard service *)
     | UserControlledURI  (** resource locator originating from the browser bar *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -121,7 +121,7 @@ module SourceKind = struct
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       match (* accessed global will be passed to us as the only parameter *)
             actuals with
-      | [(HilExp.AccessExpression access_expr)] -> (
+      | [HilExp.AccessExpression access_expr] -> (
         match AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, _), _ ->
             let pvar_string = Pvar.to_string pvar in
@@ -220,8 +220,9 @@ module SourceKind = struct
             | _ ->
               match Tenv.lookup tenv typename with
               | Some typ ->
-                  if Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
-                     && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
+                  if
+                    Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
+                    && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
                   then
                     (* assume every non-this formal of a Thrift service is tainted *)
                     (* TODO: may not want to taint numbers or Enum's *)
@@ -278,7 +279,7 @@ module SinkKind = struct
     | ShellExec  (** sink that runs a shell command *)
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
     | Other  (** for testing or uncategorized sinks *)
-    [@@deriving compare]
+  [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 

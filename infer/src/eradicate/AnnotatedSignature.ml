@@ -10,9 +10,8 @@ open! IStd
 module F = Format
 module L = Logging
 
-type t =
-  {ret: Annot.Item.t * Typ.t; params: (Mangled.t * Annot.Item.t * Typ.t) list}
-  [@@deriving compare]
+type t = {ret: Annot.Item.t * Typ.t; params: (Mangled.t * Annot.Item.t * Typ.t) list}
+[@@deriving compare]
 
 type annotation = Nullable | Present [@@deriving compare]
 

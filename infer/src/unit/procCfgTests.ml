@@ -43,7 +43,7 @@ let tests =
   let backward_instr_proc_cfg = BackwardInstrCfg.from_pdesc test_pdesc in
   let open OUnit2 in
   let cmp l1 l2 =
-    let sort = List.sort ~cmp:Procdesc.Node.compare in
+    let sort = List.sort ~compare:Procdesc.Node.compare in
     List.equal ~equal:Procdesc.Node.equal (sort l1) (sort l2)
   in
   let pp_diff fmt (actual, expected) =

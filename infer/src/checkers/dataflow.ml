@@ -57,9 +57,10 @@ let node_throws pdesc node (proc_throws: Typ.Procname.t -> throws) : throws =
     | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) when BuiltinDecl.is_declared callee_pn ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
+      when BuiltinDecl.is_declared callee_pn ->
         if Typ.Procname.equal callee_pn BuiltinDecl.__cast then DontKnow else DoesNotThrow
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
         proc_throws callee_pn
     | _ ->
         DoesNotThrow
@@ -114,7 +115,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
         let dest_state = H.find t.pre_states dest_node in
         let dest_joined = St.join dest_state new_state in
         if not (St.equal dest_state dest_joined) then push_state dest_joined
-      with Not_found -> push_state new_state
+      with Caml.Not_found -> push_state new_state
     in
     let succ_nodes = Procdesc.Node.get_succs node in
     let exn_nodes = Procdesc.Node.get_exn node in
@@ -149,12 +150,12 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
           let state = H.find t.pre_states node in
           let states_succ, states_exn = St.do_node tenv node state in
           propagate t node states_succ states_exn (node_throws proc_desc node St.proc_throws)
-        with Not_found -> ()
+        with Caml.Not_found -> ()
       done
     in
     let transitions node =
       try Transition (H.find t.pre_states node, H.find t.post_states node, H.find t.exn_states node)
-      with Not_found -> Dead_state
+      with Caml.Not_found -> Dead_state
     in
     transitions
 end

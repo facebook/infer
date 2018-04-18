@@ -11,9 +11,8 @@ open! IStd
 (* Make sure we cannot create new issue types other than by calling [from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
 module Unsafe : sig
-  type t = private
-    {unique_id: string; mutable enabled: bool; mutable hum: string}
-    [@@deriving compare]
+  type t = private {unique_id: string; mutable enabled: bool; mutable hum: string}
+  [@@deriving compare]
 
   val equal : t -> t -> bool
 
@@ -63,7 +62,7 @@ end = struct
            value of enabled (see doc comment) *)
       if Option.is_some hum0 then old.hum <- hum ;
       old
-    with Not_found ->
+    with Caml.Not_found ->
       all_issues := IssueSet.add issue !all_issues ;
       issue
 

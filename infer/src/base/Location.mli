@@ -14,7 +14,7 @@ type t =
   { line: int  (** The line number. -1 means "do not know" *)
   ; col: int  (** The column number. -1 means "do not know" *)
   ; file: SourceFile.t  (** The name of the source file *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal : t -> t -> bool
 

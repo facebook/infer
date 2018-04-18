@@ -29,8 +29,8 @@ let collect_specs_filenames jar_filename =
       let proc_filename = Filename.chop_extension (Filename.basename filename) in
       String.Set.add set proc_filename
   in
-  models_specs_filenames
-  := List.fold ~f:collect ~init:!models_specs_filenames (Zip.entries zip_channel) ;
+  models_specs_filenames :=
+    List.fold ~f:collect ~init:!models_specs_filenames (Zip.entries zip_channel) ;
   Zip.close_in zip_channel
 
 
@@ -102,9 +102,10 @@ let add_source_file path map =
           (* Two or more source file with the same base name have been found *)
           let current_package = read_package_declaration current_source_file in
           Duplicate ((current_package, current_source_file) :: previous_source_files)
-    with Not_found ->
-      (* Most common case: there is no conflict with the base name of the source file *)
-      Singleton current_source_file
+    with
+    | Not_found_s _ | Caml.Not_found ->
+        (* Most common case: there is no conflict with the base name of the source file *)
+        Singleton current_source_file
   in
   String.Map.set ~key:basename ~data:entry map
 
@@ -133,7 +134,7 @@ let load_from_verbose_output javac_verbose_out =
       let line = In_channel.input_line_exn file_in in
       if Str.string_match class_filename_re line 0 then
         let path =
-          try Str.matched_group 5 line with Not_found ->
+          try Str.matched_group 5 line with Caml.Not_found ->
             (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
             Config.javac_classes_out ^/ Str.matched_group 2 line
         in
@@ -267,7 +268,7 @@ let iter_missing_callees program ~f =
 let cleanup program = Javalib.close_class_path program.classpath.channel
 
 let lookup_node cn program =
-  try Some (JBasics.ClassMap.find cn (get_classmap program)) with Not_found ->
+  try Some (JBasics.ClassMap.find cn (get_classmap program)) with Caml.Not_found ->
     try
       let jclass = javalib_get_class (get_classpath_channel program) cn in
       add_class cn jclass program ; Some jclass

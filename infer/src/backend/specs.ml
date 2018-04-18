@@ -27,10 +27,8 @@ module Jprop = struct
   let compare_id_ _ _ = 0
 
   (** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
-  type 'a t =
-    | Prop of id_ * 'a Prop.t
-    | Joined of id_ * 'a Prop.t * 'a t * 'a t
-    [@@deriving compare]
+  type 'a t = Prop of id_ * 'a Prop.t | Joined of id_ * 'a Prop.t * 'a t * 'a t
+  [@@deriving compare]
 
   (** Comparison for joined_prop *)
   let compare jp1 jp2 = compare (fun _ _ -> 0) jp1 jp2
@@ -79,9 +77,9 @@ module Jprop = struct
     let rec pp_seq_newline f = function
       | [] ->
           ()
-      | [(Prop (n, p))] ->
+      | [Prop (n, p)] ->
           F.fprintf f "PROP %d:@\n%a" n (Prop.pp_prop pe) p
-      | [(Joined (n, p, p1, p2))] ->
+      | [Joined (n, p, p1, p2)] ->
           if not shallow then F.fprintf f "%a@\n" pp_seq_newline [p1] ;
           if not shallow then F.fprintf f "%a@\n" pp_seq_newline [p2] ;
           F.fprintf f "PROP %d (join of %d,%d):@\n%a" n (get_id p1) (get_id p2) (Prop.pp_prop pe) p
@@ -555,7 +553,7 @@ let load_summary_to_spec_table =
 
 
 let get_summary proc_name =
-  try Some (Typ.Procname.Hash.find spec_tbl proc_name) with Not_found ->
+  try Some (Typ.Procname.Hash.find spec_tbl proc_name) with Caml.Not_found ->
     load_summary_to_spec_table proc_name
 
 

@@ -18,7 +18,7 @@ type parameters = string list
 type t =
   { class_name: string  (** name of the annotation *)
   ; parameters: parameters  (** currently only one string parameter *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 val volatile : t
 (** annotation for fields marked with the "volatile" keyword *)

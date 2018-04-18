@@ -16,7 +16,7 @@ type t =
   | ArrayOffset of t * Typ.t * t list
   | AddressOf of t
   | Dereference of t
-  [@@deriving compare]
+[@@deriving compare]
 
 (** convert to an AccessPath.t, ignoring AddressOf and Dereference for now *)
 let rec to_access_path t =
@@ -108,7 +108,7 @@ let rec normalize t =
   match t with
   | Base _ ->
       t
-  | Dereference AddressOf t1 ->
+  | Dereference (AddressOf t1) ->
       normalize t1
   | FieldOffset (t1, fieldname) ->
       let t1' = normalize t1 in

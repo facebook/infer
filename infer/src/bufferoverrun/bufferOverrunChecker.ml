@@ -248,7 +248,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Prune (exp, _, _, _) ->
           Sem.Prune.prune exp mem
-      | Call (ret, Const Cfun callee_pname, params, location, _) -> (
+      | Call (ret, Const (Cfun callee_pname), params, location, _) -> (
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.hash node in
@@ -358,12 +358,12 @@ module Report = struct
       | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
           ()
       | Sil.Prune (cond, location, true_branch, _) ->
-          let i = match cond with Exp.Const Const.Cint i -> i | _ -> IntLit.zero in
+          let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
           let desc = Errdesc.explain_condition_always_true_false tenv i cond node location in
           let exn = Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
           Reporting.log_warning summary ~loc:location exn
       (* special case for `exit` when we're at the end of a block / procedure *)
-      | Sil.Call (_, Const Cfun pname, _, _, _)
+      | Sil.Call (_, Const (Cfun pname), _, _, _)
         when String.equal (Typ.Procname.get_method pname) "exit"
              && ExitStatement.is_end_of_block_or_procedure node rem_instrs ->
           ()
@@ -451,7 +451,7 @@ module Report = struct
     match instr with
     | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
         check_expr pname exp location mem cond_set
-    | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
+    | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
       match Models.Call.dispatch callee_pname params with
       | Some {Models.check} ->
           let node_hash = CFG.hash node in

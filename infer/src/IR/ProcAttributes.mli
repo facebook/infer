@@ -21,23 +21,21 @@ type clang_method_kind =
   | OBJC_CLASS
   | BLOCK
   | C_FUNCTION
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_clang_method_kind : clang_method_kind -> clang_method_kind -> bool
 
 val string_of_clang_method_kind : clang_method_kind -> string
 
-type objc_accessor_type =
-  | Objc_getter of Typ.Struct.field
-  | Objc_setter of Typ.Struct.field
-  [@@deriving compare]
+type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
+[@@deriving compare]
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
 
 type var_attribute =
   | Modify_in_block
   (* __block attribute of Objective-C variables, means that it will be modified inside a block *)
-  [@@deriving compare]
+[@@deriving compare]
 
 val var_attribute_equal : var_attribute -> var_attribute -> bool
 (** Equality for var_attribute *)
@@ -72,7 +70,7 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
-  [@@deriving compare]
+[@@deriving compare]
 
 val default : Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)

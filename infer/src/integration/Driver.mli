@@ -24,7 +24,7 @@ type mode =
   | Python of string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
-  [@@deriving compare]
+[@@deriving compare]
 
 val equal_mode : mode -> mode -> bool
 

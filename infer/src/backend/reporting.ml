@@ -75,8 +75,8 @@ let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_i
   | None ->
       L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this \
-         procedure. Did you mean to log the error on the caller of %a instead?" Typ.Procname.pp
-        proc_name Typ.Procname.pp proc_name
+         procedure. Did you mean to log the error on the caller of %a instead?"
+        Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
 let log_error = log_issue_from_summary Exceptions.Kerror

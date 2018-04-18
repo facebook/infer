@@ -77,7 +77,7 @@ end = struct
     match (se, t.desc, syn_offs) with
     | _, _, [] ->
         (se, t)
-    | Sil.Estruct (fsel, _), Tstruct name, (Field (fld, _)) :: syn_offs' -> (
+    | Sil.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let se' = snd (List.find_exn ~f:(fun (f', _) -> Typ.Fieldname.equal f' fld) fsel) in
@@ -85,7 +85,7 @@ end = struct
           get_strexp_at_syn_offsets tenv se' t' syn_offs'
       | None ->
           fail () )
-    | Sil.Earray (_, esel, _), Typ.Tarray {elt= t'}, (Index ind) :: syn_offs' ->
+    | Sil.Earray (_, esel, _), Typ.Tarray {elt= t'}, Index ind :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | _ ->
@@ -97,7 +97,7 @@ end = struct
     match (se, t.desc, syn_offs) with
     | _, _, [] ->
         update se
-    | Sil.Estruct (fsel, inst), Tstruct name, (Field (fld, _)) :: syn_offs' -> (
+    | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let se' = snd (List.find_exn ~f:(fun (f', _) -> Typ.Fieldname.equal f' fld) fsel) in
@@ -115,7 +115,7 @@ end = struct
           Sil.Estruct (fsel', inst)
       | None ->
           assert false )
-    | Sil.Earray (len, esel, inst), Tarray {elt= t'}, (Index idx) :: syn_offs' ->
+    | Sil.Earray (len, esel, inst), Tarray {elt= t'}, Index idx :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let esel' =
@@ -131,10 +131,10 @@ end = struct
     let rec convert acc = function
       | [] ->
           acc
-      | (Field (f, t)) :: syn_offs' ->
+      | Field (f, t) :: syn_offs' ->
           let acc' = List.map ~f:(fun e -> Exp.Lfield (e, f, t)) acc in
           convert acc' syn_offs'
-      | (Index idx) :: syn_offs' ->
+      | Index idx :: syn_offs' ->
           let acc' = List.map ~f:(fun e -> Exp.Lindex (e, idx)) acc in
           convert acc' syn_offs'
     in
@@ -354,7 +354,7 @@ let generic_strexp_abstract tenv (abstraction_name: string) (p_in: Prop.normal P
   let match_select_next (matchings_cur, matchings_fp) =
     match (matchings_cur, matchings_fp) with
     | [], [] ->
-        raise Not_found
+        raise Caml.Not_found
     | matched :: cur', fp' ->
         (matched, false, (cur', fp'))
     | [], matched :: fp' ->
@@ -368,7 +368,7 @@ let generic_strexp_abstract tenv (abstraction_name: string) (p_in: Prop.normal P
       let strexp_data = StrexpMatch.get_data tenv matched in
       let p1, changed = do_abstract footprint_part p0 strexp_data in
       if changed then (p1, true) else match_abstract p0 matchings_cur_fp'
-    with Not_found -> (p0, false)
+    with Caml.Not_found -> (p0, false)
   in
   let rec find_then_abstract bound p0 =
     if Int.equal bound 0 then p0
@@ -423,7 +423,7 @@ let blur_array_index tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (inde
           let sigma_fp' = StrexpMatch.replace_index tenv true matched_fp index fresh_index in
           Prop.set p ~sigma_fp:sigma_fp'
         else Prop.expose p
-      with Not_found -> Prop.expose p
+      with Caml.Not_found -> Prop.expose p
     in
     let p3 =
       let matched = StrexpMatch.find_path p.Prop.sigma path in
@@ -437,7 +437,7 @@ let blur_array_index tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (inde
       prop_replace_path_index tenv p3 path map
     in
     Prop.normalize tenv p4
-  with Not_found -> p
+  with Caml.Not_found -> p
 
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
@@ -466,7 +466,7 @@ let keep_only_indices tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (ind
             (sigma', true)
       | _ ->
           (sigma, false)
-    with Not_found -> (sigma, false)
+    with Caml.Not_found -> (sigma, false)
   in
   prop_update_sigma_and_fp_sigma tenv p prune_sigma
 
@@ -658,7 +658,7 @@ let remove_redundant_elements tenv prop =
       false
     in
     match (e, se) with
-    | Exp.Const Const.Cint i, Sil.Eexp (Exp.Var id, _)
+    | Exp.Const (Const.Cint i), Sil.Eexp (Exp.Var id, _)
       when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
     | Exp.Var id, Sil.Eexp _ when not (Ident.is_normal id) && occurs_at_most_once id ->
