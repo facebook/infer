@@ -8,37 +8,43 @@
  */
 
 class Interclass {
-  synchronized void interclass1_bad(InterclassA a) {
-    a.interclass1_bad();
+  synchronized void interclass1Bad(InterclassA a) {
+    a.interclass1Bad();
   }
 
-  synchronized void interclass2_bad() {}
+  synchronized void interclass2Bad() {}
 
-  synchronized void interclass1_ok(InterclassB b) {
-    b.interclass1_ok();
+  synchronized void interclass1Ok(InterclassB b) {
+    b.interclass1Ok();
   }
 
-  void interclass2_ok(InterclassB b) {
+  void interclass2Ok(InterclassB b) {
     synchronized(b) {}
   }
 
-  void reentrant_ok(InterclassB b) {
-    synchronized(this) { synchronized(b) { b.interclass1_ok(); } }
+  void reentrantOk(InterclassB b) {
+    synchronized(this) {
+      synchronized(b) {
+        b.interclass1Ok();
+      }
+    }
   }
 }
 
 class InterclassA {
-  synchronized void interclass1_bad() {}
+  synchronized void interclass1Bad() {}
 
-  synchronized void interclass2_bad(Interclass i) {
-    i.interclass2_bad();
+  synchronized void interclass2Bad(Interclass i) {
+    i.interclass2Bad();
   }
 }
 
 class InterclassB {
-  synchronized void interclass1_ok() {}
+  synchronized void interclass1Ok() {}
 
   void interclass2_ok(Interclass c) {
-    synchronized(c) { c.interclass2_ok(this); }
+    synchronized(c) {
+      c.interclass2Ok(this);
+    }
   }
 }

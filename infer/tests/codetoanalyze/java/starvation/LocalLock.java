@@ -10,23 +10,23 @@
 class LocalLock {
   Object lock1, lock2;
 
-  Object get_lock1() {
+  Object getLock1() {
     return lock1;
   }
 
-  void local_lock_outer_ok() {
-    synchronized(get_lock1()) {
+  void localLockOuterOk() {
+    synchronized(getLock1()) {
       synchronized(this) {}
     }
   }
 
-  Object get_lock2() {
+  Object getLock2() {
     return lock2;
   }
 
-  void local_lock_inner_ok() {
+  void localLockInnerOk() {
     synchronized(this) {
-      synchronized(get_lock2()) {}
+      synchronized(getLock2()) {}
     }
   }
 }
