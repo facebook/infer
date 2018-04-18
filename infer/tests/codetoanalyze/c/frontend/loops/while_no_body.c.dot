@@ -16,11 +16,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch) \n   PRUNE(1, true); [line 11, column 10]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch, while) \n   PRUNE(1, true); [line 11, column 10]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch) \n   PRUNE(!1, false); [line 11, column 10]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch, while) \n   PRUNE(!1, false); [line 11, column 10]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;

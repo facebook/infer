@@ -26,11 +26,11 @@ digraph cfg {
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_4" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_3" ;
-"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" [label="5: Prune (true branch) \n   PRUNE((_t$0 == 0), true); [line 17, column 7]\n " shape="invhouse"]
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" [label="5: Prune (true branch, if) \n   PRUNE((_t$0 == 0), true); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_5" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_7" ;
-"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" [label="6: Prune (false branch) \n   PRUNE(!(_t$0 == 0), false); [line 17, column 7]\n " shape="invhouse"]
+"hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" [label="6: Prune (false branch, if) \n   PRUNE(!(_t$0 == 0), false); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_6" -> "hash_combine_generic<MyHasher,_int,_int,_int>#343026119801841589.3016efe6a900b985af0e18a37325385b_4" ;

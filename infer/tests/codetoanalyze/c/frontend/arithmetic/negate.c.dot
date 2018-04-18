@@ -12,11 +12,11 @@ digraph cfg {
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" ;
@@ -44,11 +44,11 @@ digraph cfg {
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_3" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" [label="4: Prune (true branch) \n   n$1=*&a:_Bool [line 14, column 33]\n  PRUNE(n$1, true); [line 14, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:_Bool [line 14, column 33]\n  PRUNE(n$1, true); [line 14, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_4" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_6" ;
-"neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" [label="5: Prune (false branch) \n   n$1=*&a:_Bool [line 14, column 33]\n  PRUNE(!n$1, false); [line 14, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:_Bool [line 14, column 33]\n  PRUNE(!n$1, false); [line 14, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_5" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_7" ;
@@ -76,11 +76,11 @@ digraph cfg {
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_3" -> "neg_int.2aa25aca565c41dd997912d11504462c_8" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_4" [label="4: Prune (true branch) \n   n$1=*&a:int [line 10, column 30]\n  PRUNE(n$1, true); [line 10, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd997912d11504462c_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:int [line 10, column 30]\n  PRUNE(n$1, true); [line 10, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_4" -> "neg_int.2aa25aca565c41dd997912d11504462c_6" ;
-"neg_int.2aa25aca565c41dd997912d11504462c_5" [label="5: Prune (false branch) \n   n$1=*&a:int [line 10, column 30]\n  PRUNE(!n$1, false); [line 10, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd997912d11504462c_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:int [line 10, column 30]\n  PRUNE(!n$1, false); [line 10, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd997912d11504462c_5" -> "neg_int.2aa25aca565c41dd997912d11504462c_7" ;

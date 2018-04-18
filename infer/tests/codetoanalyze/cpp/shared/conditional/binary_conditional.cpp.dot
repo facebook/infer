@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_5" -> "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_6" ;
 	 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_5" -> "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_7" ;
-"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_6" [label="6: Prune (true branch) \n   PRUNE(n$7, true); [line 24, column 9]\n " shape="invhouse"]
+"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$7, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_6" -> "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_8" ;
-"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_7" [label="7: Prune (false branch) \n   PRUNE(!n$7, false); [line 24, column 9]\n " shape="invhouse"]
+"binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$7, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_7" -> "binaryConditional#binary_conditional#15641211300815748363.a0f7e256e24b7117cb94c66e5aa27a30_9" ;
@@ -68,11 +68,11 @@ digraph cfg {
 
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_5" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_6" ;
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_5" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_7" ;
-"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_6" [label="6: Prune (true branch) \n   PRUNE(n$6, true); [line 29, column 9]\n " shape="invhouse"]
+"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$6, true); [line 29, column 9]\n " shape="invhouse"]
 	
 
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_6" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_8" ;
-"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_7" [label="7: Prune (false branch) \n   PRUNE(!n$6, false); [line 29, column 9]\n " shape="invhouse"]
+"conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$6, false); [line 29, column 9]\n " shape="invhouse"]
 	
 
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_7" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_9" ;

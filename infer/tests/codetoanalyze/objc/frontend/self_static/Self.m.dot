@@ -67,11 +67,11 @@ digraph cfg {
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" ;
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch) \n   PRUNE((sizeof(t=A) != n$15), true); [line 95, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch, if) \n   PRUNE((sizeof(t=A) != n$15), true); [line 95, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch) \n   PRUNE(!(sizeof(t=A) != n$15), false); [line 95, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch, if) \n   PRUNE(!(sizeof(t=A) != n$15), false); [line 95, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" ;

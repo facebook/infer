@@ -1112,8 +1112,8 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
         Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
     | Procdesc.Node.Join_node ->
         Format.fprintf fmt "+"
-    | Procdesc.Node.Prune_node (is_true_branch, _, _) ->
-        Format.fprintf fmt "Prune (%b branch)" is_true_branch
+    | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
+        Format.fprintf fmt "Prune (%b branch, %s)" is_true_branch (Sil.if_kind_to_string if_kind)
     | Procdesc.Node.Stmt_node s ->
         Format.fprintf fmt " %s" s
     | Procdesc.Node.Skip_node s ->

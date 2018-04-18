@@ -56,11 +56,11 @@ digraph cfg {
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_4" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch) \n   n$1=*&a:_Bool [line 61, column 7]\n  PRUNE(n$1, true); [line 61, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch, if) \n   n$1=*&a:_Bool [line 61, column 7]\n  PRUNE(n$1, true); [line 61, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch) \n   n$1=*&a:_Bool [line 61, column 7]\n  PRUNE(!n$1, false); [line 61, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch, if) \n   n$1=*&a:_Bool [line 61, column 7]\n  PRUNE(!n$1, false); [line 61, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" ;
@@ -120,11 +120,11 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch) \n   n$7=*&b:_Bool [line 50, column 11]\n  PRUNE(n$7, true); [line 50, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch, if) \n   n$7=*&b:_Bool [line 50, column 11]\n  PRUNE(n$7, true); [line 50, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch) \n   n$7=*&b:_Bool [line 50, column 11]\n  PRUNE(!n$7, false); [line 50, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch, if) \n   n$7=*&b:_Bool [line 50, column 11]\n  PRUNE(!n$7, false); [line 50, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" ;
@@ -141,11 +141,11 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch) \n   n$13=*&a:_Bool [line 45, column 9]\n  PRUNE(n$13, true); [line 45, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch, if) \n   n$13=*&a:_Bool [line 45, column 9]\n  PRUNE(n$13, true); [line 45, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch) \n   n$13=*&a:_Bool [line 45, column 9]\n  PRUNE(!n$13, false); [line 45, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch, if) \n   n$13=*&a:_Bool [line 45, column 9]\n  PRUNE(!n$13, false); [line 45, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" ;
@@ -237,11 +237,11 @@ digraph cfg {
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_6" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_5" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" [label="7: Prune (true branch) \n   n$6=*&this:destructor_scope::W* [line 33, column 9]\n  n$7=*n$6.b:_Bool [line 33, column 9]\n  PRUNE(n$7, true); [line 33, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" [label="7: Prune (true branch, if) \n   n$6=*&this:destructor_scope::W* [line 33, column 9]\n  n$7=*n$6.b:_Bool [line 33, column 9]\n  PRUNE(n$7, true); [line 33, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_9" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" [label="8: Prune (false branch) \n   n$6=*&this:destructor_scope::W* [line 33, column 9]\n  n$7=*n$6.b:_Bool [line 33, column 9]\n  PRUNE(!n$7, false); [line 33, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" [label="8: Prune (false branch, if) \n   n$6=*&this:destructor_scope::W* [line 33, column 9]\n  n$7=*n$6.b:_Bool [line 33, column 9]\n  PRUNE(!n$7, false); [line 33, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_6" ;

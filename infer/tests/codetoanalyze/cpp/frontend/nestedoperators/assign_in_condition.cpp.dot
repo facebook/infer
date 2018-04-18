@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" ;
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" ;
-"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" [label="6: Prune (true branch) \n   n$1=*n$0:int [line 11, column 7]\n  PRUNE(n$1, true); [line 11, column 7]\n " shape="invhouse"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" [label="6: Prune (true branch, if) \n   n$1=*n$0:int [line 11, column 7]\n  PRUNE(n$1, true); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_8" ;
-"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" [label="7: Prune (false branch) \n   n$1=*n$0:int [line 11, column 7]\n  PRUNE(!n$1, false); [line 11, column 7]\n " shape="invhouse"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" [label="7: Prune (false branch, if) \n   n$1=*n$0:int [line 11, column 7]\n  PRUNE(!n$1, false); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" ;

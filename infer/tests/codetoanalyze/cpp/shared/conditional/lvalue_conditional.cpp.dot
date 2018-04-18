@@ -103,11 +103,11 @@ digraph cfg {
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_4" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_9" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 12, column 12]\n  PRUNE(n$2, true); [line 12, column 12]\n " shape="invhouse"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 12, column 12]\n  PRUNE(n$2, true); [line 12, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_5" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_7" ;
-"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 12, column 12]\n  PRUNE(!n$2, false); [line 12, column 12]\n " shape="invhouse"]
+"choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 12, column 12]\n  PRUNE(!n$2, false); [line 12, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_6" -> "choose_lvalue#6868643882447178722.7e0e06006a6e1baaef3aab18bce2b8d2_8" ;
@@ -147,11 +147,11 @@ digraph cfg {
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_4" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_9" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 18, column 12]\n  PRUNE(n$2, true); [line 18, column 12]\n " shape="invhouse"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 18, column 12]\n  PRUNE(n$2, true); [line 18, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_5" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_7" ;
-"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 18, column 12]\n  PRUNE(!n$2, false); [line 18, column 12]\n " shape="invhouse"]
+"choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 18, column 12]\n  PRUNE(!n$2, false); [line 18, column 12]\n " shape="invhouse"]
 	
 
 	 "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_6" -> "choose_rvalue#5692558402038768020.7de6e1902b5c331a5715ba3f0f51e47e_8" ;
@@ -187,11 +187,11 @@ digraph cfg {
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_4" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_9" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" [label="5: Prune (true branch) \n   n$2=*&a:int [line 24, column 4]\n  PRUNE(n$2, true); [line 24, column 4]\n " shape="invhouse"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&a:int [line 24, column 4]\n  PRUNE(n$2, true); [line 24, column 4]\n " shape="invhouse"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_5" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_7" ;
-"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" [label="6: Prune (false branch) \n   n$2=*&a:int [line 24, column 4]\n  PRUNE(!n$2, false); [line 24, column 4]\n " shape="invhouse"]
+"assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&a:int [line 24, column 4]\n  PRUNE(!n$2, false); [line 24, column 4]\n " shape="invhouse"]
 	
 
 	 "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_6" -> "assign_conditional#6602154438630029026.d4adbdaf8d08f61e93de4faf3d45d8ab_8" ;
@@ -232,11 +232,11 @@ digraph cfg {
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_4" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_9" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" [label="5: Prune (true branch) \n   n$4=*&a:int [line 29, column 18]\n  PRUNE(n$4, true); [line 29, column 18]\n " shape="invhouse"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" [label="5: Prune (true branch, boolean exp) \n   n$4=*&a:int [line 29, column 18]\n  PRUNE(n$4, true); [line 29, column 18]\n " shape="invhouse"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_5" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_7" ;
-"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" [label="6: Prune (false branch) \n   n$4=*&a:int [line 29, column 18]\n  PRUNE(!n$4, false); [line 29, column 18]\n " shape="invhouse"]
+"div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" [label="6: Prune (false branch, boolean exp) \n   n$4=*&a:int [line 29, column 18]\n  PRUNE(!n$4, false); [line 29, column 18]\n " shape="invhouse"]
 	
 
 	 "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_6" -> "div_temp_lvalue#2433393879580018854.ddda47c9e217adc2189e8c150a553f53_8" ;

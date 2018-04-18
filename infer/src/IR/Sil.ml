@@ -386,6 +386,24 @@ let instr_get_exps = function
       []
 
 
+(** Convert an if_kind to string  *)
+let if_kind_to_string = function
+  | Ik_bexp ->
+      "boolean exp"
+  | Ik_dowhile ->
+      "do while"
+  | Ik_for ->
+      "for loop"
+  | Ik_if ->
+      "if"
+  | Ik_land_lor ->
+      "obtained from && or ||"
+  | Ik_while ->
+      "while"
+  | Ik_switch ->
+      "switch"
+
+
 (** Pretty print an instruction. *)
 let pp_instr pe0 f instr =
   let pe, changed = color_pre_wrapper pe0 f instr in

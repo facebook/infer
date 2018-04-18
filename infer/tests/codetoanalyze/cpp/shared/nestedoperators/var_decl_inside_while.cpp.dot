@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(n$0, true); [line 13, column 14]\n " shape="invhouse"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" [label="5: Prune (true branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(n$0, true); [line 13, column 14]\n " shape="invhouse"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(!n$0, false); [line 13, column 14]\n " shape="invhouse"]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" [label="6: Prune (false branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(!n$0, false); [line 13, column 14]\n " shape="invhouse"]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" ;
@@ -59,11 +59,11 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_4" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" [label="5: Prune (true branch) \n   n$0=*&a:int [line 23, column 14]\n  PRUNE(n$0, true); [line 23, column 14]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" [label="5: Prune (true branch, while) \n   n$0=*&a:int [line 23, column 14]\n  PRUNE(n$0, true); [line 23, column 14]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_5" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_15" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_6" [label="6: Prune (false branch) \n   n$0=*&a:int [line 23, column 14]\n  PRUNE(!n$0, false); [line 23, column 14]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_6" [label="6: Prune (false branch, while) \n   n$0=*&a:int [line 23, column 14]\n  PRUNE(!n$0, false); [line 23, column 14]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_6" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_3" ;
@@ -76,11 +76,11 @@ digraph cfg {
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" ;
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_8" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" [label="9: Prune (true branch) \n   PRUNE((n$2 > 0), true); [line 23, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE((n$2 > 0), true); [line 23, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_9" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_11" ;
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" [label="10: Prune (false branch) \n   PRUNE(!(n$2 > 0), false); [line 23, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 > 0), false); [line 23, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_10" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_12" ;

@@ -12,11 +12,11 @@ digraph cfg {
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 20, column 54]\n " shape="invhouse"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 20, column 54]\n " shape="invhouse"]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_6" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 20, column 54]\n " shape="invhouse"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 20, column 54]\n " shape="invhouse"]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" ;
@@ -44,11 +44,11 @@ digraph cfg {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 22, column 45]\n " shape="invhouse"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 22, column 45]\n " shape="invhouse"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 22, column 45]\n " shape="invhouse"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 22, column 45]\n " shape="invhouse"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" ;
@@ -76,11 +76,11 @@ digraph cfg {
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 17, column 12]\n " shape="invhouse"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 12]\n " shape="invhouse"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 17, column 12]\n " shape="invhouse"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 12]\n " shape="invhouse"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" ;

@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" ;
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" [label="6: Prune (true branch) \n   PRUNE((n$0 == 0), true); [line 25, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 0), true); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_6" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_8" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" [label="7: Prune (false branch) \n   PRUNE(!(n$0 == 0), false); [line 25, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 0), false); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_7" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_3" ;
@@ -41,11 +41,11 @@ digraph cfg {
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" ;
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch) \n   PRUNE((n$2 == 0), true); [line 21, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch, if) \n   PRUNE((n$2 == 0), true); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch) \n   PRUNE(!(n$2 == 0), false); [line 21, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$2 == 0), false); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_9" ;

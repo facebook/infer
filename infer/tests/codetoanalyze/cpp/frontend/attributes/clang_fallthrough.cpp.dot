@@ -42,37 +42,37 @@ digraph cfg {
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" [label="6: Prune (true branch) \n   PRUNE((n$1 == 77), true); [line 20, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$1 == 77), true); [line 20, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" [label="7: Prune (false branch) \n   PRUNE(!(n$1 == 77), false); [line 20, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$1 == 77), false); [line 20, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" [label="8: Prune (true branch) \n   PRUNE((n$1 == 66), true); [line 18, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 66), true); [line 18, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" [label="9: Prune (false branch) \n   PRUNE(!(n$1 == 66), false); [line 18, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 66), false); [line 18, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_6" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_7" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" [label="10: Prune (true branch) \n   PRUNE((n$1 == 33), true); [line 16, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 33), true); [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" [label="11: Prune (false branch) \n   PRUNE(!(n$1 == 33), false); [line 16, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$1 == 33), false); [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_8" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_11" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_9" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" [label="12: Prune (true branch) \n   PRUNE((n$1 == 22), true); [line 15, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 22), true); [line 15, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" [label="13: Prune (false branch) \n   PRUNE(!(n$1 == 22), false); [line 15, column 5]\n " shape="invhouse"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$1 == 22), false); [line 15, column 5]\n " shape="invhouse"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_10" ;

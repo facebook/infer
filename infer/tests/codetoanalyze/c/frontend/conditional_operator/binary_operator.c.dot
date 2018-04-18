@@ -13,11 +13,11 @@ digraph cfg {
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_3" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_9" ;
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_3" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_10" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 26, column 13]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 26, column 13]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_4" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_6" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 26, column 13]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 26, column 13]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_5" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_7" ;
@@ -33,11 +33,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_8" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_13" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_9" [label="9: Prune (true branch) \n   PRUNE(1, true); [line 26, column 27]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 26, column 27]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_9" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_11" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_10" [label="10: Prune (false branch) \n   PRUNE(!1, false); [line 26, column 27]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 26, column 27]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_10" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_12" ;
@@ -57,11 +57,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_14" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_19" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" [label="15: Prune (true branch) \n   PRUNE(1, true); [line 24, column 18]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" [label="15: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 24, column 18]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_15" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_17" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" [label="16: Prune (false branch) \n   PRUNE(!1, false); [line 24, column 18]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" [label="16: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 24, column 18]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_16" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_18" ;
@@ -82,11 +82,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_20" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_25" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" [label="21: Prune (true branch) \n   PRUNE(1, true); [line 22, column 13]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" [label="21: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 22, column 13]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_21" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_23" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" [label="22: Prune (false branch) \n   PRUNE(!1, false); [line 22, column 13]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" [label="22: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 22, column 13]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_22" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_24" ;
@@ -108,11 +108,11 @@ digraph cfg {
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" ;
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_26" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" [label="27: Prune (true branch) \n   PRUNE(1, true); [line 19, column 9]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" [label="27: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 19, column 9]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_27" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_29" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" [label="28: Prune (false branch) \n   PRUNE(!1, false); [line 19, column 9]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" [label="28: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 19, column 9]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_28" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_30" ;
@@ -128,11 +128,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_31" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_36" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" [label="32: Prune (true branch) \n   PRUNE(1, true); [line 19, column 23]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" [label="32: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 19, column 23]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_32" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_34" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" [label="33: Prune (false branch) \n   PRUNE(!1, false); [line 19, column 23]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" [label="33: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 19, column 23]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_33" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_35" ;
@@ -153,11 +153,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_37" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_42" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" [label="38: Prune (true branch) \n   PRUNE(1, true); [line 16, column 14]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" [label="38: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 16, column 14]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_38" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_40" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" [label="39: Prune (false branch) \n   PRUNE(!1, false); [line 16, column 14]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" [label="39: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 16, column 14]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_39" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_41" ;
@@ -178,11 +178,11 @@ digraph cfg {
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_43" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_48" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" [label="44: Prune (true branch) \n   PRUNE(1, true); [line 13, column 9]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" [label="44: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 13, column 9]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_44" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_46" ;
-"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" [label="45: Prune (false branch) \n   PRUNE(!1, false); [line 13, column 9]\n " shape="invhouse"]
+"binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" [label="45: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 13, column 9]\n " shape="invhouse"]
 	
 
 	 "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_45" -> "binop_with_side_effects.9cbc0255c95bd7e0ccf9d7a826fa2a2d_47" ;

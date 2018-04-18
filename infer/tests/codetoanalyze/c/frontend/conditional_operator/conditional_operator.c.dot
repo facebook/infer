@@ -12,11 +12,11 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_8" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4: Prune (true branch) \n   n$1=*&b:int [line 14, column 32]\n  PRUNE(n$1, true); [line 14, column 32]\n " shape="invhouse"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&b:int [line 14, column 32]\n  PRUNE(n$1, true); [line 14, column 32]\n " shape="invhouse"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5: Prune (false branch) \n   n$1=*&b:int [line 14, column 32]\n  PRUNE(!n$1, false); [line 14, column 32]\n " shape="invhouse"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&b:int [line 14, column 32]\n  PRUNE(!n$1, false); [line 14, column 32]\n " shape="invhouse"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_7" ;
@@ -48,11 +48,11 @@ digraph cfg {
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_4" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_9" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_5" [label="5: Prune (true branch) \n   n$2=*&b:int [line 17, column 11]\n  PRUNE(n$2, true); [line 17, column 11]\n " shape="invhouse"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_5" [label="5: Prune (true branch, boolean exp) \n   n$2=*&b:int [line 17, column 11]\n  PRUNE(n$2, true); [line 17, column 11]\n " shape="invhouse"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_5" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_7" ;
-"test1.5a105e8b9d40e1329780d62ea2265d8a_6" [label="6: Prune (false branch) \n   n$2=*&b:int [line 17, column 11]\n  PRUNE(!n$2, false); [line 17, column 11]\n " shape="invhouse"]
+"test1.5a105e8b9d40e1329780d62ea2265d8a_6" [label="6: Prune (false branch, boolean exp) \n   n$2=*&b:int [line 17, column 11]\n  PRUNE(!n$2, false); [line 17, column 11]\n " shape="invhouse"]
 	
 
 	 "test1.5a105e8b9d40e1329780d62ea2265d8a_6" -> "test1.5a105e8b9d40e1329780d62ea2265d8a_8" ;
@@ -83,11 +83,11 @@ digraph cfg {
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_4" -> "test3.8ad8757baa8564dc136c1e07507f4a98_10" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_5" [label="5: Prune (true branch) \n   PRUNE(n$1, true); [line 22, column 11]\n " shape="invhouse"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE(n$1, true); [line 22, column 11]\n " shape="invhouse"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_5" -> "test3.8ad8757baa8564dc136c1e07507f4a98_7" ;
-"test3.8ad8757baa8564dc136c1e07507f4a98_6" [label="6: Prune (false branch) \n   PRUNE(!n$1, false); [line 22, column 11]\n " shape="invhouse"]
+"test3.8ad8757baa8564dc136c1e07507f4a98_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 22, column 11]\n " shape="invhouse"]
 	
 
 	 "test3.8ad8757baa8564dc136c1e07507f4a98_6" -> "test3.8ad8757baa8564dc136c1e07507f4a98_8" ;
@@ -119,11 +119,11 @@ digraph cfg {
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_3" -> "test4.86985e105f79b95d6bc918fb45ec7727_9" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_4" [label="4: Prune (true branch) \n   PRUNE(n$0, true); [line 26, column 33]\n " shape="invhouse"]
+"test4.86985e105f79b95d6bc918fb45ec7727_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(n$0, true); [line 26, column 33]\n " shape="invhouse"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_4" -> "test4.86985e105f79b95d6bc918fb45ec7727_6" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_5" [label="5: Prune (false branch) \n   PRUNE(!n$0, false); [line 26, column 33]\n " shape="invhouse"]
+"test4.86985e105f79b95d6bc918fb45ec7727_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 26, column 33]\n " shape="invhouse"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_5" -> "test4.86985e105f79b95d6bc918fb45ec7727_7" ;
@@ -155,11 +155,11 @@ digraph cfg {
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_3" -> "test5.e3d704f3542b44a621ebed70dc0efe13_9" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_4" [label="4: Prune (true branch) \n   PRUNE(n$0, true); [line 28, column 27]\n " shape="invhouse"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(n$0, true); [line 28, column 27]\n " shape="invhouse"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_4" -> "test5.e3d704f3542b44a621ebed70dc0efe13_6" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_5" [label="5: Prune (false branch) \n   PRUNE(!n$0, false); [line 28, column 27]\n " shape="invhouse"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 28, column 27]\n " shape="invhouse"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_5" -> "test5.e3d704f3542b44a621ebed70dc0efe13_7" ;
@@ -191,11 +191,11 @@ digraph cfg {
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_3" -> "test7.b04083e53e242626595e2b8ea327e525_9" ;
-"test7.b04083e53e242626595e2b8ea327e525_4" [label="4: Prune (true branch) \n   PRUNE(n$1, true); [line 35, column 27]\n " shape="invhouse"]
+"test7.b04083e53e242626595e2b8ea327e525_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(n$1, true); [line 35, column 27]\n " shape="invhouse"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_4" -> "test7.b04083e53e242626595e2b8ea327e525_6" ;
-"test7.b04083e53e242626595e2b8ea327e525_5" [label="5: Prune (false branch) \n   PRUNE(!n$1, false); [line 35, column 27]\n " shape="invhouse"]
+"test7.b04083e53e242626595e2b8ea327e525_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!n$1, false); [line 35, column 27]\n " shape="invhouse"]
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_5" -> "test7.b04083e53e242626595e2b8ea327e525_7" ;
@@ -232,11 +232,11 @@ digraph cfg {
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_4" -> "test6.4cfad7076129962ee70c36839a1e3e15_9" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_5" [label="5: Prune (true branch) \n   PRUNE(1, true); [line 31, column 11]\n " shape="invhouse"]
+"test6.4cfad7076129962ee70c36839a1e3e15_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 31, column 11]\n " shape="invhouse"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_5" -> "test6.4cfad7076129962ee70c36839a1e3e15_7" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_6" [label="6: Prune (false branch) \n   PRUNE(!1, false); [line 31, column 11]\n " shape="invhouse"]
+"test6.4cfad7076129962ee70c36839a1e3e15_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 31, column 11]\n " shape="invhouse"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_6" -> "test6.4cfad7076129962ee70c36839a1e3e15_8" ;

@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch) \n   PRUNE(n$1, true); [line 25, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch) \n   PRUNE(!n$1, false); [line 25, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 25, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" ;

@@ -12,11 +12,11 @@ digraph cfg {
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_3" -> "preincrement.db7c6523f16e1ab3058057cee6614472_9" ;
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_3" -> "preincrement.db7c6523f16e1ab3058057cee6614472_10" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 18, column 4]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 18, column 4]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_4" -> "preincrement.db7c6523f16e1ab3058057cee6614472_6" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 18, column 4]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 18, column 4]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_5" -> "preincrement.db7c6523f16e1ab3058057cee6614472_7" ;
@@ -32,11 +32,11 @@ digraph cfg {
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_8" -> "preincrement.db7c6523f16e1ab3058057cee6614472_13" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_9" [label="9: Prune (true branch) \n   PRUNE(1, true); [line 18, column 21]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 18, column 21]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_9" -> "preincrement.db7c6523f16e1ab3058057cee6614472_11" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_10" [label="10: Prune (false branch) \n   PRUNE(!1, false); [line 18, column 21]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 18, column 21]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_10" -> "preincrement.db7c6523f16e1ab3058057cee6614472_12" ;
@@ -56,11 +56,11 @@ digraph cfg {
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_14" -> "preincrement.db7c6523f16e1ab3058057cee6614472_19" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_15" [label="15: Prune (true branch) \n   PRUNE(1, true); [line 17, column 11]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_15" [label="15: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 17, column 11]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_15" -> "preincrement.db7c6523f16e1ab3058057cee6614472_17" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_16" [label="16: Prune (false branch) \n   PRUNE(!1, false); [line 17, column 11]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_16" [label="16: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 17, column 11]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_16" -> "preincrement.db7c6523f16e1ab3058057cee6614472_18" ;
@@ -81,11 +81,11 @@ digraph cfg {
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_20" -> "preincrement.db7c6523f16e1ab3058057cee6614472_25" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_21" [label="21: Prune (true branch) \n   PRUNE(1, true); [line 16, column 4]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_21" [label="21: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 16, column 4]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_21" -> "preincrement.db7c6523f16e1ab3058057cee6614472_23" ;
-"preincrement.db7c6523f16e1ab3058057cee6614472_22" [label="22: Prune (false branch) \n   PRUNE(!1, false); [line 16, column 4]\n " shape="invhouse"]
+"preincrement.db7c6523f16e1ab3058057cee6614472_22" [label="22: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 16, column 4]\n " shape="invhouse"]
 	
 
 	 "preincrement.db7c6523f16e1ab3058057cee6614472_22" -> "preincrement.db7c6523f16e1ab3058057cee6614472_24" ;

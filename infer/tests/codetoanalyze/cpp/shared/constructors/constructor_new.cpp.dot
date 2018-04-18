@@ -125,11 +125,11 @@ digraph cfg {
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_5" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_6" ;
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_5" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_7" ;
-"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_6" [label="6: Prune (true branch) \n   PRUNE(n$4, true); [line 67, column 20]\n " shape="invhouse"]
+"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$4, true); [line 67, column 20]\n " shape="invhouse"]
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_6" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_8" ;
-"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_7" [label="7: Prune (false branch) \n   PRUNE(!n$4, false); [line 67, column 20]\n " shape="invhouse"]
+"int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$4, false); [line 67, column 20]\n " shape="invhouse"]
 	
 
 	 "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_7" -> "int_init_nodes#constructor_new#3816193909145311065.e18f1e2417086b4c8d20246eeee5dd01_9" ;
@@ -173,11 +173,11 @@ digraph cfg {
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_5" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_6" ;
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_5" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_7" ;
-"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_6" [label="6: Prune (true branch) \n   PRUNE(n$4, true); [line 73, column 26]\n " shape="invhouse"]
+"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$4, true); [line 73, column 26]\n " shape="invhouse"]
 	
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_6" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_8" ;
-"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_7" [label="7: Prune (false branch) \n   PRUNE(!n$4, false); [line 73, column 26]\n " shape="invhouse"]
+"constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$4, false); [line 73, column 26]\n " shape="invhouse"]
 	
 
 	 "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_7" -> "constructor_nodes#constructor_new#2199504594298711726.73e416487288cbd4adea79b64a17dbe2_9" ;
@@ -225,11 +225,11 @@ digraph cfg {
 
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_7" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_8" ;
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_7" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_9" ;
-"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_8" [label="8: Prune (true branch) \n   PRUNE(n$7, true); [line 78, column 21]\n " shape="invhouse"]
+"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_8" [label="8: Prune (true branch, boolean exp) \n   PRUNE(n$7, true); [line 78, column 21]\n " shape="invhouse"]
 	
 
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_8" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_10" ;
-"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_9" [label="9: Prune (false branch) \n   PRUNE(!n$7, false); [line 78, column 21]\n " shape="invhouse"]
+"int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_9" [label="9: Prune (false branch, boolean exp) \n   PRUNE(!n$7, false); [line 78, column 21]\n " shape="invhouse"]
 	
 
 	 "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_9" -> "int_array#constructor_new#17288301834361373856.f0e67f3600c928968ac2559eafa09ba2_11" ;
@@ -276,11 +276,11 @@ digraph cfg {
 
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_4" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_5" ;
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_4" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_6" ;
-"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_5" [label="5: Prune (true branch) \n   PRUNE((n$1 == 5), true); [line 91, column 31]\n " shape="invhouse"]
+"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 5), true); [line 91, column 31]\n " shape="invhouse"]
 	
 
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_5" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_7" ;
-"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_6" [label="6: Prune (false branch) \n   PRUNE(!(n$1 == 5), false); [line 91, column 31]\n " shape="invhouse"]
+"array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 5), false); [line 91, column 31]\n " shape="invhouse"]
 	
 
 	 "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_6" -> "array_of_class_with_not_constant_size#constructor_new#9810665286379016302.453a7058d5d4d9a1fa36084713fcfc7d_8" ;

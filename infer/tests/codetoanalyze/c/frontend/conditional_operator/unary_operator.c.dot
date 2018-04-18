@@ -12,11 +12,11 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_3" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 16, column 5]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_6" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 16, column 5]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 16, column 5]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_7" ;
@@ -40,11 +40,11 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_15" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (true branch) \n   PRUNE(1, true); [line 14, column 13]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 14, column 13]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12: Prune (false branch) \n   PRUNE(!1, false); [line 14, column 13]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 14, column 13]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" ;
@@ -65,11 +65,11 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: Prune (true branch) \n   PRUNE(1, true); [line 12, column 9]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18: Prune (false branch) \n   PRUNE(!1, false); [line 12, column 9]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" ;

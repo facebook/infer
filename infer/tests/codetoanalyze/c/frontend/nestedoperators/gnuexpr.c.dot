@@ -61,11 +61,11 @@ digraph cfg {
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" [label="4: Prune (true branch) \n   n$1=*&p:int* [line 31, column 5]\n  PRUNE(n$1, true); [line 31, column 5]\n " shape="invhouse"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&p:int* [line 31, column 5]\n  PRUNE(n$1, true); [line 31, column 5]\n " shape="invhouse"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" [label="5: Prune (false branch) \n   n$1=*&p:int* [line 31, column 5]\n  PRUNE(!n$1, false); [line 31, column 5]\n " shape="invhouse"]
+"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&p:int* [line 31, column 5]\n  PRUNE(!n$1, false); [line 31, column 5]\n " shape="invhouse"]
 	
 
 	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" ;

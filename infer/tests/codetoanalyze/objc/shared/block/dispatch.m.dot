@@ -178,11 +178,11 @@ digraph cfg {
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" ;
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch) \n   PRUNE((n$0 == null), true); [line 87, column 7]\n " shape="invhouse"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == null), true); [line 87, column 7]\n " shape="invhouse"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch) \n   PRUNE(!(n$0 == null), false); [line 87, column 7]\n " shape="invhouse"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == null), false); [line 87, column 7]\n " shape="invhouse"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" ;

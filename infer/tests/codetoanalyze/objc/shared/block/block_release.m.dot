@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: Prune (true branch) \n   n$1=*&context:CGContext* [line 30, column 7]\n  PRUNE(n$1, true); [line 30, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: Prune (true branch, if) \n   n$1=*&context:CGContext* [line 30, column 7]\n  PRUNE(n$1, true); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (false branch) \n   n$1=*&context:CGContext* [line 30, column 7]\n  PRUNE(!n$1, false); [line 30, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (false branch, if) \n   n$1=*&context:CGContext* [line 30, column 7]\n  PRUNE(!n$1, false); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
@@ -64,11 +64,11 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_4" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_2" ;
-"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" [label="5: Prune (true branch) \n   n$6=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(n$6, true); [line 26, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" [label="5: Prune (true branch, if) \n   n$6=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(n$6, true); [line 26, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_7" ;
-"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" [label="6: Prune (false branch) \n   n$6=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(!n$6, false); [line 26, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" [label="6: Prune (false branch, if) \n   n$6=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(!n$6, false); [line 26, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_3" ;

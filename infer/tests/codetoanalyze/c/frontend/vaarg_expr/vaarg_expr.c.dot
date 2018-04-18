@@ -24,11 +24,11 @@ digraph cfg {
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" ;
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_6" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" [label="7: Prune (true branch) \n   PRUNE((n$1 == 9), true); [line 17, column 7]\n " shape="invhouse"]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" [label="7: Prune (true branch, if) \n   PRUNE((n$1 == 9), true); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_7" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_9" ;
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" [label="8: Prune (false branch) \n   PRUNE(!(n$1 == 9), false); [line 17, column 7]\n " shape="invhouse"]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$1 == 9), false); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_8" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_10" ;

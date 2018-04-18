@@ -305,6 +305,9 @@ val instr_get_loc : instr -> Location.t
 val instr_get_exps : instr -> Exp.t list
 (** get the expressions occurring in the instruction *)
 
+val if_kind_to_string : if_kind -> string
+(** Pretty print an if_kind *)
+
 val pp_instr : Pp.env -> F.formatter -> instr -> unit
 (** Pretty print an instruction. *)
 

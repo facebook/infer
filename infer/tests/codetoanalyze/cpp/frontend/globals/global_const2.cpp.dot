@@ -12,11 +12,11 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_8" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" [label="4: Prune (true branch) \n   PRUNE(1, true); [line 10, column 20]\n " shape="invhouse"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 10, column 20]\n " shape="invhouse"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_4" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" [label="5: Prune (false branch) \n   PRUNE(!1, false); [line 10, column 20]\n " shape="invhouse"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 10, column 20]\n " shape="invhouse"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" ;

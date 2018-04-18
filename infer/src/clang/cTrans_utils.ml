@@ -35,7 +35,7 @@ let extract_exp_from_list el warning_string =
 
 
 module Nodes = struct
-  let prune_kind b = Procdesc.Node.Prune_node (b, Sil.Ik_bexp, string_of_bool b ^ " Branch")
+  let prune_kind b if_kind = Procdesc.Node.Prune_node (b, if_kind, string_of_bool b ^ " Branch")
 
   let is_true_prune_node n =
     match Procdesc.Node.get_kind n with
@@ -50,14 +50,14 @@ module Nodes = struct
     Procdesc.create_node procdesc loc node_kind instrs
 
 
-  let create_prune_node ~branch ~negate_cond e_cond instrs_cond loc ik context =
+  let create_prune_node ~branch ~negate_cond e_cond instrs_cond loc if_kind context =
     let e_cond', _ =
       extract_exp_from_list e_cond
         "@\nWARNING: Missing expression for Conditional operator. Need to be fixed"
     in
     let e_cond'' = if negate_cond then Exp.UnOp (Unop.LNot, e_cond', None) else e_cond' in
-    let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond'', loc, branch, ik)] in
-    create_node (prune_kind branch) instrs_cond' loc context
+    let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond'', loc, branch, if_kind)] in
+    create_node (prune_kind branch if_kind) instrs_cond' loc context
 
 
   (** Check if this binary opertor requires the creation of a node in the cfg. *)
@@ -504,8 +504,9 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
 
 
 let trans_assume_false sil_loc (context: CContext.t) succ_nodes =
-  let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, Sil.Ik_land_lor)] in
-  let prune_node = Nodes.create_node (Nodes.prune_kind true) instrs_cond sil_loc context in
+  let if_kind = Sil.Ik_land_lor in
+  let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, if_kind)] in
+  let prune_node = Nodes.create_node (Nodes.prune_kind true if_kind) instrs_cond sil_loc context in
   Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [] ;
   {empty_res_trans with root_nodes= [prune_node]; leaf_nodes= [prune_node]}
 

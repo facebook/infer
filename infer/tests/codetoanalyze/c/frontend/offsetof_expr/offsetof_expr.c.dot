@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" ;
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_5" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" [label="6: Prune (true branch) \n   PRUNE((n$0 == 9), true); [line 20, column 7]\n " shape="invhouse"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 9), true); [line 20, column 7]\n " shape="invhouse"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_6" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_8" ;
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" [label="7: Prune (false branch) \n   PRUNE(!(n$0 == 9), false); [line 20, column 7]\n " shape="invhouse"]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 9), false); [line 20, column 7]\n " shape="invhouse"]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_7" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_9" ;

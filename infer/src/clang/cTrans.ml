@@ -1506,7 +1506,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let continuation' = mk_cond_continuation trans_state.continuation in
         let trans_state' = {trans_state with continuation= continuation'; succ_nodes= []} in
         let res_trans_cond =
-          exec_with_priority_exception trans_state' cond (cond_trans ~negate_cond:false)
+          exec_with_priority_exception trans_state' cond
+            (cond_trans ~if_kind:Sil.Ik_bexp ~negate_cond:false)
         in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
         do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar ;
@@ -1557,12 +1558,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
   (* The invariant is that the translation of a condition always contains (at least) *)
   (* the prune nodes. Moreover these are always the leaf nodes of the translation. *)
-  and cond_trans ~negate_cond trans_state cond =
+  and cond_trans ~if_kind ~negate_cond trans_state cond =
     let context = trans_state.context in
     let si, _ = Clang_ast_proj.get_stmt_tuple cond in
     let sil_loc = CLocation.get_sil_location si context in
     let mk_prune_node ~branch ~negate_cond e ins =
-      create_prune_node ~branch ~negate_cond e ins sil_loc Sil.Ik_if context
+      create_prune_node ~branch ~negate_cond e ins sil_loc if_kind context
     in
     let extract_exp el =
       extract_exp_from_list el
@@ -1615,11 +1616,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* translation of s2 (i.e., the case when we need to fully evaluate*)
     (* the condition to decide its truth value). *)
     let short_circuit binop s1 s2 =
-      let res_trans_s1 = cond_trans ~negate_cond trans_state s1 in
+      let res_trans_s1 = cond_trans ~if_kind ~negate_cond trans_state s1 in
       let prune_nodes_t, prune_nodes_f =
         List.partition_tf ~f:is_true_prune_node res_trans_s1.leaf_nodes
       in
-      let res_trans_s2 = cond_trans ~negate_cond trans_state s2 in
+      let res_trans_s2 = cond_trans ~if_kind ~negate_cond trans_state s2 in
       (* prune_to_s2 is the prune node that is connected with the root node of the *)
       (* translation of s2.*)
       (* prune_to_short_c is the prune node that is connected directly with the branch *)
@@ -1665,9 +1666,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           no_short_circuit_cond ~is_cmp:false )
     | ParenExpr (_, [s], _) ->
         (* condition can be wrapped in parenthesys *)
-        cond_trans ~negate_cond trans_state s
+        cond_trans ~if_kind ~negate_cond trans_state s
     | UnaryOperator (_, [s], _, {uoi_kind= `LNot}) ->
-        cond_trans ~negate_cond:(not negate_cond) trans_state s
+        cond_trans ~if_kind ~negate_cond:(not negate_cond) trans_state s
     | _ ->
         no_short_circuit_cond ~is_cmp:false
 
@@ -1710,7 +1711,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* set the flat to inform that we are translating a condition of a if *)
         let continuation' = mk_cond_continuation trans_state.continuation in
         let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
-        let res_trans_cond = cond_trans ~negate_cond:false trans_state'' cond in
+        let res_trans_cond = cond_trans ~if_kind:Sil.Ik_if ~negate_cond:false trans_state'' cond in
         let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
         do_branch true stmt1 res_trans_cond.leaf_nodes ;
@@ -1923,7 +1924,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let cond_stmt = Loops.get_cond loop_kind in
     let trans_state_cond = {trans_state with continuation= continuation_cond; succ_nodes= []} in
-    let res_trans_cond = cond_trans ~negate_cond:false trans_state_cond cond_stmt in
+    let if_kind =
+      match loop_kind with
+      | Loops.For _ ->
+          Sil.Ik_for
+      | Loops.While _ ->
+          Sil.Ik_while
+      | Loops.DoWhile _ ->
+          Sil.Ik_dowhile
+    in
+    let res_trans_cond = cond_trans ~if_kind ~negate_cond:false trans_state_cond cond_stmt in
     let res_trans_decl =
       match loop_kind with
       | Loops.For {decl_stmt} | Loops.While {decl_stmt} ->
