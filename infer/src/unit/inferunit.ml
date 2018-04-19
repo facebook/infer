@@ -35,6 +35,7 @@ let () =
         ; BoundedCallTreeTests.tests
         ; DifferentialTests.tests
         ; DifferentialFiltersTests.tests
+        ; FileDiffTests.tests
         ; JavaProfilerSamplesTest.tests
         ; ProcCfgTests.tests
         ; LivenessTests.tests
