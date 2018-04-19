@@ -153,7 +153,7 @@ module AttributeMapDomain : sig
 end
 
 (** Data shared among a set of accesses: current thread, lock(s) held, ownership precondition *)
-module AccessData : sig
+module AccessSnapshot : sig
   (** Precondition for owned access; access is owned if it evaluates to ture *)
   module Precondition : sig
     type t =
@@ -183,13 +183,13 @@ end
 (** map of access metadata |-> set of accesses. the map should hold all accesses to a
     possibly-unowned access path *)
 module AccessDomain : sig
-  include module type of AbstractDomain.Map (AccessData) (PathDomain)
+  include module type of AbstractDomain.Map (AccessSnapshot) (PathDomain)
 
-  val add_access : AccessData.t -> TraceElem.t -> astate -> astate
+  val add_access : AccessSnapshot.t -> TraceElem.t -> astate -> astate
   (** add the given (access, precondition) pair to the map *)
 
-  val get_accesses : AccessData.t -> astate -> PathDomain.astate
-  (** get all accesses with the given precondition *)
+  val get_accesses : AccessSnapshot.t -> astate -> PathDomain.astate
+  (** get all accesses with the given snapshot *)
 end
 
 module StabilityDomain : sig

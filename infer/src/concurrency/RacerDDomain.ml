@@ -393,7 +393,7 @@ module AttributeMapDomain = struct
     add access_path attribute_set t
 end
 
-module AccessData = struct
+module AccessSnapshot = struct
   module Precondition = struct
     type t = Conjunction of IntSet.t | False [@@deriving compare]
 
@@ -429,7 +429,7 @@ module AccessData = struct
 end
 
 module AccessDomain = struct
-  include AbstractDomain.Map (AccessData) (PathDomain)
+  include AbstractDomain.Map (AccessSnapshot) (PathDomain)
 
   let add_access precondition access_path t =
     let precondition_accesses =

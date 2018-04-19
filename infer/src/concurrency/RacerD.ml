@@ -134,7 +134,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       && not (is_receiver_safe actuals)
     then
       let open Domain in
-      let pre = AccessData.make locks threads False proc_data.pdesc in
+      let pre = AccessSnapshot.make locks threads False proc_data.pdesc in
       AccessDomain.add_access pre (TraceElem.make_unannotated_call_access pname loc) attribute_map
     else attribute_map
 
@@ -169,14 +169,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match OwnershipDomain.get_owned prefix_path ownership with
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
                 let pre =
-                  AccessData.make locks threads
-                    (AccessData.Precondition.Conjunction formal_indexes) proc_data.pdesc
+                  AccessSnapshot.make locks threads
+                    (AccessSnapshot.Precondition.Conjunction formal_indexes) proc_data.pdesc
                 in
                 add_field_access pre
             | OwnershipAbstractValue.Owned ->
                 add_field_accesses prefix_path' access_acc access_list
             | OwnershipAbstractValue.Unowned ->
-                let pre = AccessData.make locks threads False proc_data.pdesc in
+                let pre = AccessSnapshot.make locks threads False proc_data.pdesc in
                 add_field_access pre
     in
     List.fold
@@ -226,8 +226,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
         let pre =
-          AccessData.make astate.locks astate.threads
-            (AccessData.Precondition.Conjunction (IntSet.singleton 0)) caller_pdesc
+          AccessSnapshot.make astate.locks astate.threads
+            (AccessSnapshot.Precondition.Conjunction (IntSet.singleton 0)) caller_pdesc
         in
         AccessDomain.add_access pre container_access AccessDomain.empty
     in
@@ -328,7 +328,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       AccessDomain.add pre combined_accesses caller_accesses
     in
-    let conjoin_ownership_pre actual_exp actual_indexes : AccessData.Precondition.t =
+    let conjoin_ownership_pre actual_exp actual_indexes : AccessSnapshot.Precondition.t =
       match actual_exp with
       | HilExp.Constant _ ->
           (* the actual is a constant, so it's owned in the caller. *)
@@ -360,7 +360,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* couldn't find access path, don't know if it's owned. assume not *)
           False
     in
-    let update_ownership_pre actual_index (acc: AccessData.Precondition.t) =
+    let update_ownership_pre actual_index (acc: AccessSnapshot.Precondition.t) =
       match acc with
       | False ->
           (* precondition can't be satisfied *)
@@ -374,24 +374,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Typ.Procname.pp callee_pname (List.length actuals) ;
             acc
     in
-    let update_accesses (pre: AccessData.t) callee_accesses accesses_acc =
+    let update_accesses (pre: AccessSnapshot.t) callee_accesses accesses_acc =
       (* update precondition with caller ownership info *)
       let ownership_precondition' =
         match pre.ownership_precondition with
         | Conjunction indexes ->
-            let empty_pre = AccessData.Precondition.Conjunction IntSet.empty in
+            let empty_pre = AccessSnapshot.Precondition.Conjunction IntSet.empty in
             IntSet.fold update_ownership_pre indexes empty_pre
         | False ->
             pre.ownership_precondition
       in
-      if AccessData.Precondition.is_true ownership_precondition' then accesses_acc
+      if AccessSnapshot.Precondition.is_true ownership_precondition' then accesses_acc
       else
         let locks' = if pre.lock then LocksDomain.add_lock locks else locks in
         (* if the access occurred on a main thread in the callee, we should remember this when
            moving it to the callee. if we don't know what thread it ran on, use the caller's
            thread *)
         let threads' = if pre.thread then ThreadsDomain.AnyThreadButSelf else threads in
-        let pre' = AccessData.make locks' threads' ownership_precondition' pdesc in
+        let pre' = AccessSnapshot.make locks' threads' ownership_precondition' pdesc in
         update_caller_accesses pre' callee_accesses accesses_acc
     in
     AccessDomain.fold update_accesses accesses caller_astate.accesses
@@ -1125,7 +1125,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
 type reported_access =
   { access: RacerDDomain.TraceElem.t
   ; threads: RacerDDomain.ThreadsDomain.astate
-  ; precondition: RacerDDomain.AccessData.t
+  ; precondition: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
   ; procdesc: Procdesc.t
   ; wobbly_paths: RacerDDomain.StabilityDomain.astate }
@@ -1231,7 +1231,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
       match TraceElem.kind access with
       | Access.InterfaceCall unannoted_call_pname ->
           if
-            AccessData.is_unprotected precondition && ThreadsDomain.is_any threads
+            AccessSnapshot.is_unprotected precondition && ThreadsDomain.is_any threads
             && Models.is_marked_thread_safe procdesc tenv
           then (
             (* un-annotated interface call + no lock in method marked thread-safe. warn *)
@@ -1258,7 +1258,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                   accesses
             in
             if
-              AccessData.is_unprotected precondition
+              AccessSnapshot.is_unprotected precondition
               && (not (List.is_empty writes_on_background_thread) || ThreadsDomain.is_any threads)
             then (
               let conflict = List.hd writes_on_background_thread in
@@ -1271,11 +1271,11 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
             (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
             reported_acc )
-      | (Access.Read _ | ContainerRead _) when AccessData.is_unprotected precondition ->
+      | (Access.Read _ | ContainerRead _) when AccessSnapshot.is_unprotected precondition ->
           (* unprotected read. report all writes as conflicts for java. for c++ filter out
              unprotected writes *)
           let is_cpp_protected_write pre =
-            Typ.Procname.is_java pname || not (AccessData.is_unprotected pre)
+            Typ.Procname.is_java pname || not (AccessSnapshot.is_unprotected pre)
           in
           let is_conflict other_access pre other_thread =
             TraceElem.is_write other_access
@@ -1299,7 +1299,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           else reported_acc
       | Access.Read _ | ContainerRead _ ->
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
-          let can_conflict (pre1: AccessData.t) (pre2: AccessData.t) =
+          let can_conflict (pre1: AccessSnapshot.t) (pre2: AccessSnapshot.t) =
             if pre1.lock && pre2.lock then false
             else if pre1.thread && pre2.thread then false
             else true
@@ -1310,7 +1310,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                 (fun { access= other_access
                      ; precondition= other_precondition
                      ; threads= other_threads } ->
-                if AccessData.is_unprotected other_precondition then
+                if AccessSnapshot.is_unprotected other_precondition then
                   TraceElem.is_write other_access && ThreadsDomain.is_any other_threads
                 else
                   TraceElem.is_write other_access && can_conflict precondition other_precondition
