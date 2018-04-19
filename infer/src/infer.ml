@@ -130,7 +130,9 @@ let () =
             F.fprintf fmt "of cluster %s" (Filename.basename cluster)
       in
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
-      Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
+      run Driver.Analyze
+  | Capture | Compile | Run ->
+      run (Lazy.force Driver.mode_from_command_line)
   | Report ->
       InferPrint.main ~report_json:None
   | ReportDiff ->
@@ -143,8 +145,6 @@ let () =
           () ) ;
       ReportDiff.reportdiff ~current_report:Config.report_current
         ~previous_report:Config.report_previous
-  | Capture | Compile | Run ->
-      run (Lazy.force Driver.mode_from_command_line)
   | Diff ->
       Diff.diff (Lazy.force Driver.mode_from_command_line)
   | Explore when Config.procedures ->

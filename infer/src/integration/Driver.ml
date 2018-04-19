@@ -543,14 +543,15 @@ let run_prologue mode =
     L.environment_info "%a@\n" Config.pp_version () ;
     PerfStats.register_report_at_exit PerfStats.Driver ) ;
   if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
-  if Config.dump_duplicate_symbols then reset_duplicates_file () ;
-  (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
+  if CLOpt.is_originator then (
+    if Config.dump_duplicate_symbols then reset_duplicates_file () ;
+    (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
-  Unix.unsetenv "MAKEFLAGS" ;
-  (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
-  Unix.putenv ~key:"NO_BUCKD" ~data:"1" ;
+    Unix.unsetenv "MAKEFLAGS" ;
+    (* disable the Buck daemon as changes in the Buck or infer config may be missed otherwise *)
+    Unix.putenv ~key:"NO_BUCKD" ~data:"1" ) ;
   ()
 
 
@@ -560,7 +561,8 @@ let run_epilogue mode =
     if Config.developer_mode then StatsAggregator.generate_files () ;
     if Config.equal_analyzer Config.analyzer Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode ;
-    if Config.fail_on_bug then fail_on_issue_epilogue () ) ;
+    if Config.fail_on_bug then fail_on_issue_epilogue () ;
+    () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
   ()
 
