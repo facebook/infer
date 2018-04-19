@@ -18,6 +18,8 @@ module LockIdentity : PrettyPrintable.PrintableOrderedType with type t = AccessP
 module LockEvent : sig
   type event_t = private LockAcquire of LockIdentity.t | MayBlock of string
 
+  val pp_event : F.formatter -> event_t -> unit
+
   type t = private {event: event_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
@@ -56,9 +58,11 @@ end
 
 include AbstractDomain.WithBottom
 
-val acquire : LockIdentity.t -> astate -> Location.t -> astate
+val acquire : astate -> Location.t -> LockIdentity.t -> astate
 
-val release : LockIdentity.t -> astate -> astate
+val release : astate -> LockIdentity.t -> astate
+
+val blocking_call : Typ.Procname.t -> Location.t -> astate -> astate
 
 val set_on_main_thread : astate -> astate
 
@@ -68,5 +72,4 @@ val pp_summary : F.formatter -> summary -> unit
 
 val to_summary : astate -> summary
 
-val integrate_summary :
-  caller_state:astate -> callee_summary:summary -> Typ.Procname.t -> Location.t -> astate
+val integrate_summary : astate -> Typ.Procname.t -> Location.t -> summary -> astate

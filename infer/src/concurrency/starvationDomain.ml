@@ -103,7 +103,12 @@ module LockEvent = struct
 
   let make_acquire lock loc = {event= LockAcquire lock; loc; trace= []}
 
-  let _make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
+  let make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
+
+  let make_blocking_call pname loc =
+    let descr = F.asprintf "Calls %a" Typ.Procname.pp pname in
+    make_blocks descr loc
+
 
   let make_loc_trace ?(reverse= false) e =
     let call_trace, nesting =
@@ -236,16 +241,22 @@ let add_order_pairs ls lock_event acc =
     LockState.fold_over_events add_first_and_eventually ls acc |> add_eventually
 
 
-let acquire lockid ((ls, lo), main) loc =
+let acquire ((ls, lo), main) loc lockid =
   let newlock_event = LockEvent.make_acquire lockid loc in
   let lo' = add_order_pairs ls newlock_event lo in
   let ls' = LockState.acquire lockid newlock_event ls in
   ((ls', lo'), main)
 
 
-let release lockid ((ls, lo), main) = ((LockState.release lockid ls, lo), main)
+let blocking_call pname loc ((ls, lo), main) =
+  let newlock_event = LockEvent.make_blocking_call pname loc in
+  let lo' = add_order_pairs ls newlock_event lo in
+  ((ls, lo'), main)
 
-let integrate_summary ~caller_state:((ls, lo), main) ~callee_summary callee_pname loc =
+
+let release ((ls, lo), main) lockid = ((LockState.release lockid ls, lo), main)
+
+let integrate_summary ((ls, lo), main) callee_pname loc callee_summary =
   let callee_lo, callee_main = callee_summary in
   (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
      l is held locally *)

@@ -10,12 +10,28 @@ open! IStd
 module F = Format
 module L = Logging
 
-let debug fmt = F.kasprintf L.d_strln fmt
+let debug fmt = L.(debug Analysis Verbose fmt)
 
 let is_java_static pname =
   match pname with
   | Typ.Procname.Java java_pname ->
       Typ.Procname.Java.is_static java_pname
+  | _ ->
+      false
+
+
+(* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+   is int-zero then a reply is expected and returned from the remote process, thus potentially
+   blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block.
+*)
+let is_two_way_binder_transact tenv actuals pn =
+  match pn with
+  | Typ.Procname.Java java_pname ->
+      let classname = Typ.Procname.Java.get_class_type_name java_pname in
+      let mthd = Typ.Procname.Java.get_method java_pname in
+      String.equal mthd "transact"
+      && PatternMatch.is_subtype_of_str tenv classname "android.os.IBinder"
+      && List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
   | _ ->
       false
 
@@ -50,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc; extras} _ (instr: HilInstr.t) =
+  let exec_instr (astate: Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr: HilInstr.t) =
     let open RacerDConfig in
     let is_formal base = FormalMap.is_formal base extras in
     let get_path actuals =
@@ -73,20 +89,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, actuals, _, loc) -> (
       match Models.get_lock callee_pname actuals with
       | Lock ->
-          get_path actuals
-          |> Option.value_map ~default:astate ~f:(fun path -> Domain.acquire path astate loc)
+          get_path actuals |> Option.value_map ~default:astate ~f:(Domain.acquire astate loc)
       | Unlock ->
-          get_path actuals
-          |> Option.value_map ~default:astate ~f:(fun path -> Domain.release path astate)
+          get_path actuals |> Option.value_map ~default:astate ~f:(Domain.release astate)
       | LockedIfTrue ->
           astate
       | NoEffect ->
-          if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
+          if is_two_way_binder_transact tenv actuals callee_pname then
+            Domain.blocking_call callee_pname loc astate
+          else if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
           else
             Summary.read_summary pdesc callee_pname
-            |> Option.value_map ~default:astate ~f:(fun callee_summary ->
-                   Domain.integrate_summary ~caller_state:astate ~callee_summary callee_pname loc
-               ) )
+            |> Option.value_map ~default:astate
+                 ~f:(Domain.integrate_summary astate callee_pname loc) )
     | _ ->
         astate
 
@@ -104,14 +119,6 @@ let should_skip_during_deadlock_reporting _ _ = false
 
 (* currently short-circuited until non-determinism in reporting is dealt with *)
 (* Typ.Name.compare current_class eventually_class < 0 *)
-
-let get_class_of_pname = function
-  | Typ.Procname.Java java_pname ->
-      Some (Typ.Procname.Java.get_class_type_name java_pname)
-  | _ ->
-      None
-
-
 (* let false_if_none a ~f = Option.value_map a ~default:false ~f *)
 (* if same class, report only if the locks order in one of the possible ways *)
 let should_report_if_same_class _ = true
@@ -145,6 +152,13 @@ let make_loc_trace pname trace_id start_loc elem =
 let get_summary caller_pdesc callee_pdesc =
   Summary.read_summary caller_pdesc (Procdesc.get_proc_name callee_pdesc)
   |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
+
+
+let get_class_of_pname = function
+  | Typ.Procname.Java java_pname ->
+      Some (Typ.Procname.Java.get_class_type_name java_pname)
+  | _ ->
+      None
 
 
 let report_deadlocks get_proc_desc tenv pdesc (summary, _) =
@@ -203,6 +217,29 @@ let report_deadlocks get_proc_desc tenv pdesc (summary, _) =
   |> Option.iter ~f:(fun curr_class -> LockOrderDomain.iter (report_pair curr_class) summary)
 
 
+let report_direct_blocks_on_main_thread proc_desc summary =
+  let open StarvationDomain in
+  let report_pair ({LockOrder.eventually} as elem) =
+    match eventually with
+    | {LockEvent.event= LockEvent.MayBlock _} ->
+        let caller_loc = Procdesc.get_loc proc_desc in
+        let caller_pname = Procdesc.get_proc_name proc_desc in
+        let error_message =
+          Format.asprintf "May block while on main thread. Eventually: %a" LockEvent.pp_event
+            eventually.LockEvent.event
+        in
+        let exn =
+          Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
+        in
+        let ltr = make_trace_with_header elem caller_loc caller_pname in
+        Specs.get_summary caller_pname
+        |> Option.iter ~f:(fun summary -> Reporting.log_error summary ~loc:caller_loc ~ltr exn)
+    | _ ->
+        ()
+  in
+  LockOrderDomain.iter report_pair summary
+
+
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
@@ -218,8 +255,13 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           |> Option.map ~f:(fun tn -> Typ.Name.name tn |> Ident.string_to_name |> lock_of_class)
         else FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
       in
-      Option.value_map lock ~default:StarvationDomain.empty ~f:(fun path ->
-          StarvationDomain.acquire path StarvationDomain.empty loc )
+      Option.value_map lock ~default:StarvationDomain.empty
+        ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
+  in
+  let initial =
+    if RacerDConfig.Models.runs_on_ui_thread proc_desc then
+      StarvationDomain.set_on_main_thread initial
+    else initial
   in
   match Analyzer.compute_post proc_data ~initial with
   | None ->
@@ -229,4 +271,6 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
       let updated_summary = Summary.update_summary lock_order summary in
       Option.iter updated_summary.Specs.payload.starvation
         ~f:(report_deadlocks get_proc_desc tenv proc_desc) ;
+      Option.iter updated_summary.Specs.payload.starvation ~f:(fun (sum, main) ->
+          if main then report_direct_blocks_on_main_thread proc_desc sum ) ;
       updated_summary

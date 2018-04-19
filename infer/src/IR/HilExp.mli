@@ -40,4 +40,6 @@ val get_access_exprs : t -> AccessExpression.t list
 
 val is_null_literal : t -> bool
 
+val is_int_zero : t -> bool
+
 val eval : t -> Const.t option
