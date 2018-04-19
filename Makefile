@@ -544,7 +544,6 @@ ifdef DESTDIR
 ifeq (,$(findstring :/,:$(DESTDIR)))
 #	DESTDIR is set and relative
 	$(MAKE) -C facebook install 'DESTDIR=../$(DESTDIR)'
-endif
 else
 #	DESTDIR is set and absolute
 	$(MAKE) -C facebook install
@@ -552,6 +551,7 @@ endif
 else
 #	DESTDIR not set
 	$(MAKE) -C facebook install
+endif
 endif
 
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
