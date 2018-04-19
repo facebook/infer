@@ -235,11 +235,21 @@ module ThreadsDomain = struct
           "AnyThread" )
 
 
+  (* at least one access is known to occur on a background thread *)
+  let can_conflict astate1 astate2 =
+    match join astate1 astate2 with AnyThread -> true | NoThread | AnyThreadButSelf -> false
+
+
   let is_empty = function NoThread -> true | _ -> false
 
   let is_any_but_self = function AnyThreadButSelf -> true | _ -> false
 
   let is_any = function AnyThread -> true | _ -> false
+
+  let integrate_summary ~caller_astate ~callee_astate =
+    (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep 
+       the caller's thread context *)
+    match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
 end
 
 module PathDomain = SinkTrace.Make (TraceElem)
@@ -409,23 +419,26 @@ module AccessSnapshot = struct
           F.fprintf fmt "False"
   end
 
-  type t = {thread: bool; lock: bool; ownership_precondition: Precondition.t} [@@deriving compare]
+  type t =
+    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: Precondition.t}
+    [@@deriving compare]
 
-  let make lock threads ownership_precondition pdesc =
+  let make lock thread ownership_precondition pdesc =
     (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
        such accesses *)
     assert (not (Precondition.is_true ownership_precondition)) ;
-    let thread = ThreadsDomain.is_any_but_self threads in
     let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
     {thread; lock; ownership_precondition}
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
-    not thread && not lock && not (Precondition.is_true ownership_precondition)
+    not (ThreadsDomain.is_any_but_self thread) && not lock
+    && not (Precondition.is_true ownership_precondition)
 
 
   let pp fmt {thread; lock; ownership_precondition} =
-    F.fprintf fmt "Thread: %b Lock: %b Pre: %a" thread lock Precondition.pp ownership_precondition
+    F.fprintf fmt "Thread: %a Lock: %b Pre: %a" ThreadsDomain.pp thread lock Precondition.pp
+      ownership_precondition
 end
 
 module AccessDomain = struct

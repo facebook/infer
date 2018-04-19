@@ -390,7 +390,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* if the access occurred on a main thread in the callee, we should remember this when
            moving it to the callee. if we don't know what thread it ran on, use the caller's
            thread *)
-        let threads' = if pre.thread then ThreadsDomain.AnyThreadButSelf else threads in
+        let threads' =
+          ThreadsDomain.integrate_summary ~callee_astate:pre.thread ~caller_astate:threads
+        in
         let pre' = AccessSnapshot.make locks' threads' ownership_precondition' pdesc in
         update_caller_accesses pre' callee_accesses accesses_acc
     in
@@ -516,15 +518,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       LocksDomain.integrate_summary ~caller_astate:astate.locks
                         ~callee_astate:locks
                     in
-                    let threads =
-                      (* if we know the callee runs on the main thread, assume the caller does too.
-                         otherwise, keep the caller's thread context *)
-                      match threads with
-                      | ThreadsDomain.AnyThreadButSelf ->
-                          threads
-                      | _ ->
-                          astate.threads
-                    in
                     let accesses =
                       add_callee_accesses astate accesses locks threads actuals callee_pname pdesc
                         loc
@@ -539,6 +532,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         callee_pdesc
                     in
                     let wobbly_paths = StabilityDomain.join wobbly_paths callee_wps_rebased in
+                    let threads =
+                      ThreadsDomain.integrate_summary ~caller_astate:astate.threads
+                        ~callee_astate:threads
+                    in
                     {locks; threads; accesses; ownership; attribute_map; wobbly_paths}
                 | None ->
                     let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
@@ -1301,8 +1298,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
           let can_conflict (pre1: AccessSnapshot.t) (pre2: AccessSnapshot.t) =
             if pre1.lock && pre2.lock then false
-            else if pre1.thread && pre2.thread then false
-            else true
+            else ThreadsDomain.can_conflict pre1.thread pre2.thread
           in
           let conflicting_writes =
             List.filter

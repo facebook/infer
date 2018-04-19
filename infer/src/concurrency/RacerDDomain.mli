@@ -86,7 +86,15 @@ module ThreadsDomain : sig
 
   include AbstractDomain.WithBottom with type astate := astate
 
+  val can_conflict : astate -> astate -> bool
+  (** return true if two accesses with these thread values can run concurrently *)
+
   val is_any : astate -> bool
+
+  val is_any_but_self : astate -> bool
+
+  val integrate_summary : caller_astate:astate -> callee_astate:astate -> astate
+  (** integrate current state with a callee summary *)
 end
 
 module PathDomain : module type of SinkTrace.Make (TraceElem)
@@ -169,8 +177,9 @@ module AccessSnapshot : sig
     val pp : F.formatter -> t -> unit  [@@warning "-32"]
   end
 
-  type t = private {thread: bool; lock: bool; ownership_precondition: Precondition.t}
-  [@@deriving compare]
+  type t = private
+    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: Precondition.t}
+    [@@deriving compare]
 
   val make : LocksDomain.astate -> ThreadsDomain.astate -> Precondition.t -> Procdesc.t -> t
 
