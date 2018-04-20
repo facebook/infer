@@ -20,32 +20,6 @@ let is_java_static pname =
       false
 
 
-let is_countdownlatch_await pn =
-  match pn with
-  | Typ.Procname.Java java_pname ->
-      let classname = Typ.Procname.Java.get_class_name java_pname in
-      let mthd = Typ.Procname.Java.get_method java_pname in
-      String.equal classname "java.util.concurrent.CountDownLatch" && String.equal mthd "await"
-  | _ ->
-      false
-
-
-(* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
-   is int-zero then a reply is expected and returned from the remote process, thus potentially
-   blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block.
-*)
-let is_two_way_binder_transact tenv actuals pn =
-  match pn with
-  | Typ.Procname.Java java_pname ->
-      let classname = Typ.Procname.Java.get_class_type_name java_pname in
-      let mthd = Typ.Procname.Java.get_method java_pname in
-      String.equal mthd "transact"
-      && PatternMatch.is_subtype_of_str tenv classname "android.os.IBinder"
-      && List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
-  | _ ->
-      false
-
-
 let is_on_main_thread pn =
   RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
 
@@ -106,8 +80,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
       | NoEffect ->
           if
-            is_countdownlatch_await callee_pname
-            || is_two_way_binder_transact tenv actuals callee_pname
+            Models.is_countdownlatch_await callee_pname
+            || Models.is_two_way_binder_transact tenv actuals callee_pname
+            || Models.is_blocking_java_io tenv callee_pname
           then Domain.blocking_call callee_pname loc astate
           else if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
           else

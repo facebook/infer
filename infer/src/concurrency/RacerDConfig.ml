@@ -540,4 +540,42 @@ module Models = struct
              false )
        && Procdesc.get_access proc_desc <> PredSymb.Private
        && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
+
+
+  let is_blocking_java_io tenv pn =
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let classname = Typ.Procname.Java.get_class_type_name java_pname in
+        let mthd = Typ.Procname.Java.get_method java_pname in
+        let is_reader_or_inputstream =
+          let targets_str = ["java.io.Reader"; "java.io.InputStream"] in
+          let targets = List.map targets_str ~f:Typ.Name.Java.from_string in
+          fun tname _ -> List.mem targets tname ~equal:Typ.Name.equal
+        in
+        String.is_prefix mthd ~prefix:"read"
+        && PatternMatch.supertype_exists tenv is_reader_or_inputstream classname
+    | _ ->
+        false
+
+
+  let is_countdownlatch_await pn =
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let classname = Typ.Procname.Java.get_class_name java_pname in
+        let mthd = Typ.Procname.Java.get_method java_pname in
+        String.equal classname "java.util.concurrent.CountDownLatch" && String.equal mthd "await"
+    | _ ->
+        false
+
+
+  let is_two_way_binder_transact tenv actuals pn =
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let classname = Typ.Procname.Java.get_class_type_name java_pname in
+        let mthd = Typ.Procname.Java.get_method java_pname in
+        String.equal mthd "transact"
+        && PatternMatch.is_subtype_of_str tenv classname "android.os.IBinder"
+        && List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
+    | _ ->
+        false
 end
