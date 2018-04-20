@@ -2835,24 +2835,23 @@ let specs_library =
   match infer_cache with
   | Some cache_dir when use_jar_cache ->
       let add_spec_lib specs_library filename =
-        let basename = Filename.basename filename in
-        let key = basename ^ Utils.string_crc_hex32 filename in
-        let key_dir = cache_dir ^/ key in
+        let key_dir =
+          let basename = Filename.basename filename in
+          let key = basename ^ Utils.string_crc_hex32 filename in
+          cache_dir ^/ key
+        in
         let extract_specs dest_dir filename =
-          if Filename.check_suffix filename ".jar" then
-            match Unix.mkdir dest_dir ~perm:0o700 with
-            | exception Unix.Unix_error _ ->
-                ()
-            | () ->
-                let zip_channel = Zip.open_in filename in
-                let entries = Zip.entries zip_channel in
-                let extract_entry (entry: Zip.entry) =
-                  let dest_file = dest_dir ^/ Filename.basename entry.filename in
-                  if Filename.check_suffix entry.filename specs_files_suffix then
-                    Zip.copy_entry_to_file zip_channel entry dest_file
-                in
-                List.iter ~f:extract_entry entries ;
-                Zip.close_in zip_channel
+          if Filename.check_suffix filename ".jar" then (
+            (try Unix.mkdir dest_dir ~perm:0o700 with Unix.Unix_error _ -> ()) ;
+            let zip_channel = Zip.open_in filename in
+            let entries = Zip.entries zip_channel in
+            let extract_entry (entry: Zip.entry) =
+              let dest_file = dest_dir ^/ Filename.basename entry.filename in
+              if Filename.check_suffix entry.filename specs_files_suffix then
+                Zip.copy_entry_to_file zip_channel entry dest_file
+            in
+            List.iter ~f:extract_entry entries ;
+            Zip.close_in zip_channel )
         in
         extract_specs key_dir filename ; key_dir :: specs_library
       in

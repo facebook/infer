@@ -31,8 +31,8 @@ let load_from_cache serializer zip_path cache_dir zip_library =
     DB.filename_from_string to_path
   in
   match deserialize (extract absolute_path) with
-  | Some data ->
-      Some data
+  | Some _ as data ->
+      data
   | None ->
       None
   | exception Caml.Not_found ->
@@ -69,26 +69,27 @@ let zip_libraries =
        {models; zip_filename; zip_channel= lazy (Zip.open_in zip_filename)}
      in
      let zip_libs =
-       if Config.use_jar_cache && Config.infer_cache <> None then []
+       if Config.use_jar_cache && Option.is_some Config.infer_cache then []
        else
-         (* Order matters, jar files should appear in the order in which they should be searched for
-           specs files. Config.specs_library is in reverse order of appearance on command line. *)
-         let add_zip zip_libs fname =
+         let load_zip fname =
            if Filename.check_suffix fname ".jar" then
              (* fname is a zip of specs *)
-             mk_zip_lib false fname :: zip_libs
+             Some (mk_zip_lib false fname)
            else (* fname is a dir of specs *)
-             zip_libs
+             None
          in
-         List.fold ~f:add_zip ~init:[] Config.specs_library
+         (* Order matters: jar files should appear in the order in which they should be searched for
+            specs files. [Config.specs_library] is in reverse order of appearance on the command
+            line. *)
+         List.rev_filter_map Config.specs_library ~f:load_zip
      in
      if Config.biabduction && not Config.models_mode && Sys.file_exists Config.models_jar = `Yes
      then mk_zip_lib true Config.models_jar :: zip_libs
      else zip_libs)
 
 
-(* Search path in the list of zip libraries and use a cache directory to save already
-   deserialized data *)
+(** Search path in the list of zip libraries and use a cache directory to save already deserialized
+    data *)
 let load serializer path =
   let rec loop = function
     | [] ->
