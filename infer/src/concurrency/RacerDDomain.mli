@@ -91,8 +91,6 @@ module ThreadsDomain : sig
 
   val is_any : astate -> bool
 
-  val is_any_but_self : astate -> bool
-
   val integrate_summary : caller_astate:astate -> callee_astate:astate -> astate
   (** integrate current state with a callee summary *)
 end
@@ -179,7 +177,7 @@ module AccessSnapshot : sig
 
   type t = private
     {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: Precondition.t}
-    [@@deriving compare]
+  [@@deriving compare]
 
   val make : LocksDomain.astate -> ThreadsDomain.astate -> Precondition.t -> Procdesc.t -> t
 
