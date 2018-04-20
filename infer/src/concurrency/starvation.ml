@@ -20,6 +20,16 @@ let is_java_static pname =
       false
 
 
+let is_countdownlatch_await pn =
+  match pn with
+  | Typ.Procname.Java java_pname ->
+      let classname = Typ.Procname.Java.get_class_name java_pname in
+      let mthd = Typ.Procname.Java.get_method java_pname in
+      String.equal classname "java.util.concurrent.CountDownLatch" && String.equal mthd "await"
+  | _ ->
+      false
+
+
 (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
    is int-zero then a reply is expected and returned from the remote process, thus potentially
    blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block.
@@ -95,8 +105,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | LockedIfTrue ->
           astate
       | NoEffect ->
-          if is_two_way_binder_transact tenv actuals callee_pname then
-            Domain.blocking_call callee_pname loc astate
+          if
+            is_countdownlatch_await callee_pname
+            || is_two_way_binder_transact tenv actuals callee_pname
+          then Domain.blocking_call callee_pname loc astate
           else if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
           else
             Summary.read_summary pdesc callee_pname

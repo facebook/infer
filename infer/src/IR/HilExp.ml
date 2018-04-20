@@ -203,7 +203,7 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
 
 let is_null_literal = function Constant (Cint n) -> IntLit.isnull n | _ -> false
 
-let is_int_zero = function Constant Const.Cint i -> IntLit.iszero i | _ -> false
+let is_int_zero = function Constant (Const.Cint i) -> IntLit.iszero i | _ -> false
 
 let rec eval_arithmetic_binop op e1 e2 =
   match (eval e1, eval e2) with
