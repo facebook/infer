@@ -73,51 +73,51 @@ module SourceKind = struct
         external_sources
     in
     match pname with
-    | Typ.Procname.Java pname -> (
-      match (Typ.Procname.Java.get_class_name pname, Typ.Procname.Java.get_method pname) with
-      | "android.content.Intent", "<init>" when actual_has_type 2 "android.net.Uri" actuals tenv ->
-          (* taint the [this] parameter passed to the constructor *)
-          Some (IntentFromURI, Some 0)
-      | ( "android.content.Intent"
-        , ( "parseUri"
-          | "setData"
-          | "setDataAndNormalize"
-          | "setDataAndType"
-          | "setDataAndTypeAndNormalize" ) ) ->
-          Some (IntentFromURI, return)
-      | ( "android.location.Location"
-        , ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ) ->
-          Some (PrivateData, return)
-      | ( "android.telephony.TelephonyManager"
-        , ( "getDeviceId"
-          | "getLine1Number"
-          | "getSimSerialNumber"
-          | "getSubscriberId"
-          | "getVoiceMailNumber" ) ) ->
-          Some (PrivateData, return)
-      | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
-          Some (Other, return)
-      | class_name, method_name ->
-          let taint_matching_supertype typename =
-            match (Typ.Name.name typename, method_name) with
-            | "android.app.Activity", "getIntent" ->
-                Some (Intent, return)
-            | "android.content.Intent", "getStringExtra" ->
-                Some (Intent, return)
-            | "android.content.SharedPreferences", "getString" ->
-                Some (PrivateData, return)
-            | ( ("android.content.ClipboardManager" | "android.text.ClipboardManager")
-              , ("getPrimaryClip" | "getText") ) ->
-                Some (UserControlledString, return)
-            | "android.webkit.WebResourceRequest", "getUrl" ->
-                Some (UserControlledURI, return)
-            | "android.widget.EditText", "getText" ->
-                Some (UserControlledString, return)
-            | class_name, method_name ->
-                get_external_source class_name method_name
-          in
-          PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-            (Typ.Name.Java.from_string class_name) )
+    | Typ.Procname.Java pname ->
+        let method_name = Typ.Procname.Java.get_method pname in
+        let taint_matching_supertype typename =
+          match (Typ.Name.name typename, method_name) with
+          | "android.app.Activity", "getIntent" ->
+              Some (Intent, return)
+          | "android.content.Intent", "<init>"
+            when actual_has_type 2 "android.net.Uri" actuals tenv ->
+              (* taint the [this] parameter passed to the constructor *)
+              Some (IntentFromURI, Some 0)
+          | ( "android.content.Intent"
+            , ( "parseUri"
+              | "setData"
+              | "setDataAndNormalize"
+              | "setDataAndType"
+              | "setDataAndTypeAndNormalize" ) ) ->
+              Some (IntentFromURI, return)
+          | "android.content.Intent", "getStringExtra" ->
+              Some (Intent, return)
+          | "android.content.SharedPreferences", "getString" ->
+              Some (PrivateData, return)
+          | ( ("android.content.ClipboardManager" | "android.text.ClipboardManager")
+            , ("getPrimaryClip" | "getText") ) ->
+              Some (UserControlledString, return)
+          | ( "android.location.Location"
+            , ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ) ->
+              Some (PrivateData, return)
+          | ( "android.telephony.TelephonyManager"
+            , ( "getDeviceId"
+              | "getLine1Number"
+              | "getSimSerialNumber"
+              | "getSubscriberId"
+              | "getVoiceMailNumber" ) ) ->
+              Some (PrivateData, return)
+          | "android.webkit.WebResourceRequest", "getUrl" ->
+              Some (UserControlledURI, return)
+          | "android.widget.EditText", "getText" ->
+              Some (UserControlledString, return)
+          | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
+              Some (Other, return)
+          | class_name, method_name ->
+              get_external_source class_name method_name
+        in
+        PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
+          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname))
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
       match (* accessed global will be passed to us as the only parameter *)
             actuals with
@@ -171,74 +171,68 @@ module SourceKind = struct
     in
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.Java java_pname -> (
-      match
-        (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-      with
-      | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
-          taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
-      | class_name, method_name ->
-          let taint_matching_supertype typename =
-            match (Typ.Name.name typename, method_name) with
-            | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
-                Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
-            | ( "android.app.Service"
-              , ( "onBind"
-                | "onRebind"
-                | "onStart"
-                | "onStartCommand"
-                | "onTaskRemoved"
-                | "onUnbind" ) ) ->
-                Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
-            | "android.content.BroadcastReceiver", "onReceive" ->
-                Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
-            | ( "android.content.ContentProvider"
-              , ( "bulkInsert"
-                | "call"
-                | "delete"
-                | "insert"
-                | "getType"
-                | "openAssetFile"
-                | "openFile"
-                | "openPipeHelper"
-                | "openTypedAssetFile"
-                | "query"
-                | "refresh"
-                | "update" ) ) ->
-                Some
-                  (taint_formals_with_types ["android.net.Uri"; "java.lang.String"]
-                     UserControlledURI formals)
-            | ( "android.webkit.WebViewClient"
-              , ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ) ->
-                Some
-                  (taint_formals_with_types
-                     ["android.webkit.WebResourceRequest"; "java.lang.String"] UserControlledURI
-                     formals)
-            | ( "android.webkit.WebChromeClient"
-              , ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ) ->
-                Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
+    | Typ.Procname.Java java_pname
+      -> (
+        let method_name = Typ.Procname.Java.get_method java_pname in
+        let taint_matching_supertype typename =
+          match (Typ.Name.name typename, method_name) with
+          | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
+              Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+          | ( "android.app.Service"
+            , ("onBind" | "onRebind" | "onStart" | "onStartCommand" | "onTaskRemoved" | "onUnbind")
+            ) ->
+              Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+          | "android.content.BroadcastReceiver", "onReceive" ->
+              Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+          | ( "android.content.ContentProvider"
+            , ( "bulkInsert"
+              | "call"
+              | "delete"
+              | "insert"
+              | "getType"
+              | "openAssetFile"
+              | "openFile"
+              | "openPipeHelper"
+              | "openTypedAssetFile"
+              | "query"
+              | "refresh"
+              | "update" ) ) ->
+              Some
+                (taint_formals_with_types ["android.net.Uri"; "java.lang.String"] UserControlledURI
+                   formals)
+          | ( "android.webkit.WebChromeClient"
+            , ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ) ->
+              Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
+          | ( "android.webkit.WebViewClient"
+            , ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ) ->
+              Some
+                (taint_formals_with_types ["android.webkit.WebResourceRequest"; "java.lang.String"]
+                   UserControlledURI formals)
+          | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
+              Some
+                (taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals)
+          | _ ->
+            match Tenv.lookup tenv typename with
+            | Some typ ->
+                if
+                  Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
+                  && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
+                then
+                  (* assume every non-this formal of a Thrift service is tainted *)
+                  (* TODO: may not want to taint numbers or Enum's *)
+                  Some (taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc)))
+                else None
             | _ ->
-              match Tenv.lookup tenv typename with
-              | Some typ ->
-                  if
-                    Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
-                    && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
-                  then
-                    (* assume every non-this formal of a Thrift service is tainted *)
-                    (* TODO: may not want to taint numbers or Enum's *)
-                    Some (taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc)))
-                  else None
-              | _ ->
-                  None
-          in
-          match
-            PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-              (Typ.Name.Java.from_string class_name)
-          with
-          | Some tainted_formals ->
-              tainted_formals
-          | None ->
-              Source.all_formals_untainted pdesc )
+                None
+        in
+        match
+          PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
+            (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
+        with
+        | Some tainted_formals ->
+            tainted_formals
+        | None ->
+            Source.all_formals_untainted pdesc )
     | procname ->
         L.(die InternalError)
           "Non-Java procedure %a where only Java procedures are expected" Typ.Procname.pp procname
@@ -314,8 +308,7 @@ module SinkKind = struct
 
   let get pname actuals _ tenv =
     match pname with
-    | Typ.Procname.Java java_pname
-      -> (
+    | Typ.Procname.Java java_pname ->
         (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter
            only if [taint_this] is true. *)
         let taint_all ?(taint_this= false) kind =
@@ -350,82 +343,79 @@ module SinkKind = struct
               else None )
             external_sinks
         in
-        match
-          (Typ.Procname.Java.get_class_name java_pname, Typ.Procname.Java.get_method java_pname)
-        with
-        | "android.text.Html", "fromHtml" ->
-            taint_nth 0 HTML
-        | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
-            taint_all Logging
-        | "java.io.File", "<init>"
-        | "java.nio.file.FileSystem", "getPath"
-        | "java.nio.file.Paths", "get" ->
-            taint_all CreateFile
-        | "java.io.ObjectInputStream", "<init>" ->
-            taint_all Deserialization
-        | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
-            taint_nth 0 Other
-        | "java.lang.ProcessBuilder", "<init>" ->
-            taint_all ShellExec
-        | "java.lang.ProcessBuilder", "command" ->
-            taint_all ShellExec
-        | class_name, method_name ->
-            let taint_matching_supertype typename =
-              match (Typ.Name.name typename, method_name) with
-              | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
-                  taint_nth 1 StartComponent
-              | "android.app.Activity", "startIntentSenderForResult" ->
-                  taint_nth 2 StartComponent
-              | "android.app.Activity", "startIntentSenderFromChild" ->
-                  taint_nth 3 StartComponent
-              | ( "android.content.Context"
-                , ( "bindService"
-                  | "sendBroadcast"
-                  | "sendBroadcastAsUser"
-                  | "sendOrderedBroadcast"
-                  | "sendOrderedBroadcastAsUser"
-                  | "sendStickyBroadcast"
-                  | "sendStickyBroadcastAsUser"
-                  | "sendStickyOrderedBroadcast"
-                  | "sendStickyOrderedBroadcastAsUser"
-                  | "startActivities"
-                  | "startActivity"
-                  | "startActivityForResult"
-                  | "startActivityIfNeeded"
-                  | "startNextMatchingActivity"
-                  | "startService"
-                  | "stopService" ) ) ->
-                  taint_nth 0 StartComponent
-              | "android.content.Context", "startIntentSender" ->
-                  taint_nth 1 StartComponent
-              | ( "android.content.Intent"
-                , ( "parseUri"
-                  | "getIntent"
-                  | "getIntentOld"
-                  | "setComponent"
-                  | "setData"
-                  | "setDataAndNormalize"
-                  | "setDataAndType"
-                  | "setDataAndTypeAndNormalize"
-                  | "setPackage" ) ) ->
-                  taint_nth 0 CreateIntent
-              | "android.content.Intent", "setClassName" ->
-                  taint_all CreateIntent
-              | ( "android.webkit.WebView"
-                , ( "evaluateJavascript"
-                  | "loadData"
-                  | "loadDataWithBaseURL"
-                  | "loadUrl"
-                  | "postUrl"
-                  | "postWebMessage" ) ) ->
-                  taint_all JavaScript
-              | "java.lang.Runtime", "exec" ->
-                  taint_nth 0 ShellExec
-              | class_name, method_name ->
-                  get_external_sink class_name method_name
-            in
-            PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
-              (Typ.Name.Java.from_string class_name) )
+        let method_name = Typ.Procname.Java.get_method java_pname in
+        let taint_matching_supertype typename =
+          match (Typ.Name.name typename, method_name) with
+          | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
+              taint_nth 1 StartComponent
+          | "android.app.Activity", "startIntentSenderForResult" ->
+              taint_nth 2 StartComponent
+          | "android.app.Activity", "startIntentSenderFromChild" ->
+              taint_nth 3 StartComponent
+          | ( "android.content.Context"
+            , ( "bindService"
+              | "sendBroadcast"
+              | "sendBroadcastAsUser"
+              | "sendOrderedBroadcast"
+              | "sendOrderedBroadcastAsUser"
+              | "sendStickyBroadcast"
+              | "sendStickyBroadcastAsUser"
+              | "sendStickyOrderedBroadcast"
+              | "sendStickyOrderedBroadcastAsUser"
+              | "startActivities"
+              | "startActivity"
+              | "startActivityForResult"
+              | "startActivityIfNeeded"
+              | "startNextMatchingActivity"
+              | "startService"
+              | "stopService" ) ) ->
+              taint_nth 0 StartComponent
+          | "android.content.Context", "startIntentSender" ->
+              taint_nth 1 StartComponent
+          | ( "android.content.Intent"
+            , ( "parseUri"
+              | "getIntent"
+              | "getIntentOld"
+              | "setComponent"
+              | "setData"
+              | "setDataAndNormalize"
+              | "setDataAndType"
+              | "setDataAndTypeAndNormalize"
+              | "setPackage" ) ) ->
+              taint_nth 0 CreateIntent
+          | "android.content.Intent", "setClassName" ->
+              taint_all CreateIntent
+          | "android.text.Html", "fromHtml" ->
+              taint_nth 0 HTML
+          | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
+              taint_all Logging
+          | ( "android.webkit.WebView"
+            , ( "evaluateJavascript"
+              | "loadData"
+              | "loadDataWithBaseURL"
+              | "loadUrl"
+              | "postUrl"
+              | "postWebMessage" ) ) ->
+              taint_all JavaScript
+          | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
+              taint_nth 0 Other
+          | "java.io.File", "<init>"
+          | "java.nio.file.FileSystem", "getPath"
+          | "java.nio.file.Paths", "get" ->
+              taint_all CreateFile
+          | "java.io.ObjectInputStream", "<init>" ->
+              taint_all Deserialization
+          | "java.lang.ProcessBuilder", "<init>" ->
+              taint_all ShellExec
+          | "java.lang.ProcessBuilder", "command" ->
+              taint_all ShellExec
+          | "java.lang.Runtime", "exec" ->
+              taint_nth 0 ShellExec
+          | class_name, method_name ->
+              get_external_sink class_name method_name
+        in
+        PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
+          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name java_pname))
     | pname when BuiltinDecl.is_declared pname ->
         None
     | pname ->
