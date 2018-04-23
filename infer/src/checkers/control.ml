@@ -87,13 +87,17 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
   let exec_instr astate _ _ instr =
     match instr with
-    | Sil.Prune (exp, _, _, _) ->
+    | Sil.Prune (exp, _, true_branch, if_kind) ->
+        (* Only keep track of control flow variables for loop prune nodes with the true branch *)
+        (* For false branches, remove the var from the set for fixpoint *)
         let astate' =
           Exp.free_vars exp |> Sequence.map ~f:Var.of_id |> Sequence.to_list
-          |> ControlDepSet.of_list |> Domain.union astate
+          |> ControlDepSet.of_list
+          |> if true_branch && Sil.is_loop if_kind then Domain.union astate else Domain.diff astate
         in
         Exp.program_vars exp |> Sequence.map ~f:Var.of_pvar |> Sequence.to_list
-        |> ControlDepSet.of_list |> Domain.union astate'
+        |> ControlDepSet.of_list
+        |> if true_branch && Sil.is_loop if_kind then Domain.union astate' else Domain.diff astate'
     | Sil.Load _
     | Sil.Store _
     | Sil.Call _

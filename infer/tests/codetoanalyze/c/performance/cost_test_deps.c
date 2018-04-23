@@ -33,27 +33,46 @@ int loop_no_dep2(int k) {
   return p;
 }
 
-// -- Below examples should have worked, but due to the imprecision of CF
-// analysis, they don't
+// -- Below examples didn't work before, but enhancing CF analysis
+// makes the analysis much more precise and we can get proper bounds
 //
-// This example doesn't work since for the loop
-// control vars={p,j} and since j in [-oo.+oo], we get oo count.
+// This example works now because even though j in [-oo.+oo],
+// since control vars={k} (notice that we will remove {p,j} in the else branch),
+// we ignore j and find the right bound for the inner loop
 int if_bad(int j) {
   int p = 10;
-  int i = 0;
   if (p < 10 + j) {
     p++;
   } else {
     p = j + 3;
-    for (int k = 0; k < 100; k++) {
+    for (int k = 0; k < 10; k++) {
       j += 3;
     }
   }
   return p;
 }
 
-// We get +oo for this program, but if you take the first loop out,
-// fake dependency disappears and we can get a proper bound
+// Notice that removing {j,p} above doesn't create any problems if we are in a
+// loop that depends on them. E.g.: below we still depend on {j} but in the
+// conditional prune statement, we will remove the temp. var that map to inner
+// {j}, not the outer {j}
+int if_bad_loop() {
+  int p = 10;
+  for (int j = 0; j < 5; j++) {
+    if (j < 2) {
+      p++;
+    } else {
+      p = 3;
+      for (int k = 0; k < 10; k++) {
+        int m = 0;
+      }
+    }
+  }
+  return p;
+}
+
+// The fake dependency btw first and second loop disappeared and we can get a
+// proper bound
 //
 int two_loops() {
   int p = 10;
@@ -68,8 +87,25 @@ int two_loops() {
   return p;
 }
 
-// We can't get program point A's execution count as 5 due to the weakness in CF
-// analysis
+// We don't get a false dependency to m (hence p) since
+// for if statements, we don't add prune variables as dependency
+int loop_despite_inferbo(int p) {
+
+  int k = 100;
+  for (int i = 0; i < k; i++) {
+    int m = p + 3;
+    if (m < 14) {
+      p += 9;
+    }
+  }
+  return p;
+}
+
+// -- Below examples should have worked, but due to the imprecision/weakness
+//  in inferbo's relational analysis, they don't
+
+// We can get program point A's execution count as 5, however
+// due to the weakness in inferbo's relational analysis `i` is in [0, +oo]
 int nested_loop() {
   int k = 0;
   for (int i = 0; i < 5; i++) {
@@ -83,6 +119,7 @@ int nested_loop() {
 }
 
 // Unlike the above program, B will be inside the inner loop, hence executed
+// around 105 times
 int simulated_nested_loop(int p) {
   int k = 0;
   int t = 5;
@@ -93,6 +130,24 @@ int simulated_nested_loop(int p) {
     j++;
     if (j < 100)
       goto B; // continue;
+  }
+  return k;
+}
+
+// B will be inside the inner loop and executed ~500 times
+int simulated_nested_loop_more_expensive(int p) {
+  int k = 0;
+  int t = 5;
+  int j = 0;
+  for (int i = 0; i < 5; i++) {
+  B:
+    t = 3;
+    j++;
+    if (j < 100)
+      goto B; // continue;
+    else {
+      j = 0;
+    }
   }
   return k;
 }

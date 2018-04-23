@@ -55,6 +55,8 @@ type instr =
   | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
 [@@deriving compare]
 
+let is_loop = function Ik_dowhile | Ik_while | Ik_for -> true | _ -> false
+
 let equal_instr = [%compare.equal : instr]
 
 let skip_instr = Remove_temps ([], Location.dummy)

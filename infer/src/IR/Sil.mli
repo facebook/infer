@@ -28,6 +28,8 @@ type if_kind =
   | Ik_switch
 [@@deriving compare]
 
+val is_loop : if_kind -> bool
+
 (** An instruction. *)
 type instr =
   (* Note for frontend writers:
