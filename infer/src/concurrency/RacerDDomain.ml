@@ -404,7 +404,7 @@ module AttributeMapDomain = struct
 end
 
 module AccessSnapshot = struct
-  module Precondition = struct
+  module OwnershipPrecondition = struct
     type t = Conjunction of IntSet.t | False [@@deriving compare]
 
     (* precondition is true if the conjunction of owned indexes is empty *)
@@ -420,25 +420,25 @@ module AccessSnapshot = struct
   end
 
   type t =
-    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: Precondition.t}
-    [@@deriving compare]
+    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: OwnershipPrecondition.t}
+  [@@deriving compare]
 
   let make lock thread ownership_precondition pdesc =
     (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
        such accesses *)
-    assert (not (Precondition.is_true ownership_precondition)) ;
+    assert (not (OwnershipPrecondition.is_true ownership_precondition)) ;
     let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
     {thread; lock; ownership_precondition}
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
     not (ThreadsDomain.is_any_but_self thread) && not lock
-    && not (Precondition.is_true ownership_precondition)
+    && not (OwnershipPrecondition.is_true ownership_precondition)
 
 
   let pp fmt {thread; lock; ownership_precondition} =
-    F.fprintf fmt "Thread: %a Lock: %b Pre: %a" ThreadsDomain.pp thread lock Precondition.pp
-      ownership_precondition
+    F.fprintf fmt "Thread: %a Lock: %b Pre: %a" ThreadsDomain.pp thread lock
+      OwnershipPrecondition.pp ownership_precondition
 end
 
 module AccessDomain = struct

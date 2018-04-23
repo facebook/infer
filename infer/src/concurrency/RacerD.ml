@@ -170,7 +170,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
                 let pre =
                   AccessSnapshot.make locks threads
-                    (AccessSnapshot.Precondition.Conjunction formal_indexes) proc_data.pdesc
+                    (AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes)
+                    proc_data.pdesc
                 in
                 add_field_access pre
             | OwnershipAbstractValue.Owned ->
@@ -227,7 +228,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let pre =
           AccessSnapshot.make astate.locks astate.threads
-            (AccessSnapshot.Precondition.Conjunction (IntSet.singleton 0)) caller_pdesc
+            (AccessSnapshot.OwnershipPrecondition.Conjunction (IntSet.singleton 0)) caller_pdesc
         in
         AccessDomain.add_access pre container_access AccessDomain.empty
     in
@@ -328,7 +329,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       AccessDomain.add pre combined_accesses caller_accesses
     in
-    let conjoin_ownership_pre actual_exp actual_indexes : AccessSnapshot.Precondition.t =
+    let conjoin_ownership_pre actual_exp actual_indexes : AccessSnapshot.OwnershipPrecondition.t =
       match actual_exp with
       | HilExp.Constant _ ->
           (* the actual is a constant, so it's owned in the caller. *)
@@ -360,7 +361,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* couldn't find access path, don't know if it's owned. assume not *)
           False
     in
-    let update_ownership_pre actual_index (acc: AccessSnapshot.Precondition.t) =
+    let update_ownership_pre actual_index (acc: AccessSnapshot.OwnershipPrecondition.t) =
       match acc with
       | False ->
           (* precondition can't be satisfied *)
@@ -379,12 +380,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let ownership_precondition' =
         match pre.ownership_precondition with
         | Conjunction indexes ->
-            let empty_pre = AccessSnapshot.Precondition.Conjunction IntSet.empty in
+            let empty_pre = AccessSnapshot.OwnershipPrecondition.Conjunction IntSet.empty in
             IntSet.fold update_ownership_pre indexes empty_pre
         | False ->
             pre.ownership_precondition
       in
-      if AccessSnapshot.Precondition.is_true ownership_precondition' then accesses_acc
+      if AccessSnapshot.OwnershipPrecondition.is_true ownership_precondition' then accesses_acc
       else
         let locks' = if pre.lock then LocksDomain.add_lock locks else locks in
         (* if the access occurred on a main thread in the callee, we should remember this when

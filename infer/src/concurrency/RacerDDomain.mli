@@ -78,11 +78,11 @@ module ThreadsDomain : sig
         assume this by default unless we see evidence to the contrary (annotations, use of locks,
         etc.) *)
     | AnyThreadButSelf
-        (** Current thread can run in parallel with other threads, but not with itself.
+        (** Current thread can run in parallel with other threads, but not with a copy of itself.
         (concretization : { t | t \in TIDs ^ t != t_cur } ) *)
     | AnyThread
-        (** Current thread can run in parallel with any thread, including itself (concretization: set
-        of all TIDs ) *)
+        (** Current thread can run in parallel with any thread, including itself (concretization: 
+            set of all TIDs ) *)
 
   include AbstractDomain.WithBottom with type astate := astate
 
@@ -158,10 +158,10 @@ module AttributeMapDomain : sig
   val add_attribute : AccessPath.t -> Attribute.t -> astate -> astate
 end
 
-(** Data shared among a set of accesses: current thread, lock(s) held, ownership precondition *)
+(** snapshot of the relevant state at the time of a heap access: concurrent thread(s), lock(s) held, ownership precondition *)
 module AccessSnapshot : sig
-  (** Precondition for owned access; access is owned if it evaluates to ture *)
-  module Precondition : sig
+  (** precondition for owned access; access is owned if it evaluates to true *)
+  module OwnershipPrecondition : sig
     type t =
       | Conjunction of IntSet.t
           (** Conjunction of "formal index must be owned" predicates.
@@ -176,10 +176,11 @@ module AccessSnapshot : sig
   end
 
   type t = private
-    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: Precondition.t}
+    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: OwnershipPrecondition.t}
   [@@deriving compare]
 
-  val make : LocksDomain.astate -> ThreadsDomain.astate -> Precondition.t -> Procdesc.t -> t
+  val make :
+    LocksDomain.astate -> ThreadsDomain.astate -> OwnershipPrecondition.t -> Procdesc.t -> t
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
