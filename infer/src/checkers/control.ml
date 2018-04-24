@@ -93,11 +93,17 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
         let astate' =
           Exp.free_vars exp |> Sequence.map ~f:Var.of_id |> Sequence.to_list
           |> ControlDepSet.of_list
-          |> if true_branch && Sil.is_loop if_kind then Domain.union astate else Domain.diff astate
+          |>
+          if (true_branch && Sil.is_loop if_kind) || Language.curr_language_is Java then
+            Domain.union astate
+          else Domain.diff astate
         in
         Exp.program_vars exp |> Sequence.map ~f:Var.of_pvar |> Sequence.to_list
         |> ControlDepSet.of_list
-        |> if true_branch && Sil.is_loop if_kind then Domain.union astate' else Domain.diff astate'
+        |>
+        if (true_branch && Sil.is_loop if_kind) || Language.curr_language_is Java then
+          Domain.union astate'
+        else Domain.diff astate'
     | Sil.Load _
     | Sil.Store _
     | Sil.Call _
