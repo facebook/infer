@@ -80,7 +80,8 @@ module ItvPureCost = struct
 end
 
 module EnvDomain = AbstractDomain.Map (Exp) (ItvPureCost)
-module EnvDomainBO = AbstractDomain.Map (Exp) (Itv)
+module EnvMap = AbstractDomain.Map (Exp) (Itv)
+module EnvDomainBO = AbstractDomain.BottomLifted (EnvMap)
 
 type summary = {post: Itv.Bound.t}
 

@@ -128,7 +128,10 @@ module BoundMap = struct
     let open AbstractDomain.Types in
     match mem with
     | Bottom ->
-        assert false
+        L.internal_error
+          "@\n\
+           [COST ANALYSIS INTERNAL WARNING:] Found Bottom when converting mem, returning No env \n" ;
+        Bottom
     | NonBottom {BufferOverrunDomain.MemReach.heap} ->
         let env =
           BufferOverrunDomain.Heap.fold
@@ -136,15 +139,15 @@ module BoundMap = struct
               match loc with
               | AbsLoc.Loc.Var (Var.LogicalVar id) ->
                   let key = Exp.Var id in
-                  CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
+                  CostDomain.EnvMap.add key (BufferOverrunDomain.Val.get_itv data) acc
               | AbsLoc.Loc.Var (Var.ProgramVar v) ->
                   let key = Exp.Lvar v in
-                  CostDomain.EnvDomain.add key (BufferOverrunDomain.Val.get_itv data) acc
+                  CostDomain.EnvMap.add key (BufferOverrunDomain.Val.get_itv data) acc
               | _ ->
                   acc )
-            heap CostDomain.EnvDomainBO.empty
+            heap CostDomain.EnvMap.empty
         in
-        env
+        NonBottom env
 
 
   let compute_upperbound_map pdesc invariant_map_NodesBasicCost data_invariant_map
@@ -163,7 +166,6 @@ module BoundMap = struct
           in
           match entry_state_opt with
           | Some (entry_mem, _) ->
-              let env = convert entry_mem in
               (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
               let all_deps =
                 Control.compute_all_deps data_invariant_map control_invariant_map node
@@ -173,31 +175,40 @@ module BoundMap = struct
                 Control.VarSet.pp all_deps ;
               (* bound = env(v1) *... * env(vn) *)
               let bound =
-                CostDomain.EnvDomainBO.fold
-                  (fun exp itv acc ->
-                    let itv' =
-                      match exp with
-                      | Exp.Var _ ->
-                          Itv.one
-                      (* For temp var we give [1,1] so it doesn't count*)
-                      | Exp.Lvar _
-                        when List.mem fparam' exp ~equal:Exp.equal ->
-                          Itv.one
-                      | Exp.Lvar pvar when Control.VarSet.mem (Var.of_pvar pvar) all_deps ->
-                          itv
-                      | Exp.Lvar _ ->
-                          (* For a var that doesn't affect control flow directly or indirectly, we give [1,1] so it doesn't count *)
-                          Itv.one
-                      | _ ->
-                          assert false
-                    in
-                    let range = Itv.range itv' in
-                    L.(debug Analysis Medium)
-                      "@\n>>>For node = %i :  exp=%a  itv=%a   range =%a @\n\n"
-                      (node_id :> int)
-                      Exp.pp exp Itv.pp itv' Itv.Bound.pp range ;
-                    Itv.Bound.mult acc range )
-                  env Itv.Bound.one
+                match convert entry_mem with
+                | Bottom ->
+                    (* We get None by converting Bottom *)
+                    L.internal_error
+                      "@\n\
+                       [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
+                       unreachable returning cost 0 \n" ;
+                    Itv.Bound.zero
+                | NonBottom env ->
+                    CostDomain.EnvMap.fold
+                      (fun exp itv acc ->
+                        let itv' =
+                          match exp with
+                          | Exp.Var _ ->
+                              Itv.one
+                          (* For temp var we give [1,1] so it doesn't count*)
+                          | Exp.Lvar _
+                            when List.mem fparam' exp ~equal:Exp.equal ->
+                              Itv.one
+                          | Exp.Lvar pvar when Control.VarSet.mem (Var.of_pvar pvar) all_deps ->
+                              itv
+                          | Exp.Lvar _ ->
+                              (* For a var that doesn't affect control flow directly or indirectly, we give [1,1] so it doesn't count *)
+                              Itv.one
+                          | _ ->
+                              assert false
+                        in
+                        let range = Itv.range itv' in
+                        L.(debug Analysis Medium)
+                          "@\n>>>For node = %i :  exp=%a  itv=%a   range =%a @\n\n"
+                          (node_id :> int)
+                          Exp.pp exp Itv.pp itv' Itv.Bound.pp range ;
+                        Itv.Bound.mult acc range )
+                      env Itv.Bound.one
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %i  to %a@\n\n"
@@ -359,22 +370,19 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
         op res_c res_l'
 
 
-  (* TO DO: replace equality on sets with something more efficient*)
-  let rec add_without_rep s list_of_sets =
-    match list_of_sets with
-    | [] ->
-        [s]
-    | s' :: tail ->
-        if Node.IdSet.equal s s' then list_of_sets else s' :: add_without_rep s tail
-
-
   (*  a plus node is well formed if has at least two addends *)
   let is_well_formed_plus_node plus_node =
     match plus_node with Plus (_ :: _ :: _) -> true | _ -> false
 
 
+  module SetOfSetsOfNodes = Caml.Set.Make (Node.IdSet)
+
+  module BuiltTreeMap = Caml.Map.Make (struct
+    type t = Node.id * Node.IdSet.t [@@deriving compare]
+  end)
+
   let rec minimum_propagation (bound_map: BoundMap.t) (q: Node.id) (visited: Node.IdSet.t)
-      (constraints: StructuralConstraints.t list) =
+      (constraints: StructuralConstraints.t list) global_built_tree_map =
     let rec build_min node branch visited_acc worklist =
       match worklist with
       | [] ->
@@ -382,52 +390,63 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
       | k :: rest ->
           if Node.IdSet.mem k visited_acc then build_min node branch visited_acc rest
           else
-            let visited_acc = Node.IdSet.add k visited_acc in
+            let visited_acc' = Node.IdSet.add k visited_acc in
             let node = add_leaf node k (BoundMap.upperbound bound_map k) in
             let k_constraints_upperbound = get_k_single_constraints constraints k in
-            let worklist =
-              List.filter
-                ~f:(fun ub_id -> not (Node.IdSet.mem ub_id visited_acc))
-                k_constraints_upperbound
-              |> List.rev_append worklist
+            let worklist' =
+              List.fold k_constraints_upperbound ~init:rest ~f:(fun acc ub_id ->
+                  if Node.IdSet.mem ub_id visited_acc' then acc else ub_id :: acc )
             in
             let k_sum_constraints = get_k_sum_constraints constraints k in
             let branch =
               List.fold_left
                 ~f:(fun branch set_addend ->
-                  if Node.IdSet.is_empty (Node.IdSet.inter set_addend visited_acc) then
-                    add_without_rep set_addend branch
+                  if Node.IdSet.is_empty (Node.IdSet.inter set_addend visited_acc') then
+                    SetOfSetsOfNodes.add set_addend branch
                   else branch )
                 ~init:branch k_sum_constraints
             in
-            build_min node branch visited_acc worklist
+            build_min node branch visited_acc' worklist'
     in
-    let node, branch, visited_res = build_min (Min []) [] visited [q] in
-    List.fold_left
-      ~f:(fun i_node addend ->
-        if Node.IdSet.cardinal addend < 2 then assert false
-        else (
-          L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
-          Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
-          L.(debug Analysis Medium) " }@\n " ) ;
-        let plus_node =
-          Node.IdSet.fold
-            (fun n acc ->
-              let child = minimum_propagation bound_map n visited_res constraints in
-              add_child acc child )
-            addend (Plus [])
-        in
-        (* without this check it would add plus node with just one child, and give wrong results *)
-        if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
-      ~init:node branch
+    match BuiltTreeMap.find_opt (q, visited) !global_built_tree_map with
+    | Some tree ->
+        tree
+    | None ->
+        let node, branch, visited_res = build_min (Min []) SetOfSetsOfNodes.empty visited [q] in
+        SetOfSetsOfNodes.fold
+          (fun addend i_node ->
+            if Node.IdSet.cardinal addend < 2 then assert false
+            else (
+              L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
+              Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
+              L.(debug Analysis Medium) " }@\n " ) ;
+            let plus_node =
+              Node.IdSet.fold
+                (fun n acc ->
+                  let child =
+                    minimum_propagation bound_map n visited_res constraints global_built_tree_map
+                  in
+                  global_built_tree_map :=
+                    BuiltTreeMap.add (n, visited_res) child !global_built_tree_map ;
+                  add_child acc child )
+                addend (Plus [])
+            in
+            (* without this check it would add plus node with just one child, and give wrong results *)
+            if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
+          branch node
 
 
   let compute_trees_from_contraints bound_map cfg constraints =
+    (* a map used for bookkeeping of the min trees that we have already built *)
+    let global_built_tree_map : mt_node BuiltTreeMap.t ref = ref BuiltTreeMap.empty in
     let min_trees =
       List.fold
         ~f:(fun acc node ->
           let nid = Node.id node in
-          (nid, minimum_propagation bound_map nid Node.IdSet.empty constraints) :: acc )
+          let tree =
+            minimum_propagation bound_map nid Node.IdSet.empty constraints global_built_tree_map
+          in
+          (nid, tree) :: acc )
         ~init:[] (CFG.nodes cfg)
     in
     List.iter
@@ -586,6 +605,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       control_dep_invariant_map
   in
   let constraints = StructuralConstraints.compute_structural_constraints cfg in
+  L.internal_error "@\n[COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i "
+    Typ.Procname.pp
+    (Procdesc.get_proc_name proc_desc)
+    (List.length (CFG.nodes cfg)) ;
   let min_trees = MinTree.compute_trees_from_contraints bound_map cfg constraints in
   let trees_valuation =
     List.fold
@@ -605,6 +628,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   match AnalyzerWCET.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map_WCETFinal with
   | Some (exit_cost, _) ->
+      L.internal_error "  PROCEDURE COST = %a @\n" Itv.Bound.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Summary.update_summary {post= exit_cost} summary
   | None ->
