@@ -70,8 +70,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           None
     in
     match instr with
-    | Call (_, Direct callee_pname, actuals, _, loc) -> (
-      match Models.get_lock callee_pname actuals with
+    | Call (_, Direct callee, actuals, _, loc) -> (
+      match Models.get_lock callee actuals with
       | Lock ->
           get_path actuals |> Option.value_map ~default:astate ~f:(Domain.acquire astate loc)
       | Unlock ->
@@ -80,15 +80,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
       | NoEffect ->
           if
-            Models.is_countdownlatch_await callee_pname
-            || Models.is_two_way_binder_transact tenv actuals callee_pname
-            || Models.is_blocking_java_io tenv callee_pname
-          then Domain.blocking_call callee_pname loc astate
-          else if is_on_main_thread callee_pname then Domain.set_on_main_thread astate
+            Models.is_countdownlatch_await callee
+            || Models.is_two_way_binder_transact tenv actuals callee
+            || Models.is_blocking_java_io tenv callee
+          then
+            let caller = Procdesc.get_proc_name pdesc in
+            Domain.blocking_call ~caller ~callee loc astate
+          else if is_on_main_thread callee then Domain.set_on_main_thread astate
           else
-            Summary.read_summary pdesc callee_pname
-            |> Option.value_map ~default:astate
-                 ~f:(Domain.integrate_summary astate callee_pname loc) )
+            Summary.read_summary pdesc callee
+            |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
     | _ ->
         astate
 
@@ -212,7 +213,7 @@ let report_direct_blocks_on_main_thread proc_desc summary =
         let caller_loc = Procdesc.get_loc proc_desc in
         let caller_pname = Procdesc.get_proc_name proc_desc in
         let error_message =
-          Format.asprintf "May block while on main thread. Eventually: %a" LockEvent.pp_event
+          Format.asprintf "UI-thread method may block; %a" LockEvent.pp_event
             eventually.LockEvent.event
         in
         let exn =

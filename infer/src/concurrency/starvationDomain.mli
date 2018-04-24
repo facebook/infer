@@ -62,7 +62,8 @@ val acquire : astate -> Location.t -> LockIdentity.t -> astate
 
 val release : astate -> LockIdentity.t -> astate
 
-val blocking_call : Typ.Procname.t -> Location.t -> astate -> astate
+val blocking_call :
+  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Location.t -> astate -> astate
 
 val set_on_main_thread : astate -> astate
 

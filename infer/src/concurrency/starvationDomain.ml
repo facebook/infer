@@ -105,8 +105,8 @@ module LockEvent = struct
 
   let make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
 
-  let make_blocking_call pname loc =
-    let descr = F.asprintf "Calls %a" Typ.Procname.pp pname in
+  let make_blocking_call ~caller ~callee loc =
+    let descr = F.asprintf "calls %a from %a" Typ.Procname.pp callee Typ.Procname.pp caller in
     make_blocks descr loc
 
 
@@ -131,9 +131,9 @@ module LockOrder = struct
   let pp fmt o =
     match o.first with
     | None ->
-        F.fprintf fmt "Eventually %a" LockEvent.pp o.eventually
+        F.fprintf fmt "eventually %a" LockEvent.pp o.eventually
     | Some lock ->
-        F.fprintf fmt "First %a and before releasing it %a" LockEvent.pp lock LockEvent.pp
+        F.fprintf fmt "first %a, and before releasing it, %a" LockEvent.pp lock LockEvent.pp
           o.eventually
 
 
@@ -248,8 +248,8 @@ let acquire ((ls, lo), main) loc lockid =
   ((ls', lo'), main)
 
 
-let blocking_call pname loc ((ls, lo), main) =
-  let newlock_event = LockEvent.make_blocking_call pname loc in
+let blocking_call ~caller ~callee loc ((ls, lo), main) =
+  let newlock_event = LockEvent.make_blocking_call ~caller ~callee loc in
   let lo' = add_order_pairs ls newlock_event lo in
   ((ls, lo'), main)
 
