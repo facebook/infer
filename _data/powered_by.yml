@@ -5,14 +5,14 @@
   - name: Marks and Spencer
     url: https://www.marksandspencer.com/
   - name: Sky
-    url: https://www.sky.com
+    url: https://www.sky.com/
   - name: Money Lover
     url: https://www.moneylover.me/
   - name: OLA
     url: https://www.olacabs.com/
   - name: Netcetera
-    url: https://www.netcetera.com
+    url: https://www.netcetera.com/
   - name: Vuo
     url: https://vuo.org
-  - name: The FreeFem project
-    url: http://www.freefem.org
+  - name: The FreeFem++ project
+    url: http://www.freefem.org/
