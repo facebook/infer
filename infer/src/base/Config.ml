@@ -744,7 +744,7 @@ and ( annotation_reachability
   and starvation = mk_checker ~long:"starvation" ~default:false "starvation analysis"
   and suggest_nullable =
     mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
-  and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" in
+  and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" ~default:true in
   let mk_only (var, long, doc, _) =
     let _ : bool ref =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
