@@ -662,6 +662,18 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         exp
   in
   let convert_instr (instrs, id_map) instr =
+    let get_block_name_and_load_captured_vars_instrs block_var loc =
+      let block_name, extra_formals = Mangled.Map.find block_var substitutions in
+      let ids, id_exp_typs, load_instrs =
+        List.map extra_formals ~f:(fun (var, typ) ->
+            let id = Ident.create_fresh Ident.knormal in
+            let pvar = Pvar.mk var resolved_pname in
+            (id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
+        |> List.unzip3
+      in
+      let remove_temps_instr = Sil.Remove_temps (ids, loc) in
+      (block_name, id_exp_typs, load_instrs, remove_temps_instr)
+    in
     let convert_generic_call return_ids exp origin_args loc call_flags =
       let converted_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
       let call_instr = Sil.Call (return_ids, exp, converted_args, loc, call_flags) in
@@ -675,6 +687,14 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         (instrs, id_map)
     | Sil.Load (id, origin_exp, origin_typ, loc) ->
         (Sil.Load (id, convert_exp origin_exp, origin_typ, loc) :: instrs, id_map)
+    | Sil.Store (assignee_exp, origin_typ, Exp.Var id, loc) when Ident.Map.mem id id_map ->
+        let block_param = Ident.Map.find id id_map in
+        let block_name, id_exp_typs, load_instrs, remove_temps_instr =
+          get_block_name_and_load_captured_vars_instrs block_param loc
+        in
+        let closure = Exp.Closure {name= block_name; captured_vars= id_exp_typs} in
+        let instr = Sil.Store (assignee_exp, origin_typ, closure, loc) in
+        (remove_temps_instr :: instr :: load_instrs @ instrs, id_map)
     | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
         let set_instr =
           Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
@@ -682,23 +702,12 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         (set_instr :: instrs, id_map)
     | Sil.Call (return_ids, Exp.Var id, origin_args, loc, call_flags) -> (
       try
-        let block_name, extra_formals =
+        let block_name, id_exp_typs, load_instrs, remove_temps_instr =
           let block_var = Ident.Map.find id id_map in
-          Mangled.Map.find block_var substitutions
-        in
-        (* once we find the block in the map, it means that we need to subsitute it with the
-        call to the concrete block, and pass the fresh formals as arguments *)
-        let ids_typs, load_instrs =
-          let captured_ids_instrs =
-            List.map extra_formals ~f:(fun (var, typ) ->
-                let id = Ident.create_fresh Ident.knormal in
-                let pvar = Pvar.mk var resolved_pname in
-                ((id, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
-          in
-          List.unzip captured_ids_instrs
+          get_block_name_and_load_captured_vars_instrs block_var loc
         in
         let call_instr =
-          let id_exps = List.map ~f:(fun (id, typ) -> (Exp.Var id, typ)) ids_typs in
+          let id_exps = List.map ~f:(fun (id, _, typ) -> (id, typ)) id_exp_typs in
           let converted_args =
             List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args
           in
@@ -709,11 +718,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
             , loc
             , call_flags )
         in
-        let remove_temps_instrs =
-          let ids = List.map ~f:(fun (id, _) -> id) ids_typs in
-          Sil.Remove_temps (ids, loc)
-        in
-        let instrs = remove_temps_instrs :: call_instr :: load_instrs @ instrs in
+        let instrs = remove_temps_instr :: call_instr :: load_instrs @ instrs in
         (instrs, id_map)
       with Caml.Not_found ->
         convert_generic_call return_ids (Exp.Var id) origin_args loc call_flags )
