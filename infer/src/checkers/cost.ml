@@ -371,8 +371,8 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     type t = Node.id * Node.IdSet.t [@@deriving compare]
   end)
 
-  let rec minimum_propagation (bound_map: BoundMap.t) (q: Node.id) (visited: Node.IdSet.t)
-      (constraints: StructuralConstraints.t list) global_built_tree_map =
+  let minimum_propagation (bound_map: BoundMap.t) (constraints: StructuralConstraints.t list) self
+      ((q, visited): Node.id * Node.IdSet.t) =
     let rec build_min node branch visited_acc worklist =
       match worklist with
       | [] ->
@@ -398,44 +398,50 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
             in
             build_min node branch visited_acc' worklist'
     in
-    match BuiltTreeMap.find_opt (q, visited) !global_built_tree_map with
-    | Some tree ->
-        tree
-    | None ->
-        let node, branch, visited_res = build_min (Min []) SetOfSetsOfNodes.empty visited [q] in
-        SetOfSetsOfNodes.fold
-          (fun addend i_node ->
-            if Node.IdSet.cardinal addend < 2 then assert false
-            else (
-              L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
-              Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
-              L.(debug Analysis Medium) " }@\n " ) ;
-            let plus_node =
-              Node.IdSet.fold
-                (fun n acc ->
-                  let child =
-                    minimum_propagation bound_map n visited_res constraints global_built_tree_map
-                  in
-                  global_built_tree_map :=
-                    BuiltTreeMap.add (n, visited_res) child !global_built_tree_map ;
-                  add_child acc child )
-                addend (Plus [])
-            in
-            (* without this check it would add plus node with just one child, and give wrong results *)
-            if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
-          branch node
+    let node, branch, visited_res = build_min (Min []) SetOfSetsOfNodes.empty visited [q] in
+    SetOfSetsOfNodes.fold
+      (fun addend i_node ->
+        if Node.IdSet.cardinal addend < 2 then assert false
+        else (
+          L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
+          Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
+          L.(debug Analysis Medium) " }@\n " ) ;
+        let plus_node =
+          Node.IdSet.fold
+            (fun n acc ->
+              let child = self (n, visited_res) in
+              add_child acc child )
+            addend (Plus [])
+        in
+        (* without this check it would add plus node with just one child, and give wrong results *)
+        if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
+      branch node
+
+
+  let with_cache f =
+    (* a map used for bookkeeping of the min trees that we have already built *)
+    let global_built_tree_map : mt_node BuiltTreeMap.t ref = ref BuiltTreeMap.empty in
+    let rec f_with_cache x =
+      match BuiltTreeMap.find_opt x !global_built_tree_map with
+      | Some v ->
+          v
+      | None ->
+          let v = f f_with_cache x in
+          global_built_tree_map := BuiltTreeMap.add x v !global_built_tree_map ;
+          v
+    in
+    Staged.stage f_with_cache
 
 
   let compute_trees_from_contraints bound_map node_cfg constraints =
-    (* a map used for bookkeeping of the min trees that we have already built *)
-    let global_built_tree_map : mt_node BuiltTreeMap.t ref = ref BuiltTreeMap.empty in
+    let minimum_propagation =
+      with_cache (minimum_propagation bound_map constraints) |> Staged.unstage
+    in
     let min_trees =
       List.fold
         ~f:(fun acc node ->
           let nid = Node.id node in
-          let tree =
-            minimum_propagation bound_map nid Node.IdSet.empty constraints global_built_tree_map
-          in
+          let tree = minimum_propagation (nid, Node.IdSet.empty) in
           (nid, tree) :: acc )
         ~init:[] (NodeCFG.nodes node_cfg)
     in
@@ -615,15 +621,11 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       ~init:Node.IdMap.empty min_trees
   in
   let initWCET = (Itv.Bound.zero, ReportedOnNodes.empty) in
-  let invariant_map_WCETFinal =
-    (* Final map with nodes cost *)
-    AnalyzerWCET.exec_cfg instr_cfg
+  match
+    AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
          {basic_cost_map= invariant_map_NodesBasicCost; min_trees_map= trees_valuation; summary})
-      ~initial:initWCET ~debug:true
-  in
-  match
-    AnalyzerWCET.extract_post (InstrCFG.id (InstrCFG.exit_node instr_cfg)) invariant_map_WCETFinal
+      ~debug:true ~initial:initWCET
   with
   | Some (exit_cost, _) ->
       L.internal_error "  PROCEDURE COST = %a @\n" Itv.Bound.pp exit_cost ;

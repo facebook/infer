@@ -73,7 +73,7 @@ module TransferFunctionsDataDeps (CFG : ProcCfg.S) = struct
 
 
   let pp_session_name node fmt =
-    F.fprintf fmt "data depenedency analysis %a" CFG.pp_id (CFG.id node)
+    F.fprintf fmt "data dependency analysis %a" CFG.pp_id (CFG.id node)
 end
 
 module ControlDepSet = VarSet
@@ -115,7 +115,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   let pp_session_name node fmt =
-    F.fprintf fmt "control depenedency analysis %a" CFG.pp_id (CFG.id node)
+    F.fprintf fmt "control dependency analysis %a" CFG.pp_id (CFG.id node)
 end
 
 module CFG = ProcCfg.Normal
