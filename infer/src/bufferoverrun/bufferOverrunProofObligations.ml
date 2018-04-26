@@ -373,6 +373,8 @@ end
 module ConditionSet = struct
   type condition_with_trace = {cond: Condition.t; trace: ConditionTrace.t}
 
+  let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace
+
   type t = condition_with_trace list
 
   (* invariant: join_one of one of the elements should return the original list *)
@@ -406,12 +408,22 @@ module ConditionSet = struct
   let join_one condset new_ =
     let rec aux ~new_ acc ~same = function
       | [] ->
+          if Config.bo_debug >= 3 then
+            L.(debug BufferOverrun Verbose) "[InferboPO] Adding new condition %a@." pp_cwt new_ ;
           if same then new_ :: condset else new_ :: acc
       | existing :: rest as existings ->
         match try_merge ~existing ~new_ with
         | `DoNotAddAndStop ->
+            if Config.bo_debug >= 3 then
+              L.(debug BufferOverrun Verbose)
+                "[InferboPO] Not adding condition %a (because of existing %a)@." pp_cwt new_ pp_cwt
+                existing ;
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
+            if Config.bo_debug >= 3 then
+              L.(debug BufferOverrun Verbose)
+                "[InferboPO] Removing condition %a (because of new %a)@." pp_cwt existing pp_cwt
+                new_ ;
             aux ~new_ acc ~same:false rest
         | `KeepExistingAndContinue ->
             aux ~new_ (existing :: acc) ~same rest
@@ -485,8 +497,6 @@ module ConditionSet = struct
         |> Option.iter ~f:(report cwt.cond cwt.trace) ;
         propagate )
 
-
-  let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace
 
   let pp_summary : F.formatter -> t -> unit =
    fun fmt condset ->
