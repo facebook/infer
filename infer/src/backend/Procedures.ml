@@ -36,10 +36,10 @@ let pp_all ?filter ~proc_name ~attr_kind ~source_file ~proc_attributes fmt () =
       |> SqliteUtils.check_sqlite_error db ~log:"procedures filter pname bind" ;
       Sqlite3.bind stmt 2 (* :source_file_like *) source_file_like
       |> SqliteUtils.check_sqlite_error db ~log:"procedures filter source file bind" ;
-      let pp_if ?(newline= false) condition deserialize pp fmt column =
+      let pp_if ?(new_line= false) condition title deserialize pp fmt column =
         if condition then (
-          if newline then F.fprintf fmt "@\n  " ;
-          F.fprintf fmt "%a@ " pp (Sqlite3.column stmt column |> deserialize) )
+          if new_line then F.fprintf fmt "@[<v2>" else F.fprintf fmt "@[<h>" ;
+          F.fprintf fmt "%s:@ %a@]@;" title pp (Sqlite3.column stmt column |> deserialize) )
       in
       let rec aux () =
         match Sqlite3.step stmt with
@@ -47,14 +47,15 @@ let pp_all ?filter ~proc_name ~attr_kind ~source_file ~proc_attributes fmt () =
             let proc_name_hum =
               match[@warning "-8"] Sqlite3.column stmt 1 with Sqlite3.Data.TEXT s -> s
             in
-            Format.fprintf fmt "@[<h2>%s:@ %a%a%a%a@]@\n" proc_name_hum
-              (pp_if source_file SourceFile.SQLite.deserialize SourceFile.pp)
+            Format.fprintf fmt "@[<v2>%s@,%a%a%a%a@]@\n" proc_name_hum
+              (pp_if source_file "source_file" SourceFile.SQLite.deserialize SourceFile.pp)
               3
-              (pp_if proc_name Typ.Procname.SQLite.deserialize Typ.Procname.pp)
+              (pp_if proc_name "proc_name" Typ.Procname.SQLite.deserialize Typ.Procname.pp)
               0
-              (pp_if attr_kind Attributes.deserialize_attributes_kind Attributes.pp_attributes_kind)
+              (pp_if attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
+                 Attributes.pp_attributes_kind)
               2
-              (pp_if ~newline:true proc_attributes ProcAttributes.SQLite.deserialize
+              (pp_if ~new_line:true proc_attributes "attributes" ProcAttributes.SQLite.deserialize
                  ProcAttributes.pp)
               4 ;
             aux ()

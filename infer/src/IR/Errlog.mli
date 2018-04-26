@@ -62,6 +62,8 @@ type err_data = private
 (** Type of the error log *)
 type t [@@deriving compare]
 
+val equal : t -> t -> bool
+
 val empty : unit -> t
 (** Empty error log *)
 

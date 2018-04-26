@@ -52,6 +52,8 @@ module Method : sig
   (** Annotation for a method: return value and list of parameters. *)
   type t = Item.t * Item.t list [@@deriving compare]
 
+  val equal : t -> t -> bool
+
   val empty : t
   (** Empty method annotation. *)
 

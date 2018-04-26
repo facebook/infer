@@ -56,6 +56,9 @@ val extend_colormap : env -> Obj.t -> color -> env
 val text : env
 (** Default text print environment *)
 
+val text_break : env
+(** text print environment that allows line breaks *)
+
 val html : color -> env
 (** Default html print environment *)
 

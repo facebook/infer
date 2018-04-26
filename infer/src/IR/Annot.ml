@@ -78,6 +78,8 @@ module Method = struct
   (** Annotation for a method: return value and list of parameters. *)
   type t = Item.t * Item.t list [@@deriving compare]
 
+  let equal = [%compare.equal : t]
+
   (** Pretty print a method annotation. *)
   let pp s fmt (ia, ial) = F.fprintf fmt "%a %s(%a)" Item.pp ia s (Pp.seq Item.pp) ial
 

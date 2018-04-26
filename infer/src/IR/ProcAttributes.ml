@@ -65,7 +65,7 @@ let pp_objc_accessor_type fmt objc_accessor_type =
   F.fprintf fmt "%s<%a:%a@,[%a]>"
     (kind_of_objc_accessor_type objc_accessor_type)
     Typ.Fieldname.pp fieldname (Typ.pp Pp.text) typ
-    (Pp.semicolon_seq (Pp.pair ~fst:Annot.pp ~snd:F.pp_print_bool))
+    (Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Annot.pp ~snd:F.pp_print_bool))
     annots
 
 
@@ -78,10 +78,12 @@ let var_attribute_equal = [%compare.equal : var_attribute]
 type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
 
 let pp_var_data fmt {name; typ; attributes} =
-  F.fprintf fmt "{@[<h>name=@ %a;@,typ=@ %a;@,attributes=@ %a@]}" Mangled.pp name (Typ.pp Pp.text)
-    typ
-    (Pp.semicolon_seq (Pp.to_string ~f:string_of_var_attribute))
-    attributes
+  F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a" Mangled.pp name (Typ.pp_full Pp.text) typ ;
+  if not (List.is_empty attributes) then
+    F.fprintf fmt ";@ attributes=@ [@[%a@]]"
+      (Pp.semicolon_seq ~print_env:Pp.text_break (Pp.to_string ~f:string_of_var_attribute))
+      attributes ;
+  F.fprintf fmt " }@]"
 
 
 type t =
@@ -144,62 +146,107 @@ let default proc_name =
   ; source_file_captured= SourceFile.invalid __FILE__ }
 
 
-let pp_parameters = Pp.semicolon_seq (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp Pp.text))
+let pp_parameters =
+  Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text))
 
-let pp fmt attributes =
-  let[@warning "+9"] { access
-                     ; captured
-                     ; did_preanalysis
-                     ; err_log
-                     ; exceptions
-                     ; formals
-                     ; const_formals
-                     ; by_vals
-                     ; func_attributes
-                     ; is_abstract
-                     ; is_bridge_method
-                     ; is_defined
-                     ; is_cpp_noexcept_method
-                     ; is_java_synchronized_method
-                     ; is_model
-                     ; is_specialized
-                     ; is_synthetic_method
-                     ; clang_method_kind
-                     ; loc
-                     ; translation_unit
-                     ; locals
-                     ; method_annotation
-                     ; objc_accessor
-                     ; proc_flags
-                     ; proc_name
-                     ; ret_type
-                     ; source_file_captured } =
-    attributes
+
+let pp f
+    ({ access
+     ; captured
+     ; did_preanalysis
+     ; err_log
+     ; exceptions
+     ; formals
+     ; const_formals
+     ; by_vals
+     ; func_attributes
+     ; is_abstract
+     ; is_bridge_method
+     ; is_defined
+     ; is_cpp_noexcept_method
+     ; is_java_synchronized_method
+     ; is_model
+     ; is_specialized
+     ; is_synthetic_method
+     ; clang_method_kind
+     ; loc
+     ; translation_unit
+     ; locals
+     ; method_annotation
+     ; objc_accessor
+     ; proc_flags
+     ; proc_name
+     ; ret_type
+     ; source_file_captured }[@warning "+9"]) =
+  let default = default proc_name in
+  let pp_bool_default ~default title b f () =
+    if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
   in
-  Format.fprintf fmt
-    "{@[access= %a;@ captured= [@[%a@]];@ did_preanalysis= %b;@ err_log= [@[%a%a@]];@ exceptions= \
-     [@[%a@]];@ formals= [@[%a@]];@ const_formals= [@[%a@]];@ by_vals= [@[%a@]];@ \
-     func_attributes= [@[%a@]];@ is_abstract= %b;@ is_bridge_method= %b;@ is_defined= %b;@ \
-     is_cpp_noexcept_method= %b;@ is_java_synchronized_method= %b;@ is_model= %b;@ \
-     is_specialized= %b;@ is_synthetic_method= %b;@ clang_method_kind= %a;@ loc= %a;@ \
-     translation_unit= %a;@ locals= [@[%a@]];@ method_annotation= %a;@ objc_accessor= %a;@ \
-     proc_flags= [@[%a@]];@ proc_name= %a;@ ret_type= %a;@ source_file_captured=%a@]}"
-    (Pp.to_string ~f:PredSymb.string_of_access)
-    access pp_parameters captured did_preanalysis Errlog.pp_errors err_log Errlog.pp_warnings
-    err_log
-    (Pp.semicolon_seq F.pp_print_string)
-    exceptions pp_parameters formals (Pp.semicolon_seq F.pp_print_int) const_formals
-    (Pp.semicolon_seq F.pp_print_int) by_vals
-    (Pp.semicolon_seq PredSymb.pp_func_attribute)
-    func_attributes is_abstract is_bridge_method is_defined is_cpp_noexcept_method
-    is_java_synchronized_method is_model is_specialized is_synthetic_method
-    (Pp.to_string ~f:string_of_clang_method_kind)
-    clang_method_kind Location.pp loc (Pp.option SourceFile.pp) translation_unit
-    (Pp.semicolon_seq pp_var_data) locals (Annot.Method.pp "") method_annotation
-    (Pp.option pp_objc_accessor_type) objc_accessor
-    (Pp.hashtbl ~key:F.pp_print_string ~value:F.pp_print_string)
-    proc_flags Typ.Procname.pp proc_name (Typ.pp Pp.text) ret_type SourceFile.pp
-    source_file_captured
+  F.fprintf f "@[<v>{ proc_name= %a@,; source_file_captured= %a@," Typ.Procname.pp proc_name
+    SourceFile.pp source_file_captured ;
+  if not (PredSymb.equal_access default.access access) then
+    F.fprintf f "; access= %a@," (Pp.to_string ~f:PredSymb.string_of_access) access ;
+  if not ([%compare.equal : (Mangled.t * Typ.t) list] default.captured captured) then
+    F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
+  pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
+  if not (Errlog.equal default.err_log err_log) then
+    F.fprintf f "; err_log= [@[%a%a@]]@," Errlog.pp_errors err_log Errlog.pp_warnings err_log ;
+  if not ([%compare.equal : string list] default.exceptions exceptions) then
+    F.fprintf f "; exceptions= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)
+      exceptions ;
+  (* always print formals *)
+  F.fprintf f "; formals= [@[%a@]]@," pp_parameters formals ;
+  if not ([%compare.equal : int list] default.const_formals const_formals) then
+    F.fprintf f "; const_formals= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
+      const_formals ;
+  if not ([%compare.equal : int list] default.by_vals by_vals) then
+    F.fprintf f "; by_vals= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
+      by_vals ;
+  if not ([%compare.equal : PredSymb.func_attribute list] default.func_attributes func_attributes)
+  then
+    F.fprintf f "; func_attributes= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break PredSymb.pp_func_attribute)
+      func_attributes ;
+  pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
+  pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
+  pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
+  pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
+  pp_bool_default ~default:default.is_cpp_noexcept_method "is_cpp_noexcept_method"
+    is_cpp_noexcept_method f () ;
+  pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"
+    is_java_synchronized_method f () ;
+  pp_bool_default ~default:default.is_model "is_model" is_model f () ;
+  pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
+  pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
+    () ;
+  if not ([%compare.equal : clang_method_kind] default.clang_method_kind clang_method_kind) then
+    F.fprintf f "; clang_method_kind= %a@,"
+      (Pp.to_string ~f:string_of_clang_method_kind)
+      clang_method_kind ;
+  if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp loc ;
+  if not ([%compare.equal : SourceFile.t option] default.translation_unit translation_unit) then
+    F.fprintf f "; translation_unit= %a@," (Pp.option SourceFile.pp) translation_unit ;
+  if not ([%compare.equal : var_data list] default.locals locals) then
+    F.fprintf f "; locals= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)
+      locals ;
+  if not (Annot.Method.equal default.method_annotation method_annotation) then
+    F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
+  if not ([%compare.equal : objc_accessor_type option] default.objc_accessor objc_accessor) then
+    F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
+  if
+    (* HACK: this hardcodes the default instead of comparing to [default.proc_flags], and tests
+       emptiness in linear time too *)
+    not (Int.equal (Hashtbl.length proc_flags) 0)
+  then
+    F.fprintf f "; proc_flags= [@[%a@]]@,"
+      (Pp.hashtbl ~key:F.pp_print_string ~value:F.pp_print_string)
+      proc_flags ;
+  (* always print ret type *)
+  F.fprintf f "; ret_type= %a }@]" (Typ.pp_full Pp.text) ret_type
 
 
 module SQLite = SqliteUtils.MarshalledData (struct

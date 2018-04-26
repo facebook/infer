@@ -58,6 +58,8 @@ let text =
   ; obj_sub= None }
 
 
+let text_break = {text with break_lines= true}
+
 (** Default html print environment *)
 let html color =
   { text with
@@ -128,9 +130,9 @@ let elapsed_time fmt () = Mtime.Span.pp fmt (Mtime_clock.elapsed ())
 
 let option pp fmt = function
   | None ->
-      F.pp_print_string fmt "None"
+      F.pp_print_string fmt "<None>"
   | Some x ->
-      F.fprintf fmt "Some %a" pp x
+      F.fprintf fmt "<Some %a>" pp x
 
 
 let to_string ~f fmt x = F.pp_print_string fmt (f x)
@@ -138,7 +140,7 @@ let to_string ~f fmt x = F.pp_print_string fmt (f x)
 let cli_args fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;
-    seq ~sep:"" ~print_env:{text with break_lines= true} F.pp_print_string fmt args ;
+    seq ~sep:"" ~print_env:text_break F.pp_print_string fmt args ;
     F.fprintf fmt "@]@\n"
   in
   let rec pp_argfile_args in_argfiles fmt args =

@@ -125,6 +125,8 @@ let compare x y =
   [%compare : (ErrLogHash.Key.t * ErrDataSet.t) list] (bindings x) (bindings y)
 
 
+let equal x y = [%compare.equal : t] x y
+
 (** Empty error log *)
 let empty () = ErrLogHash.create 13
 
