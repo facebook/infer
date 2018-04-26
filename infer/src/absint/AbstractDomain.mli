@@ -70,6 +70,14 @@ end
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
 
+(** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn from
+    a *finite* collection of possible values, since the widening operator here is just union. *)
+module FiniteSetOfPPSet (PPSet : PrettyPrintable.PPSet) : sig
+  include module type of PPSet with type elt = PPSet.elt
+
+  include WithBottom with type astate = t
+end
+
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
 module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) : sig

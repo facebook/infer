@@ -156,8 +156,8 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
   let pp fmt (astate1, astate2) = F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
 end
 
-module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) = struct
-  include PrettyPrintable.MakePPSet (Element)
+module FiniteSetOfPPSet (S : PrettyPrintable.PPSet) = struct
+  include S
 
   type astate = t
 
@@ -167,6 +167,9 @@ module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
+
+module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) =
+  FiniteSetOfPPSet (PrettyPrintable.MakePPSet (Element))
 
 module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   include PrettyPrintable.MakePPSet (Element)
