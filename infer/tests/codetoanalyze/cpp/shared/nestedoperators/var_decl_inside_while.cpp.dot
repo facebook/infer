@@ -1,49 +1,5 @@
 /* @generated */
 digraph cfg {
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10, column 1]\n " color=yellow style=filled]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_2" [label="2: Exit simple_assignment \n  " color=yellow style=filled]
-	
-
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17, column 3]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_2" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" [label="4: + \n  " ]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" [label="5: Prune (true branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(n$0, true); [line 13, column 14]\n " shape="invhouse"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" [label="6: Prune (false branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(!n$0, false); [line 13, column 14]\n " shape="invhouse"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" [label="7:  DeclStmt \n   n$1=*&x:int [line 13, column 18]\n  *&a:int=n$1 [line 13, column 10]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" ;
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" [label="8:  BinaryOperatorStmt: SubAssign \n   n$2=*&x:int [line 15, column 5]\n  *&x:int=(n$2 - 1) [line 15, column 5]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$3=*&a:int [line 14, column 15]\n  n$4=*&result:int [line 14, column 5]\n  *&result:int=(n$4 + n$3) [line 14, column 5]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" [label="10:  DeclStmt \n   *&result:int=0 [line 12, column 3]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" [label="11:  DeclStmt \n   *&x:int=10 [line 11, column 3]\n " shape="box"]
-	
-
-	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" ;
 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&result,&x); [line 20, column 1]\n " color=yellow style=filled]
 	
 
@@ -113,4 +69,48 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10, column 1]\n " color=yellow style=filled]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_2" [label="2: Exit simple_assignment \n  " color=yellow style=filled]
+	
+
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" [label="3:  Return Stmt \n   *&return:int=0 [line 17, column 3]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_2" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" [label="4: + \n  " ]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" [label="5: Prune (true branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(n$0, true); [line 13, column 14]\n " shape="invhouse"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" [label="6: Prune (false branch, while) \n   n$0=*&a:int [line 13, column 14]\n  PRUNE(!n$0, false); [line 13, column 14]\n " shape="invhouse"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_3" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" [label="7:  DeclStmt \n   n$1=*&x:int [line 13, column 18]\n  *&a:int=n$1 [line 13, column 10]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_5" ;
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_7" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_6" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" [label="8:  BinaryOperatorStmt: SubAssign \n   n$2=*&x:int [line 15, column 5]\n  *&x:int=(n$2 - 1) [line 15, column 5]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$3=*&a:int [line 14, column 15]\n  n$4=*&result:int [line 14, column 5]\n  *&result:int=(n$4 + n$3) [line 14, column 5]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_9" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_8" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" [label="10:  DeclStmt \n   *&result:int=0 [line 12, column 3]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_4" ;
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" [label="11:  DeclStmt \n   *&x:int=10 [line 11, column 3]\n " shape="box"]
+	
+
+	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_10" ;
 }

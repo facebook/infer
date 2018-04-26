@@ -1,38 +1,5 @@
 /* @generated */
 digraph cfg {
-"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_1" [label="1: Start choose2_div0_no_report\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
-	
-
-	 "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_1" -> "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" ;
-"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_2" [label="2: Exit choose2_div0_no_report \n  " color=yellow style=filled]
-	
-
-"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 36, column 10]\n  _=*n$0:ExecStore<Choose2> [line 36, column 10]\n  n$2=_fun_ExecStore<Choose2>_call_div(n$0:ExecStore<Choose2>&,1:int) [line 36, column 10]\n  *&return:int=n$2 [line 36, column 3]\n " shape="box"]
-	
-
-	 "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" -> "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_2" ;
-"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_1" [label="1: Start choose2_div0_extra\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 39, column 1]\n " color=yellow style=filled]
-	
-
-	 "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_1" -> "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" ;
-"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_2" [label="2: Exit choose2_div0_extra \n  " color=yellow style=filled]
-	
-
-"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 39, column 56]\n  _=*n$0.f:Choose2 [line 39, column 56]\n  n$2=_fun_Choose2_extra(n$0.f:Choose2&,0:int) [line 39, column 56]\n  *&return:int=n$2 [line 39, column 49]\n " shape="box"]
-	
-
-	 "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" -> "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_2" ;
-"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_1" [label="1: Start choose2_div1_extra\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 41, column 1]\n " color=yellow style=filled]
-	
-
-	 "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_1" -> "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" ;
-"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_2" [label="2: Exit choose2_div1_extra \n  " color=yellow style=filled]
-	
-
-"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 41, column 56]\n  _=*n$0.f:Choose2 [line 41, column 56]\n  n$2=_fun_Choose2_extra(n$0.f:Choose2&,1:int) [line 41, column 56]\n  *&return:int=n$2 [line 41, column 49]\n " shape="box"]
-	
-
-	 "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" -> "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_2" ;
 "choose1_div0#84040224581831795.e7e9c53ca95564cb9f2fe7bf906efbb2_1" [label="1: Start choose1_div0\nFormals:  s:ExecStore<Choose1>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
 	
 
@@ -55,39 +22,39 @@ digraph cfg {
 	
 
 	 "choose1_div1#6853869982283615202.a4644da7504c41a081228a100b9b551b_3" -> "choose1_div1#6853869982283615202.a4644da7504c41a081228a100b9b551b_2" ;
-"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_1" [label="1: Start Choose1_div\nFormals:  this:Choose1* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
+"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_1" [label="1: Start choose2_div0_extra\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 39, column 1]\n " color=yellow style=filled]
 	
 
-	 "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_1" -> "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" ;
-"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_2" [label="2: Exit Choose1_div \n  " color=yellow style=filled]
+	 "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_1" -> "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" ;
+"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_2" [label="2: Exit choose2_div0_extra \n  " color=yellow style=filled]
 	
 
-"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 11, column 38]\n  *&return:int=(1 / n$0) [line 11, column 27]\n " shape="box"]
+"choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 39, column 56]\n  _=*n$0.f:Choose2 [line 39, column 56]\n  n$2=_fun_Choose2_extra(n$0.f:Choose2&,0:int) [line 39, column 56]\n  *&return:int=n$2 [line 39, column 49]\n " shape="box"]
 	
 
-	 "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" -> "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_2" ;
-"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_1" [label="1: Start Choose2_extra\nFormals:  this:Choose2* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 3]\n " color=yellow style=filled]
+	 "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_3" -> "choose2_div0_extra#14813785796839389204.fa5d6812348bd595f0378dd5dc4923d1_2" ;
+"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_1" [label="1: Start choose2_div0_no_report\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
 	
 
-	 "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_1" -> "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" ;
-"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_2" [label="2: Exit Choose2_extra \n  " color=yellow style=filled]
+	 "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_1" -> "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" ;
+"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_2" [label="2: Exit choose2_div0_no_report \n  " color=yellow style=filled]
 	
 
-"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 18, column 33]\n  *&return:int=(1 / n$0) [line 18, column 22]\n " shape="box"]
+"choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 36, column 10]\n  _=*n$0:ExecStore<Choose2> [line 36, column 10]\n  n$2=_fun_ExecStore<Choose2>_call_div(n$0:ExecStore<Choose2>&,1:int) [line 36, column 10]\n  *&return:int=n$2 [line 36, column 3]\n " shape="box"]
 	
 
-	 "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" -> "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_2" ;
-"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_1" [label="1: Start Choose2_div\nFormals:  this:Choose2* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+	 "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_3" -> "choose2_div0_no_report#2695819694034608079.37b94e5ad3118293eeb303180a8ab569_2" ;
+"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_1" [label="1: Start choose2_div1_extra\nFormals:  s:ExecStore<Choose2>&\nLocals:  \n   DECLARE_LOCALS(&return); [line 41, column 1]\n " color=yellow style=filled]
 	
 
-	 "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_1" -> "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" ;
-"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_2" [label="2: Exit Choose2_div \n  " color=yellow style=filled]
+	 "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_1" -> "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" ;
+"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_2" [label="2: Exit choose2_div1_extra \n  " color=yellow style=filled]
 	
 
-"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" [label="3:  Return Stmt \n   n$0=*&b:int [line 15, column 38]\n  *&return:int=(1 / n$0) [line 15, column 27]\n " shape="box"]
+"choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" [label="3:  Return Stmt \n   n$0=*&s:ExecStore<Choose2>& [line 41, column 56]\n  _=*n$0.f:Choose2 [line 41, column 56]\n  n$2=_fun_Choose2_extra(n$0.f:Choose2&,1:int) [line 41, column 56]\n  *&return:int=n$2 [line 41, column 49]\n " shape="box"]
 	
 
-	 "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" -> "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_2" ;
+	 "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_3" -> "choose2_div1_extra#11450073616177188665.26254023768c0b68956b8cd88a792052_2" ;
 "call_div#ExecStore<Choose2>#(11829874625214834057).d639b1b8281e7bb31d011a0c7a797e72_1" [label="1: Start ExecStore<Choose2>_call_div\nFormals:  this:ExecStore<Choose2>* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 3]\n " color=yellow style=filled]
 	
 
@@ -110,4 +77,37 @@ digraph cfg {
 	
 
 	 "call_div#ExecStore<Choose1>#(13821779640448790720).c684f7c620c64dbf19170e6c2add6779_3" -> "call_div#ExecStore<Choose1>#(13821779640448790720).c684f7c620c64dbf19170e6c2add6779_2" ;
+"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_1" [label="1: Start Choose1_div\nFormals:  this:Choose1* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_1" -> "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" ;
+"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_2" [label="2: Exit Choose1_div \n  " color=yellow style=filled]
+	
+
+"div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 11, column 38]\n  *&return:int=(1 / n$0) [line 11, column 27]\n " shape="box"]
+	
+
+	 "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_3" -> "div#Choose1#(7273562715988938262).67bd706f66d8f9c67db80305a9ecab16_2" ;
+"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_1" [label="1: Start Choose2_div\nFormals:  this:Choose2* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_1" -> "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" ;
+"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_2" [label="2: Exit Choose2_div \n  " color=yellow style=filled]
+	
+
+"div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" [label="3:  Return Stmt \n   n$0=*&b:int [line 15, column 38]\n  *&return:int=(1 / n$0) [line 15, column 27]\n " shape="box"]
+	
+
+	 "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_3" -> "div#Choose2#(15124421267141903041).48bc5dd070e87512d292b60033d4f4ba_2" ;
+"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_1" [label="1: Start Choose2_extra\nFormals:  this:Choose2* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 3]\n " color=yellow style=filled]
+	
+
+	 "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_1" -> "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" ;
+"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_2" [label="2: Exit Choose2_extra \n  " color=yellow style=filled]
+	
+
+"extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 18, column 33]\n  *&return:int=(1 / n$0) [line 18, column 22]\n " shape="box"]
+	
+
+	 "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_3" -> "extra#Choose2#(14672402234151207405).b4984695aadbb0c84ec39abdd34b600e_2" ;
 }

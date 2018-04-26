@@ -1,43 +1,5 @@
 /* @generated */
 digraph cfg {
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" [label="1: Start normal\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 10, column 1]\n " color=yellow style=filled]
-	
-
-	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" [label="2: Exit normal \n  " color=yellow style=filled]
-	
-
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" [label="3:  DeclStmt \n   n$0=*&ref_from_val:int& [line 13, column 23]\n  *&ref_from_ref:int&=n$0 [line 13, column 3]\n " shape="box"]
-	
-
-	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" [label="4:  DeclStmt \n   *&ref_from_val:int&=&a [line 12, column 3]\n " shape="box"]
-	
-
-	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" [label="5:  DeclStmt \n   *&a:int=3 [line 11, column 3]\n " shape="box"]
-	
-
-	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" [label="1: Start nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 16, column 1]\n " color=yellow style=filled]
-	
-
-	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" [label="2: Exit nested \n  " color=yellow style=filled]
-	
-
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" [label="3:  DeclStmt \n   n$0=*&ref_from_val:int& [line 19, column 23]\n  *n$0:int=6 [line 19, column 23]\n  *&ref_from_ref:int&=n$0 [line 19, column 3]\n " shape="box"]
-	
-
-	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" [label="4:  DeclStmt \n   *&a:int=4 [line 18, column 23]\n  *&ref_from_val:int&=&a [line 18, column 3]\n " shape="box"]
-	
-
-	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" [label="5:  DeclStmt \n   *&a:int=3 [line 17, column 3]\n " shape="box"]
-	
-
-	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" ;
 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_1" [label="1: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& b:int a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&b,&a); [line 22, column 1]\n " color=yellow style=filled]
 	
 
@@ -61,4 +23,42 @@ digraph cfg {
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" ;
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" [label="1: Start nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 16, column 1]\n " color=yellow style=filled]
+	
+
+	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" ;
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" [label="2: Exit nested \n  " color=yellow style=filled]
+	
+
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" [label="3:  DeclStmt \n   n$0=*&ref_from_val:int& [line 19, column 23]\n  *n$0:int=6 [line 19, column 23]\n  *&ref_from_ref:int&=n$0 [line 19, column 3]\n " shape="box"]
+	
+
+	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_2" ;
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" [label="4:  DeclStmt \n   *&a:int=4 [line 18, column 23]\n  *&ref_from_val:int&=&a [line 18, column 3]\n " shape="box"]
+	
+
+	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_3" ;
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" [label="5:  DeclStmt \n   *&a:int=3 [line 17, column 3]\n " shape="box"]
+	
+
+	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" ;
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" [label="1: Start normal\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 10, column 1]\n " color=yellow style=filled]
+	
+
+	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" ;
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" [label="2: Exit normal \n  " color=yellow style=filled]
+	
+
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" [label="3:  DeclStmt \n   n$0=*&ref_from_val:int& [line 13, column 23]\n  *&ref_from_ref:int&=n$0 [line 13, column 3]\n " shape="box"]
+	
+
+	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_2" ;
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" [label="4:  DeclStmt \n   *&ref_from_val:int&=&a [line 12, column 3]\n " shape="box"]
+	
+
+	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_3" ;
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" [label="5:  DeclStmt \n   *&a:int=3 [line 11, column 3]\n " shape="box"]
+	
+
+	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_4" ;
 }

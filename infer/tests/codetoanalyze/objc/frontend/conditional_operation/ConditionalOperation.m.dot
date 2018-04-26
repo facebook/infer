@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A_test4:\nFormals:  self:A* x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+	
+
+	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" [label="2: Exit A_test4: \n  " color=yellow style=filled]
+	
+
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n " shape="box"]
+	
+
+	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_1" [label="1: Start A_test5:\nFormals:  self:A* b:_Bool\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$2:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 23, column 1]\n " color=yellow style=filled]
 	
 
@@ -32,15 +43,4 @@ digraph cfg {
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_2" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A_test4:\nFormals:  self:A* x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
-	
-
-	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" [label="2: Exit A_test4: \n  " color=yellow style=filled]
-	
-
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 20, column 10]\n  *&return:int=n$0 [line 20, column 3]\n " shape="box"]
-	
-
-	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
 }

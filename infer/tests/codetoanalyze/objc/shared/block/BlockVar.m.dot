@@ -1,64 +1,49 @@
 /* @generated */
 digraph cfg {
-"test#BlockVar#class.79d88363beeb921609a605886abe817f_1" [label="1: Start BlockVar_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
+"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_1" [label="1: Start objc_blockBlockVar_blockPostBad_2\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 33, column 28]\n " color=yellow style=filled]
 	
 
-	 "test#BlockVar#class.79d88363beeb921609a605886abe817f_1" -> "test#BlockVar#class.79d88363beeb921609a605886abe817f_3" ;
-"test#BlockVar#class.79d88363beeb921609a605886abe817f_2" [label="2: Exit BlockVar_test \n  " color=yellow style=filled]
+	 "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_1" -> "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" ;
+"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_2" [label="2: Exit objc_blockBlockVar_blockPostBad_2 \n  " color=yellow style=filled]
 	
 
-"test#BlockVar#class.79d88363beeb921609a605886abe817f_3" [label="3:  Return Stmt \n   *&return:int=5 [line 15, column 3]\n " shape="box"]
+"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" [label="3:  Return Stmt \n   n$14=*&x:int* [line 34, column 12]\n  *&return:int*=n$14 [line 34, column 5]\n " shape="box"]
 	
 
-	 "test#BlockVar#class.79d88363beeb921609a605886abe817f_3" -> "test#BlockVar#class.79d88363beeb921609a605886abe817f_2" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_1" [label="1: Start BlockVar_navigateToURLInBackground\nFormals: \nLocals:  p:int* x:int addBlock:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&x,&addBlock); [line 18, column 1]\n " color=yellow style=filled]
+	 "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" -> "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_2" ;
+"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_1" [label="1: Start objc_blockBlockVar_blockPostOk_3\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 42, column 28]\n " color=yellow style=filled]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_1" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" [label="2: Exit BlockVar_navigateToURLInBackground \n  " color=yellow style=filled]
+	 "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_1" -> "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" ;
+"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_2" [label="2: Exit objc_blockBlockVar_blockPostOk_3 \n  " color=yellow style=filled]
 	
 
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" [label="3: + \n  " ]
+"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" [label="3:  Return Stmt \n   n$19=*&x:int* [line 43, column 12]\n  *&return:int*=n$19 [line 43, column 5]\n " shape="box"]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" -> "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_2" ;
+"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_1" [label="1: Start objc_blockBlockVar_capturedNoNullDeref_5\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 59, column 27]\n " color=yellow style=filled]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 25, column 7]\n " shape="box"]
+	 "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_1" -> "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" ;
+"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_2" [label="2: Exit objc_blockBlockVar_capturedNoNullDeref_5 \n  " color=yellow style=filled]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" ;
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 8), true); [line 25, column 7]\n " shape="invhouse"]
+"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" [label="3:  Return Stmt \n   n$28=*&x:int* [line 60, column 13]\n  n$29=*n$28:int [line 60, column 12]\n  *&return:int=n$29 [line 60, column 5]\n " shape="box"]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 25, column 7]\n " shape="invhouse"]
+	 "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" -> "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_2" ;
+"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_1" [label="1: Start objc_blockBlockVar_capturedNullDeref_4\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 50, column 27]\n " color=yellow style=filled]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 26, column 13]\n  n$2=*n$1:int [line 26, column 12]\n  *&return:int=n$2 [line 26, column 5]\n " shape="box"]
+	 "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_1" -> "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" ;
+"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_2" [label="2: Exit objc_blockBlockVar_capturedNullDeref_4 \n  " color=yellow style=filled]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" [label="9:  Return Stmt \n   n$3=*&x:int [line 28, column 12]\n  *&return:int=n$3 [line 28, column 5]\n " shape="box"]
+"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" [label="3:  Return Stmt \n   n$23=*&x:int* [line 51, column 13]\n  n$24=*n$23:int [line 51, column 12]\n  *&return:int=n$24 [line 51, column 5]\n " shape="box"]
 	
 
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" [label="10:  DeclStmt \n   *&p:int*=null [line 24, column 3]\n " shape="box"]
-	
-
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" [label="11:  DeclStmt \n   n$4=*&addBlock:_fn_(*) [line 23, column 11]\n  n$5=n$4(1:int,2:int) [line 23, column 11]\n  *&x:int=n$5 [line 23, column 3]\n " shape="box"]
-	
-
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   *&addBlock:_fn_(*)=(_fun_objc_blockBlockVar_navigateToURLInBackground_1) [line 19, column 3]\n " shape="box"]
-	
-
-	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" ;
+	 "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" -> "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_2" ;
 "objc_blockBlockVar_navigateToURLInBackground_1.3f33ba208d462b81a235e03653494b18_1" [label="1: Start objc_blockBlockVar_navigateToURLInBackground_1\nFormals:  a:int b:int\nLocals:  res:int \n   DECLARE_LOCALS(&return,&res); [line 19, column 35]\n " color=yellow style=filled]
 	
 
@@ -116,25 +101,6 @@ digraph cfg {
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_6" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_5" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_1" [label="1: Start BlockVar_capturedNullDeref\nFormals:  self:BlockVar*\nLocals:  my_block:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&my_block,&x); [line 48, column 1]\n " color=yellow style=filled]
-	
-
-	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_1" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" [label="2: Exit BlockVar_capturedNullDeref \n  " color=yellow style=filled]
-	
-
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" [label="3:  Return Stmt \n   n$20=*&my_block:_fn_(*) [line 53, column 10]\n  n$21=n$20() [line 53, column 10]\n  *&return:int=n$21 [line 53, column 3]\n " shape="box"]
-	
-
-	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   n$22=*&x:int* [line 50, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar_capturedNullDeref_4,(n$22 &x:int*)) [line 50, column 3]\n " shape="box"]
-	
-
-	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" [label="5:  DeclStmt \n   *&x:int*=null [line 49, column 3]\n " shape="box"]
-	
-
-	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" ;
 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_1" [label="1: Start BlockVar_capturedNoNullDeref\nFormals:  self:BlockVar*\nLocals:  my_block:_fn_(*) x:int* i:int \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 56, column 1]\n " color=yellow style=filled]
 	
 
@@ -162,48 +128,82 @@ digraph cfg {
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_7" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_6" ;
-"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_1" [label="1: Start objc_blockBlockVar_blockPostOk_3\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 42, column 28]\n " color=yellow style=filled]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_1" [label="1: Start BlockVar_capturedNullDeref\nFormals:  self:BlockVar*\nLocals:  my_block:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&my_block,&x); [line 48, column 1]\n " color=yellow style=filled]
 	
 
-	 "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_1" -> "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" ;
-"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_2" [label="2: Exit objc_blockBlockVar_blockPostOk_3 \n  " color=yellow style=filled]
+	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_1" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" ;
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" [label="2: Exit BlockVar_capturedNullDeref \n  " color=yellow style=filled]
 	
 
-"objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" [label="3:  Return Stmt \n   n$19=*&x:int* [line 43, column 12]\n  *&return:int*=n$19 [line 43, column 5]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" [label="3:  Return Stmt \n   n$20=*&my_block:_fn_(*) [line 53, column 10]\n  n$21=n$20() [line 53, column 10]\n  *&return:int=n$21 [line 53, column 3]\n " shape="box"]
 	
 
-	 "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_3" -> "objc_blockBlockVar_blockPostOk_3.3ab7fa6614f426747520e37cb5442862_2" ;
-"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_1" [label="1: Start objc_blockBlockVar_blockPostBad_2\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 33, column 28]\n " color=yellow style=filled]
+	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" ;
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   n$22=*&x:int* [line 50, column 27]\n  *&my_block:_fn_(*)=(_fun_objc_blockBlockVar_capturedNullDeref_4,(n$22 &x:int*)) [line 50, column 3]\n " shape="box"]
 	
 
-	 "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_1" -> "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" ;
-"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_2" [label="2: Exit objc_blockBlockVar_blockPostBad_2 \n  " color=yellow style=filled]
+	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" ;
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" [label="5:  DeclStmt \n   *&x:int*=null [line 49, column 3]\n " shape="box"]
 	
 
-"objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" [label="3:  Return Stmt \n   n$14=*&x:int* [line 34, column 12]\n  *&return:int*=n$14 [line 34, column 5]\n " shape="box"]
+	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_5" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_1" [label="1: Start BlockVar_navigateToURLInBackground\nFormals: \nLocals:  p:int* x:int addBlock:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&x,&addBlock); [line 18, column 1]\n " color=yellow style=filled]
 	
 
-	 "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_3" -> "objc_blockBlockVar_blockPostBad_2.bc84c345da03940b9d1bd31f97111684_2" ;
-"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_1" [label="1: Start objc_blockBlockVar_capturedNoNullDeref_5\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 59, column 27]\n " color=yellow style=filled]
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_1" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" [label="2: Exit BlockVar_navigateToURLInBackground \n  " color=yellow style=filled]
 	
 
-	 "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_1" -> "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" ;
-"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_2" [label="2: Exit objc_blockBlockVar_capturedNoNullDeref_5 \n  " color=yellow style=filled]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" [label="3: + \n  " ]
 	
 
-"objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" [label="3:  Return Stmt \n   n$28=*&x:int* [line 60, column 13]\n  n$29=*n$28:int [line 60, column 12]\n  *&return:int=n$29 [line 60, column 5]\n " shape="box"]
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_3" -> "objc_blockBlockVar_capturedNoNullDeref_5.9ca77a5edecb840a7e1b223eb6f09bab_2" ;
-"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_1" [label="1: Start objc_blockBlockVar_capturedNullDeref_4\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 50, column 27]\n " color=yellow style=filled]
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int [line 25, column 7]\n " shape="box"]
 	
 
-	 "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_1" -> "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" ;
-"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_2" [label="2: Exit objc_blockBlockVar_capturedNullDeref_4 \n  " color=yellow style=filled]
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" ;
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 8), true); [line 25, column 7]\n " shape="invhouse"]
 	
 
-"objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" [label="3:  Return Stmt \n   n$23=*&x:int* [line 51, column 13]\n  n$24=*n$23:int [line 51, column 12]\n  *&return:int=n$24 [line 51, column 5]\n " shape="box"]
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 25, column 7]\n " shape="invhouse"]
 	
 
-	 "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_3" -> "objc_blockBlockVar_capturedNullDeref_4.1bdaeaa4f18868112cc189c7d6e42bf9_2" ;
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 26, column 13]\n  n$2=*n$1:int [line 26, column 12]\n  *&return:int=n$2 [line 26, column 5]\n " shape="box"]
+	
+
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" [label="9:  Return Stmt \n   n$3=*&x:int [line 28, column 12]\n  *&return:int=n$3 [line 28, column 5]\n " shape="box"]
+	
+
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_9" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" [label="10:  DeclStmt \n   *&p:int*=null [line 24, column 3]\n " shape="box"]
+	
+
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" [label="11:  DeclStmt \n   n$4=*&addBlock:_fn_(*) [line 23, column 11]\n  n$5=n$4(1:int,2:int) [line 23, column 11]\n  *&x:int=n$5 [line 23, column 3]\n " shape="box"]
+	
+
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" ;
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   *&addBlock:_fn_(*)=(_fun_objc_blockBlockVar_navigateToURLInBackground_1) [line 19, column 3]\n " shape="box"]
+	
+
+	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" ;
+"test#BlockVar#class.79d88363beeb921609a605886abe817f_1" [label="1: Start BlockVar_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
+	
+
+	 "test#BlockVar#class.79d88363beeb921609a605886abe817f_1" -> "test#BlockVar#class.79d88363beeb921609a605886abe817f_3" ;
+"test#BlockVar#class.79d88363beeb921609a605886abe817f_2" [label="2: Exit BlockVar_test \n  " color=yellow style=filled]
+	
+
+"test#BlockVar#class.79d88363beeb921609a605886abe817f_3" [label="3:  Return Stmt \n   *&return:int=5 [line 15, column 3]\n " shape="box"]
+	
+
+	 "test#BlockVar#class.79d88363beeb921609a605886abe817f_3" -> "test#BlockVar#class.79d88363beeb921609a605886abe817f_2" ;
 }

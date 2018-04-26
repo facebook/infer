@@ -1,16 +1,5 @@
 /* @generated */
 digraph cfg {
-"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_1" [label="1: Start stat_cast\nFormals: \nLocals:  la:long long a:int \n   DECLARE_LOCALS(&return,&la,&a); [line 10, column 1]\n " color=yellow style=filled]
-	
-
-	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_1" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" ;
-"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" [label="2: Exit stat_cast \n  " color=yellow style=filled]
-	
-
-"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   n$0=*&a:int [line 12, column 41]\n  *&la:long long=n$0 [line 12, column 3]\n " shape="box"]
-	
-
-	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" ;
 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_1" [label="1: Start functional_cast\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 15, column 1]\n " color=yellow style=filled]
 	
 
@@ -22,4 +11,15 @@ digraph cfg {
 	
 
 	 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" -> "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_2" ;
+"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_1" [label="1: Start stat_cast\nFormals: \nLocals:  la:long long a:int \n   DECLARE_LOCALS(&return,&la,&a); [line 10, column 1]\n " color=yellow style=filled]
+	
+
+	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_1" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" ;
+"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" [label="2: Exit stat_cast \n  " color=yellow style=filled]
+	
+
+"stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" [label="3:  DeclStmt \n   n$0=*&a:int [line 12, column 41]\n  *&la:long long=n$0 [line 12, column 3]\n " shape="box"]
+	
+
+	 "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_3" -> "stat_cast#12446126613472042601.03b0c783caaf8ed84eb6e909b7645c57_2" ;
 }

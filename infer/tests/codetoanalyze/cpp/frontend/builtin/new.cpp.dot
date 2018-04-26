@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_1" [label="1: Start operator_new\nFormals:  size:unsigned long ptr:void* ptr2:void*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
+	
+
+	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_1" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" ;
+"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" [label="2: Exit operator_new \n  " color=yellow style=filled]
+	
+
+"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" [label="3:  Return Stmt \n   n$0=*&ptr2:void* [line 23, column 10]\n  *&return:void*=n$0 [line 23, column 3]\n " shape="box"]
+	
+
+	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  i:int* x:int \n   DECLARE_LOCALS(&return,&i,&x); [line 10, column 1]\n " color=yellow style=filled]
 	
 
@@ -34,15 +45,4 @@ digraph cfg {
 	
 
 	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" ;
-"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_1" [label="1: Start operator_new\nFormals:  size:unsigned long ptr:void* ptr2:void*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
-	
-
-	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_1" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" ;
-"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" [label="2: Exit operator_new \n  " color=yellow style=filled]
-	
-
-"operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" [label="3:  Return Stmt \n   n$0=*&ptr2:void* [line 23, column 10]\n  *&return:void*=n$0 [line 23, column 3]\n " shape="box"]
-	
-
-	 "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_3" -> "operator_new#13351464032276683690.f7532bbe196cdd8520d944e0c3e1f7b4_2" ;
 }

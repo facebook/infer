@@ -1,5 +1,65 @@
 /* @generated */
 digraph cfg {
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing_getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 36, column 1]\n " color=yellow style=filled]
+	
+
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" ;
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing_getBool \n  " color=yellow style=filled]
+	
+
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool) [line 38, column 10]\n  *&return:NSNumber*=n$12 [line 38, column 3]\n " shape="box"]
+	
+
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool) [line 37, column 17]\n  *&n:NSNumber*=n$13 [line 37, column 3]\n " shape="box"]
+	
+
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing_getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 31, column 1]\n " color=yellow style=filled]
+	
+
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing_getDouble \n  " color=yellow style=filled]
+	
+
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 33, column 10]\n  *&return:NSNumber*=n$10 [line 33, column 3]\n " shape="box"]
+	
+
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 32, column 17]\n  *&n:NSNumber*=n$11 [line 32, column 3]\n " shape="box"]
+	
+
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing_getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 26, column 1]\n " color=yellow style=filled]
+	
+
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing_getFloat \n  " color=yellow style=filled]
+	
+
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 28, column 10]\n  *&return:NSNumber*=n$8 [line 28, column 3]\n " shape="box"]
+	
+
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 27, column 17]\n  *&n:NSNumber*=n$9 [line 27, column 3]\n " shape="box"]
+	
+
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing_getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 21, column 1]\n " color=yellow style=filled]
+	
+
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing_getInt \n  " color=yellow style=filled]
+	
+
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int) [line 23, column 10]\n  *&return:NSNumber*=n$6 [line 23, column 3]\n " shape="box"]
+	
+
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int) [line 22, column 17]\n  *&n:NSNumber*=n$7 [line 22, column 3]\n " shape="box"]
+	
+
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing_getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14, column 1]\n " color=yellow style=filled]
 	
 
@@ -23,66 +83,6 @@ digraph cfg {
 	
 
 	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing_getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 21, column 1]\n " color=yellow style=filled]
-	
-
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing_getInt \n  " color=yellow style=filled]
-	
-
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int) [line 23, column 10]\n  *&return:NSNumber*=n$6 [line 23, column 3]\n " shape="box"]
-	
-
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int) [line 22, column 17]\n  *&n:NSNumber*=n$7 [line 22, column 3]\n " shape="box"]
-	
-
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing_getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 26, column 1]\n " color=yellow style=filled]
-	
-
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing_getFloat \n  " color=yellow style=filled]
-	
-
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 28, column 10]\n  *&return:NSNumber*=n$8 [line 28, column 3]\n " shape="box"]
-	
-
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 27, column 17]\n  *&n:NSNumber*=n$9 [line 27, column 3]\n " shape="box"]
-	
-
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing_getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 31, column 1]\n " color=yellow style=filled]
-	
-
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing_getDouble \n  " color=yellow style=filled]
-	
-
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 33, column 10]\n  *&return:NSNumber*=n$10 [line 33, column 3]\n " shape="box"]
-	
-
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 32, column 17]\n  *&n:NSNumber*=n$11 [line 32, column 3]\n " shape="box"]
-	
-
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing_getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 36, column 1]\n " color=yellow style=filled]
-	
-
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing_getBool \n  " color=yellow style=filled]
-	
-
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool) [line 38, column 10]\n  *&return:NSNumber*=n$12 [line 38, column 3]\n " shape="box"]
-	
-
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool) [line 37, column 17]\n  *&n:NSNumber*=n$13 [line 37, column 3]\n " shape="box"]
-	
-
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" [label="1: Start Boxing_getS\nFormals:  self:Boxing*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 41, column 1]\n " color=yellow style=filled]
 	
 

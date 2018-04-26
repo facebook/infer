@@ -33,17 +33,6 @@ digraph cfg {
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" ;
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" ;
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" [label="2: Exit MyClass_getX \n  " color=yellow style=filled]
-	
-
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" [label="3:  Return Stmt \n   *&return:int=0 [line 33, column 3]\n " shape="box"]
-	
-
-	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" ;
 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" [label="1: Start MyClass_anInstanceMethod2\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 36, column 1]\n " color=yellow style=filled]
 	
 
@@ -55,4 +44,15 @@ digraph cfg {
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" ;
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
+	
+
+	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" ;
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" [label="2: Exit MyClass_getX \n  " color=yellow style=filled]
+	
+
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" [label="3:  Return Stmt \n   *&return:int=0 [line 33, column 3]\n " shape="box"]
+	
+
+	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" ;
 }

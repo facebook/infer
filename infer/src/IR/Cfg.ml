@@ -37,20 +37,20 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) =
 
 
 (** Iterate over all the nodes in the cfg *)
-let iter_all_nodes ?(sorted= false) f cfg =
+let iter_all_nodes ?(sorted= false) cfg ~f =
   let do_proc_desc _ (pdesc: Procdesc.t) =
     List.iter ~f:(fun node -> f pdesc node) (Procdesc.get_nodes pdesc)
   in
   if not sorted then Typ.Procname.Hash.iter do_proc_desc cfg
   else
     Typ.Procname.Hash.fold
-      (fun _ pdesc desc_nodes ->
-        List.fold
-          ~f:(fun desc_nodes node -> (pdesc, node) :: desc_nodes)
-          ~init:desc_nodes (Procdesc.get_nodes pdesc) )
+      (fun pname pdesc result ->
+        Procdesc.get_nodes pdesc
+        |> List.fold ~init:result ~f:(fun inner_result node -> (pname, pdesc, node) :: inner_result)
+        )
       cfg []
-    |> List.sort ~compare:[%compare : Procdesc.t * Procdesc.Node.t]
-    |> List.iter ~f:(fun (d, n) -> f d n)
+    |> List.sort ~compare:[%compare : Typ.Procname.t * Procdesc.t * Procdesc.Node.t]
+    |> List.iter ~f:(fun (_, d, n) -> f d n)
 
 
 let is_proc_cfg_connected proc_desc =

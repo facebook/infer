@@ -11,17 +11,6 @@ digraph cfg {
 	
 
 	 "BlockMain.116013dceff9629776ec833c9d43561d_3" -> "BlockMain.116013dceff9629776ec833c9d43561d_2" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" [label="1: Start objc_blockmain1_1\nFormals:  e:int f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 14]\n " color=yellow style=filled]
-	
-
-	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" [label="2: Exit objc_blockmain1_1 \n  " color=yellow style=filled]
-	
-
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 35, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int [line 35, column 16]\n  *&return:int=(n$5 - n$6) [line 35, column 5]\n " shape="box"]
-	
-
-	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
 "main1.38f534a9576db7ec6ebcbca8c111f942_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:_fn_(*) add2:int add1:int x:int \n   DECLARE_LOCALS(&return,&addblock,&add2,&add1,&x); [line 10, column 1]\n " color=yellow style=filled]
 	
 
@@ -61,6 +50,17 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_10" -> "main1.38f534a9576db7ec6ebcbca8c111f942_9" ;
+"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" [label="1: Start objc_blockmain1_1\nFormals:  e:int f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 14]\n " color=yellow style=filled]
+	
+
+	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" ;
+"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" [label="2: Exit objc_blockmain1_1 \n  " color=yellow style=filled]
+	
+
+"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 35, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1.s:int [line 35, column 16]\n  *&return:int=(n$5 - n$6) [line 35, column 5]\n " shape="box"]
+	
+
+	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  x:int c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  x:int \n   DECLARE_LOCALS(&return,&bla,&add2,&addblock2); [line 18, column 14]\n " color=yellow style=filled]
 	
 

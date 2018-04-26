@@ -1,16 +1,5 @@
 /* @generated */
 digraph cfg {
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
-	
-
-	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
-	
-
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=2 [line 12, column 18]\n " shape="box"]
-	
-
-	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
 "g0.8ac829e3bb8338d74cfb45ebe834d8e1_1" [label="1: Start g0\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 14, column 1]\n " color=yellow style=filled]
 	
 
@@ -824,4 +813,15 @@ digraph cfg {
 	
 
 	 "g8.c98b82371573afc08575815d90f5eac4_32" -> "g8.c98b82371573afc08575815d90f5eac4_31" ;
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
+	
+
+	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
+	
+
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=2 [line 12, column 18]\n " shape="box"]
+	
+
+	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
 }

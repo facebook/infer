@@ -45,17 +45,6 @@ digraph cfg {
 	
 
 	 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" -> "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" ;
-"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
-	
-
-	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" ;
-"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" [label="2: Exit constructor_with_body::X_init \n  " color=yellow style=filled]
-	
-
-"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:constructor_with_body::X* [line 14, column 17]\n  *n$0.f:int=0 [line 14, column 17]\n " shape="box"]
-	
-
-	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" ;
 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 3]\n " color=yellow style=filled]
 	
 
@@ -67,17 +56,6 @@ digraph cfg {
 	
 
 	 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" -> "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_2" ;
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 3]\n " color=yellow style=filled]
-	
-
-	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" ;
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" [label="2: Exit constructor_with_body::X_div \n  " color=yellow style=filled]
-	
-
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 21, column 26]\n  n$1=*n$0.f:int [line 21, column 26]\n  *&return:int=(1 / n$1) [line 21, column 15]\n " shape="box"]
-	
-
-	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X* a:int b:int\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 24, column 1]\n " color=yellow style=filled]
 	
 
@@ -97,4 +75,26 @@ digraph cfg {
 	
 
 	 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_5" -> "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_4" ;
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" ;
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" [label="2: Exit constructor_with_body::X_div \n  " color=yellow style=filled]
+	
+
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" [label="3:  Return Stmt \n   n$0=*&this:constructor_with_body::X* [line 21, column 26]\n  n$1=*n$0.f:int [line 21, column 26]\n  *&return:int=(1 / n$1) [line 21, column 15]\n " shape="box"]
+	
+
+	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
+"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+	
+
+	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" ;
+"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" [label="2: Exit constructor_with_body::X_init \n  " color=yellow style=filled]
+	
+
+"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:constructor_with_body::X* [line 14, column 17]\n  *n$0.f:int=0 [line 14, column 17]\n " shape="box"]
+	
+
+	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" ;
 }

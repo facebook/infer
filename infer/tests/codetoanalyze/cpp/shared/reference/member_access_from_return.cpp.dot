@@ -33,21 +33,6 @@ digraph cfg {
 	
 
 	 "get_ref#3760753509995480941.1a9482316aa67c38d5004ec1f3cb74db_3" -> "get_ref#3760753509995480941.1a9482316aa67c38d5004ec1f3cb74db_2" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_1" [label="1: Start test_ref\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 19, column 1]\n " color=yellow style=filled]
-	
-
-	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_1" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
-	
-
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21, column 11]\n  _=*n$0:X [line 21, column 11]\n  n$2=_fun_X_call(n$0:X&) [line 21, column 11]\n  *&c:int=n$2 [line 21, column 3]\n " shape="box"]
-	
-
-	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$3=_fun_get_ref() [line 20, column 11]\n  n$4=*n$3.f:int [line 20, column 11]\n  *&f:int=n$4 [line 20, column 3]\n " shape="box"]
-	
-
-	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" ;
 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_1" [label="1: Start test_ptr\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 24, column 1]\n " color=yellow style=filled]
 	
 
@@ -63,6 +48,28 @@ digraph cfg {
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" ;
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_1" [label="1: Start test_ref\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 19, column 1]\n " color=yellow style=filled]
+	
+
+	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_1" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" ;
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
+	
+
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21, column 11]\n  _=*n$0:X [line 21, column 11]\n  n$2=_fun_X_call(n$0:X&) [line 21, column 11]\n  *&c:int=n$2 [line 21, column 3]\n " shape="box"]
+	
+
+	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" ;
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$3=_fun_get_ref() [line 20, column 11]\n  n$4=*n$3.f:int [line 20, column 11]\n  *&f:int=n$4 [line 20, column 3]\n " shape="box"]
+	
+
+	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" ;
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 8]\n " color=yellow style=filled]
+	
+
+	 "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" -> "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" ;
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+	
+
 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
 	
 
@@ -74,11 +81,4 @@ digraph cfg {
 	
 
 	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 8]\n " color=yellow style=filled]
-	
-
-	 "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" -> "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" [label="2: Exit X_X \n  " color=yellow style=filled]
-	
-
 }

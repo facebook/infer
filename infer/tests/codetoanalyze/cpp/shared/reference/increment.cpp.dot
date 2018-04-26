@@ -1,24 +1,5 @@
 /* @generated */
 digraph cfg {
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" [label="1: Start using_value\nFormals: \nLocals:  q:int& r:int& v:int \n   DECLARE_LOCALS(&return,&q,&r,&v); [line 10, column 1]\n " color=yellow style=filled]
-	
-
-	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" [label="2: Exit using_value \n  " color=yellow style=filled]
-	
-
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" [label="3:  DeclStmt \n   n$0=*&v:int [line 13, column 12]\n  *&v:int=(n$0 - 1) [line 13, column 12]\n  *&q:int&=&v [line 13, column 3]\n " shape="box"]
-	
-
-	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" [label="4:  DeclStmt \n   n$1=*&v:int [line 12, column 12]\n  *&v:int=(n$1 + 1) [line 12, column 12]\n  *&r:int&=&v [line 12, column 3]\n " shape="box"]
-	
-
-	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" [label="5:  DeclStmt \n   *&v:int=3 [line 11, column 3]\n " shape="box"]
-	
-
-	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" ;
 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_1" [label="1: Start using_ref\nFormals: \nLocals:  q:int& r:int& vr:int& v:int \n   DECLARE_LOCALS(&return,&q,&r,&vr,&v); [line 16, column 1]\n " color=yellow style=filled]
 	
 
@@ -42,4 +23,23 @@ digraph cfg {
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_6" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_5" ;
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" [label="1: Start using_value\nFormals: \nLocals:  q:int& r:int& v:int \n   DECLARE_LOCALS(&return,&q,&r,&v); [line 10, column 1]\n " color=yellow style=filled]
+	
+
+	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" ;
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" [label="2: Exit using_value \n  " color=yellow style=filled]
+	
+
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" [label="3:  DeclStmt \n   n$0=*&v:int [line 13, column 12]\n  *&v:int=(n$0 - 1) [line 13, column 12]\n  *&q:int&=&v [line 13, column 3]\n " shape="box"]
+	
+
+	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_2" ;
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" [label="4:  DeclStmt \n   n$1=*&v:int [line 12, column 12]\n  *&v:int=(n$1 + 1) [line 12, column 12]\n  *&r:int&=&v [line 12, column 3]\n " shape="box"]
+	
+
+	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_3" ;
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" [label="5:  DeclStmt \n   *&v:int=3 [line 11, column 3]\n " shape="box"]
+	
+
+	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_4" ;
 }

@@ -1,27 +1,5 @@
 /* @generated */
 digraph cfg {
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
-	
-
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_2" [label="2: Exit foo \n  " color=yellow style=filled]
-	
-
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Return Stmt \n   *&return:int=5 [line 15, column 13]\n " shape="box"]
-	
-
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  p:Point \n   DECLARE_LOCALS(&return,&p); [line 17, column 1]\n " color=yellow style=filled]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
-	
-
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   *&p.x:int=1 [line 17, column 31]\n  n$0=_fun_foo() [line 17, column 35]\n  *&p.y:int=(n$0 + 3) [line 17, column 31]\n " shape="box"]
-	
-
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_1" [label="1: Start field_set_correctly\nFormals: \nLocals:  e:Employee \n   DECLARE_LOCALS(&return,&e); [line 34, column 1]\n " color=yellow style=filled]
 	
 
@@ -37,6 +15,17 @@ digraph cfg {
 	
 
 	 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" -> "field_set_correctly.b8d9a4294a85d24818c312a099420dce_3" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+	
+
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Return Stmt \n   *&return:int=5 [line 15, column 13]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
 "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_1" [label="1: Start implicit_expr_set_correctly\nFormals: \nLocals:  imageDrawRect:rect \n   DECLARE_LOCALS(&return,&imageDrawRect); [line 56, column 1]\n " color=yellow style=filled]
 	
 
@@ -52,6 +41,17 @@ digraph cfg {
 	
 
 	 "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_4" -> "implicit_expr_set_correctly.dcfe49f71ad24e86323cbad97b1a70fe_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  p:Point \n   DECLARE_LOCALS(&return,&p); [line 17, column 1]\n " color=yellow style=filled]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
+"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   *&p.x:int=1 [line 17, column 31]\n  n$0=_fun_foo() [line 17, column 35]\n  *&p.y:int=(n$0 + 3) [line 17, column 31]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
 "point_coords_set_correctly.3abf7d8dcf379339f0fa9b69df909b28_1" [label="1: Start point_coords_set_correctly\nFormals:  p:Point*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
 	
 

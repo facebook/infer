@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25, column 7]\n " color=yellow style=filled]
+	
+
+	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" ;
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" [label="2: Exit objc_blockMy_manager_m_1 \n  " color=yellow style=filled]
+	
+
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26, column 5]\n " shape="box"]
+	
+
+	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 21, column 1]\n " color=yellow style=filled]
 	
 
@@ -56,15 +67,4 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" ;
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25, column 7]\n " color=yellow style=filled]
-	
-
-	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" ;
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" [label="2: Exit objc_blockMy_manager_m_1 \n  " color=yellow style=filled]
-	
-
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26, column 5]\n " shape="box"]
-	
-
-	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
 }

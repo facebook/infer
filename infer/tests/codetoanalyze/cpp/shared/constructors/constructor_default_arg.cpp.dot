@@ -19,17 +19,6 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
-	
-
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X_div \n  " color=yellow style=filled]
-	
-
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 15, column 26]\n  n$1=*n$0.f:int [line 15, column 26]\n  *&return:int=(1 / n$1) [line 15, column 15]\n " shape="box"]
-	
-
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
 "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_1" [label="1: Start X_X\nFormals:  this:X* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
 	
 
@@ -41,4 +30,15 @@ digraph cfg {
 	
 
 	 "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_3" -> "X#X#{14939599560045044604}.b28c8e2a1dd7783932fc838d8413f387_2" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X_div \n  " color=yellow style=filled]
+	
+
+"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 15, column 26]\n  n$1=*n$0.f:int [line 15, column 26]\n  *&return:int=(1 / n$1) [line 15, column 15]\n " shape="box"]
+	
+
+	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
 }

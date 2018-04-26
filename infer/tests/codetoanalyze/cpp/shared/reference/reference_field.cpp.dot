@@ -1,113 +1,5 @@
 /* @generated */
 digraph cfg {
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_1" [label="1: Start reference_field::ref_F_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 48, column 1]\n " color=yellow style=filled]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_1" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" ;
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_2" [label="2: Exit reference_field::ref_F_div0 \n  " color=yellow style=filled]
-	
-
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" [label="3:  Return Stmt \n   n$0=*&r.x:reference_field::X& [line 53, column 14]\n  n$1=*n$0.f:int [line 53, column 14]\n  *&return:int=(1 / n$1) [line 53, column 3]\n  _=*&x:reference_field::X [line 53, column 18]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 53, column 18]\n " shape="box"]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_2" ;
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 52, column 3]\n " shape="box"]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" ;
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 51, column 7]\n " shape="box"]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" ;
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 50, column 3]\n " shape="box"]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" ;
-"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 49, column 5]\n " shape="box"]
-	
-
-	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_1" [label="1: Start reference_field::ref_I_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 56, column 1]\n " color=yellow style=filled]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_1" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_2" [label="2: Exit reference_field::ref_I_div0 \n  " color=yellow style=filled]
-	
-
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" [label="3:  Return Stmt \n   n$0=*&r.i:int& [line 61, column 14]\n  n$1=*n$0:int [line 61, column 14]\n  *&return:int=(1 / n$1) [line 61, column 3]\n  _=*&x:reference_field::X [line 61, column 16]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 61, column 16]\n " shape="box"]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_2" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 60, column 3]\n " shape="box"]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 59, column 7]\n " shape="box"]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 58, column 3]\n " shape="box"]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" ;
-"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 57, column 5]\n " shape="box"]
-	
-
-	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_1" [label="1: Start reference_field::ref_getF_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 64, column 1]\n " color=yellow style=filled]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_1" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_2" [label="2: Exit reference_field::ref_getF_div0 \n  " color=yellow style=filled]
-	
-
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" [label="3:  Return Stmt \n   _=*&r:reference_field::Ref [line 69, column 14]\n  n$1=_fun_reference_field::Ref_getF(&r:reference_field::Ref&) [line 69, column 14]\n  *&return:int=(1 / n$1) [line 69, column 3]\n  _=*&x:reference_field::X [line 69, column 21]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 69, column 21]\n " shape="box"]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_2" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 68, column 3]\n " shape="box"]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 67, column 7]\n " shape="box"]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 66, column 3]\n " shape="box"]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" ;
-"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 65, column 5]\n " shape="box"]
-	
-
-	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_1" [label="1: Start reference_field::ref_getI_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 72, column 1]\n " color=yellow style=filled]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_1" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_2" [label="2: Exit reference_field::ref_getI_div0 \n  " color=yellow style=filled]
-	
-
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" [label="3:  Return Stmt \n   _=*&r:reference_field::Ref [line 77, column 14]\n  n$1=_fun_reference_field::Ref_getI(&r:reference_field::Ref&) [line 77, column 14]\n  *&return:int=(1 / n$1) [line 77, column 3]\n  _=*&x:reference_field::X [line 77, column 21]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 77, column 21]\n " shape="box"]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_2" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 76, column 3]\n " shape="box"]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 75, column 7]\n " shape="box"]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 74, column 3]\n " shape="box"]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" ;
-"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 73, column 5]\n " shape="box"]
-	
-
-	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" ;
 "ptr_F_div0#reference_field#14005768761742554773.fa7bac24d70ab0b747e7fb5360157c5f_1" [label="1: Start reference_field::ptr_F_div0\nFormals: \nLocals:  r:reference_field::Ptr x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 81, column 1]\n " color=yellow style=filled]
 	
 
@@ -216,6 +108,114 @@ digraph cfg {
 	
 
 	 "ptr_getI_div0#reference_field#2818660867908728453.99667cea541002986498839338031f13_7" -> "ptr_getI_div0#reference_field#2818660867908728453.99667cea541002986498839338031f13_6" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_1" [label="1: Start reference_field::ref_F_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 48, column 1]\n " color=yellow style=filled]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_1" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_2" [label="2: Exit reference_field::ref_F_div0 \n  " color=yellow style=filled]
+	
+
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" [label="3:  Return Stmt \n   n$0=*&r.x:reference_field::X& [line 53, column 14]\n  n$1=*n$0.f:int [line 53, column 14]\n  *&return:int=(1 / n$1) [line 53, column 3]\n  _=*&x:reference_field::X [line 53, column 18]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 53, column 18]\n " shape="box"]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_2" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 52, column 3]\n " shape="box"]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_3" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 51, column 7]\n " shape="box"]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_4" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 50, column 3]\n " shape="box"]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_5" ;
+"ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 49, column 5]\n " shape="box"]
+	
+
+	 "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_7" -> "ref_F_div0#reference_field#11041134718140208132.6e58f8c7050613499e915a7d12b0f081_6" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_1" [label="1: Start reference_field::ref_I_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 56, column 1]\n " color=yellow style=filled]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_1" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_2" [label="2: Exit reference_field::ref_I_div0 \n  " color=yellow style=filled]
+	
+
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" [label="3:  Return Stmt \n   n$0=*&r.i:int& [line 61, column 14]\n  n$1=*n$0:int [line 61, column 14]\n  *&return:int=(1 / n$1) [line 61, column 3]\n  _=*&x:reference_field::X [line 61, column 16]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 61, column 16]\n " shape="box"]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_2" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 60, column 3]\n " shape="box"]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_3" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 59, column 7]\n " shape="box"]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_4" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 58, column 3]\n " shape="box"]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_5" ;
+"ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 57, column 5]\n " shape="box"]
+	
+
+	 "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_7" -> "ref_I_div0#reference_field#12578013844532400739.b911fdef1ca9c73b658bff3d5d964b9b_6" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_1" [label="1: Start reference_field::ref_getF_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 64, column 1]\n " color=yellow style=filled]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_1" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_2" [label="2: Exit reference_field::ref_getF_div0 \n  " color=yellow style=filled]
+	
+
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" [label="3:  Return Stmt \n   _=*&r:reference_field::Ref [line 69, column 14]\n  n$1=_fun_reference_field::Ref_getF(&r:reference_field::Ref&) [line 69, column 14]\n  *&return:int=(1 / n$1) [line 69, column 3]\n  _=*&x:reference_field::X [line 69, column 21]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 69, column 21]\n " shape="box"]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_2" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 68, column 3]\n " shape="box"]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_3" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 67, column 7]\n " shape="box"]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_4" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 66, column 3]\n " shape="box"]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_5" ;
+"ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 65, column 5]\n " shape="box"]
+	
+
+	 "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_7" -> "ref_getF_div0#reference_field#2481930918988851369.2dc7181f26bf9bad7c2f06846f4d7ec4_6" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_1" [label="1: Start reference_field::ref_getI_div0\nFormals: \nLocals:  r:reference_field::Ref x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 72, column 1]\n " color=yellow style=filled]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_1" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_2" [label="2: Exit reference_field::ref_getI_div0 \n  " color=yellow style=filled]
+	
+
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" [label="3:  Return Stmt \n   _=*&r:reference_field::Ref [line 77, column 14]\n  n$1=_fun_reference_field::Ref_getI(&r:reference_field::Ref&) [line 77, column 14]\n  *&return:int=(1 / n$1) [line 77, column 3]\n  _=*&x:reference_field::X [line 77, column 21]\n  _fun_reference_field::X_~X(&x:reference_field::X*) [line 77, column 21]\n " shape="box"]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_2" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.f:int=0 [line 76, column 3]\n " shape="box"]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_3" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" [label="5:  DeclStmt \n   _fun_reference_field::Ref_Ref(&r:reference_field::Ref*,&x:reference_field::X&) [line 75, column 7]\n " shape="box"]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_4" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" [label="6:  BinaryOperatorStmt: Assign \n   *&x.f:int=1 [line 74, column 3]\n " shape="box"]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_5" ;
+"ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" [label="7:  DeclStmt \n   _fun_reference_field::X_X(&x:reference_field::X*) [line 73, column 5]\n " shape="box"]
+	
+
+	 "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_7" -> "ref_getI_div0#reference_field#17267881158640772750.8919328183561d84930ec2a40da70667_6" ;
 "val_F_div0#reference_field#8428286850923379914.8fdee85eabf77b0016437fa0006d373c_1" [label="1: Start reference_field::val_F_div0\nFormals: \nLocals:  r:reference_field::Val x:reference_field::X \n   DECLARE_LOCALS(&return,&r,&x); [line 114, column 1]\n " color=yellow style=filled]
 	
 
@@ -324,28 +324,6 @@ digraph cfg {
 	
 
 	 "val_getI_div0#reference_field#1916539470996695608.683d462cf87abbc81874a14e4872564a_7" -> "val_getI_div0#reference_field#1916539470996695608.683d462cf87abbc81874a14e4872564a_6" ;
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" [label="1: Start reference_field::Ptr_getF\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" ;
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" [label="2: Exit reference_field::Ptr_getF \n  " color=yellow style=filled]
-	
-
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 35, column 23]\n  n$1=*n$0.x:reference_field::X* [line 35, column 23]\n  n$2=*n$1.f:int [line 35, column 23]\n  *&return:int=n$2 [line 35, column 16]\n " shape="box"]
-	
-
-	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" ;
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" [label="1: Start reference_field::Ptr_getI\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 36, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" ;
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" [label="2: Exit reference_field::Ptr_getI \n  " color=yellow style=filled]
-	
-
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 36, column 24]\n  n$1=*n$0.i:int* [line 36, column 24]\n  n$2=*n$1:int [line 36, column 23]\n  *&return:int=n$2 [line 36, column 16]\n " shape="box"]
-	
-
-	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" ;
 "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_1" [label="1: Start reference_field::Ptr_Ptr\nFormals:  this:reference_field::Ptr* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 3]\n " color=yellow style=filled]
 	
 
@@ -361,28 +339,6 @@ digraph cfg {
 	
 
 	 "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_4" -> "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_3" ;
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" [label="1: Start reference_field::Ref_getF\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" ;
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" [label="2: Exit reference_field::Ref_getF \n  " color=yellow style=filled]
-	
-
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 27, column 23]\n  n$1=*n$0.x:reference_field::X& [line 27, column 23]\n  n$2=*n$1.f:int [line 27, column 23]\n  *&return:int=n$2 [line 27, column 16]\n " shape="box"]
-	
-
-	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" ;
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" [label="1: Start reference_field::Ref_getI\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" ;
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" [label="2: Exit reference_field::Ref_getI \n  " color=yellow style=filled]
-	
-
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 28, column 23]\n  n$1=*n$0.i:int& [line 28, column 23]\n  n$2=*n$1:int [line 28, column 23]\n  *&return:int=n$2 [line 28, column 16]\n " shape="box"]
-	
-
-	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" ;
 "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_1" [label="1: Start reference_field::Ref_Ref\nFormals:  this:reference_field::Ref* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 3]\n " color=yellow style=filled]
 	
 
@@ -398,28 +354,6 @@ digraph cfg {
 	
 
 	 "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_4" -> "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_3" ;
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" [label="1: Start reference_field::Val_getF\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" ;
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" [label="2: Exit reference_field::Val_getF \n  " color=yellow style=filled]
-	
-
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 43, column 23]\n  n$1=*n$0.x.f:int [line 43, column 23]\n  *&return:int=n$1 [line 43, column 16]\n " shape="box"]
-	
-
-	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" ;
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" [label="1: Start reference_field::Val_getI\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 44, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" ;
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" [label="2: Exit reference_field::Val_getI \n  " color=yellow style=filled]
-	
-
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 44, column 23]\n  n$1=*n$0.i:int [line 44, column 23]\n  *&return:int=n$1 [line 44, column 16]\n " shape="box"]
-	
-
-	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" ;
 "Val#Val#reference_field#{10086609758499948489}.3f0d77ba0039a38103c912b5065ccdaa_1" [label="1: Start reference_field::Val_Val\nFormals:  this:reference_field::Val* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 3]\n " color=yellow style=filled]
 	
 
@@ -435,13 +369,6 @@ digraph cfg {
 	
 
 	 "Val#Val#reference_field#{10086609758499948489}.3f0d77ba0039a38103c912b5065ccdaa_4" -> "Val#Val#reference_field#{10086609758499948489}.3f0d77ba0039a38103c912b5065ccdaa_3" ;
-"X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_1" [label="1: Start reference_field::X_X\nFormals:  this:reference_field::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 8]\n " color=yellow style=filled]
-	
-
-	 "X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_1" -> "X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_2" ;
-"X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_2" [label="2: Exit reference_field::X_X \n  " color=yellow style=filled]
-	
-
 "X#X#reference_field#{16892162000533972663|constexpr}.d3ad2332bde2031935fecc6685296b44_1" [label="1: Start reference_field::X_X\nFormals:  this:reference_field::X* __param_0:reference_field::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 8]\n " color=yellow style=filled]
 	
 
@@ -453,4 +380,77 @@ digraph cfg {
 	
 
 	 "X#X#reference_field#{16892162000533972663|constexpr}.d3ad2332bde2031935fecc6685296b44_3" -> "X#X#reference_field#{16892162000533972663|constexpr}.d3ad2332bde2031935fecc6685296b44_2" ;
+"X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_1" [label="1: Start reference_field::X_X\nFormals:  this:reference_field::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 8]\n " color=yellow style=filled]
+	
+
+	 "X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_1" -> "X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_2" ;
+"X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_2" [label="2: Exit reference_field::X_X \n  " color=yellow style=filled]
+	
+
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" [label="1: Start reference_field::Ptr_getF\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" ;
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" [label="2: Exit reference_field::Ptr_getF \n  " color=yellow style=filled]
+	
+
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 35, column 23]\n  n$1=*n$0.x:reference_field::X* [line 35, column 23]\n  n$2=*n$1.f:int [line 35, column 23]\n  *&return:int=n$2 [line 35, column 16]\n " shape="box"]
+	
+
+	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" ;
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" [label="1: Start reference_field::Ref_getF\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" ;
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" [label="2: Exit reference_field::Ref_getF \n  " color=yellow style=filled]
+	
+
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 27, column 23]\n  n$1=*n$0.x:reference_field::X& [line 27, column 23]\n  n$2=*n$1.f:int [line 27, column 23]\n  *&return:int=n$2 [line 27, column 16]\n " shape="box"]
+	
+
+	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" ;
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" [label="1: Start reference_field::Val_getF\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" ;
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" [label="2: Exit reference_field::Val_getF \n  " color=yellow style=filled]
+	
+
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 43, column 23]\n  n$1=*n$0.x.f:int [line 43, column 23]\n  *&return:int=n$1 [line 43, column 16]\n " shape="box"]
+	
+
+	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" ;
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" [label="1: Start reference_field::Ptr_getI\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 36, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" ;
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" [label="2: Exit reference_field::Ptr_getI \n  " color=yellow style=filled]
+	
+
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 36, column 24]\n  n$1=*n$0.i:int* [line 36, column 24]\n  n$2=*n$1:int [line 36, column 23]\n  *&return:int=n$2 [line 36, column 16]\n " shape="box"]
+	
+
+	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" ;
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" [label="1: Start reference_field::Ref_getI\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" ;
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" [label="2: Exit reference_field::Ref_getI \n  " color=yellow style=filled]
+	
+
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 28, column 23]\n  n$1=*n$0.i:int& [line 28, column 23]\n  n$2=*n$1:int [line 28, column 23]\n  *&return:int=n$2 [line 28, column 16]\n " shape="box"]
+	
+
+	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" ;
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" [label="1: Start reference_field::Val_getI\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 44, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" ;
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" [label="2: Exit reference_field::Val_getI \n  " color=yellow style=filled]
+	
+
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 44, column 23]\n  n$1=*n$0.i:int [line 44, column 23]\n  *&return:int=n$1 [line 44, column 16]\n " shape="box"]
+	
+
+	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" ;
 }

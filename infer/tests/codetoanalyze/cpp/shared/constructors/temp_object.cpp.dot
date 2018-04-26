@@ -15,94 +15,6 @@ digraph cfg {
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_4" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" ;
-"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_1" [label="1: Start temp_object::temp_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 33, column 1]\n " color=yellow style=filled]
-	
-
-	 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_1" -> "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" ;
-"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" [label="2: Exit temp_object::temp_field_div0 \n  " color=yellow style=filled]
-	
-
-"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 33, column 36]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 33, column 36]\n  n$2=_fun_temp_object::div(n$1:int) [line 33, column 32]\n  *&return:int=n$2 [line 33, column 25]\n " shape="box"]
-	
-
-	 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" -> "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" ;
-"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_1" [label="1: Start temp_object::temp_field2_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 1]\n " color=yellow style=filled]
-	
-
-	 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_1" -> "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" ;
-"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" [label="2: Exit temp_object::temp_field2_div0 \n  " color=yellow style=filled]
-	
-
-"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int) [line 35, column 37]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 35, column 37]\n  n$2=_fun_temp_object::div(n$1:int) [line 35, column 33]\n  *&return:int=n$2 [line 35, column 26]\n " shape="box"]
-	
-
-	 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" -> "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" ;
-"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_1" [label="1: Start temp_object::temp_method_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 37, column 1]\n " color=yellow style=filled]
-	
-
-	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_1" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" ;
-"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" [label="2: Exit temp_object::temp_method_div0 \n  " color=yellow style=filled]
-	
-
-"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 37, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 37, column 33]\n  n$2=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 37, column 33]\n  *&return:int=n$2 [line 37, column 26]\n " shape="box"]
-	
-
-	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" ;
-"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_1" [label="1: Start temp_object::getX_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 39, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_1" -> "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" ;
-"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" [label="2: Exit temp_object::getX_field_div0 \n  " color=yellow style=filled]
-	
-
-"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 39, column 36]\n  n$2=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 39, column 36]\n  n$3=_fun_temp_object::div(n$2:int) [line 39, column 32]\n  *&return:int=n$3 [line 39, column 25]\n " shape="box"]
-	
-
-	 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" -> "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" ;
-"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_1" [label="1: Start temp_object::getX_method_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 41, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_1" -> "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" ;
-"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" [label="2: Exit temp_object::getX_method_div0 \n  " color=yellow style=filled]
-	
-
-"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 41, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 41, column 33]\n  n$3=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 41, column 33]\n  *&return:int=n$3 [line 41, column 26]\n " shape="box"]
-	
-
-	 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" -> "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" ;
-"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_1" [label="1: Start temp_object::temp_field_div1\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 43, column 1]\n " color=yellow style=filled]
-	
-
-	 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_1" -> "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" ;
-"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" [label="2: Exit temp_object::temp_field_div1 \n  " color=yellow style=filled]
-	
-
-"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,1:int,0:int) [line 43, column 36]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 43, column 36]\n  n$2=_fun_temp_object::div(n$1:int) [line 43, column 32]\n  *&return:int=n$2 [line 43, column 25]\n " shape="box"]
-	
-
-	 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" -> "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" ;
-"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_1" [label="1: Start temp_object::getX_field_div1\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 45, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_1" -> "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" ;
-"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" [label="2: Exit temp_object::getX_field_div1 \n  " color=yellow style=filled]
-	
-
-"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(1:int,0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 45, column 36]\n  n$2=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 45, column 36]\n  n$3=_fun_temp_object::div(n$2:int) [line 45, column 32]\n  *&return:int=n$3 [line 45, column 25]\n " shape="box"]
-	
-
-	 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" -> "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" ;
-"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_1" [label="1: Start temp_object::getX\nFormals:  a:int b:int __return_param:temp_object::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 26, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_1" -> "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" ;
-"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_2" [label="2: Exit temp_object::getX \n  " color=yellow style=filled]
-	
-
-"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 26, column 24]\n  n$2=*&a:int [line 26, column 33]\n  n$3=*&b:int [line 26, column 36]\n  _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 26, column 31]\n  _fun_temp_object::X_X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 26, column 31]\n " shape="box"]
-	
-
-	 "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" -> "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_2" ;
 "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_1" [label="1: Start temp_object::div\nFormals:  f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
 	
 
@@ -114,39 +26,94 @@ digraph cfg {
 	
 
 	 "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_3" -> "div#temp_object#8235742009211935218.2061ea7bd543a21042cf00f2dbeefd91_2" ;
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" [label="1: Start temp_object::X_div\nFormals:  this:temp_object::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 3]\n " color=yellow style=filled]
+"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_1" [label="1: Start temp_object::getX\nFormals:  a:int b:int __return_param:temp_object::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 26, column 1]\n " color=yellow style=filled]
 	
 
-	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" ;
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" [label="2: Exit temp_object::X_div \n  " color=yellow style=filled]
+	 "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_1" -> "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" ;
+"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_2" [label="2: Exit temp_object::getX \n  " color=yellow style=filled]
 	
 
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 18, column 26]\n  n$1=*n$0.f:int [line 18, column 26]\n  *&return:int=(1 / n$1) [line 18, column 15]\n " shape="box"]
+"getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 26, column 24]\n  n$2=*&a:int [line 26, column 33]\n  n$3=*&b:int [line 26, column 36]\n  _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 26, column 31]\n  _fun_temp_object::X_X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 26, column 31]\n " shape="box"]
 	
 
-	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
-"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 3]\n " color=yellow style=filled]
+	 "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_3" -> "getX#temp_object#4720444219866178245.f48412a1530fe282a769812167194f6c_2" ;
+"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_1" [label="1: Start temp_object::getX_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 39, column 1]\n " color=yellow style=filled]
 	
 
-	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_1" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" ;
-"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
+	 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_1" -> "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" ;
+"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" [label="2: Exit temp_object::getX_field_div0 \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 13, column 14]\n  n$1=*&a:int [line 13, column 18]\n  *n$0.f:int=n$1 [line 13, column 14]\n " shape="box"]
+"getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 39, column 36]\n  n$2=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 39, column 36]\n  n$3=_fun_temp_object::div(n$2:int) [line 39, column 32]\n  *&return:int=n$3 [line 39, column 25]\n " shape="box"]
 	
 
-	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" ;
-"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+	 "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_3" -> "getX_field_div0#temp_object#12698122843139253036.854c4a3940ca05110785248e1303db49_2" ;
+"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_1" [label="1: Start temp_object::getX_field_div1\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 45, column 1]\n " color=yellow style=filled]
 	
 
-	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_1" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" ;
-"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
+	 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_1" -> "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" ;
+"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" [label="2: Exit temp_object::getX_field_div1 \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 14, column 21]\n  n$1=*&a:int [line 14, column 25]\n  *n$0.f:int=n$1 [line 14, column 21]\n " shape="box"]
+"getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(1:int,0:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 45, column 36]\n  n$2=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 45, column 36]\n  n$3=_fun_temp_object::div(n$2:int) [line 45, column 32]\n  *&return:int=n$3 [line 45, column 25]\n " shape="box"]
 	
 
-	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" ;
+	 "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_3" -> "getX_field_div1#temp_object#11953596240866039963.ee557e5aaabf95f2c8b1284adfc7249e_2" ;
+"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_1" [label="1: Start temp_object::getX_method_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 41, column 1]\n " color=yellow style=filled]
+	
+
+	 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_1" -> "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" ;
+"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" [label="2: Exit temp_object::getX_method_div0 \n  " color=yellow style=filled]
+	
+
+"getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" [label="3:  Return Stmt \n   _fun_temp_object::getX(0:int,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*) [line 41, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 41, column 33]\n  n$3=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 41, column 33]\n  *&return:int=n$3 [line 41, column 26]\n " shape="box"]
+	
+
+	 "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_3" -> "getX_method_div0#temp_object#10654710522454889600.9c743f651914acdd07ad2c70becfd89c_2" ;
+"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_1" [label="1: Start temp_object::temp_field2_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 35, column 1]\n " color=yellow style=filled]
+	
+
+	 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_1" -> "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" ;
+"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" [label="2: Exit temp_object::temp_field2_div0 \n  " color=yellow style=filled]
+	
+
+"temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int) [line 35, column 37]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 35, column 37]\n  n$2=_fun_temp_object::div(n$1:int) [line 35, column 33]\n  *&return:int=n$2 [line 35, column 26]\n " shape="box"]
+	
+
+	 "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_3" -> "temp_field2_div0#temp_object#17763200808338657027.dd874be310bbf8e78129b073d73ad49f_2" ;
+"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_1" [label="1: Start temp_object::temp_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 33, column 1]\n " color=yellow style=filled]
+	
+
+	 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_1" -> "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" ;
+"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" [label="2: Exit temp_object::temp_field_div0 \n  " color=yellow style=filled]
+	
+
+"temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 33, column 36]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 33, column 36]\n  n$2=_fun_temp_object::div(n$1:int) [line 33, column 32]\n  *&return:int=n$2 [line 33, column 25]\n " shape="box"]
+	
+
+	 "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_3" -> "temp_field_div0#temp_object#15412040659245592666.f5d0fb2d0c8f868e114b6379ad654aef_2" ;
+"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_1" [label="1: Start temp_object::temp_field_div1\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 43, column 1]\n " color=yellow style=filled]
+	
+
+	 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_1" -> "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" ;
+"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" [label="2: Exit temp_object::temp_field_div1 \n  " color=yellow style=filled]
+	
+
+"temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,1:int,0:int) [line 43, column 36]\n  n$1=*&0$?%__sil_tmpSIL_materialize_temp__n$0.f:int [line 43, column 36]\n  n$2=_fun_temp_object::div(n$1:int) [line 43, column 32]\n  *&return:int=n$2 [line 43, column 25]\n " shape="box"]
+	
+
+	 "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_3" -> "temp_field_div1#temp_object#14919979518945721169.463c8bf1b85b2fefc9473e70e135e02d_2" ;
+"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_1" [label="1: Start temp_object::temp_method_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 37, column 1]\n " color=yellow style=filled]
+	
+
+	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_1" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" ;
+"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" [label="2: Exit temp_object::temp_method_div0 \n  " color=yellow style=filled]
+	
+
+"temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" [label="3:  Return Stmt \n   _fun_temp_object::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X*,0:int,1:int) [line 37, column 33]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X [line 37, column 33]\n  n$2=_fun_temp_object::X_div(&0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X&) [line 37, column 33]\n  *&return:int=n$2 [line 37, column 26]\n " shape="box"]
+	
+
+	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" ;
 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* x:temp_object::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
 	
 
@@ -158,4 +125,37 @@ digraph cfg {
 	
 
 	 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_3" -> "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_2" ;
+"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+	
+
+	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_1" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" ;
+"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
+	
+
+"X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 14, column 21]\n  n$1=*&a:int [line 14, column 25]\n  *n$0.f:int=n$1 [line 14, column 21]\n " shape="box"]
+	
+
+	 "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_3" -> "X#X#temp_object#{8598480124712426466}.7071c692af425a15518693ebe50ba781_2" ;
+"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 3]\n " color=yellow style=filled]
+	
+
+	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_1" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" ;
+"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" [label="2: Exit temp_object::X_X \n  " color=yellow style=filled]
+	
+
+"X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 13, column 14]\n  n$1=*&a:int [line 13, column 18]\n  *n$0.f:int=n$1 [line 13, column 14]\n " shape="box"]
+	
+
+	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" ;
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" [label="1: Start temp_object::X_div\nFormals:  this:temp_object::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" ;
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" [label="2: Exit temp_object::X_div \n  " color=yellow style=filled]
+	
+
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 18, column 26]\n  n$1=*n$0.f:int [line 18, column 26]\n  *&return:int=(1 / n$1) [line 18, column 15]\n " shape="box"]
+	
+
+	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
 }

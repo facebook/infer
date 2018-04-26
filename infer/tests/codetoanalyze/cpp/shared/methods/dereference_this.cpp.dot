@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
+"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" [label="1: Start A_init\nFormals:  this:A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+	
+
+	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" ;
+"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_2" [label="2: Exit A_init \n  " color=yellow style=filled]
+	
+
+"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:A* [line 14, column 24]\n  n$1=*&val:int [line 14, column 32]\n  *n$0.field:int=n$1 [line 14, column 24]\n " shape="box"]
+	
+
+	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_2" ;
 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" [label="1: Start A_method\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
 	
 
@@ -26,15 +37,4 @@ digraph cfg {
 	
 
 	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" ;
-"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" [label="1: Start A_init\nFormals:  this:A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
-	
-
-	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" ;
-"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_2" [label="2: Exit A_init \n  " color=yellow style=filled]
-	
-
-"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:A* [line 14, column 24]\n  n$1=*&val:int [line 14, column 32]\n  *n$0.field:int=n$1 [line 14, column 24]\n " shape="box"]
-	
-
-	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_2" ;
 }

@@ -1,76 +1,81 @@
 /* @generated */
 digraph cfg {
-"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" [label="1: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
+"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" [label="1: Start objc_blockMemoryLeakExample_blockCapturedVarLeak_1\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 96, column 22]\n " color=yellow style=filled]
 	
 
-	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" ;
-"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" [label="2: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
+	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" ;
+"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_2" [label="2: Exit objc_blockMemoryLeakExample_blockCapturedVarLeak_1 \n  " color=yellow style=filled]
 	
 
-"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" [label="3:  Call _fun_CFAttributedStringCreateMutable \n   n$14=_fun_CFAttributedStringCreateMutable(null:__CFAllocator const *,0:long) [line 35, column 3]\n " shape="box"]
+"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" [label="3:  Return Stmt \n   n$43=*&x:int* [line 97, column 13]\n  n$44=*n$43:int [line 97, column 12]\n  *&return:int=n$44 [line 97, column 5]\n " shape="box"]
 	
 
-	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" ;
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" [label="1: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:__CFAttributedString* \n   DECLARE_LOCALS(&return,&maString); [line 38, column 1]\n " color=yellow style=filled]
+	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_2" ;
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" [label="1: Start objc_blockMemoryLeakExample_blockFreeNoLeak_2\nFormals:  x:int*\nLocals:  i:int\nCaptured:  x:int* \n   DECLARE_LOCALS(&return,&i); [line 105, column 22]\n " color=yellow style=filled]
 	
 
-	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" ;
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_2" [label="2: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
+	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" ;
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_2" [label="2: Exit objc_blockMemoryLeakExample_blockFreeNoLeak_2 \n  " color=yellow style=filled]
 	
 
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" [label="3:  Call _fun_CFRelease \n   n$15=*&maString:__CFAttributedString* [line 41, column 13]\n  _fun_CFRelease(n$15:void const *) [line 41, column 3]\n " shape="box"]
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" [label="3:  Return Stmt \n   n$50=*&i:int [line 108, column 12]\n  *&return:int=n$50 [line 108, column 5]\n " shape="box"]
 	
 
-	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_2" ;
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" [label="4:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(null:__CFAllocator const *,0:long) [line 40, column 7]\n  *&maString:__CFAttributedString*=n$16 [line 39, column 3]\n " shape="box"]
+	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_2" ;
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" [label="4:  Call _fun_free \n   n$51=*&x:int* [line 107, column 10]\n  _fun_free(n$51:void*) [line 107, column 5]\n " shape="box"]
 	
 
-	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" ;
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" [label="1: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:__CTFramesetter const * \n   DECLARE_LOCALS(&return,&framesetter); [line 48, column 1]\n " color=yellow style=filled]
+	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" ;
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" [label="5:  DeclStmt \n   n$52=*&x:int* [line 106, column 14]\n  n$53=*n$52:int [line 106, column 13]\n  *&i:int=n$53 [line 106, column 5]\n " shape="box"]
 	
 
-	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" ;
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_2" [label="2: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
+	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" ;
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" [label="1: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 93, column 1]\n " color=yellow style=filled]
 	
 
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" [label="3:  Call _fun_CFRelease \n   n$19=*&framesetter:__CTFramesetter const * [line 50, column 13]\n  _fun_CFRelease(n$19:void const *) [line 50, column 3]\n " shape="box"]
+	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" ;
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" [label="2: Exit MemoryLeakExample_blockCapturedVarLeak \n  " color=yellow style=filled]
 	
 
-	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_2" ;
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" [label="4:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(null:__CFAttributedString const *) [line 49, column 34]\n  *&framesetter:__CTFramesetter const *=n$20 [line 49, column 3]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" [label="3:  Return Stmt \n   n$40=*&blk:_fn_(*) [line 99, column 10]\n  n$41=n$40() [line 99, column 10]\n  *&return:int=n$41 [line 99, column 3]\n " shape="box"]
 	
 
-	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" ;
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" [label="1: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:__SecKey* \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70, column 1]\n " color=yellow style=filled]
+	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" ;
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   n$42=*&x:int* [line 96, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockCapturedVarLeak_1,(n$42 &x:int*)) [line 96, column 3]\n " shape="box"]
 	
 
-	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" ;
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_2" [label="2: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
+	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" ;
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" [label="5:  BinaryOperatorStmt: Assign \n   n$45=*&x:int* [line 95, column 4]\n  *n$45:int=2 [line 95, column 3]\n " shape="box"]
 	
 
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" [label="3:  Call _fun_CFRelease \n   n$30=*&allowedPublicKey:__SecKey* [line 72, column 13]\n  _fun_CFRelease(n$30:void const *) [line 72, column 3]\n " shape="box"]
+	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" ;
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$46=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 94, column 12]\n  *&x:int*=n$46 [line 94, column 3]\n " shape="box"]
 	
 
-	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_2" ;
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" [label="4:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(null:__SecTrust*) [line 71, column 32]\n  *&allowedPublicKey:__SecKey*=n$31 [line 71, column 3]\n " shape="box"]
+	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" [label="1: Start MemoryLeakExample_blockFreeNoLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 102, column 1]\n " color=yellow style=filled]
 	
 
-	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" ;
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" [label="1: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:CGImage* \n   DECLARE_LOCALS(&return,&newImage); [line 75, column 1]\n " color=yellow style=filled]
+	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" ;
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" [label="2: Exit MemoryLeakExample_blockFreeNoLeak \n  " color=yellow style=filled]
 	
 
-	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" ;
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_2" [label="2: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" [label="3:  Return Stmt \n   n$47=*&blk:_fn_(*) [line 110, column 10]\n  n$48=n$47() [line 110, column 10]\n  *&return:int=n$48 [line 110, column 3]\n " shape="box"]
 	
 
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" [label="3:  Call _fun_CGImageRelease \n   n$32=*&newImage:CGImage* [line 77, column 18]\n  _fun_CGImageRelease(n$32:CGImage*) [line 77, column 3]\n " shape="box"]
+	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" ;
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" [label="4:  DeclStmt \n   n$49=*&x:int* [line 105, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockFreeNoLeak_2,(n$49 &x:int*)) [line 105, column 3]\n " shape="box"]
 	
 
-	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_2" ;
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" [label="4:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(null:CGContext*) [line 76, column 25]\n  *&newImage:CGImage*=n$33 [line 76, column 3]\n " shape="box"]
+	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" ;
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" [label="5:  BinaryOperatorStmt: Assign \n   n$54=*&x:int* [line 104, column 4]\n  *n$54:int=2 [line 104, column 3]\n " shape="box"]
 	
 
-	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" ;
+	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" ;
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" [label="6:  DeclStmt \n   n$55=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 103, column 12]\n  *&x:int*=n$55 [line 103, column 3]\n " shape="box"]
+	
+
+	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" ;
 "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_1" [label="1: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:CGRect\nLocals:  \n   DECLARE_LOCALS(&return); [line 53, column 1]\n " color=yellow style=filled]
 	
 
@@ -128,36 +133,32 @@ digraph cfg {
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" ;
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" [label="1: Start MemoryLeakExample_test\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28, column 1]\n " color=yellow style=filled]
+"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" [label="1: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
 	
 
-	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" ;
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_2" [label="2: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
+	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" ;
+"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" [label="2: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
 	
 
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" [label="3:  Message Call: setShadowPath: \n   n$6=*&self:MemoryLeakExample* [line 31, column 3]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:MemoryLeakExample*) [line 31, column 8]\n  n$8=_fun_UIView_layer(n$7:UIView*) [line 31, column 31]\n  n$9=*&shadowPath:CGPath const * [line 31, column 50]\n  _fun_CALayer_setShadowPath:(n$8:CALayer*,n$9:CGPath const *) [line 31, column 37]\n " shape="box"]
+"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" [label="3:  Call _fun_CFAttributedStringCreateMutable \n   n$14=_fun_CFAttributedStringCreateMutable(null:__CFAllocator const *,0:long) [line 35, column 3]\n " shape="box"]
 	
 
-	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_2" ;
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" [label="4:  DeclStmt \n   n$10=*&self:MemoryLeakExample* [line 30, column 28]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:MemoryLeakExample*) [line 30, column 33]\n  n$12=_fun_UIView_bounds(n$11:UIView*) [line 30, column 56]\n  n$13=_fun_CGPathCreateWithRect(n$12:CGRect,null:CGAffineTransform const *) [line 30, column 7]\n  *&shadowPath:CGPath const *=n$13 [line 29, column 3]\n " shape="box"]
+	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" ;
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" [label="1: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:__CFAttributedString* \n   DECLARE_LOCALS(&return,&maString); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" ;
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" [label="1: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:MemoryLeakExample*\nLocals:  borderColor:CGColor* \n   DECLARE_LOCALS(&return,&borderColor); [line 82, column 1]\n " color=yellow style=filled]
+	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" ;
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_2" [label="2: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
 	
 
-	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" ;
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_2" [label="2: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" [label="3:  Call _fun_CFRelease \n   n$15=*&maString:__CFAttributedString* [line 41, column 13]\n  _fun_CFRelease(n$15:void const *) [line 41, column 3]\n " shape="box"]
 	
 
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" [label="3:  Call _fun_CGColorRelease \n   n$34=*&borderColor:CGColor* [line 84, column 18]\n  _fun_CGColorRelease(n$34:CGColor*) [line 84, column 3]\n " shape="box"]
+	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_2" ;
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" [label="4:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(null:__CFAllocator const *,0:long) [line 40, column 7]\n  *&maString:__CFAttributedString*=n$16 [line 39, column 3]\n " shape="box"]
 	
 
-	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_2" ;
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" [label="4:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double,0.300000:double) [line 83, column 28]\n  *&borderColor:CGColor*=n$35 [line 83, column 3]\n " shape="box"]
-	
-
-	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" ;
+	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" ;
 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_1" [label="1: Start MemoryLeakExample_regularLeak\nFormals:  self:MemoryLeakExample*\nLocals:  x:int* \n   DECLARE_LOCALS(&return,&x); [line 87, column 1]\n " color=yellow style=filled]
 	
 
@@ -177,52 +178,21 @@ digraph cfg {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" [label="1: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 93, column 1]\n " color=yellow style=filled]
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" [label="1: Start MemoryLeakExample_test\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" [label="2: Exit MemoryLeakExample_blockCapturedVarLeak \n  " color=yellow style=filled]
+	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" ;
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_2" [label="2: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
 	
 
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" [label="3:  Return Stmt \n   n$40=*&blk:_fn_(*) [line 99, column 10]\n  n$41=n$40() [line 99, column 10]\n  *&return:int=n$41 [line 99, column 3]\n " shape="box"]
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" [label="3:  Message Call: setShadowPath: \n   n$6=*&self:MemoryLeakExample* [line 31, column 3]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:MemoryLeakExample*) [line 31, column 8]\n  n$8=_fun_UIView_layer(n$7:UIView*) [line 31, column 31]\n  n$9=*&shadowPath:CGPath const * [line 31, column 50]\n  _fun_CALayer_setShadowPath:(n$8:CALayer*,n$9:CGPath const *) [line 31, column 37]\n " shape="box"]
 	
 
-	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   n$42=*&x:int* [line 96, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockCapturedVarLeak_1,(n$42 &x:int*)) [line 96, column 3]\n " shape="box"]
+	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_2" ;
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" [label="4:  DeclStmt \n   n$10=*&self:MemoryLeakExample* [line 30, column 28]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:MemoryLeakExample*) [line 30, column 33]\n  n$12=_fun_UIView_bounds(n$11:UIView*) [line 30, column 56]\n  n$13=_fun_CGPathCreateWithRect(n$12:CGRect,null:CGAffineTransform const *) [line 30, column 7]\n  *&shadowPath:CGPath const *=n$13 [line 29, column 3]\n " shape="box"]
 	
 
-	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" [label="5:  BinaryOperatorStmt: Assign \n   n$45=*&x:int* [line 95, column 4]\n  *n$45:int=2 [line 95, column 3]\n " shape="box"]
-	
-
-	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$46=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 94, column 12]\n  *&x:int*=n$46 [line 94, column 3]\n " shape="box"]
-	
-
-	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" [label="1: Start MemoryLeakExample_blockFreeNoLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 102, column 1]\n " color=yellow style=filled]
-	
-
-	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" [label="2: Exit MemoryLeakExample_blockFreeNoLeak \n  " color=yellow style=filled]
-	
-
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" [label="3:  Return Stmt \n   n$47=*&blk:_fn_(*) [line 110, column 10]\n  n$48=n$47() [line 110, column 10]\n  *&return:int=n$48 [line 110, column 3]\n " shape="box"]
-	
-
-	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_2" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" [label="4:  DeclStmt \n   n$49=*&x:int* [line 105, column 22]\n  *&blk:_fn_(*)=(_fun_objc_blockMemoryLeakExample_blockFreeNoLeak_2,(n$49 &x:int*)) [line 105, column 3]\n " shape="box"]
-	
-
-	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_3" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" [label="5:  BinaryOperatorStmt: Assign \n   n$54=*&x:int* [line 104, column 4]\n  *n$54:int=2 [line 104, column 3]\n " shape="box"]
-	
-
-	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_4" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" [label="6:  DeclStmt \n   n$55=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 103, column 12]\n  *&x:int*=n$55 [line 103, column 3]\n " shape="box"]
-	
-
-	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" ;
+	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" ;
 "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_1" [label="1: Start MemoryLeakExample_test1:\nFormals:  str:__CFAttributedString const *\nLocals:  \n   DECLARE_LOCALS(&return); [line 44, column 1]\n " color=yellow style=filled]
 	
 
@@ -234,6 +204,21 @@ digraph cfg {
 	
 
 	 "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_3" -> "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_2" ;
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" [label="1: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:__CTFramesetter const * \n   DECLARE_LOCALS(&return,&framesetter); [line 48, column 1]\n " color=yellow style=filled]
+	
+
+	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" ;
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_2" [label="2: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
+	
+
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" [label="3:  Call _fun_CFRelease \n   n$19=*&framesetter:__CTFramesetter const * [line 50, column 13]\n  _fun_CFRelease(n$19:void const *) [line 50, column 3]\n " shape="box"]
+	
+
+	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_2" ;
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" [label="4:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(null:__CFAttributedString const *) [line 49, column 34]\n  *&framesetter:__CTFramesetter const *=n$20 [line 49, column 3]\n " shape="box"]
+	
+
+	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" ;
 "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_1" [label="1: Start MemoryLeakExample_test2:\nFormals:  trust:__SecTrust*\nLocals:  \n   DECLARE_LOCALS(&return); [line 66, column 1]\n " color=yellow style=filled]
 	
 
@@ -245,34 +230,49 @@ digraph cfg {
 	
 
 	 "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_3" -> "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_2" ;
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" [label="1: Start objc_blockMemoryLeakExample_blockFreeNoLeak_2\nFormals:  x:int*\nLocals:  i:int\nCaptured:  x:int* \n   DECLARE_LOCALS(&return,&i); [line 105, column 22]\n " color=yellow style=filled]
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" [label="1: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:__SecKey* \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70, column 1]\n " color=yellow style=filled]
 	
 
-	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" ;
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_2" [label="2: Exit objc_blockMemoryLeakExample_blockFreeNoLeak_2 \n  " color=yellow style=filled]
+	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" ;
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_2" [label="2: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
 	
 
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" [label="3:  Return Stmt \n   n$50=*&i:int [line 108, column 12]\n  *&return:int=n$50 [line 108, column 5]\n " shape="box"]
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" [label="3:  Call _fun_CFRelease \n   n$30=*&allowedPublicKey:__SecKey* [line 72, column 13]\n  _fun_CFRelease(n$30:void const *) [line 72, column 3]\n " shape="box"]
 	
 
-	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_2" ;
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" [label="4:  Call _fun_free \n   n$51=*&x:int* [line 107, column 10]\n  _fun_free(n$51:void*) [line 107, column 5]\n " shape="box"]
+	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_2" ;
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" [label="4:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(null:__SecTrust*) [line 71, column 32]\n  *&allowedPublicKey:__SecKey*=n$31 [line 71, column 3]\n " shape="box"]
 	
 
-	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_3" ;
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" [label="5:  DeclStmt \n   n$52=*&x:int* [line 106, column 14]\n  n$53=*n$52:int [line 106, column 13]\n  *&i:int=n$53 [line 106, column 5]\n " shape="box"]
+	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" ;
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" [label="1: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:MemoryLeakExample*\nLocals:  borderColor:CGColor* \n   DECLARE_LOCALS(&return,&borderColor); [line 82, column 1]\n " color=yellow style=filled]
 	
 
-	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" ;
-"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" [label="1: Start objc_blockMemoryLeakExample_blockCapturedVarLeak_1\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 96, column 22]\n " color=yellow style=filled]
+	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" ;
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_2" [label="2: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
 	
 
-	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" ;
-"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_2" [label="2: Exit objc_blockMemoryLeakExample_blockCapturedVarLeak_1 \n  " color=yellow style=filled]
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" [label="3:  Call _fun_CGColorRelease \n   n$34=*&borderColor:CGColor* [line 84, column 18]\n  _fun_CGColorRelease(n$34:CGColor*) [line 84, column 3]\n " shape="box"]
 	
 
-"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" [label="3:  Return Stmt \n   n$43=*&x:int* [line 97, column 13]\n  n$44=*n$43:int [line 97, column 12]\n  *&return:int=n$44 [line 97, column 5]\n " shape="box"]
+	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_2" ;
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" [label="4:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double,0.300000:double) [line 83, column 28]\n  *&borderColor:CGColor*=n$35 [line 83, column 3]\n " shape="box"]
 	
 
-	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_2" ;
+	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" ;
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" [label="1: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:CGImage* \n   DECLARE_LOCALS(&return,&newImage); [line 75, column 1]\n " color=yellow style=filled]
+	
+
+	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" ;
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_2" [label="2: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
+	
+
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" [label="3:  Call _fun_CGImageRelease \n   n$32=*&newImage:CGImage* [line 77, column 18]\n  _fun_CGImageRelease(n$32:CGImage*) [line 77, column 3]\n " shape="box"]
+	
+
+	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_2" ;
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" [label="4:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(null:CGContext*) [line 76, column 25]\n  *&newImage:CGImage*=n$33 [line 76, column 3]\n " shape="box"]
+	
+
+	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" ;
 }

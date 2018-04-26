@@ -1,5 +1,43 @@
 /* @generated */
 digraph cfg {
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_1" [label="1: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int b:B \n   DECLARE_LOCALS(&return,&v,&b); [line 48, column 1]\n " color=yellow style=filled]
+	
+
+	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_1" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" ;
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
+	
+
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n  _=*&b:B [line 51, column 16]\n  _fun_B_~B(&b:B*) [line 51, column 16]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" ;
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$2=*&b.f:int [line 50, column 15]\n  *&v:int=(1 / n$2) [line 50, column 3]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" ;
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,0:int) [line 49, column 5]\n " shape="box"]
+	
+
+	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" ;
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_1" [label="1: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int b:B \n   DECLARE_LOCALS(&return,&v,&b); [line 42, column 1]\n " color=yellow style=filled]
+	
+
+	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_1" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" ;
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
+	
+
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45, column 14]\n  *&return:int=(1 / n$0) [line 45, column 3]\n  _=*&b:B [line 45, column 16]\n  _fun_B_~B(&b:B*) [line 45, column 16]\n " shape="box"]
+	
+
+	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" ;
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$2=*&b.f2:int [line 44, column 15]\n  *&v:int=(1 / n$2) [line 44, column 3]\n " shape="box"]
+	
+
+	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" ;
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,1:int) [line 43, column 5]\n " shape="box"]
+	
+
+	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" ;
 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_1" [label="1: Start f2_div0\nFormals: \nLocals:  b:B \n   DECLARE_LOCALS(&return,&b); [line 27, column 1]\n " color=yellow style=filled]
 	
 
@@ -30,59 +68,6 @@ digraph cfg {
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_1" [label="1: Start t_div0\nFormals: \nLocals:  b:B \n   DECLARE_LOCALS(&return,&b); [line 37, column 1]\n " color=yellow style=filled]
-	
-
-	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_1" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
-	
-
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&b:B [line 39, column 18]\n  _fun_B_~B(&b:B*) [line 39, column 18]\n " shape="box"]
-	
-
-	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   _fun_B_B(&b:B*,0:int) [line 38, column 5]\n " shape="box"]
-	
-
-	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_1" [label="1: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int b:B \n   DECLARE_LOCALS(&return,&v,&b); [line 42, column 1]\n " color=yellow style=filled]
-	
-
-	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_1" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
-	
-
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45, column 14]\n  *&return:int=(1 / n$0) [line 45, column 3]\n  _=*&b:B [line 45, column 16]\n  _fun_B_~B(&b:B*) [line 45, column 16]\n " shape="box"]
-	
-
-	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$2=*&b.f2:int [line 44, column 15]\n  *&v:int=(1 / n$2) [line 44, column 3]\n " shape="box"]
-	
-
-	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,1:int) [line 43, column 5]\n " shape="box"]
-	
-
-	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_1" [label="1: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int b:B \n   DECLARE_LOCALS(&return,&v,&b); [line 48, column 1]\n " color=yellow style=filled]
-	
-
-	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_1" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
-	
-
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n  _=*&b:B [line 51, column 16]\n  _fun_B_~B(&b:B*) [line 51, column 16]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$2=*&b.f:int [line 50, column 15]\n  *&v:int=(1 / n$2) [line 50, column 3]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,0:int) [line 49, column 5]\n " shape="box"]
-	
-
-	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" ;
 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_1" [label="1: Start f_f2_div1\nFormals: \nLocals:  v3:int v2:int v:int b:B \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54, column 1]\n " color=yellow style=filled]
 	
 
@@ -110,6 +95,21 @@ digraph cfg {
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" ;
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_1" [label="1: Start t_div0\nFormals: \nLocals:  b:B \n   DECLARE_LOCALS(&return,&b); [line 37, column 1]\n " color=yellow style=filled]
+	
+
+	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_1" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" ;
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
+	
+
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&b:B [line 39, column 18]\n  _fun_B_~B(&b:B*) [line 39, column 18]\n " shape="box"]
+	
+
+	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" ;
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   _fun_B_B(&b:B*,0:int) [line 38, column 5]\n " shape="box"]
+	
+
+	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" ;
 "A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_1" [label="1: Start A_A\nFormals:  this:A* f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
 	
 

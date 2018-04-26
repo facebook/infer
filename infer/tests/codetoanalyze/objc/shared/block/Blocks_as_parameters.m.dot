@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 26, column 11]\n " color=yellow style=filled]
+	
+
+	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" ;
+"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" [label="2: Exit objc_blockB_f_1 \n  " color=yellow style=filled]
+	
+
+"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$5=*&self:B* [line 27, column 9]\n  *n$5.x:int=5 [line 27, column 9]\n " shape="box"]
+	
+
+	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" ;
 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 
@@ -15,15 +26,4 @@ digraph cfg {
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" ;
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 26, column 11]\n " color=yellow style=filled]
-	
-
-	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" ;
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" [label="2: Exit objc_blockB_f_1 \n  " color=yellow style=filled]
-	
-
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$5=*&self:B* [line 27, column 9]\n  *n$5.x:int=5 [line 27, column 9]\n " shape="box"]
-	
-
-	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" ;
 }

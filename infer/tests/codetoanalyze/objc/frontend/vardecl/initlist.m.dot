@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"struct_init_test.b3909a459f16e15611cc425c52c74b0c_1" [label="1: Start struct_init_test\nFormals:  __return_param:CGAffineTransform*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 1]\n " color=yellow style=filled]
+	
+
+	 "struct_init_test.b3909a459f16e15611cc425c52c74b0c_1" -> "struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" ;
+"struct_init_test.b3909a459f16e15611cc425c52c74b0c_2" [label="2: Exit struct_init_test \n  " color=yellow style=filled]
+	
+
+"struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:CGAffineTransform* [line 29, column 3]\n  *n$0.a:double=-1 [line 29, column 29]\n  *n$0.b:double=0 [line 29, column 29]\n  *n$0.c:double=-0 [line 29, column 29]\n  *n$0.d:double=-1 [line 29, column 29]\n  *n$0.tx:double=0.000000 [line 29, column 62]\n  *n$0.ty:double=0.000000 [line 29, column 62]\n  n$1=*n$0:CGAffineTransform [line 29, column 10]\n " shape="box"]
+	
+
+	 "struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" -> "struct_init_test.b3909a459f16e15611cc425c52c74b0c_2" ;
 "test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals: \nLocals:  a:C*[3*8] c2:C* c1:C* \n   DECLARE_LOCALS(&return,&a,&c2,&c1); [line 22, column 1]\n " color=yellow style=filled]
 	
 
@@ -30,15 +41,4 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"struct_init_test.b3909a459f16e15611cc425c52c74b0c_1" [label="1: Start struct_init_test\nFormals:  __return_param:CGAffineTransform*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 1]\n " color=yellow style=filled]
-	
-
-	 "struct_init_test.b3909a459f16e15611cc425c52c74b0c_1" -> "struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" ;
-"struct_init_test.b3909a459f16e15611cc425c52c74b0c_2" [label="2: Exit struct_init_test \n  " color=yellow style=filled]
-	
-
-"struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:CGAffineTransform* [line 29, column 3]\n  *n$0.a:double=-1 [line 29, column 29]\n  *n$0.b:double=0 [line 29, column 29]\n  *n$0.c:double=-0 [line 29, column 29]\n  *n$0.d:double=-1 [line 29, column 29]\n  *n$0.tx:double=0.000000 [line 29, column 62]\n  *n$0.ty:double=0.000000 [line 29, column 62]\n  n$1=*n$0:CGAffineTransform [line 29, column 10]\n " shape="box"]
-	
-
-	 "struct_init_test.b3909a459f16e15611cc425c52c74b0c_3" -> "struct_init_test.b3909a459f16e15611cc425c52c74b0c_2" ;
 }

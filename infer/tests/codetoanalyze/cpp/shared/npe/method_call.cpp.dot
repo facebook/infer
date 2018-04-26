@@ -1,5 +1,27 @@
 /* @generated */
 digraph cfg {
+"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35, column 1]\n " color=yellow style=filled]
+	
+
+	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" ;
+"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
+	
+
+"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35, column 51]\n  _=*n$0:XForward [line 35, column 51]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35, column 51]\n " shape="box"]
+	
+
+	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" ;
+"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_1" [label="1: Start getX\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
+	
+
+	 "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_1" -> "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" ;
+"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_2" [label="2: Exit getX \n  " color=yellow style=filled]
+	
+
+"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" [label="3:  Return Stmt \n   *&return:X*=null [line 20, column 13]\n " shape="box"]
+	
+
+	 "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" -> "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_2" ;
 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_1" [label="1: Start npe_call\nFormals: \nLocals:  x:X* \n   DECLARE_LOCALS(&return,&x); [line 15, column 1]\n " color=yellow style=filled]
 	
 
@@ -15,17 +37,6 @@ digraph cfg {
 	
 
 	 "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_4" -> "npe_call#13153501568930109452.8b51ea84ce0a673218a9c81b7ab70538_3" ;
-"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_1" [label="1: Start getX\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
-	
-
-	 "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_1" -> "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" ;
-"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_2" [label="2: Exit getX \n  " color=yellow style=filled]
-	
-
-"getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" [label="3:  Return Stmt \n   *&return:X*=null [line 20, column 13]\n " shape="box"]
-	
-
-	 "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_3" -> "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_2" ;
 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_1" [label="1: Start npe_call_after_call\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
@@ -48,17 +59,6 @@ digraph cfg {
 	
 
 	 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" -> "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" ;
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35, column 1]\n " color=yellow style=filled]
-	
-
-	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" ;
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
-	
-
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35, column 51]\n  _=*n$0:XForward [line 35, column 51]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35, column 51]\n " shape="box"]
-	
-
-	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" ;
 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
 	
 

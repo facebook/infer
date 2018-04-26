@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 137, column 1]\n " color=yellow style=filled]
+	
+
+	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
+	
+
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 137, column 18]\n " shape="box"]
+	
+
+	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
 "m1.ae7be26cdaa742ca148068d5ac90eaca_1" [label="1: Start m1\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 12, column 1]\n " color=yellow style=filled]
 	
 
@@ -95,6 +106,82 @@ digraph cfg {
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_23" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
+"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" [label="1: Start m10\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 185, column 1]\n " color=yellow style=filled]
+	
+
+	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" ;
+"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" [label="2: Exit m10 \n  " color=yellow style=filled]
+	
+
+"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" [label="3:  Return Stmt \n   *&return:int=0 [line 188, column 3]\n " shape="box"]
+	
+
+	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" ;
+"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" [label="4:  Switch_stmt \n   *&value:int=7 [line 187, column 11]\n  n$0=*&value:int [line 187, column 11]\n " shape="box"]
+	
+
+	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" ;
+"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" [label="5:  DeclStmt \n   *&value:int=0 [line 186, column 3]\n " shape="box"]
+	
+
+	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_1" [label="1: Start m11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&value); [line 191, column 1]\n " color=yellow style=filled]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_1" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_14" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_2" [label="2: Exit m11 \n  " color=yellow style=filled]
+	
+
+"m11.c4534fe0ca256b331e9a3f14fe17229d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 197, column 3]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_3" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_2" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_4" [label="4: + \n  " ]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_4" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_10" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 193, column 20]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_6" ;
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_7" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 193, column 20]\n " shape="invhouse"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_6" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_8" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 193, column 20]\n " shape="invhouse"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_7" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_9" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 193, column 20]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_8" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_9" [label="9:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 193, column 20]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_9" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_10" [label="10:  Switch_stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 193, column 20]\n  *&value:int=n$2 [line 193, column 11]\n  n$3=*&value:int [line 193, column 11]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_12" ;
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_13" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 195, column 7]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_11" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 194, column 5]\n " shape="invhouse"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_12" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_11" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 194, column 5]\n " shape="invhouse"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_13" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
+"m11.c4534fe0ca256b331e9a3f14fe17229d_14" [label="14:  DeclStmt \n   *&value:int=0 [line 192, column 3]\n " shape="box"]
+	
+
+	 "m11.c4534fe0ca256b331e9a3f14fe17229d_14" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_5" ;
 "m2.aaf2f89992379705dac844c0a2a1d45f_1" [label="1: Start m2\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 35, column 1]\n " color=yellow style=filled]
 	
 
@@ -505,17 +592,6 @@ digraph cfg {
 	
 
 	 "m6.36604411a85db2bd9e97e22bfb5b692d_23" -> "m6.36604411a85db2bd9e97e22bfb5b692d_5" ;
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 137, column 1]\n " color=yellow style=filled]
-	
-
-	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
-	
-
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 137, column 18]\n " shape="box"]
-	
-
-	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
 "m7.0449904fbf32607bf8ce5c26823dbc29_1" [label="1: Start m7\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 139, column 1]\n " color=yellow style=filled]
 	
 
@@ -727,80 +803,4 @@ digraph cfg {
 	
 
 	 "m9.5bbb291cc1e38a051365ee9edb7cbd14_5" -> "m9.5bbb291cc1e38a051365ee9edb7cbd14_4" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" [label="1: Start m10\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 185, column 1]\n " color=yellow style=filled]
-	
-
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" [label="2: Exit m10 \n  " color=yellow style=filled]
-	
-
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" [label="3:  Return Stmt \n   *&return:int=0 [line 188, column 3]\n " shape="box"]
-	
-
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" [label="4:  Switch_stmt \n   *&value:int=7 [line 187, column 11]\n  n$0=*&value:int [line 187, column 11]\n " shape="box"]
-	
-
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" [label="5:  DeclStmt \n   *&value:int=0 [line 186, column 3]\n " shape="box"]
-	
-
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_1" [label="1: Start m11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&value); [line 191, column 1]\n " color=yellow style=filled]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_1" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_14" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_2" [label="2: Exit m11 \n  " color=yellow style=filled]
-	
-
-"m11.c4534fe0ca256b331e9a3f14fe17229d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 197, column 3]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_3" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_2" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_4" [label="4: + \n  " ]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_4" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_10" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 193, column 20]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_6" ;
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_7" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 193, column 20]\n " shape="invhouse"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_6" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_8" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 193, column 20]\n " shape="invhouse"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_7" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_9" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 193, column 20]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_8" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_9" [label="9:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 193, column 20]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_9" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_10" [label="10:  Switch_stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 193, column 20]\n  *&value:int=n$2 [line 193, column 11]\n  n$3=*&value:int [line 193, column 11]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_12" ;
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_13" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 195, column 7]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_11" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 194, column 5]\n " shape="invhouse"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_12" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_11" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 194, column 5]\n " shape="invhouse"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_13" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_14" [label="14:  DeclStmt \n   *&value:int=0 [line 192, column 3]\n " shape="box"]
-	
-
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_14" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_5" ;
 }

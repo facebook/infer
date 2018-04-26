@@ -1178,7 +1178,7 @@ let print_icfg source fmt cfg =
     if Config.dotty_cfg_libs || SourceFile.equal loc.Location.file source then
       F.fprintf fmt "%a@\n" (pp_cfgnode pdesc) node
   in
-  Cfg.iter_all_nodes ~sorted:true print_node cfg
+  Cfg.iter_all_nodes ~sorted:true cfg ~f:print_node
 
 
 let write_icfg_dotty_to_file source cfg fname =

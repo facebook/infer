@@ -1,37 +1,5 @@
 /* @generated */
 digraph cfg {
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" [label="1: Start neg_char\nFormals:  a:char\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 12, column 1]\n " color=yellow style=filled]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" ;
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_2" [label="2: Exit neg_char \n  " color=yellow style=filled]
-	
-
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" [label="3: + \n  " ]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n " shape="invhouse"]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n " shape="invhouse"]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 12, column 31]\n " shape="box"]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 12, column 31]\n " shape="box"]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
-"neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" [label="8:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 12, column 31]\n  *&return:int=n$2 [line 12, column 24]\n " shape="box"]
-	
-
-	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_2" ;
 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_1" [label="1: Start neg_bool\nFormals:  a:_Bool\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 14, column 1]\n " color=yellow style=filled]
 	
 
@@ -64,6 +32,38 @@ digraph cfg {
 	
 
 	 "neg_bool.e953d6477eaaeafaa430423a26fbaac9_8" -> "neg_bool.e953d6477eaaeafaa430423a26fbaac9_2" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" [label="1: Start neg_char\nFormals:  a:char\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 12, column 1]\n " color=yellow style=filled]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" ;
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_1" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_2" [label="2: Exit neg_char \n  " color=yellow style=filled]
+	
+
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" [label="3: + \n  " ]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" [label="4: Prune (true branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(n$1, true); [line 12, column 32]\n " shape="invhouse"]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_4" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" [label="5: Prune (false branch, boolean exp) \n   n$1=*&a:char [line 12, column 32]\n  PRUNE(!n$1, false); [line 12, column 32]\n " shape="invhouse"]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_5" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 12, column 31]\n " shape="box"]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_6" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 12, column 31]\n " shape="box"]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_7" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_3" ;
+"neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" [label="8:  Return Stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 12, column 31]\n  *&return:int=n$2 [line 12, column 24]\n " shape="box"]
+	
+
+	 "neg_char.53ef6b31d84386046a4728d1c45b5f7a_8" -> "neg_char.53ef6b31d84386046a4728d1c45b5f7a_2" ;
 "neg_int.2aa25aca565c41dd997912d11504462c_1" [label="1: Start neg_int\nFormals:  a:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 10, column 1]\n " color=yellow style=filled]
 	
 

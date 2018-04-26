@@ -11,17 +11,6 @@ digraph cfg {
 	
 
 	 "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_3" -> "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_2" ;
-"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" [label="1: Start test_fallthrough\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 1]\n " color=yellow style=filled]
-	
-
-	 "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" -> "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" ;
-"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_2" [label="2: Exit test_fallthrough \n  " color=yellow style=filled]
-	
-
-"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" [label="3:  Return Stmt \n   n$0=_fun_switch_with_fallthrough(66:int) [line 27, column 38]\n  *&return:int=(1 / (n$0 - 3)) [line 27, column 26]\n " shape="box"]
-	
-
-	 "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" -> "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_2" ;
 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_1" [label="1: Start switch_with_fallthrough\nFormals:  n:int\nLocals:  res:int \n   DECLARE_LOCALS(&return,&res); [line 12, column 1]\n " color=yellow style=filled]
 	
 
@@ -81,4 +70,15 @@ digraph cfg {
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" ;
+"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" [label="1: Start test_fallthrough\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 1]\n " color=yellow style=filled]
+	
+
+	 "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" -> "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" ;
+"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_2" [label="2: Exit test_fallthrough \n  " color=yellow style=filled]
+	
+
+"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" [label="3:  Return Stmt \n   n$0=_fun_switch_with_fallthrough(66:int) [line 27, column 38]\n  *&return:int=(1 / (n$0 - 3)) [line 27, column 26]\n " shape="box"]
+	
+
+	 "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" -> "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_2" ;
 }
