@@ -134,8 +134,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       && not (is_receiver_safe actuals)
     then
       let open Domain in
-      let pre = AccessSnapshot.make locks threads False proc_data.pdesc in
-      AccessDomain.add_access pre (TraceElem.make_unannotated_call_access pname loc) attribute_map
+      let access = TraceElem.make_unannotated_call_access pname loc in
+      let snapshot = AccessSnapshot.make access locks threads False proc_data.pdesc in
+      AccessDomain.add snapshot attribute_map
     else attribute_map
 
 
@@ -155,21 +156,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | access :: access_list ->
           let prefix_path' = (fst prefix_path, snd prefix_path @ [access]) in
           let add_field_access pre =
-            let is_write = if List.is_empty access_list then is_write_access else false in
-            let access_acc' =
-              AccessDomain.add_access pre
-                (TraceElem.make_field_access prefix_path' ~is_write loc)
-                access_acc
-            in
+            let access_acc' = AccessDomain.add pre access_acc in
             add_field_accesses prefix_path' access_acc' access_list
           in
           if is_safe_access access prefix_path proc_data.tenv then
             add_field_accesses prefix_path' access_acc access_list
           else
+            let is_write = if List.is_empty access_list then is_write_access else false in
+            let access = TraceElem.make_field_access prefix_path' ~is_write loc in
             match OwnershipDomain.get_owned prefix_path ownership with
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
                 let pre =
-                  AccessSnapshot.make locks threads
+                  AccessSnapshot.make access locks threads
                     (AccessSnapshot.OwnershipPrecondition.Conjunction formal_indexes)
                     proc_data.pdesc
                 in
@@ -177,7 +175,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | OwnershipAbstractValue.Owned ->
                 add_field_accesses prefix_path' access_acc access_list
             | OwnershipAbstractValue.Unowned ->
-                let pre = AccessSnapshot.make locks threads False proc_data.pdesc in
+                let pre = AccessSnapshot.make access locks threads False proc_data.pdesc in
                 add_field_access pre
     in
     List.fold
@@ -226,11 +224,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
-        let pre =
-          AccessSnapshot.make astate.locks astate.threads
+        let snapshot =
+          AccessSnapshot.make container_access astate.locks astate.threads
             (AccessSnapshot.OwnershipPrecondition.Conjunction (IntSet.singleton 0)) caller_pdesc
         in
-        AccessDomain.add_access pre container_access AccessDomain.empty
+        AccessDomain.singleton snapshot
     in
     (* if a container c is owned in cpp, make c[i] owned for all i *)
     let return_ownership =
@@ -306,29 +304,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | None ->
             path
       in
-      let expand_pre accesses =
-        let sinks =
-          PathDomain.Sinks.fold
-            (fun elem acc ->
-              let new_elem = TraceElem.map ~f:expand_path elem in
-              PathDomain.Sinks.add new_elem acc )
-            (PathDomain.sinks accesses) PathDomain.Sinks.empty
-        in
-        PathDomain.update_sinks accesses sinks
+      let expand_pre (snapshot: AccessSnapshot.t) =
+        let access = TraceElem.map ~f:expand_path snapshot.access in
+        AccessSnapshot.make_ access snapshot.lock snapshot.thread snapshot.ownership_precondition
       in
       AccessDomain.map expand_pre accesses
 
 
-  let add_callee_accesses (caller_astate: Domain.astate) accesses locks threads actuals
+  let add_callee_accesses (caller_astate: Domain.astate) callee_accesses locks threads actuals
       callee_pname pdesc loc =
     let open Domain in
-    let update_caller_accesses pre callee_accesses caller_accesses =
-      let combined_accesses =
-        PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
-        |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses)
-      in
-      AccessDomain.add pre combined_accesses caller_accesses
-    in
     let conjoin_ownership_pre actual_exp actual_indexes : AccessSnapshot.OwnershipPrecondition.t =
       match actual_exp with
       | HilExp.Constant _ ->
@@ -375,29 +360,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Typ.Procname.pp callee_pname (List.length actuals) ;
             acc
     in
-    let update_accesses (pre: AccessSnapshot.t) callee_accesses accesses_acc =
+    let update_callee_access (snapshot: AccessSnapshot.t) acc =
+      let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
+      let locks = if snapshot.lock then LocksDomain.add_lock locks else locks in
+      let thread =
+        ThreadsDomain.integrate_summary ~callee_astate:snapshot.thread ~caller_astate:threads
+      in
       (* update precondition with caller ownership info *)
-      let ownership_precondition' =
-        match pre.ownership_precondition with
+      let ownership_precondition =
+        match snapshot.ownership_precondition with
         | Conjunction indexes ->
             let empty_pre = AccessSnapshot.OwnershipPrecondition.Conjunction IntSet.empty in
             IntSet.fold update_ownership_pre indexes empty_pre
         | False ->
-            pre.ownership_precondition
+            snapshot.ownership_precondition
       in
-      if AccessSnapshot.OwnershipPrecondition.is_true ownership_precondition' then accesses_acc
+      if AccessSnapshot.OwnershipPrecondition.is_true ownership_precondition then
+        (* discard accesses to owned memory *)
+        acc
       else
-        let locks' = if pre.lock then LocksDomain.add_lock locks else locks in
-        (* if the access occurred on a main thread in the callee, we should remember this when
-           moving it to the callee. if we don't know what thread it ran on, use the caller's
-           thread *)
-        let threads' =
-          ThreadsDomain.integrate_summary ~callee_astate:pre.thread ~caller_astate:threads
-        in
-        let pre' = AccessSnapshot.make locks' threads' ownership_precondition' pdesc in
-        update_caller_accesses pre' callee_accesses accesses_acc
+        let snapshot = AccessSnapshot.make access locks thread ownership_precondition pdesc in
+        AccessDomain.add snapshot acc
     in
-    AccessDomain.fold update_accesses accesses caller_astate.accesses
+    AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
 
   (***********************************************************************)
@@ -949,9 +934,12 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
   | Some {accesses} ->
-      get_all_accesses
-        (fun access -> Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind access))
-        accesses
+      AccessDomain.fold
+        (fun snapshot acc ->
+          if Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind snapshot.access) then
+            PathDomain.add_sink snapshot.access acc
+          else acc )
+        accesses PathDomain.empty
   | _ ->
       PathDomain.empty
 
@@ -1539,17 +1527,14 @@ let make_results_table (module AccessListMap : QuotientedAccessListMap) file_env
   let open RacerDDomain in
   let aggregate_post {threads; accesses; wobbly_paths} tenv procdesc acc =
     AccessDomain.fold
-      (fun precondition accesses acc ->
-        PathDomain.Sinks.fold
-          (fun access acc ->
-            let access_kind = TraceElem.kind access in
-            if should_filter_access access_kind then acc
-            else
-              let reported_access : reported_access =
-                {access; threads; precondition; tenv; procdesc; wobbly_paths}
-              in
-              AccessListMap.add access_kind reported_access acc )
-          (PathDomain.sinks accesses) acc )
+      (fun snapshot acc ->
+        let access_kind = TraceElem.kind snapshot.access in
+        if should_filter_access access_kind then acc
+        else
+          let reported_access : reported_access =
+            {access= snapshot.access; threads; precondition= snapshot; tenv; procdesc; wobbly_paths}
+          in
+          AccessListMap.add access_kind reported_access acc )
       accesses acc
   in
   let aggregate_posts acc (tenv, proc_desc) =

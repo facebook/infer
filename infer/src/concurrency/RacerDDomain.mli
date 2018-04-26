@@ -176,11 +176,17 @@ module AccessSnapshot : sig
   end
 
   type t = private
-    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: OwnershipPrecondition.t}
+    { access: PathDomain.Sink.t
+    ; thread: ThreadsDomain.astate
+    ; lock: bool
+    ; ownership_precondition: OwnershipPrecondition.t }
   [@@deriving compare]
 
   val make :
-    LocksDomain.astate -> ThreadsDomain.astate -> OwnershipPrecondition.t -> Procdesc.t -> t
+    PathDomain.Sink.t -> LocksDomain.astate -> ThreadsDomain.astate -> OwnershipPrecondition.t
+    -> Procdesc.t -> t
+
+  val make_ : PathDomain.Sink.t -> bool -> ThreadsDomain.astate -> OwnershipPrecondition.t -> t
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
@@ -190,15 +196,7 @@ end
 
 (** map of access metadata |-> set of accesses. the map should hold all accesses to a
     possibly-unowned access path *)
-module AccessDomain : sig
-  include module type of AbstractDomain.Map (AccessSnapshot) (PathDomain)
-
-  val add_access : AccessSnapshot.t -> TraceElem.t -> astate -> astate
-  (** add the given (access, precondition) pair to the map *)
-
-  val get_accesses : AccessSnapshot.t -> astate -> PathDomain.astate
-  (** get all accesses with the given snapshot *)
-end
+module AccessDomain : module type of AbstractDomain.FiniteSet (AccessSnapshot)
 
 module StabilityDomain : sig
   include module type of AccessTree.PathSet (AccessTree.DefaultConfig)
@@ -244,5 +242,3 @@ val attributes_of_expr :
 
 val ownership_of_expr :
   HilExp.t -> OwnershipAbstractValue.astate AttributeMapDomain.t -> OwnershipAbstractValue.astate
-
-val get_all_accesses : (TraceElem.t -> bool) -> PathDomain.t AccessDomain.t -> PathDomain.t

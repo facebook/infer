@@ -420,15 +420,22 @@ module AccessSnapshot = struct
   end
 
   type t =
-    {thread: ThreadsDomain.astate; lock: bool; ownership_precondition: OwnershipPrecondition.t}
+    { access: PathDomain.Sink.t
+    ; thread: ThreadsDomain.astate
+    ; lock: bool
+    ; ownership_precondition: OwnershipPrecondition.t }
   [@@deriving compare]
 
-  let make lock thread ownership_precondition pdesc =
+  let make_ access lock thread ownership_precondition =
     (* shouldn't be creating metadata for accesses that are known to be owned; we should discard
        such accesses *)
     assert (not (OwnershipPrecondition.is_true ownership_precondition)) ;
+    {access; thread; lock; ownership_precondition}
+
+
+  let make access lock thread ownership_precondition pdesc =
     let lock = LocksDomain.is_locked lock || Procdesc.is_java_synchronized pdesc in
-    {thread; lock; ownership_precondition}
+    make_ access lock thread ownership_precondition
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
@@ -436,25 +443,12 @@ module AccessSnapshot = struct
     && not (OwnershipPrecondition.is_true ownership_precondition)
 
 
-  let pp fmt {thread; lock; ownership_precondition} =
-    F.fprintf fmt "Thread: %a Lock: %b Pre: %a" ThreadsDomain.pp thread lock
-      OwnershipPrecondition.pp ownership_precondition
+  let pp fmt {access; thread; lock; ownership_precondition} =
+    F.fprintf fmt "Access: %a Thread: %a Lock: %b Pre: %a" TraceElem.pp access ThreadsDomain.pp
+      thread lock OwnershipPrecondition.pp ownership_precondition
 end
 
-module AccessDomain = struct
-  include AbstractDomain.Map (AccessSnapshot) (PathDomain)
-
-  let add_access precondition access_path t =
-    let precondition_accesses =
-      try find precondition t with Caml.Not_found -> PathDomain.empty
-    in
-    let precondition_accesses' = PathDomain.add_sink access_path precondition_accesses in
-    add precondition precondition_accesses' t
-
-
-  let get_accesses precondition t =
-    try find precondition t with Caml.Not_found -> PathDomain.empty
-end
+module AccessDomain = AbstractDomain.FiniteSet (AccessSnapshot)
 
 module StabilityDomain = struct
   include AccessTree.PathSet (AccessTree.DefaultConfig)
@@ -684,17 +678,3 @@ let rec ownership_of_expr expr ownership =
       ownership_of_expr e ownership
   | _ ->
       OwnershipAbstractValue.unowned
-
-
-let filter_by_access access_filter trace =
-  PathDomain.Sinks.filter access_filter (PathDomain.sinks trace) |> PathDomain.update_sinks trace
-
-
-let get_all_accesses_with_pre pre_filter access_filter accesses =
-  AccessDomain.fold
-    (fun pre trace acc ->
-      if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc )
-    accesses PathDomain.empty
-
-
-let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
