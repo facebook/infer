@@ -318,8 +318,8 @@ module ConditionTrace = struct
 
   type t =
     { proc_name: Typ.Procname.t
-    ; location: Location.t
     ; cond_trace: cond_trace
+    ; location: Location.t
     ; val_traces: ValTraceSet.t }
   [@@deriving compare]
 
@@ -377,13 +377,16 @@ module ConditionWithTrace = struct
 
   let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
 
-  let compare_by_location {trace= trace1} {trace= trace2} =
-    Location.compare (ConditionTrace.get_location trace1) (ConditionTrace.get_location trace2)
-
-
   let have_similar_bounds {cond= cond1} {cond= cond2} = Condition.have_similar_bounds cond1 cond2
 
-  let xcompare_cond ~lhs:{cond= lhs} ~rhs:{cond= rhs} = Condition.xcompare ~lhs ~rhs
+  let xcompare ~lhs ~rhs =
+    match Condition.xcompare ~lhs:lhs.cond ~rhs:rhs.cond with
+    | `Equal ->
+        if ConditionTrace.compare lhs.trace rhs.trace <= 0 then `LeftSubsumesRight
+        else `RightSubsumesLeft
+    | (`LeftSubsumesRight | `RightSubsumesLeft | `NotComparable) as cmp ->
+        cmp
+
 
   let subst (bound_map, trace_map) caller_pname callee_pname location cwt =
     match Condition.get_symbols cwt.cond with
@@ -437,11 +440,7 @@ module ConditionSet = struct
     (* we don't want to remove issues that would end up in a higher bucket,
      e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
     if ConditionWithTrace.have_similar_bounds existing new_ then
-      match ConditionWithTrace.xcompare_cond ~lhs:existing ~rhs:new_ with
-      | `Equal ->
-          (* keep the first one in the code *)
-          if ConditionWithTrace.compare_by_location existing new_ <= 0 then `DoNotAddAndStop
-          else `RemoveExistingAndContinue
+      match ConditionWithTrace.xcompare ~lhs:existing ~rhs:new_ with
       | `LeftSubsumesRight ->
           `DoNotAddAndStop
       | `RightSubsumesLeft ->
