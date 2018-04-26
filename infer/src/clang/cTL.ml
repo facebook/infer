@@ -1005,7 +1005,7 @@ let rec eval_Atomic pred_name_ args an lcxt =
   | "is_enum_constant_of_enum", [name], an ->
       CPredicates.is_enum_constant_of_enum an name
   | "is_global_var", [], an ->
-      CPredicates.is_syntactically_global_var an
+      CPredicates.is_global_var an
   | "is_in_block", [], _ ->
       CPredicates.is_in_block lcxt
   | "is_in_cxx_constructor", [name], _ ->

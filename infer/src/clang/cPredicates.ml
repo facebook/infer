@@ -229,7 +229,7 @@ let is_objc_extension lcxt =
   CGeneral_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 
 
-let is_syntactically_global_var an =
+let is_global_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_syntactically_global_var d | _ -> false
 
 
