@@ -203,3 +203,8 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~compare:Procdesc.compare (get_all_proc_descs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
+
+
+let merge ~src ~dst =
+  Typ.Procname.Hash.iter (fun pname cfg -> Typ.Procname.Hash.replace dst pname cfg) src ;
+  dst

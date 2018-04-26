@@ -8,6 +8,7 @@
  *)
 open! IStd
 module Hashtbl = Caml.Hashtbl
+module L = Logging
 
 (** Module for Type Environments. *)
 
@@ -91,6 +92,17 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
     | Sqlite3.Data.BLOB b ->
         FileLocal (Marshal.from_string b 0)
 end
+
+let merge ~src ~dst =
+  match (src, dst) with
+  | Global, Global ->
+      Global
+  | FileLocal src_tenv, FileLocal dst_tenv ->
+      TypenameHash.iter (fun pname cfg -> TypenameHash.replace dst_tenv pname cfg) src_tenv ;
+      FileLocal dst_tenv
+  | Global, FileLocal _ | FileLocal _, Global ->
+      L.die InternalError "Cannot merge Global tenv with FileLocal tenv"
+
 
 let load_statement =
   ResultsDatabase.register_statement

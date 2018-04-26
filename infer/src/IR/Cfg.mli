@@ -41,6 +41,10 @@ val save_attributes : SourceFile.t -> t -> unit
 val inline_java_synthetic_methods : t -> unit
 (** Inline the java synthetic methods in the cfg (in-place) *)
 
+val merge : src:t -> dst:t -> t
+(** Best-effort merge of [src] into [dst]. If a procedure is both in [dst] and [src], the one in
+   [src] will get overwritten. *)
+
 val pp_proc_signatures : Format.formatter -> t -> unit
 
 module SQLite : SqliteUtils.Data with type t = t

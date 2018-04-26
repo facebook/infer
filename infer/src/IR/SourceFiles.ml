@@ -16,8 +16,46 @@ let store_statement =
   VALUES (:source, :cfgs, :tenv, :proc_names, :freshly_captured) |}
 
 
+let select_existing_statement =
+  ResultsDatabase.register_statement
+    "SELECT cfgs, type_environment FROM source_files WHERE source_file = :source AND \
+     freshly_captured = 1"
+
+
+let get_existing_data source_file =
+  ResultsDatabase.with_registered_statement select_existing_statement ~f:(fun db stmt ->
+      SourceFile.SQLite.serialize source_file |> Sqlite3.bind stmt 1
+      (* :source *)
+      |> SqliteUtils.check_sqlite_error db ~log:"get_existing_data bind source file" ;
+      match Sqlite3.step stmt with
+      | Sqlite3.Rc.ROW ->
+          (* the operation returned a result, get it *)
+          let cfgs = Sqlite3.column stmt 0 |> Cfg.SQLite.deserialize
+          and tenv = Sqlite3.column stmt 1 |> Tenv.SQLite.deserialize in
+          (match Sqlite3.step stmt with DONE -> () | _ -> assert false) ;
+          Some (cfgs, tenv)
+      | DONE ->
+          None
+      | err ->
+          L.die InternalError "Looking for pre-existing cfgs: %s (%s)" (Sqlite3.Rc.to_string err)
+            (Sqlite3.errmsg db) )
+
+
 let add source_file cfg tenv =
   Cfg.inline_java_synthetic_methods cfg ;
+  let cfg, tenv =
+    (* The same source file may get captured several times in a single capture event, for instance
+       because it is compiled with different options, or from different symbolic links. This may
+       generate different procedures in each phase, so make an attempt to merge them into the same
+       CFG. *)
+    match get_existing_data source_file with
+    | Some (old_cfg, old_tenv) ->
+        L.debug Capture Quiet "Merging capture data for already-captured '%a'@\n" SourceFile.pp
+          source_file ;
+        (Cfg.merge ~dst:old_cfg ~src:cfg, Tenv.merge ~dst:old_tenv ~src:tenv)
+    | None ->
+        (cfg, tenv)
+  in
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
