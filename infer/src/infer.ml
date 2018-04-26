@@ -154,6 +154,13 @@ let () =
             ~attr_kind:procedures_definedness ~source_file:procedures_source_file
             ~proc_attributes:procedures_attributes)
         ()
+  | Explore when Config.source_files ->
+      L.result "%a"
+        (SourceFiles.pp_all ?filter:Config.source_files_filter ~cfgs:Config.source_files_cfgs
+           ~type_environment:Config.source_files_type_environment
+           ~procedure_names:Config.source_files_procedure_names
+           ~freshly_captured:Config.source_files_freshly_captured)
+        ()
   | Explore ->
       let if_some key opt args =
         match opt with None -> args | Some arg -> key :: string_of_int arg :: args

@@ -195,7 +195,7 @@ module Node = struct
       | Join_node ->
           "Join"
     in
-    let pp fmt = F.fprintf fmt "%s@\n%a@?" str (pp_instrs pe None ~sub_instrs:true) node in
+    let pp fmt = F.fprintf fmt "%s@.%a" str (pp_instrs pe None ~sub_instrs:true) node in
     F.asprintf "%t" pp
 end
 
@@ -441,7 +441,7 @@ let pp_signature fmt pdesc =
   let pname = get_proc_name pdesc in
   let pname_string = Typ.Procname.to_string pname in
   let defined_string = match is_defined pdesc with true -> "defined" | false -> "undefined" in
-  Format.fprintf fmt "%s [%s, Return type: %s, %aFormals: %a, Locals: %a" pname_string
+  Format.fprintf fmt "@[%s [%s, Return type: %s, %aFormals: %a, Locals: %a" pname_string
     defined_string
     (Typ.to_string (get_ret_type pdesc))
     pp_objc_accessor attributes.ProcAttributes.objc_accessor pp_variable_list (get_formals pdesc)
@@ -451,7 +451,7 @@ let pp_signature fmt pdesc =
   let method_annotation = attributes.ProcAttributes.method_annotation in
   if not (Annot.Method.is_empty method_annotation) then
     Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation ;
-  Format.fprintf fmt "]@\n"
+  Format.fprintf fmt "]@]@;"
 
 
 let is_specialized pdesc =

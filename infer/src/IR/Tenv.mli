@@ -48,6 +48,10 @@ val language_is : t -> Language.t -> bool
 
 type per_file = Global | FileLocal of t
 
+val pp_per_file : Format.formatter -> per_file -> unit
+  [@@warning "-32"]
+(** print per file type environment *)
+
 val merge : src:per_file -> dst:per_file -> per_file
 (** Best-effort merge of [src] into [dst]. If a procedure is both in [dst] and [src], the one in
    [src] will get overwritten. *)

@@ -210,6 +210,18 @@ val smt_output : bool
 
 val source_file_extentions : string list
 
+val source_files : bool
+
+val source_files_filter : string option
+
+val source_files_cfgs : bool
+
+val source_files_type_environment : bool
+
+val source_files_procedure_names : bool
+
+val source_files_freshly_captured : bool
+
 val sources : string list
 
 val sourcepath : string option

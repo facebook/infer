@@ -200,9 +200,10 @@ let inline_java_synthetic_methods cfg =
 
 
 let pp_proc_signatures fmt cfg =
-  F.fprintf fmt "METHOD SIGNATURES@\n@." ;
+  F.fprintf fmt "@[<v>METHOD SIGNATURES@;" ;
   let sorted_procs = List.sort ~compare:Procdesc.compare (get_all_proc_descs cfg) in
-  List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
+  List.iter ~f:(Procdesc.pp_signature fmt) sorted_procs ;
+  F.fprintf fmt "@]"
 
 
 let merge ~src ~dst =

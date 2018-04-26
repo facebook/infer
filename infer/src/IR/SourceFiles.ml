@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
+module F = Format
 module L = Logging
 
 let store_statement =
@@ -128,14 +129,18 @@ let is_freshly_captured_statement =
     "SELECT freshly_captured FROM source_files WHERE source_file = :k"
 
 
+let deserialize_freshly_captured = function[@warning "-8"]
+  | Sqlite3.Data.INT p ->
+      Int64.equal p Int64.one
+
+
 let is_freshly_captured source =
   ResultsDatabase.with_registered_statement is_freshly_captured_statement ~f:(fun db load_stmt ->
       SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_sqlite_error db ~log:"load bind source file" ;
       SqliteUtils.sqlite_result_step ~finalize:false ~log:"SourceFiles.is_freshly_captured" db
         load_stmt
-      |> Option.value_map ~default:false ~f:(function [@warning "-8"] Sqlite3.Data.INT p ->
-             Int64.equal p Int64.one ) )
+      |> Option.value_map ~default:false ~f:deserialize_freshly_captured )
 
 
 let mark_all_stale_statement =
@@ -145,3 +150,46 @@ let mark_all_stale_statement =
 let mark_all_stale () =
   ResultsDatabase.with_registered_statement mark_all_stale_statement ~f:(fun db stmt ->
       SqliteUtils.sqlite_unit_step db ~finalize:false ~log:"mark_all_stale" stmt )
+
+
+let select_all_source_files_statement =
+  ResultsDatabase.register_statement
+    "SELECT * FROM source_files WHERE source_file LIKE :source_file_like"
+
+
+let pp_all ?(filter= "%") ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
+  ResultsDatabase.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
+      Sqlite3.bind stmt 1 (* :source_file_like *) (Sqlite3.Data.TEXT filter)
+      |> SqliteUtils.check_sqlite_error db ~log:"source files filter" ;
+      let pp_procnames fmt procs =
+        F.fprintf fmt "@[<v>" ;
+        List.iter ~f:(F.fprintf fmt "%a@," Typ.Procname.pp) procs ;
+        F.fprintf fmt "@]"
+      in
+      let pp_if title condition deserialize pp fmt column =
+        if condition then
+          F.fprintf fmt "  @[<v2>%s@,%a@]@;" title pp (Sqlite3.column stmt column |> deserialize)
+      in
+      let rec aux fmt () =
+        match Sqlite3.step stmt with
+        | Sqlite3.Rc.ROW ->
+            F.fprintf fmt "%a@,%a%a%a%a" SourceFile.pp
+              (Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize)
+              (pp_if "cfgs" cfgs Cfg.SQLite.deserialize Cfg.pp_proc_signatures)
+              1
+              (pp_if "type_environment" type_environment Tenv.SQLite.deserialize Tenv.pp_per_file)
+              2
+              (pp_if "procedure_names" procedure_names Typ.Procname.SQLiteList.deserialize
+                 pp_procnames)
+              3
+              (pp_if "freshly_captured" freshly_captured deserialize_freshly_captured
+                 Format.pp_print_bool)
+              4 ;
+            aux fmt ()
+        | DONE ->
+            ()
+        | err ->
+            L.die InternalError "source_files_iter: %s (%s)" (Sqlite3.Rc.to_string err)
+              (Sqlite3.errmsg db)
+      in
+      Format.fprintf fmt "@[<v>%a@]" aux () )

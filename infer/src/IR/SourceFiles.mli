@@ -27,3 +27,7 @@ val is_freshly_captured : SourceFile.t -> bool
 
 val mark_all_stale : unit -> unit
 (** mark all source files as stale; do be called at the start of a new capture phase *)
+
+val pp_all :
+  ?filter:string -> cfgs:bool -> type_environment:bool -> procedure_names:bool
+  -> freshly_captured:bool -> Format.formatter -> unit -> unit

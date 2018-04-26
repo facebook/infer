@@ -1896,6 +1896,46 @@ and source_preview =
     "print code excerpts around trace elements"
 
 
+and source_files =
+  CLOpt.mk_bool ~long:"source-files"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "Print source files discovered by infer"
+
+
+and source_files_filter =
+  CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "With $(b,--source-files), only print source files matching the specified $(i,filter). The \
+     filter is a pattern that should match the file path. Patterns are interpreted by SQLite: use \
+     $(b,_) to match any one character and $(b,%) to match any  sequence of characters. For \
+     instance, \"lib/%.c\" matches only C files in the lib directory."
+
+
+and source_files_cfgs =
+  CLOpt.mk_bool ~long:"source-files-cfgs"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "Print the Cfgs of each source file in the output of $(b,--source-files)"
+
+
+and source_files_type_environment =
+  CLOpt.mk_bool ~long:"source-files-type-environment"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "Print the type environment of each source file in the output of $(b,--source-files)"
+
+
+and source_files_procedure_names =
+  CLOpt.mk_bool ~long:"source-files-procedure-names"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "Print the names of procedure of each source file in the output of $(b,--source-files)"
+
+
+and source_files_freshly_captured =
+  CLOpt.mk_bool ~long:"source-files-freshly-captured"
+    ~in_help:InferCommand.[(Explore, manual_generic)]
+    "Print whether the source file has been captured in the most recent capture phase in the \
+     output of $(b,--source-files)."
+
+
 and sources = CLOpt.mk_string_list ~long:"sources" "Specify the list of source files"
 
 and sourcepath = CLOpt.mk_string_opt ~long:"sourcepath" "Specify the sourcepath"
@@ -2728,6 +2768,18 @@ and skip_duplicated_types = !skip_duplicated_types
 and skip_translation_headers = !skip_translation_headers
 
 and source_preview = !source_preview
+
+and source_files = !source_files
+
+and source_files_filter = !source_files_filter
+
+and source_files_cfgs = !source_files_cfgs
+
+and source_files_type_environment = !source_files_type_environment
+
+and source_files_procedure_names = !source_files_procedure_names
+
+and source_files_freshly_captured = !source_files_freshly_captured
 
 and sources = !sources
 

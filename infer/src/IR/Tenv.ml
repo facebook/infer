@@ -27,8 +27,8 @@ type t = Typ.Struct.t TypenameHash.t
 let pp fmt (tenv: t) =
   TypenameHash.iter
     (fun name typ ->
-      Format.fprintf fmt "@[<6>NAME: %s@." (Typ.Name.to_string name) ;
-      Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.Struct.pp Pp.text name) typ )
+      Format.fprintf fmt "@[<6>NAME: %s@]@," (Typ.Name.to_string name) ;
+      Format.fprintf fmt "@[<6>TYPE: %a@]@," (Typ.Struct.pp Pp.text name) typ )
     tenv
 
 
@@ -73,6 +73,13 @@ let add_field tenv class_tn_name field =
 
 
 type per_file = Global | FileLocal of t
+
+let pp_per_file fmt = function
+  | Global ->
+      Format.fprintf fmt "Global"
+  | FileLocal tenv ->
+      Format.fprintf fmt "FileLocal @[<v>%a@]" pp tenv
+
 
 module SQLite : SqliteUtils.Data with type t = per_file = struct
   type t = per_file
