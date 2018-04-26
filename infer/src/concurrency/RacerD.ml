@@ -1109,8 +1109,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
 
 
 type reported_access =
-  { access: RacerDDomain.TraceElem.t
-  ; threads: RacerDDomain.ThreadsDomain.astate
+  { threads: RacerDDomain.ThreadsDomain.astate
   ; precondition: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
   ; procdesc: Procdesc.t
@@ -1209,21 +1208,21 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           reported
     else reported
   in
-  let report_unsafe_access {access; precondition; threads; tenv; procdesc; wobbly_paths} accesses
+  let report_unsafe_access {precondition; threads; tenv; procdesc; wobbly_paths} accesses
       reported_acc =
     let pname = Procdesc.get_proc_name procdesc in
-    if is_duplicate_report access pname reported_acc then reported_acc
+    if is_duplicate_report precondition.access pname reported_acc then reported_acc
     else
-      match TraceElem.kind access with
+      match TraceElem.kind precondition.access with
       | Access.InterfaceCall unannoted_call_pname ->
           if
             AccessSnapshot.is_unprotected precondition && ThreadsDomain.is_any threads
             && Models.is_marked_thread_safe procdesc tenv
           then (
             (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-            report_unannotated_interface_violation tenv procdesc access threads
+            report_unannotated_interface_violation tenv procdesc precondition.access threads
               unannoted_call_pname ;
-            update_reported access pname reported_acc )
+            update_reported precondition.access pname reported_acc )
           else reported_acc
       | Access.Write _ | ContainerWrite _ -> (
         match Procdesc.get_proc_name procdesc with
@@ -1237,9 +1236,11 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
                    (i.e., not a self race). find accesses on a background thread this access might
                    conflict with and report them *)
                 List.filter_map
-                  ~f:(fun {access= other_access; threads= other_threads} ->
-                    if TraceElem.is_write other_access && ThreadsDomain.is_any other_threads then
-                      Some other_access
+                  ~f:(fun {precondition= other_precondition; threads= other_threads} ->
+                    if
+                      TraceElem.is_write other_precondition.access
+                      && ThreadsDomain.is_any other_threads
+                    then Some other_precondition.access
                     else None )
                   accesses
             in
@@ -1250,8 +1251,8 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
               let conflict = List.hd writes_on_background_thread in
               report_thread_safety_violation tenv procdesc
                 ~make_description:make_unprotected_write_description
-                ~report_kind:(WriteWriteRace conflict) access threads wobbly_paths ;
-              update_reported access pname reported_acc )
+                ~report_kind:(WriteWriteRace conflict) precondition.access threads wobbly_paths ;
+              update_reported precondition.access pname reported_acc )
             else reported_acc
         | _ ->
             (* Do not report unprotected writes when an access can't run in parallel with itself, or
@@ -1263,8 +1264,8 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           let is_cpp_protected_write pre =
             Typ.Procname.is_java pname || not (AccessSnapshot.is_unprotected pre)
           in
-          let is_conflict other_access pre other_thread =
-            TraceElem.is_write other_access
+          let is_conflict (pre: AccessSnapshot.t) other_thread =
+            TraceElem.is_write pre.access
             &&
             if Typ.Procname.is_java pname then
               ThreadsDomain.is_any threads || ThreadsDomain.is_any other_thread
@@ -1272,16 +1273,17 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           in
           let all_writes =
             List.filter
-              ~f:(fun {access= other_access; precondition; threads= other_threads} ->
-                is_conflict other_access precondition other_threads )
+              ~f:(fun {precondition; threads= other_threads} ->
+                is_conflict precondition other_threads )
               accesses
           in
           if not (List.is_empty all_writes) then (
             let conflict = List.hd_exn all_writes in
             report_thread_safety_violation tenv procdesc
               ~make_description:(make_read_write_race_description ~read_is_sync:false conflict)
-              ~report_kind:(ReadWriteRace conflict.access) access threads wobbly_paths ;
-            update_reported access pname reported_acc )
+              ~report_kind:(ReadWriteRace conflict.precondition.access) precondition.access threads
+              wobbly_paths ;
+            update_reported precondition.access pname reported_acc )
           else reported_acc
       | Access.Read _ | ContainerRead _ ->
           (* protected read. report unprotected writes and opposite protected writes as conflicts *)
@@ -1291,15 +1293,13 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           in
           let conflicting_writes =
             List.filter
-              ~f:
-                (fun { access= other_access
-                     ; precondition= other_precondition
-                     ; threads= other_threads } ->
+              ~f:(fun {precondition= other_precondition; threads= other_threads} ->
                 if AccessSnapshot.is_unprotected other_precondition then
-                  TraceElem.is_write other_access && ThreadsDomain.is_any other_threads
+                  TraceElem.is_write other_precondition.access
+                  && ThreadsDomain.is_any other_threads
                 else
-                  TraceElem.is_write other_access && can_conflict precondition other_precondition
-                )
+                  TraceElem.is_write other_precondition.access
+                  && can_conflict precondition other_precondition )
               accesses
           in
           if not (List.is_empty conflicting_writes) then (
@@ -1307,8 +1307,9 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
             (* protected read with conflicting unprotected write(s). warn. *)
             report_thread_safety_violation tenv procdesc
               ~make_description:(make_read_write_race_description ~read_is_sync:true conflict)
-              ~report_kind:(ReadWriteRace conflict.access) access threads wobbly_paths ;
-            update_reported access pname reported_acc )
+              ~report_kind:(ReadWriteRace conflict.precondition.access) precondition.access threads
+              wobbly_paths ;
+            update_reported precondition.access pname reported_acc )
           else reported_acc
   in
   AccessListMap.fold
@@ -1476,8 +1477,8 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
       else
         let k, vals = AccessListMap.min_binding m in
         let tenv =
-          (List.find_exn vals ~f:(fun {access} ->
-               RacerDDomain.Access.equal (RacerDDomain.TraceElem.kind access) k ))
+          (List.find_exn vals ~f:(fun {precondition} ->
+               RacerDDomain.Access.equal (RacerDDomain.TraceElem.kind precondition.access) k ))
             .tenv
         in
         (* assumption: the tenv for k is sufficient for k' too *)
@@ -1532,7 +1533,7 @@ let make_results_table (module AccessListMap : QuotientedAccessListMap) file_env
         if should_filter_access access_kind then acc
         else
           let reported_access : reported_access =
-            {access= snapshot.access; threads; precondition= snapshot; tenv; procdesc; wobbly_paths}
+            {threads; precondition= snapshot; tenv; procdesc; wobbly_paths}
           in
           AccessListMap.add access_kind reported_access acc )
       accesses acc
