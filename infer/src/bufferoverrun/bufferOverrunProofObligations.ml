@@ -370,31 +370,77 @@ module ConditionTrace = struct
    fun ct -> if has_unknown ct then Some IssueType.buffer_overrun_u5 else None
 end
 
+module ConditionWithTrace = struct
+  type t = {cond: Condition.t; trace: ConditionTrace.t}
+
+  let make cond trace = {cond; trace}
+
+  let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
+
+  let compare_by_location {trace= trace1} {trace= trace2} =
+    Location.compare (ConditionTrace.get_location trace1) (ConditionTrace.get_location trace2)
+
+
+  let have_similar_bounds {cond= cond1} {cond= cond2} = Condition.have_similar_bounds cond1 cond2
+
+  let xcompare_cond ~lhs:{cond= lhs} ~rhs:{cond= rhs} = Condition.xcompare ~lhs ~rhs
+
+  let subst (bound_map, trace_map) caller_pname callee_pname location cwt =
+    match Condition.get_symbols cwt.cond with
+    | [] ->
+        Some cwt
+    | symbols ->
+      match Condition.subst bound_map cwt.cond with
+      | None ->
+          None
+      | Some cond ->
+          let traces_caller =
+            List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
+                match Itv.SymbolMap.find symbol trace_map with
+                | symbol_trace ->
+                    ValTraceSet.join symbol_trace val_traces
+                | exception Caml.Not_found ->
+                    val_traces )
+          in
+          let trace =
+            ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location
+              cwt.trace
+          in
+          Some {cond; trace}
+
+
+  let set_buffer_overrun_u5 {cond; trace} issue_type =
+    if
+      ( IssueType.equal issue_type IssueType.buffer_overrun_l3
+      || IssueType.equal issue_type IssueType.buffer_overrun_l4
+      || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
+      && Condition.has_infty cond
+    then Option.value (ConditionTrace.check trace) ~default:issue_type
+    else issue_type
+
+
+  let check ~report cwt =
+    let {report_issue_type; propagate} = Condition.check cwt.cond in
+    report_issue_type |> Option.map ~f:(set_buffer_overrun_u5 cwt)
+    |> Option.iter ~f:(report cwt.cond cwt.trace) ;
+    propagate
+end
+
 module ConditionSet = struct
-  type condition_with_trace = {cond: Condition.t; trace: ConditionTrace.t}
-
-  let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace
-
-  type t = condition_with_trace list
+  type t = ConditionWithTrace.t list
 
   (* invariant: join_one of one of the elements should return the original list *)
 
   let empty = []
 
-  let compare_by_location cwt1 cwt2 =
-    Location.compare
-      (ConditionTrace.get_location cwt1.trace)
-      (ConditionTrace.get_location cwt2.trace)
-
-
   let try_merge ~existing ~new_ =
     (* we don't want to remove issues that would end up in a higher bucket,
      e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
-    if Condition.have_similar_bounds existing.cond new_.cond then
-      match Condition.xcompare ~lhs:existing.cond ~rhs:new_.cond with
+    if ConditionWithTrace.have_similar_bounds existing new_ then
+      match ConditionWithTrace.xcompare_cond ~lhs:existing ~rhs:new_ with
       | `Equal ->
           (* keep the first one in the code *)
-          if compare_by_location existing new_ <= 0 then `DoNotAddAndStop
+          if ConditionWithTrace.compare_by_location existing new_ <= 0 then `DoNotAddAndStop
           else `RemoveExistingAndContinue
       | `LeftSubsumesRight ->
           `DoNotAddAndStop
@@ -409,21 +455,22 @@ module ConditionSet = struct
     let rec aux ~new_ acc ~same = function
       | [] ->
           if Config.bo_debug >= 3 then
-            L.(debug BufferOverrun Verbose) "[InferboPO] Adding new condition %a@." pp_cwt new_ ;
+            L.(debug BufferOverrun Verbose)
+              "[InferboPO] Adding new condition %a@." ConditionWithTrace.pp new_ ;
           if same then new_ :: condset else new_ :: acc
       | existing :: rest as existings ->
         match try_merge ~existing ~new_ with
         | `DoNotAddAndStop ->
             if Config.bo_debug >= 3 then
               L.(debug BufferOverrun Verbose)
-                "[InferboPO] Not adding condition %a (because of existing %a)@." pp_cwt new_ pp_cwt
-                existing ;
+                "[InferboPO] Not adding condition %a (because of existing %a)@."
+                ConditionWithTrace.pp new_ ConditionWithTrace.pp existing ;
             if same then condset else List.rev_append acc existings
         | `RemoveExistingAndContinue ->
             if Config.bo_debug >= 3 then
               L.(debug BufferOverrun Verbose)
-                "[InferboPO] Removing condition %a (because of new %a)@." pp_cwt existing pp_cwt
-                new_ ;
+                "[InferboPO] Removing condition %a (because of new %a)@." ConditionWithTrace.pp
+                existing ConditionWithTrace.pp new_ ;
             aux ~new_ acc ~same:false rest
         | `KeepExistingAndContinue ->
             aux ~new_ (existing :: acc) ~same rest
@@ -438,7 +485,7 @@ module ConditionSet = struct
         condset
     | Some cond ->
         let trace = ConditionTrace.make pname location val_traces in
-        let cwt = {cond; trace} in
+        let cwt = ConditionWithTrace.make cond trace in
         join [cwt] condset
 
 
@@ -452,58 +499,27 @@ module ConditionSet = struct
     |> add_opt pname location val_traces condset
 
 
-  let subst condset (bound_map, trace_map) caller_pname callee_pname location =
+  let subst condset bound_map_trace_map caller_pname callee_pname location =
     let subst_add_cwt condset cwt =
-      match Condition.get_symbols cwt.cond with
-      | [] ->
+      match
+        ConditionWithTrace.subst bound_map_trace_map caller_pname callee_pname location cwt
+      with
+      | None ->
+          condset
+      | Some cwt ->
           join_one condset cwt
-      | symbols ->
-        match Condition.subst bound_map cwt.cond with
-        | None ->
-            condset
-        | Some cond ->
-            let traces_caller =
-              List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
-                  match Itv.SymbolMap.find symbol trace_map with
-                  | symbol_trace ->
-                      ValTraceSet.join symbol_trace val_traces
-                  | exception Caml.Not_found ->
-                      val_traces )
-            in
-            let make_call_and_subst trace =
-              ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname
-                location trace
-            in
-            let trace = make_call_and_subst cwt.trace in
-            join_one condset {cond; trace}
     in
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let set_buffer_overrun_u5 cwt issue_type =
-    if
-      ( IssueType.equal issue_type IssueType.buffer_overrun_l3
-      || IssueType.equal issue_type IssueType.buffer_overrun_l4
-      || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
-      && Condition.has_infty cwt.cond
-    then Option.value (ConditionTrace.check cwt.trace) ~default:issue_type
-    else issue_type
-
-
-  let check_all ~report condset =
-    List.filter condset ~f:(fun cwt ->
-        let {report_issue_type; propagate} = Condition.check cwt.cond in
-        report_issue_type |> Option.map ~f:(set_buffer_overrun_u5 cwt)
-        |> Option.iter ~f:(report cwt.cond cwt.trace) ;
-        propagate )
-
+  let check_all ~report condset = List.filter condset ~f:(ConditionWithTrace.check ~report)
 
   let pp_summary : F.formatter -> t -> unit =
    fun fmt condset ->
     let pp_sep fmt () = F.fprintf fmt ", @," in
     F.fprintf fmt "@[<v 0>Safety conditions:@," ;
     F.fprintf fmt "@[<hov 2>{ " ;
-    F.pp_print_list ~pp_sep pp_cwt fmt condset ;
+    F.pp_print_list ~pp_sep ConditionWithTrace.pp fmt condset ;
     F.fprintf fmt " }@]" ;
     F.fprintf fmt "@]"
 
@@ -513,7 +529,7 @@ module ConditionSet = struct
     let pp_sep fmt () = F.fprintf fmt ", @," in
     F.fprintf fmt "@[<v 2>Safety conditions :@," ;
     F.fprintf fmt "@[<hov 1>{" ;
-    F.pp_print_list ~pp_sep pp_cwt fmt condset ;
+    F.pp_print_list ~pp_sep ConditionWithTrace.pp fmt condset ;
     F.fprintf fmt " }@]" ;
     F.fprintf fmt "@]"
 end
