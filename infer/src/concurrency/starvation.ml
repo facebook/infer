@@ -80,9 +80,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
       | NoEffect ->
           if
-            Models.is_countdownlatch_await callee
+            Models.is_countdownlatch_await tenv callee
             || Models.is_two_way_binder_transact tenv actuals callee
             || Models.is_blocking_java_io tenv callee
+            || Models.is_getWindowVisibleDisplayFrame tenv callee
           then
             let caller = Procdesc.get_proc_name pdesc in
             Domain.blocking_call ~caller ~callee loc astate

@@ -86,12 +86,16 @@ module Models : sig
           Initially, (Writer|OutputStream).(flush|close) were also matched, but this generated too
           many reports *)
 
-  val is_countdownlatch_await : Typ.Procname.t -> bool
-  (** is the method called CountDownLath.await? *)
+  val is_countdownlatch_await : Tenv.t -> Typ.Procname.t -> bool
+  (** is the method called CountDownLath.await or on subclass? *)
 
   val is_two_way_binder_transact : Tenv.t -> HilExp.t list -> Typ.Procname.t -> bool
+
   (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
            is int-zero then a reply is expected and returned from the remote process, thus potentially
            blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block.
         *)
+
+  val is_getWindowVisibleDisplayFrame : Tenv.t -> Typ.Procname.t -> bool
+  (* is it a call to android.view.View.getWindowVisibleDisplayFrame or on sublass? *)
 end

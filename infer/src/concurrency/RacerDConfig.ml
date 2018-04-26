@@ -542,40 +542,41 @@ module Models = struct
        && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 
-  let is_blocking_java_io tenv pn =
+  let is_call_of_class_or_superclass class_names ?(method_prefix= false) method_name tenv pn =
     match pn with
     | Typ.Procname.Java java_pname ->
         let classname = Typ.Procname.Java.get_class_type_name java_pname in
         let mthd = Typ.Procname.Java.get_method java_pname in
-        let is_reader_or_inputstream =
-          let targets_str = ["java.io.Reader"; "java.io.InputStream"] in
-          let targets = List.map targets_str ~f:Typ.Name.Java.from_string in
+        let is_target_class =
+          let targets = List.map class_names ~f:Typ.Name.Java.from_string in
           fun tname _ -> List.mem targets tname ~equal:Typ.Name.equal
         in
-        String.is_prefix mthd ~prefix:"read"
-        && PatternMatch.supertype_exists tenv is_reader_or_inputstream classname
+        ( if method_prefix then String.is_prefix mthd ~prefix:method_name
+        else String.equal mthd method_name )
+        && PatternMatch.supertype_exists tenv is_target_class classname
     | _ ->
         false
 
 
-  let is_countdownlatch_await pn =
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let classname = Typ.Procname.Java.get_class_name java_pname in
-        let mthd = Typ.Procname.Java.get_method java_pname in
-        String.equal classname "java.util.concurrent.CountDownLatch" && String.equal mthd "await"
-    | _ ->
-        false
+  let is_blocking_java_io =
+    let target_classes = ["java.io.Reader"; "java.io.InputStream"] in
+    fun tenv pn -> is_call_of_class_or_superclass target_classes ~method_prefix:true "read" tenv pn
 
 
-  let is_two_way_binder_transact tenv actuals pn =
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let classname = Typ.Procname.Java.get_class_type_name java_pname in
-        let mthd = Typ.Procname.Java.get_method java_pname in
-        String.equal mthd "transact"
-        && PatternMatch.is_subtype_of_str tenv classname "android.os.IBinder"
-        && List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
-    | _ ->
-        false
+  let is_countdownlatch_await =
+    let target_classes = ["java.util.concurrent.CountDownLatch"] in
+    fun tenv pn -> is_call_of_class_or_superclass target_classes "await" tenv pn
+
+
+  let is_two_way_binder_transact =
+    let target_classes = ["android.os.IBinder"] in
+    fun tenv actuals pn ->
+      List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
+      && is_call_of_class_or_superclass target_classes "transact" tenv pn
+
+
+  let is_getWindowVisibleDisplayFrame =
+    let target_classes = ["android.view.View"] in
+    fun tenv pn ->
+      is_call_of_class_or_superclass target_classes "getWindowVisibleDisplayFrame" tenv pn
 end
