@@ -66,28 +66,36 @@ let tests =
           assert_bool "Second instr should be dummy_instr1" (phys_equal instr2 dummy_instr1)
       | _ ->
           assert_failure "Expected exactly two instructions" ) ;
-      (let node_id, _ = InstrCfg.id n1 in
-       match InstrCfg.instr_ids n1 with
-       | [(instr1, Some (id1, ProcCfg.Instr_index 0)); (instr2, Some (id2, ProcCfg.Instr_index 1))] ->
-           assert_bool "First instr should be dummy_instr1" (phys_equal instr1 dummy_instr1) ;
-           assert_bool "Second instr should be dummy_instr2" (phys_equal instr2 dummy_instr2) ;
-           assert_bool "id1 should be id of underlying node" (phys_equal id1 node_id) ;
-           assert_bool "id2 should be id of underlying node" (phys_equal id2 node_id)
-       | _ ->
-           assert_failure "Expected exactly two instructions with correct indices") ;
-      let backward_node_id, _ = BackwardInstrCfg.id n1 in
-      ( match BackwardInstrCfg.instr_ids n1 with
-      | [(instr1, Some (id1, ProcCfg.Instr_index 1)); (instr2, Some (id2, ProcCfg.Instr_index 0))] ->
-          assert_bool "First instr should be dummy_instr2" (phys_equal instr1 dummy_instr2) ;
-          assert_bool "Second instr should be dummy_instr1" (phys_equal instr2 dummy_instr1) ;
-          assert_bool "id1 should be id of underlying node" (phys_equal id1 backward_node_id) ;
-          assert_bool "id2 should be id of underlying node" (phys_equal id2 backward_node_id)
+      let instr_n1 = InstrCfg.of_underlying_node n1 in
+      ( match InstrCfg.instrs instr_n1 with
+      | [instr] ->
+          assert_bool "Only instr should be dummy_instr1" (phys_equal instr dummy_instr1)
       | _ ->
-          assert_failure "Expected exactly two instructions with correct indices" ) ;
-      assert_bool "underlying_node should return node of underlying CFG type"
-        (Procdesc.Node.equal_id
-           (Procdesc.Node.get_id (BackwardInstrCfg.underlying_node n1))
-           (BackwardCfg.id n1))
+          assert_failure "Expected exactly one instruction" ) ;
+      let n1' = InstrCfg.underlying_node instr_n1 in
+      assert_bool "underlying_node should return node of underlying CFG type" (phys_equal n1 n1') ;
+      let backward_instr_n1 = BackwardInstrCfg.of_underlying_node n1 in
+      ( match BackwardInstrCfg.instrs backward_instr_n1 with
+      | [instr] ->
+          assert_bool "Only instr should be dummy_instr1" (phys_equal instr dummy_instr1)
+      | _ ->
+          assert_failure "Expected exactly one instruction" ) ;
+      let n1'' = BackwardInstrCfg.underlying_node backward_instr_n1 in
+      assert_bool "underlying_node should return node of underlying CFG type" (phys_equal n1 n1'') ;
+      (* test the preds/succs using backward + instr cfg *)
+      let check_backward_instr_ f backward_instr_node expected_instrs =
+        match f backward_instr_proc_cfg backward_instr_node with
+        | [n] ->
+            assert_equal (BackwardInstrCfg.instrs n) expected_instrs
+        | _ ->
+            assert_failure "Expected exactly one node"
+      in
+      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n1 [dummy_instr2] ;
+      let backward_instr_n2 = BackwardInstrCfg.of_underlying_node n2 in
+      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n2 [] ;
+      let backward_instr_n3 = BackwardInstrCfg.of_underlying_node n3 in
+      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n3 [] ;
+      check_backward_instr_ BackwardInstrCfg.normal_succs backward_instr_n2 [dummy_instr2]
     in
     "instr_test" >:: instr_test_
   in
@@ -106,41 +114,18 @@ let tests =
     ; ("normal_succs_n2_bw", BackwardCfg.normal_preds backward_proc_cfg n2, [n4])
     ; ("succs_n3_bw", BackwardCfg.preds backward_proc_cfg n3, [n4])
     ; ("normal_succs_n3_bw", BackwardCfg.normal_preds backward_proc_cfg n3, [n4])
-    ; (* ...and make sure it all works when using backward + instr cfg *)
-      ("succs_n1_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n1, [n2])
-    ; ( "normal_succs_n1_bw_instrcfg"
-      , BackwardInstrCfg.normal_preds backward_instr_proc_cfg n1
-      , [n2] )
-    ; ("succs_n2_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n2, [n4])
-    ; ( "normal_succs_n2_bw_instrcfg"
-      , BackwardInstrCfg.normal_preds backward_instr_proc_cfg n2
-      , [n4] )
-    ; ("succs_n3_bw_instrcfg", BackwardInstrCfg.preds backward_instr_proc_cfg n3, [n4])
-    ; ( "normal_succs_n3_bw_instrcfg"
-      , BackwardInstrCfg.normal_preds backward_instr_proc_cfg n3
-      , [n4] )
     ; (* test the preds of the normal cfg... *)
       ("preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1])
     ; ("normal_preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1])
     ; (* ...and the backward cfg... *)
       ("preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1])
     ; ("normal_preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1])
-    ; (* ...and again make sure it works with backward + instr cfg *)
-      ("preds_n2_bw_instr", BackwardInstrCfg.normal_succs backward_instr_proc_cfg n2, [n1])
-    ; ("normal_preds_n2_bw_instr", BackwardInstrCfg.normal_succs backward_instr_proc_cfg n2, [n1])
     ; (* we shouldn't see any exn succs or preds even though we added them *)
       ("no_exn_succs_n1", ProcCfg.Normal.exceptional_succs normal_proc_cfg n1, [])
     ; ("no_exn_preds_n3", ProcCfg.Normal.exceptional_preds normal_proc_cfg n3, [])
     ; (* same in the backward cfg *)
       ("no_exn_succs_n1_bw", BackwardCfg.exceptional_preds backward_proc_cfg n1, [])
     ; ("no_exn_preds_n3_bw", BackwardCfg.exceptional_succs backward_proc_cfg n3, [])
-    ; (* same in backward + instr cfg *)
-      ( "no_exn_succs_n1_bw_instr"
-      , BackwardInstrCfg.exceptional_preds backward_instr_proc_cfg n1
-      , [] )
-    ; ( "no_exn_preds_n3_bw_instr"
-      , BackwardInstrCfg.exceptional_succs backward_instr_proc_cfg n3
-      , [] )
     ; (* now, test the exceptional succs in the exceptional cfg. *)
       ("exn_succs_n1", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n1, [n3])
     ; ("exn_succs_n2", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n2, [n3])

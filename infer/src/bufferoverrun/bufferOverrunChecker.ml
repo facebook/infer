@@ -330,17 +330,17 @@ module Report = struct
      * of a procedure (no more significant instruction)
      * or of a block (goes directly to a node with multiple predecessors)
      *)
-    let rec is_end_of_block_or_procedure node rem_instrs =
+    let rec is_end_of_block_or_procedure (cfg: CFG.t) node rem_instrs =
       List.for_all rem_instrs ~f:non_significant_instr
       &&
-      match Procdesc.Node.get_succs node with
+      match CFG.succs cfg node with
       | [] ->
           true
       | [succ]
         -> (
-          is_end_of_block_or_procedure succ (CFG.instrs succ)
+          is_end_of_block_or_procedure cfg succ (CFG.instrs succ)
           ||
-          match Procdesc.Node.get_preds succ with
+          match CFG.preds cfg succ with
           | _ :: _ :: _ ->
               true (* [succ] is a join, i.e. [node] is the end of a block *)
           | _ ->
@@ -349,7 +349,7 @@ module Report = struct
           false
   end
 
-  let check_unreachable_code summary tenv node instr rem_instrs mem =
+  let check_unreachable_code summary tenv (cfg: CFG.t) (node: CFG.node) instr rem_instrs mem =
     match mem with
     | NonBottom _ ->
         ()
@@ -359,13 +359,16 @@ module Report = struct
           ()
       | Sil.Prune (cond, location, true_branch, _) ->
           let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
-          let desc = Errdesc.explain_condition_always_true_false tenv i cond node location in
+          let desc =
+            Errdesc.explain_condition_always_true_false tenv i cond (CFG.underlying_node node)
+              location
+          in
           let exn = Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
           Reporting.log_warning summary ~loc:location exn
       (* special case for `exit` when we're at the end of a block / procedure *)
       | Sil.Call (_, Const (Cfun pname), _, _, _)
         when String.equal (Typ.Procname.get_method pname) "exit"
-             && ExitStatement.is_end_of_block_or_procedure node rem_instrs ->
+             && ExitStatement.is_end_of_block_or_procedure cfg node rem_instrs ->
           ()
       | _ ->
           let location = Sil.instr_get_loc instr in
@@ -479,36 +482,37 @@ module Report = struct
 
 
   let rec check_instrs
-      : Specs.summary -> extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
+      : Specs.summary -> extras ProcData.t -> CFG.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun summary ({tenv} as pdata) node instrs mem cond_set ->
+   fun summary ({tenv} as pdata) cfg node instrs mem cond_set ->
     match (mem, instrs) with
     | _, [] | Bottom, _ ->
         cond_set
     | NonBottom _, instr :: rem_instrs ->
         let cond_set = check_instr pdata node instr mem cond_set in
         let mem = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
-        let () = check_unreachable_code summary tenv node instr rem_instrs mem in
+        let () = check_unreachable_code summary tenv cfg node instr rem_instrs mem in
         print_debug_info instr mem cond_set ;
-        check_instrs summary pdata node rem_instrs mem cond_set
+        check_instrs summary pdata cfg node rem_instrs mem cond_set
 
 
   let check_node
-      : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t
+      : Specs.summary -> extras ProcData.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t
         -> CFG.node -> PO.ConditionSet.t =
-   fun summary pdata inv_map cond_set node ->
+   fun summary pdata cfg inv_map cond_set node ->
     match Analyzer.extract_pre (CFG.id node) inv_map with
     | Some mem ->
         let instrs = CFG.instrs node in
-        check_instrs summary pdata node instrs mem cond_set
+        check_instrs summary pdata cfg node instrs mem cond_set
     | _ ->
         cond_set
 
 
   let check_proc
-      : Specs.summary -> extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
-   fun summary ({pdesc} as pdata) inv_map ->
-    Procdesc.fold_nodes pdesc ~f:(check_node summary pdata inv_map) ~init:PO.ConditionSet.empty
+      : Specs.summary -> extras ProcData.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
+   fun summary pdata cfg inv_map ->
+    CFG.nodes cfg
+    |> List.fold ~f:(check_node summary pdata cfg inv_map) ~init:PO.ConditionSet.empty
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
@@ -578,7 +582,9 @@ let compute_post
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let entry_mem = extract_post inv_map (CFG.start_node cfg) in
   let exit_mem = extract_post inv_map (CFG.exit_node cfg) in
-  let cond_set = Report.check_proc summary pdata inv_map |> Report.report_errors summary pdesc in
+  let cond_set =
+    Report.check_proc summary pdata cfg inv_map |> Report.report_errors summary pdesc
+  in
   match (entry_mem, exit_mem) with
   | Some entry_mem, Some exit_mem ->
       Some (entry_mem, exit_mem, cond_set)

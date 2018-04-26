@@ -68,7 +68,7 @@ module TransferFunctionsNodesBasicCost (CFG : ProcCfg.S) = struct
       {ProcData.pdesc} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
     let nid_int = Procdesc.Node.get_id (CFG.underlying_node node) in
     let instr_idx = instr_idx node instr in
-    let key = (nid_int, ProcCfg.Instr_index instr_idx) in
+    let key = (nid_int, instr_idx) in
     let astate' =
       match instr with
       | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) -> (

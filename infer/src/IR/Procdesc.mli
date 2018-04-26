@@ -139,9 +139,6 @@ val did_preanalysis : t -> bool
 val fold_instrs : t -> init:'accum -> f:('accum -> Node.t -> Sil.instr -> 'accum) -> 'accum
 (** fold over all nodes and their instructions *)
 
-val fold_nodes : t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
-(** fold over all nodes *)
-
 val from_proc_attributes : ProcAttributes.t -> t
 (** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
 

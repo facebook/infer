@@ -14,8 +14,6 @@ module F = Format
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
     backward one, or view a cfg as having a single instruction per node. *)
 
-type index = Node_index | Instr_index of int [@@deriving compare]
-
 module type Node = sig
   type t
 
@@ -30,6 +28,8 @@ module type Node = sig
   val loc : t -> Location.t
 
   val underlying_node : t -> Procdesc.Node.t
+
+  val of_underlying_node : Procdesc.Node.t -> t
 
   val compare_id : id -> id -> int
 
@@ -55,6 +55,8 @@ module DefaultNode = struct
 
   let underlying_node t = t
 
+  let of_underlying_node t = t
+
   let compare_id = Procdesc.Node.compare_id
 
   let pp_id = Procdesc.Node.pp_id
@@ -72,34 +74,23 @@ module DefaultNode = struct
 end
 
 module InstrNode = struct
-  type t = Procdesc.Node.t
+  type t = Procdesc.Node.t * int
 
-  type id = Procdesc.Node.id * index
+  type id = Procdesc.Node.id * int [@@deriving compare]
 
-  let kind = Procdesc.Node.get_kind
+  let kind (t, _) = Procdesc.Node.get_kind t
 
-  let underlying_node t = t
+  let underlying_node (t, _) = t
 
-  let id t = (Procdesc.Node.get_id (underlying_node t), Node_index)
+  let of_underlying_node t = (t, 0)
+
+  let id (t, index) = (Procdesc.Node.get_id t, index)
 
   let hash node = Hashtbl.hash (id node)
 
-  let loc t = Procdesc.Node.get_loc t
+  let loc (t, _) = Procdesc.Node.get_loc t
 
-  let compare_index = compare_index
-
-  let compare_id (id1, index1) (id2, index2) =
-    let n = Procdesc.Node.compare_id id1 id2 in
-    if n <> 0 then n else compare_index index1 index2
-
-
-  let pp_id fmt (id, index) =
-    match index with
-    | Node_index ->
-        Procdesc.Node.pp_id fmt id
-    | Instr_index i ->
-        F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id i
-
+  let pp_id fmt (id, index) = F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id index
 
   module OrderedId = struct
     type t = id
@@ -302,15 +293,11 @@ end
 
 module OneInstrPerNode (Base : S with type node = Procdesc.Node.t and type id = Procdesc.Node.id) =
 struct
-  include (
-    Base :
-      module type of Base
-      with type id := Procdesc.Node.id
-       and type t = Base.t
-       and module IdMap := Base.IdMap
-       and module IdSet := Base.IdSet )
+  type t = Base.t
 
-  type id = Base.id * index
+  type node = InstrNode.t
+
+  type id = InstrNode.id
 
   include (
     InstrNode :
@@ -320,13 +307,67 @@ struct
        and module IdMap = InstrNode.IdMap
        and module IdSet = InstrNode.IdSet )
 
-  (* keep the invariants before/after each instruction *)
-  let instr_ids t =
-    List.mapi
-      ~f:(fun i instr ->
-        let id = (Procdesc.Node.get_id t, Instr_index i) in
-        (instr, Some id) )
-      (instrs t)
+  let instrs (node, index) =
+    match Base.instrs node with [] -> [] | instrs -> [List.nth_exn instrs index]
+
+
+  let instr_ids (node, index) =
+    match Base.instr_ids node with
+    | [] ->
+        []
+    | instr_ids ->
+        let instr, id_opt = List.nth_exn instr_ids index in
+        [(instr, Option.map id_opt ~f:(fun base_id -> (base_id, index)))]
+
+
+  let first_of_node node = (node, 0)
+
+  let last_of_node node = (node, max 0 (List.length (Base.instrs node) - 1))
+
+  let normal_succs _ _ = (* not used *) assert false
+
+  let exceptional_succs _ _ = (* not used *) assert false
+
+  let list_mem_nth list index = List.drop list index |> List.is_empty |> not
+
+  let succs cfg (node, index) =
+    let succ_index = index + 1 in
+    if list_mem_nth (Base.instrs node) succ_index then [(node, succ_index)]
+    else List.map ~f:first_of_node (Base.succs cfg node)
+
+
+  let normal_preds cfg (node, index) =
+    if index >= 1 then [(node, index - 1)]
+    else List.map ~f:last_of_node (Base.normal_preds cfg node)
+
+
+  (* HACK: Use first_of_node instead of last_of_node because it is used to get the pre only *)
+  let exceptional_preds cfg (node, index) =
+    if index >= 1 then [] else List.map ~f:first_of_node (Base.exceptional_preds cfg node)
+
+
+  let preds cfg t = List.rev_append (exceptional_preds cfg t) (normal_preds cfg t)
+
+  let start_node cfg = first_of_node (Base.start_node cfg)
+
+  let exit_node cfg = last_of_node (Base.exit_node cfg)
+
+  let proc_desc = Base.proc_desc
+
+  let nodes =
+    let nodes_of_node node =
+      match Base.instrs node with
+      | [] ->
+          [(node, 0)]
+      | instrs ->
+          List.mapi ~f:(fun index _instr -> (node, index)) instrs
+    in
+    fun cfg -> List.concat_map ~f:nodes_of_node (Base.nodes cfg)
+
+
+  let from_pdesc = Base.from_pdesc
+
+  let is_loop_head pdesc = function node, 0 -> Base.is_loop_head pdesc node | _ -> false
 end
 
 module NormalOneInstrPerNode = OneInstrPerNode (Normal)

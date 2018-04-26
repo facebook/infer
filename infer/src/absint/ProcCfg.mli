@@ -13,8 +13,6 @@ open! IStd
     file). Defines useful wrappers that allows us to do tricks like turn a forward cfg to into a
     backward one, or view a cfg as having a single instruction per block *)
 
-type index = Node_index | Instr_index of int
-
 module type Node = sig
   type t
 
@@ -29,6 +27,8 @@ module type Node = sig
   val loc : t -> Location.t
 
   val underlying_node : t -> Procdesc.Node.t
+
+  val of_underlying_node : Procdesc.Node.t -> t
 
   val compare_id : id -> id -> int
 
@@ -88,7 +88,7 @@ end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id
 
-module InstrNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id * index
+module InstrNode : Node with type t = Procdesc.Node.t * int and type id = Procdesc.Node.id * int
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal :
@@ -107,7 +107,7 @@ module Backward (Base : S) : S with type t = Base.t and type node = Base.node an
 module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = DefaultNode.id) :
   S
   with type t = Base.t
-   and type node = Base.node
+   and type node = InstrNode.t
    and type id = InstrNode.id
    and module IdMap = InstrNode.IdMap
    and module IdSet = InstrNode.IdSet

@@ -200,14 +200,11 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       | None ->
           VarSet.empty
     in
-    List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
-        match node_id_opt with
-        | Some node_id -> (
-          match Analyzer.extract_pre node_id invariant_map with
-          | Some live_vars ->
-              report_dead_store live_vars captured_by_ref_vars instr
-          | None ->
-              () )
+    let node_id = CFG.id node in
+    List.iter (CFG.instrs node) ~f:(fun instr ->
+        match Analyzer.extract_pre node_id invariant_map with
+        | Some live_vars ->
+            report_dead_store live_vars captured_by_ref_vars instr
         | None ->
             () )
   in

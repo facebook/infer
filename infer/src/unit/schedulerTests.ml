@@ -30,6 +30,8 @@ module MockNode = struct
 
   let underlying_node _ = assert false
 
+  let of_underlying_node _ = assert false
+
   let kind _ = Procdesc.Node.Stmt_node ""
 
   let compare_id = Int.compare
