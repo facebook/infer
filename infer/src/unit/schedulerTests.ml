@@ -18,8 +18,6 @@ module MockNode = struct
 
   let instrs _ = []
 
-  let instr_ids _ = []
-
   let hash = Hashtbl.hash
 
   let to_instr_nodes _ = assert false

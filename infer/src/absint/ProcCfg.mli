@@ -49,12 +49,6 @@ module type S = sig
   val instrs : node -> Sil.instr list
   (** get the instructions from a node *)
 
-  val instr_ids : node -> (Sil.instr * id option) list
-  (** explode a block into its instructions and an optional id for the instruction. the purpose of
-      this is to specify a policy for fine-grained storage of invariants by the abstract
-      interpreter. the interpreter will forget invariants at program points where the id is None,
-      and remember them otherwise *)
-
   val succs : t -> node -> node list
   (** all succcessors (normal and exceptional) *)
 

@@ -63,33 +63,23 @@ struct
 
   let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
     let node_id = CFG.id node in
-    let update_inv_map pre visit_count =
-      let compute_post (pre, inv_map) (instr, id_opt) =
-        let post = TransferFunctions.exec_instr pre proc_data node instr in
-        match id_opt with
-        | Some id ->
-            (post, InvariantMap.add id {pre; post; visit_count} inv_map)
-        | None ->
-            (post, inv_map)
-      in
+    let update_inv_map pre ~visit_count =
+      let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      let instr_ids = match CFG.instr_ids node with [] -> [(Sil.skip_instr, None)] | l -> l in
+      let instrs = match CFG.instrs node with [] -> [Sil.skip_instr] | l -> l in
       if debug then
         NodePrinter.start_session
           ~pp_name:(TransferFunctions.pp_session_name node)
           (CFG.underlying_node node) ;
-      let astate_post, inv_map_post = List.fold ~f:compute_post ~init:(pre, inv_map) instr_ids in
+      let astate_post = List.fold ~f:compute_post ~init:pre instrs in
       if debug then (
-        let instrs = List.map ~f:fst instr_ids in
         L.d_strln
           (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
              (Sil.pp_instr_list Pp.(html Green))
              instrs Domain.pp astate_post) ;
         NodePrinter.finish_session (CFG.underlying_node node) ) ;
-      let inv_map'' =
-        InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map_post
-      in
-      (inv_map'', Scheduler.schedule_succs work_queue node)
+      let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
+      (inv_map', Scheduler.schedule_succs work_queue node)
     in
     if InvariantMap.mem node_id inv_map then (
       let old_state = InvariantMap.find node_id inv_map in
@@ -106,11 +96,9 @@ struct
             "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
              operator or increase the threshold"
             Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
-        update_inv_map widened_pre visit_count' )
-    else
-      (* first time visiting this node *)
-      let visit_count = 1 in
-      update_inv_map astate_pre visit_count
+        update_inv_map widened_pre ~visit_count:visit_count' )
+    else (* first time visiting this node *)
+      update_inv_map astate_pre ~visit_count:1
 
 
   let rec exec_worklist cfg work_queue inv_map proc_data ~debug =

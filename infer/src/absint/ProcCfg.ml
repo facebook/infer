@@ -114,12 +114,6 @@ module type S = sig
   val instrs : node -> Sil.instr list
   (** get the instructions from a node *)
 
-  val instr_ids : node -> (Sil.instr * id option) list
-  (** explode a block into its instructions and an optional id for the instruction. the purpose of
-      this is to specify a policy for fine-grained storage of invariants by the abstract
-      interpreter. the interpreter will forget invariants at program points where the id is None,
-      and remember them otherwise *)
-
   val succs : t -> node -> node list
 
   val preds : t -> node -> node list
@@ -159,8 +153,6 @@ module Normal = struct
   include (DefaultNode : module type of DefaultNode with type t := node)
 
   let instrs = Procdesc.Node.get_instrs
-
-  let instr_ids n = List.map ~f:(fun i -> (i, None)) (instrs n)
 
   let normal_succs _ n = Procdesc.Node.get_succs n
 
@@ -223,8 +215,6 @@ module Exceptional = struct
 
   let instrs = Procdesc.Node.get_instrs
 
-  let instr_ids n = List.map ~f:(fun i -> (i, None)) (instrs n)
-
   let nodes (t, _) = Procdesc.get_nodes t
 
   let normal_succs _ n = Procdesc.Node.get_succs n
@@ -272,8 +262,6 @@ module Backward (Base : S) = struct
 
   let instrs n = List.rev (Base.instrs n)
 
-  let instr_ids n = List.rev (Base.instr_ids n)
-
   let succs = Base.preds
 
   let preds = Base.succs
@@ -309,15 +297,6 @@ struct
 
   let instrs (node, index) =
     match Base.instrs node with [] -> [] | instrs -> [List.nth_exn instrs index]
-
-
-  let instr_ids (node, index) =
-    match Base.instr_ids node with
-    | [] ->
-        []
-    | instr_ids ->
-        let instr, id_opt = List.nth_exn instr_ids index in
-        [(instr, Option.map id_opt ~f:(fun base_id -> (base_id, index)))]
 
 
   let first_of_node node = (node, 0)
