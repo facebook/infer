@@ -74,9 +74,11 @@ module DefaultNode = struct
 end
 
 module InstrNode = struct
-  type t = Procdesc.Node.t * int
+  type instr_index = int [@@deriving compare]
 
-  type id = Procdesc.Node.id * int [@@deriving compare]
+  type t = Procdesc.Node.t * instr_index
+
+  type id = Procdesc.Node.id * instr_index [@@deriving compare]
 
   let kind (t, _) = Procdesc.Node.get_kind t
 

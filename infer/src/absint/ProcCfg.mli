@@ -82,7 +82,13 @@ end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id
 
-module InstrNode : Node with type t = Procdesc.Node.t * int and type id = Procdesc.Node.id * int
+module InstrNode : sig
+  type instr_index
+
+  include Node
+          with type t = Procdesc.Node.t * instr_index
+           and type id = Procdesc.Node.id * instr_index
+end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal :
