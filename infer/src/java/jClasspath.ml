@@ -274,7 +274,7 @@ let lookup_node cn program =
       add_class cn jclass program ; Some jclass
     with
     | JBasics.No_class_found _ ->
-        (* TODO (tonyhu) T28155039 Figure out when and what to log *)
+        (* TODO T28155039 Figure out when and what to log *)
         None
     | (JBasics.Class_structure_error _ | Invalid_argument _) as exn ->
         L.internal_error "ERROR: %s@." (Exn.to_string exn) ;
