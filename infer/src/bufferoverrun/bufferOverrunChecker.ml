@@ -263,9 +263,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               L.(debug BufferOverrun Verbose)
                 "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                 location ;
-              let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
-              Models.model_by_value val_unknown ret mem |> Dom.Mem.add_heap Loc.unknown val_unknown
-        )
+              match ret with
+              | None ->
+                  mem
+              | Some (id, _) ->
+                  let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
+                  Dom.Mem.add_stack (Loc.of_id id) val_unknown mem
+                  |> Dom.Mem.add_heap Loc.unknown val_unknown )
       | Declare_locals (locals, location) ->
           (* array allocation in stack e.g., int arr[10] *)
           let node_hash = CFG.hash node in
