@@ -271,6 +271,9 @@ module SinkKind = struct
     | JavaScript  (** sink that passes its arguments to untrusted JS code *)
     | Logging  (** sink that logs one or more of its arguments *)
     | ShellExec  (** sink that runs a shell command *)
+    | SQLInjection  (** unescaped query to a SQL database (could be a read or a write) *)
+    | SQLRead  (** escaped read to a SQL database *)
+    | SQLWrite  (** escaped write to a SQL database *)
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
     | Other  (** for testing or uncategorized sinks *)
   [@@deriving compare]
@@ -294,6 +297,12 @@ module SinkKind = struct
         OpenDrawableResource
     | "ShellExec" ->
         ShellExec
+    | "SQLInjection" ->
+        SQLInjection
+    | "SQLRead" ->
+        SQLRead
+    | "SQLWrite" ->
+        SQLWrite
     | "StartComponent" ->
         StartComponent
     | _ ->
@@ -411,6 +420,13 @@ module SinkKind = struct
               taint_all ShellExec
           | "java.lang.Runtime", "exec" ->
               taint_nth 0 ShellExec
+          (* TODO: separate non-injection sinks for PreparedStatement's *)
+          | "java.sql.Statement", ("addBatch" | "execute") ->
+              taint_nth 0 SQLInjection
+          | "java.sql.Statement", "executeQuery" ->
+              taint_nth 0 SQLRead
+          | "java.sql.Statement", ("executeUpdate" | "executeLargeUpdate") ->
+              taint_nth 0 SQLWrite
           | class_name, method_name ->
               get_external_sink class_name method_name
         in
@@ -441,6 +457,12 @@ module SinkKind = struct
           "OpenDrawableResource"
       | ShellExec ->
           "ShellExec"
+      | SQLInjection ->
+          "SQLInjection"
+      | SQLRead ->
+          "SQLRead"
+      | SQLWrite ->
+          "SQLWrite"
       | StartComponent ->
           "StartComponent"
       | Other ->
@@ -505,6 +527,14 @@ include Trace.Make (struct
     | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript ->
         (* untrusted data flows into JS *)
         Some IssueType.javascript_injection
+    | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)
+      , SQLInjection ) ->
+        (* untrusted and unescaped data flows to SQL *)
+        Some IssueType.sql_injection_risk
+    | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)
+      , (SQLRead | SQLWrite) ) ->
+        (* untrusted data flows to SQL *)
+        Some IssueType.user_controlled_sql_risk
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error

@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.Runtime;
+import java.sql.Statement;
+import java.sql.SQLException;
 
 class Services {
 
@@ -31,6 +33,29 @@ class Service1 {
 
   public void serviceMethodBad(String s) throws IOException {
     Runtime.getRuntime().exec(s); // RCE if s is tainted, we should warn
+  }
+
+  Statement mStatement;
+
+  public void paramToSql1Bad(String s) throws SQLException {
+    mStatement.execute(s);
+  }
+
+  public void paramToSql2Bad(String s) throws SQLException {
+    mStatement.executeLargeUpdate(s);
+  }
+
+  public void paramToSql3Bad(String s) throws SQLException {
+    mStatement.executeQuery(s);
+  }
+
+  public void paramToSql4Bad(String s) throws SQLException {
+    mStatement.executeUpdate(s);
+  }
+
+  public void paramToSql5Bad(String s) throws SQLException {
+    mStatement.addBatch(s);
+    mStatement.executeBatch();
   }
 
   // assume protected methods aren't exported to Thrift
