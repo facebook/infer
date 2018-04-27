@@ -13,6 +13,8 @@
 #include <string>
 
 extern void __infer_sql_sink(std::string);
+extern void __infer_sql_read_sink(std::string);
+extern void __infer_sql_write_sink(std::string);
 extern std::string __infer_shell_sanitizer(std::string);
 extern std::string __infer_sql_sanitizer(std::string);
 
@@ -69,6 +71,16 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
   void service1_endpoint_sql_sanitized_bad(std::string formal) {
     // this should report USER_CONTROLLED_SQL_RISK
     __infer_sql_sink(__infer_sql_sanitizer(formal));
+  }
+
+  void service1_endpoint_sql_read_bad(std::string formal) {
+    // this should report USER_CONTROLLED_SQL_RISK
+    __infer_sql_read_sink(formal);
+  }
+
+  void service1_endpoint_sql_write_bad(std::string formal) {
+    // this should report USER_CONTROLLED_SQL_RISK
+    __infer_sql_write_sink(formal);
   }
 
   void service1_endpoint_shell_sanitized_ok(std::string formal) {

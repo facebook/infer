@@ -200,7 +200,9 @@ module SinkKind = struct
     | CreateFile  (** create/open a file *)
     | HeapAllocation  (** heap memory allocation *)
     | ShellExec  (** shell exec function *)
-    | SQL  (** SQL query *)
+    | SQLInjection  (** unescaped query to a SQL database (could be read or write) *)
+    | SQLRead  (** escaped read to a SQL database *)
+    | SQLWrite  (** escaped write to a SQL database *)
     | StackAllocation  (** stack memory allocation *)
     | URL  (** URL creation *)
     | Other  (** for testing or uncategorized sinks *)
@@ -217,8 +219,12 @@ module SinkKind = struct
         HeapAllocation
     | "ShellExec" ->
         ShellExec
-    | "SQL" ->
-        SQL
+    | "SQLInjection" ->
+        SQLInjection
+    | "SQLRead" ->
+        SQLRead
+    | "SQLWrite" ->
+        SQLWrite
     | "StackAllocation" ->
         StackAllocation
     | "URL" ->
@@ -365,8 +371,12 @@ module SinkKind = struct
           "HeapAllocation"
       | ShellExec ->
           "ShellExec"
-      | SQL ->
-          "SQL"
+      | SQLInjection ->
+          "SQLInjection"
+      | SQLRead ->
+          "SQLRead"
+      | SQLWrite ->
+          "SQLWrite"
       | StackAllocation ->
           "StackAllocation"
       | URL ->
@@ -459,13 +469,16 @@ include Trace.Make (struct
           IssueType.untrusted_url_risk
     | (CommandLineFlag _ | EnvironmentVariable | ReadFile), URL ->
         None
-    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQL ->
+    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQLInjection ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
           (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
           Some IssueType.sql_injection_risk
         else
           (* no injection risk, but still user-controlled *)
           Some IssueType.user_controlled_sql_risk
+    | (Endpoint _ | UserControlledEndpoint _), (SQLRead | SQLWrite) ->
+        (* no injection risk, but still user-controlled *)
+        Some IssueType.user_controlled_sql_risk
     | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
@@ -490,12 +503,12 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection
-    | (EnvironmentVariable | ReadFile | Other), SQL ->
+    | (EnvironmentVariable | ReadFile | Other), SQLInjection ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeSQL sanitizers)
           IssueType.sql_injection
-    | CommandLineFlag (_, typ), SQL ->
+    | CommandLineFlag (_, typ), SQLInjection ->
         (* untrusted flag, flowing to shell *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers)
@@ -514,7 +527,7 @@ include Trace.Make (struct
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), CreateFile ->
+    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), (CreateFile | SQLRead | SQLWrite) ->
         None
     | Other, _ ->
         (* Other matches everything *)

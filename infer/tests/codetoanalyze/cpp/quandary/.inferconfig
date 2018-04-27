@@ -39,7 +39,17 @@
     },
     {
       "procedure": "__infer_sql_sink",
-      "kind": "SQL",
+      "kind": "SQLInjection",
+      "index": "all"
+    },
+    {
+      "procedure": "__infer_sql_read_sink",
+      "kind": "SQLRead",
+      "index": "all"
+    },
+    {
+      "procedure": "__infer_sql_write_sink",
+      "kind": "SQLWrite",
       "index": "all"
     },
     {
