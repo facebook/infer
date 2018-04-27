@@ -11,9 +11,10 @@ open! IStd
 
 val checker : Callbacks.proc_callback_t
 
-module TransferFunctions (C : ProcCfg.S) : sig
-  include TransferFunctions.SIL
-          with module CFG = C
-           and module Domain = BufferOverrunDomain.Mem
-           and type extras = ProcData.no_extras
-end
+module CFG = ProcCfg.NormalOneInstrPerNode
+
+type invariant_map
+
+val compute_invariant_map : Procdesc.t -> Tenv.t -> invariant_map
+
+val extract_pre : CFG.id -> invariant_map -> BufferOverrunDomain.Mem.t option

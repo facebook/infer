@@ -313,6 +313,8 @@ end
 module CFG = ProcCfg.NormalOneInstrPerNode
 module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
+type invariant_map = Analyzer.invariant_map
+
 module Report = struct
   module PO = BufferOverrunProofObligations
 
@@ -572,18 +574,22 @@ module Report = struct
     PO.ConditionSet.check_all ~report cond_set
 end
 
-let extract_post inv_map node =
-  let id = CFG.id node in
-  Analyzer.extract_post id inv_map
+let extract_pre = Analyzer.extract_pre
+
+let extract_post = Analyzer.extract_post
+
+let compute_invariant_map : Procdesc.t -> Tenv.t -> invariant_map =
+ fun pdesc tenv ->
+  let pdata = ProcData.make_default pdesc tenv in
+  Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata
 
 
-let compute_post
-    : Specs.summary -> Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
- fun summary ({pdesc; tenv} as pdata) ->
+let compute_post : Specs.summary -> Procdesc.t -> Tenv.t -> Summary.payload option =
+ fun summary pdesc tenv ->
+  let inv_map = compute_invariant_map pdesc tenv in
   let cfg = CFG.from_pdesc pdesc in
-  let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
-  let entry_mem = extract_post inv_map (CFG.start_node cfg) in
-  let exit_mem = extract_post inv_map (CFG.exit_node cfg) in
+  let entry_mem = extract_post (CFG.start_node cfg |> CFG.id) inv_map in
+  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.id) inv_map in
   let cond_set =
     Report.check_proc summary pdesc tenv cfg inv_map |> Report.report_errors summary pdesc
   in
@@ -603,8 +609,7 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
 let checker : Callbacks.proc_callback_args -> Specs.summary =
  fun {proc_desc; tenv; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
-  let proc_data = ProcData.make_default proc_desc tenv in
-  match compute_post summary proc_data with
+  match compute_post summary proc_desc tenv with
   | Some post ->
       ( if Config.bo_debug >= 1 then
           let proc_name = Specs.get_proc_name summary in

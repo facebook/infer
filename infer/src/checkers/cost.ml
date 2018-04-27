@@ -36,11 +36,7 @@ module Node = struct
   let equal_id = [%compare.equal : id]
 end
 
-module NodesBasicCostDomain = struct
-  include AbstractDomain.Pair (BufferOverrunDomain.Mem) (CostDomain.NodeInstructionToCostMap)
-
-  let init = (BufferOverrunDomain.Mem.init, CostDomain.NodeInstructionToCostMap.empty)
-end
+module NodesBasicCostDomain = CostDomain.NodeInstructionToCostMap
 
 (* Compute a map (node,instruction) -> basic_cost, where basic_cost is the
    cost known for a certain operation. For example for basic operation we
@@ -49,10 +45,9 @@ end
 *)
 module TransferFunctionsNodesBasicCost = struct
   module CFG = InstrCFG
-  module InferboTransferFunctions = BufferOverrunChecker.TransferFunctions (CFG)
   module Domain = NodesBasicCostDomain
 
-  type extras = InferboTransferFunctions.extras
+  type extras = BufferOverrunChecker.invariant_map
 
   let cost_atomic_instruction = Itv.Bound.one
 
@@ -78,10 +73,10 @@ module TransferFunctionsNodesBasicCost = struct
     astate'
 
 
-  let exec_instr (inferbo_mem, costmap) pdata node instr =
-    let inferbo_mem = InferboTransferFunctions.exec_instr inferbo_mem pdata node instr in
+  let exec_instr costmap ({ProcData.extras= inferbo_invariant_map} as pdata) node instr =
+    let inferbo_mem = BufferOverrunChecker.extract_pre (CFG.id node) inferbo_invariant_map in
     let costmap = exec_instr_cost inferbo_mem costmap pdata node instr in
-    (inferbo_mem, costmap)
+    costmap
 
 
   let pp_session_name node fmt = F.fprintf fmt "cost(basic) %a" CFG.pp_id (CFG.id node)
@@ -141,7 +136,7 @@ module BoundMap = struct
         NonBottom env
 
 
-  let compute_upperbound_map node_cfg invariant_map_NodesBasicCost data_invariant_map
+  let compute_upperbound_map node_cfg inferbo_invariant_map data_invariant_map
       control_invariant_map =
     let fparam = Procdesc.get_formals node_cfg in
     let pname = Procdesc.get_proc_name node_cfg in
@@ -154,10 +149,10 @@ module BoundMap = struct
       | _ ->
           let entry_state_opt =
             let instr_node_id = InstrCFG.of_underlying_node node |> InstrCFG.id in
-            AnalyzerNodesBasicCost.extract_pre instr_node_id invariant_map_NodesBasicCost
+            BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map
           in
           match entry_state_opt with
-          | Some (entry_mem, _) ->
+          | Some entry_mem ->
               (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
               let all_deps =
                 Control.compute_all_deps data_invariant_map control_invariant_map node
@@ -543,7 +538,7 @@ module TransferFunctionsWCET = struct
     let cost_node =
       let instr_node_id = CFG.id node in
       match AnalyzerNodesBasicCost.extract_post instr_node_id invariant_map_cost with
-      | Some (_, node_map) ->
+      | Some node_map ->
           L.(debug Analysis Medium)
             "@\n AnalyzerWCET] Final map for node: %a @\n" CFG.pp_id instr_node_id ;
           map_cost trees node_map
@@ -583,6 +578,7 @@ let check_and_report_infinity cost proc_desc summary =
 
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   Preanal.do_preanalysis proc_desc tenv ;
+  let inferbo_invariant_map = BufferOverrunChecker.compute_invariant_map proc_desc tenv in
   let proc_data = ProcData.make_default proc_desc tenv in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* computes the data dependencies: node -> (var -> var set) *)
@@ -597,13 +593,14 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   let instr_cfg = InstrCFG.from_pdesc proc_desc in
   let invariant_map_NodesBasicCost =
+    let proc_data = ProcData.make proc_desc tenv inferbo_invariant_map in
     (*compute_WCET cfg invariant_map min_trees in *)
-    AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.init
+    AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
       ~debug:true
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
-    BoundMap.compute_upperbound_map node_cfg invariant_map_NodesBasicCost data_dep_invariant_map
+    BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map data_dep_invariant_map
       control_dep_invariant_map
   in
   let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
