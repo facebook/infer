@@ -54,7 +54,7 @@ def extract_argfiles_from_rev(javac_arguments):
     java_opts = []
     saved = []
     java_arg = pop(javac_arguments)
-    while java_arg:
+    while java_arg is not None:
         if java_arg.startswith('@'):
             # Probably got an @argfile
             path = ' '.join([java_arg[1:]] + saved)
@@ -114,7 +114,7 @@ def extract_all(javac_arguments):
     # Reversed Javac options parameters
     rev_opt_params = []
     java_arg = pop(javac_arguments)
-    while java_arg:
+    while java_arg is not None:
         if java_arg.endswith('.java'):
             # Probably got a file
             remainder, path = extract_filepath(javac_arguments + [java_arg])
@@ -187,8 +187,10 @@ class GradleCapture:
                 if build_agnostic_cmd in seen_build_cmds:
                     continue
                 seen_build_cmds.add(build_agnostic_cmd)
-                # Filter out the empty elements
-                arguments = list(filter(None, content.split(' ')))
+                arguments = content.split(' ')
+                # Note: do *not* try to filter out empty strings from the arguments (as was done
+                # here previously)! It will make compilation commands like
+                # `javac -classpath '' -Xmaxerrs 1000` fail with "Unrecognized option 1000"
                 extracted = extract_all(arguments)
                 java_files = extracted['files']
                 java_args = extracted['opts']
