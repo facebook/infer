@@ -37,6 +37,8 @@ let do_source_file linereader classes program tenv source_basename package_opt s
     JFrontend.compute_source_icfg linereader classes program tenv source_basename package_opt
       source_file
   in
+  if Config.test_determinator then
+    TestDeterminator.test_to_run source_file cfg Config.modified_lines Config.profiler_sample ;
   store_icfg source_file cfg
 
 

@@ -1,0 +1,20 @@
+{
+    "date": "", 
+    "methods": [
+        {
+            "class": "MyFavouriteClassXX", 
+            "id": "", 
+            "method": "methodOne", 
+            "signature": "()V", 
+            "src_file": ""
+        }, 
+        {
+            "class": "MyFavouriteClassYY", 
+            "id": "", 
+            "method": "methodTwo", 
+            "signature": "(I)I",
+            "src_file": ""
+        }
+    ],
+    "profiles": []
+}

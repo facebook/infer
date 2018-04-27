@@ -501,6 +501,8 @@ val ml_buckets :
 
 val models_mode : bool
 
+val modified_lines : string
+
 val modified_targets : string option
 
 val monitor_prop_size : bool
@@ -621,7 +623,11 @@ val suggest_nullable : bool
 
 val symops_per_iteration : int option
 
+val test_determinator : bool
+
 val test_filtering : bool
+
+val profiler_sample : string
 
 val testing_mode : bool
 

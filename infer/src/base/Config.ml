@@ -1556,6 +1556,14 @@ and ml_buckets =
     ~symbols:ml_bucket_symbols ~eq:PolyVariantEqual.( = )
 
 
+and modified_lines =
+  CLOpt.mk_string ~long:"modified-lines" ~default:""
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
+    "Specifies the file containing the modified lines when Infer is run Test Determinator mode. \
+     --test-determinator --modified-lines modified_lines_file --profiler-sample \
+     profiler_sample_file"
+
+
 and modified_targets =
   CLOpt.mk_path_opt ~deprecated:["modified_targets"] ~long:"modified-targets" ~meta:"file"
     "Read the file of Buck targets modified since the last analysis"
@@ -2022,9 +2030,26 @@ and symops_per_iteration =
     "Set the number of symbolic operations per iteration (see $(b,--iterations))"
 
 
+and test_determinator =
+  CLOpt.mk_bool ~long:"test-determinator" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
+    "Run infer in Test Determinator mode. It is used together with the --modified-lines and \
+     --test-profiler flags  \n    \
+     which speficy the relevant arguments. E.g. --test-determinator --modified-lines \
+     modified_line_file --profiler-sample profiler_sample_file"
+
+
 and test_filtering =
   CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
     "List all the files Infer can report on (should be called from the root of the project)"
+
+
+and profiler_sample =
+  CLOpt.mk_string ~long:"profiler-sample" ~default:""
+    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
+    "Specifies the file containing the profiler sample when Infer is run Test Determinator mode. \
+     --test-determinator --modified-lines modified_line_file --profiler-sample \
+     profiler_sample_file"
 
 
 and testing_mode =
@@ -2639,6 +2664,8 @@ and ml_buckets = !ml_buckets
 
 and models_mode = !models_mode
 
+and modified_lines = !modified_lines
+
 and modified_targets = !modified_targets
 
 and monitor_prop_size = !monitor_prop_size
@@ -2803,7 +2830,11 @@ and symops_per_iteration = !symops_per_iteration
 
 and keep_going = !keep_going
 
+and test_determinator = !test_determinator
+
 and test_filtering = !test_filtering
+
+and profiler_sample = !profiler_sample
 
 and testing_mode = !testing_mode
 

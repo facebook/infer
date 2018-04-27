@@ -159,8 +159,9 @@ let test_jni_to_java_type_with_invalid_input =
 
 let test_from_json_string_with_valid_input =
   let create_test input expected _ =
+    let expected = JavaProfilerSamples.ProfilerSample.of_list expected in
     let found = JavaProfilerSamples.from_json_string input in
-    assert_equal ~cmp:(List.equal ~equal:Typ.Procname.equal) expected found
+    assert_equal ~cmp:JavaProfilerSamples.ProfilerSample.equal expected found
   in
   let input1 = "{\"whatever\": {}, \"methods\": [], \"foo\": {}}" in
   let expected1 = [] in

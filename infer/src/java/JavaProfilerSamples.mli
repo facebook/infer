@@ -9,6 +9,8 @@
 
 open! IStd
 
+module ProfilerSample : Caml.Set.S with type elt = Typ.Procname.t
+
 module JNI : sig
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
     type t =
@@ -39,4 +41,6 @@ module JNI : sig
   end
 end
 
-val from_json_string : string -> Typ.Procname.t list
+val from_json_string : string -> ProfilerSample.t
+
+val from_json_file : string -> ProfilerSample.t

@@ -9,6 +9,7 @@
 
 open! IStd
 module L = Logging
+module ProfilerSample = Caml.Set.Make (Typ.Procname)
 
 module JNI = struct
   (* https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/types.html *)
@@ -281,9 +282,9 @@ let create_static = create ~kind:Typ.Procname.Java.Static
 
 let create_non_static = create ~kind:Typ.Procname.Java.Non_Static
 
-let from_json_string str =
+let from_json json =
   let methods =
-    match Yojson.Basic.from_string str with
+    match json with
     | `Assoc [_; ("methods", `List j); _] ->
         j
     | _ ->
@@ -307,3 +308,8 @@ let from_json_string str =
         L.(die UserError "Unexpected JSON input for the description of a single method")
   in
   parse_json methods []
+
+
+let from_json_string str = ProfilerSample.of_list (from_json (Yojson.Basic.from_string str))
+
+let from_json_file file = ProfilerSample.of_list (from_json (Yojson.Basic.from_file file))
