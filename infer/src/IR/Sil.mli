@@ -14,9 +14,6 @@ module F = Format
 
 (** {2 Programs and Types} *)
 
-val elist_to_eset : Exp.t list -> Exp.Set.t
-(** Convert expression lists to expression sets. *)
-
 (** Kind of prune instruction *)
 type if_kind =
   | Ik_bexp  (** boolean expressions, and exp ? exp : exp *)

@@ -230,16 +230,6 @@ val sub_tname : type_subst_t -> Name.t -> Name.t
 
 val is_type_subst_empty : type_subst_t -> bool
 
-(** Sets of types. *)
-
-module Set : Caml.Set.S with type elt = t
-
-(** Maps with type keys. *)
-
-module Map : Caml.Map.S with type key = t
-
-module Tbl : Caml.Hashtbl.S with type key = t
-
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)
 
@@ -451,8 +441,6 @@ module Procname : sig
   val equal : t -> t -> bool
 
   (** Hash tables with proc names as keys. *)
-  module Hashable : Caml.Hashtbl.HashedType with type t = t
-
   module Hash : Caml.Hashtbl.S with type key = t
 
   (** Maps from proc names. *)

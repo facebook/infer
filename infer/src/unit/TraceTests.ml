@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 module MockTraceElem = struct

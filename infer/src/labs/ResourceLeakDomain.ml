@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (* Extremely simple abstraction of resources: count the number of acquired resources. If there's
    not a corresponding number of releases, there may be a leak. *)

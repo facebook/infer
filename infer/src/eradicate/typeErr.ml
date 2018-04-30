@@ -9,7 +9,6 @@
 
 open! IStd
 module Hashtbl = Caml.Hashtbl
-module L = Logging
 module MF = MarkupFormatter
 module P = Printf
 

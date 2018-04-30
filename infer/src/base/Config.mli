@@ -9,7 +9,6 @@
  *)
 
 open! IStd
-module CLOpt = CommandLineOption
 
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)

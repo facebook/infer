@@ -11,8 +11,6 @@ open! IStd
 
 module VarNames : module type of AbstractDomain.FiniteSet (String)
 
-module BottomSiofTrace : module type of AbstractDomain.BottomLifted (SiofTrace)
-
 (* The domain for the analysis is:
 
    - On the one hand, sets of global variables if an initialization is needed at runtime, or Bottom

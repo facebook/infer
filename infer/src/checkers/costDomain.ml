@@ -9,7 +9,8 @@
 
 open! IStd
 module F = Format
-(* Map (node,instr) -> basic cost  *)
+
+(** Map (node,instr) -> basic cost  *)
 module NodeInstructionToCostMap = AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (Itv.Bound)
 module EnvMap = AbstractDomain.Map (Exp) (Itv)
 module EnvDomainBO = AbstractDomain.BottomLifted (EnvMap)

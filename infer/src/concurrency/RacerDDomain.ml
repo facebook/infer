@@ -272,15 +272,6 @@ module Attribute = struct
         F.fprintf fmt "Functional"
     | Choice choice ->
         Choice.pp fmt choice
-
-
-  module Set = PrettyPrintable.MakePPSet (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let pp = pp
-  end)
 end
 
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute)

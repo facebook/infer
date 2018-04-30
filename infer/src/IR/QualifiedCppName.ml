@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 exception ParseError of string
 

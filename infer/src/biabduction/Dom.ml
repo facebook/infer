@@ -14,7 +14,6 @@ module Hashtbl = Caml.Hashtbl
 (** Operators for the abstract domain. In particular, join and meet. *)
 
 module L = Logging
-module F = Format
 
 let ( ++ ) = IntLit.add
 
@@ -58,12 +57,6 @@ let select side e1 e2 = match side with Lhs -> e1 | Rhs -> e2
 let opposite side = match side with Lhs -> Rhs | Rhs -> Lhs
 
 let do_side side f e1 e2 = match side with Lhs -> f e1 e2 | Rhs -> f e2 e1
-
-(** {2 Sets for expression pairs} *)
-
-module EPset = Caml.Set.Make (struct
-  type t = Exp.t * Exp.t [@@deriving compare]
-end)
 
 (** {2 Module for maintaining information about noninjectivity during join} *)
 
@@ -354,49 +347,6 @@ end = struct
         CheckJoinPre.add side e1 e2
     | JoinState.Post ->
         CheckJoinPost.add side e1 e2
-end
-
-module CheckMeet : InfoLossCheckerSig = struct
-  let lexps1 = ref Exp.Set.empty
-
-  let lexps2 = ref Exp.Set.empty
-
-  let init sigma1 sigma2 =
-    let lexps1_lst = Sil.hpred_list_get_lexps (fun _ -> true) sigma1 in
-    let lexps2_lst = Sil.hpred_list_get_lexps (fun _ -> true) sigma2 in
-    lexps1 := Sil.elist_to_eset lexps1_lst ;
-    lexps2 := Sil.elist_to_eset lexps2_lst
-
-
-  let final () =
-    lexps1 := Exp.Set.empty ;
-    lexps2 := Exp.Set.empty
-
-
-  let lost_little side e es =
-    let lexps = match side with Lhs -> !lexps1 | Rhs -> !lexps2 in
-    match (es, e) with
-    | [], _ ->
-        true
-    | [Exp.Const _], Exp.Lvar _ ->
-        false
-    | [Exp.Const _], Exp.Var _ ->
-        not (Exp.Set.mem e lexps)
-    | [Exp.Const _], _ ->
-        assert false
-    | [_], Exp.Lvar _ | [_], Exp.Var _ ->
-        true
-    | [_], _ ->
-        assert false
-    | _, Exp.Lvar _ | _, Exp.Var _ ->
-        false
-    | _, Exp.Const _ ->
-        assert false
-    | _ ->
-        assert false
-
-
-  let add = NonInj.add
 end
 
 (** {2 Module for worklist} *)

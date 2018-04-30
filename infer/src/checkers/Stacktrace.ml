@@ -10,7 +10,6 @@
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
 open! IStd
-module F = Format
 module L = Logging
 
 type frame = {class_str: string; method_str: string; file_str: string; line_num: int option}

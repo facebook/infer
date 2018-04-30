@@ -8,7 +8,6 @@
  *)
 open! IStd
 module F = Format
-module L = Logging
 
 (** Location in the original source file *)
 type t =

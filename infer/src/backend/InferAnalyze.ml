@@ -11,7 +11,6 @@
 (** Main module for the analysis after the capture phase *)
 open! IStd
 module L = Logging
-module F = Format
 
 (** Create tasks to analyze an execution environment *)
 let analyze_exe_env_tasks cluster exe_env : Tasks.t =

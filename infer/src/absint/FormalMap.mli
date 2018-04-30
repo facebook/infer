@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** a map from a formal to its positional index *)
 type t

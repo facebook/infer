@@ -11,8 +11,6 @@
 (** The Smallfoot Intermediate Language: Unary Operators *)
 
 open! IStd
-module L = Logging
-module F = Format
 
 (** Unary operations *)
 type t =

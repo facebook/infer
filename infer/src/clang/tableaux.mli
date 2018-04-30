@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module CTLFormulaSet : Caml.Set.S with type elt = CTL.t
-
 module ClosureHashtbl : Caml.Map.S with type key = CTL.t
 
 type context_linter_map = bool ClosureHashtbl.t

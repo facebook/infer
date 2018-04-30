@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 module TestInterpreter = AnalyzerTester.Make (ProcCfg.Exceptional) (AddressTaken.TransferFunctions)
 
 let tests =

@@ -16,7 +16,6 @@ module D =
 UninitDomain.Domain
 module UninitVars = AbstractDomain.FiniteSet (AccessPath)
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
-module PrePost = AbstractDomain.Pair (D) (D)
 module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
 
 module Summary = Summary.Make (struct

@@ -11,7 +11,6 @@
 
 open! IStd
 module Hashtbl = Caml.Hashtbl
-module L = Logging
 module F = Format
 
 (** flags for a procedure *)

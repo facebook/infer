@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module type Kind = sig
   include TraceElem.Kind

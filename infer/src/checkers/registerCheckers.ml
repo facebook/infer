@@ -11,7 +11,6 @@ open! IStd
 
 (** Module for registering checkers. *)
 
-module L = Logging
 module F = Format
 
 (* make sure SimpleChecker.ml is not dead code *)

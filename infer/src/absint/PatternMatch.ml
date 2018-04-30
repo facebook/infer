@@ -11,9 +11,6 @@ open! IStd
 
 (** Module for Pattern matching. *)
 
-module L = Logging
-module F = Format
-
 let type_is_object typ =
   match typ.Typ.desc with
   | Tptr ({desc= Tstruct name}, _) ->

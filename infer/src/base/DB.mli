@@ -17,10 +17,6 @@ open! IStd
 (** generic file name *)
 type filename [@@deriving compare]
 
-module FilenameSet : Caml.Set.S with type elt = filename
-
-module FilenameMap : Caml.Map.S with type key = filename
-
 val filename_from_string : string -> filename
 
 val filename_to_string : filename -> string

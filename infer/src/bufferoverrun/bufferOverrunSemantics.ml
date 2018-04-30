@@ -13,10 +13,6 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
-module F = Format
-module L = Logging
-module Trace = BufferOverrunTrace
-module TraceSet = Trace.Set
 open BufferOverrunDomain
 
 let eval_const : Const.t -> Val.t = function

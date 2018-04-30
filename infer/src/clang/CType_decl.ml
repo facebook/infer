@@ -11,8 +11,6 @@ open! IStd
 
 (** Processes types and record declarations by adding them to the tenv *)
 
-module L = Logging
-
 let add_predefined_objc_types tenv =
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCClass)) ;
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCId))

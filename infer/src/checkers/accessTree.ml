@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module type S = sig
   module TraceDomain : AbstractDomain.WithBottom

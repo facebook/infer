@@ -11,9 +11,6 @@ open! IStd
 
 (** General utility functions such as functions on lists *)
 
-module L = Logging
-module F = Format
-
 type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_decl_info * bool
 
 let rec swap_elements_list l =

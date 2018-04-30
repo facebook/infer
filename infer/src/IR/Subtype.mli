@@ -11,7 +11,6 @@
 (** The Smallfoot Intermediate Language: Subtypes *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 type t [@@deriving compare]

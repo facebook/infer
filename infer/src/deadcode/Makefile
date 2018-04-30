@@ -59,7 +59,7 @@ depend:
 	$(QUIET)echo "(* START OF SIGNATURE $*.mli *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	put too many spaces in general but you never know what the contents of the file is;
 #	sometimes spaces will be needed
-	$(QUIET)echo "  module type " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "include struct  module type " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	suppress some warnings for generated code
 	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 #	compute module name from file name: capitalize first letter
@@ -68,12 +68,19 @@ depend:
 #	pre-processor directive to get errors in the original files and not in all_infer_in_one_file.ml
 	$(QUIET)echo '# 1 "$*.mli"' >> $(ALL_INFER_IN_ONE_FILE_ML)
 	cat ../$*.mli >> $(ALL_INFER_IN_ONE_FILE_ML)
-	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  end end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+#	silence "unused module" warnings for executables
+	$(QUIET)if [ $@ = "infer.cmi" ] \
+	        || [ $@ = "unit/inferunit.cmi" ] \
+	        || [ $@ = "facebook/InferCreateTraceViewLinks.cmi" ] \
+	        ; then \
+	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
+	fi
 	$(QUIET)echo "(* END OF SIGNATURE $*.mli *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	lots of duplication from above, sorry
 	$(QUIET)echo "(* START OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
-	$(QUIET)echo "  module " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "include struct  module " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  : " >> $(ALL_INFER_IN_ONE_FILE_ML)
@@ -81,8 +88,15 @@ depend:
 	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo '# 1 "$*.ml"' >> $(ALL_INFER_IN_ONE_FILE_ML)
 	cat ../$*.ml >> $(ALL_INFER_IN_ONE_FILE_ML)
-	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
+	$(QUIET)echo "  end end" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "(* END OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
+#	silence "unused module" warnings for executables
+	$(QUIET)if [ $@ = "infer.cmi" ] \
+	        || [ $@ = "unit/inferunit.cmi" ] \
+	        || [ $@ = "facebook/InferCreateTraceViewLinks.cmi" ] \
+	        ; then \
+	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
+	fi
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 
 $(ml_src_files_without_mli:.ml=.cmx):

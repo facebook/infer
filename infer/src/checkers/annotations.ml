@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module F = Format
-module L = Logging
 
 (** Annotations. *)
 

@@ -8,9 +8,7 @@
  *)
 
 open! IStd
-module L = Logging
 module F = Format
-module CLOpt = CommandLineOption
 
 (** Module to create a makefile with dependencies between clusters *)
 

@@ -5,7 +5,7 @@
      {|
 (executable
  ((name all_infer_in_one_file)
-  (flags (%s))
+  (flags (%s -w +60))
   (ocamlopt_flags (%s))
   (libraries (%s))
   (modules (All_infer_in_one_file))

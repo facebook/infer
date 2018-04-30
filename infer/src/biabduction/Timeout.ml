@@ -9,7 +9,6 @@
 
 open! IStd
 module L = Logging
-module F = Format
 
 (** Handle timeout events *)
 

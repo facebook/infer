@@ -11,7 +11,6 @@
 (** The Smallfoot Intermediate Language: Constants *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 (** Constants *)

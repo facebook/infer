@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 
 (** utilities for importing JSON specifications of sources/sinks into Quandary *)
 

@@ -63,9 +63,6 @@ val knormal : kind
 
 val kfootprint : kind
 
-(** hash table with names as keys *)
-module NameHash : Caml.Hashtbl.S with type key = name
-
 val name_spec : name
 (** Name used for spec variables *)
 

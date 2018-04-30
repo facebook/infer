@@ -10,7 +10,6 @@
 (** This module creates extra ast constructs that are needed for the translation *)
 
 open! IStd
-module L = Logging
 
 let stmt_info_with_fresh_pointer stmt_info =
   { Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()

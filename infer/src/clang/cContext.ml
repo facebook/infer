@@ -14,7 +14,6 @@ module Hashtbl = Caml.Hashtbl
 
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
-module L = Logging
 module StmtMap = ClangPointers.Map
 
 type pointer = int [@@deriving compare]

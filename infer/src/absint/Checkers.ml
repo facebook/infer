@@ -11,9 +11,6 @@ open! IStd
 
 (** Module for user-defined checkers. *)
 
-module L = Logging
-module F = Format
-
 (** State that persists in the .specs files. *)
 module ST = struct
   let report_error tenv proc_name proc_desc kind loc ?(field_name= None) ?(origin_loc= None)

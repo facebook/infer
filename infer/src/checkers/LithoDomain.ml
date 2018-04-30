@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module LocalAccessPath = struct
   type t = {access_path: AccessPath.t; parent: Typ.Procname.t} [@@deriving compare]

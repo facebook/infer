@@ -139,8 +139,6 @@ module Attribute : sig
   [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
-
-  module Set : PrettyPrintable.PPSet with type elt = t
 end
 
 module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute)

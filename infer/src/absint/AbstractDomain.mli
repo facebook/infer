@@ -61,10 +61,16 @@ module BottomLifted (Domain : S) : sig
 end
 
 (** Create a domain with Top element from a pre-domain *)
-module TopLifted (Domain : S) : sig
-  type astate = Domain.astate top_lifted
+include sig
+    (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
-  include WithTop with type astate := astate
+    [@@@warning "-60"]
+
+    module TopLifted (Domain : S) : sig
+      type astate = Domain.astate top_lifted
+
+      include WithTop with type astate := astate
+    end
 end
 
 (** Cartesian product of two domains. *)
@@ -120,7 +126,13 @@ end
 
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
     true in both conditional branches. *)
-module BooleanAnd : S with type astate = bool
+include sig
+    (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+
+    [@@@warning "-60"]
+
+    module BooleanAnd : S with type astate = bool
+end
 
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)

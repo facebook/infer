@@ -10,8 +10,6 @@
 
 (** The Smallfoot Intermediate Language: Binary Operators *)
 open! IStd
-module L = Logging
-module F = Format
 
 (** Binary operations *)
 type t =

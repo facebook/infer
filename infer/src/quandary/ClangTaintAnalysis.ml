@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module F = Format
-module L = Logging
 
 include TaintAnalysis.Make (struct
   module Trace = ClangTrace

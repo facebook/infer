@@ -11,7 +11,6 @@
 (** The Smallfoot Intermediate Language: Expressions *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 type closure = {name: Typ.Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}

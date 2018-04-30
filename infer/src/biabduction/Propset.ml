@@ -12,9 +12,6 @@ open! IStd
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
 
-module L = Logging
-module F = Format
-
 (** {2 Sets of Propositions} *)
 
 module PropSet = Caml.Set.Make (struct

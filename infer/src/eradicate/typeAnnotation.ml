@@ -8,9 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
-module F = Format
-module P = Printf
 
 (** Module to represent annotations on types. *)
 

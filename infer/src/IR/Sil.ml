@@ -234,9 +234,6 @@ let is_static_local_name pname pvar =
   match Str.split_delim (Str.regexp_string pname) var_name with [_; _] -> true | _ -> false
 
 
-(** {2 Sets of expressions} *)
-let elist_to_eset es = List.fold ~f:(fun set e -> Exp.Set.add e set) ~init:Exp.Set.empty es
-
 (** {2 Sets of heap predicates} *)
 module HpredSet = Caml.Set.Make (struct
   type t = hpred

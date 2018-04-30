@@ -9,12 +9,10 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
 
 (** Support for Execution environments *)
 
 module L = Logging
-module F = Format
 
 (** per-file data: type environment and cfg *)
 type file_data = {source: SourceFile.t; mutable tenv: Tenv.t option; mutable cfg: Cfg.t option}

@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** Module to register and invoke callbacks *)
 

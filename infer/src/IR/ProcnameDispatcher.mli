@@ -174,7 +174,13 @@ module type NameCommon = sig
         accepts ALL function arguments, binds the function *)
 end
 
-module ProcName : NameCommon with type 'f dispatcher = Typ.Procname.t -> 'f option
+(* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+
+include sig
+    [@@@warning "-60"]
+
+    module ProcName : NameCommon with type 'f dispatcher = Typ.Procname.t -> 'f option
+end
 
 module TypName : NameCommon with type 'f dispatcher = Typ.name -> 'f option
 

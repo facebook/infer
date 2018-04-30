@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-module CLOpt = CommandLineOption
-module F = Format
 module L = Logging
 
 (** enable debug mode (to get more data saved to disk for future inspections) *)

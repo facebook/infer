@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module CLOpt = CommandLineOption
 module L = Logging
 
 let create_cmd (compilation_data: CompilationDatabase.compilation_data) =

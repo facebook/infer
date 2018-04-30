@@ -8,7 +8,6 @@
  *)
 open! IStd
 open PolyVariantEqual
-module CLOpt = CommandLineOption
 module L = Logging
 
 let results_dir_dir_markers = [Config.results_dir ^/ Config.specs_dir_name]

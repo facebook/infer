@@ -30,8 +30,6 @@ module LockEvent : sig
   include PrettyPrintable.PrintableOrderedType with type t := t
 end
 
-module LockState : AbstractDomain.WithBottom
-
 (** Represents either
 - the existence of a program path from the current method to the eventual acquisition of a lock
   ("eventually"), or,

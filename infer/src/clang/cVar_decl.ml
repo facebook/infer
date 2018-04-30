@@ -13,8 +13,6 @@ open! IStd
 
 (** Computes the local variables of a function or method to be added to the procdesc *)
 
-module L = Logging
-
 let is_custom_var_pointer pointer = pointer <= 0
 
 let sil_var_of_decl context var_decl procname =

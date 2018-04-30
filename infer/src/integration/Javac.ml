@@ -10,7 +10,6 @@
 open! IStd
 module L = Logging
 module F = Format
-module CLOpt = CommandLineOption
 
 type compiler = Java | Javac [@@deriving compare]
 

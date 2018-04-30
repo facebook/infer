@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 type t = int AccessPath.BaseMap.t
 

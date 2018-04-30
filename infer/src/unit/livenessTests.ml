@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 module TestInterpreter =
   AnalyzerTester.Make (ProcCfg.Backward (ProcCfg.Normal)) (Liveness.TransferFunctions)
 

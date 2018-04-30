@@ -10,9 +10,15 @@
 open! IStd
 module L = Logging
 
-module rec CTransImpl : CModule_type.CTranslation = CTrans.CTrans_funct (CFrontend_declImpl)
+(* ocamlc gets confused by [module rec]: https://caml.inria.fr/mantis/view.php?id=6714 *)
+(* it also ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+include struct
+  [@@@warning "-60"]
 
-and CFrontend_declImpl : CModule_type.CFrontend = CFrontend_decl.CFrontend_decl_funct (CTransImpl)
+  module rec CTransImpl : CModule_type.CTranslation = CTrans.CTrans_funct (CFrontend_declImpl)
+  
+  and CFrontend_declImpl : CModule_type.CFrontend = CFrontend_decl.CFrontend_decl_funct (CTransImpl)
+end
 
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg trans_unit_ctx tenv ast =

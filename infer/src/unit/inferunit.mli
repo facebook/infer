@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2016 - present Facebook, Inc.
+ * Copyright (c) 2018 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -9,10 +9,4 @@
 
 open! IStd
 
-type t [@@deriving compare]
-
-val make : CallSite.t -> t
-
-val site : t -> CallSite.t
-
-module Set : PrettyPrintable.PPSet with type elt = t
+(** module for running OCaml unit tests *)

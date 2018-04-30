@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 module Domain = LithoDomain
 
 module Summary = Summary.Make (struct

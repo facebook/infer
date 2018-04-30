@@ -12,9 +12,6 @@ open! IStd
 
 (** State of symbolic execution *)
 
-module L = Logging
-module F = Format
-
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats =
   { mutable instr_fail: int

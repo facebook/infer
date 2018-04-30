@@ -11,7 +11,6 @@
 (** The Smallfoot Intermediate Language: Predicate Symbols *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 (** {2 Programs and Types} *)

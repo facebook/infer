@@ -13,7 +13,6 @@ open! IStd
 (** Abstraction for Arrays *)
 
 module L = Logging
-module F = Format
 
 type sigma = Sil.hpred list
 

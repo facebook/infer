@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 type attributes_kind = ProcUndefined | ProcObjCAccessor | ProcDefined [@@deriving compare]
 

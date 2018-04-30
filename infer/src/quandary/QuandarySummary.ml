@@ -11,7 +11,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 module Java = AccessTree.Make (JavaTrace) (AccessTree.DefaultConfig)
 module Clang = AccessTree.Make (ClangTrace) (AccessTree.DefaultConfig)
 

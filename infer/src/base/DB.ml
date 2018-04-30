@@ -13,7 +13,6 @@ open PolyVariantEqual
 
 (** Database of analysis results *)
 
-module F = Format
 module L = Logging
 
 let cutoff_length = 100
@@ -85,14 +84,6 @@ let filename_from_string s = s
 let filename_add_suffix fn s = fn ^ s
 
 let file_exists path = Sys.file_exists path = `Yes
-
-module FilenameSet = Caml.Set.Make (struct
-  type t = filename [@@deriving compare]
-end)
-
-module FilenameMap = Caml.Map.Make (struct
-  type t = filename [@@deriving compare]
-end)
 
 (** Return the time when a file was last modified. The file must exist. *)
 let file_modified_time ?(symlink= false) fname =

@@ -13,7 +13,6 @@ open! IStd
 
 open SymExec
 module L = Logging
-module F = Format
 
 type t = Builtin.registered
 

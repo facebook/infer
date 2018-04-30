@@ -13,7 +13,6 @@ open! IStd
 (** Re-arrangement and extension of structures with fresh variables *)
 
 module L = Logging
-module F = Format
 
 let list_product l1 l2 =
   let l1' = List.rev l1 in

@@ -12,9 +12,6 @@ open! IStd
 
 (** Attribute manipulation in Propositions (i.e., Symbolic Heaps) *)
 
-module L = Logging
-module F = Format
-
 (** Check whether an atom is used to mark an attribute *)
 let is_pred atom = match atom with Sil.Apred _ | Anpred _ -> true | _ -> false
 

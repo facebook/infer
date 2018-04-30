@@ -15,8 +15,6 @@ open AbsLoc
 open! AbstractDomain.Types
 module F = Format
 module L = Logging
-module ItvPure = Itv.ItvPure
-module MF = MarkupFormatter
 module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
@@ -281,10 +279,6 @@ module Stack = struct
 end
 
 module Heap = struct
-  module PPMap = struct
-    include PrettyPrintable.MakePPMap (Loc)
-  end
-
   include AbstractDomain.Map (Loc) (Val)
 
   let bot = empty

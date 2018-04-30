@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 
 let tests =
   let open OUnit2 in

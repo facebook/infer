@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
 module F = Format
 
 (** Module to process clusters of procedures. *)

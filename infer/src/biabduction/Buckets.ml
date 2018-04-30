@@ -13,7 +13,6 @@ open! IStd
 (** Classify bugs into buckets *)
 
 module L = Logging
-module F = Format
 
 let verbose = Config.trace_error
 

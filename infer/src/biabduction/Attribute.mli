@@ -12,9 +12,6 @@ open! IStd
 
 (** Attribute manipulation in Propositions (i.e., Symbolic Heaps) *)
 
-module L = Logging
-module F = Format
-
 val is_pred : Sil.atom -> bool
 (** Check whether an atom is used to mark an attribute *)
 

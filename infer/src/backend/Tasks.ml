@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 
 type closure = unit -> unit

@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
-module F = Format
 
 (** Check an implicit cast when returning an immutable collection from a method whose type is mutable. *)
 let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt loc : unit =

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
 module CTLFormulaSet = Caml.Set.Make (CTL)
 
 module ClosureHashtbl = Caml.Map.Make (struct

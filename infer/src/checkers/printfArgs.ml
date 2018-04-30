@@ -9,7 +9,6 @@
 
 open! IStd
 module L = Logging
-module F = Format
 
 type printf_signature =
   {unique_id: string; format_pos: int; fixed_pos: int list; vararg_pos: int option}

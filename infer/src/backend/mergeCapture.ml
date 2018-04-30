@@ -10,7 +10,6 @@
 open! IStd
 open PolyVariantEqual
 module L = Logging
-module F = Format
 
 (** Module to merge the results of capture for different buck targets. *)
 

@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
-module F = Format
 
 (** Simplified html node printer for checkers *)
 

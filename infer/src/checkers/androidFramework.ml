@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
-module F = Format
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 

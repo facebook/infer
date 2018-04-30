@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-module F = Format
 
 let log_caught_exception (trans_unit_ctx: CFrontend_config.translation_unit_context) exception_type
     exception_triggered_location (source_location_start, source_location_end) ast_node =

@@ -10,7 +10,6 @@
 
 open! IStd
 module L = Logging
-module F = Format
 
 (** Generic serializer *)
 type 'a serializer =

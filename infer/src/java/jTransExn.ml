@@ -11,7 +11,6 @@
 open! IStd
 module Hashtbl = Caml.Hashtbl
 open Sawja_pack
-module E = Logging
 
 let create_handler_table impl =
   let handler_tb = Hashtbl.create 1 in

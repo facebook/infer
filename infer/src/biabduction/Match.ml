@@ -13,7 +13,6 @@ open! IStd
 (** Functions for "Smart" Pattern Matching *)
 
 module L = Logging
-module F = Format
 
 let mem_idlist i l = List.exists ~f:(Ident.equal i) l
 

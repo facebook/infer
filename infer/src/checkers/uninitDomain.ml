@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** Forward analysis to compute uninitialized variables at each program point *)
 module Domain = AbstractDomain.InvertedSet (AccessPath)

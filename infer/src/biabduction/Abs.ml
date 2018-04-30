@@ -13,7 +13,6 @@ open! IStd
 (** Implementation of Abstraction Functions *)
 
 module L = Logging
-module F = Format
 
 (** {2 Abstraction} *)
 
@@ -931,15 +930,6 @@ let abstract_gc tenv p =
   | Some iter ->
       Prop.prop_iter_to_prop tenv (Prop.prop_iter_gc_fields iter)
 
-
-(** maps from identifiers *)
-module IdMap = Caml.Map.Make (Ident)
-
-module HpredSet = Caml.Set.Make (struct
-  type t = Sil.hpred
-
-  let compare = Sil.compare_hpred ~inst:false
-end)
 
 (** find the id's in sigma reachable from the given roots *)
 let sigma_reachable root_fav sigma =

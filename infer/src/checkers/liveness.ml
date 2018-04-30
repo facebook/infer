@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** backward analysis for computing set of maybe-live variables at each program point *)
 

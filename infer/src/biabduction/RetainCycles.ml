@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
-module L = Logging
-module F = Format
 module MF = MarkupFormatter
 
 let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =

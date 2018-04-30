@@ -10,7 +10,6 @@
 
 (** The Smallfoot Intermediate Language: Annotations *)
 open! IStd
-module L = Logging
 module F = Format
 
 type parameters = string list [@@deriving compare]
@@ -32,14 +31,6 @@ let pp fmt annotation =
   F.fprintf fmt "%s%s%s" prefix annotation.class_name
     (String.concat ~sep:"," annotation.parameters)
 
-
-module Map = PrettyPrintable.MakePPMap (struct
-  type nonrec t = t
-
-  let compare = compare
-
-  let pp = pp
-end)
 
 module Item = struct
   (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)

@@ -155,8 +155,6 @@ module T = struct
   let equal_template_arg = [%compare.equal : template_arg]
 
   let equal = [%compare.equal : t]
-
-  let hash = Hashtbl.hash
 end
 
 include T
@@ -481,11 +479,6 @@ module Name = struct
     let compare = compare
   end)
 end
-
-(** {2 Sets and maps of types} *)
-module Set = Caml.Set.Make (T)
-module Map = Caml.Map.Make (T)
-module Tbl = Hashtbl.Make (T)
 
 (** dump a type with all the details. *)
 let d_full (t: t) = L.add_print_action (L.PTtyp_full, Obj.repr t)

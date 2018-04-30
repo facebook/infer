@@ -29,8 +29,6 @@ val final : t
 val pp : F.formatter -> t -> unit
 (** Pretty print an annotation. *)
 
-module Map : PrettyPrintable.PPMap with type key = t
-
 module Item : sig
   (** Annotation for one item: a list of annotations with visibility. *)
   type nonrec t = (t * bool) list [@@deriving compare]

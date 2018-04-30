@@ -11,8 +11,6 @@ open! IStd
 
 (** Make sure callbacks are always unregistered. drive the point home by reporting possible NPE's *)
 
-module P = Printf
-
 let report_error fragment_typ fld fld_typ summary pdesc =
   let pname = Procdesc.get_proc_name pdesc in
   let description = Localise.desc_fragment_retains_view fragment_typ fld fld_typ pname in

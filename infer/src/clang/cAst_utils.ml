@@ -13,7 +13,6 @@ open PolyVariantEqual
 (** Functions for transformations of ast nodes *)
 
 module L = Logging
-module F = Format
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 

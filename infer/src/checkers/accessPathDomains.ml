@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module F = Format
 
 module Set = struct
   module APSet = PrettyPrintable.MakePPSet (AccessPath.Abs)

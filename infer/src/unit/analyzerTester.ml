@@ -9,7 +9,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** utilities for writing abstract domains/transfer function tests *)
 

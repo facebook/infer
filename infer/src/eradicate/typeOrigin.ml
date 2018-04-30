@@ -8,8 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
-module P = Printf
 
 (** Describe the origin of values propagated by the checker. *)
 

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 (** Module for the checks called by Eradicate. *)
 

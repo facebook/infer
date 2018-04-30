@@ -9,7 +9,6 @@
 
 open! IStd
 open PolyVariantEqual
-module L = Logging
 
 type zip_library = {zip_filename: string; zip_channel: Zip.in_file Lazy.t; models: bool}
 

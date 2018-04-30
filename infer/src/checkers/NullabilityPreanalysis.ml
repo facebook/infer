@@ -10,7 +10,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 module FieldsAssignedInConstructors = AbstractDomain.FiniteSet (struct
   type t = Typ.Fieldname.t * Typ.t [@@deriving compare]
@@ -66,7 +65,6 @@ end
 (* Tracks when block variables of ObjC classes have been assigned to in constructors *)
 module FieldsAssignedInConstructorsChecker =
   AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
-module AnalysisCfg = ProcCfg.Normal
 
 let add_annot annot annot_name = ({Annot.class_name= annot_name; parameters= []}, true) :: annot
 

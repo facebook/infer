@@ -10,7 +10,6 @@
 open! IStd
 open PolyVariantEqual
 module F = Format
-module L = Logging
 
 module GlobalVar = struct
   include Pvar
