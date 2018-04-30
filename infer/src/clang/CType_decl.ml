@@ -11,6 +11,86 @@ open! IStd
 
 (** Processes types and record declarations by adding them to the tenv *)
 
+let get_struct_decls decl =
+  let open Clang_ast_t in
+  match decl with
+  | CapturedDecl (_, decl_list, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
+  | EnumDecl (_, _, _, decl_list, _, _, _)
+  | LinkageSpecDecl (_, decl_list, _)
+  | NamespaceDecl (_, _, decl_list, _, _)
+  | ObjCCategoryDecl (_, _, decl_list, _, _)
+  | ObjCCategoryImplDecl (_, _, decl_list, _, _)
+  | ObjCImplementationDecl (_, _, decl_list, _, _)
+  | ObjCInterfaceDecl (_, _, decl_list, _, _)
+  | ObjCProtocolDecl (_, _, decl_list, _, _)
+  | RecordDecl (_, _, _, decl_list, _, _, _)
+  | TranslationUnitDecl (_, decl_list, _, _) ->
+      decl_list
+  | AccessSpecDecl _
+  | BlockDecl _
+  | ClassScopeFunctionSpecializationDecl _
+  | EmptyDecl _
+  | ExportDecl _
+  | ExternCContextDecl _
+  | FileScopeAsmDecl _
+  | FriendDecl _
+  | FriendTemplateDecl _
+  | ImportDecl _
+  | LabelDecl _
+  | NamespaceAliasDecl _
+  | ObjCCompatibleAliasDecl _
+  | ObjCMethodDecl _
+  | ObjCPropertyDecl _
+  | BuiltinTemplateDecl _
+  | ClassTemplateDecl _
+  | FunctionTemplateDecl _
+  | TypeAliasTemplateDecl _
+  | VarTemplateDecl _
+  | TemplateTemplateParmDecl _
+  | TemplateTypeParmDecl _
+  | ObjCTypeParamDecl _
+  | TypeAliasDecl _
+  | TypedefDecl _
+  | UnresolvedUsingTypenameDecl _
+  | UsingDecl _
+  | UsingDirectiveDecl _
+  | UsingPackDecl _
+  | UsingShadowDecl _
+  | ConstructorUsingShadowDecl _
+  | BindingDecl _
+  | FieldDecl _
+  | ObjCAtDefsFieldDecl _
+  | ObjCIvarDecl _
+  | FunctionDecl _
+  | CXXDeductionGuideDecl _
+  | CXXMethodDecl _
+  | CXXConstructorDecl _
+  | CXXConversionDecl _
+  | CXXDestructorDecl _
+  | MSPropertyDecl _
+  | NonTypeTemplateParmDecl _
+  | VarDecl _
+  | DecompositionDecl _
+  | ImplicitParamDecl _
+  | OMPCapturedExprDecl _
+  | ParmVarDecl _
+  | VarTemplateSpecializationDecl _
+  | VarTemplatePartialSpecializationDecl _
+  | EnumConstantDecl _
+  | IndirectFieldDecl _
+  | OMPDeclareReductionDecl _
+  | UnresolvedUsingValueDecl _
+  | OMPThreadPrivateDecl _
+  | ObjCPropertyImplDecl _
+  | PragmaCommentDecl _
+  | PragmaDetectMismatchDecl _
+  | StaticAssertDecl _ ->
+      []
+
+
 let add_predefined_objc_types tenv =
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCClass)) ;
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCId))
@@ -102,84 +182,52 @@ let get_record_definition decl =
       decl
 
 
-let get_struct_decls decl =
+let is_decl_info_generic_model {Clang_ast_t.di_attributes} =
+  let f = function
+    | Clang_ast_t.AnnotateAttr {ai_parameters= [_; name; _]}
+      when String.equal name "__infer_generic_model" ->
+        true
+    | _ ->
+        false
+  in
+  List.exists ~f di_attributes
+
+
+(** Global counter for anonymous block*)
+let block_counter = ref 0
+
+let get_fresh_block_index () =
+  block_counter := !block_counter + 1 ;
+  !block_counter
+
+
+let mk_objc_method class_typename method_name method_kind =
+  Typ.Procname.ObjC_Cpp
+    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate
+       ~is_generic_model:false)
+
+
+let rec get_mangled_method_name function_decl_info method_decl_info =
+  (* For virtual methods return mangled name of the method from most base class
+     Go recursively until there is no method in any parent class. All names
+     of the same method need to be the same, otherwise dynamic dispatch won't
+     work. *)
   let open Clang_ast_t in
-  match decl with
-  | CapturedDecl (_, decl_list, _)
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
-  | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
-  | EnumDecl (_, _, _, decl_list, _, _, _)
-  | LinkageSpecDecl (_, decl_list, _)
-  | NamespaceDecl (_, _, decl_list, _, _)
-  | ObjCCategoryDecl (_, _, decl_list, _, _)
-  | ObjCCategoryImplDecl (_, _, decl_list, _, _)
-  | ObjCImplementationDecl (_, _, decl_list, _, _)
-  | ObjCInterfaceDecl (_, _, decl_list, _, _)
-  | ObjCProtocolDecl (_, _, decl_list, _, _)
-  | RecordDecl (_, _, _, decl_list, _, _, _)
-  | TranslationUnitDecl (_, decl_list, _, _) ->
-      decl_list
-  | AccessSpecDecl _
-  | BlockDecl _
-  | ClassScopeFunctionSpecializationDecl _
-  | EmptyDecl _
-  | ExportDecl _
-  | ExternCContextDecl _
-  | FileScopeAsmDecl _
-  | FriendDecl _
-  | FriendTemplateDecl _
-  | ImportDecl _
-  | LabelDecl _
-  | NamespaceAliasDecl _
-  | ObjCCompatibleAliasDecl _
-  | ObjCMethodDecl _
-  | ObjCPropertyDecl _
-  | BuiltinTemplateDecl _
-  | ClassTemplateDecl _
-  | FunctionTemplateDecl _
-  | TypeAliasTemplateDecl _
-  | VarTemplateDecl _
-  | TemplateTemplateParmDecl _
-  | TemplateTypeParmDecl _
-  | ObjCTypeParamDecl _
-  | TypeAliasDecl _
-  | TypedefDecl _
-  | UnresolvedUsingTypenameDecl _
-  | UsingDecl _
-  | UsingDirectiveDecl _
-  | UsingPackDecl _
-  | UsingShadowDecl _
-  | ConstructorUsingShadowDecl _
-  | BindingDecl _
-  | FieldDecl _
-  | ObjCAtDefsFieldDecl _
-  | ObjCIvarDecl _
-  | FunctionDecl _
-  | CXXDeductionGuideDecl _
-  | CXXMethodDecl _
-  | CXXConstructorDecl _
-  | CXXConversionDecl _
-  | CXXDestructorDecl _
-  | MSPropertyDecl _
-  | NonTypeTemplateParmDecl _
-  | VarDecl _
-  | DecompositionDecl _
-  | ImplicitParamDecl _
-  | OMPCapturedExprDecl _
-  | ParmVarDecl _
-  | VarTemplateSpecializationDecl _
-  | VarTemplatePartialSpecializationDecl _
-  | EnumConstantDecl _
-  | IndirectFieldDecl _
-  | OMPDeclareReductionDecl _
-  | UnresolvedUsingValueDecl _
-  | OMPThreadPrivateDecl _
-  | ObjCPropertyImplDecl _
-  | PragmaCommentDecl _
-  | PragmaDetectMismatchDecl _
-  | StaticAssertDecl _ ->
-      []
+  match method_decl_info.xmdi_overriden_methods with
+  | [] ->
+      function_decl_info.fdi_mangled_name
+  | base1_dr :: _ ->
+      let base1 =
+        match CAst_utils.get_decl base1_dr.dr_decl_pointer with Some b -> b | _ -> assert false
+      in
+      match base1 with
+      | CXXMethodDecl (_, _, _, fdi, mdi)
+      | CXXConstructorDecl (_, _, _, fdi, mdi)
+      | CXXConversionDecl (_, _, _, fdi, mdi)
+      | CXXDestructorDecl (_, _, _, fdi, mdi) ->
+          get_mangled_method_name fdi mdi
+      | _ ->
+          assert false
 
 
 let rec get_struct_fields tenv decl =
@@ -293,49 +341,6 @@ and get_superclass_list_cpp tenv decl =
   List.map ~f:get_super_field base_decls
 
 
-and get_record_struct_type tenv definition_decl : Typ.desc =
-  let open Clang_ast_t in
-  match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
-  | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
-  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info)
-    -> (
-      let sil_typename = get_record_typename ~tenv definition_decl in
-      let sil_desc = Typ.Tstruct sil_typename in
-      match Tenv.lookup tenv sil_typename with
-      | Some _ ->
-          sil_desc (* just reuse what is already in tenv *)
-      | None ->
-          let is_translatable_definition =
-            let open Clang_ast_t in
-            record_decl_info.rdi_is_complete_definition
-            && not record_decl_info.rdi_is_dependent_type
-          in
-          if is_translatable_definition then (
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            let fields = get_struct_fields tenv definition_decl in
-            let statics = [] in
-            (* Note: We treat static field same as global variables *)
-            let methods = [] in
-            (* C++ methods are not put into tenv (info isn't used) *)
-            let supers = get_superclass_list_cpp tenv definition_decl in
-            let annots =
-              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
-              else (* No annotations for structs *) Annot.Item.empty
-            in
-            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename |> ignore ;
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            sil_desc )
-          else (
-            (* There is no definition for that struct in whole translation unit.
-                Put empty struct into tenv to prevent backend problems *)
-            ignore (Tenv.mk_struct tenv ~fields:[] sil_typename) ;
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            sil_desc ) )
-  | _ ->
-      assert false
-
-
 and add_types_from_decl_to_tenv tenv decl =
   let open Clang_ast_t in
   match decl with
@@ -379,162 +384,209 @@ and qual_type_to_sil_type tenv qual_type =
   CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qual_type
 
 
-module CProcname = struct
-  let rec get_mangled_method_name function_decl_info method_decl_info =
-    (* For virtual methods return mangled name of the method from most base class
-     Go recursively until there is no method in any parent class. All names
-     of the same method need to be the same, otherwise dynamic dispatch won't
-     work. *)
-    let open Clang_ast_t in
-    match method_decl_info.xmdi_overriden_methods with
-    | [] ->
-        function_decl_info.fdi_mangled_name
-    | base1_dr :: _ ->
-        let base1 =
-          match CAst_utils.get_decl base1_dr.dr_decl_pointer with Some b -> b | _ -> assert false
-        in
-        match base1 with
-        | CXXMethodDecl (_, _, _, fdi, mdi)
-        | CXXConstructorDecl (_, _, _, fdi, mdi)
-        | CXXConversionDecl (_, _, _, fdi, mdi)
-        | CXXDestructorDecl (_, _, _, fdi, mdi) ->
-            get_mangled_method_name fdi mdi
-        | _ ->
-            assert false
+and get_template_info tenv (fdi: Clang_ast_t.function_decl_info) =
+  match fdi.fdi_template_specialization with
+  | Some spec_info ->
+      Typ.Template {mangled= fdi.fdi_mangled_name; args= get_template_args tenv spec_info}
+  | None ->
+      Typ.NoTemplate
 
 
-  let get_template_info tenv (fdi: Clang_ast_t.function_decl_info) =
-    match fdi.fdi_template_specialization with
-    | Some spec_info ->
-        Typ.Template {mangled= fdi.fdi_mangled_name; args= get_template_args tenv spec_info}
-    | None ->
-        Typ.NoTemplate
-
-
-  let is_decl_info_generic_model {Clang_ast_t.di_attributes} =
-    let f = function
-      | Clang_ast_t.AnnotateAttr {ai_parameters= [_; name; _]}
-        when String.equal name "__infer_generic_model" ->
-          true
-      | _ ->
-          false
-    in
-    List.exists ~f di_attributes
-
-
-  let mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
-    let file =
-      match function_decl_info_opt with
-      | Some (decl_info, function_decl_info) -> (
-        match function_decl_info.Clang_ast_t.fdi_storage_class with
-        | Some "static"
-        (* when we model static functions, we cannot take the file into account to
+and mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
+  let file =
+    match function_decl_info_opt with
+    | Some (decl_info, function_decl_info) -> (
+      match function_decl_info.Clang_ast_t.fdi_storage_class with
+      | Some "static"
+      (* when we model static functions, we cannot take the file into account to
        create a mangled name because the file of the model is different to the real file,
        thus the model won't work *)
-          when not
-                 (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name)) ->
-            let file_opt =
-              (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
-              |> Option.map ~f:SourceFile.from_abs_path
-            in
-            let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
-            Option.value_map ~f:file_to_hex ~default:"" file_opt
-        | _ ->
-            "" )
+        when not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name)) ->
+          let file_opt =
+            (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
+            |> Option.map ~f:SourceFile.from_abs_path
+          in
+          let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
+          Option.value_map ~f:file_to_hex ~default:"" file_opt
+      | _ ->
+          "" )
+    | None ->
+        ""
+  in
+  let mangled_opt =
+    match function_decl_info_opt with
+    | Some (_, function_decl_info) ->
+        function_decl_info.Clang_ast_t.fdi_mangled_name
+    | _ ->
+        None
+  in
+  let mangled_name = match mangled_opt with Some m when is_cpp -> m | _ -> "" in
+  let template_info, is_generic_model =
+    match (function_decl_info_opt, tenv) with
+    | Some (decl_info, function_decl_info), Some t ->
+        (get_template_info t function_decl_info, is_decl_info_generic_model decl_info)
+    | _ ->
+        (Typ.NoTemplate, false)
+  in
+  let mangled = file ^ mangled_name in
+  if String.is_empty mangled then
+    Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
+  else Typ.Procname.C (Typ.Procname.c name mangled template_info ~is_generic_model)
+
+
+and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
+  let open Clang_ast_t in
+  let method_kind =
+    match meth_decl with
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
+        Typ.Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
+    | Some (Clang_ast_t.CXXDestructorDecl _) ->
+        Typ.Procname.ObjC_Cpp.CPPDestructor {mangled}
+    | _ ->
+        Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
+  in
+  let template_info, is_generic_model =
+    match meth_decl with
+    | Some (CXXMethodDecl (di, _, _, fdi, _))
+    | Some (CXXConstructorDecl (di, _, _, fdi, _))
+    | Some (CXXConversionDecl (di, _, _, fdi, _))
+    | Some (CXXDestructorDecl (di, _, _, fdi, _)) ->
+        let templ_info =
+          match tenv with Some t -> get_template_info t fdi | None -> Typ.NoTemplate
+        in
+        let is_gen_model =
+          is_decl_info_generic_model di
+          || (* read whether parent class is annoatated as generic model *)
+             di.di_parent_pointer |> Option.value_map ~f:CAst_utils.get_decl ~default:None
+             |> Option.map ~f:Clang_ast_proj.get_decl_tuple
+             |> Option.value_map ~f:is_decl_info_generic_model ~default:false
+        in
+        (templ_info, is_gen_model)
+    | _ ->
+        (Typ.NoTemplate, false)
+  in
+  Typ.Procname.ObjC_Cpp
+    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info ~is_generic_model)
+
+
+and get_class_typename ?tenv method_decl_info =
+  let class_ptr = Option.value_exn method_decl_info.Clang_ast_t.di_parent_pointer in
+  match CAst_utils.get_decl class_ptr with
+  | Some class_decl ->
+      get_record_typename ?tenv class_decl
+  | None ->
+      CFrontend_config.incorrect_assumption __POS__ method_decl_info.Clang_ast_t.di_source_range
+        "Expecting class declaration when getting the class typename"
+
+
+and objc_method_procname ?tenv decl_info method_name mdi =
+  let class_typename = get_class_typename ?tenv decl_info in
+  let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+  let method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
+  mk_objc_method class_typename method_name method_kind
+
+
+and from_decl ?tenv ~is_cpp meth_decl =
+  let open Clang_ast_t in
+  match meth_decl with
+  | FunctionDecl (decl_info, name_info, _, fdi) ->
+      let name = CAst_utils.get_qualified_name name_info in
+      let function_info = Some (decl_info, fdi) in
+      mk_c_function ~is_cpp ?tenv name function_info
+  | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
+      let mangled = get_mangled_method_name fdi mdi in
+      let method_name = CAst_utils.get_unqualified_name name_info in
+      let class_typename = get_class_typename ?tenv decl_info in
+      mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
+  | ObjCMethodDecl (decl_info, name_info, mdi) ->
+      objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi
+  | BlockDecl _ ->
+      let name =
+        Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep
+        ^ string_of_int (get_fresh_block_index ())
+      in
+      Typ.Procname.mangled_objc_block name
+  | _ ->
+      Logging.die InternalError "Expected method decl, but got %s."
+        (Clang_ast_proj.get_decl_kind_string meth_decl)
+
+
+and get_struct_methods struct_decl tenv =
+  let open Clang_ast_t in
+  List.filter_map (get_struct_decls struct_decl) ~f:(fun decl ->
+      match decl with
+      | FunctionDecl _
+      | CXXMethodDecl _
+      | CXXConstructorDecl _
+      | CXXConversionDecl _
+      | CXXDestructorDecl _
+      | ObjCMethodDecl _
+      | BlockDecl _ ->
+          Some (from_decl ~is_cpp:true ~tenv decl)
+      | _ ->
+          None )
+
+
+and get_record_struct_type tenv definition_decl : Typ.desc =
+  let open Clang_ast_t in
+  match definition_decl with
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
+  | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
+  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info)
+    -> (
+      let sil_typename = get_record_typename ~tenv definition_decl in
+      let sil_desc = Typ.Tstruct sil_typename in
+      match Tenv.lookup tenv sil_typename with
+      | Some _ ->
+          sil_desc (* just reuse what is already in tenv *)
       | None ->
-          ""
-    in
-    let mangled_opt =
-      match function_decl_info_opt with
-      | Some (_, function_decl_info) ->
-          function_decl_info.Clang_ast_t.fdi_mangled_name
-      | _ ->
-          None
-    in
-    let mangled_name = match mangled_opt with Some m when is_cpp -> m | _ -> "" in
-    let template_info, is_generic_model =
-      match (function_decl_info_opt, tenv) with
-      | Some (decl_info, function_decl_info), Some t ->
-          (get_template_info t function_decl_info, is_decl_info_generic_model decl_info)
-      | _ ->
-          (Typ.NoTemplate, false)
-    in
-    let mangled = file ^ mangled_name in
-    if String.is_empty mangled then
-      Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-    else Typ.Procname.C (Typ.Procname.c name mangled template_info ~is_generic_model)
-
-
-  let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
-    let open Clang_ast_t in
-    let method_kind =
-      match meth_decl with
-      | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
-          Typ.Procname.ObjC_Cpp.CPPConstructor {mangled; is_constexpr= xmdi_is_constexpr}
-      | Some (Clang_ast_t.CXXDestructorDecl _) ->
-          Typ.Procname.ObjC_Cpp.CPPDestructor {mangled}
-      | _ ->
-          Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
-    in
-    let template_info, is_generic_model =
-      match meth_decl with
-      | Some (CXXMethodDecl (di, _, _, fdi, _))
-      | Some (CXXConstructorDecl (di, _, _, fdi, _))
-      | Some (CXXConversionDecl (di, _, _, fdi, _))
-      | Some (CXXDestructorDecl (di, _, _, fdi, _)) ->
-          let templ_info =
-            match tenv with Some t -> get_template_info t fdi | None -> Typ.NoTemplate
+          let is_translatable_definition =
+            let open Clang_ast_t in
+            record_decl_info.rdi_is_complete_definition
+            && not record_decl_info.rdi_is_dependent_type
           in
-          let is_gen_model =
-            is_decl_info_generic_model di
-            || (* read whether parent class is annoatated as generic model *)
-               di.di_parent_pointer |> Option.value_map ~f:CAst_utils.get_decl ~default:None
-               |> Option.map ~f:Clang_ast_proj.get_decl_tuple
-               |> Option.value_map ~f:is_decl_info_generic_model ~default:false
-          in
-          (templ_info, is_gen_model)
-      | _ ->
-          (Typ.NoTemplate, false)
-    in
-    Typ.Procname.ObjC_Cpp
-      (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info
-         ~is_generic_model)
+          if is_translatable_definition then (
+            CAst_utils.update_sil_types_map type_ptr sil_desc ;
+            let fields = get_struct_fields tenv definition_decl in
+            (* Note: We treat static field same as global variables *)
+            let statics = [] in
+            let methods = get_struct_methods definition_decl tenv in
+            let supers = get_superclass_list_cpp tenv definition_decl in
+            let annots =
+              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
+              else (* No annotations for structs *) Annot.Item.empty
+            in
+            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename |> ignore ;
+            CAst_utils.update_sil_types_map type_ptr sil_desc ;
+            sil_desc )
+          else (
+            (* There is no definition for that struct in whole translation unit.
+                Put empty struct into tenv to prevent backend problems *)
+            ignore (Tenv.mk_struct tenv ~fields:[] sil_typename) ;
+            CAst_utils.update_sil_types_map type_ptr sil_desc ;
+            sil_desc ) )
+  | _ ->
+      assert false
 
 
-  let mk_objc_method class_typename method_name method_kind =
-    Typ.Procname.ObjC_Cpp
-      (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate
-         ~is_generic_model:false)
+module CProcname = struct
+  let from_decl = from_decl
 
+  (* silly, but required to avoid circular dependencies *)
+
+  let reset_block_counter () = block_counter := 0
 
   let block_procname_with_index defining_proc i =
     Config.anonymous_block_prefix ^ Typ.Procname.to_string defining_proc
     ^ Config.anonymous_block_num_sep ^ string_of_int i
 
 
-  (** Global counter for anonymous block*)
-  let block_counter = ref 0
-
-  let reset_block_counter () = block_counter := 0
-
-  let get_fresh_block_index () =
-    block_counter := !block_counter + 1 ;
-    !block_counter
-
-
   let mk_fresh_block_procname defining_proc =
     let name = block_procname_with_index defining_proc (get_fresh_block_index ()) in
     Typ.Procname.mangled_objc_block name
-
-
-  let get_class_typename ?tenv method_decl_info =
-    let class_ptr = Option.value_exn method_decl_info.Clang_ast_t.di_parent_pointer in
-    match CAst_utils.get_decl class_ptr with
-    | Some class_decl ->
-        get_record_typename ?tenv class_decl
-    | None ->
-        CFrontend_config.incorrect_assumption __POS__ method_decl_info.Clang_ast_t.di_source_range
-          "Expecting class declaration when getting the class typename"
 
 
   module NoAstDecl = struct
@@ -550,41 +602,6 @@ module CProcname = struct
     let objc_method_of_string_kind class_name method_name method_kind =
       mk_objc_method class_name method_name method_kind
   end
-
-  let objc_method_procname ?tenv decl_info method_name mdi =
-    let class_typename = get_class_typename ?tenv decl_info in
-    let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-    let method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
-    mk_objc_method class_typename method_name method_kind
-
-
-  let from_decl ?tenv ~is_cpp meth_decl =
-    let open Clang_ast_t in
-    match meth_decl with
-    | FunctionDecl (decl_info, name_info, _, fdi) ->
-        let name = CAst_utils.get_qualified_name name_info in
-        let function_info = Some (decl_info, fdi) in
-        mk_c_function ~is_cpp ?tenv name function_info
-    | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
-    | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
-    | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
-    | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
-        let mangled = get_mangled_method_name fdi mdi in
-        let method_name = CAst_utils.get_unqualified_name name_info in
-        let class_typename = get_class_typename ?tenv decl_info in
-        mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
-    | ObjCMethodDecl (decl_info, name_info, mdi) ->
-        objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi
-    | BlockDecl _ ->
-        let name =
-          Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep
-          ^ string_of_int (get_fresh_block_index ())
-        in
-        Typ.Procname.mangled_objc_block name
-    | _ ->
-        Logging.die InternalError "Expected method decl, but got %s."
-          (Clang_ast_proj.get_decl_kind_string meth_decl)
-
 
   let from_decl_for_linters ~is_cpp method_decl =
     let open Clang_ast_t in
