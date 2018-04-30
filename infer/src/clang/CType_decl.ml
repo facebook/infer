@@ -102,17 +102,89 @@ let get_record_definition decl =
       decl
 
 
+let get_struct_decls decl =
+  let open Clang_ast_t in
+  match decl with
+  | CapturedDecl (_, decl_list, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
+  | EnumDecl (_, _, _, decl_list, _, _, _)
+  | LinkageSpecDecl (_, decl_list, _)
+  | NamespaceDecl (_, _, decl_list, _, _)
+  | ObjCCategoryDecl (_, _, decl_list, _, _)
+  | ObjCCategoryImplDecl (_, _, decl_list, _, _)
+  | ObjCImplementationDecl (_, _, decl_list, _, _)
+  | ObjCInterfaceDecl (_, _, decl_list, _, _)
+  | ObjCProtocolDecl (_, _, decl_list, _, _)
+  | RecordDecl (_, _, _, decl_list, _, _, _)
+  | TranslationUnitDecl (_, decl_list, _, _) ->
+      decl_list
+  | AccessSpecDecl _
+  | BlockDecl _
+  | ClassScopeFunctionSpecializationDecl _
+  | EmptyDecl _
+  | ExportDecl _
+  | ExternCContextDecl _
+  | FileScopeAsmDecl _
+  | FriendDecl _
+  | FriendTemplateDecl _
+  | ImportDecl _
+  | LabelDecl _
+  | NamespaceAliasDecl _
+  | ObjCCompatibleAliasDecl _
+  | ObjCMethodDecl _
+  | ObjCPropertyDecl _
+  | BuiltinTemplateDecl _
+  | ClassTemplateDecl _
+  | FunctionTemplateDecl _
+  | TypeAliasTemplateDecl _
+  | VarTemplateDecl _
+  | TemplateTemplateParmDecl _
+  | TemplateTypeParmDecl _
+  | ObjCTypeParamDecl _
+  | TypeAliasDecl _
+  | TypedefDecl _
+  | UnresolvedUsingTypenameDecl _
+  | UsingDecl _
+  | UsingDirectiveDecl _
+  | UsingPackDecl _
+  | UsingShadowDecl _
+  | ConstructorUsingShadowDecl _
+  | BindingDecl _
+  | FieldDecl _
+  | ObjCAtDefsFieldDecl _
+  | ObjCIvarDecl _
+  | FunctionDecl _
+  | CXXDeductionGuideDecl _
+  | CXXMethodDecl _
+  | CXXConstructorDecl _
+  | CXXConversionDecl _
+  | CXXDestructorDecl _
+  | MSPropertyDecl _
+  | NonTypeTemplateParmDecl _
+  | VarDecl _
+  | DecompositionDecl _
+  | ImplicitParamDecl _
+  | OMPCapturedExprDecl _
+  | ParmVarDecl _
+  | VarTemplateSpecializationDecl _
+  | VarTemplatePartialSpecializationDecl _
+  | EnumConstantDecl _
+  | IndirectFieldDecl _
+  | OMPDeclareReductionDecl _
+  | UnresolvedUsingValueDecl _
+  | OMPThreadPrivateDecl _
+  | ObjCPropertyImplDecl _
+  | PragmaCommentDecl _
+  | PragmaDetectMismatchDecl _
+  | StaticAssertDecl _ ->
+      []
+
+
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
-  let decl_list =
-    match decl with
-    | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
-    | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
-    | RecordDecl (_, _, _, decl_list, _, _, _) ->
-        decl_list
-    | _ ->
-        []
-  in
+  let decl_list = get_struct_decls decl in
   let class_tname = get_record_typename ~tenv decl in
   let do_one_decl decl =
     match decl with
