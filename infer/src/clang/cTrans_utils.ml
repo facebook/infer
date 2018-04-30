@@ -380,7 +380,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let call_flags = {CallFlags.default with CallFlags.cf_virtual= is_instance} in
   let method_kind = ProcAttributes.OBJC_INSTANCE in
   let pname =
-    CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
+    CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
       Typ.Procname.ObjC_Cpp.ObjCInstanceMethod
   in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname method_kind None ;

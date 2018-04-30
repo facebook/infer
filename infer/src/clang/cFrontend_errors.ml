@@ -441,7 +441,7 @@ let log_frontend_issue ~is_cpp method_decl_opt (node: Ctl_parser_types.ast_node)
   let procname =
     match method_decl_opt with
     | Some method_decl ->
-        CProcname.from_decl_for_linters ~is_cpp method_decl
+        CType_decl.CProcname.from_decl_for_linters ~is_cpp method_decl
     | None ->
         Typ.Procname.Linters_dummy_method
   in

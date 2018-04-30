@@ -50,14 +50,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params
           in
-          CProcname.NoAstDecl.objc_method_of_string_kind class_name selector objc_method_kind
+          CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind class_name selector
+            objc_method_kind
     in
     let predefined_ms_opt =
       match proc_name with
       | Typ.Procname.ObjC_Cpp objc_cpp ->
           let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
+            CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
       | _ ->
           None
     in
@@ -2629,7 +2630,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
-        let block_pname = CProcname.mk_fresh_block_procname procname in
+        let block_pname = CType_decl.CProcname.mk_fresh_block_procname procname in
         let captured_pvars =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables
