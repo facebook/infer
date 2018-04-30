@@ -186,17 +186,18 @@ let get_init_list_instrs method_decl_info =
 
 let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   let open Clang_ast_t in
+  let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
   match (meth_decl, block_data_opt) with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let func_decl = Func_decl_info (fdi, qt) in
-      let procname = CProcname.from_decl trans_unit_ctx ~tenv meth_decl in
+      let procname = CProcname.from_decl ~is_cpp ~tenv meth_decl in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
       (ms, fdi.Clang_ast_t.fdi_body, [])
   | CXXMethodDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
-      let procname = CProcname.from_decl trans_unit_ctx ~tenv meth_decl in
+      let procname = CProcname.from_decl ~is_cpp ~tenv meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -208,7 +209,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       (* it will be empty for methods *)
       (ms, fdi.Clang_ast_t.fdi_body, init_list_instrs)
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
-      let procname = CProcname.from_decl trans_unit_ctx ~tenv meth_decl in
+      let procname = CProcname.from_decl ~is_cpp ~tenv meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -658,8 +659,8 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
             ( CProcname.NoAstDecl.cpp_method_of_string context.tenv class_name name
             , ProcAttributes.CPP_INSTANCE )
         | None ->
-            ( CProcname.NoAstDecl.c_function_of_string context.translation_unit_context
-                context.tenv name
+            let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
+            ( CProcname.NoAstDecl.c_function_of_string ~is_cpp context.tenv name
             , ProcAttributes.C_FUNCTION )
       in
       create_external_procdesc context.cfg callee_name method_kind None ;

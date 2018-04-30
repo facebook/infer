@@ -9,13 +9,11 @@
 
 open! IStd
 
-val from_decl :
-  CFrontend_config.translation_unit_context -> ?tenv:Tenv.t -> Clang_ast_t.decl -> Typ.Procname.t
+val from_decl : ?tenv:Tenv.t -> is_cpp:bool -> Clang_ast_t.decl -> Typ.Procname.t
 (** Given decl, return its procname. This function should be used for all procedures
     present in original AST *)
 
-val from_decl_for_linters :
-  CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> Typ.Procname.t
+val from_decl_for_linters : is_cpp:bool -> Clang_ast_t.decl -> Typ.Procname.t
 (** This is used for bug hashing for linters. In ObjC the method names contain the parameter names,
     thus if people add new parameters, any bug about the method will be considered different which means
     reporting on unchanged code. So, in the ObjC method case, we create the method name only based on the
@@ -23,8 +21,7 @@ val from_decl_for_linters :
 
 (** WARNING: functions from this module should not be used if full decl is available in AST *)
 module NoAstDecl : sig
-  val c_function_of_string :
-    CFrontend_config.translation_unit_context -> Tenv.t -> string -> Typ.Procname.t
+  val c_function_of_string : is_cpp:bool -> Tenv.t -> string -> Typ.Procname.t
 
   val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Typ.Procname.t
 

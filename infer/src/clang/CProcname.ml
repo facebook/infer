@@ -52,7 +52,7 @@ let is_decl_info_generic_model {Clang_ast_t.di_attributes} =
   List.exists ~f di_attributes
 
 
-let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
+let mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
   let file =
     match function_decl_info_opt with
     | Some (decl_info, function_decl_info) -> (
@@ -80,13 +80,7 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
     | _ ->
         None
   in
-  let mangled_name =
-    match mangled_opt with
-    | Some m when CGeneral_utils.is_cpp_translation translation_unit_context ->
-        m
-    | _ ->
-        ""
-  in
+  let mangled_name = match mangled_opt with Some m when is_cpp -> m | _ -> "" in
   let template_info, is_generic_model =
     match (function_decl_info_opt, tenv) with
     | Some (decl_info, function_decl_info), Some t ->
@@ -172,9 +166,9 @@ let get_class_typename ?tenv method_decl_info =
 
 
 module NoAstDecl = struct
-  let c_function_of_string translation_unit_context tenv name =
+  let c_function_of_string ~is_cpp tenv name =
     let qual_name = QualifiedCppName.of_qual_string name in
-    mk_c_function translation_unit_context ~tenv qual_name None
+    mk_c_function ~is_cpp ~tenv qual_name None
 
 
   let cpp_method_of_string tenv class_name method_name =
@@ -192,13 +186,13 @@ let objc_method_procname ?tenv decl_info method_name mdi =
   mk_objc_method class_typename method_name method_kind
 
 
-let from_decl translation_unit_context ?tenv meth_decl =
+let from_decl ?tenv ~is_cpp meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
       let function_info = Some (decl_info, fdi) in
-      mk_c_function translation_unit_context ?tenv name function_info
+      mk_c_function ~is_cpp ?tenv name function_info
   | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
@@ -220,7 +214,7 @@ let from_decl translation_unit_context ?tenv meth_decl =
         (Clang_ast_proj.get_decl_kind_string meth_decl)
 
 
-let from_decl_for_linters translation_unit_context method_decl =
+let from_decl_for_linters ~is_cpp method_decl =
   let open Clang_ast_t in
   match method_decl with
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
@@ -233,4 +227,4 @@ let from_decl_for_linters translation_unit_context method_decl =
       in
       objc_method_procname decl_info method_name mdi
   | _ ->
-      from_decl translation_unit_context method_decl
+      from_decl ~is_cpp method_decl
