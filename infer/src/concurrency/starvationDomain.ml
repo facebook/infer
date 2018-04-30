@@ -41,7 +41,10 @@ module LockIdentity = struct
 
 
   let pp fmt (((_, typ), _) as lock) =
-    F.fprintf fmt "Locks %a in class %a" AccessPath.pp lock (Typ.pp_full Pp.text) typ
+    F.fprintf fmt "locks `%a` in class `%a`" AccessPath.pp lock (Typ.pp_full Pp.text) typ
+
+
+  let owner_class ((_, typ), _) = Typ.inner_name typ
 end
 
 module LockEvent = struct
@@ -92,15 +95,6 @@ module LockEvent = struct
     F.fprintf fmt "%a at %a%a" pp_event e.event Location.pp e.loc pp_trace e.trace
 
 
-  let owner_class e =
-    match e.event with
-    | LockAcquire lock ->
-        let (_, typ), _ = lock in
-        Typ.inner_name typ
-    | _ ->
-        None
-
-
   let make_acquire lock loc = {event= LockAcquire lock; loc; trace= []}
 
   let make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
@@ -136,8 +130,6 @@ module LockOrder = struct
         F.fprintf fmt "first %a, and before releasing it, %a" LockEvent.pp lock LockEvent.pp
           o.eventually
 
-
-  let get_pair elem = match elem.first with None -> None | Some b -> Some (b, elem.eventually)
 
   let may_deadlock elem elem' =
     match (elem.first, elem'.first) with

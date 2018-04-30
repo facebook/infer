@@ -105,7 +105,9 @@ let all_checkers =
     }
   ; { name= "Starvation analysis"
     ; active= Config.starvation
-    ; callbacks= [(Procedure Starvation.analyze_procedure, Language.Java)] } ]
+    ; callbacks=
+        [ (Procedure Starvation.analyze_procedure, Language.Java)
+        ; (Cluster Starvation.reporting, Language.Java) ] } ]
 
 
 let get_active_checkers () =

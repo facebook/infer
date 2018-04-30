@@ -100,49 +100,6 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
-(* To allow on-demand reporting for deadlocks, we look for order pairs of the form (A,B)
-   where A belongs to the current class and B is potentially another class.  To avoid
-   quadratic/double reporting (ie when we actually analyse B), we allow the check
-   only if the current class is ordered greater or equal to the callee class.  *)
-let should_skip_during_deadlock_reporting _ _ = false
-
-(* currently short-circuited until non-determinism in reporting is dealt with *)
-(* Typ.Name.compare current_class eventually_class < 0 *)
-(* let false_if_none a ~f = Option.value_map a ~default:false ~f *)
-(* if same class, report only if the locks order in one of the possible ways *)
-let should_report_if_same_class _ = true
-
-(* currently short-circuited until non-determinism in reporting is dealt with *)
-(* StarvationDomain.(
-    LockOrder.get_pair caller_elem
-    |> false_if_none ~f:(fun (b, a) ->
-           let b_class_opt, a_class_opt = (LockEvent.owner_class b, LockEvent.owner_class a) in
-           false_if_none b_class_opt ~f:(fun first_class ->
-               false_if_none a_class_opt ~f:(fun eventually_class ->
-                   not (Typ.Name.equal first_class eventually_class) || LockEvent.compare b a >= 0
-               ) ) )) *)
-
-let make_trace_with_header ?(header= "") elem start_loc pname =
-  let trace = StarvationDomain.LockOrder.make_loc_trace elem in
-  let first_step = List.hd_exn trace in
-  if Location.equal first_step.Errlog.lt_loc start_loc then
-    let trace_descr = header ^ first_step.Errlog.lt_description in
-    Errlog.make_trace_element 0 start_loc trace_descr [] :: List.tl_exn trace
-  else
-    let trace_descr = Format.asprintf "%sMethod start: %a" header Typ.Procname.pp pname in
-    Errlog.make_trace_element 0 start_loc trace_descr [] :: trace
-
-
-let make_loc_trace pname trace_id start_loc elem =
-  let header = Printf.sprintf "[Trace %d] " trace_id in
-  make_trace_with_header ~header elem start_loc pname
-
-
-let get_summary caller_pdesc callee_pdesc =
-  Summary.read_summary caller_pdesc (Procdesc.get_proc_name callee_pdesc)
-  |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
-
-
 let get_class_of_pname = function
   | Typ.Procname.Java java_pname ->
       Some (Typ.Procname.Java.get_class_type_name java_pname)
@@ -150,86 +107,7 @@ let get_class_of_pname = function
       None
 
 
-let report_deadlocks get_proc_desc tenv pdesc (summary, _) =
-  let open StarvationDomain in
-  let process_callee_elem caller_pdesc caller_elem callee_pdesc elem =
-    if LockOrder.may_deadlock caller_elem elem && should_report_if_same_class caller_elem then (
-      debug "Possible deadlock:@.%a@.%a@." LockOrder.pp caller_elem LockOrder.pp elem ;
-      let caller_loc = Procdesc.get_loc caller_pdesc in
-      let callee_loc = Procdesc.get_loc callee_pdesc in
-      let caller_pname = Procdesc.get_proc_name caller_pdesc in
-      let callee_pname = Procdesc.get_proc_name callee_pdesc in
-      match
-        ( caller_elem.LockOrder.eventually.LockEvent.event
-        , elem.LockOrder.eventually.LockEvent.event )
-      with
-      | LockEvent.LockAcquire lock, LockEvent.LockAcquire lock' ->
-          let error_message =
-            Format.asprintf "Potential deadlock (%a ; %a)" LockIdentity.pp lock LockIdentity.pp
-              lock'
-          in
-          let exn =
-            Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
-          in
-          let first_trace = List.rev (make_loc_trace caller_pname 1 caller_loc caller_elem) in
-          let second_trace = make_loc_trace callee_pname 2 callee_loc elem in
-          let ltr = List.rev_append first_trace second_trace in
-          Specs.get_summary caller_pname
-          |> Option.iter ~f:(fun summary -> Reporting.log_error summary ~loc:caller_loc ~ltr exn)
-      | _, _ ->
-          () )
-  in
-  let report_pair current_class elem =
-    LockOrder.get_pair elem
-    |> Option.iter ~f:(fun (_, eventually) ->
-           LockEvent.owner_class eventually
-           |> Option.iter ~f:(fun eventually_class ->
-                  if should_skip_during_deadlock_reporting current_class eventually_class then ()
-                  else
-                    (* get the class of the root variable of the lock in the endpoint event
-                       and retrieve all the summaries of the methods of that class *)
-                    let class_of_eventual_lock =
-                      LockEvent.owner_class eventually |> Option.bind ~f:(Tenv.lookup tenv)
-                    in
-                    let methods =
-                      Option.value_map class_of_eventual_lock ~default:[] ~f:(fun tstruct ->
-                          tstruct.Typ.Struct.methods )
-                    in
-                    let proc_descs = List.rev_filter_map methods ~f:get_proc_desc in
-                    let summaries = List.rev_filter_map proc_descs ~f:(get_summary pdesc) in
-                    (* for each summary related to the endpoint, analyse and report on its pairs *)
-                    List.iter summaries ~f:(fun (callee_pdesc, (summary, _)) ->
-                        LockOrderDomain.iter (process_callee_elem pdesc elem callee_pdesc) summary
-                    ) ) )
-  in
-  Procdesc.get_proc_name pdesc |> get_class_of_pname
-  |> Option.iter ~f:(fun curr_class -> LockOrderDomain.iter (report_pair curr_class) summary)
-
-
-let report_direct_blocks_on_main_thread proc_desc summary =
-  let open StarvationDomain in
-  let report_pair ({LockOrder.eventually} as elem) =
-    match eventually with
-    | {LockEvent.event= LockEvent.MayBlock _} ->
-        let caller_loc = Procdesc.get_loc proc_desc in
-        let caller_pname = Procdesc.get_proc_name proc_desc in
-        let error_message =
-          Format.asprintf "UI-thread method may block; %a" LockEvent.pp_event
-            eventually.LockEvent.event
-        in
-        let exn =
-          Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
-        in
-        let ltr = make_trace_with_header elem caller_loc caller_pname in
-        Specs.get_summary caller_pname
-        |> Option.iter ~f:(fun summary -> Reporting.log_error summary ~loc:caller_loc ~ltr exn)
-    | _ ->
-        ()
-  in
-  LockOrderDomain.iter report_pair summary
-
-
-let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
+let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
@@ -252,14 +130,123 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
       StarvationDomain.set_on_main_thread initial
     else initial
   in
-  match Analyzer.compute_post proc_data ~initial with
-  | None ->
-      summary
-  | Some lock_state ->
-      let lock_order = StarvationDomain.to_summary lock_state in
-      let updated_summary = Summary.update_summary lock_order summary in
-      Option.iter updated_summary.Specs.payload.starvation
-        ~f:(report_deadlocks get_proc_desc tenv proc_desc) ;
-      Option.iter updated_summary.Specs.payload.starvation ~f:(fun (sum, main) ->
-          if main then report_direct_blocks_on_main_thread proc_desc sum ) ;
-      updated_summary
+  Analyzer.compute_post proc_data ~initial
+  |> Option.value_map ~default:summary ~f:(fun lock_state ->
+         let lock_order = StarvationDomain.to_summary lock_state in
+         Summary.update_summary lock_order summary )
+
+
+let get_summary caller_pdesc callee_pdesc =
+  Summary.read_summary caller_pdesc (Procdesc.get_proc_name callee_pdesc)
+  |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
+
+
+let make_trace_with_header ?(header= "") elem start_loc pname =
+  let trace = StarvationDomain.LockOrder.make_loc_trace elem in
+  let first_step = List.hd_exn trace in
+  if Location.equal first_step.Errlog.lt_loc start_loc then
+    let trace_descr = header ^ first_step.Errlog.lt_description in
+    Errlog.make_trace_element 0 start_loc trace_descr [] :: List.tl_exn trace
+  else
+    let trace_descr = Format.asprintf "%sMethod start: %a" header Typ.Procname.pp pname in
+    Errlog.make_trace_element 0 start_loc trace_descr [] :: trace
+
+
+let make_loc_trace pname trace_id start_loc elem =
+  let header = Printf.sprintf "[Trace %d] " trace_id in
+  make_trace_with_header ~header elem start_loc pname
+
+
+(*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
+         Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
+         this will fail when (a) the lock is of class type (ie as used in static sync methods), because
+         then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
+         inner class but this is no longer obvious in the path, because of nested-class path normalisation.
+         The net effect of the above issues is that we will only see these locks in conflicting pairs
+         once, as opposed to twice with all other deadlock pairs. *)
+let report_deadlocks get_proc_desc tenv current_pdesc (summary, _) =
+  let open StarvationDomain in
+  let current_loc = Procdesc.get_loc current_pdesc in
+  let current_pname = Procdesc.get_proc_name current_pdesc in
+  let report_endpoint_elem current_elem endpoint_pname endpoint_loc elem =
+    if LockOrder.may_deadlock current_elem elem then
+      let () = debug "Possible deadlock:@.%a@.%a@." LockOrder.pp current_elem LockOrder.pp elem in
+      match (current_elem.LockOrder.eventually, elem.LockOrder.eventually) with
+      | {LockEvent.event= LockAcquire _}, {LockEvent.event= LockAcquire _} ->
+          let error_message =
+            Format.asprintf
+              "Potential deadlock.@.Trace 1 (starts at %a), %a.@.Trace 2 (starts at %a), %a."
+              Typ.Procname.pp current_pname LockOrder.pp current_elem Typ.Procname.pp
+              endpoint_pname LockOrder.pp elem
+          in
+          let exn =
+            Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
+          in
+          let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
+          let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc elem in
+          let ltr = List.rev_append first_trace second_trace in
+          Reporting.log_error_deprecated ~store_summary:true current_pname ~loc:current_loc ~ltr
+            exn
+      | _, _ ->
+          ()
+  in
+  let report_on_current_elem elem =
+    match elem with
+    | {LockOrder.first= None} | {LockOrder.eventually= {LockEvent.event= LockEvent.MayBlock _}} ->
+        ()
+    | {LockOrder.eventually= {LockEvent.event= LockEvent.LockAcquire endpoint_lock}} ->
+      match LockIdentity.owner_class endpoint_lock with
+      | None ->
+          ()
+      | Some endpoint_class ->
+          (* get the class of the root variable of the lock in the endpoint event
+     and retrieve all the summaries of the methods of that class *)
+          let endpoint_tstruct = Tenv.lookup tenv endpoint_class in
+          let methods =
+            Option.value_map endpoint_tstruct ~default:[] ~f:(fun tstruct ->
+                tstruct.Typ.Struct.methods )
+          in
+          let endpoint_pdescs = List.rev_filter_map methods ~f:get_proc_desc in
+          let endpoint_summaries =
+            List.rev_filter_map endpoint_pdescs ~f:(get_summary current_pdesc)
+          in
+          (* for each summary related to the endpoint, analyse and report on its pairs *)
+          List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, _)) ->
+              let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
+              let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
+              LockOrderDomain.iter (report_endpoint_elem elem endpoint_pname endpoint_loc) summary
+          )
+  in
+  LockOrderDomain.iter report_on_current_elem summary
+
+
+let report_direct_blocks_on_main_thread proc_desc summary =
+  let open StarvationDomain in
+  let report_pair ({LockOrder.eventually} as elem) =
+    match eventually with
+    | {LockEvent.event= LockEvent.MayBlock _} ->
+        let current_loc = Procdesc.get_loc proc_desc in
+        let current_pname = Procdesc.get_proc_name proc_desc in
+        let error_message =
+          Format.asprintf "UI-thread method may block; %a" LockEvent.pp_event
+            eventually.LockEvent.event
+        in
+        let exn =
+          Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
+        in
+        let ltr = make_trace_with_header elem current_loc current_pname in
+        Reporting.log_error_deprecated ~store_summary:true current_pname ~loc:current_loc ~ltr exn
+    | _ ->
+        ()
+  in
+  LockOrderDomain.iter report_pair summary
+
+
+let reporting {Callbacks.procedures; get_proc_desc} =
+  let report_procedure (tenv, proc_desc) =
+    Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc)
+    |> Option.iter ~f:(fun ((s, main) as summary) ->
+           report_deadlocks get_proc_desc tenv proc_desc summary ;
+           if main then report_direct_blocks_on_main_thread proc_desc s )
+  in
+  List.iter procedures ~f:report_procedure

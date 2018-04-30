@@ -12,7 +12,12 @@ module F = Format
 
 (** Abstraction of a path that represents a lock, special-casing equality and comparisons
     to work over type, base variable modulo this and access list *)
-module LockIdentity : PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
+module LockIdentity : sig
+  include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
+
+  val owner_class : t -> Typ.name option
+  (** Class of the root variable of the path representing the lock *)
+end
 
 (** A lock event.  Equality/comparison disregards the call trace but includes location. *)
 module LockEvent : sig
@@ -23,9 +28,6 @@ module LockEvent : sig
   type t = private {event: event_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val owner_class : t -> Typ.name option
-  (** Class of the root variable of the path representing the lock *)
 end
 
 module LockState : AbstractDomain.WithBottom
@@ -39,9 +41,6 @@ module LockOrder : sig
   type t = private {first: LockEvent.t option; eventually: LockEvent.t}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val get_pair : t -> (LockEvent.t * LockEvent.t) option
-  (** return the pair (b, eventually) if first is Some b *)
 
   val may_deadlock : t -> t -> bool
   (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
