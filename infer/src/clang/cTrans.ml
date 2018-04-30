@@ -3103,7 +3103,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         arraySubscriptExpr_trans trans_state expr_info stmt_list
     | BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
         binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
-    | CallExpr (stmt_info, stmt_list, ei) ->
+    | CallExpr (stmt_info, stmt_list, ei) | UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
     | CXXMemberCallExpr (stmt_info, stmt_list, ei) ->
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
@@ -3306,9 +3306,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        sub-expressions *)
     | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         trans_into_undefined_expr trans_state expr_info
-    | ExtVectorElementExpr (_, stmts, _)
-    | ShuffleVectorExpr (_, stmts, _)
-    | UserDefinedLiteral (_, stmts, _) ->
+    | ExtVectorElementExpr (_, stmts, _) | ShuffleVectorExpr (_, stmts, _) ->
         skip_unimplemented trans_state stmts
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
