@@ -70,11 +70,12 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
      an integer offset, which is itself semantically ok though too low-level,
      but the translation of the argument expressions does not compute such
      offsets and instead passes the member pointer at type 'void'. *)
-  | `PtrMemD ->
-      (binop_exp Binop.PlusPI, [])
+  | `PtrMemD
   | `PtrMemI ->
-      let id = Ident.create_fresh Ident.knormal in
-      (Exp.BinOp (PlusPI, Exp.Var id, e2), [Sil.Load (id, e1, typ, loc)])
+      CFrontend_config.unimplemented __POS__ source_range
+        "Pointer-to-member constructs are unsupported. Got '%a'."
+        (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_info)
+        boi
   | `Add ->
       if Typ.is_pointer t1 then (binop_exp Binop.PlusPI, [])
       else if Typ.is_pointer t2 then (binop_exp ~change_order:true Binop.PlusPI, [])

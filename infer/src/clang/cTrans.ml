@@ -774,21 +774,30 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         res_trans
 
 
-  and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =
+  and decl_ref_trans ?(is_constructor_init= false) ~source trans_state stmt_info decl_ref =
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
-    match decl_kind with
-    | `EnumConstant ->
+    match (decl_kind, source) with
+    | `EnumConstant, _ ->
         enum_constant_trans trans_state decl_ref
-    | `Function ->
+    | `Function, _ ->
         function_deref_trans trans_state decl_ref
-    | `Var | `ImplicitParam | `ParmVar ->
+    | (`Var | `ImplicitParam | `ParmVar), _ ->
         var_deref_trans trans_state stmt_info decl_ref
-    | `Field | `ObjCIvar ->
+    | (`Field | `ObjCIvar), `MemberOrIvar pre_trans_result ->
+        (* a field outside of constructor initialization is probably a pointer to member, which we
+           do not support *)
         field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
-    | `CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor ->
+    | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
+        let pre_trans_result =
+          match source with
+          | `MemberOrIvar pre_trans_result ->
+              pre_trans_result
+          | `DeclRefExpr ->
+              empty_res_trans
+        in
         method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
         CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -808,7 +817,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           assert false
     in
-    decl_ref_trans trans_state empty_res_trans stmt_info decl_ref ~is_constructor_init:false
+    decl_ref_trans ~source:`DeclRefExpr trans_state stmt_info decl_ref
 
 
   (** evaluates an enum constant *)
@@ -899,10 +908,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
-    let bok =
-      Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind
-    in
-    L.(debug Capture Verbose) "  BinaryOperator '%s' " bok ;
+    L.(debug Capture Verbose)
+      "  BinaryOperator '%a' "
+      (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_kind)
+      binary_operator_info.Clang_ast_t.boi_kind ;
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
@@ -1157,7 +1166,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       else tmp_res_trans
     in
     let res_trans_callee =
-      decl_ref_trans trans_state this_res_trans si decl_ref ~is_constructor_init:false
+      decl_ref_trans ~source:(`MemberOrIvar this_res_trans) trans_state si decl_ref
     in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si
@@ -2385,7 +2394,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* int p = X(1).field; *)
     let trans_state' = {trans_state with var_exp_typ= None} in
     let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
-    decl_ref_trans trans_state result_trans_exp_stmt stmt_info decl_ref ~is_constructor_init:false
+    decl_ref_trans ~source:(`MemberOrIvar result_trans_exp_stmt) trans_state stmt_info decl_ref
 
 
   and objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info =
@@ -3447,8 +3456,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let class_typ = match this_typ.Typ.desc with Tptr (t, _) -> t | _ -> assert false in
           {this_res_trans with exps= [(this_exp, class_typ)]}
       | `Member decl_ref ->
-          decl_ref_trans trans_state' this_res_trans child_stmt_info decl_ref
-            ~is_constructor_init:true
+          decl_ref_trans ~is_constructor_init:true ~source:(`MemberOrIvar this_res_trans)
+            trans_state' child_stmt_info decl_ref
     in
     let var_exp_typ =
       extract_exp_from_list var_res_trans.exps

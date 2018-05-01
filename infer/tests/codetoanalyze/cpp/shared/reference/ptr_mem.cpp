@@ -29,9 +29,9 @@ struct List {
   E* E::*next_ptr;
 };
 
-int main() {
-  List<item> l(&item::next);
+void skip() { List<item> l(&item::next); }
 
+void noskip(List<item> l) {
   item i;
   l.add(&i);
   l.add_byref(i);
