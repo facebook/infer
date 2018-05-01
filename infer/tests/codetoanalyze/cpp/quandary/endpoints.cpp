@@ -20,23 +20,55 @@ extern std::string __infer_sql_sanitizer(std::string);
 
 extern void curl_easy_setopt(void*, int, ...);
 
+struct request {
+  std::string s;
+  int i;
+};
+
 namespace facebook {
 namespace fb303 {
 namespace cpp2 {
 
-class FacebookServiceSvIf {};
+class FacebookServiceSvIf {
+ public:
+  void service1_endpoint_bad(std::string formal);
+  void user_controlled_endpoint_to_sql_bad(std::string formal);
+  void unsanitized_sql_bad(std::string formal);
+  void sanitized_sql_with_shell_bad(std::string formal);
+  void service1_endpoint_sql_sanitized_bad(std::string formal);
+  void service1_endpoint_sql_read_bad(std::string formal);
+  void service1_endpoint_sql_write_bad(std::string formal);
+  void service1_endpoint_shell_sanitized_ok(std::string formal);
+  void service1_endpoint_struct_string_field_bad(request formal);
+  void open_or_create_c_style_file_bad(const char* filename);
+  void ofstream_open_file_bad(std::string filename);
+  void ifstream_open_file_bad(std::string filename);
+  void fstream_open_file_bad(std::string filename);
+  void endpoint_to_curl_url_bad(request formal);
+  void endpoint_to_curl_url_exp_bad(request formal);
+  void endpoint_to_curl_url_unknown_exp_bad(request formal, int i);
+  void endpoint_to_curl_other_const_ok(request formal);
+  void endpoint_to_curl_other_exp_ok(request formal);
+  void FP_service1_endpoint_struct_int_field_ok(request formal);
+  void service_this_ok();
+  void service_return_param_ok(std::string& _return);
+  void service3_endpoint_bad(std::string formal);
 
-class FacebookServiceSvAsyncIf {};
+ private:
+  void FP_private_not_endpoint_ok(std::string formal) {
+    system(formal.c_str());
+  }
+};
+
+class FacebookServiceSvAsyncIf {
+ public:
+  void service2_endpoint_bad(std::string formal);
+};
 } // namespace cpp2
 } // namespace fb303
 } // namespace facebook
 
 namespace endpoints {
-
-struct request {
-  std::string s;
-  int i;
-};
 
 class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
 
@@ -154,8 +186,18 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     system(_return.c_str());
   }
 
+  // shadows a private method of super; not an override, but we'll flag it as
+  // one because the code that checks for overrides can't see access modifiers.
+  void FP_private_not_endpoint_ok(std::string formal) {
+    system(formal.c_str());
+  }
+
+  // doesn't override a method from super
+  void non_override_ok(std::string formal) { system(formal.c_str()); }
+
  private:
-  void private_not_endpoint_ok(std::string formal) { system(formal.c_str()); }
+  // similar to above, but even easier
+  void private_non_override_ok(std::string formal) { system(formal.c_str()); }
 };
 
 class Service2 : facebook::fb303::cpp2::FacebookServiceSvAsyncIf {

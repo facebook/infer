@@ -279,27 +279,32 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
 
 
 let override_exists f tenv proc_name =
-  let rec super_type_exists tenv super_class_name =
-    let super_proc_name = Typ.Procname.replace_class proc_name super_class_name in
+  let method_name = Typ.Procname.get_method proc_name in
+  let rec super_type_exists_ tenv super_class_name =
     match Tenv.lookup tenv super_class_name with
     | Some {methods; supers} ->
         let is_override pname =
-          Typ.Procname.equal pname super_proc_name && not (Typ.Procname.is_constructor pname)
+          (* Note: very coarse! TODO: match parameter names/types to get an exact match *)
+          String.equal (Typ.Procname.get_method pname) method_name
+          && not (Typ.Procname.is_constructor pname)
         in
         List.exists ~f:(fun pname -> is_override pname && f pname) methods
-        || List.exists ~f:(super_type_exists tenv) supers
+        || List.exists ~f:(super_type_exists_ tenv) supers
     | _ ->
         false
+  in
+  let super_type_exists tenv type_name =
+    List.exists ~f:(super_type_exists_ tenv)
+      (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
   in
   f proc_name
   ||
   match proc_name with
   | Typ.Procname.Java proc_name_java ->
-      let type_name =
-        Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java)
-      in
-      List.exists ~f:(super_type_exists tenv)
-        (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
+      super_type_exists tenv
+        (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java))
+  | Typ.Procname.ObjC_Cpp proc_name_cpp ->
+      super_type_exists tenv (Typ.Procname.ObjC_Cpp.get_class_type_name proc_name_cpp)
   | _ ->
       false
 

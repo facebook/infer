@@ -133,16 +133,19 @@ module SourceKind = struct
     if PredSymb.equal_access (Procdesc.get_attributes pdesc).ProcAttributes.access PredSymb.Private
     then Source.all_formals_untainted pdesc
     else
-      let is_thrift_service cpp_pname =
-        let is_thrift_service_ typename _ =
-          match QualifiedCppName.to_list (Typ.Name.unqualified_name typename) with
-          | ["facebook"; "fb303"; "cpp2"; ("FacebookServiceSvIf" | "FacebookServiceSvAsyncIf")] ->
-              true
-          | _ ->
-              false
-        in
-        let typename = Typ.Procname.ObjC_Cpp.get_class_type_name cpp_pname in
-        PatternMatch.supertype_exists tenv is_thrift_service_ typename
+      let overrides_service_method pname tenv =
+        PatternMatch.override_exists
+          (function
+              | Typ.Procname.ObjC_Cpp cpp_pname ->
+                  let class_name = Typ.Procname.ObjC_Cpp.get_class_name cpp_pname in
+                  let res =
+                    String.is_suffix ~suffix:"SvIf" class_name
+                    || String.is_suffix ~suffix:"SvAsyncIf" class_name
+                  in
+                  res
+              | _ ->
+                  false)
+          tenv pname
       in
       (* taint all formals except for [this] *)
       let taint_all_but_this_and_return ~make_source =
@@ -170,7 +173,7 @@ module SourceKind = struct
           if String.Set.mem endpoints qualified_pname then
             taint_all_but_this_and_return ~make_source:(fun name desc ->
                 UserControlledEndpoint (name, desc) )
-          else if is_thrift_service cpp_pname then
+          else if overrides_service_method pname tenv then
             taint_all_but_this_and_return ~make_source:(fun name desc -> Endpoint (name, desc))
           else Source.all_formals_untainted pdesc
       | _ ->
