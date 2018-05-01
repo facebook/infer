@@ -930,3 +930,12 @@ let is_method_called_by_superclass an =
     match obj_c_message_expr_info.omei_receiver_kind with `SuperInstance -> true | _ -> false )
   | _ ->
       false
+
+
+let is_cxx_copy_constructor an =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Stmt (CXXConstructExpr (_, _, _, xcei)) ->
+      xcei.xcei_is_copy_constructor
+  | _ ->
+      false

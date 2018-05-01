@@ -181,3 +181,6 @@ val is_decl : Ctl_parser_types.ast_node -> bool
 val get_ast_node_type_ptr : Ctl_parser_types.ast_node -> Clang_ast_t.type_ptr option
 
 val is_method_called_by_superclass : Ctl_parser_types.ast_node -> bool
+
+val is_cxx_copy_constructor : Ctl_parser_types.ast_node -> bool
+(** true if the current node is a C++ copy constructor *)
