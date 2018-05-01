@@ -19,19 +19,23 @@ type continuation =
 
 type priority_node = Free | Busy of Clang_ast_t.pointer
 
+(** A translation state. It provides the translation function with the info it needs to carry on the
+   translation. *)
 type trans_state =
-  { context: CContext.t
-  ; succ_nodes: Procdesc.Node.t list
-  ; continuation: continuation option
+  { context: CContext.t  (** current context of the translation *)
+  ; succ_nodes: Procdesc.Node.t list  (** successor nodes in the cfg *)
+  ; continuation: continuation option  (** current continuation *)
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option }
 
+(** A translation result. It is returned by the translation function. *)
 type trans_result =
-  { root_nodes: Procdesc.Node.t list
-  ; leaf_nodes: Procdesc.Node.t list
+  { root_nodes: Procdesc.Node.t list  (** Top cfg nodes (root) created by the translation *)
+  ; leaf_nodes: Procdesc.Node.t list  (** Bottom cfg nodes (leaf) created by the translate *)
   ; instrs: Sil.instr list
-  ; exps: (Exp.t * Typ.t) list
+        (** list of SIL instruction that need to be placed in cfg nodes of the parent*)
+  ; exps: (Exp.t * Typ.t) list  (** SIL expressions resulting from translation of clang stmt *)
   ; initd_exps: Exp.t list
   ; is_cpp_call_virtual: bool }
 
@@ -40,6 +44,7 @@ val empty_res_trans : trans_result
 val undefined_expression : unit -> Exp.t
 
 val collect_res_trans : Procdesc.t -> trans_result list -> trans_result
+(** Collect the results of translating a list of instructions, and link up the nodes created. *)
 
 val is_return_temp : continuation option -> bool
 

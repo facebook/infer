@@ -17,7 +17,7 @@ open CTrans_utils.Nodes
 module L = Logging
 
 module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = struct
-  (* Returns the procname and whether is instance, according to the selector information and
+  (** Returns the procname and whether is instance, according to the selector information and
      according to the method signature with the following priority:
      1. method is a predefined model
      2. method is found by clang's resolution
@@ -106,11 +106,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     List.concat_map ~f:(fun res_trans -> res_trans.exps) res_trans_list
 
 
-  (* If e is a block and the calling node has the priority then *)
-  (* we need to release the priority to allow*)
-  (* creation of nodes inside the block.*)
-  (* At the end of block translation, we need to get the proirity back.*)
-  (* the parameter f will be called with function instruction *)
+  (* If e is a block and the calling node has the priority then we need to release the priority to
+     allow creation of nodes inside the block.  At the end of block translation, we need to get the
+     proirity back.  the parameter f will be called with function instruction *)
   let exec_with_block_priority_exception f trans_state e stmt_info =
     if is_block_expr e && PriorityNode.own_priority_node trans_state.priority stmt_info then (
       L.(debug Capture Verbose) "Translating block expression by freeing the priority" ;
@@ -148,8 +146,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   let add_reference_if_glvalue (typ: Typ.t) expr_info =
-    (* glvalue definition per C++11:*)
-    (* http://en.cppreference.com/w/cpp/language/value_category *)
+    (* glvalue definition per C++11:
+       http://en.cppreference.com/w/cpp/language/value_category *)
     let is_glvalue =
       match expr_info.Clang_ast_t.ei_value_kind with `LValue | `XValue -> true | `RValue -> false
     in
@@ -180,11 +178,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans with exps= [(exp, add_reference_if_glvalue typ expr_info)]}
 
 
-  (* Execute translation of e forcing to release priority
-     (if it's not free) and then setting it back.*)
-  (* This is used in conditional operators where we need to force
-     the priority to be free for the *)
-  (* computation of the expressions*)
+  (** Execute translation of e forcing to release priority (if it's not free) and then setting it
+     back. This is used in conditional operators where we need to force the priority to be free for
+     the computation of the expressions*)
   let exec_with_priority_exception trans_state e f =
     if PriorityNode.is_priority_free trans_state then f trans_state e
     else f {trans_state with priority= Free} e
@@ -267,7 +263,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with instrs= [call_instr']; exps= ret_exps; initd_exps}
 
 
-  (* Given a captured var, return the instruction to assign it to a temp *)
+  (** Given a captured var, return the instruction to assign it to a temp *)
   let assign_captured_var loc (cvar, typ) =
     let id = Ident.create_fresh Ident.knormal in
     let instr = Sil.Load (id, Exp.Lvar cvar, typ, loc) in
@@ -294,14 +290,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with exps= [(exp, typ)]}
 
 
-  (* FROM CLANG DOCS: "Implements the GNU __null extension,
-     which is a name for a null pointer constant *)
-     (* that has integral type (e.g., int or long) and is the same
-     size and alignment as a pointer. The __null *)
-     (* extension is typically  only used by system headers,
-     which define NULL as __null in C++ rather than using 0 *)
-     (* (which is an integer that may not match the size of a pointer)".
-     So we implement it as the constant zero *)
+  (** FROM CLANG DOCS: "Implements the GNU __null extension, which is a name for a null pointer
+     constant that has integral type (e.g., int or long) and is the same size and alignment as a
+     pointer. The __null extension is typically only used by system headers, which define NULL as
+     __null in C++ rather than using 0 (which is an integer that may not match the size of a
+     pointer)".  So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state expr_info =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cint IntLit.zero) in
@@ -345,8 +338,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with exps= [(exp, typ)]}
 
 
-  (* Note currently we don't have support for different qual     *)
-  (* type like long, unsigned long, etc                                *)
+  (* Note currently we don't have support for different qual type like long, unsigned long, etc. *)
   and integerLiteral_trans trans_state expr_info integer_literal_info =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp =
@@ -598,18 +590,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let extra_exps, extra_instrs =
       if is_instance_method then
         match
-          (* pre_trans_result.exps may contain expr for 'this' parameter:*)
-          (* if it comes from CXXMemberCallExpr it will be there *)
-          (* if it comes from CXXOperatorCallExpr it won't be there and will be added later *)
-          (* In case of CXXMemberCallExpr it's possible that type of 'this' parameter *)
-          (* won't have a pointer - if that happens add a pointer to type of the object *)
+          (* pre_trans_result.exps may contain expr for 'this' parameter: if it comes from
+             CXXMemberCallExpr it will be there if it comes from CXXOperatorCallExpr it won't be
+             there and will be added later In case of CXXMemberCallExpr it's possible that type of
+             'this' parameter won't have a pointer - if that happens add a pointer to type of the
+             object *)
           pre_trans_result.exps
         with
         | [] ->
             ([], [])
-        (* We need to add a dereference before a method call to find null dereferences when *)
-        (* calling a method with null *)
         | [(exp, {Typ.desc= Tptr (typ, _)})]
+        (* We need to add a dereference before a method call to find null dereferences when
+             calling a method with null *)
           when decl_kind <> `CXXConstructor ->
             let no_id = Ident.create_none () in
             let extra_instrs = [Sil.Load (no_id, exp, typ, sil_loc)] in
@@ -623,8 +615,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       else (* don't add 'this' expression for static methods *)
         ([], [])
     in
-    (* unlike field access, for method calls there is no need to expand class type *)
-    (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
+    (* unlike field access, for method calls there is no need to expand class type use qualified
+       method name for builtin matching, but use unqualified name elsewhere *)
     let qual_method_name = CAst_utils.get_qualified_name name_info in
     let pname =
       match get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt with
@@ -707,7 +699,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     dereference_value_from_result sil_loc {empty_res_trans with exps} ~strip_pointer:false
 
 
-  (* get the [this] of the current procedure *)
+  (** get the [this] of the current procedure *)
   let compute_this_expr trans_state stmt_info =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -730,8 +722,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     (* go ahead with the translation *)
     let res_trans =
-      match stmt_list with [stmt] -> instruction trans_state stmt | _ -> assert false
-      (* expected a stmt or at most a compoundstmt *)
+      match stmt_list with
+      | [stmt] ->
+          instruction trans_state stmt
+      | _ ->
+          (* expected a stmt or at most a compoundstmt *) assert false
     in
     (* create the label root node into the hashtbl *)
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -807,8 +802,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and declRefExpr_trans trans_state stmt_info decl_ref_expr_info _ =
     L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
+      "  priority node free = '%b'@\n@."
+      (PriorityNode.is_priority_free trans_state) ;
     let decl_ref =
       match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
       | Some dr ->
@@ -819,7 +814,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     decl_ref_trans trans_state empty_res_trans stmt_info decl_ref ~is_constructor_init:false
 
 
-  (* evaluates an enum constant *)
+  (** evaluates an enum constant *)
   and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
     match CAst_utils.get_decl enum_constant_pointer with
     | Some (Clang_ast_t.EnumConstantDecl (_, _, _, enum_constant_decl_info)) -> (
@@ -837,7 +832,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         zero
 
 
-  (* get the sil value of the enum constant from the map or by evaluating it *)
+  (** get the sil value of the enum constant from the map or by evaluating it *)
   and get_enum_constant_expr context enum_constant_pointer =
     let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
@@ -868,12 +863,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let array_stmt, idx_stmt =
       match stmt_list with
       | [a; i] ->
+          (* Assumption: the statement list contains 2 elements, the first is the array expr and the
+             second the index *)
           (a, i)
-      (* Assumption: the statement list contains 2 elements, the first is the array expr and the
-         second the index *)
       | _ ->
           assert false
-      (* Let's get notified if the assumption is wrong...*)
     in
     let res_trans_a = instruction trans_state array_stmt in
     let res_trans_idx = instruction trans_state idx_stmt in
@@ -1007,8 +1001,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
          BE FIXED"
     in
     let callee_pname_opt =
-      match sil_fe with Exp.Const (Const.Cfun pn) -> Some pn | _ -> None
-      (* function pointer *)
+      match sil_fe with Exp.Const (Const.Cfun pn) -> Some pn | _ -> (* function pointer *) None
     in
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
        them verbatim from a call to a different function, and they might be side-effecting *)
@@ -1179,8 +1172,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr ~is_inner_destructor =
-    (* cxx_method_construct_call_trans claims a priority with the same `si`.
-                    New pointer is generated to avoid premature node creation *)
+    (* cxx_method_construct_call_trans claims a priority with the same `si`. A new pointer is
+       generated to avoid premature node creation *)
     let si' = {si with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si' in
     let this_exp, this_typ =
@@ -1232,8 +1225,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     else None
 
 
-  (* If the first argument of the call is self in a static context, remove it as an argument *)
-  (* and change the call from instance to static *)
+  (** If the first argument of the call is self in a static context, remove it as an argument and
+     change the call from instance to static *)
   and objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info =
     match stmt_list with
     | stmt :: rest ->
@@ -1368,7 +1361,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (* compute `this` once that is used for all destructors of fields and base classes *)
       let obj_sil, this_qual_type, this_res_trans = compute_this_expr trans_state stmt_info_loc in
       (* ReturnStmt claims a priority with the same `stmt_info`.
-       New pointer is generated to avoid premature node creation *)
+         New pointer is generated to avoid premature node creation *)
       let stmt_info' =
         {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
       in
@@ -1526,7 +1519,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (* The GNU extension to the conditional operator which allows the middle operand to be omitted. *)
+  (** The GNU extension to the conditional operator which allows the middle operand to be
+     omitted. *)
   and binaryConditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     match stmt_list with
     | [stmt1; ostmt1; ostmt2; stmt2]
@@ -1557,9 +1551,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           "BinaryConditionalOperator not translated"
 
 
-  (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
-  (* The invariant is that the translation of a condition always contains (at least) *)
-  (* the prune nodes. Moreover these are always the leaf nodes of the translation. *)
+  (** Translate a condition for if/loops statement. It shorts-circuit and/or. The invariant is that
+     the translation of a condition always contains (at least) the prune nodes. Moreover these are
+     always the leaf nodes of the translation. *)
   and cond_trans ~if_kind ~negate_cond trans_state cond =
     let context = trans_state.context in
     let si, _ = Clang_ast_proj.get_stmt_tuple cond in
@@ -2017,7 +2011,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     loop_instruction trans_state dowhile_kind stmt_info
 
 
-  (* Iteration over colection
+  (** Iteration over collection
 
       for (v : C) { body; }
 
@@ -2047,7 +2041,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (* Fast iteration for colection
+  (** Fast iteration for colection
      for (type_it i in collection) { body }
      is translate as
      {
@@ -2111,11 +2105,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** InitListExpr can have following meanings:
-   - initialize all record fields
-   - initialize array
-   - initialize primitive type (int/flaot/pointer/...)
-   - perform zero initalization - http://en.cppreference.com/w/cpp/language/zero_initialization
-   Decision which case happens is based on the type of the InitListExpr
+      - initialize all record fields
+      - initialize array
+      - initialize primitive type (int/flaot/pointer/...)
+      - perform zero initalization - http://en.cppreference.com/w/cpp/language/zero_initialization
+      Decision which case happens is based on the type of the InitListExpr
   *)
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let var_exp, var_typ =
@@ -2197,7 +2191,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       with
       | Some (Clang_ast_t.VariableArrayType (_, _, stmt_pointer)) ->
           (* Set the dynamic length of the variable length array. Variable length array cannot
-               have an initialization expression. *)
+                 have an initialization expression. *)
           init_dynamic_array trans_state var_exp_typ var_stmt_info stmt_pointer
       | _ ->
           (* Nothing to do if no init expression and not a variable length array *)
@@ -2306,7 +2300,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match stmt_list with [stmt] -> instruction trans_state stmt | _ -> assert false
 
 
-  (* For OpaqueValueExpr we return the translation generated from its source expression*)
+  (** For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state opaque_value_expr_info source_range =
     L.(debug Capture Verbose)
       "  priority node free = '%s'@\n@."
@@ -2362,7 +2356,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (* Cast expression are treated the same apart from the cast operation kind*)
+  (** Cast expression are treated the same apart from the cast operation kind *)
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info =
     let context = trans_state.context in
     L.(debug Capture Verbose)
@@ -2383,7 +2377,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans_stmt with instrs= res_trans_stmt.instrs @ cast_inst; exps= [cast_exp]}
 
 
-  (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
+  (** function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref =
     let exp_stmt =
       extract_stmt_from_singleton stmt_list
@@ -2536,10 +2530,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     trans_result
 
 
-  (* We analyze the content of the expr. We treat ExprWithCleanups as a wrapper. *)
-  (*  It may be that later on (when we treat ARC) some info can be taken from it. *)
-  (* For ParenExpression we translate its body composed by the stmt_list.  *)
-  (* In paren expression there should be only one stmt that defines the  expression  *)
+  (** We analyze the content of the expr. We treat ExprWithCleanups as a wrapper. It may be that
+     later on (when we treat ARC) some info can be taken from it.  For ParenExpression we translate
+     its body composed by the stmt_list. In paren expression there should be only one stmt that
+     defines the expression *)
   and parenExpr_trans trans_state stmt_list =
     let stmt =
       extract_stmt_from_singleton stmt_list
@@ -2686,7 +2680,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | `LCK_This (* explicit with [this] or implicit with [&] *)
         | `LCK_VLAType
         (* capture a variable-length array by reference. we probably don't handle
-                          this correctly elsewhere, but it's definitely not captured by value! *) ->
+                            this correctly elsewhere, but it's definitely not captured by value! *) ->
             true
         | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
             (* [=] captures this by reference and everything else by value *)
@@ -2781,7 +2775,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           [init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt]
       | _ when is_dyn_array && Typ.is_pointer_to_cpp_class typ ->
           (* NOTE: this is heuristic to initialize C++ objects when the size of dynamic
-           array is constant, it doesn't do anything for non-const lengths, it should be translated as a loop *)
+             array is constant, it doesn't do anything for non-const lengths, it should be translated as a loop *)
           let rec create_stmts stmt_opt size_exp_opt =
             match (stmt_opt, size_exp_opt) with
             | Some stmt, Some (Exp.Const (Const.Cint n)) when not (IntLit.iszero n) ->
@@ -3087,9 +3081,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     call_function_with_args reason BuiltinDecl.__infer_skip trans_state stmts
 
 
-  (* Translates a clang instruction into SIL instructions. It takes a       *)
-  (* a trans_state containing current info on the translation and it returns *)
-  (* a result_state.*)
+  (** Translates a clang instruction into SIL instructions. It takes a a [trans_state] containing
+     current info on the translation and it returns a [trans_result].*)
   and instruction trans_state instr =
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
@@ -3150,8 +3143,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
     | DeclStmt (stmt_info, _, decl_list) ->
         declStmt_trans trans_state decl_list stmt_info
-    | DeclRefExpr (stmt_info, _, _, decl_ref_expr_info) as d ->
-        declRefExpr_trans trans_state stmt_info decl_ref_expr_info d
+    | DeclRefExpr (stmt_info, _, _, decl_ref_expr_info) ->
+        declRefExpr_trans trans_state stmt_info decl_ref_expr_info instr
     | ObjCPropertyRefExpr (_, stmt_list, _, _) ->
         objCPropertyRefExpr_trans trans_state stmt_list
     | CXXThisExpr (stmt_info, _, expr_info) ->
@@ -3428,7 +3421,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           instr
 
 
-  (* Function similar to instruction function, but it takes C++ constructor initializer as
+  (** Function similar to instruction function, but it takes C++ constructor initializer as
      an input parameter. *)
   and cxx_constructor_init_trans ctor_init trans_state =
     let context = trans_state.context in

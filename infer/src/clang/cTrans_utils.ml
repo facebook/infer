@@ -129,33 +129,26 @@ let mk_cond_continuation cont =
 
 type priority_node = Free | Busy of Clang_ast_t.pointer
 
-(* A translation state. It provides the translation function with the info*)
-(* it need to carry on the tranlsation. *)
+(** A translation state. It provides the translation function with the info it needs to carry on the
+   translation. *)
 type trans_state =
-  { context: CContext.t
-  ; (* current context of the translation *)
-    succ_nodes: Procdesc.Node.t list
-  ; (* successor nodes in the cfg *)
-    continuation: continuation option
-  ; (* current continuation *)
-    priority: priority_node
+  { context: CContext.t  (** current context of the translation *)
+  ; succ_nodes: Procdesc.Node.t list  (** successor nodes in the cfg *)
+  ; continuation: continuation option  (** current continuation *)
+  ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option }
 
-(* A translation result. It is returned by the translation function. *)
+(** A translation result. It is returned by the translation function. *)
 type trans_result =
-  { root_nodes: Procdesc.Node.t list
-  ; (* Top cfg nodes (root) created by the translation *)
-    leaf_nodes: Procdesc.Node.t list
-  ; (* Bottom cfg nodes (leaf) created by the translate *)
-    instrs: Sil.instr list
-  ; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
-    exps: (Exp.t * Typ.t) list
-  ; (* SIL expressions resulting from translation of clang stmt *)
-    initd_exps: Exp.t list
+  { root_nodes: Procdesc.Node.t list  (** Top cfg nodes (root) created by the translation *)
+  ; leaf_nodes: Procdesc.Node.t list  (** Bottom cfg nodes (leaf) created by the translate *)
+  ; instrs: Sil.instr list
+        (** list of SIL instruction that need to be placed in cfg nodes of the parent*)
+  ; exps: (Exp.t * Typ.t) list  (** SIL expressions resulting from translation of clang stmt *)
+  ; initd_exps: Exp.t list
   ; is_cpp_call_virtual: bool }
 
-(* Empty result translation *)
 let empty_res_trans =
   {root_nodes= []; leaf_nodes= []; instrs= []; exps= []; initd_exps= []; is_cpp_call_virtual= false}
 
@@ -187,18 +180,6 @@ let collect_res_trans pdesc l =
   {rt with instrs= List.rev rt.instrs; exps= List.rev rt.exps; initd_exps= List.rev rt.initd_exps}
 
 
-(* priority_node is used to enforce some kind of policy for creating nodes *)
-(* in the cfg. Certain elements of the AST must__ create nodes therefore   *)
-(* there is no need for them to use priority_node. Certain elements        *)
-(* instead need or need not to create a node depending of certain factors. *)
-(* When an element of the latter kind wants to create a node it must claim *)
-(* priority first (like taking a lock). priority can be claimes only when  *)
-(* it is free. If an element of AST succedes in claiming priority its id   *)
-(* (pointer) is recorded in priority. After an element has finished it     *)
-(* frees the priority. In general an AST element E checks if an ancestor   *)
-(* has claimed priority. If priority is already claimed E does not have to *)
-(* create a node. If priority is free then it means E has to create the    *)
-(* node. Then E claims priority and release it afterward.                  *)
 module PriorityNode = struct
   type t = priority_node
 
