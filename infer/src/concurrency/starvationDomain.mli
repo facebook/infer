@@ -17,6 +17,8 @@ module LockIdentity : sig
 
   val owner_class : t -> Typ.name option
   (** Class of the root variable of the path representing the lock *)
+
+  val equal : t -> t -> bool
 end
 
 (** A lock event.  Equality/comparison disregards the call trace but includes location. *)
