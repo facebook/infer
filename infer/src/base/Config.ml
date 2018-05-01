@@ -1558,7 +1558,6 @@ and ml_buckets =
 
 and modified_lines =
   CLOpt.mk_string ~long:"modified-lines" ~default:""
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
     "Specifies the file containing the modified lines when Infer is run Test Determinator mode. \
      --test-determinator --modified-lines modified_lines_file --profiler-sample \
      profiler_sample_file"
@@ -2032,7 +2031,6 @@ and symops_per_iteration =
 
 and test_determinator =
   CLOpt.mk_bool ~long:"test-determinator" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
     "Run infer in Test Determinator mode. It is used together with the --modified-lines and \
      --test-profiler flags  \n    \
      which speficy the relevant arguments. E.g. --test-determinator --modified-lines \
@@ -2046,7 +2044,6 @@ and test_filtering =
 
 and profiler_sample =
   CLOpt.mk_string ~long:"profiler-sample" ~default:""
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
     "Specifies the file containing the profiler sample when Infer is run Test Determinator mode. \
      --test-determinator --modified-lines modified_line_file --profiler-sample \
      profiler_sample_file"
