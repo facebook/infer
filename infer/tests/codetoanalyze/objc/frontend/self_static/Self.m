@@ -97,4 +97,14 @@
   } else
     return 0;
 }
+
+Class foo();
+
+BOOL class_method_in_conditional() {
+  Class c = foo();
+  if ([c class]) {
+    return YES;
+  }
+  return NO;
+}
 @end

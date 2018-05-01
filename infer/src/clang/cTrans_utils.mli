@@ -27,7 +27,8 @@ type trans_state =
   ; continuation: continuation option  (** current continuation *)
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
-  ; opaque_exp: (Exp.t * Typ.t) option }
+  ; opaque_exp: (Exp.t * Typ.t) option
+  ; is_fst_arg_objc_method_call: bool }
 
 (** A translation result. It is returned by the translation function. *)
 type trans_result =
@@ -40,6 +41,8 @@ type trans_result =
   ; is_cpp_call_virtual: bool }
 
 val empty_res_trans : trans_result
+
+val default_trans_state : CContext.t -> trans_state
 
 val undefined_expression : unit -> Exp.t
 

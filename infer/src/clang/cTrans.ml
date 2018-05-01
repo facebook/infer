@@ -136,13 +136,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      when they are the first argument of method calls. In that case they are not translated as
      expressions, but we take the type and create a static method call from it. This is done in
      objcMessageExpr_trans. *)
-  let exec_with_self_exception f trans_state stmt =
-    try f trans_state stmt with Self.SelfClassException e ->
-      let typ = Typ.mk (Tstruct e.class_name) in
-      { empty_res_trans with
-        exps=
-          [ ( Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-            , Typ.mk (Tint IULong) ) ] }
+  let sizeof_expr_class class_name =
+    let typ = Typ.mk (Tstruct class_name) in
+    ( Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+    , Typ.mk (Tint IULong) )
 
 
   let add_reference_if_glvalue (typ: Typ.t) expr_info =
@@ -756,15 +753,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     CContext.add_block_static_var context procname (pvar, typ) ;
     let var_exp = Exp.Lvar pvar in
     let exps =
-      if Self.is_var_self pvar (CContext.is_objc_method context) then
+      if Self.is_var_self pvar (CContext.is_objc_method context) && CType.is_class typ then
         let class_name = CContext.get_curr_class_typename stmt_info context in
-        if CType.is_class typ then
+        if trans_state.is_fst_arg_objc_method_call then
           raise
             (Self.SelfClassException
                {class_name; position= __POS__; source_range= stmt_info.Clang_ast_t.si_source_range})
         else
-          let typ = CType.add_pointer_to_typ (Typ.mk (Tstruct class_name)) in
-          [(var_exp, typ)]
+          let exp_typ = sizeof_expr_class class_name in
+          [exp_typ]
       else [(var_exp, typ)]
     in
     L.(debug Capture Verbose) "@\n@\n PVAR ='%s'@\n@\n" (Pvar.to_string pvar) ;
@@ -923,7 +920,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* NOTE: we create a node only if required. In that case this node *)
         (* becomes the successor of the nodes that may be created when     *)
         (* translating the operands.                                       *)
-        let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
+        let res_trans_e1 = instruction trans_state' s1 in
         let (var_exp, var_exp_typ) as e1_with_typ =
           extract_exp_from_list res_trans_e1.exps
             "@\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...@\n"
@@ -931,9 +928,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let trans_state'' = {trans_state' with var_exp_typ= Some e1_with_typ} in
         let res_trans_e2 =
           (* translation of s2 is done taking care of block special case *)
-          exec_with_block_priority_exception
-            (exec_with_self_exception instruction)
-            trans_state'' s2 stmt_info
+          exec_with_block_priority_exception instruction trans_state'' s2 stmt_info
         in
         let e2_with_typ =
           extract_exp_from_list res_trans_e2.exps
@@ -1015,7 +1010,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let result_trans_subexprs =
-      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
+      let instruction' = exec_with_glvalue_as_reference instruction in
       let res_trans_p = List.map ~f:(instruction' trans_state_param) params_stmt in
       res_trans_callee :: res_trans_p
     in
@@ -1075,7 +1070,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        parameter and collect the results afterwards. The 'instructions' function does not do that *)
     let result_trans_subexprs =
       let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
-      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
+      let instruction' = exec_with_glvalue_as_reference instruction in
       let res_trans_p = List.map ~f:(instruction' trans_state_param) params_stmt in
       result_trans_callee :: res_trans_p
     in
@@ -1204,12 +1199,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CMethod_trans.get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info
           act_params
       in
-      (* alloc or new *)
-      (* FIXME(t21762295): we do not expect this to propagate to the top but it does *)
-      raise
-        (Self.SelfClassException
-           {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
+      if trans_state.is_fst_arg_objc_method_call then
+        raise
+          (Self.SelfClassException
+             {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
+      else
+        let exp, typ = sizeof_expr_class class_name in
+        Some {empty_res_trans with exps= [(exp, typ)]}
     else if
+      (* alloc or new *)
       String.equal selector CFrontend_config.alloc
       || String.equal selector CFrontend_config.new_str
     then
@@ -1232,7 +1230,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | stmt :: rest ->
         let obj_c_message_expr_info, fst_res_trans =
           try
-            let fst_res_trans = instruction trans_state_param stmt in
+            let trans_state_param' = {trans_state_param with is_fst_arg_objc_method_call= true} in
+            let fst_res_trans = instruction trans_state_param' stmt in
             (obj_c_message_expr_info, fst_res_trans)
           with Self.SelfClassException e ->
             let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
@@ -1242,7 +1241,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             in
             (obj_c_message_expr_info, empty_res_trans)
         in
-        let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
+        let instruction' = exec_with_glvalue_as_reference instruction in
         let l = List.map ~f:(instruction' trans_state_param) rest in
         (obj_c_message_expr_info, fst_res_trans :: l)
     | [] ->
@@ -2208,9 +2207,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let trans_state' =
             {trans_state_pri with succ_nodes= []; var_exp_typ= Some var_exp_typ}
           in
-          let instruction' =
-            exec_with_self_exception (exec_with_glvalue_as_reference instruction)
-          in
+          let instruction' = exec_with_glvalue_as_reference instruction in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info
         in
         let sil_e1', ie_typ =
@@ -2496,7 +2493,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let trans_state' =
             {trans_state_pri with succ_nodes= []; var_exp_typ= Some (ret_exp, ret_typ)}
           in
-          let res_trans_stmt = exec_with_self_exception instruction trans_state' stmt in
+          let res_trans_stmt = instruction trans_state' stmt in
           let sil_expr, _ =
             extract_exp_from_list res_trans_stmt.exps
               "WARNING: There should be only one return expression.@\n"
@@ -2806,7 +2803,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let param = match stmt_list with [p] -> p | _ -> assert false in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = {trans_state_pri with succ_nodes= []} in
-    let result_trans_param = exec_with_self_exception instruction trans_state_param param in
+    let result_trans_param = instruction trans_state_param param in
     let exp =
       extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. @\n"
@@ -3505,27 +3502,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and expression_trans context stmt warning =
-    let trans_state =
-      { context
-      ; succ_nodes= []
-      ; continuation= None
-      ; priority= Free
-      ; var_exp_typ= None
-      ; opaque_exp= None }
-    in
+    let trans_state = CTrans_utils.default_trans_state context in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
 
 
   let instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper =
-    let trans_state =
-      { context
-      ; succ_nodes= [exit_node]
-      ; continuation= None
-      ; priority= Free
-      ; var_exp_typ= None
-      ; opaque_exp= None }
-    in
+    let default_trans_state = CTrans_utils.default_trans_state context in
+    let trans_state = {default_trans_state with succ_nodes= [exit_node]} in
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let is_destructor =
       match procname with

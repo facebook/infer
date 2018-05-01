@@ -33,12 +33,6 @@ let protect ~f ~recover ~pp_context (trans_unit_ctx: CFrontend_config.translatio
       ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
         e.source_range e.ast_node ;
       log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" e.msg
-  | CTrans_utils.Self.SelfClassException e ->
-      (* FIXME(t21762295): we do not expect this to happen but it does *)
-      Some (Typ.Name.to_string e.class_name)
-      |> ClangLogging.log_caught_exception trans_unit_ctx "SelfClassException" e.position
-           e.source_range ;
-      log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp e.class_name
   | exn ->
       let trace = Backtrace.get () in
       IExn.reraise_if exn ~f:(fun () ->

@@ -137,7 +137,8 @@ type trans_state =
   ; continuation: continuation option  (** current continuation *)
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
-  ; opaque_exp: (Exp.t * Typ.t) option }
+  ; opaque_exp: (Exp.t * Typ.t) option
+  ; is_fst_arg_objc_method_call: bool }
 
 (** A translation result. It is returned by the translation function. *)
 type trans_result =
@@ -151,6 +152,16 @@ type trans_result =
 
 let empty_res_trans =
   {root_nodes= []; leaf_nodes= []; instrs= []; exps= []; initd_exps= []; is_cpp_call_virtual= false}
+
+
+let default_trans_state context =
+  { context
+  ; succ_nodes= []
+  ; continuation= None
+  ; priority= Free
+  ; var_exp_typ= None
+  ; opaque_exp= None
+  ; is_fst_arg_objc_method_call= false }
 
 
 let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
