@@ -992,7 +992,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
-    let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* First stmt is the function expr and the rest are params *)
     let fun_exp_stmt, params_stmt =
@@ -1039,6 +1038,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if Int.equal (List.length params) (List.length params_stmt) then params
           else
             (* FIXME(t21762295) this is reachable *)
+            let procname = Procdesc.get_proc_name context.CContext.procdesc in
             CFrontend_config.incorrect_assumption __POS__ si.Clang_ast_t.si_source_range
               "In call to %a: stmt_list and res_trans_par.exps must have same size but they don't:@\n\
                stmt_list(%d)=[%a]@\n\
@@ -3082,8 +3082,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with exps= [(CTrans_utils.undefined_expression (), typ)]}
 
 
-  (* no-op translated for unsupported instructions that will at least translate subexpressions *)
-  and skip_unimplemented trans_state stmts = instructions trans_state stmts
+  (** no-op translated for unsupported instructions that will at least translate subexpressions *)
+  and skip_unimplemented ~reason trans_state stmts =
+    call_function_with_args reason BuiltinDecl.__infer_skip trans_state stmts
+
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -3306,8 +3308,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        sub-expressions *)
     | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         trans_into_undefined_expr trans_state expr_info
-    | ExtVectorElementExpr (_, stmts, _) | ShuffleVectorExpr (_, stmts, _) ->
-        skip_unimplemented trans_state stmts
+    | ExtVectorElementExpr (stmt_info, stmts, _) | ShuffleVectorExpr (stmt_info, stmts, _) ->
+        skip_unimplemented
+          ~reason:
+            (Printf.sprintf "unimplemented construct: %s"
+               (Clang_ast_proj.get_stmt_kind_string instr))
+          trans_state stmt_info stmts
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
     | SubstNonTypeTemplateParmExpr _

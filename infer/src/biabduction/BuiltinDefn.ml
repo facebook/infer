@@ -886,6 +886,8 @@ let __infer_assume = Builtin.register BuiltinDecl.__infer_assume execute___infer
 (* externally create new errors *)
 let __infer_fail = Builtin.register BuiltinDecl.__infer_fail execute___infer_fail
 
+let __infer_skip = Builtin.register BuiltinDecl.__infer_skip execute_skip
+
 (* [__instanceof(val,typ)] implements java's [val instanceof typ] *)
 let __instanceof = Builtin.register BuiltinDecl.__instanceof execute___instanceof
 

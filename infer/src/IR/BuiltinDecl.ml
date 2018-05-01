@@ -71,6 +71,8 @@ let __infer_assume = create_procname "__infer_assume"
 
 let __infer_fail = create_procname "__infer_fail"
 
+let __infer_skip = create_procname "__infer_skip"
+
 let __instanceof = create_procname "__instanceof"
 
 let __method_set_ignore_attribute = create_procname "__method_set_ignore_attribute"

@@ -50,6 +50,9 @@ module type S = sig
 
   val __infer_fail : t
 
+  val __infer_skip : t
+  (** used to represent behavior that is not modeled in infer *)
+
   val __instanceof : t
   (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
 
