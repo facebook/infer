@@ -182,17 +182,6 @@ let get_record_definition decl =
       decl
 
 
-let is_decl_info_generic_model {Clang_ast_t.di_attributes} =
-  let f = function
-    | Clang_ast_t.AnnotateAttr {ai_parameters= [_; name; _]}
-      when String.equal name "__infer_generic_model" ->
-        true
-    | _ ->
-        false
-  in
-  List.exists ~f di_attributes
-
-
 (** Global counter for anonymous block*)
 let block_counter = ref 0
 
@@ -203,8 +192,7 @@ let get_fresh_block_index () =
 
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate
-       ~is_generic_model:false)
+    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate)
 
 
 let rec get_mangled_method_name function_decl_info method_decl_info =
@@ -421,17 +409,17 @@ and mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
         None
   in
   let mangled_name = match mangled_opt with Some m when is_cpp -> m | _ -> "" in
-  let template_info, is_generic_model =
+  let template_info =
     match (function_decl_info_opt, tenv) with
-    | Some (decl_info, function_decl_info), Some t ->
-        (get_template_info t function_decl_info, is_decl_info_generic_model decl_info)
+    | Some (_, function_decl_info), Some t ->
+        get_template_info t function_decl_info
     | _ ->
-        (Typ.NoTemplate, false)
+        Typ.NoTemplate
   in
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then
     Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Typ.Procname.C (Typ.Procname.c name mangled template_info ~is_generic_model)
+  else Typ.Procname.C (Typ.Procname.c name mangled template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
@@ -445,28 +433,19 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
     | _ ->
         Typ.Procname.ObjC_Cpp.CPPMethod {mangled}
   in
-  let template_info, is_generic_model =
+  let template_info =
     match meth_decl with
-    | Some (CXXMethodDecl (di, _, _, fdi, _))
-    | Some (CXXConstructorDecl (di, _, _, fdi, _))
-    | Some (CXXConversionDecl (di, _, _, fdi, _))
-    | Some (CXXDestructorDecl (di, _, _, fdi, _)) ->
-        let templ_info =
-          match tenv with Some t -> get_template_info t fdi | None -> Typ.NoTemplate
-        in
-        let is_gen_model =
-          is_decl_info_generic_model di
-          || (* read whether parent class is annoatated as generic model *)
-             di.di_parent_pointer |> Option.value_map ~f:CAst_utils.get_decl ~default:None
-             |> Option.map ~f:Clang_ast_proj.get_decl_tuple
-             |> Option.value_map ~f:is_decl_info_generic_model ~default:false
-        in
-        (templ_info, is_gen_model)
+    | Some
+        ( CXXMethodDecl (_, _, _, fdi, _)
+        | CXXConstructorDecl (_, _, _, fdi, _)
+        | CXXConversionDecl (_, _, _, fdi, _)
+        | CXXDestructorDecl (_, _, _, fdi, _) ) -> (
+      match tenv with Some t -> get_template_info t fdi | None -> Typ.NoTemplate )
     | _ ->
-        (Typ.NoTemplate, false)
+        Typ.NoTemplate
   in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info ~is_generic_model)
+    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info)
 
 
 and get_class_typename ?tenv method_decl_info =

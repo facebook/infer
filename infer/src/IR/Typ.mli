@@ -370,14 +370,10 @@ module Procname : sig
 
     (** Type of Objective C and C++ procedure names: method signatures. *)
     type t =
-      { method_name: string
-      ; class_name: Name.t
-      ; kind: kind
-      ; template_args: template_spec_info
-      ; is_generic_model: bool }
+      {method_name: string; class_name: Name.t; kind: kind; template_args: template_spec_info}
     [@@deriving compare]
 
-    val make : Name.t -> string -> kind -> template_spec_info -> is_generic_model:bool -> t
+    val make : Name.t -> string -> kind -> template_spec_info -> t
     (** Create an objc procedure name from a class_name and method_name. *)
 
     val get_class_name : t -> string
@@ -413,10 +409,7 @@ module Procname : sig
 
   (** Type of c procedure names. *)
   type c = private
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; template_args: template_spec_info
-    ; is_generic_model: bool }
+    {name: QualifiedCppName.t; mangled: string option; template_args: template_spec_info}
 
   (** Type of Objective C block names. *)
   type block_name
@@ -459,7 +452,7 @@ module Procname : sig
 
   module SQLiteList : SqliteUtils.Data with type t = t list
 
-  val c : QualifiedCppName.t -> string -> template_spec_info -> is_generic_model:bool -> c
+  val c : QualifiedCppName.t -> string -> template_spec_info -> c
   (** Create a C procedure name from plain and mangled name. *)
 
   val empty_block : t

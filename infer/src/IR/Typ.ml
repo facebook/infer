@@ -733,15 +733,11 @@ module Procname = struct
     [@@deriving compare]
 
     type t =
-      { method_name: string
-      ; class_name: Name.t
-      ; kind: kind
-      ; template_args: template_spec_info
-      ; is_generic_model: bool }
+      {method_name: string; class_name: Name.t; kind: kind; template_args: template_spec_info}
     [@@deriving compare]
 
-    let make class_name method_name kind template_args ~is_generic_model =
-      {class_name; method_name; kind; template_args; is_generic_model}
+    let make class_name method_name kind template_args =
+      {class_name; method_name; kind; template_args}
 
 
     let get_class_name objc_cpp = Name.name objc_cpp.class_name
@@ -813,11 +809,7 @@ module Procname = struct
   end
 
   (** Type of c procedure names. *)
-  type c =
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; template_args: template_spec_info
-    ; is_generic_model: bool }
+  type c = {name: QualifiedCppName.t; mangled: string option; template_args: template_spec_info}
   [@@deriving compare]
 
   (** Type of Objective C block names. *)
@@ -847,16 +839,10 @@ module Procname = struct
 
   let empty_block = Block ""
 
-  let c name mangled template_args ~is_generic_model =
-    {name; mangled= Some mangled; template_args; is_generic_model}
-
+  let c name mangled template_args = {name; mangled= Some mangled; template_args}
 
   let from_string_c_fun (name: string) =
-    C
-      { name= QualifiedCppName.of_qual_string name
-      ; mangled= None
-      ; template_args= NoTemplate
-      ; is_generic_model= false }
+    C {name= QualifiedCppName.of_qual_string name; mangled= None; template_args= NoTemplate}
 
 
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
@@ -1111,21 +1097,7 @@ module Procname = struct
     Escape.escape_filename @@ DB.append_crc_cutoff ?crc_only proc_id
 
 
-  let to_generic_filename ?crc_only pname =
-    let proc_id =
-      get_qualifiers pname |> QualifiedCppName.strip_template_args |> QualifiedCppName.to_rev_list
-      |> String.concat ~sep:"#"
-    in
-    Escape.escape_filename @@ DB.append_crc_cutoff ?crc_only proc_id
-
-
-  let to_filename ?crc_only pname =
-    match pname with
-    | (C {is_generic_model} | ObjC_Cpp {is_generic_model}) when Bool.equal is_generic_model true ->
-        to_generic_filename ?crc_only pname
-    | _ ->
-        to_concrete_filename ?crc_only pname
-
+  let to_filename ?crc_only pname = to_concrete_filename ?crc_only pname
 
   module SQLite = struct
     let pname_to_key =
