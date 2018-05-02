@@ -201,11 +201,72 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           obj_c_property_impl_decl_info
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ ->
         ()
-    | _ ->
-        L.internal_error
-          "@\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED@\n@\n"
-          (Clang_ast_proj.get_decl_kind_string dec) ;
-        ()
+    | AccessSpecDecl _
+    | BlockDecl _
+    | CapturedDecl _
+    | ClassScopeFunctionSpecializationDecl _
+    | ExportDecl _
+    | ExternCContextDecl _
+    | FileScopeAsmDecl _
+    | FriendDecl _
+    | FriendTemplateDecl _
+    | ImportDecl _
+    | LinkageSpecDecl _
+    | LabelDecl _
+    | NamespaceDecl _
+    | NamespaceAliasDecl _
+    | ObjCCompatibleAliasDecl _
+    | ObjCCategoryDecl _
+    | ObjCCategoryImplDecl _
+    | ObjCImplementationDecl _
+    | ObjCInterfaceDecl _
+    | ObjCProtocolDecl _
+    | BuiltinTemplateDecl _
+    | ClassTemplateDecl _
+    | FunctionTemplateDecl _
+    | TypeAliasTemplateDecl _
+    | VarTemplateDecl _
+    | TemplateTemplateParmDecl _
+    | EnumDecl _
+    | RecordDecl _
+    | CXXRecordDecl _
+    | ClassTemplateSpecializationDecl _
+    | ClassTemplatePartialSpecializationDecl _
+    | TemplateTypeParmDecl _
+    | ObjCTypeParamDecl _
+    | TypeAliasDecl _
+    | TypedefDecl _
+    | UnresolvedUsingTypenameDecl _
+    | UsingDecl _
+    | UsingDirectiveDecl _
+    | UsingPackDecl _
+    | UsingShadowDecl _
+    | ConstructorUsingShadowDecl _
+    | BindingDecl _
+    | FieldDecl _
+    | ObjCAtDefsFieldDecl _
+    | FunctionDecl _
+    | CXXDeductionGuideDecl _
+    | MSPropertyDecl _
+    | NonTypeTemplateParmDecl _
+    | VarDecl _
+    | DecompositionDecl _
+    | ImplicitParamDecl _
+    | OMPCapturedExprDecl _
+    | ParmVarDecl _
+    | VarTemplateSpecializationDecl _
+    | VarTemplatePartialSpecializationDecl _
+    | EnumConstantDecl _
+    | IndirectFieldDecl _
+    | OMPDeclareReductionDecl _
+    | UnresolvedUsingValueDecl _
+    | OMPThreadPrivateDecl _
+    | PragmaCommentDecl _
+    | PragmaDetectMismatchDecl _
+    | StaticAssertDecl _
+    | TranslationUnitDecl _ ->
+        L.die InternalError "Skipped Method Declaration '%s'."
+          (Clang_ast_proj.get_decl_kind_string dec)
 
 
   let process_methods trans_unit_ctx tenv cfg curr_class decl_list =
