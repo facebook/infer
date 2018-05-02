@@ -424,25 +424,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let no_op_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
 
   (* The stmt seems to be always empty *)
-  let unaryExprOrTypeTraitExpr_trans trans_state expr_info unary_expr_or_type_trait_expr_info =
+  let unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
+    let typ =
+      CType_decl.qual_type_to_sil_type tenv
+        unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_qual_type
+    in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | (`SizeOf | `SizeOfWithSize _) as size ->
-        let qt = unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_qual_type in
-        let sizeof_typ = CType_decl.qual_type_to_sil_type tenv qt in
         let nbytes = match size with `SizeOfWithSize nbytes -> Some nbytes | _ -> None in
-        let sizeof_data =
-          {Exp.typ= sizeof_typ; nbytes; dynamic_length= None; subtype= Subtype.exact}
-        in
-        {empty_res_trans with exps= [(Exp.Sizeof sizeof_data, sizeof_typ)]}
-    | k ->
-        let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
-        L.(debug Capture Medium)
-          "@\n\
-           WARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression \
-           ignored, returned -1... @\n"
-          (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k) ;
-        {empty_res_trans with exps= [(Exp.minus_one, typ)]}
+        let sizeof_data = {Exp.typ; nbytes; dynamic_length= None; subtype= Subtype.exact} in
+        {empty_res_trans with exps= [(Exp.Sizeof sizeof_data, typ)]}
+    | `AlignOf | `OpenMPRequiredSimdAlign | `VecStep ->
+        let nondet = (Exp.Var (Ident.create_fresh Ident.knormal), typ) in
+        {empty_res_trans with exps= [nondet]}
 
 
   (* search the label into the hashtbl - create a fake node eventually *)
@@ -3189,8 +3184,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           stmt_info.Clang_ast_t.si_source_range
     | PseudoObjectExpr (_, stmt_list, _) ->
         pseudoObjectExpr_trans trans_state stmt_list
-    | UnaryExprOrTypeTraitExpr (_, _, expr_info, ei) ->
-        unaryExprOrTypeTraitExpr_trans trans_state expr_info ei
+    | UnaryExprOrTypeTraitExpr (_, _, _, unary_expr_or_type_trait_expr_info) ->
+        unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info
     | ObjCBridgedCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind)
     | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
