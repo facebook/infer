@@ -8,7 +8,7 @@ fbappid: "1615782811974223"
 gacode: "UA-44373548-7"
 description:
 baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://fbinfer.com" # the base hostname & protocol for your site
+url: "https://fbinfer.com" # the base hostname & protocol for your site
 ghrepo: "facebook/infer"
 
 markdown: kramdown
