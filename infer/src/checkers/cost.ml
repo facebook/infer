@@ -540,9 +540,10 @@ let check_and_report_infinity cost proc_desc summary =
     Reporting.log_error ~loc summary exn
 
 
-let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
-  Preanal.do_preanalysis proc_desc tenv ;
-  let inferbo_invariant_map = BufferOverrunChecker.compute_invariant_map proc_desc tenv in
+let checker ({Callbacks.tenv; proc_desc} as callback_args) : Specs.summary =
+  let inferbo_invariant_map, summary =
+    BufferOverrunChecker.compute_invariant_map_and_check callback_args
+  in
   let proc_data = ProcData.make_default proc_desc tenv in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* computes the data dependencies: node -> (var -> var set) *)

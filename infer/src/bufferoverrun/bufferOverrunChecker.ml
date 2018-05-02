@@ -582,42 +582,36 @@ let extract_pre = Analyzer.extract_pre
 
 let extract_post = Analyzer.extract_post
 
-let compute_invariant_map : Procdesc.t -> Tenv.t -> invariant_map =
- fun pdesc tenv ->
-  let pdata = ProcData.make_default pdesc tenv in
-  Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata
-
-
-let compute_post : Specs.summary -> Procdesc.t -> Tenv.t -> Summary.payload option =
- fun summary pdesc tenv ->
-  let inv_map = compute_invariant_map pdesc tenv in
-  let cfg = CFG.from_pdesc pdesc in
-  let entry_mem = extract_post (CFG.start_node cfg |> CFG.id) inv_map in
-  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.id) inv_map in
-  let cond_set =
-    Report.check_proc summary pdesc tenv cfg inv_map |> Report.report_errors summary pdesc
-  in
-  match (entry_mem, exit_mem) with
-  | Some entry_mem, Some exit_mem ->
-      Some (entry_mem, exit_mem, cond_set)
-  | _ ->
-      None
-
-
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
  fun proc_name s ->
   L.(debug BufferOverrun Medium)
-    "@\n@[<v 2>Summary of %a :@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
+    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
+
+
+let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Specs.summary =
+ fun {proc_desc; tenv; summary} ->
+  Preanal.do_preanalysis proc_desc tenv ;
+  let pdata = ProcData.make_default proc_desc tenv in
+  let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
+  let cfg = CFG.from_pdesc proc_desc in
+  let entry_mem = extract_post (CFG.start_node cfg |> CFG.id) inv_map in
+  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.id) inv_map in
+  let cond_set =
+    Report.check_proc summary proc_desc tenv cfg inv_map |> Report.report_errors summary proc_desc
+  in
+  let summary =
+    match (entry_mem, exit_mem) with
+    | Some entry_mem, Some exit_mem ->
+        let post = (entry_mem, exit_mem, cond_set) in
+        ( if Config.bo_debug >= 1 then
+            let proc_name = Procdesc.get_proc_name proc_desc in
+            print_summary proc_name post ) ;
+        Summary.update_summary post summary
+    | _ ->
+        summary
+  in
+  (inv_map, summary)
 
 
 let checker : Callbacks.proc_callback_args -> Specs.summary =
- fun {proc_desc; tenv; summary} ->
-  Preanal.do_preanalysis proc_desc tenv ;
-  match compute_post summary proc_desc tenv with
-  | Some post ->
-      ( if Config.bo_debug >= 1 then
-          let proc_name = Specs.get_proc_name summary in
-          print_summary proc_name post ) ;
-      Summary.update_summary post summary
-  | None ->
-      summary
+ fun args -> compute_invariant_map_and_check args |> snd

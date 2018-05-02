@@ -15,6 +15,6 @@ module CFG = ProcCfg.NormalOneInstrPerNode
 
 type invariant_map
 
-val compute_invariant_map : Procdesc.t -> Tenv.t -> invariant_map
+val compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Specs.summary
 
 val extract_pre : CFG.id -> invariant_map -> BufferOverrunDomain.Mem.t option

@@ -42,7 +42,7 @@ let all_checkers =
         [ (Procedure Interproc.analyze_procedure, Language.Clang)
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun"
-    ; active= Config.bufferoverrun
+    ; active= Config.bufferoverrun && not Config.cost (* Cost analysis already triggers Inferbo *)
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
