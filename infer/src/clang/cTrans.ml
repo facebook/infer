@@ -3091,7 +3091,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      current info on the translation and it returns a [trans_result].*)
   and instruction trans_state instr =
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
-    let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
+    let stmt_info, stmts = Clang_ast_proj.get_stmt_tuple instr in
     let stmt_pointer = stmt_info.Clang_ast_t.si_pointer in
     L.(debug Capture Verbose) "@\nPassing from %s '%d' @\n" stmt_kind stmt_pointer ;
     let open Clang_ast_t in
@@ -3419,12 +3419,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHLeaveStmt _
     | SEHTryStmt _
     | DefaultStmt _ ->
-        CFrontend_config.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-          ~ast_node:(Clang_ast_proj.get_stmt_kind_string instr)
-          "Statement translation for kind %s: %a"
+        L.(debug Capture Verbose)
+          "Skipping translation for kind %s: %a@\n@"
           (Clang_ast_proj.get_stmt_kind_string instr)
           (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
-          instr
+          instr ;
+        skip_unimplemented trans_state stmts
 
 
   (** Function similar to instruction function, but it takes C++ constructor initializer as
