@@ -806,18 +806,31 @@ module Bound = struct
         None
 
 
+  let neg : t -> t = function
+    | MInf ->
+        PInf
+    | PInf ->
+        MInf
+    | Linear (c, x) ->
+        Linear (-c, SymLinear.neg x)
+    | MinMax (c, sign, min_max, d, x) ->
+        mk_MinMax (-c, Sign.neg sign, min_max, d, x)
+
+
   let mult : t -> t -> t =
    fun x y ->
-    let res_opt =
-      match (is_const x, is_const y) with
-      | _, Some n -> (
-        match NonZeroInt.of_int n with Some n' -> mult_const x n' | _ -> Some zero )
-      | Some n, _ -> (
-        match NonZeroInt.of_int n with Some n' -> mult_const y n' | _ -> Some zero )
-      | _, _ ->
-          None
-    in
-    Option.value res_opt ~default:PInf
+    let default = PInf in
+    match (x, is_const x, y, is_const y) with
+    | x, _, _, Some n | _, Some n, x, _ -> (
+      match NonZeroInt.of_int n with
+      | Some n ->
+          if NonZeroInt.is_one n then x
+          else if NonZeroInt.is_minus_one n then neg x
+          else mult_const x n |> Option.value ~default
+      | None ->
+          zero )
+    | _ ->
+        default
 
 
   let div_const : t -> NonZeroInt.t -> t option =
@@ -835,17 +848,6 @@ module Bound = struct
           None )
     | _ ->
         None
-
-
-  let neg : t -> t = function
-    | MInf ->
-        PInf
-    | PInf ->
-        MInf
-    | Linear (c, x) ->
-        Linear (-c, SymLinear.neg x)
-    | MinMax (c, sign, min_max, d, x) ->
-        mk_MinMax (-c, Sign.neg sign, min_max, d, x)
 
 
   let get_symbols : t -> Symbol.t list = function

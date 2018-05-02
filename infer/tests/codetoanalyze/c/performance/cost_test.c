@@ -81,7 +81,6 @@ int loop1_bad() {
   return 0;
 }
 
-// This is currently evaluated to Top as the analysis is not powerful enough
 int FN_loop2(int k) {
 
   for (int i = 0; i < k; i++) {
