@@ -3307,12 +3307,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        sub-expressions *)
     | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         trans_into_undefined_expr trans_state expr_info
-    | ExtVectorElementExpr (stmt_info, stmts, _) | ShuffleVectorExpr (stmt_info, stmts, _) ->
-        skip_unimplemented
-          ~reason:
-            (Printf.sprintf "unimplemented construct: %s"
-               (Clang_ast_proj.get_stmt_kind_string instr))
-          trans_state stmt_info stmts
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
     | SubstNonTypeTemplateParmExpr _
@@ -3352,6 +3346,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | DesignatedInitExpr _
     | DesignatedInitUpdateExpr _
     | ExpressionTraitExpr _
+    | ExtVectorElementExpr _
     | FunctionParmPackExpr _
     | ImaginaryLiteral _
     | MSPropertyRefExpr _
@@ -3418,13 +3413,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHFinallyStmt _
     | SEHLeaveStmt _
     | SEHTryStmt _
+    | ShuffleVectorExpr _
     | DefaultStmt _ ->
-        L.(debug Capture Verbose)
-          "Skipping translation for kind %s: %a@\n@"
-          (Clang_ast_proj.get_stmt_kind_string instr)
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
-          instr ;
-        skip_unimplemented trans_state stmts
+        skip_unimplemented
+          ~reason:
+            (Printf.sprintf "unimplemented construct: %s"
+               (Clang_ast_proj.get_stmt_kind_string instr))
+          trans_state stmt_info stmts
 
 
   (** Function similar to instruction function, but it takes C++ constructor initializer as
