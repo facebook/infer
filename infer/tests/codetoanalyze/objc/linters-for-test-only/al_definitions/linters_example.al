@@ -128,7 +128,7 @@ DEFINE-CHECKER TEST_BUILTIN_TYPE = {
 
   SET report_when =
         WHEN
-          is_in_objc_class_named("TestType") AND 
+          is_in_objc_class_named("TestType") AND
           (method_return_type("void")
           OR method_return_type("bool")
           OR method_return_type("char")
@@ -441,5 +441,147 @@ DEFINE-CHECKER TEST_PARAMETER_SEL_TYPE = {
       HOLDS-IN-NODE ObjCMessageExpr;
 
   SET message = "Method %name% is not called with super.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_named("MyBaseClassCategory")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category named MyBaseClassCategory.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_ON_CLASS_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_on_class_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_ON_SUBCLASS_OF = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_on_subclass_of("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category on a subclass of MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_INTERFACE_NAMED = {
+
+ SET report_when =
+    is_objc_category_interface_named("MyBaseClassCategory");
+
+ SET message = "Node is a category interface named MyBaseClassCategory.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_IMPLEMENTATION_NAMED = {
+
+ SET report_when =
+    is_objc_category_implementation_named("MyBaseClassCategory");
+
+ SET message = "Node is a category implementation named MyBaseClassCategory.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_NAMED = {
+
+ SET report_when =
+    is_objc_category_named("MyBaseClassCategory");
+
+ SET message = "Node is a category named MyBaseClassCategory.";
+
+};
+
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_INTERFACE_ON_CLASS_NAMED = {
+
+ SET report_when =
+    is_objc_category_interface_on_class_named("MyBaseClass");
+
+ SET message = "Node is a category interface on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_IMPLEMENTATION_ON_CLASS_NAMED = {
+
+ SET report_when =
+    is_objc_category_implementation_on_class_named("MyBaseClass");
+
+ SET message = "Node is a category implementation on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_ON_CLASS_NAMED = {
+
+ SET report_when =
+    is_objc_category_on_class_named("MyBaseClass");
+
+ SET message = "Node is a category on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_INTERFACE_ON_SUBCLASS_OF = {
+
+ SET report_when =
+    is_objc_category_interface_on_subclass_of("MyBaseClass");
+
+ SET message = "Node is a category interface on a subclass of MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_IMPLEMENTATION_ON_SUBCLASS_OF = {
+
+ SET report_when =
+    is_objc_category_implementation_on_subclass_of("MyBaseClass");
+
+ SET message = "Node is a category implementation on a subclass of MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CATEGORY_ON_SUBCLASS_OF = {
+
+ SET report_when =
+    is_objc_category_on_subclass_of("MyBaseClass");
+
+ SET message = "Node is a category on a subclass of MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_IMPLEMENTATION_NAMED = {
+
+ SET report_when =
+    is_objc_implementation_named("MyBaseClass");
+
+ SET message = "Node is an implementation named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_CLASS_NAMED = {
+
+ SET report_when =
+    is_objc_class_named("MyBaseClass");
+
+ SET message = "Node is a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_METHOD_NAMED = {
+
+ SET report_when =
+    is_objc_method_named("mySubclassMethod");
+
+ SET message = "Node is a method named mySubclassMethod.";
 
 };

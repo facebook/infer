@@ -20,11 +20,11 @@ val call_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_method an m an' is true iff node an is a call to an ObjC method with name containing string m *)
 
 val call_class_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
-(** 'call_class_method an cname mname' is true iff node an is a call to an ObjC method of class cname 
+(** 'call_class_method an cname mname' is true iff node an is a call to an ObjC method of class cname
 and the name of the method contains mname *)
 
 val call_instance_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
-(** 'call_instance_method an cname mname' is true iff  an is a node calling an ObjC method of an 
+(** 'call_instance_method an cname mname' is true iff  an is a node calling an ObjC method of an
    object of class cname and the method name  contains mname
 *)
 
@@ -35,11 +35,6 @@ val is_enum_constant : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'is_enum_constant an name' is true iff an is an EnumConstant with name containing 'name' *)
 
 val is_enum_constant_of_enum : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
-
-val is_objc_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
-(** 'is_objc_interface_named an expected_name' is true iff an is an objc interface with name expected_name *)
-
-val is_objc_extension : CLintersContext.context -> bool
 
 val is_global_var : Ctl_parser_types.ast_node -> bool
 (** 'is_global_var an' is true iff an is a global variable (but not a static local) *)
@@ -89,8 +84,114 @@ val is_in_cxx_method : CLintersContext.context -> ALVar.alexp -> bool
 val is_in_function : CLintersContext.context -> ALVar.alexp -> bool
 (** 'is_in_function context name' is true if the curent node is within a function whose name contains 'name' *)
 
-val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool
-(** 'is_in_objc_method context name' is true if the curent node is within an ObjC method whose name contains 'name' *)
+val is_objc_extension : CLintersContext.context -> bool
+(**
+ *  Checks if the current file has an ObjC file extension (I.E. '.m' or '.mm')
+ *)
+
+val is_objc_class_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCInterfaceDecl or ObjCImplementationDecl
+ *    node whose name matches the provided REGEXP
+ *
+ *  Matches on MyClass in:
+ *    @interface MyClass
+ *    @implementation MyClass
+ *)
+
+val is_objc_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCInterfaceDecl node
+ *    whose name matches the provided REGEXP
+ *
+ *  Matches on MyClass in @interface MyClass
+ *)
+
+val is_objc_implementation_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCImplementationDecl node
+ *    whose name matches the provided REGEXP
+ *
+ *  Matches on MyClass in @implementation MyClass
+ *)
+
+val is_objc_category_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl or ObjCCategoryImplDecl
+ *    node whose name matches the provided REGEXP
+ *
+ *  Matches on MyCategory in:
+ *    @interface MyClass (MyCategory)
+ *    @implementation MyClass (MyCategory)
+ *)
+
+val is_objc_category_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl node
+ *    whose name matches the provided REGEXP
+ *
+ *  Matches on MyCategory in @interface MyClass (MyCategory)
+ *)
+
+val is_objc_category_implementation_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryImplDecl node
+ *    whose name matches the provided REGEXP
+ *
+ *  Matches on MyCategory in @implementation MyClass (MyCategory)
+ *)
+
+val is_objc_category_on_class_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl or ObjCCategoryImplDecl
+ *    node whose class's name matches the provided REGEXP
+ *
+ *  Matches on MyClass in:
+ *    @interface MyClass (MyCategory)
+ *    @implementation MyClass (MyCategory)
+ *)
+
+val is_objc_category_interface_on_class_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl node
+ *    whose class's name matches the provided REGEXP
+ *
+ *  Matches on MyClass in @interface MyClass (MyCategory)
+ *)
+
+val is_objc_category_implementation_on_class_named :
+  Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryImplDecl node
+ *    whose class's name matches the provided REGEXP
+ *
+ *  Matches on MyClass in @implementation MyClass (MyCategory)
+ *)
+
+val is_objc_category_on_subclass_of : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl or ObjCCategoryImplDecl
+ *  node whose class inherits from a class whose name matches the provided REGEXP
+ *)
+
+val is_objc_category_interface_on_subclass_of : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryDecl node whose class
+ *    inherits from a class whose name matches the provided REGEXP
+ *)
+
+val is_objc_category_implementation_on_subclass_of :
+  Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCCategoryImplDecl node whose class
+ *    inherits from a class whose name matches the provided REGEXP
+ *)
+
+val is_objc_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCMethodDecl node
+ *    whose name matches the provided REGEXP
+ *)
 
 val is_objc_constructor : CLintersContext.context -> bool
 (** 'is_in_objc_constructor context' is true if the curent node is within an ObjC constructor *)
@@ -99,10 +200,42 @@ val is_objc_dealloc : CLintersContext.context -> bool
 (** 'is_in_objc_dealloc context' is true if the curent node is within an ObjC dealloc method *)
 
 val is_in_objc_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
-(** 'is_in_objc_subclass_of context cname' is true if the current node is within the context of a subclass of class cname*)
+(**
+ *  Checks if the current node is a subnode of an ObjCInterfaceDecl or
+ *    ObjCImplementationDecl node which inherits from a class whose
+ *    name matches the provided REGEXP
+ *)
 
 val is_in_objc_class_named : CLintersContext.context -> ALVar.alexp -> bool
-(** 'is_in_objc_class_named context cname' is true if the current node is within the context of a of class cname*)
+(**
+ *  Checks if the current node is a subnode of an ObjCInterfaceDecl or
+ *    ObjCImplementationDecl node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_on_class_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl or
+ *    ObjCCategoryImplDecl node whose class's name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_on_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl or
+ *    ObjCCategoryImplDecl node whose class inherits from a class whose
+ *    name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl or
+ *    ObjCCategoryImplDecl node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node, or a parent node, is an ObjCMethodDecl node
+ *    whose name matches the provided REGEXP
+ *)
 
 val captures_cxx_references : Ctl_parser_types.ast_node -> bool
 (** 'captures_cxx_references an' is true iff the node an captures some CXX references *)
@@ -126,7 +259,7 @@ val declaration_has_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val declaration_ref_name :
   ?kind:Clang_ast_t.decl_kind -> Ctl_parser_types.ast_node -> ALVar.alexp -> bool
-(** 'declaration_ref_has_name an n' is true iff node an is a DeclRefExpr with name containing string n. The optional parameter kind 
+(** 'declaration_ref_has_name an n' is true iff node an is a DeclRefExpr with name containing string n. The optional parameter kind
 allow to distinguish between special kind of decl_ref_exprs like 'is_enum_constant'. *)
 
 val is_class : Ctl_parser_types.ast_node -> ALVar.alexp -> bool

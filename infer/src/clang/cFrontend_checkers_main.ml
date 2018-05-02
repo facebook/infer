@@ -338,6 +338,11 @@ and do_frontend_checks_decl (context: CLintersContext.context)
         let context' = {context with current_objc_class= Some decl} in
         List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
         call_tableaux context' an map_active
+    | ObjCCategoryImplDecl (_, _, decls, _, _) | ObjCCategoryDecl (_, _, decls, _, _) ->
+        CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        let context' = {context with current_objc_category= Some decl} in
+        List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
+        call_tableaux context' an map_active
     | _ ->
         CFrontend_errors.invoke_set_of_checkers_on_node context an ;
         ( match Clang_ast_proj.get_decl_context_tuple decl with

@@ -19,11 +19,13 @@ type context =
   ; current_method: Clang_ast_t.decl option
   ; parent_methods: Clang_ast_t.decl list
   ; in_synchronized_block: bool
-        (** True if the translation unit contains an ObjC class impl that's a subclass
-      of CKComponent or CKComponentController. *)
   ; is_ck_translation_unit: bool
-        (** If inside an objc class, contains the objc class (impl or interface) decl. *)
+        (** True if the translation unit contains an ObjC class impl that's a subclass
+            of CKComponent or CKComponentController. *)
   ; current_objc_class: Clang_ast_t.decl option
+        (** If inside an objc class, contains the objc class (impl or interface) decl. *)
+  ; current_objc_category: Clang_ast_t.decl option
+        (** If inside an objc category, contains the objc category (impl or interface) decl. *)
   ; et_evaluation_node: string option
   ; if_context: if_context option
   ; in_for_loop_declaration: bool }
@@ -35,6 +37,7 @@ let empty translation_unit_context =
   ; in_synchronized_block= false
   ; is_ck_translation_unit= false
   ; current_objc_class= None
+  ; current_objc_category= None
   ; et_evaluation_node= None
   ; if_context= None
   ; in_for_loop_declaration= false }

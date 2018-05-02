@@ -148,16 +148,148 @@ let pp_predicate fmt (name_, arglist_) =
   Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
 
 
-(* is an objc interface with name expected_name *)
-let is_objc_interface_named an expected_name =
+(* an is a declaration whose name contains a regexp defined by re *)
+let declaration_has_name an name =
   match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl (_, ni, _, _, _)) ->
-      ALVar.compare_str_with_alexp ni.ni_name expected_name
+  | Ctl_parser_types.Decl d -> (
+    match declaration_name d with
+    | Some decl_name ->
+        ALVar.compare_str_with_alexp decl_name name
+    | _ ->
+        false )
   | _ ->
       false
 
 
-(* checkes whether an object is of a certain class *)
+let rec is_subclass_of decl name =
+  match CAst_utils.get_superclass_curr_class_objc_from_decl decl with
+  | Some super_ref
+    -> (
+      let ndi = match super_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
+      if ALVar.compare_str_with_alexp ndi.ni_name name then true
+      else
+        match CAst_utils.get_decl_opt_with_decl_ref (Some super_ref) with
+        | Some decl ->
+            is_subclass_of decl name
+        | None ->
+            false )
+  | None ->
+      false
+
+
+(* is an objc interface with name expected_name *)
+let is_objc_interface_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl _) ->
+      declaration_has_name an expected_name
+  | _ ->
+      false
+
+
+(* is an objc implementation with name expected_name *)
+let is_objc_implementation_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl _) ->
+      declaration_has_name an expected_name
+  | _ ->
+      false
+
+
+let is_objc_class_named an re = is_objc_interface_named an re || is_objc_implementation_named an re
+
+(* is an objc category interface with class name expected_name *)
+let is_objc_category_interface_on_class_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryDecl (_, _, _, _, ocdi)) -> (
+    match CAst_utils.get_decl_opt_with_decl_ref ocdi.odi_class_interface with
+    | Some decl_ref ->
+        is_objc_interface_named (Decl decl_ref) expected_name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
+(* is an objc category implementation with class name expected_name *)
+let is_objc_category_implementation_on_class_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
+    match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+    | Some decl_ref ->
+        is_objc_interface_named (Decl decl_ref) expected_name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
+let is_objc_category_on_class_named an re =
+  is_objc_category_interface_on_class_named an re
+  || is_objc_category_implementation_on_class_named an re
+
+
+(* is an objc category interface with superclass name expected_name *)
+let is_objc_category_interface_on_subclass_of an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryDecl (_, _, _, _, ocdi)) -> (
+    match CAst_utils.get_decl_opt_with_decl_ref ocdi.odi_class_interface with
+    | Some decl_ref ->
+        is_subclass_of decl_ref expected_name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
+(* is an objc category implementation with superclass name expected_name *)
+let is_objc_category_implementation_on_subclass_of an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
+    match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+    | Some decl_ref ->
+        is_subclass_of decl_ref expected_name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
+let is_objc_category_on_subclass_of an expected_name =
+  is_objc_category_interface_on_subclass_of an expected_name
+  || is_objc_category_implementation_on_subclass_of an expected_name
+
+
+(* is an objc category interface with name expected_name *)
+let is_objc_category_interface_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryDecl _) ->
+      declaration_has_name an expected_name
+  | _ ->
+      false
+
+
+(* is an objc category implementation with name expected_name *)
+let is_objc_category_implementation_named an expected_name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCCategoryImplDecl _) ->
+      declaration_has_name an expected_name
+  | _ ->
+      false
+
+
+let is_objc_category_named an re =
+  is_objc_category_interface_named an re || is_objc_category_implementation_named an re
+
+
+let is_objc_method_named an name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl _) ->
+      declaration_has_name an name
+  | _ ->
+      false
+
+
+(* checks whether an object is of a certain class *)
 let is_object_of_class_named receiver cname =
   let open Clang_ast_t in
   match receiver with
@@ -459,22 +591,6 @@ let is_in_block context =
   match context.CLintersContext.current_method with Some (BlockDecl _) -> true | _ -> false
 
 
-let rec is_subclass_of decl name =
-  match CAst_utils.get_superclass_curr_class_objc_from_decl decl with
-  | Some super_ref
-    -> (
-      let ndi = match super_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
-      if ALVar.compare_str_with_alexp ndi.ni_name name then true
-      else
-        match CAst_utils.get_decl_opt_with_decl_ref (Some super_ref) with
-        | Some decl ->
-            is_subclass_of decl name
-        | None ->
-            false )
-  | None ->
-      false
-
-
 let is_in_objc_subclass_of context name =
   match context.CLintersContext.current_objc_class with
   | Some cls ->
@@ -486,7 +602,31 @@ let is_in_objc_subclass_of context name =
 let is_in_objc_class_named context name =
   match context.CLintersContext.current_objc_class with
   | Some cls ->
-      is_objc_interface_named (Decl cls) name
+      is_objc_class_named (Decl cls) name
+  | None ->
+      false
+
+
+let is_in_objc_category_on_class_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_on_class_named (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_on_subclass_of context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_on_subclass_of (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_named (Decl cat) name
   | None ->
       false
 
@@ -573,17 +713,7 @@ let isa an classname =
       false
 
 
-(* an is a declaration whose name contains a regexp defined by re *)
-let declaration_has_name an name =
-  match an with
-  | Ctl_parser_types.Decl d -> (
-    match Clang_ast_proj.get_named_decl_tuple d with
-    | Some (_, ndi) ->
-        ALVar.compare_str_with_alexp ndi.ni_name name
-    | _ ->
-        false )
-  | _ ->
-      false
+let is_class an re = is_objc_class_named an re
 
 
 (* an is an expression @selector with whose name in the language of re *)
@@ -591,15 +721,6 @@ let is_at_selector_with_name an re =
   match an with
   | Ctl_parser_types.Stmt (ObjCSelectorExpr (_, _, _, s)) ->
       ALVar.compare_str_with_alexp s re
-  | _ ->
-      false
-
-
-let is_class an re =
-  match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl _)
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl _) ->
-      declaration_has_name an re
   | _ ->
       false
 
