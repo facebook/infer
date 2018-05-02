@@ -2276,17 +2276,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ; exps= []
             ; initd_exps= res_trans_tmp.initd_exps @ res_trans_vd.initd_exps }
           , Some leaf_nodes )
-      | CXXRecordDecl _ :: var_decls'
-      (*C++/C record decl treated in the same way *)
-      | RecordDecl _ :: var_decls' ->
-          (* Record declaration is done in the beginning when procdesc is defined.*)
+      | _ :: var_decls' ->
+          (* Here we can get also record declarations or typedef declarations, which are dealt with somewhere else. 
+                   We just handle the variables here. *)
           collect_all_decl_inner trans_state var_decls'
-      | decl :: _ ->
-          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
-            "unexpected decl type %s in collect_all_decl: %a"
-            (Clang_ast_proj.get_decl_kind_string decl)
-            (Pp.to_string ~f:Clang_ast_j.string_of_decl)
-            decl
     in
     let res_trans, leaf_nodes_opt = collect_all_decl_inner trans_state var_decls in
     match leaf_nodes_opt with Some leaf_nodes -> {res_trans with leaf_nodes} | None -> res_trans
