@@ -1463,7 +1463,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       else trans_state.succ_nodes
     in
     let trans_state' = {trans_state with succ_nodes} in
-    instructions trans_state' stmt_list
+    let trans_res = instructions trans_state' stmt_list in
+    let leaf_nodes =
+      if destr_trans_result.leaf_nodes <> [] then destr_trans_result.leaf_nodes
+      else trans_res.leaf_nodes
+    in
+    {trans_res with leaf_nodes}
 
 
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
@@ -3058,7 +3063,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some bn ->
         let trans_state' = {trans_state with succ_nodes= bn.break} in
         let destr_trans_result = inject_destructors trans_state' stmt_info in
-        if destr_trans_result.root_nodes <> [] then destr_trans_result
+        if destr_trans_result.root_nodes <> [] then {destr_trans_result with leaf_nodes= []}
         else {empty_res_trans with root_nodes= bn.break}
     | _ (* t21762295 *) ->
         CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -3072,7 +3077,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some bn ->
         let trans_state' = {trans_state with succ_nodes= bn.continue} in
         let destr_trans_result = inject_destructors trans_state' stmt_info in
-        if destr_trans_result.root_nodes <> [] then destr_trans_result
+        if destr_trans_result.root_nodes <> [] then {destr_trans_result with leaf_nodes= []}
         else {empty_res_trans with root_nodes= bn.continue}
     | _ (* t21762295 *) ->
         CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
