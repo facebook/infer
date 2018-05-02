@@ -322,9 +322,8 @@ struct
     else List.map ~f:last_of_node (Base.normal_preds cfg node)
 
 
-  (* HACK: Use first_of_node instead of last_of_node because it is used to get the pre only *)
   let exceptional_preds cfg (node, index) =
-    if index >= 1 then [] else List.map ~f:first_of_node (Base.exceptional_preds cfg node)
+    if index >= 1 then [] else List.map ~f:last_of_node (Base.exceptional_preds cfg node)
 
 
   let preds cfg t = List.rev_append (exceptional_preds cfg t) (normal_preds cfg t)

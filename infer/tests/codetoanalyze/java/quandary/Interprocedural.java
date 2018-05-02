@@ -320,9 +320,7 @@ class Interprocedural {
     for (;;);
   }
 
-  // this fails because the exit block in callSinkThenDiverge is unreachable, so the summary is
-  // empty.
-  public void FN_callSinkThenDivergeBad() {
+  public void callSinkThenDivergeBad() {
     callSinkThenDiverge(InferTaint.inferSecretSource());
   }
 

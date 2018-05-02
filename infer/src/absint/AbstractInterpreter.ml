@@ -103,14 +103,8 @@ struct
 
   let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
     let compute_pre node inv_map =
-      (* if the [pred] -> [node] transition was normal, use post([pred]) *)
       let extract_post_ pred = extract_post (CFG.id pred) inv_map in
-      let normal_posts = List.map ~f:extract_post_ (CFG.normal_preds cfg node) in
-      (* if the [pred] -> [node] transition was exceptional, use pre([pred]) *)
-      let extract_pre_f acc pred = extract_pre (CFG.id pred) inv_map :: acc in
-      let all_posts =
-        List.fold ~f:extract_pre_f ~init:normal_posts (CFG.exceptional_preds cfg node)
-      in
+      let all_posts = List.map ~f:extract_post_ (CFG.preds cfg node) in
       match List.filter_opt all_posts with
       | post :: posts ->
           Some (List.fold ~f:Domain.join ~init:post posts)
