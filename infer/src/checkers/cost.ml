@@ -463,52 +463,39 @@ module TransferFunctionsWCET = struct
 
   type extras = extras_TransferFunctionsWCET
 
+  let should_report_on_instr = function
+    | Sil.Call _ | Sil.Load _ | Sil.Prune _ | Sil.Store _ ->
+        true
+    | Sil.Abstract _ | Sil.Declare_locals _ | Sil.Nullify _ | Sil.Remove_temps _ ->
+        false
+
+
   (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
    Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
-  let report_cost summary instr (cost: Itv.Bound.t) instr_node reported_so_far =
-    let mk_message () =
-      F.asprintf
-        "The execution time from the beginning of the function up to this program point is likely \
-         above the acceptable threshold of %a (estimated cost %a)"
-        Itv.Bound.pp expensive_threshold Itv.Bound.pp cost
+  let should_report_cost cost =
+    Itv.Bound.is_not_infty cost && not (Itv.Bound.le cost expensive_threshold)
+
+
+  let do_report summary loc cost =
+    let ltr =
+      let cost_desc = F.asprintf "with estimated cost %a" Itv.Bound.pp cost in
+      [Errlog.make_trace_element 0 loc cost_desc []]
     in
-    match cost with
-    | b when Itv.Bound.is_not_infty b
-      -> (
-        let above_expensive_threshold = not (Itv.Bound.le cost expensive_threshold) in
-        let cost_desc = F.asprintf "with estimated cost %a" Itv.Bound.pp cost in
-        match instr with
-        | Sil.Call (_, _, _, loc, _) when above_expensive_threshold ->
-            let ltr = [Errlog.make_trace_element 0 loc cost_desc []] in
-            let exn =
-              Exceptions.Checkers
-                (IssueType.expensive_execution_time_call, Localise.verbatim_desc (mk_message ()))
-            in
-            Reporting.log_error summary ~loc ~ltr exn ;
-            let nid = instr_node |> CFG.underlying_node |> Procdesc.Node.get_id in
-            (cost, ReportedOnNodes.add nid reported_so_far)
-        | Sil.Load (_, _, _, loc)
-        | Sil.Store (_, _, _, loc)
-        | Sil.Call (_, _, _, loc, _)
-        | Sil.Prune (_, loc, _, _)
-          when above_expensive_threshold ->
-            let ltr = [Errlog.make_trace_element 0 loc cost_desc []] in
-            let exn =
-              Exceptions.Checkers
-                (IssueType.expensive_execution_time_call, Localise.verbatim_desc (mk_message ()))
-            in
-            Reporting.log_error summary ~loc ~ltr exn ;
-            let nid = instr_node |> CFG.underlying_node |> Procdesc.Node.get_id in
-            (cost, ReportedOnNodes.add nid reported_so_far)
-        | _ ->
-            (cost, reported_so_far) )
-    | _ ->
-        (cost, reported_so_far)
+    let exn =
+      let message =
+        F.asprintf
+          "The execution time from the beginning of the function up to this program point is \
+           likely above the acceptable threshold of %a (estimated cost %a)"
+          Itv.Bound.pp expensive_threshold Itv.Bound.pp cost
+      in
+      Exceptions.Checkers (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
+    in
+    Reporting.log_error summary ~loc ~ltr exn
 
 
   (* get a list of nodes and check if we have already reported for at
      least one of them. In that case no need to report again. *)
-  let should_report preds reported_so_far =
+  let should_report_on_node preds reported_so_far =
     List.for_all
       ~f:(fun node ->
         let nid = Procdesc.Node.get_id node in
@@ -551,9 +538,17 @@ module TransferFunctionsWCET = struct
     let astate' =
       let und_node = CFG.underlying_node node in
       let preds = Procdesc.Node.get_preds und_node in
-      if should_report (und_node :: preds) reported_so_far then
-        report_cost summary instr cost_node node reported_so_far
-      else (cost_node, reported_so_far)
+      let reported_so_far =
+        if
+          should_report_on_instr instr && should_report_on_node (und_node :: preds) reported_so_far
+          && should_report_cost cost_node
+        then (
+          do_report summary (Sil.instr_get_loc instr) cost_node ;
+          let nid = Procdesc.Node.get_id und_node in
+          ReportedOnNodes.add nid reported_so_far )
+        else reported_so_far
+      in
+      (cost_node, reported_so_far)
     in
     astate'
 
