@@ -2238,43 +2238,49 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and collect_all_decl trans_state var_decls next_nodes stmt_info =
-    let open Clang_ast_t in
-    let context = trans_state.context in
-    let procdesc = context.CContext.procdesc in
-    let procname = Procdesc.get_proc_name procdesc in
-    let do_var_dec (di, var_name, qual_type, vdi) next_node =
-      let var_decl = VarDecl (di, var_name, qual_type, vdi) in
-      let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
-      let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-      CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
-      let trans_state' = {trans_state with succ_nodes= next_node} in
-      init_expr_trans trans_state' (Exp.Lvar pvar, typ) ~qual_type stmt_info
-        vdi.Clang_ast_t.vdi_init_expr
+    let rec collect_all_decl_inner trans_state var_decls =
+      let open Clang_ast_t in
+      let context = trans_state.context in
+      let procdesc = context.CContext.procdesc in
+      let procname = Procdesc.get_proc_name procdesc in
+      let do_var_dec (di, var_name, qual_type, vdi) next_node =
+        let var_decl = VarDecl (di, var_name, qual_type, vdi) in
+        let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
+        let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+        CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
+        let trans_state' = {trans_state with succ_nodes= next_node} in
+        init_expr_trans trans_state' (Exp.Lvar pvar, typ) ~qual_type stmt_info
+          vdi.Clang_ast_t.vdi_init_expr
+      in
+      match var_decls with
+      | [] ->
+          ({empty_res_trans with root_nodes= next_nodes}, None)
+      | VarDecl (di, n, qt, vdi) :: var_decls' ->
+          (* Var are defined when procdesc is created, here we only take care of initialization*)
+          let res_trans_vd, leaf_nodes_opt = collect_all_decl_inner trans_state var_decls' in
+          let res_trans_tmp = do_var_dec (di, n, qt, vdi) res_trans_vd.root_nodes in
+          let leaf_nodes = Option.value ~default:res_trans_tmp.leaf_nodes leaf_nodes_opt in
+          ( { empty_res_trans with
+              root_nodes= res_trans_tmp.root_nodes
+            ; leaf_nodes= []
+            ; instrs= res_trans_tmp.instrs @ res_trans_vd.instrs
+            ; exps= []
+            ; initd_exps= res_trans_tmp.initd_exps @ res_trans_vd.initd_exps }
+          , Some leaf_nodes )
+      | CXXRecordDecl _ :: var_decls'
+      (*C++/C record decl treated in the same way *)
+      | RecordDecl _ :: var_decls' ->
+          (* Record declaration is done in the beginning when procdesc is defined.*)
+          collect_all_decl_inner trans_state var_decls'
+      | decl :: _ ->
+          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+            "unexpected decl type %s in collect_all_decl: %a"
+            (Clang_ast_proj.get_decl_kind_string decl)
+            (Pp.to_string ~f:Clang_ast_j.string_of_decl)
+            decl
     in
-    match var_decls with
-    | [] ->
-        {empty_res_trans with root_nodes= next_nodes}
-    | VarDecl (di, n, qt, vdi) :: var_decls' ->
-        (* Var are defined when procdesc is created, here we only take care of initialization*)
-        let res_trans_vd = collect_all_decl trans_state var_decls' next_nodes stmt_info in
-        let res_trans_tmp = do_var_dec (di, n, qt, vdi) res_trans_vd.root_nodes in
-        { empty_res_trans with
-          root_nodes= res_trans_tmp.root_nodes
-        ; leaf_nodes= []
-        ; instrs= res_trans_tmp.instrs @ res_trans_vd.instrs
-        ; exps= []
-        ; initd_exps= res_trans_tmp.initd_exps @ res_trans_vd.initd_exps }
-    | CXXRecordDecl _ :: var_decls'
-    (*C++/C record decl treated in the same way *)
-    | RecordDecl _ :: var_decls' ->
-        (* Record declaration is done in the beginning when procdesc is defined.*)
-        collect_all_decl trans_state var_decls' next_nodes stmt_info
-    | decl :: _ ->
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
-          "unexpected decl type %s in collect_all_decl: %a"
-          (Clang_ast_proj.get_decl_kind_string decl)
-          (Pp.to_string ~f:Clang_ast_j.string_of_decl)
-          decl
+    let res_trans, leaf_nodes_opt = collect_all_decl_inner trans_state var_decls in
+    match leaf_nodes_opt with Some leaf_nodes -> {res_trans with leaf_nodes} | None -> res_trans
 
 
   (* stmt_list is ignored because it contains the same instructions as *)
@@ -2299,7 +2305,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | [] ->
           assert false
     in
-    {res_trans with leaf_nodes= []}
+    res_trans
 
 
   and objCPropertyRefExpr_trans trans_state stmt_list =
