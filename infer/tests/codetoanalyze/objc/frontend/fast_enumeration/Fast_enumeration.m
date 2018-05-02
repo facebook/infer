@@ -8,11 +8,15 @@
  */
 
 #import <Foundation/NSArray.h>
+#import <Foundation/NSObject.h>
+#import <Foundation/NSEnumerator.h>
 
 @interface A : NSObject
 @end
 
-@implementation A
+@implementation A {
+  NSEnumerator* reverseObjectEnumerator;
+}
 
 - (int)fast_loop:(NSArray*)items {
   int size = 0;
@@ -29,6 +33,13 @@
     size += [item count];
   }
   return size;
+}
+
+- (void)fast_loop_no_crash {
+  id obj = nil;
+  for (obj in reverseObjectEnumerator) {
+    [obj copy];
+  }
 }
 
 @end

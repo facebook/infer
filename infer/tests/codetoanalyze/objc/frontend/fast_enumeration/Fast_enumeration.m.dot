@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_1" [label="1: Start A_fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 17, column 1]\n " color=yellow style=filled]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_1" [label="1: Start A_fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 21, column 1]\n " color=yellow style=filled]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_1" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_11" ;
 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_2" [label="2: Exit A_fast_loop: \n  " color=yellow style=filled]
 	
 
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_3" [label="3:  Return Stmt \n   n$0=*&size:int [line 22, column 10]\n  *&return:int=n$0 [line 22, column 3]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_3" [label="3:  Return Stmt \n   n$0=*&size:int [line 26, column 10]\n  *&return:int=n$0 [line 26, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_3" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_2" ;
@@ -15,43 +15,83 @@ digraph cfg {
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_4" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" [label="5:  BinaryOperatorStmt: NE \n   n$1=*&item:NSArray* [line 19, column 3]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" [label="5:  BinaryOperatorStmt: NE \n   n$1=*&item:NSArray* [line 23, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" ;
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" [label="6: Prune (true branch, while) \n   PRUNE((n$1 != null), true); [line 19, column 3]\n " shape="invhouse"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" [label="6: Prune (true branch, while) \n   PRUNE((n$1 != null), true); [line 23, column 3]\n " shape="invhouse"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_9" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$1 != null), false); [line 19, column 3]\n " shape="invhouse"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$1 != null), false); [line 23, column 3]\n " shape="invhouse"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_3" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_8" [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&items:NSArray* [line 19, column 25]\n  n$3=_fun_NSArray_nextObject(n$2:NSArray*) virtual [line 19, column 3]\n  *&item:NSArray*=n$3 [line 19, column 3]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_8" [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&items:NSArray* [line 23, column 25]\n  n$3=_fun_NSArray_nextObject(n$2:NSArray*) virtual [line 23, column 3]\n  *&item:NSArray*=n$3 [line 23, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_8" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_4" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:NSArray* [line 20, column 14]\n  n$5=_fun_NSArray_count(n$4:NSArray*) [line 20, column 13]\n  n$6=*&size:int [line 20, column 5]\n  *&size:int=(n$6 + n$5) [line 20, column 5]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:NSArray* [line 24, column 14]\n  n$5=_fun_NSArray_count(n$4:NSArray*) [line 24, column 13]\n  n$6=*&size:int [line 24, column 5]\n  *&size:int=(n$6 + n$5) [line 24, column 5]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_9" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_8" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_10" [label="10:  BinaryOperatorStmt: Assign \n   n$7=*&items:NSArray* [line 19, column 25]\n  n$8=_fun_NSArray_nextObject(n$7:NSArray*) virtual [line 19, column 3]\n  *&item:NSArray*=n$8 [line 19, column 3]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_10" [label="10:  BinaryOperatorStmt: Assign \n   n$7=*&items:NSArray* [line 23, column 25]\n  n$8=_fun_NSArray_nextObject(n$7:NSArray*) virtual [line 23, column 3]\n  *&item:NSArray*=n$8 [line 23, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_10" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_4" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_11" [label="11:  DeclStmt \n   *&size:int=0 [line 18, column 3]\n " shape="box"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_11" [label="11:  DeclStmt \n   *&size:int=0 [line 22, column 3]\n " shape="box"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_11" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_10" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_1" [label="1: Start A_while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 25, column 1]\n " color=yellow style=filled]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A_fast_loop_no_crash\nFormals:  self:A*\nLocals:  obj:objc_object* \n   DECLARE_LOCALS(&return,&obj); [line 38, column 1]\n " color=yellow style=filled]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" [label="2: Exit A_fast_loop_no_crash \n  " color=yellow style=filled]
+	
+
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" [label="3: + \n  " ]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" [label="4:  BinaryOperatorStmt: NE \n   n$16=*&obj:objc_object* [line 40, column 3]\n " shape="box"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" ;
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" [label="5: Prune (true branch, while) \n   PRUNE((n$16 != null), true); [line 40, column 3]\n " shape="invhouse"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" [label="6: Prune (false branch, while) \n   PRUNE(!(n$16 != null), false); [line 40, column 3]\n " shape="invhouse"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" [label="7:  BinaryOperatorStmt: Assign \n   n$17=*&self:A* [line 40, column 15]\n  n$18=*n$17.reverseObjectEnumerator:NSEnumerator* [line 40, column 15]\n  n$19=_fun_NSEnumerator_nextObject(n$18:NSEnumerator*) virtual [line 40, column 3]\n  *&obj:objc_object*=n$19 [line 40, column 3]\n " shape="box"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" [label="8:  Message Call: copy \n   n$20=*&obj:objc_object* [line 41, column 6]\n  n$21=_fun_NSObject_copy(n$20:objc_object*) virtual [line 41, column 5]\n " shape="box"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" [label="9:  BinaryOperatorStmt: Assign \n   n$22=*&self:A* [line 40, column 15]\n  n$23=*n$22.reverseObjectEnumerator:NSEnumerator* [line 40, column 15]\n  n$24=_fun_NSEnumerator_nextObject(n$23:NSEnumerator*) virtual [line 40, column 3]\n  *&obj:objc_object*=n$24 [line 40, column 3]\n " shape="box"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" [label="10:  DeclStmt \n   *&obj:objc_object*=null [line 39, column 3]\n " shape="box"]
+	
+
+	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" ;
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_1" [label="1: Start A_while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 29, column 1]\n " color=yellow style=filled]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_1" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_10" ;
 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_2" [label="2: Exit A_while_loop: \n  " color=yellow style=filled]
 	
 
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_3" [label="3:  Return Stmt \n   n$9=*&size:int [line 31, column 10]\n  *&return:int=n$9 [line 31, column 3]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_3" [label="3:  Return Stmt \n   n$9=*&size:int [line 35, column 10]\n  *&return:int=n$9 [line 35, column 3]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_3" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_2" ;
@@ -59,28 +99,28 @@ digraph cfg {
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_4" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_5" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_5" [label="5:  BinaryOperatorStmt: Assign \n   n$10=*&items:NSArray* [line 28, column 19]\n  n$11=_fun_NSArray_objectAtIndex:(n$10:NSArray*,3:unsigned long) virtual [line 28, column 18]\n  *&item:NSArray*=n$11 [line 28, column 11]\n  n$12=*&item:NSArray* [line 28, column 11]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_5" [label="5:  BinaryOperatorStmt: Assign \n   n$10=*&items:NSArray* [line 32, column 19]\n  n$11=_fun_NSArray_objectAtIndex:(n$10:NSArray*,3:unsigned long) virtual [line 32, column 18]\n  *&item:NSArray*=n$11 [line 32, column 11]\n  n$12=*&item:NSArray* [line 32, column 11]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_5" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_6" ;
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_5" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_7" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_6" [label="6: Prune (true branch, while) \n   PRUNE(n$12, true); [line 28, column 11]\n " shape="invhouse"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_6" [label="6: Prune (true branch, while) \n   PRUNE(n$12, true); [line 32, column 11]\n " shape="invhouse"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_6" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_8" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_7" [label="7: Prune (false branch, while) \n   PRUNE(!n$12, false); [line 28, column 11]\n " shape="invhouse"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_7" [label="7: Prune (false branch, while) \n   PRUNE(!n$12, false); [line 32, column 11]\n " shape="invhouse"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_7" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_3" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_8" [label="8:  BinaryOperatorStmt: AddAssign \n   n$13=*&item:NSArray* [line 29, column 14]\n  n$14=_fun_NSArray_count(n$13:NSArray*) [line 29, column 13]\n  n$15=*&size:int [line 29, column 5]\n  *&size:int=(n$15 + n$14) [line 29, column 5]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_8" [label="8:  BinaryOperatorStmt: AddAssign \n   n$13=*&item:NSArray* [line 33, column 14]\n  n$14=_fun_NSArray_count(n$13:NSArray*) [line 33, column 13]\n  n$15=*&size:int [line 33, column 5]\n  *&size:int=(n$15 + n$14) [line 33, column 5]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_8" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_4" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" [label="9:  DeclStmt \n   *&item:NSArray*=null [line 27, column 3]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" [label="9:  DeclStmt \n   *&item:NSArray*=null [line 31, column 3]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_4" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_10" [label="10:  DeclStmt \n   *&size:int=0 [line 26, column 3]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_10" [label="10:  DeclStmt \n   *&size:int=0 [line 30, column 3]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_10" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" ;

@@ -149,7 +149,7 @@ let make_binary_stmt stmt1 stmt2 stmt_info expr_info boi =
 
 
 let make_next_object_exp stmt_info item items =
-  let var_decl_ref, var_type =
+  let rec get_decl_ref item =
     match item with
     | Clang_ast_t.DeclStmt (_, _, [Clang_ast_t.VarDecl (di, name_info, var_qual_type, _)]) ->
         let decl_ptr = di.Clang_ast_t.di_pointer in
@@ -161,12 +161,20 @@ let make_next_object_exp stmt_info item items =
         let expr_info = make_expr_info_with_objc_kind var_qual_type `ObjCProperty in
         let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
         (Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info), var_qual_type)
-    | _ ->
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
-          "unexpected item %a"
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
-          item
+    | Clang_ast_t.DeclRefExpr (_, _, expr_info, _) ->
+        (item, expr_info.Clang_ast_t.ei_qual_type)
+    | stmt ->
+        let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+        match stmts with
+        | [stmt] ->
+            get_decl_ref stmt
+        | _ ->
+            CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+              "unexpected item %a"
+              (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+              item
   in
+  let var_decl_ref, var_type = get_decl_ref item in
   let message_call =
     make_message_expr create_id_type CFrontend_config.next_object items stmt_info false
   in
