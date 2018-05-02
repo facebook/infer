@@ -57,6 +57,13 @@ let is_proc_cfg_connected proc_desc =
   let is_exit_node n =
     match Procdesc.Node.get_kind n with Procdesc.Node.Exit_node _ -> true | _ -> false
   in
+  let is_between_join_and_exit_node n =
+    match Procdesc.Node.get_kind n with
+    | Procdesc.Node.Stmt_node "between_join_and_exit" -> (
+      match Procdesc.Node.get_succs n with [n'] when is_exit_node n' -> true | _ -> false )
+    | _ ->
+        false
+  in
   let is_broken_node n =
     let succs = Procdesc.Node.get_succs n in
     let preds = Procdesc.Node.get_preds n in
@@ -69,9 +76,13 @@ let is_proc_cfg_connected proc_desc =
         Int.equal (List.length succs) 0 || Int.equal (List.length preds) 0
     | Procdesc.Node.Join_node ->
       (* Join node has the exception that it may be without predecessors
-         and pointing to an exit node *)
-      (* if the if brances end with a return *)
-      match succs with [n'] when is_exit_node n' -> false | _ -> Int.equal (List.length preds) 0
+         and pointing to between_join_and_exit which points to an exit node *)
+      (* this happens when the if branches end with a return *)
+      match succs with
+      | [n'] when is_between_join_and_exit_node n' ->
+          false
+      | _ ->
+          Int.equal (List.length preds) 0
   in
   not (List.exists ~f:is_broken_node (Procdesc.get_nodes proc_desc))
 
