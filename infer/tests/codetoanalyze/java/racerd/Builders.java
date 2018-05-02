@@ -104,3 +104,22 @@ class TopLevelBuilder {
   }
 
 }
+
+class MyBuilder {
+  Obj mObj;
+
+  public static MyBuilder create() {
+    return new MyBuilder();
+  }
+
+  public MyBuilder setNestedPath(int i) {
+    this.mObj.f = i;
+    return this;
+  }
+
+  @ThreadSafe
+  static void setNestedPathOk(int i) {
+    MyBuilder.create().setNestedPath(1);
+  }
+
+}

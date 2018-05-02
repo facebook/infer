@@ -81,6 +81,7 @@ codetoanalyze/java/racerd/Ownership.java, void Ownership.notPropagatingOwnership
 codetoanalyze/java/racerd/Ownership.java, void Ownership.ownInOneBranchBad(Obj,boolean), 5, THREAD_SAFETY_VIOLATION, ERROR, [access to `formal.codetoanalyze.java.checkers.Obj.f`]
 codetoanalyze/java/racerd/Ownership.java, void Ownership.reassignParamToUnownedBad(), 1, THREAD_SAFETY_VIOLATION, ERROR, [call to void Ownership.reassignParamToUnowned(Obj),access to `o.codetoanalyze.java.checkers.Obj.f`]
 codetoanalyze/java/racerd/Ownership.java, void Ownership.reassignToFormalBad(Obj), 2, THREAD_SAFETY_VIOLATION, ERROR, [access to `formal.codetoanalyze.java.checkers.Obj.g`]
+codetoanalyze/java/racerd/Ownership.java, void Ownership.reassignToFormalBad(Obj), 3, THREAD_SAFETY_VIOLATION, ERROR, [access to `formal.codetoanalyze.java.checkers.Obj.g.codetoanalyze.java.checkers.Obj.f`]
 codetoanalyze/java/racerd/Ownership.java, void Ownership.reassignToFormalBad(Obj), 3, THREAD_SAFETY_VIOLATION, ERROR, [<Read trace>,access to `formal.codetoanalyze.java.checkers.Obj.g`,<Write trace>,access to `formal.codetoanalyze.java.checkers.Obj.g`]
 codetoanalyze/java/racerd/Ownership.java, void Ownership.writeToNotOwnedInCalleeBad1(Obj), 1, THREAD_SAFETY_VIOLATION, ERROR, [call to void Ownership.writeToFormal(Obj),access to `formal.codetoanalyze.java.checkers.Obj.f`]
 codetoanalyze/java/racerd/Ownership.java, void Ownership.writeToNotOwnedInCalleeBad2(), 2, THREAD_SAFETY_VIOLATION, ERROR, [call to void Ownership.writeToFormal(Obj),access to `formal.codetoanalyze.java.checkers.Obj.f`]
