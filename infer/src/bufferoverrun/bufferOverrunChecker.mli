@@ -11,6 +11,8 @@ open! IStd
 
 val checker : Callbacks.proc_callback_t
 
+module Summary : Summary.S with type payload = BufferOverrunDomain.Summary.t
+
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 type invariant_map

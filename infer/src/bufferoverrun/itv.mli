@@ -77,6 +77,8 @@ module Bound : sig
   val widen : prev:t -> next:t -> num_iters:'a -> t
 
   val ( <= ) : lhs:t -> rhs:t -> bool
+
+  val subst_ub : t -> t bottom_lifted SymbolMap.t -> t bottom_lifted
 end
 
 module ItvPure : sig

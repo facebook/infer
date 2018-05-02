@@ -51,17 +51,53 @@ module TransferFunctionsNodesBasicCost = struct
 
   let cost_atomic_instruction = Itv.Bound.one
 
-  let exec_instr_cost _inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
-      {ProcData.pdesc} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
+  let instantiate_cost ~tenv ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
+    match Ondemand.get_proc_desc callee_pname with
+    | None ->
+        L.(die InternalError)
+          "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" Itv.Bound.pp
+          callee_cost Typ.Procname.pp callee_pname
+    | Some callee_pdesc ->
+      match BufferOverrunChecker.Summary.read_summary caller_pdesc callee_pname with
+      | None ->
+          L.(die InternalError)
+            "Can't instantiate symbolic cost %a from call to %a (can't get summary)" Itv.Bound.pp
+            callee_cost Typ.Procname.pp callee_pname
+      | Some inferbo_summary ->
+          let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
+          let callee_entry_mem = BufferOverrunDomain.Summary.get_input inferbo_summary in
+          let callee_exit_mem = BufferOverrunDomain.Summary.get_output inferbo_summary in
+          let callee_ret_alias = BufferOverrunDomain.Mem.find_ret_alias callee_exit_mem in
+          let (subst_map, _), _ =
+            BufferOverrunSemantics.get_subst_map tenv callee_pdesc params inferbo_caller_mem
+              callee_entry_mem ~callee_ret_alias
+          in
+          match Itv.Bound.subst_ub callee_cost subst_map with
+          | Bottom ->
+              L.(die InternalError)
+                "Instantiation of cost %a from call to %a returned Bottom" Itv.Bound.pp callee_cost
+                Typ.Procname.pp callee_pname
+          | NonBottom callee_cost ->
+              callee_cost
+
+
+  let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
+      {ProcData.pdesc; tenv} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
     let key = CFG.id node in
     let astate' =
       match instr with
-      | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) -> (
-        match Summary.read_summary pdesc callee_pname with
-        | Some {post= cost_callee} ->
-            CostDomain.NodeInstructionToCostMap.add key cost_callee astate
-        | None ->
-            CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate )
+      | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
+          let callee_cost =
+            match Summary.read_summary pdesc callee_pname with
+            | Some {post= callee_cost} ->
+                if Itv.Bound.is_symbolic callee_cost then
+                  instantiate_cost ~tenv ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem
+                    ~callee_pname ~params ~callee_cost
+                else callee_cost
+            | None ->
+                cost_atomic_instruction
+          in
+          CostDomain.NodeInstructionToCostMap.add key callee_cost astate
       | Sil.Load _ | Sil.Store _ | Sil.Call _ | Sil.Prune _ ->
           CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
       | _ ->
