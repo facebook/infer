@@ -29,7 +29,7 @@ digraph cfg {
 "~A#A#(5328378654181921475).cff4808f235f4b18d15ccd10cb1df4ff_2" [label="2: Exit A_~A \n  " color=yellow style=filled]
 	
 
-"~A#A#(5328378654181921475).cff4808f235f4b18d15ccd10cb1df4ff_3" [label="3:  Destruction \n   n$0=*&this:A* [line 12, column 17]\n  _=*n$0:A [line 12, column 17]\n  _fun_A___infer_inner_destructor_~A(n$0:A*) [line 12, column 17]\n " shape="box"]
+"~A#A#(5328378654181921475).cff4808f235f4b18d15ccd10cb1df4ff_3" [label="3:  Destruction \n   n$0=*&this:A* [line 12, column 17]\n  _=*n$0:A [line 12, column 17]\n  n$2=_fun_A___infer_inner_destructor_~A(n$0:A*) [line 12, column 17]\n " shape="box"]
 	
 
 	 "~A#A#(5328378654181921475).cff4808f235f4b18d15ccd10cb1df4ff_3" -> "~A#A#(5328378654181921475).cff4808f235f4b18d15ccd10cb1df4ff_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "~B#B#(7876366742276079110).576ee7cb70a3e3453b3760583a94887e_2" [label="2: Exit B_~B \n  " color=yellow style=filled]
 	
 
-"~B#B#(7876366742276079110).576ee7cb70a3e3453b3760583a94887e_3" [label="3:  Destruction \n   n$0=*&this:B* [line 20, column 18]\n  _=*n$0:B [line 20, column 18]\n  _fun_B___infer_inner_destructor_~B(n$0:B*) [line 20, column 18]\n " shape="box"]
+"~B#B#(7876366742276079110).576ee7cb70a3e3453b3760583a94887e_3" [label="3:  Destruction \n   n$0=*&this:B* [line 20, column 18]\n  _=*n$0:B [line 20, column 18]\n  n$2=_fun_B___infer_inner_destructor_~B(n$0:B*) [line 20, column 18]\n " shape="box"]
 	
 
 	 "~B#B#(7876366742276079110).576ee7cb70a3e3453b3760583a94887e_3" -> "~B#B#(7876366742276079110).576ee7cb70a3e3453b3760583a94887e_2" ;

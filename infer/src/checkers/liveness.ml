@@ -68,11 +68,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         exp_add_live lhs_exp astate |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
-    | Sil.Call (ret_id, call_exp, actuals, _, _) ->
-        Option.value_map
-          ~f:(fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
-          ~default:astate ret_id
-        |> exp_add_live call_exp |> add_live_actuals actuals call_exp
+    | Sil.Call ((ret_id, _), call_exp, actuals, _, _) ->
+        Domain.remove (Var.of_id ret_id) astate |> exp_add_live call_exp
+        |> add_live_actuals actuals call_exp
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 
@@ -176,11 +174,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp) ->
         log_report pvar typ loc
     | Sil.Call
-        ( None
-        , Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname))
-        , (Exp.Lvar pvar, typ) :: _
-        , loc
-        , _ )
+        (_, Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)), (Exp.Lvar pvar, typ) :: _, loc, _)
       when Typ.Procname.is_constructor pname
            && should_report pvar typ live_vars captured_by_ref_vars ->
         log_report pvar typ loc

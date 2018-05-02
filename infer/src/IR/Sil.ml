@@ -46,9 +46,9 @@ type instr =
             [exp2] is the expression whose value is store. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
-  | Call of (Ident.t * Typ.t) option * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
-      (** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
-          [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. *)
+  | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
+      (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
+          [ret_id = e_fun(arg_ts);] *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
@@ -373,8 +373,8 @@ let instr_get_exps = function
       [e1; e2]
   | Prune (cond, _, _, _) ->
       [cond]
-  | Call (ret_id, e, _, _, _) ->
-      e :: Option.value_map ~f:(fun (id, _) -> [Exp.Var id]) ~default:[] ret_id
+  | Call ((id, _), e, _, _, _) ->
+      [e; Exp.Var id]
   | Nullify (pvar, _) ->
       [Exp.Lvar pvar]
   | Abstract _ ->
@@ -414,8 +414,8 @@ let pp_instr pe0 f instr =
         Location.pp loc
   | Prune (cond, loc, true_branch, _) ->
       F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv pe) cond true_branch Location.pp loc
-  | Call (ret_id, e, arg_ts, loc, cf) ->
-      (match ret_id with None -> () | Some (id, _) -> F.fprintf f "%a=" Ident.pp id) ;
+  | Call ((id, _), e, arg_ts, loc, cf) ->
+      F.fprintf f "%a=" Ident.pp id ;
       F.fprintf f "%a(%a)%a [%a]" (pp_exp_printenv pe) e
         (Pp.comma_seq (pp_exp_typ pe))
         arg_ts CallFlags.pp cf Location.pp loc
@@ -433,14 +433,14 @@ let pp_instr pe0 f instr =
 
 let add_with_block_parameters_flag instr =
   match instr with
-  | Call (ret_id, Exp.Const (Const.Cfun pname), arg_ts, loc, cf) ->
+  | Call (ret_id_typ, Exp.Const (Const.Cfun pname), arg_ts, loc, cf) ->
       if
         List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
         && Typ.Procname.is_clang pname
         (* to be extended to other methods *)
       then
         let cf' = {cf with cf_with_block_parameters= true} in
-        Call (ret_id, Exp.Const (Const.Cfun pname), arg_ts, loc, cf')
+        Call (ret_id_typ, Exp.Const (Const.Cfun pname), arg_ts, loc, cf')
       else instr
   | _ ->
       instr
@@ -1366,17 +1366,13 @@ let instr_sub_ids ~sub_id_binders f instr =
       if phys_equal lhs_exp' lhs_exp && phys_equal typ typ' && phys_equal rhs_exp' rhs_exp then
         instr
       else Store (lhs_exp', typ', rhs_exp', loc)
-  | Call (ret_id, fun_exp, actuals, call_flags, loc) ->
+  | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
       let ret_id' =
         if sub_id_binders then
-          match ret_id with
-          | Some (id, typ) ->
-              let id' = sub_id id in
-              let typ' = sub_typ typ in
-              if Ident.equal id id' && phys_equal typ typ' then ret_id else Some (id', typ')
-          | None ->
-              None
-        else ret_id
+          let id' = sub_id id in
+          let typ' = sub_typ typ in
+          if Ident.equal id id' && phys_equal typ typ' then ret_id_typ else (id', typ')
+        else ret_id_typ
       in
       let fun_exp' = exp_sub_ids f fun_exp in
       let actuals' =
@@ -1389,7 +1385,8 @@ let instr_sub_ids ~sub_id_binders f instr =
             else (actual', typ') )
           actuals
       in
-      if phys_equal ret_id' ret_id && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
+      if
+        phys_equal ret_id' ret_id_typ && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
       then instr
       else Call (ret_id', fun_exp', actuals', call_flags, loc)
   | Prune (exp, loc, true_branch, if_kind) ->

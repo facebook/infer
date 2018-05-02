@@ -45,9 +45,9 @@ type instr =
         [exp2] is the expression whose value is store. *)
   | Prune of Exp.t * Location.t * bool * if_kind
       (** prune the state based on [exp=1], the boolean indicates whether true branch *)
-  | Call of (Ident.t * Typ.t) option * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
-      (** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
-      [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. *)
+  | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
+      (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
+          [ret_id = e_fun(arg_ts);] *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)

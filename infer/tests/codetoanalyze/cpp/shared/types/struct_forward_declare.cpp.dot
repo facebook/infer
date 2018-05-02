@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   _fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 48, column 5]\n " shape="box"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   n$3=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 48, column 5]\n " shape="box"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" ;
@@ -55,7 +55,7 @@ digraph cfg {
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   _fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 37, column 5]\n " shape="box"]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   n$2=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 37, column 5]\n " shape="box"]
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
@@ -89,7 +89,7 @@ digraph cfg {
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   _fun_struct_forward_declare::Z_Z(&z:struct_forward_declare::Z*) [line 58, column 5]\n " shape="box"]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   n$2=_fun_struct_forward_declare::Z_Z(&z:struct_forward_declare::Z*) [line 58, column 5]\n " shape="box"]
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;

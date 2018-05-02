@@ -20,7 +20,7 @@ let tests =
   let f_proc_name = Typ.Procname.from_string_c_fun "f" in
   let g_proc_name = Typ.Procname.from_string_c_fun "g" in
   let g_args = [(Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint IInt))] in
-  let g_ret_id = Some (ident_of_str "r", Typ.mk (Tint IInt)) in
+  let g_return = (ident_of_str "r", Typ.mk (Tint IInt)) in
   let class_name = "com.example.SomeClass" in
   let file_name = "SomeClass.java" in
   let trace =
@@ -45,41 +45,42 @@ let tests =
   let caller_baz_name = Typ.Procname.from_string_c_fun "baz" in
   let test_list_from_foo =
     [ ( "on_call_add_proc_name"
-      , [make_call ~procname:f_proc_name None []; (* means f() *) invariant "{ f }"] )
+      , [make_call ~procname:f_proc_name []; (* means f() *) invariant "{ f }"] )
     ; ( "on_call_add_proc_name_w_args"
-      , [make_call ~procname:g_proc_name g_ret_id g_args; (* means r = a.g(1) *) invariant "{ g }"]
-      )
+      , [ make_call ~procname:g_proc_name ~return:g_return g_args
+        ; (* means r = a.g(1) *)
+          invariant "{ g }" ] )
     ; ( "handle_two_proc_calls"
-      , [ make_call ~procname:f_proc_name None []
+      , [ make_call ~procname:f_proc_name []
         ; invariant "{ f }"
-        ; make_call ~procname:g_proc_name g_ret_id g_args
+        ; make_call ~procname:g_proc_name ~return:g_return g_args
         ; invariant "{ f, g }" ] )
     ; ( "dont_record_procs_twice"
-      , [ make_call ~procname:f_proc_name None []
+      , [ make_call ~procname:f_proc_name []
         ; invariant "{ f }"
-        ; make_call ~procname:f_proc_name None []
+        ; make_call ~procname:f_proc_name []
         ; invariant "{ f }" ] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_foo_name
          ~initial:BoundedCallTree.Domain.empty extras
   in
   let test_list_from_bar =
     [ ( "on_call_anywhere_on_stack_add_proc_name"
-      , [make_call ~procname:f_proc_name None []; (* means f() *) invariant "{ f }"] ) ]
+      , [make_call ~procname:f_proc_name []; (* means f() *) invariant "{ f }"] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_bar_name extras ~initial
   in
   let test_list_from_baz =
     [ ( "ignore_procs_unrelated_to_trace"
-      , [make_call ~procname:f_proc_name None []; (* means f() *) invariant "{ }"] ) ]
+      , [make_call ~procname:f_proc_name []; (* means f() *) invariant "{ }"] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras ~initial
   in
   let test_list_multiple_traces_from_foo =
     [ ( "on_call_add_proc_name_in_any_stack_1"
-      , [make_call ~procname:f_proc_name None []; (* means f() *) invariant "{ f }"] ) ]
+      , [make_call ~procname:f_proc_name []; (* means f() *) invariant "{ f }"] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_foo_name multi_trace_extras ~initial
   in
   let test_list_multiple_traces_from_bar =
     [ ( "on_call_add_proc_name_in_any_stack_2"
-      , [make_call ~procname:f_proc_name None []; (* means f() *) invariant "{ f }"] ) ]
+      , [make_call ~procname:f_proc_name []; (* means f() *) invariant "{ f }"] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_bar_name multi_trace_extras ~initial
   in
   let test_list =

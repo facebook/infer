@@ -7,15 +7,15 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   _fun_X_X(&x3:X*,0:int,1:int) [line 23, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   n$0=_fun_X_X(&x3:X*,0:int,1:int) [line 23, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   _fun_X_X(&x2:X*,1:int,0:int) [line 22, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$1=_fun_X_X(&x2:X*,1:int,0:int) [line 22, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   _fun_X_X(&x1:X*,0:int,0:int) [line 21, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$2=_fun_X_X(&x1:X*,0:int,0:int) [line 21, column 5]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;

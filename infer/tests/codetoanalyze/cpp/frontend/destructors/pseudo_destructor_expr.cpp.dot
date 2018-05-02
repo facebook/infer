@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_3" -> "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_2" ;
-"destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 19, column 3]\n " shape="box"]
+"destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" [label="4:  Call _fun___infer_skip_function \n   n$0=_fun___infer_skip_function() [line 19, column 3]\n " shape="box"]
 	
 
 	 "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_4" -> "destroy<int_*>#14082686937760238422.8268959c48dc929d419568bc99a6b97b_3" ;
@@ -26,11 +26,11 @@ digraph cfg {
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_2" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 13, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" [label="4:  Call _fun___infer_skip_function \n   n$1=_fun___infer_skip_function() [line 13, column 3]\n " shape="box"]
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_3" ;
-"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  DeclStmt \n   n$1=*&p:int* [line 12, column 12]\n  n$2=*n$1:int [line 12, column 11]\n  *&x:int=n$2 [line 12, column 3]\n " shape="box"]
+"f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" [label="5:  DeclStmt \n   n$2=*&p:int* [line 12, column 12]\n  n$3=*n$2:int [line 12, column 11]\n  *&x:int=n$3 [line 12, column 3]\n " shape="box"]
 	
 
 	 "f#10188173399311638112.8cffce40f5525757e791edeba0985326_5" -> "f#10188173399311638112.8cffce40f5525757e791edeba0985326_4" ;

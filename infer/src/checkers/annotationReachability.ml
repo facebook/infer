@@ -10,7 +10,6 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
-module L = Logging
 module MF = MarkupFormatter
 
 let dummy_constructor_annot = "__infer_is_constructor"
@@ -421,7 +420,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate {ProcData.pdesc; tenv} _ = function
-    | Sil.Call (Some (id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
+    | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name pdesc in
@@ -436,8 +435,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.remove_tracking_var (Var.of_pvar pvar) astate
     | Sil.Prune (exp, _, _, _) when prunes_tracking_var astate exp ->
         Domain.stop_tracking astate
-    | Sil.Call (None, _, _, _, _) ->
-        L.(die InternalError) "Expecting a return identifier"
     | _ ->
         astate
 

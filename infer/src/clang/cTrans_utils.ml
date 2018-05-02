@@ -346,7 +346,7 @@ let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc fu
     let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
     match placement_args_exps with Some args -> exp :: args | None -> [exp]
   in
-  let ret_id_typ = Some (ret_id, function_type) in
+  let ret_id_typ = (ret_id, function_type) in
   let stmt_call =
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun alloc_builtin), args, sil_loc, CallFlags.default)
   in
@@ -377,7 +377,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname method_kind None ;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
-  let ret_id_typ = Some (init_ret_id, alloc_ret_type) in
+  let ret_id_typ = (init_ret_id, alloc_ret_type) in
   let init_stmt_call =
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, loc, call_flags)
   in
@@ -427,7 +427,12 @@ let cpp_new_trans sil_loc function_type size_exp placement_args_exps =
 let create_call_to_free_cf sil_loc exp typ =
   let pname = BuiltinDecl.__free_cf in
   let stmt_call =
-    Sil.Call (None, Exp.Const (Const.Cfun pname), [(exp, typ)], sil_loc, CallFlags.default)
+    Sil.Call
+      ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+      , Exp.Const (Const.Cfun pname)
+      , [(exp, typ)]
+      , sil_loc
+      , CallFlags.default )
   in
   stmt_call
 
@@ -486,7 +491,14 @@ let cast_operation cast_kind exps cast_typ sil_loc =
 let trans_assertion_failure sil_loc (context: CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
   let args = [(Exp.Const (Const.Cstr Config.default_failure_name), Typ.mk Tvoid)] in
-  let call_instr = Sil.Call (None, assert_fail_builtin, args, sil_loc, CallFlags.default) in
+  let call_instr =
+    Sil.Call
+      ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+      , assert_fail_builtin
+      , args
+      , sil_loc
+      , CallFlags.default )
+  in
   let exit_node = Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
     Nodes.create_node (Procdesc.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context
@@ -526,11 +538,11 @@ let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call
     match params_trans_res with
     | _ :: fst_arg_res :: _ when not cxx_method_call ->
         fst_arg_res
-    | ({exps= _method_exp :: this_exp} as fst_arg_res) :: _ when cxx_method_call ->
-        (* method_deref_trans uses different format to store first argument - it stores
-           two things in exps: [method_exp; this_exp].
-           We need to get rid of first exp before calling dereference_value_from_result *)
-        {fst_arg_res with exps= this_exp}
+    | ({exps= _method_exp :: rest} as fst_arg_res) :: _ when cxx_method_call ->
+        (* method_deref_trans uses a different format to store the first argument: it stores the
+           [method_exp] first.  We need to get rid of first exp before calling
+           dereference_value_from_result *)
+        {fst_arg_res with exps= rest}
     | _ ->
         assert false
   in

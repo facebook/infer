@@ -52,7 +52,7 @@ digraph cfg {
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 36, column 3]\n  n$10=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 36, column 16]\n  n$9(n$10:NSString*) [line 36, column 3]\n " shape="box"]
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 36, column 3]\n  n$10=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 36, column 16]\n  n$11=n$9(n$10:NSString*) [line 36, column 3]\n " shape="box"]
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$11 \n   n$11=*&successBlock:_fn_(*) [line 41, column 3]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 41, column 16]\n  n$11(n$12:NSString*) [line 41, column 3]\n " shape="box"]
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 41, column 3]\n  n$13=_fun_NSString_stringWithUTF8String:(\"Yay\":char* const ) [line 41, column 16]\n  n$14=n$12(n$13:NSString*) [line 41, column 3]\n " shape="box"]
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;

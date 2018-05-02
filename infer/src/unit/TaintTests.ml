@@ -101,15 +101,15 @@ let tests =
   in
   let assign_to_source ret_str =
     let procname = Typ.Procname.from_string_c_fun "SOURCE" in
-    make_call ~procname (Some (ident_of_str ret_str, dummy_typ)) []
+    make_call ~procname ~return:(ident_of_str ret_str, dummy_typ) []
   in
   let assign_to_non_source ret_str =
     let procname = Typ.Procname.from_string_c_fun "NON-SOURCE" in
-    make_call ~procname (Some (ident_of_str ret_str, dummy_typ)) []
+    make_call ~procname ~return:(ident_of_str ret_str, dummy_typ) []
   in
   let call_sink_with_exp exp =
     let procname = Typ.Procname.from_string_c_fun "SINK" in
-    make_call ~procname None [(exp, dummy_typ)]
+    make_call ~procname [(exp, dummy_typ)]
   in
   let call_sink actual_str = call_sink_with_exp (Exp.Var (ident_of_str actual_str)) in
   let assign_id_to_field root_str fld_str rhs_id_str =

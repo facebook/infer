@@ -7,15 +7,15 @@ digraph cfg {
 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" [label="2: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
 	
 
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n  _=*&b:B [line 51, column 16]\n  _fun_B_~B(&b:B*) [line 51, column 16]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 51, column 14]\n  *&return:int=(1 / n$0) [line 51, column 3]\n  _=*&b:B [line 51, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 51, column 16]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_2" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$2=*&b.f:int [line 50, column 15]\n  *&v:int=(1 / n$2) [line 50, column 3]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" [label="4:  DeclStmt \n   n$3=*&b.f:int [line 50, column 15]\n  *&v:int=(1 / n$3) [line 50, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_3" ;
-"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,0:int) [line 49, column 5]\n " shape="box"]
+"delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" [label="5:  DeclStmt \n   n$4=_fun_B_B(&b:B*,-1:int,0:int) [line 49, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_5" -> "delegate_constr_f2_div0#13553474688240246893.0ce7e6b119d9277f847a079378cf30a1_4" ;
@@ -26,15 +26,15 @@ digraph cfg {
 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" [label="2: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
 	
 
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45, column 14]\n  *&return:int=(1 / n$0) [line 45, column 3]\n  _=*&b:B [line 45, column 16]\n  _fun_B_~B(&b:B*) [line 45, column 16]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 45, column 14]\n  *&return:int=(1 / n$0) [line 45, column 3]\n  _=*&b:B [line 45, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 45, column 16]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_2" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$2=*&b.f2:int [line 44, column 15]\n  *&v:int=(1 / n$2) [line 44, column 3]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" [label="4:  DeclStmt \n   n$3=*&b.f2:int [line 44, column 15]\n  *&v:int=(1 / n$3) [line 44, column 3]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_3" ;
-"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   _fun_B_B(&b:B*,-1:int,1:int) [line 43, column 5]\n " shape="box"]
+"delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" [label="5:  DeclStmt \n   n$4=_fun_B_B(&b:B*,-1:int,1:int) [line 43, column 5]\n " shape="box"]
 	
 
 	 "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_5" -> "delegate_constr_f_div0#5612932889167727636.f7eff0d7a58a3e6a6faddf562531b7f4_4" ;
@@ -45,11 +45,11 @@ digraph cfg {
 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" [label="2: Exit f2_div0 \n  " color=yellow style=filled]
 	
 
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 29, column 14]\n  *&return:int=(1 / n$0) [line 29, column 3]\n  _=*&b:B [line 29, column 16]\n  _fun_B_~B(&b:B*) [line 29, column 16]\n " shape="box"]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" [label="3:  Return Stmt \n   n$0=*&b.f2:int [line 29, column 14]\n  *&return:int=(1 / n$0) [line 29, column 3]\n  _=*&b:B [line 29, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 29, column 16]\n " shape="box"]
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_2" ;
-"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   _fun_B_B(&b:B*,0:int) [line 28, column 5]\n " shape="box"]
+"f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" [label="4:  DeclStmt \n   n$3=_fun_B_B(&b:B*,0:int) [line 28, column 5]\n " shape="box"]
 	
 
 	 "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_4" -> "f2_div0#7534053771484990951.dd0b0233a011b5600e68aef2c840bcef_3" ;
@@ -60,11 +60,11 @@ digraph cfg {
 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" [label="2: Exit f_div0 \n  " color=yellow style=filled]
 	
 
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 34, column 14]\n  *&return:int=(1 / n$0) [line 34, column 3]\n  _=*&b:B [line 34, column 16]\n  _fun_B_~B(&b:B*) [line 34, column 16]\n " shape="box"]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" [label="3:  Return Stmt \n   n$0=*&b.f:int [line 34, column 14]\n  *&return:int=(1 / n$0) [line 34, column 3]\n  _=*&b:B [line 34, column 16]\n  n$2=_fun_B_~B(&b:B*) [line 34, column 16]\n " shape="box"]
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_2" ;
-"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   _fun_B_B(&b:B*,0:int) [line 33, column 5]\n " shape="box"]
+"f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" [label="4:  DeclStmt \n   n$3=_fun_B_B(&b:B*,0:int) [line 33, column 5]\n " shape="box"]
 	
 
 	 "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_4" -> "f_div0#425664895438337450.ac4424ba5cea731e26a9fe2fb1b0b687_3" ;
@@ -75,23 +75,23 @@ digraph cfg {
 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" [label="2: Exit f_f2_div1 \n  " color=yellow style=filled]
 	
 
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 59, column 10]\n  n$1=*&v2:int [line 59, column 14]\n  *&return:int=(n$0 + n$1) [line 59, column 3]\n  _=*&b:B [line 59, column 14]\n  _fun_B_~B(&b:B*) [line 59, column 14]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" [label="3:  Return Stmt \n   n$0=*&v:int [line 59, column 10]\n  n$1=*&v2:int [line 59, column 14]\n  *&return:int=(n$0 + n$1) [line 59, column 3]\n  _=*&b:B [line 59, column 14]\n  n$3=_fun_B_~B(&b:B*) [line 59, column 14]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_2" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   n$3=*&b.t.v:int [line 58, column 16]\n  *&v3:int=(1 / n$3) [line 58, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" [label="4:  DeclStmt \n   n$4=*&b.t.v:int [line 58, column 16]\n  *&v3:int=(1 / n$4) [line 58, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_3" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   n$4=*&b.f2:int [line 57, column 16]\n  *&v2:int=(1 / n$4) [line 57, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" [label="5:  DeclStmt \n   n$5=*&b.f2:int [line 57, column 16]\n  *&v2:int=(1 / n$5) [line 57, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_4" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   n$5=*&b.f:int [line 56, column 15]\n  *&v:int=(1 / n$5) [line 56, column 3]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" [label="6:  DeclStmt \n   n$6=*&b.f:int [line 56, column 15]\n  *&v:int=(1 / n$6) [line 56, column 3]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_5" ;
-"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   _fun_B_B(&b:B*,1:int) [line 55, column 5]\n " shape="box"]
+"f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" [label="7:  DeclStmt \n   n$7=_fun_B_B(&b:B*,1:int) [line 55, column 5]\n " shape="box"]
 	
 
 	 "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_7" -> "f_f2_div1#1916649103065485619.7e2fb5eeaa415affd6bdd86573d188de_6" ;
@@ -102,11 +102,11 @@ digraph cfg {
 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" [label="2: Exit t_div0 \n  " color=yellow style=filled]
 	
 
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&b:B [line 39, column 18]\n  _fun_B_~B(&b:B*) [line 39, column 18]\n " shape="box"]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" [label="3:  Return Stmt \n   n$0=*&b.t.v:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n  _=*&b:B [line 39, column 18]\n  n$2=_fun_B_~B(&b:B*) [line 39, column 18]\n " shape="box"]
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_2" ;
-"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   _fun_B_B(&b:B*,0:int) [line 38, column 5]\n " shape="box"]
+"t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" [label="4:  DeclStmt \n   n$3=_fun_B_B(&b:B*,0:int) [line 38, column 5]\n " shape="box"]
 	
 
 	 "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_4" -> "t_div0#3531430030893775324.a762c245df414e083e61674c93898055_3" ;
@@ -128,15 +128,15 @@ digraph cfg {
 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_2" [label="2: Exit B_B \n  " color=yellow style=filled]
 	
 
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" [label="3:  Constructor Init \n   n$0=*&this:B* [line 22, column 27]\n  n$1=*&a:int [line 22, column 29]\n  _fun_B::T_T(n$0.t:B::T*,n$1:int) [line 22, column 27]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" [label="3:  Constructor Init \n   n$0=*&this:B* [line 22, column 27]\n  n$1=*&a:int [line 22, column 29]\n  n$2=_fun_B::T_T(n$0.t:B::T*,n$1:int) [line 22, column 27]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_2" ;
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" [label="4:  Constructor Init \n   n$2=*&this:B* [line 22, column 20]\n  n$3=*&a:int [line 22, column 23]\n  *n$2.f2:int=n$3 [line 22, column 20]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" [label="4:  Constructor Init \n   n$3=*&this:B* [line 22, column 20]\n  n$4=*&a:int [line 22, column 23]\n  *n$3.f2:int=n$4 [line 22, column 20]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_3" ;
-"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" [label="5:  Constructor Init \n   n$4=*&this:B* [line 22, column 14]\n  n$5=*&a:int [line 22, column 16]\n  _fun_A_A(n$4:B*,n$5:int) [line 22, column 14]\n " shape="box"]
+"B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" [label="5:  Constructor Init \n   n$5=*&this:B* [line 22, column 14]\n  n$6=*&a:int [line 22, column 16]\n  n$7=_fun_A_A(n$5:B*,n$6:int) [line 22, column 14]\n " shape="box"]
 	
 
 	 "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_5" -> "B#B#{10798906211412859239}.a51813e44ba191ffaf76fde9e0b33185_4" ;
@@ -151,7 +151,7 @@ digraph cfg {
 	
 
 	 "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" -> "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_2" ;
-"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" [label="4:  Constructor Init \n   n$2=*&this:B* [line 24, column 21]\n  n$3=*&a:int [line 24, column 23]\n  n$4=*&b:int [line 24, column 27]\n  _fun_B_B(n$2:B*,(n$3 + n$4):int) [line 24, column 21]\n " shape="box"]
+"B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" [label="4:  Constructor Init \n   n$2=*&this:B* [line 24, column 21]\n  n$3=*&a:int [line 24, column 23]\n  n$4=*&b:int [line 24, column 27]\n  n$5=_fun_B_B(n$2:B*,(n$3 + n$4):int) [line 24, column 21]\n " shape="box"]
 	
 
 	 "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_4" -> "B#B#{12472590675666260682}.da2bf46e3a176d218006b99f6059cb97_3" ;

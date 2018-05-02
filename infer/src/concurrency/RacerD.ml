@@ -57,36 +57,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Domain.OwnershipDomain.add lhs_access_path ownership_value ownership
 
 
-  let propagate_return ret_opt ret_ownership ret_attributes actuals
+  let propagate_return return ret_ownership ret_attributes actuals
       {Domain.ownership; attribute_map} =
     let open Domain in
-    match ret_opt with
-    | None ->
-        (ownership, attribute_map)
-    | Some ret ->
-        let ret_access_path = (ret, []) in
-        let get_ownership formal_index acc =
-          match List.nth actuals formal_index with
-          | Some (HilExp.AccessExpression access_expr) ->
-              let actual_ap = AccessExpression.to_access_path access_expr in
-              OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
-          | Some (HilExp.Constant _) ->
-              acc
-          | _ ->
-              OwnershipAbstractValue.unowned
-        in
-        let ownership' =
-          match ret_ownership with
-          | OwnershipAbstractValue.Owned | Unowned ->
-              OwnershipDomain.add ret_access_path ret_ownership ownership
-          | OwnershipAbstractValue.OwnedIf formal_indexes ->
-              let actuals_ownership =
-                IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
-              in
-              OwnershipDomain.add ret_access_path actuals_ownership ownership
-        in
-        let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
-        (ownership', attribute_map')
+    let ret_access_path = (return, []) in
+    let get_ownership formal_index acc =
+      match List.nth actuals formal_index with
+      | Some (HilExp.AccessExpression access_expr) ->
+          let actual_ap = AccessExpression.to_access_path access_expr in
+          OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
+      | Some (HilExp.Constant _) ->
+          acc
+      | _ ->
+          OwnershipAbstractValue.unowned
+    in
+    let ownership' =
+      match ret_ownership with
+      | OwnershipAbstractValue.Owned | Unowned ->
+          OwnershipDomain.add ret_access_path ret_ownership ownership
+      | OwnershipAbstractValue.OwnedIf formal_indexes ->
+          let actuals_ownership =
+            IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
+          in
+          OwnershipDomain.add ret_access_path actuals_ownership ownership
+    in
+    let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
+    (ownership', attribute_map')
 
 
   (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
@@ -397,11 +393,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (instr: HilInstr.t) =
     let open Domain in
     let open RacerDConfig in
-    let add_base ret_opt wps =
-      match ret_opt with Some vt -> StabilityDomain.add_path (vt, []) wps | _ -> wps
-    in
+    let add_base ret_base wps = StabilityDomain.add_path (ret_base, []) wps in
     match instr with
-    | Call ((Some ret_base as rt), Direct procname, actuals, _, loc)
+    | Call (ret_base, Direct procname, actuals, _, loc)
       when Models.acquires_ownership procname tenv ->
         let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
@@ -412,11 +406,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         (* Record all actuals as wobbly paths *)
         let wobbly_paths =
-          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base rt
+          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base ret_base
         in
         {astate with accesses; ownership; wobbly_paths}
-    | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
-      -> (
+    | Call (ret_access_path, Direct callee_pname, actuals, call_flags, loc) ->
         let accesses_with_unannotated_calls =
           add_unannotated_call_access callee_pname actuals call_flags loc tenv ~locks:astate.locks
             ~threads:astate.threads astate.accesses proc_data
@@ -426,7 +419,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             astate.ownership proc_data
         in
         let wobbly_paths =
-          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base ret_opt
+          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths
+          |> add_base ret_access_path
         in
         let astate = {astate with accesses; wobbly_paths} in
         let astate =
@@ -435,18 +429,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               {astate with threads= ThreadsDomain.AnyThread}
           | MainThread ->
               {astate with threads= ThreadsDomain.AnyThreadButSelf}
-          | MainThreadIfTrue -> (
-            match ret_opt with
-            | Some ret_access_path ->
-                let attribute_map =
-                  AttributeMapDomain.add_attribute (ret_access_path, [])
-                    (Choice Choice.OnMainThread) astate.attribute_map
-                in
-                {astate with attribute_map}
-            | None ->
-                L.(die InternalError)
-                  "Procedure %a specified as returning boolean, but returns nothing"
-                  Typ.Procname.pp callee_pname )
+          | MainThreadIfTrue ->
+              let attribute_map =
+                AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.OnMainThread)
+                  astate.attribute_map
+              in
+              {astate with attribute_map}
           | UnknownThread ->
               astate
         in
@@ -473,18 +461,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 { astate with
                   locks= LocksDomain.remove_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
-            | LockedIfTrue -> (
-              match ret_opt with
-              | Some ret_access_path ->
-                  let attribute_map =
-                    AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.LockHeld)
-                      astate.attribute_map
-                  in
-                  {astate with attribute_map; threads= update_for_lock_use astate.threads}
-              | None ->
-                  L.(die InternalError)
-                    "Procedure %a specified as returning boolean, but returns nothing"
-                    Typ.Procname.pp callee_pname )
+            | LockedIfTrue ->
+                let attribute_map =
+                  AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.LockHeld)
+                    astate.attribute_map
+                in
+                {astate with attribute_map; threads= update_for_lock_use astate.threads}
             | NoEffect ->
                 let summary_opt = get_summary pdesc callee_pname actuals loc tenv astate in
                 let callee_pdesc = extras callee_pname in
@@ -512,7 +494,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         loc
                     in
                     let ownership, attribute_map =
-                      propagate_return ret_opt return_ownership return_attributes actuals astate
+                      propagate_return ret_access_path return_ownership return_attributes actuals
+                        astate
                     in
                     (* Remapping wobble paths; also bases that are not in caller's wobbly paths, i.e., callee's locals *)
                     let callee_wps_rebased =
@@ -533,8 +516,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       not call_flags.cf_interface && List.is_empty actuals
                     in
                     if Models.is_box callee_pname then
-                      match (ret_opt, actuals) with
-                      | Some ret, HilExp.AccessExpression actual_access_expr :: _ ->
+                      match actuals with
+                      | HilExp.AccessExpression actual_access_expr :: _ ->
                           let actual_ap = AccessExpression.to_access_path actual_access_expr in
                           if
                             AttributeMapDomain.has_attribute actual_ap Functional
@@ -542,7 +525,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           then
                             (* TODO: check for constants, which are functional? *)
                             let attribute_map =
-                              AttributeMapDomain.add_attribute (ret, []) Functional
+                              AttributeMapDomain.add_attribute (ret_access_path, []) Functional
                                 astate.attribute_map
                             in
                             {astate with attribute_map}
@@ -550,39 +533,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       | _ ->
                           astate
                     else if should_assume_returns_ownership call_flags actuals then
-                      match ret_opt with
-                      | Some ret ->
-                          let ownership =
-                            OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned
-                              astate.ownership
-                          in
-                          {astate with ownership}
-                      | None ->
-                          astate
+                      let ownership =
+                        OwnershipDomain.add (ret_access_path, []) OwnershipAbstractValue.owned
+                          astate.ownership
+                      in
+                      {astate with ownership}
                     else astate
         in
-        match ret_opt with
-        | Some ret ->
-            let add_if_annotated predicate attribute attribute_map =
-              if PatternMatch.override_exists predicate tenv callee_pname then
-                AttributeMapDomain.add_attribute (ret, []) attribute attribute_map
-              else attribute_map
-            in
-            let attribute_map =
-              add_if_annotated Models.is_functional Functional astate_callee.attribute_map
-            in
-            let ownership =
-              if
-                PatternMatch.override_exists
-                  (Models.has_return_annot Annotations.ia_is_returns_ownership)
-                  tenv callee_pname
-              then
-                OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned astate_callee.ownership
-              else astate_callee.ownership
-            in
-            {astate_callee with ownership; attribute_map}
-        | _ ->
-            astate_callee )
+        let add_if_annotated predicate attribute attribute_map =
+          if PatternMatch.override_exists predicate tenv callee_pname then
+            AttributeMapDomain.add_attribute (ret_access_path, []) attribute attribute_map
+          else attribute_map
+        in
+        let attribute_map =
+          add_if_annotated Models.is_functional Functional astate_callee.attribute_map
+        in
+        let ownership =
+          if
+            PatternMatch.override_exists
+              (Models.has_return_annot Annotations.ia_is_returns_ownership)
+              tenv callee_pname
+          then
+            OwnershipDomain.add (ret_access_path, []) OwnershipAbstractValue.owned
+              astate_callee.ownership
+          else astate_callee.ownership
+        in
+        {astate_callee with ownership; attribute_map}
     | Assign (lhs_access_expr, rhs_exp, loc) ->
         let lhs_access_path = AccessExpression.to_access_path lhs_access_expr in
         let rhs_accesses =

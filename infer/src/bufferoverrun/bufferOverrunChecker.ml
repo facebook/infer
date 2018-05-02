@@ -133,18 +133,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let reachable_locs = Dom.Mem.get_reachable_locs_from locs callee_exit_mem in
       PowLoc.fold copy (PowLoc.inter new_locs reachable_locs) mem
     in
-    match ret with
-    | Some (id, _) ->
-        let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-        let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
-        let ret_var = Loc.of_var (Var.of_id id) in
-        let add_ret_alias l = Dom.Mem.load_alias id l mem in
-        let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
-        Dom.Val.subst ret_val subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
-        |> Fn.flip (Dom.Mem.add_stack ret_var) mem
-        |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
-    | None ->
-        mem
+    let id = fst ret in
+    let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
+    let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
+    let ret_var = Loc.of_var (Var.of_id id) in
+    let add_ret_alias l = Dom.Mem.load_alias id l mem in
+    let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
+    Dom.Val.subst ret_val subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
+    |> Fn.flip (Dom.Mem.add_stack ret_var) mem
+    |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
 
 
   let instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location mem =
@@ -187,8 +184,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let instantiate_mem
-      : Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t option -> Typ.Procname.t
-        -> (Exp.t * Typ.t) list -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate =
+      : Tenv.t -> Ident.t * Typ.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
+        -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate =
    fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
     let callee_entry_mem = Dom.Summary.get_input summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
@@ -252,7 +249,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.hash node in
-            let model_env = Models.mk_model_env callee_pname node_hash location tenv ?ret in
+            let model_env = Models.mk_model_env callee_pname node_hash location tenv ~ret in
             exec model_env mem
         | None ->
           match Summary.read_summary pdesc callee_pname with
@@ -263,13 +260,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               L.(debug BufferOverrun Verbose)
                 "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                 location ;
-              match ret with
-              | None ->
-                  mem
-              | Some (id, _) ->
-                  let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
-                  Dom.Mem.add_stack (Loc.of_id id) val_unknown mem
-                  |> Dom.Mem.add_heap Loc.unknown val_unknown )
+              let id = fst ret in
+              let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
+              Dom.Mem.add_stack (Loc.of_id id) val_unknown mem
+              |> Dom.Mem.add_heap Loc.unknown val_unknown )
       | Declare_locals (locals, location) ->
           (* array allocation in stack e.g., int arr[10] *)
           let node_hash = CFG.hash node in

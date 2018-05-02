@@ -33,11 +33,11 @@ digraph cfg {
 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" [label="2: Exit TollBridgeExample__readHTTPHeader \n  " color=yellow style=filled]
 	
 
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$6=*&ref:__CFDictionary const * [line 37, column 21]\n  n$7=_fun_CFBridgingRelease(n$6:void const *) [line 37, column 3]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$8=*&ref:__CFDictionary const * [line 37, column 21]\n  n$9=_fun_CFBridgingRelease(n$8:void const *) [line 37, column 3]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$8=_fun_CFHTTPMessageCopyAllHeaderFields(null:__CFHTTPMessage*) [line 36, column 25]\n  *&ref:__CFDictionary const *=n$8 [line 36, column 3]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$10=_fun_CFHTTPMessageCopyAllHeaderFields(null:__CFHTTPMessage*) [line 36, column 25]\n  *&ref:__CFDictionary const *=n$10 [line 36, column 3]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" ;
@@ -48,11 +48,11 @@ digraph cfg {
 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" [label="2: Exit TollBridgeExample_brideRetained \n  " color=yellow style=filled]
 	
 
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   n$4=*&observer:objc_object* [line 31, column 50]\n  *&a:__CFLocale const *=n$4 [line 31, column 3]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   n$6=*&observer:objc_object* [line 31, column 50]\n  *&a:__CFLocale const *=n$6 [line 31, column 3]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=NSLocale):unsigned long) [line 30, column 17]\n  *&observer:objc_object*=n$5 [line 30, column 3]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=NSLocale):unsigned long) [line 30, column 17]\n  *&observer:objc_object*=n$7 [line 30, column 3]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" ;
@@ -63,11 +63,11 @@ digraph cfg {
 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" [label="2: Exit TollBridgeExample_bridge \n  " color=yellow style=filled]
 	
 
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   n$2=*&nameRef:__CFLocale const * [line 26, column 37]\n  _fun___free_cf(n$2:__CFLocale const *) [line 26, column 17]\n  *&a:NSLocale*=n$2 [line 26, column 3]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   n$3=*&nameRef:__CFLocale const * [line 26, column 37]\n  n$4=_fun___free_cf(n$3:__CFLocale const *) [line 26, column 17]\n  *&a:NSLocale*=n$3 [line 26, column 3]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$3=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 25, column 25]\n  *&nameRef:__CFLocale const *=n$3 [line 25, column 3]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$5=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 25, column 25]\n  *&nameRef:__CFLocale const *=n$5 [line 25, column 3]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" ;
@@ -78,11 +78,11 @@ digraph cfg {
 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" [label="2: Exit TollBridgeExample_bridgeTransfer \n  " color=yellow style=filled]
 	
 
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   n$0=*&nameRef:__CFLocale const * [line 21, column 46]\n  _fun___free_cf(n$0:__CFLocale const *) [line 21, column 17]\n  *&a:NSLocale*=n$0 [line 21, column 3]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   n$0=*&nameRef:__CFLocale const * [line 21, column 46]\n  n$1=_fun___free_cf(n$0:__CFLocale const *) [line 21, column 17]\n  *&a:NSLocale*=n$0 [line 21, column 3]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 20, column 25]\n  *&nameRef:__CFLocale const *=n$1 [line 20, column 3]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$2=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 20, column 25]\n  *&nameRef:__CFLocale const *=n$2 [line 20, column 3]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" ;

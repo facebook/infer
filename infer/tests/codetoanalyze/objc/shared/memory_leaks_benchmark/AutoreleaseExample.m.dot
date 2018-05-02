@@ -85,15 +85,15 @@ digraph cfg {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  _fun_NSObject_release(n$1:NSAutoreleasePool*) virtual [line 63, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  n$2=_fun_NSObject_release(n$1:NSAutoreleasePool*) virtual [line 63, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$3=_fun_NSObject_autorelease(n$2:NSString*) virtual [line 61, column 22]\n  *&string:NSString*=n$3 [line 61, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$4=_fun_NSObject_autorelease(n$3:NSString*) virtual [line 61, column 22]\n  *&string:NSString*=n$4 [line 61, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 60, column 30]\n  n$5=_fun_NSObject_init(n$4:NSAutoreleasePool*) virtual [line 60, column 29]\n  *&pool:NSAutoreleasePool*=n$5 [line 60, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=NSAutoreleasePool):unsigned long) [line 60, column 30]\n  n$6=_fun_NSObject_init(n$5:NSAutoreleasePool*) virtual [line 60, column 29]\n  *&pool:NSAutoreleasePool*=n$6 [line 60, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;

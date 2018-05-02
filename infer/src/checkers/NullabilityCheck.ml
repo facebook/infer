@@ -261,7 +261,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             is_pointer_subtype tenv rhs_typ lhs_typ
     in
     match instr with
-    | Call (Some ret_var, Direct callee_pname, _, _, _)
+    | Call (ret_var, Direct callee_pname, _, _, _)
       when NullCheckedPname.mem callee_pname checked_pnames ->
         (* Do not report nullable when the method has already been checked for null *)
         remove_nullable_ap (ret_var, []) astate
@@ -270,7 +270,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         assume_pnames_notnull (AccessExpression.to_access_path receiver) astate
     | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
         astate
-    | Call (Some ret_var, Direct callee_pname, _, _, loc)
+    | Call (ret_var, Direct callee_pname, _, _, loc)
       when Annotations.pname_has_return_annot callee_pname ~attrs_of_pname:lookup_local_attributes
              Annotations.ia_is_nullable ->
         let call_site = CallSite.make callee_pname loc in
@@ -281,7 +281,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
         check_nil_in_objc_container proc_data loc args astate
     | Call
-        ( Some ((_, ret_typ) as ret_var)
+        ( ((_, ret_typ) as ret_var)
         , Direct callee_pname
         , HilExp.AccessExpression receiver :: _
         , _
@@ -293,7 +293,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Some (_, call_sites) ->
           (* Objective C method will return nil when called on a nil receiver *)
           add_nullable_ap (ret_var, []) call_sites astate )
-    | Call (Some ret_var, _, _, _, _) ->
+    | Call (ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
     | Assign (lhs_access_expr, rhs, loc)
       -> (

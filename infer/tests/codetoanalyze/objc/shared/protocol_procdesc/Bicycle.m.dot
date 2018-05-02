@@ -7,7 +7,7 @@ digraph cfg {
 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" [label="2: Exit Bicycle_lockToStructure: \n  " color=yellow style=filled]
 	
 
-"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" [label="3:  Call _fun_NSLog \n   n$5=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char* const ) [line 32, column 9]\n  _fun_NSLog(n$5:objc_object*) [line 32, column 3]\n " shape="box"]
+"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" [label="3:  Call _fun_NSLog \n   n$10=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char* const ) [line 32, column 9]\n  n$11=_fun_NSLog(n$10:objc_object*) [line 32, column 3]\n " shape="box"]
 	
 
 	 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" -> "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_2" [label="2: Exit Bicycle_removeFrontWheel \n  " color=yellow style=filled]
 	
 
-"removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString_stringWithUTF8String:(\"Front wheel is off.Should probably replace that before pedaling...\":char* const ) [line 28, column 9]\n  _fun_NSLog(n$4:objc_object*) [line 28, column 3]\n " shape="box"]
+"removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" [label="3:  Call _fun_NSLog \n   n$8=_fun_NSString_stringWithUTF8String:(\"Front wheel is off.Should probably replace that before pedaling...\":char* const ) [line 28, column 9]\n  n$9=_fun_NSLog(n$8:objc_object*) [line 28, column 3]\n " shape="box"]
 	
 
 	 "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" -> "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_2" [label="2: Exit Bicycle_signalLeftTurn \n  " color=yellow style=filled]
 	
 
-"signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" [label="3:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"Extending left arm outwards\":char* const ) [line 19, column 9]\n  _fun_NSLog(n$1:objc_object*) [line 19, column 3]\n " shape="box"]
+"signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"Extending left arm outwards\":char* const ) [line 19, column 9]\n  n$3=_fun_NSLog(n$2:objc_object*) [line 19, column 3]\n " shape="box"]
 	
 
 	 "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" -> "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_2" [label="2: Exit Bicycle_signalRightTurn \n  " color=yellow style=filled]
 	
 
-"signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"Bending left arm upwards\":char* const ) [line 22, column 9]\n  _fun_NSLog(n$2:objc_object*) [line 22, column 3]\n " shape="box"]
+"signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString_stringWithUTF8String:(\"Bending left arm upwards\":char* const ) [line 22, column 9]\n  n$5=_fun_NSLog(n$4:objc_object*) [line 22, column 3]\n " shape="box"]
 	
 
 	 "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" -> "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_2" ;
@@ -51,7 +51,7 @@ digraph cfg {
 "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_2" [label="2: Exit Bicycle_signalStop \n  " color=yellow style=filled]
 	
 
-"signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Bending left arm downwards\":char* const ) [line 16, column 9]\n  _fun_NSLog(n$0:objc_object*) [line 16, column 3]\n " shape="box"]
+"signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Bending left arm downwards\":char* const ) [line 16, column 9]\n  n$1=_fun_NSLog(n$0:objc_object*) [line 16, column 3]\n " shape="box"]
 	
 
 	 "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" -> "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_2" ;
@@ -62,7 +62,7 @@ digraph cfg {
 "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_2" [label="2: Exit Bicycle_startPedaling \n  " color=yellow style=filled]
 	
 
-"startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" [label="3:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"Here we go!\":char* const ) [line 25, column 9]\n  _fun_NSLog(n$3:objc_object*) [line 25, column 3]\n " shape="box"]
+"startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" [label="3:  Call _fun_NSLog \n   n$6=_fun_NSString_stringWithUTF8String:(\"Here we go!\":char* const ) [line 25, column 9]\n  n$7=_fun_NSLog(n$6:objc_object*) [line 25, column 3]\n " shape="box"]
 	
 
 	 "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" -> "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_2" ;

@@ -224,31 +224,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Option.some_if (is_aggregate base) base
 
 
-  let acquire_ownership call_exp return_opt actuals loc summary astate =
+  let acquire_ownership call_exp return_base actuals loc summary astate =
     match call_exp with
     | HilInstr.Direct pname ->
         (* TODO: support new[], malloc, others? *)
         if Typ.Procname.equal pname BuiltinDecl.__new then
           let astate' = Domain.actuals_add_reads actuals loc summary astate in
-          match return_opt with
-          | Some return_base ->
-              Some (Domain.add return_base CapabilityDomain.Owned astate')
-          | None ->
-              Some astate'
+          Some (Domain.add return_base CapabilityDomain.Owned astate')
         else if Typ.Procname.equal pname BuiltinDecl.__placement_new then
-          match (List.rev actuals, return_opt) with
-          | HilExp.AccessExpression (Base placement_base) :: other_actuals, Some return_base ->
+          match List.rev actuals with
+          | HilExp.AccessExpression (Base placement_base) :: other_actuals ->
               (* placement new creates an alias between return var and placement var. model as
                  return borrowing from placement *)
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add placement_base CapabilityDomain.Owned
               |> Domain.borrow_vars return_base (VarSet.singleton placement_base) |> Option.some
-          | _ :: other_actuals, Some return_base ->
+          | _ :: other_actuals ->
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add return_base CapabilityDomain.Owned |> Option.some
           | _ ->
-              L.die InternalError "Placement new without placement or return in %a %a"
-                Typ.Procname.pp pname Location.pp loc
+              L.die InternalError "Placement new without placement in %a %a" Typ.Procname.pp pname
+                Location.pp loc
         else if Typ.Procname.is_constructor pname then
           match actuals with
           | HilExp.AccessExpression (AccessExpression.AddressOf access_expression) :: other_actuals
@@ -327,8 +323,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* invoking a lambda; check that it's captured vars are valid *)
         Domain.check_var_lifetime lhs_base loc summary astate ;
         astate
-    | Call (ret_opt, call_exp, actuals, _, loc) -> (
-      match acquire_ownership call_exp ret_opt actuals loc summary astate with
+    | Call (ret_id_typ, call_exp, actuals, _, loc) -> (
+      match acquire_ownership call_exp ret_id_typ actuals loc summary astate with
       | Some astate' ->
           astate'
       | None ->
@@ -337,7 +333,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.empty
           else
             let astate' = Domain.actuals_add_reads actuals loc summary astate in
-            match ret_opt with Some base -> Domain.remove base astate' | None -> astate' )
+            Domain.remove ret_id_typ astate' )
     | Assume (assume_exp, _, _, loc) ->
         Domain.exp_add_reads assume_exp loc summary astate
 

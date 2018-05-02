@@ -196,8 +196,8 @@ let rec nullify_exp_with_objc_null tenv prop exp =
 The annotations of the return type of the method get propagated to the return id,
 with the exception of when the return type is a struct, and we translate it as passing a reference
 to the method.  *)
-let mark_vars_as_undefined tenv prop ~ret_exp_opt ~undefined_actuals_by_ref callee_pname ret_annots
-    loc path_pos =
+let mark_vars_as_undefined tenv prop ~ret_exp ~undefined_actuals_by_ref callee_pname ret_annots loc
+    path_pos =
   let mark_var_as_undefined ~annot exp prop =
     match exp with
     | Exp.Var _ | Lvar _ ->
@@ -206,13 +206,7 @@ let mark_vars_as_undefined tenv prop ~ret_exp_opt ~undefined_actuals_by_ref call
     | _ ->
         prop
   in
-  let prop_with_ret_attr =
-    match ret_exp_opt with
-    | Some ret_exp ->
-        mark_var_as_undefined ~annot:ret_annots ret_exp prop
-    | None ->
-        prop
-  in
+  let prop_with_ret_attr = mark_var_as_undefined ~annot:ret_annots ret_exp prop in
   List.fold
     ~f:(fun prop id -> mark_var_as_undefined ~annot:[] id prop)
     ~init:prop_with_ret_attr undefined_actuals_by_ref

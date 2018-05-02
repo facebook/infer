@@ -535,7 +535,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           |> add_sinks_for_access_path lhs_access_expr loc |> exec_write lhs_access_expr rhs_exp
       | Assume (assume_exp, _, _, loc) ->
           add_sources_sinks_for_exp assume_exp loc astate
-      | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
+      | Call (ret_ap, Direct called_pname, actuals, call_flags, callee_loc) ->
           let astate =
             List.fold
               ~f:(fun acc exp -> add_sources_sinks_for_exp exp callee_loc acc)
@@ -588,19 +588,18 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 TaintDomain.add_trace access_path pruned_trace access_tree
             in
             let handle_model_ astate_acc propagation =
-              match (propagation, actuals, ret_opt) with
-              | _, [], _ ->
+              match (propagation, actuals) with
+              | _, [] ->
                   astate_acc
-              | TaintSpec.Propagate_to_return, actuals, Some ret_ap ->
+              | TaintSpec.Propagate_to_return, actuals ->
                   propagate_to_access_path (AccessPath.Abs.Abstracted (ret_ap, [])) actuals
                     astate_acc
               | ( TaintSpec.Propagate_to_receiver
-                , AccessExpression receiver_ae :: (_ :: _ as other_actuals)
-                , _ ) ->
+                , AccessExpression receiver_ae :: (_ :: _ as other_actuals) ) ->
                   propagate_to_access_path
                     (AccessPath.Abs.Abstracted (AccessExpression.to_access_path receiver_ae))
                     other_actuals astate_acc
-              | TaintSpec.Propagate_to_actual actual_index, _, _ -> (
+              | TaintSpec.Propagate_to_actual actual_index, _ -> (
                 match List.nth actuals actual_index with
                 | Some (HilExp.AccessExpression actual_ae) ->
                     propagate_to_access_path
@@ -639,14 +638,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   access_tree )
             | _ ->
                 let model =
-                  TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret_opt)
-                    actuals proc_data.tenv
+                  TaintSpecification.handle_unknown_call callee_pname (snd ret_ap) actuals
+                    proc_data.tenv
                 in
                 handle_model callee_pname access_tree model
           in
           let dummy_ret_opt =
-            match ret_opt with
-            | None when not (Typ.Procname.is_java called_pname) -> (
+            match ret_ap with
+            | _, {Typ.desc= Tvoid} when not (Typ.Procname.is_java called_pname) -> (
               match
                 (* the C++ frontend handles returns of non-pointers by adding a dummy
                    pass-by-reference variable as the last actual, then returning the value by
@@ -662,7 +661,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | _ ->
                   None )
             | _ ->
-                ret_opt
+                Some ret_ap
           in
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
@@ -698,10 +697,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 | None ->
                     handle_unknown_call callee_pname astate_with_source
                 | Some summary ->
-                    let ret_typ_opt = Option.map ~f:snd ret_opt in
+                    let ret_typ = snd ret_ap in
                     let access_tree = TaintSpecification.of_summary_access_tree summary in
                     match
-                      TaintSpecification.get_model callee_pname ret_typ_opt actuals proc_data.tenv
+                      TaintSpecification.get_model callee_pname ret_typ actuals proc_data.tenv
                         access_tree
                     with
                     | Some model ->

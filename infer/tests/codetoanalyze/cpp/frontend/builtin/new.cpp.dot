@@ -18,15 +18,15 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Call delete \n   n$0=*&i:int* [line 14, column 10]\n  _fun___delete(n$0:int*) [line 14, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Call delete \n   n$0=*&i:int* [line 14, column 10]\n  n$1=_fun___delete(n$0:int*) [line 14, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(t=int):unsigned long) [line 13, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=int):unsigned long) [line 13, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(t=int):unsigned long) [line 12, column 12]\n  *&i:int*=n$2 [line 12, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$3=_fun___new(sizeof(t=int):unsigned long) [line 12, column 12]\n  *&i:int*=n$3 [line 12, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
@@ -41,7 +41,7 @@ digraph cfg {
 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" [label="2: Exit test_placement \n  " color=yellow style=filled]
 	
 
-"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  DeclStmt \n   n$2=*&ptr:void* [line 26, column 60]\n  n$0=*&ptr2:int* [line 26, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 26, column 65]\n  n$1=*&ptr2:int* [line 26, column 65]\n  n$3=_fun___placement_new(sizeof(t=A):unsigned long,n$2:void*,n$1:void*) [line 26, column 55]\n  _fun_A_A(n$3:A*) [line 26, column 73]\n  *&p:A*=n$3 [line 26, column 45]\n " shape="box"]
+"test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" [label="3:  DeclStmt \n   n$2=*&ptr:void* [line 26, column 60]\n  n$0=*&ptr2:int* [line 26, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 26, column 65]\n  n$1=*&ptr2:int* [line 26, column 65]\n  n$3=_fun___placement_new(sizeof(t=A):unsigned long,n$2:void*,n$1:void*) [line 26, column 55]\n  n$4=_fun_A_A(n$3:A*) [line 26, column 73]\n  *&p:A*=n$3 [line 26, column 45]\n " shape="box"]
 	
 
 	 "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_3" -> "test_placement#7589029240520377616.7f92d4e10c030674dddd1682731c0ba3_2" ;

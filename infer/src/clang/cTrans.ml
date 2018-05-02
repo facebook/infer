@@ -214,10 +214,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let create_call_instr trans_state (return_type: Typ.t) function_sil params_sil sil_loc call_flags
       ~is_objc_method =
-    let ret_id =
-      if Typ.equal_desc return_type.desc Typ.Tvoid then None
-      else Some (Ident.create_fresh Ident.knormal, return_type)
-    in
+    let ret_id_typ = (Ident.create_fresh Ident.knormal, return_type) in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
       if CMethod_trans.should_add_return_param return_type ~is_objc_method then
@@ -251,9 +248,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (*                   value doesn't work good anyway. This may need to be revisited later*)
         let ret_param = (var_exp, param_type) in
         let ret_exp = (var_exp, return_type) in
-        (None, params_sil @ [ret_param], [var_exp], [ret_exp])
+        ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+        , params_sil @ [ret_param]
+        , [var_exp]
+        , [ret_exp] )
       else
-        (ret_id, params_sil, [], match ret_id with Some (i, t) -> [(Exp.Var i, t)] | None -> [])
+        ( ret_id_typ
+        , params_sil
+        , []
+        , let i, t = ret_id_typ in
+          [(Exp.Var i, t)] )
     in
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     let call_instr' = Sil.add_with_block_parameters_flag call_instr in
@@ -1031,7 +1035,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         builtin
     | None ->
         let act_params =
-          let params = List.tl_exn (collect_exprs result_trans_subexprs) in
+          let params = List.tl (collect_exprs result_trans_subexprs) |> Option.value ~default:[] in
           if Int.equal (List.length params) (List.length params_stmt) then params
           else
             (* FIXME(t21762295) this is reachable *)
@@ -2184,7 +2188,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let call_instr =
       let call_exp = Exp.Const (Const.Cfun BuiltinDecl.__set_array_length) in
       let actuals = [array_exp_typ; dynlength_exp_typ] in
-      Sil.Call (None, call_exp, actuals, sil_loc, CallFlags.default)
+      Sil.Call
+        ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+        , call_exp
+        , actuals
+        , sil_loc
+        , CallFlags.default )
     in
     let call_trans_result = {empty_res_trans with instrs= [call_instr]} in
     let res_trans =
@@ -2829,7 +2838,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         "WARNING: There should be one expression to delete. @\n"
     in
     let call_instr =
-      Sil.Call (None, Exp.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default)
+      Sil.Call
+        ( (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+        , Exp.Const (Const.Cfun fname)
+        , [exp]
+        , sil_loc
+        , CallFlags.default )
     in
     let call_res_trans = {empty_res_trans with instrs= [call_instr]} in
     let all_res_trans =
@@ -2906,7 +2920,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let exp = match res_trans_stmt.exps with [e] -> e | _ -> assert false in
     let args = [exp; (sizeof_expr, Typ.mk Tvoid)] in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let call = Sil.Call (Some (ret_id, cast_type), builtin, args, sil_loc, CallFlags.default) in
+    let call = Sil.Call ((ret_id, cast_type), builtin, args, sil_loc, CallFlags.default) in
     let res_ex = Exp.Var ret_id in
     let res_trans_dynamic_cast = {empty_res_trans with instrs= [call]} in
     let all_res_trans = [res_trans_stmt; res_trans_dynamic_cast] in
@@ -2925,7 +2939,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  and call_function_with_args instr_name pname trans_state stmt_info stmts =
+  and call_function_with_args instr_name pname trans_state stmt_info ret_typ stmts =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = {trans_state_pri with succ_nodes= []} in
@@ -2934,7 +2948,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let params = collect_exprs res_trans_subexpr_list in
     let sil_fun = Exp.Const (Const.Cfun pname) in
-    let call_instr = Sil.Call (None, sil_fun, params, sil_loc, CallFlags.default) in
+    let call_instr =
+      Sil.Call
+        ((Ident.create_fresh Ident.knormal, ret_typ), sil_fun, params, sil_loc, CallFlags.default)
+    in
     let res_trans_call = {empty_res_trans with instrs= [call_instr]; exps= []} in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
     let res_trans_to_parent =
@@ -2944,18 +2961,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans_to_parent with exps= res_trans_call.exps}
 
 
-  and gccAsmStmt_trans trans_state =
+  and gccAsmStmt_trans trans_state stmt_info stmts =
     let pname = Typ.Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_asm_stmt in
-    call_function_with_args "GCCAsmStmt" pname trans_state
+    call_function_with_args "GCCAsmStmt" pname trans_state stmt_info (Typ.mk Tvoid) stmts
 
 
-  and genericSelectionExprUnknown_trans trans_state =
+  and genericSelectionExprUnknown_trans trans_state stmt_info stmts =
     let pname = Typ.Procname.from_string_c_fun CFrontend_config.infer_generic_selection_expr in
-    call_function_with_args "GenericSelectionExpr" pname trans_state
+    call_function_with_args "GenericSelectionExpr" pname trans_state stmt_info (Typ.mk Tvoid) stmts
 
 
-  and objc_cxx_throw_trans trans_state =
-    call_function_with_args "ObjCCPPThrow" BuiltinDecl.objc_cpp_throw trans_state
+  and objc_cxx_throw_trans trans_state stmt_info stmts =
+    call_function_with_args "ObjCCPPThrow" BuiltinDecl.objc_cpp_throw trans_state stmt_info
+      (Typ.mk Tvoid) stmts
 
 
   and cxxPseudoDestructorExpr_trans () =
@@ -2990,7 +3008,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args = type_info_objc :: (field_exp, void_typ) :: res_trans_subexpr.exps in
-    let call_instr = Sil.Call (Some (ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call ((ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_trans_call = {empty_res_trans with instrs= [call_instr]; exps= [(ret_exp, typ)]} in
     let all_res_trans = [res_trans_subexpr; res_trans_call] in
     let res_trans_to_parent =
@@ -3013,7 +3031,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let ret_exp = Exp.Var ret_id in
-    let call_instr = Sil.Call (Some (ret_id, typ), sil_fun, params, sil_loc, CallFlags.default) in
+    let call_instr = Sil.Call ((ret_id, typ), sil_fun, params, sil_loc, CallFlags.default) in
     let res_trans_call = {empty_res_trans with instrs= [call_instr]; exps= [(ret_exp, typ)]} in
     let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
     let res_trans_to_parent =
@@ -3094,8 +3112,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** no-op translated for unsupported instructions that will at least translate subexpressions *)
-  and skip_unimplemented ~reason trans_state stmts =
-    call_function_with_args reason BuiltinDecl.__infer_skip trans_state stmts
+  and skip_unimplemented ~reason trans_state ret_typ stmts =
+    call_function_with_args reason BuiltinDecl.__infer_skip trans_state ret_typ stmts
 
 
   (** Translates a clang instruction into SIL instructions. It takes a a [trans_state] containing
@@ -3426,11 +3444,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHTryStmt _
     | ShuffleVectorExpr _
     | DefaultStmt _ ->
+        let stmt_info, stmts, ret_typ =
+          match Clang_ast_proj.get_expr_tuple instr with
+          | Some (stmt_info, stmts, expr_info) ->
+              let ret_typ =
+                CType_decl.get_type_from_expr_info expr_info trans_state.context.tenv
+              in
+              (stmt_info, stmts, ret_typ)
+          | None ->
+              (stmt_info, stmts, Typ.mk Tvoid)
+        in
         skip_unimplemented
           ~reason:
             (Printf.sprintf "unimplemented construct: %s"
                (Clang_ast_proj.get_stmt_kind_string instr))
-          trans_state stmt_info stmts
+          trans_state stmt_info ret_typ stmts
 
 
   (** Function similar to instruction function, but it takes C++ constructor initializer as

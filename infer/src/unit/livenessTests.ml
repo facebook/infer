@@ -54,10 +54,10 @@ let tests =
       , [assert_empty; var_assign_int "x" 1; invariant "{ x }"; If (var_of_str "x", [], [])] )
     ; ( "while_exp_live"
       , [assert_empty; var_assign_int "x" 1; invariant "{ x }"; While (var_of_str "x", [])] )
-    ; ("call_params_live", [invariant "{ b, a, c }"; call_unknown_no_ret ["a"; "b"; "c"]])
+    ; ("call_params_live", [invariant "{ b, a, c }"; call_unknown ["a"; "b"; "c"]])
     ; ( "dead_after_call_with_retval"
       , [ assert_empty
-        ; call_unknown (Some ("y", Typ.mk (Tint IInt))) []
+        ; call_unknown ~return:("y", Typ.mk (Tint IInt)) []
         ; invariant "{ y$0 }"
         ; id_assign_id "x" "y" ] )
     ; ( "closure_captured_live"

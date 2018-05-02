@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X*) [line 15, column 3]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$0=_fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X*) [line 15, column 3]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;

@@ -7,15 +7,15 @@ digraph cfg {
 "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_2" [label="2: Exit struct_pass_by_value::field_div0 \n  " color=yellow style=filled]
 	
 
-"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&y.x:struct_pass_by_value::X&) [line 44, column 20]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 44, column 14]\n  *&return:int=(1 / n$1) [line 44, column 3]\n  _=*&x:struct_pass_by_value::X [line 44, column 23]\n  _fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 44, column 23]\n " shape="box"]
+"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_3" [label="3:  Return Stmt \n   n$1=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&y.x:struct_pass_by_value::X&) [line 44, column 20]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 44, column 14]\n  *&return:int=(1 / n$2) [line 44, column 3]\n  _=*&x:struct_pass_by_value::X [line 44, column 23]\n  n$4=_fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 44, column 23]\n " shape="box"]
 	
 
 	 "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_3" -> "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_2" ;
-"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::Y_Y(&y:struct_pass_by_value::Y*,&x:struct_pass_by_value::X&) [line 43, column 5]\n " shape="box"]
+"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_4" [label="4:  DeclStmt \n   n$5=_fun_struct_pass_by_value::Y_Y(&y:struct_pass_by_value::Y*,&x:struct_pass_by_value::X&) [line 43, column 5]\n " shape="box"]
 	
 
 	 "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_4" -> "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_3" ;
-"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 42, column 5]\n " shape="box"]
+"field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_5" [label="5:  DeclStmt \n   n$6=_fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 42, column 5]\n " shape="box"]
 	
 
 	 "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_5" -> "field_div0#struct_pass_by_value#10739265731582012189.309f906a63458fd1d3c6651d011f1020_4" ;
@@ -30,41 +30,41 @@ digraph cfg {
 	
 
 	 "get_f#struct_pass_by_value#16901161791851138670.e181cdd22ed5b9b12bfb0f726d36256b_3" -> "get_f#struct_pass_by_value#16901161791851138670.e181cdd22ed5b9b12bfb0f726d36256b_2" ;
-"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_1" [label="1: Start struct_pass_by_value::param_get_copied_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X x:struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$2,&x); [line 47, column 1]\n " color=yellow style=filled]
+"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_1" [label="1: Start struct_pass_by_value::param_get_copied_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X x:struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$3,&x); [line 47, column 1]\n " color=yellow style=filled]
 	
 
 	 "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_1" -> "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_5" ;
 "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_2" [label="2: Exit struct_pass_by_value::param_get_copied_div0 \n  " color=yellow style=filled]
 	
 
-"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 50, column 14]\n  *&return:int=(1 / n$0) [line 50, column 3]\n  _=*&x:struct_pass_by_value::X [line 50, column 16]\n  _fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 50, column 16]\n " shape="box"]
+"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 50, column 14]\n  *&return:int=(1 / n$0) [line 50, column 3]\n  _=*&x:struct_pass_by_value::X [line 50, column 16]\n  n$2=_fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 50, column 16]\n " shape="box"]
 	
 
 	 "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_3" -> "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_2" ;
-"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 49, column 9]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X,1:int) [line 49, column 3]\n " shape="box"]
+"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   n$4=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 49, column 9]\n  n$5=_fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X,1:int) [line 49, column 3]\n " shape="box"]
 	
 
 	 "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_4" -> "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_3" ;
-"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 48, column 5]\n " shape="box"]
+"param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_5" [label="5:  DeclStmt \n   n$6=_fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 48, column 5]\n " shape="box"]
 	
 
 	 "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_5" -> "param_get_copied_div0#struct_pass_by_value#5422600122206315156.a9ecc5bcf15beb35ee10b7d5c038ad8e_4" ;
-"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_1" [label="1: Start struct_pass_by_value::param_get_copied_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X x:struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$2,&x); [line 53, column 1]\n " color=yellow style=filled]
+"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_1" [label="1: Start struct_pass_by_value::param_get_copied_div1\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X x:struct_pass_by_value::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$3,&x); [line 53, column 1]\n " color=yellow style=filled]
 	
 
 	 "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_1" -> "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_5" ;
 "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_2" [label="2: Exit struct_pass_by_value::param_get_copied_div1 \n  " color=yellow style=filled]
 	
 
-"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 56, column 14]\n  *&return:int=(1 / n$0) [line 56, column 3]\n  _=*&x:struct_pass_by_value::X [line 56, column 16]\n  _fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 56, column 16]\n " shape="box"]
+"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 56, column 14]\n  *&return:int=(1 / n$0) [line 56, column 3]\n  _=*&x:struct_pass_by_value::X [line 56, column 16]\n  n$2=_fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 56, column 16]\n " shape="box"]
 	
 
 	 "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_3" -> "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_2" ;
-"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 55, column 9]\n  _fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$2:struct_pass_by_value::X,0:int) [line 55, column 3]\n " shape="box"]
+"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_4" [label="4:  Call _fun_struct_pass_by_value::set_f \n   n$4=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 55, column 9]\n  n$5=_fun_struct_pass_by_value::set_f(&0$?%__sil_tmp__temp_construct_n$3:struct_pass_by_value::X,0:int) [line 55, column 3]\n " shape="box"]
 	
 
 	 "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_4" -> "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_3" ;
-"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_5" [label="5:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,1:int) [line 54, column 5]\n " shape="box"]
+"param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_5" [label="5:  DeclStmt \n   n$6=_fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,1:int) [line 54, column 5]\n " shape="box"]
 	
 
 	 "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_5" -> "param_get_copied_div1#struct_pass_by_value#4678038335560999331.58ffd03114defd7dfa2ce1d8e7c84b46_4" ;
@@ -86,7 +86,7 @@ digraph cfg {
 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_2" [label="2: Exit struct_pass_by_value::temp_div0 \n  " color=yellow style=filled]
 	
 
-"temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X*,0:int) [line 37, column 36]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X&) [line 37, column 36]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 37, column 30]\n  *&return:int=(1 / n$2) [line 37, column 19]\n " shape="box"]
+"temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" [label="3:  Return Stmt \n   n$2=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X*,0:int) [line 37, column 36]\n  n$3=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X&) [line 37, column 36]\n  n$4=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 37, column 30]\n  *&return:int=(1 / n$4) [line 37, column 19]\n " shape="box"]
 	
 
 	 "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_3" -> "temp_div0#struct_pass_by_value#12428807554484697371.c8fca64e841f1b138c802c96104d913c_2" ;
@@ -97,7 +97,7 @@ digraph cfg {
 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_2" [label="2: Exit struct_pass_by_value::temp_div1 \n  " color=yellow style=filled]
 	
 
-"temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X*,1:int) [line 39, column 36]\n  _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X&) [line 39, column 36]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 39, column 30]\n  *&return:int=(1 / n$2) [line 39, column 19]\n " shape="box"]
+"temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" [label="3:  Return Stmt \n   n$2=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X*,1:int) [line 39, column 36]\n  n$3=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:struct_pass_by_value::X&) [line 39, column 36]\n  n$4=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 39, column 30]\n  *&return:int=(1 / n$4) [line 39, column 19]\n " shape="box"]
 	
 
 	 "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_3" -> "temp_div1#struct_pass_by_value#13173334156757910444.11618e43948d09c7324724af84bc0d5b_2" ;
@@ -108,11 +108,11 @@ digraph cfg {
 "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_2" [label="2: Exit struct_pass_by_value::var_div0 \n  " color=yellow style=filled]
 	
 
-"var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 29, column 20]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 29, column 14]\n  *&return:int=(1 / n$1) [line 29, column 3]\n  _=*&x:struct_pass_by_value::X [line 29, column 21]\n  _fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 29, column 21]\n " shape="box"]
+"var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_3" [label="3:  Return Stmt \n   n$1=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 29, column 20]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 29, column 14]\n  *&return:int=(1 / n$2) [line 29, column 3]\n  _=*&x:struct_pass_by_value::X [line 29, column 21]\n  n$4=_fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 29, column 21]\n " shape="box"]
 	
 
 	 "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_3" -> "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_2" ;
-"var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 28, column 5]\n " shape="box"]
+"var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_4" [label="4:  DeclStmt \n   n$5=_fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,0:int) [line 28, column 5]\n " shape="box"]
 	
 
 	 "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_4" -> "var_div0#struct_pass_by_value#10764880494979445665.44da929aedf0cdc1afaea064cb399051_3" ;
@@ -123,11 +123,11 @@ digraph cfg {
 "var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_2" [label="2: Exit struct_pass_by_value::var_div1 \n  " color=yellow style=filled]
 	
 
-"var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_3" [label="3:  Return Stmt \n   _fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 34, column 20]\n  n$1=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 34, column 14]\n  *&return:int=(1 / n$1) [line 34, column 3]\n  _=*&x:struct_pass_by_value::X [line 34, column 21]\n  _fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 34, column 21]\n " shape="box"]
+"var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_3" [label="3:  Return Stmt \n   n$1=_fun_struct_pass_by_value::X_X(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X*,&x:struct_pass_by_value::X&) [line 34, column 20]\n  n$2=_fun_struct_pass_by_value::get_f(&0$?%__sil_tmp__temp_construct_n$0:struct_pass_by_value::X) [line 34, column 14]\n  *&return:int=(1 / n$2) [line 34, column 3]\n  _=*&x:struct_pass_by_value::X [line 34, column 21]\n  n$4=_fun_struct_pass_by_value::X_~X(&x:struct_pass_by_value::X*) [line 34, column 21]\n " shape="box"]
 	
 
 	 "var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_3" -> "var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_2" ;
-"var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_4" [label="4:  DeclStmt \n   _fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,1:int) [line 33, column 5]\n " shape="box"]
+"var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_4" [label="4:  DeclStmt \n   n$5=_fun_struct_pass_by_value::X_X(&x:struct_pass_by_value::X*,1:int) [line 33, column 5]\n " shape="box"]
 	
 
 	 "var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_4" -> "var_div1#struct_pass_by_value#11501824865066029482.b667f3a6d8153cf4e571282bd064fc22_3" ;
@@ -171,7 +171,7 @@ digraph cfg {
 "Y#Y#struct_pass_by_value#{2591422873810003675}.4cc6400ed3a8bedc19c95b6ea1876631_2" [label="2: Exit struct_pass_by_value::Y_Y \n  " color=yellow style=filled]
 	
 
-"Y#Y#struct_pass_by_value#{2591422873810003675}.4cc6400ed3a8bedc19c95b6ea1876631_3" [label="3:  Constructor Init \n   n$0=*&this:struct_pass_by_value::Y* [line 18, column 19]\n  n$1=*&x:struct_pass_by_value::X const & [line 18, column 21]\n  _fun_struct_pass_by_value::X_X(n$0.x:struct_pass_by_value::X*,n$1:struct_pass_by_value::X const &) [line 18, column 19]\n " shape="box"]
+"Y#Y#struct_pass_by_value#{2591422873810003675}.4cc6400ed3a8bedc19c95b6ea1876631_3" [label="3:  Constructor Init \n   n$0=*&this:struct_pass_by_value::Y* [line 18, column 19]\n  n$1=*&x:struct_pass_by_value::X const & [line 18, column 21]\n  n$2=_fun_struct_pass_by_value::X_X(n$0.x:struct_pass_by_value::X*,n$1:struct_pass_by_value::X const &) [line 18, column 19]\n " shape="box"]
 	
 
 	 "Y#Y#struct_pass_by_value#{2591422873810003675}.4cc6400ed3a8bedc19c95b6ea1876631_3" -> "Y#Y#struct_pass_by_value#{2591422873810003675}.4cc6400ed3a8bedc19c95b6ea1876631_2" ;

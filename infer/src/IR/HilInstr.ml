@@ -23,7 +23,7 @@ let pp_call fmt = function
 type t =
   | Assign of AccessExpression.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
-  | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
+  | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
 [@@deriving compare]
 
 let pp fmt = function
@@ -31,10 +31,10 @@ let pp fmt = function
       F.fprintf fmt "%a := %a [%a]" AccessExpression.pp access_expr HilExp.pp exp Location.pp loc
   | Assume (exp, _, _, loc) ->
       F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
-  | Call (ret_opt, call, actuals, _, loc) ->
-      let pp_ret fmt = Option.iter ~f:(F.fprintf fmt "%a := " AccessPath.pp_base) in
+  | Call (ret, call, actuals, _, loc) ->
+      let pp_ret fmt = F.fprintf fmt "%a := " AccessPath.pp_base in
       let pp_actuals fmt = PrettyPrintable.pp_collection ~pp_item:HilExp.pp fmt in
-      F.fprintf fmt "%a%a(%a) [%a]" pp_ret ret_opt pp_call call pp_actuals actuals Location.pp loc
+      F.fprintf fmt "%a%a(%a) [%a]" pp_ret ret pp_call call pp_actuals actuals Location.pp loc
 
 
 type translation =
@@ -66,7 +66,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
       (* do not need to add deref here as it is added implicitly in of_pvar by forgetting the & *)
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call
-      ( Some (ret_id, _)
+      ( (ret_id, _)
       , Const (Cfun callee_pname)
       , (target_exp, _) :: (Sizeof {typ= cast_typ}, _) :: _
       , loc
@@ -108,8 +108,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
               "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc
       in
       Instr (Assign (lhs_access_expr, exp_of_sil rhs_exp typ, loc))
-  | Call (ret_opt, call_exp, formals, loc, call_flags) ->
-      let hil_ret = Option.map ~f:(fun (ret_id, ret_typ) -> (Var.of_id ret_id, ret_typ)) ret_opt in
+  | Call ((ret_id, ret_typ), call_exp, formals, loc, call_flags) ->
+      let hil_ret = (Var.of_id ret_id, ret_typ) in
       let hil_call =
         match exp_of_sil call_exp (Typ.mk Tvoid) with
         | Constant (Cfun procname) | Closure (procname, _) ->

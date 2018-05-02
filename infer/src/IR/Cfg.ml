@@ -117,7 +117,7 @@ let save_attributes source_file cfg =
 
 
 (** Inline a synthetic (access or bridge) method. *)
-let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
+let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr option =
   let modified = ref None in
   let found instr instr' =
     modified := Some instr' ;
@@ -127,33 +127,27 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
       "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr'
   in
   let do_instr _ instr =
-    match (instr, ret_id, etl) with
-    | ( Sil.Load (_, Exp.Lfield (Exp.Var _, fn, ft), bt, _)
-      , Some (ret_id, _)
-      , [(* getter for fields *) (e1, _)] ) ->
+    match (instr, etl) with
+    | Sil.Load (_, Exp.Lfield (Exp.Var _, fn, ft), bt, _), [(* getter for fields *) (e1, _)] ->
         let instr' = Sil.Load (ret_id, Exp.Lfield (e1, fn, ft), bt, loc_call) in
         found instr instr'
-    | Sil.Load (_, Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _), Some (ret_id, _), []
-      when Pvar.is_global pvar ->
+    | Sil.Load (_, Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _), [] when Pvar.is_global pvar ->
         (* getter for static fields *)
         let instr' = Sil.Load (ret_id, Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, loc_call) in
         found instr instr'
-    | Sil.Store (Exp.Lfield (_, fn, ft), bt, _, _), _, [(* setter for fields *) (e1, _); (e2, _)] ->
+    | Sil.Store (Exp.Lfield (_, fn, ft), bt, _, _), [(* setter for fields *) (e1, _); (e2, _)] ->
         let instr' = Sil.Store (Exp.Lfield (e1, fn, ft), bt, e2, loc_call) in
         found instr instr'
-    | Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _, _), _, [(e1, _)]
-      when Pvar.is_global pvar ->
+    | Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _, _), [(e1, _)] when Pvar.is_global pvar ->
         (* setter for static fields *)
         let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, e1, loc_call) in
         found instr instr'
-    | Sil.Call (ret_id', Exp.Const (Const.Cfun pn), etl', _, cf), _, _
-      when Bool.equal (is_none ret_id) (is_none ret_id')
-           && Int.equal (List.length etl') (List.length etl) ->
-        let instr' = Sil.Call (ret_id, Exp.Const (Const.Cfun pn), etl, loc_call, cf) in
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _
+      when Int.equal (List.length etl') (List.length etl) ->
+        let instr' = Sil.Call (ret, Exp.Const (Const.Cfun pn), etl, loc_call, cf) in
         found instr instr'
-    | Sil.Call (ret_id', Exp.Const (Const.Cfun pn), etl', _, cf), _, _
-      when Bool.equal (is_none ret_id) (is_none ret_id')
-           && Int.equal (List.length etl' + 1) (List.length etl) ->
+    | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _
+      when Int.equal (List.length etl' + 1) (List.length etl) ->
         let etl1 =
           match List.rev etl with
           (* remove last element *)
@@ -162,7 +156,7 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
           | [] ->
               assert false
         in
-        let instr' = Sil.Call (ret_id, Exp.Const (Const.Cfun pn), etl1, loc_call, cf) in
+        let instr' = Sil.Call (ret, Exp.Const (Const.Cfun pn), etl1, loc_call, cf) in
         found instr instr'
     | _ ->
         ()
@@ -174,14 +168,16 @@ let inline_synthetic_method ret_id etl pdesc loc_call : Sil.instr option =
 (** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. *)
 let proc_inline_synthetic_methods cfg pdesc : unit =
   let instr_inline_synthetic_method = function
-    | Sil.Call (ret_id, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _) -> (
+    | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _)
+          -> (
       match Typ.Procname.Hash.find cfg pn with
       | pd ->
           let is_access = Typ.Procname.Java.is_access_method java_pn in
           let attributes = Procdesc.get_attributes pd in
           let is_synthetic = attributes.is_synthetic_method in
           let is_bridge = attributes.is_bridge_method in
-          if is_access || is_bridge || is_synthetic then inline_synthetic_method ret_id etl pd loc
+          if is_access || is_bridge || is_synthetic then
+            inline_synthetic_method ret_id_typ etl pd loc
           else None
       | exception Caml.Not_found ->
           None )

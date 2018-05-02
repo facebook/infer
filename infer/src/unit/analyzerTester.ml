@@ -52,7 +52,7 @@ module StructuredSil = struct
 
   let pp_structured_program = pp_structured_instr_list
 
-  let dummy_typ = Typ.mk Tvoid
+  let dummy_typ = Typ.mk (Tint IUChar)
 
   let dummy_loc = Location.dummy
 
@@ -76,9 +76,16 @@ module StructuredSil = struct
 
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp = Cmd (Sil.Store (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
-  let make_call ?(procname= dummy_procname) ret_id args =
+  let make_call ?(procname= dummy_procname) ?return:return_opt args =
+    let ret_id_typ =
+      match return_opt with
+      | Some ret_id_typ ->
+          ret_id_typ
+      | None ->
+          (Ident.create_fresh Ident.knormal, Typ.mk Tvoid)
+    in
     let call_exp = Exp.Const (Const.Cfun procname) in
-    Cmd (Sil.Call (ret_id, call_exp, args, dummy_loc, CallFlags.default))
+    Cmd (Sil.Call (ret_id_typ, call_exp, args, dummy_loc, CallFlags.default))
 
 
   let make_store ~rhs_typ root_exp fld_str ~rhs_exp =
@@ -138,13 +145,10 @@ module StructuredSil = struct
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
 
-  let call_unknown ret_id_str_opt arg_strs =
+  let call_unknown ?return arg_strs =
     let args = List.map ~f:(fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
-    let ret_id = Option.map ~f:(fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
-    make_call ret_id args
-
-
-  let call_unknown_no_ret arg_strs = call_unknown None arg_strs
+    let return = Option.map return ~f:(fun (str, typ) -> (ident_of_str str, typ)) in
+    make_call ?return args
 end
 
 module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =

@@ -118,7 +118,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
     match instrs with
-    | Sil.Call (Some (t1, _), Exp.Const (Const.Cfun pn), _, _, _)
+    | Sil.Call ((t1, _), Exp.Const (Const.Cfun pn), _, _, _)
       :: Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) :: is ->
         Pvar.equal ivar iv && Ident.equal t1 t2
         && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array")

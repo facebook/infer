@@ -39,7 +39,7 @@ digraph cfg {
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   _fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12, column 5]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   n$3=_fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12, column 5]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;

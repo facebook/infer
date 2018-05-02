@@ -7,7 +7,7 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   *&0$?%__sil_tmpSIL_init_list__n$0.top:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.left:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.bottom:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.right:int=0 [line 17, column 25]\n  _fun_Person_Person(&p:Person*,&0$?%__sil_tmpSIL_init_list__n$0:Insets) [line 17, column 22]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   *&0$?%__sil_tmpSIL_init_list__n$0.top:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.left:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.bottom:int=0 [line 17, column 25]\n  *&0$?%__sil_tmpSIL_init_list__n$0.right:int=0 [line 17, column 25]\n  n$1=_fun_Person_Person(&p:Person*,&0$?%__sil_tmpSIL_init_list__n$0:Insets) [line 17, column 22]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;

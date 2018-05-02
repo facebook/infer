@@ -18,7 +18,7 @@ digraph cfg {
 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_2" [label="2: Exit MyClass_aClassMethod2 \n  " color=yellow style=filled]
 	
 
-"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" [label="3:  Message Call: aClassMethod \n   _fun_MyClass_aClassMethod() [line 29, column 3]\n " shape="box"]
+"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" [label="3:  Message Call: aClassMethod \n   n$2=_fun_MyClass_aClassMethod() [line 29, column 3]\n " shape="box"]
 	
 
 	 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" -> "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" [label="2: Exit MyClass_anInstanceMethod \n  " color=yellow style=filled]
 	
 
-"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" [label="3:  Message Call: aClassMethod \n   _fun_MyClass_aClassMethod() [line 25, column 3]\n " shape="box"]
+"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" [label="3:  Message Call: aClassMethod \n   n$1=_fun_MyClass_aClassMethod() [line 25, column 3]\n " shape="box"]
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" [label="2: Exit MyClass_anInstanceMethod2 \n  " color=yellow style=filled]
 	
 
-"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" [label="3:  Message Call: getX \n   n$1=*&self:MyClass* [line 37, column 4]\n  n$2=_fun_MyClass_getX(n$1:MyClass*) virtual [line 37, column 3]\n " shape="box"]
+"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" [label="3:  Message Call: getX \n   n$3=*&self:MyClass* [line 37, column 4]\n  n$4=_fun_MyClass_getX(n$3:MyClass*) virtual [line 37, column 3]\n " shape="box"]
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" ;

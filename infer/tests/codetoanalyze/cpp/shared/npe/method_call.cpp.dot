@@ -55,7 +55,7 @@ digraph cfg {
 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" [label="2: Exit npe_call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:XForward*) [line 38, column 3]\n " shape="box"]
+"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   n$0=_fun_call_with_forward_declaration(null:XForward*) [line 38, column 3]\n " shape="box"]
 	
 
 	 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" -> "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" ;

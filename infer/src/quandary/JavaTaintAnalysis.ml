@@ -23,7 +23,7 @@ include TaintAnalysis.Make (struct
         assert false
 
 
-  let handle_unknown_call pname ret_typ_opt actuals tenv =
+  let handle_unknown_call pname ret_typ actuals tenv =
     let get_receiver_typ tenv = function
       | HilExp.AccessExpression access_expr ->
           AccessPath.get_typ (AccessExpression.to_access_path access_expr) tenv
@@ -46,7 +46,7 @@ include TaintAnalysis.Make (struct
         match
           ( Typ.Procname.Java.get_class_name java_pname
           , Typ.Procname.Java.get_method java_pname
-          , ret_typ_opt )
+          , ret_typ )
         with
         | "android.content.Intent", ("putExtra" | "putExtras"), _ ->
             (* don't care about tainted extras. instead. we'll check that result of getExtra is
@@ -54,11 +54,11 @@ include TaintAnalysis.Make (struct
             []
         | _ when Typ.Procname.is_constructor pname ->
             [TaintSpec.Propagate_to_receiver]
-        | _, _, (Some {Typ.desc= Tvoid | Tint _ | Tfloat _} | None) when not is_static ->
+        | _, _, {Typ.desc= Tvoid | Tint _ | Tfloat _} when not is_static ->
             (* for instance methods with a non-Object return value, propagate the taint to the
                receiver *)
             [TaintSpec.Propagate_to_receiver]
-        | classname, _, Some {Typ.desc= Tptr _ | Tstruct _} -> (
+        | classname, _, {Typ.desc= Tptr _ | Tstruct _} -> (
           match actuals with
           | receiver_exp :: _
             when not is_static && types_match (get_receiver_typ tenv receiver_exp) classname tenv ->

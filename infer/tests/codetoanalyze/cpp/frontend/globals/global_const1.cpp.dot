@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 13, column 9]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   n$0=_fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 13, column 9]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -29,7 +29,7 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 12]\n  _fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 15, column 19]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 15, column 19]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;

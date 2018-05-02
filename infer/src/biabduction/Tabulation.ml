@@ -909,29 +909,15 @@ let combine tenv ret_id (posts: ('a Prop.t * Paths.Path.t) list) actual_pre path
           | None ->
               post_p2
           | Some iter' ->
-            match (fst (Prop.prop_iter_current tenv iter'), ret_id) with
-            | Sil.Hpointsto (_, Sil.Eexp (e', inst), _), _ when exp_is_exn e' ->
+            match fst (Prop.prop_iter_current tenv iter') with
+            | Sil.Hpointsto (_, Sil.Eexp (e', inst), _) when exp_is_exn e' ->
                 (* resuls is an exception: set in caller *)
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                 prop_set_exn tenv caller_pname p (Sil.Eexp (e', inst))
-            | Sil.Hpointsto (_, Sil.Eexp (e', _), _), Some (id, _) ->
+            | Sil.Hpointsto (_, Sil.Eexp (e', _), _) ->
                 let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
-                Prop.conjoin_eq tenv e' (Exp.Var id) p
-            | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _), _
-              when Int.equal (List.length ftl) (if is_none ret_id then 0 else 1) ->
-                (* TODO(jjb): Is this case dead? *)
-                let rec do_ftl_ids p = function
-                  | [], None ->
-                      p
-                  | (_, Sil.Eexp (e', _)) :: ftl', Some (ret_id, _) ->
-                      let p' = Prop.conjoin_eq tenv e' (Exp.Var ret_id) p in
-                      do_ftl_ids p' (ftl', None)
-                  | _ ->
-                      p
-                in
-                let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
-                do_ftl_ids p (ftl, ret_id)
-            | Sil.Hpointsto _, _ ->
+                Prop.conjoin_eq tenv e' (Exp.Var ret_id) p
+            | Sil.Hpointsto _ ->
                 (* returning nothing or unexpected sexp, turning into nondet *)
                 Prop.prop_iter_remove_curr_then_to_prop tenv iter'
             | _ ->
@@ -988,38 +974,36 @@ let mk_actual_precondition tenv prop actual_params formal_params =
   Prop.normalize tenv actual_pre
 
 
-let mk_posts tenv ret_id_opt prop callee_pname posts =
-  if is_none ret_id_opt then posts
-  else
-    let mk_getter_idempotent posts =
-      (* if we have seen a previous call to the same function, only use specs whose return value
+let mk_posts tenv prop callee_pname posts =
+  let mk_getter_idempotent posts =
+    (* if we have seen a previous call to the same function, only use specs whose return value
            is consistent with constraints on the return value of the previous call w.r.t to
            nullness. meant to eliminate false NPE warnings from the common
            "if (get() != null) get().something()" pattern *)
-      let last_call_ret_non_null =
+    let last_call_ret_non_null =
+      List.exists
+        ~f:(function
+            | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname ->
+                Prover.check_disequal tenv prop exp Exp.zero
+            | _ ->
+                false)
+        (Attribute.get_all prop)
+    in
+    if last_call_ret_non_null then
+      let returns_null prop =
         List.exists
           ~f:(function
-              | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname ->
-                  Prover.check_disequal tenv prop exp Exp.zero
+              | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
+                  Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
               | _ ->
                   false)
-          (Attribute.get_all prop)
+          prop.Prop.sigma
       in
-      if last_call_ret_non_null then
-        let returns_null prop =
-          List.exists
-            ~f:(function
-                | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar ->
-                    Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
-                | _ ->
-                    false)
-            prop.Prop.sigma
-        in
-        List.filter ~f:(fun (prop, _) -> not (returns_null prop)) posts
-      else posts
-    in
-    if Config.idempotent_getters && Language.curr_language_is Java then mk_getter_idempotent posts
+      List.filter ~f:(fun (prop, _) -> not (returns_null prop)) posts
     else posts
+  in
+  if Config.idempotent_getters && Language.curr_language_is Java then mk_getter_idempotent posts
+  else posts
 
 
 (** Check if actual_pre * missing_footprint |- false *)
@@ -1108,10 +1092,10 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
 
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path_pre
+let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path_pre
     (spec: Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts tenv ret_id_opt prop callee_pname spec.Specs.posts in
+  let posts = mk_posts tenv prop callee_pname spec.Specs.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
   let spec_pre = Specs.Jprop.to_prop spec.Specs.pre in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs) ;
@@ -1172,7 +1156,7 @@ let exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc p
       in
       let report_valid_res split =
         match
-          combine tenv ret_id_opt posts actual_pre path_pre split caller_pdesc callee_pname loc
+          combine tenv ret_id posts actual_pre path_pre split caller_pdesc callee_pname loc
         with
         | None ->
             Invalid_res Cannot_combine
@@ -1413,21 +1397,19 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
     (Config.idempotent_getters && Language.curr_language_is Java && is_likely_getter callee_pname)
     || returns_nullable ret_annot
   in
-  match ret_id with
-  | Some (ret_id, _) when should_add_ret_attr () ->
-      (* add attribute to remember what function call a return id came from *)
-      let ret_var = Exp.Var ret_id in
-      let mark_id_as_retval (p, path) =
-        let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
-        (Attribute.add tenv p att_retval [ret_var], path)
-      in
-      List.map ~f:mark_id_as_retval res
-  | _ ->
-      res
+  if should_add_ret_attr () then
+    (* add attribute to remember what function call a return id came from *)
+    let ret_var = Exp.Var ret_id in
+    let mark_id_as_retval (p, path) =
+      let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
+      (Attribute.add tenv p att_retval [ret_var], path)
+    in
+    List.map ~f:mark_id_as_retval res
+  else res
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call exe_env callee_summary tenv ret_id_opt caller_pdesc callee_pname loc
+let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pname loc
     actual_params prop path =
   let callee_attrs = Specs.get_attributes callee_summary in
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
@@ -1441,8 +1423,8 @@ let exe_function_call exe_env callee_summary tenv ret_id_opt caller_pdesc callee
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec exe_env tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path spec
+    exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path spec
       actual_params formal_params
   in
   let results = List.map ~f:exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_id_opt trace_call callee_pname callee_attrs loc results
+  exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results

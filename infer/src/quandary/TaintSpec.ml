@@ -24,13 +24,12 @@ module type S = sig
 
   module AccessTree : module type of AccessTree.Make (Trace) (AccessTree.DefaultConfig)
 
-  val handle_unknown_call :
-    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> action list
+  val handle_unknown_call : Typ.Procname.t -> Typ.t -> HilExp.t list -> Tenv.t -> action list
   (** return a summary for handling an unknown call at the given site with the given return type
       and actuals *)
 
   val get_model :
-    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> AccessTree.t -> action list option
+    Typ.Procname.t -> Typ.t -> HilExp.t list -> Tenv.t -> AccessTree.t -> action list option
   (** returns a model that should be used for the given (procname, return type, actuals, summary)
       instead of using the summary for the procname *)
 

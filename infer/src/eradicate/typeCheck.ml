@@ -494,19 +494,19 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             typestate1
       in
       check_field_assign () ; typestate2
-  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
+  | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
       TypeState.add_id id
         (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New, [loc])
         typestate
       (* new never returns null *)
-  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
+  | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), (e, typ) :: _, loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors typestate e loc ;
       let e', typestate' = convert_complex_exp_to_pvar node false e typestate loc in
       (* cast copies the type of the first argument *)
       TypeState.add_id id (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc) typestate'
-  | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
+  | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
     when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
       let _, ta, _ =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
@@ -525,7 +525,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
-      ( ret_id
+      ( ret_id_typ
       , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java as callee_pname))
       , etl_
       , loc
@@ -577,11 +577,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       in
       let do_return (ret_ta, ret_typ) loc' typestate' =
         let mk_return_range () = (ret_typ, ret_ta, [loc']) in
-        match ret_id with
-        | None ->
-            typestate'
-        | Some (id, _) ->
-            TypeState.add_id id (mk_return_range ()) typestate'
+        let id = fst ret_id_typ in
+        TypeState.add_id id (mk_return_range ()) typestate'
       in
       (* Handle Preconditions.checkNotNull. *)
       let do_preconditions_check_not_null parameter_num ~is_vararg typestate' =

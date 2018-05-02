@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" -> "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_2" ;
-"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" [label="4:  DeclStmt \n   _fun_B<A>_B(&b:B<A>*) [line 19, column 8]\n " shape="box"]
+"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" [label="4:  DeclStmt \n   n$2=_fun_B<A>_B(&b:B<A>*) [line 19, column 8]\n " shape="box"]
 	
 
 	 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" -> "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" -> "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_2" ;
-"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" [label="4:  DeclStmt \n   _fun_B<int>_B(&b:B<int>*) [line 14, column 10]\n " shape="box"]
+"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" [label="4:  DeclStmt \n   n$2=_fun_B<int>_B(&b:B<int>*) [line 14, column 10]\n " shape="box"]
 	
 
 	 "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" -> "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" ;

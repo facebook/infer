@@ -47,7 +47,7 @@ val lookup_custom_errors : 'a Prop.t -> string option
 (** search in prop contains an error state *)
 
 val exe_function_call :
-  Exe_env.t -> Specs.summary -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Typ.Procname.t
-  -> Location.t -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t
+  Exe_env.t -> Specs.summary -> Tenv.t -> Ident.t -> Procdesc.t -> Typ.Procname.t -> Location.t
+  -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t
   -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Execute the function call and return the list of results with return value *)

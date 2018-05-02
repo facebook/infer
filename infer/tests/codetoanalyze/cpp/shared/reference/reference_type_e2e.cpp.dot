@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_2" ;
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Call _fun_zero_ptr \n   _fun_zero_ptr(&a:int*) [line 22, column 3]\n " shape="box"]
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Call _fun_zero_ptr \n   n$1=_fun_zero_ptr(&a:int*) [line 22, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" ;
@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_2" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Call _fun_zero_ptr \n   n$1=*&r:int* [line 29, column 12]\n  _fun_zero_ptr(n$1:int*) [line 29, column 3]\n " shape="box"]
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Call _fun_zero_ptr \n   n$1=*&r:int* [line 29, column 12]\n  n$2=_fun_zero_ptr(n$1:int*) [line 29, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" ;
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_2" ;
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Call _fun_zero_ref \n   _fun_zero_ref(&a:int&) [line 42, column 3]\n " shape="box"]
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Call _fun_zero_ref \n   n$1=_fun_zero_ref(&a:int&) [line 42, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" ;
@@ -118,7 +118,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_2" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Call _fun_zero_ref \n   n$1=*&r:int& [line 49, column 12]\n  _fun_zero_ref(n$1:int&) [line 49, column 3]\n " shape="box"]
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Call _fun_zero_ref \n   n$1=*&r:int& [line 49, column 12]\n  n$2=_fun_zero_ref(n$1:int&) [line 49, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" ;

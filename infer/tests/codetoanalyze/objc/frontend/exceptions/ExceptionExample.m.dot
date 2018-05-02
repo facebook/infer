@@ -38,11 +38,11 @@ digraph cfg {
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 31, column 27]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 33, column 24]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:NSString*,n$5:NSString*,null:NSDictionary*) [line 30, column 12]\n  _fun___infer_objc_cpp_throw(n$6:NSException*) [line 30, column 5]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char* const ) [line 31, column 27]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char* const ) [line 33, column 24]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:NSString*,n$5:NSString*,null:NSDictionary*) [line 30, column 12]\n  n$7=_fun___infer_objc_cpp_throw(n$6:NSException*) [line 30, column 5]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 28, column 17]\n  *&s:NSString*=n$7 [line 28, column 3]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$8=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 28, column 17]\n  *&s:NSString*=n$8 [line 28, column 3]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" ;

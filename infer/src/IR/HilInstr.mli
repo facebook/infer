@@ -18,8 +18,8 @@ type t =
       (** LHS access expression, RHS expression *)
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
       (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
-  | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
-      (** Var to hold the return if it exists, call expression, formals *)
+  | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
+      (** Var to hold the return, call expression, formals *)
 [@@deriving compare]
 
 val pp : F.formatter -> t -> unit

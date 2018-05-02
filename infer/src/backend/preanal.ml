@@ -91,12 +91,8 @@ module NullifyTransferFunctions = struct
       match instr with
       | Sil.Load (lhs_id, _, _, _) ->
           (VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify)
-      | Sil.Call (lhs_id, _, _, _, _) ->
-          let active_defs' =
-            Option.value_map
-              ~f:(fun (id, _) -> VarDomain.add (Var.of_id id) active_defs)
-              ~default:active_defs lhs_id
-          in
+      | Sil.Call ((id, _), _, _, _, _) ->
+          let active_defs' = VarDomain.add (Var.of_id id) active_defs in
           (active_defs', to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)

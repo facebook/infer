@@ -22,18 +22,19 @@ include TaintAnalysis.Make (struct
         assert false
 
 
-  let handle_unknown_call pname ret_typ_opt actuals _ =
-    let handle_generic_unknown ret_typ_opt actuals =
-      match (ret_typ_opt, List.rev actuals) with
-      | Some _, _ ->
+  let handle_unknown_call pname ret_typ actuals _ =
+    let handle_generic_unknown ret_typ actuals =
+      match ((ret_typ.Typ.desc : Typ.desc), List.rev actuals) with
+      (* everything but Tvoid*)
+      | (Tint _ | Tfloat _ | Tfun _ | Tptr (_, _) | Tstruct _ | TVar _ | Tarray _), _ ->
           (* propagate taint from actuals to return value *)
           [TaintSpec.Propagate_to_return]
-      | None, [] ->
+      | Tvoid, [] ->
           []
-      | None, _ when Typ.Procname.is_constructor pname ->
+      | Tvoid, _ when Typ.Procname.is_constructor pname ->
           (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
-      | None, HilExp.AccessExpression access_expr :: _ -> (
+      | Tvoid, HilExp.AccessExpression access_expr :: _ -> (
         match AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []
           when Pvar.is_frontend_tmp pvar ->
@@ -44,7 +45,7 @@ include TaintAnalysis.Make (struct
             [TaintSpec.Propagate_to_actual actual_index]
         | _ ->
             [TaintSpec.Propagate_to_receiver] )
-      | None, _ ->
+      | Tvoid, _ ->
           (* no return value; propagate taint from actuals to receiver *)
           [TaintSpec.Propagate_to_receiver]
     in
@@ -70,7 +71,7 @@ include TaintAnalysis.Make (struct
         (* don't propagate taint for strlen *)
         []
     | _ ->
-        handle_generic_unknown ret_typ_opt actuals
+        handle_generic_unknown ret_typ actuals
 
 
   (* treat folly functions as unknown library code. we often specify folly functions as sinks,
@@ -80,7 +81,7 @@ include TaintAnalysis.Make (struct
        to write models for these functions or treat them as unknown *)
   let models_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly"]
 
-  let get_model pname ret_typ_opt actuals tenv summary =
+  let get_model pname ret_typ actuals tenv summary =
     (* hack for default C++ constructors, which get translated as an empty body (and will thus
          have an empty summary). We don't want that because we want to be able to propagate taint
          from comstructor parameters to the constructed object. so we treat the empty constructor
@@ -94,7 +95,7 @@ include TaintAnalysis.Make (struct
       when is_default_constructor pname
            || QualifiedCppName.Match.match_qualifiers models_matcher
                 (Typ.Procname.get_qualifiers pname) ->
-        Some (handle_unknown_call pname ret_typ_opt actuals tenv)
+        Some (handle_unknown_call pname ret_typ actuals tenv)
     | _ ->
         None
 

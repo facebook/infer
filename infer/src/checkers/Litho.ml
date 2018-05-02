@@ -195,7 +195,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = ProcData.no_extras
 
-  let apply_callee_summary summary_opt caller_pname ret_opt actuals astate =
+  let apply_callee_summary summary_opt caller_pname ret_id_typ actuals astate =
     match summary_opt with
     | Some summary ->
         (* TODO: append paths if the footprint access path is an actual path instead of a var *)
@@ -212,11 +212,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 None )
           | None ->
               if Var.is_return var then
-                match ret_opt with
-                | Some ret ->
-                    Some (Domain.LocalAccessPath.make (ret, []) caller_pname)
-                | None ->
-                    assert false
+                Some (Domain.LocalAccessPath.make (ret_id_typ, []) caller_pname)
               else None
         in
         Domain.substitute ~f_sub summary |> Domain.join astate
@@ -228,7 +224,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
     match instr with
     | Call
-        ( (Some return_base as ret_opt)
+        ( return_base
         , Direct (Typ.Procname.Java java_callee_procname as callee_procname)
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
@@ -259,10 +255,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Domain.add return_access_path return_calls astate
         else
           (* treat it like a normal call *)
-          apply_callee_summary summary caller_pname ret_opt actuals astate
-    | Call (ret_opt, Direct callee_procname, actuals, _, _) ->
+          apply_callee_summary summary caller_pname return_base actuals astate
+    | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
         let summary = Summary.read_summary proc_data.pdesc callee_procname in
-        apply_callee_summary summary caller_pname ret_opt actuals astate
+        apply_callee_summary summary caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _)
       -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the

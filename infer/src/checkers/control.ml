@@ -61,13 +61,9 @@ module TransferFunctionsDataDeps (CFG : ProcCfg.S) = struct
         Exp.program_vars exp_lhs
         |> Sequence.fold ~init:astate' ~f:(fun astate_acc pvar ->
                add_data_dep_exp (Var.of_pvar pvar) exp_rhs astate_acc )
-    | Sil.Call (lhs, _, arg_list, _, _) -> (
-      match lhs with
-      | Some (id, _) ->
-          List.fold_left arg_list ~init:astate ~f:(fun astate_acc (exp, _) ->
-              add_data_dep_exp (Var.of_id id) exp astate_acc )
-      | None ->
-          astate )
+    | Sil.Call ((id, _), _, arg_list, _, _) ->
+        List.fold_left arg_list ~init:astate ~f:(fun astate_acc (exp, _) ->
+            add_data_dep_exp (Var.of_id id) exp astate_acc )
     | Sil.Prune _ | Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 

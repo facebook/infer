@@ -40,7 +40,7 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
     let instr_unwrap_ret_val =
       let unwrap_builtin = Exp.Const (Const.Cfun BuiltinDecl.__unwrap_exception) in
       Sil.Call
-        ( Some (id_exn_val, ret_type)
+        ( (id_exn_val, ret_type)
         , unwrap_builtin
         , [(Exp.Var id_ret_val, ret_type)]
         , loc
@@ -86,7 +86,7 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
                   , Typ.mk Tvoid ) ]
               in
               Sil.Call
-                ( Some (id_instanceof, Typ.mk (Tint IBool))
+                ( (id_instanceof, Typ.mk (Tint IBool))
                 , instanceof_builtin
                 , args
                 , loc

@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_2" ;
-"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" [label="4:  Call _fun_A_init \n   n$2=*&this:A* [line 19, column 3]\n  _=*n$2:A [line 19, column 3]\n  _fun_A_init(n$2:A*,10:int) [line 19, column 3]\n " shape="box"]
+"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" [label="4:  Call _fun_A_init \n   n$2=*&this:A* [line 19, column 3]\n  _=*n$2:A [line 19, column 3]\n  n$4=_fun_A_init(n$2:A*,10:int) [line 19, column 3]\n " shape="box"]
 	
 
 	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_3" ;
