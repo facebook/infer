@@ -55,7 +55,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_blacklisted_method : Typ.Procname.t -> bool =
-    let blacklist = ["URLWithString:"] in
+    let blacklist = ["URLWithString:"; "objectForKeyedSubscript:"] in
     fun proc_name ->
       let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
       List.exists ~f:(String.equal simplified_callee_pname) blacklist
