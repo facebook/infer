@@ -110,37 +110,23 @@ module BoundMap = struct
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
 
-  let convert (mem: BufferOverrunDomain.Mem.astate) : CostDomain.EnvDomainBO.astate =
-    let open AbstractDomain.Types in
-    match mem with
-    | Bottom ->
-        L.internal_error
-          "@\n\
-           [COST ANALYSIS INTERNAL WARNING:] Found Bottom when converting mem, returning No env \n" ;
-        Bottom
-    | NonBottom {BufferOverrunDomain.MemReach.heap} ->
-        let env =
-          BufferOverrunDomain.Heap.fold
-            (fun loc data acc ->
-              match loc with
-              | AbsLoc.Loc.Var (Var.LogicalVar id) ->
-                  let key = Exp.Var id in
-                  CostDomain.EnvMap.add key (BufferOverrunDomain.Val.get_itv data) acc
-              | AbsLoc.Loc.Var (Var.ProgramVar v) ->
-                  let key = Exp.Lvar v in
-                  CostDomain.EnvMap.add key (BufferOverrunDomain.Val.get_itv data) acc
-              | _ ->
-                  acc )
-            heap CostDomain.EnvMap.empty
-        in
-        NonBottom env
+  let filter_loc formal_pvars vars_to_keep = function
+    | AbsLoc.Loc.Var (Var.LogicalVar _) ->
+        false
+    | AbsLoc.Loc.Var (Var.ProgramVar pvar) when List.mem formal_pvars pvar ~equal:Pvar.equal ->
+        false
+    | AbsLoc.Loc.Var var when Control.VarSet.mem var vars_to_keep ->
+        true
+    | _ ->
+        false
 
 
   let compute_upperbound_map node_cfg inferbo_invariant_map data_invariant_map
       control_invariant_map =
-    let fparam = Procdesc.get_formals node_cfg in
     let pname = Procdesc.get_proc_name node_cfg in
-    let fparam' = List.map ~f:(fun (m, _) -> Exp.Lvar (Pvar.mk m pname)) fparam in
+    let formal_pvars =
+      Procdesc.get_formals node_cfg |> List.map ~f:(fun (m, _) -> Pvar.mk m pname)
+    in
     let compute_node_upper_bound bound_map node =
       let node_id = NodeCFG.id node in
       match Procdesc.Node.get_kind node with
@@ -162,39 +148,17 @@ module BoundMap = struct
                 Control.VarSet.pp all_deps ;
               (* bound = env(v1) *... * env(vn) *)
               let bound =
-                match convert entry_mem with
+                match entry_mem with
                 | Bottom ->
-                    (* We get None by converting Bottom *)
                     L.internal_error
                       "@\n\
                        [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                        unreachable returning cost 0 \n" ;
                     Itv.Bound.zero
-                | NonBottom env ->
-                    CostDomain.EnvMap.fold
-                      (fun exp itv acc ->
-                        let itv' =
-                          match exp with
-                          | Exp.Var _ ->
-                              Itv.one
-                          (* For temp var we give [1,1] so it doesn't count*)
-                          | Exp.Lvar _
-                            when List.mem fparam' exp ~equal:Exp.equal ->
-                              Itv.one
-                          | Exp.Lvar pvar when Control.VarSet.mem (Var.of_pvar pvar) all_deps ->
-                              itv
-                          | Exp.Lvar _ ->
-                              (* For a var that doesn't affect control flow directly or indirectly, we give [1,1] so it doesn't count *)
-                              Itv.one
-                          | _ ->
-                              assert false
-                        in
-                        let range = Itv.range itv' in
-                        L.(debug Analysis Medium)
-                          "@\n>>>For node = %a :  exp=%a  itv=%a   range =%a @\n\n" Node.pp_id
-                          node_id Exp.pp exp Itv.pp itv' Itv.Bound.pp range ;
-                        Itv.Bound.mult acc range )
-                      env Itv.Bound.one
+                | NonBottom mem ->
+                    BufferOverrunDomain.MemReach.heap_range
+                      ~filter_loc:(filter_loc formal_pvars all_deps)
+                      mem
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id Itv.Bound.pp
