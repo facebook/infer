@@ -240,17 +240,11 @@ let rec get_struct_fields tenv decl =
 (** For a record declaration it returns/constructs the type *)
 and get_record_declaration_type tenv decl =
   let definition_decl = get_record_definition decl in
-  match get_record_custom_type tenv definition_decl with
+  match get_record_friend_decl_type tenv definition_decl with
   | Some t ->
       t.Typ.desc
   | None ->
       get_record_struct_type tenv definition_decl
-
-
-and get_record_custom_type tenv definition_decl =
-  let result = get_record_friend_decl_type tenv definition_decl in
-  let result = if Option.is_none result then get_record_as_typevar definition_decl else result in
-  result
 
 
 and get_record_friend_decl_type tenv definition_decl =
@@ -259,24 +253,6 @@ and get_record_friend_decl_type tenv definition_decl =
   | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _) ->
       Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
-  | _ ->
-      None
-
-
-and get_record_as_typevar (definition_decl: Clang_ast_t.decl) =
-  let open Clang_ast_t in
-  match definition_decl with
-  | CXXRecordDecl (decl_info, name_info, _, _, _, _, _, _) ->
-      let is_infer_typevar = function
-        | AnnotateAttr {ai_parameters= [_; name; _]} when String.equal name "__infer_type_var" ->
-            true
-        | _ ->
-            false
-      in
-      if List.exists ~f:is_infer_typevar decl_info.di_attributes then
-        let tname = CAst_utils.get_qualified_name name_info |> QualifiedCppName.to_qual_string in
-        Some (Typ.mk (TVar tname))
-      else None
   | _ ->
       None
 
