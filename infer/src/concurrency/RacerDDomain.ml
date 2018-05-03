@@ -247,7 +247,7 @@ module ThreadsDomain = struct
   let is_any = function AnyThread -> true | _ -> false
 
   let integrate_summary ~caller_astate ~callee_astate =
-    (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep 
+    (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep
        the caller's thread context *)
     match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
 end
@@ -329,38 +329,31 @@ end
 module OwnershipDomain = struct
   include AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
 
-  (* Helper function used by both is_owned and get_owned. Not exported.*)
-  let get_owned_shallow access_path astate =
-    try find access_path astate with Caml.Not_found -> OwnershipAbstractValue.Unowned
-
-
-  (*deep ownership model where only a prefix needs to be owned in the astate*)
-  let is_owned (base, accesses) astate =
-    let is_owned_shallow access_path astate =
-      match get_owned_shallow access_path astate with
-      | OwnershipAbstractValue.Owned ->
-          true
+  (* return the first non-Unowned ownership value found when checking progressively shorter
+     prefixes of [access_path] *)
+  let rec get_owned access_path astate =
+    let keep_looking access_path astate =
+      match AccessPath.truncate access_path with
+      | access_path', Some _ ->
+          get_owned access_path' astate
       | _ ->
-          false
+          OwnershipAbstractValue.Unowned
     in
-    let rec helper = function
-      | prefix, _ when is_owned_shallow (base, prefix) astate ->
-          true
-      | _, [] ->
-          false
-      | prefix, hd :: tl ->
-          helper (List.append prefix [hd], tl)
-    in
-    helper ([], accesses)
+    match find access_path astate with
+    | (OwnershipAbstractValue.Owned | OwnedIf _) as v ->
+        v
+    | OwnershipAbstractValue.Unowned ->
+        keep_looking access_path astate
+    | exception Caml.Not_found ->
+        keep_looking access_path astate
 
 
-  (*
-returns Owned if any prefix is owned on any prefix, else OwnedIf if it is
-OwnedIf in the astate, else UnOwned
-*)
-  let get_owned access_path astate =
-    if is_owned access_path astate then OwnershipAbstractValue.Owned
-    else try find access_path astate with Caml.Not_found -> OwnershipAbstractValue.Unowned
+  let is_owned access_path astate =
+    match get_owned access_path astate with
+    | OwnershipAbstractValue.Owned ->
+        true
+    | OwnershipAbstractValue.OwnedIf _ | Unowned ->
+        false
 
 
   let find = `Use_get_owned_instead

@@ -33,28 +33,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
 
-  let propagate_ownership ((lhs_root, accesses) as lhs_access_path) rhs_exp ownership =
+  let propagate_ownership ((lhs_root, _) as lhs_access_path) rhs_exp ownership =
     if Var.is_global (fst lhs_root) then
       (* do not assign ownership to access paths rooted at globals *)
       ownership
     else
-      let ownership_value =
-        match accesses with
-        | [] ->
-            Domain.ownership_of_expr rhs_exp ownership
-        | [_]
-          when match Domain.OwnershipDomain.get_owned (lhs_root, []) ownership with
-               | Domain.OwnershipAbstractValue.OwnedIf _ ->
-                   true
-               | _ ->
-                   false ->
-            Domain.ownership_of_expr rhs_exp ownership
-        | _ when Domain.OwnershipDomain.is_owned lhs_access_path ownership ->
-            Domain.ownership_of_expr rhs_exp ownership
-        | _ ->
-            Domain.OwnershipAbstractValue.unowned
-      in
-      Domain.OwnershipDomain.add lhs_access_path ownership_value ownership
+      let rhs_ownership_value = Domain.ownership_of_expr rhs_exp ownership in
+      Domain.OwnershipDomain.add lhs_access_path rhs_ownership_value ownership
 
 
   let propagate_return return ret_ownership ret_attributes actuals
@@ -327,19 +312,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else
             let base = fst actual_access_path in
             match OwnershipDomain.get_owned (base, []) caller_astate.ownership with
+            | Owned ->
+                (* the actual passed to the current callee is owned. drop all the conditional
+                   accesses for that actual, since they're all safe *)
+                Conjunction actual_indexes
             | OwnedIf formal_indexes ->
-                (* the actual passed to the current callee is rooted in a formal *)
+                (* access path conditionally owned if [formal_indexes] are owned *)
                 Conjunction (IntSet.union formal_indexes actual_indexes)
-            | Unowned | Owned ->
-              match OwnershipDomain.get_owned actual_access_path caller_astate.ownership with
-              | OwnedIf formal_indexes ->
-                  (* access path conditionally owned if [formal_indexes] are owned *)
-                  Conjunction (IntSet.union formal_indexes actual_indexes)
-              | Owned ->
-                  assert false
-              | Unowned ->
-                  (* access path not rooted in a formal and not conditionally owned *)
-                  False )
+            | Unowned ->
+                (* access path not rooted in a formal and not conditionally owned *)
+                False )
       | _ ->
           (* couldn't find access path, don't know if it's owned. assume not *)
           False
