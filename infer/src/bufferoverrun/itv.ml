@@ -242,7 +242,7 @@ module SymLinear = struct
     M.merge f se1 se2
 
 
-  let mult_const : t -> NonZeroInt.t -> t = fun x n -> M.map (NonZeroInt.( * ) n) x
+  let mult_const : NonZeroInt.t -> t -> t = fun n x -> M.map (NonZeroInt.( * ) n) x
 
   let exact_div_const_exn : t -> NonZeroInt.t -> t =
    fun x n -> M.map (fun c -> NonZeroInt.exact_div_exn c n) x
@@ -322,8 +322,6 @@ module Bound = struct
     | MinMax of int * Sign.t * MinMax.t * int * Symbol.t
     | PInf
   [@@deriving compare]
-
-  type astate = t
 
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
@@ -679,8 +677,8 @@ module Bound = struct
         b1 b1 b2
 
 
-  let ub : ?default:t -> t -> t -> t =
-   fun ?(default= PInf) x y ->
+  let ub : default:t -> t -> t -> t =
+   fun ~default x y ->
     if le x y then y
     else if le y x then x
     else
@@ -697,7 +695,7 @@ module Bound = struct
           default
 
 
-  let join : t -> t -> t = ub ~default:PInf
+  let max_u : t -> t -> t = ub ~default:PInf
 
   let widen_l : t -> t -> t =
    fun x y ->
@@ -717,8 +715,6 @@ module Bound = struct
         if le y x then x else PInf
 
 
-  let widen ~prev ~next ~num_iters:_ = widen_u prev next
-
   let ( <= ) ~lhs ~rhs = le lhs rhs
 
   let zero : t = Linear (0, SymLinear.zero)
@@ -726,8 +722,6 @@ module Bound = struct
   let one : t = Linear (1, SymLinear.zero)
 
   let mone : t = Linear (-1, SymLinear.zero)
-
-  let pinf : t = PInf
 
   let is_some_const : int -> t -> bool =
    fun c x -> match x with Linear (c', y) -> Int.equal c c' && SymLinear.is_zero y | _ -> false
@@ -802,18 +796,22 @@ module Bound = struct
             PInf )
 
 
-  let mult_const : t -> NonZeroInt.t -> t option =
-   fun x n ->
+  let mult_const : default:t -> NonZeroInt.t -> t -> t =
+   fun ~default n x ->
     match x with
     | MInf ->
-        Some (if NonZeroInt.is_positive n then MInf else PInf)
+        if NonZeroInt.is_positive n then MInf else PInf
     | PInf ->
-        Some (if NonZeroInt.is_positive n then PInf else MInf)
+        if NonZeroInt.is_positive n then PInf else MInf
     | Linear (c, x') ->
-        Some (Linear (c * (n :> int), SymLinear.mult_const x' n))
+        Linear (c * (n :> int), SymLinear.mult_const n x')
     | _ ->
-        None
+        default
 
+
+  let mult_const_l = mult_const ~default:MInf
+
+  let mult_const_u = mult_const ~default:PInf
 
   let neg : t -> t = function
     | MInf ->
@@ -824,22 +822,6 @@ module Bound = struct
         Linear (-c, SymLinear.neg x)
     | MinMax (c, sign, min_max, d, x) ->
         mk_MinMax (-c, Sign.neg sign, min_max, d, x)
-
-
-  let mult : t -> t -> t =
-   fun x y ->
-    let default = PInf in
-    match (x, is_const x, y, is_const y) with
-    | x, _, _, Some n | _, Some n, x, _ -> (
-      match NonZeroInt.of_int n with
-      | Some n ->
-          if NonZeroInt.is_one n then x
-          else if NonZeroInt.is_minus_one n then neg x
-          else mult_const x n |> Option.value ~default
-      | None ->
-          zero )
-    | _ ->
-        default
 
 
   let div_const : t -> NonZeroInt.t -> t option =
@@ -881,6 +863,85 @@ module Bound = struct
 
 
   let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
+end
+
+module NonNegativeBound = struct
+  type t = Bound.t [@@deriving compare]
+
+  type astate = t
+
+  let pp = Bound.pp
+
+  let zero = Bound.zero
+
+  let one = Bound.one
+
+  let top = Bound.PInf
+
+  let of_bound b = if Bound.le b Bound.zero then Bound.zero else b
+
+  let of_int_exn i =
+    assert (i >= 0) ;
+    Bound.of_int i
+
+
+  let is_not_infty = function
+    | Bound.PInf ->
+        false
+    | Bound.(Linear _ | MinMax _) ->
+        true
+    | Bound.MInf ->
+        assert false
+
+
+  let is_symbolic = Bound.is_symbolic
+
+  let ( <= ) = Bound.( <= )
+
+  (* For now let's check and fail when these operations don't give a non-negative result *)
+
+  let checked1 name f b =
+    let res = f b in
+    let () =
+      if Bound.lt res zero then
+        L.internal_error "NonNegativeBound.%s %a = %a < 0@\n" name pp b pp res
+    in
+    res
+
+
+  let checked2 name f b1 b2 =
+    let res = f b1 b2 in
+    let () =
+      if Bound.lt res zero then
+        L.internal_error "NonNegativeBound.%s %a %a = %a < 0@\n" name pp b1 pp b2 pp res
+    in
+    res
+
+
+  let join b1 b2 = checked2 "join" Bound.max_u b1 b2
+
+  let min b1 b2 = checked2 "min" Bound.min_u b1 b2
+
+  let mult : t -> t -> t =
+   fun x y ->
+    match (x, Bound.is_const x, y, Bound.is_const y) with
+    | x, _, _, Some n | _, Some n, x, _ -> (
+      match NonZeroInt.of_int n with
+      | Some n ->
+          if NonZeroInt.is_one n then x
+          else if NonZeroInt.is_minus_one n then assert false
+          else checked1 "neg(mult_const)" (Bound.mult_const_u n) x
+      | None ->
+          zero )
+    | _ ->
+        top
+
+
+  let plus b1 b2 = checked2 "plus" Bound.plus_u b1 b2
+
+  let widen ~prev ~next ~num_iters:_ = checked2 "widen" Bound.widen_u prev next
+
+  let subst b map = match Bound.subst_ub b map with Bottom -> zero | NonBottom b -> of_bound b
 end
 
 module ItvPure = struct
@@ -947,7 +1008,7 @@ module ItvPure = struct
         `RightSubsumesLeft
 
 
-  let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb ~default:MInf l1 l2, Bound.ub u1 u2)
+  let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.min_l l1 l2, Bound.max_u u1 u2)
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
    fun ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ -> (Bound.widen_l l1 l2, Bound.widen_u u1 u2)
@@ -1013,7 +1074,9 @@ module ItvPure = struct
 
   let is_le_zero : t -> bool = fun (_, ub) -> Bound.le ub Bound.zero
 
-  let range : t -> Bound.t = fun (l, u) -> Bound.plus_u (Bound.plus_u u Bound.one) (Bound.neg l)
+  let range : t -> NonNegativeBound.t =
+   fun (l, u) -> Bound.plus_u (Bound.plus_u u Bound.one) (Bound.neg l) |> NonNegativeBound.of_bound
+
 
   let neg : t -> t =
    fun (l, u) ->
@@ -1030,22 +1093,16 @@ module ItvPure = struct
 
   let minus : t -> t -> t = fun i1 i2 -> plus i1 (neg i2)
 
-  let mult_const : t -> int -> t =
-   fun ((l, u) as itv) n ->
+  let mult_const : int -> t -> t =
+   fun n ((l, u) as itv) ->
     match NonZeroInt.of_int n with
     | None ->
         zero
     | Some n ->
         if NonZeroInt.is_one n then itv
         else if NonZeroInt.is_minus_one n then neg itv
-        else if NonZeroInt.is_positive n then
-          let l' = Option.value ~default:Bound.MInf (Bound.mult_const l n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.mult_const u n) in
-          (l', u')
-        else
-          let l' = Option.value ~default:Bound.MInf (Bound.mult_const u n) in
-          let u' = Option.value ~default:Bound.PInf (Bound.mult_const l n) in
-          (l', u')
+        else if NonZeroInt.is_positive n then (Bound.mult_const_l n l, Bound.mult_const_u n u)
+        else (Bound.mult_const_l n u, Bound.mult_const_u n l)
 
 
   (* Returns a precise value only when all coefficients are divided by
@@ -1072,9 +1129,9 @@ module ItvPure = struct
    fun x y ->
     match (is_const x, is_const y) with
     | _, Some n ->
-        mult_const x n
+        mult_const n x
     | Some n, _ ->
-        mult_const y n
+        mult_const n y
     | None, None ->
         top
 
@@ -1101,7 +1158,7 @@ module ItvPure = struct
 
   (* x << [-1,-1] does nothing. *)
   let shiftlt : t -> t -> t =
-   fun x y -> match is_const y with Some n -> mult_const x (1 lsl n) | None -> top
+   fun x y -> match is_const y with Some n -> mult_const (1 lsl n) x | None -> top
 
 
   (* x >> [-1,-1] does nothing. *)

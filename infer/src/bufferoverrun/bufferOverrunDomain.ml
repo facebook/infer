@@ -319,12 +319,13 @@ module Heap = struct
     if is_empty mem then Val.bot else snd (choose mem)
 
 
-  let range : filter_loc:(Loc.t -> bool) -> astate -> Itv.Bound.t =
+  let range : filter_loc:(Loc.t -> bool) -> astate -> Itv.NonNegativeBound.t =
    fun ~filter_loc mem ->
     fold
       (fun loc v acc ->
-        if filter_loc loc then v |> Val.get_itv |> Itv.range |> Itv.Bound.mult acc else acc )
-      mem Itv.Bound.one
+        if filter_loc loc then v |> Val.get_itv |> Itv.range |> Itv.NonNegativeBound.mult acc
+        else acc )
+      mem Itv.NonNegativeBound.one
 end
 
 module AliasTarget = struct
@@ -768,7 +769,7 @@ module MemReach = struct
     fun locs m -> add_from_locs m.heap locs PowLoc.empty
 
 
-  let heap_range : filter_loc:(Loc.t -> bool) -> t -> Itv.Bound.t =
+  let heap_range : filter_loc:(Loc.t -> bool) -> t -> Itv.NonNegativeBound.t =
    fun ~filter_loc {heap} -> Heap.range ~filter_loc heap
 end
 

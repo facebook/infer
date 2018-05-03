@@ -11,8 +11,9 @@ open! IStd
 module F = Format
 
 (** Map (node,instr) -> basic cost  *)
-module NodeInstructionToCostMap = AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (Itv.Bound)
+module NodeInstructionToCostMap =
+  AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (Itv.NonNegativeBound)
 
-type summary = {post: Itv.Bound.t}
+type summary = {post: Itv.NonNegativeBound.t}
 
-let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" Itv.Bound.pp post
+let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" Itv.NonNegativeBound.pp post

@@ -40,17 +40,7 @@ module SymbolMap : PrettyPrintable.PPMap with type key = Symbol.t
 module Bound : sig
   type t [@@deriving compare]
 
-  type astate = t
-
-  val pp : F.formatter -> t -> unit
-
   val zero : t
-
-  val one : t
-
-  val pinf : t
-
-  val of_int : int -> t
 
   val is_const : t -> int option
 
@@ -65,20 +55,41 @@ module Bound : sig
   val le : t -> t -> bool
 
   val lt : t -> t -> bool
+end
 
-  val plus_u : t -> t -> t
+(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
+module NonNegativeBound : sig
+  type t
 
-  val join : t -> t -> t
+  type astate = t
 
-  val min_u : t -> t -> t
+  val pp : F.formatter -> t -> unit
 
-  val mult : t -> t -> t
+  val zero : t
 
-  val widen : prev:t -> next:t -> num_iters:'a -> t
+  val one : t
+
+  val top : t
+
+  val of_int_exn : int -> t
+
+  val is_not_infty : t -> bool
+
+  val is_symbolic : t -> bool
 
   val ( <= ) : lhs:t -> rhs:t -> bool
 
-  val subst_ub : t -> t bottom_lifted SymbolMap.t -> t bottom_lifted
+  val join : t -> t -> t
+
+  val min : t -> t -> t
+
+  val mult : t -> t -> t
+
+  val plus : t -> t -> t
+
+  val widen : prev:t -> next:t -> num_iters:'a -> t
+
+  val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t
 end
 
 module ItvPure : sig
@@ -193,7 +204,7 @@ val le : lhs:t -> rhs:t -> bool
 
 val lnot : t -> Boolean.t
 
-val range : t -> Bound.t
+val range : t -> NonNegativeBound.t
 
 val div : t -> t -> t
 
