@@ -19,4 +19,21 @@ public class ArrayCost {
 
         }
     }
+
+    private static boolean isPowOfTwo_FP(int value) {
+        int ones = 0;
+        int v = value;
+
+        for (int shifts = 0; shifts < 31 && ones <= 1; shifts++) {
+            if ((v & 1) == 1) {
+                ones++;
+            }
+
+            v >>= 1;
+        }
+
+        return ones == 1;
+    }
+
+
 }
