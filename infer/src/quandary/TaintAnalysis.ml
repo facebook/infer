@@ -630,11 +630,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                       |> exec_write dummy_ret_access_expr rhs_exp
                   | _ ->
                       L.internal_error "Unexpected call to operator= %a in %a" HilInstr.pp instr
-                        Typ.Procname.pp callee_pname ;
+                        Typ.Procname.pp
+                        (Procdesc.get_proc_name proc_data.pdesc) ;
                       access_tree )
               | _ ->
                   L.internal_error "Unexpected call to operator= %a in %a" HilInstr.pp instr
-                    Typ.Procname.pp callee_pname ;
+                    Typ.Procname.pp
+                    (Procdesc.get_proc_name proc_data.pdesc) ;
                   access_tree )
             | _ ->
                 let model =
