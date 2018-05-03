@@ -622,8 +622,8 @@ module Bound = struct
         x
 
 
-  let rec lb : ?default:t -> t -> t -> t =
-   fun ?(default= MInf) x y ->
+  let rec lb : default:t -> t -> t -> t =
+   fun ~default x y ->
     if le x y then x
     else if le y x then y
     else
@@ -668,6 +668,17 @@ module Bound = struct
           default
 
 
+  (** underapproximation of min b1 b2 *)
+  let min_l b1 b2 = lb ~default:MInf b1 b2
+
+  (** overapproximation of min b1 b2 *)
+  let min_u b1 b2 =
+    lb
+      ~default:
+        (* When the result is not representable, our best effort is to return the first argument. Any other deterministic heuristics would work too. *)
+        b1 b1 b2
+
+
   let ub : ?default:t -> t -> t -> t =
    fun ?(default= PInf) x y ->
     if le x y then y
@@ -687,8 +698,6 @@ module Bound = struct
 
 
   let join : t -> t -> t = ub ~default:PInf
-
-  let min : t -> t -> t = lb ~default:MInf
 
   let widen_l : t -> t -> t =
    fun x y ->
@@ -896,8 +905,8 @@ module ItvPure = struct
   let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
 
   let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t bottom_lifted =
-   fun x map ->
-    match (Bound.subst_lb (lb x) map, Bound.subst_ub (ub x) map) with
+   fun (l, u) map ->
+    match (Bound.subst_lb l map, Bound.subst_ub u map) with
     | NonBottom l, NonBottom u ->
         NonBottom (l, u)
     | _ ->
@@ -938,7 +947,7 @@ module ItvPure = struct
         `RightSubsumesLeft
 
 
-  let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb l1 l2, Bound.ub u1 u2)
+  let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb ~default:MInf l1 l2, Bound.ub u1 u2)
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
    fun ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ -> (Bound.widen_l l1 l2, Bound.widen_u u1 u2)
@@ -1151,7 +1160,7 @@ module ItvPure = struct
     else Boolean.Top
 
 
-  let min_sem : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb l1 l2, Bound.lb ~default:u1 u1 u2)
+  let min_sem : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.min_l l1 l2, Bound.min_u u1 u2)
 
   let is_invalid : t -> bool = function
     | Bound.PInf, _ | _, Bound.MInf ->

@@ -70,7 +70,7 @@ module Bound : sig
 
   val join : t -> t -> t
 
-  val min : t -> t -> t
+  val min_u : t -> t -> t
 
   val mult : t -> t -> t
 

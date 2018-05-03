@@ -81,7 +81,7 @@ int loop1_bad() {
   return 0;
 }
 
-int FN_loop2(int k) {
+int loop2_bad(int k) {
 
   for (int i = 0; i < k; i++) {
     alias2_OK();
@@ -89,8 +89,7 @@ int FN_loop2(int k) {
   return 0;
 }
 
-// This is currently evaluated to Top as the analysis is not powerful enough
-int FN_loop3(int k) {
+int loop3_bad(int k) {
 
   for (int i = k; i < k + 15; i++) {
     alias2_OK();

@@ -338,7 +338,7 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     | Leaf (_, c) ->
         c
     | Min l ->
-        evaluate_operator Itv.Bound.min l
+        evaluate_operator Itv.Bound.min_u l
     | Plus l ->
         evaluate_operator Itv.Bound.plus_u l
 
