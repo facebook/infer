@@ -1066,6 +1066,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_objc_category_on_subclass_of an name
   | "is_objc_method_named", [name], an ->
       CPredicates.is_objc_method_named an name
+  | "is_objc_method_overriding", [], an ->
+      CPredicates.is_objc_method_overriding an
   | "is_property_pointer_type", [], an ->
       CPredicates.is_property_pointer_type an
   | "is_strong_property", [], an ->

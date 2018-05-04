@@ -289,6 +289,14 @@ let is_objc_method_named an name =
       false
 
 
+let is_objc_method_overriding an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, mdi)) ->
+      mdi.omdi_is_overriding
+  | _ ->
+      false
+
+
 (* checks whether an object is of a certain class *)
 let is_object_of_class_named receiver cname =
   let open Clang_ast_t in

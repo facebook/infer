@@ -237,6 +237,17 @@ val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool
  *    whose name matches the provided REGEXP
  *)
 
+val is_objc_method_overriding : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMethodDecl node and is overriding a
+ *    method in the superclass.
+ *
+ *  A method is said to override any method in the class's base classes,
+ *    its protocols, or its categories' protocols, that has the same selector
+ *    and is of the same kind (class or instance). A method in an implementation
+ *    is not considered as overriding the same method in the interface or its categories.
+ *)
+
 val captures_cxx_references : Ctl_parser_types.ast_node -> bool
 (** 'captures_cxx_references an' is true iff the node an captures some CXX references *)
 

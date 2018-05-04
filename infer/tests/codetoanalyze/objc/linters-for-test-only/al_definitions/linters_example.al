@@ -585,3 +585,12 @@ DEFINE-CHECKER TEST_IF_IS_METHOD_NAMED = {
  SET message = "Node is a method named mySubclassMethod.";
 
 };
+
+DEFINE-CHECKER TEST_IS_OVERRIDING_METHOD = {
+
+ SET report_when =
+    is_objc_method_overriding;
+
+ SET message = "Method %name% is overriding a method in a superclass.";
+
+};
