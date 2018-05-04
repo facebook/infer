@@ -67,7 +67,8 @@ module Models = struct
           ; "folly::SharedMutexImpl::lockExclusiveImpl"
           ; "folly::SharedMutexImpl::lockSharedImpl"
           ; "std::mutex::lock"
-          ; "std::unique_lock::lock" ]
+          ; "std::unique_lock::lock"
+          ; "std::lock" ]
       in
       let matcher_lock_constructor =
         QualifiedCppName.Match.of_fuzzy_qual_names
