@@ -84,6 +84,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             || Models.is_two_way_binder_transact tenv actuals callee
             || Models.is_blocking_java_io tenv callee
             || Models.is_getWindowVisibleDisplayFrame tenv callee
+            || Models.is_future_get tenv callee
           then
             let caller = Procdesc.get_proc_name pdesc in
             Domain.blocking_call ~caller ~callee loc astate

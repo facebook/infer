@@ -563,24 +563,24 @@ module Models = struct
 
 
   let is_blocking_java_io =
-    let target_classes = ["java.io.Reader"; "java.io.InputStream"] in
-    fun tenv pn -> is_call_of_class_or_superclass target_classes ~method_prefix:true "read" tenv pn
+    is_call_of_class_or_superclass ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
+      "read"
 
 
   let is_countdownlatch_await =
-    let target_classes = ["java.util.concurrent.CountDownLatch"] in
-    fun tenv pn -> is_call_of_class_or_superclass target_classes "await" tenv pn
+    is_call_of_class_or_superclass ["java.util.concurrent.CountDownLatch"] "await"
 
 
   let is_two_way_binder_transact =
-    let target_classes = ["android.os.IBinder"] in
+    let matcher = is_call_of_class_or_superclass ["android.os.IBinder"] "transact" in
     fun tenv actuals pn ->
       List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
-      && is_call_of_class_or_superclass target_classes "transact" tenv pn
+      && matcher tenv pn
 
 
   let is_getWindowVisibleDisplayFrame =
-    let target_classes = ["android.view.View"] in
-    fun tenv pn ->
-      is_call_of_class_or_superclass target_classes "getWindowVisibleDisplayFrame" tenv pn
+    is_call_of_class_or_superclass ["android.view.View"] "getWindowVisibleDisplayFrame"
+
+
+  let is_future_get = is_call_of_class_or_superclass ["java.util.concurrent.Future"] "get"
 end
