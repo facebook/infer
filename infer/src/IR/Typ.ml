@@ -359,8 +359,6 @@ module Name = struct
 
   let is_class = function CppClass _ | JavaClass _ | ObjcClass _ -> true | _ -> false
 
-  let is_objc_protocol name = match name with ObjcProtocol _ -> true | _ -> false
-
   let is_same_type t1 t2 =
     match (t1, t2) with
     | CStruct _, CStruct _
@@ -878,10 +876,6 @@ module Procname = struct
         WithBlockParameters (replace_class base new_class, blocks)
     | C _ | Block _ | Linters_dummy_method ->
         t
-
-
-  let rec is_method_in_objc_protocol t =
-    match t with ObjC_Cpp osig -> Name.is_objc_protocol osig.class_name | _ -> false
 
 
   let rec objc_cpp_replace_method_name t (new_method_name: string) =

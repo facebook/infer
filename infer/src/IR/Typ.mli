@@ -133,8 +133,6 @@ module Name : sig
   val is_class : t -> bool
   (** [is_class name] holds if [name] names CPP/Objc/Java class *)
 
-  val is_objc_protocol : t -> bool
-
   val is_same_type : t -> t -> bool
   (** [is_class name1 name2] holds if [name1] and [name2] name same kind of type *)
 
@@ -509,8 +507,6 @@ module Procname : sig
   val replace_class : t -> Name.t -> t
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
-
-  val is_method_in_objc_protocol : t -> bool
 
   val to_string : t -> string
   (** Convert a proc name to a string for the user to see. *)
