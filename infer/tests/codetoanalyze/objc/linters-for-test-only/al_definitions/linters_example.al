@@ -576,6 +576,17 @@ DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_ON_SUBCLASS_OF = {
 
 };
 
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_PROTOCOL_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_protocol_named("MyBaseClassProtocol")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the protocol named MyBaseClassProtocol.";
+
+};
+
 DEFINE-CHECKER TEST_IF_IS_CATEGORY_INTERFACE_NAMED = {
 
  SET report_when =
@@ -673,6 +684,15 @@ DEFINE-CHECKER TEST_IF_IS_CLASS_NAMED = {
     is_objc_class_named("MyBaseClass");
 
  SET message = "Node is a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_PROTOCOL_NAMED = {
+
+ SET report_when =
+    is_objc_protocol_named("MyBaseClassProtocol");
+
+ SET message = "Node is a protocol named MyBaseClassProtocol.";
 
 };
 

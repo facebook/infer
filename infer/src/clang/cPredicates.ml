@@ -281,6 +281,14 @@ let is_objc_category_named an re =
   is_objc_category_interface_named an re || is_objc_category_implementation_named an re
 
 
+let is_objc_protocol_named an re =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCProtocolDecl _) ->
+      declaration_has_name an re
+  | _ ->
+      false
+
+
 let is_objc_method_named an name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl _) ->
@@ -759,6 +767,14 @@ let is_in_objc_category_named context name =
   match context.CLintersContext.current_objc_category with
   | Some cat ->
       is_objc_category_named (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_protocol_named context name =
+  match context.CLintersContext.current_objc_protocol with
+  | Some protocol ->
+      is_objc_protocol_named (Decl protocol) name
   | None ->
       false
 

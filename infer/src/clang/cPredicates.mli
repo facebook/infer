@@ -187,6 +187,12 @@ val is_objc_category_implementation_on_subclass_of :
  *    inherits from a class whose name matches the provided REGEXP
  *)
 
+val is_objc_protocol_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCProtocolDecl node
+ *    whose name matches the provided REGEXP
+ *)
+
 val is_objc_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is an ObjCMethodDecl node
@@ -279,6 +285,12 @@ val is_in_objc_category_named : CLintersContext.context -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is a subnode of an ObjCCategoryDecl or
  *    ObjCCategoryImplDecl node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_protocol_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCProtocolDecl
+ *    node whose name matches the provided REGEXP
  *)
 
 val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool
