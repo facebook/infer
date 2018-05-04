@@ -1249,6 +1249,13 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                 else [(prop_r, path)]
               in
               let do_call (prop, path) =
+                ( match resolved_summary_opt with
+                | Some resolved_summary ->
+                    Logging.progress "%a is defined %b@." Typ.Procname.pp resolved_pname
+                      (Specs.get_attributes resolved_summary).ProcAttributes.is_defined
+                | None ->
+                    Logging.progress "%a is objc protocol %b@." Typ.Procname.pp resolved_pname
+                      (Typ.Procname.is_method_in_objc_protocol resolved_pname) ) ;
                 let reason_to_skip_opt =
                   Option.value_map ~f:reason_to_skip ~default:(Some "function or method not found")
                     resolved_summary_opt
