@@ -19,7 +19,7 @@ module Key : sig
   val cluster : t
   (** current key for a cluster *)
 
-  val lint_issues : t
+  val issues : t
   (** current key for lint issues *)
 
   val summary : t

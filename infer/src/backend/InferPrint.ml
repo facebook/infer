@@ -967,10 +967,10 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
         issue_formats )
     (Issue.sort_filter_issues !all_issues) ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
-  LintIssues.load_issues_to_errlog_map Config.lint_issues_dir_name ;
+  IssueLog.load Config.lint_issues_dir_name ;
   Typ.Procname.Map.iter
     (pp_lint_issues filters formats_by_report_kind linereader)
-    !LintIssues.errLogMap ;
+    (IssueLog.get_map ()) ;
   finalize_and_close_files formats_by_report_kind stats
 
 
