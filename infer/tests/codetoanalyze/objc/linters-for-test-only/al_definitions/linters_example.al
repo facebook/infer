@@ -444,6 +444,61 @@ DEFINE-CHECKER TEST_PARAMETER_SEL_TYPE = {
 
 };
 
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_INTERFACE_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_interface_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the interface named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_IMPLEMENTATION_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_implementation_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the implementation named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CLASS_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_class_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_INTERFACE_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_interface_named("MyBaseClassCategory")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category interface named MyBaseClassCategory.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_IMPLEMENTATION_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_implementation_named("MyBaseClassCategory")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category implementation named MyBaseClassCategory.";
+
+};
+
 DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_NAMED = {
 
  SET report_when =
@@ -455,6 +510,28 @@ DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_NAMED = {
 
 };
 
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_INTERFACE_ON_CLASS_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_interface_on_class_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category interface on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_IMPLEMENATION_ON_CLASS_NAMED = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_implementation_on_class_named("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category implementation on a class named MyBaseClass.";
+
+};
+
 DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_ON_CLASS_NAMED = {
 
  SET report_when =
@@ -463,6 +540,28 @@ DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_ON_CLASS_NAMED = {
      HOLDS-IN-NODE ObjCMethodDecl;
 
  SET message = "Method %name% is in the category on a class named MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_INTERFACE_ON_SUBCLASS_OF = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_interface_on_subclass_of("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category interface on a subclass of MyBaseClass.";
+
+};
+
+DEFINE-CHECKER TEST_IF_METHOD_IS_IN_CATEGORY_IMPLEMENTATION_ON_SUBCLASS_OF = {
+
+ SET report_when =
+     WHEN
+       is_in_objc_category_implementation_on_subclass_of("MyBaseClass")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method %name% is in the category implementation on a subclass of MyBaseClass.";
 
 };
 

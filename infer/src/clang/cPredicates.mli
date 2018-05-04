@@ -206,10 +206,35 @@ val is_in_objc_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
  *    name matches the provided REGEXP
  *)
 
+val is_in_objc_interface_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCInterfaceDecl
+ *    node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_implementation_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCImplementationDecl
+ *    node whose name matches the provided REGEXP
+ *)
+
 val is_in_objc_class_named : CLintersContext.context -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is a subnode of an ObjCInterfaceDecl or
  *    ObjCImplementationDecl node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_interface_on_class_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl node
+ *    whose class's name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_implementation_on_class_named :
+  CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryImplDecl node
+ *    whose class's name matches the provided REGEXP
  *)
 
 val is_in_objc_category_on_class_named : CLintersContext.context -> ALVar.alexp -> bool
@@ -218,11 +243,36 @@ val is_in_objc_category_on_class_named : CLintersContext.context -> ALVar.alexp 
  *    ObjCCategoryImplDecl node whose class's name matches the provided REGEXP
  *)
 
+val is_in_objc_category_interface_on_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl node
+ *    whose class inherits from a class whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_implementation_on_subclass_of :
+  CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryImplDecl node
+ *    whose class inherits from a class whose name matches the provided REGEXP
+ *)
+
 val is_in_objc_category_on_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is a subnode of an ObjCCategoryDecl or
  *    ObjCCategoryImplDecl node whose class inherits from a class whose
  *    name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_interface_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryDecl node
+ *    whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_category_implementation_named : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is a subnode of an ObjCCategoryImplDecl node
+ *    whose name matches the provided REGEXP
  *)
 
 val is_in_objc_category_named : CLintersContext.context -> ALVar.alexp -> bool

@@ -1018,14 +1018,30 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_in_function lcxt name
   | "is_in_objc_method", [name], _ ->
       CPredicates.is_in_objc_method lcxt name
+  | "is_in_objc_interface_named", [name], _ ->
+      CPredicates.is_in_objc_interface_named lcxt name
+  | "is_in_objc_implementation_named", [name], _ ->
+      CPredicates.is_in_objc_implementation_named lcxt name
   | "is_in_objc_class_named", [name], _ ->
       CPredicates.is_in_objc_class_named lcxt name
   | "is_in_objc_subclass_of", [name], _ ->
       CPredicates.is_in_objc_subclass_of lcxt name
+  | "is_in_objc_category_interface_on_class_named", [name], _ ->
+      CPredicates.is_in_objc_category_interface_on_class_named lcxt name
+  | "is_in_objc_category_implementation_on_class_named", [name], _ ->
+      CPredicates.is_in_objc_category_implementation_on_class_named lcxt name
   | "is_in_objc_category_on_class_named", [name], _ ->
       CPredicates.is_in_objc_category_on_class_named lcxt name
+  | "is_in_objc_category_interface_on_subclass_of", [name], _ ->
+      CPredicates.is_in_objc_category_interface_on_subclass_of lcxt name
+  | "is_in_objc_category_implementation_on_subclass_of", [name], _ ->
+      CPredicates.is_in_objc_category_implementation_on_subclass_of lcxt name
   | "is_in_objc_category_on_subclass_of", [name], _ ->
       CPredicates.is_in_objc_category_on_subclass_of lcxt name
+  | "is_in_objc_category_interface_named", [name], _ ->
+      CPredicates.is_in_objc_category_interface_named lcxt name
+  | "is_in_objc_category_implementation_named", [name], _ ->
+      CPredicates.is_in_objc_category_implementation_named lcxt name
   | "is_in_objc_category_named", [name], _ ->
       CPredicates.is_in_objc_category_named lcxt name
   | "is_ivar_atomic", [], an ->

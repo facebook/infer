@@ -667,10 +667,42 @@ let is_in_objc_subclass_of context name =
       false
 
 
+let is_in_objc_interface_named context name =
+  match context.CLintersContext.current_objc_class with
+  | Some cls ->
+      is_objc_interface_named (Decl cls) name
+  | None ->
+      false
+
+
+let is_in_objc_implementation_named context name =
+  match context.CLintersContext.current_objc_class with
+  | Some cls ->
+      is_objc_implementation_named (Decl cls) name
+  | None ->
+      false
+
+
 let is_in_objc_class_named context name =
   match context.CLintersContext.current_objc_class with
   | Some cls ->
       is_objc_class_named (Decl cls) name
+  | None ->
+      false
+
+
+let is_in_objc_category_interface_on_class_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_interface_on_class_named (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_implementation_on_class_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_implementation_on_class_named (Decl cat) name
   | None ->
       false
 
@@ -683,10 +715,42 @@ let is_in_objc_category_on_class_named context name =
       false
 
 
+let is_in_objc_category_interface_on_subclass_of context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_interface_on_subclass_of (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_implementation_on_subclass_of context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_implementation_on_subclass_of (Decl cat) name
+  | None ->
+      false
+
+
 let is_in_objc_category_on_subclass_of context name =
   match context.CLintersContext.current_objc_category with
   | Some cat ->
       is_objc_category_on_subclass_of (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_interface_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_interface_named (Decl cat) name
+  | None ->
+      false
+
+
+let is_in_objc_category_implementation_named context name =
+  match context.CLintersContext.current_objc_category with
+  | Some cat ->
+      is_objc_category_implementation_named (Decl cat) name
   | None ->
       false
 
