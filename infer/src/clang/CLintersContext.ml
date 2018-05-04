@@ -26,6 +26,8 @@ type context =
         (** If inside an objc class, contains the objc class (impl or interface) decl. *)
   ; current_objc_category: Clang_ast_t.decl option
         (** If inside an objc category, contains the objc category (impl or interface) decl. *)
+  ; current_objc_protocol: Clang_ast_t.decl option
+        (** If inside an objc protocol, contains the objc protocol decl. *)
   ; et_evaluation_node: string option
   ; if_context: if_context option
   ; in_for_loop_declaration: bool }
@@ -38,6 +40,7 @@ let empty translation_unit_context =
   ; is_ck_translation_unit= false
   ; current_objc_class= None
   ; current_objc_category= None
+  ; current_objc_protocol= None
   ; et_evaluation_node= None
   ; if_context= None
   ; in_for_loop_declaration= false }

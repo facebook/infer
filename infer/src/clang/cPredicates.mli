@@ -248,6 +248,18 @@ val is_objc_method_overriding : Ctl_parser_types.ast_node -> bool
  *    is not considered as overriding the same method in the interface or its categories.
  *)
 
+val is_objc_method_exposed : CLintersContext.context -> Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMethodDecl node and is exposed in an interface.
+ *
+ *  A method is said to be exposed if it's overriding a method or it's declared
+ *    in a matching interface. For example, a method defined in a class's
+ *    implementation is exposed if it's declared in the class's interface or
+ *    interface extension, but not if it's declared in a category on the class.
+ *    If the current node is a subnode of an ObjCInterfaceDecl, ObjCCategoryDecl,
+ *    or ObjCProtocolDecl, this predicate returns false.
+ *)
+
 val captures_cxx_references : Ctl_parser_types.ast_node -> bool
 (** 'captures_cxx_references an' is true iff the node an captures some CXX references *)
 

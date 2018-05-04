@@ -297,6 +297,66 @@ let is_objc_method_overriding an =
       false
 
 
+let decl_list_has_objc_method decl_list method_name is_instance_method =
+  List.exists
+    ~f:(fun decl ->
+      match decl with
+      | Clang_ast_t.ObjCMethodDecl (_, ni, omdi) ->
+          Bool.equal omdi.omdi_is_instance_method is_instance_method
+          && String.equal ni.ni_name method_name
+      | _ ->
+          false )
+    decl_list
+
+
+let current_objc_container context =
+  let open CLintersContext in
+  let current_objc_class = context.current_objc_class in
+  let current_objc_category = context.current_objc_category in
+  let current_objc_protocol = context.current_objc_protocol in
+  if not (Option.is_none current_objc_class) then current_objc_class
+  else if not (Option.is_none current_objc_category) then current_objc_category
+  else if not (Option.is_none current_objc_protocol) then current_objc_protocol
+  else None
+
+
+let is_objc_method_exposed context an =
+  let open Clang_ast_t in
+  if is_objc_method_overriding an then true
+  else
+    match an with
+    | Ctl_parser_types.Decl (ObjCMethodDecl (_, ndi, mdi))
+      -> (
+        let method_name = ndi.ni_name in
+        let is_instance_method = mdi.omdi_is_instance_method in
+        match current_objc_container context with
+        | Some (ObjCImplementationDecl (_, _, _, _, oidi)) -> (
+          match CAst_utils.get_decl_opt_with_decl_ref oidi.oidi_class_interface with
+          | Some (ObjCInterfaceDecl (_, _, decl_list, _, otdi)) ->
+              decl_list_has_objc_method decl_list method_name is_instance_method
+              || List.exists
+                   ~f:(fun decl_ref ->
+                     match CAst_utils.get_decl decl_ref.dr_decl_pointer with
+                     | Some (ObjCCategoryDecl (_, ni, decl_list, _, _)) ->
+                         String.equal ni.ni_name ""
+                         && decl_list_has_objc_method decl_list method_name is_instance_method
+                     | _ ->
+                         false )
+                   otdi.otdi_known_categories
+          | _ ->
+              false )
+        | Some (ObjCCategoryImplDecl (_, _, _, _, ocidi)) -> (
+          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_category_decl with
+          | Some (ObjCCategoryDecl (_, _, decl_list, _, _)) ->
+              decl_list_has_objc_method decl_list method_name is_instance_method
+          | _ ->
+              false )
+        | _ ->
+            false )
+    | _ ->
+        false
+
+
 (* checks whether an object is of a certain class *)
 let is_object_of_class_named receiver cname =
   let open Clang_ast_t in

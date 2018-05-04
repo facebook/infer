@@ -594,3 +594,12 @@ DEFINE-CHECKER TEST_IS_OVERRIDING_METHOD = {
  SET message = "Method %name% is overriding a method in a superclass.";
 
 };
+
+DEFINE-CHECKER TEST_IS_METHOD_EXPOSED = {
+
+ SET report_when =
+    is_objc_method_exposed;
+
+ SET message = "Method %name% is exposed in an interface.";
+
+};
