@@ -79,13 +79,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | LockedIfTrue ->
           astate
       | NoEffect ->
-          if
-            Models.is_countdownlatch_await tenv callee
-            || Models.is_two_way_binder_transact tenv actuals callee
-            || Models.is_blocking_java_io tenv callee
-            || Models.is_getWindowVisibleDisplayFrame tenv callee
-            || Models.is_future_get tenv callee
-          then
+          if Models.may_block tenv callee actuals then
             let caller = Procdesc.get_proc_name pdesc in
             Domain.blocking_call ~caller ~callee loc astate
           else if is_on_main_thread callee then Domain.set_on_main_thread astate

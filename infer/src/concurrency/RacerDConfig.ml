@@ -546,7 +546,10 @@ module Models = struct
        && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 
-  let is_call_of_class_or_superclass class_names ?(method_prefix= false) method_name tenv pn =
+  let is_call_of_class_or_superclass ?(method_prefix= false) ?(actuals_pred= fun _ -> true)
+      class_names method_name tenv pn actuals =
+    actuals_pred actuals
+    &&
     match pn with
     | Typ.Procname.Java java_pname ->
         let classname = Typ.Procname.Java.get_class_type_name java_pname in
@@ -562,25 +565,52 @@ module Models = struct
         false
 
 
+  (** It's surprisingly difficult making any sense of the official documentation on java.io classes
+                as to whether methods may block.  We approximate these by calls in traditionally blocking
+                classes (non-channel based I/O), to methods `(Reader|InputStream).read*`.
+                Initially, (Writer|OutputStream).(flush|close) were also matched, but this generated too
+                many reports *)
   let is_blocking_java_io =
     is_call_of_class_or_superclass ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
       "read"
 
 
+  (** is the method called CountDownLath.await or on subclass? *)
   let is_countdownlatch_await =
     is_call_of_class_or_superclass ["java.util.concurrent.CountDownLatch"] "await"
 
 
+  (** an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+           is int-zero then a reply is expected and returned from the remote process, thus potentially
+           blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block.
+        *)
   let is_two_way_binder_transact =
-    let matcher = is_call_of_class_or_superclass ["android.os.IBinder"] "transact" in
-    fun tenv actuals pn ->
+    let actuals_pred actuals =
       List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
-      && matcher tenv pn
+    in
+    is_call_of_class_or_superclass ~actuals_pred ["android.os.IBinder"] "transact"
 
 
+  (** is it a call to android.view.View.getWindowVisibleDisplayFrame or on sublass? *)
   let is_getWindowVisibleDisplayFrame =
     is_call_of_class_or_superclass ["android.view.View"] "getWindowVisibleDisplayFrame"
 
 
+  (** is it a call to Future.get() or on sublass? *)
   let is_future_get = is_call_of_class_or_superclass ["java.util.concurrent.Future"] "get"
+
+  let is_accountManager_setUserData =
+    is_call_of_class_or_superclass ["android.accounts.AccountManager"] "setUserData"
+
+
+  let may_block =
+    let matchers =
+      [ is_blocking_java_io
+      ; is_countdownlatch_await
+      ; is_two_way_binder_transact
+      ; is_getWindowVisibleDisplayFrame
+      ; is_future_get
+      ; is_accountManager_setUserData ]
+    in
+    fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
 end
