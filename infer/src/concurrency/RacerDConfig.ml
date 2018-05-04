@@ -72,7 +72,9 @@ module Models = struct
       in
       let matcher_lock_constructor =
         QualifiedCppName.Match.of_fuzzy_qual_names
-          ["std::lock_guard::lock_guard"; "std::unique_lock::unique_lock"]
+          [ "std::lock_guard::lock_guard"
+          ; "std::unique_lock::unique_lock"
+          ; "folly::LockedPtr::LockedPtr" ]
       in
       fun pname actuals ->
         QualifiedCppName.Match.match_qualifiers matcher_lock (Typ.Procname.get_qualifiers pname)
@@ -92,7 +94,8 @@ module Models = struct
           ; "std::lock_guard::~lock_guard"
           ; "std::mutex::unlock"
           ; "std::unique_lock::unlock"
-          ; "std::unique_lock::~unique_lock" ]
+          ; "std::unique_lock::~unique_lock"
+          ; "folly::LockedPtr::~LockedPtr" ]
       in
       fun pname ->
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
