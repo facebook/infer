@@ -68,14 +68,10 @@ let run_compilation_database compilation_database should_capture_file =
   L.progress "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
   let sequence = Parmap.L (List.map ~f:create_cmd compilation_data) in
   let fail_sentinel_fname = Config.results_dir ^/ Config.linters_failed_sentinel_filename in
+  (* fail_sentinel = Some file means we will fail by compilation failures, None means we won't *)
   let fail_sentinel =
-    if Config.linters_ignore_clang_failures then None
-    else
-      match Config.buck_compilation_database with
-      | Some NoDeps when Config.linters ->
-          Some fail_sentinel_fname
-      | Some NoDeps | Some (Deps _) | None ->
-          None
+    if Config.linters_ignore_clang_failures || Config.keep_going then None
+    else Some fail_sentinel_fname
   in
   Utils.rmtree fail_sentinel_fname ;
   let chunksize = min ((List.length compilation_data / Config.jobs) + 1) 10 in
@@ -84,8 +80,8 @@ let run_compilation_database compilation_database should_capture_file =
   L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs ;
   if sentinel_exists fail_sentinel then (
     L.progress
-      "Failure detected, capture did not finish successfully. Use \
-       `--linters-ignore-clang-failures` to ignore compilation errors. Terminating@." ;
+      "Failure detected, capture did not finish successfully. Use `--keep-going` to ignore \
+       compilation errors. Terminating@." ;
     L.exit 1 )
 
 
