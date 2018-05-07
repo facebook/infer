@@ -168,7 +168,7 @@ let log_issue current_pname current_loc ltr exn =
          inner class but this is no longer obvious in the path, because of nested-class path normalisation.
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks get_proc_desc tenv current_pdesc (summary, _) =
+let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
   let open StarvationDomain in
   let current_loc = Procdesc.get_loc current_pdesc in
   let current_pname = Procdesc.get_proc_name current_pdesc in
@@ -208,7 +208,8 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, _) =
             get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc endpoint_class
           in
           (* for each summary related to the endpoint, analyse and report on its pairs *)
-          List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, _)) ->
+          List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, endpoint_main)) ->
+              if not (current_main && endpoint_main) then
               let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
               let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
               LockOrderDomain.iter (report_endpoint_elem elem endpoint_pname endpoint_loc) summary
