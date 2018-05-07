@@ -27,7 +27,9 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_args =
-  {procedures: (Tenv.t * Procdesc.t) list; get_proc_desc: Typ.Procname.t -> Procdesc.t option}
+  { procedures: (Tenv.t * Procdesc.t) list
+  ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
+  ; exe_env: Exe_env.t }
 
 type cluster_callback_t = cluster_callback_args -> unit
 

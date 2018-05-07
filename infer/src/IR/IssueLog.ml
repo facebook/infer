@@ -13,11 +13,7 @@ open! IStd
 
 let errLogMap = ref Typ.Procname.Map.empty
 
-let exist_issues () = not (Typ.Procname.Map.is_empty !errLogMap)
-
-let get_map () = !errLogMap
-
-let get_err_log procname =
+let get_errlog procname =
   try Typ.Procname.Map.find procname !errLogMap with Caml.Not_found ->
     let errlog = Errlog.empty () in
     errLogMap := Typ.Procname.Map.add procname errlog !errLogMap ;
@@ -28,8 +24,19 @@ let issues_serializer : Errlog.t Typ.Procname.Map.t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.issues
 
 
-(** Save issues to a file *)
-let store filename = Serialization.write_to_file issues_serializer filename ~data:!errLogMap
+let iter f = Typ.Procname.Map.iter f !errLogMap
+
+let store directory source_file =
+  if not (Typ.Procname.Map.is_empty !errLogMap) then (
+    let abbrev_source_file = DB.source_file_encoding source_file in
+    let issues_dir = Config.results_dir ^/ directory in
+    Utils.create_dir issues_dir ;
+    let filename =
+      DB.filename_from_string (Filename.concat issues_dir (abbrev_source_file ^ ".issue"))
+    in
+    Serialization.write_to_file issues_serializer filename ~data:!errLogMap )
+  else ()
+
 
 (** Load issues from the given file *)
 let load_issues issues_file = Serialization.read_from_file issues_serializer issues_file

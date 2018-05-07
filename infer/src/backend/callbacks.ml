@@ -23,7 +23,9 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_args =
-  {procedures: (Tenv.t * Procdesc.t) list; get_proc_desc: Typ.Procname.t -> Procdesc.t option}
+  { procedures: (Tenv.t * Procdesc.t) list
+  ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
+  ; exe_env: Exe_env.t }
 
 type cluster_callback_t = cluster_callback_args -> unit
 
@@ -78,7 +80,7 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
 let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
   if !cluster_callbacks <> [] then
     let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
-    let environment = {procedures; get_proc_desc} in
+    let environment = {procedures; get_proc_desc; exe_env} in
     let language_matches language =
       match procedures with
       | (_, pdesc) :: _ ->

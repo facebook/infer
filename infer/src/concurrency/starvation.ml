@@ -156,6 +156,11 @@ let get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc clazz =
   List.rev_filter_map pdescs ~f:(get_summary current_pdesc)
 
 
+let log_issue current_pname current_loc ltr exn =
+  let errlog = IssueLog.get_errlog current_pname in
+  Reporting.log_issue_from_errlog current_pname Exceptions.Kerror errlog ~loc:current_loc ~ltr exn
+
+
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
          Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
          this will fail when (a) the lock is of class type (ie as used in static sync methods), because
@@ -184,8 +189,7 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, _) =
           let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
           let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc elem in
           let ltr = List.rev_append first_trace second_trace in
-          Reporting.log_error_deprecated ~store_summary:true current_pname ~loc:current_loc ~ltr
-            exn
+          log_issue current_pname current_loc ltr exn
       | _, _ ->
           ()
   in
@@ -232,7 +236,7 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
         let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
         let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc endpoint_elem in
         let ltr = List.rev_append first_trace second_trace in
-        Reporting.log_error_deprecated ~store_summary:true current_pname ~loc:current_loc ~ltr exn
+        log_issue current_pname current_loc ltr exn
     | _ ->
         ()
   in
@@ -247,7 +251,7 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
           Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
         in
         let ltr = make_trace_with_header elem current_loc current_pname in
-        Reporting.log_error_deprecated ~store_summary:true current_pname ~loc:current_loc ~ltr exn
+        log_issue current_pname current_loc ltr exn
     | {LockEvent.event= LockEvent.LockAcquire endpoint_lock} ->
       match LockIdentity.owner_class endpoint_lock with
       | None ->
@@ -272,11 +276,13 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
   LockOrderDomain.iter report_on_current_elem summary
 
 
-let reporting {Callbacks.procedures; get_proc_desc} =
+let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
   let report_procedure (tenv, proc_desc) =
     Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.iter ~f:(fun ((s, main) as summary) ->
            report_deadlocks get_proc_desc tenv proc_desc summary ;
            if main then report_blocks_on_main_thread get_proc_desc tenv proc_desc s )
   in
-  List.iter procedures ~f:report_procedure
+  List.iter procedures ~f:report_procedure ;
+  let sourcefile = exe_env.Exe_env.source_file in
+  IssueLog.store Config.starvation_issues_dir_name sourcefile

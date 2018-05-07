@@ -283,6 +283,8 @@ let specs_dir_name = "specs"
 
 let specs_files_suffix = ".specs"
 
+let starvation_issues_dir_name = "starvation_issues"
+
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 

@@ -365,16 +365,6 @@ let context_with_ck_set context decl_list =
   if is_ck then {context with CLintersContext.is_ck_translation_unit= true} else context
 
 
-let store_issues source_file =
-  let abbrev_source_file = DB.source_file_encoding source_file in
-  let lint_issues_dir = Config.results_dir ^/ Config.lint_issues_dir_name in
-  Utils.create_dir lint_issues_dir ;
-  let lint_issues_file =
-    DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue"))
-  in
-  IssueLog.store lint_issues_file
-
-
 let find_linters_files () =
   List.concat_map
     ~f:(fun folder -> Utils.find_files ~path:folder ~extension:".al")
@@ -412,7 +402,7 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
       let active_map : Tableaux.context_linter_map = Tableaux.init_active_map () in
       CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast) ;
       List.iter ~f:(do_frontend_checks_decl context active_map) allowed_decls ;
-      if IssueLog.exist_issues () then store_issues source_file ;
+      IssueLog.store Config.lint_issues_dir_name source_file ;
       L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
       CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file
       (*if CFrontend_config.tableaux_evaluation then (

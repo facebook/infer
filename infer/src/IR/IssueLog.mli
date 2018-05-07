@@ -11,17 +11,17 @@ open! IStd
 
 (** Module to store a map from procnames to error logs.  Starts with an empty map. *)
 
-val get_map : unit -> Errlog.t Typ.Procname.Map.t
+val iter : (Typ.Procname.t -> Errlog.t -> unit) -> unit
+(** iterate a function on map contents *)
 
-val exist_issues : unit -> bool
-
-val get_err_log : Typ.Procname.t -> Errlog.t
-(** Get the error log for a given procname.  If not present, then add the association from 
+val get_errlog : Typ.Procname.t -> Errlog.t
+(** Get the error log for a given procname.  If not present, then add the association from
     procname to an empty error log and return the latter. *)
 
-val store : DB.filename -> unit
-(** Store map to a file *)
+val store : string -> SourceFile.t -> unit
+(** If there are any issues in the log, [store dirname filename] stores map to [infer-out/dirname/filename].
+    Otherwise, no file is written. *)
 
 val load : string -> unit
-(** Reset the issue map first, then walk the directory given as argument and merge all
+(** [load directory] resets the issue map first, then walks [infer-out/directory], merging all
     maps stored in the found files into the current map.  *)

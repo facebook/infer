@@ -445,7 +445,7 @@ let log_frontend_issue ~is_cpp method_decl_opt (node: Ctl_parser_types.ast_node)
     | None ->
         Typ.Procname.Linters_dummy_method
   in
-  let errlog = IssueLog.get_err_log procname in
+  let errlog = IssueLog.get_errlog procname in
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in

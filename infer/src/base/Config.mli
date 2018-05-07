@@ -229,6 +229,8 @@ val specs_dir_name : string
 
 val specs_files_suffix : string
 
+val starvation_issues_dir_name : string
+
 val trace_absarray : bool
 
 val undo_join : bool

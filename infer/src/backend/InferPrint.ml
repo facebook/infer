@@ -967,10 +967,9 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
         issue_formats )
     (Issue.sort_filter_issues !all_issues) ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
-  IssueLog.load Config.lint_issues_dir_name ;
-  Typ.Procname.Map.iter
-    (pp_lint_issues filters formats_by_report_kind linereader)
-    (IssueLog.get_map ()) ;
+  List.iter [Config.lint_issues_dir_name; Config.starvation_issues_dir_name] ~f:(fun dir_name ->
+      IssueLog.load dir_name ;
+      IssueLog.iter (pp_lint_issues filters formats_by_report_kind linereader) ) ;
   finalize_and_close_files formats_by_report_kind stats
 
 
