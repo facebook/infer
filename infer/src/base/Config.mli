@@ -189,6 +189,8 @@ val procedures_source_file : bool
 
 val property_attributes : string
 
+val racerd_issues_dir_name : string
+
 val report : bool
 
 val report_condition_always_true_in_clang : bool

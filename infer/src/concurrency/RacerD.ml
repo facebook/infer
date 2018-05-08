@@ -985,6 +985,10 @@ let get_contaminated_race_message access wobbly_paths =
         AccessPath.pp wobbly_path AccessPath.pp access_path )
 
 
+let log_issue current_pname ~loc ~ltr ~access exn =
+  Reporting.log_issue_external current_pname Exceptions.Kerror ~loc ~ltr ~access exn
+
+
 let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread
     wobbly_paths =
   let open RacerDDomain in
@@ -1029,7 +1033,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
           in
           let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
           let access = IssueAuxData.encode (pname, access, end_locs) in
-          Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr ~access exn
+          log_issue pname ~loc ~ltr ~access exn
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
@@ -1530,7 +1534,7 @@ let aggregate_by_class file_env =
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
-let file_analysis {Callbacks.procedures} =
+let file_analysis {Callbacks.procedures; exe_env} =
   String.Map.iter
     ~f:(fun class_env ->
       let tenv = fst (List.hd_exn class_env) in
@@ -1539,4 +1543,6 @@ let file_analysis {Callbacks.procedures} =
            ( if Tenv.language_is tenv Clang then (module SyntacticQuotientedAccessListMap)
            else (module MayAliasQuotientedAccessListMap) )
            class_env) )
-    (aggregate_by_class procedures)
+    (aggregate_by_class procedures) ;
+  let sourcefile = exe_env.Exe_env.source_file in
+  IssueLog.store Config.racerd_issues_dir_name sourcefile

@@ -42,3 +42,8 @@ val log_error : Specs.summary -> log_t
 
 val log_warning : Specs.summary -> log_t
 (** Add an warning to the given summary. *)
+
+val log_issue_external :
+  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.err_kind
+  -> log_t
+(** Log an issue to the error log in [IssueLog] associated with the given procname. *)

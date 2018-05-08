@@ -93,3 +93,10 @@ let log_warning_deprecated ?(store_summary= false) =
 
 let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
+
+
+let log_issue_external procname ?clang_method_kind err_kind ?loc ?node_id ?session ?ltr
+    ?linters_def_file ?doc_url ?access exn =
+  let errlog = IssueLog.get_errlog procname in
+  log_issue_from_errlog procname ?clang_method_kind err_kind errlog ?loc ?node_id ?session ?ltr
+    ?linters_def_file ?doc_url ?access exn

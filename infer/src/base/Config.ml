@@ -259,6 +259,8 @@ let proc_stats_filename = "proc_stats.json"
 
 let property_attributes = "property_attributes"
 
+let racerd_issues_dir_name = "racerd"
+
 let report_condition_always_true_in_clang = false
 
 let report_json = "report.json"

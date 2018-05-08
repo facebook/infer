@@ -157,8 +157,7 @@ let get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc clazz =
 
 
 let log_issue current_pname current_loc ltr exn =
-  let errlog = IssueLog.get_errlog current_pname in
-  Reporting.log_issue_from_errlog current_pname Exceptions.Kerror errlog ~loc:current_loc ~ltr exn
+  Reporting.log_issue_external current_pname Exceptions.Kerror ~loc:current_loc ~ltr exn
 
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
