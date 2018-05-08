@@ -212,8 +212,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (Exp.Lvar pvar, typ)
 
 
+  let get_forwarded_params trans_state sil_loc =
+    (* forward all parameters of constructor except this *)
+    let context = trans_state.context in
+    let pdesc = context.procdesc in
+    let attr = Procdesc.get_attributes pdesc in
+    let procname = Procdesc.get_proc_name pdesc in
+    attr.formals (* remove this, which should always be the first formal parameter *)
+    |> List.tl_exn
+    |> List.fold_left ~init:([], []) ~f:
+         (fun (forwarded_params, forwarded_init_exps) (formal, typ) ->
+           let pvar = Pvar.mk formal procname in
+           let id = Ident.create_fresh Ident.knormal in
+           ( (Exp.Var id, typ) :: forwarded_params
+           , Sil.Load (id, Exp.Lvar pvar, typ, sil_loc) :: forwarded_init_exps ) )
+
+
   let create_call_instr trans_state (return_type: Typ.t) function_sil params_sil sil_loc call_flags
-      ~is_objc_method =
+      ~is_objc_method ~is_inherited_ctor =
     let ret_id_typ = (Ident.create_fresh Ident.knormal, return_type) in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
@@ -259,9 +275,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         , let i, t = ret_id_typ in
           [(Exp.Var i, t)] )
     in
-    let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
+    let forwarded_params, forwarded_init_instrs =
+      if is_inherited_ctor then get_forwarded_params trans_state sil_loc else ([], [])
+    in
+    let call_instr =
+      Sil.Call (ret_id', function_sil, params @ forwarded_params, sil_loc, call_flags)
+    in
     let call_instr' = Sil.add_with_block_parameters_flag call_instr in
-    {empty_res_trans with instrs= [call_instr']; exps= ret_exps; initd_exps}
+    {empty_res_trans with instrs= forwarded_init_instrs @ [call_instr']; exps= ret_exps; initd_exps}
 
 
   (** Given a captured var, return the instruction to assign it to a temp *)
@@ -1048,7 +1069,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
           let call_flags = {CallFlags.default with CallFlags.cf_is_objc_block= is_call_to_block} in
           create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
-            ~is_objc_method:false
+            ~is_objc_method:false ~is_inherited_ctor:false
         in
         let nname = "Call " ^ Exp.to_string sil_fe in
         let all_res_trans = result_trans_subexprs @ [res_trans_call] in
@@ -1059,7 +1080,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
-      function_type is_cpp_call_virtual extra_res_trans =
+      function_type is_cpp_call_virtual extra_res_trans ~is_inherited_ctor =
     let context = trans_state_pri.context in
     let sil_loc = CLocation.get_sil_location si context in
     (* first for method address, second for 'this' expression and other parameters *)
@@ -1091,7 +1112,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let call_flags = {CallFlags.default with CallFlags.cf_virtual= is_cpp_call_virtual} in
         let res_trans_call =
           create_call_instr trans_state_pri function_type sil_method actual_params sil_loc
-            call_flags ~is_objc_method:false
+            call_flags ~is_objc_method:false ~is_inherited_ctor
         in
         let nname = "Call " ^ Exp.to_string sil_method in
         let all_res_trans = result_trans_subexprs @ [res_trans_call; extra_res_trans] in
@@ -1118,10 +1139,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
-      function_type is_cpp_call_virtual empty_res_trans
+      function_type is_cpp_call_virtual empty_res_trans ~is_inherited_ctor:false
 
 
-  and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info =
+  and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info ~is_inherited_ctor =
     let context = trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let sil_loc = CLocation.get_sil_location si context in
@@ -1169,7 +1190,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si
-        (Typ.mk Tvoid) false extra_res_trans
+        (Typ.mk Tvoid) false extra_res_trans ~is_inherited_ctor
     in
     {res_trans with exps= extra_res_trans.exps}
 
@@ -1192,7 +1213,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' (Typ.mk Tvoid)
-        is_cpp_call_virtual empty_res_trans
+        is_cpp_call_virtual empty_res_trans ~is_inherited_ctor:false
     else empty_res_trans
 
 
@@ -1294,7 +1315,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let method_sil = Exp.Const (Const.Cfun callee_name) in
         let res_trans_call =
           create_call_instr trans_state method_type method_sil subexpr_exprs sil_loc call_flags
-            ~is_objc_method:true
+            ~is_objc_method:true ~is_inherited_ctor:false
         in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: " ^ selector in
@@ -3130,6 +3151,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info)
     | CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
         cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
+          ~is_inherited_ctor:false
+    | CXXInheritedCtorInitExpr (stmt_info, stmt_list, expr_info, cxx_construct_inherited_expr_info) ->
+        cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info
+          cxx_construct_inherited_expr_info ~is_inherited_ctor:true
     | ObjCMessageExpr (stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
     | CompoundStmt (stmt_info, stmt_list) ->
@@ -3350,7 +3375,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | AsTypeExpr _
     | AtomicExpr _
     | CXXFoldExpr _
-    | CXXInheritedCtorInitExpr _
     | CXXUnresolvedConstructExpr _
     | CXXUuidofExpr _
     | CUDAKernelCallExpr _
