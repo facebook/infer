@@ -129,7 +129,7 @@ let () =
         | Some cluster ->
             F.fprintf fmt "of cluster %s" (Filename.basename cluster)
       in
-      L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
+      L.progress "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
       run Driver.Analyze
   | Capture | Compile | Run ->
       run (Lazy.force Driver.mode_from_command_line)
@@ -140,7 +140,7 @@ let () =
       ( match (Config.report_current, Config.report_previous) with
       | None, None ->
           L.(die UserError)
-            "Expected at least one argument among 'report-current' and 'report-previous'"
+            "Expected at least one argument among '--report-current' and '--report-previous'"
       | _ ->
           () ) ;
       ReportDiff.reportdiff ~current_report:Config.report_current

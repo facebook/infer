@@ -372,7 +372,7 @@ let error_nothing_to_analyze mode =
   | None ->
       L.user_warning "%s%s Try cleaning the build first.@." nothing_to_compile_msg
         please_run_capture_msg ) ;
-  L.user_error "There was nothing to analyze.@\n@."
+  L.progress "There was nothing to analyze.@."
 
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =

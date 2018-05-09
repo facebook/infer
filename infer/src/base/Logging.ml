@@ -87,9 +87,25 @@ let mk_file_formatter file_fmt category0 =
   f
 
 
+let color_console ?(use_stdout= false) scheme =
+  let scheme = Option.value scheme ~default:Normal in
+  let formatter = if use_stdout then F.std_formatter else F.err_formatter in
+  let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
+  if can_colorize then (
+    let styles = term_styles_of_style scheme in
+    let out_string s p n =
+      let print = if use_stdout then ANSITerminal.print_string else ANSITerminal.prerr_string in
+      print styles (String.slice s p n)
+    in
+    F.pp_set_formatter_out_functions formatter
+      {(F.pp_get_formatter_out_functions formatter ()) with F.out_string} ;
+    formatter )
+  else formatter
+
+
 let register_formatter =
   let all_prefixes = ref [] in
-  fun ?(use_stdout= false) prefix ->
+  fun ?use_stdout ?color_scheme prefix ->
     all_prefixes := prefix :: !all_prefixes ;
     (* lazy so that we get a chance to register all prefixes before computing their max length for
        alignment purposes *)
@@ -101,7 +117,7 @@ let register_formatter =
        in
        let justified_prefix = fill ^ prefix in
        let mk_formatters () =
-         let console = if use_stdout then F.std_formatter else F.err_formatter in
+         let console = color_console ?use_stdout color_scheme in
          match !log_file with
          | Some (file_fmt, _) ->
              let file = mk_file_formatter file_fmt justified_prefix in
@@ -167,11 +183,11 @@ let debug_dev_file_fmts = register_formatter "local debug"
 
 let environment_info_file_fmts = register_formatter "environment"
 
-let external_warning_file_fmts = register_formatter "extern warn"
+let external_warning_file_fmts = register_formatter ~color_scheme:Warning "extern warn"
 
-let external_error_file_fmts = register_formatter "extern err"
+let external_error_file_fmts = register_formatter ~color_scheme:Error "extern err"
 
-let internal_error_file_fmts = register_formatter "intern err"
+let internal_error_file_fmts = register_formatter ~color_scheme:Error "intern err"
 
 let phase_file_fmts = register_formatter "phase"
 
@@ -179,9 +195,9 @@ let progress_file_fmts = register_formatter "progress"
 
 let result_file_fmts = register_formatter ~use_stdout:true "result"
 
-let user_warning_file_fmts = register_formatter "user warn"
+let user_warning_file_fmts = register_formatter ~color_scheme:Warning "user warn"
 
-let user_error_file_fmts = register_formatter "user err"
+let user_error_file_fmts = register_formatter ~color_scheme:Fatal "user err"
 
 let phase fmt = log ~to_console:false phase_file_fmts fmt
 

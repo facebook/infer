@@ -59,10 +59,12 @@ let create_results_dir () =
     RunState.load_and_validate ()
     |> Result.iter_error ~f:(fun error ->
            if Config.force_delete_results_dir then (
-             L.user_warning
-               "%s@\nDeleting results dir because --force-delete-results-dir was passed@." error ;
+             L.user_warning "WARNING: %s@\n" error ;
+             L.progress "Deleting results dir because --force-delete-results-dir was passed@." ;
              remove_results_dir () )
-           else L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
+           else
+             L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error
+               Config.results_dir ) ;
   Unix.mkdir_p Config.results_dir ;
   Unix.mkdir_p (Config.results_dir ^/ Config.events_dir_name) ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;

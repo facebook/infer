@@ -50,3 +50,16 @@ let exit_code_of_exception = function
       exitcode
   | _ ->
       (* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions *) 2
+
+
+type style = Error | Fatal | Normal | Warning
+
+let term_styles_of_style = function
+  | Error ->
+      ANSITerminal.[Foreground Red]
+  | Fatal ->
+      ANSITerminal.[Bold; Foreground Red]
+  | Normal ->
+      [ANSITerminal.default]
+  | Warning ->
+      ANSITerminal.[Foreground Yellow]

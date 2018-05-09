@@ -2265,9 +2265,9 @@ let post_parsing_initialization command_opt =
     in
     let print_exception () =
       let error prefix msg =
-        ANSITerminal.(prerr_string [Bold; Foreground Red]) prefix ;
-        ANSITerminal.(prerr_string [Bold; Foreground Red]) msg ;
-        Out_channel.newline stderr
+        ANSITerminal.prerr_string L.(term_styles_of_style Fatal) prefix ;
+        ANSITerminal.prerr_string L.(term_styles_of_style Fatal) msg ;
+        ANSITerminal.prerr_string L.(term_styles_of_style Normal) "\n"
       in
       match exn with
       | Failure msg ->
@@ -2281,19 +2281,17 @@ let post_parsing_initialization command_opt =
       | L.InferExit _ ->
           ()
       | _ ->
-          error "Uncaught error: " (Exn.to_string exn)
+          error "Uncaught Internal Error: " (Exn.to_string exn)
     in
-    if not is_infer_exit_zero && (should_print_backtrace_default || !developer_mode) then (
-      Out_channel.newline stderr ;
-      ANSITerminal.(prerr_string [Foreground Red]) "Error backtrace:" ;
-      Out_channel.newline stderr ;
-      ANSITerminal.(prerr_string [Foreground Red]) backtrace ) ;
     print_exception () ;
+    if not is_infer_exit_zero && (should_print_backtrace_default || !developer_mode) then (
+      ANSITerminal.prerr_string L.(term_styles_of_style Error) "Error backtrace:\n" ;
+      ANSITerminal.prerr_string L.(term_styles_of_style Error) backtrace ) ;
     if not is_infer_exit_zero then Out_channel.newline stderr ;
-    if suggest_keep_going then (
-      ANSITerminal.(prerr_string [])
-        "Run the command again with `--keep-going` to try and ignore this error." ;
-      Out_channel.newline stderr ) ;
+    if suggest_keep_going then
+      ANSITerminal.prerr_string
+        L.(term_styles_of_style Normal)
+        "Run the command again with `--keep-going` to try and ignore this error.\n" ;
     let exitcode = L.exit_code_of_exception exn in
     L.log_uncaught_exception exn ~exitcode ;
     Epilogues.late () ;

@@ -35,3 +35,7 @@ val die : error -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise the corresponding exception. *)
 
 val raise_error : error -> msg:string -> 'a
+
+type style = Error | Fatal | Normal | Warning
+
+val term_styles_of_style : style -> ANSITerminal.style list

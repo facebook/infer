@@ -45,27 +45,26 @@ let load_and_validate () =
       (fun err_msg ->
         Error
           (Printf.sprintf
-             "Incompatible results directory '%s':\n\
+             "'%s' already exists but it is not an empty directory and it does not look like an \
+              infer results directory:\n  \
               %s\n\
-              Was '%s' created using an older version of infer?"
-             Config.results_dir err_msg Config.results_dir) )
+              Was it created using an older version of infer?"
+             Config.results_dir err_msg) )
       msg
   in
-  if Sys.file_exists state_file_path <> `Yes then error "save state not found"
+  if Sys.file_exists state_file_path <> `Yes then
+    error "save state not found: '%s' does not exist" state_file_path
   else
-    try
-      let loaded_state = Ag_util.Json.from_file Runstate_j.read_t state_file_path in
-      if
-        not
-          (String.equal !state.Runstate_t.results_dir_format
-             loaded_state.Runstate_t.results_dir_format)
-      then
-        error "Incompatible formats: found\n  %s\n\nbut expected this format:\n  %s\n\n"
-          loaded_state.results_dir_format !state.Runstate_t.results_dir_format
-      else (
+    match Ag_util.Json.from_file Runstate_j.read_t state_file_path with
+    | {Runstate_t.results_dir_format} as loaded_state
+      when String.equal !state.Runstate_t.results_dir_format results_dir_format ->
         state := loaded_state ;
-        Ok () )
-    with _ -> Error "error reading the save state"
+        Ok ()
+    | {Runstate_t.results_dir_format} ->
+        error "Incompatible formats: found\n  %s\n\nbut expected this format:\n  %s\n\n"
+          results_dir_format !state.Runstate_t.results_dir_format
+    | exception e ->
+        error "could not read the save state '%s': %s" state_file_path (Exn.to_string e)
 
 
 let reset () = state := state0
