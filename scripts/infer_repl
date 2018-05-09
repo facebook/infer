@@ -6,6 +6,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # where to find toplevel.bc, can be overridden
 TOPLEVEL_DIR=${TOPLEVEL_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
+INCLUDE_FLAGS=$(find "$TOPLEVEL_DIR" -type d -name '*.objs' -exec printf -- '-I {}\n' \;)
 
 # The -init option is effective only in interactive mode.
 # In batch mode, scripts need to import toplevel_init themselves.
@@ -20,9 +21,6 @@ set -x
 cd "$SCRIPT_DIR"/../infer
 "$TOPLEVEL_DIR"/infertop.bc \
   -init "$SCRIPT_DIR"/toplevel_init \
-  -I "$TOPLEVEL_DIR" \
-  -I "$TOPLEVEL_DIR"/atd \
-  -I "$TOPLEVEL_DIR"/istd \
-  -I "$TOPLEVEL_DIR"/scripts \
+  $INCLUDE_FLAGS \
   -I "$SCRIPT_DIR" \
   "$@"

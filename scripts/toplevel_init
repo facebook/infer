@@ -16,6 +16,8 @@
 
 open InferStdlib;;
 open InferGenerated;;
+open InferBase;;
+open InferIR;;
 open InferModules;;
 
 (* Most of infer uses this, useful for copy/pasting. Can be (partially) countered by typing `open

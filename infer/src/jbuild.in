@@ -83,14 +83,12 @@ let stanzas =
 (executable
  ((name infertop)
   (flags (%s))
-  (ocamlopt_flags (%s))
   (libraries (utop InferModules))
   (modules (Infertop))
   (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
   (link_flags (-linkall -warn-error -31))))
 |}
-        (String.concat " " infer_cflags)
-        (String.concat " " common_optflags) ]
+        (String.concat " " infer_cflags) ]
   @ ( List.map
         (fun source_dir ->
           [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir

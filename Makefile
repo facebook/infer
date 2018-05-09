@@ -18,9 +18,7 @@ BUILD_MODE ?= opt
 MAKE_SOURCE = $(MAKE) -C $(SRC_DIR) INFER_BUILD_DIR=_build/$(BUILD_MODE)
 
 ifneq ($(UTOP),no)
-# TODO: turn this back on
-#BUILD_SYSTEMS_TESTS += infertop
-#build_infertop_print build_infertop_test: test_build
+BUILD_SYSTEMS_TESTS += infertop
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
