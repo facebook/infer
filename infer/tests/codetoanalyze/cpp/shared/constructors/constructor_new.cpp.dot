@@ -128,11 +128,11 @@ digraph cfg {
 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_2" [label="2: Exit constructor_new::float_init_number \n  " color=yellow style=filled]
 	
 
-"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" [label="3:  Return Stmt \n   n$0=*&x1:float* [line 46, column 16]\n  n$1=*n$0:float [line 46, column 15]\n  *&return:float=(1 / (n$1 - 5.400000)) [line 46, column 3]\n " shape="box"]
+"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" [label="3:  Return Stmt \n   n$0=*&x1:float* [line 46, column 16]\n  n$1=*n$0:float [line 46, column 15]\n  *&return:float=(1 / (n$1 - 5.4)) [line 46, column 3]\n " shape="box"]
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_2" ;
-"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  DeclStmt \n   n$2=_fun___new(sizeof(t=float):unsigned long) [line 45, column 15]\n  *n$2:float=5.400000 [line 45, column 15]\n  *&x1:float*=n$2 [line 45, column 3]\n " shape="box"]
+"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  DeclStmt \n   n$2=_fun___new(sizeof(t=float):unsigned long) [line 45, column 15]\n  *n$2:float=5.4 [line 45, column 15]\n  *&x1:float*=n$2 [line 45, column 3]\n " shape="box"]
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" ;

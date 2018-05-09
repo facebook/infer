@@ -43,38 +43,35 @@ let builtin_functions_to_string pn =
   if Typ.Procname.equal pn BuiltinDecl.__objc_alloc_no_fail then Some "alloc" else None
 
 
-(** convert a dexp to a string *)
-let rec to_string = function
+let rec pp fmt = function
   | Darray (de1, de2) ->
-      to_string de1 ^ "[" ^ to_string de2 ^ "]"
+      F.fprintf fmt "%a[%a]" pp de1 pp de2
   | Dbinop (op, de1, de2) ->
-      "(" ^ to_string de1 ^ Binop.str Pp.text op ^ to_string de2 ^ ")"
-  | Dconst (Cfun pn)
-    -> (
-      let procname_str = Typ.Procname.to_simplified_string pn in
-      match builtin_functions_to_string pn with
-      | Some str ->
-          str
-      | None ->
+      F.fprintf fmt "(%a%a%a)" pp de1 (Pp.to_string ~f:(Binop.str Pp.text)) op pp de2
+  | Dconst (Cfun pn) -> (
+    match builtin_functions_to_string pn with
+    | Some str ->
+        F.pp_print_string fmt str
+    | None ->
+        let procname_str = Typ.Procname.to_simplified_string pn in
         match pn with
         | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
         | Typ.Procname.ObjC_Cpp {kind= ObjCClassMethod} -> (
           match String.lsplit2 ~on:':' procname_str with
           | Some (base_name, _) ->
-              base_name
+              F.pp_print_string fmt base_name
           | None ->
-              procname_str )
+              F.pp_print_string fmt procname_str )
         | _ ->
-            procname_str )
+            F.pp_print_string fmt procname_str )
   | Dconst c ->
-      Const.to_string c
+      (Const.pp Pp.text) fmt c
   | Dderef de ->
-      "*" ^ to_string de
+      F.fprintf fmt "*%a" pp de
   | Dfcall (fun_dexp, args, _, {cf_virtual= isvirtual}) ->
-      let pp_arg fmt de = F.fprintf fmt "%s" (to_string de) in
       let pp_args fmt des =
-        if eradicate_java () then ( if des <> [] then F.fprintf fmt "..." )
-        else Pp.comma_seq pp_arg fmt des
+        if eradicate_java () then ( if des <> [] then F.pp_print_string fmt "..." )
+        else Pp.comma_seq pp fmt des
       in
       let pp_fun fmt = function
         | Dconst (Cfun pname) ->
@@ -85,9 +82,9 @@ let rec to_string = function
               | _ ->
                   Typ.Procname.to_string pname
             in
-            F.fprintf fmt "%s" s
+            F.pp_print_string fmt s
         | de ->
-            F.fprintf fmt "%s" (to_string de)
+            pp fmt de
       in
       let receiver, args' =
         match args with
@@ -98,26 +95,28 @@ let rec to_string = function
         | _ ->
             (None, args)
       in
-      let pp fmt =
-        let pp_receiver fmt = function None -> () | Some arg -> F.fprintf fmt "%a." pp_arg arg in
-        F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args'
-      in
-      F.asprintf "%t" pp
+      let pp_receiver fmt = function None -> () | Some arg -> F.fprintf fmt "%a." pp arg in
+      F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args'
   | Darrow (Dpvar pv, f) when Pvar.is_this pv ->
       (* this->fieldname *)
-      Typ.Fieldname.to_simplified_string f
+      F.pp_print_string fmt (Typ.Fieldname.to_simplified_string f)
   | Darrow (de, f) ->
-      if Language.curr_language_is Java then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
-      else to_string de ^ "->" ^ Typ.Fieldname.to_string f
+      if Language.curr_language_is Java then
+        F.fprintf fmt "%a.%s" pp de (Typ.Fieldname.to_flat_string f)
+      else F.fprintf fmt "%a->%s" pp de (Typ.Fieldname.to_string f)
   | Ddot (Dpvar _, fe) when eradicate_java () ->
       (* static field access *)
-      Typ.Fieldname.to_simplified_string fe
+      F.pp_print_string fmt (Typ.Fieldname.to_simplified_string fe)
   | Ddot (de, f) ->
-      if Language.curr_language_is Java then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
-      else to_string de ^ "." ^ Typ.Fieldname.to_string f
+      let field_text =
+        if Language.curr_language_is Java then Typ.Fieldname.to_flat_string f
+        else Typ.Fieldname.to_string f
+      in
+      F.fprintf fmt "%a.%s" pp de field_text
   | Dpvar pv ->
       let var_name = Mangled.to_string (Pvar.get_name pv) in
-      if Language.curr_language_is Clang then split_var_clang var_name else var_name
+      let s = if Language.curr_language_is Clang then split_var_clang var_name else var_name in
+      F.pp_print_string fmt s
   | Dpvaraddr pv ->
       let var_name = Mangled.to_string (Pvar.get_name pv) in
       let s =
@@ -125,20 +124,19 @@ let rec to_string = function
         else if Language.curr_language_is Clang then split_var_clang var_name
         else Mangled.to_string (Pvar.get_name pv)
       in
-      let ampersand = if eradicate_java () then "" else "&" in
-      ampersand ^ s
+      let pp_ampersand fmt = if not (eradicate_java ()) then F.pp_print_string fmt "&" in
+      F.fprintf fmt "%t%s" pp_ampersand s
   | Dunop (op, de) ->
-      Unop.str op ^ to_string de
+      F.fprintf fmt "%s%a" (Unop.to_string op) pp de
   | Dsizeof (typ, _, _) ->
-      F.asprintf "%a" (Typ.pp_full Pp.text) typ
+      (Typ.pp_full Pp.text) fmt typ
   | Dunknown ->
-      "unknown"
+      F.pp_print_string fmt "unknown"
   | Dretcall (de, _, _, _) ->
-      "returned by " ^ to_string de
+      F.fprintf fmt "returned by %a" pp de
 
 
-(** Pretty print a dexp. *)
-let pp fmt de = F.fprintf fmt "%s" (to_string de)
+let to_string de = F.asprintf "%a" pp de
 
 (** Pretty print a value path *)
 let pp_vpath pe fmt vpath =
@@ -146,7 +144,7 @@ let pp_vpath pe fmt vpath =
   if Pp.equal_print_kind pe.Pp.kind Pp.HTML then
     F.fprintf fmt " %a{vpath: %a}%a" Io_infer.Html.pp_start_color Pp.Orange pp vpath
       Io_infer.Html.pp_end_color ()
-  else F.fprintf fmt "%a" pp vpath
+  else pp fmt vpath
 
 
 let rec has_tmp_var = function

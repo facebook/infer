@@ -22,4 +22,4 @@ type t =
 let equal = [%compare.equal : t]
 
 (** String representation of unary operator. *)
-let str = function Neg -> "-" | BNot -> "~" | LNot -> "!"
+let to_string = function Neg -> "-" | BNot -> "~" | LNot -> "!"

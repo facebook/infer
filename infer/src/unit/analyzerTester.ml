@@ -45,9 +45,7 @@ module StructuredSil = struct
 
 
   and pp_structured_instr_list fmt instrs =
-    F.pp_print_list ~pp_sep:F.pp_print_newline
-      (fun fmt instr -> F.fprintf fmt "%a" pp_structured_instr instr)
-      fmt instrs
+    F.pp_print_list ~pp_sep:F.pp_print_newline pp_structured_instr fmt instrs
 
 
   let pp_structured_program = pp_structured_instr_list
@@ -267,9 +265,7 @@ struct
         () (* no mismatches, test passed *)
     | error_msgs ->
         let mismatches_str =
-          F.pp_print_list
-            (fun fmt error_msg -> F.fprintf fmt "%s" error_msg)
-            F.str_formatter (List.rev error_msgs)
+          F.pp_print_list F.pp_print_string F.str_formatter (List.rev error_msgs)
           |> F.flush_str_formatter
         in
         let assert_fail_message =

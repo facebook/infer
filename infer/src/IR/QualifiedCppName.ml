@@ -70,7 +70,7 @@ let to_separated_string quals ~sep = List.rev quals |> String.concat ~sep
 
 let to_qual_string = to_separated_string ~sep:cpp_separator
 
-let pp fmt quals = Format.fprintf fmt "%s" (to_qual_string quals)
+let pp fmt quals = Format.pp_print_string fmt (to_qual_string quals)
 
 module Match = struct
   type quals_matcher = Str.regexp

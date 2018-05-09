@@ -184,13 +184,13 @@ module SourceKind = struct
     | Endpoint (formal_name, _) ->
         F.fprintf fmt "Endpoint(%s)" (Mangled.to_string formal_name)
     | EnvironmentVariable ->
-        F.fprintf fmt "EnvironmentVariable"
+        F.pp_print_string fmt "EnvironmentVariable"
     | ReadFile ->
-        F.fprintf fmt "File"
+        F.pp_print_string fmt "File"
     | CommandLineFlag (var, _) ->
         F.fprintf fmt "CommandLineFlag(%a)" Var.pp var
     | Other ->
-        F.fprintf fmt "Other"
+        F.pp_print_string fmt "Other"
     | UserControlledEndpoint (formal_name, _) ->
         F.fprintf fmt "UserControlledEndpoint(%s)" (Mangled.to_string formal_name)
 end
@@ -364,7 +364,7 @@ module SinkKind = struct
 
 
   let pp fmt kind =
-    F.fprintf fmt
+    F.pp_print_string fmt
       ( match kind with
       | BufferAccess ->
           "BufferAccess"
@@ -429,13 +429,13 @@ module CppSanitizer = struct
 
   let pp fmt = function
     | EscapeShell ->
-        F.fprintf fmt "EscapeShell"
+        F.pp_print_string fmt "EscapeShell"
     | EscapeSQL ->
-        F.fprintf fmt "EscapeSQL"
+        F.pp_print_string fmt "EscapeSQL"
     | EscapeURL ->
-        F.fprintf fmt "EscapeURL"
+        F.pp_print_string fmt "EscapeURL"
     | All ->
-        F.fprintf fmt "All"
+        F.pp_print_string fmt "All"
 end
 
 include Trace.Make (struct

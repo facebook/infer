@@ -148,19 +148,15 @@ module FileOrProcMatcher = struct
   let load_matcher = create_file_matcher
 
   let _pp_pattern fmt pattern =
-    let pp_string fmt s = Format.fprintf fmt "%s" s in
-    let pp_option pp_value fmt = function
-      | None ->
-          pp_string fmt "None"
-      | Some value ->
-          Format.fprintf fmt "%a" pp_value value
-    in
     let pp_key_value pp_value fmt (key, value) =
-      Format.fprintf fmt "  %s: %a,@\n" key (pp_option pp_value) value
+      Format.fprintf fmt "  %s: %a,@\n" key (Pp.option pp_value) value
     in
     let pp_method_pattern fmt mp =
-      Format.fprintf fmt "%a%a" (pp_key_value pp_string) ("class", Some mp.class_name)
-        (pp_key_value pp_string) ("method", mp.method_name)
+      Format.fprintf fmt "%a%a"
+        (pp_key_value Format.pp_print_string)
+        ("class", Some mp.class_name)
+        (pp_key_value Format.pp_print_string)
+        ("method", mp.method_name)
     and pp_source_contains fmt sc = Format.fprintf fmt "  pattern: %s@\n" sc in
     match pattern with
     | Method_pattern (language, mp) ->

@@ -69,7 +69,7 @@ let pp_ f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var n ->
-      if !Config.pp_simple then F.fprintf f "%a" Mangled.pp name
+      if !Config.pp_simple then Mangled.pp f name
       else F.fprintf f "%a$%a" Typ.Procname.pp n Mangled.pp name
   | Callee_var n ->
       if !Config.pp_simple then F.fprintf f "%a|callee" Mangled.pp name

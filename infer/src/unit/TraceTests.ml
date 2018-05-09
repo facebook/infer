@@ -21,7 +21,12 @@ module MockTraceElem = struct
 
   let make ?indexes:_ kind _ = kind
 
-  let pp fmt = function Kind1 -> F.fprintf fmt "Kind1" | Kind2 -> F.fprintf fmt "Kind2"
+  let pp fmt = function
+    | Kind1 ->
+        F.pp_print_string fmt "Kind1"
+    | Kind2 ->
+        F.pp_print_string fmt "Kind2"
+
 
   module Kind = struct
     type nonrec t = t

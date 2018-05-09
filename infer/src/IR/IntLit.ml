@@ -130,7 +130,7 @@ let shift_right (unsigned1, i1, ptr1) (_, i2, _) =
 
 
 let pp f (unsigned, n, ptr) =
-  if ptr && Int64.equal n 0L then F.fprintf f "null"
+  if ptr && Int64.equal n 0L then F.pp_print_string f "null"
   else if unsigned then F.fprintf f "%Lu" n
   else F.fprintf f "%Ld" n
 

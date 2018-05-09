@@ -151,7 +151,7 @@ let pp_sub pe f = function
       let pi_sub = List.map ~f:(fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
       Pp.semicolon_seq ~print_env:{pe with break_lines= false} (Sil.pp_atom pe) f pi_sub
   | `Typ _ ->
-      F.fprintf f "Printing typ_subst not implemented."
+      F.pp_print_string f "Printing typ_subst not implemented."
 
 
 (** Dump a substitution. *)
@@ -199,8 +199,7 @@ let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt sg_ =
     let sg = List.sort ~compare:Sil.compare_hpred sg_ in
-    if sg <> [] then
-      Format.fprintf fmt "%a" (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) sg
+    if sg <> [] then (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) fmt sg
   in
   let pp_nl fmt doit = if doit then Format.fprintf fmt " ;@\n" in
   let pp_nonstack fmt = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)) fmt in

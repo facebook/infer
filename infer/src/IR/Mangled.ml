@@ -32,7 +32,7 @@ let to_string_full (pn: t) =
 
 
 (** Pretty print a mangled name *)
-let pp f pn = F.fprintf f "%s" (to_string pn)
+let pp f pn = F.pp_print_string f (to_string pn)
 
 module Set = Caml.Set.Make (struct
   type nonrec t = t

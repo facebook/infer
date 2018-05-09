@@ -197,32 +197,37 @@ let escape pe = if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Escape.escape_xml
 (** Pretty print a type with all the details, using the C syntax. *)
 let rec pp_full pe f typ =
   let pp_quals f {quals} =
-    if is_const quals then F.fprintf f " const " ;
-    if is_restrict quals then F.fprintf f " __restrict " ;
-    if is_volatile quals then F.fprintf f " volatile "
+    if is_const quals then F.pp_print_string f " const " ;
+    if is_restrict quals then F.pp_print_string f " __restrict " ;
+    if is_volatile quals then F.pp_print_string f " volatile "
   in
   let pp_desc f {desc} =
     match desc with
     | Tstruct tname ->
-        F.fprintf f "%a" (pp_name_c_syntax pe) tname
+        (pp_name_c_syntax pe) f tname
     | TVar name ->
-        F.fprintf f "%s" name
+        F.pp_print_string f name
     | Tint ik ->
-        F.fprintf f "%s" (ikind_to_string ik)
+        F.pp_print_string f (ikind_to_string ik)
     | Tfloat fk ->
-        F.fprintf f "%s" (fkind_to_string fk)
+        F.pp_print_string f (fkind_to_string fk)
     | Tvoid ->
-        F.fprintf f "void"
+        F.pp_print_string f "void"
     | Tfun {no_return= false} ->
-        F.fprintf f "_fn_"
+        F.pp_print_string f "_fn_"
     | Tfun {no_return= true} ->
-        F.fprintf f "_fn_noreturn_"
+        F.pp_print_string f "_fn_noreturn_"
     | Tptr (({desc= Tarray _ | Tfun _} as typ), pk) ->
         F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
     | Tptr (typ, pk) ->
         F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
     | Tarray {elt; length; stride} ->
-        let pp_int_opt fmt = function Some x -> IntLit.pp fmt x | None -> F.fprintf fmt "_" in
+        let pp_int_opt fmt = function
+          | Some x ->
+              IntLit.pp fmt x
+          | None ->
+              F.pp_print_char fmt '_'
+        in
         F.fprintf f "%a[%a*%a]" (pp_full pe) elt pp_int_opt length pp_int_opt stride
   in
   F.fprintf f "%a%a" pp_desc typ pp_quals typ
@@ -230,11 +235,11 @@ let rec pp_full pe f typ =
 
 and pp_name_c_syntax pe f = function
   | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
-      F.fprintf f "%a" QualifiedCppName.pp name
+      QualifiedCppName.pp f name
   | CppClass (name, template_spec) ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
   | JavaClass name ->
-      F.fprintf f "%a" Mangled.pp name
+      Mangled.pp f name
 
 
 and pp_template_spec_info pe f = function
@@ -1043,7 +1048,7 @@ module Procname = struct
 
 
   (** Pretty print a proc name *)
-  let pp f pn = F.fprintf f "%s" (to_string pn)
+  let pp f pn = F.pp_print_string f (to_string pn)
 
   (** hash function for procname *)
   let hash_pname = Hashtbl.hash
@@ -1179,7 +1184,7 @@ module Fieldname = struct
     match String.rsplit2 s ~on:'.' with Some (_, s2) -> s2 | _ -> s
 
 
-  let pp f = function Java field_name | Clang {field_name} -> Format.fprintf f "%s" field_name
+  let pp f = function Java field_name | Clang {field_name} -> Format.pp_print_string f field_name
 
   let class_name_replace fname ~f =
     match fname with
@@ -1276,7 +1281,7 @@ module Struct = struct
         supers
         (Pp.seq (fun f m -> F.fprintf f "@\n\t\t%a" Procname.pp m))
         methods Annot.Item.pp annots
-    else F.fprintf f "%a" Name.pp name
+    else Name.pp f name
 
 
   let internal_mk_struct ?default ?fields ?statics ?methods ?supers ?annots () =

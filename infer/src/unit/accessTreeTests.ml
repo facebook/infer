@@ -30,7 +30,7 @@ module MockTraceDomain = struct
 
 
   (* similarly, hack printing so top looks different *)
-  let pp fmt s = if phys_equal s top then F.fprintf fmt "T" else pp fmt s
+  let pp fmt s = if phys_equal s top then F.pp_print_char fmt 'T' else pp fmt s
 end
 
 module MakeTree (Config : AccessTree.Config) = struct

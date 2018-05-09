@@ -111,9 +111,9 @@ let pp f (t, flag) =
   if Config.print_types then
     match t with
     | Exact ->
-        F.fprintf f "%s" (flag_to_string flag)
+        F.pp_print_string f (flag_to_string flag)
     | Subtypes list ->
-        F.fprintf f "%s" (list_to_string list ^ flag_to_string flag)
+        F.fprintf f "%s%s" (list_to_string list) (flag_to_string flag)
 
 
 let exact = (Exact, NORMAL)

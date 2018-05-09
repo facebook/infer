@@ -255,7 +255,7 @@ type status = Pending | Analyzed [@@deriving compare]
 
 let string_of_status = function Pending -> "Pending" | Analyzed -> "Analyzed"
 
-let pp_status fmt status = F.fprintf fmt "%s" (string_of_status status)
+let pp_status fmt status = F.pp_print_string fmt (string_of_status status)
 
 let equal_status = [%compare.equal : status]
 
@@ -317,7 +317,7 @@ let pp_failure_kind_opt fmt failure_kind_opt =
   | Some failure_kind ->
       SymOp.pp_failure_kind fmt failure_kind
   | None ->
-      F.fprintf fmt "NONE"
+      F.pp_print_string fmt "NONE"
 
 
 let pp_errlog fmt err_log =
@@ -346,14 +346,14 @@ let pp_spec pe num_opt fmt spec =
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
       F.fprintf fmt "PRE:@\n%a@\n" (Prop.pp_prop Pp.text) pre ;
       F.fprintf fmt "%a@\n" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list ;
-      F.fprintf fmt "----------------------------------------------------------------"
+      F.pp_print_string fmt "----------------------------------------------------------------"
   | HTML ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
       F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Pp.Blue
         (Prop.pp_prop (Pp.html Blue))
         pre Io_infer.Html.pp_end_color () ;
-      F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list ;
-      F.fprintf fmt "----------------------------------------------------------------"
+      (Propgraph.pp_proplist pe_post "POST" (pre, true)) fmt post_list ;
+      F.pp_print_string fmt "----------------------------------------------------------------"
 
 
 (** Dump a spec *)
@@ -367,7 +367,7 @@ let pp_specs pe fmt specs =
       List.iter
         ~f:(fun spec ->
           incr cnt ;
-          F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec )
+          (pp_spec pe (Some (!cnt, total))) fmt spec )
         specs
   | HTML ->
       List.iter
@@ -390,12 +390,8 @@ let get_signature summary =
       let decl = F.asprintf "%t" pp in
       s := if String.equal !s "" then decl else !s ^ ", " ^ decl )
     (get_formals summary) ;
-  let pp f =
-    F.fprintf f "%a %a" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
-      (get_proc_name summary)
-  in
-  let decl = F.asprintf "%t" pp in
-  decl ^ "(" ^ !s ^ ")"
+  F.asprintf "%a %a(%s)" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
+    (get_proc_name summary) !s
 
 
 let get_specs_from_preposts preposts = Option.value_map ~f:NormSpec.tospecs ~default:[] preposts

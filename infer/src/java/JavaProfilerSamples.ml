@@ -43,23 +43,23 @@ module JNI = struct
   let rec pp fmt jni =
     match jni with
     | Boolean ->
-        Format.fprintf fmt "Z"
+        Format.pp_print_char fmt 'Z'
     | Byte ->
-        Format.fprintf fmt "B"
+        Format.pp_print_char fmt 'B'
     | Char ->
-        Format.fprintf fmt "C"
+        Format.pp_print_char fmt 'C'
     | Short ->
-        Format.fprintf fmt "S"
+        Format.pp_print_char fmt 'S'
     | Int ->
-        Format.fprintf fmt "I"
+        Format.pp_print_char fmt 'I'
     | Long ->
-        Format.fprintf fmt "J"
+        Format.pp_print_char fmt 'J'
     | Float ->
-        Format.fprintf fmt "F"
+        Format.pp_print_char fmt 'F'
     | Double ->
-        Format.fprintf fmt "D"
+        Format.pp_print_char fmt 'D'
     | Void ->
-        Format.fprintf fmt "V"
+        Format.pp_print_char fmt 'V'
     | FullyQualifiedClass (pkg, cl) ->
         let pkg' = String.tr ~target:'.' ~replacement:'/' pkg in
         Format.fprintf fmt "L%s/%s;" pkg' cl

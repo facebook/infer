@@ -269,10 +269,10 @@ let pp_seq_diff pp pe0 f =
           ()
       | [x] ->
           let _, changed = color_pre_wrapper pe0 f x in
-          F.fprintf f "%a" pp x ; color_post_wrapper changed f
+          pp f x ; color_post_wrapper changed f
       | x :: l ->
           let _, changed = color_pre_wrapper pe0 f x in
-          F.fprintf f "%a" pp x ; color_post_wrapper changed f ; F.fprintf f ", " ; doit l
+          pp f x ; color_post_wrapper changed f ; F.pp_print_string f ", " ; doit l
     in
     doit
 
@@ -329,9 +329,9 @@ let d_texp_full (te: Exp.t) = L.add_print_action (L.PTtexp_full, Obj.repr te)
 (** Pretty print an offset *)
 let pp_offset pe f = function
   | Off_fld (fld, _) ->
-      F.fprintf f "%a" Typ.Fieldname.pp fld
+      Typ.Fieldname.pp f fld
   | Off_index exp ->
-      F.fprintf f "%a" (pp_exp_printenv pe) exp
+      (pp_exp_printenv pe) f exp
 
 
 (** Convert an offset to a string *)
@@ -460,7 +460,7 @@ let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
   ( match a with
   | Aeq (BinOp (op, e1, e2), Const (Cint i)) when IntLit.isone i ->
-      F.fprintf f "%a" (pp_exp_printenv pe) (Exp.BinOp (op, e1, e2))
+      (pp_exp_printenv pe) f (Exp.BinOp (op, e1, e2))
   | Aeq (e1, e2) ->
       F.fprintf f "%a = %a" (pp_exp_printenv pe) e1 (pp_exp_printenv pe) e2
   | Aneq (e1, e2) ->
@@ -475,17 +475,10 @@ let pp_atom pe0 f a =
 (** dump an atom *)
 let d_atom (a: atom) = L.add_print_action (L.PTatom, Obj.repr a)
 
-let pp_lseg_kind f = function Lseg_NE -> F.fprintf f "ne" | Lseg_PE -> ()
+let pp_lseg_kind f = function Lseg_NE -> F.pp_print_string f "ne" | Lseg_PE -> ()
 
 (** Print a *-separated sequence. *)
-let rec pp_star_seq pp f = function
-  | [] ->
-      ()
-  | [x] ->
-      F.fprintf f "%a" pp x
-  | x :: l ->
-      F.fprintf f "%a * %a" pp x (pp_star_seq pp) l
-
+let pp_star_seq pp f l = Pp.seq ~sep:" * " pp f l
 
 (** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara. Provides unique numbering
@@ -915,9 +908,7 @@ let pp_hpred pe f = pp_hpred_env pe None f
 let d_sexp (se: strexp) = L.add_print_action (L.PTsexp, Obj.repr se)
 
 (** Pretty print a list of expressions. *)
-let pp_sexp_list pe f sel =
-  F.fprintf f "%a" (Pp.seq (fun f se -> F.fprintf f "%a" (pp_sexp pe) se)) sel
-
+let pp_sexp_list pe f sel = (Pp.seq (fun f se -> (pp_sexp pe) f se)) f sel
 
 (** dump a hpred. *)
 let d_hpred (hpred: hpred) = L.add_print_action (L.PThpred, Obj.repr hpred)

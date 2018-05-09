@@ -211,11 +211,11 @@ let rec pp_ pe pp_t f e =
   | Var id ->
       Ident.pp f id
   | Const c ->
-      F.fprintf f "%a" (Const.pp pe) c
+      (Const.pp pe) f c
   | Cast (typ, e) ->
       F.fprintf f "(%a)%a" pp_t typ pp_exp e
   | UnOp (op, e, _) ->
-      F.fprintf f "%s%a" (Unop.str op) pp_exp e
+      F.fprintf f "%s%a" (Unop.to_string op) pp_exp e
   | BinOp (op, Const c, e2) when Config.smt_output ->
       print_binop_stm_output (Const c) op e2
   | BinOp (op, e1, e2) ->
@@ -249,7 +249,7 @@ let rec pp_ pe pp_t f e =
 and pp_captured_var pe pp_t f (exp, var, typ) =
   match exp with
   | Lvar evar when Pvar.equal var evar ->
-      F.fprintf f "%a" (Pvar.pp pe) var
+      (Pvar.pp pe) f var
   | _ ->
       F.fprintf f "(%a %a:%a)" (pp_ pe pp_t) exp (Pvar.pp pe) var (Typ.pp pe) typ
 

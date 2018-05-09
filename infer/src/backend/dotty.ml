@@ -133,11 +133,11 @@ let strip_special_chars b =
 let rec strexp_to_string pe coo f se =
   match se with
   | Sil.Eexp (Exp.Lvar pvar, _) ->
-      F.fprintf f "%a" (Pvar.pp pe) pvar
+      (Pvar.pp pe) f pvar
   | Sil.Eexp (Exp.Var id, _) ->
-      if !print_full_prop then F.fprintf f "%a" Ident.pp id else ()
+      if !print_full_prop then Ident.pp f id else ()
   | Sil.Eexp (e, _) ->
-      if !print_full_prop then F.fprintf f "%a" (Sil.pp_exp_printenv pe) e else F.fprintf f "_"
+      if !print_full_prop then (Sil.pp_exp_printenv pe) f e else F.pp_print_char f '_'
   | Sil.Estruct (ls, _) ->
       F.fprintf f " STRUCT | { %a } " (struct_to_dotty_str pe coo) ls
   | Sil.Earray (e, idx, _) ->
@@ -159,7 +159,7 @@ and struct_to_dotty_str pe coo f ls : unit =
 and get_contents_sexp pe coo f se =
   match se with
   | Sil.Eexp (e', _) ->
-      F.fprintf f "%a" (Sil.pp_exp_printenv pe) e'
+      (Sil.pp_exp_printenv pe) f e'
   | Sil.Estruct (se', _) ->
       F.fprintf f "| { %a }" (struct_to_dotty_str pe coo) se'
   | Sil.Earray (e', [], _) ->
@@ -179,7 +179,7 @@ and get_contents pe coo f = function
   | [] ->
       ()
   | [idx_se] ->
-      F.fprintf f "%a" (get_contents_single pe coo) idx_se
+      (get_contents_single pe coo) f idx_se
   | idx_se :: l ->
       F.fprintf f "%a | %a" (get_contents_single pe coo) idx_se (get_contents pe coo) l
 
@@ -1111,7 +1111,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
     | Procdesc.Node.Exit_node pname ->
         Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
     | Procdesc.Node.Join_node ->
-        Format.fprintf fmt "+"
+        Format.pp_print_char fmt '+'
     | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
         Format.fprintf fmt "Prune (%b branch, %s)" is_true_branch (Sil.if_kind_to_string if_kind)
     | Procdesc.Node.Stmt_node s ->
@@ -1134,7 +1134,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
 let pp_cfgnodeshape fmt (n: Procdesc.Node.t) =
   match Procdesc.Node.get_kind n with
   | Procdesc.Node.Start_node _ | Procdesc.Node.Exit_node _ ->
-      F.fprintf fmt "color=yellow style=filled"
+      F.pp_print_string fmt "color=yellow style=filled"
   | Procdesc.Node.Prune_node _ ->
       F.fprintf fmt "shape=\"invhouse\""
   | Procdesc.Node.Skip_node _ ->

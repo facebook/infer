@@ -53,7 +53,7 @@ module BoTrace = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt t ->
-    let pp_sep fmt () = F.fprintf fmt " :: " in
+    let pp_sep fmt () = F.pp_print_string fmt " :: " in
     F.pp_print_list ~pp_sep pp_elem fmt t.trace
 
 

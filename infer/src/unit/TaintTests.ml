@@ -70,18 +70,16 @@ let tests =
   let open AnalyzerTester.StructuredSil in
   (* less verbose form of pretty-printing to make writing tests easy *)
   let pp_sparse fmt astate =
-    let pp_call_site fmt call_site =
-      F.fprintf fmt "%a" Typ.Procname.pp (CallSite.pname call_site)
-    in
+    let pp_call_site fmt call_site = Typ.Procname.pp fmt (CallSite.pname call_site) in
     let pp_sources fmt sources =
-      if MockTrace.Sources.is_empty sources then F.fprintf fmt "?"
+      if MockTrace.Sources.is_empty sources then F.pp_print_char fmt '?'
       else
         MockTrace.Sources.Known.iter
           (fun source -> pp_call_site fmt (MockTrace.Source.call_site source))
           sources.MockTrace.Sources.known
     in
     let pp_sinks fmt sinks =
-      if MockTrace.Sinks.is_empty sinks then F.fprintf fmt "?"
+      if MockTrace.Sinks.is_empty sinks then F.pp_print_char fmt '?'
       else
         MockTrace.Sinks.iter (fun sink -> pp_call_site fmt (MockTrace.Sink.call_site sink)) sinks
     in

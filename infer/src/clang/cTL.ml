@@ -159,7 +159,7 @@ module Debug = struct
       | PointerToDecl ->
           Format.pp_print_string fmt "PointerToDecl"
     in
-    match trans_opt with Some trans -> pp_aux fmt trans | None -> Format.pp_print_string fmt "_"
+    match trans_opt with Some trans -> pp_aux fmt trans | None -> Format.pp_print_char fmt '_'
 
 
   (* a flag to print more or less in the dotty graph *)
@@ -169,20 +169,20 @@ module Debug = struct
     let nodes_to_string nl = List.map ~f:ALVar.alexp_to_string nl in
     match phi with
     | True ->
-        Format.fprintf fmt "True"
+        Format.pp_print_string fmt "True"
     | False ->
-        Format.fprintf fmt "False"
+        Format.pp_print_string fmt "False"
     | Atomic p ->
         CPredicates.pp_predicate fmt p
     | Not phi ->
         if full_print then Format.fprintf fmt "NOT(%a)" pp_formula phi
-        else Format.fprintf fmt "NOT(...)"
+        else Format.pp_print_string fmt "NOT(...)"
     | And (phi1, phi2) ->
         if full_print then Format.fprintf fmt "(%a AND %a)" pp_formula phi1 pp_formula phi2
-        else Format.fprintf fmt "(... AND ...)"
+        else Format.pp_print_string fmt "(... AND ...)"
     | Or (phi1, phi2) ->
         if full_print then Format.fprintf fmt "(%a OR %a)" pp_formula phi1 pp_formula phi2
-        else Format.fprintf fmt "(... OR ...)"
+        else Format.pp_print_string fmt "(... OR ...)"
     | Implies (phi1, phi2) ->
         Format.fprintf fmt "(%a ==> %a)" pp_formula phi1 pp_formula phi2
     | InNode (nl, phi) ->

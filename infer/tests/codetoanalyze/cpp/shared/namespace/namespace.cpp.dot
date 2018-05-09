@@ -54,7 +54,7 @@ digraph cfg {
 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" [label="2: Exit __infer_globals_initializer_bar::pi \n  " color=yellow style=filled]
 	
 
-"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double=3.141600 [line 29, column 1]\n " shape="box"]
+"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double=3.1416 [line 29, column 1]\n " shape="box"]
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" ;

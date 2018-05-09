@@ -77,7 +77,7 @@ let to_string fname =
       path
 
 
-let pp fmt fname = Format.fprintf fmt "%s" (to_string fname)
+let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 
 let to_abs_path fname =
   match fname with

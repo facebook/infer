@@ -863,11 +863,11 @@ let pp_container_access fmt (access_path, access_pname) =
 let pp_access fmt sink =
   match RacerDDomain.PathDomain.Sink.kind sink with
   | Read access_path | Write access_path ->
-      F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp) access_path
+      (MF.wrap_monospaced AccessPath.pp) fmt access_path
   | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname) ->
       pp_container_access fmt (access_path, access_pname)
   | InterfaceCall _ as access ->
-      F.fprintf fmt "%a" RacerDDomain.Access.pp access
+      RacerDDomain.Access.pp fmt access
 
 
 let desc_of_sink sink =
@@ -1084,7 +1084,7 @@ type reported_access =
 let make_read_write_race_description ~read_is_sync (conflict: reported_access) pname
     final_sink_site initial_sink_site final_sink =
   let pp_conflict fmt {procdesc} =
-    F.fprintf fmt "%s"
+    F.pp_print_string fmt
       (Typ.Procname.to_simplified_string ~withclass:true (Procdesc.get_proc_name procdesc))
   in
   let conflicts_description =

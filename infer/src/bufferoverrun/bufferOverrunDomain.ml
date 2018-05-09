@@ -451,11 +451,11 @@ module AliasRet = struct
    fun fmt x ->
     match x with
     | Top ->
-        F.fprintf fmt "T"
+        F.pp_print_char fmt 'T'
     | L loc ->
         AliasTarget.pp fmt loc
     | Bot ->
-        F.fprintf fmt "_|_"
+        F.pp_print_string fmt "_|_"
 
 
   let find : astate -> AliasTarget.t option = fun x -> match x with L loc -> Some loc | _ -> None
@@ -631,10 +631,7 @@ module MemReach = struct
 
 
   let pp_summary : F.formatter -> t -> unit =
-   fun fmt x ->
-    F.fprintf fmt "@[<v 0>Parameters:@," ;
-    F.fprintf fmt "%a" Heap.pp_summary x.heap ;
-    F.fprintf fmt "@]"
+   fun fmt x -> F.fprintf fmt "@[<v 0>Parameters:@,%a@]" Heap.pp_summary x.heap
 
 
   let find_stack : Loc.t -> t -> Val.t = fun k m -> Stack.find k m.stack
@@ -803,7 +800,7 @@ module Mem = struct
    fun fmt m ->
     match m with
     | Bottom ->
-        F.fprintf fmt "unreachable"
+        F.pp_print_string fmt "unreachable"
     | NonBottom m' ->
         MemReach.pp_summary fmt m'
 

@@ -141,4 +141,4 @@ let crashcontext_epilogue ~in_buck_mode =
   collect_all_summaries root_summaries_dir Config.stacktrace Config.stacktraces_dir
 
 
-let pp_stacktree fmt st = Format.fprintf fmt "%s" (Stacktree_j.string_of_stacktree st)
+let pp_stacktree fmt st = Format.pp_print_string fmt (Stacktree_j.string_of_stacktree st)

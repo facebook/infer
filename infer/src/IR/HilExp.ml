@@ -26,7 +26,7 @@ let rec pp fmt = function
   | AccessExpression access_expr ->
       AccessExpression.pp fmt access_expr
   | UnaryOperator (op, e, _) ->
-      F.fprintf fmt "%s%a" (Unop.str op) pp e
+      F.fprintf fmt "%s%a" (Unop.to_string op) pp e
   | BinaryOperator (op, e1, e2) ->
       F.fprintf fmt "%a %s %a" pp e1 (Binop.str Pp.text op) pp e2
   | Exception e ->

@@ -206,7 +206,7 @@ module Make (Spec : Spec) = struct
           F.fprintf fmt " + Sanitizers(%a)" Sanitizers.pp sanitizers
       in
       if Known.is_empty known then
-        if Footprint.is_empty footprint then F.fprintf fmt "{}"
+        if Footprint.is_empty footprint then F.pp_print_string fmt "{}"
         else F.fprintf fmt "Footprint(%a)%a" Footprint.pp footprint pp_sanitizers sanitizers
       else
         F.fprintf fmt "%a + Footprint(%a)%a" Known.pp known Footprint.pp footprint pp_sanitizers
@@ -271,7 +271,7 @@ module Make (Spec : Spec) = struct
         F.fprintf fmt " via %a" Passthroughs.pp passthroughs
     in
     let pp_sinks fmt sinks =
-      if Sinks.is_empty sinks then F.fprintf fmt "?" else Sinks.pp fmt sinks
+      if Sinks.is_empty sinks then F.pp_print_char fmt '?' else Sinks.pp fmt sinks
     in
     (* empty sources implies empty sinks and passthroughs *)
     F.fprintf fmt "%a ~> %a%a" Sources.pp sources pp_sinks sinks pp_passthroughs passthroughs

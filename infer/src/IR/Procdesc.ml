@@ -114,7 +114,7 @@ module Node = struct
     match List.rev (get_instrs n) with instr :: _ -> Sil.instr_get_loc instr | [] -> n.loc
 
 
-  let pp_id f id = F.fprintf f "%d" id
+  let pp_id f id = F.pp_print_int f id
 
   let pp f node = pp_id f (get_id node)
 
@@ -162,13 +162,13 @@ module Node = struct
         | Prune_node (_, _, descr) ->
             F.fprintf fmt "assume %s" descr
         | Exit_node _ ->
-            F.fprintf fmt "exit"
+            F.pp_print_string fmt "exit"
         | Skip_node s ->
             F.fprintf fmt "skip (%s)" s
         | Start_node _ ->
-            F.fprintf fmt "start"
+            F.pp_print_string fmt "start"
         | Join_node ->
-            F.fprintf fmt "join"
+            F.pp_print_string fmt "join"
       in
       F.fprintf fmt "  %a " Location.pp (get_loc node)
 
@@ -404,7 +404,7 @@ let is_loop_head pdesc (node: Node.t) =
 
 let pp_var_attributes fmt attrs =
   let pp_attribute fmt attr =
-    match attr with ProcAttributes.Modify_in_block -> Format.fprintf fmt "__block"
+    match attr with ProcAttributes.Modify_in_block -> Format.pp_print_string fmt "__block"
   in
   if List.is_empty attrs then () else F.fprintf fmt "(%a)" (Pp.seq ~sep:"," pp_attribute) attrs
 
@@ -415,11 +415,11 @@ let pp_local fmt (var_data: ProcAttributes.var_data) =
 
 
 let pp_locals_list fmt etl =
-  if List.is_empty etl then Format.fprintf fmt "None" else List.iter ~f:(pp_local fmt) etl
+  if List.is_empty etl then Format.pp_print_string fmt "None" else List.iter ~f:(pp_local fmt) etl
 
 
 let pp_variable_list fmt etl =
-  if List.is_empty etl then Format.fprintf fmt "None"
+  if List.is_empty etl then Format.pp_print_string fmt "None"
   else
     List.iter
       ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)

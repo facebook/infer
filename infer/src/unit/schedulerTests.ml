@@ -34,7 +34,7 @@ module MockNode = struct
 
   let compare_id = Int.compare
 
-  let pp_id fmt i = F.fprintf fmt "%i" i
+  let pp_id fmt i = F.pp_print_int fmt i
 
   module OrderedId = struct
     type t = id
@@ -111,9 +111,7 @@ let create_test test_graph expected_result _ =
         List.rev visited_acc
   in
   let pp_diff fmt (exp, actual) =
-    let pp_sched fmt l =
-      F.pp_print_list ~pp_sep:F.pp_print_space (fun fmt i -> F.fprintf fmt "%d" i) fmt l
-    in
+    let pp_sched fmt l = F.pp_print_list ~pp_sep:F.pp_print_space F.pp_print_int fmt l in
     F.fprintf fmt "Expected schedule %a but got schedule %a" pp_sched exp pp_sched actual
   in
   let cfg = MockProcCfg.from_adjacency_list test_graph in

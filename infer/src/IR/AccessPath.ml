@@ -35,13 +35,13 @@ module Raw = struct
     | FieldAccess field_name ->
         Typ.Fieldname.pp fmt field_name
     | ArrayAccess (_, []) ->
-        F.fprintf fmt "[_]"
+        F.pp_print_string fmt "[_]"
     | ArrayAccess (_, index_aps) ->
         F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
 
 
   and pp_access_list fmt accesses =
-    let pp_sep _ _ = F.fprintf fmt "." in
+    let pp_sep fmt () = F.pp_print_char fmt '.' in
     F.pp_print_list ~pp_sep pp_access fmt accesses
 
 

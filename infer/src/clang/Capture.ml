@@ -83,7 +83,7 @@ let run_clang_frontend ast_source =
   let pp_ast_filename fmt ast_source =
     match ast_source with
     | `File path ->
-        Format.fprintf fmt "%s" path
+        Format.pp_print_string fmt path
     | `Pipe _ ->
         Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
   in

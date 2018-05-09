@@ -18,7 +18,7 @@ digraph cfg {
 "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_2" [label="2: Exit get<float> \n  " color=yellow style=filled]
 	
 
-"get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" [label="3:  Return Stmt \n   *&return:float=0.000000 [line 14, column 3]\n " shape="box"]
+"get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" [label="3:  Return Stmt \n   *&return:float=0. [line 14, column 3]\n " shape="box"]
 	
 
 	 "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_3" -> "get<float>#13747618516057362976.2fec1fe1de6ac1c3fae6ec84a1ffd2b5_2" ;
@@ -62,7 +62,7 @@ digraph cfg {
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   *&f2:float=0.000000 [line 23, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   *&f2:float=0. [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;

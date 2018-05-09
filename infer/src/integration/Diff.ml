@@ -14,7 +14,7 @@ type revision = Current | Previous
 
 let string_of_revision = function Current -> "current" | Previous -> "previous"
 
-let pp_revision f r = F.fprintf f "%s" (string_of_revision r)
+let pp_revision f r = F.pp_print_string f (string_of_revision r)
 
 let checkout revision =
   let script_opt =

@@ -388,7 +388,7 @@ end = struct
     Invariant.reset_stats path ; str
 
 
-  let pp_stats fmt path = F.fprintf fmt "%s" (stats_string path)
+  let pp_stats fmt path = F.pp_print_string fmt (stats_string path)
 
   let d_stats path = L.d_str (stats_string path)
 

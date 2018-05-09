@@ -225,7 +225,7 @@ module ThreadsDomain = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let pp fmt astate =
-    F.fprintf fmt
+    F.pp_print_string fmt
       ( match astate with
       | NoThread ->
           "NoThread"
@@ -259,9 +259,9 @@ module Choice = struct
 
   let pp fmt = function
     | OnMainThread ->
-        F.fprintf fmt "OnMainThread"
+        F.pp_print_string fmt "OnMainThread"
     | LockHeld ->
-        F.fprintf fmt "LockHeld"
+        F.pp_print_string fmt "LockHeld"
 end
 
 module Attribute = struct
@@ -269,7 +269,7 @@ module Attribute = struct
 
   let pp fmt = function
     | Functional ->
-        F.fprintf fmt "Functional"
+        F.pp_print_string fmt "Functional"
     | Choice choice ->
         Choice.pp fmt choice
 end
@@ -317,13 +317,13 @@ module OwnershipAbstractValue = struct
 
   let pp fmt = function
     | Unowned ->
-        F.fprintf fmt "Unowned"
+        F.pp_print_string fmt "Unowned"
     | OwnedIf s ->
         F.fprintf fmt "OwnedIf%a"
           (PrettyPrintable.pp_collection ~pp_item:Int.pp)
           (IntSet.elements s)
     | Owned ->
-        F.fprintf fmt "Owned"
+        F.pp_print_string fmt "Owned"
 end
 
 module OwnershipDomain = struct
@@ -400,7 +400,7 @@ module AccessSnapshot = struct
             (PrettyPrintable.pp_collection ~pp_item:Int.pp)
             (IntSet.elements indexes)
       | False ->
-          F.fprintf fmt "False"
+          F.pp_print_string fmt "False"
   end
 
   type t =

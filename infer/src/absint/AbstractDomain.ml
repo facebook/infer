@@ -89,7 +89,11 @@ module BottomLifted (Domain : S) = struct
           NonBottom (Domain.widen ~prev ~next ~num_iters)
 
 
-  let pp fmt = function Bottom -> F.fprintf fmt "_|_" | NonBottom astate -> Domain.pp fmt astate
+  let pp fmt = function
+    | Bottom ->
+        F.pp_print_string fmt "_|_"
+    | NonBottom astate ->
+        Domain.pp fmt astate
 end
 
 module TopLifted (Domain : S) = struct
@@ -129,7 +133,7 @@ module TopLifted (Domain : S) = struct
           NonTop (Domain.widen ~prev ~next ~num_iters)
 
 
-  let pp fmt = function Top -> F.fprintf fmt "T" | NonTop astate -> Domain.pp fmt astate
+  let pp fmt = function Top -> F.pp_print_char fmt 'T' | NonTop astate -> Domain.pp fmt astate
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct
@@ -285,7 +289,7 @@ module BooleanAnd = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let pp fmt astate = F.fprintf fmt "%b" astate
+  let pp fmt astate = F.pp_print_bool fmt astate
 end
 
 module BooleanOr = struct
@@ -301,7 +305,7 @@ module BooleanOr = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  let pp fmt astate = F.fprintf fmt "%b" astate
+  let pp fmt astate = F.pp_print_bool fmt astate
 end
 
 module type MaxCount = sig

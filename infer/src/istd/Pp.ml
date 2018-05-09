@@ -105,7 +105,7 @@ let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) pp =
     | [] ->
         ()
     | [x] ->
-        F.fprintf f "%a" pp x
+        pp f x
     | x :: l ->
         let sep = match print_env.kind with TEXT -> sep_text | HTML -> sep_html in
         if print_env.break_lines then F.fprintf f "%a%s@ %a" pp x sep aux l

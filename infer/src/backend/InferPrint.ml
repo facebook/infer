@@ -33,7 +33,7 @@ let load_specfiles () =
 
 
 let error_desc_to_plain_string error_desc =
-  let pp fmt = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
+  let pp fmt = Localise.pp_error_desc fmt error_desc in
   let s = F.asprintf "%t" pp in
   let s = String.strip s in
   let s =
@@ -100,7 +100,7 @@ let summary_values summary =
   let attributes = Specs.get_attributes summary in
   let err_log = Specs.get_err_log summary in
   let proc_name = Specs.get_proc_name summary in
-  let signature = Specs.get_signature summary in
+  let vsignature = Specs.get_signature summary in
   let specs = Specs.get_specs_from_payload summary in
   let lines_visited =
     let visited = ref Specs.Visitedset.empty in
@@ -112,9 +112,9 @@ let summary_values summary =
       !visited ;
     Int.Set.elements !visited_lines
   in
-  let proof_trace =
-    let pp_line fmt l = F.fprintf fmt "%d" l in
-    let pp fmt = F.fprintf fmt "%a" (Pp.seq pp_line) lines_visited in
+  let vproof_trace =
+    let pp_line fmt l = F.pp_print_int fmt l in
+    let pp fmt = Pp.seq pp_line fmt lines_visited in
     F.asprintf "%t" pp
   in
   let pp_failure failure = F.asprintf "%a" SymOp.pp_failure_kind failure in
@@ -131,8 +131,8 @@ let summary_values summary =
   ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
   ; vline= attributes.ProcAttributes.loc.Location.line
-  ; vsignature= signature
-  ; vproof_trace= proof_trace }
+  ; vsignature
+  ; vproof_trace }
 
 
 module ProcsCsv = struct
@@ -300,7 +300,7 @@ let pp_custom_of_report fmt report fields =
     let open Jsonbug_t in
     let comma_separator index = if index > 0 then ", " else "" in
     let pp_trace fmt trace comma =
-      let pp_trace_elem fmt {description} = F.fprintf fmt "%s" description in
+      let pp_trace_elem fmt {description} = F.pp_print_string fmt description in
       let trace_without_empty_descs =
         List.filter ~f:(fun {description} -> description <> "") trace
       in
@@ -344,7 +344,7 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_procedure_id_without_crc ->
           Format.fprintf fmt "%s%s" (comma_separator index) (DB.strip_crc issue.procedure_id)
       | `Issue_field_qualifier_contains_potential_exception_note ->
-          Format.fprintf fmt "%B"
+          Format.pp_print_bool fmt
             (String.is_substring issue.qualifier ~substring:potential_exception_message)
     in
     List.iteri ~f:pp_field fields ; Format.fprintf fmt "@."

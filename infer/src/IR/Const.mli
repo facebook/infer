@@ -30,8 +30,6 @@ val kind_equal : t -> t -> bool
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a const *)
 
-val to_string : t -> string
-
 val iszero_int_float : t -> bool
 
 val isone_int_float : t -> bool

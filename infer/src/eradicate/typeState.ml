@@ -53,7 +53,7 @@ let equal t1 t2 = Int.equal (compare t1 t2) 0
 let empty ext = {map= M.empty; extension= ext.empty}
 
 let pp ext fmt typestate =
-  let pp_loc fmt loc = F.fprintf fmt "%d" loc.Location.line in
+  let pp_loc fmt loc = F.pp_print_int fmt loc.Location.line in
   let pp_locs fmt locs = F.fprintf fmt " [%a]" (Pp.seq pp_loc) locs in
   let pp_one exp (typ, ta, locs) =
     F.fprintf fmt "  %a -> [%s] %s %a%a@\n" Exp.pp exp

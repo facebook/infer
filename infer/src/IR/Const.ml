@@ -51,12 +51,10 @@ let pp pe f = function
   | Cstr s ->
       F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v ->
-      F.fprintf f "%f" v
+      F.pp_print_float f v
   | Cclass c ->
-      F.fprintf f "%a" Ident.pp_name c
+      Ident.pp_name f c
 
-
-let to_string c = F.asprintf "%a" (pp Pp.text) c
 
 let iszero_int_float = function Cint i -> IntLit.iszero i | Cfloat 0.0 -> true | _ -> false
 

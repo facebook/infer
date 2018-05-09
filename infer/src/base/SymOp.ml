@@ -43,7 +43,7 @@ let try_finally ~f ~finally =
 
 let pp_failure_kind fmt = function
   | FKtimeout ->
-      F.fprintf fmt "TIMEOUT"
+      F.pp_print_string fmt "TIMEOUT"
   | FKsymops_timeout symops ->
       F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops
   | FKrecursion_timeout level ->

@@ -57,7 +57,7 @@ digraph cfg {
 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_2" [label="2: Exit init_list::zero_init_primitive \n  " color=yellow style=filled]
 	
 
-"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" [label="3:  DeclStmt \n   *&f:float=0.000000 [line 30, column 3]\n " shape="box"]
+"zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" [label="3:  DeclStmt \n   *&f:float=0. [line 30, column 3]\n " shape="box"]
 	
 
 	 "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_3" -> "zero_init_primitive#init_list#3465759276925732066.1d03db1e38d38f4b345f33049176e92c_2" ;

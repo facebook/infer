@@ -44,7 +44,7 @@ module PathCountDomain = struct
 
   let widen ~prev:_ ~next:_ ~num_iters:_ = Top
 
-  let pp fmt = function PathCount c -> F.fprintf fmt "%d" c | Top -> F.fprintf fmt "T"
+  let pp fmt = function PathCount c -> F.pp_print_int fmt c | Top -> F.pp_print_char fmt 'T'
 end
 
 module PathCountTransferFunctions (CFG : ProcCfg.S) = struct

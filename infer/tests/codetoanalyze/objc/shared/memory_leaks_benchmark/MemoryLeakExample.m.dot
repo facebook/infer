@@ -106,7 +106,7 @@ digraph cfg {
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_3" ;
-"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_5" [label="5:  DeclStmt \n   n$32=*&rect:CGRect [line 59, column 51]\n  n$33=_fun_CGRectGetHeight(n$32:CGRect) [line 59, column 35]\n  *&lineThickness:double=(0.200000 * n$33) [line 59, column 3]\n " shape="box"]
+"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_5" [label="5:  DeclStmt \n   n$32=*&rect:CGRect [line 59, column 51]\n  n$33=_fun_CGRectGetHeight(n$32:CGRect) [line 59, column 35]\n  *&lineThickness:double=(0.200000003 * n$33) [line 59, column 3]\n " shape="box"]
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_5" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" ;
@@ -256,7 +256,7 @@ digraph cfg {
 	
 
 	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_2" ;
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" [label="4:  DeclStmt \n   n$44=_fun_FBColorCreateWithGray(0.000000:double,0.300000:double) [line 83, column 28]\n  *&borderColor:CGColor*=n$44 [line 83, column 3]\n " shape="box"]
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" [label="4:  DeclStmt \n   n$44=_fun_FBColorCreateWithGray(0.:double,0.3:double) [line 83, column 28]\n  *&borderColor:CGColor*=n$44 [line 83, column 3]\n " shape="box"]
 	
 
 	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_3" ;

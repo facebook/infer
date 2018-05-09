@@ -24,9 +24,9 @@ type t =
 [@@deriving compare]
 
 let pp f cf =
-  if cf.cf_virtual then F.fprintf f " virtual" ;
-  if cf.cf_noreturn then F.fprintf f " noreturn" ;
-  if cf.cf_with_block_parameters then F.fprintf f " block_params"
+  if cf.cf_virtual then F.pp_print_string f " virtual" ;
+  if cf.cf_noreturn then F.pp_print_string f " noreturn" ;
+  if cf.cf_with_block_parameters then F.pp_print_string f " block_params"
 
 
 let default =

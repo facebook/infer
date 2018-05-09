@@ -340,7 +340,7 @@ let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre fo
       L.d_ln () ;
       L.d_str "exp " ;
       Sil.d_exp e ;
-      L.d_strln (" desc: " ^ F.asprintf "%a" Localise.pp_error_desc error_desc) ;
+      L.d_strln (F.asprintf " desc: %a" Localise.pp_error_desc error_desc) ;
       error_desc
     in
     let deref_no_null_check_pos =

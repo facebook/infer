@@ -228,10 +228,10 @@ let to_string id =
 
 
 (** Pretty print a name. *)
-let pp_name f name = F.fprintf f "%s" (name_to_string name)
+let pp_name f name = F.pp_print_string f (name_to_string name)
 
 (** Pretty print an identifier. *)
-let pp f id = F.fprintf f "%s" (to_string id)
+let pp f id = F.pp_print_string f (to_string id)
 
 (** pretty printer for lists of identifiers *)
 let pp_list = Pp.comma_seq pp

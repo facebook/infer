@@ -27,7 +27,7 @@ let pp_prolog fmt clusters =
   F.fprintf fmt "INFERANALYZE = '%s' --no-report --results-dir '%s' %s@\n@\n"
     (Config.bin_dir ^/ InferCommand.(to_exe_name Analyze))
     (escape Config.results_dir) compilation_dbs_cmd ;
-  F.fprintf fmt "CLUSTERS=" ;
+  F.pp_print_string fmt "CLUSTERS=" ;
   List.iteri ~f:(fun i _ -> F.fprintf fmt "%a " Cluster.pp_cluster_name (i + 1)) clusters ;
   F.fprintf fmt "@\n@\ndefault: test@\n@\nall: test@\n@\n" ;
   F.fprintf fmt "test: $(CLUSTERS)@\n" ;

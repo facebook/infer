@@ -14,9 +14,8 @@ module DExp = DecompiledExp
 
 (** Module for type checking. *)
 
+(** remove temp ids from typestates *)
 let remove_temps = true
-
-(* remove temp ids from typestates *)
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
@@ -100,7 +99,7 @@ module ComplexExpressions = struct
       | DExp.Dfcall (fun_dexp, args, _, {CallFlags.cf_virtual= isvirtual})
       | DExp.Dretcall (fun_dexp, args, _, {CallFlags.cf_virtual= isvirtual})
         when functions_idempotent () ->
-          let pp_arg fmt de = F.fprintf fmt "%s" (dexp_to_string de) in
+          let pp_arg fmt de = F.pp_print_string fmt (dexp_to_string de) in
           let pp_args fmt des = Pp.comma_seq pp_arg fmt des in
           let pp fmt =
             let virt = if isvirtual then "V" else "" in
@@ -114,7 +113,7 @@ module ComplexExpressions = struct
       | DExp.Dpvar _ | DExp.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
           case_not_handled ()
       | DExp.Dunop (op, de) ->
-          Unop.str op ^ dexp_to_string de
+          Unop.to_string op ^ dexp_to_string de
       | DExp.Dsizeof _ ->
           case_not_handled ()
       | DExp.Dunknown ->

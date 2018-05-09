@@ -71,10 +71,7 @@ let verbatim_desc s = {no_desc with descriptions= [s]}
 let custom_desc description tags = {no_desc with descriptions= [description]; tags}
 
 (** pretty print an error description *)
-let pp_error_desc fmt err_desc =
-  let pp_item fmt s = F.fprintf fmt "%s" s in
-  Pp.seq pp_item fmt err_desc.descriptions
-
+let pp_error_desc fmt err_desc = Pp.seq F.pp_print_string fmt err_desc.descriptions
 
 let error_desc_get_dotty err_desc = err_desc.dotty
 

@@ -7,7 +7,7 @@ digraph cfg {
 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_2" [label="2: Exit functional_cast \n  " color=yellow style=filled]
 	
 
-"functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" [label="3:  DeclStmt \n   *&a:int=(2 + 3.400000) [line 15, column 26]\n " shape="box"]
+"functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" [label="3:  DeclStmt \n   *&a:int=(2 + 3.4) [line 15, column 26]\n " shape="box"]
 	
 
 	 "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_3" -> "functional_cast#14011367992313068291.82cd85208f04494c7a6533d123f52fe0_2" ;

@@ -72,7 +72,7 @@ let test_file_renamings_find_previous =
   let pp_diff fmt (expected, actual) =
     let pp_str_opt fmt str_opt =
       let out = match str_opt with Some str -> "Some " ^ str | None -> "None" in
-      Format.fprintf fmt "%s" out
+      Format.pp_print_string fmt out
     in
     Format.fprintf fmt "Expected '%a' but got '%a'" pp_str_opt expected pp_str_opt actual
   in

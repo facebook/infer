@@ -125,7 +125,7 @@ let () =
   | Analyze ->
       let pp_cluster_opt fmt = function
         | None ->
-            F.fprintf fmt "(no cluster)"
+            F.pp_print_string fmt "(no cluster)"
         | Some cluster ->
             F.fprintf fmt "of cluster %s" (Filename.basename cluster)
       in

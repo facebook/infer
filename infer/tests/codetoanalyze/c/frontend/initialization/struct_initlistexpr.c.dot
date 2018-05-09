@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_3" -> "field_set_correctly.b8d9a4294a85d24818c312a099420dce_2" ;
-"field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" [label="4:  DeclStmt \n   *&e.ssn:int=12 [line 35, column 23]\n  *&e.salary:float=3000.500000 [line 35, column 23]\n  *&e.doj.date:int=12 [line 35, column 37]\n  *&e.doj.month:int=12 [line 35, column 37]\n  *&e.doj.year:int=2010 [line 35, column 37]\n " shape="box"]
+"field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" [label="4:  DeclStmt \n   *&e.ssn:int=12 [line 35, column 23]\n  *&e.salary:float=3000.5 [line 35, column 23]\n  *&e.doj.date:int=12 [line 35, column 37]\n  *&e.doj.month:int=12 [line 35, column 37]\n  *&e.doj.year:int=2010 [line 35, column 37]\n " shape="box"]
 	
 
 	 "field_set_correctly.b8d9a4294a85d24818c312a099420dce_4" -> "field_set_correctly.b8d9a4294a85d24818c312a099420dce_3" ;

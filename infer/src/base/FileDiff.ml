@@ -33,11 +33,11 @@ module UnixDiff = struct
   let pp fmt d =
     match d with
     | Unchanged ->
-        Format.fprintf fmt "U"
+        Format.pp_print_char fmt 'U'
     | New ->
-        Format.fprintf fmt "N"
+        Format.pp_print_char fmt 'N'
     | Old ->
-        Format.fprintf fmt "O"
+        Format.pp_print_char fmt 'O'
 
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
@@ -69,8 +69,9 @@ let parse_directives directives =
   in
   if List.is_empty directives then (* handle the case where both files are empty *)
     []
-  else if (* handle the case where the new-file is empty *)
-          List.for_all ~f:(UnixDiff.equal UnixDiff.Old) directives
+  else if
+    (* handle the case where the new-file is empty *)
+    List.for_all ~f:(UnixDiff.equal UnixDiff.Old) directives
   then [1]
   else
     let pred_is_old, directives' =

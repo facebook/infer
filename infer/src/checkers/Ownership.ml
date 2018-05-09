@@ -78,7 +78,7 @@ module CapabilityDomain = struct
     | BorrowedFrom vars ->
         F.fprintf fmt "BorrowedFrom(%a)" VarSet.pp vars
     | Owned ->
-        F.fprintf fmt "Owned"
+        F.pp_print_string fmt "Owned"
 end
 
 let rec is_function_typ = function

@@ -21,5 +21,5 @@ type t =
 
 val equal : t -> t -> bool
 
-val str : t -> string
+val to_string : t -> string
 (** String representation of a unary operator. *)

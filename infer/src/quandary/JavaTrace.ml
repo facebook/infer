@@ -239,24 +239,23 @@ module SourceKind = struct
 
 
   let pp fmt kind =
-    F.fprintf fmt "%s"
-      ( match kind with
-      | DrawableResource pvar ->
-          Pvar.to_string pvar
-      | Endpoint (formal_name, _) ->
-          F.asprintf "Endpoint(%s)" (Mangled.to_string formal_name)
-      | Intent ->
-          "Intent"
-      | IntentFromURI ->
-          "IntentFromURI"
-      | Other ->
-          "Other"
-      | PrivateData ->
-          "PrivateData"
-      | UserControlledString ->
-          "UserControlledString"
-      | UserControlledURI ->
-          "UserControlledURI" )
+    match kind with
+    | DrawableResource pvar ->
+        F.pp_print_string fmt (Pvar.to_string pvar)
+    | Endpoint (formal_name, _) ->
+        F.fprintf fmt "Endpoint(%s)" (Mangled.to_string formal_name)
+    | Intent ->
+        F.pp_print_string fmt "Intent"
+    | IntentFromURI ->
+        F.pp_print_string fmt "IntentFromURI"
+    | Other ->
+        F.pp_print_string fmt "Other"
+    | PrivateData ->
+        F.pp_print_string fmt "PrivateData"
+    | UserControlledString ->
+        F.pp_print_string fmt "UserControlledString"
+    | UserControlledURI ->
+        F.pp_print_string fmt "UserControlledURI"
 end
 
 module JavaSource = Source.Make (SourceKind)
@@ -495,7 +494,7 @@ module JavaSanitizer = struct
         None
 
 
-  let pp fmt = function All -> F.fprintf fmt "All"
+  let pp fmt = function All -> F.pp_print_string fmt "All"
 end
 
 include Trace.Make (struct

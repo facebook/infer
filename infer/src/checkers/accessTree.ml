@@ -422,13 +422,13 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
       | Subtree access_map ->
           AccessMap.pp ~pp_value:pp_node fmt access_map
       | Star ->
-          F.fprintf fmt "*"
+          F.pp_print_char fmt '*'
     in
     if not (TraceDomain.is_empty trace) then
       if not (is_empty_tree subtree) then
         F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree
-      else F.fprintf fmt "%a" TraceDomain.pp trace
-    else F.fprintf fmt "%a" pp_subtree subtree
+      else TraceDomain.pp fmt trace
+    else pp_subtree fmt subtree
 
 
   let pp fmt base_tree = BaseMap.pp ~pp_value:pp_node fmt base_tree

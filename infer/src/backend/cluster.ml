@@ -37,11 +37,11 @@ let cl_name n = "cl" ^ string_of_int n
 
 let cl_file n = "x" ^ cl_name n ^ ".cluster"
 
-let pp_cluster_name fmt n = Format.fprintf fmt "%s" (cl_name n)
+let pp_cluster_name fmt n = Format.pp_print_string fmt (cl_name n)
 
 let pp_cluster fmt (nr, cluster) =
   let fname = Config.results_dir ^/ Config.multicore_dir_name ^/ cl_file nr in
-  let pp_cl fmt n = Format.fprintf fmt "%s" (cl_name n) in
+  let pp_cl fmt n = Format.pp_print_string fmt (cl_name n) in
   store_to_file (DB.filename_from_string fname) (nr, cluster) ;
   F.fprintf fmt "%a: @\n" pp_cl nr ;
   F.fprintf fmt "\t%@$(INFERANALYZE) --cluster '%s'@\n" fname ;

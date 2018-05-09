@@ -47,7 +47,7 @@ let appears_in_source_code = function
 
 let pp fmt = function
   | ProgramVar pv ->
-      F.fprintf fmt "%s" (Pvar.get_simplified_name pv)
+      F.pp_print_string fmt (Pvar.get_simplified_name pv)
   | LogicalVar id ->
       Ident.pp fmt id
 

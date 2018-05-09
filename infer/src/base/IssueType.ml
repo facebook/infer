@@ -73,7 +73,7 @@ end
 include Unsafe
 
 (** pretty print a localised string *)
-let pp fmt t = Format.fprintf fmt "%s" t.unique_id
+let pp fmt t = Format.pp_print_string fmt t.unique_id
 
 let abduction_case_not_implemented = from_string "Abduction_case_not_implemented"
 

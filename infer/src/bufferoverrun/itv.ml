@@ -213,7 +213,8 @@ module SymLinear = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    if M.is_empty x then F.fprintf fmt "empty" else Pp.seq ~sep:" + " pp1 fmt (M.bindings x)
+    if M.is_empty x then F.pp_print_string fmt "empty"
+    else Pp.seq ~sep:" + " pp1 fmt (M.bindings x)
 
 
   let zero : t = M.empty
@@ -299,7 +300,11 @@ module Bound = struct
     let eval_int x i1 i2 = match x with Plus -> i1 + i2 | Minus -> i1 - i2
 
     let pp ~need_plus : F.formatter -> t -> unit =
-     fun fmt -> function Plus -> if need_plus then F.fprintf fmt "+" | Minus -> F.fprintf fmt "-"
+     fun fmt -> function
+      | Plus ->
+          if need_plus then F.pp_print_char fmt '+'
+      | Minus ->
+          F.pp_print_char fmt '-'
   end
 
   type min_max = Min | Max [@@deriving compare]
@@ -314,7 +319,7 @@ module Bound = struct
     let eval_int x i1 i2 = match x with Min -> min i1 i2 | Max -> max i1 i2
 
     let pp : F.formatter -> t -> unit =
-     fun fmt -> function Min -> F.fprintf fmt "min" | Max -> F.fprintf fmt "max"
+     fun fmt -> function Min -> F.pp_print_string fmt "min" | Max -> F.pp_print_string fmt "max"
   end
 
   (* MinMax constructs a bound that is in the "int [+|-] [min|max](int, symbol)" format.
@@ -329,15 +334,15 @@ module Bound = struct
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
     | MInf ->
-        F.fprintf fmt "-oo"
+        F.pp_print_string fmt "-oo"
     | PInf ->
-        F.fprintf fmt "+oo"
+        F.pp_print_string fmt "+oo"
     | Linear (c, x) ->
-        if SymLinear.is_zero x then F.fprintf fmt "%d" c
-        else if Int.equal c 0 then F.fprintf fmt "%a" SymLinear.pp x
+        if SymLinear.is_zero x then F.pp_print_int fmt c
+        else if Int.equal c 0 then SymLinear.pp fmt x
         else F.fprintf fmt "%a + %d" SymLinear.pp x c
     | MinMax (c, sign, m, d, x) ->
-        if Int.equal c 0 then F.fprintf fmt "%a" (Sign.pp ~need_plus:false) sign
+        if Int.equal c 0 then (Sign.pp ~need_plus:false) fmt sign
         else F.fprintf fmt "%d%a" c (Sign.pp ~need_plus:true) sign ;
         F.fprintf fmt "%a(%d, %a)" MinMax.pp m d Symbol.pp x
 
