@@ -59,7 +59,7 @@ let is_proc_cfg_connected proc_desc =
   in
   let is_between_join_and_exit_node n =
     match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Stmt_node "between_join_and_exit" -> (
+    | Procdesc.Node.Stmt_node "between_join_and_exit" | Procdesc.Node.Stmt_node "Destruction" -> (
       match Procdesc.Node.get_succs n with [n'] when is_exit_node n' -> true | _ -> false )
     | _ ->
         false
