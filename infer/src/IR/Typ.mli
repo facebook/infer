@@ -508,6 +508,8 @@ module Procname : sig
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
 
+  val is_method_in_objc_protocol : t -> bool
+
   val to_string : t -> string
   (** Convert a proc name to a string for the user to see. *)
 

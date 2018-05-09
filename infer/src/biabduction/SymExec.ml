@@ -358,13 +358,22 @@ let check_inherently_dangerous_function caller_pname callee_pname =
     Reporting.log_warning_deprecated caller_pname exn
 
 
-let reason_to_skip callee_summary : string option =
-  let attributes = Specs.get_attributes callee_summary in
-  if attributes.ProcAttributes.is_abstract then Some "abstract method"
-  else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
-  else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
-    Some "empty list of specs"
-  else None
+let reason_to_skip ~callee_desc : string option =
+  match callee_desc with
+  | Some (`Summary callee_summary) ->
+      let attributes = Specs.get_attributes callee_summary in
+      if attributes.ProcAttributes.is_abstract then Some "abstract method"
+      else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
+      else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
+        Some "empty list of specs"
+      else (* we are not skipping *) None
+  | Some (`ProcName callee_pname) ->
+      (* no summary, so we are skipping, determining reasons *)
+      if Typ.Procname.is_method_in_objc_protocol callee_pname then
+        Some "no implementation found for method declared in Objective-C protocol"
+      else Some "function or method not found"
+  | None ->
+      Some "function or method not found"
 
 
 (** In case of constant string dereference, return the result immediately *)
@@ -1175,7 +1184,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               let ret_annots = load_ret_annots callee_pname in
               exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
           | Some resolved_summary ->
-            match reason_to_skip resolved_summary with
+            match reason_to_skip ~callee_desc:(Some (`Summary resolved_summary)) with
             | None ->
                 proc_call exe_env resolved_summary
                   (call_args prop_ callee_pname norm_args ret_id_typ loc)
@@ -1201,7 +1210,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                 let ret_annots = load_ret_annots callee_pname in
                 exec_skip_call ~reason:"unknown method" ret_annots ret_typ
             | Some callee_summary ->
-              match reason_to_skip callee_summary with
+              match reason_to_skip ~callee_desc:(Some (`Summary callee_summary)) with
               | None ->
                   let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
                   proc_call exe_env callee_summary handled_args
@@ -1249,11 +1258,14 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                 else [(prop_r, path)]
               in
               let do_call (prop, path) =
-                let reason_to_skip_opt =
-                  Option.value_map ~f:reason_to_skip ~default:(Some "function or method not found")
-                    resolved_summary_opt
+                let callee_desc =
+                  match resolved_summary_opt with
+                  | Some summary ->
+                      Some (`Summary summary)
+                  | None ->
+                      Some (`ProcName resolved_pname)
                 in
-                match reason_to_skip_opt with
+                match reason_to_skip ~callee_desc with
                 | Some reason
                   -> (
                     let ret_annots =

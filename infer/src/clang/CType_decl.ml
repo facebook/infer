@@ -284,9 +284,10 @@ and get_record_typename ?tenv decl =
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate
         (CAst_utils.get_qualified_name ~linters_mode name_info)
   | ObjCInterfaceDecl (_, name_info, _, _, _), _
-  | ObjCImplementationDecl (_, name_info, _, _, _), _
-  | ObjCProtocolDecl (_, name_info, _, _, _), _ ->
+  | ObjCImplementationDecl (_, name_info, _, _, _), _ ->
       CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
+  | ObjCProtocolDecl (_, name_info, _, _, _), _ ->
+      CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.protocol_from_qual_name
   | ObjCCategoryDecl (_, _, _, _, {odi_class_interface= Some {dr_name}}), _
   | ObjCCategoryImplDecl (_, _, _, _, {ocidi_class_interface= Some {dr_name}}), _ -> (
     match dr_name with
