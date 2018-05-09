@@ -102,7 +102,15 @@ let get_class_of_pname = function
       None
 
 
+let die_if_not_java proc_desc =
+  let is_java =
+    Procdesc.get_proc_name proc_desc |> Typ.Procname.get_language |> Language.(equal Java)
+  in
+  if not is_java then L.(die InternalError "Not supposed to run on non-Java code yet.")
+
+
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
+  die_if_not_java proc_desc ;
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
@@ -183,7 +191,7 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
               endpoint_pname LockOrder.pp elem
           in
           let exn =
-            Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
+            Exceptions.Checkers (IssueType.deadlock, Localise.verbatim_desc error_message)
           in
           let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
           let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc elem in
@@ -209,10 +217,11 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
           (* for each summary related to the endpoint, analyse and report on its pairs *)
           List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, endpoint_main)) ->
               if not (current_main && endpoint_main) then
-              let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
-              let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
-              LockOrderDomain.iter (report_endpoint_elem elem endpoint_pname endpoint_loc) summary
-          )
+                let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
+                let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
+                LockOrderDomain.iter
+                  (report_endpoint_elem elem endpoint_pname endpoint_loc)
+                  summary )
   in
   LockOrderDomain.iter report_on_current_elem summary
 
@@ -244,7 +253,7 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
     match eventually with
     | {LockEvent.event= LockEvent.MayBlock _} ->
         let error_message =
-          Format.asprintf "UI-thread method may block; %a" LockEvent.pp_event
+          Format.asprintf "UI thread method may block; %a" LockEvent.pp_event
             eventually.LockEvent.event
         in
         let exn =
@@ -278,6 +287,7 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
 
 let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
   let report_procedure (tenv, proc_desc) =
+    die_if_not_java proc_desc ;
     Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.iter ~f:(fun ((s, main) as summary) ->
            report_deadlocks get_proc_desc tenv proc_desc summary ;
