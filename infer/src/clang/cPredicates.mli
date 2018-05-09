@@ -193,6 +193,18 @@ val is_objc_protocol_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
  *    whose name matches the provided REGEXP
  *)
 
+val is_objc_class_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCMethodDecl node whose name
+ *    matches the provided REGEXP and is a class method
+ *)
+
+val is_objc_instance_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCMethodDecl node whose name
+ *    matches the provided REGEXP and is an instance method
+ *)
+
 val is_objc_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is an ObjCMethodDecl node
@@ -291,6 +303,18 @@ val is_in_objc_protocol_named : CLintersContext.context -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is a subnode of an ObjCProtocolDecl
  *    node whose name matches the provided REGEXP
+ *)
+
+val is_in_objc_class_method : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node, or a parent node, is an ObjCMethodDecl node
+ *    whose name matches the provided REGEXP and is a class method
+ *)
+
+val is_in_objc_instance_method : CLintersContext.context -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node, or a parent node, is an ObjCMethodDecl node
+ *    whose name matches the provided REGEXP and is an instance method
  *)
 
 val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool

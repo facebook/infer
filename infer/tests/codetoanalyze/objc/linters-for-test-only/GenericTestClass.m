@@ -14,6 +14,7 @@
 @interface MyBaseClass : NSObject<MyBaseClassProtocol>
 
 @property int myBaseClassProperty;
++ (void)myBaseClassClassMethod;
 - (void)myBaseClassMethod;
 
 @end
@@ -26,7 +27,11 @@
 
 @implementation MyBaseClass
 
++ (void)myBaseClassClassMethod {
+  int x = 0;
+}
 - (void)myBaseClassMethod {
+  int x = 0;
 }
 - (void)myBaseClassInterfaceExtensionMethod {
 }

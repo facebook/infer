@@ -696,12 +696,31 @@ DEFINE-CHECKER TEST_IF_IS_PROTOCOL_NAMED = {
 
 };
 
+DEFINE-CHECKER TEST_IF_IS_CLASS_METHOD_NAMED = {
+
+ SET report_when =
+    is_objc_class_method_named("myBaseClassClassMethod");
+
+ SET message = "Node is a class method named myBaseClassClassMethod.";
+
+};
+
+DEFINE-CHECKER TEST_IF_IS_INSTANCE_METHOD_NAMED = {
+
+ SET report_when =
+    is_objc_instance_method_named("mySubclassMethod");
+
+ SET message = "Node is an instance method named mySubclassMethod.";
+
+};
+
 DEFINE-CHECKER TEST_IF_IS_METHOD_NAMED = {
 
  SET report_when =
-    is_objc_method_named("mySubclassMethod");
+    is_objc_method_named("mySubclassMethod") OR
+    is_objc_method_named("myBaseClassClassMethod");
 
- SET message = "Node is a method named mySubclassMethod.";
+ SET message = "Node is a method named mySubclassMethod or myBaseClassClassMethod.";
 
 };
 
@@ -720,5 +739,23 @@ DEFINE-CHECKER TEST_IS_METHOD_EXPOSED = {
     is_objc_method_exposed;
 
  SET message = "Method %name% is exposed in an interface.";
+
+};
+
+DEFINE-CHECKER TEST_IN_CLASS_METHOD = {
+
+  SET report_when =
+     is_in_objc_class_method("myBaseClassClassMethod");
+
+  SET message = "This node is in a class method named myBaseClassClassMethod.";
+
+};
+
+DEFINE-CHECKER TEST_IN_INSTANCE_METHOD = {
+
+  SET report_when =
+     is_in_objc_instance_method("myBaseClassMethod");
+
+  SET message = "This node is in an instance method named myBaseClassClassMethod.";
 
 };

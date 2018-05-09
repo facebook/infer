@@ -289,6 +289,22 @@ let is_objc_protocol_named an re =
       false
 
 
+let is_objc_class_method_named an name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, omdi)) ->
+      declaration_has_name an name && not omdi.omdi_is_instance_method
+  | _ ->
+      false
+
+
+let is_objc_instance_method_named an name =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, omdi)) ->
+      declaration_has_name an name && omdi.omdi_is_instance_method
+  | _ ->
+      false
+
+
 let is_objc_method_named an name =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl _) ->
@@ -623,12 +639,24 @@ let is_in_method context name =
   ALVar.compare_str_with_alexp current_method_name name
 
 
-let is_in_objc_method context name =
+let is_in_objc_class_method context name =
   match context.CLintersContext.current_method with
-  | Some (ObjCMethodDecl _) ->
-      is_in_method context name
+  | Some (ObjCMethodDecl (_, _, omdi) as objc_method) ->
+      declaration_has_name (Decl objc_method) name && not omdi.omdi_is_instance_method
   | _ ->
       false
+
+
+let is_in_objc_instance_method context name =
+  match context.CLintersContext.current_method with
+  | Some (ObjCMethodDecl (_, _, omdi) as objc_method) ->
+      declaration_has_name (Decl objc_method) name && omdi.omdi_is_instance_method
+  | _ ->
+      false
+
+
+let is_in_objc_method context name =
+  is_in_objc_class_method context name || is_in_objc_instance_method context name
 
 
 let is_in_function context name =

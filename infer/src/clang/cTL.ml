@@ -1016,6 +1016,10 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_in_cxx_method lcxt name
   | "is_in_function", [name], _ ->
       CPredicates.is_in_function lcxt name
+  | "is_in_objc_class_method", [name], _ ->
+      CPredicates.is_in_objc_class_method lcxt name
+  | "is_in_objc_instance_method", [name], _ ->
+      CPredicates.is_in_objc_instance_method lcxt name
   | "is_in_objc_method", [name], _ ->
       CPredicates.is_in_objc_method lcxt name
   | "is_in_objc_interface_named", [name], _ ->
@@ -1084,6 +1088,10 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_objc_category_on_subclass_of an name
   | "is_objc_protocol_named", [name], an ->
       CPredicates.is_objc_protocol_named an name
+  | "is_objc_class_method_named", [name], an ->
+      CPredicates.is_objc_class_method_named an name
+  | "is_objc_instance_method_named", [name], an ->
+      CPredicates.is_objc_instance_method_named an name
   | "is_objc_method_named", [name], an ->
       CPredicates.is_objc_method_named an name
   | "is_objc_method_overriding", [], an ->
