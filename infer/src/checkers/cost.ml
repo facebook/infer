@@ -10,6 +10,8 @@
 open! IStd
 module F = Format
 module L = Logging
+module BasicCost = CostDomain.BasicCost
+module NodesBasicCostDomain = CostDomain.NodeInstructionToCostMap
 
 module Summary = Summary.Make (struct
   type payload = CostDomain.summary
@@ -23,7 +25,7 @@ end)
 
 (* We use this treshold to give error if the cost is above it.
    Currently it's set randomly to 200. *)
-let expensive_threshold = Itv.NonNegativeBound.of_int_exn 200
+let expensive_threshold = BasicCost.of_int_exn 200
 
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
@@ -36,8 +38,6 @@ module Node = struct
   let equal_id = [%compare.equal : id]
 end
 
-module NodesBasicCostDomain = CostDomain.NodeInstructionToCostMap
-
 (* Compute a map (node,instruction) -> basic_cost, where basic_cost is the
    cost known for a certain operation. For example for basic operation we
    set it to 1 and for function call we take it from the spec of the function.
@@ -49,20 +49,20 @@ module TransferFunctionsNodesBasicCost = struct
 
   type extras = BufferOverrunChecker.invariant_map
 
-  let cost_atomic_instruction = Itv.NonNegativeBound.one
+  let cost_atomic_instruction = BasicCost.one
 
   let instantiate_cost ~tenv ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
     match Ondemand.get_proc_desc callee_pname with
     | None ->
         L.(die InternalError)
-          "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)"
-          Itv.NonNegativeBound.pp callee_cost Typ.Procname.pp callee_pname
+          "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
+          callee_cost Typ.Procname.pp callee_pname
     | Some callee_pdesc ->
       match BufferOverrunChecker.Summary.read_summary caller_pdesc callee_pname with
       | None ->
           L.(die InternalError)
-            "Can't instantiate symbolic cost %a from call to %a (can't get summary)"
-            Itv.NonNegativeBound.pp callee_cost Typ.Procname.pp callee_pname
+            "Can't instantiate symbolic cost %a from call to %a (can't get summary)" BasicCost.pp
+            callee_cost Typ.Procname.pp callee_pname
       | Some inferbo_summary ->
           let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
           let callee_entry_mem = BufferOverrunDomain.Summary.get_input inferbo_summary in
@@ -72,7 +72,7 @@ module TransferFunctionsNodesBasicCost = struct
             BufferOverrunSemantics.get_subst_map tenv callee_pdesc params inferbo_caller_mem
               callee_entry_mem ~callee_ret_alias
           in
-          Itv.NonNegativeBound.subst callee_cost subst_map
+          BasicCost.subst callee_cost subst_map
 
 
   let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
@@ -84,7 +84,7 @@ module TransferFunctionsNodesBasicCost = struct
           let callee_cost =
             match Summary.read_summary pdesc callee_pname with
             | Some {post= callee_cost} ->
-                if Itv.NonNegativeBound.is_symbolic callee_cost then
+                if BasicCost.is_symbolic callee_cost then
                   instantiate_cost ~tenv ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem
                     ~callee_pname ~params ~callee_cost
                 else callee_cost
@@ -128,14 +128,14 @@ module AnalyzerNodesBasicCost =
 
 *)
 module BoundMap = struct
-  type t = Itv.NonNegativeBound.t Node.IdMap.t
+  type t = BasicCost.astate Node.IdMap.t
 
   let print_upper_bound_map bound_map =
     L.(debug Analysis Medium) "@\n\n******* Bound Map ITV **** @\n" ;
     Node.IdMap.iter
       (fun nid b ->
-        L.(debug Analysis Medium)
-          "@\n node: %a --> bound = %a @\n" Node.pp_id nid Itv.NonNegativeBound.pp b )
+        L.(debug Analysis Medium) "@\n node: %a --> bound = %a @\n" Node.pp_id nid BasicCost.pp b
+        )
       bound_map ;
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
@@ -161,7 +161,7 @@ module BoundMap = struct
       let node_id = NodeCFG.id node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
-          Node.IdMap.add node_id Itv.NonNegativeBound.one bound_map
+          Node.IdMap.add node_id BasicCost.one bound_map
       | _ ->
           let entry_state_opt =
             let instr_node_id = InstrCFG.of_underlying_node node |> InstrCFG.id in
@@ -184,18 +184,18 @@ module BoundMap = struct
                       "@\n\
                        [COST ANALYSIS INTERNAL WARNING:] No 'env' found. This location is \
                        unreachable returning cost 0 \n" ;
-                    Itv.NonNegativeBound.zero
+                    BasicCost.zero
                 | NonBottom mem ->
                     BufferOverrunDomain.MemReach.heap_range
                       ~filter_loc:(filter_loc formal_pvars all_deps)
                       mem
               in
               L.(debug Analysis Medium)
-                "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id
-                Itv.NonNegativeBound.pp bound ;
+                "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id BasicCost.pp
+                bound ;
               Node.IdMap.add node_id bound bound_map
           | _ ->
-              Node.IdMap.add node_id Itv.NonNegativeBound.zero bound_map
+              Node.IdMap.add node_id BasicCost.zero bound_map
     in
     let bound_map =
       List.fold (NodeCFG.nodes node_cfg) ~f:compute_node_upper_bound ~init:Node.IdMap.empty
@@ -210,7 +210,7 @@ module BoundMap = struct
     | None ->
         L.(debug Analysis Medium)
           "@\n\n[WARNING] Bound not found for node %a, returning Top @\n" Node.pp_id nid ;
-        Itv.NonNegativeBound.top
+        BasicCost.top
 end
 
 (* Structural Constraints are expressions of the kind:
@@ -290,7 +290,7 @@ end
 *)
 module MinTree = struct
   type mt_node =
-    | Leaf of (Node.id * Itv.NonNegativeBound.t)
+    | Leaf of (Node.id * BasicCost.astate)
     | Min of mt_node list
     | Plus of mt_node list
 
@@ -304,7 +304,7 @@ module MinTree = struct
   let rec pp fmt node =
     match node with
     | Leaf (nid, c) ->
-        F.fprintf fmt "%a:%a" Node.pp_id nid Itv.NonNegativeBound.pp c
+        F.fprintf fmt "%a:%a" Node.pp_id nid BasicCost.pp c
     | Min l ->
         F.fprintf fmt "Min(%a)" (Pp.comma_seq pp) l
     | Plus l ->
@@ -335,9 +335,9 @@ return the addends of the sum x_j1+x_j2+..+x_j_n*)
     | Leaf (_, c) ->
         c
     | Min l ->
-        evaluate_operator Itv.NonNegativeBound.min l
+        evaluate_operator BasicCost.min l
     | Plus l ->
-        evaluate_operator Itv.NonNegativeBound.plus l
+        evaluate_operator BasicCost.plus l
 
 
   and evaluate_operator op l =
@@ -447,7 +447,7 @@ module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; min_trees_map: Itv.NonNegativeBound.t Node.IdMap.t
+  ; min_trees_map: BasicCost.astate Node.IdMap.t
   ; summary: Specs.summary }
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -456,7 +456,7 @@ type extras_TransferFunctionsWCET =
 *)
 module TransferFunctionsWCET = struct
   module CFG = InstrCFG
-  module Domain = AbstractDomain.Pair (Itv.NonNegativeBound) (ReportedOnNodes)
+  module Domain = AbstractDomain.Pair (BasicCost) (ReportedOnNodes)
 
   type extras = extras_TransferFunctionsWCET
 
@@ -470,13 +470,12 @@ module TransferFunctionsWCET = struct
   (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
    Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
   let should_report_cost cost =
-    Itv.NonNegativeBound.is_not_infty cost
-    && not (Itv.NonNegativeBound.( <= ) ~lhs:cost ~rhs:expensive_threshold)
+    BasicCost.is_not_infty cost && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
 
 
   let do_report summary loc cost =
     let ltr =
-      let cost_desc = F.asprintf "with estimated cost %a" Itv.NonNegativeBound.pp cost in
+      let cost_desc = F.asprintf "with estimated cost %a" BasicCost.pp cost in
       [Errlog.make_trace_element 0 loc cost_desc []]
     in
     let exn =
@@ -484,7 +483,7 @@ module TransferFunctionsWCET = struct
         F.asprintf
           "The execution time from the beginning of the function up to this program point is \
            likely above the acceptable threshold of %a (estimated cost %a)"
-          Itv.NonNegativeBound.pp expensive_threshold Itv.NonNegativeBound.pp cost
+          BasicCost.pp expensive_threshold BasicCost.pp cost
       in
       Exceptions.Checkers (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
     in
@@ -501,20 +500,20 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost trees m : Itv.NonNegativeBound.t =
+  let map_cost trees m : BasicCost.astate =
     CostDomain.NodeInstructionToCostMap.fold
       (fun ((node_id, _) as instr_node_id) c acc ->
         let t = Node.IdMap.find node_id trees in
-        let c_node = Itv.NonNegativeBound.mult c t in
-        let c_node' = Itv.NonNegativeBound.plus acc c_node in
+        let c_node = BasicCost.mult c t in
+        let c_node' = BasicCost.plus acc c_node in
         L.(debug Analysis Medium)
           "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" InstrCFG.pp_id
-          instr_node_id Itv.NonNegativeBound.pp c Itv.NonNegativeBound.pp t ;
+          instr_node_id BasicCost.pp c BasicCost.pp t ;
         L.(debug Analysis Medium)
           "@\n  [AnalyzerWCET] Adding cost: (%a) --> c_node=%a  cost = %a @\n" InstrCFG.pp_id
-          instr_node_id Itv.NonNegativeBound.pp c_node Itv.NonNegativeBound.pp c_node' ;
+          instr_node_id BasicCost.pp c_node BasicCost.pp c_node' ;
         c_node' )
-      m Itv.NonNegativeBound.zero
+      m BasicCost.zero
 
 
   let exec_instr ((_, reported_so_far): Domain.astate) {ProcData.extras} (node: CFG.node) instr
@@ -531,8 +530,8 @@ module TransferFunctionsWCET = struct
           assert false
     in
     L.(debug Analysis Medium)
-      "@\n>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr
-      Itv.NonNegativeBound.pp cost_node ;
+      "@\n>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr BasicCost.pp
+      cost_node ;
     let astate' =
       let und_node = CFG.underlying_node node in
       let preds = Procdesc.Node.get_preds und_node in
@@ -557,7 +556,7 @@ end
 module AnalyzerWCET = AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsWCET)
 
 let check_and_report_infinity cost proc_desc summary =
-  if not (Itv.NonNegativeBound.is_not_infty cost) then
+  if not (BasicCost.is_not_infty cost) then
     let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
     let message =
       F.asprintf "The execution time of the function %a cannot be computed" Typ.Procname.pp
@@ -607,12 +606,11 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Specs.summary =
     List.fold
       ~f:(fun acc (nid, t) ->
         let res = MinTree.evaluate_tree t in
-        L.(debug Analysis Medium)
-          "@\n   Tree %a eval to %a @\n" Node.pp_id nid Itv.NonNegativeBound.pp res ;
+        L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
         Node.IdMap.add nid res acc )
       ~init:Node.IdMap.empty min_trees
   in
-  let initWCET = (Itv.NonNegativeBound.zero, ReportedOnNodes.empty) in
+  let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match
     AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
@@ -620,7 +618,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Specs.summary =
       ~debug:true ~initial:initWCET
   with
   | Some (exit_cost, _) ->
-      L.internal_error "  PROCEDURE COST = %a @\n" Itv.NonNegativeBound.pp exit_cost ;
+      L.internal_error "  PROCEDURE COST = %a @\n" BasicCost.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Summary.update_summary {post= exit_cost} summary
   | None ->
