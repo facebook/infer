@@ -552,7 +552,7 @@ let get_objc_property_accessor tenv ms =
 (** Creates a procedure description. *)
 let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg tenv ms fbody
     captured =
-  let defined = not (Int.equal (List.length fbody) 0) in
+  let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let pname = Typ.Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes ms.CMethodSignature.attributes in

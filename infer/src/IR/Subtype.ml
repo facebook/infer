@@ -14,7 +14,7 @@ open! IStd
 module F = Format
 
 let list_to_string list =
-  if Int.equal (List.length list) 0 then "( sub )"
+  if List.is_empty list then "( sub )"
   else "- {" ^ String.concat ~sep:", " (List.map ~f:Typ.Name.name list) ^ "}"
 
 

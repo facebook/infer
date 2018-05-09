@@ -223,7 +223,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let rhs_base, al = AccessExpression.to_access_path rhs_access_expr in
         let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
         let uninit_vars =
-          if Int.equal (List.length apl) 0 then
+          if List.is_empty apl then
             (* if we assign to the root of a struct then we need to remove all the fields *)
             remove_all_fields tenv (lhs_var, lhs_typ) uninit_vars'
           else uninit_vars'

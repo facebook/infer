@@ -2152,7 +2152,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           create_var_exp_tmp_var trans_state expr_info "SIL_init_list__"
     in
-    if Int.equal (List.length stmts) 0 then
+    if List.is_empty stmts then
       (* perform zero initialization of a primitive type, record types will have
          ImplicitValueInitExpr nodes *)
       let exps =
@@ -2298,7 +2298,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ; initd_exps= res_trans_tmp.initd_exps @ res_trans_vd.initd_exps }
           , Some leaf_nodes )
       | _ :: var_decls' ->
-          (* Here we can get also record declarations or typedef declarations, which are dealt with somewhere else. 
+          (* Here we can get also record declarations or typedef declarations, which are dealt with somewhere else.
                    We just handle the variables here. *)
           collect_all_decl_inner trans_state var_decls'
     in

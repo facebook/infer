@@ -1103,7 +1103,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
         let byvals = attributes.ProcAttributes.by_vals in
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string (pp_etlist byvals)
           (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
-        if List.length (Procdesc.get_captured pdesc) <> 0 then
+        if not (List.is_empty (Procdesc.get_captured pdesc)) then
           Format.fprintf fmt "\\nCaptured: %a" pp_var_list (Procdesc.get_captured pdesc) ;
         let method_annotation = attributes.ProcAttributes.method_annotation in
         if not (Annot.Method.is_empty method_annotation) then

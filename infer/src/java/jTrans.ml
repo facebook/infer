@@ -77,7 +77,7 @@ let get_exit_location source_file bytecode =
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
-    if Int.equal (List.length subs) 0 then assert false else List.last_exn subs
+    List.last_exn subs
   with _ -> assert false
 
 
