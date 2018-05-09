@@ -1629,11 +1629,6 @@ and patterns_skip_translation =
       "Matcher or list of matchers for names of files that should not be analyzed at all." )
 
 
-and per_procedure_parallelism =
-  CLOpt.mk_bool ~long:"per-procedure-parallelism" ~default:true
-    "Perform analysis with per-procedure parallelism. Java is not supported."
-
-
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
     ~in_help:InferCommand.[(Run, manual_generic)]
@@ -2696,8 +2691,6 @@ and patterns_never_returning_null = match patterns_never_returning_null with k, 
 and patterns_skip_implementation = match patterns_skip_implementation with k, r -> (k, !r)
 
 and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
-
-and per_procedure_parallelism = !per_procedure_parallelism
 
 and pmd_xml = !pmd_xml
 

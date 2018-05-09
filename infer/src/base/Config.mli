@@ -167,8 +167,6 @@ val patterns_skip_implementation : string * Yojson.Basic.json
 
 val patterns_skip_translation : string * Yojson.Basic.json
 
-val per_procedure_parallelism : bool
-
 val perf_stats_prefix : string
 
 val pp_version : Format.formatter -> unit -> unit

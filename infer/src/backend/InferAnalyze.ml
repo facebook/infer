@@ -130,7 +130,7 @@ let main ~changed_files ~makefile =
              all_clusters)
       in
       print_legend () ;
-      if Config.per_procedure_parallelism && not (Lazy.force is_java) then (
+      if not (Lazy.force is_java) then (
         (* Java uses ZipLib which is incompatible with forking *)
         (* per-procedure parallelism *)
         L.environment_info "Per-procedure parallelism jobs: %d@." Config.jobs ;
