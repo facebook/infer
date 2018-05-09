@@ -381,14 +381,14 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
               , Format.asprintf
                   "%a needs a non-null value in parameter %d but argument %a can be null. %s"
                   MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
+                  (Typ.Procname.to_simplified_string ~withclass:true pn)
                   n MF.pp_monospaced s origin_desc )
           | AnnotatedSignature.Present ->
               ( IssueType.eradicate_parameter_value_absent
               , Format.asprintf
                   "%a needs a present value in parameter %d but argument %a can be absent. %s"
                   MF.pp_monospaced
-                  (Typ.Procname.to_simplified_string pn)
+                  (Typ.Procname.to_simplified_string ~withclass:true pn)
                   n MF.pp_monospaced s origin_desc )
         in
         (kind_s, description, None, origin_loc)
