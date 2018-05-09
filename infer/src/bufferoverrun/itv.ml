@@ -65,7 +65,26 @@ module Symbol = struct
   let is_unsigned : t -> bool = fun x -> x.unsigned
 end
 
-module SymbolMap = PrettyPrintable.MakePPMap (Symbol)
+module SymbolMap = struct
+  include PrettyPrintable.MakePPMap (Symbol)
+
+  let for_all2 : f:(key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool =
+   fun ~f x y ->
+    match merge (fun k x y -> if f k x y then None else raise Exit) x y with
+    | _ ->
+        true
+    | exception Exit ->
+        false
+
+
+  let is_singleton : 'a t -> (key * 'a) option =
+   fun m ->
+    if is_empty m then None
+    else
+      let (kmin, _) as binding = min_binding m in
+      let kmax, _ = max_binding m in
+      if Symbol.equal kmin kmax then Some binding else None
+end
 
 module NonZeroInt : sig
   type t = private int [@@deriving compare]
@@ -77,6 +96,8 @@ module NonZeroInt : sig
   val minus_one : t
 
   val of_int : int -> t option
+
+  val opt_to_int : t option -> int
 
   val is_one : t -> bool
 
@@ -92,6 +113,8 @@ module NonZeroInt : sig
 
   val ( * ) : t -> t -> t
 
+  val plus : t -> t -> t option
+
   val exact_div_exn : t -> t -> t
 end = struct
   type t = int [@@deriving compare]
@@ -103,6 +126,8 @@ end = struct
   let minus_one = -1
 
   let of_int = function 0 -> None | i -> Some i
+
+  let opt_to_int = function None -> 0 | Some i -> i
 
   let is_one = Int.equal 1
 
@@ -118,29 +143,15 @@ end = struct
 
   let ( * ) = Int.( * )
 
+  let plus x y = of_int (x + y)
+
   let exact_div_exn num den =
     if not (is_multiple num den) then raise DivisionNotExact ;
     num / den
 end
 
 module SymLinear = struct
-  module M = struct
-    include Caml.Map.Make (Symbol)
-
-    let for_all2 : (key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool =
-     fun cond x y ->
-      let merge_function k x y = if cond k x y then None else raise Exit in
-      match merge merge_function x y with _ -> true | exception Exit -> false
-
-
-    let is_singleton : 'a t -> (key * 'a) option =
-     fun m ->
-      if is_empty m then None
-      else
-        let (kmin, _) as binding = min_binding m in
-        let kmax, _ = max_binding m in
-        if Symbol.equal kmin kmax then Some binding else None
-  end
+  module M = SymbolMap
 
   (**
      Map from symbols to integer coefficients.
@@ -172,12 +183,12 @@ module SymLinear = struct
 
   let le : t -> t -> bool =
    fun x y ->
-    let le_one_pair s (v1_opt: NonZeroInt.t option) (v2_opt: NonZeroInt.t option) =
-      let v1 = Option.value (v1_opt :> int option) ~default:0 in
-      let v2 = Option.value (v2_opt :> int option) ~default:0 in
+    let le_one_pair s v1_opt v2_opt =
+      let v1 = NonZeroInt.opt_to_int v1_opt in
+      let v2 = NonZeroInt.opt_to_int v2_opt in
       Int.equal v1 v2 || (Symbol.is_unsigned s && v1 <= v2)
     in
-    M.for_all2 le_one_pair x y
+    M.for_all2 ~f:le_one_pair x y
 
 
   let make : unsigned:bool -> Typ.Procname.t -> int -> t =
@@ -189,14 +200,14 @@ module SymLinear = struct
     let eq_pair _ (coeff1: NonZeroInt.t option) (coeff2: NonZeroInt.t option) =
       [%compare.equal : int option] (coeff1 :> int option) (coeff2 :> int option)
     in
-    M.for_all2 eq_pair x y
+    M.for_all2 ~f:eq_pair x y
 
 
   let pp1 : F.formatter -> Symbol.t * NonZeroInt.t -> unit =
    fun fmt (s, c) ->
     let c = (c :> int) in
-    if Int.equal c 1 then F.fprintf fmt "%a" Symbol.pp s
-    else if c < 0 then F.fprintf fmt "(%d)x%a" c Symbol.pp s
+    if Int.equal c 1 then Symbol.pp fmt s
+    else if Int.equal c (-1) then F.fprintf fmt "-%a" Symbol.pp s
     else F.fprintf fmt "%dx%a" c Symbol.pp s
 
 
@@ -213,16 +224,8 @@ module SymLinear = struct
 
   let plus : t -> t -> t =
    fun x y ->
-    let plus' _ (n_opt: NonZeroInt.t option) (m_opt: NonZeroInt.t option) =
-      match (n_opt, m_opt) with
-      | None, None ->
-          None
-      | (Some _ as some_v), None | None, (Some _ as some_v) ->
-          some_v
-      | Some n, Some m ->
-          NonZeroInt.of_int ((n :> int) + (m :> int))
-    in
-    M.merge plus' x y
+    let plus_coeff _ c1 c2 = NonZeroInt.plus c1 c2 in
+    M.union plus_coeff x y
 
 
   (** [se1] * [c] + [se2] *)
@@ -235,9 +238,9 @@ module SymLinear = struct
       | None, (Some _ as some_v) ->
           some_v
       | Some v, None ->
-          Some (NonZeroInt.( * ) v c)
+          Some NonZeroInt.(v * c)
       | Some v1, Some v2 ->
-          NonZeroInt.of_int (((v1 :> int) * (c :> int)) + (v2 :> int))
+          NonZeroInt.(v1 * c |> plus v2)
     in
     M.merge f se1 se2
 
