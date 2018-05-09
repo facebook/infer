@@ -64,25 +64,39 @@ let is_proc_cfg_connected proc_desc =
     | _ ->
         false
   in
+  let rec is_consecutive_join_nodes n visited =
+    match Procdesc.Node.get_kind n with
+    | Procdesc.Node.Join_node
+      -> (
+        if Procdesc.NodeSet.mem n visited then false
+        else
+          let succs = Procdesc.Node.get_succs n in
+          match succs with
+          | [n'] ->
+              is_consecutive_join_nodes n' (Procdesc.NodeSet.add n visited)
+          | _ ->
+              false )
+    | _ ->
+        is_between_join_and_exit_node n
+  in
   let is_broken_node n =
     let succs = Procdesc.Node.get_succs n in
     let preds = Procdesc.Node.get_preds n in
     match Procdesc.Node.get_kind n with
     | Procdesc.Node.Start_node _ ->
-        Int.equal (List.length succs) 0 || List.length preds > 0
+        List.is_empty succs || not (List.is_empty preds)
     | Procdesc.Node.Exit_node _ ->
-        List.length succs > 0 || Int.equal (List.length preds) 0
+        not (List.is_empty succs) || List.is_empty preds
     | Procdesc.Node.Stmt_node _ | Procdesc.Node.Prune_node _ | Procdesc.Node.Skip_node _ ->
-        Int.equal (List.length succs) 0 || Int.equal (List.length preds) 0
+        List.is_empty succs || List.is_empty preds
     | Procdesc.Node.Join_node ->
-      (* Join node has the exception that it may be without predecessors
-         and pointing to between_join_and_exit which points to an exit node *)
-      (* this happens when the if branches end with a return *)
-      match succs with
-      | [n'] when is_between_join_and_exit_node n' ->
-          false
-      | _ ->
-          Int.equal (List.length preds) 0
+        (* Join node has the exception that it may be without predecessors
+         and pointing to between_join_and_exit which points to an exit node.
+         This happens when the if branches end with a return.
+         Nested if statements, where all branches have return statements,
+         introduce a sequence of join nodes *)
+        (List.is_empty preds && not (is_consecutive_join_nodes n Procdesc.NodeSet.empty))
+        || (not (List.is_empty preds) && List.is_empty succs)
   in
   not (List.exists ~f:is_broken_node (Procdesc.get_nodes proc_desc))
 
