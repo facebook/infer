@@ -14,7 +14,6 @@ open! IStd
 
 module CLOpt = CommandLineOption
 module L = Logging
-module F = Format
 
 let run driver_mode =
   let open Driver in
@@ -123,13 +122,6 @@ let () =
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
   ( match Config.command with
   | Analyze ->
-      let pp_cluster_opt fmt = function
-        | None ->
-            F.pp_print_string fmt "(no cluster)"
-        | Some cluster ->
-            F.fprintf fmt "of cluster %s" (Filename.basename cluster)
-      in
-      L.progress "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
       run Driver.Analyze
   | Capture | Compile | Run ->
       run (Lazy.force Driver.mode_from_command_line)

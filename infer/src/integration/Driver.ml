@@ -300,30 +300,9 @@ let capture ~changed_files mode =
       capture_with_compilation_database ~changed_files json_cdb
 
 
-let run_parallel_analysis ~changed_files : unit =
-  let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
-  Utils.rmtree multicore_dir ;
-  Unix.mkdir_p multicore_dir ;
-  InferAnalyze.main ~changed_files ~makefile:(multicore_dir ^/ "Makefile") ;
-  run_command ~prog:"make"
-    ~args:
-      ( "--directory"
-        :: multicore_dir
-        :: (if Config.keep_going then "--keep-going" else "--no-keep-going")
-        :: "--jobs"
-        :: string_of_int Config.jobs
-        :: Option.value_map
-             ~f:(fun l -> ["--load-average"; string_of_float l])
-             ~default:[] Config.load_average
-      @ if Config.debug_mode then [] else ["--silent"] )
-    ()
-
-
 let execute_analyze ~changed_files =
   register_perf_stats_report PerfStats.TotalBackend ;
-  if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
-    InferAnalyze.main ~changed_files ~makefile:""
-  else run_parallel_analysis ~changed_files ;
+  InferAnalyze.main ~changed_files ;
   PerfStats.get_reporter PerfStats.TotalBackend ()
 
 

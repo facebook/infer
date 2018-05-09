@@ -42,5 +42,5 @@ val node_start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -
 val write_proc_html : Procdesc.t -> unit
 (** Write html file for the procedure. *)
 
-val write_all_html_files : Cluster.t -> unit
+val write_all_html_files : SourceFile.t -> unit
 (** Create filename.ext.html for each file in the cluster. *)

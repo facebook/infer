@@ -312,8 +312,6 @@ val clang_ignore_regex : string option
 
 val clang_include_to_override_regex : string option
 
-val cluster_cmdline : string option
-
 val command : InferCommand.t
 
 val compute_analytics : bool

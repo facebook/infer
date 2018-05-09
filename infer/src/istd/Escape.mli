@@ -12,9 +12,6 @@ open! IStd
 (** Escape a string for use in a CSV or XML file: replace reserved
     characters with escape sequences *)
 
-val escape_map : (char -> string option) -> string -> string
-(** escape a string specifying the per character escaping function *)
-
 val escape_dotty : string -> string
 (** escape a string to be used in a dotty file *)
 

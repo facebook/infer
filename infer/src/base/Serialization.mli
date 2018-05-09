@@ -16,9 +16,6 @@ module Key : sig
   (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
   type t
 
-  val cluster : t
-  (** current key for a cluster *)
-
   val issues : t
   (** current key for lint issues *)
 

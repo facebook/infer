@@ -924,11 +924,6 @@ and clang_ignore_regex =
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
 
-and cluster =
-  CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster" ~meta:"file"
-    "Specify a .cluster file to be analyzed"
-
-
 and compilation_database =
   CLOpt.mk_path_list ~long:"compilation-database" ~deprecated:["-clang-compilation-db-files"]
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -2473,8 +2468,6 @@ and clang_ignore_regex = !clang_ignore_regex
 and clang_include_to_override_regex = !clang_include_to_override_regex
 
 and classpath = !classpath
-
-and cluster_cmdline = !cluster
 
 and compute_analytics = !compute_analytics
 

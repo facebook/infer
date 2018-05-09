@@ -13,7 +13,7 @@ open! IStd
 module L = Logging
 
 (** Create tasks to analyze an execution environment *)
-let analyze_exe_env_tasks cluster exe_env : Tasks.t =
+let create_exe_env_tasks source_file exe_env : Tasks.t =
   L.progressbar_file () ;
   Specs.clear_spec_tbl () ;
   Typ.Procname.SQLite.clear_cache () ;
@@ -21,18 +21,17 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
   Tasks.create
     [ (fun () ->
         Callbacks.iterate_callbacks exe_env ;
-        if Config.write_html then Printer.write_all_html_files cluster ) ]
+        if Config.write_html then Printer.write_all_html_files source_file ) ]
 
 
 (** Create tasks to analyze a cluster *)
-let analyze_cluster_tasks cluster_num (cluster: Cluster.t) : Tasks.t =
-  let exe_env = Exe_env.mk cluster in
-  L.(debug Analysis Medium)
-    "@\nProcessing cluster '%a' #%d@." SourceFile.pp cluster (cluster_num + 1) ;
-  analyze_exe_env_tasks cluster exe_env
+let create_source_file_tasks (source_file: SourceFile.t) : Tasks.t =
+  let exe_env = Exe_env.mk source_file in
+  L.(debug Analysis Medium) "@\nProcessing '%a'@." SourceFile.pp source_file ;
+  create_exe_env_tasks source_file exe_env
 
 
-let analyze_cluster cluster_num cluster = Tasks.run (analyze_cluster_tasks cluster_num cluster)
+let analyze_source_file source_file = Tasks.run (create_source_file_tasks source_file)
 
 let output_json_makefile_stats clusters =
   let num_files = List.length clusters in
@@ -45,15 +44,6 @@ let output_json_makefile_stats clusters =
   (* write stats file to disk, intentionally overwriting old file if it already exists *)
   let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
-
-
-let process_cluster_cmdline fname =
-  match Cluster.load_from_file (DB.filename_from_string fname) with
-  | None ->
-      (if Config.keep_going then L.internal_error else L.die InternalError)
-        "Cannot find cluster file %s@." fname
-  | Some (nr, cluster) ->
-      analyze_cluster (nr - 1) cluster
 
 
 let print_legend () =
@@ -73,12 +63,12 @@ let print_legend () =
   L.progress "@\n@?"
 
 
-let cluster_should_be_analyzed ~changed_files cluster =
+let source_file_should_be_analyzed ~changed_files source_file =
   (* whether [fname] is one of the [changed_files] *)
-  let is_changed_file = Option.map changed_files ~f:(SourceFile.Set.mem cluster) in
+  let is_changed_file = Option.map changed_files ~f:(SourceFile.Set.mem source_file) in
   let check_modified () =
-    let modified = SourceFiles.is_freshly_captured cluster in
-    if modified then L.debug Analysis Medium "Modified: %a@\n" SourceFile.pp cluster ;
+    let modified = SourceFiles.is_freshly_captured source_file in
+    if modified then L.debug Analysis Medium "Modified: %a@\n" SourceFile.pp source_file ;
     modified
   in
   match is_changed_file with
@@ -98,56 +88,40 @@ let register_active_checkers () =
       ()
 
 
-let main ~changed_files ~makefile =
+let main ~changed_files =
   ( match Config.modified_targets with
   | Some file ->
       MergeCapture.record_modified_targets_from_file file
   | None ->
       () ) ;
   register_active_checkers () ;
-  match Config.cluster_cmdline with
-  | Some fname ->
-      process_cluster_cmdline fname
-  | None ->
-      (* delete all specs when doing a full analysis so that we do not report on procedures that do
+  (* delete all specs when doing a full analysis so that we do not report on procedures that do
          not exist anymore *)
-      if not Config.reactive_mode then DB.Results_dir.clean_specs_dir () ;
-      let all_clusters = SourceFiles.get_all () in
-      let clusters_to_analyze =
-        List.filter ~f:(cluster_should_be_analyzed ~changed_files) all_clusters
-      in
-      let n_clusters_to_analyze = List.length clusters_to_analyze in
-      L.progress "Found %d%s source file%s to analyze in %s@." n_clusters_to_analyze
-        ( if Config.reactive_mode || Option.is_some changed_files then
-            " (out of " ^ string_of_int (List.length all_clusters) ^ ")"
-        else "" )
-        (if Int.equal n_clusters_to_analyze 1 then "" else "s")
-        Config.results_dir ;
-      let is_java =
-        lazy
-          (List.exists
-             ~f:(fun cl -> Filename.check_suffix ".java" (SourceFile.to_string cl))
-             all_clusters)
-      in
-      print_legend () ;
-      if not (Lazy.force is_java) then (
-        (* Java uses ZipLib which is incompatible with forking *)
-        (* per-procedure parallelism *)
-        L.environment_info "Per-procedure parallelism jobs: %d@." Config.jobs ;
-        if makefile <> "" then ClusterMakefile.create_cluster_makefile [] makefile ;
-        (* Prepare tasks one cluster at a time while executing in parallel *)
-        let runner = Tasks.Runner.create ~jobs:Config.jobs in
-        let cluster_start_tasks i cluster =
-          let tasks = analyze_cluster_tasks i cluster in
-          let aggregate_tasks = Tasks.aggregate ~size:Config.procedures_per_process tasks in
-          Tasks.Runner.start runner ~tasks:aggregate_tasks
-        in
-        List.iteri ~f:cluster_start_tasks clusters_to_analyze ;
-        Tasks.Runner.complete runner )
-      else if makefile <> "" then
-        ClusterMakefile.create_cluster_makefile clusters_to_analyze makefile
-      else (
-        (* This branch is reached when -j 1 is used *)
-        List.iteri ~f:analyze_cluster clusters_to_analyze ;
-        L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ) ;
-      output_json_makefile_stats clusters_to_analyze
+  if not Config.reactive_mode then DB.Results_dir.clean_specs_dir () ;
+  let all_source_files = SourceFiles.get_all () in
+  let source_files_to_analyze =
+    List.filter ~f:(source_file_should_be_analyzed ~changed_files) all_source_files
+  in
+  let n_source_files = List.length source_files_to_analyze in
+  L.progress "Found %d%s source file%s to analyze in %s@." n_source_files
+    ( if Config.reactive_mode || Option.is_some changed_files then
+        " (out of " ^ string_of_int (List.length all_source_files) ^ ")"
+    else "" )
+    (if Int.equal n_source_files 1 then "" else "s")
+    Config.results_dir ;
+  print_legend () ;
+  if Int.equal Config.jobs 1 then (
+    List.iter ~f:analyze_source_file source_files_to_analyze ;
+    L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )
+  else (
+    L.environment_info "Parallel jobs: %d@." Config.jobs ;
+    (* Prepare tasks one cluster at a time while executing in parallel *)
+    let runner = Tasks.Runner.create ~jobs:Config.jobs in
+    let analyze source_file =
+      let tasks = create_source_file_tasks source_file in
+      let aggregate_tasks = Tasks.aggregate ~size:Config.procedures_per_process tasks in
+      Tasks.Runner.start runner ~tasks:aggregate_tasks
+    in
+    List.iter ~f:analyze source_files_to_analyze ;
+    Tasks.Runner.complete runner ) ;
+  output_json_makefile_stats source_files_to_analyze
