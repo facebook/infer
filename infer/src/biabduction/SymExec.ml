@@ -359,21 +359,32 @@ let check_inherently_dangerous_function caller_pname callee_pname =
 
 
 let reason_to_skip ~callee_desc : string option =
+  let reason_from_attributes attributes =
+    if attributes.ProcAttributes.is_abstract then Some "abstract method"
+    else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
+    else None
+  in
+  let reason_from_pname pname =
+    if Typ.Procname.is_method_in_objc_protocol pname then
+      Some "no implementation found for method declared in Objective-C protocol"
+    else None
+  in
   match callee_desc with
-  | Some (`Summary callee_summary) ->
-      let attributes = Specs.get_attributes callee_summary in
-      if attributes.ProcAttributes.is_abstract then Some "abstract method"
-      else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
+  | `Summary callee_summary ->
+      let attr_reason = Specs.get_attributes callee_summary |> reason_from_attributes in
+      if Option.is_some attr_reason then attr_reason
       else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
         Some "empty list of specs"
       else (* we are not skipping *) None
-  | Some (`ProcName callee_pname) ->
-      (* no summary, so we are skipping, determining reasons *)
-      if Typ.Procname.is_method_in_objc_protocol callee_pname then
-        Some "no implementation found for method declared in Objective-C protocol"
-      else Some "function or method not found"
-  | None ->
-      Some "function or method not found"
+  | `ProcDesc procdesc ->
+      let pname_reason = Procdesc.get_proc_name procdesc |> reason_from_pname in
+      if Option.is_some pname_reason then pname_reason
+      else
+        let attr_reason = Procdesc.get_attributes procdesc |> reason_from_attributes in
+        if Option.is_some attr_reason then attr_reason else Some "function or method not found"
+  | `ProcName callee_pname ->
+      let pname_reason = reason_from_pname callee_pname in
+      if Option.is_some pname_reason then pname_reason else Some "function or method not found"
 
 
 (** In case of constant string dereference, return the result immediately *)
@@ -1184,7 +1195,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               let ret_annots = load_ret_annots callee_pname in
               exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
           | Some resolved_summary ->
-            match reason_to_skip ~callee_desc:(Some (`Summary resolved_summary)) with
+            match reason_to_skip ~callee_desc:(`Summary resolved_summary) with
             | None ->
                 proc_call exe_env resolved_summary
                   (call_args prop_ callee_pname norm_args ret_id_typ loc)
@@ -1210,7 +1221,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                 let ret_annots = load_ret_annots callee_pname in
                 exec_skip_call ~reason:"unknown method" ret_annots ret_typ
             | Some callee_summary ->
-              match reason_to_skip ~callee_desc:(Some (`Summary callee_summary)) with
+              match reason_to_skip ~callee_desc:(`Summary callee_summary) with
               | None ->
                   let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
                   proc_call exe_env callee_summary handled_args
@@ -1259,11 +1270,13 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               in
               let do_call (prop, path) =
                 let callee_desc =
-                  match resolved_summary_opt with
-                  | Some summary ->
-                      Some (`Summary summary)
-                  | None ->
-                      Some (`ProcName resolved_pname)
+                  match (resolved_summary_opt, callee_pdesc_opt) with
+                  | Some summary, _ ->
+                      `Summary summary
+                  | None, Some pdesc ->
+                      `ProcDesc pdesc
+                  | None, None ->
+                      `ProcName resolved_pname
                 in
                 match reason_to_skip ~callee_desc with
                 | Some reason
