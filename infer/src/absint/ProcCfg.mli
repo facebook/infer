@@ -50,7 +50,7 @@ module type S = sig
   (** get the instructions from a node *)
 
   val succs : t -> node -> node list
-  (** all succcessors (normal and exceptional) *)
+  (** all successors (normal and exceptional) *)
 
   val preds : t -> node -> node list
   (** all predecessors (normal and exceptional) *)

@@ -184,7 +184,7 @@ and get_contents pe coo f = function
       F.fprintf f "%a | %a" (get_contents_single pe coo) idx_se (get_contents pe coo) l
 
 
-(* true if node is the sorce node of the expression e*)
+(* true if node is the source node of the expression e*)
 let is_source_node_of_exp e node =
   match node with Dotpointsto (_, e', _) -> Exp.equal e e' | _ -> false
 
@@ -626,7 +626,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
           let address_struct_id =
             get_coordinate_id (List.hd_exn (List.filter ~f:(is_source_node_of_exp e) nodes_e))
           in
-          (* we need to exclude the address node from the sorce of fields. no fields should start from there*)
+          (* we need to exclude the address node from the source of fields. no fields should start from there*)
           let nl' = List.filter ~f:(fun id -> address_struct_id <> id) nl in
           let links_from_fields = List.concat_map ~f:ff nl' in
           let lnk_from_address_struct =

@@ -1192,7 +1192,7 @@ let explain_divide_by_zero tenv exp node loc =
       Localise.no_desc
 
 
-(** explain a fronend warning *)
+(** explain a frontend warning *)
 let explain_frontend_warning loc = Localise.desc_frontend_warning loc
 
 (** explain a condition which is always true or false *)
