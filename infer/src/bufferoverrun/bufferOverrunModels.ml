@@ -193,6 +193,17 @@ let infer_print e =
   {exec; check= no_check}
 
 
+let get_array_length array_exp =
+  let exec {ret} mem =
+    let arr = Sem.eval_arr array_exp mem in
+    let traces = Dom.Val.get_traces arr in
+    let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
+    let result = Dom.Val.of_itv ~traces length in
+    model_by_value result ret mem
+  in
+  {exec; check= no_check}
+
+
 let set_array_length array length_exp =
   let exec {pname; node_hash; location} mem =
     match array with
@@ -331,6 +342,7 @@ module Call = struct
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
       ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
+      ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"strlen" <>--> by_value Dom.Val.Itv.nat
       ; -"boost" &:: "split" $ capt_arg_of_typ (-"std" &:: "vector") $+ any_arg $+ any_arg
