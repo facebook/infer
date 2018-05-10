@@ -240,7 +240,7 @@ let java_get_vararg_values node pvar idenv =
   let do_instr = function
     | Sil.Store (Exp.Lindex (array_exp, _), _, content_exp, _)
       when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
-        (* Each vararg argument is an assigment to a pvar denoting an array of objects. *)
+        (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
         values := content_exp :: !values
     | _ ->
         ()
