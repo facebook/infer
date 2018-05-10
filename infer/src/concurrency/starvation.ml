@@ -12,14 +12,6 @@ module L = Logging
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
-let is_java_static pname =
-  match pname with
-  | Typ.Procname.Java java_pname ->
-      Typ.Procname.Java.is_static java_pname
-  | _ ->
-      false
-
-
 let is_on_main_thread pn =
   RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
 
@@ -78,14 +70,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           get_path actuals |> Option.value_map ~default:astate ~f:(Domain.release astate)
       | LockedIfTrue ->
           astate
-      | NoEffect ->
-          if Models.may_block tenv callee actuals then
-            let caller = Procdesc.get_proc_name pdesc in
-            Domain.blocking_call ~caller ~callee loc astate
-          else if is_on_main_thread callee then Domain.set_on_main_thread astate
-          else
-            Summary.read_summary pdesc callee
-            |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
+      | NoEffect when Models.may_block tenv callee actuals ->
+          let caller = Procdesc.get_proc_name pdesc in
+          Domain.blocking_call ~caller ~callee loc astate
+      | NoEffect when is_on_main_thread callee ->
+          Domain.set_on_main_thread astate
+      | _ ->
+          Summary.read_summary pdesc callee
+          |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
     | _ ->
         astate
 
@@ -94,13 +86,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
-
-let get_class_of_pname = function
-  | Typ.Procname.Java java_pname ->
-      Some (Typ.Procname.Java.get_class_type_name java_pname)
-  | _ ->
-      None
-
 
 let die_if_not_java proc_desc =
   let is_java =
@@ -119,11 +104,13 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     else
       let loc = Procdesc.get_loc proc_desc in
       let lock =
-        if is_java_static pname then
-          (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
-          get_class_of_pname pname
-          |> Option.map ~f:(fun tn -> Typ.Name.name tn |> Ident.string_to_name |> lock_of_class)
-        else FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
+        match pname with
+        | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
+            (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
+            Typ.Procname.Java.get_class_type_name java_pname |> Typ.Name.name
+            |> Ident.string_to_name |> lock_of_class |> Option.some
+        | _ ->
+            FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
       in
       Option.value_map lock ~default:StarvationDomain.empty
         ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
@@ -137,11 +124,6 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   |> Option.value_map ~default:summary ~f:(fun lock_state ->
          let lock_order = StarvationDomain.to_summary lock_state in
          Summary.update_summary lock_order summary )
-
-
-let get_summary caller_pdesc callee_pdesc =
-  Summary.read_summary caller_pdesc (Procdesc.get_proc_name callee_pdesc)
-  |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
 
 
 let make_trace_with_header ?(header= "") elem start_loc pname =
@@ -161,11 +143,45 @@ let get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc clazz =
     Option.value_map tstruct_opt ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
   in
   let pdescs = List.rev_filter_map methods ~f:get_proc_desc in
-  List.rev_filter_map pdescs ~f:(get_summary current_pdesc)
+  let get_summary callee_pdesc =
+    Summary.read_summary current_pdesc (Procdesc.get_proc_name callee_pdesc)
+    |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
+  in
+  List.rev_filter_map pdescs ~f:get_summary
 
 
 let log_issue current_pname current_loc ltr exn =
   Reporting.log_issue_external current_pname Exceptions.Kerror ~loc:current_loc ~ltr exn
+
+
+let should_report_deadlock_on_current_proc current_elem endpoint_elem =
+  let open StarvationDomain in
+  match (current_elem.LockOrder.first, current_elem.LockOrder.eventually) with
+  | None, _ | Some {LockEvent.event= MayBlock _}, _ | _, {LockEvent.event= MayBlock _} ->
+      (* should never happen *)
+      L.die InternalError "Deadlock cannot occur without two lock events: %a" LockOrder.pp
+        current_elem
+  | Some {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
+      (* first event is a class object (see [lock_of_class]), so always report because the
+         reverse ordering on the events will not occur *)
+      true
+  | Some {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
+  | _, {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), _)} ->
+      (* first event has an ident root, but has a non-empty access path, which means we are
+         not filtering out local variables (see [exec_instr]), or,
+         second event has an ident root, which should not happen if we are filtering locals *)
+      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." LockOrder.pp
+        current_elem
+  | ( Some {LockEvent.event= LockAcquire ((_, typ1), _)}
+    , {LockEvent.event= LockAcquire ((_, typ2), _)} ) ->
+      (* use string comparison on types as a stable order to decide whether to report a deadlock *)
+      let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
+      c < 0
+      || Int.equal 0 c
+         && (* same class, so choose depending on location *)
+            Location.compare current_elem.LockOrder.eventually.LockEvent.loc
+              endpoint_elem.LockOrder.eventually.LockEvent.loc
+            < 0
 
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
@@ -180,7 +196,10 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
   let current_loc = Procdesc.get_loc current_pdesc in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let report_endpoint_elem current_elem endpoint_pname endpoint_loc elem =
-    if LockOrder.may_deadlock current_elem elem then
+    if
+      LockOrder.may_deadlock current_elem elem
+      && should_report_deadlock_on_current_proc current_elem elem
+    then
       let () = debug "Possible deadlock:@.%a@.%a@." LockOrder.pp current_elem LockOrder.pp elem in
       match (current_elem.LockOrder.eventually, elem.LockOrder.eventually) with
       | {LockEvent.event= LockAcquire _}, {LockEvent.event= LockAcquire _} ->
