@@ -1346,6 +1346,11 @@ and generated_classes =
     "Specify where to load the generated class files"
 
 
+and genrule_mode =
+  CLOpt.mk_bool ~default:false ~long:"genrule-mode"
+    "Enable the genrule compatibility mode used for the Buck integration"
+
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -2428,7 +2433,7 @@ and buck = !buck
 
 and buck_build_args = !buck_build_args
 
-and buck_cache_mode = !buck && not !debug
+and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
 and buck_compilation_database =
   match !buck_compilation_database with
