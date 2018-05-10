@@ -16,11 +16,11 @@ type proc_callback_args =
   { get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
-  ; summary: Specs.summary
+  ; summary: Summary.t
   ; proc_desc: Procdesc.t
   ; exe_env: Exe_env.t }
 
-type proc_callback_t = proc_callback_args -> Specs.summary
+type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
   { procedures: (Tenv.t * Procdesc.t) list
@@ -135,7 +135,7 @@ let iterate_callbacks (exe_env: Exe_env.t) =
     | Some _ as pdesc_opt ->
         pdesc_opt
     | None ->
-        Option.map ~f:Specs.get_proc_desc (Specs.get_summary proc_name)
+        Option.map ~f:Summary.get_proc_desc (Summary.get proc_name)
   in
   let analyze_ondemand summary proc_desc =
     iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
@@ -147,7 +147,7 @@ let iterate_callbacks (exe_env: Exe_env.t) =
     SourceFiles.proc_names_of_source exe_env.source_file
   in
   if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env procs_to_analyze ;
-  let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Specs.summary option) in
+  let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
   iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;

@@ -19,15 +19,15 @@ module Domain = AbstractDomain.FiniteSet (Typ.Procname)
    always []. Instead, the expanded per-method summaries are directly stored
    in the output directory as JSON files and *only* for those methods that
    will be part of the final crashcontext.json. *)
-module SpecSummary = Summary.Make (struct
-  type payload = Stacktree_j.stacktree
+module SpecPayload = SummaryPayload.Make (struct
+  type t = Stacktree_j.stacktree
 
-  let update_payload frame (summary: Specs.summary) =
-    let payload = {summary.payload with Specs.crashcontext_frame= Some frame} in
+  let update_summary frame (summary: Summary.t) =
+    let payload = {summary.payload with Summary.crashcontext_frame= Some frame} in
     {summary with payload}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.crashcontext_frame
+  let of_summary (summary: Summary.t) = summary.payload.crashcontext_frame
 end)
 
 type extras_t = {get_proc_desc: Typ.Procname.t -> Procdesc.t option; stacktraces: Stacktrace.t list}
@@ -70,14 +70,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let callees =
       List.map
         ~f:(fun pn ->
-          match SpecSummary.read_summary pdesc pn with
+          match SpecPayload.read_summary pdesc pn with
           | None -> (
             match get_proc_desc pn with
             | None ->
                 stacktree_stub_of_procname pn
             (* This can happen when the callee is in the same cluster/ buck
                     target, but it hasn't been checked yet. So we need both the
-                    inter-target lookup (SpecSummary) and the intra-target
+                    inter-target lookup (SpecPayload) and the intra-target
                     lookup (using get_proc_desc). *)
             | Some callee_pdesc ->
                 stacktree_of_pdesc callee_pdesc "proc_start" )
@@ -174,7 +174,7 @@ let loaded_stacktraces =
       Some (List.map ~f:Stacktrace.of_json_file files)
 
 
-let checker {Callbacks.proc_desc; tenv; get_proc_desc; summary} : Specs.summary =
+let checker {Callbacks.proc_desc; tenv; get_proc_desc; summary} : Summary.t =
   ( match loaded_stacktraces with
   | None ->
       L.(die UserError)

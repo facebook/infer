@@ -21,14 +21,14 @@ module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
-module Summary = Summary.Make (struct
-  type payload = Dom.Summary.t
+module Payload = SummaryPayload.Make (struct
+  type t = Dom.Summary.t
 
-  let update_payload astate (summary: Specs.summary) =
+  let update_summary astate (summary: Summary.t) =
     {summary with payload= {summary.payload with buffer_overrun= Some astate}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.buffer_overrun
+  let of_summary (summary: Summary.t) = summary.payload.buffer_overrun
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -252,7 +252,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let model_env = Models.mk_model_env callee_pname node_hash location tenv ~ret in
             exec model_env mem
         | None ->
-          match Summary.read_summary pdesc callee_pname with
+          match Payload.read_summary pdesc callee_pname with
           | Some summary ->
               let callee = Ondemand.get_proc_desc callee_pname in
               instantiate_mem tenv ret callee callee_pname params mem summary location
@@ -425,7 +425,7 @@ module Report = struct
 
   let instantiate_cond
       : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
-        -> Summary.payload -> Location.t -> PO.ConditionSet.t =
+        -> Payload.t -> Location.t -> PO.ConditionSet.t =
    fun tenv caller_pname callee_pdesc params caller_mem summary location ->
     let callee_entry_mem = Dom.Summary.get_input summary in
     let callee_cond = Dom.Summary.get_cond_set summary in
@@ -454,7 +454,7 @@ module Report = struct
           let node_hash = CFG.hash node in
           check (Models.mk_model_env pname node_hash location tenv) mem cond_set
       | None ->
-        match Summary.read_summary pdesc callee_pname with
+        match Payload.read_summary pdesc callee_pname with
         | Some callee_summary ->
             let callee = Ondemand.get_proc_desc callee_pname in
             instantiate_cond tenv pname callee params mem callee_summary location
@@ -476,7 +476,7 @@ module Report = struct
 
 
   let check_instrs
-      : Specs.summary -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.node -> Sil.instr list
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.node -> Sil.instr list
         -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg node instrs state cond_set ->
     match (state, instrs) with
@@ -498,8 +498,8 @@ module Report = struct
 
 
   let check_node
-      : Specs.summary -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map
-        -> PO.ConditionSet.t -> CFG.node -> PO.ConditionSet.t =
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t
+        -> CFG.node -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg inv_map cond_set node ->
     match Analyzer.extract_state (CFG.id node) inv_map with
     | Some state ->
@@ -510,8 +510,7 @@ module Report = struct
 
 
   let check_proc
-      : Specs.summary -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map
-        -> PO.ConditionSet.t =
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg inv_map ->
     CFG.nodes cfg
     |> List.fold ~f:(check_node summary pdesc tenv cfg inv_map) ~init:PO.ConditionSet.empty
@@ -545,7 +544,7 @@ module Report = struct
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
 
-  let report_errors : Specs.summary -> Procdesc.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
+  let report_errors : Summary.t -> Procdesc.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc cond_set ->
     let pname = Procdesc.get_proc_name pdesc in
     let report cond trace issue_type =
@@ -582,7 +581,7 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
     "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
 
 
-let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Specs.summary =
+let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
  fun {proc_desc; tenv; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
   let pdata = ProcData.make_default proc_desc tenv in
@@ -600,12 +599,12 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
         ( if Config.bo_debug >= 1 then
             let proc_name = Procdesc.get_proc_name proc_desc in
             print_summary proc_name post ) ;
-        Summary.update_summary post summary
+        Payload.update_summary post summary
     | _ ->
         summary
   in
   (inv_map, summary)
 
 
-let checker : Callbacks.proc_callback_args -> Specs.summary =
+let checker : Callbacks.proc_callback_args -> Summary.t =
  fun args -> compute_invariant_map_and_check args |> snd

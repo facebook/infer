@@ -12,13 +12,11 @@ open! IStd
 module F = Format
 open PolyVariantEqual
 
-(** Execution statistics *)
 type stats =
   { stats_failure: SymOp.failure_kind option
-        (** what type of failure stopped the analysis (if any) *)
-  ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
-  ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
-  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
+  ; symops: int
+  ; mutable nodes_visited_fp: IntSet.t
+  ; mutable nodes_visited_re: IntSet.t }
 
 type status = Pending | Analyzed [@@deriving compare]
 
@@ -28,7 +26,6 @@ let pp_status fmt status = F.pp_print_string fmt (string_of_status status)
 
 let equal_status = [%compare.equal : status]
 
-(** Payload: results of some analysis *)
 type payload =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
@@ -44,12 +41,7 @@ type payload =
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option }
 
-type summary =
-  { payload: payload  (** payload containing the result of some analysis *)
-  ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
-  ; stats: stats  (** statistics: execution time and list of errors *)
-  ; status: status  (** Analysis status of the procedure *)
-  ; proc_desc: Procdesc.t  (** Proc desc of the procdure *) }
+type t = {payload: payload; sessions: int ref; stats: stats; status: status; proc_desc: Procdesc.t}
 
 let get_status summary = summary.status
 
@@ -67,11 +59,11 @@ let get_err_log summary = (get_attributes summary).ProcAttributes.err_log
 
 let get_loc summary = (get_attributes summary).ProcAttributes.loc
 
-type spec_tbl = summary Typ.Procname.Hash.t
+type cache = t Typ.Procname.Hash.t
 
-let spec_tbl : spec_tbl = Typ.Procname.Hash.create 128
+let cache : cache = Typ.Procname.Hash.create 128
 
-let clear_spec_tbl () = Typ.Procname.Hash.clear spec_tbl
+let clear_cache () = Typ.Procname.Hash.clear cache
 
 let pp_failure_kind_opt fmt failure_kind_opt =
   match failure_kind_opt with
@@ -103,7 +95,7 @@ let get_signature summary =
     (get_proc_name summary) !s
 
 
-let pp_summary_no_stats_specs fmt summary =
+let pp_no_stats_specs fmt summary =
   F.fprintf fmt "%s@\n" (get_signature summary) ;
   F.fprintf fmt "%a@\n" pp_status summary.status
 
@@ -150,17 +142,17 @@ let pp_payload pe fmt
     starvation
 
 
-let pp_summary_text fmt summary =
+let pp_text fmt summary =
   let pe = Pp.text in
-  pp_summary_no_stats_specs fmt summary ;
+  pp_no_stats_specs fmt summary ;
   F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) pp_stats summary.stats (pp_payload pe)
     summary.payload
 
 
-let pp_summary_html source color fmt summary =
+let pp_html source color fmt summary =
   let pe = Pp.html color in
   Io_infer.Html.pp_start_color fmt Black ;
-  F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary ;
+  F.fprintf fmt "@\n%a" pp_no_stats_specs summary ;
   Io_infer.Html.pp_end_color fmt () ;
   F.fprintf fmt "<br />%a<br />@\n" pp_stats summary.stats ;
   Errlog.pp_html source [] fmt (get_err_log summary) ;
@@ -175,8 +167,8 @@ let empty_stats =
 
 
 (** Add the summary to the table for the given function *)
-let add_summary (proc_name: Typ.Procname.t) (summary: summary) : unit =
-  Typ.Procname.Hash.replace spec_tbl proc_name summary
+let add (proc_name: Typ.Procname.t) (summary: t) : unit =
+  Typ.Procname.Hash.replace cache proc_name summary
 
 
 let specs_filename pname =
@@ -200,16 +192,14 @@ let specs_models_filename pname =
   DB.filename_from_string (Filename.concat Config.models_dir (specs_filename pname))
 
 
-let summary_exists_in_models pname =
-  Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
+let has_model pname = Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
 
-
-let summary_serializer : summary Serialization.serializer =
+let summary_serializer : t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.summary
 
 
 (** Load procedure summary from the given file *)
-let load_summary specs_file = Serialization.read_from_file summary_serializer specs_file
+let load_from_file specs_file = Serialization.read_from_file summary_serializer specs_file
 
 (** Load procedure summary for the given procedure name and update spec table *)
 let load_summary_to_spec_table =
@@ -218,7 +208,7 @@ let load_summary_to_spec_table =
     | Some _, _ | _, [] ->
         summ_opt
     | None, specs_dir :: specs_dirs ->
-        load_summary (specs_library_filename specs_dir proc_name)
+        load_from_file (specs_library_filename specs_dir proc_name)
         |> or_load_summary_libs specs_dirs proc_name
   in
   let load_summary_ziplibs zip_specs_filename =
@@ -230,31 +220,27 @@ let load_summary_to_spec_table =
   in
   fun proc_name ->
     let summ_opt =
-      None |> or_from load_summary res_dir_specs_filename proc_name
-      |> or_from load_summary specs_models_filename proc_name
+      load_from_file (res_dir_specs_filename proc_name)
+      |> or_from load_from_file specs_models_filename proc_name
       |> or_from load_summary_ziplibs specs_filename proc_name
       |> or_load_summary_libs Config.specs_library proc_name
     in
-    Option.iter ~f:(add_summary proc_name) summ_opt ;
+    Option.iter ~f:(add proc_name) summ_opt ;
     summ_opt
 
 
-let get_summary proc_name =
-  try Some (Typ.Procname.Hash.find spec_tbl proc_name) with Caml.Not_found ->
+let get proc_name =
+  try Some (Typ.Procname.Hash.find cache proc_name) with Caml.Not_found ->
     load_summary_to_spec_table proc_name
 
 
-let get_summary_unsafe proc_name = Option.value_exn (get_summary proc_name)
+let get_unsafe proc_name = Option.value_exn (get proc_name)
 
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
 let proc_is_library proc_attributes =
   if not proc_attributes.ProcAttributes.is_defined then
-    match get_summary proc_attributes.ProcAttributes.proc_name with
-    | None ->
-        true
-    | Some _ ->
-        false
+    match get proc_attributes.ProcAttributes.proc_name with None -> true | Some _ -> false
   else false
 
 
@@ -264,7 +250,7 @@ let proc_is_library proc_attributes =
     If no attributes can be found, return None.
 *)
 let proc_resolve_attributes proc_name =
-  match get_summary proc_name with
+  match get proc_name with
   | Some summary ->
       Some (get_attributes summary)
   | None ->
@@ -283,11 +269,11 @@ let pdesc_resolve_attributes proc_desc =
 
 
 (** Save summary for the procedure into the spec database *)
-let store_summary (summ: summary) =
+let store (summ: t) =
   let final_summary = {summ with status= Analyzed} in
   let proc_name = get_proc_name final_summary in
   (* Make sure the summary in memory is identical to the saved one *)
-  add_summary proc_name final_summary ;
+  add proc_name final_summary ;
   Serialization.write_to_file summary_serializer
     (res_dir_specs_filename proc_name)
     ~data:final_summary
@@ -316,7 +302,7 @@ let init_summary proc_desc =
   let summary =
     {sessions= ref 0; payload= empty_payload; stats= empty_stats; status= Pending; proc_desc}
   in
-  Typ.Procname.Hash.replace spec_tbl (Procdesc.get_proc_name proc_desc) summary ;
+  Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
   summary
 
 
@@ -327,6 +313,6 @@ let dummy =
 
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary proc_desc = init_summary proc_desc
+let reset proc_desc = init_summary proc_desc
 
 (* =============== END of support for spec tables =============== *)

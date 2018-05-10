@@ -96,11 +96,11 @@ type summary_val =
 
 (** compute values from summary data to export to csv format *)
 let summary_values summary =
-  let stats = summary.Specs.stats in
-  let attributes = Specs.get_attributes summary in
-  let err_log = Specs.get_err_log summary in
-  let proc_name = Specs.get_proc_name summary in
-  let vsignature = Specs.get_signature summary in
+  let stats = summary.Summary.stats in
+  let attributes = Summary.get_attributes summary in
+  let err_log = Summary.get_err_log summary in
+  let proc_name = Summary.get_proc_name summary in
+  let vsignature = Summary.get_signature summary in
   let specs = Tabulation.get_specs_from_payload summary in
   let lines_visited =
     let visited = ref BiabductionSummary.Visitedset.empty in
@@ -123,8 +123,8 @@ let summary_values summary =
   { vname= Typ.Procname.to_string proc_name
   ; vname_id= Typ.Procname.to_filename proc_name
   ; vspecs= List.length specs
-  ; vto= Option.value_map ~f:pp_failure ~default:"NONE" stats.Specs.stats_failure
-  ; vsymop= stats.Specs.symops
+  ; vto= Option.value_map ~f:pp_failure ~default:"NONE" stats.Summary.stats_failure
+  ; vsymop= stats.Summary.symops
   ; verr=
       Errlog.size
         (fun ekind in_footprint ->
@@ -493,12 +493,18 @@ module Stats = struct
 
   let process_summary error_filter summary linereader stats =
     let specs = Tabulation.get_specs_from_payload summary in
-    let found_errors = process_err_log error_filter linereader (Specs.get_err_log summary) stats in
+    let found_errors =
+      process_err_log error_filter linereader (Summary.get_err_log summary) stats
+    in
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
     let is_timeout =
-      match Specs.(summary.stats.stats_failure) with None | Some (FKcrash _) -> false | _ -> true
+      match Summary.(summary.stats.stats_failure) with
+      | None | Some (FKcrash _) ->
+          false
+      | _ ->
+          true
     in
     stats.nprocs <- stats.nprocs + 1 ;
     stats.nspecs <- stats.nspecs + List.length specs ;
@@ -506,7 +512,7 @@ module Stats = struct
     if is_checked then stats.nchecked <- stats.nchecked + 1 ;
     if is_timeout then stats.ntimeouts <- stats.ntimeouts + 1 ;
     if is_defective then stats.ndefective <- stats.ndefective + 1 ;
-    process_loc (Specs.get_loc summary) stats
+    process_loc (Summary.get_loc summary) stats
 
 
   let num_files stats = Hashtbl.length stats.files
@@ -528,24 +534,24 @@ module Stats = struct
 end
 
 module StatsLogs = struct
-  let process _ (summary: Specs.summary) _ _ =
+  let process _ (summary: Summary.t) _ _ =
     let num_preposts =
       match summary.payload.biabduction with Some {preposts} -> List.length preposts | None -> 0
     in
     let clang_method_kind =
-      ProcAttributes.string_of_clang_method_kind (Specs.get_attributes summary).clang_method_kind
+      ProcAttributes.string_of_clang_method_kind (Summary.get_attributes summary).clang_method_kind
     in
-    let proc_name = Specs.get_proc_name summary in
+    let proc_name = Summary.get_proc_name summary in
     let lang = Typ.Procname.get_language proc_name in
     let stats =
       EventLogger.AnalysisStats
         { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
         ; analysis_status= summary.stats.stats_failure
-        ; analysis_total_nodes= Specs.get_proc_desc summary |> Procdesc.get_nodes_num
+        ; analysis_total_nodes= Summary.get_proc_desc summary |> Procdesc.get_nodes_num
         ; clang_method_kind=
             (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
         ; lang= Language.to_explicit_string lang
-        ; method_location= Specs.get_loc summary
+        ; method_location= Summary.get_loc summary
         ; method_name= Typ.Procname.to_string proc_name
         ; num_preposts
         ; symops= summary.stats.symops }
@@ -736,9 +742,9 @@ let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log
 
 
 let collect_issues summary issues_acc =
-  let err_log = Specs.get_err_log summary in
-  let proc_name = Specs.get_proc_name summary in
-  let proc_location = Specs.get_loc summary in
+  let err_log = Summary.get_err_log summary in
+  let proc_name = Summary.get_proc_name summary in
+  let proc_location = Summary.get_loc summary in
   Errlog.fold
     (fun err_key err_data acc -> {Issue.proc_name; proc_location; err_key; err_data} :: acc)
     err_log issues_acc
@@ -761,8 +767,8 @@ let pp_stats error_filter linereader summary stats stats_format_list =
 
 
 let pp_summary summary =
-  L.result "Procedure: %a@\n%a@." Typ.Procname.pp (Specs.get_proc_name summary)
-    Specs.pp_summary_text summary
+  L.result "Procedure: %a@\n%a@." Typ.Procname.pp (Summary.get_proc_name summary) Summary.pp_text
+    summary
 
 
 let pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
@@ -838,8 +844,8 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 
 (** Process a summary *)
 let process_summary filters formats_by_report_kind linereader stats summary issues_acc =
-  let file = (Specs.get_loc summary).Location.file in
-  let proc_name = Specs.get_proc_name summary in
+  let file = (Summary.get_loc summary).Location.file in
+  let proc_name = Summary.get_proc_name summary in
   let error_filter = error_filter filters proc_name in
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true ;
@@ -870,7 +876,7 @@ let spec_files_from_cmdline () =
 let get_summary_iterator () =
   let sorted_spec_files = List.sort ~compare:String.compare (spec_files_from_cmdline ()) in
   let do_spec f fname =
-    match Specs.load_summary (DB.filename_from_string fname) with
+    match Summary.load_from_file (DB.filename_from_string fname) with
     | None ->
         L.(die UserError) "Error: cannot open file %s@." fname
     | Some summary ->

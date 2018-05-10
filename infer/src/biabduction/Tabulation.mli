@@ -47,13 +47,13 @@ val lookup_custom_errors : 'a Prop.t -> string option
 (** search in prop contains an error state *)
 
 val exe_function_call :
-  Exe_env.t -> Specs.summary -> Tenv.t -> Ident.t -> Procdesc.t -> Typ.Procname.t -> Location.t
+  Exe_env.t -> Summary.t -> Tenv.t -> Ident.t -> Procdesc.t -> Typ.Procname.t -> Location.t
   -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t
   -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Execute the function call and return the list of results with return value *)
 
-val get_phase : Specs.summary -> BiabductionSummary.phase
+val get_phase : Summary.t -> BiabductionSummary.phase
 (** Return the current phase for the proc *)
 
-val get_specs_from_payload : Specs.summary -> Prop.normal BiabductionSummary.spec list
+val get_specs_from_payload : Summary.t -> Prop.normal BiabductionSummary.spec list
 (** Get the specs from the payload of the summary. *)

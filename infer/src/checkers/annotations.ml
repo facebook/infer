@@ -142,7 +142,7 @@ let pdesc_return_annot_ends_with pdesc annot =
   pdesc_has_return_annot pdesc (fun ia -> ia_ends_with ia annot)
 
 
-(* note: we would use Specs.proc_resolve_attributes directly instead of requiring [attrs_of_pname],
+(* note: we would use Summary.proc_resolve_attributes directly instead of requiring [attrs_of_pname],
    but doing so creates a circular dependency *)
 let pname_has_return_annot pname ~attrs_of_pname predicate =
   match attrs_of_pname pname with

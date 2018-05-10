@@ -202,7 +202,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = Specs.summary
+  type extras = Summary.t
 
   let is_aggregate (_, typ) =
     match typ.Typ.desc with

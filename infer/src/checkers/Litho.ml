@@ -11,14 +11,14 @@ open! IStd
 module F = Format
 module Domain = LithoDomain
 
-module Summary = Summary.Make (struct
-  type payload = Domain.astate
+module Payload = SummaryPayload.Make (struct
+  type t = Domain.astate
 
-  let update_payload astate (summary: Specs.summary) =
+  let update_summary astate (summary: Summary.t) =
     {summary with payload= {summary.payload with litho= Some astate}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.litho
+  let of_summary (summary: Summary.t) = summary.payload.litho
 end)
 
 module LithoFramework = struct
@@ -93,7 +93,7 @@ module GraphQLGetters = struct
       let exn =
         Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message)
       in
-      let loc = Specs.get_loc summary in
+      let loc = Summary.get_loc summary in
       let ltr = [Errlog.make_trace_element 0 loc message []] in
       Reporting.log_error summary ~loc ~ltr exn
     in
@@ -179,7 +179,7 @@ module RequiredProps = struct
               ~f:(fun required_prop ->
                 if not (has_prop prop_set required_prop) then
                   report_missing_required_prop summary required_prop parent_typename
-                    (Specs.get_loc summary) )
+                    (Summary.get_loc summary) )
               required_props
         | _ ->
             () )
@@ -229,7 +229,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , _ ) ->
-        let summary = Summary.read_summary proc_data.pdesc callee_procname in
+        let summary = Payload.read_summary proc_data.pdesc callee_procname in
         let receiver =
           Domain.LocalAccessPath.make (AccessExpression.to_access_path receiver_ae) caller_pname
         in
@@ -257,7 +257,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* treat it like a normal call *)
           apply_callee_summary summary caller_pname return_base actuals astate
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let summary = Summary.read_summary proc_data.pdesc callee_procname in
+        let summary = Payload.read_summary proc_data.pdesc callee_procname in
         apply_callee_summary summary caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _)
       -> (
@@ -294,6 +294,6 @@ let checker {Callbacks.summary; proc_desc; tenv} =
         Domain.substitute ~f_sub astate
       in
       let payload = postprocess post (FormalMap.make proc_desc) in
-      Summary.update_summary payload summary
+      Payload.update_summary payload summary
   | None ->
       summary

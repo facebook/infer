@@ -241,7 +241,7 @@ let report_cycle tenv pname prop =
         Otherwise we report a retain cycle. *)
   let cycles = get_retain_cycles tenv prop in
   RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
-  match Specs.get_summary pname with
+  match Summary.get pname with
   | Some summary ->
       if RetainCyclesType.Set.cardinal cycles > 0 then (
         RetainCyclesType.Set.iter

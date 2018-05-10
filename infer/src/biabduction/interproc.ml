@@ -199,7 +199,7 @@ let do_meet_pre tenv pset =
 (** Find the preconditions in the current spec table,
     apply meet then join, and return the joined preconditions *)
 let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t list =
-  let proc_name = Specs.get_proc_name summary in
+  let proc_name = Summary.get_proc_name summary in
   let collect_do_abstract_one tenv prop =
     if !Config.footprint then Config.run_in_re_execution_mode (Abs.abstract_no_symop tenv) prop
     else Abs.abstract_no_symop tenv prop
@@ -397,10 +397,10 @@ let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Except
 
 let mark_visited summary node =
   let node_id = Procdesc.Node.get_id node in
-  let stats = summary.Specs.stats in
+  let stats = summary.Summary.stats in
   if !Config.footprint then
-    stats.Specs.nodes_visited_fp <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_fp
-  else stats.Specs.nodes_visited_re <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_re
+    stats.Summary.nodes_visited_fp <- IntSet.add (node_id :> int) stats.Summary.nodes_visited_fp
+  else stats.Summary.nodes_visited_re <- IntSet.add (node_id :> int) stats.Summary.nodes_visited_re
 
 
 let forward_tabulate exe_env tenv proc_cfg wl =
@@ -434,16 +434,12 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   let print_node_preamble curr_node session pathset_todo =
     let log_string proc_name =
-      let summary = Specs.get_summary_unsafe proc_name in
+      let summary = Summary.get_unsafe proc_name in
       let phase_string =
-        if
-          BiabductionSummary.equal_phase (Tabulation.get_phase summary)
-            BiabductionSummary.FOOTPRINT
-        then "FP"
-        else "RE"
+        match Tabulation.get_phase summary with FOOTPRINT -> "FP" | RE_EXECUTION -> "RE"
       in
-      let status = Specs.get_status summary in
-      F.sprintf "[%s:%s] %s" phase_string (Specs.string_of_status status)
+      let status = Summary.get_status summary in
+      F.sprintf "[%s:%s] %s" phase_string (Summary.string_of_status status)
         (Typ.Procname.to_string proc_name)
     in
     L.d_strln
@@ -509,10 +505,10 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
-    let summary = Specs.get_summary_unsafe pname in
+    let summary = Summary.get_unsafe pname in
     mark_visited summary curr_node ;
     (* mark nodes visited in fp and re phases *)
-    let session = incr summary.Specs.sessions ; !(summary.Specs.sessions) in
+    let session = incr summary.Summary.sessions ; !(summary.Summary.sessions) in
     do_before_node session curr_node ;
     do_node_and_handle curr_node session
   done ;
@@ -827,9 +823,9 @@ type exe_phase =
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exceptional.t)
+let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.Exceptional.t)
     : exe_phase =
-  let pname = Specs.get_proc_name summary in
+  let pname = Summary.get_proc_name summary in
   let start_node = ProcCfg.Exceptional.start_node proc_cfg in
   let compute_footprint () : exe_phase =
     let go (wl: Worklist.t) () =
@@ -1005,9 +1001,9 @@ let is_unavoidable tenv pre =
     an error in that case, generating the trace that lead to the runtime exception if the method is
     called in the context { precondition } *)
 let report_runtime_exceptions tenv pdesc summary =
-  let pname = Specs.get_proc_name summary in
+  let pname = Summary.get_proc_name summary in
   let is_public_method =
-    PredSymb.equal_access (Specs.get_attributes summary).access PredSymb.Public
+    PredSymb.equal_access (Summary.get_attributes summary).access PredSymb.Public
   in
   let is_main =
     is_public_method
@@ -1037,11 +1033,11 @@ let report_runtime_exceptions tenv pdesc summary =
 
 
 let report_custom_errors tenv summary =
-  let pname = Specs.get_proc_name summary in
+  let pname = Summary.get_proc_name summary in
   let error_preconditions, all_post_error = custom_error_preconditions summary in
   let report (pre, custom_error) =
     if all_post_error || is_unavoidable tenv pre then
-      let loc = Specs.get_loc summary in
+      let loc = Summary.get_loc summary in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
       Reporting.log_error_deprecated pname exn
@@ -1125,11 +1121,11 @@ let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec
 let update_summary tenv prev_summary specs phase res =
   let normal_specs = List.map ~f:(BiabductionSummary.spec_normalize tenv) specs in
   let new_specs, _ = update_specs tenv prev_summary phase normal_specs in
-  let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
+  let symops = prev_summary.Summary.stats.Summary.symops + SymOp.get_total () in
   let stats_failure =
-    match res with None -> prev_summary.Specs.stats.Specs.stats_failure | Some _ -> res
+    match res with None -> prev_summary.Summary.stats.Summary.stats_failure | Some _ -> res
   in
-  let stats = {prev_summary.Specs.stats with symops; stats_failure} in
+  let stats = {prev_summary.Summary.stats with symops; stats_failure} in
   let preposts =
     match phase with
     | BiabductionSummary.FOOTPRINT ->
@@ -1138,17 +1134,18 @@ let update_summary tenv prev_summary specs phase res =
         List.map ~f:(BiabductionSummary.NormSpec.erase_join_info_pre tenv) new_specs
   in
   let payload =
-    {prev_summary.Specs.payload with Specs.biabduction= Some BiabductionSummary.{preposts; phase}}
+    { prev_summary.Summary.payload with
+      Summary.biabduction= Some BiabductionSummary.{preposts; phase} }
   in
-  {prev_summary with Specs.stats; payload}
+  {prev_summary with Summary.stats; payload}
 
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc exe_env tenv proc_cfg : Specs.summary =
+let analyze_proc exe_env tenv proc_cfg : Summary.t =
   let proc_desc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let proc_name = Procdesc.get_proc_name proc_desc in
   reset_global_values proc_desc ;
-  let summary = Specs.get_summary_unsafe proc_name in
+  let summary = Summary.get_unsafe proc_name in
   let go, get_results = perform_analysis_phase exe_env tenv summary proc_cfg in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
@@ -1162,15 +1159,15 @@ let analyze_proc exe_env tenv proc_cfg : Specs.summary =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe tenv proc_name joined_pres =
-  let summary = Specs.get_summary_unsafe proc_name in
+  let summary = Summary.get_unsafe proc_name in
   let summary' =
     if Config.only_footprint then
-      match summary.Specs.payload.biabduction with
+      match summary.Summary.payload.biabduction with
       | Some ({phase= FOOTPRINT} as biabduction) ->
           { summary with
-            Specs.payload=
+            Summary.payload=
               { summary.payload with
-                Specs.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
+                Summary.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
               } }
       | _ ->
           summary
@@ -1184,12 +1181,12 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
           joined_pres
       in
       let payload =
-        { summary.Specs.payload with
+        { summary.Summary.payload with
           biabduction= Some BiabductionSummary.{preposts; phase= RE_EXECUTION} }
       in
-      {summary with Specs.payload}
+      {summary with Summary.payload}
   in
-  Specs.add_summary proc_name summary'
+  Summary.add proc_name summary'
 
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
@@ -1223,7 +1220,7 @@ let perform_transition proc_cfg tenv proc_name =
     in
     transition_footprint_re_exe tenv proc_name joined_pres
   in
-  match Specs.get_summary proc_name with
+  match Summary.get proc_name with
   | Some summary when BiabductionSummary.equal_phase (Tabulation.get_phase summary) FOOTPRINT ->
       transition summary
   | _ ->
@@ -1235,11 +1232,11 @@ let analyze_procedure_aux exe_env tenv proc_desc =
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   Preanal.do_preanalysis proc_desc tenv ;
   let summaryfp = Config.run_in_footprint_mode (analyze_proc exe_env tenv) proc_cfg in
-  Specs.add_summary proc_name summaryfp ;
+  Summary.add proc_name summaryfp ;
   perform_transition proc_cfg tenv proc_name ;
   let summaryre = Config.run_in_re_execution_mode (analyze_proc exe_env tenv) proc_cfg in
   let summary_compact =
-    match summaryre.Specs.payload.biabduction with
+    match summaryre.Summary.payload.biabduction with
     | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->
         let sharing_env = Sil.create_sharing_env () in
         let compact_preposts =
@@ -1253,16 +1250,16 @@ let analyze_procedure_aux exe_env tenv proc_desc =
     | _ ->
         summaryre
   in
-  Specs.add_summary proc_name summary_compact ;
+  Summary.add proc_name summary_compact ;
   summary_compact
 
 
-let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summary =
+let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t =
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
   let proc_name = Procdesc.get_proc_name proc_desc in
-  Specs.add_summary proc_name summary ;
+  Summary.add proc_name summary ;
   ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->
       IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
-  Specs.get_summary_unsafe proc_name
+  Summary.get_unsafe proc_name

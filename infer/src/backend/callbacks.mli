@@ -15,7 +15,7 @@ type proc_callback_args =
   { get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
-  ; summary: Specs.summary
+  ; summary: Summary.t
   ; proc_desc: Procdesc.t
   ; exe_env: Exe_env.t }
 
@@ -24,7 +24,7 @@ type proc_callback_args =
     - get_proc_desc to get a proc desc from a proc name
     - Type environment.
     - Procedure for the callback to act on. *)
-type proc_callback_t = proc_callback_args -> Specs.summary
+type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
   { procedures: (Tenv.t * Procdesc.t) list

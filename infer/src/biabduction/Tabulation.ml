@@ -99,13 +99,14 @@ let log_call_trace caller_name callee_name ?reason loc res =
 (***************)
 
 let get_specs_from_payload summary =
-  Option.map summary.Specs.payload.biabduction ~f:(fun BiabductionSummary.({preposts}) -> preposts)
+  Option.map summary.Summary.payload.biabduction ~f:(fun BiabductionSummary.({preposts}) ->
+      preposts )
   |> BiabductionSummary.get_specs_from_preposts
 
 
 (** Return the current phase for the proc *)
 let get_phase summary =
-  Option.value_map summary.Specs.payload.biabduction ~default:BiabductionSummary.FOOTPRINT ~f:
+  Option.value_map summary.Summary.payload.biabduction ~default:BiabductionSummary.FOOTPRINT ~f:
     (fun BiabductionSummary.({phase}) -> phase )
 
 
@@ -144,12 +145,12 @@ let spec_rename_vars pname spec =
     after renaming their vars, and also return the parameters *)
 let spec_find_rename trace_call summary
     : (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
-  let proc_name = Specs.get_proc_name summary in
+  let proc_name = Summary.get_proc_name summary in
   try
     let count = ref 0 in
     let f spec = incr count ; (!count, spec_rename_vars proc_name spec) in
     let specs = get_specs_from_payload summary in
-    let formals = Specs.get_formals summary in
+    let formals = Summary.get_formals summary in
     if List.is_empty specs then (
       trace_call CR_not_found ;
       raise
@@ -817,7 +818,7 @@ let prop_set_exn tenv pname prop se_exn =
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
-  match Specs.proc_resolve_attributes callee_pname with
+  match Summary.proc_resolve_attributes callee_pname with
   | Some attrs ->
       not attrs.ProcAttributes.is_model
       && SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file
@@ -1427,7 +1428,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 (** Execute the function call and return the list of results with return value *)
 let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pname loc
     actual_params prop path =
-  let callee_attrs = Specs.get_attributes callee_summary in
+  let callee_attrs = Summary.get_attributes callee_summary in
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let trace_call = log_call_trace caller_pname callee_pname loc in
   let spec_list, formal_params = spec_find_rename trace_call callee_summary in

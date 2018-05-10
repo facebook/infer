@@ -15,7 +15,7 @@ module L = Logging
 (** Create tasks to analyze an execution environment *)
 let create_exe_env_tasks source_file exe_env : Tasks.t =
   L.progressbar_file () ;
-  Specs.clear_spec_tbl () ;
+  Summary.clear_cache () ;
   Typ.Procname.SQLite.clear_cache () ;
   Random.self_init () ;
   Tasks.create

@@ -650,7 +650,7 @@ let execute_pthread_create ({Builtin.tenv; prop_; path; args; exe_env} as builti
           let fun_name = Pvar.get_name pvar in
           let fun_string = Mangled.to_string fun_name in
           L.d_strln ("pthread_create: calling function " ^ fun_string) ;
-          match Specs.get_summary (Typ.Procname.from_string_c_fun fun_string) with
+          match Summary.get (Typ.Procname.from_string_c_fun fun_string) with
           | None ->
               assert false
           | Some callee_summary ->

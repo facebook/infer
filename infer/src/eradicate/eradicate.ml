@@ -33,20 +33,21 @@ module type ExtensionT = sig
 
   val ext : extension TypeState.ext
 
-  val update_payload : extension TypeState.t option -> Specs.payload -> Specs.payload
+  val update_payload : extension TypeState.t option -> Summary.payload -> Summary.payload
 end
 
 (** Create a module with the toplevel callback. *)
 module MkCallback (Extension : ExtensionT) : CallBackT = struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name final_typestate_opt =
-    match Specs.get_summary proc_name with
+    match Summary.get proc_name with
     | Some old_summ ->
         let new_summ =
           { old_summ with
-            Specs.payload= Extension.update_payload final_typestate_opt old_summ.Specs.payload }
+            Summary.payload= Extension.update_payload final_typestate_opt old_summ.Summary.payload
+          }
         in
-        Specs.add_summary proc_name new_summ
+        Summary.add proc_name new_summ
     | None ->
         ()
 
@@ -140,7 +141,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       {Callbacks.proc_desc= curr_pdesc; summary; get_proc_desc; tenv; get_procs_in_file}
       annotated_signature linereader proc_loc : unit =
     let idenv = Idenv.create curr_pdesc in
-    let curr_pname = Specs.get_proc_name summary in
+    let curr_pname = Summary.get_proc_name summary in
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
@@ -192,7 +193,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
               is_private && same_class
             in
             let private_called =
-              PatternMatch.proc_calls Specs.proc_resolve_attributes init_pd filter
+              PatternMatch.proc_calls Summary.proc_resolve_attributes init_pd filter
             in
             let do_called (callee_pn, _) =
               match get_proc_desc callee_pn with
@@ -241,7 +242,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let pname_and_pdescs_with f =
         let res = ref [] in
         let filter pname =
-          match Specs.proc_resolve_attributes pname with
+          match Summary.proc_resolve_attributes pname with
           | Some proc_attributes ->
               f (pname, proc_attributes)
           | None ->
@@ -326,7 +327,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
 
 
   (** Entry point for the eradicate-based checker infrastructure. *)
-  let callback checks ({Callbacks.proc_desc; summary} as callback_args) : Specs.summary =
+  let callback checks ({Callbacks.proc_desc; summary} as callback_args) : Summary.t =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
     let filter_special_cases () =
@@ -336,11 +337,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             Typ.Procname.Java.is_access_method java_pname
         | _ ->
             false )
-        || (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
+        || (Summary.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else
         let annotated_signature =
-          Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes proc_desc)
+          Models.get_modelled_annotated_signature (Summary.pdesc_resolve_attributes proc_desc)
         in
         Some annotated_signature
     in
@@ -378,7 +379,7 @@ module EmptyExtension : ExtensionT = struct
     {TypeState.empty; check_instr; join; pp}
 
 
-  let update_payload typestate_opt payload = {payload with Specs.typestate= typestate_opt}
+  let update_payload typestate_opt payload = {payload with Summary.typestate= typestate_opt}
 end
 
 module Main = Build (EmptyExtension)

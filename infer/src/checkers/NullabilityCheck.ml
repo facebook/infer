@@ -20,7 +20,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
 
-  type extras = Specs.summary
+  type extras = Summary.t
 
   let rec is_pointer_subtype tenv typ1 typ2 =
     match (typ1.Typ.desc, typ2.Typ.desc) with
@@ -43,7 +43,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ~f:(fun attributes ->
             ProcAttributes.equal_clang_method_kind attributes.ProcAttributes.clang_method_kind
               ProcAttributes.CPP_INSTANCE )
-          (Specs.proc_resolve_attributes callee_pname)
+          (Summary.proc_resolve_attributes callee_pname)
 
 
   let is_objc_instance_method callee_pname =
@@ -51,7 +51,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun attributes ->
         ProcAttributes.equal_clang_method_kind attributes.ProcAttributes.clang_method_kind
           ProcAttributes.OBJC_INSTANCE )
-      (Specs.proc_resolve_attributes callee_pname)
+      (Summary.proc_resolve_attributes callee_pname)
 
 
   let is_blacklisted_method : Typ.Procname.t -> bool =
@@ -88,7 +88,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           || in_footprint && IssueType.equal err_name IssueType.null_dereference
              && Location.equal loc report_location
              && Localise.error_desc_is_reportable_bucket err_desc )
-        (Specs.get_err_log summary) false
+        (Summary.get_err_log summary) false
 
 
   (* On Clang languages, the annotations like _Nullabe can be found on the declaration
@@ -98,7 +98,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let lookup_local_attributes = function
     | Typ.Procname.Java _ as pname ->
         (* Looking up the attribute according to the classpath *)
-        Specs.proc_resolve_attributes pname
+        Summary.proc_resolve_attributes pname
     | pname ->
         (* Looking up the attributes locally, i.e. either from the file of from the includes *)
         Option.map ~f:Procdesc.get_attributes (Ondemand.get_proc_desc pname)

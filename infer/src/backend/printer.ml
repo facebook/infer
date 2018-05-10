@@ -72,16 +72,16 @@ let curr_html_formatter = ref F.std_formatter
 
 (** Return true if the node was visited during footprint and during re-execution*)
 let node_is_visited node =
-  match Specs.get_summary (Procdesc.Node.get_proc_name node) with
+  match Summary.get (Procdesc.Node.get_proc_name node) with
   | None ->
       (false, false)
   | Some summary ->
-      let stats = summary.Specs.stats in
+      let stats = summary.Summary.stats in
       let is_visited_fp =
-        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Specs.nodes_visited_fp
+        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Summary.nodes_visited_fp
       in
       let is_visited_re =
-        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Specs.nodes_visited_re
+        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Summary.nodes_visited_re
       in
       (is_visited_fp, is_visited_re)
 
@@ -387,11 +387,11 @@ let write_proc_html pdesc =
          [])
       linenum ;
     Pp.seq (pp_node_link [] ~description:true) fmt nodes ;
-    match Specs.get_summary pname with
+    match Summary.get pname with
     | None ->
         ()
     | Some summary ->
-        Specs.pp_summary_html source Black fmt summary ;
+        Summary.pp_html source Black fmt summary ;
         Io_infer.Html.close (fd, fmt) )
 
 
@@ -435,7 +435,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   in
   if process_proc then (
     List.iter ~f:process_node (Procdesc.get_nodes proc_desc) ;
-    match Specs.get_summary proc_name with
+    match Summary.get proc_name with
     | None ->
         ()
     | Some summary ->
@@ -444,7 +444,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
             proof_cover :=
               BiabductionSummary.Visitedset.union sp.BiabductionSummary.visited !proof_cover )
           (Tabulation.get_specs_from_payload summary) ;
-        Errlog.update global_err_log (Specs.get_err_log summary) )
+        Errlog.update global_err_log (Summary.get_err_log summary) )
 
 
 (** Create filename.ext.html. *)
@@ -484,7 +484,7 @@ let write_html_file linereader filename procs =
         match Procdesc.Node.get_kind n with
         | Procdesc.Node.Start_node proc_name ->
             let num_specs =
-              match Specs.get_summary proc_name with
+              match Summary.get proc_name with
               | None ->
                   0
               | Some summary ->

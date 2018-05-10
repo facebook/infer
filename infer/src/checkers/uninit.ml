@@ -18,14 +18,14 @@ module UninitVars = AbstractDomain.FiniteSet (AccessPath)
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
 module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
 
-module Summary = Summary.Make (struct
-  type payload = UninitDomain.summary
+module Payload = SummaryPayload.Make (struct
+  type t = UninitDomain.summary
 
-  let update_payload sum (summary: Specs.summary) =
+  let update_summary sum (summary: Summary.t) =
     {summary with payload= {summary.payload with uninit= Some sum}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.uninit
+  let of_summary (summary: Summary.t) = summary.payload.uninit
 end)
 
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
@@ -57,7 +57,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Reporting.log_error summary ~loc ~ltr exn
 
 
-  type extras = FormalMap.t * Specs.summary
+  type extras = FormalMap.t * Summary.t
 
   let is_struct t = match t.Typ.desc with Typ.Tstruct _ -> true | _ -> false
 
@@ -181,7 +181,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let remove_initialized_params pdesc call acc idx (base, al) remove_fields =
-    match Summary.read_summary pdesc call with
+    match Payload.read_summary pdesc call with
     | Some {pre= initialized_formal_params; post= _} -> (
       match init_nth_actual_param call idx initialized_formal_params with
       | Some nth_formal ->
@@ -196,7 +196,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (* true if a function initializes at least a param or a field of a struct param *)
   let function_initializes_some_formal_params pdesc call =
-    match Summary.read_summary pdesc call with
+    match Payload.read_summary pdesc call with
     | Some {pre= initialized_formal_params; post= _} ->
         not (D.is_empty initialized_formal_params)
     | _ ->
@@ -325,7 +325,7 @@ let get_locals cfg tenv pdesc =
     ~init:[] (Procdesc.get_locals cfg)
 
 
-let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
+let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   let cfg = CFG.from_pdesc proc_desc in
   (* start with empty set of uninit local vars and  empty set of init formal params *)
   let formal_map = FormalMap.make proc_desc in
@@ -345,7 +345,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   | Some
       ( {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
       , _ ) ->
-      Summary.update_summary {pre; post} summary
+      Payload.update_summary {pre; post} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp

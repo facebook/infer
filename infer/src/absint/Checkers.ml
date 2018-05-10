@@ -20,7 +20,7 @@ module ST = struct
       Localise.custom_desc description [("always_report", string_of_bool always_report)]
     in
     let exn = exception_kind kind localized_description in
-    let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
+    let proc_attributes = Summary.pdesc_resolve_attributes proc_desc in
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
        suppressed with the following annotations:
        - @android.annotation.SuppressLint("checker-error-name")

@@ -10,9 +10,8 @@
 
 open! IStd
 
-(** Specifications and spec table *)
-
-(** {2 Spec Tables} *)
+(** Procedure summaries: the results of the capture and all the analysis for a single procedure,
+   plus some statistics *)
 
 (** Execution statistics *)
 type stats =
@@ -22,16 +21,16 @@ type stats =
   ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
   ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
 
-(** Analysis status of the procedure:
-    - Pending means that the summary has been created by the procedure has not been analyzed yet
-    - Analyzed means that the analysis of the procedure is finished *)
-type status = Pending | Analyzed
+(** Analysis status of the procedure *)
+type status =
+  | Pending  (** the summary has been created by the procedure has not been analyzed yet *)
+  | Analyzed  (** the analysis of the procedure is finished *)
 
 val equal_status : status -> status -> bool
 
 val string_of_status : status -> string
 
-(** Payload: results of some analysis *)
+(** analysis results *)
 type payload =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
@@ -47,63 +46,62 @@ type payload =
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option }
 
-(** Procedure summary *)
-type summary =
-  { payload: payload  (** payload containing the result of some analysis *)
+(** summary of a procedure name *)
+type t =
+  { payload: payload
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
-  ; stats: stats  (** statistics: execution time and list of errors *)
-  ; status: status  (** Analysis status of the procedure *)
+  ; stats: stats
+  ; status: status
   ; proc_desc: Procdesc.t }
 
-val dummy : summary
+val dummy : t
 (** dummy summary for testing *)
 
-val add_summary : Typ.Procname.t -> summary -> unit
+val add : Typ.Procname.t -> t -> unit
 (** Add the summary to the table for the given function *)
 
-val summary_exists_in_models : Typ.Procname.t -> bool
+val has_model : Typ.Procname.t -> bool
 (** Check if a summary for a given procedure exists in the models directory *)
 
-val clear_spec_tbl : unit -> unit
-(** remove all the elements from the spec table *)
+val clear_cache : unit -> unit
+(** remove all the elements from the cache of summaries *)
 
-val get_summary : Typ.Procname.t -> summary option
+val get : Typ.Procname.t -> t option
 (** Return the summary option for the procedure name *)
 
-val get_proc_name : summary -> Typ.Procname.t
+val get_proc_name : t -> Typ.Procname.t
 (** Get the procedure name *)
 
-val get_proc_desc : summary -> Procdesc.t
+val get_proc_desc : t -> Procdesc.t
 
-val get_attributes : summary -> ProcAttributes.t
+val get_attributes : t -> ProcAttributes.t
 (** Get the attributes of the procedure. *)
 
-val get_formals : summary -> (Mangled.t * Typ.t) list
+val get_formals : t -> (Mangled.t * Typ.t) list
 (** Get the formal parameters of the procedure *)
 
-val get_err_log : summary -> Errlog.t
+val get_err_log : t -> Errlog.t
 
-val get_loc : summary -> Location.t
+val get_loc : t -> Location.t
 
-val get_signature : summary -> string
+val get_signature : t -> string
 (** Return the signature of a procedure declaration as a string *)
 
-val get_summary_unsafe : Typ.Procname.t -> summary
+val get_unsafe : Typ.Procname.t -> t
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
 
-val get_status : summary -> status
+val get_status : t -> status
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
-val reset_summary : Procdesc.t -> summary
+val reset : Procdesc.t -> t
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
-val load_summary : DB.filename -> summary option
-(** Load procedure summary from the given file *)
+val load_from_file : DB.filename -> t option
 
-val pp_summary_html : SourceFile.t -> Pp.color -> Format.formatter -> summary -> unit
+val pp_html : SourceFile.t -> Pp.color -> Format.formatter -> t -> unit
 (** Print the summary in html format *)
 
-val pp_summary_text : Format.formatter -> summary -> unit
+val pp_text : Format.formatter -> t -> unit
 (** Print the summary in text format *)
 
 val pdesc_resolve_attributes : Procdesc.t -> ProcAttributes.t
@@ -120,5 +118,5 @@ val proc_is_library : ProcAttributes.t -> bool
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
 
-val store_summary : summary -> unit
+val store : t -> unit
 (** Save summary for the procedure into the spec database *)

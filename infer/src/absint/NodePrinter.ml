@@ -15,13 +15,13 @@ open! IStd
 let new_session node =
   let pname = Procdesc.Node.get_proc_name node in
   let node_id = (Procdesc.Node.get_id node :> int) in
-  match Specs.get_summary pname with
+  match Summary.get pname with
   | None ->
       0
   | Some summary ->
       (summary.stats).nodes_visited_fp <- IntSet.add node_id summary.stats.nodes_visited_fp ;
-      incr summary.Specs.sessions ;
-      !(summary.Specs.sessions)
+      incr summary.Summary.sessions ;
+      !(summary.Summary.sessions)
 
 
 let start_session ~pp_name node =

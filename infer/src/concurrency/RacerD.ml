@@ -12,14 +12,14 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-module Summary = Summary.Make (struct
-  type payload = RacerDDomain.summary
+module Payload = SummaryPayload.Make (struct
+  type t = RacerDDomain.summary
 
-  let update_payload post (summary: Specs.summary) =
+  let update_summary post (summary: Summary.t) =
     {summary with payload= {summary.payload with racerd= Some post}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.racerd
+  let of_summary (summary: Summary.t) = summary.payload.racerd
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -248,7 +248,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
           tenv caller_pdesc astate
     | None, _ ->
-        Summary.read_summary caller_pdesc callee_pname
+        Payload.read_summary caller_pdesc callee_pname
 
 
   let add_reads exps loc accesses locks threads ownership proc_data =
@@ -769,10 +769,10 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
             AttributeSetDomain.empty
         in
         let post = {threads; locks; accesses; return_ownership; return_attributes; wobbly_paths} in
-        Summary.update_summary post summary
+        Payload.update_summary post summary
     | None ->
         summary
-  else Summary.update_summary empty_post summary
+  else Payload.update_summary empty_post summary
 
 
 module AccessListMap = Caml.Map.Make (RacerDDomain.Access)
@@ -894,7 +894,7 @@ let desc_of_sink sink =
 let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open RacerDDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
-  match Summary.read_summary orig_pdesc callee_pname with
+  match Payload.read_summary orig_pdesc callee_pname with
   | Some {accesses} ->
       AccessDomain.fold
         (fun snapshot acc ->
@@ -1502,7 +1502,7 @@ let make_results_table (module AccessListMap : QuotientedAccessListMap) file_env
       accesses acc
   in
   let aggregate_posts acc (tenv, proc_desc) =
-    match Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc) with
+    match Payload.read_summary proc_desc (Procdesc.get_proc_name proc_desc) with
     | Some summary ->
         aggregate_post summary tenv proc_desc acc
     | None ->

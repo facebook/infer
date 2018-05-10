@@ -16,19 +16,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module TraceDomain = TaintSpecification.Trace
   module TaintDomain = TaintSpecification.AccessTree
 
-  module Summary = Summary.Make (struct
-    type payload = QuandarySummary.t
+  module Payload = SummaryPayload.Make (struct
+    type t = QuandarySummary.t
 
-    let update_payload quandary_payload (summary: Specs.summary) =
+    let update_summary quandary_payload (summary: Summary.t) =
       {summary with payload= {summary.payload with quandary= Some quandary_payload}}
 
 
-    let read_payload (summary: Specs.summary) = summary.payload.quandary
+    let of_summary (summary: Summary.t) = summary.payload.quandary
   end)
 
   module Domain = TaintDomain
 
-  type extras = {formal_map: FormalMap.t; summary: Specs.summary}
+  type extras = {formal_map: FormalMap.t; summary: Summary.t}
 
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
@@ -137,7 +137,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.empty
         else
-          match Summary.read_summary proc_data.pdesc pname with
+          match Payload.read_summary proc_data.pdesc pname with
           | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
@@ -695,7 +695,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (* don't use a summary for a procedure that is a direct source *)
                 astate_with_source
               else
-                match Summary.read_summary proc_data.pdesc callee_pname with
+                match Payload.read_summary proc_data.pdesc callee_pname with
                 | None ->
                     handle_unknown_call callee_pname astate_with_source
                 | Some summary ->
@@ -862,7 +862,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 
-  let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
+  let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
       let pname = Procdesc.get_proc_name pdesc in
@@ -887,7 +887,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let proc_data = ProcData.make proc_desc tenv extras in
     match Analyzer.compute_post proc_data ~initial with
     | Some access_tree ->
-        Summary.update_summary (make_summary proc_data access_tree) summary
+        Payload.update_summary (make_summary proc_data access_tree) summary
     | None ->
         if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
           L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp

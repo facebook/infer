@@ -49,7 +49,7 @@ let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
   let pdesc_opt =
     match Ondemand.analyze_proc_name ~caller_pdesc pname with
     | Some summary ->
-        Some (Specs.get_proc_desc summary)
+        Some (Summary.get_proc_desc summary)
     | None ->
         Ondemand.get_proc_desc pname
   in

@@ -310,7 +310,7 @@ module Models = struct
 
 
   let has_return_annot predicate pn =
-    Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
+    Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes predicate
 
 
   let is_functional pname =
@@ -521,7 +521,7 @@ module Models = struct
   let is_thread_safe_method pname tenv =
     PatternMatch.override_exists
       (fun pn ->
-        Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes
+        Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes
           is_thread_safe )
       tenv pname
 

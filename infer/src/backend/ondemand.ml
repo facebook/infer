@@ -14,7 +14,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-type analyze_ondemand = Specs.summary -> Procdesc.t -> Specs.summary
+type analyze_ondemand = Summary.t -> Procdesc.t -> Summary.t
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 
@@ -51,9 +51,9 @@ let should_create_summary proc_name proc_attributes =
 
 let should_be_analyzed proc_name proc_attributes =
   let already_analyzed () =
-    match Specs.get_summary proc_name with
+    match Summary.get proc_name with
     | Some summary ->
-        Specs.equal_status (Specs.get_status summary) Specs.Analyzed
+        Summary.equal_status (Summary.get_status summary) Summary.Analyzed
     | None ->
         false
   in
@@ -63,7 +63,7 @@ let should_be_analyzed proc_name proc_attributes =
 
 
 let procedure_should_be_analyzed proc_name =
-  match Specs.proc_resolve_attributes proc_name with
+  match Summary.proc_resolve_attributes proc_name with
   | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
@@ -122,12 +122,12 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
       Typ.Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    let initial_summary = Specs.reset_summary callee_pdesc in
+    let initial_summary = Summary.reset callee_pdesc in
     add_active callee_pname ; initial_summary
   in
   let postprocess summary =
     decr nesting ;
-    Specs.store_summary summary ;
+    Summary.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -135,18 +135,15 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   in
   let log_error_and_continue exn summary kind =
     Reporting.log_error summary exn ;
-    let stats = {summary.Specs.stats with Specs.stats_failure= Some kind} in
+    let stats = {summary.Summary.stats with Summary.stats_failure= Some kind} in
     let payload =
       let biabduction =
         Some BiabductionSummary.{preposts= []; phase= Tabulation.get_phase summary}
       in
-      {summary.Specs.payload with Specs.biabduction}
+      {summary.Summary.payload with Summary.biabduction}
     in
-    let new_summary = {summary with Specs.stats; payload} in
-    Specs.store_summary new_summary ;
-    remove_active callee_pname ;
-    log_elapsed_time () ;
-    new_summary
+    let new_summary = {summary with Summary.stats; payload} in
+    Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary
   in
   let old_state = save_global_state () in
   let initial_summary = preprocess () in
@@ -187,7 +184,7 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
         let proc_attributes = Procdesc.get_attributes callee_pdesc in
         if should_be_analyzed callee_pname proc_attributes then
           analyze_proc ~caller_pdesc callee_pdesc
-        else Specs.get_summary callee_pname
+        else Summary.get callee_pname
       in
       Typ.Procname.Hash.add cache callee_pname summary_option ;
       summary_option
@@ -207,8 +204,8 @@ let analyze_proc_name ?caller_pdesc callee_pname =
           | Some callee_pdesc ->
               analyze_proc ?caller_pdesc callee_pdesc
           | None ->
-              Specs.get_summary callee_pname
-        else Specs.get_summary callee_pname
+              Summary.get callee_pname
+        else Summary.get callee_pname
       in
       Typ.Procname.Hash.add cache callee_pname summary_option ;
       summary_option

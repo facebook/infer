@@ -13,14 +13,14 @@ module L = Logging
 module Domain = ResourceLeakDomain
 
 (* Boilerplate to write/read our summaries alongside the summaries of other analyzers *)
-module Summary = Summary.Make (struct
-  type payload = Domain.astate
+module Payload = SummaryPayload.Make (struct
+  type t = Domain.astate
 
-  let update_payload resources_payload (summary: Specs.summary) =
+  let update_summary resources_payload (summary: Summary.t) =
     {summary with payload= {summary.payload with resources= Some resources_payload}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.resources
+  let of_summary (summary: Summary.t) = summary.payload.resources
 end)
 
 type extras = FormalMap.t
@@ -70,7 +70,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else if releases_resource callee_procname tenv then astate - 1 (* 2(a) *)
           else astate
         in
-        match Summary.read_summary pdesc callee_procname with
+        match Payload.read_summary pdesc callee_procname with
         | Some _summary ->
             (* Looked up the summary for callee_procname... do something with it *)
             (* 4(a) *)
@@ -103,7 +103,7 @@ module Analyzer =
     (TransferFunctions)
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
+let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
   (* Report an error when we have acquired more resources than we have released *)
   let report leak_count (proc_data: extras ProcData.t) =
     if leak_count > 0 (* 2(a) *) then
@@ -123,7 +123,7 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   | Some post ->
       (* 1(f) *)
       report post proc_data ;
-      Summary.update_summary (convert_to_summary post) summary
+      Payload.update_summary (convert_to_summary post) summary
   | None ->
       L.(die InternalError)
         "Analyzer failed to compute post for %a" Typ.Procname.pp

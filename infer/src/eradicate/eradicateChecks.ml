@@ -47,7 +47,7 @@ let classify_procedure proc_attributes =
   let unique_id = Typ.Procname.to_unique_id pn in
   let classification =
     if Models.is_modelled_nullable pn then "M" (* modelled *)
-    else if Specs.proc_is_library proc_attributes then "L" (* library *)
+    else if Summary.proc_is_library proc_attributes then "L" (* library *)
     else if not proc_attributes.ProcAttributes.is_defined then "S" (* skip *)
     else if String.is_prefix ~prefix:"com.facebook" unique_id then "F" (* FB *)
     else "?"
@@ -473,7 +473,7 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
       ignore (List.fold2_exn ~f:compare ~init:initial_pos current_params overridden_params)
   in
   let check overriden_proc_name =
-    match Specs.proc_resolve_attributes overriden_proc_name with
+    match Summary.proc_resolve_attributes overriden_proc_name with
     | Some attributes ->
         let overridden_signature = Models.get_modelled_annotated_signature attributes in
         check_return overriden_proc_name overridden_signature ;

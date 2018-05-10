@@ -37,10 +37,10 @@ val log_issue_from_errlog :
   -> log_issue_from_errlog
 (** Report an issue of a given kind  in the given error log. *)
 
-val log_error : Specs.summary -> log_t
+val log_error : Summary.t -> log_t
 (** Add an error to the given summary. *)
 
-val log_warning : Specs.summary -> log_t
+val log_warning : Summary.t -> log_t
 (** Add an warning to the given summary. *)
 
 val log_issue_external :

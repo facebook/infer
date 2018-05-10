@@ -41,7 +41,7 @@ let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?nod
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     ?access exn =
-  let attrs = Specs.get_attributes summary in
+  let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
   let clang_method_kind = attrs.clang_method_kind in
   let is_java_generated_method =
@@ -54,24 +54,24 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   let should_suppress_lint =
     Language.curr_language_is Java
     && Annotations.ia_is_suppress_lint
-         (fst (Specs.get_attributes summary).ProcAttributes.method_annotation)
+         (fst (Summary.get_attributes summary).ProcAttributes.method_annotation)
   in
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else
-    let err_log = Specs.get_err_log summary in
+    let err_log = Summary.get_err_log summary in
     log_issue_from_errlog procname ~clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
       ?linters_def_file ?doc_url ?access exn
 
 
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access exn =
-  match Specs.get_summary proc_name with
+  match Summary.get proc_name with
   | Some summary ->
       log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
         ?doc_url ?access exn ;
       if store_summary then
         (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
-        Specs.store_summary summary
+        Summary.store summary
   | None ->
       L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this \

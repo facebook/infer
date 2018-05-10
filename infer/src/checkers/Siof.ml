@@ -50,14 +50,14 @@ let is_modelled =
     Typ.Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers models_matcher
 
 
-module Summary = Summary.Make (struct
-  type payload = SiofDomain.astate
+module Payload = SummaryPayload.Make (struct
+  type t = SiofDomain.astate
 
-  let update_payload astate (summary: Specs.summary) =
+  let update_summary astate (summary: Summary.t) =
     {summary with payload= {summary.payload with siof= Some astate}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.siof
+  let of_summary (summary: Summary.t) = summary.payload.siof
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -68,7 +68,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_compile_time_constructed pdesc pv =
     let init_pname = Pvar.get_initializer_pname pv in
-    match Option.bind init_pname ~f:(Summary.read_summary pdesc) with
+    match Option.bind init_pname ~f:(Payload.read_summary pdesc) with
     | Some (Bottom, _) ->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
@@ -145,7 +145,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_actuals_globals astate pdesc loc actuals_without_self
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
-          match Summary.read_summary pdesc callee_pname with
+          match Payload.read_summary pdesc callee_pname with
           | Some (NonBottom trace, initialized_by_callee) ->
               let already_initialized = snd astate in
               let dangerous_accesses =
@@ -194,7 +194,7 @@ let is_foreign tu_opt v =
 
 let report_siof summary trace pdesc gname loc =
   let trace_of_pname pname =
-    match Summary.read_summary pdesc pname with
+    match Payload.read_summary pdesc pname with
     | Some (NonBottom summary, _) ->
         summary
     | _ ->
@@ -222,7 +222,7 @@ let report_siof summary trace pdesc gname loc =
   else List.iter ~f:report_one_path reportable_paths
 
 
-let siof_check pdesc gname (summary: Specs.summary) =
+let siof_check pdesc gname (summary: Summary.t) =
   match summary.payload.siof with
   | Some (NonBottom post, _) ->
       let attrs = Procdesc.get_attributes pdesc in
@@ -243,7 +243,7 @@ let siof_check pdesc gname (summary: Specs.summary) =
       ()
 
 
-let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summary =
+let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Summary.t =
   let pname = Procdesc.get_proc_name proc_desc in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =
@@ -278,11 +278,11 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
           Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
       | _ ->
           false
-    then Summary.update_summary initial summary
+    then Payload.update_summary initial summary
     else
       match Analyzer.compute_post proc_data ~initial with
       | Some post ->
-          Summary.update_summary post summary
+          Payload.update_summary post summary
       | None ->
           summary
   in

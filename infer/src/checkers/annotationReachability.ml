@@ -60,14 +60,14 @@ module Domain = struct
     match vstate with Bottom -> false | NonBottom vars -> TrackingVar.mem var vars
 end
 
-module Summary = Summary.Make (struct
-  type payload = AnnotReachabilityDomain.astate
+module Payload = SummaryPayload.Make (struct
+  type t = AnnotReachabilityDomain.astate
 
-  let update_payload annot_map (summary: Specs.summary) =
+  let update_summary annot_map (summary: Summary.t) =
     {summary with payload= {summary.payload with annot_map= Some annot_map}}
 
 
-  let read_payload (summary: Specs.summary) = summary.payload.annot_map
+  let of_summary (summary: Summary.t) = summary.payload.annot_map
 end)
 
 let is_modeled_expensive tenv = function
@@ -100,7 +100,7 @@ let is_allocator tenv pname =
 
 let check_attributes check tenv pname =
   PatternMatch.check_class_attributes check tenv pname
-  || Annotations.pname_has_return_annot pname ~attrs_of_pname:Specs.proc_resolve_attributes check
+  || Annotations.pname_has_return_annot pname ~attrs_of_pname:Summary.proc_resolve_attributes check
 
 
 let method_overrides is_annotated tenv pname =
@@ -119,7 +119,7 @@ let method_overrides_annot annot tenv pname = method_overrides (method_has_annot
 
 let lookup_annotation_calls ~caller_pdesc annot pname =
   match Ondemand.analyze_proc_name ~caller_pdesc pname with
-  | Some {Specs.payload= {Specs.annot_map= Some annot_map}} -> (
+  | Some {Summary.payload= {Summary.annot_map= Some annot_map}} -> (
     try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
       AnnotReachabilityDomain.SinkMap.empty )
   | _ ->
@@ -135,7 +135,7 @@ let string_of_pname = Typ.Procname.to_simplified_string ~withclass:true
 
 let report_allocation_stack src_annot summary fst_call_loc trace stack_str constructor_pname
     call_loc =
-  let pname = Specs.get_proc_name summary in
+  let pname = Summary.get_proc_name summary in
   let final_trace = List.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
@@ -151,7 +151,7 @@ let report_allocation_stack src_annot summary fst_call_loc trace stack_str const
 
 
 let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc =
-  let src_pname = Specs.get_proc_name src_summary in
+  let src_pname = Summary.get_proc_name src_summary in
   if String.equal snk_annot dummy_constructor_annot then
     report_allocation_stack src_annot src_summary loc trace stack_str snk_pname call_loc
   else
@@ -176,7 +176,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
   (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
-    Option.value_map ~f:Specs.get_loc ~default:Location.dummy (Specs.get_summary pname)
+    Option.value_map ~f:Summary.get_loc ~default:Location.dummy (Summary.get pname)
   in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
@@ -405,7 +405,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let merge_callee_map call_site pdesc callee_pname astate =
-    match Summary.read_summary pdesc callee_pname with
+    match Payload.read_summary pdesc callee_pname with
     | None ->
         astate
     | Some callee_call_map ->
@@ -444,12 +444,12 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
-let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
+let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Summary.t =
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
   let proc_data = ProcData.make_default proc_desc tenv in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _) ->
       List.iter annot_specs ~f:(fun (spec: AnnotationSpec.t) -> spec.report callback annot_map) ;
-      Summary.update_summary annot_map summary
+      Payload.update_summary annot_map summary
   | None ->
       summary

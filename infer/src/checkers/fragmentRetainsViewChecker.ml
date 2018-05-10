@@ -53,8 +53,8 @@ let callback_fragment_retains_view_java pname_java {Callbacks.proc_desc; summary
         ()
 
 
-let callback_fragment_retains_view ({Callbacks.summary} as args) : Specs.summary =
-  let proc_name = Specs.get_proc_name summary in
+let callback_fragment_retains_view ({Callbacks.summary} as args) : Summary.t =
+  let proc_name = Summary.get_proc_name summary in
   ( match proc_name with
   | Typ.Procname.Java pname_java ->
       callback_fragment_retains_view_java pname_java args
