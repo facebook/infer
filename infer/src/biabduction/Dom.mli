@@ -19,7 +19,8 @@ val pathset_join :
   -> Paths.PathSet.t * Paths.PathSet.t
 (** Join two pathsets *)
 
-val proplist_collapse_pre : Tenv.t -> Prop.normal Prop.t list -> Prop.normal Specs.Jprop.t list
+val proplist_collapse_pre :
+  Tenv.t -> Prop.normal Prop.t list -> Prop.normal BiabductionSummary.Jprop.t list
 
 val pathset_collapse : Tenv.t -> Paths.PathSet.t -> Paths.PathSet.t
 

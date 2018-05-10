@@ -2023,35 +2023,38 @@ let pathset_collapse_impl pname tenv pset =
 
 
 let jprop_partial_join tenv mode jp1 jp2 =
-  let p1, p2 = (Prop.expose (Specs.Jprop.to_prop jp1), Prop.expose (Specs.Jprop.to_prop jp2)) in
+  let p1, p2 =
+    ( Prop.expose (BiabductionSummary.Jprop.to_prop jp1)
+    , Prop.expose (BiabductionSummary.Jprop.to_prop jp2) )
+  in
   try
     let p = eprop_partial_join tenv mode p1 p2 in
     let p_renamed = Prop.prop_rename_primed_footprint_vars tenv p in
-    Some (Specs.Jprop.Joined (0, p_renamed, jp1, jp2))
+    Some (BiabductionSummary.Jprop.Joined (0, p_renamed, jp1, jp2))
   with Sil.JoinFail -> None
 
 
 let jplist_collapse tenv mode jplist =
   let f = jprop_partial_join tenv mode in
-  list_reduce "JOIN" Specs.Jprop.d_shallow f jplist
+  list_reduce "JOIN" BiabductionSummary.Jprop.d_shallow f jplist
 
 
 (** Add identifiers to a list of jprops *)
 let jprop_list_add_ids jplist =
   let seq_number = ref 0 in
   let rec do_jprop = function
-    | Specs.Jprop.Prop (_, p) ->
-        incr seq_number ; Specs.Jprop.Prop (!seq_number, p)
-    | Specs.Jprop.Joined (_, p, jp1, jp2) ->
+    | BiabductionSummary.Jprop.Prop (_, p) ->
+        incr seq_number ; BiabductionSummary.Jprop.Prop (!seq_number, p)
+    | BiabductionSummary.Jprop.Joined (_, p, jp1, jp2) ->
         let jp1' = do_jprop jp1 in
         let jp2' = do_jprop jp2 in
-        incr seq_number ; Specs.Jprop.Joined (!seq_number, p, jp1', jp2')
+        incr seq_number ; BiabductionSummary.Jprop.Joined (!seq_number, p, jp1', jp2')
   in
   List.map ~f:(fun (p, path) -> (do_jprop p, path)) jplist
 
 
 let proplist_collapse tenv mode plist =
-  let jplist = List.map ~f:(fun (p, path) -> (Specs.Jprop.Prop (0, p), path)) plist in
+  let jplist = List.map ~f:(fun (p, path) -> (BiabductionSummary.Jprop.Prop (0, p), path)) plist in
   let jplist_joined = jplist_collapse tenv mode (jplist_collapse tenv mode jplist) in
   jprop_list_add_ids jplist_joined
 
@@ -2065,7 +2068,7 @@ let pathset_collapse tenv pset =
   let plist = Paths.PathSet.elements pset in
   let plist' = proplist_collapse tenv JoinState.Post plist in
   Paths.PathSet.from_renamed_list
-    (List.map ~f:(fun (p, path) -> (Specs.Jprop.to_prop p, path)) plist')
+    (List.map ~f:(fun (p, path) -> (BiabductionSummary.Jprop.to_prop p, path)) plist')
 
 
 let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)

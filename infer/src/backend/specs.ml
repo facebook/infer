@@ -9,239 +9,8 @@
  *)
 
 open! IStd
-open PolyVariantEqual
-
-(** Specifications and spec table *)
-
-module L = Logging
 module F = Format
-
-(* =============== START of support for spec tables =============== *)
-
-(** Module for joined props *)
-module Jprop = struct
-  (** type aliases for component of t values that compare should ignore *)
-  type id_ = int
-
-  let compare_id_ _ _ = 0
-
-  (** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
-  type 'a t = Prop of id_ * 'a Prop.t | Joined of id_ * 'a Prop.t * 'a t * 'a t
-  [@@deriving compare]
-
-  (** Comparison for joined_prop *)
-  let compare jp1 jp2 = compare (fun _ _ -> 0) jp1 jp2
-
-  (** Return true if the two join_prop's are equal *)
-  let equal jp1 jp2 = Int.equal (compare jp1 jp2) 0
-
-  let to_prop = function Prop (_, p) -> p | Joined (_, p, _, _) -> p
-
-  let rec sorted_gen_free_vars tenv =
-    let open Sequence.Generator in
-    function
-      | Prop (_, p) ->
-          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
-      | Joined (_, p, jp1, jp2) ->
-          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
-          >>= fun () -> sorted_gen_free_vars tenv jp1 >>= fun () -> sorted_gen_free_vars tenv jp2
-
-
-  let rec normalize tenv = function
-    | Prop (n, p) ->
-        Prop (n, Prop.normalize tenv p)
-    | Joined (n, p, jp1, jp2) ->
-        Joined (n, Prop.normalize tenv p, normalize tenv jp1, normalize tenv jp2)
-
-
-  (** Return a compact representation of the jprop *)
-  let rec compact sh = function
-    | Prop (n, p) ->
-        Prop (n, Prop.prop_compact sh p)
-    | Joined (n, p, jp1, jp2) ->
-        Joined (n, Prop.prop_compact sh p, compact sh jp1, compact sh jp2)
-
-
-  (** Print the toplevel prop *)
-  let pp_short pe f jp = Prop.pp_prop pe f (to_prop jp)
-
-  (** Dump the toplevel prop *)
-  let d_shallow (jp: Prop.normal t) = L.add_print_action (L.PTjprop_short, Obj.repr jp)
-
-  (** Get identifies of the jprop *)
-  let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
-
-  (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
-  let pp_list pe shallow f jplist =
-    let rec pp_seq_newline f = function
-      | [] ->
-          ()
-      | [Prop (n, p)] ->
-          F.fprintf f "PROP %d:@\n%a" n (Prop.pp_prop pe) p
-      | [Joined (n, p, p1, p2)] ->
-          if not shallow then F.fprintf f "%a@\n" pp_seq_newline [p1] ;
-          if not shallow then F.fprintf f "%a@\n" pp_seq_newline [p2] ;
-          F.fprintf f "PROP %d (join of %d,%d):@\n%a" n (get_id p1) (get_id p2) (Prop.pp_prop pe) p
-      | jp :: l ->
-          F.fprintf f "%a@\n" pp_seq_newline [jp] ;
-          pp_seq_newline f l
-    in
-    pp_seq_newline f jplist
-
-
-  (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
-  let d_list (shallow: bool) (jplist: Prop.normal t list) =
-    L.add_print_action (L.PTjprop_list, Obj.repr (shallow, jplist))
-
-
-  let rec gen_free_vars =
-    let open Sequence.Generator in
-    function
-      | Prop (_, p) ->
-          Prop.gen_free_vars p
-      | Joined (_, p, jp1, jp2) ->
-          Prop.gen_free_vars p >>= fun () -> gen_free_vars jp1 >>= fun () -> gen_free_vars jp2
-
-
-  let free_vars jp = Sequence.Generator.run (gen_free_vars jp)
-
-  let rec jprop_sub sub = function
-    | Prop (n, p) ->
-        Prop (n, Prop.prop_sub sub p)
-    | Joined (n, p, jp1, jp2) ->
-        let p' = Prop.prop_sub sub p in
-        let jp1' = jprop_sub sub jp1 in
-        let jp2' = jprop_sub sub jp2 in
-        Joined (n, p', jp1', jp2')
-
-
-  let filter (f: 'a t -> 'b option) jpl =
-    let rec do_filter acc = function
-      | [] ->
-          acc
-      | (Prop _ as jp) :: jpl -> (
-        match f jp with Some x -> do_filter (x :: acc) jpl | None -> do_filter acc jpl )
-      | (Joined (_, _, jp1, jp2) as jp) :: jpl ->
-        match f jp with
-        | Some x ->
-            do_filter (x :: acc) jpl
-        | None ->
-            do_filter acc (jpl @ [jp1; jp2])
-    in
-    do_filter [] jpl
-
-
-  let rec map (f: 'a Prop.t -> 'b Prop.t) = function
-    | Prop (n, p) ->
-        Prop (n, f p)
-    | Joined (n, p, jp1, jp2) ->
-        Joined (n, f p, map f jp1, map f jp2)
-
-  (*
-  let rec jprop_sub sub = function
-    | Prop (n, p) -> Prop (n, Prop.prop_sub sub p)
-    | Joined (n, p, jp1, jp2) ->
-        Joined (n, Prop.prop_sub sub p, jprop_sub sub jp1, jprop_sub sub jp2)
-*)
-end
-
-(***** End of module Jprop *****)
-
-module Visitedset = Caml.Set.Make (struct
-  type t = Procdesc.Node.id * int list
-
-  let compare (node_id1, _) (node_id2, _) = Procdesc.Node.compare_id node_id1 node_id2
-end)
-
-let visited_str vis =
-  let s = ref "" in
-  let lines = ref Int.Set.empty in
-  let do_one (_, ns) =
-    (* if List.length ns > 1 then
-       begin
-       let ss = ref "" in
-       List.iter ~f:(fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
-       L.out "Node %d has lines %s@." node !ss
-       end; *)
-    List.iter ~f:(fun n -> lines := Int.Set.add !lines n) ns
-  in
-  Visitedset.iter do_one vis ;
-  Int.Set.iter ~f:(fun n -> s := !s ^ " " ^ string_of_int n) !lines ;
-  !s
-
-
-(** A spec consists of:
-    pre: a joined prop
-    post: a list of props with path
-    visited: a list of pairs (node_id, line) for the visited nodes *)
-type 'a spec = {pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited: Visitedset.t}
-
-(** encapsulate type for normalized specs *)
-module NormSpec : sig
-  type t
-
-  val normalize : Tenv.t -> Prop.normal spec -> t
-
-  val tospecs : t list -> Prop.normal spec list
-
-  val compact : Sil.sharing_env -> t -> t
-  (** Return a compact representation of the spec *)
-
-  val erase_join_info_pre : Tenv.t -> t -> t
-  (** Erase join info from pre of spec *)
-end = struct
-  type t = Prop.normal spec
-
-  let tospecs specs = specs
-
-  let gen_free_vars tenv (spec: Prop.normal spec) =
-    let open Sequence.Generator in
-    Jprop.sorted_gen_free_vars tenv spec.pre
-    >>= fun () ->
-    ISequence.gen_sequence_list spec.posts ~f:(fun (p, _) ->
-        Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars )
-
-
-  let free_vars tenv spec = Sequence.Generator.run (gen_free_vars tenv spec)
-
-  let spec_sub tenv sub spec =
-    { pre= Jprop.normalize tenv (Jprop.jprop_sub sub spec.pre)
-    ; posts=
-        List.map ~f:(fun (p, path) -> (Prop.normalize tenv (Prop.prop_sub sub p), path)) spec.posts
-    ; visited= spec.visited }
-
-
-  (** Convert spec into normal form w.r.t. variable renaming *)
-  let normalize tenv (spec: Prop.normal spec) : Prop.normal spec =
-    let idlist = free_vars tenv spec |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
-    let count = ref 0 in
-    let sub =
-      Sil.subst_of_list
-        (List.map
-           ~f:(fun id -> incr count ; (id, Exp.Var (Ident.create_normal Ident.name_spec !count)))
-           idlist)
-    in
-    spec_sub tenv sub spec
-
-
-  (** Return a compact representation of the spec *)
-  let compact sh spec =
-    let pre = Jprop.compact sh spec.pre in
-    let posts = List.map ~f:(fun (p, path) -> (Prop.prop_compact sh p, path)) spec.posts in
-    {pre; posts; visited= spec.visited}
-
-
-  (** Erase join info from pre of spec *)
-  let erase_join_info_pre tenv spec =
-    let spec' = {spec with pre= Jprop.Prop (1, Jprop.to_prop spec.pre)} in
-    normalize tenv spec'
-end
-
-(** Convert spec into normal form w.r.t. variable renaming *)
-let spec_normalize = NormSpec.normalize
-
-(** Cast a list of normalized specs to a list of specs *)
-let normalized_specs_to_specs = NormSpec.tospecs
+open PolyVariantEqual
 
 (** Execution statistics *)
 type stats =
@@ -259,17 +28,13 @@ let pp_status fmt status = F.pp_print_string fmt (string_of_status status)
 
 let equal_status = [%compare.equal : status]
 
-type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
-
-let equal_phase = [%compare.equal : phase]
-
 (** Payload: results of some analysis *)
 type payload =
   { annot_map: AnnotReachabilityDomain.astate option
+  ; biabduction: BiabductionSummary.t option
   ; buffer_overrun: BufferOverrunDomain.Summary.t option
   ; crashcontext_frame: Stacktree_t.stacktree option
   ; litho: LithoDomain.astate option
-  ; preposts: NormSpec.t list option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
@@ -280,8 +45,7 @@ type payload =
   ; starvation: StarvationDomain.summary option }
 
 type summary =
-  { phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
-  ; payload: payload  (** payload containing the result of some analysis *)
+  { payload: payload  (** payload containing the result of some analysis *)
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
   ; stats: stats  (** statistics: execution time and list of errors *)
   ; status: status  (** Analysis status of the procedure *)
@@ -302,9 +66,6 @@ let get_formals summary = (get_attributes summary).ProcAttributes.formals
 let get_err_log summary = (get_attributes summary).ProcAttributes.err_log
 
 let get_loc summary = (get_attributes summary).ProcAttributes.loc
-
-(** Return the current phase for the proc *)
-let get_phase summary = summary.phase
 
 type spec_tbl = summary Typ.Procname.Hash.t
 
@@ -329,58 +90,6 @@ let pp_stats fmt stats =
   F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt stats.stats_failure stats.symops
 
 
-(** Print the spec *)
-let pp_spec pe num_opt fmt spec =
-  let num_str =
-    match num_opt with
-    | None ->
-        "----------"
-    | Some (n, tot) ->
-        Format.sprintf "%d of %d [nvisited:%s]" n tot (visited_str spec.visited)
-  in
-  let pre = Jprop.to_prop spec.pre in
-  let pe_post = Prop.prop_update_obj_sub pe pre in
-  let post_list = List.map ~f:fst spec.posts in
-  match pe.Pp.kind with
-  | TEXT ->
-      F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
-      F.fprintf fmt "PRE:@\n%a@\n" (Prop.pp_prop Pp.text) pre ;
-      F.fprintf fmt "%a@\n" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list ;
-      F.pp_print_string fmt "----------------------------------------------------------------"
-  | HTML ->
-      F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
-      F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Pp.Blue
-        (Prop.pp_prop (Pp.html Blue))
-        pre Io_infer.Html.pp_end_color () ;
-      (Propgraph.pp_proplist pe_post "POST" (pre, true)) fmt post_list ;
-      F.pp_print_string fmt "----------------------------------------------------------------"
-
-
-(** Dump a spec *)
-let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
-
-let pp_specs pe fmt specs =
-  let total = List.length specs in
-  let cnt = ref 0 in
-  match pe.Pp.kind with
-  | TEXT ->
-      List.iter
-        ~f:(fun spec ->
-          incr cnt ;
-          (pp_spec pe (Some (!cnt, total))) fmt spec )
-        specs
-  | HTML ->
-      List.iter
-        ~f:(fun spec ->
-          incr cnt ;
-          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec )
-        specs
-
-
-let describe_phase summary =
-  ("Phase", if equal_phase summary.phase FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
-
-
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =
   let s = ref "" in
@@ -394,19 +103,13 @@ let get_signature summary =
     (get_proc_name summary) !s
 
 
-let get_specs_from_preposts preposts = Option.value_map ~f:NormSpec.tospecs ~default:[] preposts
-
-let get_specs_from_payload summary = get_specs_from_preposts summary.payload.preposts
-
 let pp_summary_no_stats_specs fmt summary =
-  let pp_pair fmt (x, y) = F.fprintf fmt "%s: %s" x y in
   F.fprintf fmt "%s@\n" (get_signature summary) ;
-  F.fprintf fmt "%a@\n" pp_status summary.status ;
-  F.fprintf fmt "%a@\n" pp_pair (describe_phase summary)
+  F.fprintf fmt "%a@\n" pp_status summary.status
 
 
 let pp_payload pe fmt
-    { preposts
+    { biabduction
     ; typestate
     ; crashcontext_frame
     ; quandary
@@ -425,8 +128,8 @@ let pp_payload pe fmt
         ()
   in
   F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a@\n"
-    (pp_opt "PrePosts" (pp_specs pe))
-    (Option.map ~f:NormSpec.tospecs preposts)
+    (pp_opt "Biabduction" (BiabductionSummary.pp pe))
+    biabduction
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
     typestate
     (pp_opt "CrashContext" Crashcontext.pp_stacktree)
@@ -470,17 +173,6 @@ let pp_summary_html source color fmt summary =
 let empty_stats =
   {stats_failure= None; symops= 0; nodes_visited_fp= IntSet.empty; nodes_visited_re= IntSet.empty}
 
-
-let payload_compact sh payload =
-  match payload.preposts with
-  | Some specs ->
-      {payload with preposts= Some (List.map ~f:(NormSpec.compact sh) specs)}
-  | None ->
-      payload
-
-
-(** Return a compact representation of the summary *)
-let summary_compact sh summary = {summary with payload= payload_compact sh summary.payload}
 
 (** Add the summary to the table for the given function *)
 let add_summary (proc_name: Typ.Procname.t) (summary: summary) : unit =
@@ -552,14 +244,7 @@ let get_summary proc_name =
     load_summary_to_spec_table proc_name
 
 
-let get_summary_unsafe s proc_name =
-  match get_summary proc_name with
-  | None ->
-      L.(die InternalError)
-        "[%s] Specs.get_summary_unsafe: %a Not found" s Typ.Procname.pp proc_name
-  | Some summary ->
-      summary
-
+let get_summary_unsafe proc_name = Option.value_exn (get_summary proc_name)
 
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
@@ -598,12 +283,8 @@ let pdesc_resolve_attributes proc_desc =
 
 
 (** Save summary for the procedure into the spec database *)
-let store_summary (summ1: summary) =
-  let summ2 =
-    if Config.save_compact_summaries then summary_compact (Sil.create_sharing_env ()) summ1
-    else summ1
-  in
-  let final_summary = {summ2 with status= Analyzed} in
+let store_summary (summ: summary) =
+  let final_summary = {summ with status= Analyzed} in
   let proc_name = get_proc_name final_summary in
   (* Make sure the summary in memory is identical to the saved one *)
   add_summary proc_name final_summary ;
@@ -613,7 +294,7 @@ let store_summary (summ1: summary) =
 
 
 let empty_payload =
-  { preposts= None
+  { biabduction= None
   ; typestate= None
   ; annot_map= None
   ; crashcontext_frame= None
@@ -633,12 +314,7 @@ let empty_payload =
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary proc_desc =
   let summary =
-    { phase= FOOTPRINT
-    ; sessions= ref 0
-    ; payload= empty_payload
-    ; stats= empty_stats
-    ; status= Pending
-    ; proc_desc }
+    {sessions= ref 0; payload= empty_payload; stats= empty_stats; status= Pending; proc_desc}
   in
   Typ.Procname.Hash.replace spec_tbl (Procdesc.get_proc_name proc_desc) summary ;
   summary

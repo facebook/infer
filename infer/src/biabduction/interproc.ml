@@ -198,7 +198,7 @@ let do_meet_pre tenv pset =
 
 (** Find the preconditions in the current spec table,
     apply meet then join, and return the joined preconditions *)
-let collect_preconditions tenv summary : Prop.normal Specs.Jprop.t list =
+let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t list =
   let proc_name = Specs.get_proc_name summary in
   let collect_do_abstract_one tenv prop =
     if !Config.footprint then Config.run_in_re_execution_mode (Abs.abstract_no_symop tenv) prop
@@ -206,8 +206,8 @@ let collect_preconditions tenv summary : Prop.normal Specs.Jprop.t list =
   in
   let pres =
     List.map
-      ~f:(fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
-      (Specs.get_specs_from_payload summary)
+      ~f:(fun spec -> BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre)
+      (Tabulation.get_specs_from_payload summary)
   in
   let pset = Propset.from_proplist tenv pres in
   let pset' =
@@ -235,26 +235,26 @@ let collect_preconditions tenv summary : Prop.normal Specs.Jprop.t list =
   L.d_ln () ;
   L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Join  ####") ;
   L.d_increase_indent 1 ;
-  Specs.Jprop.d_list false jplist ;
+  BiabductionSummary.Jprop.d_list false jplist ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   let jplist' =
-    List.map ~f:(Specs.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist
+    List.map ~f:(BiabductionSummary.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist
   in
   L.d_strln ("#### Renamed footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
   L.d_increase_indent 1 ;
-  Specs.Jprop.d_list false jplist' ;
+  BiabductionSummary.Jprop.d_list false jplist' ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   let jplist'' =
     let f p =
       Prop.prop_primed_vars_to_normal_vars tenv (collect_do_abstract_one proc_name tenv p)
     in
-    List.map ~f:(Specs.Jprop.map f) jplist'
+    List.map ~f:(BiabductionSummary.Jprop.map f) jplist'
   in
   L.d_strln ("#### Abstracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
   L.d_increase_indent 1 ;
-  Specs.Jprop.d_list false jplist'' ;
+  BiabductionSummary.Jprop.d_list false jplist'' ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   jplist''
@@ -434,9 +434,13 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   let print_node_preamble curr_node session pathset_todo =
     let log_string proc_name =
-      let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
+      let summary = Specs.get_summary_unsafe proc_name in
       let phase_string =
-        if Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT then "FP" else "RE"
+        if
+          BiabductionSummary.equal_phase (Tabulation.get_phase summary)
+            BiabductionSummary.FOOTPRINT
+        then "FP"
+        else "RE"
       in
       let status = Specs.get_status summary in
       F.sprintf "[%s:%s] %s" phase_string (Specs.string_of_status status)
@@ -505,7 +509,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
-    let summary = Specs.get_summary_unsafe "forward_tabulate" pname in
+    let summary = Specs.get_summary_unsafe pname in
     mark_visited summary curr_node ;
     (* mark nodes visited in fp and re phases *)
     let session = incr summary.Specs.sessions ; !(summary.Specs.sessions) in
@@ -555,7 +559,7 @@ let vset_ref_add_pathset vset_ref pathset =
 
 
 let compute_visited vset =
-  let res = ref Specs.Visitedset.empty in
+  let res = ref BiabductionSummary.Visitedset.empty in
   let node_get_all_lines n =
     let node_loc = Procdesc.Node.get_loc n in
     let instrs_loc = List.map ~f:Sil.instr_get_loc (ProcCfg.Exceptional.instrs n) in
@@ -563,14 +567,14 @@ let compute_visited vset =
     List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~compare:Int.compare lines)
   in
   let do_node n =
-    res := Specs.Visitedset.add (Procdesc.Node.get_id n, node_get_all_lines n) !res
+    res := BiabductionSummary.Visitedset.add (Procdesc.Node.get_id n, node_get_all_lines n) !res
   in
   Procdesc.NodeSet.iter do_node vset ;
   !res
 
 
 (** Extract specs from a pathset *)
-let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
+let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list =
   let pname = Procdesc.get_proc_name pdesc in
   let sub =
     let fav =
@@ -605,7 +609,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
-        try Pmap.find pre map with Caml.Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty)
+        try Pmap.find pre map with Caml.Not_found ->
+          (Paths.PathSet.empty, BiabductionSummary.Visitedset.empty)
       in
       let new_posts =
         match post with
@@ -614,7 +619,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
         | Some (post, path) ->
             Paths.PathSet.add_renamed_prop post path current_posts
       in
-      let new_visited = Specs.Visitedset.union visited current_visited in
+      let new_visited = BiabductionSummary.Visitedset.union visited current_visited in
       Pmap.add pre (new_posts, new_visited) map
     in
     List.fold ~f:add ~init:Pmap.empty pre_post_visited_list
@@ -626,13 +631,13 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
         ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
         (Paths.PathSet.elements (do_join_post pname tenv posts))
     in
-    let spec = {Specs.pre= Specs.Jprop.Prop (1, pre); Specs.posts= posts'; Specs.visited} in
+    let spec = BiabductionSummary.{pre= Jprop.Prop (1, pre); posts= posts'; visited} in
     specs := spec :: !specs
   in
   Pmap.iter add_spec pre_post_map ; !specs
 
 
-let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * Specs.Visitedset.t =
+let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSummary.Visitedset.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pathset = collect_analysis_result tenv wl proc_cfg in
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
@@ -751,17 +756,20 @@ let initial_prop_from_pre tenv curr_f pre =
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
 let execute_filter_prop exe_env wl tenv proc_cfg init_node
-    (precondition: Prop.normal Specs.Jprop.t) : Prop.normal Specs.spec option =
+    (precondition: Prop.normal BiabductionSummary.Jprop.t)
+    : Prop.normal BiabductionSummary.spec option =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
   L.d_strln ("#### Start: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
   L.d_indent 1 ;
   L.d_strln "Precond:" ;
-  Specs.Jprop.d_shallow precondition ;
+  BiabductionSummary.Jprop.d_shallow precondition ;
   L.d_ln () ;
   L.d_ln () ;
-  let init_prop = initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
+  let init_prop =
+    initial_prop_from_pre tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
+  in
   let init_edgeset =
     Paths.PathSet.add_renamed_prop init_prop (Paths.Path.start init_node) Paths.PathSet.empty
   in
@@ -775,7 +783,7 @@ let execute_filter_prop exe_env wl tenv proc_cfg init_node
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
     L.d_increase_indent 1 ;
     L.d_strln "Precond:" ;
-    Prop.d_prop (Specs.Jprop.to_prop precondition) ;
+    Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
     L.d_ln () ;
     let posts, visited =
       let pset, visited = collect_postconditions wl tenv proc_cfg in
@@ -787,14 +795,16 @@ let execute_filter_prop exe_env wl tenv proc_cfg init_node
       (plist, visited)
     in
     let pre =
-      let p = PropUtil.remove_locals_ret tenv pdesc (Specs.Jprop.to_prop precondition) in
+      let p =
+        PropUtil.remove_locals_ret tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
+      in
       match precondition with
-      | Specs.Jprop.Prop (n, _) ->
-          Specs.Jprop.Prop (n, p)
-      | Specs.Jprop.Joined (n, _, jp1, jp2) ->
-          Specs.Jprop.Joined (n, p, jp1, jp2)
+      | BiabductionSummary.Jprop.Prop (n, _) ->
+          BiabductionSummary.Jprop.Prop (n, p)
+      | BiabductionSummary.Jprop.Joined (n, _, jp1, jp2) ->
+          BiabductionSummary.Jprop.Joined (n, p, jp1, jp2)
     in
-    let spec = {Specs.pre; Specs.posts; Specs.visited} in
+    let spec = BiabductionSummary.{pre; posts; visited} in
     L.d_decrease_indent 1 ; do_after_node init_node ; Some spec
   with RE_EXE_ERROR ->
     do_before_node 0 init_node ;
@@ -802,14 +812,15 @@ let execute_filter_prop exe_env wl tenv proc_cfg init_node
     L.d_strln_color Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR") ;
     L.d_increase_indent 1 ;
     L.d_strln "when starting from pre:" ;
-    Prop.d_prop (Specs.Jprop.to_prop precondition) ;
+    Prop.d_prop (BiabductionSummary.Jprop.to_prop precondition) ;
     L.d_strln "This precondition is filtered out." ;
     L.d_decrease_indent 1 ;
     do_after_node init_node ;
     None
 
 
-type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase)
+type exe_phase =
+  (unit -> unit) * (unit -> Prop.normal BiabductionSummary.spec list * BiabductionSummary.phase)
 
 (** Return functions to perform one phase of the analysis for a procedure.
     Given [proc_name], return [do, get_results] where [go ()] performs the analysis phase
@@ -826,12 +837,12 @@ let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: Proc
       let init_prop = initial_prop_from_emp tenv pdesc in
       (* use existing pre's (in recursion some might exist) as starting points *)
       let init_props_from_pres =
-        let specs = Specs.get_specs_from_payload summary in
+        let specs = Tabulation.get_specs_from_payload summary in
         (* rename spec vars to footprint vars, and copy current to footprint *)
         let mk_init precondition =
-          initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition)
+          initial_prop_from_pre tenv pdesc (BiabductionSummary.Jprop.to_prop precondition)
         in
-        List.map ~f:(fun spec -> mk_init spec.Specs.pre) specs
+        List.map ~f:(fun spec -> mk_init spec.BiabductionSummary.pre) specs
       in
       let init_props = Propset.from_proplist tenv (init_prop :: init_props_from_pres) in
       let init_edgeset =
@@ -863,14 +874,16 @@ let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: Proc
           Reporting.log_error_deprecated pname exn ;
           (* retuning no specs *) []
       in
-      (specs, Specs.FOOTPRINT)
+      (specs, BiabductionSummary.FOOTPRINT)
     in
     let wl = path_set_create_worklist proc_cfg in
     (go wl, get_results wl)
   in
   let re_execution () : exe_phase =
     let candidate_preconditions =
-      List.map ~f:(fun spec -> spec.Specs.pre) (Specs.get_specs_from_payload summary)
+      List.map
+        ~f:(fun spec -> spec.BiabductionSummary.pre)
+        (Tabulation.get_specs_from_payload summary)
     in
     let valid_specs = ref [] in
     let go () =
@@ -880,7 +893,8 @@ let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: Proc
         (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in
-      if Config.undo_join then ignore (Specs.Jprop.filter filter candidate_preconditions)
+      if Config.undo_join then
+        ignore (BiabductionSummary.Jprop.filter filter candidate_preconditions)
       else ignore (List.map ~f:filter candidate_preconditions)
     in
     let get_results () =
@@ -891,14 +905,14 @@ let perform_analysis_phase exe_env tenv (summary: Specs.summary) (proc_cfg: Proc
           [Typ.Procname.to_filename pname]
       in
       if Config.write_dotty then Dotty.pp_speclist_dotty_file filename specs ;
-      (specs, Specs.RE_EXECUTION)
+      (specs, BiabductionSummary.RE_EXECUTION)
     in
     (go, get_results)
   in
-  match Specs.get_phase summary with
-  | Specs.FOOTPRINT ->
+  match Tabulation.get_phase summary with
+  | FOOTPRINT ->
       compute_footprint ()
-  | Specs.RE_EXECUTION ->
+  | RE_EXECUTION ->
       re_execution ()
 
 
@@ -927,9 +941,11 @@ let exception_preconditions tenv pname summary =
         (exns, false)
   in
   let collect_spec errors spec =
-    List.fold ~f:(collect_exceptions spec.Specs.pre) ~init:errors spec.Specs.posts
+    List.fold
+      ~f:(collect_exceptions spec.BiabductionSummary.pre)
+      ~init:errors spec.BiabductionSummary.posts
   in
-  List.fold ~f:collect_spec ~init:([], true) (Specs.get_specs_from_payload summary)
+  List.fold ~f:collect_spec ~init:([], true) (Tabulation.get_specs_from_payload summary)
 
 
 (* Collect all pairs of the kind (precondition, custom error) from a summary *)
@@ -942,9 +958,11 @@ let custom_error_preconditions summary =
         ((pre, e) :: errors, all_post_error)
   in
   let collect_spec errors spec =
-    List.fold ~f:(collect_errors spec.Specs.pre) ~init:errors spec.Specs.posts
+    List.fold
+      ~f:(collect_errors spec.BiabductionSummary.pre)
+      ~init:errors spec.BiabductionSummary.posts
   in
-  List.fold ~f:collect_spec ~init:([], true) (Specs.get_specs_from_payload summary)
+  List.fold ~f:collect_spec ~init:([], true) (Tabulation.get_specs_from_payload summary)
 
 
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
@@ -975,7 +993,7 @@ let remove_this_not_null tenv prop =
     This means that the post-conditions associated with this precondition cannot be prevented
     by the calling context. *)
 let is_unavoidable tenv pre =
-  let prop = remove_this_not_null tenv (Specs.Jprop.to_prop pre) in
+  let prop = remove_this_not_null tenv (BiabductionSummary.Jprop.to_prop pre) in
   match Prop.CategorizePreconditions.categorize [prop] with
   | Prop.CategorizePreconditions.NoPres | Prop.CategorizePreconditions.Empty ->
       true
@@ -1008,7 +1026,9 @@ let report_runtime_exceptions tenv pdesc summary =
   in
   let report (pre, runtime_exception) =
     if should_report pre then
-      let pre_str = F.asprintf "%a" (Prop.pp_prop Pp.text) (Specs.Jprop.to_prop pre) in
+      let pre_str =
+        F.asprintf "%a" (Prop.pp_prop Pp.text) (BiabductionSummary.Jprop.to_prop pre)
+      in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error_deprecated pname exn
@@ -1030,62 +1050,67 @@ let report_custom_errors tenv summary =
 
 
 module SpecMap = Caml.Map.Make (struct
-  type t = Prop.normal Specs.Jprop.t
+  type t = Prop.normal BiabductionSummary.Jprop.t
 
-  let compare = Specs.Jprop.compare
+  let compare = BiabductionSummary.Jprop.compare
 end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
-    : Specs.NormSpec.t list * bool =
-  let new_specs = Specs.normalized_specs_to_specs new_specs in
-  let old_specs = Specs.get_specs_from_payload prev_summary in
+let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec.t list)
+    : BiabductionSummary.NormSpec.t list * bool =
+  let new_specs = BiabductionSummary.normalized_specs_to_specs new_specs in
+  let old_specs = Tabulation.get_specs_from_payload prev_summary in
   let changed = ref false in
   let current_specs =
     ref
       (List.fold
          ~f:(fun map spec ->
-           SpecMap.add spec.Specs.pre
-             (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map )
+           SpecMap.add spec.BiabductionSummary.pre
+             ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
+             , spec.BiabductionSummary.visited ) map )
          ~init:SpecMap.empty old_specs)
   in
   let re_exe_filter old_spec =
     (* filter out pres which failed re-exe *)
     if
-      Specs.equal_phase phase Specs.RE_EXECUTION
+      BiabductionSummary.equal_phase phase RE_EXECUTION
       && not
            (List.exists
-              ~f:(fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
+              ~f:(fun new_spec ->
+                BiabductionSummary.Jprop.equal new_spec.BiabductionSummary.pre
+                  old_spec.BiabductionSummary.pre )
               new_specs)
     then (
       changed := true ;
-      current_specs := SpecMap.remove old_spec.Specs.pre !current_specs )
+      current_specs := SpecMap.remove old_spec.BiabductionSummary.pre !current_specs )
     else ()
   in
   let add_spec spec =
     (* add a new spec by doing union of the posts *)
     try
-      let old_post, old_visited = SpecMap.find spec.Specs.pre !current_specs in
+      let old_post, old_visited = SpecMap.find spec.BiabductionSummary.pre !current_specs in
       let new_post, new_visited =
-        ( Paths.PathSet.union old_post (Paths.PathSet.from_renamed_list spec.Specs.posts)
-        , Specs.Visitedset.union old_visited spec.Specs.visited )
+        ( Paths.PathSet.union old_post
+            (Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts)
+        , BiabductionSummary.Visitedset.union old_visited spec.BiabductionSummary.visited )
       in
       if not (Paths.PathSet.equal old_post new_post) then (
         changed := true ;
         current_specs :=
-          SpecMap.add spec.Specs.pre (new_post, new_visited)
-            (SpecMap.remove spec.Specs.pre !current_specs) )
+          SpecMap.add spec.BiabductionSummary.pre (new_post, new_visited)
+            (SpecMap.remove spec.BiabductionSummary.pre !current_specs) )
     with Caml.Not_found ->
       changed := true ;
       current_specs :=
-        SpecMap.add spec.Specs.pre
-          (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) !current_specs
+        SpecMap.add spec.BiabductionSummary.pre
+          ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
+          , spec.BiabductionSummary.visited ) !current_specs
   in
   let res = ref [] in
   let convert pre (post_set, visited) =
     res :=
-      Specs.spec_normalize tenv
-        {Specs.pre; Specs.posts= Paths.PathSet.elements post_set; Specs.visited}
+      BiabductionSummary.spec_normalize tenv
+        BiabductionSummary.{pre; posts= Paths.PathSet.elements post_set; visited}
       :: !res
   in
   List.iter ~f:re_exe_filter old_specs ;
@@ -1098,7 +1123,7 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
 
 (** update a summary after analysing a procedure *)
 let update_summary tenv prev_summary specs phase res =
-  let normal_specs = List.map ~f:(Specs.spec_normalize tenv) specs in
+  let normal_specs = List.map ~f:(BiabductionSummary.spec_normalize tenv) specs in
   let new_specs, _ = update_specs tenv prev_summary phase normal_specs in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
   let stats_failure =
@@ -1107,13 +1132,15 @@ let update_summary tenv prev_summary specs phase res =
   let stats = {prev_summary.Specs.stats with symops; stats_failure} in
   let preposts =
     match phase with
-    | Specs.FOOTPRINT ->
-        Some new_specs
-    | Specs.RE_EXECUTION ->
-        Some (List.map ~f:(Specs.NormSpec.erase_join_info_pre tenv) new_specs)
+    | BiabductionSummary.FOOTPRINT ->
+        new_specs
+    | BiabductionSummary.RE_EXECUTION ->
+        List.map ~f:(BiabductionSummary.NormSpec.erase_join_info_pre tenv) new_specs
   in
-  let payload = {prev_summary.Specs.payload with Specs.preposts} in
-  {prev_summary with Specs.phase; stats; payload}
+  let payload =
+    {prev_summary.Specs.payload with Specs.biabduction= Some BiabductionSummary.{preposts; phase}}
+  in
+  {prev_summary with Specs.stats; payload}
 
 
 (** Analyze the procedure and return the resulting summary. *)
@@ -1121,7 +1148,7 @@ let analyze_proc exe_env tenv proc_cfg : Specs.summary =
   let proc_desc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let proc_name = Procdesc.get_proc_name proc_desc in
   reset_global_values proc_desc ;
-  let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
+  let summary = Specs.get_summary_unsafe proc_name in
   let go, get_results = perform_analysis_phase exe_env tenv summary proc_cfg in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
@@ -1135,19 +1162,32 @@ let analyze_proc exe_env tenv proc_cfg : Specs.summary =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe tenv proc_name joined_pres =
-  let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
+  let summary = Specs.get_summary_unsafe proc_name in
   let summary' =
-    if Config.only_footprint then {summary with Specs.phase= Specs.RE_EXECUTION}
+    if Config.only_footprint then
+      match summary.Specs.payload.biabduction with
+      | Some ({phase= FOOTPRINT} as biabduction) ->
+          { summary with
+            Specs.payload=
+              { summary.payload with
+                Specs.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
+              } }
+      | _ ->
+          summary
     else
-      let specs =
+      let preposts =
         List.map
           ~f:(fun jp ->
-            Specs.spec_normalize tenv {Specs.pre= jp; posts= []; visited= Specs.Visitedset.empty}
+            BiabductionSummary.spec_normalize tenv
+              {BiabductionSummary.pre= jp; posts= []; visited= BiabductionSummary.Visitedset.empty}
             )
           joined_pres
       in
-      let payload = {summary.Specs.payload with Specs.preposts= Some specs} in
-      {summary with Specs.phase= Specs.RE_EXECUTION; payload}
+      let payload =
+        { summary.Specs.payload with
+          biabduction= Some BiabductionSummary.{preposts; phase= RE_EXECUTION} }
+      in
+      {summary with Specs.payload}
   in
   Specs.add_summary proc_name summary'
 
@@ -1184,7 +1224,7 @@ let perform_transition proc_cfg tenv proc_name =
     transition_footprint_re_exe tenv proc_name joined_pres
   in
   match Specs.get_summary proc_name with
-  | Some summary when Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT ->
+  | Some summary when BiabductionSummary.equal_phase (Tabulation.get_phase summary) FOOTPRINT ->
       transition summary
   | _ ->
       ()
@@ -1198,8 +1238,23 @@ let analyze_procedure_aux exe_env tenv proc_desc =
   Specs.add_summary proc_name summaryfp ;
   perform_transition proc_cfg tenv proc_name ;
   let summaryre = Config.run_in_re_execution_mode (analyze_proc exe_env tenv) proc_cfg in
-  Specs.add_summary proc_name summaryre ;
-  summaryre
+  let summary_compact =
+    match summaryre.Specs.payload.biabduction with
+    | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->
+        let sharing_env = Sil.create_sharing_env () in
+        let compact_preposts =
+          List.map ~f:(BiabductionSummary.NormSpec.compact sharing_env) preposts
+        in
+        { summaryre with
+          payload=
+            { summaryre.payload with
+              biabduction= Some {biabduction with BiabductionSummary.preposts= compact_preposts} }
+        }
+    | _ ->
+        summaryre
+  in
+  Specs.add_summary proc_name summary_compact ;
+  summary_compact
 
 
 let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summary =
@@ -1210,4 +1265,4 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Specs.summ
   ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->
       IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
-  Specs.get_summary_unsafe __FILE__ proc_name
+  Specs.get_summary_unsafe proc_name

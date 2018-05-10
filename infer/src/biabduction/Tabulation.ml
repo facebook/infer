@@ -98,6 +98,17 @@ let log_call_trace caller_name callee_name ?reason loc res =
 
 (***************)
 
+let get_specs_from_payload summary =
+  Option.map summary.Specs.payload.biabduction ~f:(fun BiabductionSummary.({preposts}) -> preposts)
+  |> BiabductionSummary.get_specs_from_preposts
+
+
+(** Return the current phase for the proc *)
+let get_phase summary =
+  Option.value_map summary.Specs.payload.biabduction ~default:BiabductionSummary.FOOTPRINT ~f:
+    (fun BiabductionSummary.({phase}) -> phase )
+
+
 (** Rename the variables in the spec. *)
 let spec_rename_vars pname spec =
   let prop_add_callee_suffix p =
@@ -105,34 +116,39 @@ let spec_rename_vars pname spec =
     Prop.prop_expmap f p
   in
   let jprop_add_callee_suffix = function
-    | Specs.Jprop.Prop (n, p) ->
-        Specs.Jprop.Prop (n, prop_add_callee_suffix p)
-    | Specs.Jprop.Joined (n, p, jp1, jp2) ->
-        Specs.Jprop.Joined (n, prop_add_callee_suffix p, jp1, jp2)
+    | BiabductionSummary.Jprop.Prop (n, p) ->
+        BiabductionSummary.Jprop.Prop (n, prop_add_callee_suffix p)
+    | BiabductionSummary.Jprop.Joined (n, p, jp1, jp2) ->
+        BiabductionSummary.Jprop.Joined (n, prop_add_callee_suffix p, jp1, jp2)
   in
   let fav =
-    let fav = Specs.Jprop.free_vars spec.Specs.pre |> Ident.hashqueue_of_sequence in
-    List.fold_left spec.Specs.posts ~init:fav ~f:(fun fav (p, _) ->
+    let fav =
+      BiabductionSummary.Jprop.free_vars spec.BiabductionSummary.pre |> Ident.hashqueue_of_sequence
+    in
+    List.fold_left spec.BiabductionSummary.posts ~init:fav ~f:(fun fav (p, _) ->
         Prop.free_vars p |> Ident.hashqueue_of_sequence ~init:fav )
   in
   let ids = Ident.HashQueue.keys fav in
   let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
   let ren_sub = Sil.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
-  let pre' = Specs.Jprop.jprop_sub ren_sub spec.Specs.pre in
-  let posts' = List.map ~f:(fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.Specs.posts in
+  let pre' = BiabductionSummary.Jprop.jprop_sub ren_sub spec.BiabductionSummary.pre in
+  let posts' =
+    List.map ~f:(fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.BiabductionSummary.posts
+  in
   let pre'' = jprop_add_callee_suffix pre' in
   let posts'' = List.map ~f:(fun (p, path) -> (prop_add_callee_suffix p, path)) posts' in
-  {Specs.pre= pre''; Specs.posts= posts''; Specs.visited= spec.Specs.visited}
+  BiabductionSummary.{pre= pre''; posts= posts''; visited= spec.BiabductionSummary.visited}
 
 
 (** Find and number the specs for [proc_name],
     after renaming their vars, and also return the parameters *)
-let spec_find_rename trace_call summary : (int * Prop.exposed Specs.spec) list * Pvar.t list =
+let spec_find_rename trace_call summary
+    : (int * Prop.exposed BiabductionSummary.spec) list * Pvar.t list =
   let proc_name = Specs.get_proc_name summary in
   try
     let count = ref 0 in
     let f spec = incr count ; (!count, spec_rename_vars proc_name spec) in
-    let specs = Specs.get_specs_from_payload summary in
+    let specs = get_specs_from_payload summary in
     let formals = Specs.get_formals summary in
     if List.is_empty specs then (
       trace_call CR_not_found ;
@@ -1093,11 +1109,11 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
 
 (** Perform symbolic execution for a single spec *)
 let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop path_pre
-    (spec: Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
+    (spec: Prop.exposed BiabductionSummary.spec) actual_params formal_params : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts tenv prop callee_pname spec.Specs.posts in
+  let posts = mk_posts tenv prop callee_pname spec.BiabductionSummary.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
-  let spec_pre = Specs.Jprop.to_prop spec.Specs.pre in
+  let spec_pre = BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs) ;
   L.d_strln "ACTUAL PRECONDITION =" ;
   L.d_increase_indent 1 ;
@@ -1106,7 +1122,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
   L.d_ln () ;
   L.d_strln "SPEC =" ;
   L.d_increase_indent 1 ;
-  Specs.d_spec spec ;
+  BiabductionSummary.d_spec spec ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   SymOp.pay () ;

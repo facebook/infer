@@ -19,5 +19,5 @@ val print_icfg_dotty : SourceFile.t -> Cfg.t -> unit
 
 (** {2 Specs} *)
 
-val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
+val pp_speclist_dotty_file : DB.filename -> Prop.normal BiabductionSummary.spec list -> unit
 (** Dotty printing for specs *)

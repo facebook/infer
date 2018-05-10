@@ -373,7 +373,7 @@ let reason_to_skip ~callee_desc : string option =
   | `Summary callee_summary ->
       let attr_reason = Specs.get_attributes callee_summary |> reason_from_attributes in
       if Option.is_some attr_reason then attr_reason
-      else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
+      else if List.is_empty (Tabulation.get_specs_from_payload callee_summary) then
         Some "empty list of specs"
       else (* we are not skipping *) None
   | `ProcDesc procdesc ->

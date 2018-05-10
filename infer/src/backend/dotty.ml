@@ -1209,7 +1209,7 @@ let print_icfg_dotty source cfg =
 (********** END of Printing dotty files ***********)
 
 (** Dotty printing for specs *)
-let pp_speclist_dotty f (splist: Prop.normal Specs.spec list) =
+let pp_speclist_dotty f (splist: Prop.normal BiabductionSummary.spec list) =
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true ;
   reset_proposition_counter () ;
@@ -1218,7 +1218,10 @@ let pp_speclist_dotty f (splist: Prop.normal Specs.spec list) =
   F.fprintf f "@\n compound = true; @\n" ;
   (*  F.fprintf f "@\n size=\"12,7\"; ratio=fill; @\n"; *)
   List.iter
-    ~f:(fun s -> pp_dotty_one_spec f (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts)
+    ~f:(fun s ->
+      pp_dotty_one_spec f
+        (BiabductionSummary.Jprop.to_prop s.BiabductionSummary.pre)
+        s.BiabductionSummary.posts )
     splist ;
   F.fprintf f "@\n}" ;
   Config.pp_simple := pp_simple_saved

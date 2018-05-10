@@ -136,7 +136,12 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   let log_error_and_continue exn summary kind =
     Reporting.log_error summary exn ;
     let stats = {summary.Specs.stats with Specs.stats_failure= Some kind} in
-    let payload = {summary.Specs.payload with Specs.preposts= Some []} in
+    let payload =
+      let biabduction =
+        Some BiabductionSummary.{preposts= []; phase= Tabulation.get_phase summary}
+      in
+      {summary.Specs.payload with Specs.biabduction}
+    in
     let new_summary = {summary with Specs.stats; payload} in
     Specs.store_summary new_summary ;
     remove_active callee_pname ;

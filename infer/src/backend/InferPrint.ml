@@ -101,13 +101,15 @@ let summary_values summary =
   let err_log = Specs.get_err_log summary in
   let proc_name = Specs.get_proc_name summary in
   let vsignature = Specs.get_signature summary in
-  let specs = Specs.get_specs_from_payload summary in
+  let specs = Tabulation.get_specs_from_payload summary in
   let lines_visited =
-    let visited = ref Specs.Visitedset.empty in
-    let do_spec spec = visited := Specs.Visitedset.union spec.Specs.visited !visited in
+    let visited = ref BiabductionSummary.Visitedset.empty in
+    let do_spec spec =
+      visited := BiabductionSummary.Visitedset.union spec.BiabductionSummary.visited !visited
+    in
     List.iter ~f:do_spec specs ;
     let visited_lines = ref Int.Set.empty in
-    Specs.Visitedset.iter
+    BiabductionSummary.Visitedset.iter
       (fun (_, ls) -> List.iter ~f:(fun l -> visited_lines := Int.Set.add !visited_lines l) ls)
       !visited ;
     Int.Set.elements !visited_lines
@@ -490,7 +492,7 @@ module Stats = struct
 
 
   let process_summary error_filter summary linereader stats =
-    let specs = Specs.get_specs_from_payload summary in
+    let specs = Tabulation.get_specs_from_payload summary in
     let found_errors = process_err_log error_filter linereader (Specs.get_err_log summary) stats in
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
@@ -528,7 +530,7 @@ end
 module StatsLogs = struct
   let process _ (summary: Specs.summary) _ _ =
     let num_preposts =
-      match summary.payload.preposts with Some preposts -> List.length preposts | None -> 0
+      match summary.payload.biabduction with Some {preposts} -> List.length preposts | None -> 0
     in
     let clang_method_kind =
       ProcAttributes.string_of_clang_method_kind (Specs.get_attributes summary).clang_method_kind
@@ -571,8 +573,10 @@ module PreconditionStats = struct
   let nr_dataconstraints = ref 0
 
   let do_summary proc_name summary =
-    let specs = Specs.get_specs_from_payload summary in
-    let preconditions = List.map ~f:(fun spec -> Specs.Jprop.to_prop spec.Specs.pre) specs in
+    let specs = Tabulation.get_specs_from_payload summary in
+    let preconditions =
+      List.map ~f:(fun spec -> BiabductionSummary.Jprop.to_prop spec.BiabductionSummary.pre) specs
+    in
     match Prop.CategorizePreconditions.categorize preconditions with
     | Prop.CategorizePreconditions.Empty ->
         incr nr_empty ;

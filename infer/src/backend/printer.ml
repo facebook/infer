@@ -99,7 +99,7 @@ let pp_node_link path_to_root ?proof_cover ~description fmt node =
   let isproof =
     match proof_cover with
     | Some proof_cover ->
-        Specs.Visitedset.mem (Procdesc.Node.get_id node, []) proof_cover
+        BiabductionSummary.Visitedset.mem (Procdesc.Node.get_id node, []) proof_cover
     | None ->
         false
   in
@@ -208,11 +208,13 @@ let force_delayed_print fmt =
             il Io_infer.Html.pp_end_color ()
         else Sil.pp_instr_list Pp.text fmt il
     | L.PTjprop_list, shallow_jpl ->
-        let (shallow: bool), (jpl: Prop.normal Specs.Jprop.t list) = Obj.obj shallow_jpl in
-        Specs.Jprop.pp_list pe_default shallow fmt jpl
+        let (shallow: bool), (jpl: Prop.normal BiabductionSummary.Jprop.t list) =
+          Obj.obj shallow_jpl
+        in
+        BiabductionSummary.Jprop.pp_list pe_default shallow fmt jpl
     | L.PTjprop_short, jp ->
-        let jp : Prop.normal Specs.Jprop.t = Obj.obj jp in
-        Specs.Jprop.pp_short pe_default fmt jp
+        let jp : Prop.normal BiabductionSummary.Jprop.t = Obj.obj jp in
+        BiabductionSummary.Jprop.pp_short pe_default fmt jp
     | L.PTloc, loc ->
         let loc : Location.t = Obj.obj loc in
         Location.pp fmt loc
@@ -263,8 +265,10 @@ let force_delayed_print fmt =
         let sigma : Sil.hpred list = Obj.obj sigma in
         Prop.pp_sigma pe_default fmt sigma
     | L.PTspec, spec ->
-        let spec : Prop.normal Specs.spec = Obj.obj spec in
-        Specs.pp_spec (if Config.write_html then Pp.html Blue else Pp.text) None fmt spec
+        let spec : Prop.normal BiabductionSummary.spec = Obj.obj spec in
+        BiabductionSummary.pp_spec
+          (if Config.write_html then Pp.html Blue else Pp.text)
+          None fmt spec
     | L.PTstr, s ->
         let s : string = Obj.obj s in
         F.pp_print_string fmt s
@@ -436,8 +440,10 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
         ()
     | Some summary ->
         List.iter
-          ~f:(fun sp -> proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
-          (Specs.get_specs_from_payload summary) ;
+          ~f:(fun sp ->
+            proof_cover :=
+              BiabductionSummary.Visitedset.union sp.BiabductionSummary.visited !proof_cover )
+          (Tabulation.get_specs_from_payload summary) ;
         Errlog.update global_err_log (Specs.get_err_log summary) )
 
 
@@ -482,7 +488,7 @@ let write_html_file linereader filename procs =
               | None ->
                   0
               | Some summary ->
-                  List.length (Specs.get_specs_from_payload summary)
+                  List.length (Tabulation.get_specs_from_payload summary)
             in
             let label =
               F.sprintf "%s: %d specs"
@@ -500,7 +506,7 @@ let write_html_file linereader filename procs =
   pp_prelude () ;
   let global_err_log = Errlog.empty () in
   let table_nodes_at_linenum = Hashtbl.create 11 in
-  let proof_cover = ref Specs.Visitedset.empty in
+  let proof_cover = ref BiabductionSummary.Visitedset.empty in
   List.iter ~f:(write_html_proc filename proof_cover table_nodes_at_linenum global_err_log) procs ;
   let table_err_per_line = create_table_err_per_line global_err_log in
   let linenum = ref 0 in
