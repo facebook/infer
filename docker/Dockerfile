@@ -17,11 +17,12 @@ RUN apt-get update && \
       openjdk-8-jdk-headless \
       pkg-config \
       python2.7 \
+      libsqlite3-dev \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.13.1; \
+RUN INFER_VERSION=v0.14.0; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
@@ -30,7 +31,7 @@ RUN INFER_VERSION=v0.13.1; \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
 
 # Compile Infer
-RUN OCAML_VERSION=4.05.0+flambda; \
+RUN OCAML_VERSION=4.06.1+flambda; \
     cd /infer && ./build-infer.sh --opam-switch $OCAML_VERSION && rm -rf /root/.opam
 
 # Install Infer
