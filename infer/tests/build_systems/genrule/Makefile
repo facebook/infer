@@ -14,9 +14,7 @@ INFER_TARGET = $(BUCK_TARGET)_infer
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/lib__module2_compile__output/module2_compile.jar
 JSON_REPORT = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json
-INFER_OPTIONS = --project-root $(ROOT_DIR)
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
-CLEAN_EXTRA = $(ROOT_DIR)/buck-out/genruletest report.json
 
 # fake infer-out because we only copy the results.json from buck-out.
 INFER_OUT = .
@@ -37,7 +35,7 @@ $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES) $(MAKEFILE_LIST)
 	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck genrule for Java integration,\
-	INFER_BIN="$(INFER_BIN)" $(BUCK) build --no-cache $(INFER_TARGET))
+	INFER_BIN="$(INFER_BIN)" PROJECT_ROOT="$(PWD)" $(BUCK) build --no-cache $(INFER_TARGET))
 	$(QUIET)touch $@
 
 report.json: $(JSON_REPORT) $(MAKEFILE_LIST)
