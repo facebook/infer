@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_7" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_2" ;
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" [label="8:  DeclStmt \n   n$1=_fun_foo() [line 104, column 13]\n  *&c:objc_class*=n$1 [line 104, column 3]\n " shape="box"]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" [label="8:  DeclStmt \n   n$3=_fun_foo() [line 104, column 13]\n  *&c:objc_class*=n$3 [line 104, column 3]\n " shape="box"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" ;
@@ -46,7 +46,7 @@ digraph cfg {
 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" [label="2: Exit A_call_alloc_class \n  " color=yellow style=filled]
 	
 
-"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" [label="3:  Call alloc \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 58, column 3]\n " shape="box"]
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" [label="3:  Call alloc \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 58, column 3]\n " shape="box"]
 	
 
 	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" ;
@@ -57,7 +57,7 @@ digraph cfg {
 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" [label="2: Exit A_call_alloc_instance \n  " color=yellow style=filled]
 	
 
-"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" [label="3:  Call alloc \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 62, column 3]\n " shape="box"]
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" [label="3:  Call alloc \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 62, column 3]\n " shape="box"]
 	
 
 	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" ;
@@ -68,7 +68,7 @@ digraph cfg {
 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" [label="2: Exit A_call_class_instance \n  " color=yellow style=filled]
 	
 
-"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" [label="3:  Message Call: test_class \n   n$7=_fun_C_test_class() [line 66, column 3]\n " shape="box"]
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" [label="3:  Message Call: test_class \n   n$9=_fun_C_test_class() [line 66, column 3]\n " shape="box"]
 	
 
 	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" ;
@@ -79,7 +79,7 @@ digraph cfg {
 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_2" [label="2: Exit A_call_class_instance_with_class_name \n  " color=yellow style=filled]
 	
 
-"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" [label="3:  Message Call: test_class \n   n$8=_fun_A_test_class() [line 70, column 3]\n " shape="box"]
+"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" [label="3:  Message Call: test_class \n   n$10=_fun_A_test_class() [line 70, column 3]\n " shape="box"]
 	
 
 	 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" -> "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_2" ;
@@ -90,7 +90,7 @@ digraph cfg {
 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_2" [label="2: Exit A_call_test \n  " color=yellow style=filled]
 	
 
-"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" [label="3:  Message Call: test \n   n$0=*&self:A* [line 47, column 4]\n  n$1=_fun_A_test(n$0:A*) virtual [line 47, column 3]\n " shape="box"]
+"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" [label="3:  Message Call: test \n   n$1=*&self:A* [line 47, column 4]\n  n$2=_fun_A_test(n$1:A*) virtual [line 47, column 3]\n " shape="box"]
 	
 
 	 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" -> "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_2" ;
@@ -101,7 +101,7 @@ digraph cfg {
 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" [label="2: Exit A_call_test_class \n  " color=yellow style=filled]
 	
 
-"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" [label="3:  Message Call: test_class \n   n$2=_fun_C_test_class() [line 54, column 3]\n " shape="box"]
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" [label="3:  Message Call: test_class \n   n$4=_fun_C_test_class() [line 54, column 3]\n " shape="box"]
 	
 
 	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" ;
@@ -112,7 +112,7 @@ digraph cfg {
 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" [label="2: Exit A_calling_super \n  " color=yellow style=filled]
 	
 
-"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" [label="3:  Message Call: test_class \n   n$16=_fun_C_test_class() [line 83, column 3]\n " shape="box"]
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" [label="3:  Message Call: test_class \n   n$18=_fun_C_test_class() [line 83, column 3]\n " shape="box"]
 	
 
 	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" ;
@@ -123,7 +123,7 @@ digraph cfg {
 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A_init \n  " color=yellow style=filled]
 	
 
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Message Call: init \n   n$17=*&self:A* [line 87, column 3]\n  n$18=_fun_NSObject_init(n$17:A*) [line 87, column 3]\n " shape="box"]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Message Call: init \n   n$19=*&self:A* [line 87, column 3]\n  n$20=_fun_NSObject_init(n$19:A*) [line 87, column 3]\n " shape="box"]
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
@@ -145,7 +145,7 @@ digraph cfg {
 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" [label="2: Exit A_loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$20=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 91, column 10]\n  *&return:NSString*=n$20 [line 91, column 3]\n " shape="box"]
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$22=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 91, column 10]\n  *&return:NSString*=n$22 [line 91, column 3]\n " shape="box"]
 	
 
 	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" ;
@@ -156,11 +156,11 @@ digraph cfg {
 "t#A#instance.e31b9a7bced712626784e2860af1a31b_2" [label="2: Exit A_t \n  " color=yellow style=filled]
 	
 
-"t#A#instance.e31b9a7bced712626784e2860af1a31b_3" [label="3:  Message Call: b_m \n   n$10=_fun_B_b_m() [line 75, column 3]\n " shape="box"]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_3" [label="3:  Message Call: b_m \n   n$12=_fun_B_b_m() [line 75, column 3]\n " shape="box"]
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_2" ;
-"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$11=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 74, column 10]\n  n$12=_fun_NSObject_init(n$11:B*) virtual [line 74, column 10]\n  *&b:B*=n$12 [line 74, column 3]\n " shape="box"]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 74, column 10]\n  n$14=_fun_NSObject_init(n$13:B*) virtual [line 74, column 10]\n  *&b:B*=n$14 [line 74, column 3]\n " shape="box"]
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" ;
@@ -185,7 +185,7 @@ digraph cfg {
 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 79, column 11]\n  n$15=_fun_B_isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 79, column 10]\n  *&return:_Bool=n$15 [line 79, column 3]\n " shape="box"]
+"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$16=*&object:B* [line 79, column 11]\n  n$17=_fun_B_isC:(n$16:B*,sizeof(t=A):unsigned long) virtual [line 79, column 10]\n  *&return:_Bool=n$17 [line 79, column 3]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" ;
@@ -204,16 +204,16 @@ digraph cfg {
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" [label="5:  BinaryOperatorStmt: NE \n   n$21=*sizeof(t=A):objc_class* [line 95, column 7]\n  n$22=*&c:objc_class* [line 95, column 15]\n " shape="box"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" [label="5:  BinaryOperatorStmt: NE \n   n$23=*sizeof(t=A):objc_class* [line 95, column 7]\n  n$24=*&c:objc_class* [line 95, column 15]\n " shape="box"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" ;
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch, if) \n   PRUNE((n$21 != n$22), true); [line 95, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch, if) \n   PRUNE((n$23 != n$24), true); [line 95, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$21 != n$22), false); [line 95, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$23 != n$24), false); [line 95, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" ;

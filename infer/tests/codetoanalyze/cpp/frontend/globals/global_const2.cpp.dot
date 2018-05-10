@@ -20,11 +20,11 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_5" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 10, column 20]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 10, column 20]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_6" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 10, column 20]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 10, column 20]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_7" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;

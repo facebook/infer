@@ -36,16 +36,16 @@ digraph cfg {
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_9" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_5" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" [label="10:  BinaryOperatorStmt: EQ \n   n$2=*&i:int [line 21, column 7]\n " shape="box"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" [label="10:  BinaryOperatorStmt: EQ \n   n$4=*&i:int [line 21, column 7]\n " shape="box"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" ;
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_10" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch, if) \n   PRUNE((n$2 == 0), true); [line 21, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" [label="11: Prune (true branch, if) \n   PRUNE((n$4 == 0), true); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_11" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_13" ;
-"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$2 == 0), false); [line 21, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$4 == 0), false); [line 21, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_12" -> "aMethod#MyClass#instance.af06019e61fb7341a36c141ed90caaaf_9" ;

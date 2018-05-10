@@ -45,24 +45,24 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   n$1=*&o:AClass* [line 45, column 10]\n  n$2=*&x:int [line 45, column 16]\n  n$3=_fun_AClass_bar:(n$1:AClass*,n$2:int) virtual [line 45, column 9]\n  *&x:int=n$3 [line 45, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   n$2=*&o:AClass* [line 45, column 10]\n  n$1=*&x:int [line 45, column 16]\n  n$3=_fun_AClass_bar:(n$2:AClass*,n$1:int) virtual [line 45, column 9]\n  *&x:int=n$3 [line 45, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  Message Call: foo: \n   n$4=*&o:AClass* [line 44, column 6]\n  n$5=*&x:int [line 44, column 12]\n  n$6=_fun_AClass_foo:(n$4:AClass*,n$5:int) virtual [line 44, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  Message Call: foo: \n   n$5=*&o:AClass* [line 44, column 6]\n  n$4=*&x:int [line 44, column 12]\n  n$6=_fun_AClass_foo:(n$5:AClass*,n$4:int) virtual [line 44, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 40, column 15]\n  *&o:AClass*=n$7 [line 40, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$9=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 40, column 15]\n  *&o:AClass*=n$9 [line 40, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&x:int [line 38, column 12]\n  n$9=_fun_bar1(n$8:int) [line 38, column 7]\n  *&x:int=n$9 [line 38, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$10=*&x:int [line 38, column 12]\n  n$11=_fun_bar1(n$10:int) [line 38, column 7]\n  *&x:int=n$11 [line 38, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  Call _fun_foo1 \n   n$10=*&x:int [line 36, column 8]\n  n$11=_fun_foo1(n$10:int) [line 36, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  Call _fun_foo1 \n   n$12=*&x:int [line 36, column 8]\n  n$13=_fun_foo1(n$12:int) [line 36, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;

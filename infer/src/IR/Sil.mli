@@ -240,12 +240,6 @@ val hpred_compact : sharing_env -> hpred -> hpred
 val is_objc_object : hpred -> bool
 (** {2 Comparision And Inspection Functions} *)
 
-val zero_value_of_numerical_type_option : Typ.t -> Exp.t option
-(** Returns the zero value of a type, for int, float and ptr types, None othwewise *)
-
-val zero_value_of_numerical_type : Typ.t -> Exp.t
-(** Returns the zero value of a type, for int, float and ptr types, fail otherwise *)
-
 val is_static_local_name : string -> Pvar.t -> bool
 (** Check if a pvar is a local static in objc *)
 

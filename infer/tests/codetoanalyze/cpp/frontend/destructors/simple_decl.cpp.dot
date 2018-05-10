@@ -7,7 +7,7 @@ digraph cfg {
 "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_2" [label="2: Exit A___infer_inner_destructor_~A \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:A* [line 12, column 10]\n  *n$1.f:int=0 [line 12, column 10]\n " shape="box"]
+"__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&this:A* [line 12, column 10]\n  *n$3.f:int=0 [line 12, column 10]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_3" -> "__infer_inner_destructor_~A#A#(5328378654181921475).fc82b49c4db05388a691369e292a802b_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_2" [label="2: Exit B___infer_inner_destructor_~B \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:B* [line 20, column 11]\n  *n$1.f:int=1 [line 20, column 11]\n " shape="box"]
+"__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&this:B* [line 20, column 11]\n  *n$3.f:int=1 [line 20, column 11]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_3" -> "__infer_inner_destructor_~B#B#(7876366742276079110).fe5e2468da434006eca91d5190796d09_2" ;

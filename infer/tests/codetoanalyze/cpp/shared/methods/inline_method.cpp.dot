@@ -7,11 +7,11 @@ digraph cfg {
 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" [label="2: Exit test_call \n  " color=yellow style=filled]
 	
 
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$0=*&a_ptr:A* [line 26, column 3]\n  n$1=*n$0.in:A::AIn* [line 26, column 3]\n  _=*n$1:A::AIn [line 26, column 3]\n  n$3=_fun_A::AIn_fun(n$1:A::AIn*) [line 26, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$1=*&a_ptr:A* [line 26, column 3]\n  n$2=*n$1.in:A::AIn* [line 26, column 3]\n  _=*n$2:A::AIn [line 26, column 3]\n  n$4=_fun_A::AIn_fun(n$2:A::AIn*) [line 26, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" ;
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$4=*&a_ptr:A* [line 25, column 3]\n  _=*n$4:A [line 25, column 3]\n  n$6=_fun_A_fun(n$4:A*) [line 25, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$5=*&a_ptr:A* [line 25, column 3]\n  _=*n$5:A [line 25, column 3]\n  n$7=_fun_A_fun(n$5:A*) [line 25, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" ;

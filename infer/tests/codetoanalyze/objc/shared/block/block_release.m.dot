@@ -16,15 +16,15 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_4" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_2" ;
-"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" [label="5: Prune (true branch, if) \n   n$8=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(n$8, true); [line 26, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" [label="5: Prune (true branch, if) \n   n$10=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(n$10, true); [line 26, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_5" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_7" ;
-"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" [label="6: Prune (false branch, if) \n   n$8=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(!n$8, false); [line 26, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" [label="6: Prune (false branch, if) \n   n$10=*&newImage:CGImage* [line 26, column 9]\n  PRUNE(!n$10, false); [line 26, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_6" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_3" ;
-"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_7" [label="7:  Call _fun_CGImageRelease \n   n$9=*&newImage:CGImage* [line 27, column 22]\n  n$10=_fun_CGImageRelease(n$9:CGImage*) [line 27, column 7]\n " shape="box"]
+"objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 27, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 27, column 7]\n " shape="box"]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_7" -> "objc_blockMy_manager_blockReleaseNoLeak_1.a1f2f2c370e78fee994cf9a9d53a7210_3" ;
@@ -55,20 +55,20 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$4 \n   n$4=*&b:_fn_(*) [line 29, column 3]\n  n$5=*&z:int [line 29, column 5]\n  n$6=n$4(n$5:int) [line 29, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call n$6 \n   n$6=*&b:_fn_(*) [line 29, column 3]\n  n$7=*&z:int [line 29, column 5]\n  n$8=n$6(n$7:int) [line 29, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$7=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseNoLeak_1,(n$7 &newImage:CGImage*)) [line 25, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseNoLeak_1,(n$9 &newImage:CGImage*)) [line 25, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   n$11=*&context:CGContext* [line 24, column 52]\n  n$12=_fun_CGBitmapContextCreateImage(n$11:CGContext*) [line 24, column 25]\n  *&newImage:CGImage*=n$12 [line 24, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  DeclStmt \n   n$15=*&context:CGContext* [line 24, column 52]\n  n$16=_fun_CGBitmapContextCreateImage(n$15:CGContext*) [line 24, column 25]\n  *&newImage:CGImage*=n$16 [line 24, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$13=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 23, column 26]\n  *&context:CGContext*=n$13 [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   n$17=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 23, column 26]\n  *&context:CGContext*=n$17 [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;

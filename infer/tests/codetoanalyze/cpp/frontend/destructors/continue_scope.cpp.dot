@@ -15,15 +15,15 @@ digraph cfg {
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_4" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_16" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" [label="5: Prune (true branch, do while) \n   n$2=*&a:_Bool [line 90, column 12]\n  PRUNE(n$2, true); [line 90, column 12]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" [label="5: Prune (true branch, do while) \n   n$3=*&a:_Bool [line 90, column 12]\n  PRUNE(n$3, true); [line 90, column 12]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_4" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_6" [label="6: Prune (false branch, do while) \n   n$2=*&a:_Bool [line 90, column 12]\n  PRUNE(!n$2, false); [line 90, column 12]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_6" [label="6: Prune (false branch, do while) \n   n$3=*&a:_Bool [line 90, column 12]\n  PRUNE(!n$3, false); [line 90, column 12]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_6" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_3" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" [label="7:  Destruction \n   _=*&x2:continue_scope::X [line 90, column 3]\n  n$4=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 90, column 3]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" [label="7:  Destruction \n   _=*&x2:continue_scope::X [line 90, column 3]\n  n$5=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 90, column 3]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" ;
@@ -32,45 +32,45 @@ digraph cfg {
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" [label="9: Prune (true branch, if) \n   n$5=*&b:_Bool [line 84, column 9]\n  PRUNE(n$5, true); [line 84, column 9]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" [label="9: Prune (true branch, if) \n   n$7=*&b:_Bool [line 84, column 9]\n  PRUNE(n$7, true); [line 84, column 9]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_13" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" [label="10: Prune (false branch, if) \n   n$5=*&b:_Bool [line 84, column 9]\n  PRUNE(!n$5, false); [line 84, column 9]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" [label="10: Prune (false branch, if) \n   n$7=*&b:_Bool [line 84, column 9]\n  PRUNE(!n$7, false); [line 84, column 9]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_15" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_11" [label="11:  Destruction \n   _=*&x3:continue_scope::X [line 87, column 5]\n  n$7=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 87, column 5]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_11" [label="11:  Destruction \n   _=*&x3:continue_scope::X [line 87, column 5]\n  n$9=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 87, column 5]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_11" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" [label="12:  Destruction \n   _=*&x3:continue_scope::X [line 86, column 7]\n  n$9=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 86, column 7]\n  _=*&x2:continue_scope::X [line 86, column 7]\n  n$11=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 86, column 7]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" [label="12:  Destruction \n   _=*&x3:continue_scope::X [line 86, column 7]\n  n$12=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 86, column 7]\n  _=*&x2:continue_scope::X [line 86, column 7]\n  n$14=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 86, column 7]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" ;
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_6" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_13" [label="13:  DeclStmt \n   n$12=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 85, column 9]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_13" [label="13:  DeclStmt \n   n$16=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 85, column 9]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_13" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_14" [label="14:  Destruction \n   _=*&x4:continue_scope::X [line 89, column 5]\n  n$14=_fun_continue_scope::X_~X(&x4:continue_scope::X*) [line 89, column 5]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_14" [label="14:  Destruction \n   _=*&x4:continue_scope::X [line 89, column 5]\n  n$18=_fun_continue_scope::X_~X(&x4:continue_scope::X*) [line 89, column 5]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_14" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_15" [label="15:  DeclStmt \n   n$15=_fun_continue_scope::X_X(&x4:continue_scope::X*) [line 88, column 9]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_15" [label="15:  DeclStmt \n   n$20=_fun_continue_scope::X_X(&x4:continue_scope::X*) [line 88, column 9]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_15" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_14" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_16" [label="16:  DeclStmt \n   n$16=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 83, column 7]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_16" [label="16:  DeclStmt \n   n$22=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 83, column 7]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_16" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" ;
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_16" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_17" [label="17:  DeclStmt \n   n$17=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 81, column 5]\n " shape="box"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_17" [label="17:  DeclStmt \n   n$24=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 81, column 5]\n " shape="box"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_17" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_4" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_1" [label="1: Start continue_scope::test_for\nFormals:  b:_Bool\nLocals:  x2:continue_scope::X it:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$5:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$11:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator x1:continue_scope::X vector:continue_scope::vec \n   DECLARE_LOCALS(&return,&x2,&it,&0$?%__sil_tmpSIL_materialize_temp__n$5,&0$?%__sil_tmp__temp_return_n$11,&0$?%__sil_tmpSIL_materialize_temp__n$13,&x1,&vector); [line 57, column 1]\n " color=yellow style=filled]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_1" [label="1: Start continue_scope::test_for\nFormals:  b:_Bool\nLocals:  x2:continue_scope::X it:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$6:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$13:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$16:continue_scope::iterator const  x1:continue_scope::X vector:continue_scope::vec \n   DECLARE_LOCALS(&return,&x2,&it,&0$?%__sil_tmpSIL_materialize_temp__n$6,&0$?%__sil_tmp__temp_return_n$13,&0$?%__sil_tmpSIL_materialize_temp__n$16,&x1,&vector); [line 57, column 1]\n " color=yellow style=filled]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_1" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_17" ;
@@ -81,7 +81,7 @@ digraph cfg {
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_3" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_2" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_4" [label="4:  DeclStmt \n   n$4=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 65, column 5]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_4" [label="4:  DeclStmt \n   n$5=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 65, column 5]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_4" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_3" ;
@@ -89,25 +89,25 @@ digraph cfg {
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_5" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_8" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_6" [label="6:  DeclStmt \n   _=*&vector:continue_scope::vec [line 59, column 22]\n  n$8=_fun_continue_scope::vec_begin(&vector:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$5:continue_scope::iterator*) [line 59, column 22]\n  n$9=_fun_continue_scope::iterator_iterator(&it:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$5:continue_scope::iterator&) [line 59, column 22]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_6" [label="6:  DeclStmt \n   _=*&vector:continue_scope::vec [line 59, column 22]\n  n$9=_fun_continue_scope::vec_begin(&vector:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$6:continue_scope::iterator*) [line 59, column 22]\n  n$10=_fun_continue_scope::iterator_iterator(&it:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$6:continue_scope::iterator&) [line 59, column 22]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_6" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_5" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$12=_fun_continue_scope::iterator_operator++(&it:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$11:continue_scope::iterator*) [line 59, column 58]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$14=_fun_continue_scope::iterator_operator++(&it:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$13:continue_scope::iterator*) [line 59, column 58]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_7" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_5" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   _=*&vector:continue_scope::vec [line 59, column 44]\n  n$16=_fun_continue_scope::vec_end(&vector:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator*) [line 59, column 44]\n  n$17=_fun_continue_scope::iterator_operator!=(&it:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator&) [line 59, column 38]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   _=*&vector:continue_scope::vec [line 59, column 44]\n  n$19=_fun_continue_scope::vec_end(&vector:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$16:continue_scope::iterator*) [line 59, column 44]\n  n$20=_fun_continue_scope::iterator_operator!=(&it:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$16:continue_scope::iterator const &) [line 59, column 38]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_8" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" ;
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_8" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_10" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$17, true); [line 59, column 38]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$20, true); [line 59, column 38]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_12" ;
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_13" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$17, false); [line 59, column 38]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$20, false); [line 59, column 38]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_10" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_4" ;
@@ -115,31 +115,31 @@ digraph cfg {
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_11" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_7" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_12" [label="12: Prune (true branch, if) \n   n$18=*&b:_Bool [line 60, column 9]\n  PRUNE(n$18, true); [line 60, column 9]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_12" [label="12: Prune (true branch, if) \n   n$22=*&b:_Bool [line 60, column 9]\n  PRUNE(n$22, true); [line 60, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_12" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_13" [label="13: Prune (false branch, if) \n   n$18=*&b:_Bool [line 60, column 9]\n  PRUNE(!n$18, false); [line 60, column 9]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_13" [label="13: Prune (false branch, if) \n   n$22=*&b:_Bool [line 60, column 9]\n  PRUNE(!n$22, false); [line 60, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_13" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_11" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" [label="14:  Destruction \n   _=*&x1:continue_scope::X [line 63, column 5]\n  n$20=_fun_continue_scope::X_~X(&x1:continue_scope::X*) [line 63, column 5]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" [label="14:  Destruction \n   _=*&x1:continue_scope::X [line 63, column 5]\n  n$24=_fun_continue_scope::X_~X(&x1:continue_scope::X*) [line 63, column 5]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_11" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" [label="15:  Destruction \n   _=*&x1:continue_scope::X [line 62, column 7]\n  n$22=_fun_continue_scope::X_~X(&x1:continue_scope::X*) [line 62, column 7]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" [label="15:  Destruction \n   _=*&x1:continue_scope::X [line 62, column 7]\n  n$27=_fun_continue_scope::X_~X(&x1:continue_scope::X*) [line 62, column 7]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_7" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" [label="16:  DeclStmt \n   n$23=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 61, column 9]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" [label="16:  DeclStmt \n   n$29=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 61, column 9]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_17" [label="17:  DeclStmt \n   n$24=_fun_continue_scope::vec_vec(&vector:continue_scope::vec*) [line 58, column 7]\n " shape="box"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_17" [label="17:  DeclStmt \n   n$33=_fun_continue_scope::vec_vec(&vector:continue_scope::vec*) [line 58, column 7]\n " shape="box"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_17" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_6" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" [label="1: Start continue_scope::test_for_range\nFormals:  b:_Bool\nLocals:  __end:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$4:continue_scope::iterator __begin:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$10:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$17:continue_scope::iterator x2:continue_scope::X x:continue_scope::X 0$?%__sil_tmpSIL_materialize_temp__n$26:continue_scope::X __range:continue_scope::vec& x1:continue_scope::X vector:continue_scope::vec \n   DECLARE_LOCALS(&return,&__end,&0$?%__sil_tmpSIL_materialize_temp__n$4,&__begin,&0$?%__sil_tmpSIL_materialize_temp__n$10,&0$?%__sil_tmp__temp_return_n$17,&x2,&x,&0$?%__sil_tmpSIL_materialize_temp__n$26,&__range,&x1,&vector); [line 46, column 1]\n " color=yellow style=filled]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" [label="1: Start continue_scope::test_for_range\nFormals:  b:_Bool\nLocals:  __end:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator __begin:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator x2:continue_scope::X x:continue_scope::X 0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const  __range:continue_scope::vec& x1:continue_scope::X vector:continue_scope::vec \n   DECLARE_LOCALS(&return,&__end,&0$?%__sil_tmpSIL_materialize_temp__n$7,&__begin,&0$?%__sil_tmpSIL_materialize_temp__n$13,&0$?%__sil_tmp__temp_return_n$21,&x2,&x,&0$?%__sil_tmpSIL_materialize_temp__n$37,&__range,&x1,&vector); [line 46, column 1]\n " color=yellow style=filled]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_20" ;
@@ -154,28 +154,28 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" [label="5:  DeclStmt \n   n$5=*&__range:continue_scope::vec& [line 49, column 12]\n  _=*n$5:continue_scope::vec [line 49, column 12]\n  n$8=_fun_continue_scope::vec_end(n$5:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$4:continue_scope::iterator*) [line 49, column 12]\n  n$9=_fun_continue_scope::iterator_iterator(&__end:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$4:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" [label="5:  DeclStmt \n   n$8=*&__range:continue_scope::vec& [line 49, column 12]\n  _=*n$8:continue_scope::vec [line 49, column 12]\n  n$11=_fun_continue_scope::vec_end(n$8:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator*) [line 49, column 12]\n  n$12=_fun_continue_scope::iterator_iterator(&__end:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" [label="6:  DeclStmt \n   n$11=*&__range:continue_scope::vec& [line 49, column 12]\n  _=*n$11:continue_scope::vec [line 49, column 12]\n  n$14=_fun_continue_scope::vec_begin(n$11:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$10:continue_scope::iterator*) [line 49, column 12]\n  n$15=_fun_continue_scope::iterator_iterator(&__begin:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$10:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" [label="6:  DeclStmt \n   n$14=*&__range:continue_scope::vec& [line 49, column 12]\n  _=*n$14:continue_scope::vec [line 49, column 12]\n  n$17=_fun_continue_scope::vec_begin(n$14:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator*) [line 49, column 12]\n  n$18=_fun_continue_scope::iterator_iterator(&__begin:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$18=_fun_continue_scope::iterator_operator++(&__begin:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$17:continue_scope::iterator*) [line 49, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$22=_fun_continue_scope::iterator_operator++(&__begin:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator*) [line 49, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   n$19=_fun_continue_scope::iterator_operator!=(&__begin:continue_scope::iterator&,&__end:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   n$24=_fun_continue_scope::iterator_operator!=(&__begin:continue_scope::iterator&,&__end:continue_scope::iterator&) [line 49, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_9" ;
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_10" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$19, true); [line 49, column 12]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_9" [label="9: Prune (true branch, for loop) \n   PRUNE(n$24, true); [line 49, column 12]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_9" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$19, false); [line 49, column 12]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!n$24, false); [line 49, column 12]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_10" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_3" ;
@@ -183,27 +183,27 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_11" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_12" [label="12: Prune (true branch, if) \n   n$20=*&b:_Bool [line 50, column 9]\n  PRUNE(n$20, true); [line 50, column 9]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_12" [label="12: Prune (true branch, if) \n   n$27=*&b:_Bool [line 50, column 9]\n  PRUNE(n$27, true); [line 50, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_12" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_13" [label="13: Prune (false branch, if) \n   n$20=*&b:_Bool [line 50, column 9]\n  PRUNE(!n$20, false); [line 50, column 9]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_13" [label="13: Prune (false branch, if) \n   n$27=*&b:_Bool [line 50, column 9]\n  PRUNE(!n$27, false); [line 50, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_13" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_11" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_14" [label="14:  Destruction \n   _=*&x2:continue_scope::X [line 53, column 5]\n  n$22=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 53, column 5]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_14" [label="14:  Destruction \n   _=*&x2:continue_scope::X [line 53, column 5]\n  n$29=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 53, column 5]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_14" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_11" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" [label="15:  Destruction \n   _=*&x2:continue_scope::X [line 52, column 7]\n  n$24=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 52, column 7]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" [label="15:  Destruction \n   _=*&x2:continue_scope::X [line 52, column 7]\n  n$32=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 52, column 7]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" [label="16:  DeclStmt \n   n$25=_fun_continue_scope::X_X(&x2:continue_scope::X*,&x:continue_scope::X&) [line 51, column 14]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" [label="16:  DeclStmt \n   n$34=_fun_continue_scope::X_X(&x2:continue_scope::X*,&x:continue_scope::X&) [line 51, column 14]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17:  DeclStmt \n   n$28=_fun_continue_scope::iterator_operator*(&__begin:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$26:continue_scope::X*) [line 49, column 12]\n  n$29=_fun_continue_scope::X_X(&x:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$26:continue_scope::X&) [line 49, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17:  DeclStmt \n   n$40=_fun_continue_scope::iterator_operator*(&__begin:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X*) [line 49, column 12]\n  n$41=_fun_continue_scope::X_X(&x:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const &) [line 49, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_12" ;
@@ -212,11 +212,11 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_18" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_19" [label="19:  DeclStmt \n   n$30=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 48, column 5]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_19" [label="19:  DeclStmt \n   n$43=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 48, column 5]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_19" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_18" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_20" [label="20:  DeclStmt \n   n$31=_fun_continue_scope::vec_vec(&vector:continue_scope::vec*) [line 47, column 7]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_20" [label="20:  DeclStmt \n   n$44=_fun_continue_scope::vec_vec(&vector:continue_scope::vec*) [line 47, column 7]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_20" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_19" ;
@@ -236,12 +236,12 @@ digraph cfg {
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_5" ;
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_6" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_5" [label="5: Prune (true branch, while) \n   n$2=*&a:_Bool [line 70, column 10]\n  PRUNE(n$2, true); [line 70, column 10]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_5" [label="5: Prune (true branch, while) \n   n$3=*&a:_Bool [line 70, column 10]\n  PRUNE(n$3, true); [line 70, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_5" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" ;
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_5" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_6" [label="6: Prune (false branch, while) \n   n$2=*&a:_Bool [line 70, column 10]\n  PRUNE(!n$2, false); [line 70, column 10]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_6" [label="6: Prune (false branch, while) \n   n$3=*&a:_Bool [line 70, column 10]\n  PRUNE(!n$3, false); [line 70, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_6" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_3" ;
@@ -249,35 +249,35 @@ digraph cfg {
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" [label="8: Prune (true branch, if) \n   n$3=*&b:_Bool [line 71, column 9]\n  PRUNE(n$3, true); [line 71, column 9]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" [label="8: Prune (true branch, if) \n   n$5=*&b:_Bool [line 71, column 9]\n  PRUNE(n$5, true); [line 71, column 9]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_12" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" [label="9: Prune (false branch, if) \n   n$3=*&b:_Bool [line 71, column 9]\n  PRUNE(!n$3, false); [line 71, column 9]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" [label="9: Prune (false branch, if) \n   n$5=*&b:_Bool [line 71, column 9]\n  PRUNE(!n$5, false); [line 71, column 9]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_14" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_10" [label="10:  Destruction \n   _=*&x2:continue_scope::X [line 74, column 5]\n  n$5=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 74, column 5]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_10" [label="10:  Destruction \n   _=*&x2:continue_scope::X [line 74, column 5]\n  n$7=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 74, column 5]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_10" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_11" [label="11:  Destruction \n   _=*&x2:continue_scope::X [line 73, column 7]\n  n$7=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 73, column 7]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_11" [label="11:  Destruction \n   _=*&x2:continue_scope::X [line 73, column 7]\n  n$10=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 73, column 7]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_11" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_12" [label="12:  DeclStmt \n   n$8=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 72, column 9]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_12" [label="12:  DeclStmt \n   n$12=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 72, column 9]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_12" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_11" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_13" [label="13:  Destruction \n   _=*&x4:continue_scope::X [line 76, column 5]\n  n$10=_fun_continue_scope::X_~X(&x4:continue_scope::X*) [line 76, column 5]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_13" [label="13:  Destruction \n   _=*&x4:continue_scope::X [line 76, column 5]\n  n$14=_fun_continue_scope::X_~X(&x4:continue_scope::X*) [line 76, column 5]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_13" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_14" [label="14:  DeclStmt \n   n$11=_fun_continue_scope::X_X(&x4:continue_scope::X*) [line 75, column 9]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_14" [label="14:  DeclStmt \n   n$16=_fun_continue_scope::X_X(&x4:continue_scope::X*) [line 75, column 9]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_14" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_13" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_15" [label="15:  DeclStmt \n   n$12=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 69, column 5]\n " shape="box"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_15" [label="15:  DeclStmt \n   n$19=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 69, column 5]\n " shape="box"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_15" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" ;
@@ -297,15 +297,15 @@ digraph cfg {
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_4" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_5" ;
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_4" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_6" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_5" [label="5: Prune (true branch, while) \n   n$2=*&a:_Bool [line 95, column 10]\n  PRUNE(n$2, true); [line 95, column 10]\n " shape="invhouse"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_5" [label="5: Prune (true branch, while) \n   n$3=*&a:_Bool [line 95, column 10]\n  PRUNE(n$3, true); [line 95, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_5" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_14" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_6" [label="6: Prune (false branch, while) \n   n$2=*&a:_Bool [line 95, column 10]\n  PRUNE(!n$2, false); [line 95, column 10]\n " shape="invhouse"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_6" [label="6: Prune (false branch, while) \n   n$3=*&a:_Bool [line 95, column 10]\n  PRUNE(!n$3, false); [line 95, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_6" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_3" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_7" [label="7:  Destruction \n   _=*&x2:continue_scope::X [line 101, column 3]\n  n$4=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 101, column 3]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_7" [label="7:  Destruction \n   _=*&x2:continue_scope::X [line 101, column 3]\n  n$5=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 101, column 3]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_7" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_4" ;
@@ -314,31 +314,31 @@ digraph cfg {
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_8" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_9" ;
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_8" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_10" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_9" [label="9: Prune (true branch, while) \n   n$5=*&b:_Bool [line 97, column 12]\n  PRUNE(n$5, true); [line 97, column 12]\n " shape="invhouse"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_9" [label="9: Prune (true branch, while) \n   n$7=*&b:_Bool [line 97, column 12]\n  PRUNE(n$7, true); [line 97, column 12]\n " shape="invhouse"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_9" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_13" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_10" [label="10: Prune (false branch, while) \n   n$5=*&b:_Bool [line 97, column 12]\n  PRUNE(!n$5, false); [line 97, column 12]\n " shape="invhouse"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_10" [label="10: Prune (false branch, while) \n   n$7=*&b:_Bool [line 97, column 12]\n  PRUNE(!n$7, false); [line 97, column 12]\n " shape="invhouse"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_10" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_7" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_11" [label="11:  Destruction \n   _=*&x3:continue_scope::X [line 100, column 5]\n  n$7=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 100, column 5]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_11" [label="11:  Destruction \n   _=*&x3:continue_scope::X [line 100, column 5]\n  n$9=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 100, column 5]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_11" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_8" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_12" [label="12:  Destruction \n   _=*&x3:continue_scope::X [line 99, column 7]\n  n$9=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 99, column 7]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_12" [label="12:  Destruction \n   _=*&x3:continue_scope::X [line 99, column 7]\n  n$12=_fun_continue_scope::X_~X(&x3:continue_scope::X*) [line 99, column 7]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_12" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_8" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_13" [label="13:  DeclStmt \n   n$10=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 98, column 9]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_13" [label="13:  DeclStmt \n   n$14=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 98, column 9]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_13" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_12" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_14" [label="14:  DeclStmt \n   n$11=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 96, column 7]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_14" [label="14:  DeclStmt \n   n$16=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 96, column 7]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_14" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_8" ;
-"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_15" [label="15:  DeclStmt \n   n$12=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 94, column 5]\n " shape="box"]
+"test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_15" [label="15:  DeclStmt \n   n$18=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 94, column 5]\n " shape="box"]
 	
 
 	 "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_15" -> "test_while2#continue_scope#4169552136172626704.fb057544ed7a6c8312596f53be6b62dc_4" ;
@@ -353,7 +353,7 @@ digraph cfg {
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_3" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_2" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_4" [label="4:  DeclStmt \n   n$4=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 112, column 5]\n " shape="box"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_4" [label="4:  DeclStmt \n   n$5=_fun_continue_scope::X_X(&x3:continue_scope::X*) [line 112, column 5]\n " shape="box"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_4" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_3" ;
@@ -362,15 +362,15 @@ digraph cfg {
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_5" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_6" ;
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_5" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_7" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_6" [label="6: Prune (true branch, while) \n   n$5=*&a:_Bool [line 106, column 10]\n  PRUNE(n$5, true); [line 106, column 10]\n " shape="invhouse"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_6" [label="6: Prune (true branch, while) \n   n$6=*&a:_Bool [line 106, column 10]\n  PRUNE(n$6, true); [line 106, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_6" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_12" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_7" [label="7: Prune (false branch, while) \n   n$5=*&a:_Bool [line 106, column 10]\n  PRUNE(!n$5, false); [line 106, column 10]\n " shape="invhouse"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_7" [label="7: Prune (false branch, while) \n   n$6=*&a:_Bool [line 106, column 10]\n  PRUNE(!n$6, false); [line 106, column 10]\n " shape="invhouse"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_7" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_4" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_8" [label="8:  Destruction \n   _=*&x2:continue_scope::X [line 111, column 3]\n  n$7=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 111, column 3]\n " shape="box"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_8" [label="8:  Destruction \n   _=*&x2:continue_scope::X [line 111, column 3]\n  n$8=_fun_continue_scope::X_~X(&x2:continue_scope::X*) [line 111, column 3]\n " shape="box"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_8" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_5" ;
@@ -379,19 +379,19 @@ digraph cfg {
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_9" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_10" ;
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_9" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_11" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_10" [label="10: Prune (true branch, while) \n   n$8=*&b:_Bool [line 108, column 12]\n  PRUNE(n$8, true); [line 108, column 12]\n " shape="invhouse"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_10" [label="10: Prune (true branch, while) \n   n$10=*&b:_Bool [line 108, column 12]\n  PRUNE(n$10, true); [line 108, column 12]\n " shape="invhouse"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_10" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_9" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_11" [label="11: Prune (false branch, while) \n   n$8=*&b:_Bool [line 108, column 12]\n  PRUNE(!n$8, false); [line 108, column 12]\n " shape="invhouse"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_11" [label="11: Prune (false branch, while) \n   n$10=*&b:_Bool [line 108, column 12]\n  PRUNE(!n$10, false); [line 108, column 12]\n " shape="invhouse"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_11" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_8" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_12" [label="12:  DeclStmt \n   n$9=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 107, column 7]\n " shape="box"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_12" [label="12:  DeclStmt \n   n$15=_fun_continue_scope::X_X(&x2:continue_scope::X*) [line 107, column 7]\n " shape="box"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_12" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_9" ;
-"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_13" [label="13:  DeclStmt \n   n$10=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 105, column 5]\n " shape="box"]
+"test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_13" [label="13:  DeclStmt \n   n$17=_fun_continue_scope::X_X(&x1:continue_scope::X*) [line 105, column 5]\n " shape="box"]
 	
 
 	 "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_13" -> "test_while3#continue_scope#1176125085634537673.a024bcf519539ef1deac237c06a02a78_5" ;
@@ -463,11 +463,11 @@ digraph cfg {
 "iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_2" [label="2: Exit continue_scope::iterator_iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_3" [label="3:  Constructor Init \n   n$0=*&this:continue_scope::iterator* [line 18, column 8]\n  n$1=*&__param_0:continue_scope::iterator& [line 18, column 8]\n  n$2=*n$1.vector:continue_scope::vec const * [line 18, column 8]\n  *n$0.vector:continue_scope::vec const *=n$2 [line 18, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_3" [label="3:  Constructor Init \n   n$2=*&this:continue_scope::iterator* [line 18, column 8]\n  n$3=*&__param_0:continue_scope::iterator& [line 18, column 8]\n  n$4=*n$3.vector:continue_scope::vec const * [line 18, column 8]\n  *n$2.vector:continue_scope::vec const *=n$4 [line 18, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_3" -> "iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_2" ;
-"iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_4" [label="4:  Constructor Init \n   n$3=*&this:continue_scope::iterator* [line 18, column 8]\n  n$4=*&__param_0:continue_scope::iterator& [line 18, column 8]\n  n$5=*n$4.position:int [line 18, column 8]\n  *n$3.position:int=n$5 [line 18, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_4" [label="4:  Constructor Init \n   n$5=*&this:continue_scope::iterator* [line 18, column 8]\n  n$6=*&__param_0:continue_scope::iterator& [line 18, column 8]\n  n$7=*n$6.position:int [line 18, column 8]\n  *n$5.position:int=n$7 [line 18, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_4" -> "iterator#iterator#continue_scope#{10809914205998631191|constexpr}.3824b12e843bd919018b65d60747271f_3" ;
@@ -478,11 +478,11 @@ digraph cfg {
 "iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_2" [label="2: Exit continue_scope::iterator_iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_3" [label="3:  Constructor Init \n   n$0=*&this:continue_scope::iterator* [line 22, column 52]\n  n$1=*&v:continue_scope::vec const * [line 22, column 59]\n  *n$0.vector:continue_scope::vec const *=n$1 [line 22, column 52]\n " shape="box"]
+"iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_3" [label="3:  Constructor Init \n   n$2=*&this:continue_scope::iterator* [line 22, column 52]\n  n$3=*&v:continue_scope::vec const * [line 22, column 59]\n  *n$2.vector:continue_scope::vec const *=n$3 [line 22, column 52]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_3" -> "iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_2" ;
-"iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_4" [label="4:  Constructor Init \n   n$2=*&this:continue_scope::iterator* [line 22, column 37]\n  n$3=*&pos:int [line 22, column 46]\n  *n$2.position:int=n$3 [line 22, column 37]\n " shape="box"]
+"iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_4" [label="4:  Constructor Init \n   n$4=*&this:continue_scope::iterator* [line 22, column 37]\n  n$5=*&pos:int [line 22, column 46]\n  *n$4.position:int=n$5 [line 22, column 37]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_4" -> "iterator#iterator#continue_scope#{17152205201271404012}.6fcfea00eca12936183691c85f57ca37_3" ;
@@ -493,11 +493,11 @@ digraph cfg {
 "iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_2" [label="2: Exit continue_scope::iterator_iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_3" [label="3:  Constructor Init \n   n$0=*&this:continue_scope::iterator* [line 18, column 8]\n  n$1=*&__param_0:continue_scope::iterator const & [line 18, column 8]\n  n$2=*n$1.vector:continue_scope::vec const * [line 18, column 8]\n  *n$0.vector:continue_scope::vec const *=n$2 [line 18, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_3" [label="3:  Constructor Init \n   n$2=*&this:continue_scope::iterator* [line 18, column 8]\n  n$3=*&__param_0:continue_scope::iterator const & [line 18, column 8]\n  n$4=*n$3.vector:continue_scope::vec const * [line 18, column 8]\n  *n$2.vector:continue_scope::vec const *=n$4 [line 18, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_3" -> "iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_2" ;
-"iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_4" [label="4:  Constructor Init \n   n$3=*&this:continue_scope::iterator* [line 18, column 8]\n  n$4=*&__param_0:continue_scope::iterator const & [line 18, column 8]\n  n$5=*n$4.position:int [line 18, column 8]\n  *n$3.position:int=n$5 [line 18, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_4" [label="4:  Constructor Init \n   n$5=*&this:continue_scope::iterator* [line 18, column 8]\n  n$6=*&__param_0:continue_scope::iterator const & [line 18, column 8]\n  n$7=*n$6.position:int [line 18, column 8]\n  *n$5.position:int=n$7 [line 18, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_4" -> "iterator#iterator#continue_scope#{5205818338773724773|constexpr}.befe58b6f79cfdaaec28cf6af78711d5_3" ;
@@ -525,11 +525,11 @@ digraph cfg {
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_6" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_8" ;
-"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=1 [line 29, column 48]\n " shape="box"]
+"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=1 [line 29, column 48]\n " shape="box"]
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_7" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_3" ;
-"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=0 [line 29, column 48]\n " shape="box"]
+"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=0 [line 29, column 48]\n " shape="box"]
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_8" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_3" ;
@@ -537,14 +537,14 @@ digraph cfg {
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_9" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_2" ;
-"operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_1" [label="1: Start continue_scope::iterator_operator*\nFormals:  this:continue_scope::iterator* __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 44, column 1]\n " color=yellow style=filled]
+"operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_1" [label="1: Start continue_scope::iterator_operator*\nFormals:  this:continue_scope::iterator* __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 44, column 1]\n " color=yellow style=filled]
 	
 
 	 "operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_1" -> "operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_3" ;
 "operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_2" [label="2: Exit continue_scope::iterator_operator* \n  " color=yellow style=filled]
 	
 
-"operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_3" [label="3:  Return Stmt \n   n$0=*&__return_param:continue_scope::X* [line 44, column 33]\n  n$2=*&this:continue_scope::iterator const * [line 44, column 40]\n  n$3=*n$2.vector:continue_scope::vec const * [line 44, column 40]\n  _=*n$3:continue_scope::vec const  [line 44, column 40]\n  n$5=*&this:continue_scope::iterator const * [line 44, column 52]\n  n$6=*n$5.position:int [line 44, column 52]\n  n$8=_fun_continue_scope::vec_get(n$3:continue_scope::vec const *,n$6:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X*) [line 44, column 40]\n  n$9=_fun_continue_scope::X_X(n$0:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X&) [line 44, column 40]\n " shape="box"]
+"operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_3" [label="3:  Return Stmt \n   n$0=*&__return_param:continue_scope::X* [line 44, column 33]\n  n$2=*&this:continue_scope::iterator const * [line 44, column 40]\n  n$3=*n$2.vector:continue_scope::vec const * [line 44, column 40]\n  _=*n$3:continue_scope::vec const  [line 44, column 40]\n  n$5=*&this:continue_scope::iterator const * [line 44, column 52]\n  n$6=*n$5.position:int [line 44, column 52]\n  n$8=_fun_continue_scope::vec_get(n$3:continue_scope::vec const *,n$6:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X*) [line 44, column 40]\n  n$9=_fun_continue_scope::X_X(n$0:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const &) [line 44, column 40]\n " shape="box"]
 	
 
 	 "operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_3" -> "operator*#iterator#continue_scope#(10976315504449545146).52feec5517a47e2a4f419770b171de17_2" ;
@@ -559,7 +559,7 @@ digraph cfg {
 	
 
 	 "operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_3" -> "operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_2" ;
-"operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_4" [label="4:  UnaryOperator \n   n$3=*&this:continue_scope::iterator* [line 25, column 5]\n  n$4=*n$3.position:int [line 25, column 5]\n  *n$3.position:int=(n$4 + 1) [line 25, column 5]\n " shape="box"]
+"operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_4" [label="4:  UnaryOperator \n   n$4=*&this:continue_scope::iterator* [line 25, column 5]\n  n$5=*n$4.position:int [line 25, column 5]\n  *n$4.position:int=(n$5 + 1) [line 25, column 5]\n " shape="box"]
 	
 
 	 "operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_4" -> "operator++#iterator#continue_scope#(16434574593791982090).926de445b967c9119c5cf6eecba7a618_3" ;
@@ -570,7 +570,7 @@ digraph cfg {
 "vec#vec#continue_scope#{15014380772393274563}.0db26bae10e0d7702598e02aede0544b_2" [label="2: Exit continue_scope::vec_vec \n  " color=yellow style=filled]
 	
 
-"vec#vec#continue_scope#{15014380772393274563}.0db26bae10e0d7702598e02aede0544b_3" [label="3:  Constructor Init \n   n$0=*&this:continue_scope::vec* [line 35, column 3]\n  n$1=_fun_continue_scope::X_X(n$0._data:continue_scope::X[10*1](*)) [line 35, column 3]\n " shape="box"]
+"vec#vec#continue_scope#{15014380772393274563}.0db26bae10e0d7702598e02aede0544b_3" [label="3:  Constructor Init \n   n$2=*&this:continue_scope::vec* [line 35, column 3]\n  n$3=_fun_continue_scope::X_X(n$2._data:continue_scope::X[10*1](*)) [line 35, column 3]\n " shape="box"]
 	
 
 	 "vec#vec#continue_scope#{15014380772393274563}.0db26bae10e0d7702598e02aede0544b_3" -> "vec#vec#continue_scope#{15014380772393274563}.0db26bae10e0d7702598e02aede0544b_2" ;

@@ -7,11 +7,11 @@ digraph cfg {
 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_2" [label="2: Exit div0_B_A \n  " color=yellow style=filled]
 	
 
-"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" [label="3:  Call _fun_B<A>_div0 \n   _=*&b:B<A> [line 20, column 3]\n  n$1=_fun_B<A>_div0(&b:B<A>&) [line 20, column 3]\n " shape="box"]
+"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" [label="3:  Call _fun_B<A>_div0 \n   _=*&b:B<A> [line 20, column 3]\n  n$2=_fun_B<A>_div0(&b:B<A>&) [line 20, column 3]\n " shape="box"]
 	
 
 	 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" -> "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_2" ;
-"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" [label="4:  DeclStmt \n   n$2=_fun_B<A>_B(&b:B<A>*) [line 19, column 8]\n " shape="box"]
+"div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" [label="4:  DeclStmt \n   n$3=_fun_B<A>_B(&b:B<A>*) [line 19, column 8]\n " shape="box"]
 	
 
 	 "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_4" -> "div0_B_A#16868528730428357658.9b8f4e2ce0bf464a2adbe53fb7a34f64_3" ;
@@ -22,11 +22,11 @@ digraph cfg {
 "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_2" [label="2: Exit div0_B_int \n  " color=yellow style=filled]
 	
 
-"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" [label="3:  Call _fun_B<int>_div0 \n   _=*&b:B<int> [line 15, column 3]\n  n$1=_fun_B<int>_div0(&b:B<int>&) [line 15, column 3]\n " shape="box"]
+"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" [label="3:  Call _fun_B<int>_div0 \n   _=*&b:B<int> [line 15, column 3]\n  n$2=_fun_B<int>_div0(&b:B<int>&) [line 15, column 3]\n " shape="box"]
 	
 
 	 "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" -> "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_2" ;
-"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" [label="4:  DeclStmt \n   n$2=_fun_B<int>_B(&b:B<int>*) [line 14, column 10]\n " shape="box"]
+"div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" [label="4:  DeclStmt \n   n$3=_fun_B<int>_B(&b:B<int>*) [line 14, column 10]\n " shape="box"]
 	
 
 	 "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_4" -> "div0_B_int#1022620961131326491.1d61c8d3035b9223f336f2b0e83b1cd8_3" ;
@@ -59,7 +59,7 @@ digraph cfg {
 "div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_2" [label="2: Exit div0_templ_A \n  " color=yellow style=filled]
 	
 
-"div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_3" [label="3:  Call _fun_div0_templ<A> \n   n$0=_fun_div0_templ<A>() [line 25, column 22]\n " shape="box"]
+"div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_3" [label="3:  Call _fun_div0_templ<A> \n   n$1=_fun_div0_templ<A>() [line 25, column 22]\n " shape="box"]
 	
 
 	 "div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_3" -> "div0_templ_A#15777392272986999827.c3e6f124c5921f718c539c423038b21a_2" ;
@@ -70,7 +70,7 @@ digraph cfg {
 "div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_2" [label="2: Exit div0_templ_int \n  " color=yellow style=filled]
 	
 
-"div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_3" [label="3:  Call _fun_div0_templ<int> \n   n$0=_fun_div0_templ<int>() [line 23, column 25]\n " shape="box"]
+"div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_3" [label="3:  Call _fun_div0_templ<int> \n   n$1=_fun_div0_templ<int>() [line 23, column 25]\n " shape="box"]
 	
 
 	 "div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_3" -> "div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_2" ;

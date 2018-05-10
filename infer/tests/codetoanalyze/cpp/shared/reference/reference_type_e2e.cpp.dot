@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_2" ;
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&p:int* [line 16, column 4]\n  *n$1:int=0 [line 16, column 3]\n " shape="box"]
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&p:int* [line 16, column 4]\n  *n$2:int=0 [line 16, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_4" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_3" ;
@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_2" ;
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Call _fun_zero_ptr \n   n$1=_fun_zero_ptr(&a:int*) [line 22, column 3]\n " shape="box"]
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" [label="4:  Call _fun_zero_ptr \n   n$2=_fun_zero_ptr(&a:int*) [line 22, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_3" ;
@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_2" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Call _fun_zero_ptr \n   n$1=*&r:int* [line 29, column 12]\n  n$2=_fun_zero_ptr(n$1:int*) [line 29, column 3]\n " shape="box"]
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" [label="4:  Call _fun_zero_ptr \n   n$2=*&r:int* [line 29, column 12]\n  n$3=_fun_zero_ptr(n$2:int*) [line 29, column 3]\n " shape="box"]
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_4" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_3" ;
@@ -76,7 +76,7 @@ digraph cfg {
 	
 
 	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_2" ;
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r:int& [line 36, column 3]\n  *n$1:int=0 [line 36, column 3]\n " shape="box"]
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&r:int& [line 36, column 3]\n  *n$2:int=0 [line 36, column 3]\n " shape="box"]
 	
 
 	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_4" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_3" ;
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_2" ;
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Call _fun_zero_ref \n   n$1=_fun_zero_ref(&a:int&) [line 42, column 3]\n " shape="box"]
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" [label="4:  Call _fun_zero_ref \n   n$2=_fun_zero_ref(&a:int&) [line 42, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_3" ;
@@ -118,7 +118,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_2" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Call _fun_zero_ref \n   n$1=*&r:int& [line 49, column 12]\n  n$2=_fun_zero_ref(n$1:int&) [line 49, column 3]\n " shape="box"]
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" [label="4:  Call _fun_zero_ref \n   n$2=*&r:int& [line 49, column 12]\n  n$3=_fun_zero_ref(n$2:int&) [line 49, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_4" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_3" ;
@@ -141,11 +141,11 @@ digraph cfg {
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_2" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 58, column 3]\n  *n$1:int=0 [line 58, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&r2:int& [line 58, column 3]\n  *n$2:int=0 [line 58, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_3" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" [label="5:  DeclStmt \n   n$2=*&r1:int& [line 57, column 13]\n  *&b:int=1 [line 57, column 18]\n  n$3=*&b:int [line 57, column 18]\n  *n$2:int=n$3 [line 57, column 13]\n  *&r2:int&=n$2 [line 57, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" [label="5:  DeclStmt \n   n$3=*&r1:int& [line 57, column 13]\n  *&b:int=1 [line 57, column 18]\n  n$4=*&b:int [line 57, column 18]\n  *n$3:int=n$4 [line 57, column 13]\n  *&r2:int&=n$3 [line 57, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_5" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_4" ;
@@ -172,11 +172,11 @@ digraph cfg {
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_2" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int& [line 67, column 3]\n  *n$1:int=0 [line 67, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&r2:int& [line 67, column 3]\n  *n$2:int=0 [line 67, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_3" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" [label="5:  DeclStmt \n   n$2=*&r1:int& [line 66, column 13]\n  *&b:int=1 [line 66, column 18]\n  n$3=*&b:int [line 66, column 18]\n  *n$2:int=n$3 [line 66, column 13]\n  *&r2:int&=n$2 [line 66, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" [label="5:  DeclStmt \n   n$3=*&r1:int& [line 66, column 13]\n  *&b:int=1 [line 66, column 18]\n  n$4=*&b:int [line 66, column 18]\n  *n$3:int=n$4 [line 66, column 13]\n  *&r2:int&=n$3 [line 66, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_5" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_4" ;
@@ -199,7 +199,7 @@ digraph cfg {
 "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_2" [label="2: Exit zero_ptr \n  " color=yellow style=filled]
 	
 
-"zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&p:int* [line 10, column 26]\n  *n$0:int=0 [line 10, column 25]\n " shape="box"]
+"zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&p:int* [line 10, column 26]\n  *n$1:int=0 [line 10, column 25]\n " shape="box"]
 	
 
 	 "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_3" -> "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_2" ;
@@ -210,7 +210,7 @@ digraph cfg {
 "zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_2" [label="2: Exit zero_ref \n  " color=yellow style=filled]
 	
 
-"zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&p:int& [line 11, column 25]\n  *n$0:int=0 [line 11, column 25]\n " shape="box"]
+"zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&p:int& [line 11, column 25]\n  *n$1:int=0 [line 11, column 25]\n " shape="box"]
 	
 
 	 "zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_3" -> "zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_2" ;

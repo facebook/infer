@@ -136,3 +136,8 @@ val pp : F.formatter -> t -> unit
 val to_string : t -> string
 
 val is_objc_block_closure : t -> bool
+
+val zero_of_type : Typ.t -> t option
+(** Returns the zero value of a type, for int, float and ptr types *)
+
+val zero_of_type_exn : Typ.t -> t

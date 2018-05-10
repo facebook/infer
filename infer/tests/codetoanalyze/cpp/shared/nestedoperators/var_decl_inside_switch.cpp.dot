@@ -7,12 +7,12 @@ digraph cfg {
 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_2" [label="2: Exit get \n  " color=yellow style=filled]
 	
 
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" [label="3:  Switch_stmt \n   n$0=*&x:int [line 11, column 15]\n " shape="box"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" [label="3:  Switch_stmt \n   n$1=*&x:int [line 11, column 15]\n " shape="box"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_13" ;
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_14" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" [label="4:  DeclStmt \n   n$1=*&a:int [line 11, column 19]\n  *&x:int=n$1 [line 11, column 11]\n " shape="box"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" [label="4:  DeclStmt \n   n$2=*&a:int [line 11, column 19]\n  *&x:int=n$2 [line 11, column 11]\n " shape="box"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_3" ;
@@ -20,7 +20,7 @@ digraph cfg {
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_5" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_6" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_6" [label="6:  Return Stmt \n   n$2=*&x:int [line 18, column 14]\n  *&return:int=n$2 [line 18, column 7]\n " shape="box"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_6" [label="6:  Return Stmt \n   n$3=*&x:int [line 18, column 14]\n  *&return:int=n$3 [line 18, column 7]\n " shape="box"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_6" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_2" ;
@@ -28,11 +28,11 @@ digraph cfg {
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_7" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_2" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 15, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$1 == 2), true); [line 15, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_8" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_7" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 15, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$1 == 2), false); [line 15, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_9" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_5" ;
@@ -40,20 +40,20 @@ digraph cfg {
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_10" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_2" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 13, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$1 == 1), true); [line 13, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_11" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_10" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 13, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$1 == 1), false); [line 13, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_12" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_8" ;
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_12" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_9" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 12, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$1 == 0), true); [line 12, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_13" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_10" ;
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 12, column 5]\n " shape="invhouse"]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$1 == 0), false); [line 12, column 5]\n " shape="invhouse"]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_14" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_11" ;

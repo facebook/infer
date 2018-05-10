@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_2" ;
-"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:X& [line 25, column 3]\n  *n$2.field:int=0 [line 25, column 3]\n " shape="box"]
+"div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&v:X& [line 25, column 3]\n  *n$3.field:int=0 [line 25, column 3]\n " shape="box"]
 	
 
 	 "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_4" -> "div0_struct_field#9739930445713322699.789b28ce09db76d69bc6373aefeacf6a_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_2" ;
-"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:Container<int>& [line 20, column 3]\n  *n$2.field:int=0 [line 20, column 3]\n " shape="box"]
+"div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&v:Container<int>& [line 20, column 3]\n  *n$3.field:int=0 [line 20, column 3]\n " shape="box"]
 	
 
 	 "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_4" -> "div0_template_field#16893301392201012428.8e63a0ece60a1b5e4e7b3cfa5d3dddd8_3" ;

@@ -40,11 +40,11 @@ digraph cfg {
 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   n$0=_fun_get_ptr() [line 26, column 11]\n  _=*n$0:X [line 26, column 11]\n  n$2=_fun_X_call(n$0:X*) [line 26, column 11]\n  *&c:int=n$2 [line 26, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" [label="3:  DeclStmt \n   n$1=_fun_get_ptr() [line 26, column 11]\n  _=*n$1:X [line 26, column 11]\n  n$3=_fun_X_call(n$1:X*) [line 26, column 11]\n  *&c:int=n$3 [line 26, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_2" ;
-"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   n$3=_fun_get_ptr() [line 25, column 11]\n  n$4=*n$3.f:int [line 25, column 11]\n  *&f:int=n$4 [line 25, column 3]\n " shape="box"]
+"test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" [label="4:  DeclStmt \n   n$4=_fun_get_ptr() [line 25, column 11]\n  n$5=*n$4.f:int [line 25, column 11]\n  *&f:int=n$5 [line 25, column 3]\n " shape="box"]
 	
 
 	 "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_4" -> "test_ptr#11416786403465510397.fe356f46dccde5545eadf0c661f4974d_3" ;
@@ -55,11 +55,11 @@ digraph cfg {
 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
 	
 
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21, column 11]\n  _=*n$0:X [line 21, column 11]\n  n$2=_fun_X_call(n$0:X&) [line 21, column 11]\n  *&c:int=n$2 [line 21, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" [label="3:  DeclStmt \n   n$1=_fun_get_ref() [line 21, column 11]\n  _=*n$1:X [line 21, column 11]\n  n$3=_fun_X_call(n$1:X&) [line 21, column 11]\n  *&c:int=n$3 [line 21, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_2" ;
-"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$3=_fun_get_ref() [line 20, column 11]\n  n$4=*n$3.f:int [line 20, column 11]\n  *&f:int=n$4 [line 20, column 3]\n " shape="box"]
+"test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" [label="4:  DeclStmt \n   n$4=_fun_get_ref() [line 20, column 11]\n  n$5=*n$4.f:int [line 20, column 11]\n  *&f:int=n$5 [line 20, column 3]\n " shape="box"]
 	
 
 	 "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_4" -> "test_ref#7021555814503032268.9c735d5eedd26e3009ec35c4af427db4_3" ;

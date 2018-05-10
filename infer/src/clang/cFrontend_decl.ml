@@ -57,7 +57,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       CMethod_trans.create_external_procdesc cfg procname method_kind None
     in
     let pp_context fmt () =
-      F.fprintf fmt "Aborting translation of method '%a'" Typ.Procname.pp procname
+      F.fprintf fmt "Aborting translation of method '%a' in file '%a'" Typ.Procname.pp procname
+        SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     in
     let f () =
       match Typ.Procname.Hash.find cfg procname with

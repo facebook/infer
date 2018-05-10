@@ -304,3 +304,17 @@ let rec gen_program_vars =
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
+
+let zero_of_type typ =
+  match typ.Typ.desc with
+  | Typ.Tint _ ->
+      Some (Const (Cint IntLit.zero))
+  | Typ.Tfloat _ ->
+      Some (Const (Cfloat 0.0))
+  | Typ.Tptr _ ->
+      Some (Const (Cint IntLit.null))
+  | _ ->
+      None
+
+
+let zero_of_type_exn typ = Option.value_exn (zero_of_type typ)

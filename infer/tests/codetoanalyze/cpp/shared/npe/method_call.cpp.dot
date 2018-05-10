@@ -7,7 +7,7 @@ digraph cfg {
 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35, column 51]\n  _=*n$0:XForward [line 35, column 51]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35, column 51]\n " shape="box"]
+"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" [label="3:  Call _fun_XForward_call \n   n$1=*&x:XForward* [line 35, column 51]\n  _=*n$1:XForward [line 35, column 51]\n  n$3=_fun_XForward_call(n$1:XForward*) [line 35, column 51]\n " shape="box"]
 	
 
 	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" ;
@@ -44,7 +44,7 @@ digraph cfg {
 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_2" [label="2: Exit npe_call_after_call \n  " color=yellow style=filled]
 	
 
-"npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" [label="3:  Call _fun_X_call \n   n$0=_fun_getX() [line 22, column 30]\n  _=*n$0:X [line 22, column 30]\n  n$2=_fun_X_call(n$0:X*) [line 22, column 30]\n " shape="box"]
+"npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" [label="3:  Call _fun_X_call \n   n$1=_fun_getX() [line 22, column 30]\n  _=*n$1:X [line 22, column 30]\n  n$3=_fun_X_call(n$1:X*) [line 22, column 30]\n " shape="box"]
 	
 
 	 "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_3" -> "npe_call_after_call#8140813350794705532.fd3a6d06275def8a130284a430f22a3d_2" ;
@@ -55,7 +55,7 @@ digraph cfg {
 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" [label="2: Exit npe_call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   n$0=_fun_call_with_forward_declaration(null:XForward*) [line 38, column 3]\n " shape="box"]
+"npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" [label="3:  Call _fun_call_with_forward_declaration \n   n$1=_fun_call_with_forward_declaration(null:XForward*) [line 38, column 3]\n " shape="box"]
 	
 
 	 "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_3" -> "npe_call_with_forward_declaration#12046983290123510130.5e902eb9a8f96f74e83d527b422bd861_2" ;

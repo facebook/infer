@@ -70,12 +70,6 @@ let dummy_stmt_info () =
   {Clang_ast_t.si_pointer= get_fresh_pointer (); si_source_range= dummy_source_range ()}
 
 
-let dummy_stmt () =
-  let pointer = get_fresh_pointer () in
-  let source_range = dummy_source_range () in
-  Clang_ast_t.NullStmt ({Clang_ast_t.si_pointer= pointer; si_source_range= source_range}, [])
-
-
 let get_decl decl_ptr = Int.Table.find ClangPointers.pointer_decl_table decl_ptr
 
 let get_decl_opt decl_ptr_opt =

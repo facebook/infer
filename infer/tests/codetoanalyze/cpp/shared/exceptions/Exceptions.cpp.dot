@@ -7,7 +7,7 @@ digraph cfg {
 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_2" [label="2: Exit call_deref_with_null \n  " color=yellow style=filled]
 	
 
-"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" [label="3:  Call _fun_deref_null \n   n$0=_fun_deref_null(null:int*) [line 24, column 30]\n " shape="box"]
+"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" [label="3:  Call _fun_deref_null \n   n$1=_fun_deref_null(null:int*) [line 24, column 30]\n " shape="box"]
 	
 
 	 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" -> "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_2" ;
@@ -26,20 +26,20 @@ digraph cfg {
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5:  BinaryOperatorStmt: EQ \n   n$2=*&p:int* [line 11, column 7]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5:  BinaryOperatorStmt: EQ \n   n$3=*&p:int* [line 11, column 7]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" ;
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" [label="6: Prune (true branch, if) \n   PRUNE((n$2 == null), true); [line 11, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" [label="6: Prune (true branch, if) \n   PRUNE((n$3 == null), true); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$2 == null), false); [line 11, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$3 == null), false); [line 11, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   n$3=_fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12, column 5]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   n$5=_fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12, column 5]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;
@@ -50,7 +50,7 @@ digraph cfg {
 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" [label="2: Exit deref_null \n  " color=yellow style=filled]
 	
 
-"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" [label="3:  Return Stmt \n   n$0=*&p:int* [line 19, column 13]\n  n$1=*n$0:int [line 19, column 12]\n  *&return:int=n$1 [line 19, column 5]\n " shape="box"]
+"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" [label="3:  Return Stmt \n   n$4=*&p:int* [line 19, column 13]\n  n$5=*n$4:int [line 19, column 12]\n  *&return:int=n$5 [line 19, column 5]\n " shape="box"]
 	
 
 	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" ;
@@ -61,7 +61,7 @@ digraph cfg {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$0=_fun_deref(null:int*) [line 28, column 12]\n  *&return:int=n$0 [line 28, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$4=_fun_deref(null:int*) [line 28, column 12]\n  *&return:int=n$4 [line 28, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;

@@ -74,7 +74,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_18" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-"main.fad58de7366495db4650cfefac2fcd61_19" [label="19:  BinaryOperatorStmt: Assign \n   n$7=_fun_getenv(\"BLOCK\":char const *) [line 47, column 10]\n  *&spec:char*=n$7 [line 47, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_19" [label="19:  BinaryOperatorStmt: Assign \n   n$10=_fun_getenv(\"BLOCK\":char const *) [line 47, column 10]\n  *&spec:char*=n$10 [line 47, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_19" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
@@ -95,24 +95,24 @@ digraph cfg {
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_4" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_2" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" [label="5: Prune (true branch, if) \n   n$0=*&x:int* [line 22, column 8]\n  PRUNE(!n$0, true); [line 22, column 8]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" [label="5: Prune (true branch, if) \n   n$1=*&x:int* [line 22, column 8]\n  PRUNE(!n$1, true); [line 22, column 8]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" [label="6: Prune (false branch, if) \n   n$0=*&x:int* [line 22, column 8]\n  PRUNE(n$0, false); [line 22, column 8]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" [label="6: Prune (false branch, if) \n   n$1=*&x:int* [line 22, column 8]\n  PRUNE(n$1, false); [line 22, column 8]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" [label="7:  BinaryOperatorStmt: Assign \n   n$1=_fun_getenv(\"BLOCK\":char const *) [line 22, column 19]\n  *&x:int*=n$1 [line 22, column 15]\n  n$2=*&x:int* [line 22, column 15]\n " shape="box"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" [label="7:  BinaryOperatorStmt: Assign \n   n$2=_fun_getenv(\"BLOCK\":char const *) [line 22, column 19]\n  *&x:int*=n$2 [line 22, column 15]\n  n$3=*&x:int* [line 22, column 15]\n " shape="box"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" ;
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" [label="8: Prune (true branch, if) \n   PRUNE(!n$2, true); [line 22, column 15]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" [label="8: Prune (true branch, if) \n   PRUNE(!n$3, true); [line 22, column 15]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_10" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" [label="9: Prune (false branch, if) \n   PRUNE(n$2, false); [line 22, column 15]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" [label="9: Prune (false branch, if) \n   PRUNE(n$3, false); [line 22, column 15]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" ;
@@ -120,7 +120,7 @@ digraph cfg {
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_10" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" [label="11:  BinaryOperatorStmt: Assign \n   n$3=*&x:int* [line 25, column 6]\n  *n$3:int=32 [line 25, column 5]\n " shape="box"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" [label="11:  BinaryOperatorStmt: Assign \n   n$4=*&x:int* [line 25, column 6]\n  *n$4:int=32 [line 25, column 5]\n " shape="box"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" ;
@@ -139,29 +139,29 @@ digraph cfg {
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_4" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_2" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&x:int* [line 14, column 7]\n " shape="box"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&x:int* [line 14, column 7]\n " shape="box"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" ;
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == null), true); [line 14, column 7]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == null), true); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_11" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == null), false); [line 14, column 7]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == null), false); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" [label="8:  BinaryOperatorStmt: EQ \n   n$1=*&x:int* [line 14, column 18]\n  n$2=*n$1:int [line 14, column 17]\n " shape="box"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" [label="8:  BinaryOperatorStmt: EQ \n   n$2=*&x:int* [line 14, column 18]\n  n$3=*n$2:int [line 14, column 17]\n " shape="box"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" ;
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" [label="9: Prune (true branch, if) \n   PRUNE((n$2 == 2), true); [line 14, column 17]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" [label="9: Prune (true branch, if) \n   PRUNE((n$3 == 2), true); [line 14, column 17]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_11" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$2 == 2), false); [line 14, column 17]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$3 == 2), false); [line 14, column 17]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_12" ;
@@ -223,7 +223,7 @@ digraph cfg {
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_12" -> "test_loop.254a9d372f8f45542e409771135b9322_3" ;
-"test_loop.254a9d372f8f45542e409771135b9322_13" [label="13:  BinaryOperatorStmt: Assign \n   n$5=_fun_getenv(\"BLOCK\":char const *) [line 34, column 10]\n  *&spec:char*=n$5 [line 34, column 3]\n " shape="box"]
+"test_loop.254a9d372f8f45542e409771135b9322_13" [label="13:  BinaryOperatorStmt: Assign \n   n$6=_fun_getenv(\"BLOCK\":char const *) [line 34, column 10]\n  *&spec:char*=n$6 [line 34, column 3]\n " shape="box"]
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_13" -> "test_loop.254a9d372f8f45542e409771135b9322_3" ;

@@ -40,7 +40,7 @@ digraph cfg {
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   n$3=_fun_DispatchA_sharedInstance() [line 85, column 18]\n  *&b:DispatchA*=n$3 [line 85, column 3]\n " shape="box"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   n$4=_fun_DispatchA_sharedInstance() [line 85, column 18]\n  *&b:DispatchA*=n$4 [line 85, column 3]\n " shape="box"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;

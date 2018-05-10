@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_3" -> "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_2" ;
-"div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" [label="4:  DeclStmt \n   n$1=*&x:X& [line 30, column 11]\n  n$2=_fun_operator*(n$1:X&,0:int) [line 30, column 11]\n  *&v:int=n$2 [line 30, column 3]\n " shape="box"]
+"div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" [label="4:  DeclStmt \n   n$2=*&x:X& [line 30, column 11]\n  n$3=_fun_operator*(n$2:X&,0:int) [line 30, column 11]\n  *&v:int=n$3 [line 30, column 3]\n " shape="box"]
 	
 
 	 "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_4" -> "div0_function_op#6873855268879531342.84fad54736dded19eef101141599a76d_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "div0_inheritted_op#3897716987010755035.349c69d7e8317217b8bcc1ac60f4e8bb_2" [label="2: Exit div0_inheritted_op \n  " color=yellow style=filled]
 	
 
-"div0_inheritted_op#3897716987010755035.349c69d7e8317217b8bcc1ac60f4e8bb_3" [label="3:  Return Stmt \n   n$0=*&y:Y& [line 42, column 14]\n  n$1=_fun_X_operator[](n$0:Y&,0:int) [line 42, column 14]\n  *&return:int=(1 / n$1) [line 42, column 3]\n " shape="box"]
+"div0_inheritted_op#3897716987010755035.349c69d7e8317217b8bcc1ac60f4e8bb_3" [label="3:  Return Stmt \n   n$1=*&y:Y& [line 42, column 14]\n  n$2=_fun_X_operator[](n$1:Y&,0:int) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n " shape="box"]
 	
 
 	 "div0_inheritted_op#3897716987010755035.349c69d7e8317217b8bcc1ac60f4e8bb_3" -> "div0_inheritted_op#3897716987010755035.349c69d7e8317217b8bcc1ac60f4e8bb_2" ;
@@ -37,7 +37,7 @@ digraph cfg {
 	
 
 	 "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_3" -> "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_2" ;
-"div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" [label="4:  DeclStmt \n   n$1=*&x:X& [line 36, column 11]\n  _=*n$1:X [line 36, column 11]\n  n$3=_fun_X_operator[](n$1:X&,0:int) [line 36, column 11]\n  *&v:int=n$3 [line 36, column 3]\n " shape="box"]
+"div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" [label="4:  DeclStmt \n   n$2=*&x:X& [line 36, column 11]\n  _=*n$2:X [line 36, column 11]\n  n$4=_fun_X_operator[](n$2:X&,0:int) [line 36, column 11]\n  *&v:int=n$4 [line 36, column 3]\n " shape="box"]
 	
 
 	 "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_4" -> "div0_method#3394285867487200768.d62d68147390fdf119b5094668c7a05c_3" ;
@@ -52,7 +52,7 @@ digraph cfg {
 	
 
 	 "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_3" -> "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_2" ;
-"div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" [label="4:  DeclStmt \n   n$1=*&x:X& [line 22, column 11]\n  n$2=_fun_X_operator[](n$1:X&,0:int) [line 22, column 11]\n  *&v:int=n$2 [line 22, column 3]\n " shape="box"]
+"div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" [label="4:  DeclStmt \n   n$3=*&x:X& [line 22, column 11]\n  n$4=_fun_X_operator[](n$3:X&,0:int) [line 22, column 11]\n  *&v:int=n$4 [line 22, column 3]\n " shape="box"]
 	
 
 	 "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" -> "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_3" ;
@@ -63,7 +63,7 @@ digraph cfg {
 "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
 	
 
-"div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 26, column 45]\n  n$1=_fun_X_operator[](n$0:X&,0:int) [line 26, column 43]\n  *&return:int=(1 / n$1) [line 26, column 32]\n " shape="box"]
+"div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 26, column 45]\n  n$2=_fun_X_operator[](n$1:X&,0:int) [line 26, column 43]\n  *&return:int=(1 / n$2) [line 26, column 32]\n " shape="box"]
 	
 
 	 "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" -> "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_2" ;
@@ -74,7 +74,7 @@ digraph cfg {
 "div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_2" [label="2: Exit div1_method_op \n  " color=yellow style=filled]
 	
 
-"div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 45, column 39]\n  n$1=_fun_X_operator[](n$0:X&,1:int) [line 45, column 39]\n  *&return:int=(1 / n$1) [line 45, column 28]\n " shape="box"]
+"div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_3" [label="3:  Return Stmt \n   n$1=*&x:X& [line 45, column 39]\n  n$2=_fun_X_operator[](n$1:X&,1:int) [line 45, column 39]\n  *&return:int=(1 / n$2) [line 45, column 28]\n " shape="box"]
 	
 
 	 "div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_3" -> "div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_2" ;

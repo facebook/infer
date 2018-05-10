@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 20, column 15]\n  *&local:int=n$1 [line 20, column 3]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  DeclStmt \n   n$2=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 20, column 15]\n  *&local:int=n$2 [line 20, column 3]\n " shape="box"]
 	
 
 	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;

@@ -7,7 +7,7 @@ digraph cfg {
 "f#3072121847520995784.879d673a5bab84df6d2f71ce7f834b14_2" [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-"f#3072121847520995784.879d673a5bab84df6d2f71ce7f834b14_3" [label="3:  Call _fun_Person_~Person \n   n$0=*&p:Person* [line 15, column 21]\n  _=*n$0:Person [line 15, column 21]\n  n$2=_fun_Person_~Person(n$0:Person*) [line 15, column 21]\n " shape="box"]
+"f#3072121847520995784.879d673a5bab84df6d2f71ce7f834b14_3" [label="3:  Call _fun_Person_~Person \n   n$1=*&p:Person* [line 15, column 21]\n  _=*n$1:Person [line 15, column 21]\n  n$3=_fun_Person_~Person(n$1:Person*) [line 15, column 21]\n " shape="box"]
 	
 
 	 "f#3072121847520995784.879d673a5bab84df6d2f71ce7f834b14_3" -> "f#3072121847520995784.879d673a5bab84df6d2f71ce7f834b14_2" ;

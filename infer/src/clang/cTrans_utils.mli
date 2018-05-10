@@ -30,33 +30,50 @@ type trans_state =
   ; opaque_exp: (Exp.t * Typ.t) option
   ; is_fst_arg_objc_method_call: bool }
 
-(** A translation result. It is returned by the translation function. *)
-type trans_result =
+val default_trans_state : CContext.t -> trans_state
+
+(** Part of the translation result that is (loosely) related to control flow graph
+   construction. More importantly, this is the part of a [trans_result] that some internal
+   translation functions work on when constructing a [trans_result] before the other components of
+   the translation result are available (such as the return expression). This is made into a
+   separate type to make intermediate computations easier to write and easier to typecheck. *)
+type control =
   { root_nodes: Procdesc.Node.t list  (** Top cfg nodes (root) created by the translation *)
   ; leaf_nodes: Procdesc.Node.t list  (** Bottom cfg nodes (leaf) created by the translate *)
   ; instrs: Sil.instr list
         (** list of SIL instruction that need to be placed in cfg nodes of the parent*)
-  ; exps: (Exp.t * Typ.t) list  (** SIL expressions resulting from translation of clang stmt *)
-  ; initd_exps: Exp.t list
+  ; initd_exps: Exp.t list  (** list of expressions that are initialised by the instructions *) }
+
+(** A translation result. It is returned by the translation function. *)
+type trans_result =
+  { control: control
+  ; return: Exp.t * Typ.t  (** value returned by the translated statement *)
+  ; method_name: Typ.Procname.t option
+        (** in the specific case of translating a method call in C++, we get the method name called
+            at the same time we get the [this] object that contains the method. The [this] instance
+            object is returned as the [return] field, while the method to call is filled in here.
+            This field is [None] in all other cases. *)
   ; is_cpp_call_virtual: bool }
 
-val empty_res_trans : trans_result
+val empty_control : control
 
-val default_trans_state : CContext.t -> trans_state
+val mk_trans_result :
+  ?method_name:BuiltinDecl.t -> ?is_cpp_call_virtual:bool -> Exp.t * Typ.typ -> control
+  -> trans_result
 
 val undefined_expression : unit -> Exp.t
 
-val collect_res_trans : Procdesc.t -> trans_result list -> trans_result
+val collect_controls : Procdesc.t -> control list -> control
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
+
+val collect_trans_results : Procdesc.t -> return:Exp.t * Typ.t -> trans_result list -> trans_result
 
 val is_return_temp : continuation option -> bool
 
 val mk_cond_continuation : continuation option -> continuation option
 
-val extract_exp_from_list : (Exp.t * Typ.t) list -> string -> Exp.t * Typ.t
-
 val define_condition_side_effects :
-  (Exp.t * Typ.t) list -> Sil.instr list -> Location.t -> (Exp.t * Typ.t) list * Sil.instr list
+  Exp.t * Typ.t -> Sil.instr list -> Location.t -> (Exp.t * Typ.t) * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
@@ -68,8 +85,7 @@ val dereference_value_from_result :
     expression assigned to it *)
 
 val cast_operation :
-  Clang_ast_t.cast_kind -> (Exp.t * Typ.t) list -> Typ.t -> Location.t
-  -> Sil.instr list * (Exp.t * Typ.t)
+  Clang_ast_t.cast_kind -> Exp.t * Typ.t -> Typ.t -> Location.t -> Sil.instr list * (Exp.t * Typ.t)
 
 val trans_assertion : trans_state -> Location.t -> trans_result
 
@@ -95,8 +111,8 @@ module Nodes : sig
     Procdesc.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Procdesc.Node.t
 
   val create_prune_node :
-    branch:bool -> negate_cond:bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t
-    -> Sil.if_kind -> CContext.t -> Procdesc.Node.t
+    branch:bool -> negate_cond:bool -> Exp.t * Typ.t -> Sil.instr list -> Location.t -> Sil.if_kind
+    -> CContext.t -> Procdesc.Node.t
 
   val is_true_prune_node : Procdesc.Node.t -> bool
 end
@@ -121,14 +137,23 @@ module PriorityNode : sig
 
   val own_priority_node : t -> Clang_ast_t.stmt_info -> bool
 
-  (* Used by translation functions to handle potenatial cfg nodes. *)
-  (* It connects nodes returned by translation of stmt children and *)
-  (* deals with creating or not a cfg node depending of owning the *)
-  (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
+  val compute_controls_to_parent :
+    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> control list
+    -> control
+  (** Used by translation functions to handle potential cfg nodes. It connects nodes returned by the
+      translation of stmt children and deals with creating or not a cfg node depending of owning the
+      priority_node. It returns the [control] that should be passed to the parent. *)
 
   val compute_results_to_parent :
-    trans_state -> Location.t -> string -> Clang_ast_t.stmt_info -> trans_result list
+    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> return:Exp.t * Typ.t
+    -> trans_result list -> trans_result
+  (** convenience wrapper around [compute_controls_to_parent] *)
+
+  val compute_result_to_parent :
+    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> trans_result
     -> trans_result
+  (** convenience function like [compute_results_to_parent] when there is a single [trans_result]
+      to consider *)
 end
 
 (** Module for translating goto instructions by keeping a map of labels. *)
@@ -171,10 +196,18 @@ module Self : sig
 
   val add_self_parameter_for_super_instance :
     Clang_ast_t.stmt_info -> CContext.t -> Typ.Procname.t -> Location.t
-    -> Clang_ast_t.obj_c_message_expr_info -> trans_result
+    -> Clang_ast_t.obj_c_message_expr_info -> trans_result option
 
   val is_var_self : Pvar.t -> bool -> bool
 end
 
 val is_logical_negation_of_int :
   Tenv.t -> Clang_ast_t.expr_info -> Clang_ast_t.unary_operator_info -> bool
+
+val mk_fresh_void_exp_typ : unit -> Exp.t * Typ.t
+
+val mk_fresh_void_id_typ : unit -> Ident.t * Typ.t
+
+val mk_fresh_void_return : unit -> (Ident.t * Typ.t) * (Exp.t * Typ.t)
+
+val last_or_mk_fresh_void_exp_typ : (Exp.t * Typ.t) list -> Exp.t * Typ.t

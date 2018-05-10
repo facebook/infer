@@ -11,8 +11,6 @@ open! IStd
 
 (** Functions for transformations of ast nodes *)
 
-val dummy_stmt : unit -> Clang_ast_t.stmt
-
 val dummy_source_range : unit -> Clang_ast_t.source_range
 
 val dummy_stmt_info : unit -> Clang_ast_t.stmt_info

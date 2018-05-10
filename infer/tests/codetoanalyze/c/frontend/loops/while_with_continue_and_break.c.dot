@@ -58,20 +58,20 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_15" [label="15:  BinaryOperatorStmt: GT \n   n$1=*&x:int [line 15, column 11]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_15" [label="15:  BinaryOperatorStmt: GT \n   n$4=*&x:int [line 15, column 11]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_16" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_17" ;
-"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if) \n   PRUNE((n$1 > 5), true); [line 15, column 11]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if) \n   PRUNE((n$4 > 5), true); [line 15, column 11]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_16" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if) \n   PRUNE(!(n$1 > 5), false); [line 15, column 11]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if) \n   PRUNE(!(n$4 > 5), false); [line 15, column 11]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_17" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
-"main.fad58de7366495db4650cfefac2fcd61_18" [label="18:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int [line 14, column 7]\n  *&x:int=(n$2 + 1) [line 14, column 7]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_18" [label="18:  BinaryOperatorStmt: AddAssign \n   n$8=*&x:int [line 14, column 7]\n  *&x:int=(n$8 + 1) [line 14, column 7]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_18" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;

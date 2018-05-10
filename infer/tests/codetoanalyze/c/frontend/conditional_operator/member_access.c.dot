@@ -20,11 +20,11 @@ digraph cfg {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_5" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" [label="6:  ConditinalStmt Branch \n   n$1=_fun_ret_ptr(4:int) [line 22, column 50]\n  n$2=*n$1.field:int [line 22, column 49]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$2 [line 22, column 45]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" [label="6:  ConditionalStmt Branch \n   n$1=_fun_ret_ptr(4:int) [line 22, column 50]\n  n$2=*n$1.field:int [line 22, column 49]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=n$2 [line 22, column 45]\n " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_6" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" ;
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 22, column 45]\n " shape="box"]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 22, column 45]\n " shape="box"]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_7" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_3" ;
@@ -52,11 +52,11 @@ digraph cfg {
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_5" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_6" [label="6:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 20, column 54]\n " shape="box"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_6" [label="6:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=2 [line 20, column 54]\n " shape="box"]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_6" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 20, column 54]\n " shape="box"]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=3 [line 20, column 54]\n " shape="box"]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_7" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_3" ;
@@ -84,11 +84,11 @@ digraph cfg {
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" [label="6:  ConditinalStmt Branch \n   n$1=*&p:s* [line 17, column 16]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$1 [line 17, column 12]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" [label="6:  ConditionalStmt Branch \n   n$1=*&p:s* [line 17, column 16]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$1 [line 17, column 12]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" [label="7:  ConditinalStmt Branch \n   n$2=*&q:s* [line 17, column 20]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$2 [line 17, column 12]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" [label="7:  ConditionalStmt Branch \n   n$2=*&q:s* [line 17, column 20]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$2 [line 17, column 12]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;

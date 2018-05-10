@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$3:X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 21, column 1]\n " color=yellow style=filled]
+"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$4:X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 21, column 1]\n " color=yellow style=filled]
 	
 
 	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_3" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_2" ;
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" [label="4:  DeclStmt \n   n$4=*&a:A* [line 22, column 9]\n  _=*n$4:A [line 22, column 9]\n  n$7=_fun_A_get(n$4:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$3:X*) [line 22, column 9]\n  n$8=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$3:X&) [line 22, column 9]\n " shape="box"]
+"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" [label="4:  DeclStmt \n   n$5=*&a:A* [line 22, column 9]\n  _=*n$5:A [line 22, column 9]\n  n$8=_fun_A_get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) [line 22, column 9]\n  n$9=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 22, column 9]\n " shape="box"]
 	
 
 	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" [label="3:  Constructor Init \n   n$0=*&this:X* [line 10, column 8]\n  n$1=*&__param_0:X& [line 10, column 8]\n  n$2=*n$1.f:int [line 10, column 8]\n  *n$0.f:int=n$2 [line 10, column 8]\n " shape="box"]
+"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" [label="3:  Constructor Init \n   n$2=*&this:X* [line 10, column 8]\n  n$3=*&__param_0:X& [line 10, column 8]\n  n$4=*n$3.f:int [line 10, column 8]\n  *n$2.f:int=n$4 [line 10, column 8]\n " shape="box"]
 	
 
 	 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" -> "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_2" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_3" -> "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_2" ;
-"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" [label="4:  DeclStmt \n   n$4=_fun_X_X(&x:X*) [line 16, column 7]\n " shape="box"]
+"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" [label="4:  DeclStmt \n   n$5=_fun_X_X(&x:X*) [line 16, column 7]\n " shape="box"]
 	
 
 	 "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" -> "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_3" ;

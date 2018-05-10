@@ -77,7 +77,7 @@ digraph cfg {
 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" [label="2: Exit using_div0 \n  " color=yellow style=filled]
 	
 
-"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$0=_fun_f3::C_ret_zero() [line 35, column 14]\n  *&return:int=(1 / n$0) [line 35, column 3]\n " shape="box"]
+"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C_ret_zero() [line 35, column 14]\n  *&return:int=(1 / n$1) [line 35, column 3]\n " shape="box"]
 	
 
 	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" ;

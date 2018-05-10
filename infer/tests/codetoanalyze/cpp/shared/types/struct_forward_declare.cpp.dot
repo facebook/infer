@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: Prune (true branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 51, column 7]\n  PRUNE(n$2, true); [line 51, column 7]\n " shape="invhouse"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: Prune (true branch, if) \n   n$3=*&x.y:struct_forward_declare::Y* [line 51, column 7]\n  PRUNE(n$3, true); [line 51, column 7]\n " shape="invhouse"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (false branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 51, column 7]\n  PRUNE(!n$2, false); [line 51, column 7]\n " shape="invhouse"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (false branch, if) \n   n$3=*&x.y:struct_forward_declare::Y* [line 51, column 7]\n  PRUNE(!n$3, false); [line 51, column 7]\n " shape="invhouse"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" ;
@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   n$3=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 48, column 5]\n " shape="box"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" [label="10:  DeclStmt \n   n$7=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 48, column 5]\n " shape="box"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" ;
@@ -55,7 +55,7 @@ digraph cfg {
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_3" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   n$2=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 37, column 5]\n " shape="box"]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" [label="5:  DeclStmt \n   n$3=_fun_struct_forward_declare::X_X(&x:struct_forward_declare::X*) [line 37, column 5]\n " shape="box"]
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
@@ -70,7 +70,7 @@ digraph cfg {
 	
 
 	 "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_3" -> "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_2" ;
-"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&x:struct_forward_declare::X* [line 43, column 3]\n  *n$3.f:int=0 [line 43, column 3]\n " shape="box"]
+"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&x:struct_forward_declare::X* [line 43, column 3]\n  *n$4.f:int=0 [line 43, column 3]\n " shape="box"]
 	
 
 	 "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" -> "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_3" ;
@@ -89,7 +89,7 @@ digraph cfg {
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_3" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   n$2=_fun_struct_forward_declare::Z_Z(&z:struct_forward_declare::Z*) [line 58, column 5]\n " shape="box"]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" [label="5:  DeclStmt \n   n$3=_fun_struct_forward_declare::Z_Z(&z:struct_forward_declare::Z*) [line 58, column 5]\n " shape="box"]
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
@@ -104,7 +104,7 @@ digraph cfg {
 	
 
 	 "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_3" -> "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_2" ;
-"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&z:struct_forward_declare::Z* [line 67, column 3]\n  *n$3.f:int=0 [line 67, column 3]\n " shape="box"]
+"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&z:struct_forward_declare::Z* [line 67, column 3]\n  *n$4.f:int=0 [line 67, column 3]\n " shape="box"]
 	
 
 	 "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" -> "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_3" ;
@@ -115,7 +115,7 @@ digraph cfg {
 "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_2" [label="2: Exit struct_forward_declare::fun_with_Z \n  " color=yellow style=filled]
 	
 
-"fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" [label="3:  DeclStmt \n   n$0=*&z1:struct_forward_declare::Z* [line 26, column 34]\n  *&z2:struct_forward_declare::Z*=n$0 [line 26, column 26]\n " shape="box"]
+"fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" [label="3:  DeclStmt \n   n$1=*&z1:struct_forward_declare::Z* [line 26, column 34]\n  *&z2:struct_forward_declare::Z*=n$1 [line 26, column 26]\n " shape="box"]
 	
 
 	 "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" -> "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_2" ;

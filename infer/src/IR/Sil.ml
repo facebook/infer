@@ -211,22 +211,6 @@ let is_objc_object = function
       false
 
 
-(** Returns the zero value of a type, for int, float and ptr types, None othwewise *)
-let zero_value_of_numerical_type_option typ =
-  match typ.Typ.desc with
-  | Typ.Tint _ ->
-      Some (Exp.Const (Cint IntLit.zero))
-  | Typ.Tfloat _ ->
-      Some (Exp.Const (Cfloat 0.0))
-  | Typ.Tptr _ ->
-      Some (Exp.Const (Cint IntLit.null))
-  | _ ->
-      None
-
-
-(** Returns the zero value of a type, for int, float and ptr types, fail otherwise *)
-let zero_value_of_numerical_type typ = Option.value_exn (zero_value_of_numerical_type_option typ)
-
 (** Check if a pvar is a local static in objc *)
 let is_static_local_name pname pvar =
   (* local static name is of the form procname_varname *)

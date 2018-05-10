@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_1" [label="1: Start A_test5:\nFormals:  self:A* b:_Bool\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$2:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$2); [line 23, column 1]\n " color=yellow style=filled]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_1" [label="1: Start A_test5:\nFormals:  self:A* b:_Bool\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$1:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$1); [line 23, column 1]\n " color=yellow style=filled]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_1" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" ;
@@ -23,23 +23,23 @@ digraph cfg {
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" [label="4: Prune (true branch, boolean exp) \n   n$3=*&b:_Bool [line 24, column 23]\n  PRUNE(n$3, true); [line 24, column 23]\n " shape="invhouse"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" [label="4: Prune (true branch, boolean exp) \n   n$2=*&b:_Bool [line 24, column 23]\n  PRUNE(n$2, true); [line 24, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_6" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" [label="5: Prune (false branch, boolean exp) \n   n$3=*&b:_Bool [line 24, column 23]\n  PRUNE(!n$3, false); [line 24, column 23]\n " shape="invhouse"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" [label="5: Prune (false branch, boolean exp) \n   n$2=*&b:_Bool [line 24, column 23]\n  PRUNE(!n$2, false); [line 24, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_7" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_6" [label="6:  ConditinalStmt Branch \n   n$4=*&b:_Bool [line 24, column 27]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=n$4 [line 24, column 23]\n " shape="box"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_6" [label="6:  ConditionalStmt Branch \n   n$3=*&b:_Bool [line 24, column 27]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=n$3 [line 24, column 23]\n " shape="box"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_6" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$2:int=1 [line 24, column 23]\n " shape="box"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_7" [label="7:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 24, column 23]\n " shape="box"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_7" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" [label="8:  Return Stmt \n   n$1=*&self:A* [line 24, column 11]\n  n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$2:int [line 24, column 23]\n  n$6=_fun_A_test4:(n$1:A*,n$5:int) virtual [line 24, column 10]\n  *&return:int=n$6 [line 24, column 3]\n " shape="box"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" [label="8:  Return Stmt \n   n$5=*&self:A* [line 24, column 11]\n  n$4=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 24, column 23]\n  n$6=_fun_A_test4:(n$5:A*,n$4:int) virtual [line 24, column 10]\n  *&return:int=n$6 [line 24, column 3]\n " shape="box"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_2" ;
