@@ -134,6 +134,8 @@ let create_analysis_stats_row base record =
 type call_trace =
   { call_location: Location.t
   ; call_result: string
+  ; callee_clang_method_kind: string option
+  ; callee_source_file: SourceFile.t option
   ; callee_name: string
   ; caller_name: string
   ; lang: string
@@ -148,6 +150,9 @@ let create_call_trace_row base record =
             [string_of_int record.call_location.line; ":"; string_of_int record.call_location.col])
   |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.call_location.file)
   |> add_string ~key:"call_result" ~data:record.call_result
+  |> add_string_opt ~key:"callee_clang_method_kind" ~data:record.callee_clang_method_kind
+  |> add_string_opt ~key:"callee_source_file"
+       ~data:(Option.map ~f:SourceFile.to_rel_path record.callee_source_file)
   |> add_string ~key:"callee_name" ~data:record.callee_name
   |> add_string ~key:"caller_name" ~data:record.caller_name
   |> add_string ~key:"lang" ~data:record.lang |> add_string_opt ~key:"reason" ~data:record.reason

@@ -30,6 +30,8 @@ type analysis_stats =
 type call_trace =
   { call_location: Location.t
   ; call_result: string
+  ; callee_clang_method_kind: string option
+  ; callee_source_file: SourceFile.t option
   ; callee_name: string
   ; caller_name: string
   ; lang: string

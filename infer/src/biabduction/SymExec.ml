@@ -1086,8 +1086,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
     | _ ->
         instr_
   in
-  let skip_call ?(is_objc_instance_method= false) ~reason prop path callee_pname ret_annots loc
-      ret_id_typ ret_typ actual_args =
+  let skip_call ?(is_objc_instance_method= false) ?(callee_attributes= None) ~reason prop path
+      callee_pname ret_annots loc ret_id_typ ret_typ actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_info_deprecated current_pname exn ;
@@ -1097,8 +1097,9 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
       | None ->
           ()
       | Some summary ->
-          let proc_name = Summary.get_proc_name summary in
-          Tabulation.log_call_trace proc_name callee_pname ~reason loc Tabulation.CR_skip ) ;
+          let caller_name = Summary.get_proc_name summary in
+          Tabulation.log_call_trace ~caller_name ~callee_name:callee_pname ?callee_attributes
+            ~reason loc Tabulation.CR_skip ) ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
         Builtin.
           { pdesc= current_pdesc
@@ -1311,8 +1312,9 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                               ProcAttributes.equal_clang_method_kind
                                 attrs.ProcAttributes.clang_method_kind ProcAttributes.OBJC_INSTANCE
                             in
-                            skip_call ~is_objc_instance_method ~reason prop path resolved_pname
-                              ret_annots loc ret_id_typ ret_type n_actual_params )
+                            skip_call ~is_objc_instance_method ~callee_attributes:(Some attrs)
+                              ~reason prop path resolved_pname ret_annots loc ret_id_typ ret_type
+                              n_actual_params )
                     | None ->
                         skip_call ~reason prop path resolved_pname ret_annots loc ret_id_typ
                           (snd ret_id_typ) n_actual_params )
