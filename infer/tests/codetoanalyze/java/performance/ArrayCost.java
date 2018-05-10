@@ -8,32 +8,28 @@
  */
 public class ArrayCost {
 
-    private void ArrayCost_FP(int signum, int[] mag) {
-        if (mag.length > 0) {
+  private void ArrayCost_FP(int[] mag) {
 
-            int i = 0;
+    int i = 0;
+    int k = mag.length;
 
-            while (i < mag.length && mag[i] == 0) {
-                i++;
-            }
+    while (i < k) {
+      i++;
+    }
+  }
 
-        }
+  private static boolean isPowOfTwo_FP(int value) {
+    int ones = 0;
+    int v = value;
+
+    for (int shifts = 0; shifts < 31 && ones <= 1; shifts++) {
+      if ((v & 1) == 1) {
+        ones++;
+      }
+
+      v >>= 1;
     }
 
-    private static boolean isPowOfTwo_FP(int value) {
-        int ones = 0;
-        int v = value;
-
-        for (int shifts = 0; shifts < 31 && ones <= 1; shifts++) {
-            if ((v & 1) == 1) {
-                ones++;
-            }
-
-            v >>= 1;
-        }
-
-        return ones == 1;
-    }
-
-
+    return ones == 1;
+  }
 }

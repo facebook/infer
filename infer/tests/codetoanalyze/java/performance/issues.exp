@@ -1,5 +1,5 @@
 codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(int), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
-codetoanalyze/java/performance/ArrayCost.java, void ArrayCost.ArrayCost_FP(int,int[]), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
+codetoanalyze/java/performance/ArrayCost.java, void ArrayCost.ArrayCost_FP(int[]), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
 codetoanalyze/java/performance/JsonArray.java, void JsonArray.addStringEntry(String), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
 codetoanalyze/java/performance/JsonMap.java, void JsonMap.addEntry(String,JsonType), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []
 codetoanalyze/java/performance/JsonMap.java, void JsonMap.addEntry(String,Object), 0, INFINITE_EXECUTION_TIME_CALL, ERROR, []

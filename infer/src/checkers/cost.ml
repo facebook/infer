@@ -524,13 +524,13 @@ module TransferFunctionsWCET = struct
       match AnalyzerNodesBasicCost.extract_post instr_node_id invariant_map_cost with
       | Some node_map ->
           L.(debug Analysis Medium)
-            "@\n AnalyzerWCET] Final map for node: %a @\n" CFG.pp_id instr_node_id ;
+            "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.pp_id instr_node_id ;
           map_cost trees node_map
       | _ ->
           assert false
     in
     L.(debug Analysis Medium)
-      "@\n>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr BasicCost.pp
+      "@\n[>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr BasicCost.pp
       cost_node ;
     let astate' =
       let und_node = CFG.underlying_node node in
@@ -597,10 +597,6 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
       control_dep_invariant_map
   in
   let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-  L.internal_error "@\n[COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i "
-    Typ.Procname.pp
-    (Procdesc.get_proc_name proc_desc)
-    (List.length (NodeCFG.nodes node_cfg)) ;
   let min_trees = MinTree.compute_trees_from_contraints bound_map node_cfg constraints in
   let trees_valuation =
     List.fold
@@ -618,7 +614,12 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
       ~debug:true ~initial:initWCET
   with
   | Some (exit_cost, _) ->
-      L.internal_error "  PROCEDURE COST = %a @\n" BasicCost.pp exit_cost ;
+      L.internal_error
+        "@\n[COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"
+        Typ.Procname.pp
+        (Procdesc.get_proc_name proc_desc)
+        (List.length (NodeCFG.nodes node_cfg))
+        BasicCost.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary
   | None ->
