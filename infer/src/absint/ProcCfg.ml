@@ -131,7 +131,7 @@ module type S = sig
   (** exceptional successors *)
 
   val exceptional_preds : t -> node -> node list
-  (** exceptional predescessors *)
+  (** exceptional predecessors *)
 
   val start_node : t -> node
 
