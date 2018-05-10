@@ -125,7 +125,7 @@ let tests =
               ; (* point 2 *)
                 invariant "1" ]
             , (* point 4 *)
-              [ (* ... so |paths through catch block| shoud be |number of instructions in try block| *)
+              [ (* ... so |paths through catch block| should be |number of instructions in try block| *)
                 invariant "2" ]
             , (* could arrive here via (1, 2, 3), (1, 4), or (2, 4) *)
               [invariant "3"] )

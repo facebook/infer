@@ -80,7 +80,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (* No summary for callee_procname; it's native code or missing for some reason *)
             astate' )
     | Assign (_lhs_access_path, _rhs_exp, _loc) ->
-        (* an assigment [lhs_access_path] := [rhs_exp] *)
+        (* an assignment [lhs_access_path] := [rhs_exp] *)
         astate
     | Assume (_assume_exp, _, _, _loc) ->
         (* a conditional assume([assume_exp]). blocks if [assume_exp] evaluates to false *)

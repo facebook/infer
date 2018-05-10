@@ -38,7 +38,7 @@ val append_template_args_to_last : t -> args:string -> t
     template args *)
 
 val to_list : t -> string list
-(** returns list of qualifers *)
+(** returns list of qualifiers *)
 
 val to_rev_list : t -> string list
 (** returns reversed list of qualifiers, ie innermost scope is the first element *)

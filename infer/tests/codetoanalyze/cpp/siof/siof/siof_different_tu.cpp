@@ -62,7 +62,7 @@ SomeNonPODObject& TemplatedObject<T>::getGlobalNonPOD() {
 template struct TemplatedObject<int>;
 } // namespace whitelisted
 
-// initialise static class field
+// initialize static class field
 template <typename T>
 SomeTemplatedConstexprObject<T> SomeTemplatedConstexprObject<T>::instance_;
 SomeTemplatedConstexprObject<int>& getGlobalTemplatedConstexpr() {
