@@ -43,7 +43,7 @@ val load_program : string -> JBasics.ClassSet.t -> program
 (** load a java program *)
 
 val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface_or_class option
-(** retrive a Java node from the classname *)
+(** retrieve a Java node from the classname *)
 
 val add_missing_callee :
   program -> Typ.Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit

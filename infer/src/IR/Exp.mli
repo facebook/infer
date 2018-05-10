@@ -104,13 +104,13 @@ val bool : bool -> t
 (** Create integer constant corresponding to the boolean value *)
 
 val eq : t -> t -> t
-(** Create expresstion [e1 == e2] *)
+(** Create expression [e1 == e2] *)
 
 val ne : t -> t -> t
-(** Create expresstion [e1 != e2] *)
+(** Create expression [e1 != e2] *)
 
 val le : t -> t -> t
-(** Create expresstion [e1 <= e2] *)
+(** Create expression [e1 <= e2] *)
 
 val lt : t -> t -> t
 (** Create expression [e1 < e2] *)

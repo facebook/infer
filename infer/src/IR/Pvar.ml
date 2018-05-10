@@ -114,7 +114,7 @@ let get_simplified_name pv =
       s
 
 
-(** Check if the pvar is an abucted return var or param passed by ref *)
+(** Check if the pvar is an abducted return var or param passed by ref *)
 let is_abduced pv =
   match pv.pv_kind with Abduced_retvar _ | Abduced_ref_param _ -> true | _ -> false
 
