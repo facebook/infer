@@ -184,7 +184,7 @@ and 'inst hpara_dll0 =
 
 type hpred = inst hpred0
 
-(** Comparsion between heap predicates. Reverse natural order, and order first by anchor exp. *)
+(** Comparison between heap predicates. Reverse natural order, and order first by anchor exp. *)
 let compare_hpred ?(inst= false) hpred1 hpred2 =
   compare_hpred0 (match inst with true -> compare_inst | false -> fun _ _ -> 0) hpred1 hpred2
 

@@ -253,7 +253,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         exp
   in
   (* Convert a complex expressions into a pvar.
-     When [is_assigment] is true, update the relevant annotations for the pvar. *)
+     When [is_assignment] is true, update the relevant annotations for the pvar. *)
   let convert_complex_exp_to_pvar node' is_assignment exp_ typestate loc =
     let exp = handle_field_access_via_temporary typestate (Idenv.expand_expr idenv exp_) in
     let default = (exp, typestate) in
@@ -1024,7 +1024,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             typestate
         (* FIXME: silenced warning may be legit *)
       in
-      (* Handle assigment fron a temp pvar in a condition.
+      (* Handle assignment fron a temp pvar in a condition.
          This recognizes the handling of temp variables in ((x = ...) != null) *)
       let handle_assignment_in_condition pvar =
         match Procdesc.Node.get_preds node with

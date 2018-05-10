@@ -160,10 +160,10 @@ let minus_one = int IntLit.minus_one
 (** Create integer constant corresponding to the boolean value *)
 let bool b = if b then one else zero
 
-(** Create expresstion [e1 == e2] *)
+(** Create expression [e1 == e2] *)
 let eq e1 e2 = BinOp (Eq, e1, e2)
 
-(** Create expresstion [e1 != e2] *)
+(** Create expression [e1 != e2] *)
 let ne e1 e2 = BinOp (Ne, e1, e2)
 
 (** Create expression [e1 <= e2] *)

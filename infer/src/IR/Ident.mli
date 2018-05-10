@@ -55,7 +55,7 @@ module NameGenerator : sig
 end
 
 val idlist_to_idset : t list -> Set.t
-(** Convert an identfier list to an identifier set *)
+(** Convert an identifier list to an identifier set *)
 
 val kprimed : kind
 
