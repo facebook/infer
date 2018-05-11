@@ -603,6 +603,11 @@ module Models = struct
     is_call_of_class_or_superclass ["android.accounts.AccountManager"] "setUserData"
 
 
+  let is_asyncTask_get_without_timeout =
+    let actuals_pred actuals = Int.equal 1 (List.length actuals) in
+    is_call_of_class_or_superclass ~actuals_pred ["android.os.AsyncTask"] "get"
+
+
   let may_block =
     let matchers =
       [ is_blocking_java_io
@@ -610,7 +615,8 @@ module Models = struct
       ; is_two_way_binder_transact
       ; is_getWindowVisibleDisplayFrame
       ; is_future_get
-      ; is_accountManager_setUserData ]
+      ; is_accountManager_setUserData
+      ; is_asyncTask_get_without_timeout ]
     in
     fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
 end
