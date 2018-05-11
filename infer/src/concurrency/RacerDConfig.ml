@@ -431,17 +431,6 @@ module Models = struct
          (Procdesc.get_proc_name pdesc)
 
 
-  (* we don't want to warn on methods that run on the UI thread because they should always be
-      single-threaded *)
-  let runs_on_ui_thread proc_desc =
-    (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
-        @OnUnmount always run on the UI thread *)
-    Annotations.pdesc_has_return_annot proc_desc (fun annot ->
-        Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
-        || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
-        || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot )
-
-
   let threadsafe_annotations =
     Annotations.thread_safe :: AnnotationAliases.of_json Config.threadsafe_aliases
 
@@ -493,16 +482,49 @@ module Models = struct
     && not (should_skip pn)
 
 
-  let get_current_class_and_threadsafe_superclasses tenv pname =
+  let get_current_class_and_annotated_superclasses is_annot tenv pname =
     match pname with
     | Typ.Procname.Java java_pname ->
         let current_class = Typ.Procname.Java.get_class_type_name java_pname in
-        let thread_safe_annotated_classes =
-          PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
+        let annotated_classes =
+          PatternMatch.find_superclasses_with_attributes is_annot tenv current_class
         in
-        Some (current_class, thread_safe_annotated_classes)
+        Some (current_class, annotated_classes)
     | _ ->
         None
+
+
+  let is_annotated_or_overriden_annotated_method is_annot pname tenv =
+    PatternMatch.override_exists
+      (fun pn ->
+        Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes
+          is_annot )
+      tenv pname
+
+
+  (* we don't want to warn on methods that run on the UI thread because they should always be
+        single-threaded *)
+  let runs_on_ui_thread tenv proc_desc =
+    (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
+          @OnUnmount always run on the UI thread *)
+    let is_annot annot =
+      Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
+      || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
+      || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot
+    in
+    let pname = Procdesc.get_proc_name proc_desc in
+    Annotations.pdesc_has_return_annot proc_desc is_annot
+    || is_annotated_or_overriden_annotated_method is_annot pname tenv
+    ||
+    match get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname with
+    | Some (_, _ :: _) ->
+        true
+    | _ ->
+        false
+
+
+  let get_current_class_and_threadsafe_superclasses tenv pname =
+    get_current_class_and_annotated_superclasses is_thread_safe tenv pname
 
 
   let is_thread_safe_class pname tenv =
@@ -519,11 +541,7 @@ module Models = struct
 
 
   let is_thread_safe_method pname tenv =
-    PatternMatch.override_exists
-      (fun pn ->
-        Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes
-          is_thread_safe )
-      tenv pname
+    is_annotated_or_overriden_annotated_method is_thread_safe pname tenv
 
 
   let is_marked_thread_safe pdesc tenv =

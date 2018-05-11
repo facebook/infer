@@ -408,3 +408,30 @@ class Annotations implements Interface {
   }
 
 }
+
+
+@UiThread
+@ThreadSafe
+class AllMethodsOnUiThread {
+  int f;
+
+  void fooOk() {
+    f = 5;
+  }
+
+  int bar() {
+    return f;
+  }
+}
+
+class ExtendsClassOnUiThread extends AllMethodsOnUiThread {
+  @Override
+  void fooOk() {
+    f = 9;
+  }
+
+  @Override
+  int bar() {
+    return super.bar();
+  }
+}

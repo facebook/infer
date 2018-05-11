@@ -116,7 +116,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
   in
   let initial =
-    if RacerDConfig.Models.runs_on_ui_thread proc_desc then
+    if RacerDConfig.Models.runs_on_ui_thread tenv proc_desc then
       StarvationDomain.set_on_main_thread initial
     else initial
   in
