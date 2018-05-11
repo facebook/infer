@@ -9,7 +9,9 @@
 
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import android.support.annotation.UiThread;
+import java.util.concurrent.TimeUnit;
 
 class FutureGet {
   Future future;
@@ -33,5 +35,47 @@ class FutureGet {
 
   void getOnOtherThreadOk() throws InterruptedException, ExecutionException {
     future.get();
+  }
+
+  @UiThread
+  void getTimeoutOneDayBad() throws InterruptedException, ExecutionException {
+    try {
+      future.get(1L, TimeUnit.DAYS);
+    } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  void getTimeoutOneSecondOk() throws InterruptedException, ExecutionException {
+    try {
+      future.get(1L, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  void getTimeoutOneHourBad() throws InterruptedException, ExecutionException {
+    try {
+      future.get(1L, TimeUnit.HOURS);
+    } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  void getTimeoutFourSecondsOk() throws InterruptedException, ExecutionException {
+    try {
+      future.get(4L, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  void getTimeout4999MilliSecondsOk() throws InterruptedException, ExecutionException {
+    try {
+      future.get(4999L, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  void getTimeout50000001MicroSecondsBad() throws InterruptedException, ExecutionException {
+    try {
+      future.get(5000001L, TimeUnit.MICROSECONDS);
+    } catch (TimeoutException e) {}
   }
 }

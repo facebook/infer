@@ -586,6 +586,38 @@ module Models = struct
         false
 
 
+  (** magical value from https://developer.android.com/topic/performance/vitals/anr *)
+  let android_anr_time_limit = 5.0
+
+  (** can this timeout cause an anr? *)
+  let is_excessive_timeout =
+    let time_units =
+      String.Map.of_alist_exn
+        [ ("NANOSECONDS", 0.000_000_001)
+        ; ("MICROSECONDS", 0.000_001)
+        ; ("MILLISECONDS", 0.001)
+        ; ("SECONDS", 1.0)
+        ; ("MINUTES", 60.0)
+        ; ("HOURS", 3_600.0)
+        ; ("DAYS", 86_400.0) ]
+    in
+    fun duration_exp timeunit_exp ->
+      match (duration_exp, timeunit_exp) with
+      | HilExp.Constant (Const.Cint duration_lit), HilExp.AccessExpression timeunit_acc_exp -> (
+        match AccessExpression.to_access_path timeunit_acc_exp with
+        | _, [AccessPath.FieldAccess field]
+          when String.equal "java.util.concurrent.TimeUnit" (Typ.Fieldname.Java.get_class field) ->
+            let fieldname = Typ.Fieldname.Java.get_field field in
+            let duration = float_of_int (IntLit.to_int duration_lit) in
+            String.Map.find time_units fieldname
+            |> Option.value_map ~default:false ~f:(fun unit_in_secs ->
+                   unit_in_secs *. duration >. android_anr_time_limit )
+        | _ ->
+            false )
+      | _ ->
+          false
+
+
   (** It's surprisingly difficult making any sense of the official documentation on java.io classes
                 as to whether methods may block.  We approximate these by calls in traditionally blocking
                 classes (non-channel based I/O), to methods `(Reader|InputStream).read*`.
@@ -596,9 +628,19 @@ module Models = struct
       "read"
 
 
+  let actuals_are_empty_or_timeout = function
+    | [_] ->
+        true
+    | [_; duration; timeunit] ->
+        is_excessive_timeout duration timeunit
+    | _ ->
+        false
+
+
   (** is the method called CountDownLath.await or on subclass? *)
   let is_countdownlatch_await =
-    is_call_of_class_or_superclass ["java.util.concurrent.CountDownLatch"] "await"
+    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
+      ["java.util.concurrent.CountDownLatch"] "await"
 
 
   (** an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
@@ -618,15 +660,18 @@ module Models = struct
 
 
   (** is it a call to Future.get() or on sublass? *)
-  let is_future_get = is_call_of_class_or_superclass ["java.util.concurrent.Future"] "get"
+  let is_future_get =
+    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
+      ["java.util.concurrent.Future"] "get"
+
 
   let is_accountManager_setUserData =
     is_call_of_class_or_superclass ["android.accounts.AccountManager"] "setUserData"
 
 
-  let is_asyncTask_get_without_timeout =
-    let actuals_pred actuals = Int.equal 1 (List.length actuals) in
-    is_call_of_class_or_superclass ~actuals_pred ["android.os.AsyncTask"] "get"
+  let is_asyncTask_get =
+    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
+      ["android.os.AsyncTask"] "get"
 
 
   let may_block =
@@ -637,7 +682,7 @@ module Models = struct
       ; is_getWindowVisibleDisplayFrame
       ; is_future_get
       ; is_accountManager_setUserData
-      ; is_asyncTask_get_without_timeout ]
+      ; is_asyncTask_get ]
     in
     fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
 end
