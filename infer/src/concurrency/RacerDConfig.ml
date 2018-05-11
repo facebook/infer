@@ -519,6 +519,9 @@ module Models = struct
     match get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname with
     | Some (_, _ :: _) ->
         true
+    | Some (current_class, _) ->
+        PatternMatch.is_subtype_of_str tenv current_class "android.app.Service"
+        && not (PatternMatch.is_subtype_of_str tenv current_class "android.app.IntentService")
     | _ ->
         false
 
