@@ -979,12 +979,7 @@ let get_contaminated_race_message access wobbly_paths =
     | _ ->
         None
   in
-  Option.map wobbly_path_opt ~f:(fun (wobbly_path, access_path) ->
-      F.asprintf
-        "@\n\n\
-         Note that the prefix path %a has been contaminated during the execution, so the reported \
-         race on %a might be a false positive.@\n\n"
-        AccessPath.pp wobbly_path AccessPath.pp access_path )
+  Option.map wobbly_path_opt ~f:(fun _ -> " [wob]")
 
 
 let log_issue current_pname ~loc ~ltr ~access exn =
