@@ -12,19 +12,67 @@ open! IStd
 module F = Format
 open PolyVariantEqual
 
-type stats =
-  { stats_failure: SymOp.failure_kind option
-  ; symops: int
-  ; mutable nodes_visited_fp: IntSet.t
-  ; mutable nodes_visited_re: IntSet.t }
+module Stats = struct
+  type t =
+    { failure_kind: SymOp.failure_kind option
+          (** what type of failure stopped the analysis (if any) *)
+    ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
+    ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
+    ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
 
-type status = Pending | Analyzed [@@deriving compare]
+  let empty =
+    {failure_kind= None; symops= 0; nodes_visited_fp= IntSet.empty; nodes_visited_re= IntSet.empty}
 
-let string_of_status = function Pending -> "Pending" | Analyzed -> "Analyzed"
 
-let pp_status fmt status = F.pp_print_string fmt (string_of_status status)
+  let is_visited_fp stats node_id = IntSet.mem node_id stats.nodes_visited_fp
 
-let equal_status = [%compare.equal : status]
+  let is_visited_re stats node_id = IntSet.mem node_id stats.nodes_visited_re
+
+  let add_visited_fp stats node_id =
+    stats.nodes_visited_fp <- IntSet.add node_id stats.nodes_visited_fp
+
+
+  let add_visited_re stats node_id =
+    stats.nodes_visited_re <- IntSet.add node_id stats.nodes_visited_re
+
+
+  let nb_visited_re {nodes_visited_re} = IntSet.cardinal nodes_visited_re
+
+  let update ?(add_symops= 0) ?failure_kind stats =
+    let symops = stats.symops + add_symops in
+    let failure_kind = match failure_kind with None -> stats.failure_kind | some -> some in
+    {stats with symops; failure_kind}
+
+
+  let failure_kind {failure_kind} = failure_kind
+
+  let symops {symops} = symops
+
+  let pp_failure_kind_opt fmt failure_kind_opt =
+    match failure_kind_opt with
+    | Some failure_kind ->
+        SymOp.pp_failure_kind fmt failure_kind
+    | None ->
+        F.pp_print_string fmt "NONE"
+
+
+  let failure_kind_to_string {failure_kind} = F.asprintf "%a" pp_failure_kind_opt failure_kind
+
+  let pp fmt {failure_kind; symops} =
+    F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
+end
+
+module Status = struct
+  type t =
+    | Pending  (** the summary has been created by the procedure has not been analyzed yet *)
+    | Analyzed  (** the analysis of the procedure is finished *)
+
+  let to_string = function Pending -> "Pending" | Analyzed -> "Analyzed"
+
+  let pp fmt status = F.pp_print_string fmt (to_string status)
+
+  let is_analyzed = function Analyzed -> true | _ -> false
+end
 
 type payload =
   { annot_map: AnnotReachabilityDomain.astate option
@@ -41,7 +89,8 @@ type payload =
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option }
 
-type t = {payload: payload; sessions: int ref; stats: stats; status: status; proc_desc: Procdesc.t}
+type t =
+  {payload: payload; sessions: int ref; stats: Stats.t; status: Status.t; proc_desc: Procdesc.t}
 
 let get_status summary = summary.status
 
@@ -65,21 +114,9 @@ let cache : cache = Typ.Procname.Hash.create 128
 
 let clear_cache () = Typ.Procname.Hash.clear cache
 
-let pp_failure_kind_opt fmt failure_kind_opt =
-  match failure_kind_opt with
-  | Some failure_kind ->
-      SymOp.pp_failure_kind fmt failure_kind
-  | None ->
-      F.pp_print_string fmt "NONE"
-
-
 let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@\n%!" Errlog.pp_errors err_log ;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
-
-
-let pp_stats fmt stats =
-  F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt stats.stats_failure stats.symops
 
 
 (** Return the signature of a procedure declaration as a string *)
@@ -97,7 +134,7 @@ let get_signature summary =
 
 let pp_no_stats_specs fmt summary =
   F.fprintf fmt "%s@\n" (get_signature summary) ;
-  F.fprintf fmt "%a@\n" pp_status summary.status
+  F.fprintf fmt "%a@\n" Status.pp summary.status
 
 
 let pp_payload pe fmt
@@ -145,7 +182,7 @@ let pp_payload pe fmt
 let pp_text fmt summary =
   let pe = Pp.text in
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) pp_stats summary.stats (pp_payload pe)
+  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) Stats.pp summary.stats (pp_payload pe)
     summary.payload
 
 
@@ -154,16 +191,12 @@ let pp_html source color fmt summary =
   Io_infer.Html.pp_start_color fmt Black ;
   F.fprintf fmt "@\n%a" pp_no_stats_specs summary ;
   Io_infer.Html.pp_end_color fmt () ;
-  F.fprintf fmt "<br />%a<br />@\n" pp_stats summary.stats ;
+  F.fprintf fmt "<br />%a<br />@\n" Stats.pp summary.stats ;
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
   pp_payload pe fmt summary.payload ;
   F.fprintf fmt "</LISTING>@\n"
-
-
-let empty_stats =
-  {stats_failure= None; symops= 0; nodes_visited_fp= IntSet.empty; nodes_visited_re= IntSet.empty}
 
 
 (** Add the summary to the table for the given function *)
@@ -270,7 +303,7 @@ let pdesc_resolve_attributes proc_desc =
 
 (** Save summary for the procedure into the spec database *)
 let store (summ: t) =
-  let final_summary = {summ with status= Analyzed} in
+  let final_summary = {summ with status= Status.Analyzed} in
   let proc_name = get_proc_name final_summary in
   (* Make sure the summary in memory is identical to the saved one *)
   add proc_name final_summary ;
@@ -300,7 +333,7 @@ let empty_payload =
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary proc_desc =
   let summary =
-    {sessions= ref 0; payload= empty_payload; stats= empty_stats; status= Pending; proc_desc}
+    {sessions= ref 0; payload= empty_payload; stats= Stats.empty; status= Status.Pending; proc_desc}
   in
   Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
   summary

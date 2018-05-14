@@ -50,16 +50,16 @@ let should_create_summary proc_name proc_attributes =
 
 
 let should_be_analyzed proc_name proc_attributes =
-  let already_analyzed () =
+  let already_analyzed proc_name =
     match Summary.get proc_name with
     | Some summary ->
-        Summary.equal_status (Summary.get_status summary) Summary.Analyzed
+        Summary.(Status.is_analyzed (get_status summary))
     | None ->
         false
   in
   should_create_summary proc_name proc_attributes && not (is_active proc_name)
   && (* avoid infinite loops *)
-     not (already_analyzed ())
+     not (already_analyzed proc_name)
 
 
 let procedure_should_be_analyzed proc_name =
@@ -133,16 +133,16 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue exn summary kind =
+  let log_error_and_continue exn (summary: Summary.t) kind =
     Reporting.log_error summary exn ;
-    let stats = {summary.Summary.stats with Summary.stats_failure= Some kind} in
+    let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payload =
       let biabduction =
         Some BiabductionSummary.{preposts= []; phase= Tabulation.get_phase summary}
       in
-      {summary.Summary.payload with Summary.biabduction}
+      {summary.payload with Summary.biabduction}
     in
-    let new_summary = {summary with Summary.stats; payload} in
+    let new_summary = {summary with stats; payload} in
     Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary
   in
   let old_state = save_global_state () in

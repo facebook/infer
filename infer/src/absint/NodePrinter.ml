@@ -19,7 +19,7 @@ let new_session node =
   | None ->
       0
   | Some summary ->
-      (summary.stats).nodes_visited_fp <- IntSet.add node_id summary.stats.nodes_visited_fp ;
+      Summary.Stats.add_visited_fp summary.stats node_id ;
       incr summary.Summary.sessions ;
       !(summary.Summary.sessions)
 

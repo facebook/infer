@@ -396,11 +396,10 @@ let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Except
 
 
 let mark_visited summary node =
-  let node_id = Procdesc.Node.get_id node in
+  let node_id = (Procdesc.Node.get_id node :> int) in
   let stats = summary.Summary.stats in
-  if !Config.footprint then
-    stats.Summary.nodes_visited_fp <- IntSet.add (node_id :> int) stats.Summary.nodes_visited_fp
-  else stats.Summary.nodes_visited_re <- IntSet.add (node_id :> int) stats.Summary.nodes_visited_re
+  if !Config.footprint then Summary.Stats.add_visited_fp stats node_id
+  else Summary.Stats.add_visited_re stats node_id
 
 
 let forward_tabulate exe_env tenv proc_cfg wl =
@@ -439,7 +438,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
         match Tabulation.get_phase summary with FOOTPRINT -> "FP" | RE_EXECUTION -> "RE"
       in
       let status = Summary.get_status summary in
-      F.sprintf "[%s:%s] %s" phase_string (Summary.string_of_status status)
+      F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
         (Typ.Procname.to_string proc_name)
     in
     L.d_strln
@@ -1121,11 +1120,10 @@ let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec
 let update_summary tenv prev_summary specs phase res =
   let normal_specs = List.map ~f:(BiabductionSummary.spec_normalize tenv) specs in
   let new_specs, _ = update_specs tenv prev_summary phase normal_specs in
-  let symops = prev_summary.Summary.stats.Summary.symops + SymOp.get_total () in
-  let stats_failure =
-    match res with None -> prev_summary.Summary.stats.Summary.stats_failure | Some _ -> res
+  let stats =
+    Summary.Stats.update prev_summary.Summary.stats ~add_symops:(SymOp.get_total ())
+      ?failure_kind:res
   in
-  let stats = {prev_summary.Summary.stats with symops; stats_failure} in
   let preposts =
     match phase with
     | BiabductionSummary.FOOTPRINT ->

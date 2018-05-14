@@ -77,12 +77,9 @@ let node_is_visited node =
       (false, false)
   | Some summary ->
       let stats = summary.Summary.stats in
-      let is_visited_fp =
-        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Summary.nodes_visited_fp
-      in
-      let is_visited_re =
-        IntSet.mem (Procdesc.Node.get_id node :> int) stats.Summary.nodes_visited_re
-      in
+      let node_id = (Procdesc.Node.get_id node :> int) in
+      let is_visited_fp = Summary.Stats.is_visited_fp stats node_id in
+      let is_visited_re = Summary.Stats.is_visited_re stats node_id in
       (is_visited_fp, is_visited_re)
 
 

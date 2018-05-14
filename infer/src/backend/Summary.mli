@@ -13,22 +13,37 @@ open! IStd
 (** Procedure summaries: the results of the capture and all the analysis for a single procedure,
    plus some statistics *)
 
-(** Execution statistics *)
-type stats =
-  { stats_failure: SymOp.failure_kind option
-        (** what type of failure stopped the analysis (if any) *)
-  ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
-  ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
-  ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
+module Stats : sig
+  (** Execution statistics *)
+  type t
 
-(** Analysis status of the procedure *)
-type status =
-  | Pending  (** the summary has been created by the procedure has not been analyzed yet *)
-  | Analyzed  (** the analysis of the procedure is finished *)
+  val add_visited_fp : t -> int -> unit
 
-val equal_status : status -> status -> bool
+  val add_visited_re : t -> int -> unit
 
-val string_of_status : status -> string
+  val is_visited_fp : t -> int -> bool
+
+  val is_visited_re : t -> int -> bool
+
+  val nb_visited_re : t -> int
+
+  val update : ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> t -> t
+
+  val failure_kind : t -> SymOp.failure_kind option
+
+  val failure_kind_to_string : t -> string
+
+  val symops : t -> int
+end
+
+module Status : sig
+  (** Analysis status of the procedure *)
+  type t
+
+  val is_analyzed : t -> bool
+
+  val to_string : t -> string
+end
 
 (** analysis results *)
 type payload =
@@ -49,9 +64,9 @@ type payload =
 (** summary of a procedure name *)
 type t =
   { payload: payload
-  ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
-  ; stats: stats
-  ; status: status
+  ; sessions: int ref  (** Session number: how many nodes went through symbolic execution *)
+  ; stats: Stats.t
+  ; status: Status.t
   ; proc_desc: Procdesc.t }
 
 val dummy : t
@@ -90,7 +105,7 @@ val get_signature : t -> string
 val get_unsafe : Typ.Procname.t -> t
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
 
-val get_status : t -> status
+val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
 val reset : Procdesc.t -> t

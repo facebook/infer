@@ -119,12 +119,11 @@ let summary_values summary =
     let pp fmt = Pp.seq pp_line fmt lines_visited in
     F.asprintf "%t" pp
   in
-  let pp_failure failure = F.asprintf "%a" SymOp.pp_failure_kind failure in
   { vname= Typ.Procname.to_string proc_name
   ; vname_id= Typ.Procname.to_filename proc_name
   ; vspecs= List.length specs
-  ; vto= Option.value_map ~f:pp_failure ~default:"NONE" stats.Summary.stats_failure
-  ; vsymop= stats.Summary.symops
+  ; vto= Summary.Stats.failure_kind_to_string stats
+  ; vsymop= Summary.Stats.symops stats
   ; verr=
       Errlog.size
         (fun ekind in_footprint ->
@@ -500,7 +499,7 @@ module Stats = struct
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
     let is_timeout =
-      match Summary.(summary.stats.stats_failure) with
+      match Summary.(Stats.failure_kind summary.stats) with
       | None | Some (FKcrash _) ->
           false
       | _ ->
@@ -545,8 +544,8 @@ module StatsLogs = struct
     let lang = Typ.Procname.get_language proc_name in
     let stats =
       EventLogger.AnalysisStats
-        { analysis_nodes_visited= IntSet.cardinal summary.stats.nodes_visited_re
-        ; analysis_status= summary.stats.stats_failure
+        { analysis_nodes_visited= Summary.Stats.nb_visited_re summary.stats
+        ; analysis_status= Summary.Stats.failure_kind summary.stats
         ; analysis_total_nodes= Summary.get_proc_desc summary |> Procdesc.get_nodes_num
         ; clang_method_kind=
             (match lang with Language.Clang -> Some clang_method_kind | _ -> None)
@@ -554,7 +553,7 @@ module StatsLogs = struct
         ; method_location= Summary.get_loc summary
         ; method_name= Typ.Procname.to_string proc_name
         ; num_preposts
-        ; symops= summary.stats.symops }
+        ; symops= Summary.Stats.symops summary.stats }
     in
     EventLogger.log stats
 end
