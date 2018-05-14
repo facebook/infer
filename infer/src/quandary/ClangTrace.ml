@@ -472,7 +472,8 @@ include Trace.Make (struct
           IssueType.untrusted_url_risk
     | (CommandLineFlag _ | EnvironmentVariable | ReadFile), URL ->
         None
-    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), SQLInjection ->
+    | ( (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ))
+      , SQLInjection ) ->
         if is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers then
           (* SQL injection if the caller of the endpoint doesn't sanitize on its end *)
           Some IssueType.sql_injection_risk
@@ -482,7 +483,7 @@ include Trace.Make (struct
     | (Endpoint _ | UserControlledEndpoint _), (SQLRead | SQLWrite) ->
         (* no injection risk, but still user-controlled *)
         Some IssueType.user_controlled_sql_risk
-    | (Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
+    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
@@ -501,20 +502,10 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection
-    | CommandLineFlag (_, typ), ShellExec ->
-        (* untrusted flag, flowing to shell *)
-        Option.some_if
-          (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
-          IssueType.shell_injection
     | (EnvironmentVariable | ReadFile | Other), SQLInjection ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Option.some_if
           (is_injection_possible Sanitizer.EscapeSQL sanitizers)
-          IssueType.sql_injection
-    | CommandLineFlag (_, typ), SQLInjection ->
-        (* untrusted flag, flowing to shell *)
-        Option.some_if
-          (is_injection_possible ~typ Sanitizer.EscapeSQL sanitizers)
           IssueType.sql_injection
     | Other, URL ->
         (* untrusted flag, environment var, or file data flowing to URL *)
