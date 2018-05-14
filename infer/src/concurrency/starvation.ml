@@ -61,15 +61,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           None
     in
+    let do_lock actuals loc astate =
+      get_path actuals |> Option.value_map ~default:astate ~f:(Domain.acquire astate loc)
+    in
+    let do_unlock actuals astate =
+      get_path actuals |> Option.value_map ~default:astate ~f:(Domain.release astate)
+    in
     match instr with
     | Call (_, Direct callee, actuals, _, loc) -> (
       match Models.get_lock callee actuals with
       | Lock ->
-          get_path actuals |> Option.value_map ~default:astate ~f:(Domain.acquire astate loc)
+          do_lock actuals loc astate
       | Unlock ->
-          get_path actuals |> Option.value_map ~default:astate ~f:(Domain.release astate)
+          do_unlock actuals astate
       | LockedIfTrue ->
           astate
+      | NoEffect when Models.is_synchronized_library_call tenv callee ->
+          (* model a synchronized call without visible internal behaviour *)
+          do_lock actuals loc astate |> do_unlock actuals
       | NoEffect when Models.may_block tenv callee actuals ->
           let caller = Procdesc.get_proc_name pdesc in
           Domain.blocking_call ~caller ~callee loc astate

@@ -685,4 +685,17 @@ module Models = struct
       ; is_asyncTask_get ]
     in
     fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
+
+
+  let is_synchronized_library_call =
+    let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
+    fun tenv pn ->
+      not (Typ.Procname.is_constructor pn)
+      &&
+      match pn with
+      | Typ.Procname.Java java_pname ->
+          let classname = Typ.Procname.Java.get_class_type_name java_pname in
+          List.exists targets ~f:(PatternMatch.is_subtype_of_str tenv classname)
+      | _ ->
+          false
 end
