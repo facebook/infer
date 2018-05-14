@@ -49,7 +49,7 @@ def prepare_build(args):
     configuration that tells buck to use that script.
     """
 
-    infer_options = ['--buck']
+    infer_options = ['--buck', '--jobs', '1']
 
     if args.java_jar_compiler is not None:
         infer_options += [
