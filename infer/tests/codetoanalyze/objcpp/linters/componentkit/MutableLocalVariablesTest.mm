@@ -126,4 +126,11 @@ class BarClass {
 
   return nil;
 }
+
+- (void)no_mutable_local_variable_in_self_aliases {
+  __weak auto weakSelf = self; // no error
+  __strong auto strongSelf = self; // no error
+  auto comp = [BarComponent new]; // error
+}
+
 @end

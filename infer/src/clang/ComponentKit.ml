@@ -132,11 +132,19 @@ let mutable_local_vars_advice context an =
                 false
           in
           let is_const = qual_type.qt_is_const || is_const_ref in
+          let name_is decl name =
+            match decl with
+            | Clang_ast_t.VarDecl (_, named_decl_info, _, _) ->
+                String.equal name named_decl_info.Clang_ast_t.ni_name
+            | _ ->
+                false
+          in
           let should_not_report_mutable_local =
             CAst_utils.is_syntactically_global_var decl || CAst_utils.is_static_local_var decl
             || is_const || is_of_whitelisted_type qual_type || decl_info.di_is_implicit
             || context.CLintersContext.in_for_loop_declaration
             || CAst_utils.is_std_vector qual_type || CAst_utils.has_block_attribute decl
+            || name_is decl "weakSelf" || name_is decl "strongSelf"
           in
           if should_not_report_mutable_local then None
           else
