@@ -1939,6 +1939,43 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state' stmt
 
 
+  and tryStmt_trans trans_state stmts =
+    let open Clang_ast_t in
+    let translate_catch catch_root_nodes_acc = function
+      | CXXCatchStmt (catch_stmt_info, catch_body_stmts, _) ->
+          let catch_trans_result =
+            compoundStmt_trans trans_state catch_stmt_info catch_body_stmts
+          in
+          (* no risk of duplicates because two catch blocks should never have the same root nodes
+             (they have to be in different syntactic locations, after all!) *)
+          catch_trans_result.control.root_nodes @ catch_root_nodes_acc
+      | _ ->
+          assert false
+    in
+    match stmts with
+    | try_body_stmt :: catch_stmts ->
+        let try_trans_result = instruction trans_state try_body_stmt in
+        let catch_start_nodes = List.fold catch_stmts ~f:translate_catch ~init:[] in
+        (* add catch block as exceptional successor to end of try block. not ideal, but we will at
+           least reach the code in the catch block this way *)
+        (* TODO (T28898377): instead, we should extend trans_state with a list of maybe-throwing
+           blocks, and add transitions from those to the catch block instead *)
+        let try_control = try_trans_result.control in
+        let try_ends =
+          if List.is_empty try_control.leaf_nodes then
+            (* try ends in return; transition from beginning instead *)
+            try_control.root_nodes
+          else try_control.leaf_nodes
+        in
+        List.iter
+          ~f:(fun try_end -> Procdesc.set_succs_exn_only try_end catch_start_nodes)
+          try_ends ;
+        try_trans_result
+    | _ ->
+        (* try should always have a catch statement *)
+        assert false
+
+
   and loop_instruction trans_state loop_kind stmt_info =
     let outer_continuation = trans_state.continuation in
     let context = trans_state.context in
@@ -3323,16 +3360,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         compoundStmt_trans trans_state stmt_info stmts
     | ObjCAtTryStmt (stmt_info, stmts) ->
         compoundStmt_trans trans_state stmt_info stmts
-    | CXXTryStmt (stmt_info, stmts) ->
-        L.(debug Capture Medium)
-          "@\n!!!!WARNING: found statement %s. @\nTranslation need to be improved.... @\n"
-          (Clang_ast_proj.get_stmt_kind_string instr) ;
-        compoundStmt_trans trans_state stmt_info stmts
+    | CXXTryStmt (_, try_stmts) ->
+        tryStmt_trans trans_state try_stmts
+    | CXXCatchStmt _ ->
+        (* should by handled by try statement *)
+        assert false
     | ObjCAtThrowStmt (stmt_info, stmts) | CXXThrowExpr (stmt_info, stmts, _) ->
         objc_cxx_throw_trans trans_state stmt_info stmts
     | ObjCAtFinallyStmt (stmt_info, stmts) ->
         compoundStmt_trans trans_state stmt_info stmts
-    | ObjCAtCatchStmt (stmt_info, _, _) | CXXCatchStmt (stmt_info, _, _) ->
+    | ObjCAtCatchStmt (stmt_info, _, _) ->
         compoundStmt_trans trans_state stmt_info []
     | PredefinedExpr (_, _, expr_info, _) ->
         stringLiteral_trans trans_state expr_info ""

@@ -332,6 +332,8 @@ let append_locals pdesc new_locals =
   (pdesc.attributes).locals <- pdesc.attributes.locals @ new_locals
 
 
+let set_succs_exn_only (node: Node.t) exn = node.exn <- exn
+
 (** Set the successor nodes and exception nodes, and build predecessor links *)
 let set_succs_exn_base (node: Node.t) succs exn =
   node.succs <- succs ;

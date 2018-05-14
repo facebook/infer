@@ -1,24 +1,152 @@
 /* @generated */
 digraph cfg {
-"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_1" [label="1: Start call_deref_with_null\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_1" [label="1: Start FN_deref_null_after_catch_bad\nFormals:  i:int*\nLocals:  0$?%__sil_tmp__temp_construct_n$4:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$5:std::runtime_error const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$4,&0$?%__sil_tmpSIL_materialize_temp__n$5); [line 47, column 1]\n " color=yellow style=filled]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_1" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_5" ;
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_2" [label="2: Exit FN_deref_null_after_catch_bad \n  " color=yellow style=filled]
+	
+
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 54, column 11]\n  n$1=*n$0:int [line 54, column 10]\n  *&return:int=n$1 [line 54, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_2" ;
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_4" [label="4:  ObjCCPPThrow \n   n$6=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$5:std::runtime_error const *,\"error\":char const *) [line 50, column 11]\n  n$7=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$5:std::runtime_error const &) [line 50, column 11]\n  n$8=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error) [line 50, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_4" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_4" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" [color="red" ];
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_5" [label="5:  BinaryOperatorStmt: Assign \n   n$9=*&i:int* [line 49, column 6]\n  *n$9:int=2 [line 49, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_5" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_4" ;
+"FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" [label="6:  BinaryOperatorStmt: Assign \n   *&i:int*=null [line 52, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_6" -> "FN_deref_null_after_catch_bad#4627123003703707696.43441e3badf1bb571cbe770f9d51a51c_3" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_1" [label="1: Start FN_deref_null_in_catch_bad\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error const  i:int* \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$2,&0$?%__sil_tmpSIL_materialize_temp__n$3,&i); [line 37, column 1]\n " color=yellow style=filled]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_1" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" [label="2: Exit FN_deref_null_in_catch_bad \n  " color=yellow style=filled]
+	
+
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" [label="4:  ObjCCPPThrow \n   n$4=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error const *,\"error\":char const *) [line 40, column 11]\n  n$5=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error const &) [line 40, column 11]\n  n$6=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error) [line 40, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_3" ;
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" [color="red" ];
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" [label="5:  Return Stmt \n   n$8=*&i:int* [line 42, column 13]\n  n$9=*n$8:int [line 42, column 12]\n  *&return:int=n$9 [line 42, column 5]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_5" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_2" ;
+"FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" [label="6:  DeclStmt \n   *&i:int*=null [line 38, column 3]\n " shape="box"]
+	
+
+	 "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_6" -> "FN_deref_null_in_catch_bad#9297890526029657977.c83eec7c9ab8ce2e38ddbc08f8c3dfeb_4" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_1" [label="1: Start FN_multiple_catches_bad\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmp__temp_construct_n$4:std::length_error 0$?%__sil_tmpSIL_materialize_temp__n$5:std::length_error const  0$?%__sil_tmp__temp_construct_n$10:std::range_error 0$?%__sil_tmpSIL_materialize_temp__n$11:std::range_error const  j:int* i:int* \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$4,&0$?%__sil_tmpSIL_materialize_temp__n$5,&0$?%__sil_tmp__temp_construct_n$10,&0$?%__sil_tmpSIL_materialize_temp__n$11,&j,&i); [line 57, column 1]\n " color=yellow style=filled]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_1" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" [label="2: Exit FN_multiple_catches_bad \n  " color=yellow style=filled]
+	
+
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" [label="3:  Return Stmt \n   *&return:int=0 [line 71, column 3]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n  " ]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_10" [color="red" ];
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_9" [color="red" ];
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" [label="5: Prune (true branch, if) \n   n$2=*&b:_Bool [line 61, column 9]\n  PRUNE(n$2, true); [line 61, column 9]\n " shape="invhouse"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_7" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" [label="6: Prune (false branch, if) \n   n$2=*&b:_Bool [line 61, column 9]\n  PRUNE(!n$2, false); [line 61, column 9]\n " shape="invhouse"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_8" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_7" [label="7:  ObjCCPPThrow \n   n$6=_fun_std::length_error_length_error(&0$?%__sil_tmpSIL_materialize_temp__n$5:std::length_error const *,\"error\":char const *) [line 62, column 13]\n  n$7=_fun_std::length_error_length_error(&0$?%__sil_tmp__temp_construct_n$4:std::length_error*,&0$?%__sil_tmpSIL_materialize_temp__n$5:std::length_error const &) [line 62, column 13]\n  n$8=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::length_error) [line 62, column 7]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_7" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_8" [label="8:  ObjCCPPThrow \n   n$12=_fun_std::range_error_range_error(&0$?%__sil_tmpSIL_materialize_temp__n$11:std::range_error const *,\"error\":char const *) [line 64, column 13]\n  n$13=_fun_std::range_error_range_error(&0$?%__sil_tmp__temp_construct_n$10:std::range_error*,&0$?%__sil_tmpSIL_materialize_temp__n$11:std::range_error const &) [line 64, column 13]\n  n$14=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$10:std::range_error) [line 64, column 7]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_8" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_9" [label="9:  Return Stmt \n   n$17=*&i:int* [line 67, column 13]\n  n$18=*n$17:int [line 67, column 12]\n  *&return:int=n$18 [line 67, column 5]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_9" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_10" [label="10:  Return Stmt \n   n$21=*&j:int* [line 69, column 13]\n  n$22=*n$21:int [line 69, column 12]\n  *&return:int=n$22 [line 69, column 5]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_10" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" [label="11:  DeclStmt \n   *&j:int*=null [line 59, column 3]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" ;
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" ;
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" [label="12:  DeclStmt \n   *&i:int*=null [line 58, column 3]\n " shape="box"]
+	
+
+	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_12" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_11" ;
+"basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_1" [label="1: Start basic_throw_ok\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$1:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$1,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 29, column 1]\n " color=yellow style=filled]
+	
+
+	 "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_1" -> "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_3" ;
+"basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_2" [label="2: Exit basic_throw_ok \n  " color=yellow style=filled]
+	
+
+"basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_3" [label="3:  ObjCCPPThrow \n   n$3=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *,\"throwing!\":char const *) [line 29, column 31]\n  n$4=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmp__temp_construct_n$1:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 29, column 31]\n  n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$1:std::runtime_error) [line 29, column 25]\n " shape="box"]
+	
+
+	 "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_3" -> "basic_throw_ok#10529188890980782893.c9e1b8dd080b2621cfca65612331859d_2" ;
+"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_1" [label="1: Start call_deref_with_null\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 1]\n " color=yellow style=filled]
 	
 
 	 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_1" -> "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" ;
 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_2" [label="2: Exit call_deref_with_null \n  " color=yellow style=filled]
 	
 
-"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" [label="3:  Call _fun_deref_null \n   n$1=_fun_deref_null(null:int*) [line 24, column 30]\n " shape="box"]
+"call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" [label="3:  Call _fun_deref_null \n   n$1=_fun_deref_null(null:int*) [line 27, column 30]\n " shape="box"]
 	
 
 	 "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_3" -> "call_deref_with_null#4611966425999531792.6346543307e9a799421a89e451b917c2_2" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_1" [label="1: Start deref\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_1" [label="1: Start dead_deref_null_after_throw_ok\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$3:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$4:std::runtime_error const  i:int* \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$3,&0$?%__sil_tmpSIL_materialize_temp__n$4,&i); [line 31, column 1]\n " color=yellow style=filled]
+	
+
+	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_1" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_5" ;
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_2" [label="2: Exit dead_deref_null_after_throw_ok \n  " color=yellow style=filled]
+	
+
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" [label="3:  Return Stmt \n   n$0=*&i:int* [line 34, column 11]\n  n$1=*n$0:int [line 34, column 10]\n  *&return:int=n$1 [line 34, column 3]\n " shape="box"]
+	
+
+	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_2" ;
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" [label="4:  ObjCCPPThrow \n   n$5=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$4:std::runtime_error const *,\"throwing!\":char const *) [line 33, column 9]\n  n$6=_fun_std::runtime_error_runtime_error(&0$?%__sil_tmp__temp_construct_n$3:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$4:std::runtime_error const &) [line 33, column 9]\n  n$7=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$3:std::runtime_error) [line 33, column 3]\n " shape="box"]
+	
+
+	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_3" ;
+"dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_5" [label="5:  DeclStmt \n   *&i:int*=null [line 32, column 3]\n " shape="box"]
+	
+
+	 "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_5" -> "dead_deref_null_after_throw_ok#12025371096822526715.42d41c040f3a321bb94f60bf7b55d001_4" ;
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_1" [label="1: Start deref\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_1" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" ;
 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_2" [label="2: Exit deref \n  " color=yellow style=filled]
 	
 
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" [label="3:  Return Stmt \n   n$0=*&p:int* [line 14, column 11]\n  n$1=*n$0:int [line 14, column 10]\n  *&return:int=n$1 [line 14, column 3]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" [label="3:  Return Stmt \n   n$0=*&p:int* [line 17, column 11]\n  n$1=*n$0:int [line 17, column 10]\n  *&return:int=n$1 [line 17, column 3]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_2" ;
@@ -26,43 +154,48 @@ digraph cfg {
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5:  BinaryOperatorStmt: EQ \n   n$3=*&p:int* [line 11, column 7]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5:  BinaryOperatorStmt: EQ \n   n$3=*&p:int* [line 14, column 7]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" ;
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" [label="6: Prune (true branch, if) \n   PRUNE((n$3 == null), true); [line 11, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" [label="6: Prune (true branch, if) \n   PRUNE((n$3 == null), true); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$3 == null), false); [line 11, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$3 == null), false); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   n$5=_fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12, column 5]\n " shape="box"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8:  ObjCCPPThrow \n   n$5=_fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 15, column 5]\n " shape="box"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" ;
-"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" [label="1: Start deref_null\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
+"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" [label="1: Start deref_null\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
 	
 
 	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_1" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" ;
 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" [label="2: Exit deref_null \n  " color=yellow style=filled]
 	
 
-"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" [label="3:  Return Stmt \n   n$4=*&p:int* [line 19, column 13]\n  n$5=*n$4:int [line 19, column 12]\n  *&return:int=n$5 [line 19, column 5]\n " shape="box"]
+"deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" [label="3:  Return Stmt \n   n$1=*&p:int* [line 22, column 13]\n  n$2=*n$1:int [line 22, column 12]\n  *&return:int=n$2 [line 22, column 5]\n " shape="box"]
 	
 
 	 "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_3" -> "deref_null#11536394632240553702.ea4eed042da22ab7ceb619ec1b7f73bb_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 74, column 1]\n " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$4=_fun_deref(null:int*) [line 28, column 12]\n  *&return:int=n$4 [line 28, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   n$1=_fun_deref(null:int*) [line 76, column 12]\n  *&return:int=n$1 [line 76, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_4" [color="red" ];
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Return Stmt \n   *&return:int=-1 [line 78, column 5]\n " shape="box"]
+	
+
+	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
 }

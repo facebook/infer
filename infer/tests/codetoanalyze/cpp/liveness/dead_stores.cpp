@@ -7,8 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <exception>
 #include <mutex>
 #include <new>
+#include <stdexcept>
 #include <thread>
 
 namespace infer {
@@ -357,5 +359,126 @@ std::mutex my_mutex;
 void dead_lock_guard_ok() { std::lock_guard<std::mutex> lock(my_mutex); }
 
 void dead_unique_lock_ok() { std::unique_lock<std::mutex> lock(my_mutex); }
+
+extern int maybe_throw();
+
+class Exceptions {
+
+  int read_in_catch1_ok() {
+    int i = 1;
+    try {
+      throw std::runtime_error("error");
+    } catch (...) {
+      return i;
+    }
+    return 0;
+  }
+
+  int read_in_catch_explicit_throw_ok() {
+    int i = 1;
+    try {
+      maybe_throw();
+    } catch (...) {
+      return i;
+    }
+    return 0;
+  }
+
+  int dead_in_catch_bad() {
+    try {
+      throw std::runtime_error("error");
+    } catch (...) {
+      int i = 1;
+    }
+    return 0;
+  }
+
+  int FN_unreachable_catch_bad() {
+    int i = 1;
+    try {
+    } catch (...) {
+      return i;
+    }
+    return 0;
+  }
+
+  int multiple_catches_ok(bool b) {
+    int i = 1;
+    int j = 2;
+    try {
+      if (b) {
+        throw std::length_error("error");
+      } else {
+        throw std::range_error("error");
+      }
+    } catch (std::length_error& msg) {
+      return i;
+    } catch (std::range_error& msg) {
+      return j;
+    }
+    return 0;
+  }
+
+  void dont_throw() {}
+
+  int FN_harder_unreachable_catch_bad() {
+    int i = 1;
+    try {
+      dont_throw();
+    } catch (...) {
+      return i;
+    }
+    return 0;
+  }
+
+  // currently, the only transition to the catch block is at the end of the try
+  // block
+  int FP_read_in_catch_tricky_ok(bool b1, bool b2) {
+    int i = 1;
+    try {
+      if (b1) {
+        throw std::runtime_error("error");
+      }
+      i = 2;
+      if (b2) {
+        throw std::runtime_error("error");
+      }
+    } catch (...) {
+      return i;
+    }
+    return 0;
+  }
+
+  int return_in_try1_ok() {
+    bool b;
+
+    try {
+      maybe_throw();
+      return 3;
+    } catch (const char* msg) {
+      b = true;
+    }
+
+    if (b) {
+      return 2;
+    }
+    return 3;
+  }
+
+  int return_in_try2_ok() {
+    bool b;
+
+    try {
+      return maybe_throw();
+    } catch (const char* msg) {
+      b = true;
+    }
+
+    if (b) {
+      return 2;
+    }
+    return 3;
+  }
+};
 
 }

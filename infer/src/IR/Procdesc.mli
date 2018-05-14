@@ -190,6 +190,8 @@ val iter_nodes : (Node.t -> unit) -> t -> unit
 val iter_slope_range : (Node.t -> unit) -> Node.t -> Node.t -> unit
 (** iterate between two nodes or until we reach a branching structure *)
 
+val set_succs_exn_only : Node.t -> Node.t list -> unit
+
 val node_set_succs_exn : t -> Node.t -> Node.t list -> Node.t list -> unit
 (** Set the successor nodes and exception nodes, and build predecessor links *)
 
