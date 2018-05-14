@@ -68,7 +68,7 @@ module Jprop = struct
   let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
 
   (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
-  let pp_list pe shallow f jplist =
+  let pp_list pe ~shallow f jplist =
     let rec pp_seq_newline f = function
       | [] ->
           ()
@@ -86,7 +86,7 @@ module Jprop = struct
 
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
-  let d_list (shallow: bool) (jplist: Prop.normal t list) =
+  let d_list ~(shallow: bool) (jplist: Prop.normal t list) =
     L.add_print_action (L.PTjprop_list, Obj.repr (shallow, jplist))
 
 
@@ -143,28 +143,18 @@ end
 
 (***** End of module Jprop *****)
 
-module Visitedset = Caml.Set.Make (struct
-  type t = Procdesc.Node.id * int list
+module Visitedset = struct
+  include Caml.Set.Make (struct
+    type t = Procdesc.Node.id * int list
 
-  let compare (node_id1, _) (node_id2, _) = Procdesc.Node.compare_id node_id1 node_id2
-end)
+    let compare (node_id1, _) (node_id2, _) = Procdesc.Node.compare_id node_id1 node_id2
+  end)
 
-let visited_str vis =
-  let s = ref "" in
-  let lines = ref Int.Set.empty in
-  let do_one (_, ns) =
-    (* if List.length ns > 1 then
-       begin
-       let ss = ref "" in
-       List.iter ~f:(fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
-       L.out "Node %d has lines %s@." node !ss
-       end; *)
-    List.iter ~f:(fun n -> lines := Int.Set.add !lines n) ns
-  in
-  Visitedset.iter do_one vis ;
-  Int.Set.iter ~f:(fun n -> s := !s ^ " " ^ string_of_int n) !lines ;
-  !s
-
+  let pp fmt visitedset =
+    let collect_lines (_, ns) acc = List.fold ns ~f:Int.Set.add ~init:acc in
+    let lines = fold collect_lines visitedset Int.Set.empty in
+    Pp.seq F.pp_print_int fmt (Int.Set.elements lines)
+end
 
 (** A spec consists of:
     pre: a joined prop
@@ -245,28 +235,29 @@ let equal_phase = [%compare.equal : phase]
 
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
-  let num_str =
-    match num_opt with
+  let pp_num_opt fmt = function
     | None ->
-        "----------"
+        F.pp_print_string fmt "----------"
     | Some (n, tot) ->
-        Format.sprintf "%d of %d [nvisited:%s]" n tot (visited_str spec.visited)
+        F.fprintf fmt "%d of %d [nvisited:%a]" n tot Visitedset.pp spec.visited
   in
   let pre = Jprop.to_prop spec.pre in
   let pe_post = Prop.prop_update_obj_sub pe pre in
   let post_list = List.map ~f:fst spec.posts in
   match pe.Pp.kind with
   | TEXT ->
-      F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
+      F.fprintf fmt "--------------------------- %a ---------------------------@\n" pp_num_opt
+        num_opt ;
       F.fprintf fmt "PRE:@\n%a@\n" (Prop.pp_prop Pp.text) pre ;
       F.fprintf fmt "%a@\n" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list ;
       F.pp_print_string fmt "----------------------------------------------------------------"
   | HTML ->
-      F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str ;
+      F.fprintf fmt "--------------------------- %a ---------------------------@\n" pp_num_opt
+        num_opt ;
       F.fprintf fmt "PRE:@\n%a%a%a@\n" Io_infer.Html.pp_start_color Pp.Blue
         (Prop.pp_prop (Pp.html Blue))
         pre Io_infer.Html.pp_end_color () ;
-      (Propgraph.pp_proplist pe_post "POST" (pre, true)) fmt post_list ;
+      Propgraph.pp_proplist pe_post "POST" (pre, true) fmt post_list ;
       F.pp_print_string fmt "----------------------------------------------------------------"
 
 
@@ -275,20 +266,12 @@ let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
 
 let pp_specs pe fmt specs =
   let total = List.length specs in
-  let cnt = ref 0 in
   match pe.Pp.kind with
   | TEXT ->
-      List.iter
-        ~f:(fun spec ->
-          incr cnt ;
-          (pp_spec pe (Some (!cnt, total))) fmt spec )
-        specs
+      List.iteri specs ~f:(fun cnt spec -> pp_spec pe (Some (cnt + 1, total)) fmt spec)
   | HTML ->
-      List.iter
-        ~f:(fun spec ->
-          incr cnt ;
-          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec )
-        specs
+      List.iteri specs ~f:(fun cnt spec ->
+          F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (cnt + 1, total))) spec )
 
 
 let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EXECUTION"

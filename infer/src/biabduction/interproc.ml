@@ -235,7 +235,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   L.d_ln () ;
   L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Join  ####") ;
   L.d_increase_indent 1 ;
-  BiabductionSummary.Jprop.d_list false jplist ;
+  BiabductionSummary.Jprop.d_list ~shallow:false jplist ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   let jplist' =
@@ -243,7 +243,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   in
   L.d_strln ("#### Renamed footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
   L.d_increase_indent 1 ;
-  BiabductionSummary.Jprop.d_list false jplist' ;
+  BiabductionSummary.Jprop.d_list ~shallow:false jplist' ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   let jplist'' =
@@ -254,7 +254,7 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
   in
   L.d_strln ("#### Abstracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####") ;
   L.d_increase_indent 1 ;
-  BiabductionSummary.Jprop.d_list false jplist'' ;
+  BiabductionSummary.Jprop.d_list ~shallow:false jplist'' ;
   L.d_decrease_indent 1 ;
   L.d_ln () ;
   jplist''

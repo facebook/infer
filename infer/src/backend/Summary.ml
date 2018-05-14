@@ -119,21 +119,16 @@ let pp_errlog fmt err_log =
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
 
-(** Return the signature of a procedure declaration as a string *)
-let get_signature summary =
-  let s = ref "" in
-  List.iter
-    ~f:(fun (p, typ) ->
-      let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
-      let decl = F.asprintf "%t" pp in
-      s := if String.equal !s "" then decl else !s ^ ", " ^ decl )
-    (get_formals summary) ;
-  F.asprintf "%a %a(%s)" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
-    (get_proc_name summary) !s
+let pp_signature fmt summary =
+  let pp_formal fmt (p, typ) = F.fprintf fmt "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
+  F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
+    (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
 
+
+let get_signature summary = F.asprintf "%a" pp_signature summary
 
 let pp_no_stats_specs fmt summary =
-  F.fprintf fmt "%s@\n" (get_signature summary) ;
+  F.fprintf fmt "%a@\n" pp_signature summary ;
   F.fprintf fmt "%a@\n" Status.pp summary.status
 
 
@@ -180,14 +175,12 @@ let pp_payload pe fmt
 
 
 let pp_text fmt summary =
-  let pe = Pp.text in
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) Stats.pp summary.stats (pp_payload pe)
-    summary.payload
+  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) Stats.pp summary.stats
+    (pp_payload Pp.text) summary.payload
 
 
 let pp_html source color fmt summary =
-  let pe = Pp.html color in
   Io_infer.Html.pp_start_color fmt Black ;
   F.fprintf fmt "@\n%a" pp_no_stats_specs summary ;
   Io_infer.Html.pp_end_color fmt () ;
@@ -195,7 +188,7 @@ let pp_html source color fmt summary =
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
-  pp_payload pe fmt summary.payload ;
+  pp_payload (Pp.html color) fmt summary.payload ;
   F.fprintf fmt "</LISTING>@\n"
 
 

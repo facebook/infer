@@ -23,7 +23,7 @@ module Jprop : sig
   val d_shallow : Prop.normal t -> unit
   (** Dump the toplevel prop *)
 
-  val d_list : bool -> Prop.normal t list -> unit
+  val d_list : shallow:bool -> Prop.normal t list -> unit
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
 
   val free_vars : Prop.normal t -> Ident.t Sequence.t
@@ -39,7 +39,7 @@ module Jprop : sig
   val map : ('a Prop.t -> 'b Prop.t) -> 'a t -> 'b t
   (** map the function to each prop in the jprop, pointwise *)
 
-  val pp_list : Pp.env -> bool -> Format.formatter -> Prop.normal t list -> unit
+  val pp_list : Pp.env -> shallow:bool -> Format.formatter -> Prop.normal t list -> unit
   (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
 
   val pp_short : Pp.env -> Format.formatter -> Prop.normal t -> unit

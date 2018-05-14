@@ -208,7 +208,7 @@ let force_delayed_print fmt =
         let (shallow: bool), (jpl: Prop.normal BiabductionSummary.Jprop.t list) =
           Obj.obj shallow_jpl
         in
-        BiabductionSummary.Jprop.pp_list pe_default shallow fmt jpl
+        BiabductionSummary.Jprop.pp_list pe_default ~shallow fmt jpl
     | L.PTjprop_short, jp ->
         let jp : Prop.normal BiabductionSummary.Jprop.t = Obj.obj jp in
         BiabductionSummary.Jprop.pp_short pe_default fmt jp
