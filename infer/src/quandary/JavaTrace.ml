@@ -176,7 +176,8 @@ module SourceKind = struct
         let method_name = Typ.Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
-          | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
+          | ( ("android.app.Activity" | "android.app.Fragment" | "android.support.v4.app.Fragment")
+            , ("onActivityResult" | "onNewIntent") ) ->
               Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
           | ( "android.app.Service"
             , ("onBind" | "onRebind" | "onStart" | "onStartCommand" | "onTaskRemoved" | "onUnbind")
@@ -356,11 +357,16 @@ module SinkKind = struct
           match (Typ.Name.name typename, method_name) with
           | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment") ->
               taint_nth 1 StartComponent
-          | "android.app.Activity", "startIntentSenderForResult" ->
+          | ( ( "android.app.Activity"
+              | "android.content.Context"
+              | "android.support.v4.app.Fragment" )
+            , "startIntentSenderForResult" ) ->
               taint_nth 2 StartComponent
           | "android.app.Activity", "startIntentSenderFromChild" ->
               taint_nth 3 StartComponent
-          | ( "android.content.Context"
+          | ( ( "android.app.Fragment"
+              | "android.content.Context"
+              | "android.support.v4.app.Fragment" )
             , ( "bindService"
               | "sendBroadcast"
               | "sendBroadcastAsUser"
