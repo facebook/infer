@@ -30,6 +30,10 @@ let append_no_duplicates_annotations =
   Staged.unstage (IList.append_no_duplicates ~cmp)
 
 
+let append_no_duplicates_methods =
+  Staged.unstage (IList.append_no_duplicates ~cmp:Typ.Procname.compare)
+
+
 let add_no_duplicates_fields field_tuple l =
   let rec replace_field field_tuple l found =
     match (field_tuple, l) with

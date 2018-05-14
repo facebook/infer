@@ -63,19 +63,21 @@ let get_base_class_name_from_category decl =
       None
 
 
-(* Add potential extra fields defined only in the category *)
+(* Add potential extra fields and methods defined only in the category *)
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category qual_type_to_sil_type tenv class_name decl_info decl_list =
   let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
   let decl_fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
+  let decl_methods = ObjcMethod_decl.get_methods class_tn_name decl_list in
   let class_tn_desc = Typ.Tstruct class_tn_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key class_tn_desc ;
   ( match Tenv.lookup tenv class_tn_name with
-  | Some ({fields} as struct_typ) ->
+  | Some ({fields; methods} as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields decl_fields fields in
+      let new_methods = CGeneral_utils.append_no_duplicates_methods decl_methods methods in
       ignore
-        (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:[]
+        (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~methods:new_methods
            class_tn_name) ;
       L.(debug Capture Verbose)
         " Updating info for class '%a' in tenv@\n" QualifiedCppName.pp class_name
