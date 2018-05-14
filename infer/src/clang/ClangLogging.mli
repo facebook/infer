@@ -13,4 +13,5 @@ val log_caught_exception :
   CFrontend_config.translation_unit_context -> string -> Logging.ocaml_pos
   -> Clang_ast_t.source_location * Clang_ast_t.source_location -> string option -> unit
 
-val log_broken_cfg : Procdesc.t -> Logging.ocaml_pos -> lang:string -> unit
+val log_broken_cfg :
+  broken_node:[`Join | `Other] -> Procdesc.t -> Logging.ocaml_pos -> lang:string -> unit

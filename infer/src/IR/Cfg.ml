@@ -53,7 +53,7 @@ let iter_all_nodes ?(sorted= false) cfg ~f =
     |> List.iter ~f:(fun (_, d, n) -> f d n)
 
 
-let is_proc_cfg_connected proc_desc =
+let proc_cfg_broken_for_node proc_desc =
   let is_exit_node n =
     match Procdesc.Node.get_kind n with Procdesc.Node.Exit_node _ -> true | _ -> false
   in
@@ -79,26 +79,43 @@ let is_proc_cfg_connected proc_desc =
     | _ ->
         is_between_join_and_exit_node n
   in
-  let is_broken_node n =
+  let find_broken_node n =
     let succs = Procdesc.Node.get_succs n in
     let preds = Procdesc.Node.get_preds n in
     match Procdesc.Node.get_kind n with
     | Procdesc.Node.Start_node _ ->
-        List.is_empty succs || not (List.is_empty preds)
+        if List.is_empty succs || not (List.is_empty preds) then Some `Other else None
     | Procdesc.Node.Exit_node _ ->
-        not (List.is_empty succs) || List.is_empty preds
+        if not (List.is_empty succs) || List.is_empty preds then Some `Other else None
     | Procdesc.Node.Stmt_node _ | Procdesc.Node.Prune_node _ | Procdesc.Node.Skip_node _ ->
-        List.is_empty succs || List.is_empty preds
+        if List.is_empty succs || List.is_empty preds then Some `Other else None
     | Procdesc.Node.Join_node ->
         (* Join node has the exception that it may be without predecessors
          and pointing to between_join_and_exit which points to an exit node.
          This happens when the if branches end with a return.
          Nested if statements, where all branches have return statements,
          introduce a sequence of join nodes *)
-        (List.is_empty preds && not (is_consecutive_join_nodes n Procdesc.NodeSet.empty))
-        || (not (List.is_empty preds) && List.is_empty succs)
+        if
+          (List.is_empty preds && not (is_consecutive_join_nodes n Procdesc.NodeSet.empty))
+          || (not (List.is_empty preds) && List.is_empty succs)
+        then Some `Join
+        else None
   in
-  not (List.exists ~f:is_broken_node (Procdesc.get_nodes proc_desc))
+  let rec find_first_broken nodes res_broken_node =
+    match nodes with
+    | [] ->
+        res_broken_node
+    | n :: nodes' ->
+        let broken_node = find_broken_node n in
+        match broken_node with
+        | None ->
+            find_first_broken nodes' res_broken_node
+        | Some `Join ->
+            find_first_broken nodes' broken_node
+        | Some `Other ->
+            broken_node
+  in
+  find_first_broken (Procdesc.get_nodes proc_desc) None
 
 
 let load_statement =

@@ -22,15 +22,18 @@ let log_caught_exception (trans_unit_ctx: CFrontend_config.translation_unit_cont
   EventLogger.log caught_exception
 
 
-let log_broken_cfg procdesc exception_triggered_location ~lang =
+let log_broken_cfg ~broken_node procdesc exception_triggered_location ~lang =
   let proc_location = Procdesc.get_loc procdesc in
+  let exception_type =
+    match broken_node with `Other -> "Broken CFG" | `Join -> "Broken CFG at join node"
+  in
   let cfg_exception =
     EventLogger.FrontendException
       { source_location_start= proc_location
       ; source_location_end= proc_location
       ; ast_node= None
       ; exception_triggered_location
-      ; exception_type= "Broken CFG"
+      ; exception_type
       ; lang }
   in
   EventLogger.log cfg_exception
