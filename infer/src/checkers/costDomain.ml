@@ -9,7 +9,7 @@
 
 open! IStd
 module F = Format
-module BasicCost = Itv.NonNegativeBound
+module BasicCost = Itv.NonNegativePolynomial
 
 (** Map (node,instr) -> basic cost  *)
 module NodeInstructionToCostMap = AbstractDomain.MapOfPPMap (ProcCfg.InstrNode.IdMap) (BasicCost)

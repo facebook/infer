@@ -150,6 +150,89 @@ end = struct
     num / den
 end
 
+module Ints : sig
+  module NonNegativeInt : sig
+    type t = private int [@@deriving compare]
+
+    val zero : t
+
+    val one : t
+
+    val of_int_exn : int -> t
+
+    val is_zero : t -> bool
+
+    val is_one : t -> bool
+
+    val ( <= ) : lhs:t -> rhs:t -> bool
+
+    val ( + ) : t -> t -> t
+
+    val ( * ) : t -> t -> t
+
+    val max : t -> t -> t
+
+    val min : t -> t -> t
+
+    val pp : F.formatter -> t -> unit
+  end
+
+  module PositiveInt : sig
+    type t = private NonNegativeInt.t [@@deriving compare]
+
+    val one : t
+
+    val of_int : int -> t option
+
+    val succ : t -> t
+
+    val pp : F.formatter -> t -> unit
+  end
+end = struct
+  module NonNegativeInt = struct
+    type t = int [@@deriving compare]
+
+    let zero = 0
+
+    let one = 1
+
+    let is_zero = function 0 -> true | _ -> false
+
+    let is_one = function 1 -> true | _ -> false
+
+    let of_int_exn i =
+      assert (i >= 0) ;
+      i
+
+
+    let ( <= ) ~lhs ~rhs = Int.(lhs <= rhs)
+
+    let ( + ) = Int.( + )
+
+    let ( * ) = Int.( * )
+
+    let max = Int.max
+
+    let min = Int.min
+
+    let pp = F.pp_print_int
+  end
+
+  module PositiveInt = struct
+    type t = NonNegativeInt.t [@@deriving compare]
+
+    let one = 1
+
+    let of_int i = if i <= 0 then None else Some i
+
+    let succ = Int.succ
+
+    let pp = F.pp_print_int
+  end
+end
+
+open Ints
+
 module SymLinear = struct
   module M = SymbolMap
 
@@ -723,8 +806,6 @@ module Bound = struct
         if le y x then x else PInf
 
 
-  let ( <= ) ~lhs ~rhs = le lhs rhs
-
   let zero : t = Linear (0, SymLinear.zero)
 
   let one : t = Linear (1, SymLinear.zero)
@@ -873,83 +954,313 @@ module Bound = struct
   let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
 end
 
+type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
+
+(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
 module NonNegativeBound = struct
   type t = Bound.t [@@deriving compare]
-
-  type astate = t
 
   let pp = Bound.pp
 
   let zero = Bound.zero
 
-  let one = Bound.one
-
-  let top = Bound.PInf
-
   let of_bound b = if Bound.le b Bound.zero then Bound.zero else b
 
-  let of_int_exn i =
-    assert (i >= 0) ;
-    Bound.of_int i
-
-
-  let is_not_infty = function
+  let classify = function
     | Bound.PInf ->
-        false
-    | Bound.(Linear _ | MinMax _) ->
-        true
+        ValTop
     | Bound.MInf ->
         assert false
-
-
-  let is_symbolic = Bound.is_symbolic
-
-  let ( <= ) = Bound.( <= )
-
-  (* For now let's check and fail when these operations don't give a non-negative result *)
-
-  let checked1 name f b =
-    let res = f b in
-    let () =
-      if Bound.lt res zero then
-        L.internal_error "NonNegativeBound.%s %a = %a < 0@\n" name pp b pp res
-    in
-    res
-
-
-  let checked2 name f b1 b2 =
-    let res = f b1 b2 in
-    let () =
-      if Bound.lt res zero then
-        L.internal_error "NonNegativeBound.%s %a %a = %a < 0@\n" name pp b1 pp b2 pp res
-    in
-    res
-
-
-  let join b1 b2 = checked2 "join" Bound.max_u b1 b2
-
-  let min b1 b2 = checked2 "min" Bound.min_u b1 b2
-
-  let mult : t -> t -> t =
-   fun x y ->
-    match (x, Bound.is_const x, y, Bound.is_const y) with
-    | x, _, _, Some n | _, Some n, x, _ -> (
-      match NonZeroInt.of_int n with
-      | Some n ->
-          if NonZeroInt.is_one n then x
-          else if NonZeroInt.is_minus_one n then assert false
-          else checked1 "neg(mult_const)" (Bound.mult_const_u n) x
+    | b ->
+      match Bound.is_const b with
       | None ->
-          zero )
-    | _ ->
-        top
+          Symbolic b
+      | Some c ->
+          Constant (NonNegativeInt.of_int_exn c)
 
 
-  let plus b1 b2 = checked2 "plus" Bound.plus_u b1 b2
+  let subst b map =
+    match Bound.subst_ub b map with
+    | Bottom ->
+        Constant NonNegativeInt.zero
+    | NonBottom b ->
+        of_bound b |> classify
+end
 
-  let widen ~prev ~next ~num_iters:_ = checked2 "widen" Bound.widen_u prev next
+module type NonNegativeSymbol = sig
+  type t [@@deriving compare]
 
-  let subst b map = match Bound.subst_ub b map with Bottom -> zero | NonBottom b -> of_bound b
+  val subst : t -> Bound.t bottom_lifted SymbolMap.t -> (NonNegativeInt.t, t) valclass
+
+  val pp : F.formatter -> t -> unit
+end
+
+module MakePolynomial (S : NonNegativeSymbol) = struct
+  module M = struct
+    include Caml.Map.Make (S)
+
+    let increasing_union ~f m1 m2 = union (fun _ v1 v2 -> Some (f v1 v2)) m1 m2
+
+    let inter ~f m1 m2 =
+      merge
+        (fun _ v1_opt v2_opt ->
+          match (v1_opt, v2_opt) with Some v1, Some v2 -> f v1 v2 | _ -> None )
+        m1 m2
+
+
+    let le ~le_elt m1 m2 =
+      match
+        merge
+          (fun _ v1_opt v2_opt ->
+            match (v1_opt, v2_opt) with
+            | Some _, None ->
+                raise Exit
+            | Some lhs, Some rhs when not (le_elt ~lhs ~rhs) ->
+                raise Exit
+            | _ ->
+                None )
+          m1 m2
+      with
+      | _ ->
+          true
+      | exception Exit ->
+          false
+  end
+
+  (** If x < y < z then
+    2 + 3 * x + 4 * x ^ 2 + x * y + 7 * y ^ 2 * z
+    is represented by
+    {const= 2; terms= {
+      x -> {const= 3; terms= {
+        x -> {const= 4; terms={}},
+        y -> {const= 1; terms={}}
+      }},
+      y -> {const= 0; terms= {
+        y -> {const= 0; terms= {
+          z -> {const= 7; terms={}}
+        }}
+      }}
+    }}
+
+    The representation is a tree, each edge from a node to a child (terms) represents a multiplication by a symbol. If a node has a non-zero const, it represents the multiplication (of the path) by this constant.
+    In the example above, we have the following paths:
+    2
+    x * 3
+    x * x * 4
+    x * y * 1
+    y * y * z * 7
+
+    Invariants:
+      - except for the root, terms <> {} \/ const <> 0
+      - symbols children of a term are 'smaller' than its self symbol
+      - contents of terms are not zero
+      - symbols in terms are only symbolic values
+  *)
+  type t = {const: NonNegativeInt.t; terms: t M.t}
+
+  type astate = t
+
+  let of_non_negative_int : NonNegativeInt.t -> t = fun const -> {const; terms= M.empty}
+
+  let zero = of_non_negative_int NonNegativeInt.zero
+
+  let one = of_non_negative_int NonNegativeInt.one
+
+  let of_int_exn : int -> t = fun i -> i |> NonNegativeInt.of_int_exn |> of_non_negative_int
+
+  let of_valclass : (NonNegativeInt.t, S.t) valclass -> t top_lifted = function
+    | ValTop ->
+        Top
+    | Constant i ->
+        NonTop (of_non_negative_int i)
+    | Symbolic s ->
+        NonTop {const= NonNegativeInt.zero; terms= M.singleton s one}
+
+
+  let is_zero : t -> bool = fun {const; terms} -> NonNegativeInt.is_zero const && M.is_empty terms
+
+  let is_one : t -> bool = fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
+
+  let non_zero : t -> t option = fun p -> if is_zero p then None else Some p
+
+  let is_symbolic : t -> bool = fun {terms} -> not (M.is_empty terms)
+
+  let rec plus : t -> t -> t =
+   fun p1 p2 ->
+    { const= NonNegativeInt.(p1.const + p2.const)
+    ; terms= M.increasing_union ~f:plus p1.terms p2.terms }
+
+
+  let rec mult_const_positive : t -> PositiveInt.t -> t =
+   fun {const; terms} c ->
+    { const= NonNegativeInt.(const * (c :> NonNegativeInt.t))
+    ; terms= M.map (fun p -> mult_const_positive p c) terms }
+
+
+  let mult_const : t -> NonNegativeInt.t -> t =
+   fun p c ->
+    match PositiveInt.of_int (c :> int) with None -> zero | Some c -> mult_const_positive p c
+
+
+  (* (c + r * R + s * S + t * T) x s
+    = 0 + r * (R x s) + s * (c + s * S + t * T) *)
+  let rec mult_symb : t -> S.t -> t =
+   fun {const; terms} s ->
+    let less_than_s, equal_s_opt, greater_than_s = M.split s terms in
+    let less_than_s = M.map (fun p -> mult_symb p s) less_than_s in
+    let s_term =
+      let terms =
+        match equal_s_opt with
+        | None ->
+            greater_than_s
+        | Some equal_s_p ->
+            M.add s equal_s_p greater_than_s
+      in
+      {const; terms}
+    in
+    let terms = if is_zero s_term then less_than_s else M.add s s_term less_than_s in
+    {const= NonNegativeInt.zero; terms}
+
+
+  let rec mult : t -> t -> t =
+   fun p1 p2 ->
+    if is_zero p1 || is_zero p2 then zero
+    else if is_one p1 then p2
+    else if is_one p2 then p1
+    else
+      mult_const p1 p2.const |> M.fold (fun s p acc -> plus (mult_symb (mult p p1) s) acc) p2.terms
+
+
+  (* assumes symbols are not comparable *)
+  let rec ( <= ) : lhs:t -> rhs:t -> bool =
+   fun ~lhs ~rhs ->
+    NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:( <= ) lhs.terms rhs.terms
+
+
+  (* Possible optimization for later: x join x^2 = x^2 instead of x + x^2 *)
+  let rec join : t -> t -> t =
+   fun p1 p2 ->
+    { const= NonNegativeInt.max p1.const p2.const
+    ; terms= M.increasing_union ~f:join p1.terms p2.terms }
+
+
+  let rec min : t -> t -> t =
+   fun p1 p2 ->
+    {const= NonNegativeInt.min p1.const p2.const; terms= M.inter ~f:min_non_zero p1.terms p2.terms}
+
+
+  and min_non_zero : t -> t -> t option = fun p1 p2 -> min p1 p2 |> non_zero
+
+  let widen : prev:t -> next:t -> num_iters:int -> t =
+   fun ~prev:_ ~next:_ ~num_iters:_ -> assert false
+
+
+  let subst =
+    let exception ReturnTop in
+    (* avoids top-lifting everything *)
+    let rec subst {const; terms} map =
+      M.fold
+        (fun s p acc ->
+          match S.subst s map with
+          | Constant c -> (
+            match PositiveInt.of_int (c :> int) with
+            | None ->
+                acc
+            | Some c ->
+                let p = subst p map in
+                mult_const_positive p c |> plus acc )
+          | ValTop ->
+              let p = subst p map in
+              if is_zero p then acc else raise ReturnTop
+          | Symbolic s ->
+              let p = subst p map in
+              mult_symb p s |> plus acc )
+        terms (of_non_negative_int const)
+    in
+    fun p map -> match subst p map with p -> NonTop p | exception ReturnTop -> Top
+
+
+  let pp : F.formatter -> t -> unit =
+    let add_symb s (((last_s, last_occ) as last), others) =
+      if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
+      else ((s, PositiveInt.one), last :: others)
+    in
+    let pp_coeff fmt (c: NonNegativeInt.t) =
+      if (c :> int) > 1 then F.fprintf fmt "%a * " NonNegativeInt.pp c
+    in
+    let pp_exp fmt (e: PositiveInt.t) =
+      if (e :> int) > 1 then F.fprintf fmt "^%a" PositiveInt.pp e
+    in
+    let pp_magic_parentheses pp fmt x =
+      let s = F.asprintf "%a" pp x in
+      if String.contains s ' ' then F.fprintf fmt "(%s)" s else F.pp_print_string fmt s
+    in
+    let pp_symb fmt symb = pp_magic_parentheses S.pp fmt symb in
+    let pp_symb_exp fmt (symb, exp) = F.fprintf fmt "%a%a" pp_symb symb pp_exp exp in
+    let pp_symbs fmt (last, others) =
+      List.rev_append others [last] |> Pp.seq ~sep:" * " pp_symb_exp fmt
+    in
+    let rec pp_sub symbs fmt {const; terms} =
+      if not (NonNegativeInt.is_zero const) then
+        F.fprintf fmt " + %a%a" pp_coeff const pp_symbs symbs ;
+      M.iter (fun s p -> pp_sub (add_symb s symbs) fmt p) terms
+    in
+    fun fmt {const; terms} ->
+      NonNegativeInt.pp fmt const ;
+      M.iter (fun s p -> pp_sub ((s, PositiveInt.one), []) fmt p) terms
+end
+
+module NonNegativePolynomial = struct
+  module NonNegativeNonTopPolynomial = MakePolynomial (NonNegativeBound)
+  include AbstractDomain.TopLifted (NonNegativeNonTopPolynomial)
+
+  let zero = NonTop NonNegativeNonTopPolynomial.zero
+
+  let one = NonTop NonNegativeNonTopPolynomial.one
+
+  let of_int_exn i = NonTop (NonNegativeNonTopPolynomial.of_int_exn i)
+
+  let of_non_negative_bound b =
+    b |> NonNegativeBound.classify |> NonNegativeNonTopPolynomial.of_valclass
+
+
+  let is_symbolic = function Top -> false | NonTop p -> NonNegativeNonTopPolynomial.is_symbolic p
+
+  let is_top = function Top -> true | _ -> false
+
+  let top_lifted_increasing ~f p1 p2 =
+    match (p1, p2) with Top, _ | _, Top -> Top | NonTop p1, NonTop p2 -> NonTop (f p1 p2)
+
+
+  let plus = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.plus
+
+  let mult = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.mult
+
+  let min p1 p2 =
+    match (p1, p2) with
+    | Top, x | x, Top ->
+        x
+    | NonTop p1, NonTop p2 ->
+        NonTop (NonNegativeNonTopPolynomial.min p1 p2)
+
+
+  let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top
+
+  let subst p map = match p with Top -> Top | NonTop p -> NonNegativeNonTopPolynomial.subst p map
+end
+
+module ItvRange = struct
+  type t = NonNegativeBound.t
+
+  let zero : t = NonNegativeBound.zero
+
+  let of_bounds : lb:Bound.t -> ub:Bound.t -> t =
+   fun ~lb ~ub ->
+    Bound.plus_u ub Bound.one |> Bound.plus_u (Bound.neg lb) |> NonNegativeBound.of_bound
+
+
+  let to_top_lifted_polynomial : t -> NonNegativePolynomial.astate =
+   fun r -> NonNegativePolynomial.of_non_negative_bound r
 end
 
 module ItvPure = struct
@@ -1082,9 +1393,7 @@ module ItvPure = struct
 
   let is_le_zero : t -> bool = fun (_, ub) -> Bound.le ub Bound.zero
 
-  let range : t -> NonNegativeBound.t =
-   fun (l, u) -> Bound.plus_u (Bound.plus_u u Bound.one) (Bound.neg l) |> NonNegativeBound.of_bound
-
+  let range : t -> ItvRange.t = fun (lb, ub) -> ItvRange.of_bounds ~lb ~ub
 
   let neg : t -> t =
    fun (l, u) ->
@@ -1427,7 +1736,12 @@ let le : lhs:t -> rhs:t -> bool = ( <= )
 
 let eq : t -> t -> bool = fun x y -> ( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x
 
-let range : t -> Bound.t = function Bottom -> Bound.zero | NonBottom itv -> ItvPure.range itv
+let range : t -> ItvRange.t = function
+  | Bottom ->
+      ItvRange.zero
+  | NonBottom itv ->
+      ItvPure.range itv
+
 
 let lift1 : (ItvPure.t -> ItvPure.t) -> t -> t =
  fun f -> function Bottom -> Bottom | NonBottom x -> NonBottom (f x)

@@ -470,7 +470,7 @@ module TransferFunctionsWCET = struct
   (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
    Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
   let should_report_cost cost =
-    BasicCost.is_not_infty cost && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
+    not (BasicCost.is_top cost) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
 
 
   let do_report summary loc cost =
@@ -556,7 +556,7 @@ end
 module AnalyzerWCET = AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsWCET)
 
 let check_and_report_infinity cost proc_desc summary =
-  if not (BasicCost.is_not_infty cost) then
+  if BasicCost.is_top cost then
     let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
     let message =
       F.asprintf "The execution time of the function %a cannot be computed" Typ.Procname.pp

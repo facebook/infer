@@ -18,3 +18,15 @@ void do_n_times(int n) {
 void do_2_times_Good() { do_n_times(2); }
 
 void do_2K_times_Bad() { do_n_times(2000); }
+
+void do_m2_times(int m) {
+  for (int i = 0; i < m; i++) {
+    do_n_times(m);
+  }
+}
+
+void do_half_m2_times(int m) {
+  for (int i = 0; i < m; i++) {
+    do_n_times(i);
+  }
+}

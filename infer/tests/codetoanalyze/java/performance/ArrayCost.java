@@ -8,7 +8,7 @@
  */
 public class ArrayCost {
 
-  private void ArrayCost_FP(int[] mag) {
+  private void ArrayCost(int[] mag) {
 
     int i = 0;
     int k = mag.length;

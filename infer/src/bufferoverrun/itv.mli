@@ -57,39 +57,32 @@ module Bound : sig
   val lt : t -> t -> bool
 end
 
-(** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a non-negative value once instantiated *)
-module NonNegativeBound : sig
+module NonNegativePolynomial : sig
+  include AbstractDomain.WithTop
+
+  val zero : astate
+
+  val one : astate
+
+  val of_int_exn : int -> astate
+
+  val is_symbolic : astate -> bool
+
+  val is_top : astate -> bool
+
+  val plus : astate -> astate -> astate
+
+  val mult : astate -> astate -> astate
+
+  val min : astate -> astate -> astate
+
+  val subst : astate -> Bound.t bottom_lifted SymbolMap.t -> astate
+end
+
+module ItvRange : sig
   type t
 
-  type astate = t
-
-  val pp : F.formatter -> t -> unit
-
-  val zero : t
-
-  val one : t
-
-  val top : t
-
-  val of_int_exn : int -> t
-
-  val is_not_infty : t -> bool
-
-  val is_symbolic : t -> bool
-
-  val ( <= ) : lhs:t -> rhs:t -> bool
-
-  val join : t -> t -> t
-
-  val min : t -> t -> t
-
-  val mult : t -> t -> t
-
-  val plus : t -> t -> t
-
-  val widen : prev:t -> next:t -> num_iters:'a -> t
-
-  val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t
+  val to_top_lifted_polynomial : t -> NonNegativePolynomial.astate
 end
 
 module ItvPure : sig
@@ -204,7 +197,7 @@ val le : lhs:t -> rhs:t -> bool
 
 val lnot : t -> Boolean.t
 
-val range : t -> NonNegativeBound.t
+val range : t -> ItvRange.t
 
 val div : t -> t -> t
 
