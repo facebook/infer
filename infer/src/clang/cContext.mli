@@ -24,19 +24,17 @@ type t =
   ; tenv: Tenv.t
   ; cfg: Cfg.t
   ; procdesc: Procdesc.t
-  ; is_objc_method: bool
-  ; curr_class: curr_class
+  ; is_immediate_objc_method: bool
+  ; immediate_curr_class: curr_class
   ; return_param_typ: Typ.t option
   ; outer_context: t option
-        (** in case of objc blocks, the context of the method containing the
-                                  block *)
+        (** in case of objc blocks, the context of the method containing the block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
-  (* mapping from a statement to a list of variables, that go out of scope after the end of the statement *)
+        (** mapping from a statement to a list of variables, that go out of scope after the end of the
+     statement *)
   }
-
-val get_procdesc : t -> Procdesc.t
 
 val get_curr_class : t -> curr_class
 

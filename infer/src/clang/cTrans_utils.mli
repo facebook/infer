@@ -75,14 +75,17 @@ val mk_cond_continuation : continuation option -> continuation option
 val define_condition_side_effects :
   Exp.t * Typ.t -> Sil.instr list -> Location.t -> (Exp.t * Typ.t) * Sil.instr list
 
-val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
+val source_range_of_stmt : Clang_ast_t.stmt -> Clang_ast_t.source_range
+
+val extract_stmt_from_singleton :
+  Clang_ast_t.stmt list -> Clang_ast_t.source_range -> string -> Clang_ast_t.stmt
 
 val is_null_stmt : Clang_ast_t.stmt -> bool
 
 val dereference_value_from_result :
-  Location.t -> trans_result -> strip_pointer:bool -> trans_result
-(** Given trans_result with ONE expression, create temporary variable with dereferenced value of an
-    expression assigned to it *)
+  ?strip_pointer:bool -> Clang_ast_t.source_range -> Location.t -> trans_result -> trans_result
+(** Given a [trans_result], create a temporary variable with dereferenced value of an expression
+   assigned to it *)
 
 val cast_operation :
   Clang_ast_t.cast_kind -> Exp.t * Typ.t -> Typ.t -> Location.t -> Sil.instr list * (Exp.t * Typ.t)
@@ -92,10 +95,12 @@ val trans_assertion : trans_state -> Location.t -> trans_result
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 
 val builtin_trans :
-  trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
+  trans_state -> Clang_ast_t.source_range -> Location.t -> trans_result list -> Typ.Procname.t
+  -> trans_result option
 
 val cxx_method_builtin_trans :
-  trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
+  trans_state -> Clang_ast_t.source_range -> Location.t -> trans_result list -> Typ.Procname.t
+  -> trans_result option
 
 val new_or_alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option
@@ -103,16 +108,13 @@ val new_or_alloc_trans :
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.typ) list -> trans_result
 
-(** Module for creating cfg nodes and other utility functions related to them.  *)
+(** Module for creating cfg nodes and other utility functions related to them. *)
 module Nodes : sig
   val is_binary_assign_op : Clang_ast_t.binary_operator_info -> bool
 
-  val create_node :
-    Procdesc.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Procdesc.Node.t
-
   val create_prune_node :
-    branch:bool -> negate_cond:bool -> Exp.t * Typ.t -> Sil.instr list -> Location.t -> Sil.if_kind
-    -> CContext.t -> Procdesc.Node.t
+    Procdesc.t -> branch:bool -> negate_cond:bool -> Exp.t -> Sil.instr list -> Location.t
+    -> Sil.if_kind -> Procdesc.Node.t
 
   val is_true_prune_node : Procdesc.Node.t -> bool
 end

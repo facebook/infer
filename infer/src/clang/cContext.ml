@@ -29,39 +29,35 @@ type t =
   ; tenv: Tenv.t
   ; cfg: Cfg.t
   ; procdesc: Procdesc.t
-  ; is_objc_method: bool
-  ; curr_class: curr_class
+  ; is_immediate_objc_method: bool
+  ; immediate_curr_class: curr_class
   ; return_param_typ: Typ.t option
   ; outer_context: t option
-        (** in case of objc blocks, the context of the method containing the
-                                  block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
   ; label_map: str_node_map
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t }
 
-let create_context translation_unit_context tenv cfg procdesc curr_class return_param_typ
-    is_objc_method outer_context vars_to_destroy =
+let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
+    is_immediate_objc_method outer_context vars_to_destroy =
   { translation_unit_context
   ; tenv
   ; cfg
   ; procdesc
-  ; curr_class
+  ; immediate_curr_class
   ; return_param_typ
-  ; is_objc_method
+  ; is_immediate_objc_method
   ; outer_context
   ; blocks_static_vars= Typ.Procname.Map.empty
   ; label_map= Hashtbl.create 17
   ; vars_to_destroy }
 
 
-let get_procdesc context = context.procdesc
-
 let rec is_objc_method context =
   match context.outer_context with
   | Some outer_context ->
       is_objc_method outer_context
   | None ->
-      context.is_objc_method
+      context.is_immediate_objc_method
 
 
 let rec is_objc_instance context =
@@ -75,11 +71,11 @@ let rec is_objc_instance context =
 
 
 let rec get_curr_class context =
-  match (context.curr_class, context.outer_context) with
+  match (context.immediate_curr_class, context.outer_context) with
   | ContextNoCls, Some outer_context ->
       get_curr_class outer_context
   | _ ->
-      context.curr_class
+      context.immediate_curr_class
 
 
 let get_curr_class_decl_ptr stmt_info curr_class =

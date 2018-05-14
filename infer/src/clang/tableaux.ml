@@ -55,7 +55,7 @@ let get_node_valuation k =
 
 let is_decl_allowed lcxt decl =
   let decl_info = Clang_ast_proj.get_decl_tuple decl in
-  CLocation.should_do_frontend_check lcxt.CLintersContext.translation_unit_context
+  CLocation.should_do_frontend_check lcxt.CLintersContext.translation_unit_context.source_file
     decl_info.Clang_ast_t.di_source_range
 
 

@@ -12,12 +12,12 @@ open PolyVariantEqual
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
-let clang_to_sil_location trans_unit_ctx clang_loc =
+let clang_to_sil_location default_source_file clang_loc =
   let line = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_line in
   let col = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_column in
   let file =
-    Option.value_map ~default:trans_unit_ctx.CFrontend_config.source_file
-      ~f:SourceFile.from_abs_path clang_loc.Clang_ast_t.sl_file
+    Option.value_map ~default:default_source_file ~f:SourceFile.from_abs_path
+      clang_loc.Clang_ast_t.sl_file
   in
   Location.{line; col; file}
 
@@ -33,10 +33,10 @@ let source_file_in_project source_file =
   file_in_project && not file_should_be_skipped
 
 
-let should_do_frontend_check trans_unit_ctx (loc_start, _) =
+let should_do_frontend_check translation_unit (loc_start, _) =
   match Option.map ~f:SourceFile.from_abs_path loc_start.Clang_ast_t.sl_file with
   | Some source_file ->
-      SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file
+      SourceFile.equal translation_unit source_file
       || (source_file_in_project source_file && not Config.testing_mode)
   | None ->
       false
@@ -46,7 +46,7 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
     translate the headers that are part of the project. However, in testing mode, we don't want to
     translate the headers because the dot files in the frontend tests should contain nothing else
     than the source file to avoid conflicts between different versions of the libraries. *)
-let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~translate_when_used =
+let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_file_of pred loc =
     match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
     | Some f ->
@@ -57,7 +57,7 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   (* it's not necessary to compare inodes here because both files come from
      the same context - they are produced by the same invocation of ASTExporter
      which uses same logic to produce both files *)
-  let equal_current_source = SourceFile.equal trans_unit_ctx.CFrontend_config.source_file in
+  let equal_current_source = SourceFile.equal translation_unit in
   let equal_header_of_current_source maybe_header =
     (* SourceFile.of_header will cache calls to filesystem *)
     let source_of_header_opt = SourceFile.of_header maybe_header in
@@ -76,9 +76,9 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
      && not Config.testing_mode
 
 
-let should_translate_lib trans_unit_ctx source_range decl_trans_context ~translate_when_used =
+let should_translate_lib translation_unit source_range decl_trans_context ~translate_when_used =
   not Config.no_translate_libs
-  || should_translate trans_unit_ctx source_range decl_trans_context ~translate_when_used
+  || should_translate translation_unit source_range decl_trans_context ~translate_when_used
 
 
 let is_file_blacklisted file =
@@ -89,12 +89,10 @@ let is_file_blacklisted file =
   is_file_blacklisted
 
 
-let get_sil_location_from_range trans_unit_ctx source_range prefer_first =
-  let sloc1, sloc2 = source_range in
-  let sloc = if not prefer_first then sloc2 else sloc1 in
-  clang_to_sil_location trans_unit_ctx sloc
+let location_of_source_range ?(pick_location= `Start) default_source_file source_range =
+  source_range |> (match pick_location with `Start -> fst | `End -> snd)
+  |> clang_to_sil_location default_source_file
 
 
-let get_sil_location stmt_info context =
-  let sloc1, _ = stmt_info.Clang_ast_t.si_source_range in
-  clang_to_sil_location context.CContext.translation_unit_context sloc1
+let location_of_stmt_info default_source_file stmt_info =
+  location_of_source_range default_source_file stmt_info.Clang_ast_t.si_source_range

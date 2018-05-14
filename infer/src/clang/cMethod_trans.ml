@@ -588,8 +588,13 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     L.(debug Capture Verbose)
       "@\nbyvals = [ %s ]@\n@."
       (String.concat ~sep:", " (List.map by_vals ~f:string_of_int)) ;
-    let loc_start = CLocation.get_sil_location_from_range trans_unit_ctx source_range true in
-    let loc_exit = CLocation.get_sil_location_from_range trans_unit_ctx source_range false in
+    let loc_start =
+      CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
+    in
+    let loc_exit =
+      CLocation.location_of_source_range ~pick_location:`End
+        trans_unit_ctx.CFrontend_config.source_file source_range
+    in
     let ret_type = get_return_type tenv ms in
     let objc_property_accessor =
       if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None

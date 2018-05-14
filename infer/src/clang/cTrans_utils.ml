@@ -14,14 +14,20 @@ module Hashtbl = Caml.Hashtbl
 
 module L = Logging
 
-(** Extract the element of a singleton list. If the list is not a singleton it crashes *)
-let extract_item_from_singleton l pp warning_string =
+(** Extract the element of a singleton list. If the list is not a singleton it crashes. *)
+let extract_item_from_singleton l pp source_range warning_string =
   match l with
   | [item] ->
       item
   | _ ->
-      L.die InternalError "List has %d elements, 1 expected:@\n[@[<h>%a@]]@\n%s" (List.length l)
-        (Pp.semicolon_seq pp) l warning_string
+      L.die InternalError "At %a: List has %d elements, 1 expected:@\n[@[<h>%a@]]@\n%s"
+        (Pp.to_string ~f:Clang_ast_j.string_of_source_range)
+        source_range (List.length l) (Pp.semicolon_seq pp) l warning_string
+
+
+let source_range_of_stmt stmt =
+  let {Clang_ast_t.si_source_range}, _ = Clang_ast_proj.get_stmt_tuple stmt in
+  si_source_range
 
 
 module Nodes = struct
@@ -35,15 +41,10 @@ module Nodes = struct
         false
 
 
-  let create_node node_kind instrs loc context =
-    let procdesc = CContext.get_procdesc context in
-    Procdesc.create_node procdesc loc node_kind instrs
-
-
-  let create_prune_node ~branch ~negate_cond (e_cond, _) instrs_cond loc if_kind context =
+  let create_prune_node proc_desc ~branch ~negate_cond e_cond instrs_cond loc if_kind =
     let e_cond = if negate_cond then Exp.UnOp (Unop.LNot, e_cond, None) else e_cond in
     let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond, loc, branch, if_kind)] in
-    create_node (prune_kind branch if_kind) instrs_cond' loc context
+    Procdesc.create_node proc_desc loc (prune_kind branch if_kind) instrs_cond'
 
 
   (** Check if this binary opertor requires the creation of a node in the cfg. *)
@@ -90,7 +91,10 @@ module GotoLabel = struct
   let find_goto_label context label sil_loc =
     try Hashtbl.find context.CContext.label_map label with Caml.Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
-      let new_node = Nodes.create_node (Procdesc.Node.Skip_node node_name) [] sil_loc context in
+      let new_node =
+        Procdesc.create_node context.CContext.procdesc sil_loc (Procdesc.Node.Skip_node node_name)
+          []
+      in
       Hashtbl.add context.CContext.label_map label new_node ;
       new_node
 end
@@ -214,7 +218,9 @@ module PriorityNode = struct
     if create_node then (
       (* We need to create a node *)
       let node_kind = Procdesc.Node.Stmt_node node_name in
-      let node = Nodes.create_node node_kind res_state.instrs loc trans_state.context in
+      let node =
+        Procdesc.create_node trans_state.context.CContext.procdesc loc node_kind res_state.instrs
+      in
       Procdesc.node_set_succs_exn trans_state.context.procdesc node trans_state.succ_nodes [] ;
       List.iter
         ~f:(fun leaf -> Procdesc.node_set_succs_exn trans_state.context.procdesc leaf [node] [])
@@ -440,17 +446,14 @@ let dereference_var_sil (exp, typ) sil_loc =
   ([sil_instr], Exp.Var id)
 
 
-(** Given trans_result with ONE expression, create temporary variable with value of an expression
-    assigned to it *)
-let dereference_value_from_result sil_loc trans_result ~strip_pointer =
+let dereference_value_from_result ?(strip_pointer= false) source_range sil_loc trans_result =
   let obj_sil, class_typ = trans_result.return in
   let typ_no_ptr =
     match class_typ.Typ.desc with
     | Tptr (typ, _) ->
         typ
     | _ ->
-        CFrontend_config.incorrect_assumption __POS__
-          (CAst_utils.dummy_source_range ())
+        CFrontend_config.incorrect_assumption __POS__ source_range
           "Expected pointer type but found type %a" (Typ.pp_full Pp.text) class_typ
   in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
@@ -494,9 +497,10 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
   let call_instr =
     Sil.Call ((ret_id, ret_typ), assert_fail_builtin, args, sil_loc, CallFlags.default)
   in
-  let exit_node = Procdesc.get_exit_node (CContext.get_procdesc context)
+  let exit_node = Procdesc.get_exit_node context.procdesc
   and failure_node =
-    Nodes.create_node (Procdesc.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context
+    Procdesc.create_node context.CContext.procdesc sil_loc
+      (Procdesc.Node.Stmt_node "Assertion failure") [call_instr]
   in
   Procdesc.node_set_succs_exn context.procdesc failure_node [exit_node] [] ;
   mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with root_nodes= [failure_node]}
@@ -505,7 +509,10 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
 let trans_assume_false sil_loc (context: CContext.t) succ_nodes =
   let if_kind = Sil.Ik_land_lor in
   let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, if_kind)] in
-  let prune_node = Nodes.create_node (Nodes.prune_kind true if_kind) instrs_cond sil_loc context in
+  let prune_node =
+    Procdesc.create_node context.CContext.procdesc sil_loc (Nodes.prune_kind true if_kind)
+      instrs_cond
+  in
   Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [] ;
   mk_trans_result (Exp.zero, Typ.(mk (Tint IInt)))
     {empty_control with root_nodes= [prune_node]; leaf_nodes= [prune_node]}
@@ -529,7 +536,7 @@ let trans_std_addressof params_trans_res =
   match params_trans_res with [_; fst_arg_res] -> Some fst_arg_res | _ -> assert false
 
 
-let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call =
+let trans_replace_with_deref_first_arg source_range sil_loc params_trans_res ~cxx_method_call =
   let first_arg_res_trans =
     if cxx_method_call then
       match params_trans_res with
@@ -541,22 +548,24 @@ let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call
     else
       match params_trans_res with _ :: fst_arg_res :: _ -> fst_arg_res | [] | [_] -> assert false
   in
-  dereference_value_from_result sil_loc first_arg_res_trans ~strip_pointer:true
+  dereference_value_from_result ~strip_pointer:true source_range sil_loc first_arg_res_trans
 
 
-let builtin_trans trans_state loc params_trans_res pname =
+let builtin_trans trans_state source_range loc params_trans_res pname =
   if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
   else if CTrans_models.is_builtin_expect pname then trans_builtin_expect params_trans_res
   else if CTrans_models.is_replace_with_deref_first_arg pname then
-    Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:false)
+    Some
+      (trans_replace_with_deref_first_arg source_range loc params_trans_res ~cxx_method_call:false)
   else if CTrans_models.is_std_addressof pname then trans_std_addressof params_trans_res
   else None
 
 
-let cxx_method_builtin_trans trans_state loc params_trans_res pname =
+let cxx_method_builtin_trans trans_state source_range loc params_trans_res pname =
   if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
   else if CTrans_models.is_replace_with_deref_first_arg pname then
-    Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:true)
+    Some
+      (trans_replace_with_deref_first_arg source_range loc params_trans_res ~cxx_method_call:true)
   else None
 
 
@@ -575,8 +584,10 @@ let is_superinstance mei =
 
 let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
 
-let extract_stmt_from_singleton stmt_list warning_string =
-  extract_item_from_singleton stmt_list (Pp.to_string ~f:Clang_ast_j.string_of_stmt) warning_string
+let extract_stmt_from_singleton stmt_list source_range warning_string =
+  extract_item_from_singleton stmt_list
+    (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+    source_range warning_string
 
 
 module Self = struct

@@ -13,19 +13,19 @@ module L = Logging
 (* Helper functions *)
 let location_from_stmt lctx stmt =
   let info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-  CLocation.get_sil_location_from_range lctx.CLintersContext.translation_unit_context
-    info.Clang_ast_t.si_source_range true
+  CLocation.location_of_source_range lctx.CLintersContext.translation_unit_context.source_file
+    info.Clang_ast_t.si_source_range
 
 
 let location_from_dinfo lctx info =
-  CLocation.get_sil_location_from_range lctx.CLintersContext.translation_unit_context
-    info.Clang_ast_t.di_source_range true
+  CLocation.location_of_source_range lctx.CLintersContext.translation_unit_context.source_file
+    info.Clang_ast_t.di_source_range
 
 
 let location_from_decl lctx dec =
   let info = Clang_ast_proj.get_decl_tuple dec in
-  CLocation.get_sil_location_from_range lctx.CLintersContext.translation_unit_context
-    info.Clang_ast_t.di_source_range true
+  CLocation.location_of_source_range lctx.CLintersContext.translation_unit_context.source_file
+    info.Clang_ast_t.di_source_range
 
 
 let location_from_an lcxt an =

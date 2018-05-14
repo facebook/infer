@@ -322,8 +322,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     in
     let translate_location =
       always_translate
-      || CLocation.should_translate_lib trans_unit_ctx source_range decl_trans_context
-           ~translate_when_used
+      || CLocation.should_translate_lib trans_unit_ctx.CFrontend_config.source_file source_range
+           decl_trans_context ~translate_when_used
     in
     let never_translate_decl =
       match dec with

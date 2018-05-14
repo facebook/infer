@@ -13,8 +13,10 @@ let log_caught_exception (trans_unit_ctx: CFrontend_config.translation_unit_cont
   let caught_exception =
     EventLogger.FrontendException
       { exception_type
-      ; source_location_start= CLocation.clang_to_sil_location trans_unit_ctx source_location_start
-      ; source_location_end= CLocation.clang_to_sil_location trans_unit_ctx source_location_end
+      ; source_location_start=
+          CLocation.clang_to_sil_location trans_unit_ctx.source_file source_location_start
+      ; source_location_end=
+          CLocation.clang_to_sil_location trans_unit_ctx.source_file source_location_end
       ; exception_triggered_location
       ; ast_node
       ; lang= CFrontend_config.string_of_clang_lang trans_unit_ctx.lang }
