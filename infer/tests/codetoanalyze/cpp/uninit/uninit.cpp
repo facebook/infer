@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <algorithm>
+
 void init(int* i) { *i = 10; }
 
 void init_bool(bool* i) { *i = false; }
@@ -133,6 +135,25 @@ void ok8() {
             // reference.
 }
 
+struct A {
+  int* ptr;
+};
+
+void ok9() {
+  int i;
+  A a;
+  a.ptr = &i; // no report since the variable could be initialized when passed
+              // by reference.
+  init(a.ptr);
+}
+
+int array_initialized_ok(int N, int index) {
+  int array[N];
+  std::fill_n(array, N, 0.0f);
+  int value = array[index];
+  return value;
+}
+
 int ret_undef_bad() {
   int* p;
   return *p; // report as p was not initialized
@@ -147,7 +168,7 @@ int ret_undef_FP() {
 
 void use_an_int2(int*);
 
-int ok9() {
+int ok10() {
   int buf[1024];
   use_an_int2(buf); // no report as we pass the pointer to buf
   return 1;

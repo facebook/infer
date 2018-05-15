@@ -120,6 +120,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         uninit_vars
 
 
+  let remove_all_array_elements base uninit_vars =
+    match base with
+    | _, {Typ.desc= Tptr (elt, _)} ->
+        D.remove (base, [AccessPath.ArrayAccess (elt, [])]) uninit_vars
+    | _ ->
+        uninit_vars
+
+
   let remove_init_fields base formal_var uninit_vars init_fields =
     let subst_formal_actual_fields initialized_fields =
       D.map
@@ -228,8 +236,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let prepost = update_prepost lhs_ap rhs_expr in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
-        if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (Typ.is_pointer lhs_typ)
-        then report_intra (rhs_base, al) loc (snd extras) ;
+        let is_lhs_not_a_pointer =
+          match AccessPath.get_typ lhs_ap tenv with
+          | None ->
+              false
+          | Some lhs_ap_typ ->
+              not (Typ.is_pointer lhs_ap_typ)
+        in
+        if should_report_var pdesc tenv uninit_vars (rhs_base, al) && is_lhs_not_a_pointer then
+          report_intra (rhs_base, al) loc (snd extras) ;
         {astate with uninit_vars; prepost}
     | Assign (lhs_access_expr, rhs, _) ->
         let (lhs_ap, apl) as lhs = AccessExpression.to_access_path lhs_access_expr in
@@ -273,8 +288,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     if Config.uninit_interproc then
                       remove_initialized_params pdesc call acc idx (base, al) true
                     else
-                      let acc' = D.remove (base, al) acc in
-                      remove_all_fields tenv base acc'
+                      D.remove (base, al) acc |> remove_all_fields tenv base
+                      |> remove_all_array_elements base
                 | _ ->
                     acc )
               | HilExp.Closure (_, apl) ->
