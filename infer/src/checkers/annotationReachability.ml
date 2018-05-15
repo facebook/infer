@@ -63,11 +63,9 @@ end
 module Payload = SummaryPayload.Make (struct
   type t = AnnotReachabilityDomain.astate
 
-  let update_summary annot_map (summary: Summary.t) =
-    {summary with payload= {summary.payload with annot_map= Some annot_map}}
+  let update_payloads annot_map (payloads: Payloads.t) = {payloads with annot_map= Some annot_map}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.annot_map
+  let of_payloads (payloads: Payloads.t) = payloads.annot_map
 end)
 
 let is_modeled_expensive tenv = function
@@ -119,7 +117,7 @@ let method_overrides_annot annot tenv pname = method_overrides (method_has_annot
 
 let lookup_annotation_calls ~caller_pdesc annot pname =
   match Ondemand.analyze_proc_name ~caller_pdesc pname with
-  | Some {Summary.payload= {Summary.annot_map= Some annot_map}} -> (
+  | Some {Summary.payloads= {Payloads.annot_map= Some annot_map}} -> (
     try AnnotReachabilityDomain.find annot annot_map with Caml.Not_found ->
       AnnotReachabilityDomain.SinkMap.empty )
   | _ ->
@@ -405,7 +403,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let merge_callee_map call_site pdesc callee_pname astate =
-    match Payload.read_summary pdesc callee_pname with
+    match Payload.read pdesc callee_pname with
     | None ->
         astate
     | Some callee_call_map ->

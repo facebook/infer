@@ -21,11 +21,9 @@ module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
 module Payload = SummaryPayload.Make (struct
   type t = UninitDomain.summary
 
-  let update_summary sum (summary: Summary.t) =
-    {summary with payload= {summary.payload with uninit= Some sum}}
+  let update_payloads sum (payloads: Payloads.t) = {payloads with uninit= Some sum}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.uninit
+  let of_payloads (payloads: Payloads.t) = payloads.uninit
 end)
 
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
@@ -181,7 +179,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let remove_initialized_params pdesc call acc idx (base, al) remove_fields =
-    match Payload.read_summary pdesc call with
+    match Payload.read pdesc call with
     | Some {pre= initialized_formal_params; post= _} -> (
       match init_nth_actual_param call idx initialized_formal_params with
       | Some nth_formal ->
@@ -196,7 +194,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (* true if a function initializes at least a param or a field of a struct param *)
   let function_initializes_some_formal_params pdesc call =
-    match Payload.read_summary pdesc call with
+    match Payload.read pdesc call with
     | Some {pre= initialized_formal_params; post= _} ->
         not (D.is_empty initialized_formal_params)
     | _ ->

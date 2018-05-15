@@ -33,7 +33,7 @@ module type ExtensionT = sig
 
   val ext : extension TypeState.ext
 
-  val update_payload : extension TypeState.t option -> Summary.payload -> Summary.payload
+  val update_payloads : extension TypeState.t option -> Payloads.t -> Payloads.t
 end
 
 (** Create a module with the toplevel callback. *)
@@ -44,8 +44,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     | Some old_summ ->
         let new_summ =
           { old_summ with
-            Summary.payload= Extension.update_payload final_typestate_opt old_summ.Summary.payload
-          }
+            Summary.payloads=
+              Extension.update_payloads final_typestate_opt old_summ.Summary.payloads }
         in
         Summary.add proc_name new_summ
     | None ->
@@ -379,7 +379,8 @@ module EmptyExtension : ExtensionT = struct
     {TypeState.empty; check_instr; join; pp}
 
 
-  let update_payload typestate_opt payload = {payload with Summary.typestate= typestate_opt}
+  let update_payloads typestate_opt (payloads: Payloads.t) =
+    {payloads with typestate= typestate_opt}
 end
 
 module Main = Build (EmptyExtension)

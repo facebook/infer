@@ -19,11 +19,9 @@ let is_on_main_thread pn =
 module Payload = SummaryPayload.Make (struct
   type t = StarvationDomain.summary
 
-  let update_summary post (summary: Summary.t) =
-    {summary with payload= {summary.payload with starvation= Some post}}
+  let update_payloads post (payloads: Payloads.t) = {payloads with starvation= Some post}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.starvation
+  let of_payloads (payloads: Payloads.t) = payloads.starvation
 end)
 
 (* using an indentifier for a class object, create an access path representing that lock;
@@ -85,7 +83,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when is_on_main_thread callee ->
           Domain.set_on_main_thread astate
       | _ ->
-          Payload.read_summary pdesc callee
+          Payload.read pdesc callee
           |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
     | _ ->
         astate
@@ -153,7 +151,7 @@ let get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc clazz =
   in
   let pdescs = List.rev_filter_map methods ~f:get_proc_desc in
   let get_summary callee_pdesc =
-    Payload.read_summary current_pdesc (Procdesc.get_proc_name callee_pdesc)
+    Payload.read current_pdesc (Procdesc.get_proc_name callee_pdesc)
     |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
   in
   List.rev_filter_map pdescs ~f:get_summary
@@ -316,7 +314,7 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
 let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
   let report_procedure (tenv, proc_desc) =
     die_if_not_java proc_desc ;
-    Payload.read_summary proc_desc (Procdesc.get_proc_name proc_desc)
+    Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.iter ~f:(fun ((s, main) as summary) ->
            report_deadlocks get_proc_desc tenv proc_desc summary ;
            if main then report_blocks_on_main_thread get_proc_desc tenv proc_desc s )

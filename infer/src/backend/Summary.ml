@@ -74,23 +74,8 @@ module Status = struct
   let is_analyzed = function Analyzed -> true | _ -> false
 end
 
-type payload =
-  { annot_map: AnnotReachabilityDomain.astate option
-  ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
-  ; crashcontext_frame: Stacktree_t.stacktree option
-  ; litho: LithoDomain.astate option
-  ; quandary: QuandarySummary.t option
-  ; racerd: RacerDDomain.summary option
-  ; resources: ResourceLeakDomain.summary option
-  ; siof: SiofDomain.astate option
-  ; typestate: unit TypeState.t option
-  ; uninit: UninitDomain.summary option
-  ; cost: CostDomain.summary option
-  ; starvation: StarvationDomain.summary option }
-
 type t =
-  {payload: payload; sessions: int ref; stats: Stats.t; status: Status.t; proc_desc: Procdesc.t}
+  {payloads: Payloads.t; sessions: int ref; stats: Stats.t; status: Status.t; proc_desc: Procdesc.t}
 
 let get_status summary = summary.status
 
@@ -132,52 +117,10 @@ let pp_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" Status.pp summary.status
 
 
-let pp_payload pe fmt
-    { biabduction
-    ; typestate
-    ; crashcontext_frame
-    ; quandary
-    ; siof
-    ; racerd
-    ; litho
-    ; buffer_overrun
-    ; annot_map
-    ; uninit
-    ; cost
-    ; starvation } =
-  let pp_opt prefix pp fmt = function
-    | Some x ->
-        F.fprintf fmt "%s: %a@\n" prefix pp x
-    | None ->
-        ()
-  in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a@\n"
-    (pp_opt "Biabduction" (BiabductionSummary.pp pe))
-    biabduction
-    (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
-    typestate
-    (pp_opt "CrashContext" Crashcontext.pp_stacktree)
-    crashcontext_frame
-    (pp_opt "Quandary" QuandarySummary.pp)
-    quandary (pp_opt "Siof" SiofDomain.pp) siof
-    (pp_opt "RacerD" RacerDDomain.pp_summary)
-    racerd (pp_opt "Litho" LithoDomain.pp) litho
-    (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp)
-    buffer_overrun
-    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
-    annot_map
-    (pp_opt "Uninitialised" UninitDomain.pp_summary)
-    uninit
-    (pp_opt "Cost" CostDomain.pp_summary)
-    cost
-    (pp_opt "Starvation" StarvationDomain.pp_summary)
-    starvation
-
-
 let pp_text fmt summary =
   pp_no_stats_specs fmt summary ;
   F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) Stats.pp summary.stats
-    (pp_payload Pp.text) summary.payload
+    (Payloads.pp Pp.text) summary.payloads
 
 
 let pp_html source color fmt summary =
@@ -188,7 +131,7 @@ let pp_html source color fmt summary =
   Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
-  pp_payload (Pp.html color) fmt summary.payload ;
+  Payloads.pp (Pp.html color) fmt summary.payloads ;
   F.fprintf fmt "</LISTING>@\n"
 
 
@@ -305,28 +248,16 @@ let store (summ: t) =
     ~data:final_summary
 
 
-let empty_payload =
-  { biabduction= None
-  ; typestate= None
-  ; annot_map= None
-  ; crashcontext_frame= None
-  ; quandary= None
-  ; resources= None
-  ; siof= None
-  ; racerd= None
-  ; litho= None
-  ; buffer_overrun= None
-  ; uninit= None
-  ; cost= None
-  ; starvation= None }
-
-
 (** [init_summary (depend_list, nodes,
     proc_flags, calls, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary proc_desc =
   let summary =
-    {sessions= ref 0; payload= empty_payload; stats= Stats.empty; status= Status.Pending; proc_desc}
+    { sessions= ref 0
+    ; payloads= Payloads.empty
+    ; stats= Stats.empty
+    ; status= Status.Pending
+    ; proc_desc }
   in
   Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
   summary

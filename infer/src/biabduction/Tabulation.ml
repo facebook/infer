@@ -118,7 +118,7 @@ let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason loc res 
 (***************)
 
 let get_specs_from_payload summary =
-  Option.map summary.Summary.payload.biabduction ~f:(fun BiabductionSummary.({preposts}) ->
+  Option.map summary.Summary.payloads.biabduction ~f:(fun BiabductionSummary.({preposts}) ->
       preposts )
   |> BiabductionSummary.get_specs_from_preposts
 

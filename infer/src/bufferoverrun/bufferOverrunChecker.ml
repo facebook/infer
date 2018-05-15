@@ -24,11 +24,9 @@ module TraceSet = Trace.Set
 module Payload = SummaryPayload.Make (struct
   type t = Dom.Summary.t
 
-  let update_summary astate (summary: Summary.t) =
-    {summary with payload= {summary.payload with buffer_overrun= Some astate}}
+  let update_payloads astate (payloads: Payloads.t) = {payloads with buffer_overrun= Some astate}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.buffer_overrun
+  let of_payloads (payloads: Payloads.t) = payloads.buffer_overrun
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -252,7 +250,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let model_env = Models.mk_model_env callee_pname node_hash location tenv ~ret in
             exec model_env mem
         | None ->
-          match Payload.read_summary pdesc callee_pname with
+          match Payload.read pdesc callee_pname with
           | Some summary ->
               let callee = Ondemand.get_proc_desc callee_pname in
               instantiate_mem tenv ret callee callee_pname params mem summary location
@@ -454,7 +452,7 @@ module Report = struct
           let node_hash = CFG.hash node in
           check (Models.mk_model_env pname node_hash location tenv) mem cond_set
       | None ->
-        match Payload.read_summary pdesc callee_pname with
+        match Payload.read pdesc callee_pname with
         | Some callee_summary ->
             let callee = Ondemand.get_proc_desc callee_pname in
             instantiate_cond tenv pname callee params mem callee_summary location

@@ -53,11 +53,9 @@ let is_modelled =
 module Payload = SummaryPayload.Make (struct
   type t = SiofDomain.astate
 
-  let update_summary astate (summary: Summary.t) =
-    {summary with payload= {summary.payload with siof= Some astate}}
+  let update_payloads astate (payloads: Payloads.t) = {payloads with siof= Some astate}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.siof
+  let of_payloads (payloads: Payloads.t) = payloads.siof
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -68,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_compile_time_constructed pdesc pv =
     let init_pname = Pvar.get_initializer_pname pv in
-    match Option.bind init_pname ~f:(Payload.read_summary pdesc) with
+    match Option.bind init_pname ~f:(Payload.read pdesc) with
     | Some (Bottom, _) ->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
@@ -145,7 +143,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_actuals_globals astate pdesc loc actuals_without_self
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
-          match Payload.read_summary pdesc callee_pname with
+          match Payload.read pdesc callee_pname with
           | Some (NonBottom trace, initialized_by_callee) ->
               let already_initialized = snd astate in
               let dangerous_accesses =
@@ -194,7 +192,7 @@ let is_foreign tu_opt v =
 
 let report_siof summary trace pdesc gname loc =
   let trace_of_pname pname =
-    match Payload.read_summary pdesc pname with
+    match Payload.read pdesc pname with
     | Some (NonBottom summary, _) ->
         summary
     | _ ->
@@ -223,7 +221,7 @@ let report_siof summary trace pdesc gname loc =
 
 
 let siof_check pdesc gname (summary: Summary.t) =
-  match summary.payload.siof with
+  match summary.payloads.siof with
   | Some (NonBottom post, _) ->
       let attrs = Procdesc.get_attributes pdesc in
       let tu_opt =

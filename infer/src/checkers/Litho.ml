@@ -14,11 +14,9 @@ module Domain = LithoDomain
 module Payload = SummaryPayload.Make (struct
   type t = Domain.astate
 
-  let update_summary astate (summary: Summary.t) =
-    {summary with payload= {summary.payload with litho= Some astate}}
+  let update_payloads astate (payloads: Payloads.t) = {payloads with litho= Some astate}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.litho
+  let of_payloads (payloads: Payloads.t) = payloads.litho
 end)
 
 module LithoFramework = struct
@@ -229,7 +227,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , (HilExp.AccessExpression receiver_ae :: _ as actuals)
         , _
         , _ ) ->
-        let summary = Payload.read_summary proc_data.pdesc callee_procname in
+        let summary = Payload.read proc_data.pdesc callee_procname in
         let receiver =
           Domain.LocalAccessPath.make (AccessExpression.to_access_path receiver_ae) caller_pname
         in
@@ -257,7 +255,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* treat it like a normal call *)
           apply_callee_summary summary caller_pname return_base actuals astate
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
-        let summary = Payload.read_summary proc_data.pdesc callee_procname in
+        let summary = Payload.read proc_data.pdesc callee_procname in
         apply_callee_summary summary caller_pname ret_id_typ actuals astate
     | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _)
       -> (

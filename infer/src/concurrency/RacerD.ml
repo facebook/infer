@@ -15,11 +15,9 @@ module MF = MarkupFormatter
 module Payload = SummaryPayload.Make (struct
   type t = RacerDDomain.summary
 
-  let update_summary post (summary: Summary.t) =
-    {summary with payload= {summary.payload with racerd= Some post}}
+  let update_payloads post (payloads: Payloads.t) = {payloads with racerd= Some post}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.racerd
+  let of_payloads (payloads: Payloads.t) = payloads.racerd
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -248,7 +246,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
           tenv caller_pdesc astate
     | None, _ ->
-        Payload.read_summary caller_pdesc callee_pname
+        Payload.read caller_pdesc callee_pname
 
 
   let add_reads exps loc accesses locks threads ownership proc_data =
@@ -896,7 +894,7 @@ let desc_of_sink sink =
 let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open RacerDDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
-  match Payload.read_summary orig_pdesc callee_pname with
+  match Payload.read orig_pdesc callee_pname with
   | Some {accesses} ->
       AccessDomain.fold
         (fun snapshot acc ->
@@ -1499,7 +1497,7 @@ let make_results_table (module AccessListMap : QuotientedAccessListMap) file_env
       accesses acc
   in
   let aggregate_posts acc (tenv, proc_desc) =
-    match Payload.read_summary proc_desc (Procdesc.get_proc_name proc_desc) with
+    match Payload.read proc_desc (Procdesc.get_proc_name proc_desc) with
     | Some summary ->
         aggregate_post summary tenv proc_desc acc
     | None ->

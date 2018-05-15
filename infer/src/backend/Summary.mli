@@ -45,25 +45,9 @@ module Status : sig
   val to_string : t -> string
 end
 
-(** analysis results *)
-type payload =
-  { annot_map: AnnotReachabilityDomain.astate option
-  ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
-  ; crashcontext_frame: Stacktree_t.stacktree option
-  ; litho: LithoDomain.astate option
-  ; quandary: QuandarySummary.t option
-  ; racerd: RacerDDomain.summary option
-  ; resources: ResourceLeakDomain.summary option
-  ; siof: SiofDomain.astate option
-  ; typestate: unit TypeState.t option
-  ; uninit: UninitDomain.summary option
-  ; cost: CostDomain.summary option
-  ; starvation: StarvationDomain.summary option }
-
 (** summary of a procedure name *)
 type t =
-  { payload: payload
+  { payloads: Payloads.t
   ; sessions: int ref  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
   ; status: Status.t

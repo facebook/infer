@@ -435,7 +435,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
     let log_string proc_name =
       let summary = Summary.get_unsafe proc_name in
       let phase_string =
-        BiabductionSummary.(summary.payload.biabduction |> opt_get_phase |> string_of_phase_short)
+        BiabductionSummary.(summary.payloads.biabduction |> opt_get_phase |> string_of_phase_short)
       in
       let status = Summary.get_status summary in
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
@@ -904,7 +904,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
     in
     (go, get_results)
   in
-  match BiabductionSummary.opt_get_phase summary.payload.biabduction with
+  match BiabductionSummary.opt_get_phase summary.payloads.biabduction with
   | FOOTPRINT ->
       compute_footprint ()
   | RE_EXECUTION ->
@@ -1131,11 +1131,11 @@ let update_summary tenv prev_summary specs phase res =
     | BiabductionSummary.RE_EXECUTION ->
         List.map ~f:(BiabductionSummary.NormSpec.erase_join_info_pre tenv) new_specs
   in
-  let payload =
-    { prev_summary.Summary.payload with
-      Summary.biabduction= Some BiabductionSummary.{preposts; phase} }
+  let payloads =
+    { prev_summary.Summary.payloads with
+      Payloads.biabduction= Some BiabductionSummary.{preposts; phase} }
   in
-  {prev_summary with Summary.stats; payload}
+  {prev_summary with Summary.stats; payloads}
 
 
 (** Analyze the procedure and return the resulting summary. *)
@@ -1160,12 +1160,12 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
   let summary = Summary.get_unsafe proc_name in
   let summary' =
     if Config.only_footprint then
-      match summary.Summary.payload.biabduction with
+      match summary.Summary.payloads.biabduction with
       | Some ({phase= FOOTPRINT} as biabduction) ->
           { summary with
-            Summary.payload=
-              { summary.payload with
-                Summary.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
+            Summary.payloads=
+              { summary.payloads with
+                Payloads.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
               } }
       | _ ->
           summary
@@ -1178,11 +1178,11 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
             )
           joined_pres
       in
-      let payload =
-        { summary.Summary.payload with
+      let payloads =
+        { summary.Summary.payloads with
           biabduction= Some BiabductionSummary.{preposts; phase= RE_EXECUTION} }
       in
-      {summary with Summary.payload}
+      {summary with Summary.payloads}
   in
   Summary.add proc_name summary'
 
@@ -1220,7 +1220,7 @@ let perform_transition proc_cfg tenv proc_name =
   in
   match Summary.get proc_name with
   | Some summary
-    when BiabductionSummary.(summary.payload.biabduction |> opt_get_phase |> equal_phase FOOTPRINT) ->
+    when BiabductionSummary.(summary.payloads.biabduction |> opt_get_phase |> equal_phase FOOTPRINT) ->
       transition summary
   | _ ->
       ()
@@ -1235,15 +1235,15 @@ let analyze_procedure_aux exe_env tenv proc_desc =
   perform_transition proc_cfg tenv proc_name ;
   let summaryre = Config.run_in_re_execution_mode (analyze_proc exe_env tenv) proc_cfg in
   let summary_compact =
-    match summaryre.Summary.payload.biabduction with
+    match summaryre.Summary.payloads.biabduction with
     | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->
         let sharing_env = Sil.create_sharing_env () in
         let compact_preposts =
           List.map ~f:(BiabductionSummary.NormSpec.compact sharing_env) preposts
         in
         { summaryre with
-          payload=
-            { summaryre.payload with
+          payloads=
+            { summaryre.payloads with
               biabduction= Some {biabduction with BiabductionSummary.preposts= compact_preposts} }
         }
     | _ ->

@@ -16,11 +16,9 @@ module NodesBasicCostDomain = CostDomain.NodeInstructionToCostMap
 module Payload = SummaryPayload.Make (struct
   type t = CostDomain.summary
 
-  let update_summary sum (summary: Summary.t) =
-    {summary with payload= {summary.payload with cost= Some sum}}
+  let update_payloads sum (payloads: Payloads.t) = {payloads with cost= Some sum}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.cost
+  let of_payloads (payloads: Payloads.t) = payloads.cost
 end)
 
 (* We use this treshold to give error if the cost is above it.
@@ -58,7 +56,7 @@ module TransferFunctionsNodesBasicCost = struct
           "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
           callee_cost Typ.Procname.pp callee_pname
     | Some callee_pdesc ->
-      match BufferOverrunChecker.Payload.read_summary caller_pdesc callee_pname with
+      match BufferOverrunChecker.Payload.read caller_pdesc callee_pname with
       | None ->
           L.(die InternalError)
             "Can't instantiate symbolic cost %a from call to %a (can't get summary)" BasicCost.pp
@@ -82,7 +80,7 @@ module TransferFunctionsNodesBasicCost = struct
       match instr with
       | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
           let callee_cost =
-            match Payload.read_summary pdesc callee_pname with
+            match Payload.read pdesc callee_pname with
             | Some {post= callee_cost} ->
                 if BasicCost.is_symbolic callee_cost then
                   instantiate_cost ~tenv ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem

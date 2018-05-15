@@ -136,13 +136,14 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   let log_error_and_continue exn (summary: Summary.t) kind =
     Reporting.log_error summary exn ;
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
-    let payload =
+    let payloads =
       let biabduction =
-        Some BiabductionSummary.{preposts= []; phase= summary.payload.biabduction |> opt_get_phase}
+        Some
+          BiabductionSummary.{preposts= []; phase= summary.payloads.biabduction |> opt_get_phase}
       in
-      {summary.payload with biabduction}
+      {summary.payloads with biabduction}
     in
-    let new_summary = {summary with stats; payload} in
+    let new_summary = {summary with stats; payloads} in
     Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary
   in
   let old_state = save_global_state () in

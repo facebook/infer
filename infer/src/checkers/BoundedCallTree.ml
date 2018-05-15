@@ -22,12 +22,9 @@ module Domain = AbstractDomain.FiniteSet (Typ.Procname)
 module SpecPayload = SummaryPayload.Make (struct
   type t = Stacktree_j.stacktree
 
-  let update_summary frame (summary: Summary.t) =
-    let payload = {summary.payload with Summary.crashcontext_frame= Some frame} in
-    {summary with payload}
+  let update_payloads frame (payloads: Payloads.t) = {payloads with crashcontext_frame= Some frame}
 
-
-  let of_summary (summary: Summary.t) = summary.payload.crashcontext_frame
+  let of_payloads (payloads: Payloads.t) = payloads.crashcontext_frame
 end)
 
 type extras_t = {get_proc_desc: Typ.Procname.t -> Procdesc.t option; stacktraces: Stacktrace.t list}
@@ -70,7 +67,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let callees =
       List.map
         ~f:(fun pn ->
-          match SpecPayload.read_summary pdesc pn with
+          match SpecPayload.read pdesc pn with
           | None -> (
             match get_proc_desc pn with
             | None ->

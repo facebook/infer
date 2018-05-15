@@ -27,5 +27,5 @@ module type ExtensionT = sig
 
   val ext : extension TypeState.ext
 
-  val update_payload : extension TypeState.t option -> Summary.payload -> Summary.payload
+  val update_payloads : extension TypeState.t option -> Payloads.t -> Payloads.t
 end

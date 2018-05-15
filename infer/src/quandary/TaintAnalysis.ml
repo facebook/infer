@@ -19,11 +19,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module Payload = SummaryPayload.Make (struct
     type t = QuandarySummary.t
 
-    let update_summary quandary_payload (summary: Summary.t) =
-      {summary with payload= {summary.payload with quandary= Some quandary_payload}}
+    let update_payloads quandary_payload (payloads: Payloads.t) =
+      {payloads with quandary= Some quandary_payload}
 
 
-    let of_summary (summary: Summary.t) = summary.payload.quandary
+    let of_payloads (payloads: Payloads.t) = payloads.quandary
   end)
 
   module Domain = TaintDomain
@@ -137,7 +137,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
           TaintDomain.empty
         else
-          match Payload.read_summary proc_data.pdesc pname with
+          match Payload.read proc_data.pdesc pname with
           | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
@@ -695,7 +695,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (* don't use a summary for a procedure that is a direct source *)
                 astate_with_source
               else
-                match Payload.read_summary proc_data.pdesc callee_pname with
+                match Payload.read proc_data.pdesc callee_pname with
                 | None ->
                     handle_unknown_call callee_pname astate_with_source
                 | Some summary ->
