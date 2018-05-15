@@ -163,7 +163,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       infer needs it to be T& *)
   let exec_with_glvalue_as_reference f trans_state stmt =
     let expr_info =
-      match Clang_ast_proj.get_expr_tuple stmt with Some (_, _, ei) -> ei | None -> assert false
+      match Clang_ast_proj.get_expr_tuple stmt with
+      | Some (_, _, ei) ->
+          ei
+      | None ->
+          let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+          CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
+            "Clang_ast_proj.get_expr_tuple stmt returns None, stmt is %a"
+            (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+            stmt
     in
     let res_trans = f trans_state stmt in
     let return =
