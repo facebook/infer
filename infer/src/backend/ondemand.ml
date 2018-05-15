@@ -138,9 +138,9 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payload =
       let biabduction =
-        Some BiabductionSummary.{preposts= []; phase= Tabulation.get_phase summary}
+        Some BiabductionSummary.{preposts= []; phase= summary.payload.biabduction |> opt_get_phase}
       in
-      {summary.payload with Summary.biabduction}
+      {summary.payload with biabduction}
     in
     let new_summary = {summary with stats; payload} in
     Summary.store new_summary ; remove_active callee_pname ; log_elapsed_time () ; new_summary

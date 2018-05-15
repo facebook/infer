@@ -53,8 +53,5 @@ val exe_function_call :
   -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Execute the function call and return the list of results with return value *)
 
-val get_phase : Summary.t -> BiabductionSummary.phase
-(** Return the current phase for the proc *)
-
 val get_specs_from_payload : Summary.t -> Prop.normal BiabductionSummary.spec list
 (** Get the specs from the payload of the summary. *)

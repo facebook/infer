@@ -233,6 +233,10 @@ type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
 
 let equal_phase = [%compare.equal : phase]
 
+let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EXECUTION"
+
+let string_of_phase_short = function FOOTPRINT -> "FP" | RE_EXECUTION -> "RE"
+
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
   let pp_num_opt fmt = function
@@ -274,11 +278,11 @@ let pp_specs pe fmt specs =
           F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (cnt + 1, total))) spec )
 
 
-let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EXECUTION"
-
 let get_specs_from_preposts preposts = Option.value_map ~f:NormSpec.tospecs ~default:[] preposts
 
 type t = {preposts: NormSpec.t list; phase: phase}
+
+let opt_get_phase = function None -> FOOTPRINT | Some {phase} -> phase
 
 let pp pe fmt {preposts; phase} =
   F.fprintf fmt "phase= %s@\n%a" (string_of_phase phase) (pp_specs pe) (NormSpec.tospecs preposts)

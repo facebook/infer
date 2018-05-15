@@ -435,7 +435,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
     let log_string proc_name =
       let summary = Summary.get_unsafe proc_name in
       let phase_string =
-        match Tabulation.get_phase summary with FOOTPRINT -> "FP" | RE_EXECUTION -> "RE"
+        BiabductionSummary.(summary.payload.biabduction |> opt_get_phase |> string_of_phase_short)
       in
       let status = Summary.get_status summary in
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
@@ -904,7 +904,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
     in
     (go, get_results)
   in
-  match Tabulation.get_phase summary with
+  match BiabductionSummary.opt_get_phase summary.payload.biabduction with
   | FOOTPRINT ->
       compute_footprint ()
   | RE_EXECUTION ->
@@ -1219,7 +1219,8 @@ let perform_transition proc_cfg tenv proc_name =
     transition_footprint_re_exe tenv proc_name joined_pres
   in
   match Summary.get proc_name with
-  | Some summary when BiabductionSummary.equal_phase (Tabulation.get_phase summary) FOOTPRINT ->
+  | Some summary
+    when BiabductionSummary.(summary.payload.biabduction |> opt_get_phase |> equal_phase FOOTPRINT) ->
       transition summary
   | _ ->
       ()

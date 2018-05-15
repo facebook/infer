@@ -123,12 +123,6 @@ let get_specs_from_payload summary =
   |> BiabductionSummary.get_specs_from_preposts
 
 
-(** Return the current phase for the proc *)
-let get_phase summary =
-  Option.value_map summary.Summary.payload.biabduction ~default:BiabductionSummary.FOOTPRINT ~f:
-    (fun BiabductionSummary.({phase}) -> phase )
-
-
 (** Rename the variables in the spec. *)
 let spec_rename_vars pname spec =
   let prop_add_callee_suffix p =
