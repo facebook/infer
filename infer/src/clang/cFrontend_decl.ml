@@ -204,7 +204,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) ->
         process_property_implementation trans_unit_ctx tenv cfg curr_class
           obj_c_property_impl_decl_info
-    | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ ->
+    | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ | ObjCInterfaceDecl _ ->
         ()
     | AccessSpecDecl _
     | BlockDecl _
@@ -224,7 +224,6 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | ObjCCategoryDecl _
     | ObjCCategoryImplDecl _
     | ObjCImplementationDecl _
-    | ObjCInterfaceDecl _
     | ObjCProtocolDecl _
     | BuiltinTemplateDecl _
     | ClassTemplateDecl _

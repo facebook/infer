@@ -27,6 +27,7 @@ SOURCES = \
   ../conditional_operation/ConditionalOperation.m \
   ../exceptions/ExceptionExample.m \
   ../fast_enumeration/Fast_enumeration.m \
+	../internal_forward_class/ForwardClassInMethod.m \
   ../property/PropertyCustomAccessor.m \
   ../property/PropertyImplSetter.m \
   ../property/Property_getter.m \
