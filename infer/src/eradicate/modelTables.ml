@@ -183,6 +183,7 @@ let annotated_list_nullable =
       , "android.text.SpannableString.valueOf(java.lang.CharSequence):android.text.SpannableString"
       )
     ; (o1, "android.app.AlarmManager.cancel(android.app.PendingIntent):void")
+    ; (o1, "android.net.Uri.parse(java.lang.String):android.net.Uri")
     ; (n1, "android.os.Parcel.writeList(java.util.List):void")
     ; (n2, "android.os.Parcel.writeParcelable(android.os.Parcelable,int):void")
     ; (n1, "android.os.Parcel.writeString(java.lang.String):void")
