@@ -701,14 +701,10 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
       in
       (* Add ownership to local variables. In cpp, stack-allocated local
-         variables cannot be raced on as every thread has its own stack. *)
-      let own_locals_in_cpp =
-        match Procdesc.get_proc_name proc_desc with
-        | ObjC_Cpp _ | C _ ->
-            List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc)
-              ~init:OwnershipDomain.empty
-        | _ ->
-            OwnershipDomain.empty
+         variables cannot be raced on as every thread has its own stack.
+          More generally, we will never be confident that a race exists on a local/temp. *)
+      let own_locals =
+        List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc) ~init:OwnershipDomain.empty
       in
       let is_owned_formal {Annot.class_name} =
         (* @InjectProp allocates a fresh object to bind to the parameter *)
@@ -736,10 +732,10 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
              called via DI or using fresh parameters. *)
           if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
             List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
-            |> List.fold ~f:add_owned_formal ~init:own_locals_in_cpp
+            |> List.fold ~f:add_owned_formal ~init:own_locals
           else
             (* express that the constructor owns [this] *)
-            let init = add_owned_formal own_locals_in_cpp 0 in
+            let init = add_owned_formal own_locals 0 in
             List.fold ~f:add_conditional_owned_formal ~init
               (List.filter
                  ~f:(fun (_, index) -> not (Int.equal index 0))
@@ -752,7 +748,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         let ownership =
           List.fold ~f:add_conditional_owned_formal
             (FormalMap.get_formals_indexes formal_map)
-            ~init:own_locals_in_cpp
+            ~init:own_locals
         in
         {RacerDDomain.empty with ownership; threads}
     in
@@ -994,17 +990,16 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
     let is_full_trace = TraceElem.is_direct final_sink in
     let is_pvar_base initial_sink =
       let access_path = Access.get_access_path (PathDomain.Sink.kind initial_sink) in
-      Option.value_map ~default:false access_path ~f:(fun ((var, _), _) ->
+      Option.value_map ~default:true access_path ~f:(fun ((var, _), _) ->
           Var.appears_in_source_code var )
     in
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
        trace, it's probably going to be too confusing to be actionable. Skip it.
-       For C++ it is difficult to understand error messages when access path starts with a logical
-       variable or a temporary variable. We want to skip the reports for now until we
-       find a solution *)
+       It is difficult to ensure that a report on an access path starting with a logical
+       variable or a temporary variable, is a race. We want to skip the reports, at least for now.*)
     if
       not Config.filtering
-      || if Typ.Procname.is_java pname then is_full_trace else is_pvar_base initial_sink
+      || (is_pvar_base initial_sink && (not (Typ.Procname.is_java pname) || is_full_trace))
     then
       let final_sink_site = PathDomain.Sink.call_site final_sink in
       let initial_sink_site = PathDomain.Sink.call_site initial_sink in

@@ -1,8 +1,0 @@
-DeDup.java, void DeDup.colocated_read_write(), 1, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,call to void DeDup.read_and_write(),access to `build_systems.threadsafety.DeDup.colocated_read`,<Beginning of write trace>,access to `build_systems.threadsafety.DeDup.colocated_read`]
-DeDup.java, void DeDup.separate_write_to_colocated_read(), 1, THREAD_SAFETY_VIOLATION, [access to `build_systems.threadsafety.DeDup.colocated_read`]
-DeDup.java, void DeDup.twoWritesOneInCaller(), 2, THREAD_SAFETY_VIOLATION, [access to `build_systems.threadsafety.DeDup.field`]
-DeDup.java, void DeDup.two_fields(), 1, THREAD_SAFETY_VIOLATION, [call to void DeDup.foo(),access to `build_systems.threadsafety.DeDup.fielda`]
-DeDup.java, void DeDup.two_reads(), 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `build_systems.threadsafety.DeDup.field`,<Beginning of write trace>,access to `build_systems.threadsafety.DeDup.field`]
-DeDup.java, void DeDup.two_writes(), 2, THREAD_SAFETY_VIOLATION, [access to `build_systems.threadsafety.DeDup.field`]
-DeDup.java, void DeDup.write_read(), 2, THREAD_SAFETY_VIOLATION, [access to `build_systems.threadsafety.DeDup.field`]
-DeDup.java, void DeDup.write_read(), 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `build_systems.threadsafety.DeDup.field`,<Beginning of write trace>,access to `build_systems.threadsafety.DeDup.field`]

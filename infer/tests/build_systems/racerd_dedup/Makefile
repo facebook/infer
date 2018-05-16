@@ -12,6 +12,6 @@ ANALYZER = checkers
 INFER_OPTIONS = --project-root src --no-keep-going --racerd-only --filtering
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = src/DeDup.java
+SOURCES = src/*.java
 
 include $(TESTS_DIR)/javac.make

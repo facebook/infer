@@ -9,7 +9,7 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYZER = checkers
-BUCK_TARGET = //infer/tests/build_systems/threadsafety_traces/module3:module3
+BUCK_TARGET = //infer/tests/build_systems/racerd_traces/module3:module3
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out
 

@@ -85,6 +85,7 @@ BUILD_SYSTEMS_TESTS += \
   gradle \
   javac \
   resource_leak_exception_lines \
+	racerd_dedup
 
 DIRECT_TESTS += \
   java_checkers java_eradicate java_infer java_lab java_tracing java_quandary \

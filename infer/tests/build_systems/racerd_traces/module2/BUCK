@@ -2,7 +2,7 @@ java_library(
     name='module2',
     srcs=['Class2.java'],
     deps=[
-        '//infer/tests/build_systems/threadsafety_traces/module1:module1'
+        '//infer/tests/build_systems/racerd_traces/module1:module1'
     ],
     visibility=[
         'PUBLIC'

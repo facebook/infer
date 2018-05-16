@@ -1,0 +1,8 @@
+DeDup.java, void DeDup.colocated_read_write(), 66, THREAD_SAFETY_VIOLATION, ERROR, [<Read trace>,call to void DeDup.read_and_write(),access to `this.build_systems.threadsafety.DeDup.colocated_read`,<Write trace>,access to `this.build_systems.threadsafety.DeDup.colocated_read`]
+DeDup.java, void DeDup.separate_write_to_colocated_read(), 71, THREAD_SAFETY_VIOLATION, ERROR, [access to `this.build_systems.threadsafety.DeDup.colocated_read`]
+DeDup.java, void DeDup.twoWritesOneInCaller(), 54, THREAD_SAFETY_VIOLATION, ERROR, [access to `this.build_systems.threadsafety.DeDup.field`]
+DeDup.java, void DeDup.two_fields(), 22, THREAD_SAFETY_VIOLATION, ERROR, [call to void DeDup.foo(),access to `this.build_systems.threadsafety.DeDup.fielda`]
+DeDup.java, void DeDup.two_reads(), 41, THREAD_SAFETY_VIOLATION, ERROR, [<Read trace>,access to `this.build_systems.threadsafety.DeDup.field`,<Write trace>,access to `this.build_systems.threadsafety.DeDup.field`]
+DeDup.java, void DeDup.two_writes(), 34, THREAD_SAFETY_VIOLATION, ERROR, [access to `this.build_systems.threadsafety.DeDup.field`]
+DeDup.java, void DeDup.write_read(), 47, THREAD_SAFETY_VIOLATION, ERROR, [access to `this.build_systems.threadsafety.DeDup.field`]
+DeDup.java, void DeDup.write_read(), 48, THREAD_SAFETY_VIOLATION, ERROR, [<Read trace>,access to `this.build_systems.threadsafety.DeDup.field`,<Write trace>,access to `this.build_systems.threadsafety.DeDup.field`]
