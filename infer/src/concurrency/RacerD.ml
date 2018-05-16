@@ -1378,54 +1378,33 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
     add k (d :: ds) m
 
 
-  let sound = false
-
   let syntactic_equal_access_path tenv p1 p2 =
-    if sound then
-      (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
-         other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
-         be to the same container if they are to the same access path *)
-      match (AccessPath.get_typ p1 tenv, AccessPath.get_typ p2 tenv) with
-      | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)} ->
-          PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
-      | _ ->
-          true
-    else
-      (* unsound, but effective: report that the containers alias if their access paths are
-         syntactically identical *)
-      match (fst p1, fst p2) with
-      | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
-        when Pvar.is_this pvar1 && Pvar.is_this pvar2
-             && ( Typ.equal typ1 typ2 || Prover.Subtyping_check.check_subtype tenv typ1 typ2
-                || Prover.Subtyping_check.check_subtype tenv typ2 typ1 ) ->
-          (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
-             represented as a local pvar, and a local pvar contains its parent procedure name. Count
-             the `this`'s as equal if their types are compatible *)
-          AccessPath.equal_access_list (snd p1) (snd p2)
-      | _ ->
-          AccessPath.equal p1 p2
+    (* unsound, but effective: report that the containers alias if their access paths are
+       syntactically identical *)
+    match (fst p1, fst p2) with
+    | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
+      when Pvar.is_this pvar1 && Pvar.is_this pvar2
+           && ( Typ.equal typ1 typ2 || Prover.Subtyping_check.check_subtype tenv typ1 typ2
+              || Prover.Subtyping_check.check_subtype tenv typ2 typ1 ) ->
+        (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
+           represented as a local pvar, and a local pvar contains its parent procedure name. Count
+           the `this`'s as equal if their types are compatible *)
+        AccessPath.equal_access_list (snd p1) (snd p2)
+    | _ ->
+        AccessPath.equal p1 p2
 
 
   (* equivalence relation computing whether two access paths may refer
      to the same heap location. *)
   let may_alias tenv p1 p2 =
-    let open Typ in
     let open AccessPath in
     phys_equal p1 p2
     ||
     match (List.last_exn (snd p1), List.last_exn (snd p2)) with
     | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ ->
         false
-    | FieldAccess _, FieldAccess _ ->
+    | _, _ ->
         syntactic_equal_access_path tenv p1 p2
-    (* if arrays of objects that have an inheritance rel then they can alias *)
-    | ( ArrayAccess ({desc= Tptr ({desc= Tstruct tn1}, _)}, _)
-      , ArrayAccess ({desc= Tptr ({desc= Tstruct tn2}, _)}, _) ) ->
-        if sound then PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
-        else syntactic_equal_access_path tenv p1 p2
-    (* primitive type arrays can alias if the prim. type is the same *)
-    | ArrayAccess (t1, _), ArrayAccess (t2, _) ->
-        if sound then equal_desc t1.desc t2.desc else syntactic_equal_access_path tenv p1 p2
 
 
   (* take a results table and quotient it by the may_alias relation *)
