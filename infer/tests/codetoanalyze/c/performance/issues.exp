@@ -36,3 +36,5 @@ codetoanalyze/c/performance/instantiate.c, do_m2_times, 1, EXPENSIVE_EXECUTION_T
 codetoanalyze/c/performance/instantiate.c, do_m2_times, 2, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 3 + 10 * s$1 + 6 * s$1^2]
 codetoanalyze/c/performance/instantiate.c, do_n_times, 1, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 3 + 6 * s$1]
 codetoanalyze/c/performance/instantiate.c, do_n_times, 2, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 3 + 6 * s$1]
+codetoanalyze/c/performance/invariant.c, do_k_times, 2, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 5 + 5 * s$1^2]
+codetoanalyze/c/performance/invariant.c, do_k_times, 2, EXPENSIVE_EXECUTION_TIME_CALL, ERROR, [with estimated cost 5 + 5 * s$1^2]
