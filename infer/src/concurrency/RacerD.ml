@@ -1035,9 +1035,9 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
       let class_name = Typ.Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
-          "Unprotected call to method of un-annotated interface %s. Consider annotating the class \
-           with %a, adding a lock, or using an interface that is known to be thread-safe."
-          class_name MF.pp_monospaced "@ThreadSafe"
+          "Unprotected call to method %a of un-annotated interface %s. Consider annotating the \
+           class with %a, adding a lock, or using an interface that is known to be thread-safe."
+          Typ.Procname.pp reported_pname class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation tenv pdesc ~make_description ~report_kind:UnannotatedInterface
         access thread RacerDDomain.StabilityDomain.empty
@@ -1046,18 +1046,9 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
       ()
 
 
-let pp_procname_short fmt = function
-  | Typ.Procname.Java java ->
-      F.fprintf fmt "%s.%s"
-        (Typ.Procname.Java.get_class_name java)
-        (Typ.Procname.Java.get_method java)
-  | pname ->
-      Typ.Procname.pp fmt pname
-
-
 let make_unprotected_write_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
-    (MF.wrap_monospaced pp_procname_short)
+    (MF.wrap_monospaced Typ.Procname.pp)
     pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if RacerDDomain.TraceElem.is_container_write final_sink then "mutates" else "writes to field")
@@ -1083,7 +1074,7 @@ let make_read_write_race_description ~read_is_sync (conflict: reported_access) p
       (MF.wrap_monospaced pp_conflict) conflict
   in
   Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
-    (MF.wrap_monospaced pp_procname_short)
+    (MF.wrap_monospaced Typ.Procname.pp)
     pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
@@ -1097,13 +1088,15 @@ let make_read_write_race_description ~read_is_sync (conflict: reported_access) p
 type reported =
   { reported_sites: CallSite.Set.t
   ; reported_writes: Typ.Procname.Set.t
-  ; reported_reads: Typ.Procname.Set.t }
+  ; reported_reads: Typ.Procname.Set.t
+  ; reported_unannotated_calls: Typ.Procname.Set.t }
 
 let empty_reported =
   let reported_sites = CallSite.Set.empty in
   let reported_writes = Typ.Procname.Set.empty in
   let reported_reads = Typ.Procname.Set.empty in
-  {reported_sites; reported_reads; reported_writes}
+  let reported_unannotated_calls = Typ.Procname.Set.empty in
+  {reported_sites; reported_reads; reported_writes; reported_unannotated_calls}
 
 
 (** Report accesses that may race with each other.
@@ -1137,7 +1130,8 @@ let empty_reported =
 let report_unsafe_accesses (aggregated_access_map: reported_access list AccessListMap.t) =
   let open RacerDDomain in
   let open RacerDConfig in
-  let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
+  let is_duplicate_report access pname
+      {reported_sites; reported_writes; reported_reads; reported_unannotated_calls} =
     if Config.filtering then
       CallSite.Set.mem (TraceElem.call_site access) reported_sites
       ||
@@ -1147,7 +1141,7 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
       | Access.Read _ | Access.ContainerRead _ ->
           Typ.Procname.Set.mem pname reported_reads
       | Access.InterfaceCall _ ->
-          false
+          Typ.Procname.Set.mem pname reported_unannotated_calls
     else false
   in
   let update_reported access pname reported =
@@ -1161,7 +1155,10 @@ let report_unsafe_accesses (aggregated_access_map: reported_access list AccessLi
           let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
           {reported with reported_reads; reported_sites}
       | Access.InterfaceCall _ ->
-          reported
+          let reported_unannotated_calls =
+            Typ.Procname.Set.add pname reported.reported_unannotated_calls
+          in
+          {reported with reported_unannotated_calls; reported_sites}
     else reported
   in
   let report_unsafe_access {snapshot; threads; tenv; procdesc; wobbly_paths} accesses reported_acc =
