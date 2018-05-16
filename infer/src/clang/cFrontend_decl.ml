@@ -269,8 +269,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | PragmaDetectMismatchDecl _
     | StaticAssertDecl _
     | TranslationUnitDecl _ ->
-        L.die InternalError "Skipped Method Declaration '%s'."
+        let decl_info = Clang_ast_proj.get_decl_tuple dec in
+        CFrontend_config.incorrect_assumption __POS__ decl_info.Clang_ast_t.di_source_range
+          "Skipped declaration inside a class '%s'."
           (Clang_ast_proj.get_decl_kind_string dec)
+          dec
 
 
   let process_methods trans_unit_ctx tenv cfg curr_class decl_list =
