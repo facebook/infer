@@ -737,7 +737,7 @@ and ( annotation_reachability
       "the detection of mismatch between the Java printf format strings and the argument types \
        For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
        \"world\")`"
-  and quandary = mk_checker ~long:"quandary" ~default:true "the quandary taint analysis"
+  and quandary = mk_checker ~long:"quandary" ~default:false "the quandary taint analysis"
   and racerd =
     mk_checker ~long:"racerd" ~deprecated:["-threadsafety"] ~default:true
       "the RacerD thread safety analysis"
