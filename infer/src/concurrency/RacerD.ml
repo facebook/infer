@@ -26,20 +26,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
-  let propagate_attributes lhs_access_path rhs_exp attribute_map =
-    let rhs_attributes = Domain.attributes_of_expr attribute_map rhs_exp in
-    Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
-
-
-  let propagate_ownership ((lhs_root, _) as lhs_access_path) rhs_exp ownership =
-    if Var.is_global (fst lhs_root) then
-      (* do not assign ownership to access paths rooted at globals *)
-      ownership
-    else
-      let rhs_ownership_value = Domain.ownership_of_expr rhs_exp ownership in
-      Domain.OwnershipDomain.add lhs_access_path rhs_ownership_value ownership
-
-
   let propagate_return return ret_ownership ret_attributes actuals
       {Domain.ownership; attribute_map} =
     let open Domain in
@@ -286,7 +272,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       let expand_precondition (snapshot: AccessSnapshot.t) =
         let access = TraceElem.map ~f:expand_path snapshot.access in
-        AccessSnapshot.make_ access snapshot.lock snapshot.thread snapshot.ownership_precondition
+        AccessSnapshot.make_from_snapshot access snapshot
       in
       AccessDomain.map expand_precondition accesses
 
@@ -340,7 +326,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let update_callee_access (snapshot: AccessSnapshot.t) acc =
       let access = TraceElem.with_callsite snapshot.access (CallSite.make callee_pname loc) in
-      let locks = if snapshot.lock then LocksDomain.add_lock locks else locks in
+      let locks = if snapshot.lock then LocksDomain.acquire_lock locks else locks in
       let thread =
         ThreadsDomain.integrate_summary ~callee_astate:snapshot.thread ~caller_astate:threads
       in
@@ -364,11 +350,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
-
-  (***********************************************************************)
-  (*              Wobbly paths and where to find them.                   *)
-  (***********************************************************************)
-  (***********************************************************************)
 
   let exec_instr (astate: Domain.astate) ({ProcData.tenv; extras; pdesc} as proc_data) _
       (instr: HilInstr.t) =
@@ -436,11 +417,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match Models.get_lock callee_pname actuals with
             | Lock ->
                 { astate with
-                  locks= LocksDomain.add_lock astate.locks
+                  locks= LocksDomain.acquire_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
             | Unlock ->
                 { astate with
-                  locks= LocksDomain.remove_lock astate.locks
+                  locks= LocksDomain.release_lock astate.locks
                 ; threads= update_for_lock_use astate.threads }
             | LockedIfTrue ->
                 let attribute_map =
@@ -574,8 +555,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             add_access (AccessExpression lhs_access_expr) loc ~is_write_access:true rhs_accesses
               astate.locks astate.threads astate.ownership proc_data
         in
-        let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
-        let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
+        let ownership =
+          OwnershipDomain.propagate_assignment lhs_access_path rhs_exp astate.ownership
+        in
+        let attribute_map =
+          AttributeMapDomain.propagate_assignment lhs_access_path rhs_exp astate.attribute_map
+        in
         (* [TODO] Do not add this path as wobbly, if it's the _first_
            initialization of a local variable (e.g. A z = getA(); -->
            now z is considered wobbly).
@@ -621,8 +606,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let add_choice bool_value (acc: Domain.astate) = function
           | Choice.LockHeld ->
               let locks =
-                if bool_value then LocksDomain.add_lock acc.locks
-                else LocksDomain.remove_lock acc.locks
+                if bool_value then LocksDomain.acquire_lock acc.locks
+                else LocksDomain.release_lock acc.locks
               in
               {acc with locks}
           | Choice.OnMainThread ->
