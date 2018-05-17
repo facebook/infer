@@ -32,9 +32,6 @@ val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 val iter_all_nodes : ?sorted:bool -> t -> f:(Procdesc.t -> Procdesc.Node.t -> unit) -> unit
 (** Iterate over all the nodes in the cfg *)
 
-val proc_cfg_broken_for_node : Procdesc.t -> [`Join | `Other] option
-(** checks whether a cfg for the given procdesc is connected or not *)
-
 val save_attributes : SourceFile.t -> t -> unit
 (** Save the .attr files for the procedures in the cfg. *)
 

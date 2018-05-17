@@ -211,9 +211,8 @@ val pp_local : Format.formatter -> ProcAttributes.var_data -> unit
 
 val is_specialized : t -> bool
 
-(* true if pvar is a captred variable of a cpp lambda or obcj block *)
-
 val is_captured_var : t -> Pvar.t -> bool
+(** true if pvar is a captured variable of a cpp lambda or obcj block *)
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 
@@ -229,3 +228,6 @@ val specialize_with_block_args : t -> Typ.Procname.t -> Exp.closure option list 
   a) the block parameters are replaces with the closures
   b) the parameters of the method are extended with parameters for the captured variables
   in the closures *)
+
+val is_connected : t -> (unit, [`Join | `Other]) Result.t
+(** checks whether a cfg for the given procdesc is connected or not *)
