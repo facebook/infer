@@ -9,10 +9,13 @@
 
 #import <stdio.h>
 
-int m1() {
+int test_switch1() {
   int value = 0;
+  // infinite loop
   while (value < 10) {
     switch (value) {
+      // code before the first case statement gets skipped but can be used to
+      // declare variables
       int x = 1;
       printf("(out)HELLO WORLD!");
       x = value + 1;
@@ -32,12 +35,10 @@ int m1() {
   return 0;
 }
 
-int m2() {
+int test_switch2() {
   int value = 0;
   switch (value) {
-    int x = 1;
-    printf("(out)HELLO WORLD!");
-    x = value + 1;
+    int x;
     case 0:
       printf("(0)HELLO WORLD!");
       break;
@@ -57,7 +58,7 @@ int m2() {
   return 0;
 }
 
-int m3() {
+int test_switch3() {
   int value = 0;
   switch (value) {
     case 0:
@@ -75,12 +76,10 @@ int m3() {
   return 0;
 }
 
-int m4() {
+int test_switch4() {
   int value = 0;
   switch (value) {
-    int x = 1;
-    printf("(out)HELLO WORLD!");
-    x = value + 1;
+    int x;
     case 0:
       printf("(0)HELLO WORLD!");
       break;
@@ -100,11 +99,11 @@ int m4() {
   return 0;
 }
 
-int m5() {
+int test_switch5() {
   int value = 0;
   while (value < 10) {
     switch (value) {
-      int x = 1;
+      int x;
       printf("(out)HELLO WORLD!");
       x = value + 1;
       continue;
@@ -116,7 +115,7 @@ int m5() {
   return 0;
 }
 
-int m6() {
+int test_switch6() {
   int value = 0;
   switch (value > 0 ? 1 : 0) {
     case 0:
@@ -136,7 +135,7 @@ int m6() {
 
 int getValue() { return 1; }
 
-int m7() {
+int test_switch7() {
   int value = 0;
   switch (getValue()) {
     case 0:
@@ -154,7 +153,7 @@ int m7() {
   return 0;
 }
 
-int m8() {
+int test_switch8() {
   int value = 0;
   while (value < 10) {
     switch (getValue() == 0 ? 1 : 2) {
@@ -176,19 +175,19 @@ int m8() {
   return 0;
 }
 
-int m9() {
+int test_switch9() {
   int value = 0;
   switch (value) {}
   return 0;
 }
 
-int m10() {
+int test_switch10() {
   int value = 0;
   switch (value = 7) {}
   return 0;
 }
 
-int m11() {
+int test_switch11() {
   int value = 0;
   switch (value = (value == 0 ? 7 : 9)) {
     case 0:

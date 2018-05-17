@@ -1,0 +1,39 @@
+(*
+ * Copyright (c) 2018 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+open! IStd
+module F = Format
+
+type condition = Case of Clang_ast_t.stmt | Default
+
+type t = {condition: condition; stmt_info: Clang_ast_t.stmt_info; root_nodes: Procdesc.Node.t list}
+
+let current_cases : t list ref = ref []
+
+let in_switch_body ~f x =
+  let outer_switch_cases = !current_cases in
+  current_cases := [] ;
+  let res = f x in
+  let rev_switch_cases = !current_cases in
+  current_cases := outer_switch_cases ;
+  (List.rev rev_switch_cases, res)
+
+
+let add switch_case = current_cases := switch_case :: !current_cases
+
+let pp_condition fmt = function
+  | Case stmt ->
+      F.fprintf fmt "case %a:" (Pp.to_string ~f:Clang_ast_j.string_of_stmt) stmt
+  | Default ->
+      F.pp_print_string fmt "default:"
+
+
+let pp fmt {condition; root_nodes} =
+  F.fprintf fmt "%a -> @[<h>[%a]@]" pp_condition condition
+    (Pp.semicolon_seq Procdesc.Node.pp)
+    root_nodes

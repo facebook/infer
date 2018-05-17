@@ -747,14 +747,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
-    (* go ahead with the translation *)
-    let res_trans =
-      match stmt_list with
-      | [stmt] ->
-          instruction trans_state stmt
-      | _ ->
-          (* expected a stmt or at most a compoundstmt *) assert false
-    in
+    let[@warning "-8"] [stmt] = stmt_list in
+    let res_trans = instruction trans_state stmt in
     (* create the label root node into the hashtbl *)
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -1523,7 +1517,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.control.root_nodes [])
-        prune_nodes'
+        prune_nodes' ;
+      res_trans
     in
     match stmt_list with
     | [cond; exp1; exp2] ->
@@ -1546,8 +1541,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (cond_trans ~if_kind:Sil.Ik_bexp ~negate_cond:false)
         in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
-        do_branch true exp1 var_typ res_trans_cond.control.leaf_nodes join_node pvar ;
-        do_branch false exp2 var_typ res_trans_cond.control.leaf_nodes join_node pvar ;
+        let _ : trans_result =
+          do_branch true exp1 var_typ res_trans_cond.control.leaf_nodes join_node pvar
+        in
+        let _ : trans_result =
+          do_branch false exp2 var_typ res_trans_cond.control.leaf_nodes join_node pvar
+        in
         let id = Ident.create_fresh Ident.knormal in
         let instrs = [Sil.Load (id, Exp.Lvar pvar, var_typ, sil_loc)] in
         mk_trans_result (Exp.Var id, typ)
@@ -1764,179 +1763,104 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  (* Assumption: the CompoundStmt can be made of different stmts, not just CaseStmts *)
+  and caseStmt_trans trans_state stmt_info case_stmt_list =
+    (* ignore the [case lhs ... rhs: body] form, only support the [case condition: body] form *)
+    let[@warning "-8"] [condition; _rhs; body] = case_stmt_list in
+    let body_trans_result = instruction trans_state body in
+    (let open SwitchCase in
+    add {condition= Case condition; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
+    body_trans_result
+
+
+  and defaultStmt_trans trans_state stmt_info default_stmt_list =
+    let[@warning "-8"] [body] = default_stmt_list in
+    let body_trans_result = instruction trans_state body in
+    (let open SwitchCase in
+    add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
+    body_trans_result
+
+
   and switchStmt_trans trans_state stmt_info switch_stmt_list =
+    (* overview: translate the body of the switch statement, which automatically collects the
+       various cases at the same time, then link up the cases together and together with the switch
+       condition variable *)
+    (* unsupported: initialization *)
+    let[@warning "-8"] [_initialization; variable; condition; body] = switch_stmt_list in
     let context = trans_state.context in
-    let succ_nodes = trans_state.succ_nodes in
-    let continuation = trans_state.continuation in
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let open Clang_ast_t in
-    match switch_stmt_list with
-    | [_; decl_stmt; cond; CompoundStmt (stmt_info, stmt_list)] ->
-        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-        let trans_state' = {trans_state_pri with succ_nodes= []} in
-        let res_trans_cond_tmp = instruction trans_state' cond in
-        let switch_special_cond_node =
-          let node_kind = Procdesc.Node.Stmt_node "Switch_stmt" in
-          Procdesc.create_node context.procdesc sil_loc node_kind res_trans_cond_tmp.control.instrs
-        in
-        List.iter
-          ~f:(fun n' ->
-            Procdesc.node_set_succs_exn context.procdesc n' [switch_special_cond_node] [] )
-          res_trans_cond_tmp.control.leaf_nodes ;
-        let root_nodes =
-          if res_trans_cond_tmp.control.root_nodes <> [] then res_trans_cond_tmp.control.root_nodes
-          else [switch_special_cond_node]
-        in
-        let switch_e_cond', _ = res_trans_cond_tmp.return in
-        let res_trans_cond =
-          { res_trans_cond_tmp with
-            control=
-              {res_trans_cond_tmp.control with root_nodes; leaf_nodes= [switch_special_cond_node]}
-          }
-        in
-        let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
-        let trans_state_no_pri =
-          if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
-            {trans_state_pri with priority= Free}
-          else trans_state_pri
-        in
-        let switch_exit_point = succ_nodes in
-        let continuation' =
-          match continuation with
-          | Some cont ->
-              Some {cont with break= switch_exit_point}
-          | None ->
-              Some {break= switch_exit_point; continue= []; return_temp= false}
-        in
-        let trans_state'' = {trans_state_no_pri with continuation= continuation'} in
-        let merge_into_cases stmt_list =
-          (* returns list_of_cases * before_any_case_instrs *)
-          let rec aux rev_stmt_list acc cases =
-            match rev_stmt_list with
-            | CaseStmt (info, a :: b :: CaseStmt x :: c) :: rest ->
-                (* case x: case y: ... *)
-                if c <> [] (* empty case with nested case, then followed by some instructions *)
-                then assert false ;
-                let rest' = CaseStmt (info, [a; b]) :: rest in
-                let rev_stmt_list' = CaseStmt x :: rest' in
-                aux rev_stmt_list' acc cases
-            | CaseStmt (info, a :: b :: DefaultStmt x :: c) :: rest ->
-                (* case x: default: ... *)
-                if c <> [] (* empty case with nested case, then followed by some instructions *)
-                then assert false ;
-                let rest' = CaseStmt (info, [a; b]) :: rest in
-                let rev_stmt_list' = DefaultStmt x :: rest' in
-                aux rev_stmt_list' acc cases
-            | DefaultStmt (info, CaseStmt x :: c) :: rest ->
-                (* default: case x: ... *)
-                if c <> [] (* empty case with nested case, then followed by some instructions *)
-                then assert false ;
-                let rest' = DefaultStmt (info, []) :: rest in
-                let rev_stmt_list' = CaseStmt x :: rest' in
-                aux rev_stmt_list' acc cases
-            | CaseStmt (info, a :: b :: c) :: rest ->
-                aux rest [] (CaseStmt (info, a :: b :: c @ acc) :: cases)
-            | DefaultStmt (info, c) :: rest ->
-                (* default is always the last in the list *)
-                aux rest [] (DefaultStmt (info, c @ acc) :: cases)
-            | x :: rest ->
-                aux rest (x :: acc) cases
-            | [] ->
-                (cases, acc)
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let trans_state' = {trans_state_pri with succ_nodes= []} in
+    let res_trans_cond_tmp = instruction trans_state' condition in
+    let switch_node =
+      let node_kind = Procdesc.Node.Stmt_node "SwitchStmt" in
+      Procdesc.create_node context.procdesc sil_loc node_kind res_trans_cond_tmp.control.instrs
+    in
+    List.iter
+      ~f:(fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [switch_node] [])
+      res_trans_cond_tmp.control.leaf_nodes ;
+    let root_nodes =
+      if res_trans_cond_tmp.control.root_nodes <> [] then res_trans_cond_tmp.control.root_nodes
+      else [switch_node]
+    in
+    let condition_exp, _ = res_trans_cond_tmp.return in
+    let condition_result =
+      { res_trans_cond_tmp with
+        control= {res_trans_cond_tmp.control with root_nodes; leaf_nodes= [switch_node]} }
+    in
+    let variable_result = declStmt_in_condition_trans trans_state variable condition_result in
+    let trans_state_no_pri =
+      if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
+        {trans_state_pri with priority= Free}
+      else trans_state_pri
+    in
+    let continuation' =
+      let switch_exit_point = trans_state.succ_nodes in
+      match trans_state.continuation with
+      | Some cont ->
+          Some {cont with break= switch_exit_point}
+      | None ->
+          Some {break= switch_exit_point; continue= []; return_temp= false}
+    in
+    let inner_trans_state = {trans_state_no_pri with continuation= continuation'} in
+    let switch_cases, (_: trans_result) =
+      SwitchCase.in_switch_body ~f:(instruction inner_trans_state) body
+    in
+    let link_up_switch_cases curr_succ_nodes = function
+      | {SwitchCase.condition= Case case_condition; stmt_info; root_nodes} ->
+          (* create case prune nodes, link the then branch to [root_nodes], the else branch to
+             [curr_succ_nodes] *)
+          let trans_state_pri = PriorityNode.try_claim_priority_node inner_trans_state stmt_info in
+          let res_trans_case_const = instruction trans_state_pri case_condition in
+          let e_const, _ = res_trans_case_const.return in
+          let sil_eq_cond = Exp.BinOp (Binop.Eq, condition_exp, e_const) in
+          let sil_loc =
+            CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
           in
-          aux (List.rev stmt_list) [] []
-        in
-        let list_of_cases, pre_case_stmts = merge_into_cases stmt_list in
-        let rec connected_instruction rev_instr_list successor_nodes =
-          (* returns the entry point of the translated set of instr *)
-          match rev_instr_list with
-          | [] ->
-              successor_nodes
-          | instr :: rest ->
-              let trans_state''' = {trans_state'' with succ_nodes= successor_nodes} in
-              let res_trans_instr = instruction trans_state''' instr in
-              let instr_entry_points = res_trans_instr.control.root_nodes in
-              connected_instruction rest instr_entry_points
-        in
-        let rec translate_and_connect_cases cases next_nodes next_prune_nodes =
-          let create_prune_nodes_for_case case =
-            match case with
-            | CaseStmt (stmt_info, case_const :: _ :: _) ->
-                let trans_state_pri =
-                  PriorityNode.try_claim_priority_node trans_state'' stmt_info
-                in
-                let res_trans_case_const = instruction trans_state_pri case_const in
-                let e_const, _ = res_trans_case_const.return in
-                let sil_eq_cond = Exp.BinOp (Binop.Eq, switch_e_cond', e_const) in
-                let sil_loc =
-                  CLocation.location_of_stmt_info context.translation_unit_context.source_file
-                    stmt_info
-                in
-                let true_prune_node =
-                  create_prune_node context.procdesc ~branch:true ~negate_cond:false sil_eq_cond
-                    res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
-                in
-                let false_prune_node =
-                  create_prune_node context.procdesc ~branch:false ~negate_cond:true sil_eq_cond
-                    res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
-                in
-                (true_prune_node, false_prune_node)
-            | _ ->
-                assert false
+          let true_prune_node =
+            create_prune_node context.procdesc ~branch:true ~negate_cond:false sil_eq_cond
+              res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
           in
-          match cases with
-          (* top-down to handle default cases *)
-          | [] ->
-              (next_nodes, next_prune_nodes)
-          | (CaseStmt (_, _ :: _ :: case_content) as case) :: rest ->
-              let last_nodes, last_prune_nodes =
-                translate_and_connect_cases rest next_nodes next_prune_nodes
-              in
-              let case_entry_point = connected_instruction (List.rev case_content) last_nodes in
-              (* connects between cases, then continuation has priority about breaks *)
-              let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
-              Procdesc.node_set_succs_exn context.procdesc prune_node_t case_entry_point [] ;
-              Procdesc.node_set_succs_exn context.procdesc prune_node_f last_prune_nodes [] ;
-              (case_entry_point, [prune_node_t; prune_node_f])
-          | DefaultStmt (stmt_info, default_content) :: rest ->
-              let sil_loc =
-                CLocation.location_of_stmt_info context.translation_unit_context.source_file
-                  stmt_info
-              in
-              let placeholder_entry_point =
-                Procdesc.create_node context.procdesc sil_loc
-                  (Procdesc.Node.Stmt_node "DefaultStmt_placeholder") []
-              in
-              let last_nodes, last_prune_nodes =
-                translate_and_connect_cases rest next_nodes [placeholder_entry_point]
-              in
-              let default_entry_point =
-                connected_instruction (List.rev default_content) last_nodes
-              in
-              Procdesc.node_set_succs_exn context.procdesc placeholder_entry_point
-                default_entry_point [] ;
-              (default_entry_point, last_prune_nodes)
-          | _ ->
-              assert false
-        in
-        let top_entry_point, top_prune_nodes =
-          translate_and_connect_cases list_of_cases succ_nodes succ_nodes
-        in
-        let _ = connected_instruction (List.rev pre_case_stmts) top_entry_point in
-        Procdesc.node_set_succs_exn context.procdesc switch_special_cond_node top_prune_nodes [] ;
-        let top_nodes = res_trans_decl.control.root_nodes in
-        (* succ_nodes will remove the temps *)
-        mk_trans_result (mk_fresh_void_exp_typ ())
-          {empty_control with root_nodes= top_nodes; leaf_nodes= succ_nodes}
-    | _ ->
-        (* TODO(t21762295) this raises sometimes *)
-        CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
-          "Unexpected Switch Statement sub-expression list: [%a]"
-          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
-          switch_stmt_list
+          let false_prune_node =
+            create_prune_node context.procdesc ~branch:false ~negate_cond:true sil_eq_cond
+              res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
+          in
+          Procdesc.node_set_succs_exn context.procdesc true_prune_node root_nodes [] ;
+          Procdesc.node_set_succs_exn context.procdesc false_prune_node curr_succ_nodes [] ;
+          (* return prune nodes as next roots *)
+          [true_prune_node; false_prune_node]
+      | {SwitchCase.condition= Default; root_nodes} ->
+          (* just return the [root_nodes] to be linked to the previous case's fallthrough *)
+          root_nodes
+    in
+    let cases_root_nodes =
+      List.fold switch_cases ~init:trans_state.succ_nodes ~f:link_up_switch_cases
+    in
+    Procdesc.node_set_succs_exn context.procdesc switch_node cases_root_nodes [] ;
+    let top_nodes = variable_result.control.root_nodes in
+    mk_trans_result (mk_fresh_void_exp_typ ())
+      {empty_control with root_nodes= top_nodes; leaf_nodes= trans_state.succ_nodes}
 
 
   and stmtExpr_trans trans_state source_range stmt_list =
@@ -3213,7 +3137,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       "Translating statement '%a' (pointer= '%a')@\n@[<hv2>"
       (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
       instr pp_pointer instr ;
-    let trans_result = instruction_aux trans_state instr in
+    let trans_result =
+      try instruction_aux trans_state instr with e ->
+        IExn.reraise_after e ~f:(fun () ->
+            let {Clang_ast_t.si_source_range}, _ = Clang_ast_proj.get_stmt_tuple instr in
+            let source_file =
+              trans_state.context.CContext.translation_unit_context.CFrontend_config.source_file
+            in
+            let loc_start =
+              CLocation.location_of_source_range ~pick_location:`Start source_file si_source_range
+            in
+            let loc_end =
+              CLocation.location_of_source_range ~pick_location:`End source_file si_source_range
+            in
+            L.internal_error "%a: ERROR translating statement '%a'@\n" Location.pp_range
+              (loc_start, loc_end)
+              (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+              instr )
+    in
     L.(debug Capture Verbose) "@]" ;
     trans_result
 
@@ -3253,12 +3194,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ifStmt_trans trans_state stmt_info stmt_list
     | SwitchStmt (stmt_info, switch_stmt_list) ->
         switchStmt_trans trans_state stmt_info switch_stmt_list
-    | CaseStmt ({Clang_ast_t.si_source_range}, _) ->
-        (* where do we even get case stmts outside of the switch stmt? (t21762295) *)
-        CFrontend_config.incorrect_assumption __POS__ si_source_range
-          "Case statement outside of switch statement: %a"
-          (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
-          instr
+    | CaseStmt (stmt_info, stmt_list) ->
+        caseStmt_trans trans_state stmt_info stmt_list
+    | DefaultStmt (stmt_info, stmt_list) ->
+        defaultStmt_trans trans_state stmt_info stmt_list
     | StmtExpr ({Clang_ast_t.si_source_range}, stmt_list, _) ->
         stmtExpr_trans trans_state si_source_range stmt_list
     | ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
@@ -3543,8 +3482,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHFinallyStmt _
     | SEHLeaveStmt _
     | SEHTryStmt _
-    | ShuffleVectorExpr _
-    | DefaultStmt _ ->
+    | ShuffleVectorExpr _ ->
         let (stmt_info, stmts), ret_typ =
           match Clang_ast_proj.get_expr_tuple instr with
           | Some (stmt_info, stmts, expr_info) ->

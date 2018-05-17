@@ -28,13 +28,20 @@ let pp f (loc: t) =
   if loc.col <> -1 then F.fprintf f ", column %d" loc.col
 
 
-let to_string loc =
-  let s = string_of_int loc.line in
-  if loc.col <> -1 then Printf.sprintf "%s:%d" s loc.col else s
+let pp_short f loc =
+  F.pp_print_int f loc.line ;
+  if loc.col <> -1 then F.fprintf f ":%d" loc.col
 
+
+let to_string loc = F.asprintf "%a" pp_short loc
 
 (** Pretty print a file-position of a location *)
-let pp_file_pos f (loc: t) =
-  let fname = SourceFile.to_string loc.file in
-  let pos = to_string loc in
-  F.fprintf f "%s:%s" fname pos
+let pp_file_pos f (loc: t) = F.fprintf f "%a:%a" SourceFile.pp loc.file pp_short loc
+
+let pp_range f (loc_start, loc_end) =
+  let pp_end loc_start f loc_end =
+    if Int.equal loc_end.line loc_start.line then
+      if Int.equal loc_end.col loc_start.col then () else F.fprintf f "-%d" loc_end.col
+    else F.fprintf f "-%a" pp_short loc_end
+  in
+  F.fprintf f "%a%a" pp_file_pos loc_start (pp_end loc_start) loc_end

@@ -22,12 +22,12 @@ digraph cfg {
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_2" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" [label="4:  Switch_stmt \n   n$2=*&n:int [line 14, column 11]\n " shape="box"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" [label="4:  SwitchStmt \n   n$2=*&n:int [line 14, column 11]\n " shape="box"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_12" ;
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_13" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" [label="5:  BinaryOperatorStmt: Assign \n   n$5=_fun_h() [line 21, column 13]\n  *&res:int=n$5 [line 21, column 7]\n " shape="box"]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" [label="5:  BinaryOperatorStmt: Assign \n   n$6=_fun_h() [line 21, column 13]\n  *&res:int=n$6 [line 21, column 7]\n " shape="box"]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_5" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_3" ;

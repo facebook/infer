@@ -234,66 +234,66 @@ digraph cfg {
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_4" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_3" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_5" [label="5:  Switch_stmt \n   n$6=*&n:int [line 117, column 11]\n " shape="box"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_5" [label="5:  SwitchStmt \n   n$6=*&n:int [line 117, column 11]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_5" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_17" ;
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_5" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_6" [label="6:  Destruction \n   _=*&x4:break_scope::X [line 127, column 5]\n  n$8=_fun_break_scope::X_~X(&x4:break_scope::X*) [line 127, column 5]\n " shape="box"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_6" [label="6:  Destruction \n   _=*&x4:break_scope::X [line 127, column 5]\n  n$9=_fun_break_scope::X_~X(&x4:break_scope::X*) [line 127, column 5]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_6" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_4" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" [label="7:  DeclStmt \n   n$10=_fun_break_scope::X_X(&x4:break_scope::X*) [line 126, column 9]\n " shape="box"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" [label="7:  DeclStmt \n   n$11=_fun_break_scope::X_X(&x4:break_scope::X*) [line 126, column 9]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_6" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$6 == 3), true); [line 125, column 5]\n " shape="invhouse"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_8" [label="8:  Destruction \n   _=*&x3:break_scope::X [line 124, column 5]\n  n$13=_fun_break_scope::X_~X(&x3:break_scope::X*) [line 124, column 5]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_8" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$6 == 3), false); [line 125, column 5]\n " shape="invhouse"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_9" [label="9:  Destruction \n   _=*&x3:break_scope::X [line 123, column 7]\n  n$16=_fun_break_scope::X_~X(&x3:break_scope::X*) [line 123, column 7]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_9" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_4" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" [label="10:  Destruction \n   _=*&x3:break_scope::X [line 124, column 5]\n  n$12=_fun_break_scope::X_~X(&x3:break_scope::X*) [line 124, column 5]\n " shape="box"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" [label="10:  DeclStmt \n   n$18=_fun_break_scope::X_X(&x3:break_scope::X*) [line 122, column 9]\n " shape="box"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_11" [label="11:  Destruction \n   _=*&x3:break_scope::X [line 123, column 7]\n  n$15=_fun_break_scope::X_~X(&x3:break_scope::X*) [line 123, column 7]\n " shape="box"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_9" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_11" [label="11:  Destruction \n   _=*&x2:break_scope::X [line 120, column 5]\n  n$20=_fun_break_scope::X_~X(&x2:break_scope::X*) [line 120, column 5]\n " shape="box"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_11" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_4" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" [label="12:  DeclStmt \n   n$17=_fun_break_scope::X_X(&x3:break_scope::X*) [line 122, column 9]\n " shape="box"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_11" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" [label="12:  DeclStmt \n   n$22=_fun_break_scope::X_X(&x2:break_scope::X*) [line 119, column 9]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_11" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$6 == 2), true); [line 121, column 5]\n " shape="invhouse"]
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$6 == 3), true); [line 125, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$6 == 2), false); [line 121, column 5]\n " shape="invhouse"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_7" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$6 == 3), false); [line 125, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_8" ;
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_9" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" [label="15:  Destruction \n   _=*&x2:break_scope::X [line 120, column 5]\n  n$19=_fun_break_scope::X_~X(&x2:break_scope::X*) [line 120, column 5]\n " shape="box"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_4" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$6 == 2), true); [line 121, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" [label="16:  DeclStmt \n   n$21=_fun_break_scope::X_X(&x2:break_scope::X*) [line 119, column 9]\n " shape="box"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_10" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$6 == 2), false); [line 121, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" ;
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" ;
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" ;
 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$6 == 1), true); [line 118, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_17" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" ;
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_17" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_12" ;
 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" [label="18: Prune (false branch, switch) \n   PRUNE(!(n$6 == 1), false); [line 118, column 5]\n " shape="invhouse"]
 	
 
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_13" ;
-	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_14" ;
-"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_19" [label="19:  DeclStmt \n   n$23=_fun_break_scope::X_X(&x1:break_scope::X*) [line 116, column 5]\n " shape="box"]
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_15" ;
+	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_18" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_16" ;
+"test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_19" [label="19:  DeclStmt \n   n$24=_fun_break_scope::X_X(&x1:break_scope::X*) [line 116, column 5]\n " shape="box"]
 	
 
 	 "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_19" -> "test_switch#break_scope#5012999682930893305.43ca855443a5fa68fa701447a90f7a1f_5" ;

@@ -1,806 +1,764 @@
 /* @generated */
 digraph cfg {
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 137, column 1]\n " color=yellow style=filled]
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 136, column 1]\n " color=yellow style=filled]
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" [label="2: Exit getValue \n  " color=yellow style=filled]
 	
 
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 137, column 18]\n " shape="box"]
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" [label="3:  Return Stmt \n   *&return:int=1 [line 136, column 18]\n " shape="box"]
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_1" [label="1: Start m1\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 12, column 1]\n " color=yellow style=filled]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" [label="1: Start test_switch1\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 12, column 1]\n " color=yellow style=filled]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_1" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_23" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_2" [label="2: Exit m1 \n  " color=yellow style=filled]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_2" [label="2: Exit test_switch1 \n  " color=yellow style=filled]
 	
 
-"m1.ae7be26cdaa742ca148068d5ac90eaca_3" [label="3:  Return Stmt \n   *&return:int=0 [line 32, column 3]\n " shape="box"]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 35, column 3]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_3" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_2" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_4" [label="4: + \n  " ]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_2" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" [label="4: + \n  " ]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_4" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_5" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 14, column 10]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 15, column 10]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_5" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_6" ;
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_5" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_7" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 14, column 10]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" ;
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_5" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 15, column 10]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_6" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_9" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 14, column 10]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_6" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 15, column 10]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_7" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_3" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char const *) [line 30, column 5]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_7" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_3" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char const *) [line 33, column 5]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_8" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_9" [label="9:  Switch_stmt \n   n$2=*&value:int [line 15, column 13]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" [label="9:  SwitchStmt \n   n$2=*&value:int [line 16, column 13]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_9" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_18" ;
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_9" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_19" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_10" [label="10:  DefaultStmt_placeholder \n  " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" ;
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_9" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" [label="10:  Call _fun_printf \n   n$4=_fun_printf(\"(2/def)HELLO WORLD!\":char const *) [line 30, column 9]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_10" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_11" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(2/def)HELLO WORLD!\":char const *) [line 27, column 9]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(1)HELLO WORLD!\":char const *) [line 26, column 9]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_11" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 25, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" [label="12:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 23, column 9]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_12" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_11" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 25, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_8" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" [label="13:  BinaryOperatorStmt: Assign \n   n$9=*&value:int [line 21, column 11]\n  *&x:int=(n$9 + 1) [line 21, column 7]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_13" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_10" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_14" [label="14:  Call _fun_printf \n   n$6=_fun_printf(\"(1)HELLO WORLD!\":char const *) [line 23, column 9]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" [label="14:  Call _fun_printf \n   n$10=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 20, column 7]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_14" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 22, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_13" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" [label="15:  DeclStmt \n   *&x:int=1 [line 19, column 7]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_15" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_14" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$2 == 1), false); [line 22, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_15" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_14" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_16" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_12" ;
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_16" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_13" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_17" [label="17:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 20, column 9]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_17" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_8" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 19, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_10" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 25, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_18" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_17" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_19" [label="19: Prune (false branch, switch) \n   PRUNE(!(n$2 == 0), false); [line 19, column 7]\n " shape="invhouse"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_11" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" [label="19: Prune (false branch, switch) \n   PRUNE(!(n$2 == 1), false); [line 25, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_19" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_15" ;
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_19" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_16" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_20" [label="20:  BinaryOperatorStmt: Assign \n   n$9=*&value:int [line 18, column 11]\n  *&x:int=(n$9 + 1) [line 18, column 7]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_16" ;
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_17" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" [label="20: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 22, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_20" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_17" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_21" [label="21:  Call _fun_printf \n   n$10=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 17, column 7]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_20" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_12" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" [label="21: Prune (false branch, switch) \n   PRUNE(!(n$2 == 0), false); [line 22, column 7]\n " shape="invhouse"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_21" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_20" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_22" [label="22:  DeclStmt \n   *&x:int=1 [line 16, column 7]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_18" ;
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_21" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_19" ;
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" [label="22:  DeclStmt \n   *&value:int=0 [line 13, column 3]\n " shape="box"]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_22" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_21" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_23" [label="23:  DeclStmt \n   *&value:int=0 [line 13, column 3]\n " shape="box"]
+	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_1" [label="1: Start test_switch10\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 184, column 1]\n " color=yellow style=filled]
 	
 
-	 "m1.ae7be26cdaa742ca148068d5ac90eaca_23" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" [label="1: Start m10\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 185, column 1]\n " color=yellow style=filled]
+	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_1" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" ;
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_2" [label="2: Exit test_switch10 \n  " color=yellow style=filled]
 	
 
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_1" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" [label="2: Exit m10 \n  " color=yellow style=filled]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 187, column 3]\n " shape="box"]
 	
 
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" [label="3:  Return Stmt \n   *&return:int=0 [line 188, column 3]\n " shape="box"]
+	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_2" ;
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" [label="4:  SwitchStmt \n   *&value:int=7 [line 186, column 11]\n  n$0=*&value:int [line 186, column 11]\n " shape="box"]
 	
 
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_2" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" [label="4:  Switch_stmt \n   *&value:int=7 [line 187, column 11]\n  n$0=*&value:int [line 187, column 11]\n " shape="box"]
+	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_3" ;
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" [label="5:  DeclStmt \n   *&value:int=0 [line 185, column 3]\n " shape="box"]
 	
 
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_3" ;
-"m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" [label="5:  DeclStmt \n   *&value:int=0 [line 186, column 3]\n " shape="box"]
+	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" [label="1: Start test_switch11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&value); [line 190, column 1]\n " color=yellow style=filled]
 	
 
-	 "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_5" -> "m10.e66050aa5d0a7e0ecb49429ea4b0a32b_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_1" [label="1: Start m11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&value); [line 191, column 1]\n " color=yellow style=filled]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_2" [label="2: Exit test_switch11 \n  " color=yellow style=filled]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_1" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_14" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_2" [label="2: Exit m11 \n  " color=yellow style=filled]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" [label="3:  Return Stmt \n   *&return:int=0 [line 196, column 3]\n " shape="box"]
 	
 
-"m11.c4534fe0ca256b331e9a3f14fe17229d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 197, column 3]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_2" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" [label="4: + \n  " ]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_3" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_2" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_4" [label="4: + \n  " ]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 192, column 20]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_4" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_10" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$1=*&value:int [line 193, column 20]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" ;
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 192, column 20]\n " shape="invhouse"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_6" ;
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_5" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_7" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 == 0), true); [line 193, column 20]\n " shape="invhouse"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_6" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 192, column 20]\n " shape="invhouse"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_6" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_8" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 == 0), false); [line 193, column 20]\n " shape="invhouse"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_7" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 192, column 20]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_7" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_9" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=7 [line 193, column 20]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_8" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 192, column 20]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_8" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=9 [line 193, column 20]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_9" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_4" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 192, column 20]\n  *&value:int=n$2 [line 192, column 11]\n  n$3=*&value:int [line 192, column 11]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_9" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_4" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_10" [label="10:  Switch_stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 193, column 20]\n  *&value:int=n$2 [line 193, column 11]\n  n$3=*&value:int [line 193, column 11]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" ;
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_10" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 194, column 7]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_12" ;
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_13" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 195, column 7]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 193, column 5]\n " shape="invhouse"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_11" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 194, column 5]\n " shape="invhouse"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_12" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_11" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 193, column 5]\n " shape="invhouse"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_12" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_11" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 194, column 5]\n " shape="invhouse"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_13" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_3" ;
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" [label="14:  DeclStmt \n   *&value:int=0 [line 191, column 3]\n " shape="box"]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_13" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_14" [label="14:  DeclStmt \n   *&value:int=0 [line 192, column 3]\n " shape="box"]
+	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_1" [label="1: Start test_switch2\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-	 "m11.c4534fe0ca256b331e9a3f14fe17229d_14" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_5" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_1" [label="1: Start m2\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 35, column 1]\n " color=yellow style=filled]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_1" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_18" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_2" [label="2: Exit test_switch2 \n  " color=yellow style=filled]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_1" -> "m2.aaf2f89992379705dac844c0a2a1d45f_22" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_2" [label="2: Exit m2 \n  " color=yellow style=filled]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_3" [label="3:  Return Stmt \n   *&return:int=0 [line 58, column 3]\n " shape="box"]
 	
 
-"m2.aaf2f89992379705dac844c0a2a1d45f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 57, column 3]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_3" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_2" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 40, column 11]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_3" -> "m2.aaf2f89992379705dac844c0a2a1d45f_2" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_4" [label="4:  Switch_stmt \n   n$0=*&value:int [line 37, column 11]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_4" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_16" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_4" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_17" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 52, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_4" -> "m2.aaf2f89992379705dac844c0a2a1d45f_17" ;
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_4" -> "m2.aaf2f89992379705dac844c0a2a1d45f_18" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_5" [label="5:  DefaultStmt_placeholder \n  " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_5" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 50, column 7]\n  *&something:int=(n$3 + 1) [line 50, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_5" -> "m2.aaf2f89992379705dac844c0a2a1d45f_12" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 54, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_6" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_5" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_7" [label="7:  DeclStmt \n   *&something:int=1 [line 49, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_6" -> "m2.aaf2f89992379705dac844c0a2a1d45f_3" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 54, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_7" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_6" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_8" [label="8:  DeclStmt \n   *&z:int=9 [line 45, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_7" -> "m2.aaf2f89992379705dac844c0a2a1d45f_5" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 53, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_8" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 43, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_8" -> "m2.aaf2f89992379705dac844c0a2a1d45f_3" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 53, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_9" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 55, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_9" -> "m2.aaf2f89992379705dac844c0a2a1d45f_6" ;
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_9" -> "m2.aaf2f89992379705dac844c0a2a1d45f_7" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_10" [label="10:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 51, column 7]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_10" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 55, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_10" -> "m2.aaf2f89992379705dac844c0a2a1d45f_3" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_11" [label="11:  UnaryOperator \n   n$3=*&something:int [line 49, column 7]\n  *&something:int=(n$3 + 1) [line 49, column 7]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_11" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 54, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_11" -> "m2.aaf2f89992379705dac844c0a2a1d45f_10" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_12" [label="12:  DeclStmt \n   *&something:int=1 [line 48, column 7]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_12" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_3" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 54, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_12" -> "m2.aaf2f89992379705dac844c0a2a1d45f_11" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 47, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_13" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_10" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_13" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_11" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 48, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_13" -> "m2.aaf2f89992379705dac844c0a2a1d45f_12" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 47, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_14" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_15" [label="15: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 48, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_14" -> "m2.aaf2f89992379705dac844c0a2a1d45f_8" ;
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_14" -> "m2.aaf2f89992379705dac844c0a2a1d45f_9" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_15" [label="15:  DeclStmt \n   *&z:int=9 [line 44, column 7]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_15" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_12" ;
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_15" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_13" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 42, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_15" -> "m2.aaf2f89992379705dac844c0a2a1d45f_12" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_16" [label="16:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 42, column 7]\n " shape="box"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_16" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_9" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 42, column 5]\n " shape="invhouse"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_16" -> "m2.aaf2f89992379705dac844c0a2a1d45f_3" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 41, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_17" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_7" ;
+"test_switch2.0717c55583f10f472ddb2d73d867e556_18" [label="18:  DeclStmt \n   *&value:int=0 [line 39, column 3]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_17" -> "m2.aaf2f89992379705dac844c0a2a1d45f_16" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_18" [label="18: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 41, column 5]\n " shape="invhouse"]
+	 "test_switch2.0717c55583f10f472ddb2d73d867e556_18" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_4" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_1" [label="1: Start test_switch3\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 61, column 1]\n " color=yellow style=filled]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_18" -> "m2.aaf2f89992379705dac844c0a2a1d45f_13" ;
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_18" -> "m2.aaf2f89992379705dac844c0a2a1d45f_14" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_19" [label="19:  BinaryOperatorStmt: Assign \n   n$6=*&value:int [line 40, column 9]\n  *&x:int=(n$6 + 1) [line 40, column 5]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_1" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_2" [label="2: Exit test_switch3 \n  " color=yellow style=filled]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_19" -> "m2.aaf2f89992379705dac844c0a2a1d45f_16" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_20" [label="20:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 39, column 5]\n " shape="box"]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" [label="3:  Return Stmt \n   *&return:int=0 [line 76, column 3]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_20" -> "m2.aaf2f89992379705dac844c0a2a1d45f_19" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_21" [label="21:  DeclStmt \n   *&x:int=1 [line 38, column 5]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_2" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 63, column 11]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_21" -> "m2.aaf2f89992379705dac844c0a2a1d45f_20" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_22" [label="22:  DeclStmt \n   *&value:int=0 [line 36, column 3]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" ;
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" [label="5:  DeclStmt \n   *&z:int=9 [line 71, column 7]\n " shape="box"]
 	
 
-	 "m2.aaf2f89992379705dac844c0a2a1d45f_22" -> "m2.aaf2f89992379705dac844c0a2a1d45f_4" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_1" [label="1: Start m3\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 60, column 1]\n " color=yellow style=filled]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_5" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 69, column 7]\n  *&something:int=(n$3 + 1) [line 69, column 7]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_1" -> "m3.9678f7a7939f457fa0d9353761e189c7_17" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_2" [label="2: Exit m3 \n  " color=yellow style=filled]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" [label="7:  DeclStmt \n   *&something:int=1 [line 68, column 7]\n " shape="box"]
 	
 
-"m3.9678f7a7939f457fa0d9353761e189c7_3" [label="3:  Return Stmt \n   *&return:int=0 [line 75, column 3]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_6" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 65, column 7]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_3" -> "m3.9678f7a7939f457fa0d9353761e189c7_2" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_4" [label="4:  Switch_stmt \n   n$0=*&value:int [line 62, column 11]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 73, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_4" -> "m3.9678f7a7939f457fa0d9353761e189c7_15" ;
-	 "m3.9678f7a7939f457fa0d9353761e189c7_4" -> "m3.9678f7a7939f457fa0d9353761e189c7_16" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_5" [label="5: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 72, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 73, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_5" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_6" [label="6: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 72, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 72, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_6" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_7" [label="7: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 71, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_3" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 72, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_7" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_8" [label="8: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 71, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_9" ;
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_10" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 67, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_8" -> "m3.9678f7a7939f457fa0d9353761e189c7_5" ;
-	 "m3.9678f7a7939f457fa0d9353761e189c7_8" -> "m3.9678f7a7939f457fa0d9353761e189c7_6" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_9" [label="9:  DeclStmt \n   *&z:int=9 [line 70, column 7]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_7" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 67, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_9" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_10" [label="10:  UnaryOperator \n   n$3=*&something:int [line 68, column 7]\n  *&something:int=(n$3 + 1) [line 68, column 7]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_11" ;
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_12" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 64, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_10" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_11" [label="11:  DeclStmt \n   *&something:int=1 [line 67, column 7]\n " shape="box"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_15" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_8" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 64, column 5]\n " shape="invhouse"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_11" -> "m3.9678f7a7939f457fa0d9353761e189c7_10" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 66, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_13" ;
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_16" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_14" ;
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" [label="17:  DeclStmt \n   *&value:int=0 [line 62, column 3]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_12" -> "m3.9678f7a7939f457fa0d9353761e189c7_11" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 66, column 5]\n " shape="invhouse"]
+	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_1" [label="1: Start test_switch4\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 79, column 1]\n " color=yellow style=filled]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_13" -> "m3.9678f7a7939f457fa0d9353761e189c7_7" ;
-	 "m3.9678f7a7939f457fa0d9353761e189c7_13" -> "m3.9678f7a7939f457fa0d9353761e189c7_8" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_14" [label="14:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 64, column 7]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_1" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_2" [label="2: Exit test_switch4 \n  " color=yellow style=filled]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_14" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 63, column 5]\n " shape="invhouse"]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 99, column 3]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_15" -> "m3.9678f7a7939f457fa0d9353761e189c7_14" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 63, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_2" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 81, column 11]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_16" -> "m3.9678f7a7939f457fa0d9353761e189c7_12" ;
-	 "m3.9678f7a7939f457fa0d9353761e189c7_16" -> "m3.9678f7a7939f457fa0d9353761e189c7_13" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_17" [label="17:  DeclStmt \n   *&value:int=0 [line 61, column 3]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" [label="5:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 93, column 7]\n " shape="box"]
 	
 
-	 "m3.9678f7a7939f457fa0d9353761e189c7_17" -> "m3.9678f7a7939f457fa0d9353761e189c7_4" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_1" [label="1: Start m4\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 78, column 1]\n " color=yellow style=filled]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 91, column 7]\n  *&something:int=(n$3 + 1) [line 91, column 7]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_1" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_22" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_2" [label="2: Exit m4 \n  " color=yellow style=filled]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_5" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" [label="7:  DeclStmt \n   *&something:int=1 [line 90, column 7]\n " shape="box"]
 	
 
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_3" [label="3:  Return Stmt \n   *&return:int=0 [line 100, column 3]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_6" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" [label="8:  DeclStmt \n   *&z:int=9 [line 86, column 7]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_2" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_4" [label="4:  Switch_stmt \n   n$0=*&value:int [line 80, column 11]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_8" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" [label="9:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 84, column 7]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_4" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_17" ;
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_4" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_18" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_5" [label="5:  DefaultStmt_placeholder \n  " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 96, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_5" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_12" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 97, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 96, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_6" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 97, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 95, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_7" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_5" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_8" [label="8: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 96, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_3" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 95, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_8" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_9" [label="9: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 96, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_10" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_11" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" [label="14: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 89, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_9" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_6" ;
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_9" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_7" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_10" [label="10:  BinaryOperatorStmt: Assign \n   *&z:int=42 [line 94, column 7]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_14" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" [label="15: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 89, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_10" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_11" [label="11:  UnaryOperator \n   n$3=*&something:int [line 92, column 7]\n  *&something:int=(n$3 + 1) [line 92, column 7]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_12" ;
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_15" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_13" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 83, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_11" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_10" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_12" [label="12:  DeclStmt \n   *&something:int=1 [line 91, column 7]\n " shape="box"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_16" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_9" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 83, column 5]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_12" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_11" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 90, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_17" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_7" ;
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" [label="18:  DeclStmt \n   *&value:int=0 [line 80, column 3]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_13" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_12" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 90, column 5]\n " shape="invhouse"]
+	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_1" [label="1: Start test_switch5\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 102, column 1]\n " color=yellow style=filled]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_14" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_8" ;
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_14" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_9" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_15" [label="15:  DeclStmt \n   *&z:int=9 [line 87, column 7]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_1" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_2" [label="2: Exit test_switch5 \n  " color=yellow style=filled]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_15" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_12" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_16" [label="16:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 85, column 7]\n " shape="box"]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" [label="3:  Return Stmt \n   *&return:int=0 [line 115, column 3]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_16" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 84, column 5]\n " shape="invhouse"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_2" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" [label="4: + \n  " ]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_17" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_16" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_18" [label="18: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 84, column 5]\n " shape="invhouse"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 104, column 10]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_18" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_13" ;
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_18" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_14" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_19" [label="19:  BinaryOperatorStmt: Assign \n   n$6=*&value:int [line 83, column 9]\n  *&x:int=(n$6 + 1) [line 83, column 5]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" ;
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_5" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 104, column 10]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_19" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_16" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_20" [label="20:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 82, column 5]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_6" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 104, column 10]\n " shape="invhouse"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_20" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_19" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_21" [label="21:  DeclStmt \n   *&x:int=1 [line 81, column 5]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_7" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_3" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" [label="8:  SwitchStmt \n   n$1=*&value:int [line 105, column 13]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_21" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_20" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_22" [label="22:  DeclStmt \n   *&value:int=0 [line 79, column 3]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" ;
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_8" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 111, column 9]\n " shape="box"]
 	
 
-	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_22" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_4" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_1" [label="1: Start m5\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 103, column 1]\n " color=yellow style=filled]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" [label="10:  BinaryOperatorStmt: Assign \n   n$5=*&value:int [line 108, column 11]\n  *&x:int=(n$5 + 1) [line 108, column 7]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_1" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_15" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_2" [label="2: Exit m5 \n  " color=yellow style=filled]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" [label="11:  Call _fun_printf \n   n$6=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 107, column 7]\n " shape="box"]
 	
 
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 116, column 3]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_11" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_10" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$1 == 0), true); [line 110, column 7]\n " shape="invhouse"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_3" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_2" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" [label="4: + \n  " ]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_12" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_9" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$1 == 0), false); [line 110, column 7]\n " shape="invhouse"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_5" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 105, column 10]\n " shape="box"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_13" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" [label="14:  DeclStmt \n   *&value:int=0 [line 103, column 3]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_5" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_6" ;
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_5" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_7" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 105, column 10]\n " shape="invhouse"]
+	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_1" [label="1: Start test_switch6\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&z,&something,&value); [line 118, column 1]\n " color=yellow style=filled]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_6" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 105, column 10]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_1" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_23" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_2" [label="2: Exit test_switch6 \n  " color=yellow style=filled]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_7" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_3" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" [label="8:  Switch_stmt \n   n$1=*&value:int [line 106, column 13]\n " shape="box"]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_3" [label="3:  Return Stmt \n   *&return:int=0 [line 133, column 3]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_10" ;
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_11" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" [label="9:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 112, column 9]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_3" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_2" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_4" [label="4: + \n  " ]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_10" [label="10: Prune (true branch, switch) \n   PRUNE((n$1 == 0), true); [line 111, column 7]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_4" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_10" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_5" [label="5:  BinaryOperatorStmt: GT \n   n$1=*&value:int [line 120, column 11]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_10" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_11" [label="11: Prune (false branch, switch) \n   PRUNE(!(n$1 == 0), false); [line 111, column 7]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_5" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_6" ;
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_5" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_7" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 120, column 11]\n " shape="invhouse"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_11" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_12" [label="12:  BinaryOperatorStmt: Assign \n   n$5=*&value:int [line 109, column 11]\n  *&x:int=(n$5 + 1) [line 109, column 7]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_6" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_8" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 120, column 11]\n " shape="invhouse"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_12" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" [label="13:  Call _fun_printf \n   n$6=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 108, column 7]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_7" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_9" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 120, column 11]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_12" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_14" [label="14:  DeclStmt \n   *&x:int=1 [line 107, column 7]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_8" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_4" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 120, column 11]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_14" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_15" [label="15:  DeclStmt \n   *&value:int=0 [line 104, column 3]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_9" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_4" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_10" [label="10:  SwitchStmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 120, column 11]\n " shape="box"]
 	
 
-	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_15" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_1" [label="1: Start m6\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&z,&something,&value); [line 119, column 1]\n " color=yellow style=filled]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_21" ;
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_10" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_22" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_11" [label="11:  DeclStmt \n   *&z:int=9 [line 128, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_1" -> "m6.36604411a85db2bd9e97e22bfb5b692d_23" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_2" [label="2: Exit m6 \n  " color=yellow style=filled]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_11" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_12" [label="12:  UnaryOperator \n   n$5=*&something:int [line 126, column 7]\n  *&something:int=(n$5 + 1) [line 126, column 7]\n " shape="box"]
 	
 
-"m6.36604411a85db2bd9e97e22bfb5b692d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 134, column 3]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_12" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_13" [label="13:  DeclStmt \n   *&something:int=1 [line 125, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_3" -> "m6.36604411a85db2bd9e97e22bfb5b692d_2" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_4" [label="4: + \n  " ]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_13" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_12" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_14" [label="14:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 122, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_4" -> "m6.36604411a85db2bd9e97e22bfb5b692d_10" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_5" [label="5:  BinaryOperatorStmt: GT \n   n$1=*&value:int [line 121, column 11]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_14" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$2 == 3), true); [line 130, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_5" -> "m6.36604411a85db2bd9e97e22bfb5b692d_6" ;
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_5" -> "m6.36604411a85db2bd9e97e22bfb5b692d_7" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 121, column 11]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_15" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$2 == 3), false); [line 130, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_6" -> "m6.36604411a85db2bd9e97e22bfb5b692d_8" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 121, column 11]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_16" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_17" [label="17: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 129, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_7" -> "m6.36604411a85db2bd9e97e22bfb5b692d_9" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=1 [line 121, column 11]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_17" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_3" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_18" [label="18: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 129, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_8" -> "m6.36604411a85db2bd9e97e22bfb5b692d_4" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:int=0 [line 121, column 11]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_18" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_15" ;
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_18" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_16" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_19" [label="19: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 124, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_9" -> "m6.36604411a85db2bd9e97e22bfb5b692d_4" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_10" [label="10:  Switch_stmt \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$0:int [line 121, column 11]\n " shape="box"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_19" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_13" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_20" [label="20: Prune (false branch, switch) \n   PRUNE(!(n$2 == 1), false); [line 124, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_10" -> "m6.36604411a85db2bd9e97e22bfb5b692d_21" ;
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_10" -> "m6.36604411a85db2bd9e97e22bfb5b692d_22" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$2 == 3), true); [line 131, column 5]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_20" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_17" ;
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_20" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_18" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 121, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_11" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$2 == 3), false); [line 131, column 5]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_21" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_14" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_22" [label="22: Prune (false branch, switch) \n   PRUNE(!(n$2 == 0), false); [line 121, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_12" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$2 == 2), true); [line 130, column 5]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_19" ;
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_22" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_20" ;
+"test_switch6.a23e54b3840073f4ece330ef3c560915_23" [label="23:  DeclStmt \n   *&value:int=0 [line 119, column 3]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_13" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$2 == 2), false); [line 130, column 5]\n " shape="invhouse"]
+	 "test_switch6.a23e54b3840073f4ece330ef3c560915_23" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_5" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_1" [label="1: Start test_switch7\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 138, column 1]\n " color=yellow style=filled]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_14" -> "m6.36604411a85db2bd9e97e22bfb5b692d_11" ;
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_14" -> "m6.36604411a85db2bd9e97e22bfb5b692d_12" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_15" [label="15:  DeclStmt \n   *&z:int=9 [line 129, column 7]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_1" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_2" [label="2: Exit test_switch7 \n  " color=yellow style=filled]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_15" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_16" [label="16:  UnaryOperator \n   n$5=*&something:int [line 127, column 7]\n  *&something:int=(n$5 + 1) [line 127, column 7]\n " shape="box"]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" [label="3:  Return Stmt \n   *&return:int=0 [line 153, column 3]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_16" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_17" [label="17:  DeclStmt \n   *&something:int=1 [line 126, column 7]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_2" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" [label="4:  SwitchStmt \n   n$0=_fun_getValue() [line 140, column 11]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_17" -> "m6.36604411a85db2bd9e97e22bfb5b692d_16" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$2 == 1), true); [line 125, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" ;
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" [label="5:  DeclStmt \n   *&z:int=9 [line 148, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_18" -> "m6.36604411a85db2bd9e97e22bfb5b692d_17" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_19" [label="19: Prune (false branch, switch) \n   PRUNE(!(n$2 == 1), false); [line 125, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_5" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" [label="6:  UnaryOperator \n   n$3=*&something:int [line 146, column 7]\n  *&something:int=(n$3 + 1) [line 146, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_19" -> "m6.36604411a85db2bd9e97e22bfb5b692d_13" ;
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_19" -> "m6.36604411a85db2bd9e97e22bfb5b692d_14" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_20" [label="20:  Call _fun_printf \n   n$7=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 123, column 7]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" [label="7:  DeclStmt \n   *&something:int=1 [line 145, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_20" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$2 == 0), true); [line 122, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_6" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" [label="8:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 142, column 7]\n " shape="box"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_21" -> "m6.36604411a85db2bd9e97e22bfb5b692d_20" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_22" [label="22: Prune (false branch, switch) \n   PRUNE(!(n$2 == 0), false); [line 122, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" [label="9: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 150, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_22" -> "m6.36604411a85db2bd9e97e22bfb5b692d_18" ;
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_22" -> "m6.36604411a85db2bd9e97e22bfb5b692d_19" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_23" [label="23:  DeclStmt \n   *&value:int=0 [line 120, column 3]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" [label="10: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 150, column 5]\n " shape="invhouse"]
 	
 
-	 "m6.36604411a85db2bd9e97e22bfb5b692d_23" -> "m6.36604411a85db2bd9e97e22bfb5b692d_5" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_1" [label="1: Start m7\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 139, column 1]\n " color=yellow style=filled]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 149, column 5]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_1" -> "m7.0449904fbf32607bf8ce5c26823dbc29_17" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_2" [label="2: Exit m7 \n  " color=yellow style=filled]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_3" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 149, column 5]\n " shape="invhouse"]
 	
 
-"m7.0449904fbf32607bf8ce5c26823dbc29_3" [label="3:  Return Stmt \n   *&return:int=0 [line 154, column 3]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_9" ;
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_10" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" [label="13: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 144, column 5]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_3" -> "m7.0449904fbf32607bf8ce5c26823dbc29_2" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_4" [label="4:  Switch_stmt \n   n$0=_fun_getValue() [line 141, column 11]\n " shape="box"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_7" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" [label="14: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 144, column 5]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_4" -> "m7.0449904fbf32607bf8ce5c26823dbc29_15" ;
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_4" -> "m7.0449904fbf32607bf8ce5c26823dbc29_16" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_5" [label="5: Prune (true branch, switch) \n   PRUNE((n$0 == 3), true); [line 151, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_11" ;
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_12" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 141, column 5]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_5" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_6" [label="6: Prune (false branch, switch) \n   PRUNE(!(n$0 == 3), false); [line 151, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_15" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_8" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 141, column 5]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_6" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_7" [label="7: Prune (true branch, switch) \n   PRUNE((n$0 == 2), true); [line 150, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_13" ;
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_16" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_14" ;
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" [label="17:  DeclStmt \n   *&value:int=0 [line 139, column 3]\n " shape="box"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_7" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_8" [label="8: Prune (false branch, switch) \n   PRUNE(!(n$0 == 2), false); [line 150, column 5]\n " shape="invhouse"]
+	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_1" [label="1: Start test_switch8\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&z,&something,&value); [line 156, column 1]\n " color=yellow style=filled]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_8" -> "m7.0449904fbf32607bf8ce5c26823dbc29_5" ;
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_8" -> "m7.0449904fbf32607bf8ce5c26823dbc29_6" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_9" [label="9:  DeclStmt \n   *&z:int=9 [line 149, column 7]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_1" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" [label="2: Exit test_switch8 \n  " color=yellow style=filled]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_9" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_10" [label="10:  UnaryOperator \n   n$3=*&something:int [line 147, column 7]\n  *&something:int=(n$3 + 1) [line 147, column 7]\n " shape="box"]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" [label="3:  Return Stmt \n   *&return:int=0 [line 175, column 3]\n " shape="box"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_10" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_11" [label="11:  DeclStmt \n   *&something:int=1 [line 146, column 7]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" [label="4: + \n  " ]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_11" -> "m7.0449904fbf32607bf8ce5c26823dbc29_10" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_12" [label="12: Prune (true branch, switch) \n   PRUNE((n$0 == 1), true); [line 145, column 5]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 158, column 10]\n " shape="box"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_12" -> "m7.0449904fbf32607bf8ce5c26823dbc29_11" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_13" [label="13: Prune (false branch, switch) \n   PRUNE(!(n$0 == 1), false); [line 145, column 5]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_5" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 158, column 10]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_13" -> "m7.0449904fbf32607bf8ce5c26823dbc29_7" ;
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_13" -> "m7.0449904fbf32607bf8ce5c26823dbc29_8" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_14" [label="14:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 143, column 7]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_6" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 158, column 10]\n " shape="invhouse"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_14" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 142, column 5]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_7" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_3" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" [label="8:  DeclStmt \n   *&a:int=0 [line 173, column 5]\n " shape="box"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_15" -> "m7.0449904fbf32607bf8ce5c26823dbc29_14" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 142, column 5]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" [label="9: + \n  " ]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_16" -> "m7.0449904fbf32607bf8ce5c26823dbc29_12" ;
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_16" -> "m7.0449904fbf32607bf8ce5c26823dbc29_13" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_17" [label="17:  DeclStmt \n   *&value:int=0 [line 140, column 3]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" [label="10:  BinaryOperatorStmt: EQ \n   n$2=_fun_getValue() [line 159, column 13]\n " shape="box"]
 	
 
-	 "m7.0449904fbf32607bf8ce5c26823dbc29_17" -> "m7.0449904fbf32607bf8ce5c26823dbc29_4" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_1" [label="1: Start m8\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&z,&something,&value); [line 157, column 1]\n " color=yellow style=filled]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_10" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE((n$2 == 0), true); [line 159, column 13]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_1" -> "m8.980b79c2a71b9bcc117e08a990b5b332_29" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_2" [label="2: Exit m8 \n  " color=yellow style=filled]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_11" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 == 0), false); [line 159, column 13]\n " shape="invhouse"]
 	
 
-"m8.980b79c2a71b9bcc117e08a990b5b332_3" [label="3:  Return Stmt \n   *&return:int=0 [line 176, column 3]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_12" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" [label="13:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 159, column 13]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_3" -> "m8.980b79c2a71b9bcc117e08a990b5b332_2" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_4" [label="4: + \n  " ]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_13" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" [label="14:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=2 [line 159, column 13]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_4" -> "m8.980b79c2a71b9bcc117e08a990b5b332_5" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_5" [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int [line 159, column 10]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_14" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_9" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" [label="15:  SwitchStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 159, column 13]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_5" -> "m8.980b79c2a71b9bcc117e08a990b5b332_6" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_5" -> "m8.980b79c2a71b9bcc117e08a990b5b332_7" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 < 10), true); [line 159, column 10]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_15" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" [label="16:  DeclStmt \n   *&z:int=9 [line 168, column 9]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_6" -> "m8.980b79c2a71b9bcc117e08a990b5b332_10" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 < 10), false); [line 159, column 10]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_16" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" [label="17:  UnaryOperator \n   n$7=*&something:int [line 165, column 9]\n  *&something:int=(n$7 + 1) [line 165, column 9]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_7" -> "m8.980b79c2a71b9bcc117e08a990b5b332_3" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_8" [label="8:  DeclStmt \n   *&a:int=0 [line 174, column 5]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" [label="18:  DeclStmt \n   *&something:int=1 [line 164, column 9]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_8" -> "m8.980b79c2a71b9bcc117e08a990b5b332_4" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_9" [label="9: + \n  " ]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_17" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" [label="19:  Return Stmt \n   *&return:int=0 [line 162, column 9]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_9" -> "m8.980b79c2a71b9bcc117e08a990b5b332_15" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_10" [label="10:  BinaryOperatorStmt: EQ \n   n$2=_fun_getValue() [line 160, column 13]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_2" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" [label="20:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 161, column 9]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_10" -> "m8.980b79c2a71b9bcc117e08a990b5b332_11" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_10" -> "m8.980b79c2a71b9bcc117e08a990b5b332_12" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE((n$2 == 0), true); [line 160, column 13]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_19" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" [label="21: Prune (true branch, switch) \n   PRUNE((n$3 == 3), true); [line 170, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_11" -> "m8.980b79c2a71b9bcc117e08a990b5b332_13" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!(n$2 == 0), false); [line 160, column 13]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" [label="22: Prune (false branch, switch) \n   PRUNE(!(n$3 == 3), false); [line 170, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_12" -> "m8.980b79c2a71b9bcc117e08a990b5b332_14" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_13" [label="13:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=1 [line 160, column 13]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" [label="23: Prune (true branch, switch) \n   PRUNE((n$3 == 2), true); [line 169, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_13" -> "m8.980b79c2a71b9bcc117e08a990b5b332_9" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_14" [label="14:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$1:int=2 [line 160, column 13]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_8" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" [label="24: Prune (false branch, switch) \n   PRUNE(!(n$3 == 2), false); [line 169, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_14" -> "m8.980b79c2a71b9bcc117e08a990b5b332_9" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_15" [label="15:  Switch_stmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 160, column 13]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_21" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_22" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" [label="25: Prune (true branch, switch) \n   PRUNE((n$3 == 1), true); [line 163, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_15" -> "m8.980b79c2a71b9bcc117e08a990b5b332_27" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_15" -> "m8.980b79c2a71b9bcc117e08a990b5b332_28" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_16" [label="16: Prune (true branch, switch) \n   PRUNE((n$3 == 3), true); [line 171, column 7]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_18" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" [label="26: Prune (false branch, switch) \n   PRUNE(!(n$3 == 1), false); [line 163, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_16" -> "m8.980b79c2a71b9bcc117e08a990b5b332_8" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_17" [label="17: Prune (false branch, switch) \n   PRUNE(!(n$3 == 3), false); [line 171, column 7]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_23" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_24" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 160, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_17" -> "m8.980b79c2a71b9bcc117e08a990b5b332_8" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_18" [label="18: Prune (true branch, switch) \n   PRUNE((n$3 == 2), true); [line 170, column 7]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_27" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_20" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" [label="28: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 160, column 7]\n " shape="invhouse"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_18" -> "m8.980b79c2a71b9bcc117e08a990b5b332_8" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_19" [label="19: Prune (false branch, switch) \n   PRUNE(!(n$3 == 2), false); [line 170, column 7]\n " shape="invhouse"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_25" ;
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_28" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_26" ;
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" [label="29:  DeclStmt \n   *&value:int=0 [line 157, column 3]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_19" -> "m8.980b79c2a71b9bcc117e08a990b5b332_16" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_19" -> "m8.980b79c2a71b9bcc117e08a990b5b332_17" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_20" [label="20:  DeclStmt \n   *&z:int=9 [line 169, column 9]\n " shape="box"]
+	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_1" [label="1: Start test_switch9\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 178, column 1]\n " color=yellow style=filled]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_20" -> "m8.980b79c2a71b9bcc117e08a990b5b332_8" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_21" [label="21:  UnaryOperator \n   n$7=*&something:int [line 166, column 9]\n  *&something:int=(n$7 + 1) [line 166, column 9]\n " shape="box"]
+	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_1" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" ;
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_2" [label="2: Exit test_switch9 \n  " color=yellow style=filled]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_21" -> "m8.980b79c2a71b9bcc117e08a990b5b332_4" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_22" [label="22:  DeclStmt \n   *&something:int=1 [line 165, column 9]\n " shape="box"]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 181, column 3]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_22" -> "m8.980b79c2a71b9bcc117e08a990b5b332_21" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_23" [label="23: Prune (true branch, switch) \n   PRUNE((n$3 == 1), true); [line 164, column 7]\n " shape="invhouse"]
+	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_2" ;
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" [label="4:  SwitchStmt \n   n$0=*&value:int [line 180, column 11]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_23" -> "m8.980b79c2a71b9bcc117e08a990b5b332_22" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_24" [label="24: Prune (false branch, switch) \n   PRUNE(!(n$3 == 1), false); [line 164, column 7]\n " shape="invhouse"]
+	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_3" ;
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" [label="5:  DeclStmt \n   *&value:int=0 [line 179, column 3]\n " shape="box"]
 	
 
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_24" -> "m8.980b79c2a71b9bcc117e08a990b5b332_18" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_24" -> "m8.980b79c2a71b9bcc117e08a990b5b332_19" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_25" [label="25:  Return Stmt \n   *&return:int=0 [line 163, column 9]\n " shape="box"]
-	
-
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_25" -> "m8.980b79c2a71b9bcc117e08a990b5b332_2" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_26" [label="26:  Call _fun_printf \n   n$8=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 162, column 9]\n " shape="box"]
-	
-
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_26" -> "m8.980b79c2a71b9bcc117e08a990b5b332_25" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_27" [label="27: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 161, column 7]\n " shape="invhouse"]
-	
-
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_27" -> "m8.980b79c2a71b9bcc117e08a990b5b332_26" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_28" [label="28: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 161, column 7]\n " shape="invhouse"]
-	
-
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_28" -> "m8.980b79c2a71b9bcc117e08a990b5b332_23" ;
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_28" -> "m8.980b79c2a71b9bcc117e08a990b5b332_24" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_29" [label="29:  DeclStmt \n   *&value:int=0 [line 158, column 3]\n " shape="box"]
-	
-
-	 "m8.980b79c2a71b9bcc117e08a990b5b332_29" -> "m8.980b79c2a71b9bcc117e08a990b5b332_4" ;
-"m9.5bbb291cc1e38a051365ee9edb7cbd14_1" [label="1: Start m9\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 179, column 1]\n " color=yellow style=filled]
-	
-
-	 "m9.5bbb291cc1e38a051365ee9edb7cbd14_1" -> "m9.5bbb291cc1e38a051365ee9edb7cbd14_5" ;
-"m9.5bbb291cc1e38a051365ee9edb7cbd14_2" [label="2: Exit m9 \n  " color=yellow style=filled]
-	
-
-"m9.5bbb291cc1e38a051365ee9edb7cbd14_3" [label="3:  Return Stmt \n   *&return:int=0 [line 182, column 3]\n " shape="box"]
-	
-
-	 "m9.5bbb291cc1e38a051365ee9edb7cbd14_3" -> "m9.5bbb291cc1e38a051365ee9edb7cbd14_2" ;
-"m9.5bbb291cc1e38a051365ee9edb7cbd14_4" [label="4:  Switch_stmt \n   n$0=*&value:int [line 181, column 11]\n " shape="box"]
-	
-
-	 "m9.5bbb291cc1e38a051365ee9edb7cbd14_4" -> "m9.5bbb291cc1e38a051365ee9edb7cbd14_3" ;
-"m9.5bbb291cc1e38a051365ee9edb7cbd14_5" [label="5:  DeclStmt \n   *&value:int=0 [line 180, column 3]\n " shape="box"]
-	
-
-	 "m9.5bbb291cc1e38a051365ee9edb7cbd14_5" -> "m9.5bbb291cc1e38a051365ee9edb7cbd14_4" ;
+	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_4" ;
 }

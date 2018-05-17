@@ -15,7 +15,7 @@ type continuation =
   { break: Procdesc.Node.t list
   ; continue: Procdesc.Node.t list
   ; return_temp: bool
-  (* true if temps should not be removed in the node but returned to ancestors *) }
+        (** true if temps should not be removed in the node but returned to ancestors *) }
 
 type priority_node = Free | Busy of Clang_ast_t.pointer
 

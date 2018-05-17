@@ -32,3 +32,5 @@ val to_string : t -> string
 
 val pp_file_pos : Format.formatter -> t -> unit
 (** Pretty print a file-position of a location *)
+
+val pp_range : Format.formatter -> t * t -> unit
