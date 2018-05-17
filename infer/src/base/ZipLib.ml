@@ -10,7 +10,7 @@
 open! IStd
 open PolyVariantEqual
 
-type zip_library = {zip_filename: string; zip_channel: Zip.in_file Lazy.t; models: bool}
+type zip_library = {zip_filename: string; zip_channel: Zip.in_file Lazy.t}
 
 let get_cache_dir infer_cache zip_filename =
   let basename = Filename.basename zip_filename in
@@ -64,16 +64,14 @@ let load_data serializer path zip_library =
 let zip_libraries =
   (* delay until load is called, to avoid stating/opening files at init time *)
   lazy
-    (let mk_zip_lib models zip_filename =
-       {models; zip_filename; zip_channel= lazy (Zip.open_in zip_filename)}
-     in
+    (let mk_zip_lib zip_filename = {zip_filename; zip_channel= lazy (Zip.open_in zip_filename)} in
      let zip_libs =
        if Config.use_jar_cache && Option.is_some Config.infer_cache then []
        else
          let load_zip fname =
            if Filename.check_suffix fname ".jar" then
              (* fname is a zip of specs *)
-             Some (mk_zip_lib false fname)
+             Some (mk_zip_lib fname)
            else (* fname is a dir of specs *)
              None
          in
@@ -83,7 +81,7 @@ let zip_libraries =
          List.rev_filter_map Config.specs_library ~f:load_zip
      in
      if Config.biabduction && not Config.models_mode && Sys.file_exists Config.models_jar = `Yes
-     then mk_zip_lib true Config.models_jar :: zip_libs
+     then mk_zip_lib Config.models_jar :: zip_libs
      else zip_libs)
 
 
