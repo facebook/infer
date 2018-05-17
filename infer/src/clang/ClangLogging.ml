@@ -8,9 +8,10 @@
  *)
 open! IStd
 
-let log_caught_exception (trans_unit_ctx: CFrontend_config.translation_unit_context) exception_type
-    exception_triggered_location (source_location_start, source_location_end) ast_node =
-  let caught_exception =
+let log_frontend_exception (trans_unit_ctx: CFrontend_config.translation_unit_context)
+    exception_type exception_triggered_location (source_location_start, source_location_end)
+    ast_node =
+  let frontend_exception =
     EventLogger.FrontendException
       { exception_type
       ; source_location_start=
@@ -21,7 +22,18 @@ let log_caught_exception (trans_unit_ctx: CFrontend_config.translation_unit_cont
       ; ast_node
       ; lang= CFrontend_config.string_of_clang_lang trans_unit_ctx.lang }
   in
-  EventLogger.log caught_exception
+  EventLogger.log frontend_exception
+
+
+let log_caught_exception trans_unit_ctx exception_type exception_triggered_location source_range
+    ast_node =
+  log_frontend_exception trans_unit_ctx exception_type exception_triggered_location source_range
+    ast_node
+
+
+let log_unexpected_decl trans_unit_ctx exception_triggered_location source_range ast_node =
+  log_frontend_exception trans_unit_ctx "Skipped declaration inside a class"
+    exception_triggered_location source_range ast_node
 
 
 let log_broken_cfg ~broken_node procdesc exception_triggered_location ~lang =

@@ -15,3 +15,7 @@ val log_caught_exception :
 
 val log_broken_cfg :
   broken_node:[`Join | `Other] -> Procdesc.t -> Logging.ocaml_pos -> lang:string -> unit
+
+val log_unexpected_decl :
+  CFrontend_config.translation_unit_context -> Logging.ocaml_pos
+  -> Clang_ast_t.source_location * Clang_ast_t.source_location -> string option -> unit
