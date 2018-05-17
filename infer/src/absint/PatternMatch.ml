@@ -278,7 +278,7 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
   List.rev !res
 
 
-let override_exists f tenv proc_name =
+let override_exists ?(check_current_type= true) f tenv proc_name =
   let method_name = Typ.Procname.get_method proc_name in
   let rec super_type_exists_ tenv super_class_name =
     match Tenv.lookup tenv super_class_name with
@@ -297,7 +297,7 @@ let override_exists f tenv proc_name =
     List.exists ~f:(super_type_exists_ tenv)
       (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
   in
-  f proc_name
+  (check_current_type && f proc_name)
   ||
   match proc_name with
   | Typ.Procname.Java proc_name_java ->

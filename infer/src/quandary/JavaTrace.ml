@@ -171,7 +171,7 @@ module SourceKind = struct
     in
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.Java java_pname
+    | Typ.Procname.Java java_pname as pname
       -> (
         let method_name = Typ.Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
@@ -217,7 +217,10 @@ module SourceKind = struct
             | Some typ ->
                 if
                   Annotations.struct_typ_has_annot typ Annotations.ia_is_thrift_service
-                  && PredSymb.equal_access (Procdesc.get_access pdesc) PredSymb.Public
+                  && PatternMatch.override_exists ~check_current_type:false
+                       (fun superclass_pname ->
+                         String.equal (Typ.Procname.get_method superclass_pname) method_name )
+                       tenv pname
                 then
                   (* assume every non-this formal of a Thrift service is tainted *)
                   (* TODO: may not want to taint numbers or Enum's *)

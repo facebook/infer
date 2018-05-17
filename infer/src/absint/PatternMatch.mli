@@ -50,9 +50,9 @@ val proc_calls :
   -> (Typ.Procname.t -> ProcAttributes.t -> bool) -> (Typ.Procname.t * ProcAttributes.t) list
 (** Return the callees that satisfy [filter]. *)
 
-val override_exists : (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
-(** Return true if applying the given predicate to an override of [procname] or [procname] itself
-    returns true. For the moment, this only works for Java *)
+val override_exists :
+  ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
+(** Return true if applying the given predicate to an override of [procname] (including [procname] itself when [check_current_type] is true, which it is by default) returns true. *)
 
 val override_iter : (Typ.Procname.t -> unit) -> Tenv.t -> Typ.Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
