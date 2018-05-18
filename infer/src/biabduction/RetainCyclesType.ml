@@ -73,6 +73,25 @@ let is_isa_field node =
       false
 
 
+let is_modelled_type node =
+  let modelled_types =
+    [ "NSArray"
+    ; "NSData"
+    ; "NSDictionary"
+    ; "NSMutableArray"
+    ; "NSMutableDictionary"
+    ; "NSNumber"
+    ; "NSString" ]
+  in
+  match node with
+  | Object obj ->
+      List.exists
+        ~f:(fun model -> String.equal model (Typ.to_string obj.rc_from.rc_node_typ))
+        modelled_types
+  | Block _ ->
+      false
+
+
 let _retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
@@ -125,6 +144,10 @@ let normalize_cycle cycle =
 let create_cycle cycle =
   (*isa is an internal field not accessible or writable, so it doesn't make sense in a cycle *)
   if List.exists ~f:is_isa_field cycle then None
+    (* The modelled types, where the models are meant to catch NPEs or Memory Leaks, include fields
+     that don't necessarily reflect the real code, so potential retain cycles including them are
+     probably wrong. *)
+  else if List.exists ~f:is_modelled_type cycle then None
   else
     match cycle with
     | [hd] ->
