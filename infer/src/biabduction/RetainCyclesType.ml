@@ -92,6 +92,10 @@ let is_modelled_type node =
       false
 
 
+let is_exp_null node =
+  match node with Object obj -> Exp.is_null_literal obj.rc_from.rc_node_exp | Block _ -> false
+
+
 let _retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
@@ -148,6 +152,8 @@ let create_cycle cycle =
      that don't necessarily reflect the real code, so potential retain cycles including them are
      probably wrong. *)
   else if List.exists ~f:is_modelled_type cycle then None
+    (* There are some false positives where we report on null expressions, we can eliminate them here *)
+  else if List.exists ~f:is_exp_null cycle then None
   else
     match cycle with
     | [hd] ->
