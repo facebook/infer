@@ -94,6 +94,22 @@ let rec is_function_typ = function
 module Domain = struct
   include AbstractDomain.Map (Base) (CapabilityDomain)
 
+  let report message loc ltr summary =
+    let exn = Exceptions.Checkers (IssueType.use_after_lifetime, Localise.verbatim_desc message) in
+    Reporting.log_error summary ~loc ~ltr exn
+
+
+  let report_return_stack_var (var, _) loc summary =
+    let message =
+      F.asprintf "Reference to stack variable %a is returned at %a" Var.pp var Location.pp loc
+    in
+    let ltr =
+      [ Errlog.make_trace_element 0 loc "Return of stack variable" []
+      ; Errlog.make_trace_element 0 loc "End of procedure" [] ]
+    in
+    report message loc ltr summary
+
+
   let report_use_after_lifetime (var, _) ~use_loc ~invalidated_loc summary =
     let message =
       F.asprintf "Variable %a is used at line %a after its lifetime ended at %a" Var.pp var
@@ -103,8 +119,7 @@ module Domain = struct
       [ Errlog.make_trace_element 0 invalidated_loc "End of variable lifetime" []
       ; Errlog.make_trace_element 0 use_loc "Use of invalid variable" [] ]
     in
-    let exn = Exceptions.Checkers (IssueType.use_after_lifetime, Localise.verbatim_desc message) in
-    Reporting.log_error summary ~loc:use_loc ~ltr exn
+    report message use_loc ltr summary
 
 
   (* complain if we do not have the right capability to access [var] *)
@@ -164,34 +179,42 @@ module Domain = struct
     else add lhs_base (CapabilityDomain.make_borrowed_vars rhs_vars) astate
 
 
+  (* copy capability if it exists, consider borrowing if it doesn't *)
+  let copy_or_borrow_var lhs_base rhs_base astate =
+    try
+      let rhs_capability = find rhs_base astate in
+      add lhs_base rhs_capability astate
+    with Caml.Not_found ->
+      if Var.is_cpp_temporary (fst rhs_base) then
+        borrow_vars lhs_base (VarSet.singleton rhs_base) astate
+      else add lhs_base CapabilityDomain.Owned astate
+
+
   (* handle assigning directly to a base var *)
-  let handle_var_assign lhs_base rhs_exp loc summary astate =
-    if Var.is_return (fst lhs_base) then exp_add_reads rhs_exp loc summary astate
-    else
-      match rhs_exp with
-      | HilExp.AccessExpression (Base rhs_base | AddressOf (Base rhs_base))
-        when not (Var.appears_in_source_code (fst rhs_base)) -> (
-        try
-          (* assume assignments with non-source vars on the RHS transfer capabilities to the LHS
-             var *)
-          (* copy capability from RHS to LHS *)
-          let base_capability = find rhs_base astate in
-          add lhs_base base_capability astate
-        with Caml.Not_found ->
-          (* no existing capability on RHS. don't make any assumptions about LHS capability *)
-          remove lhs_base astate )
-      | HilExp.Closure (_, captured_vars) ->
-          (* TODO: can be folded into the case above once we have proper AccessExpressions *)
-          let vars_captured_by_ref =
-            List.fold captured_vars
-              ~f:(fun acc (((_, typ) as base), _) ->
-                match typ.Typ.desc with Typ.Tptr _ -> VarSet.add base acc | _ -> acc )
-              ~init:VarSet.empty
-          in
-          borrow_vars lhs_base vars_captured_by_ref astate
-      | _ ->
-          (* TODO: support capability transfer between source vars, other assignment modes *)
-          exp_add_reads rhs_exp loc summary astate |> remove lhs_base
+  let handle_var_assign ?(is_operator_equal= false) lhs_base rhs_exp loc summary astate =
+    match rhs_exp with
+    | HilExp.Constant _ when not (Var.is_cpp_temporary (fst lhs_base)) ->
+        add lhs_base CapabilityDomain.Owned astate
+    | HilExp.AccessExpression (Base rhs_base | AddressOf (Base rhs_base))
+      when not (Var.appears_in_source_code (fst rhs_base)) ->
+        copy_or_borrow_var lhs_base rhs_base astate
+    | HilExp.Closure (_, captured_vars) ->
+        (* TODO: can be folded into the case above once we have proper AccessExpressions *)
+        let vars_captured_by_ref =
+          List.fold captured_vars
+            ~f:(fun acc (((_, typ) as base), _) ->
+              match typ.Typ.desc with Typ.Tptr _ -> VarSet.add base acc | _ -> acc )
+            ~init:VarSet.empty
+        in
+        borrow_vars lhs_base vars_captured_by_ref astate
+    | HilExp.AccessExpression (Base rhs_base)
+      when not is_operator_equal && Typ.is_reference (snd rhs_base) ->
+        copy_or_borrow_var lhs_base rhs_base astate
+    | HilExp.AccessExpression (AddressOf (Base rhs_base)) when not is_operator_equal ->
+        borrow_vars lhs_base (VarSet.singleton rhs_base) astate
+    | _ ->
+        (* TODO: support capability transfer between source vars, other assignment modes *)
+        exp_add_reads rhs_exp loc summary astate |> remove lhs_base
 
 
   let release_ownership base loc summary astate =
@@ -234,11 +257,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else if Typ.Procname.equal pname BuiltinDecl.__placement_new then
           match List.rev actuals with
           | HilExp.AccessExpression (Base placement_base) :: other_actuals ->
-              (* placement new creates an alias between return var and placement var. model as
-                 return borrowing from placement *)
+              (* TODO: placement new creates an alias between return var and placement var, should
+                 eventually model as return borrowing from placement (see
+                 FN_placement_new_aliasing2_bad test) *)
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add placement_base CapabilityDomain.Owned
-              |> Domain.borrow_vars return_base (VarSet.singleton placement_base) |> Option.some
+              |> Domain.add return_base CapabilityDomain.Owned |> Option.some
           | _ :: other_actuals ->
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add return_base CapabilityDomain.Owned |> Option.some
@@ -312,7 +336,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when Typ.Procname.ObjC_Cpp.is_operator_equal callee_pname ->
         (* TODO: once we go interprocedural, this case should only apply for operator='s with an
            empty summary *)
-        Domain.handle_var_assign lhs_base rhs_exp loc summary astate
+        Domain.handle_var_assign ~is_operator_equal:true lhs_base rhs_exp loc summary astate
     | Call
         ( _
         , Direct (Typ.Procname.ObjC_Cpp callee_pname)
@@ -343,8 +367,35 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
 
+let report_invalid_return post end_loc formal_map summary =
+  (* look for return values that are borrowed from (now-invalid) local variables *)
+  let report_invalid_return base (capability: CapabilityDomain.astate) =
+    if Var.is_return (fst base) then
+      match capability with
+      | BorrowedFrom vars ->
+          VarSet.iter
+            (fun borrowed_base ->
+              if
+                not (FormalMap.is_formal borrowed_base formal_map)
+                && not (Var.is_global (fst borrowed_base))
+              then Domain.report_return_stack_var borrowed_base end_loc summary )
+            vars
+      | InvalidatedAt invalidated_loc ->
+          Domain.report_use_after_lifetime base ~use_loc:end_loc ~invalidated_loc summary
+      | Owned ->
+          ()
+  in
+  Domain.iter report_invalid_return post
+
+
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
   let initial = Domain.empty in
-  ignore (Analyzer.compute_post proc_data ~initial) ;
+  ( match Analyzer.compute_post proc_data ~initial with
+  | Some post ->
+      let end_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
+      let formal_map = FormalMap.make proc_desc in
+      report_invalid_return post end_loc formal_map summary
+  | None ->
+      () ) ;
   summary

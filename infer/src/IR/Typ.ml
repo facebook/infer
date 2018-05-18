@@ -524,6 +524,8 @@ let is_cpp_class = is_class_of_kind Name.Cpp.is_class
 
 let is_pointer typ = match typ.desc with Tptr _ -> true | _ -> false
 
+let is_reference typ = match typ.desc with Tptr (_, Pk_reference) -> true | _ -> false
+
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false
 
 let has_block_prefix s =

@@ -45,6 +45,13 @@ let appears_in_source_code = function
       not (Pvar.is_frontend_tmp pvar)
 
 
+let is_cpp_temporary = function
+  | LogicalVar _ ->
+      false
+  | ProgramVar pvar ->
+      Pvar.is_cpp_temporary pvar
+
+
 let pp fmt = function
   | ProgramVar pv ->
       F.pp_print_string fmt (Pvar.get_simplified_name pv)

@@ -1433,11 +1433,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             ~f:(function
                 | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl ->
                     let pvar = CVar_decl.sil_var_of_decl context decl procname in
-                    let exp = Exp.Lvar pvar in
-                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
-                    cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                      qual_type.Clang_ast_t.qt_type_ptr ~is_inner_destructor:false
+                    if Pvar.is_static_local pvar then
+                      (* don't call destructors on static vars *)
+                      None
+                    else
+                      let exp = Exp.Lvar pvar in
+                      let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                      let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
+                      cxx_destructor_call_trans trans_state_pri stmt_info_loc
+                        this_res_trans_destruct qual_type.Clang_ast_t.qt_type_ptr
+                        ~is_inner_destructor:false
                 | _ ->
                     assert false)
             vars_to_destroy
@@ -2867,7 +2872,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* typ_tmp is 'best guess' type of variable - translation may decide to use different type
        later *)
     let pvar, typ_tmp =
-      mk_temp_sil_var_for_expr context.CContext.tenv procdesc "SIL_materialize_temp__" expr_info
+      mk_temp_sil_var_for_expr context.CContext.tenv procdesc Pvar.materialized_cpp_temporary
+        expr_info
     in
     let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
     let var_exp_typ = (Exp.Lvar pvar, typ_tmp) in

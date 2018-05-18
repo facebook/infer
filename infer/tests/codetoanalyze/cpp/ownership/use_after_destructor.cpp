@@ -136,7 +136,7 @@ S* FN_placement_new_aliasing1_bad() {
   return s; // bad, returning freed memory
 }
 
-S* placement_new_aliasing2_bad() {
+S* FN_placement_new_aliasing2_bad() {
   S* s = new S(1);
   s->~S();
   auto alias = new (s) S(2);
@@ -152,6 +152,11 @@ void placement_new_non_var_ok() {
   m.s->~S();
   new (m.s) S(2);
   delete m.s;
+}
+
+void return_placement_new_ok() {
+  auto mem = new S(1);
+  return new (mem) S(2);
 }
 
 void destructor_in_loop_ok() {

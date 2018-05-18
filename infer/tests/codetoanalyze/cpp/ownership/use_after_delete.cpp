@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct S {
   int f;
@@ -87,6 +88,14 @@ void delete_in_loop_bad() {
 void delete_in_loop_ok() {
   for (int i = 0; i < 10; i++) {
     auto s = new S{1};
+    delete s;
+  }
+}
+
+void delete_ref_in_loop_ok(int j, std::vector<std::string> v) {
+  int i = 0;
+  for (int i = 0; i < 10; i++) {
+    auto s = &v[i];
     delete s;
   }
 }
