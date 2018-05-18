@@ -159,90 +159,66 @@ let test_jni_to_java_type_with_invalid_input =
 
 let test_from_json_string_with_valid_input =
   let create_test input expected _ =
-    let expected = JavaProfilerSamples.ProfilerSample.of_list expected in
     let found = JavaProfilerSamples.from_json_string input in
-    assert_equal ~cmp:JavaProfilerSamples.ProfilerSample.equal expected found
+    assert_equal
+      ~cmp:(List.equal ~equal:JavaProfilerSamples.equal_labeled_profiler_sample)
+      expected found
   in
-  let input1 = "{\"whatever\": {}, \"methods\": [], \"foo\": {}}" in
-  let expected1 = [] in
+  let input1 =
+    "{\"label1\": {\"field1\": {}, \"field2\": {}, \"field3\": {}, \"field4\": {}, \"methods\": \
+     [], \"field6\": {},\"field7\": {}}}"
+  in
+  let expected1 = [("label1", JavaProfilerSamples.ProfilerSample.of_list [])] in
   let input2 =
-    "{\"whatever\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
-     \"methodOne\", \"signature\": \"()V\", \"wat\": \"\"},{\"class\": \"ddd.eee.Fff\", \"boo\": \
-     \"\", \"method\": \"methodTwo\", \"signature\": \"(Ljava/lang/String;[IJ)[[C\", \"wat\": \
-     \"\"},{\"class\": \"ggg.hhh.Iii\", \"boo\": \"\", \"method\": \"<clinit>\", \"signature\": \
+    "{\"label1\": {\"field1\": {}, \"field2\": {}, \"field3\": {}, \"field4\": {}, \"methods\": \
+     [{\"class\": \"ggg.hhh.Iii\", \"boo\": \"\", \"method\": \"<clinit>\", \"signature\": \
      \"(Ljava/lang/String;[IJ)V\", \"wat\": \"\"},{\"class\": \"lll.mmm.Nnn\", \"boo\": \"\", \
      \"method\": \"<init>\", \"signature\": \"(Ljava/lang/String;[IJ)V\", \"wat\": \"\"}], \
-     \"foo\": {}}"
+     \"field6\": {},\"field7\": {}},\"label2\": {\"field1\": {}, \"field2\": {}, \"field3\": {}, \
+     \"field4\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
+     \"methodOne\", \"signature\": \"()V\", \"wat\": \"\"},{\"class\": \"ddd.eee.Fff\", \"boo\": \
+     \"\", \"method\": \"methodTwo\", \"signature\": \"(Ljava/lang/String;[IJ)[[C\", \"wat\": \
+     \"\"}], \"field6\": {},\"field7\": {}}}"
   in
   let expected2 =
-    [ Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "lll.mmm.Nnn")
-             None "<init>"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "lll.mmm.Nnn")
-             None "<init>"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Non_Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "ggg.hhh.Iii")
-             None "<clinit>"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "ggg.hhh.Iii")
-             None "<clinit>"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Non_Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "ddd.eee.Fff")
-             (Some (mk_split (None, "char[][]")))
-             "methodTwo"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "ddd.eee.Fff")
-             (Some (mk_split (None, "char[][]")))
-             "methodTwo"
-             [ mk_split (Some "java.lang", "String")
-             ; mk_split (None, "int[]")
-             ; mk_split (None, "long") ]
-             Java.Non_Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "aaa.bbb.Ccc")
-             (Some (mk_split (None, "void")))
-             "methodOne" [] Java.Static))
-    ; Typ.Procname.(
-        Java
-          (Java.make
-             (Typ.Name.Java.from_string "aaa.bbb.Ccc")
-             (Some (mk_split (None, "void")))
-             "methodOne" [] Java.Non_Static)) ]
+    [ ( "label1"
+      , JavaProfilerSamples.ProfilerSample.of_list
+          [ Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "lll.mmm.Nnn")
+                   None "<init>"
+                   [ mk_split (Some "java.lang", "String")
+                   ; mk_split (None, "int[]")
+                   ; mk_split (None, "long") ]
+                   Java.Non_Static))
+          ; Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "ggg.hhh.Iii")
+                   None "<clinit>"
+                   [ mk_split (Some "java.lang", "String")
+                   ; mk_split (None, "int[]")
+                   ; mk_split (None, "long") ]
+                   Java.Non_Static)) ] )
+    ; ( "label2"
+      , JavaProfilerSamples.ProfilerSample.of_list
+          [ Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "ddd.eee.Fff")
+                   (Some (mk_split (None, "char[][]")))
+                   "methodTwo"
+                   [ mk_split (Some "java.lang", "String")
+                   ; mk_split (None, "int[]")
+                   ; mk_split (None, "long") ]
+                   Java.Non_Static))
+          ; Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "aaa.bbb.Ccc")
+                   (Some (mk_split (None, "void")))
+                   "methodOne" [] Java.Non_Static)) ] ) ]
   in
   [("test_from_json_string_1", input1, expected1); ("test_from_json_string_2", input2, expected2)]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
@@ -260,7 +236,7 @@ let test_from_json_string_with_invalid_input =
   ; ( "test_from_json_string_2"
     , "{\"whatever\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
        \"methodOne\", \"signature\": \"()V\"}], \"foo\": {}}"
-    , Logging.InferUserError "Unexpected JSON input for the description of a single method" )
+    , Logging.InferUserError "Unexpected JSON input for the collection of methods" )
   ; ("test_from_json_string_3", "(", Yojson.Json_error "Line 1, bytes 0-1:\nInvalid token '('") ]
   |> List.map ~f:(fun (name, test_input, expected_exception) ->
          name >:: create_test test_input expected_exception )

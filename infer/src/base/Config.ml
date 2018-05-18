@@ -2043,9 +2043,9 @@ and test_filtering =
 
 and profiler_sample =
   CLOpt.mk_string ~long:"profiler-sample" ~default:""
-    "Specifies the file containing the profiler sample when Infer is run Test Determinator mode. \
+    "Specifies the file containing the profiler samples when Infer is run Test Determinator mode. \
      --test-determinator --modified-lines modified_line_file --profiler-sample \
-     profiler_sample_file"
+     profiler_samples_file"
 
 
 and testing_mode =

@@ -41,6 +41,10 @@ module JNI : sig
   end
 end
 
-val from_json_string : string -> ProfilerSample.t
+type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
-val from_json_file : string -> ProfilerSample.t
+val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_sample -> bool
+
+val from_json_string : string -> labeled_profiler_sample list
+
+val from_json_file : string -> labeled_profiler_sample list

@@ -278,38 +278,46 @@ let create ~classname ~methodname ~signature ~kind =
   Typ.Procname.Java (Typ.Procname.Java.make name java_type_ret_typ methodname java_type_args kind)
 
 
-let create_static = create ~kind:Typ.Procname.Java.Static
+type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
-let create_non_static = create ~kind:Typ.Procname.Java.Non_Static
+let equal_labeled_profiler_sample = [%compare.equal : labeled_profiler_sample]
 
-let from_json json =
-  let methods =
-    match json with
-    | `Assoc [_; ("methods", `List j); _] ->
-        j
-    | _ ->
-        L.(die UserError "Unexpected JSON input for the collection of methods")
+let from_json j =
+  let parse_profiler_result label result =
+    let methods =
+      match result with
+      | `Assoc [_; _; _; _; ("methods", `List j); _; _] ->
+          j
+      | _ ->
+          L.(die UserError "Unexpected JSON input for the collection of methods")
+    in
+    let rec parse_json j acc =
+      match j with
+      | `Assoc
+          [ ("class", `String classname)
+          ; _
+          ; ("method", `String methodname)
+          ; ("signature", `String signature)
+          ; _ ]
+        :: tl ->
+          let procname =
+            create ~kind:Typ.Procname.Java.Non_Static ~classname ~methodname ~signature
+          in
+          parse_json tl (procname :: acc)
+      | [] ->
+          acc
+      | _ ->
+          L.(die UserError "Unexpected JSON input for the description of a single method")
+    in
+    (label, ProfilerSample.of_list (parse_json methods []))
   in
-  let rec parse_json j acc =
-    match j with
-    | `Assoc
-        [ ("class", `String classname)
-        ; _
-        ; ("method", `String methodname)
-        ; ("signature", `String signature)
-        ; _ ]
-      :: tl ->
-        let static_procname = create_static ~classname ~methodname ~signature in
-        let non_static_procname = create_non_static ~classname ~methodname ~signature in
-        parse_json tl (static_procname :: non_static_procname :: acc)
-    | [] ->
-        acc
-    | _ ->
-        L.(die UserError "Unexpected JSON input for the description of a single method")
-  in
-  parse_json methods []
+  match j with
+  | `Assoc pr ->
+      List.map ~f:(fun (label, result) -> parse_profiler_result label result) pr
+  | _ ->
+      L.(die UserError "Unexpected JSON input for the list of profiler results")
 
 
-let from_json_string str = ProfilerSample.of_list (from_json (Yojson.Basic.from_string str))
+let from_json_string str = from_json (Yojson.Basic.from_string str)
 
-let from_json_file file = ProfilerSample.of_list (from_json (Yojson.Basic.from_file file))
+let from_json_file file = from_json (Yojson.Basic.from_file file)

@@ -78,20 +78,6 @@ let read_changed_lines_file changed_lines_file =
       String.Map.empty
 
 
-let read_test_samples_file test_samples_file =
-  match Utils.read_file test_samples_file with
-  | Ok ts_list ->
-      let test_samples =
-        List.fold ts_list ~init:String.Map.empty ~f:(fun acc test_id ->
-            let test_name, path = String.lsplit2_exn ~on:':' test_id in
-            let tset = JavaProfilerSamples.from_json_file path in
-            String.Map.set acc ~key:test_name ~data:tset )
-      in
-      test_samples
-  | Error _ ->
-      String.Map.empty
-
-
 let print_test_to_run test_to_run =
   L.result "@\n [Result Test Determinator:] Test to run = [" ;
   List.iter ~f:(L.result " %s ") test_to_run ;
@@ -113,11 +99,11 @@ let test_to_run source_file cfg changed_lines_file test_samples_file =
   let fname = SourceFile.to_rel_path source_file in
   let changed_lines = read_changed_lines_file changed_lines_file in
   print_changed_lines changed_lines ;
-  let test_samples = read_test_samples_file test_samples_file in
+  let test_samples = JavaProfilerSamples.from_json_file test_samples_file in
   let affected_methods = compute_affected_methods fname cfg changed_lines in
   let test_to_run =
-    String.Map.fold test_samples ~init:[] ~f:(fun ~key ~data acc ->
-        let intersection = ProfilerSample.inter affected_methods data in
-        if ProfilerSample.is_empty intersection then acc else key :: acc )
+    List.fold test_samples ~init:[] ~f:(fun acc (label, profiler_samples) ->
+        let intersection = ProfilerSample.inter affected_methods profiler_samples in
+        if ProfilerSample.is_empty intersection then acc else label :: acc )
   in
   print_test_to_run test_to_run

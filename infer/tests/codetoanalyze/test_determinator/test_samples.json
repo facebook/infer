@@ -1,0 +1,50 @@
+{
+    "label1": {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "field4": {},
+      "methods": [
+        {
+          "class": "MyFavouriteClassOne",
+          "id": "",
+          "method": "methodOne",
+          "signature": "()V",
+          "src_file": ""
+        },
+        {
+          "class": "MyFavouriteClassTwo",
+          "id": "",
+          "method": "methodTwo",
+          "signature": "(I)I",
+          "src_file": ""
+        }
+      ],
+      "field6": {},
+      "field7": {}
+    },
+    "label2": {
+      "field1": {},
+      "field2": {},
+      "field3": {},
+      "field4": {},
+      "methods": [
+        {
+          "class": "MyFavouriteClassXX",
+          "id": "",
+          "method": "methodOne",
+          "signature": "()V",
+          "src_file": ""
+        },
+        {
+          "class": "MyFavouriteClassYY",
+          "id": "",
+          "method": "methodTwo",
+          "signature": "(I)I",
+          "src_file": ""
+        }
+      ],
+      "field6": {},
+      "field7": {}
+    }
+  }
