@@ -30,6 +30,10 @@ val of_id : Ident.t -> Typ.t -> t
 
 val get_base : t -> AccessPath.base
 
+val replace_base : remove_deref_after_base:bool -> AccessPath.base -> t -> t
+
+val is_base : t -> bool
+
 val get_typ : t -> Tenv.t -> Typ.t option
 
 val pp : Format.formatter -> t -> unit

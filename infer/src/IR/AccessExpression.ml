@@ -49,6 +49,25 @@ let rec get_base = function
       get_base ae
 
 
+let rec replace_base ~remove_deref_after_base base_new access_expr =
+  let replace_base_inner = replace_base ~remove_deref_after_base base_new in
+  match access_expr with
+  | Dereference (Base _) ->
+      if remove_deref_after_base then Base base_new else Dereference (Base base_new)
+  | Base _ ->
+      Base base_new
+  | FieldOffset (ae, fld) ->
+      FieldOffset (replace_base_inner ae, fld)
+  | ArrayOffset (ae, typ, aes) ->
+      ArrayOffset (replace_base_inner ae, typ, aes)
+  | AddressOf ae ->
+      AddressOf (replace_base_inner ae)
+  | Dereference ae ->
+      Dereference (replace_base_inner ae)
+
+
+let is_base = function Base _ -> true | _ -> false
+
 let lookup_field_type_annot tenv base_typ field_name =
   let lookup = Tenv.lookup tenv in
   Typ.Struct.get_field_type_and_annotation ~lookup field_name base_typ

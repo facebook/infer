@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 (** Forward analysis to compute uninitialized variables at each program point *)
-module Domain = AbstractDomain.InvertedSet (AccessPath)
+module Domain = AbstractDomain.InvertedSet (AccessExpression)
 
 (* pre = set of parameters initialized inside the procedure;
    post = set of uninit local variables of the procedure *)

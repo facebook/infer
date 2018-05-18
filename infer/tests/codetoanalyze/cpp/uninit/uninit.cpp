@@ -137,6 +137,7 @@ void ok8() {
 
 struct A {
   int* ptr;
+  int value;
 };
 
 void ok9() {
@@ -145,6 +146,20 @@ void ok9() {
   a.ptr = &i; // no report since the variable could be initialized when passed
               // by reference.
   init(a.ptr);
+}
+
+int field_passed_by_ref_ok() {
+  A a;
+  init(&a.value);
+  return a.value;
+}
+
+void init_double_pointer(int**);
+
+int pointer_passed_by_ref_ok() {
+  int* i;
+  init_double_pointer(&i);
+  return *i;
 }
 
 int array_initialized_ok(int N, int index) {
