@@ -38,3 +38,27 @@ void for_loop() {
     a[i] = 'a'; /* BUG */
   }
 }
+
+void nop() { int k = 0; }
+
+int two_loops(int m) {
+  for (int i = 0; i < m; i++) {
+    nop();
+  }
+  for (int j = 0; j < m; j++) {
+    nop();
+  }
+  return m;
+}
+
+void call_two_loops_Good() {
+  int a[10];
+  int m = 5;
+  a[two_loops(m)] = 1;
+}
+
+void call_two_loops_Bad() {
+  int a[10];
+  int m = 15;
+  a[two_loops(m)] = 1;
+}

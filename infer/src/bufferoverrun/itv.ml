@@ -366,6 +366,16 @@ module SymLinear = struct
    fun x -> match get_mone_symbol_opt x with Some _ -> true | None -> false
 
 
+  let is_one_symbol_of : Symbol.t -> t -> bool =
+   fun s x ->
+    Option.value_map (get_one_symbol_opt x) ~default:false ~f:(fun s' -> Symbol.equal s s')
+
+
+  let is_mone_symbol_of : Symbol.t -> t -> bool =
+   fun s x ->
+    Option.value_map (get_mone_symbol_opt x) ~default:false ~f:(fun s' -> Symbol.equal s s')
+
+
   let get_symbols : t -> Symbol.t list =
    fun x -> M.fold (fun symbol _coeff acc -> symbol :: acc) x []
 end
@@ -793,6 +803,12 @@ module Bound = struct
     match (x, y) with
     | PInf, _ | _, PInf ->
         L.(die InternalError) "Lower bound cannot be +oo."
+    | MinMax (n1, Plus, Max, _, s1), Linear (n2, s2)
+      when Int.equal n1 n2 && SymLinear.is_one_symbol_of s1 s2 ->
+        y
+    | MinMax (n1, Minus, Min, _, s1), Linear (n2, s2)
+      when Int.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
+        y
     | _ ->
         if le x y then x else MInf
 
@@ -802,6 +818,12 @@ module Bound = struct
     match (x, y) with
     | MInf, _ | _, MInf ->
         L.(die InternalError) "Upper bound cannot be -oo."
+    | MinMax (n1, Plus, Min, _, s1), Linear (n2, s2)
+      when Int.equal n1 n2 && SymLinear.is_one_symbol_of s1 s2 ->
+        y
+    | MinMax (n1, Minus, Max, _, s1), Linear (n2, s2)
+      when Int.equal n1 n2 && SymLinear.is_mone_symbol_of s1 s2 ->
+        y
     | _ ->
         if le y x then x else PInf
 

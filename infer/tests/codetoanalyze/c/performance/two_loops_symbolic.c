@@ -8,8 +8,6 @@
  */
 void nop() { int k = 0; }
 
-/* we report infinity after the first loop, due to the problem in prune node.
- * Instead, we should obtain the appropriate bounds for the two loops */
 int two_loops_symb(int m) {
   int p = 10;
 
@@ -22,8 +20,6 @@ int two_loops_symb(int m) {
   return p;
 }
 
-/* we report the appropriate bounds for the two loops if the loops are over two
- * different arguments */
 int two_loops_symb_diff(int m, int k) {
   int p = 10;
   for (int i = 0; i < m; i++) {

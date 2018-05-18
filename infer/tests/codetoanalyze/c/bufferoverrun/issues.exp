@@ -17,6 +17,7 @@ codetoanalyze/c/bufferoverrun/duplicates.c, tsa_two_alarms_Bad, 0, BUFFER_OVERRU
 codetoanalyze/c/bufferoverrun/duplicates.c, tsa_two_alarms_Bad, 0, BUFFER_OVERRUN_L1, ERROR, [Call,ArrayDeclaration,Parameter: n,ArrayAccess: Offset: [1, 1] Size: [1, 1] by call to `two_symbolic_accesses()` ]
 codetoanalyze/c/bufferoverrun/external.c, extern_bad, 5, BUFFER_OVERRUN_U5, ERROR, [Unknown value from: lib,Assignment,ArrayAccess: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/external.c, extern_bad, 10, BUFFER_OVERRUN_L1, ERROR, [ArrayDeclaration,ArrayAccess: Offset: [30, 30] Size: [10, 10]]
+codetoanalyze/c/bufferoverrun/for_loop.c, call_two_loops_Bad, 3, BUFFER_OVERRUN_L1, ERROR, [ArrayDeclaration,Assignment,Call,Parameter: m,Assignment,Return,ArrayAccess: Offset: [15, 15] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/for_loop.c, for_loop, 10, BUFFER_OVERRUN_L3, ERROR, [Call,ArrayDeclaration,Assignment,Assignment,Return,Assignment,Assignment,ArrayAccess: Offset: [0, 9] Size: [5, 10]]
 codetoanalyze/c/bufferoverrun/function_call.c, call_by_arr_bad, 3, BUFFER_OVERRUN_L1, ERROR, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: [-1, -1] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/function_call.c, call_by_ptr_bad, 4, BUFFER_OVERRUN_L1, ERROR, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: [-1, -1] Size: [10, 10]]
