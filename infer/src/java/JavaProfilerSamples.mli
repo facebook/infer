@@ -48,3 +48,5 @@ val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_
 val from_json_string : string -> labeled_profiler_sample list
 
 val from_json_file : string -> labeled_profiler_sample list
+
+val create : classname:string -> methodname:string -> signature:string -> ProfilerSample.elt

@@ -493,6 +493,8 @@ val log_file : string
 
 val max_nesting : int option
 
+val method_decls_info : string option
+
 val merge : bool
 
 val ml_buckets :
@@ -500,7 +502,7 @@ val ml_buckets :
 
 val models_mode : bool
 
-val modified_lines : string
+val modified_lines : string option
 
 val modified_targets : string option
 
@@ -626,7 +628,7 @@ val test_determinator : bool
 
 val test_filtering : bool
 
-val profiler_sample : string
+val profiler_samples : string option
 
 val testing_mode : bool
 

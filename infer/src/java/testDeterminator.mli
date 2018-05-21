@@ -7,4 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-val test_to_run : SourceFile.t -> Procdesc.t Typ.Procname.Hash.t -> string -> string -> unit
+val test_to_run_java : string option -> string option -> string option -> unit
+
+val _test_to_run_clang :
+  SourceFile.t -> Procdesc.t Typ.Procname.Hash.t -> string option -> string option -> unit
+
+val print_test_to_run : unit -> unit
+
+val _get_relevant_test_to_run : unit -> string list

@@ -264,7 +264,7 @@ module JNI = struct
   end
 end
 
-let create ~classname ~methodname ~signature ~kind =
+let create ~classname ~methodname ~signature =
   let name = Typ.Name.Java.from_string classname in
   let args, ret_typ = JNI.parse_method_str signature in
   let java_type_args = List.map ~f:JNI.to_java_type args in
@@ -275,7 +275,9 @@ let create ~classname ~methodname ~signature ~kind =
     then None
     else Some (JNI.to_java_type ret_typ)
   in
-  Typ.Procname.Java (Typ.Procname.Java.make name java_type_ret_typ methodname java_type_args kind)
+  Typ.Procname.Java
+    (Typ.Procname.Java.make name java_type_ret_typ methodname java_type_args
+       Typ.Procname.Java.Non_Static)
 
 
 type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
@@ -300,9 +302,7 @@ let from_json j =
           ; ("signature", `String signature)
           ; _ ]
         :: tl ->
-          let procname =
-            create ~kind:Typ.Procname.Java.Non_Static ~classname ~methodname ~signature
-          in
+          let procname = create ~classname ~methodname ~signature in
           parse_json tl (procname :: acc)
       | [] ->
           acc

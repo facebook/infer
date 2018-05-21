@@ -120,56 +120,61 @@ let () =
   prepare_events_logging () ;
   if Config.debug_mode && CLOpt.is_originator then
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
-  ( match Config.command with
-  | Analyze ->
-      run Driver.Analyze
-  | Capture | Compile | Run ->
-      run (Lazy.force Driver.mode_from_command_line)
-  | Report ->
-      InferPrint.main ~report_json:None
-  | ReportDiff ->
-      (* at least one report must be passed in input to compute differential *)
-      ( match (Config.report_current, Config.report_previous) with
-      | None, None ->
-          L.(die UserError)
-            "Expected at least one argument among '--report-current' and '--report-previous'"
-      | _ ->
-          () ) ;
-      ReportDiff.reportdiff ~current_report:Config.report_current
-        ~previous_report:Config.report_previous
-  | Diff ->
-      Diff.diff (Lazy.force Driver.mode_from_command_line)
-  | Explore when Config.procedures ->
-      L.result "%a"
-        Config.(
-          Procedures.pp_all ?filter:procedures_filter ~proc_name:procedures_name
-            ~attr_kind:procedures_definedness ~source_file:procedures_source_file
-            ~proc_attributes:procedures_attributes)
-        ()
-  | Explore when Config.source_files ->
-      L.result "%a"
-        (SourceFiles.pp_all ?filter:Config.source_files_filter ~cfgs:Config.source_files_cfgs
-           ~type_environment:Config.source_files_type_environment
-           ~procedure_names:Config.source_files_procedure_names
-           ~freshly_captured:Config.source_files_freshly_captured)
-        ()
-  | Explore ->
-      let if_some key opt args =
-        match opt with None -> args | Some arg -> key :: string_of_int arg :: args
-      in
-      let if_true key opt args = if not opt then args else key :: args in
-      let if_false key opt args = if opt then args else key :: args in
-      let args =
-        if_some "--max-level" Config.max_nesting @@ if_true "--only-show" Config.only_show
-        @@ if_false "--no-source" Config.source_preview @@ if_true "--html" Config.html
-        @@ if_some "--select" Config.select ["-o"; Config.results_dir]
-      in
-      let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
-      if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
-        L.external_error
-          "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-          (String.concat ~sep:" " args)
-  | Events ->
-      EventLogger.dump () ) ;
+  ( if Config.test_determinator then (
+      TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
+        Config.method_decls_info ;
+      TestDeterminator.print_test_to_run () )
+  else
+    match Config.command with
+    | Analyze ->
+        run Driver.Analyze
+    | Capture | Compile | Run ->
+        run (Lazy.force Driver.mode_from_command_line)
+    | Report ->
+        InferPrint.main ~report_json:None
+    | ReportDiff ->
+        (* at least one report must be passed in input to compute differential *)
+        ( match (Config.report_current, Config.report_previous) with
+        | None, None ->
+            L.(die UserError)
+              "Expected at least one argument among '--report-current' and '--report-previous'"
+        | _ ->
+            () ) ;
+        ReportDiff.reportdiff ~current_report:Config.report_current
+          ~previous_report:Config.report_previous
+    | Diff ->
+        Diff.diff (Lazy.force Driver.mode_from_command_line)
+    | Explore when Config.procedures ->
+        L.result "%a"
+          Config.(
+            Procedures.pp_all ?filter:procedures_filter ~proc_name:procedures_name
+              ~attr_kind:procedures_definedness ~source_file:procedures_source_file
+              ~proc_attributes:procedures_attributes)
+          ()
+    | Explore when Config.source_files ->
+        L.result "%a"
+          (SourceFiles.pp_all ?filter:Config.source_files_filter ~cfgs:Config.source_files_cfgs
+             ~type_environment:Config.source_files_type_environment
+             ~procedure_names:Config.source_files_procedure_names
+             ~freshly_captured:Config.source_files_freshly_captured)
+          ()
+    | Explore ->
+        let if_some key opt args =
+          match opt with None -> args | Some arg -> key :: string_of_int arg :: args
+        in
+        let if_true key opt args = if not opt then args else key :: args in
+        let if_false key opt args = if opt then args else key :: args in
+        let args =
+          if_some "--max-level" Config.max_nesting @@ if_true "--only-show" Config.only_show
+          @@ if_false "--no-source" Config.source_preview @@ if_true "--html" Config.html
+          @@ if_some "--select" Config.select ["-o"; Config.results_dir]
+        in
+        let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in
+        if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
+          L.external_error
+            "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
+            (String.concat ~sep:" " args)
+    | Events ->
+        EventLogger.dump () ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0
