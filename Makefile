@@ -219,11 +219,11 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 byte src_build src_build_common test_build: clang_plugin
 endif
 
-$(INFER_COMMAND_MANUALS): $(INFER_BIN) $(MAKEFILE_LIST)
+$(INFER_COMMAND_MANUALS): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
 	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help --help-format=groff > $@
 
-$(INFER_MANUAL): $(INFER_BIN) $(MAKEFILE_LIST)
+$(INFER_MANUAL): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
 	$(QUIET)$(INFER_BIN) --help --help-format=groff > $@
 
@@ -231,7 +231,7 @@ $(INFER_MANUALS_GZIPPED): %.gz: %
 	$(QUIET)$(REMOVE) $@
 	gzip $<
 
-infer_models: $(INFER_BIN)
+infer_models: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
@@ -434,10 +434,13 @@ test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%
 .PHONY: uninstall
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
-	$(REMOVE) $(DESTDIR)$(bindir)/infer*
+	$(REMOVE) $(DESTDIR)$(bindir)/infer
 	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
 	$(REMOVE) $(foreach manual,$(INFER_MANUALS_GZIPPED),\
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook uninstall
+endif
 
 .PHONY: test_clean
 test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
@@ -536,8 +539,8 @@ endif
 	  (cd '$(DESTDIR)$(libdir)'/infer/infer/bin && \
 	   $(REMOVE) "$$alias" && \
 	   $(LN_S) infer "$$alias"); done
-	$(foreach man,$(INFER_MANUAL_GZIPPED), \
-	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))')
+	$(foreach man,$(INFER_MANUALS_GZIPPED), \
+	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))';)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 ifdef DESTDIR
 ifeq (,$(findstring :/,:$(DESTDIR)))
