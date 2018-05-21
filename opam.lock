@@ -13,6 +13,7 @@ conf-autoconf = 0.1
 conf-m4 = 1
 conf-pkg-config = 1.0
 conf-which = 1
+conf-zlib = 1
 configurator = v0.11.0
 core = v0.11.0
 core_kernel = v0.11.0
