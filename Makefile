@@ -492,11 +492,11 @@ endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib' \
 	  '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib'
-	find facebook-clang-plugins/clang/install -not -type d -print0 | xargs -0 -I \{\} \
-	  $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
+	find facebook-clang-plugins/clang/install -not -type d -not -name '*.a' -print0 \
+	  | xargs -0 -I \{\} $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	find infer/lib/clang_wrappers/* -print0 | xargs -0 -I \{\} \
 	  $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
-#	  only for files that point to infer
+#	only for files that point to infer
 	(cd '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' && \
 	 $(foreach cc,$(shell find '$(LIB_DIR)/wrappers' -type l), \
 	  [ $(cc) -ef '$(INFER_BIN)' ] && \
