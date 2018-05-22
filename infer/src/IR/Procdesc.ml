@@ -556,7 +556,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
   let redirect_typename origin_id =
     try Some (Ident.Map.find origin_id !subst_map) with Caml.Not_found -> None
   in
-  let convert_instr instrs = function
+  let convert_instr = function
     | Sil.Load
         ( id
         , (Exp.Lvar origin_pvar as origin_exp)
@@ -567,20 +567,20 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
             origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
-        Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc) :: instrs
+        Some (Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc))
     | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc) ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
         in
-        Sil.Load (id, convert_exp origin_exp, updated_typ, loc) :: instrs
+        Some (Sil.Load (id, convert_exp origin_exp, updated_typ, loc))
     | Sil.Load (id, origin_exp, origin_typ, loc) ->
-        Sil.Load (id, convert_exp origin_exp, origin_typ, loc) :: instrs
+        Some (Sil.Load (id, convert_exp origin_exp, origin_typ, loc))
     | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
         let set_instr =
           Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
         in
-        set_instr :: instrs
+        Some set_instr
     | Sil.Call
         ( return_ids
         , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java))
@@ -600,25 +600,25 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         let call_instr =
           Sil.Call (return_ids, Exp.Const (Const.Cfun redirected_pname), args, loc, call_flags)
         in
-        call_instr :: instrs
+        Some call_instr
     | Sil.Call (return_ids, origin_call_exp, origin_args, loc, call_flags) ->
         let converted_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
         let call_instr =
           Sil.Call (return_ids, convert_exp origin_call_exp, converted_args, loc, call_flags)
         in
-        call_instr :: instrs
+        Some call_instr
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
-        Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind) :: instrs
+        Some (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind))
     | Sil.Declare_locals (typed_vars, loc) ->
         let new_typed_vars =
           List.map ~f:(fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars
         in
-        Sil.Declare_locals (new_typed_vars, loc) :: instrs
+        Some (Sil.Declare_locals (new_typed_vars, loc))
     | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
-        instrs
+        None
   in
-  let f_instr_list instrs = List.fold ~f:convert_instr ~init:[] instrs |> List.rev in
+  let f_instr_list instrs = List.filter_map ~f:convert_instr instrs in
   convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list
 
 
