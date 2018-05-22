@@ -17,44 +17,34 @@ module L = Logging
 (* "instructions" is not empty when the binary operator is actually a statement like an *)
 (* assignment. *)
 let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 loc =
-  let id = Ident.create_fresh Ident.knormal in
-  let instr1 = Sil.Load (id, e1, typ, loc) in
-  let e_res, instr_op =
-    match boi_kind with
-    | `AddAssign ->
-        let bop = if Typ.is_pointer t1 then Binop.PlusPI else Binop.PlusA in
-        let e1_plus_e2 = Exp.BinOp (bop, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_plus_e2, loc)])
-    | `SubAssign ->
-        let bop = if Typ.is_pointer t1 then Binop.MinusPI else Binop.MinusA in
-        let e1_sub_e2 = Exp.BinOp (bop, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_sub_e2, loc)])
-    | `MulAssign ->
-        let e1_mul_e2 = Exp.BinOp (Binop.Mult, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_mul_e2, loc)])
-    | `DivAssign ->
-        let e1_div_e2 = Exp.BinOp (Binop.Div, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_div_e2, loc)])
-    | `ShlAssign ->
-        let e1_shl_e2 = Exp.BinOp (Binop.Shiftlt, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_shl_e2, loc)])
-    | `ShrAssign ->
-        let e1_shr_e2 = Exp.BinOp (Binop.Shiftrt, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_shr_e2, loc)])
-    | `RemAssign ->
-        let e1_mod_e2 = Exp.BinOp (Binop.Mod, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_mod_e2, loc)])
-    | `AndAssign ->
-        let e1_and_e2 = Exp.BinOp (Binop.BAnd, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_and_e2, loc)])
-    | `OrAssign ->
-        let e1_or_e2 = Exp.BinOp (Binop.BOr, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_or_e2, loc)])
-    | `XorAssign ->
-        let e1_xor_e2 = Exp.BinOp (Binop.BXor, Exp.Var id, e2) in
-        (e1, [Sil.Store (e1, typ, e1_xor_e2, loc)])
+  let instrs =
+    let bop =
+      match boi_kind with
+      | `AddAssign ->
+          if Typ.is_pointer t1 then Binop.PlusPI else Binop.PlusA
+      | `SubAssign ->
+          if Typ.is_pointer t1 then Binop.MinusPI else Binop.MinusA
+      | `MulAssign ->
+          Binop.Mult
+      | `DivAssign ->
+          Binop.Div
+      | `ShlAssign ->
+          Binop.Shiftlt
+      | `ShrAssign ->
+          Binop.Shiftrt
+      | `RemAssign ->
+          Binop.Mod
+      | `AndAssign ->
+          Binop.BAnd
+      | `OrAssign ->
+          Binop.BOr
+      | `XorAssign ->
+          Binop.BXor
+    in
+    let id = Ident.create_fresh Ident.knormal in
+    [Sil.Load (id, e1, typ, loc); Sil.Store (e1, typ, Exp.BinOp (bop, Exp.Var id, e2), loc)]
   in
-  (e_res, instr1 :: instr_op)
+  (e1, instrs)
 
 
 (** Returns a pair ([binary_expression], instructions). "binary_expression" is returned when we are
