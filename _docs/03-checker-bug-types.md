@@ -84,4 +84,65 @@ This error indicates a possible race condition--see the thread-safety [docs](htt
 
 This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are needed, see the detailed explanation [here](http://fbinfer.com/docs/threadsafety.html#interface-not-thread-safe).
 
+## <a name="DEADLOCK"></a>Deadlock
 
+This error is currently reported in Java.  A deadlock occurs when two distinct threads try to acquire two locks in reverse orders.  The following code illustrates a textbook example.  Of course, in real deadlocks, the lock acquisitions may be separated by deeply nested call chains.  
+
+```java
+  public void lockAThenB() {
+    synchronized(lockA) {
+      synchronized(lockB) {
+       // do something with both resources
+      }
+    }
+  }
+
+  public void lockBThenA() {
+    synchronized(lockB) {
+      synchronized(lockA) {
+       // do something with both resources
+      }
+    }
+  }
+```
+
+The standard solution to a deadlock is to fix an order of lock acquisition and adhere to that order in all cases.  Another solution may be to shrink the critical sections (i.e., the code executing under lock) to the minimum required.
+
+Old-style containers such as `Vector` are synchronized on the object monitor, which means that deadlocks can occur even without explicit synchronisation on both threads.  For instance:
+
+```java
+  public void lockAThenAddToVector() {
+    synchronized(lockA) {
+      vector.add(object);
+    }
+  }
+
+  public void lockVectorThenA() {
+    synchronized(vector) {
+      synchronized(lockA) {
+       // do something with both resources
+      }
+    }
+  }
+```
+
+Infer has support for detecting these deadlocks too.
+
+## <a name="STARVATION"></a>UI Thread Starvation
+
+This error is reported in Java, and specifically on Android.  These reports are triggered when a method that runs on the UI thread may block, thus potentially leading to an Application Not Responding error.
+
+Infer considers a method as running on the UI thread whenever:
+- The method, one of its overrides, its class, or an ancestral class, is annotated with `@UiThread`.
+- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`, etc.
+- The method or its callees call a `Litho.ThreadUtils` method such as `assertMainThread`.
+
+The issue is reported when a method deemed to run on the UI thread
+- Makes a method call which may block.
+- Takes a lock, and another thread takes the same lock, and before releasing it, makes a call that may block.
+
+Calls that may block are considered:
+- Certain I/O calls.
+- Two way `Binder.transact` calls.
+- Certain OS calls.
+- `Future` or `AsyncTask` calls to `get` without timeouts, or with too large timeouts.
