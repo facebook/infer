@@ -169,6 +169,13 @@ int array_initialized_ok(int N, int index) {
   return value;
 }
 
+int array_element_passed_by_ref_ok() {
+  int array[1];
+  init(&(array[0]));
+  int value = array[0];
+  return value;
+}
+
 int ret_undef_bad() {
   int* p;
   return *p; // report as p was not initialized

@@ -61,6 +61,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_struct t = match t.Typ.desc with Typ.Tstruct _ -> true | _ -> false
 
+  let is_array t = match t.Typ.desc with Typ.Tarray _ -> true | _ -> false
+
   let get_formals call =
     match Ondemand.get_proc_desc call with
     | Some proc_desc ->
@@ -90,6 +92,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_struct_field_passed_by_ref call t access_expr idx =
     is_struct t && not (AccessExpression.is_base access_expr)
+    && function_expects_a_pointer_as_nth_param call idx
+
+
+  let is_array_element_passed_by_ref call t access_expr idx =
+    is_array t && not (AccessExpression.is_base access_expr)
     && function_expects_a_pointer_as_nth_param call idx
 
 
@@ -297,7 +304,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   match AccessExpression.get_base access_expr with
                   | _, {Typ.desc= Tarray _} when is_blacklisted_function call ->
                       D.remove access_expr acc
-                  | _, t when is_struct_field_passed_by_ref call t access_expr idx ->
+                  | _, t
+                    when is_struct_field_passed_by_ref call t access_expr idx
+                         || is_array_element_passed_by_ref call t access_expr idx ->
                       (* Access to a field of a struct by reference *)
                       if Config.uninit_interproc then
                         remove_initialized_params pdesc call acc idx access_expr_to_remove false
