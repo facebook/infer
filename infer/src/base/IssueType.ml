@@ -318,7 +318,7 @@ let sql_injection_risk = from_string "SQL_INJECTION_RISK"
 
 let stack_variable_address_escape = from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
 
-let starvation = from_string "STARVATION"
+let starvation = from_string "STARVATION" ~hum:"UI Thread Starvation"
 
 let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
 

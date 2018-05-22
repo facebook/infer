@@ -9,6 +9,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
@@ -133,28 +134,29 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
          Payload.update_summary lock_order summary )
 
 
-let make_trace_with_header ?(header= "") elem start_loc pname =
+let make_trace_with_header ?(header= "") elem pname =
   let trace = StarvationDomain.LockOrder.make_loc_trace elem in
-  let trace_descr = Format.asprintf "%s %a" header Typ.Procname.pp pname in
+  let trace_descr = Format.asprintf "%s %a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+  let start_loc =
+    List.hd trace |> Option.value_map ~default:Location.dummy ~f:(fun lt -> lt.Errlog.lt_loc)
+  in
   Errlog.make_trace_element 0 start_loc trace_descr [] :: trace
 
 
-let make_loc_trace pname trace_id start_loc elem =
+let make_loc_trace pname trace_id elem =
   let header = Printf.sprintf "[Trace %d] " trace_id in
-  make_trace_with_header ~header elem start_loc pname
+  make_trace_with_header ~header elem pname
 
 
-let get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc clazz =
+let get_summaries_of_methods_in_class tenv clazz =
   let tstruct_opt = Tenv.lookup tenv clazz in
   let methods =
     Option.value_map tstruct_opt ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
   in
-  let pdescs = List.rev_filter_map methods ~f:get_proc_desc in
-  let get_summary callee_pdesc =
-    Payload.read current_pdesc (Procdesc.get_proc_name callee_pdesc)
-    |> Option.map ~f:(fun summary -> (callee_pdesc, summary))
-  in
-  List.rev_filter_map pdescs ~f:get_summary
+  let summaries = List.rev_filter_map methods ~f:Ondemand.analyze_proc_name in
+  List.rev_filter_map summaries ~f:(fun sum ->
+      Option.map sum.Summary.payloads.Payloads.starvation ~f:(fun p ->
+          (Summary.get_proc_name sum, p) ) )
 
 
 let log_issue current_pname current_loc ltr exn =
@@ -198,11 +200,11 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
          inner class but this is no longer obvious in the path, because of nested-class path normalisation.
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
+let report_deadlocks tenv current_pdesc (summary, current_main) =
   let open StarvationDomain in
   let current_loc = Procdesc.get_loc current_pdesc in
   let current_pname = Procdesc.get_proc_name current_pdesc in
-  let report_endpoint_elem current_elem endpoint_pname endpoint_loc elem =
+  let report_endpoint_elem current_elem endpoint_pname elem =
     if
       LockOrder.may_deadlock current_elem elem
       && should_report_deadlock_on_current_proc current_elem elem
@@ -213,14 +215,16 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
           let error_message =
             Format.asprintf
               "Potential deadlock.@.Trace 1 (starts at %a), %a.@.Trace 2 (starts at %a), %a."
-              Typ.Procname.pp current_pname LockOrder.pp current_elem Typ.Procname.pp
+              (MF.wrap_monospaced Typ.Procname.pp)
+              current_pname LockOrder.pp current_elem
+              (MF.wrap_monospaced Typ.Procname.pp)
               endpoint_pname LockOrder.pp elem
           in
           let exn =
             Exceptions.Checkers (IssueType.deadlock, Localise.verbatim_desc error_message)
           in
-          let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
-          let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc elem in
+          let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
+          let second_trace = make_loc_trace endpoint_pname 2 elem in
           let ltr = List.rev_append first_trace second_trace in
           log_issue current_pname current_loc ltr exn
       | _, _ ->
@@ -237,39 +241,34 @@ let report_deadlocks get_proc_desc tenv current_pdesc (summary, current_main) =
       | Some endpoint_class ->
           (* get the class of the root variable of the lock in the endpoint event
                    and retrieve all the summaries of the methods of that class *)
-          let endpoint_summaries =
-            get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc endpoint_class
-          in
+          let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
           (* for each summary related to the endpoint, analyse and report on its pairs *)
-          List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, endpoint_main)) ->
+          List.iter endpoint_summaries ~f:(fun (endpoint_pname, (summary, endpoint_main)) ->
               if not (current_main && endpoint_main) then
-                let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
-                let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
-                LockOrderDomain.iter
-                  (report_endpoint_elem elem endpoint_pname endpoint_loc)
-                  summary )
+                LockOrderDomain.iter (report_endpoint_elem elem endpoint_pname) summary )
   in
   LockOrderDomain.iter report_on_current_elem summary
 
 
-let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
+let report_blocks_on_main_thread tenv current_pdesc summary =
   let open StarvationDomain in
   let current_loc = Procdesc.get_loc current_pdesc in
   let current_pname = Procdesc.get_proc_name current_pdesc in
-  let report_remote_block current_elem current_lock endpoint_pname endpoint_loc endpoint_elem =
+  let report_remote_block current_elem current_lock endpoint_pname endpoint_elem =
     match endpoint_elem with
     | { LockOrder.first= Some {LockEvent.event= LockEvent.LockAcquire lock}
       ; eventually= {LockEvent.event= LockEvent.MayBlock block_descr} }
       when LockIdentity.equal current_lock lock ->
         let error_message =
-          Format.asprintf "UI thread %a, which may be held by another thread which %s"
-            LockIdentity.pp lock block_descr
+          Format.asprintf "UI thread method %a %a, which may be held by another thread which %s"
+            (MF.wrap_monospaced Typ.Procname.pp)
+            current_pname LockIdentity.pp lock block_descr
         in
         let exn =
           Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
         in
-        let first_trace = List.rev (make_loc_trace current_pname 1 current_loc current_elem) in
-        let second_trace = make_loc_trace endpoint_pname 2 endpoint_loc endpoint_elem in
+        let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
+        let second_trace = make_loc_trace endpoint_pname 2 endpoint_elem in
         let ltr = List.rev_append first_trace second_trace in
         log_issue current_pname current_loc ltr exn
     | _ ->
@@ -279,13 +278,14 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
     match eventually with
     | {LockEvent.event= LockEvent.MayBlock _} ->
         let error_message =
-          Format.asprintf "UI thread method may block; %a" LockEvent.pp_event
-            eventually.LockEvent.event
+          Format.asprintf "UI thread method %a may block; %a"
+            (MF.wrap_monospaced Typ.Procname.pp)
+            current_pname LockEvent.pp_event eventually.LockEvent.event
         in
         let exn =
           Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
         in
-        let ltr = make_trace_with_header elem current_loc current_pname in
+        let ltr = make_trace_with_header elem current_pname in
         log_issue current_pname current_loc ltr exn
     | {LockEvent.event= LockEvent.LockAcquire endpoint_lock} ->
       match LockIdentity.owner_class endpoint_lock with
@@ -294,30 +294,26 @@ let report_blocks_on_main_thread get_proc_desc tenv current_pdesc summary =
       | Some endpoint_class ->
           (* get the class of the root variable of the lock in the endpoint event
                      and retrieve all the summaries of the methods of that class *)
-          let endpoint_summaries =
-            get_summaries_of_methods_in_class get_proc_desc tenv current_pdesc endpoint_class
-          in
+          let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
           (* for each summary related to the endpoint, analyse and report on its pairs *)
-          List.iter endpoint_summaries ~f:(fun (endpoint_pdesc, (summary, main)) ->
+          List.iter endpoint_summaries ~f:(fun (endpoint_pname, (summary, main)) ->
               (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
               if main then ()
               else
-                let endpoint_loc = Procdesc.get_loc endpoint_pdesc in
-                let endpoint_pname = Procdesc.get_proc_name endpoint_pdesc in
                 LockOrderDomain.iter
-                  (report_remote_block elem endpoint_lock endpoint_pname endpoint_loc)
+                  (report_remote_block elem endpoint_lock endpoint_pname)
                   summary )
   in
   LockOrderDomain.iter report_on_current_elem summary
 
 
-let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
+let reporting {Callbacks.procedures; exe_env} =
   let report_procedure (tenv, proc_desc) =
     die_if_not_java proc_desc ;
     Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.iter ~f:(fun ((s, main) as summary) ->
-           report_deadlocks get_proc_desc tenv proc_desc summary ;
-           if main then report_blocks_on_main_thread get_proc_desc tenv proc_desc s )
+           report_deadlocks tenv proc_desc summary ;
+           if main then report_blocks_on_main_thread tenv proc_desc s )
   in
   List.iter procedures ~f:report_procedure ;
   let sourcefile = exe_env.Exe_env.source_file in
