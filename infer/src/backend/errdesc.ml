@@ -80,20 +80,25 @@ let explain_deallocate_constant_string s ra =
 
 let verbose = Config.trace_error
 
-let find_in_node_or_preds start_node f_node_instr =
-  let visited = ref Procdesc.NodeSet.empty in
-  let rec find node =
-    if Procdesc.NodeSet.mem node !visited then None
-    else (
-      visited := Procdesc.NodeSet.add node !visited ;
-      let instrs = Procdesc.Node.get_instrs node in
-      match List.find_map ~f:(f_node_instr node) (List.rev instrs) with
-      | Some res ->
-          Some res
-      | None ->
-          List.find_map ~f:find (Procdesc.Node.get_preds node) )
+let find_in_node_or_preds =
+  let rec find ~f visited nodes =
+    match nodes with
+    | node :: nodes when not (Procdesc.NodeSet.mem node visited)
+      -> (
+        let instrs = Procdesc.Node.get_instrs node in
+        match List.find_map ~f:(f node) instrs with
+        | Some res ->
+            Some res
+        | None ->
+            let nodes = Procdesc.Node.get_preds node |> List.rev_append nodes in
+            let visited = Procdesc.NodeSet.add node visited in
+            find ~f visited nodes )
+    | _ :: nodes ->
+        find ~f visited nodes
+    | _ ->
+        None
   in
-  find start_node
+  fun start_node ~f -> find ~f Procdesc.NodeSet.empty [start_node]
 
 
 (** Find the function call instruction used to initialize normal variable [id],
@@ -106,7 +111,7 @@ let find_normal_variable_funcall (node: Procdesc.Node.t) (id: Ident.t)
     | _ ->
         None
   in
-  let res = find_in_node_or_preds node find_declaration in
+  let res = find_in_node_or_preds node ~f:find_declaration in
   if verbose && is_none res then (
     L.d_str
       ( "find_normal_variable_funcall could not find " ^ Ident.to_string id ^ " in node "
@@ -123,7 +128,7 @@ let find_program_variable_assignment node pvar : (Procdesc.Node.t * Ident.t) opt
     | _ ->
         None
   in
-  find_in_node_or_preds node find_instr
+  find_in_node_or_preds node ~f:find_instr
 
 
 (** Special case for C++, where we translate code like
@@ -142,7 +147,7 @@ let find_struct_by_value_assignment node pvar =
       | _ ->
           None
     in
-    find_in_node_or_preds node find_instr
+    find_in_node_or_preds node ~f:find_instr
   else None
 
 
@@ -154,7 +159,7 @@ let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
     | _ ->
         None
   in
-  find_in_node_or_preds node find_instr
+  find_in_node_or_preds node ~f:find_instr
 
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
@@ -221,7 +226,7 @@ let rec find_normal_variable_load_ tenv (seen: Exp.Set.t) node id : DExp.t optio
     | _ ->
         None
   in
-  let res = find_in_node_or_preds node find_declaration in
+  let res = find_in_node_or_preds node ~f:find_declaration in
   if verbose && is_none res then (
     L.d_str
       ( "find_normal_variable_load could not find " ^ Ident.to_string id ^ " in node "
