@@ -9,6 +9,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 type t =
   | Base of AccessPath.base
@@ -204,9 +205,25 @@ let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id: Var.t -> 
 
 let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
   match lhs_exp with
-  | (Exp.Lfield _ | Exp.Lindex _) when not add_deref
+  | Exp.Lfield _ when not add_deref
     -> (
       let res = of_exp ~include_array_indexes ~add_deref:true lhs_exp typ ~f_resolve_id in
+      match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
+  | Exp.Lindex _ when not add_deref
+    -> (
+      let res =
+        let typ' =
+          match typ.Typ.desc with
+          | Tptr (t, _) ->
+              t
+          | _ ->
+              L.internal_error
+                "Translation from SIL to HIL expected pointer type for exp %a, but got %a@." Exp.pp
+                lhs_exp (Typ.pp_full Pp.text) typ ;
+              typ
+        in
+        of_exp ~include_array_indexes ~add_deref:true lhs_exp typ' ~f_resolve_id
+      in
       match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
   | _ ->
       let res = of_exp ~include_array_indexes ~add_deref lhs_exp typ ~f_resolve_id in
