@@ -97,19 +97,21 @@ let filename_to_absolute ~root fname =
 
 
 (** Convert an absolute filename to one relative to the given directory. *)
-let filename_to_relative ~root fname =
-  let rec relativize_if_under origin target =
+let filename_to_relative ?(backtrack= 0) ~root fname =
+  let rec relativize_if_under prefix backtrack origin target =
     match (origin, target) with
     | x :: xs, y :: ys when String.equal x y ->
-        relativize_if_under xs ys
+        relativize_if_under prefix backtrack xs ys
+    | _ :: xs, y :: ys when backtrack > 0 ->
+        relativize_if_under (Filename.parent_dir_name :: y :: prefix) (backtrack - 1) xs ys
     | [], [] ->
         Some "."
     | [], ys ->
-        Some (Filename.of_parts ys)
+        Some (Filename.of_parts (prefix @ ys))
     | _ ->
         None
   in
-  relativize_if_under (Filename.parts root) (Filename.parts fname)
+  relativize_if_under [] backtrack (Filename.parts root) (Filename.parts fname)
 
 
 let directory_fold f init path =

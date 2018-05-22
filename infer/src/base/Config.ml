@@ -1802,6 +1802,13 @@ and reactive_capture =
     "Compile source files only when required by analyzer (clang only)"
 
 
+and relative_path_backtack =
+  CLOpt.mk_int ~long:"backtrack-level" ~default:0 ~meta:"int"
+    "Maximum level of backtracking to convert an absolute path to path relative to the common \
+     prefix between the project root and the path. For instance, with bactraking level 1, it \
+     will convert /my/source/File.java with project root /my/root into ../source/File.java"
+
+
 and report =
   CLOpt.mk_bool ~long:"report" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
@@ -2756,6 +2763,8 @@ and racerd_use_path_stability = !racerd_use_path_stability
 and reactive_mode = !reactive || InferCommand.(equal Diff) command
 
 and reactive_capture = !reactive_capture
+
+and relative_path_backtack = !relative_path_backtack
 
 and report = !report
 
