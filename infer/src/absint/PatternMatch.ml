@@ -236,24 +236,22 @@ let method_is_initializer (tenv: Tenv.t) (proc_attributes: ProcAttributes.t) : b
 
 (** Get the vararg values by looking for array assignments to the pvar. *)
 let java_get_vararg_values node pvar idenv =
-  let values = ref [] in
-  let do_instr = function
+  let values_of_instr acc = function
     | Sil.Store (Exp.Lindex (array_exp, _), _, content_exp, _)
       when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
         (* Each vararg argument is an assignment to a pvar denoting an array of objects. *)
-        values := content_exp :: !values
+        content_exp :: acc
     | _ ->
-        ()
+        acc
   in
-  let do_node n = List.iter ~f:do_instr (Procdesc.Node.get_instrs n) in
-  let () =
-    match Errdesc.find_program_variable_assignment node pvar with
-    | Some (node', _) ->
-        Procdesc.iter_slope_range do_node node' node
-    | None ->
-        ()
+  let values_of_node acc n =
+    Procdesc.Node.get_instrs n |> List.fold ~f:values_of_instr ~init:acc
   in
-  !values
+  match Errdesc.find_program_variable_assignment node pvar with
+  | Some (node', _) ->
+      Procdesc.fold_slope_range node' node ~f:values_of_node ~init:[]
+  | None ->
+      []
 
 
 let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttributes.t) list =

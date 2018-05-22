@@ -306,19 +306,18 @@ let fold_instrs pdesc ~init ~f =
   fold_nodes ~f:fold_node ~init pdesc
 
 
-(** iterate between two nodes or until we reach a branching structure *)
-let iter_slope_range f src_node dst_node =
-  let visited = ref NodeSet.empty in
-  let rec do_node node =
-    visited := NodeSet.add node !visited ;
-    f node ;
+(** fold between two nodes or until we reach a branching structure *)
+let fold_slope_range =
+  let rec aux node visited acc ~f =
+    let visited = NodeSet.add node visited in
+    let acc = f acc node in
     match Node.get_succs node with
-    | [n] ->
-        if not (NodeSet.mem n !visited) && not (Node.equal node dst_node) then do_node n
+    | [n] when not (NodeSet.mem n visited) ->
+        aux n visited acc ~f
     | _ ->
-        ()
+        acc
   in
-  do_node src_node
+  fun src_node dst_node ~init ~f -> aux src_node (NodeSet.singleton dst_node) init ~f
 
 
 (** Set the exit node of the proc desc *)
