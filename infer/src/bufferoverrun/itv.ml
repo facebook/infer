@@ -172,8 +172,6 @@ module Ints : sig
 
     val max : t -> t -> t
 
-    val min : t -> t -> t
-
     val pp : F.formatter -> t -> unit
   end
 
@@ -212,8 +210,6 @@ end = struct
     let ( * ) = Int.( * )
 
     let max = Int.max
-
-    let min = Int.min
 
     let pp = F.pp_print_int
   end
@@ -1023,13 +1019,6 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
     let increasing_union ~f m1 m2 = union (fun _ v1 v2 -> Some (f v1 v2)) m1 m2
 
-    let inter ~f m1 m2 =
-      merge
-        (fun _ v1_opt v2_opt ->
-          match (v1_opt, v2_opt) with Some v1, Some v2 -> f v1 v2 | _ -> None )
-        m1 m2
-
-
     let le ~le_elt m1 m2 =
       match
         merge
@@ -1103,8 +1092,6 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
   let is_one : t -> bool = fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
 
-  let non_zero : t -> t option = fun p -> if is_zero p then None else Some p
-
   let is_symbolic : t -> bool = fun {terms} -> not (M.is_empty terms)
 
   let rec plus : t -> t -> t =
@@ -1166,12 +1153,14 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     ; terms= M.increasing_union ~f:join p1.terms p2.terms }
 
 
-  let rec min : t -> t -> t =
+  (* assumes symbols are not comparable *)
+  (* TODO: improve this for comparable symbols *)
+  let min : t -> t -> t =
    fun p1 p2 ->
-    {const= NonNegativeInt.min p1.const p2.const; terms= M.inter ~f:min_non_zero p1.terms p2.terms}
+    if ( <= ) ~lhs:p1 ~rhs:p2 then p1
+    else (* either can't decide which one is smaller or p2 is smaller  *)
+      p2
 
-
-  and min_non_zero : t -> t -> t option = fun p1 p2 -> min p1 p2 |> non_zero
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
    fun ~prev:_ ~next:_ ~num_iters:_ -> assert false
