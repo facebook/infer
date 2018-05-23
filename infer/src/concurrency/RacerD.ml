@@ -672,7 +672,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
     let initial =
       let threads =
         if
-          Models.runs_on_ui_thread tenv proc_desc
+          Models.runs_on_ui_thread tenv proc_desc |> Option.is_some
           || Models.is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf
         else if

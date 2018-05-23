@@ -276,35 +276,40 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
   List.rev !res
 
 
-let override_exists ?(check_current_type= true) f tenv proc_name =
+let override_find ?(check_current_type= true) f tenv proc_name =
   let method_name = Typ.Procname.get_method proc_name in
-  let rec super_type_exists_ tenv super_class_name =
-    match Tenv.lookup tenv super_class_name with
-    | Some {methods; supers} ->
-        let is_override pname =
-          (* Note: very coarse! TODO: match parameter names/types to get an exact match *)
-          String.equal (Typ.Procname.get_method pname) method_name
-          && not (Typ.Procname.is_constructor pname)
-        in
-        List.exists ~f:(fun pname -> is_override pname && f pname) methods
-        || List.exists ~f:(super_type_exists_ tenv) supers
-    | _ ->
-        false
+  let is_override pname =
+    (* Note: very coarse! TODO: match parameter names/types to get an exact match *)
+    String.equal (Typ.Procname.get_method pname) method_name
+    && not (Typ.Procname.is_constructor pname)
   in
-  let super_type_exists tenv type_name =
-    List.exists ~f:(super_type_exists_ tenv)
+  let rec find_super_type_ super_class_name =
+    Tenv.lookup tenv super_class_name
+    |> Option.bind ~f:(fun {Typ.Struct.methods; supers} ->
+           match List.find ~f:(fun pname -> is_override pname && f pname) methods with
+           | None ->
+               List.find_map ~f:find_super_type_ supers
+           | pname_opt ->
+               pname_opt )
+  in
+  let find_super_type type_name =
+    List.find_map ~f:find_super_type_
       (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
   in
-  (check_current_type && f proc_name)
-  ||
-  match proc_name with
-  | Typ.Procname.Java proc_name_java ->
-      super_type_exists tenv
-        (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java))
-  | Typ.Procname.ObjC_Cpp proc_name_cpp ->
-      super_type_exists tenv (Typ.Procname.ObjC_Cpp.get_class_type_name proc_name_cpp)
-  | _ ->
-      false
+  if check_current_type && f proc_name then Some proc_name
+  else
+    match proc_name with
+    | Typ.Procname.Java proc_name_java ->
+        find_super_type
+          (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name proc_name_java))
+    | Typ.Procname.ObjC_Cpp proc_name_cpp ->
+        find_super_type (Typ.Procname.ObjC_Cpp.get_class_type_name proc_name_cpp)
+    | _ ->
+        None
+
+
+let override_exists ?(check_current_type= true) f tenv proc_name =
+  override_find ~check_current_type f tenv proc_name |> Option.is_some
 
 
 (* Only java supported at the moment *)

@@ -157,7 +157,7 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
       , Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
 
 
-  let pp fmt (astate1, astate2) = F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
+  let pp fmt astate = Pp.pair ~fst:Domain1.pp ~snd:Domain2.pp fmt astate
 end
 
 module FiniteSetOfPPSet (S : PrettyPrintable.PPSet) = struct

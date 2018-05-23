@@ -55,6 +55,9 @@ module LockOrderDomain : sig
   include AbstractDomain.WithBottom with type astate = t
 end
 
+module UIThreadDomain :
+  AbstractDomain.WithBottom with type astate = string AbstractDomain.Types.bottom_lifted
+
 include AbstractDomain.WithBottom
 
 val acquire : astate -> Location.t -> LockIdentity.t -> astate
@@ -64,9 +67,11 @@ val release : astate -> LockIdentity.t -> astate
 val blocking_call :
   caller:Typ.Procname.t -> callee:Typ.Procname.t -> Location.t -> astate -> astate
 
-val set_on_main_thread : astate -> astate
+val set_on_ui_thread : astate -> string -> astate
+(** set the property "runs on UI thread" to true by attaching the given explanation string as to
+    why this method is thought to do so *)
 
-type summary = LockOrderDomain.astate * bool
+type summary = LockOrderDomain.astate * UIThreadDomain.astate
 
 val pp_summary : F.formatter -> summary -> unit
 

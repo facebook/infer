@@ -13,7 +13,7 @@ module MF = MarkupFormatter
 
 let debug fmt = L.(debug Analysis Verbose fmt)
 
-let is_on_main_thread pn =
+let is_on_ui_thread pn =
   RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
 
 
@@ -81,8 +81,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when Models.may_block tenv callee actuals ->
           let caller = Procdesc.get_proc_name pdesc in
           Domain.blocking_call ~caller ~callee loc astate
-      | NoEffect when is_on_main_thread callee ->
-          Domain.set_on_main_thread astate
+      | NoEffect when is_on_ui_thread callee ->
+          let explanation = F.asprintf "calls %a" (MF.wrap_monospaced Typ.Procname.pp) callee in
+          Domain.set_on_ui_thread astate explanation
       | _ ->
           Payload.read pdesc callee
           |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
@@ -124,9 +125,8 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
   in
   let initial =
-    if RacerDConfig.Models.runs_on_ui_thread tenv proc_desc then
-      StarvationDomain.set_on_main_thread initial
-    else initial
+    RacerDConfig.Models.runs_on_ui_thread tenv proc_desc
+    |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial)
   in
   Analyzer.compute_post proc_data ~initial
   |> Option.value_map ~default:summary ~f:(fun lock_state ->
@@ -244,13 +244,13 @@ let report_deadlocks tenv current_pdesc (summary, current_main) =
           let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
           (* for each summary related to the endpoint, analyse and report on its pairs *)
           List.iter endpoint_summaries ~f:(fun (endpoint_pname, (summary, endpoint_main)) ->
-              if not (current_main && endpoint_main) then
+              if UIThreadDomain.is_empty current_main || UIThreadDomain.is_empty endpoint_main then
                 LockOrderDomain.iter (report_endpoint_elem elem endpoint_pname) summary )
   in
   LockOrderDomain.iter report_on_current_elem summary
 
 
-let report_blocks_on_main_thread tenv current_pdesc summary =
+let report_blocks_on_main_thread tenv current_pdesc order ui_explain =
   let open StarvationDomain in
   let current_loc = Procdesc.get_loc current_pdesc in
   let current_pname = Procdesc.get_proc_name current_pdesc in
@@ -260,9 +260,11 @@ let report_blocks_on_main_thread tenv current_pdesc summary =
       ; eventually= {LockEvent.event= LockEvent.MayBlock block_descr} }
       when LockIdentity.equal current_lock lock ->
         let error_message =
-          Format.asprintf "UI thread method %a %a, which may be held by another thread which %s"
+          Format.asprintf
+            "Method %a runs on UI thread (because %s) and %a, which may be held by another thread \
+             which %s"
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname LockIdentity.pp lock block_descr
+            current_pname ui_explain LockIdentity.pp lock block_descr
         in
         let exn =
           Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
@@ -278,9 +280,9 @@ let report_blocks_on_main_thread tenv current_pdesc summary =
     match eventually with
     | {LockEvent.event= LockEvent.MayBlock _} ->
         let error_message =
-          Format.asprintf "UI thread method %a may block; %a"
+          Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a"
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname LockEvent.pp_event eventually.LockEvent.event
+            current_pname ui_explain LockEvent.pp_event eventually.LockEvent.event
         in
         let exn =
           Exceptions.Checkers (IssueType.starvation, Localise.verbatim_desc error_message)
@@ -293,27 +295,29 @@ let report_blocks_on_main_thread tenv current_pdesc summary =
           ()
       | Some endpoint_class ->
           (* get the class of the root variable of the lock in the endpoint event
-                     and retrieve all the summaries of the methods of that class *)
+                 and retrieve all the summaries of the methods of that class *)
           let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
           (* for each summary related to the endpoint, analyse and report on its pairs *)
-          List.iter endpoint_summaries ~f:(fun (endpoint_pname, (summary, main)) ->
+          List.iter endpoint_summaries ~f:(fun (endpoint_pname, (order, ui)) ->
               (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
-              if main then ()
-              else
-                LockOrderDomain.iter
-                  (report_remote_block elem endpoint_lock endpoint_pname)
-                  summary )
+              if UIThreadDomain.is_empty ui then
+                LockOrderDomain.iter (report_remote_block elem endpoint_lock endpoint_pname) order
+          )
   in
-  LockOrderDomain.iter report_on_current_elem summary
+  LockOrderDomain.iter report_on_current_elem order
 
 
 let reporting {Callbacks.procedures; exe_env} =
   let report_procedure (tenv, proc_desc) =
     die_if_not_java proc_desc ;
     Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
-    |> Option.iter ~f:(fun ((s, main) as summary) ->
+    |> Option.iter ~f:(fun ((order, ui) as summary) ->
            report_deadlocks tenv proc_desc summary ;
-           if main then report_blocks_on_main_thread tenv proc_desc s )
+           match ui with
+           | AbstractDomain.Types.Bottom ->
+               ()
+           | AbstractDomain.Types.NonBottom on_ui ->
+               report_blocks_on_main_thread tenv proc_desc order on_ui )
   in
   List.iter procedures ~f:report_procedure ;
   let sourcefile = exe_env.Exe_env.source_file in

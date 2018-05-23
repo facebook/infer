@@ -50,6 +50,11 @@ val proc_calls :
   -> (Typ.Procname.t -> ProcAttributes.t -> bool) -> (Typ.Procname.t * ProcAttributes.t) list
 (** Return the callees that satisfy [filter]. *)
 
+val override_find :
+  ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t
+  -> Typ.Procname.t option
+(** Return a method which overrides [procname] and satisfies [f] (including [procname] itself when [check_current_type] is true, which it is by default). *)
+
 val override_exists :
   ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 (** Return true if applying the given predicate to an override of [procname] (including [procname] itself when [check_current_type] is true, which it is by default) returns true. *)

@@ -10,6 +10,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 module AnnotationAliases = struct
   let of_json = function
@@ -494,8 +495,8 @@ module Models = struct
         None
 
 
-  let is_annotated_or_overriden_annotated_method is_annot pname tenv =
-    PatternMatch.override_exists
+  let find_annotated_or_overriden_annotated_method is_annot pname tenv =
+    PatternMatch.override_find
       (fun pn ->
         Annotations.pname_has_return_annot pn ~attrs_of_pname:Summary.proc_resolve_attributes
           is_annot )
@@ -513,17 +514,42 @@ module Models = struct
       || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot
     in
     let pname = Procdesc.get_proc_name proc_desc in
-    Annotations.pdesc_has_return_annot proc_desc is_annot
-    || is_annotated_or_overriden_annotated_method is_annot pname tenv
-    ||
-    match get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname with
-    | Some (_, _ :: _) ->
-        true
-    | Some (current_class, _) ->
-        PatternMatch.is_subtype_of_str tenv current_class "android.app.Service"
-        && not (PatternMatch.is_subtype_of_str tenv current_class "android.app.IntentService")
-    | _ ->
-        false
+    if Annotations.pdesc_has_return_annot proc_desc is_annot then
+      Some
+        (F.asprintf "%a is annotated %s"
+           (MF.wrap_monospaced Typ.Procname.pp)
+           pname
+           (MF.monospaced_to_string Annotations.ui_thread))
+    else
+      match find_annotated_or_overriden_annotated_method is_annot pname tenv with
+      | Some override_pname ->
+          Some
+            (F.asprintf "class %a overrides %a, which is annotated %s"
+               (MF.wrap_monospaced Typ.Procname.pp)
+               pname
+               (MF.wrap_monospaced Typ.Procname.pp)
+               override_pname
+               (MF.monospaced_to_string Annotations.ui_thread))
+      | None ->
+        match
+          get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname
+        with
+        | Some (current_class, _)
+          when let open PatternMatch in
+               is_subtype_of_str tenv current_class "android.app.Service"
+               && not (is_subtype_of_str tenv current_class "android.app.IntentService") ->
+            Some
+              (F.asprintf "class %s extends %s"
+                 (MF.monospaced_to_string (Typ.Name.name current_class))
+                 (MF.monospaced_to_string "android.app.Service"))
+        | Some (current_class, super_class :: _) ->
+            Some
+              (F.asprintf "class %s extends %a, which is annotated %s"
+                 (MF.monospaced_to_string (Typ.Name.name current_class))
+                 (MF.wrap_monospaced Typ.Name.pp) super_class
+                 (MF.monospaced_to_string Annotations.ui_thread))
+        | _ ->
+            None
 
 
   let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -544,7 +570,7 @@ module Models = struct
 
 
   let is_thread_safe_method pname tenv =
-    is_annotated_or_overriden_annotated_method is_thread_safe pname tenv
+    find_annotated_or_overriden_annotated_method is_thread_safe pname tenv |> Option.is_some
 
 
   let is_marked_thread_safe pdesc tenv =

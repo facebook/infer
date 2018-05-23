@@ -9,6 +9,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 module LockIdentity = struct
   type t = AccessPath.t
@@ -41,7 +42,11 @@ module LockIdentity = struct
 
 
   let pp fmt (((_, typ), _) as lock) =
-    F.fprintf fmt "locks `%a` in class `%a`" AccessPath.pp lock (Typ.pp_full Pp.text) typ
+    F.fprintf fmt "locks %a in class %a"
+      (MF.wrap_monospaced AccessPath.pp)
+      lock
+      (MF.wrap_monospaced (Typ.pp_full Pp.text))
+      typ
 
 
   let owner_class ((_, typ), _) = Typ.inner_name typ
@@ -100,7 +105,13 @@ module LockEvent = struct
   let make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
 
   let make_blocking_call ~caller ~callee loc =
-    let descr = F.asprintf "calls %a from %a" Typ.Procname.pp callee Typ.Procname.pp caller in
+    let descr =
+      F.asprintf "calls %a from %a"
+        (MF.wrap_monospaced Typ.Procname.pp)
+        callee
+        (MF.wrap_monospaced Typ.Procname.pp)
+        caller
+    in
     make_blocks descr loc
 
 
@@ -108,7 +119,9 @@ module LockEvent = struct
     let call_trace, nesting =
       List.fold e.trace ~init:([], 0) ~f:(fun (tr, ns) callsite ->
           let elem_descr =
-            F.asprintf "Method call: %a" Typ.Procname.pp (CallSite.pname callsite)
+            F.asprintf "Method call: %a"
+              (MF.wrap_monospaced Typ.Procname.pp)
+              (CallSite.pname callsite)
           in
           let elem = Errlog.make_trace_element ns (CallSite.loc callsite) elem_descr [] in
           (elem :: tr, ns + 1) )
@@ -204,13 +217,25 @@ module LockState = struct
     fold ff map init
 end
 
-module MainThreadDomain = AbstractDomain.BooleanOr
-include AbstractDomain.Pair (AbstractDomain.Pair (LockState) (LockOrderDomain)) (MainThreadDomain)
+module UIThreadExplanationDomain = struct
+  type astate = string
 
-let empty = ((LockState.empty, LockOrderDomain.empty), false)
+  let pp = String.pp
+
+  let join lhs _ = lhs
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let ( <= ) ~lhs:_ ~rhs:_ = true
+end
+
+module UIThreadDomain = AbstractDomain.BottomLifted (UIThreadExplanationDomain)
+include AbstractDomain.Pair (AbstractDomain.Pair (LockState) (LockOrderDomain)) (UIThreadDomain)
+
+let empty = ((LockState.empty, LockOrderDomain.empty), UIThreadDomain.empty)
 
 let is_empty ((ls, lo), main) =
-  LockState.is_empty ls && LockOrderDomain.is_empty lo && MainThreadDomain.is_empty main
+  LockState.is_empty ls && LockOrderDomain.is_empty lo && UIThreadDomain.is_empty main
 
 
 (* for every lock b held locally, add a pair (b, lock_event), plus (None, lock_event) *)
@@ -260,15 +285,17 @@ let integrate_summary ((ls, lo), main) callee_pname loc callee_summary =
   (* add callsite to the "eventually" trace *)
   let elems = LockOrderDomain.with_callsite callsite callee_lo in
   let lo' = LockOrderDomain.fold do_elem elems lo in
-  let main' = MainThreadDomain.join main callee_main in
+  let main' = UIThreadDomain.join main callee_main in
   ((ls, lo'), main')
 
 
-let set_on_main_thread (sum, _) = (sum, true)
+let set_on_ui_thread (sum, explain_opt) explain =
+  (sum, UIThreadDomain.join explain_opt (AbstractDomain.Types.NonBottom explain))
+
 
 let to_summary ((_, lo), main) = (lo, main)
 
-type summary = LockOrderDomain.astate * MainThreadDomain.astate
+type summary = LockOrderDomain.astate * UIThreadDomain.astate
 
 let pp_summary fmt (lo, main) =
-  F.fprintf fmt "LockOrder: %a, MainThread: %a" LockOrderDomain.pp lo MainThreadDomain.pp main
+  F.fprintf fmt "LockOrder: %a, UIThread: %a" LockOrderDomain.pp lo UIThreadDomain.pp main

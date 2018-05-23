@@ -54,11 +54,12 @@ module Models : sig
      completely different classes that don't necessarily run on the same thread as the confined
      object. *)
 
-  val runs_on_ui_thread : Tenv.t -> Procdesc.t -> bool
+  val runs_on_ui_thread : Tenv.t -> Procdesc.t -> string option
   (** We don't want to warn on methods that run on the UI thread because they should always be
       single-threaded. Assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount,
       @OnUnbind, @OnUnmount always run on the UI thread.  Also assume that any superclass
-      marked @UiThread implies all methods are on UI thread. *)
+      marked @UiThread implies all methods are on UI thread. Return Some string explaining why
+      this method is on the UI thread, else return None. *)
 
   val should_analyze_proc : Procdesc.t -> Tenv.t -> bool
   (** return true if we should compute a summary for the procedure. if this returns false, we won't
