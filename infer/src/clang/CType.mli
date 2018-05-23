@@ -22,3 +22,7 @@ val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.qual_typ
 val is_block_type : Clang_ast_t.qual_type -> bool
 
 val is_reference_type : Clang_ast_t.qual_type -> bool
+
+val is_pointer_to_const : Clang_ast_t.qual_type -> bool
+
+val is_value : Clang_ast_t.qual_type -> bool
