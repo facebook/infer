@@ -8,7 +8,9 @@
  */
 class MyFavouriteClassTwo {
 
+    void methodOne() {}
+
     int methodTwo (int i) {
-        return i+2;
+        return i + 2;
     }
 }

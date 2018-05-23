@@ -6,8 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+
 class MyFavouriteClassTwo {
 
+    void methodOne() {}
+    // This is a comment
     int methodTwo (int i) {
         return i;
     }

@@ -6,7 +6,7 @@
       "field4": {},
       "methods": [
         {
-          "class": "MyFavouriteClassOne",
+          "class": "MyFavouriteClassTwo",
           "id": "",
           "method": "methodOne",
           "signature": "()V",
