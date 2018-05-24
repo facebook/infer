@@ -231,7 +231,7 @@ module JNI = struct
     | [Method m] ->
         m
     | _ ->
-        L.(die UserError "The input provided did not parse as one JNI method signature")
+        L.(die UserError "'%s' did not parse as one JNI method signature" str)
 
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct

@@ -57,9 +57,12 @@ module MethodRangeMap = struct
               in
               let range = (start_location, end_location) in
               let classname, methodname = split_class_method_name decl.method_name in
-              let signature = match decl.signature with Some s -> s | _ -> "" in
-              let key = JavaProfilerSamples.create ~classname ~methodname ~signature in
-              RangeMap.add key range acc )
+              match decl.signature with
+              | Some signature ->
+                  let key = JavaProfilerSamples.create ~classname ~methodname ~signature in
+                  RangeMap.add key range acc
+              | None ->
+                  acc )
         in
         map := map'
     | _ ->
