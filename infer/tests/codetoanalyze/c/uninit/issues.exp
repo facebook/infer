@@ -1,0 +1,1 @@
+codetoanalyze/c/uninit/uninit.c, dereference_bad, 2, UNINITIALIZED_VALUE, ERROR, []

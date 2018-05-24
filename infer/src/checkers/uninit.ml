@@ -100,7 +100,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     && function_expects_a_pointer_as_nth_param call idx
 
 
-  let report_on_function_params call pdesc tenv uninit_vars actuals loc extras =
+  let is_fld_or_array_elem_passed_by_ref t access_expr idx call =
+    is_struct_field_passed_by_ref call t access_expr idx
+    || is_array_element_passed_by_ref call t access_expr idx
+
+
+  let report_on_function_params pdesc tenv uninit_vars actuals loc extras call =
     List.iteri
       ~f:(fun idx e ->
         match e with
@@ -290,9 +295,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           in
           {astate with uninit_vars= uninit_vars'}
         else astate
-    | Call (_, HilInstr.Direct call, actuals, _, loc) ->
+    | Call (_, call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
+        let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
         let uninit_vars =
           List.foldi ~init:astate.uninit_vars actuals ~f:(fun idx acc actual_exp ->
               match actual_exp with
@@ -302,23 +308,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     match access_expr with AddressOf ae -> ae | _ -> access_expr
                   in
                   match AccessExpression.get_base access_expr with
-                  | _, {Typ.desc= Tarray _} when is_blacklisted_function call ->
+                  | _, {Typ.desc= Tarray _}
+                    when Option.value_map ~default:false ~f:is_blacklisted_function pname_opt ->
                       D.remove access_expr acc
                   | _, t
-                    when is_struct_field_passed_by_ref call t access_expr idx
-                         || is_array_element_passed_by_ref call t access_expr idx ->
-                      (* Access to a field of a struct by reference *)
-                      if Config.uninit_interproc then
-                        remove_initialized_params pdesc call acc idx access_expr_to_remove false
-                      else D.remove access_expr_to_remove acc
-                  | base when Typ.Procname.is_constructor call ->
+                  (* Access to a field of a struct or an element of an array by reference *)
+                    when Option.value_map ~default:false
+                           ~f:(is_fld_or_array_elem_passed_by_ref t access_expr idx)
+                           pname_opt -> (
+                    match pname_opt with
+                    | Some pname when Config.uninit_interproc ->
+                        remove_initialized_params pdesc pname acc idx access_expr_to_remove false
+                    | _ ->
+                        D.remove access_expr_to_remove acc )
+                  | base
+                    when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt ->
                       remove_all_fields tenv base (D.remove access_expr_to_remove acc)
-                  | (_, {Typ.desc= Tptr _}) as base ->
-                      if Config.uninit_interproc then
-                        remove_initialized_params pdesc call acc idx access_expr_to_remove true
-                      else
+                  | (_, {Typ.desc= Tptr _}) as base -> (
+                    match pname_opt with
+                    | Some pname when Config.uninit_interproc ->
+                        remove_initialized_params pdesc pname acc idx access_expr_to_remove true
+                    | _ ->
                         D.remove access_expr_to_remove acc |> remove_all_fields tenv base
-                        |> remove_all_array_elements base |> remove_dereference_access base
+                        |> remove_all_array_elements base |> remove_dereference_access base )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
@@ -329,9 +341,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | _ ->
                   acc )
         in
-        report_on_function_params call pdesc tenv uninit_vars actuals loc extras ;
+        Option.value_map ~default:()
+          ~f:(report_on_function_params pdesc tenv uninit_vars actuals loc extras)
+          pname_opt ;
         {astate with uninit_vars}
-    | Call _ | Assume _ ->
+    | Assume _ ->
         astate
 
 

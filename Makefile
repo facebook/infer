@@ -48,7 +48,7 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
 
 DIRECT_TESTS += \
-  c_biabduction c_bufferoverrun c_errors c_frontend c_performance \
+  c_biabduction c_bufferoverrun c_errors c_frontend c_performance c_uninit \
   cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_ownership cpp_quandary \
   cpp_racerd cpp_siof cpp_uninit cpp_nullable cpp_conflicts cpp_linters-for-test-only \
 
