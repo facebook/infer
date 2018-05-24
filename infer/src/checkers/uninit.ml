@@ -379,7 +379,7 @@ let get_locals cfg tenv pdesc =
       | Typ.Tarray {elt} ->
           AccessExpression.ArrayOffset (base_access_expr, elt, []) :: acc
       | Typ.Tptr _ ->
-          AccessExpression.Dereference base_access_expr :: acc
+          base_access_expr :: AccessExpression.Dereference base_access_expr :: acc
       | _ ->
           base_access_expr :: acc )
     ~init:[] (Procdesc.get_locals cfg)
