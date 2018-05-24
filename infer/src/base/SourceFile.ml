@@ -59,8 +59,7 @@ let from_abs_path ?(warn_on_error= true) fname =
   | Some path ->
       RelativeProjectRoot path
   | None when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
-      L.internal_error "%s is not relative to %s" fname_real project_root_real ;
-      Invalid "absolute path"
+      L.(die InternalError) "%s is not relative to %s" fname_real project_root_real
   | None ->
     match Utils.filename_to_relative ~root:models_dir_real fname_real with
     | Some path ->
