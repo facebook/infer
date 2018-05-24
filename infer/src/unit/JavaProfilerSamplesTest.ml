@@ -49,10 +49,10 @@ let test_jni_parse_method_str_with_invalid_input =
   in
   [ ( "test_jni_parse_method_str_with_empty_input"
     , ""
-    , Logging.InferUserError "The input provided did not parse as one JNI method signature" )
+    , Logging.InferUserError "'' did not parse as one JNI method signature" )
   ; ( "test_jni_parse_method_str_with_valid_non_method_input"
     , "I"
-    , Logging.InferUserError "The input provided did not parse as one JNI method signature" ) ]
+    , Logging.InferUserError "'I' did not parse as one JNI method signature" ) ]
   |> List.map ~f:(fun (name, test_input, expected_exception) ->
          name >:: create_test test_input expected_exception )
 
