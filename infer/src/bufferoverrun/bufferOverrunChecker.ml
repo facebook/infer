@@ -315,19 +315,12 @@ module Report = struct
   module PO = BufferOverrunProofObligations
 
   module ExitStatement = struct
-    let non_significant_instr = function
-      | Sil.(Abstract _ | Nullify _ | Remove_temps _) ->
-          true
-      | _ ->
-          false
-
-
     (* check that we are the last significant instruction
      * of a procedure (no more significant instruction)
      * or of a block (goes directly to a node with multiple predecessors)
      *)
     let rec is_end_of_block_or_procedure (cfg: CFG.t) node rem_instrs =
-      List.for_all rem_instrs ~f:non_significant_instr
+      List.for_all rem_instrs ~f:Sil.instr_is_auxiliary
       &&
       match CFG.succs cfg node with
       | [] ->
