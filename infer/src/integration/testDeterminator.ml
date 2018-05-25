@@ -6,10 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
+open! IStd
 module L = Logging
 module F = Format
-open JavaProfilerSamples
-open! IStd
+module JPS = JavaProfilerSamples
 
 (* a flag used to make the method search signature sensitive *)
 let use_method_signature = false
@@ -66,9 +67,9 @@ module MethodRangeMap = struct
                     if use_method_signature then signature
                     else
                       (* When we should not use the signature we use 'void ()' *)
-                      JavaProfilerSamples.JNI.void_method_with_no_arguments
+                      JPS.JNI.void_method_with_no_arguments
                   in
-                  let key = JavaProfilerSamples.create ~classname ~methodname ~signature in
+                  let key = JPS.create_procname ~classname ~methodname ~signature in
                   RangeMap.add key range acc
               | None ->
                   acc )
@@ -139,8 +140,8 @@ module DiffLines = struct
 end
 
 let pp_profiler_sample_set fmt s =
-  F.fprintf fmt " (size = %i) " (ProfilerSample.cardinal s) ;
-  ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      >  %a " Typ.Procname.pp m) s
+  F.fprintf fmt " (size = %i) " (JPS.ProfilerSample.cardinal s) ;
+  JPS.ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      >  %a " Typ.Procname.pp m) s
 
 
 module TestSample = struct
@@ -152,9 +153,7 @@ module TestSample = struct
     match test_samples_file' with
     | Some test_samples_file ->
         L.progress "@\nReading Profiler Samples File '%s'...." test_samples_file ;
-        let ts =
-          JavaProfilerSamples.from_json_file test_samples_file ~use_signature:use_method_signature
-        in
+        let ts = JPS.from_json_file test_samples_file ~use_signature:use_method_signature in
         labeled_test_samples := ts
     | _ ->
         L.die UserError "Missing profiler samples argument"
@@ -178,17 +177,17 @@ let affected_methods method_range_map file_changed_lines changed_lines =
         && List.exists ~f:(fun l -> in_range l range) changed_lines
       then (
         L.progress "@\n     ->Adding '%a' in affected methods...@\n" Typ.Procname.pp key ;
-        ProfilerSample.add key acc )
+        JPS.ProfilerSample.add key acc )
       else acc )
-    method_range_map ProfilerSample.empty
+    method_range_map JPS.ProfilerSample.empty
 
 
 let compute_affected_methods_java changed_lines_map method_range_map =
   let affected_methods =
-    String.Map.fold changed_lines_map ~init:ProfilerSample.empty ~f:
+    String.Map.fold changed_lines_map ~init:JPS.ProfilerSample.empty ~f:
       (fun ~key:file_changed_lines ~data acc ->
         let am = affected_methods method_range_map file_changed_lines data in
-        ProfilerSample.union am acc )
+        JPS.ProfilerSample.union am acc )
   in
   L.progress "@\n\n== Resulting Affected Methods ==%a@\n== End Affected Methods ==@\n"
     pp_profiler_sample_set affected_methods ;
@@ -207,7 +206,7 @@ let compute_affected_methods_clang source_file changed_lines_map method_range_ma
       affected_methods
   | None ->
       L.progress "@\n%s not found in changed-line map. Nothing else to do for it.@\n" fname ;
-      ProfilerSample.empty
+      JPS.ProfilerSample.empty
 
 
 let relevant_tests = ref []
@@ -252,11 +251,11 @@ let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
       (MethodRangeMap.method_range_map ())
   in
   let test_to_run =
-    if ProfilerSample.is_empty affected_methods then []
+    if JPS.ProfilerSample.is_empty affected_methods then []
     else
       List.fold (TestSample.test_sample ()) ~init:[] ~f:(fun acc (label, profiler_samples) ->
-          let intersection = ProfilerSample.inter affected_methods profiler_samples in
-          if ProfilerSample.is_empty intersection then acc else label :: acc )
+          let intersection = JPS.ProfilerSample.inter affected_methods profiler_samples in
+          if JPS.ProfilerSample.is_empty intersection then acc else label :: acc )
   in
   relevant_tests := List.append test_to_run !relevant_tests
 
@@ -270,10 +269,10 @@ let test_to_run_java changed_lines_file test_samples_file code_graph_file =
       (MethodRangeMap.method_range_map ())
   in
   let test_to_run =
-    if ProfilerSample.is_empty affected_methods then []
+    if JPS.ProfilerSample.is_empty affected_methods then []
     else
       List.fold (TestSample.test_sample ()) ~init:[] ~f:(fun acc (label, profiler_samples) ->
-          let intersection = ProfilerSample.inter affected_methods profiler_samples in
-          if ProfilerSample.is_empty intersection then acc else label :: acc )
+          let intersection = JPS.ProfilerSample.inter affected_methods profiler_samples in
+          if JPS.ProfilerSample.is_empty intersection then acc else label :: acc )
   in
   relevant_tests := List.append test_to_run !relevant_tests

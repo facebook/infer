@@ -266,7 +266,7 @@ module JNI = struct
   end
 end
 
-let create ~classname ~methodname ~signature =
+let create_procname ~classname ~methodname ~signature =
   let name = Typ.Name.Java.from_string classname in
   let args, ret_typ = JNI.parse_method_str signature in
   let java_type_args = List.map ~f:JNI.to_java_type args in
@@ -305,7 +305,7 @@ let from_json j ~use_signature =
           ; _ ]
         :: tl ->
           let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
-          let procname = create ~classname ~methodname ~signature in
+          let procname = create_procname ~classname ~methodname ~signature in
           parse_json tl (procname :: acc)
       | [] ->
           acc

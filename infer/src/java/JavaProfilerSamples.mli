@@ -51,4 +51,4 @@ val from_json_string : string -> use_signature:bool -> labeled_profiler_sample l
 
 val from_json_file : string -> use_signature:bool -> labeled_profiler_sample list
 
-val create : classname:string -> methodname:string -> signature:string -> ProfilerSample.elt
+val create_procname : classname:string -> methodname:string -> signature:string -> Typ.Procname.t
