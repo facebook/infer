@@ -11,6 +11,9 @@ module F = Format
 open JavaProfilerSamples
 open! IStd
 
+(* a flag used to make the method search signature sensitive *)
+let use_method_signature = false
+
 module RangeMap = Caml.Map.Make (struct
   type t = Typ.Procname.t
 
@@ -59,6 +62,12 @@ module MethodRangeMap = struct
               let classname, methodname = split_class_method_name decl.method_name in
               match decl.signature with
               | Some signature ->
+                  let signature =
+                    if use_method_signature then signature
+                    else
+                      (* When we should not use the signature we use 'void ()' *)
+                      JavaProfilerSamples.JNI.void_method_with_no_arguments
+                  in
                   let key = JavaProfilerSamples.create ~classname ~methodname ~signature in
                   RangeMap.add key range acc
               | None ->
@@ -104,7 +113,7 @@ module DiffLines = struct
     match changed_lines_file' with
     | Some changed_lines_file
       -> (
-        L.progress "@\n Initializing modified lines map from file '%s'... " changed_lines_file ;
+        L.progress "@\nInitializing modified lines map from file '%s'... " changed_lines_file ;
         match Utils.read_file changed_lines_file with
         | Ok cl_list ->
             let changed_lines =
@@ -130,7 +139,7 @@ module DiffLines = struct
 end
 
 let pp_profiler_sample_set fmt s =
-  F.fprintf fmt "size = %i" (ProfilerSample.cardinal s) ;
+  F.fprintf fmt " (size = %i) " (ProfilerSample.cardinal s) ;
   ProfilerSample.iter (fun m -> F.fprintf fmt "@\n      >  %a " Typ.Procname.pp m) s
 
 
@@ -143,7 +152,9 @@ module TestSample = struct
     match test_samples_file' with
     | Some test_samples_file ->
         L.progress "@\nReading Profiler Samples File '%s'...." test_samples_file ;
-        let ts = JavaProfilerSamples.from_json_file test_samples_file in
+        let ts =
+          JavaProfilerSamples.from_json_file test_samples_file ~use_signature:use_method_signature
+        in
         labeled_test_samples := ts
     | _ ->
         L.die UserError "Missing profiler samples argument"
@@ -157,35 +168,41 @@ end
 
 let in_range l range = l >= (fst range).Location.line && l <= (snd range).Location.line
 
-let affected_methods method_range_map changed_lines =
+let affected_methods method_range_map file_changed_lines changed_lines =
+  L.progress "@\nLooking for affected methods in file '%s' " file_changed_lines ;
   RangeMap.fold
-    (fun key range acc ->
-      if List.exists ~f:(fun l -> in_range l range) changed_lines then
-        (*L.progress "@\n ADDING '%a' in affected methods..." Typ.Procname.pp key ; *)
-        ProfilerSample.add key acc
+    (fun key ((l1, _) as range) acc ->
+      let method_file = SourceFile.to_string l1.Location.file in
+      if
+        String.equal method_file file_changed_lines
+        && List.exists ~f:(fun l -> in_range l range) changed_lines
+      then (
+        L.progress "@\n     ->Adding '%a' in affected methods...@\n" Typ.Procname.pp key ;
+        ProfilerSample.add key acc )
       else acc )
     method_range_map ProfilerSample.empty
 
 
 let compute_affected_methods_java changed_lines_map method_range_map =
   let affected_methods =
-    String.Map.fold changed_lines_map ~init:ProfilerSample.empty ~f:(fun ~key:_ ~data acc ->
-        let am = affected_methods method_range_map data in
+    String.Map.fold changed_lines_map ~init:ProfilerSample.empty ~f:
+      (fun ~key:file_changed_lines ~data acc ->
+        let am = affected_methods method_range_map file_changed_lines data in
         ProfilerSample.union am acc )
   in
-  L.progress "== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
+  L.progress "@\n\n== Resulting Affected Methods ==%a@\n== End Affected Methods ==@\n"
     pp_profiler_sample_set affected_methods ;
   affected_methods
 
 
 let compute_affected_methods_clang source_file changed_lines_map method_range_map =
   let fname = SourceFile.to_rel_path source_file in
-  L.progress "@\n Looking for file %s in changed-line map..." fname ;
+  L.progress "@\nLooking for file %s in changed-line map..." fname ;
   match String.Map.find changed_lines_map fname with
   | Some changed_lines ->
       L.progress " found!@\n" ;
-      let affected_methods = affected_methods method_range_map changed_lines in
-      L.progress "== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
+      let affected_methods = affected_methods method_range_map fname changed_lines in
+      L.progress "@\n\n== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
         pp_profiler_sample_set affected_methods ;
       affected_methods
   | None ->
@@ -198,7 +215,7 @@ let relevant_tests = ref []
 let _get_relevant_test_to_run () = !relevant_tests
 
 let print_test_to_run () =
-  L.progress "@\n [TEST DETERMINATOR] Relevant Tests to run = [" ;
+  L.progress "@\n[TEST DETERMINATOR] Relevant Tests to run = [" ;
   List.iter ~f:(L.progress " %s ") !relevant_tests ;
   L.progress " ] @\n" ;
   let json = `List (List.map ~f:(fun t -> `String t) !relevant_tests) in
@@ -227,7 +244,7 @@ let init_java changed_lines_file test_samples_file code_graph_file =
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
 let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
-  L.progress "@\n ***** Start Test Determinator for  %s ***** @\n"
+  L.progress "@\n****** Start Test Determinator for  %s ***** @\n"
     (SourceFile.to_string source_file) ;
   if is_test_determinator_init () then () else init_clang cfg changed_lines_file test_samples_file ;
   let affected_methods =
@@ -245,7 +262,7 @@ let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
 
 
 let test_to_run_java changed_lines_file test_samples_file code_graph_file =
-  L.progress "@\n ***** Start Test Determinator ***** @\n" ;
+  L.progress "@\n***** Start Test Determinator ***** @\n" ;
   if is_test_determinator_init () then ()
   else init_java changed_lines_file test_samples_file code_graph_file ;
   let affected_methods =

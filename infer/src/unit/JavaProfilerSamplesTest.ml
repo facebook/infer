@@ -159,7 +159,7 @@ let test_jni_to_java_type_with_invalid_input =
 
 let test_from_json_string_with_valid_input =
   let create_test input expected _ =
-    let found = JavaProfilerSamples.from_json_string input in
+    let found = JavaProfilerSamples.from_json_string input ~use_signature:true in
     assert_equal
       ~cmp:(List.equal ~equal:JavaProfilerSamples.equal_labeled_profiler_sample)
       expected found
@@ -227,7 +227,7 @@ let test_from_json_string_with_valid_input =
 
 let test_from_json_string_with_invalid_input =
   let create_test input expected_exception _ =
-    let run () = JavaProfilerSamples.from_json_string input in
+    let run () = JavaProfilerSamples.from_json_string input ~use_signature:true in
     assert_raises expected_exception run
   in
   [ ( "test_from_json_string_1"

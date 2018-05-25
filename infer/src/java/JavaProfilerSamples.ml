@@ -31,6 +31,8 @@ module JNI = struct
 
   let equal = [%compare.equal : t]
 
+  let void_method_with_no_arguments = "()V"
+
   type non_terminal_symbol = SymArray | SymMethodOpen | SymMethodClose | SymMethod of t list
 
   type symbol = Terminal of t | NonTerminal of non_terminal_symbol
@@ -284,7 +286,7 @@ type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
 let equal_labeled_profiler_sample = [%compare.equal : labeled_profiler_sample]
 
-let from_json j =
+let from_json j ~use_signature =
   let parse_profiler_result label result =
     let methods =
       match result with
@@ -302,6 +304,7 @@ let from_json j =
           ; ("signature", `String signature)
           ; _ ]
         :: tl ->
+          let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
           let procname = create ~classname ~methodname ~signature in
           parse_json tl (procname :: acc)
       | [] ->
@@ -318,6 +321,6 @@ let from_json j =
       L.(die UserError "Unexpected JSON input for the list of profiler results")
 
 
-let from_json_string str = from_json (Yojson.Basic.from_string str)
+let from_json_string str ~use_signature = from_json (Yojson.Basic.from_string str) ~use_signature
 
-let from_json_file file = from_json (Yojson.Basic.from_file file)
+let from_json_file file ~use_signature = from_json (Yojson.Basic.from_file file) ~use_signature

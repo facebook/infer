@@ -12,6 +12,8 @@ open! IStd
 module ProfilerSample : Caml.Set.S with type elt = Typ.Procname.t
 
 module JNI : sig
+  val void_method_with_no_arguments : string
+
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
     type t =
       | Boolean
@@ -45,8 +47,8 @@ type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
 val equal_labeled_profiler_sample : labeled_profiler_sample -> labeled_profiler_sample -> bool
 
-val from_json_string : string -> labeled_profiler_sample list
+val from_json_string : string -> use_signature:bool -> labeled_profiler_sample list
 
-val from_json_file : string -> labeled_profiler_sample list
+val from_json_file : string -> use_signature:bool -> labeled_profiler_sample list
 
 val create : classname:string -> methodname:string -> signature:string -> ProfilerSample.elt
