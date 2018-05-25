@@ -962,12 +962,12 @@ let choose_witness_opt witness_opt1 witness_opt2 =
 let rec eval_Atomic pred_name_ args an lcxt =
   let pred_name = ALVar.formula_id_to_string pred_name_ in
   match (pred_name, args, an) with
-  | "call_class_method", [c; m], an ->
-      CPredicates.call_class_method an c m
+  | "call_class_method", [m], an ->
+      CPredicates.call_class_method an m
   | "call_function", [m], an ->
       CPredicates.call_function an m
-  | "call_instance_method", [c; m], an ->
-      CPredicates.call_instance_method an c m
+  | "call_instance_method", [m], an ->
+      CPredicates.call_instance_method an m
   | "call_method", [m], an ->
       CPredicates.call_method an m
   | "captures_cxx_references", [], _ ->
@@ -1108,6 +1108,16 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_unop_with_kind an kind
   | "is_weak_property", [], an ->
       CPredicates.is_weak_property an
+  | "is_receiver_objc_class_type", [], an ->
+      CPredicates.is_receiver_objc_class_type an
+  | "is_receiver_objc_id_type", [], an ->
+      CPredicates.is_receiver_objc_id_type an
+  | "is_receiver_subclass_of", [name], an ->
+      CPredicates.is_receiver_subclass_of lcxt an name
+  | "is_receiver_class_named", [name], an ->
+      CPredicates.is_receiver_class_named lcxt an name
+  | "is_receiver_super", [], an ->
+      CPredicates.is_receiver_super an
   | "iphoneos_target_sdk_version_greater_or_equal", [version], _ ->
       CPredicates.iphoneos_target_sdk_version_greater_or_equal lcxt (ALVar.alexp_to_string version)
   | "method_return_type", [typ], an ->

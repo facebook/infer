@@ -19,14 +19,13 @@ val captured_variables_cxx_ref : Ctl_parser_types.ast_node -> Clang_ast_t.named_
 val call_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_method an m an' is true iff node an is a call to an ObjC method with name containing string m *)
 
-val call_class_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
-(** 'call_class_method an cname mname' is true iff node an is a call to an ObjC method of class cname
-and the name of the method contains mname *)
+val call_class_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** 'call_class_method an mname' is true iff node an is a call to an ObjC
+    class method with name containing mname *)
 
-val call_instance_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
-(** 'call_instance_method an cname mname' is true iff  an is a node calling an ObjC method of an
-   object of class cname and the method name  contains mname
-*)
+val call_instance_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** 'call_instance_method an mname' is true iff node an is a call to an ObjC
+    instance method with name containing mname *)
 
 val declaration_name : Clang_ast_t.decl -> string option
 (** 'declaration_name d' returns the name of declaration d *)
@@ -401,6 +400,40 @@ val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 val receiver_class_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
 
 val receiver_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
+
+val is_receiver_objc_class_type : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a
+ *    receiver equivalent to the 'Class' type.
+ *)
+
+val is_receiver_objc_id_type : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a
+ *    receiver equivalent to the 'id' type.
+ *)
+
+val is_receiver_subclass_of :
+  CLintersContext.context -> Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a receiver
+ *    which inherits from a class whose name matches the provided REGEXP.
+ *)
+
+val is_receiver_class_named :
+  CLintersContext.context -> Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a
+ *    receiver whose class name matches the provided REGEXP.
+ *)
+
+val is_receiver_super : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a
+ *    receiver which is equal to 'super'.
+ *
+ *  Matches on [super myMethod];
+ *)
 
 val is_at_selector_with_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** an is an expression @selector with whose name in the language of re *)

@@ -57,7 +57,7 @@ DEFINE-CHECKER MACRO_TEST1 = {
 // Test reverse parameter of macro
 DEFINE-CHECKER MACRO_TEST2 = {
 
-  LET my_macro_to_call_method_of_class(x,y) = call_instance_method(y,x);
+  LET my_macro_to_call_method_of_class(x,y) = call_instance_method(x) AND is_receiver_class_named(y);
 
   SET report_when = my_macro_to_call_method_of_class("foo:", "A");
 
@@ -68,7 +68,7 @@ DEFINE-CHECKER MACRO_TEST2 = {
 // Test macro call macro
 DEFINE-CHECKER MACRO_TEST3 = {
 
-  LET my_macro_to_call_method_of_class(x,y) = call_instance_method(y,x);
+  LET my_macro_to_call_method_of_class(x,y) = call_instance_method(x) AND is_receiver_class_named(y);
 
   LET call_my_macro(t,v) = my_macro_to_call_method_of_class(t,v);
 
@@ -107,7 +107,7 @@ DEFINE-CHECKER GLOBAL_MACRO_SUBCLASS = {
 
 DEFINE-CHECKER TEST_ALL_METHODS = {
 
-  SET report_when = call_class_method(REGEXP(".*"), REGEXP(".*"));
+  SET report_when = call_class_method(REGEXP(".*"));
 
   SET message = "Method call...";
 
@@ -757,5 +757,50 @@ DEFINE-CHECKER TEST_IN_INSTANCE_METHOD = {
      is_in_objc_instance_method("myBaseClassMethod");
 
   SET message = "This node is in an instance method named myBaseClassClassMethod.";
+
+};
+
+DEFINE-CHECKER TEST_IS_RECEIVER_CLASS_TYPE = {
+
+  SET report_when =
+     is_receiver_objc_class_type;
+
+  SET message = "This node is a method call to 'Class'.";
+
+};
+
+DEFINE-CHECKER TEST_IS_RECEIVER_ID_TYPE = {
+
+  SET report_when =
+     is_receiver_objc_id_type;
+
+  SET message = "This node is a method call to 'id'.";
+
+};
+
+DEFINE-CHECKER TEST_IS_RECEIVER_SUBCLASS_OF = {
+
+  SET report_when =
+     is_receiver_subclass_of("MyBaseClass");
+
+  SET message = "This node is a method call to an object which inherits from 'MyBaseClass'.";
+
+};
+
+DEFINE-CHECKER TEST_IS_RECEIVER_CLASS_NAMED = {
+
+  SET report_when =
+     is_receiver_class_named("MyBaseClass");
+
+  SET message = "This node is a method call to an object of class 'MyBaseClass'.";
+
+};
+
+DEFINE-CHECKER TEST_IS_RECEIVER_SUPER = {
+
+  SET report_when =
+     is_receiver_super();
+
+  SET message = "This node is a method call to 'super'.";
 
 };

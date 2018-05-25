@@ -15,6 +15,8 @@
 
 @property int myBaseClassProperty;
 + (void)myBaseClassClassMethod;
++ (void)myBaseClassClassAndInstanceMethod;
+- (void)myBaseClassClassAndInstanceMethod;
 - (void)myBaseClassMethod;
 
 @end
@@ -30,6 +32,10 @@
 + (void)myBaseClassClassMethod {
   int x = 0;
 }
++ (void)myBaseClassClassAndInstanceMethod {
+}
+- (void)myBaseClassClassAndInstanceMethod {
+}
 - (void)myBaseClassMethod {
   int x = 0;
 }
@@ -43,6 +49,21 @@
   return 0;
 }
 - (void)setMyBaseClassProperty:(int)value {
+}
+
+- (void)myBaseClassTestReceiver {
+  [self myBaseClassClassAndInstanceMethod];
+  [[self class] myBaseClassClassAndInstanceMethod];
+  [MyBaseClass myBaseClassClassMethod];
+
+  [self respondsToSelector:@selector(myBaseClassMethod)];
+  [[self class] respondsToSelector:@selector(myBaseClassClassMethod)];
+  [MyBaseClass respondsToSelector:@selector(myBaseClassClassMethod)];
+
+  MyBaseClass* myBaseClass = [MyBaseClass new];
+  [(id)myBaseClass myBaseClassProtocolOptionalMethod];
+  Class myBaseClassClass = [myBaseClass class];
+  [myBaseClassClass myBaseClassClassMethod];
 }
 
 @end
@@ -91,6 +112,10 @@
 
 @implementation MySubclass
 
++ (void)myBaseClassClassMethod {
+  [super myBaseClassClassMethod];
+}
+
 - (void)myBaseClassMethod {
   [super myBaseClassMethod];
 }
@@ -132,6 +157,20 @@
 - (void)mySubclassSubprotocol2RequiredMethod {
 }
 - (void)mySubclassSubprotocol2OptionalMethod {
+}
+
+- (void)mySubclassTestReceiver {
+  [super myBaseClassMethod];
+  [self myBaseClassMethod];
+  [(MyBaseClass*)self myBaseClassMethod];
+
+  [[self superclass] myBaseClassClassMethod];
+  [[self class] myBaseClassClassMethod];
+  [MySubclass myBaseClassClassMethod];
+
+  MySubclass* mySubclass = [MySubclass new];
+  [[mySubclass class] myBaseClassClassMethod];
+  [mySubclass mySubclassMethod];
 }
 
 @end

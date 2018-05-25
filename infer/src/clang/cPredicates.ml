@@ -381,24 +381,70 @@ let is_objc_method_exposed context an =
         false
 
 
-(* checks whether an object is of a certain class *)
-let is_object_of_class_named receiver cname =
-  let open Clang_ast_t in
-  match receiver with
-  | PseudoObjectExpr (_, _, ei) | ImplicitCastExpr (_, _, ei, _) | ParenExpr (_, _, ei) -> (
-    match CAst_utils.qual_type_to_objc_interface ei.ei_qual_type with
-    | Some interface ->
-        is_objc_interface_named (Ctl_parser_types.Decl interface) cname
-    | _ ->
-        false )
-  | _ ->
-      false
-
-
 let get_selector an =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
       Some omei.omei_selector
+  | _ ->
+      None
+
+
+let receiver_objc_type_name an =
+  match an with
+  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, receiver :: _, _, {omei_receiver_kind= `Instance})) ->
+      Clang_ast_proj.get_expr_tuple receiver
+      |> Option.bind ~f:(fun (_, _, expr_info) ->
+             CAst_utils.name_opt_of_typedef_qual_type expr_info.Clang_ast_t.ei_qual_type )
+      |> Option.map ~f:QualifiedCppName.to_qual_string
+  | _ ->
+      None
+
+
+let is_receiver_objc_class_type an =
+  match receiver_objc_type_name an with
+  | Some type_name ->
+      String.equal type_name "Class"
+  | None ->
+      false
+
+
+let is_receiver_objc_id_type an =
+  match receiver_objc_type_name an with
+  | Some type_name ->
+      String.equal type_name "id"
+  | None ->
+      false
+
+
+let objc_message_receiver context an =
+  match an with
+  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, args, _, omei)) -> (
+    match omei.omei_receiver_kind with
+    | `SuperClass | `SuperInstance -> (
+      match current_objc_container context with
+      | Some container ->
+          let decl_ref_opt = CAst_utils.get_superclass_curr_class_objc_from_decl container in
+          CAst_utils.get_decl_opt_with_decl_ref decl_ref_opt
+      | _ ->
+          None )
+    | `Class qt ->
+        CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr
+    | `Instance ->
+      match args with
+      | receiver :: _ -> (
+        match receiver with
+        | ObjCMessageExpr (_, _, _, sub_omei) -> (
+          match CAst_utils.get_decl_opt sub_omei.omei_decl_pointer with
+          | Some (ObjCMethodDecl (_, _, omdi)) ->
+              CAst_utils.qual_type_to_objc_interface omdi.omdi_result_type
+          | _ ->
+              None )
+        | PseudoObjectExpr (_, _, ei) | ImplicitCastExpr (_, _, ei, _) | ParenExpr (_, _, ei) ->
+            CAst_utils.qual_type_to_objc_interface ei.ei_qual_type
+        | _ ->
+            None )
+      | [] ->
+          None )
   | _ ->
       None
 
@@ -412,39 +458,38 @@ let call_method an m =
       false
 
 
-let is_receiver_kind_class omei cname =
-  let open Clang_ast_t in
-  match omei.omei_receiver_kind with
-  | `Class ptr -> (
-    match CAst_utils.get_desugared_type ptr.Clang_ast_t.qt_type_ptr with
-    | Some (ObjCInterfaceType (_, ptr)) -> (
-      match CAst_utils.get_decl ptr with
-      | Some (ObjCInterfaceDecl (_, ndi, _, _, _)) ->
-          ALVar.compare_str_with_alexp ndi.ni_name cname
-      | _ ->
-          false )
+let call_class_method an mname =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) -> (
+    match omei.omei_receiver_kind with
+    | `SuperClass | `Class _ ->
+        ALVar.compare_str_with_alexp omei.omei_selector mname
+    | `Instance ->
+        (* The ObjC class type, 'Class', is treated as an instance receiver kind.
+            We need to check if the receiver is the class type to catch cases like
+            [[self class] myClassMethod] *)
+        ALVar.compare_str_with_alexp omei.omei_selector mname && is_receiver_objc_class_type an
     | _ ->
         false )
   | _ ->
       false
 
 
-let call_class_method an cname mname =
+(* an is a node calling method whose name contains mname of a class. *)
+let call_instance_method an mname =
   match an with
-  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
-      is_receiver_kind_class omei cname && ALVar.compare_str_with_alexp omei.omei_selector mname
-  | _ ->
-      false
-
-
-(* an is a node calling method whose name contains mname of a
-   class whose name contains cname.
-*)
-let call_instance_method an cname mname =
-  match an with
-  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
-      is_object_of_class_named receiver cname
-      && ALVar.compare_str_with_alexp omei.omei_selector mname
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) -> (
+    match omei.omei_receiver_kind with
+    | `SuperInstance ->
+        ALVar.compare_str_with_alexp omei.omei_selector mname
+    | `Instance ->
+        (* The ObjC class type, 'Class', is treated as an instance receiver kind.
+            We need to verify the receiver is not the class type to avoid cases like
+            [[self class] myClassMethod] *)
+        ALVar.compare_str_with_alexp omei.omei_selector mname
+        && not (is_receiver_objc_class_type an)
+    | _ ->
+        false )
   | _ ->
       false
 
@@ -807,6 +852,31 @@ let is_in_objc_protocol_named context name =
       false
 
 
+let is_receiver_subclass_of context an cname =
+  match objc_message_receiver context an with
+  | Some receiver ->
+      is_subclass_of receiver cname
+  | _ ->
+      false
+
+
+let is_receiver_class_named context an cname =
+  match objc_message_receiver context an with
+  | Some receiver ->
+      declaration_has_name (Decl receiver) cname
+  | _ ->
+      false
+
+
+let is_receiver_super an =
+  match an with
+  | Ctl_parser_types.Stmt
+      (ObjCMessageExpr (_, _, _, {omei_receiver_kind= `SuperClass | `SuperInstance})) ->
+      true
+  | _ ->
+      false
+
+
 let captures_cxx_references an = List.length (captured_variables_cxx_ref an) > 0
 
 let is_binop_with_kind an alexp_kind =
@@ -890,7 +960,6 @@ let isa an classname =
 
 
 let is_class an re = is_objc_class_named an re
-
 
 (* an is an expression @selector with whose name in the language of re *)
 let is_at_selector_with_name an re =

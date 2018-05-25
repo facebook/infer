@@ -221,8 +221,8 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 		SET report_when =
 				 WHEN ((class_unavailable_in_supported_ios_sdk()) AND
 				       NOT within_available_class_block() AND
-							 (call_class_method(REGEXP(".*"), "alloc") OR
-							 call_class_method(REGEXP(".*"), "new")))
+							 (call_class_method("alloc") OR
+							 call_class_method("new")))
 				 HOLDS-IN-NODE ObjCMessageExpr;
 
 			SET message =
