@@ -32,8 +32,6 @@ DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                  config.JSON_REPORT_FILENAME)
 
-USE_INFER_CACHE = False
-
 INFER_SCRIPT = """\
 #!/usr/bin/env {python_executable}
 import subprocess
@@ -58,13 +56,6 @@ def prepare_build(args):
         ]
 
     temp_files = []
-    if USE_INFER_CACHE:
-        # Create a temporary directory as a cache for jar files.
-        infer_cache_dir = os.path.join(args.infer_out, 'cache')
-        if not os.path.isdir(infer_cache_dir):
-            os.mkdir(infer_cache_dir)
-        infer_options += ['--infer-cache', infer_cache_dir]
-        temp_files += [infer_cache_dir]
 
     try:
         infer_command = [utils.get_cmd_in_bin_dir('infer')] + infer_options

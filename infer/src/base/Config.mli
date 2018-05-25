@@ -239,8 +239,6 @@ val undo_join : bool
 
 val unsafe_unret : string
 
-val use_jar_cache : bool
-
 val weak : string
 
 val whitelisted_cpp_methods : string list
@@ -415,8 +413,6 @@ val icfg_dotty_outfile : string option
 val ignore_trivial_traces : bool
 
 val immutable_cast : bool
-
-val infer_cache : string option
 
 val infer_is_clang : bool
 

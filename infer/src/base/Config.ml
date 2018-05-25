@@ -295,8 +295,6 @@ let undo_join = true
 
 let unsafe_unret = "<\"Unsafe_unretained\">"
 
-let use_jar_cache = true
-
 let weak = "<\"Weak\">"
 
 (* Whitelists for C++ library functions *)
@@ -1411,11 +1409,6 @@ and icfg_dotty_outfile =
 and ignore_trivial_traces =
   CLOpt.mk_bool ~long:"ignore-trivial-traces" ~default:true
     "Ignore traces whose length is at most 1"
-
-
-and infer_cache =
-  CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache" ~meta:"dir"
-    "Select a directory to contain the infer cache (Buck and Java only)"
 
 
 and iphoneos_target_sdk_version =
@@ -2622,8 +2615,6 @@ and ignore_trivial_traces = !ignore_trivial_traces
 
 and immutable_cast = !immutable_cast
 
-and infer_cache = !infer_cache
-
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 
 and iphoneos_target_sdk_version_path_regex =
@@ -2947,34 +2938,7 @@ let dynamic_dispatch =
 
 let dynamic_dispatch = !dynamic_dispatch
 
-let specs_library =
-  match infer_cache with
-  | Some cache_dir when use_jar_cache ->
-      let add_spec_lib specs_library filename =
-        let key_dir =
-          let basename = Filename.basename filename in
-          let key = basename ^ Utils.string_crc_hex32 filename in
-          cache_dir ^/ key
-        in
-        let extract_specs dest_dir filename =
-          if Filename.check_suffix filename ".jar" then (
-            (try Unix.mkdir dest_dir ~perm:0o700 with Unix.Unix_error _ -> ()) ;
-            let zip_channel = Zip.open_in filename in
-            let entries = Zip.entries zip_channel in
-            let extract_entry (entry: Zip.entry) =
-              let dest_file = dest_dir ^/ Filename.basename entry.filename in
-              if Filename.check_suffix entry.filename specs_files_suffix then
-                Zip.copy_entry_to_file zip_channel entry dest_file
-            in
-            List.iter ~f:extract_entry entries ;
-            Zip.close_in zip_channel )
-        in
-        extract_specs key_dir filename ; key_dir :: specs_library
-      in
-      List.fold ~f:add_spec_lib ~init:[] !specs_library
-  | _ ->
-      !specs_library
-
+let specs_library = !specs_library
 
 (** Global variables *)
 
