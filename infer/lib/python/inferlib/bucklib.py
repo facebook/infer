@@ -209,7 +209,7 @@ def cleanup(temp_files):
                 shutil.rmtree(file)
             else:
                 os.unlink(file)
-        except IOError:
+        except OSError:
             logging.error('Could not remove %s' % file)
 
 
