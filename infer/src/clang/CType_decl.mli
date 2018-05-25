@@ -10,7 +10,8 @@
 open! IStd
 
 module CProcname : sig
-  val from_decl : ?tenv:Tenv.t -> is_cpp:bool -> Clang_ast_t.decl -> Typ.Procname.t
+  val from_decl :
+    ?tenv:Tenv.t -> is_cpp:bool -> ?outer_proc:Typ.Procname.t -> Clang_ast_t.decl -> Typ.Procname.t
   (** Given decl, return its procname. This function should be used for all procedures
       present in original AST *)
 
@@ -29,12 +30,6 @@ module CProcname : sig
     val objc_method_of_string_kind :
       Typ.Name.t -> string -> Typ.Procname.ObjC_Cpp.kind -> Typ.Procname.t
   end
-
-  val mk_fresh_block_procname : Typ.Procname.t -> Typ.Procname.t
-  (** Makes a fresh name for a block defined inside the defining procedure.
-    It updates the global block_counter *)
-
-  val reset_block_counter : unit -> unit
 end
 
 (** Processes types and record declarations by adding them to the tenv *)

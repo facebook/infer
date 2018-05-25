@@ -41,7 +41,7 @@ let compute_icfg trans_unit_ctx tenv ast =
 let init_global_state_capture () =
   Ident.NameGenerator.reset () ;
   CFrontend_config.global_translation_unit_decls := [] ;
-  CType_decl.CProcname.reset_block_counter ()
+  CFrontend_config.reset_block_counter ()
 
 
 let do_source_file (translation_unit_context: CFrontend_config.translation_unit_context) ast =

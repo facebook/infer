@@ -182,14 +182,6 @@ let get_record_definition decl =
       decl
 
 
-(** Global counter for anonymous block*)
-let block_counter = ref 0
-
-let get_fresh_block_index () =
-  block_counter := !block_counter + 1 ;
-  !block_counter
-
-
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
     (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate)
@@ -442,7 +434,17 @@ and objc_method_procname ?tenv decl_info method_name mdi =
   mk_objc_method class_typename method_name method_kind
 
 
-and from_decl ?tenv ~is_cpp meth_decl =
+and objc_block_procname outer_proc_opt =
+  let outer_proc_string = Option.value_map ~f:Typ.Procname.to_string outer_proc_opt ~default:"" in
+  let block_procname_with_index i =
+    Printf.sprintf "%s%s%s%d" Config.anonymous_block_prefix outer_proc_string
+      Config.anonymous_block_num_sep i
+  in
+  let name = block_procname_with_index (CFrontend_config.get_fresh_block_index ()) in
+  Typ.Procname.mangled_objc_block name
+
+
+and from_decl ?tenv ~is_cpp ?outer_proc meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -460,11 +462,7 @@ and from_decl ?tenv ~is_cpp meth_decl =
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
       objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi
   | BlockDecl _ ->
-      let name =
-        Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep
-        ^ string_of_int (get_fresh_block_index ())
-      in
-      Typ.Procname.mangled_objc_block name
+      objc_block_procname outer_proc
   | _ ->
       Logging.die InternalError "Expected method decl, but got %s."
         (Clang_ast_proj.get_decl_kind_string meth_decl)
@@ -530,20 +528,6 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
 
 module CProcname = struct
   let from_decl = from_decl
-
-  (* silly, but required to avoid circular dependencies *)
-
-  let reset_block_counter () = block_counter := 0
-
-  let block_procname_with_index defining_proc i =
-    Config.anonymous_block_prefix ^ Typ.Procname.to_string defining_proc
-    ^ Config.anonymous_block_num_sep ^ string_of_int i
-
-
-  let mk_fresh_block_procname defining_proc =
-    let name = block_procname_with_index defining_proc (get_fresh_block_index ()) in
-    Typ.Procname.mangled_objc_block name
-
 
   module NoAstDecl = struct
     let c_function_of_string ~is_cpp tenv name =
