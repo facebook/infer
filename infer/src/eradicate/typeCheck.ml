@@ -401,7 +401,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 0
           in
           let n = drop_n_args proc_attributes.ProcAttributes.formals in
-          let visible_params = List.drop params n in
+          let visible_params = IList.drop params n in
           (* Drop the trailing hidden parameter if the constructor is synthetic. *)
           if proc_attributes.ProcAttributes.is_synthetic_method then
             List.take visible_params (List.length visible_params - 1)

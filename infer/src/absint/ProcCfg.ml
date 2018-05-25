@@ -309,11 +309,9 @@ struct
 
   let exceptional_succs _ _ = (* not used *) assert false
 
-  let list_mem_nth list index = List.drop list index |> List.is_empty |> not
-
   let succs cfg (node, index) =
     let succ_index = index + 1 in
-    if list_mem_nth (Base.instrs node) succ_index then [(node, succ_index)]
+    if IList.mem_nth (Base.instrs node) succ_index then [(node, succ_index)]
     else List.map ~f:first_of_node (Base.succs cfg node)
 
 

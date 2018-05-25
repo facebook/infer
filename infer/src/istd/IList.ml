@@ -137,3 +137,11 @@ let merge_dedup l1 l2 ~compare =
         else loop (h2 :: acc) l1 t2
   in
   loop [] l1 l2
+
+
+(* Remove when Base.List.drop perf is fixed *)
+let rec drop list index =
+  match list with _ :: tl when index > 0 -> drop tl (index - 1) | _ -> list
+
+
+let mem_nth list index = drop list index |> List.is_empty |> not

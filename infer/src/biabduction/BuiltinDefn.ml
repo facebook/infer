@@ -672,7 +672,7 @@ let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_a
   match args with
   | _ when List.length args >= skip_n_arguments ->
       let varargs = ref args in
-      varargs := List.drop !varargs skip_n_arguments ;
+      varargs := IList.drop !varargs skip_n_arguments ;
       SymExec.unknown_or_scan_call ~is_scan:true ~reason:"execute scan function" (snd ret_id_typ)
         Annot.Item.empty {call_args with args= !varargs}
   | _ ->

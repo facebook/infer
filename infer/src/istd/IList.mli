@@ -35,3 +35,9 @@ val append_no_duplicates : cmp:('a -> 'a -> int) -> ('a list -> 'a list -> 'a li
     duplicates. *)
 
 val merge_dedup : 'a list -> 'a list -> compare:('a -> 'a -> int) -> 'a list
+
+val drop : 'a list -> int -> 'a list
+(** [drop l n] returns [l] without the first [n] elements, or the empty list if [n > length l]. *)
+
+val mem_nth : 'a list -> int -> bool
+(** [mem_nth l n] returns whether the list [l] contains a [n]th element. *)

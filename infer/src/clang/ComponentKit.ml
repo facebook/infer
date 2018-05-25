@@ -311,7 +311,7 @@ let component_with_multiple_factory_methods_advice context an =
                    document which are optional."
             ; doc_url= None
             ; loc= CFrontend_checkers.location_from_decl context meth_decl } )
-          (List.drop factory_methods 1)
+          (IList.drop factory_methods 1)
     | _ ->
         assert false
   in
