@@ -123,7 +123,7 @@ let () =
   ( if Config.test_determinator then (
       TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
         Config.method_decls_info ;
-      TestDeterminator.print_test_to_run () )
+      TestDeterminator.emit_tests_to_run () )
   else
     match Config.command with
     | Analyze ->

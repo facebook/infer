@@ -114,7 +114,8 @@ module DiffLines = struct
     match changed_lines_file' with
     | Some changed_lines_file
       -> (
-        L.progress "@\nInitializing modified lines map from file '%s'... " changed_lines_file ;
+        L.(debug TestDeterminator Medium)
+          "Initializing changed lines map from file '%s'..." changed_lines_file ;
         match Utils.read_file changed_lines_file with
         | Ok cl_list ->
             let changed_lines =
@@ -122,7 +123,7 @@ module DiffLines = struct
                   let fname, cl = String.rsplit2_exn ~on:':' cl_item in
                   String.Map.set acc ~key:fname ~data:(FileDiff.parse_unix_diff cl) )
             in
-            L.progress " done! @\n" ;
+            L.(debug TestDeterminator Medium) "done@\n" ;
             map := changed_lines
         | Error _ ->
             L.die UserError "Could not read file %s" changed_lines_file )
@@ -131,12 +132,10 @@ module DiffLines = struct
 
 
   let print_changed_lines () =
-    L.(debug Analysis Medium) "@\n--- Changed Lines Map --- " ;
-    String.Map.iteri !map ~f:(fun ~key:k ~data:d ->
-        L.(debug Analysis Medium) "\n     %s --> [" k ;
-        List.iter d ~f:(L.(debug Analysis Medium) " %i ") ;
-        L.(debug Analysis Medium) " ] " ) ;
-    L.(debug Analysis Medium) "@\n--- End Changed Lines Map --- @\n"
+    L.(debug TestDeterminator Quiet) "--- Changed Lines Map ---@\n" ;
+    String.Map.iteri !map ~f:(fun ~key ~data ->
+        L.(debug TestDeterminator Quiet)
+          "%s --> [%a]@\n" key (Pp.seq ~sep:", " F.pp_print_int) data )
 end
 
 let pp_profiler_sample_set fmt s =
@@ -152,7 +151,8 @@ module TestSample = struct
   let init_test_sample test_samples_file' =
     match test_samples_file' with
     | Some test_samples_file ->
-        L.progress "@\nReading Profiler Samples File '%s'...." test_samples_file ;
+        L.(debug TestDeterminator Medium)
+          "Reading Profiler Samples File '%s'....@\n" test_samples_file ;
         let ts = JPS.from_json_file test_samples_file ~use_signature:use_method_signature in
         labeled_test_samples := ts
     | _ ->
@@ -168,7 +168,7 @@ end
 let in_range l range = l >= (fst range).Location.line && l <= (snd range).Location.line
 
 let affected_methods method_range_map file_changed_lines changed_lines =
-  L.progress "@\nLooking for affected methods in file '%s' " file_changed_lines ;
+  L.(debug TestDeterminator Medium) "Looking for affected methods in file '%s' " file_changed_lines ;
   RangeMap.fold
     (fun key ((l1, _) as range) acc ->
       let method_file = SourceFile.to_string l1.Location.file in
@@ -176,7 +176,8 @@ let affected_methods method_range_map file_changed_lines changed_lines =
         String.equal method_file file_changed_lines
         && List.exists ~f:(fun l -> in_range l range) changed_lines
       then (
-        L.progress "@\n     ->Adding '%a' in affected methods...@\n" Typ.Procname.pp key ;
+        L.(debug TestDeterminator Medium)
+          "Adding '%a' in affected methods...@\n" Typ.Procname.pp key ;
         JPS.ProfilerSample.add key acc )
       else acc )
     method_range_map JPS.ProfilerSample.empty
@@ -189,23 +190,26 @@ let compute_affected_methods_java changed_lines_map method_range_map =
         let am = affected_methods method_range_map file_changed_lines data in
         JPS.ProfilerSample.union am acc )
   in
-  L.progress "@\n\n== Resulting Affected Methods ==%a@\n== End Affected Methods ==@\n"
-    pp_profiler_sample_set affected_methods ;
+  L.(debug TestDeterminator Quiet)
+    "== Affected Methods ==%a@\n== End Affected Methods ==@\n" pp_profiler_sample_set
+    affected_methods ;
   affected_methods
 
 
 let compute_affected_methods_clang source_file changed_lines_map method_range_map =
   let fname = SourceFile.to_rel_path source_file in
-  L.progress "@\nLooking for file %s in changed-line map..." fname ;
+  L.(debug TestDeterminator Medium) "Looking for file %s in changed-line map..." fname ;
   match String.Map.find changed_lines_map fname with
   | Some changed_lines ->
-      L.progress " found!@\n" ;
+      L.(debug TestDeterminator Medium) "found!@\n" ;
       let affected_methods = affected_methods method_range_map fname changed_lines in
-      L.progress "@\n\n== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
+      L.(debug TestDeterminator Medium)
+        "== Resulting Affected Methods ==@\n%a@\n== End Affected Methods ==@\n"
         pp_profiler_sample_set affected_methods ;
       affected_methods
   | None ->
-      L.progress "@\n%s not found in changed-line map. Nothing else to do for it.@\n" fname ;
+      L.(debug TestDeterminator Medium)
+        "%s not found in changed-line map. Nothing else to do for it.@\n" fname ;
       JPS.ProfilerSample.empty
 
 
@@ -213,21 +217,20 @@ let relevant_tests = ref []
 
 let _get_relevant_test_to_run () = !relevant_tests
 
-let print_test_to_run () =
-  L.progress "@\n[TEST DETERMINATOR] Relevant Tests to run = [" ;
-  List.iter ~f:(L.progress " %s ") !relevant_tests ;
-  L.progress " ] @\n" ;
+let emit_tests_to_run () =
   let json = `List (List.map ~f:(fun t -> `String t) !relevant_tests) in
-  Yojson.Basic.to_file (Config.results_dir ^/ "test_determinator.json") json
+  let outpath = Config.results_dir ^/ "test_determinator.json" in
+  Yojson.Basic.to_file outpath json ;
+  L.progress "Tests to run: [%a]@\n" (Pp.seq ~sep:", " F.pp_print_string) !relevant_tests
 
 
 let init_clang cfg changed_lines_file test_samples_file =
   DiffLines.init_changed_lines_map changed_lines_file ;
   DiffLines.print_changed_lines () ;
   MethodRangeMap.create_clang_method_range_map cfg ;
-  L.(debug Analysis Medium) "%a@\n" MethodRangeMap.pp_map () ;
+  L.(debug TestDeterminator Medium) "%a@\n" MethodRangeMap.pp_map () ;
   TestSample.init_test_sample test_samples_file ;
-  L.(debug Analysis Medium) "%a@\n" TestSample.pp_map () ;
+  L.(debug TestDeterminator Medium) "%a@\n" TestSample.pp_map () ;
   initialized_test_determinator := true
 
 
@@ -235,15 +238,16 @@ let init_java changed_lines_file test_samples_file code_graph_file =
   DiffLines.init_changed_lines_map changed_lines_file ;
   DiffLines.print_changed_lines () ;
   MethodRangeMap.create_java_method_range_map code_graph_file ;
-  L.(debug Analysis Medium) "%a@\n" MethodRangeMap.pp_map () ;
+  L.(debug TestDeterminator Medium) "%a@\n" MethodRangeMap.pp_map () ;
   TestSample.init_test_sample test_samples_file ;
-  L.(debug Analysis Medium) "%a@\n" TestSample.pp_map () ;
+  L.(debug TestDeterminator Medium) "%a@\n" TestSample.pp_map () ;
   initialized_test_determinator := true
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
 let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
-  L.progress "@\n****** Start Test Determinator for  %s ***** @\n"
+  L.(debug TestDeterminator Quiet)
+    "****** Start Test Determinator for  %s *****@\n"
     (SourceFile.to_string source_file) ;
   if is_test_determinator_init () then () else init_clang cfg changed_lines_file test_samples_file ;
   let affected_methods =
@@ -261,7 +265,7 @@ let _test_to_run_clang source_file cfg changed_lines_file test_samples_file =
 
 
 let test_to_run_java changed_lines_file test_samples_file code_graph_file =
-  L.progress "@\n***** Start Test Determinator ***** @\n" ;
+  L.(debug TestDeterminator Quiet) "***** Start Java Test Determinator *****@\n" ;
   if is_test_determinator_init () then ()
   else init_java changed_lines_file test_samples_file code_graph_file ;
   let affected_methods =
@@ -273,6 +277,12 @@ let test_to_run_java changed_lines_file test_samples_file code_graph_file =
     else
       List.fold (TestSample.test_sample ()) ~init:[] ~f:(fun acc (label, profiler_samples) ->
           let intersection = JPS.ProfilerSample.inter affected_methods profiler_samples in
-          if JPS.ProfilerSample.is_empty intersection then acc else label :: acc )
+          if JPS.ProfilerSample.is_empty intersection then acc
+          else (
+            L.(debug TestDeterminator Quiet)
+              "Choosing test '%s' because of [%a]@\n" label
+              (Pp.seq Typ.Procname.pp ~sep:", ")
+              (JPS.ProfilerSample.elements intersection) ;
+            label :: acc ) )
   in
   relevant_tests := List.append test_to_run !relevant_tests

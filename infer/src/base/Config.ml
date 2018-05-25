@@ -1003,6 +1003,7 @@ and ( bo_debug
     , debug_level_analysis
     , debug_level_capture
     , debug_level_linters
+    , debug_level_test_determinator
     , default_linters
     , filtering
     , frontend_tests
@@ -1036,6 +1037,9 @@ and ( bo_debug
     CLOpt.mk_int ~long:"debug-level-linters" ~default:0
       ~in_help:(InferCommand.(Capture, manual_clang_linters) :: all_generic_manuals)
       "Debug level for the linters. See $(b,--debug-level) for accepted values."
+  and debug_level_test_determinator =
+    CLOpt.mk_int ~long:"debug-level-test-determinator" ~default:0
+      "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
       ~default:(Option.value_map ~default:false ~f:InferCommand.(equal Report) initial_command)
@@ -1072,7 +1076,8 @@ and ( bo_debug
     bo_debug := level ;
     debug_level_analysis := level ;
     debug_level_capture := level ;
-    debug_level_linters := level
+    debug_level_linters := level ;
+    debug_level_test_determinator := level
   in
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"; "-stats"] ~long:"debug" ~short:'g'
@@ -1144,6 +1149,7 @@ and ( bo_debug
   , debug_level_analysis
   , debug_level_capture
   , debug_level_linters
+  , debug_level_test_determinator
   , default_linters
   , filtering
   , frontend_tests
@@ -2524,6 +2530,8 @@ and debug_level_analysis = !debug_level_analysis
 and debug_level_capture = !debug_level_capture
 
 and debug_level_linters = !debug_level_linters
+
+and debug_level_test_determinator = !debug_level_test_determinator
 
 and debug_exceptions = !debug_exceptions
 

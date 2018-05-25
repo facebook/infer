@@ -338,6 +338,8 @@ val debug_level_capture : int
 
 val debug_level_linters : int
 
+val debug_level_test_determinator : int
+
 val debug_exceptions : bool
 
 val debug_mode : bool

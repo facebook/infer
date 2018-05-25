@@ -248,7 +248,9 @@ let linters_debug_level = debug_level_of_int Config.debug_level_linters
 
 let mergecapture_debug_level = Quiet
 
-type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture
+let test_determinator_debug_level = debug_level_of_int Config.debug_level_test_determinator
+
+type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture | TestDeterminator
 
 let debug kind level fmt =
   let base_level =
@@ -263,6 +265,8 @@ let debug kind level fmt =
         linters_debug_level
     | MergeCapture ->
         mergecapture_debug_level
+    | TestDeterminator ->
+        test_determinator_debug_level
   in
   let to_file = compare_debug_level level base_level <= 0 in
   log ~to_console:false ~to_file debug_file_fmts fmt
