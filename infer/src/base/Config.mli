@@ -594,6 +594,8 @@ val show_progress_bar : bool
 
 val siof : bool
 
+val siof_check_iostreams : bool
+
 val siof_safe_methods : string list
 
 val skip_analysis_in_path : string list

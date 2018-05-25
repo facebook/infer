@@ -19,7 +19,7 @@ type t =
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
-  ; siof: SiofDomain.astate option
+  ; siof: SiofDomain.Summary.astate option
   ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
@@ -52,7 +52,9 @@ let pp pe fmt
     (pp_opt "CrashContext" Crashcontext.pp_stacktree)
     crashcontext_frame
     (pp_opt "Quandary" QuandarySummary.pp)
-    quandary (pp_opt "Siof" SiofDomain.pp) siof
+    quandary
+    (pp_opt "Siof" SiofDomain.Summary.pp)
+    siof
     (pp_opt "RacerD" RacerDDomain.pp_summary)
     racerd (pp_opt "Litho" LithoDomain.pp) litho
     (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp)

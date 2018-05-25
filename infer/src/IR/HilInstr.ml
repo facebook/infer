@@ -43,8 +43,8 @@ type translation =
   | Unbind of Var.t list
   | Ignore
 
-(* convert an SIL instruction into an HIL instruction. the [f_resolve_id] function should map an SSA
-   temporary variable to the access path it represents. evaluating the HIL instruction should
+(** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an
+   SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
    produce the same result as evaluating the SIL instruction and replacing the temporary variables
    using [f_resolve_id]. *)
 let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =

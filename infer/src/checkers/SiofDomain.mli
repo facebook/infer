@@ -11,6 +11,9 @@ open! IStd
 
 module VarNames : module type of AbstractDomain.FiniteSet (String)
 
+module Summary :
+    module type of AbstractDomain.Pair (AbstractDomain.BottomLifted (SiofTrace)) (VarNames)
+
 (* The domain for the analysis is:
 
    - On the one hand, sets of global variables if an initialization is needed at runtime, or Bottom
@@ -27,4 +30,4 @@ module VarNames : module type of AbstractDomain.FiniteSet (String)
    terminates (even before main() has started). For instance, this is the case for
    std::ios_base::Init::Init(). *)
 
-include module type of AbstractDomain.Pair (AbstractDomain.BottomLifted (SiofTrace)) (VarNames)
+include module type of Summary

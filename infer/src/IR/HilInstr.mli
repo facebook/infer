@@ -34,4 +34,7 @@ type translation =
 val of_sil :
   include_array_indexes:bool -> f_resolve_id:(Var.t -> AccessExpression.t option) -> Sil.instr
   -> translation
-(** Convert an SIL instruction to an HIL instruction *)
+(** convert an SIL instruction into an HIL instruction. The [f_resolve_id] function should map an
+   SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
+   produce the same result as evaluating the SIL instruction and replacing the temporary variables
+   using [f_resolve_id]. *)

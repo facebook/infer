@@ -11,4 +11,5 @@ open! IStd
 open! AbstractDomain.Types
 module VarNames = AbstractDomain.FiniteSet (String)
 module BottomSiofTrace = AbstractDomain.BottomLifted (SiofTrace)
-include AbstractDomain.Pair (BottomSiofTrace) (VarNames)
+module Summary = AbstractDomain.Pair (BottomSiofTrace) (VarNames)
+include Summary

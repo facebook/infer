@@ -962,12 +962,25 @@ and current_to_previous_script =
      we are on the current version already."
 
 
-and cxx_infer_headers =
-  CLOpt.mk_bool ~long:"cxx-infer-headers" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_clang)]
-    "Include C++ header models during compilation. Infer swaps some C++ headers for its own in \
-     order to get a better model of, eg, the standard library. This can sometimes cause \
-     compilation failures."
+and cxx_infer_headers, siof_check_iostreams =
+  let siof_check_iostreams =
+    CLOpt.mk_bool ~long:"siof-check-iostreams"
+      ~in_help:InferCommand.[(Analyze, manual_siof)]
+      "Do not assume that iostreams (cout, cerr, ...) are always initialized. The default is to \
+       assume they are always initialized when $(b,--cxx-infer-headers) is false to avoid false \
+       positives due to lack of models of the proper initialization of io streams. However, if \
+       your program compiles against a recent libstdc++ then the infer models are not needed for \
+       precision and it is safe to turn this option on."
+  in
+  let cxx_infer_headers =
+    CLOpt.mk_bool_group ~long:"cxx-infer-headers" ~default:false
+      ~in_help:InferCommand.[(Capture, manual_clang)]
+      "Include C++ header models during compilation. Infer swaps some C++ headers for its own in \
+       order to get a better model of, eg, the standard library. This can sometimes cause \
+       compilation failures."
+      [siof_check_iostreams] []
+  in
+  (cxx_infer_headers, siof_check_iostreams)
 
 
 and cxx_scope_guards =
@@ -1805,8 +1818,8 @@ and reactive_capture =
 and relative_path_backtack =
   CLOpt.mk_int ~long:"backtrack-level" ~default:0 ~meta:"int"
     "Maximum level of backtracking to convert an absolute path to path relative to the common \
-     prefix between the project root and the path. For instance, with bactraking level 1, it \
-     will convert /my/source/File.java with project root /my/root into ../source/File.java"
+     prefix between the project root and the path. For instance, with bactraking level 1, it will \
+     convert /my/source/File.java with project root /my/root into ../source/File.java"
 
 
 and report =
@@ -2793,6 +2806,8 @@ and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
 
 and siof = !siof
+
+and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = !siof_safe_methods
 

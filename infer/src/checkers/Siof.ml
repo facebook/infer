@@ -40,6 +40,16 @@ let standard_streams =
   ; "std::wcout" ]
 
 
+let always_initialized =
+  (* We model "std::ios_base::Init::Init" as initializing [standard_streams], which works if either
+     infer's cxx models are enabled ([Config.cxx_infer_headers]) or if the stdlib is a recent
+     libstdc++ (which is kind enough to create an [std::ios_base::Init] object explicitely). In
+     other cases, we assume they are always initialized so as not to be noisy. The issue to remove
+     this assumption would be to detect when <iostream> is included in a file without swapping the
+     C++ includes for our own. *)
+  if Config.siof_check_iostreams then [] else standard_streams
+
+
 let models = List.map ~f:parse_siof_model [("std::ios_base::Init::Init", standard_streams)]
 
 let is_modelled =
@@ -51,7 +61,7 @@ let is_modelled =
 
 
 module Payload = SummaryPayload.Make (struct
-  type t = SiofDomain.astate
+  type t = SiofDomain.Summary.astate
 
   let update_payloads astate (payloads: Payloads.t) = {payloads with siof= Some astate}
 
@@ -75,16 +85,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let get_globals pdesc e =
-    let is_dangerous_global pv =
-      Pvar.is_global pv && not (Pvar.is_static_local pv) && not (Pvar.is_pod pv)
-      && not (Pvar.is_compile_constant pv) && not (is_compile_time_constructed pdesc pv)
-    in
-    Exp.program_vars e
-    |> Sequence.fold ~init:GlobalVarSet.empty ~f:(fun gset g ->
-           if is_dangerous_global g then GlobalVarSet.add g gset else gset )
-
-
   let filter_global_accesses initialized =
     let initialized_matcher =
       Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
@@ -93,6 +93,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  gvar ->
         QualifiedCppName.of_qual_string (Pvar.to_string gvar)
         |> Fn.non (QualifiedCppName.Match.match_qualifiers initialized_matcher) )
+
+
+  let is_not_always_initialized =
+    Staged.unstage (filter_global_accesses (Domain.VarNames.of_list always_initialized))
+
+
+  let get_globals pdesc e =
+    let is_dangerous_global pv =
+      Pvar.is_global pv && not (Pvar.is_static_local pv) && not (Pvar.is_pod pv)
+      && not (Pvar.is_compile_constant pv) && not (is_compile_time_constructed pdesc pv)
+      && is_not_always_initialized pv
+    in
+    Exp.program_vars e
+    |> Sequence.fold ~init:GlobalVarSet.empty ~f:(fun gset g ->
+           if is_dangerous_global g then GlobalVarSet.add g gset else gset )
 
 
   let add_globals astate loc globals =

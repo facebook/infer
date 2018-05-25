@@ -19,7 +19,7 @@ type t =
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
-  ; siof: SiofDomain.astate option
+  ; siof: SiofDomain.Summary.astate option
   ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
