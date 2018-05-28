@@ -32,6 +32,7 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
   View mView2;
   ViewGroup mViewSubclass;
   CustomView mCustomView;
+  @AutoCleanup View mWillBeCleanedUp;
 
   boolean b;
 
@@ -41,6 +42,7 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
     mView2 = inflater.inflate(-1, container, false);
     mViewSubclass = (ViewGroup) inflater.inflate(-1, container, false);
     mCustomView = (CustomView) inflater.inflate(-1, container, false);
+    mWillBeCleanedUp = inflater.inflate(-1, container, false);
     return container;
   }
 

@@ -13,6 +13,8 @@ open! IStd
 
 val any_thread : string
 
+val auto_cleanup : string
+
 val expensive : string
 
 val inject_prop : string

@@ -13,6 +13,8 @@ open! IStd
 
 let any_thread = "AnyThread"
 
+let auto_cleanup = "AutoCleanup"
+
 let bind = "Bind"
 
 let bind_view = "BindView"
