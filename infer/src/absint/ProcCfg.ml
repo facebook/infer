@@ -324,7 +324,9 @@ struct
     if index >= 1 then [] else List.map ~f:last_of_node (Base.exceptional_preds cfg node)
 
 
-  let preds cfg t = List.rev_append (exceptional_preds cfg t) (normal_preds cfg t)
+  let preds cfg (node, index) =
+    if index >= 1 then [(node, index - 1)] else List.map ~f:last_of_node (Base.preds cfg node)
+
 
   let start_node cfg = first_of_node (Base.start_node cfg)
 
