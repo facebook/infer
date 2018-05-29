@@ -293,7 +293,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let assign_captured_var loc (cvar, typ) =
     let id = Ident.create_fresh Ident.knormal in
     let instr = Sil.Load (id, Exp.Lvar cvar, typ, loc) in
-    (id, instr)
+    ((Exp.Var id, cvar, typ), instr)
 
 
   let closure_trans closure_pname captured_vars context stmt_info expr_info =
@@ -304,10 +304,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let ids_instrs = List.map ~f:(assign_captured_var loc) captured_vars in
-    let ids, instrs = List.unzip ids_instrs in
-    let captured_vars =
-      List.map2_exn ~f:(fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captured_vars
-    in
+    let captured_vars, instrs = List.unzip ids_instrs in
     let closure = Exp.Closure {name= closure_pname; captured_vars} in
     mk_trans_result (closure, typ) {empty_control with instrs}
 
@@ -2688,11 +2685,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       if is_by_ref then (trans_results_acc, (Exp.Lvar pvar, pvar, typ) :: captured_vars_acc)
       else
-        let id, instr = assign_captured_var loc pvar_typ in
-        let trans_results =
-          mk_trans_result (Exp.Var id, typ) {empty_control with instrs= [instr]}
-        in
-        (trans_results :: trans_results_acc, (Exp.Var id, pvar, typ) :: captured_vars_acc)
+        let ((exp, _, typ) as exp_pvar_typ), instr = assign_captured_var loc pvar_typ in
+        let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
+        (trans_results :: trans_results_acc, exp_pvar_typ :: captured_vars_acc)
     in
     let translate_captured
         { Clang_ast_t.lci_captured_var
