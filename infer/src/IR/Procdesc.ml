@@ -111,7 +111,7 @@ module Node = struct
 
   (** Get the source location of the last instruction in the node *)
   let get_last_loc n =
-    match List.rev (get_instrs n) with instr :: _ -> Sil.instr_get_loc instr | [] -> n.loc
+    n |> get_instrs |> List.last |> Option.value_map ~f:Sil.instr_get_loc ~default:n.loc
 
 
   let pp_id f id = F.pp_print_int f id

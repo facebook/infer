@@ -74,7 +74,7 @@ module NullifyTransferFunctions = struct
   let last_instr_in_node node =
     let get_last_instr () =
       let instrs = CFG.instrs node in
-      match List.rev instrs with instr :: _ -> instr | [] -> Sil.skip_instr
+      List.last instrs |> Option.value ~default:Sil.skip_instr
     in
     if phys_equal node !cache_node then !cache_instr
     else
@@ -135,9 +135,10 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let node_add_nullify_instructions node pvars =
     let loc = Procdesc.Node.get_last_loc node in
     let nullify_instrs =
-      List.filter ~f:is_local pvars |> List.map ~f:(fun pvar -> Sil.Nullify (pvar, loc))
+      List.rev_filter_map pvars ~f:(fun pvar ->
+          if is_local pvar then Some (Sil.Nullify (pvar, loc)) else None )
     in
-    if nullify_instrs <> [] then Procdesc.Node.append_instrs node (List.rev nullify_instrs)
+    if nullify_instrs <> [] then Procdesc.Node.append_instrs node nullify_instrs
   in
   let node_add_removetmps_instructions node ids =
     if ids <> [] then
