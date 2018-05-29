@@ -187,6 +187,9 @@ val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
 
+val fold_nodes : t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
+(** fold over all the nodes of a procedure *)
+
 val fold_slope_range : Node.t -> Node.t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
 (** fold between two nodes or until we reach a branching structure *)
 

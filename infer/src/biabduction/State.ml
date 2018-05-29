@@ -141,8 +141,8 @@ let node_key node =
 (** normalize the list of instructions by renaming let-bound ids *)
 let instrs_normalize instrs =
   let bound_ids =
-    let do_instr ids = function Sil.Load (id, _, _, _) -> id :: ids | _ -> ids in
-    List.fold ~f:do_instr ~init:[] instrs
+    let do_instr = function Sil.Load (id, _, _, _) -> Some id | _ -> None in
+    List.rev_filter_map instrs ~f:do_instr
   in
   let subst =
     let count = ref Int.min_value in
@@ -150,75 +150,59 @@ let instrs_normalize instrs =
       incr count ;
       Ident.set_stamp id !count
     in
-    Sil.subst_of_list (List.map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
+    Sil.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
-  List.map ~f:(Sil.instr_sub subst) instrs
+  List.rev_map ~f:(Sil.instr_sub subst) instrs
 
 
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
-let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
+let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.t =
   let module M = (* map from (loc,kind) *)
   Caml.Map.Make (struct
     type t = Location.t * Procdesc.Node.nodekind [@@deriving compare]
   end) in
-  let module S = (* set of nodes with normalized insructions *)
-  Caml.Set.Make (struct
-    type t = Procdesc.Node.t * Sil.instr list
+  let module E = struct
+    (** Threshold: do not build the map if too many nodes are duplicates. *)
+    let threshold = 100
 
-    let compare (n1, _) (n2, _) = Procdesc.Node.compare n1 n2
-  end) in
+    exception Threshold
+  end in
   let get_key node =
     (* map key *)
     let loc = Procdesc.Node.get_loc node in
     let kind = Procdesc.Node.get_kind node in
     (loc, kind)
   in
-  let map =
-    let m = ref M.empty in
-    (* map from (loc, kind) to (instructions, node) set *)
-    let module E = struct
-      (** Threshold: do not build the map if too many nodes are duplicates. *)
-      let threshold = 100
-
-      exception Threshold
-    end in
-    let do_node node =
-      let normalized_instrs = instrs_normalize (Procdesc.Node.get_instrs node) in
-      let key = get_key node in
-      let s = try M.find key !m with Caml.Not_found -> S.empty in
-      if S.cardinal s > E.threshold then raise E.Threshold ;
-      let s' = S.add (node, normalized_instrs) s in
-      m := M.add key s' !m
+  fun proc_desc ->
+    let map =
+      (* map from (loc, kind) to (node -> instructions) map *)
+      let do_node m node =
+        let normalized_instrs = instrs_normalize (Procdesc.Node.get_instrs node) in
+        let key = get_key node in
+        M.update key
+          (fun s_opt ->
+            let s = Option.value s_opt ~default:Procdesc.NodeMap.empty in
+            if Procdesc.NodeMap.cardinal s > E.threshold then raise E.Threshold ;
+            Some (Procdesc.NodeMap.add node normalized_instrs s) )
+          m
+      in
+      try Procdesc.fold_nodes proc_desc ~init:M.empty ~f:do_node with E.Threshold -> M.empty
     in
-    let nodes = Procdesc.get_nodes proc_desc in
-    try List.iter ~f:do_node nodes ; !m with E.Threshold -> M.empty
-  in
-  let find_duplicate_nodes node =
-    try
-      let s = M.find (get_key node) map in
-      let elements = S.elements s in
-      let (_, node_normalized_instrs), _ =
-        let filter (node', _) = Procdesc.Node.equal node node' in
-        match List.partition_tf ~f:filter elements with
-        | [this], others ->
-            (this, others)
-        | _ ->
-            raise Caml.Not_found
-      in
-      let duplicates =
-        let equal_normalized_instrs (_, normalized_instrs') =
-          List.equal ~equal:Sil.equal_instr node_normalized_instrs normalized_instrs'
+    let find_duplicate_nodes node =
+      try
+        let s = M.find (get_key node) map in
+        let node_normalized_instrs = Procdesc.NodeMap.find node s in
+        let collect_duplicates node' normalized_instrs' nset =
+          if List.equal ~equal:Sil.equal_instr node_normalized_instrs normalized_instrs' then
+            Procdesc.NodeSet.add node' nset
+          else nset
         in
-        List.filter ~f:equal_normalized_instrs elements
-      in
-      List.fold
-        ~f:(fun nset (node', _) -> Procdesc.NodeSet.add node' nset)
-        ~init:Procdesc.NodeSet.empty duplicates
-    with Caml.Not_found -> Procdesc.NodeSet.singleton node
-  in
-  find_duplicate_nodes
+        Procdesc.NodeMap.fold collect_duplicates s Procdesc.NodeSet.empty
+      with Caml.Not_found -> Procdesc.NodeSet.singleton node
+    in
+    find_duplicate_nodes
 
 
 let get_node_id () = Procdesc.Node.get_id !gs.last_node
