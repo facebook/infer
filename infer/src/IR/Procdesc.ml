@@ -290,14 +290,14 @@ let is_defined pdesc = pdesc.attributes.is_defined
 
 let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 
-let iter_nodes f pdesc = List.iter ~f (List.rev (get_nodes pdesc))
+let iter_nodes f pdesc = List.iter ~f (get_nodes pdesc)
 
 let iter_instrs f pdesc =
   let do_node node = List.iter ~f:(fun i -> f node i) (Node.get_instrs node) in
   iter_nodes do_node pdesc
 
 
-let fold_nodes pdesc ~init ~f = List.fold ~f ~init (List.rev (get_nodes pdesc))
+let fold_nodes pdesc ~init ~f = List.fold ~f ~init (get_nodes pdesc)
 
 let fold_instrs pdesc ~init ~f =
   let fold_node acc node =
