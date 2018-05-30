@@ -99,8 +99,8 @@ let get_node () = !gs.last_node
 
 (** simple key for a node: just look at the instructions *)
 let node_simple_key node =
-  let add_instr key instr =
-    if Sil.instr_is_auxiliary instr then key
+  let add_instr instr =
+    if Sil.instr_is_auxiliary instr then None
     else
       let instr_key =
         match instr with
@@ -121,9 +121,10 @@ let node_simple_key node =
         | Sil.Declare_locals _ ->
             8
       in
-      instr_key :: key
+      Some instr_key
   in
-  Procdesc.Node.get_instrs node |> List.fold ~init:[] ~f:add_instr |> Utils.better_hash
+  Procdesc.Node.get_instrs node |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr
+  |> Utils.better_hash
 
 
 (** key for a node: look at the current node, successors and predecessors *)
@@ -142,7 +143,7 @@ let node_key node =
 let instrs_normalize instrs =
   let bound_ids =
     let do_instr = function Sil.Load (id, _, _, _) -> Some id | _ -> None in
-    List.rev_filter_map instrs ~f:do_instr
+    IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:do_instr instrs
   in
   let subst =
     let count = ref Int.min_value in
@@ -152,7 +153,8 @@ let instrs_normalize instrs =
     in
     Sil.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
-  List.rev_map ~f:(Sil.instr_sub subst) instrs
+  let subst_and_add acc instr = Sil.instr_sub subst instr :: acc in
+  Instrs.fold instrs ~init:[] ~f:subst_and_add
 
 
 (** Create a function to find duplicate nodes.

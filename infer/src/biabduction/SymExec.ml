@@ -1432,7 +1432,7 @@ and instrs ?(mask_errors= false) exe_env tenv pdesc instrs ppl =
       [(p, path)]
   in
   let f plist instr = List.concat_map ~f:(exe_instr instr) plist in
-  List.fold ~f ~init:ppl instrs
+  Instrs.fold ~f ~init:ppl instrs
 
 
 and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref callee_pname callee_loc =
@@ -1625,7 +1625,8 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
-    try instrs exe_env tenv pdesc [load_instr] result with e when SymOp.exn_not_failure e ->
+    try instrs exe_env tenv pdesc (Instrs.single load_instr) result
+    with e when SymOp.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
       let err_desc =
@@ -1723,7 +1724,7 @@ and sym_exec_alloc_model exe_env pname ret_typ tenv ret_id_typ pdesc loc prop pa
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.malloc_no_fail) in
   let alloc_instr = Sil.Call (ret_id_typ, alloc_fun, args, loc, CallFlags.default) in
   L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
-  instrs exe_env tenv pdesc [alloc_instr] [(prop, path)]
+  instrs exe_env tenv pdesc (Instrs.single alloc_instr) [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)
@@ -1829,7 +1830,7 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
           () ) ;
       let node_has_abstraction node =
         let instr_is_abstraction = function Sil.Abstract _ -> true | _ -> false in
-        List.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
+        Instrs.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
       in
       let curr_node = State.get_node () in
       match ProcCfg.Exceptional.kind curr_node with
@@ -1896,4 +1897,4 @@ let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset
   let exe_instr_pset pset instr =
     Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty
   in
-  List.fold ~f:exe_instr_pset ~init:pset (ProcCfg.Exceptional.instrs node)
+  Instrs.fold ~f:exe_instr_pset ~init:pset (ProcCfg.Exceptional.instrs node)

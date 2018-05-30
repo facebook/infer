@@ -46,7 +46,7 @@ module type S = sig
 
   include Node with type t := node
 
-  val instrs : node -> Sil.instr list
+  val instrs : node -> Instrs.t
   (** get the instructions from a node *)
 
   val fold_succs : t -> (node, node, 'accum) Container.fold

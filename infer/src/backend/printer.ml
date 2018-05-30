@@ -198,12 +198,12 @@ let force_delayed_print fmt =
             i Io_infer.Html.pp_end_color ()
         else Sil.pp_instr Pp.text fmt i
     | L.PTinstr_list, il ->
-        let il : Sil.instr list = Obj.obj il in
+        let il : Instrs.t = Obj.obj il in
         if Config.write_html then
           F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Pp.Green
-            (Sil.pp_instr_list (Pp.html Green))
+            (Instrs.pp (Pp.html Green))
             il Io_infer.Html.pp_end_color ()
-        else Sil.pp_instr_list Pp.text fmt il
+        else Instrs.pp Pp.text fmt il
     | L.PTjprop_list, shallow_jpl ->
         let (shallow: bool), (jpl: Prop.normal BiabductionSummary.Jprop.t list) =
           Obj.obj shallow_jpl

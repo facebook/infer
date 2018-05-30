@@ -16,7 +16,7 @@ module MockNode = struct
 
   type id = int
 
-  let instrs _ = []
+  let instrs _ = Instrs.empty
 
   let hash = Hashtbl.hash
 

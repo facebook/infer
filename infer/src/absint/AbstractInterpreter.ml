@@ -66,16 +66,19 @@ struct
     let update_inv_map pre ~visit_count =
       let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      let instrs = match CFG.instrs node with [] -> [Sil.skip_instr] | l -> l in
+      let instrs =
+        let instrs = CFG.instrs node in
+        if Instrs.is_empty instrs then Instrs.single Sil.skip_instr else instrs
+      in
       if debug then
         NodePrinter.start_session
           ~pp_name:(TransferFunctions.pp_session_name node)
           (CFG.underlying_node node) ;
-      let astate_post = List.fold ~f:compute_post ~init:pre instrs in
+      let astate_post = Instrs.fold ~f:compute_post ~init:pre instrs in
       if debug then (
         L.d_strln
           (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
-             (Sil.pp_instr_list Pp.(html Green))
+             (Instrs.pp Pp.(html Green))
              instrs Domain.pp astate_post) ;
         NodePrinter.finish_session (CFG.underlying_node node) ) ;
       let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in

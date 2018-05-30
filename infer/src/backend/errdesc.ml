@@ -86,7 +86,7 @@ let find_in_node_or_preds =
     | node :: nodes when not (Procdesc.NodeSet.mem node visited)
       -> (
         let instrs = Procdesc.Node.get_instrs node in
-        match List.find_map ~f:(f node) instrs with
+        match Instrs.find_map ~f:(f node) instrs with
         | Some res ->
             Some res
         | None ->
@@ -172,7 +172,7 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
       | _ ->
           false
     in
-    List.exists ~f:filter (Procdesc.Node.get_instrs n)
+    Instrs.exists ~f:filter (Procdesc.Node.get_instrs n)
   in
   match Procdesc.Node.get_preds node with
   | [pred_node] ->
@@ -566,13 +566,15 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
                 L.d_str "explain_leak: found nullify before Abstract for pvar " ;
                 Pvar.d pvar ;
                 L.d_ln () ) ;
-              [pvar]
+              Some pvar
           | _ ->
-              []
+              None
         in
-        let nullify_pvars = List.concat_map ~f:get_nullify node_instrs in
+        let rev_nullify_pvars =
+          IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:get_nullify node_instrs
+        in
         let nullify_pvars_notmp =
-          List.filter ~f:(fun pvar -> not (Pvar.is_frontend_tmp pvar)) nullify_pvars
+          List.rev_filter ~f:(fun pvar -> not (Pvar.is_frontend_tmp pvar)) rev_nullify_pvars
         in
         value_str_from_pvars_vpath nullify_pvars_notmp vpath
     | Some (Sil.Store (lexp, _, _, _)) when is_none vpath

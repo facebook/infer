@@ -320,7 +320,7 @@ module Report = struct
      * or of a block (goes directly to a node with multiple predecessors)
      *)
     let rec is_end_of_block_or_procedure (cfg: CFG.t) node rem_instrs =
-      List.for_all rem_instrs ~f:Sil.instr_is_auxiliary
+      Instrs.for_all rem_instrs ~f:Sil.instr_is_auxiliary
       &&
       match IContainer.singleton_or_more node ~fold:(CFG.fold_succs cfg) with
       | IContainer.Empty ->
@@ -462,25 +462,28 @@ module Report = struct
 
 
   let check_instrs
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.node -> Sil.instr list
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.node -> Instrs.t
         -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg node instrs state cond_set ->
-    match (state, instrs) with
-    | _, [] | {AbstractInterpreter.pre= Bottom}, _ :: _ ->
+    match state with
+    | _ when Instrs.is_empty instrs ->
         cond_set
-    | {AbstractInterpreter.pre= NonBottom _ as pre; post}, [instr] ->
+    | {AbstractInterpreter.pre= Bottom} ->
+        cond_set
+    | {AbstractInterpreter.pre= NonBottom _ as pre; post} ->
+        if Instrs.nth_exists instrs 1 then
+          L.(die InternalError) "Did not expect several instructions" ;
+        let instr = Instrs.nth_exn instrs 0 in
         let () =
           match post with
           | Bottom ->
-              check_unreachable_code summary tenv cfg node instr []
+              check_unreachable_code summary tenv cfg node instr Instrs.empty
           | NonBottom _ ->
               ()
         in
         let cond_set = check_instr pdesc tenv node instr pre cond_set in
         print_debug_info instr pre cond_set ;
         cond_set
-    | _, _ :: _ :: _ ->
-        L.(die InternalError) "Did not expect several instructions"
 
 
   let check_node

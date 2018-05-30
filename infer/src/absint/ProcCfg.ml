@@ -113,7 +113,7 @@ module type S = sig
 
   include Node with type t := node
 
-  val instrs : node -> Sil.instr list
+  val instrs : node -> Instrs.t
   (** get the instructions from a node *)
 
   val fold_succs : t -> (node, node, 'accum) Container.fold
@@ -268,7 +268,7 @@ end
 module Backward (Base : S) = struct
   include Base
 
-  let instrs n = List.rev (Base.instrs n)
+  let instrs n = Instrs.reverse_order (Base.instrs n)
 
   let fold_succs = Base.fold_preds
 
@@ -304,12 +304,13 @@ struct
        and module IdSet = InstrNode.IdSet )
 
   let instrs (node, index) =
-    match Base.instrs node with [] -> [] | instrs -> [List.nth_exn instrs index]
+    let instrs = Base.instrs node in
+    if Instrs.is_empty instrs then Instrs.empty else Instrs.nth_exn instrs index |> Instrs.single
 
 
   let first_of_node node = (node, 0)
 
-  let last_of_node node = (node, max 0 (List.length (Base.instrs node) - 1))
+  let last_of_node node = (node, max 0 (Instrs.count (Base.instrs node) - 1))
 
   let fold_normal_succs _ _ ~init:_ ~f:_ = (* not used *) assert false
 
@@ -317,7 +318,7 @@ struct
 
   let fold_succs cfg (node, index) ~init ~f =
     let succ_index = index + 1 in
-    if IList.mem_nth (Base.instrs node) succ_index then f init (node, succ_index)
+    if Instrs.nth_exists (Base.instrs node) succ_index then f init (node, succ_index)
     else
       let f acc node = f acc (first_of_node node) in
       Base.fold_succs cfg node ~init ~f
@@ -347,11 +348,11 @@ struct
 
   let fold_nodes cfg ~init ~f =
     let f init node =
-      match Base.instrs node with
-      | [] ->
+      match Base.instrs node |> Instrs.count with
+      | 0 ->
           f init (node, 0)
-      | instrs ->
-          List.foldi instrs ~init ~f:(fun index acc _instr -> f acc (node, index))
+      | nb_instrs ->
+          IContainer.forto nb_instrs ~init ~f:(fun acc index -> f acc (node, index))
     in
     Base.fold_nodes cfg ~init ~f
 

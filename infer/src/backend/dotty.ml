@@ -1125,7 +1125,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
     Escape.escape_dotty str
   in
   let pp_instrs fmt instrs =
-    List.iter ~f:(fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs
+    Instrs.iter ~f:(fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs
   in
   let instrs = Procdesc.Node.get_instrs n in
   F.fprintf fmt "%d: %a \\n  %a" (Procdesc.Node.get_id n :> int) pp_label n pp_instrs instrs

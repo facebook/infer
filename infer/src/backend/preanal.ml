@@ -73,8 +73,7 @@ module NullifyTransferFunctions = struct
 
   let last_instr_in_node node =
     let get_last_instr () =
-      let instrs = CFG.instrs node in
-      List.last instrs |> Option.value ~default:Sil.skip_instr
+      CFG.instrs node |> Instrs.last |> Option.value ~default:Sil.skip_instr
     in
     if phys_equal node !cache_node then !cache_instr
     else

@@ -436,10 +436,6 @@ let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name 
 (** Dump an instruction. *)
 let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
 
-let pp_instr_list pe fmt instrs =
-  List.iter instrs ~f:(fun instr -> F.fprintf fmt "%a;@\n" (pp_instr pe) instr)
-
-
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
   ( match a with

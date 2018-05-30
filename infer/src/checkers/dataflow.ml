@@ -76,7 +76,7 @@ let node_throws pdesc node (proc_throws: Typ.Procname.t -> throws) : throws =
         res := t
   in
   let do_instr instr = update_res (instr_throws instr) in
-  List.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
+  Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
   !res
 
 

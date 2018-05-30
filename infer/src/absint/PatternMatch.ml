@@ -118,13 +118,13 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   (* Is this the node creating ivar? *)
   let initializes_array instrs =
     instrs
-    |> List.find_map ~f:(function
+    |> Instrs.find_map ~f:(function
          | Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) when Pvar.equal ivar iv ->
              Some t2
          | _ ->
              None )
     |> Option.exists ~f:(fun t2 ->
-           List.exists instrs ~f:(function
+           Instrs.exists instrs ~f:(function
              | Sil.Call ((t1, _), Exp.Const (Const.Cfun pn), _, _, _) ->
                  Ident.equal t1 t2
                  && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array")
@@ -135,7 +135,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
   let added_type_name instrs =
     let nvar_type_name nvar =
       instrs
-      |> List.find_map ~f:(function
+      |> Instrs.find_map ~f:(function
            | Sil.Load (nv, e, t, _) when Ident.equal nv nvar ->
                Some (e, t)
            | _ ->
@@ -148,7 +148,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
     in
     let added_nvar array_nvar =
       instrs
-      |> List.find_map ~f:(function
+      |> Instrs.find_map ~f:(function
            | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _)
              when Ident.equal iv array_nvar ->
                Some (nvar_type_name nvar)
@@ -161,7 +161,7 @@ let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : str
     in
     let array_nvar =
       instrs
-      |> List.find_map ~f:(function
+      |> Instrs.find_map ~f:(function
            | Sil.Load (nv, Exp.Lvar iv, _, _) when Pvar.equal iv ivar ->
                Some nv
            | _ ->
@@ -255,7 +255,7 @@ let java_get_vararg_values node pvar idenv =
         acc
   in
   let values_of_node acc n =
-    Procdesc.Node.get_instrs n |> List.fold ~f:values_of_instr ~init:acc
+    Procdesc.Node.get_instrs n |> Instrs.fold ~f:values_of_instr ~init:acc
   in
   match Errdesc.find_program_variable_assignment node pvar with
   | Some (node', _) ->
@@ -279,7 +279,7 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
   in
   let do_node node =
     let instrs = Procdesc.Node.get_instrs node in
-    List.iter ~f:(do_instruction node) instrs
+    Instrs.iter ~f:(do_instruction node) instrs
   in
   let nodes = Procdesc.get_nodes pdesc in
   List.iter ~f:do_node nodes ;

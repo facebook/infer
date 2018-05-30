@@ -307,9 +307,6 @@ val pp_instr : Pp.env -> F.formatter -> instr -> unit
 val d_instr : instr -> unit
 (** Dump an instruction. *)
 
-val pp_instr_list : Pp.env -> F.formatter -> instr list -> unit
-(** Pretty print a list of instructions. *)
-
 val pp_atom : Pp.env -> F.formatter -> atom -> unit
 (** Pretty print an atom. *)
 

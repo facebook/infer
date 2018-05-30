@@ -126,7 +126,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
     in
     let do_node n =
       if Location.equal loc (Procdesc.Node.get_loc n) then
-        List.iter ~f:do_instr (Procdesc.Node.get_instrs n)
+        Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs n)
     in
     Procdesc.iter_nodes do_node pdesc ; !throwable_found
   in

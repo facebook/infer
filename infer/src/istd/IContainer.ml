@@ -23,3 +23,14 @@ let mem_nth ~fold t index =
         fold t ~init:index ~f:(fun index _ -> if index <= 0 then return true else index - 1)
       in
       false )
+
+
+let forto excl ~init ~f =
+  let rec aux excl ~f acc i = if i >= excl then acc else aux excl ~f (f acc i) (i + 1) in
+  aux excl ~f init 0
+
+
+let rev_map_to_list ~fold t ~f = fold t ~init:[] ~f:(fun acc item -> f item :: acc)
+
+let rev_filter_map_to_list ~fold t ~f =
+  fold t ~init:[] ~f:(fun acc item -> IList.opt_cons (f item) acc)

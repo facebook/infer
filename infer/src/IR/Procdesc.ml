@@ -35,7 +35,7 @@ module Node = struct
     { id: id  (** unique id of the node *)
     ; mutable dist_exit: int option  (** distance to the exit node *)
     ; mutable exn: t list  (** exception nodes in the cfg *)
-    ; mutable instrs: Sil.instr list  (** instructions for symbolic execution *)
+    ; mutable instrs: Instrs.t  (** instructions for symbolic execution *)
     ; kind: nodekind  (** kind of node *)
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
@@ -51,7 +51,7 @@ module Node = struct
   let dummy pname_opt =
     { id= 0
     ; dist_exit= None
-    ; instrs= []
+    ; instrs= Instrs.empty
     ; kind= Skip_node "dummy"
     ; loc= Location.dummy
     ; pname_opt
@@ -111,7 +111,7 @@ module Node = struct
 
   (** Get the source location of the last instruction in the node *)
   let get_last_loc n =
-    n |> get_instrs |> List.last |> Option.value_map ~f:Sil.instr_get_loc ~default:n.loc
+    n |> get_instrs |> Instrs.last |> Option.value_map ~f:Sil.instr_get_loc ~default:n.loc
 
 
   let pp_id f id = F.pp_print_int f id
@@ -121,14 +121,13 @@ module Node = struct
   let get_distance_to_exit node = node.dist_exit
 
   (** Append the instructions to the list of instructions to execute *)
-  let append_instrs node instrs = if instrs <> [] then node.instrs <- node.instrs @ instrs
+  let append_instrs node instrs =
+    if instrs <> [] then node.instrs <- Instrs.append_list node.instrs instrs
 
-  (** Add the instructions at the beginning of the list of instructions to execute *)
-  let prepend_instrs node instrs = node.instrs <- instrs @ node.instrs
 
   (** Map and replace the instructions to be executed *)
   let replace_instrs node ~f =
-    let instrs' = IList.map_changed node.instrs ~equal:phys_equal ~f in
+    let instrs' = Instrs.map_changed ~equal:phys_equal node.instrs ~f in
     if not (phys_equal instrs' node.instrs) then node.instrs <- instrs'
 
 
@@ -145,7 +144,7 @@ module Node = struct
     in
     let ptl = ret_var :: List.map ~f:construct_decl locals in
     let instr = Sil.Declare_locals (ptl, loc) in
-    prepend_instrs node [instr]
+    node.instrs <- Instrs.prepend_one instr node.instrs
 
 
   (** Print extended instructions for the node,
@@ -156,7 +155,7 @@ module Node = struct
         match instro with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
       in
       let instrs = get_instrs node in
-      Sil.pp_instr_list pe fmt instrs
+      Instrs.pp pe fmt instrs
     else
       let () =
         match get_kind node with
@@ -296,7 +295,7 @@ let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 let iter_nodes f pdesc = List.iter ~f (get_nodes pdesc)
 
 let iter_instrs f pdesc =
-  let do_node node = List.iter ~f:(fun i -> f node i) (Node.get_instrs node) in
+  let do_node node = Instrs.iter ~f:(fun i -> f node i) (Node.get_instrs node) in
   iter_nodes do_node pdesc
 
 
@@ -304,7 +303,7 @@ let fold_nodes pdesc ~init ~f = List.fold ~f ~init (get_nodes pdesc)
 
 let fold_instrs pdesc ~init ~f =
   let fold_node acc node =
-    List.fold ~f:(fun acc instr -> f acc node instr) ~init:acc (Node.get_instrs node)
+    Instrs.fold ~f:(fun acc instr -> f acc node instr) ~init:acc (Node.get_instrs node)
   in
   fold_nodes ~f:fold_node ~init pdesc
 
@@ -312,7 +311,7 @@ let fold_instrs pdesc ~init ~f =
 let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
 
 let find_map_instrs pdesc ~f =
-  let find_map_node node = List.find_map ~f (Node.get_instrs node) in
+  let find_map_node node = Instrs.find_map ~f (Node.get_instrs node) in
   find_map_nodes ~f:find_map_node pdesc
 
 
@@ -356,7 +355,7 @@ let set_succs_exn_base (node: Node.t) succs exn =
 
 
 (** Create a new cfg node *)
-let create_node pdesc loc kind instrs =
+let create_node_internal pdesc loc kind instrs =
   pdesc.nodes_num <- pdesc.nodes_num + 1 ;
   let node_id = pdesc.nodes_num in
   let node =
@@ -374,6 +373,8 @@ let create_node pdesc loc kind instrs =
   node
 
 
+let create_node pdesc loc kind instrs = create_node_internal pdesc loc kind (Instrs.of_list instrs)
+
 (** Set the successor and exception nodes.
     If this is a join node right before the exit node, add an extra node in the middle,
     otherwise nullify and abstract instructions cannot be added after a conditional. *)
@@ -381,7 +382,7 @@ let node_set_succs_exn pdesc (node: Node.t) succs exn =
   match (node.kind, succs) with
   | Join_node, [({Node.kind= Exit_node _} as exit_node)] ->
       let kind = Node.Stmt_node "between_join_and_exit" in
-      let node' = create_node pdesc node.loc kind node.instrs in
+      let node' = create_node_internal pdesc node.loc kind node.instrs in
       set_succs_exn_base node [node'] exn ;
       set_succs_exn_base node' [exit_node] exn
   | _ ->
@@ -529,7 +530,7 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
     let loc = Node.get_loc node
     and kind = convert_node_kind (Node.get_kind node)
     and instrs = f_instr_list (Node.get_instrs node) in
-    create_node resolved_pdesc loc kind instrs
+    create_node_internal resolved_pdesc loc kind instrs
   and loop callee_nodes =
     match callee_nodes with
     | [] ->
@@ -633,7 +634,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         (* these are generated instructions that will be replaced by the preanalysis *)
         None
   in
-  let f_instr_list instrs = List.filter_map ~f:convert_instr instrs in
+  let f_instr_list instrs = Instrs.filter_map ~f:convert_instr instrs in
   convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list
 
 
@@ -752,8 +753,8 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         (instrs, id_map)
   in
   let f_instr_list instrs =
-    let instrs, _ = List.fold ~f:convert_instr ~init:([], Ident.Map.empty) instrs in
-    List.rev instrs
+    let rev_instrs, _ = Instrs.fold ~f:convert_instr ~init:([], Ident.Map.empty) instrs in
+    Instrs.of_rev_list rev_instrs
   in
   f_instr_list
 

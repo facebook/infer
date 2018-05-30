@@ -139,22 +139,24 @@ let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
   let array_ivar instrs nvar =
     match nvar with
     | Exp.Var nid ->
-        List.find_map_exn instrs ~f:(function
+        Instrs.find_map instrs ~f:(function
           | Sil.Load (id, Exp.Lvar iv, _, _) when Ident.equal id nid ->
               Some iv
           | _ ->
               None )
+        |> IOption.find_value_exn
     | _ ->
         raise Caml.Not_found
   in
   let fixed_nvar_type_name instrs nvar =
     match nvar with
     | Exp.Var nid ->
-        List.find_map_exn instrs ~f:(function
+        Instrs.find_map instrs ~f:(function
           | Sil.Load (id, Exp.Lvar _, t, _) when Ident.equal id nid ->
               Some (PatternMatch.get_type_name t)
           | _ ->
               None )
+        |> IOption.find_value_exn
     | Exp.Const c ->
         PatternMatch.java_get_const_type_name c
     | _ ->

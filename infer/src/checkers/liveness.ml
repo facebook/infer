@@ -194,7 +194,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
           VarSet.empty
     in
     let node_id = CFG.id node in
-    List.iter (CFG.instrs node) ~f:(fun instr ->
+    Instrs.iter (CFG.instrs node) ~f:(fun instr ->
         match Analyzer.extract_pre node_id invariant_map with
         | Some live_vars ->
             report_dead_store live_vars captured_by_ref_vars instr

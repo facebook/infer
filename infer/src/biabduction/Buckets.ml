@@ -85,7 +85,7 @@ let check_access access_opt de_opt =
         | _ ->
             ()
       in
-      List.iter ~f:process_formal_letref node_instrs ;
+      Instrs.iter ~f:process_formal_letref node_instrs ;
       !formal_ids
     in
     let formal_param_used_in_call = ref false in
@@ -112,7 +112,7 @@ let check_access access_opt de_opt =
         | _ ->
             false
       in
-      List.exists ~f:filter (Procdesc.Node.get_instrs node)
+      Instrs.exists ~f:filter (Procdesc.Node.get_instrs node)
     in
     let local_access_found = ref false in
     let do_node node =

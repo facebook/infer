@@ -128,7 +128,7 @@ let report_deps data_map =
 
 
 let report_data_deps data_map node =
-  List.iter (Procdesc.Node.get_instrs node) ~f:(fun instr ->
+  Instrs.iter (Procdesc.Node.get_instrs node) ~f:(fun instr ->
       List.iter (Sil.instr_get_exps instr) ~f:(fun exp ->
           L.(debug Analysis Medium)
             "@\n>>>Data dependencies of node = %a @\n" Procdesc.Node.pp node ;
@@ -140,7 +140,7 @@ let report_data_deps data_map node =
 
 
 let report_control_deps control_map node =
-  List.iter (Procdesc.Node.get_instrs node) ~f:(fun instr ->
+  Instrs.iter (Procdesc.Node.get_instrs node) ~f:(fun instr ->
       L.(debug Analysis Medium) "@\n>>>Control dependencies of node = %a @\n" Procdesc.Node.pp node ;
       List.iter (Sil.instr_get_exps instr) ~f:(fun exp ->
           L.(debug Analysis Medium)

@@ -659,7 +659,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 ()
             (* FIXME: silenced warning may be legit *)
           in
-          List.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node)
+          Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node)
         in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
@@ -1037,7 +1037,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
               | _ ->
                   ()
             in
-            List.iter ~f:do_instr (Procdesc.Node.get_instrs prev_node) ;
+            Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs prev_node) ;
             !found
         | _ ->
             None
@@ -1118,7 +1118,7 @@ let typecheck_node tenv ext calls_this checks idenv get_proc_desc curr_pname cur
   (* Reset 'always' field for forall errors to false. *)
   (* This is used to track if it is set to true for all visit to the node. *)
   TypeErr.node_reset_forall canonical_node ;
-  let typestate_succ = List.fold ~f:(do_instruction ext) ~init:typestate instrs in
+  let typestate_succ = Instrs.fold ~f:(do_instruction ext) ~init:typestate instrs in
   let dont_propagate =
     Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind
     (* don't propagate exceptions *)

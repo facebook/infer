@@ -18,7 +18,7 @@ val node :
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 
 val instrs :
-  ?mask_errors:bool -> Exe_env.t -> Tenv.t -> Procdesc.t -> Sil.instr list
+  ?mask_errors:bool -> Exe_env.t -> Tenv.t -> Procdesc.t -> Instrs.t
   -> (Prop.normal Prop.t * Paths.Path.t) list -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of a sequence of instructions.
     If errors occur and [mask_errors] is true, just treat as skip. *)
