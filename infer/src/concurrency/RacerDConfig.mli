@@ -81,7 +81,8 @@ module Models : sig
   (** return true if procedure is at an abstraction boundary or reporting has been explicitly
      requested via @ThreadSafe *)
 
-  val may_block : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+  val may_block :
+    Tenv.t -> Typ.Procname.t -> HilExp.t list -> StarvationDomain.LockEvent.severity_t option
   (** is the method call potentially blocking, given the actuals passed? *)
 
   val is_synchronized_library_call : Tenv.t -> Typ.Procname.t -> bool

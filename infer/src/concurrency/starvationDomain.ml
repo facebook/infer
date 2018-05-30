@@ -53,12 +53,15 @@ module LockIdentity = struct
 end
 
 module LockEvent = struct
-  type event_t = LockAcquire of LockIdentity.t | MayBlock of string [@@deriving compare]
+  type severity_t = Low | Medium | High [@@deriving compare]
+
+  type event_t = LockAcquire of LockIdentity.t | MayBlock of (string * severity_t)
+  [@@deriving compare]
 
   let pp_event fmt = function
     | LockAcquire lock ->
         LockIdentity.pp fmt lock
-    | MayBlock msg ->
+    | MayBlock (msg, _) ->
         F.pp_print_string fmt msg
 
 
@@ -102,9 +105,9 @@ module LockEvent = struct
 
   let make_acquire lock loc = {event= LockAcquire lock; loc; trace= []}
 
-  let make_blocks msg loc = {event= MayBlock msg; loc; trace= []}
+  let make_blocks msg sev loc = {event= MayBlock (msg, sev); loc; trace= []}
 
-  let make_blocking_call ~caller ~callee loc =
+  let make_blocking_call ~caller ~callee sev loc =
     let descr =
       F.asprintf "calls %a from %a"
         (MF.wrap_monospaced Typ.Procname.pp)
@@ -112,8 +115,10 @@ module LockEvent = struct
         (MF.wrap_monospaced Typ.Procname.pp)
         caller
     in
-    make_blocks descr loc
+    make_blocks descr sev loc
 
+
+  let get_loc {loc; trace} = List.hd trace |> Option.value_map ~default:loc ~f:CallSite.loc
 
   let make_loc_trace ?(reverse= false) e =
     let call_trace, nesting =
@@ -163,6 +168,10 @@ module LockOrder = struct
   let with_callsite callsite o =
     { o with
       eventually= {o.eventually with LockEvent.trace= callsite :: o.eventually.LockEvent.trace} }
+
+
+  let get_loc {first; eventually} =
+    match first with Some event -> LockEvent.get_loc event | None -> LockEvent.get_loc eventually
 
 
   let make_loc_trace o =
@@ -265,8 +274,8 @@ let acquire ((ls, lo), main) loc lockid =
   ((ls', lo'), main)
 
 
-let blocking_call ~caller ~callee loc ((ls, lo), main) =
-  let newlock_event = LockEvent.make_blocking_call ~caller ~callee loc in
+let blocking_call ~caller ~callee sev loc ((ls, lo), main) =
+  let newlock_event = LockEvent.make_blocking_call ~caller ~callee sev loc in
   let lo' = add_order_pairs ls newlock_event lo in
   ((ls, lo'), main)
 

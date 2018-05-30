@@ -23,7 +23,10 @@ end
 
 (** A lock event.  Equality/comparison disregards the call trace but includes location. *)
 module LockEvent : sig
-  type event_t = private LockAcquire of LockIdentity.t | MayBlock of string
+  type severity_t = Low | Medium | High [@@deriving compare]
+
+  type event_t = LockAcquire of LockIdentity.t | MayBlock of (string * severity_t)
+  [@@deriving compare]
 
   val pp_event : F.formatter -> event_t -> unit
 
@@ -47,6 +50,8 @@ module LockOrder : sig
       variable name at the root of each path. *)
 
   val make_loc_trace : t -> Errlog.loc_trace
+
+  val get_loc : t -> Location.t
 end
 
 module LockOrderDomain : sig
@@ -65,7 +70,8 @@ val acquire : astate -> Location.t -> LockIdentity.t -> astate
 val release : astate -> LockIdentity.t -> astate
 
 val blocking_call :
-  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Location.t -> astate -> astate
+  caller:Typ.Procname.t -> callee:Typ.Procname.t -> LockEvent.severity_t -> Location.t -> astate
+  -> astate
 
 val set_on_ui_thread : astate -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to

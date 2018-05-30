@@ -700,17 +700,20 @@ module Models = struct
       ["android.os.AsyncTask"] "get"
 
 
+  (* at most one function is allowed to be true *)
   let may_block =
+    let open StarvationDomain.LockEvent in
     let matchers =
-      [ is_blocking_java_io
-      ; is_countdownlatch_await
-      ; is_two_way_binder_transact
-      ; is_getWindowVisibleDisplayFrame
-      ; is_future_get
-      ; is_accountManager_setUserData
-      ; is_asyncTask_get ]
+      [ (is_blocking_java_io, Low)
+      ; (is_countdownlatch_await, Medium)
+      ; (is_two_way_binder_transact, High)
+      ; (is_getWindowVisibleDisplayFrame, Low)
+      ; (is_future_get, High)
+      ; (is_accountManager_setUserData, High)
+      ; (is_asyncTask_get, High) ]
     in
-    fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
+    fun tenv pn actuals ->
+      List.find_map matchers ~f:(fun (matcher, sev) -> Option.some_if (matcher tenv pn actuals) sev)
 
 
   let is_synchronized_library_call =
