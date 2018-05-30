@@ -142,7 +142,6 @@ module BuildMethodSignature = struct
       get_parameters qual_type_to_sil_type ~is_cpp tenv ~block_return_type method_decl
     in
     let attributes = decl_info.Clang_ast_t.di_attributes in
-    let lang = CMethodProperties.get_language ~is_cpp method_decl in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
     let is_cpp_nothrow = CMethodProperties.is_cpp_nothrow method_decl in
     let access = decl_info.Clang_ast_t.di_access in
@@ -157,7 +156,6 @@ module BuildMethodSignature = struct
     ; method_kind
     ; is_cpp_virtual
     ; is_cpp_nothrow
-    ; lang
     ; pointer_to_parent
     ; pointer_to_property_opt
     ; return_param_typ }

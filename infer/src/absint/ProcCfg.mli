@@ -49,23 +49,23 @@ module type S = sig
   val instrs : node -> Sil.instr list
   (** get the instructions from a node *)
 
-  val succs : t -> node -> node list
-  (** all successors (normal and exceptional) *)
+  val fold_succs : t -> (node, node, 'accum) Container.fold
+  (** fold over all successors (normal and exceptional) *)
 
-  val preds : t -> node -> node list
-  (** all predecessors (normal and exceptional) *)
+  val fold_preds : t -> (node, node, 'accum) Container.fold
+  (** fold over all predecessors (normal and exceptional) *)
 
-  val normal_succs : t -> node -> node list
-  (** non-exceptional successors *)
+  val fold_normal_succs : t -> (node, node, 'accum) Container.fold
+  (** fold over non-exceptional successors *)
 
-  val normal_preds : t -> node -> node list
-  (** non-exceptional predecessors *)
+  val fold_normal_preds : t -> (node, node, 'accum) Container.fold
+  (** fold over non-exceptional predecessors *)
 
-  val exceptional_succs : t -> node -> node list
-  (** exceptional successors *)
+  val fold_exceptional_succs : t -> (node, node, 'accum) Container.fold
+  (** fold over exceptional successors *)
 
-  val exceptional_preds : t -> node -> node list
-  (** exceptional predescessors *)
+  val fold_exceptional_preds : t -> (node, node, 'accum) Container.fold
+  (** fold over exceptional predescessors *)
 
   val start_node : t -> node
 
@@ -73,7 +73,7 @@ module type S = sig
 
   val proc_desc : t -> Procdesc.t
 
-  val nodes : t -> node list
+  val fold_nodes : (t, node, 'accum) Container.fold
 
   val from_pdesc : Procdesc.t -> t
 

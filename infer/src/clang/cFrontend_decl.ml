@@ -417,8 +417,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             in
             let ms =
               CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
-                decl_info.Clang_ast_t.di_source_range ProcAttributes.C_FUNCTION
-                trans_unit_ctx.CFrontend_config.lang None None None `None
+                decl_info.Clang_ast_t.di_source_range ProcAttributes.C_FUNCTION None None None
+                `None
             in
             let stmt_info =
               { si_pointer= CAst_utils.get_fresh_pointer ()

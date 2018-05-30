@@ -58,7 +58,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | Typ.Procname.ObjC_Cpp objc_cpp ->
           let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
+            CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind
       | _ ->
           None
     in

@@ -64,8 +64,8 @@ let is_assert_log pname =
       false
 
 
-let get_predefined_ms_method condition class_name method_name method_kind mk_procname lang
-    arguments return_type attributes builtin =
+let get_predefined_ms_method condition class_name method_name method_kind mk_procname arguments
+    return_type attributes builtin =
   if condition then
     let procname =
       match builtin with
@@ -77,13 +77,13 @@ let get_predefined_ms_method condition class_name method_name method_kind mk_pro
     let ms =
       CMethodSignature.mk procname None arguments return_type attributes
         (CAst_utils.dummy_source_range ())
-        ProcAttributes.C_FUNCTION lang None None None `None
+        ProcAttributes.C_FUNCTION None None None `None
     in
     Some ms
   else None
 
 
-let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname lang =
+let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname =
   let condition =
     class_equal class_name CFrontend_config.nsstring_cl
     && String.equal method_name CFrontend_config.string_with_utf8_m
@@ -96,21 +96,21 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
   let param_name = Mangled.from_string "x" in
   let params = [CMethodSignature.mk_param_type param_name char_star_type] in
   get_predefined_ms_method condition class_name method_name Typ.Procname.ObjC_Cpp.ObjCClassMethod
-    mk_procname lang params (id_type, Annot.Item.empty) [] None
+    mk_procname params (id_type, Annot.Item.empty) [] None
 
 
-let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
+let get_predefined_ms_is_kind_of_class class_name method_name mk_procname =
   let condition = String.equal method_name CFrontend_config.is_kind_of_class in
   let class_type = CType_to_sil_type.type_of_builtin_type_kind `ObjCClass in
   let name = Mangled.from_string CFrontend_config.self in
   let params = [CMethodSignature.mk_param_type name class_type] in
   let bool_type = CType_to_sil_type.type_of_builtin_type_kind `Bool in
   get_predefined_ms_method condition class_name method_name
-    Typ.Procname.ObjC_Cpp.ObjCInstanceMethod mk_procname lang params (bool_type, Annot.Item.empty)
-    [] (Some BuiltinDecl.__instanceof)
+    Typ.Procname.ObjC_Cpp.ObjCInstanceMethod mk_procname params (bool_type, Annot.Item.empty) []
+    (Some BuiltinDecl.__instanceof)
 
 
-let get_predefined_model_method_signature class_name method_name mk_procname lang =
-  let next_predefined f = function Some _ as x -> x | None -> f method_name mk_procname lang in
+let get_predefined_model_method_signature class_name method_name mk_procname =
+  let next_predefined f = function Some _ as x -> x | None -> f method_name mk_procname in
   None |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
   |> next_predefined (get_predefined_ms_is_kind_of_class class_name)

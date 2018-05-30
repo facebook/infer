@@ -79,19 +79,6 @@ let get_method_body method_decl =
       raise CFrontend_config.Invalid_declaration
 
 
-let get_language ~is_cpp method_decl =
-  let open Clang_ast_t in
-  match method_decl with
-  | FunctionDecl _ ->
-      if is_cpp then CFrontend_config.CPP else CFrontend_config.ObjC
-  | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _ | CXXDestructorDecl _ ->
-      CFrontend_config.CPP
-  | ObjCMethodDecl _ | BlockDecl _ ->
-      CFrontend_config.ObjC
-  | _ ->
-      raise CFrontend_config.Invalid_declaration
-
-
 let is_cpp_virtual method_decl =
   let open Clang_ast_t in
   match method_decl with

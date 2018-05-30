@@ -59,10 +59,14 @@ module OrderDomain : sig
   include AbstractDomain.WithBottom with type astate = t
 end
 
+module LockState : AbstractDomain.WithBottom
+
 module UIThreadDomain :
   AbstractDomain.WithBottom with type astate = string AbstractDomain.Types.bottom_lifted
 
-include AbstractDomain.WithBottom
+type astate = {lock_state: LockState.astate; order: OrderDomain.astate; ui: UIThreadDomain.astate}
+
+include AbstractDomain.WithBottom with type astate := astate
 
 val acquire : astate -> Location.t -> Lock.t -> astate
 
@@ -76,10 +80,8 @@ val set_on_ui_thread : astate -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
-type summary = OrderDomain.astate * UIThreadDomain.astate
+type summary = astate
 
 val pp_summary : F.formatter -> summary -> unit
-
-val to_summary : astate -> summary
 
 val integrate_summary : astate -> Typ.Procname.t -> Location.t -> summary -> astate

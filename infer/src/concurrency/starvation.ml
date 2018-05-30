@@ -131,9 +131,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial)
   in
   Analyzer.compute_post proc_data ~initial
-  |> Option.value_map ~default:summary ~f:(fun lock_state ->
-         let lock_order = StarvationDomain.to_summary lock_state in
-         Payload.update_summary lock_order summary )
+  |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
 
 
 let make_trace_with_header ?(header= "") elem pname =
@@ -254,7 +252,7 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
          inner class but this is no longer obvious in the path, because of nested-class path normalisation.
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks tenv current_pdesc (summary, current_main) report_map' =
+let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
@@ -295,15 +293,17 @@ let report_deadlocks tenv current_pdesc (summary, current_main) report_map' =
                let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                List.fold endpoint_summaries ~init:report_map ~f:
-                 (fun acc (endp_pname, (endp_summary, endp_ui)) ->
-                   if UIThreadDomain.is_empty current_main || UIThreadDomain.is_empty endp_ui then
-                     OrderDomain.fold (report_endpoint_elem elem endp_pname) endp_summary acc
+                 (fun acc (endp_pname, endpoint_summary) ->
+                   let endp_order = endpoint_summary.order in
+                   let endp_ui = endpoint_summary.ui in
+                   if UIThreadDomain.is_empty ui || UIThreadDomain.is_empty endp_ui then
+                     OrderDomain.fold (report_endpoint_elem elem endp_pname) endp_order acc
                    else acc ) )
   in
-  OrderDomain.fold report_on_current_elem summary report_map'
+  OrderDomain.fold report_on_current_elem order report_map'
 
 
-let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
+let report_blocks_on_main_thread tenv current_pdesc {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let report_remote_block ui_explain current_elem current_lock endpoint_pname endpoint_elem
@@ -346,7 +346,7 @@ let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
                let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
                List.fold endpoint_summaries ~init:report_map ~f:
-                 (fun acc (endpoint_pname, (order, ui)) ->
+                 (fun acc (endpoint_pname, {order; ui}) ->
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
                      OrderDomain.fold

@@ -19,8 +19,6 @@ val get_param_decls : Clang_ast_t.decl -> Clang_ast_t.decl list
 
 val get_method_body : Clang_ast_t.decl -> Clang_ast_t.stmt option
 
-val get_language : is_cpp:bool -> Clang_ast_t.decl -> CFrontend_config.clang_lang
-
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
 val is_cpp_nothrow : Clang_ast_t.decl -> bool

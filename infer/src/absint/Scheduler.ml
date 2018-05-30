@@ -50,7 +50,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let priority t = t.priority
 
     let compute_priority cfg node visited_preds =
-      List.length (CFG.preds cfg node) - IdSet.cardinal visited_preds
+      Container.length ~fold:(CFG.fold_preds cfg) node - IdSet.cardinal visited_preds
 
 
     let make cfg node =
@@ -81,7 +81,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let new_work = WorkUnit.add_visited_pred t.cfg old_work node_id in
       M.add id_to_schedule new_work worklist_acc
     in
-    let new_worklist = List.fold ~f:schedule_succ ~init:t.worklist (CFG.succs t.cfg node) in
+    let new_worklist = CFG.fold_succs t.cfg node ~f:schedule_succ ~init:t.worklist in
     {t with worklist= new_worklist}
 
 

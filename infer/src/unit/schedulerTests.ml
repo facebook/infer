@@ -57,33 +57,33 @@ module MockProcCfg = struct
 
   let equal_id = Int.equal
 
-  let succs t n =
+  let fold_succs t n ~init ~f =
     let node_id = id n in
     List.find ~f:(fun (node, _) -> equal_id (id node) node_id) t
-    |> Option.value_map ~f:snd ~default:[]
+    |> Option.value_map ~f:snd ~default:[] |> List.fold ~init ~f
 
 
-  let preds t n =
+  let fold_preds t n ~init ~f =
     try
       let node_id = id n in
       List.filter
         ~f:(fun (_, succs) -> List.exists ~f:(fun node -> equal_id (id node) node_id) succs)
         t
-      |> List.map ~f:fst
+      |> List.map ~f:fst |> List.fold ~init ~f
     with
     | Not_found_s _ | Caml.Not_found ->
-        []
+        init
 
 
-  let nodes t = List.map ~f:fst t
+  let fold_nodes t ~init ~f = List.map ~f:fst t |> List.fold ~init ~f
 
-  let normal_succs = succs
+  let fold_normal_succs = fold_succs
 
-  let normal_preds = preds
+  let fold_normal_preds = fold_preds
 
-  let exceptional_succs _ _ = []
+  let fold_exceptional_succs _ _ ~init ~f:_ = init
 
-  let exceptional_preds _ _ = []
+  let fold_exceptional_preds _ _ ~init ~f:_ = init
 
   let from_adjacency_list t = t
 

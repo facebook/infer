@@ -201,5 +201,5 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
         | None ->
             () )
   in
-  List.iter (CFG.nodes cfg) ~f:report_on_node ;
+  Container.iter cfg ~fold:CFG.fold_nodes ~f:report_on_node ;
   summary
