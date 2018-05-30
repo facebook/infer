@@ -10,15 +10,17 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 set -e
+set -o pipefail
+set -u
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR"
 INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-OCAML_VERSION=${OCAML_VERSION:-"4.06.1+flambda"}
-OPAM_LOCK_URL=${OPAM_LOCK_URL:-"https://github.com/rgrinberg/opam-lock"}
-INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION"
+OCAML_VERSION_DEFAULT="4.06.1+flambda"
+INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION_DEFAULT"
+
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -44,10 +46,15 @@ function usage() {
 # arguments
 BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
-INTERACTIVE=${INTERACTIVE:-yes}
-ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
+INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_SWITCH_DEFAULT}
+INTERACTIVE=${INTERACTIVE:-yes}
+JOBS=${JOBS:-$NCPU}
+OCAML_VERSION=${OCAML_VERSION:-$OCAML_VERSION_DEFAULT}
+ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
+OPAM_LOCK_URL=${OPAM_LOCK_URL:-https://github.com/rgrinberg/opam-lock}
 USE_OPAM_LOCK=${USE_OPAM_LOCK:-yes}
+
 ORIG_ARGS="$*"
 
 while [[ $# > 0 ]]; do
@@ -117,9 +124,9 @@ fi
 export OPAMYES=1
 
 check_installed () {
-  local cmd=$1
-  if ! which $cmd >/dev/null 2>&1; then
-    echo "dependency not found: $cmd" >&2
+  local cmd="$1"
+  if ! which "$cmd" >/dev/null 2>&1; then
+    echo "dependency not found: '$cmd'" >&2
     exit 1
   fi
 }
@@ -139,11 +146,11 @@ opam_retry () {
 }
 
 setup_opam () {
-    opam_retry opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
+    opam_retry opam init --compiler="$OCAML_VERSION" -j "$JOBS" --no-setup
     if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
-        opam_retry opam switch set -j $NCPU "$INFER_OPAM_SWITCH" --alias-of $OCAML_VERSION
+        opam_retry opam switch set -j "$JOBS" "$INFER_OPAM_SWITCH" --alias-of "$OCAML_VERSION"
     else
-        opam_retry opam switch set -j $NCPU "$INFER_OPAM_SWITCH"
+        opam_retry opam switch set -j "$JOBS" "$INFER_OPAM_SWITCH"
     fi
 }
 
@@ -153,12 +160,12 @@ setup_opam () {
 install_infer-deps () {
     # remove previous infer-deps pin, which might have conflicting dependencies
     opam pin remove infer-deps --no-action
-    INFER_TMP_DEPS_DIR=$(mktemp -d "$INFER_ROOT"/dependencies/infer-deps-XXXX)
+    INFER_TMP_DEPS_DIR="$(mktemp -d "$INFER_ROOT"/dependencies/infer-deps-XXXX)"
     INFER_TMP_PACKAGE_NAME="$(basename "$INFER_TMP_DEPS_DIR")"
     cp -a "$INFER_DEPS_DIR"/* "$INFER_TMP_DEPS_DIR"
     # give unique name to the package to force opam to recheck the dependencies are all installed
     opam pin add --no-action "$INFER_TMP_PACKAGE_NAME" "$INFER_TMP_DEPS_DIR"
-    opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
+    opam install -j "$JOBS" --deps-only "$INFER_TMP_PACKAGE_NAME"
     opam pin remove "$INFER_TMP_PACKAGE_NAME"
     rm -fr "$INFER_TMP_DEPS_DIR"
     # pin infer so that opam doesn't violate its package constraints when the user does
@@ -186,7 +193,7 @@ install_opam_deps() {
 echo "initializing opam... " >&2
 check_installed opam
 setup_opam
-eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
+eval $(SHELL=bash opam config env --switch="$INFER_OPAM_SWITCH")
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
 opam_retry install_opam_deps
@@ -244,17 +251,17 @@ if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-
   fi
 fi
 
-make -j $NCPU || (
+make -j "$JOBS" || (
   echo >&2
   echo '  compilation failure; you can try running' >&2
   echo >&2
   echo '    make clean' >&2
-  echo "    $0 $ORIG_ARGS" >&2
+  echo "    '$0' $ORIG_ARGS" >&2
   echo >&2
   exit 1)
 
 echo
-echo "*** Success! Infer is now built in '$SCRIPT_PATH/infer/bin/'."
+echo "*** Success! Infer is now built in '$SCRIPT_DIR/infer/bin/'."
 echo '*** Install infer on your system with `make install`.'
 echo
 echo '*** If you plan to hack on infer, check out CONTRIBUTING.md to setup your dev environment.'

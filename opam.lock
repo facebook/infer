@@ -12,6 +12,7 @@ conf-aclocal = 1.0.0
 conf-autoconf = 0.1
 conf-m4 = 1
 conf-pkg-config = 1.0
+conf-sqlite3 = 1
 conf-which = 1
 conf-zlib = 1
 configurator = v0.11.0
