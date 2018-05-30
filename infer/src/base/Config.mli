@@ -36,6 +36,7 @@ type build_system =
   | BAnalyze
   | BAnt
   | BBuck
+  | BBrazil
   | BClang
   | BGradle
   | BJava

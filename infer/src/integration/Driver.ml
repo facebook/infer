@@ -431,7 +431,7 @@ let assert_supported_mode required_analyzer requested_mode_string =
 
 let assert_supported_build_system build_system =
   match (build_system : Config.build_system) with
-  | BAnt | BGradle | BJava | BJavac | BMvn ->
+  | BAnt | BBrazil | BGradle | BJava | BJavac | BMvn ->
       Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk ->
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
@@ -494,7 +494,7 @@ let mode_of_build_command build_cmd =
           Python args
       | BXcode when Config.xcpretty ->
           XcodeXcpretty (prog, args)
-      | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
+      | (BAnt | BBuck | BBrazil | BGradle | BNdk | BXcode) as build_system ->
           PythonCapture (build_system, build_cmd)
 
 

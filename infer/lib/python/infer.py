@@ -35,6 +35,7 @@ CMD_MARKER = '--'
 MODULE_TO_COMMAND = {
     'ant': ['ant'],
     'buck': ['buck'],
+    'brazil-build': ['brazil-build', 'bb', 'bbb', 'brazil-recursive-cmd'],
     'gradle': ['gradle', 'gradlew'],
     'xcodebuild': ['xcodebuild'],
     'ndk-build': ['ndk-build'],

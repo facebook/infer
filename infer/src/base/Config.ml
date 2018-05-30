@@ -84,6 +84,7 @@ type build_system =
   | BAnalyze
   | BAnt
   | BBuck
+  | BBrazil
   | BClang
   | BGradle
   | BJava
@@ -104,6 +105,8 @@ let build_system_exe_assoc =
   [ (BAnalyze, "analyze")
   ; (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBrazil, "brazil-build")
+  ; (BBrazil, "bb")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
   ; (BJava, "java")
