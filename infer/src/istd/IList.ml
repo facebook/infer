@@ -9,9 +9,26 @@
 
 open! IStd
 
-let rec take_append n ~tail l =
-  if n <= 0 then tail
-  else match l with [] -> tail | x :: tl -> take_append (n - 1) ~tail:(x :: tail) tl
+(* [take_append ~max list ~tail] takes the first max elements of [list] and appends [tail] to the result.
+   Does not create garbage for [max] <= 1000. *)
+let take_append =
+  let rec take_append_non_tailrec ~max list ~tail =
+    match list with
+    | hd :: tl when max > 0 ->
+        hd :: take_append_non_tailrec ~max:(max - 1) tl ~tail
+    | _ ->
+        tail
+  in
+  let rec take_append_tailrec ~max list acc ~tail =
+    match list with
+    | hd :: tl when max > 0 ->
+        (take_append_tailrec [@tailcall]) ~max:(max - 1) tl (hd :: acc) ~tail
+    | _ ->
+        List.rev_append acc tail
+  in
+  fun list ~max ~tail ->
+    if max <= 1000 then take_append_non_tailrec ~max list ~tail
+    else take_append_tailrec ~max list [] ~tail
 
 
 (** like map, but returns the original list if unchanged *)
@@ -21,7 +38,8 @@ let map_changed ~equal ~f l =
         l
     | x :: tl ->
         let x' = f x in
-        if not (equal x x') then take_append unchanged_prefix_length ~tail:(x' :: List.map ~f tl) l
+        if not (equal x x') then
+          take_append ~max:unchanged_prefix_length ~tail:(x' :: List.map ~f tl) l
         else aux (unchanged_prefix_length + 1) tl
   in
   aux 0 l
