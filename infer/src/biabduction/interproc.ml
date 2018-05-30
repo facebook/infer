@@ -281,7 +281,7 @@ let propagate (wl: Worklist.t) pname ~is_exception (pset: Paths.PathSet.t)
 
 (** propagate a set of results, including exceptions and divergence *)
 let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Paths.PathSet.t)
-    (succ_nodes: Procdesc.Node.t list) (exn_nodes: Procdesc.Node.t list) (wl: Worklist.t) =
+    curr_node (wl: Worklist.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then (
@@ -300,8 +300,10 @@ let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Pat
     Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons) ;
     L.d_ln () ;
     propagate wl pname ~is_exception:false prop_incons exit_node ) ;
-  List.iter ~f:(propagate wl pname ~is_exception:false pset_ok) succ_nodes ;
-  List.iter ~f:(propagate wl pname ~is_exception:true pset_exn) exn_nodes
+  ProcCfg.Exceptional.normal_succs proc_cfg curr_node
+  |> List.iter ~f:(propagate wl pname ~is_exception:false pset_ok) ;
+  ProcCfg.Exceptional.exceptional_succs proc_cfg curr_node
+  |> List.iter ~f:(propagate wl pname ~is_exception:true pset_exn)
 
 
 (* ===================== END of symbolic execution ===================== *)
@@ -459,9 +461,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
     try
       State.reset_diverging_states_node () ;
       let pset = do_symbolic_execution exe_env proc_cfg handle_exn tenv curr_node prop path in
-      let normal_succ_nodes = ProcCfg.Exceptional.normal_succs proc_cfg curr_node in
-      let exn_succ_nodes = ProcCfg.Exceptional.exceptional_succs proc_cfg curr_node in
-      propagate_nodes_divergence tenv proc_cfg pset normal_succ_nodes exn_succ_nodes wl ;
+      propagate_nodes_divergence tenv proc_cfg pset curr_node wl ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
     with exn ->
