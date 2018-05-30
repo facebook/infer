@@ -116,66 +116,76 @@ let java_get_const_type_name (const: Const.t) : string =
 
 let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : string list =
   (* Is this the node creating ivar? *)
-  let rec initializes_array instrs =
-    match instrs with
-    | Sil.Call ((t1, _), Exp.Const (Const.Cfun pn), _, _, _)
-      :: Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) :: is ->
-        Pvar.equal ivar iv && Ident.equal t1 t2
-        && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array")
-        || initializes_array is
-    | _ :: is ->
-        initializes_array is
-    | _ ->
-        false
+  let initializes_array instrs =
+    instrs
+    |> List.find_map ~f:(function
+         | Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _) when Pvar.equal ivar iv ->
+             Some t2
+         | _ ->
+             None )
+    |> Option.exists ~f:(fun t2 ->
+           List.exists instrs ~f:(function
+             | Sil.Call ((t1, _), Exp.Const (Const.Cfun pn), _, _, _) ->
+                 Ident.equal t1 t2
+                 && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array")
+             | _ ->
+                 false ) )
   in
   (* Get the type name added to ivar or None *)
-  let added_type_name node =
-    let rec nvar_type_name nvar instrs =
-      match instrs with
-      | Sil.Load (nv, Exp.Lfield (_, id, t), _, _) :: _ when Ident.equal nv nvar ->
-          get_field_type_name tenv t id
-      | Sil.Load (nv, _, t, _) :: _ when Ident.equal nv nvar ->
-          Some (get_type_name t)
-      | _ :: is ->
-          nvar_type_name nvar is
-      | _ ->
-          None
+  let added_type_name instrs =
+    let nvar_type_name nvar =
+      instrs
+      |> List.find_map ~f:(function
+           | Sil.Load (nv, e, t, _) when Ident.equal nv nvar ->
+               Some (e, t)
+           | _ ->
+               None )
+      |> Option.bind ~f:(function
+           | Exp.Lfield (_, id, t), _ ->
+               get_field_type_name tenv t id
+           | _, t ->
+               Some (get_type_name t) )
     in
-    let rec added_nvar array_nvar instrs =
-      match instrs with
-      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _) :: _
-        when Ident.equal iv array_nvar ->
-          nvar_type_name nvar (Procdesc.Node.get_instrs node)
-      | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _) :: _
-        when Ident.equal iv array_nvar ->
-          Some (java_get_const_type_name c)
-      | _ :: is ->
-          added_nvar array_nvar is
-      | _ ->
-          None
+    let added_nvar array_nvar =
+      instrs
+      |> List.find_map ~f:(function
+           | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Var nvar, _)
+             when Ident.equal iv array_nvar ->
+               Some (nvar_type_name nvar)
+           | Sil.Store (Exp.Lindex (Exp.Var iv, _), _, Exp.Const c, _)
+             when Ident.equal iv array_nvar ->
+               Some (Some (java_get_const_type_name c))
+           | _ ->
+               None )
+      |> Option.join
     in
-    let rec array_nvar instrs =
-      match instrs with
-      | Sil.Load (nv, Exp.Lvar iv, _, _) :: _ when Pvar.equal iv ivar ->
-          added_nvar nv instrs
-      | _ :: is ->
-          array_nvar is
-      | _ ->
-          None
+    let array_nvar =
+      instrs
+      |> List.find_map ~f:(function
+           | Sil.Load (nv, Exp.Lvar iv, _, _) when Pvar.equal iv ivar ->
+               Some nv
+           | _ ->
+               None )
+      |> Option.bind ~f:added_nvar
     in
-    array_nvar (Procdesc.Node.get_instrs node)
+    array_nvar
   in
   (* Walk nodes backward until definition of ivar, adding type names *)
-  let rec type_names node =
-    if initializes_array (Procdesc.Node.get_instrs node) then []
+  let rec type_names acc node =
+    let instrs = Procdesc.Node.get_instrs node in
+    if initializes_array instrs then acc
     else
       match Procdesc.Node.get_preds node with
       | [n] -> (
-        match added_type_name node with Some name -> name :: type_names n | None -> type_names n )
+        match added_type_name instrs with
+        | Some name ->
+            type_names (name :: acc) n
+        | None ->
+            type_names acc n )
       | _ ->
           raise Caml.Not_found
   in
-  List.rev (type_names call_node)
+  type_names [] call_node
 
 
 let is_getter pname_java =

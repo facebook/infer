@@ -136,25 +136,25 @@ let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
         Reporting.log_error summary ~loc:instr_loc exn
   in
   (* Get the array ivar for a given nvar *)
-  let rec array_ivar instrs nvar =
-    match (instrs, nvar) with
-    | Sil.Load (id, Exp.Lvar iv, _, _) :: _, Exp.Var nid when Ident.equal id nid ->
-        iv
-    | _ :: is, _ ->
-        array_ivar is nvar
+  let array_ivar instrs nvar =
+    match nvar with
+    | Exp.Var nid ->
+        List.find_map_exn instrs ~f:(function
+          | Sil.Load (id, Exp.Lvar iv, _, _) when Ident.equal id nid ->
+              Some iv
+          | _ ->
+              None )
     | _ ->
         raise Caml.Not_found
   in
-  let rec fixed_nvar_type_name instrs nvar =
+  let fixed_nvar_type_name instrs nvar =
     match nvar with
-    | Exp.Var nid -> (
-      match instrs with
-      | Sil.Load (id, Exp.Lvar _, t, _) :: _ when Ident.equal id nid ->
-          PatternMatch.get_type_name t
-      | _ :: is ->
-          fixed_nvar_type_name is nvar
-      | _ ->
-          raise Caml.Not_found )
+    | Exp.Var nid ->
+        List.find_map_exn instrs ~f:(function
+          | Sil.Load (id, Exp.Lvar _, t, _) when Ident.equal id nid ->
+              Some (PatternMatch.get_type_name t)
+          | _ ->
+              None )
     | Exp.Const c ->
         PatternMatch.java_get_const_type_name c
     | _ ->
