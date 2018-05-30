@@ -12,7 +12,7 @@ module F = Format
 
 (** Abstraction of a path that represents a lock, special-casing equality and comparisons
     to work over type, base variable modulo this and access list *)
-module LockIdentity : sig
+module Lock : sig
   include PrettyPrintable.PrintableOrderedType with type t = AccessPath.t
 
   val owner_class : t -> Typ.name option
@@ -21,12 +21,11 @@ module LockIdentity : sig
   val equal : t -> t -> bool
 end
 
-(** A lock event.  Equality/comparison disregards the call trace but includes location. *)
-module LockEvent : sig
+(** Event type.  Equality/comparison disregards the call trace but includes location. *)
+module Event : sig
   type severity_t = Low | Medium | High [@@deriving compare]
 
-  type event_t = LockAcquire of LockIdentity.t | MayBlock of (string * severity_t)
-  [@@deriving compare]
+  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
 
   val pp_event : F.formatter -> event_t -> unit
 
@@ -40,8 +39,8 @@ end
   ("eventually"), or,
 - the "first" lock being taken *in the current method* and, before its release, the eventual
   acquisition of "eventually" *)
-module LockOrder : sig
-  type t = private {first: LockEvent.t option; eventually: LockEvent.t}
+module Order : sig
+  type t = private {first: Event.t option; eventually: Event.t}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
@@ -54,8 +53,8 @@ module LockOrder : sig
   val get_loc : t -> Location.t
 end
 
-module LockOrderDomain : sig
-  include PrettyPrintable.PPSet with type elt = LockOrder.t
+module OrderDomain : sig
+  include PrettyPrintable.PPSet with type elt = Order.t
 
   include AbstractDomain.WithBottom with type astate = t
 end
@@ -65,19 +64,19 @@ module UIThreadDomain :
 
 include AbstractDomain.WithBottom
 
-val acquire : astate -> Location.t -> LockIdentity.t -> astate
+val acquire : astate -> Location.t -> Lock.t -> astate
 
-val release : astate -> LockIdentity.t -> astate
+val release : astate -> Lock.t -> astate
 
 val blocking_call :
-  caller:Typ.Procname.t -> callee:Typ.Procname.t -> LockEvent.severity_t -> Location.t -> astate
+  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Event.severity_t -> Location.t -> astate
   -> astate
 
 val set_on_ui_thread : astate -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
-type summary = LockOrderDomain.astate * UIThreadDomain.astate
+type summary = OrderDomain.astate * UIThreadDomain.astate
 
 val pp_summary : F.formatter -> summary -> unit
 

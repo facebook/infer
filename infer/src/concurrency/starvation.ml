@@ -137,7 +137,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
 
 
 let make_trace_with_header ?(header= "") elem pname =
-  let trace = StarvationDomain.LockOrder.make_loc_trace elem in
+  let trace = StarvationDomain.Order.make_loc_trace elem in
   let trace_descr = Format.asprintf "%s %a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
   let start_loc =
     List.hd trace |> Option.value_map ~default:Location.dummy ~f:(fun lt -> lt.Errlog.lt_loc)
@@ -163,8 +163,7 @@ let get_summaries_of_methods_in_class tenv clazz =
 
 (** per-procedure report map, which takes care of deduplication *)
 module ReportMap = struct
-  type issue_t = Starvation of StarvationDomain.LockEvent.severity_t | Deadlock
-  [@@deriving compare]
+  type issue_t = Starvation of StarvationDomain.Event.severity_t | Deadlock [@@deriving compare]
 
   type report_t =
     { issue: issue_t
@@ -222,31 +221,29 @@ end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   let open StarvationDomain in
-  match (current_elem.LockOrder.first, current_elem.LockOrder.eventually) with
-  | None, _ | Some {LockEvent.event= MayBlock _}, _ | _, {LockEvent.event= MayBlock _} ->
+  match (current_elem.Order.first, current_elem.Order.eventually) with
+  | None, _ | Some {Event.event= MayBlock _}, _ | _, {Event.event= MayBlock _} ->
       (* should never happen *)
-      L.die InternalError "Deadlock cannot occur without two lock events: %a" LockOrder.pp
-        current_elem
-  | Some {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
+      L.die InternalError "Deadlock cannot occur without two lock events: %a" Order.pp current_elem
+  | Some {Event.event= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
       (* first event is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur *)
       true
-  | Some {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
-  | _, {LockEvent.event= LockAcquire ((Var.LogicalVar _, _), _)} ->
+  | Some {Event.event= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
+  | _, {Event.event= LockAcquire ((Var.LogicalVar _, _), _)} ->
       (* first event has an ident root, but has a non-empty access path, which means we are
          not filtering out local variables (see [exec_instr]), or,
          second event has an ident root, which should not happen if we are filtering locals *)
-      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." LockOrder.pp
+      L.die InternalError "Deadlock cannot occur on these logical variables: %a @." Order.pp
         current_elem
-  | ( Some {LockEvent.event= LockAcquire ((_, typ1), _)}
-    , {LockEvent.event= LockAcquire ((_, typ2), _)} ) ->
+  | Some {Event.event= LockAcquire ((_, typ1), _)}, {Event.event= LockAcquire ((_, typ2), _)} ->
       (* use string comparison on types as a stable order to decide whether to report a deadlock *)
       let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
       c < 0
       || Int.equal 0 c
          && (* same class, so choose depending on location *)
-            Location.compare current_elem.LockOrder.eventually.LockEvent.loc
-              endpoint_elem.LockOrder.eventually.LockEvent.loc
+            Location.compare current_elem.Order.eventually.Event.loc
+              endpoint_elem.Order.eventually.Event.loc
             < 0
 
 
@@ -263,35 +260,35 @@ let report_deadlocks tenv current_pdesc (summary, current_main) report_map' =
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
       not
-        ( LockOrder.may_deadlock current_elem elem
+        ( Order.may_deadlock current_elem elem
         && should_report_deadlock_on_current_proc current_elem elem )
     then report_map
     else
-      let () = debug "Possible deadlock:@.%a@.%a@." LockOrder.pp current_elem LockOrder.pp elem in
-      match (current_elem.LockOrder.eventually, elem.LockOrder.eventually) with
-      | {LockEvent.event= LockAcquire _}, {LockEvent.event= LockAcquire _} ->
+      let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
+      match (current_elem.Order.eventually, elem.Order.eventually) with
+      | {Event.event= LockAcquire _}, {Event.event= LockAcquire _} ->
           let error_message =
             Format.asprintf
               "Potential deadlock.@.Trace 1 (starts at %a), %a.@.Trace 2 (starts at %a), %a."
               (MF.wrap_monospaced Typ.Procname.pp)
-              current_pname LockOrder.pp current_elem
+              current_pname Order.pp current_elem
               (MF.wrap_monospaced Typ.Procname.pp)
-              endpoint_pname LockOrder.pp elem
+              endpoint_pname Order.pp elem
           in
           let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
           let second_trace = make_loc_trace endpoint_pname 2 elem in
           let ltr = List.rev_append first_trace second_trace in
-          let loc = LockOrder.get_loc current_elem in
+          let loc = Order.get_loc current_elem in
           ReportMap.add_deadlock current_pname loc ltr error_message report_map
       | _, _ ->
           report_map
   in
   let report_on_current_elem elem report_map =
     match elem with
-    | {LockOrder.first= None} | {LockOrder.eventually= {LockEvent.event= LockEvent.MayBlock _}} ->
+    | {Order.first= None} | {Order.eventually= {Event.event= Event.MayBlock _}} ->
         report_map
-    | {LockOrder.eventually= {LockEvent.event= LockEvent.LockAcquire endpoint_lock}} ->
-        LockIdentity.owner_class endpoint_lock
+    | {Order.eventually= {Event.event= Event.LockAcquire endpoint_lock}} ->
+        Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
                (* get the class of the root variable of the lock in the endpoint event
                    and retrieve all the summaries of the methods of that class *)
@@ -300,10 +297,10 @@ let report_deadlocks tenv current_pdesc (summary, current_main) report_map' =
                List.fold endpoint_summaries ~init:report_map ~f:
                  (fun acc (endp_pname, (endp_summary, endp_ui)) ->
                    if UIThreadDomain.is_empty current_main || UIThreadDomain.is_empty endp_ui then
-                     LockOrderDomain.fold (report_endpoint_elem elem endp_pname) endp_summary acc
+                     OrderDomain.fold (report_endpoint_elem elem endp_pname) endp_summary acc
                    else acc ) )
   in
-  LockOrderDomain.fold report_on_current_elem summary report_map'
+  OrderDomain.fold report_on_current_elem summary report_map'
 
 
 let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
@@ -312,37 +309,37 @@ let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
   let report_remote_block ui_explain current_elem current_lock endpoint_pname endpoint_elem
       report_map =
     match endpoint_elem with
-    | { LockOrder.first= Some {LockEvent.event= LockEvent.LockAcquire lock}
-      ; eventually= {LockEvent.event= LockEvent.MayBlock (block_descr, sev)} }
-      when LockIdentity.equal current_lock lock ->
+    | { Order.first= Some {Event.event= Event.LockAcquire lock}
+      ; eventually= {Event.event= Event.MayBlock (block_descr, sev)} }
+      when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread (because %s) and %a, which may be held by another thread \
              which %s."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain LockIdentity.pp lock block_descr
+            current_pname ui_explain Lock.pp lock block_descr
         in
         let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
         let second_trace = make_loc_trace endpoint_pname 2 endpoint_elem in
         let ltr = List.rev_append first_trace second_trace in
-        let loc = LockOrder.get_loc current_elem in
+        let loc = Order.get_loc current_elem in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
     | _ ->
         report_map
   in
-  let report_on_current_elem ui_explain ({LockOrder.eventually} as elem) report_map =
+  let report_on_current_elem ui_explain ({Order.eventually} as elem) report_map =
     match eventually with
-    | {LockEvent.event= LockEvent.MayBlock (_, sev)} ->
+    | {Event.event= Event.MayBlock (_, sev)} ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain LockEvent.pp_event eventually.LockEvent.event
+            current_pname ui_explain Event.pp_event eventually.Event.event
         in
-        let loc = LockOrder.get_loc elem in
+        let loc = Order.get_loc elem in
         let ltr = make_trace_with_header elem current_pname in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
-    | {LockEvent.event= LockEvent.LockAcquire endpoint_lock} ->
-        LockIdentity.owner_class endpoint_lock
+    | {Event.event= Event.LockAcquire endpoint_lock} ->
+        Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
                (* get the class of the root variable of the lock in the endpoint event
                  and retrieve all the summaries of the methods of that class *)
@@ -352,7 +349,7 @@ let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
                  (fun acc (endpoint_pname, (order, ui)) ->
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
-                     LockOrderDomain.fold
+                     OrderDomain.fold
                        (report_remote_block ui_explain elem endpoint_lock endpoint_pname)
                        order acc
                    else acc ) )
@@ -361,7 +358,7 @@ let report_blocks_on_main_thread tenv current_pdesc (order, ui) report_map' =
   | AbstractDomain.Types.Bottom ->
       report_map'
   | AbstractDomain.Types.NonBottom ui_explain ->
-      LockOrderDomain.fold (report_on_current_elem ui_explain) order report_map'
+      OrderDomain.fold (report_on_current_elem ui_explain) order report_map'
 
 
 let reporting {Callbacks.procedures; exe_env} =

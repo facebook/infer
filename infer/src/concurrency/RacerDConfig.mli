@@ -82,7 +82,7 @@ module Models : sig
      requested via @ThreadSafe *)
 
   val may_block :
-    Tenv.t -> Typ.Procname.t -> HilExp.t list -> StarvationDomain.LockEvent.severity_t option
+    Tenv.t -> Typ.Procname.t -> HilExp.t list -> StarvationDomain.Event.severity_t option
   (** is the method call potentially blocking, given the actuals passed? *)
 
   val is_synchronized_library_call : Tenv.t -> Typ.Procname.t -> bool

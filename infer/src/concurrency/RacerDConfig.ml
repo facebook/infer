@@ -702,7 +702,7 @@ module Models = struct
 
   (* at most one function is allowed to be true *)
   let may_block =
-    let open StarvationDomain.LockEvent in
+    let open StarvationDomain.Event in
     let matchers =
       [ (is_blocking_java_io, Low)
       ; (is_countdownlatch_await, Medium)
