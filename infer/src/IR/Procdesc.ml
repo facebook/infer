@@ -126,8 +126,11 @@ module Node = struct
   (** Add the instructions at the beginning of the list of instructions to execute *)
   let prepend_instrs node instrs = node.instrs <- instrs @ node.instrs
 
-  (** Replace the instructions to be executed. *)
-  let replace_instrs node instrs = node.instrs <- instrs
+  (** Map and replace the instructions to be executed *)
+  let replace_instrs node ~f =
+    let instrs' = IList.map_changed node.instrs ~equal:phys_equal ~f in
+    if not (phys_equal instrs' node.instrs) then node.instrs <- instrs'
+
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node (proc_attributes: ProcAttributes.t) locals =
@@ -304,6 +307,18 @@ let fold_instrs pdesc ~init ~f =
     List.fold ~f:(fun acc instr -> f acc node instr) ~init:acc (Node.get_instrs node)
   in
   fold_nodes ~f:fold_node ~init pdesc
+
+
+let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
+
+let find_map_instrs pdesc ~f =
+  let find_map_node node = List.find_map ~f (Node.get_instrs node) in
+  find_map_nodes ~f:find_map_node pdesc
+
+
+let replace_instrs pdesc ~f =
+  let do_node node = Node.replace_instrs ~f node in
+  iter_nodes do_node pdesc
 
 
 (** fold between two nodes or until we reach a branching structure *)

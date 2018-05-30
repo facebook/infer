@@ -84,15 +84,14 @@ let save_attributes source_file cfg =
 
 (** Inline a synthetic (access or bridge) method. *)
 let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr option =
-  let modified = ref None in
   let found instr instr' =
-    modified := Some instr' ;
     L.(debug Analysis Verbose)
       "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr Pp.text) instr ;
     L.(debug Analysis Verbose)
-      "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr'
+      "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr' ;
+    Some instr'
   in
-  let do_instr _ instr =
+  let do_instr instr =
     match (instr, etl) with
     | Sil.Load (_, Exp.Lfield (Exp.Var _, fn, ft), bt, _), [(* getter for fields *) (e1, _)] ->
         let instr' = Sil.Load (ret_id, Exp.Lfield (e1, fn, ft), bt, loc_call) in
@@ -125,15 +124,15 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
         let instr' = Sil.Call (ret, Exp.Const (Const.Cfun pn), etl1, loc_call, cf) in
         found instr instr'
     | _ ->
-        ()
+        None
   in
-  Procdesc.iter_instrs do_instr pdesc ;
-  !modified
+  Procdesc.find_map_instrs ~f:do_instr pdesc
 
 
 (** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. *)
 let proc_inline_synthetic_methods cfg pdesc : unit =
-  let instr_inline_synthetic_method = function
+  let instr_inline_synthetic_method instr =
+    match instr with
     | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _)
           -> (
       match Typ.Procname.Hash.find cfg pn with
@@ -143,28 +142,14 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
           let is_synthetic = attributes.is_synthetic_method in
           let is_bridge = attributes.is_bridge_method in
           if is_access || is_bridge || is_synthetic then
-            inline_synthetic_method ret_id_typ etl pd loc
-          else None
+            inline_synthetic_method ret_id_typ etl pd loc |> Option.value ~default:instr
+          else instr
       | exception Caml.Not_found ->
-          None )
+          instr )
     | _ ->
-        None
+        instr
   in
-  let node_inline_synthetic_methods node =
-    let modified = ref false in
-    let do_instr instr =
-      match instr_inline_synthetic_method instr with
-      | None ->
-          instr
-      | Some instr' ->
-          modified := true ;
-          instr'
-    in
-    let instrs = Procdesc.Node.get_instrs node in
-    let instrs' = List.map ~f:do_instr instrs in
-    if !modified then Procdesc.Node.replace_instrs node instrs'
-  in
-  Procdesc.iter_nodes node_inline_synthetic_methods pdesc
+  Procdesc.replace_instrs pdesc ~f:instr_inline_synthetic_method
 
 
 let inline_java_synthetic_methods cfg =

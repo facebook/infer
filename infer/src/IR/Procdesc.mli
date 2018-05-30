@@ -101,9 +101,6 @@ module Node : sig
   val pp_instrs : Pp.env -> sub_instrs:bool -> Sil.instr option -> Format.formatter -> t -> unit
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
-
-  val replace_instrs : t -> Sil.instr list -> unit
-  (** Replace the instructions to be executed. *)
 end
 
 (** Map with node id keys. *)
@@ -138,6 +135,8 @@ val did_preanalysis : t -> bool
 
 val fold_instrs : t -> init:'accum -> f:('accum -> Node.t -> Sil.instr -> 'accum) -> 'accum
 (** fold over all nodes and their instructions *)
+
+val find_map_instrs : t -> f:(Sil.instr -> 'a option) -> 'a option
 
 val from_proc_attributes : ProcAttributes.t -> t
 (** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
@@ -183,6 +182,9 @@ val is_java_synchronized : t -> bool
 
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)
+
+val replace_instrs : t -> f:(Sil.instr -> Sil.instr) -> unit
+(** Map and replace the instructions to be executed *)
 
 val iter_nodes : (Node.t -> unit) -> t -> unit
 (** iterate over all the nodes of a procedure *)
