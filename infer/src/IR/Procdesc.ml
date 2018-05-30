@@ -121,7 +121,7 @@ module Node = struct
   let get_distance_to_exit node = node.dist_exit
 
   (** Append the instructions to the list of instructions to execute *)
-  let append_instrs node instrs = node.instrs <- node.instrs @ instrs
+  let append_instrs node instrs = if instrs <> [] then node.instrs <- node.instrs @ instrs
 
   (** Add the instructions at the beginning of the list of instructions to execute *)
   let prepend_instrs node instrs = node.instrs <- instrs @ node.instrs

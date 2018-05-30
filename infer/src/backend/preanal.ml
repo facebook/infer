@@ -132,18 +132,12 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   in
   (* only nullify pvars that are local; don't nullify those that can escape *)
   let is_local pvar = not (Pvar.is_return pvar || Pvar.is_global pvar) in
-  let node_add_nullify_instructions node pvars =
-    let loc = Procdesc.Node.get_last_loc node in
-    let nullify_instrs =
-      List.rev_filter_map pvars ~f:(fun pvar ->
-          if is_local pvar then Some (Sil.Nullify (pvar, loc)) else None )
-    in
-    if nullify_instrs <> [] then Procdesc.Node.append_instrs node nullify_instrs
+  let node_nullify_instructions loc pvars =
+    List.rev_filter_map pvars ~f:(fun pvar ->
+        if is_local pvar then Some (Sil.Nullify (pvar, loc)) else None )
   in
-  let node_add_removetmps_instructions node ids =
-    if ids <> [] then
-      let loc = Procdesc.Node.get_last_loc node in
-      Procdesc.Node.append_instrs node [Sil.Remove_temps (List.rev ids, loc)]
+  let node_removetmps_instruction loc ids =
+    if ids <> [] then Some (Sil.Remove_temps (List.rev ids, loc)) else None
   in
   List.iter
     ~f:(fun node ->
@@ -163,15 +157,19 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
                     (pvars_acc, ids_acc) )
               to_nullify ([], [])
           in
-          node_add_removetmps_instructions node ids_to_remove ;
-          node_add_nullify_instructions node pvars_to_nullify
+          let loc = Procdesc.Node.get_last_loc node in
+          node_nullify_instructions loc pvars_to_nullify
+          |> IList.opt_cons (node_removetmps_instruction loc ids_to_remove)
+          |> Procdesc.Node.append_instrs node
       | None ->
           () )
     (ProcCfg.Exceptional.nodes nullify_proc_cfg) ;
   (* nullify all address taken variables *)
   if not (AddressTaken.Domain.is_empty address_taken_vars) then
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
-    node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
+    let exit_loc = Procdesc.Node.get_last_loc exit_node in
+    node_nullify_instructions exit_loc (AddressTaken.Domain.elements address_taken_vars)
+    |> Procdesc.Node.append_instrs exit_node
 
 
 (** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it

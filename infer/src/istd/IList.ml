@@ -145,3 +145,5 @@ let rec drop list index =
 
 
 let mem_nth list index = drop list index |> List.is_empty |> not
+
+let opt_cons opt list = match opt with Some x -> x :: list | None -> list
