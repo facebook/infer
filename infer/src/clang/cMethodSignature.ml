@@ -33,7 +33,6 @@ type t =
   ; method_kind: ProcAttributes.clang_method_kind
   ; is_cpp_virtual: bool
   ; is_cpp_nothrow: bool
-  ; lang: CFrontend_config.clang_lang
   ; pointer_to_parent: Clang_ast_t.pointer option
   ; pointer_to_property_opt: Clang_ast_t.pointer option
   ; (* If set then method is a getter/setter *)
@@ -52,7 +51,7 @@ let is_setter {pointer_to_property_opt; params} =
 
 
 let mk name class_param params ret_type attributes loc method_kind ?is_cpp_virtual ?is_cpp_nothrow
-    lang pointer_to_parent pointer_to_property_opt return_param_typ access =
+    pointer_to_parent pointer_to_property_opt return_param_typ access =
   let is_cpp_virtual = Option.value is_cpp_virtual ~default:false in
   let is_cpp_nothrow = Option.value is_cpp_nothrow ~default:false in
   { name
@@ -65,7 +64,6 @@ let mk name class_param params ret_type attributes loc method_kind ?is_cpp_virtu
   ; method_kind
   ; is_cpp_virtual
   ; is_cpp_nothrow
-  ; lang
   ; pointer_to_parent
   ; pointer_to_property_opt
   ; return_param_typ }
