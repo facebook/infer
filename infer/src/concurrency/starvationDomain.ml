@@ -300,7 +300,8 @@ let release ({lock_state} as astate) lockid =
 
 
 let integrate_summary ({lock_state; order; ui} as astate) callee_pname loc callee_summary =
-  let callee_order, callee_ui = callee_summary in
+  let callee_order = callee_summary.order in
+  let callee_ui = callee_summary.ui in
   (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
      l is held locally *)
   let do_elem elem acc =
@@ -317,9 +318,6 @@ let set_on_ui_thread ({ui} as astate) explain =
   {astate with ui= UIThreadDomain.join ui (AbstractDomain.Types.NonBottom explain)}
 
 
-let to_summary {order; ui} = (order, ui)
+type summary = astate
 
-type summary = OrderDomain.astate * UIThreadDomain.astate
-
-let pp_summary fmt (order, ui) =
-  F.fprintf fmt "Order: %a, UIThread: %a" OrderDomain.pp order UIThreadDomain.pp ui
+let pp_summary = pp
