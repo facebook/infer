@@ -104,17 +104,16 @@ struct
   let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
     let compute_pre node inv_map =
       let extract_post_ pred = extract_post (CFG.id pred) inv_map in
-      CFG.preds cfg node
-      |> List.fold ~init:None ~f:(fun joined_post_opt pred ->
-             match extract_post_ pred with
-             | None ->
-                 joined_post_opt
-             | Some post as some_post ->
-               match joined_post_opt with
-               | None ->
-                   some_post
-               | Some joined_post ->
-                   Some (Domain.join joined_post post) )
+      CFG.fold_preds cfg node ~init:None ~f:(fun joined_post_opt pred ->
+          match extract_post_ pred with
+          | None ->
+              joined_post_opt
+          | Some post as some_post ->
+            match joined_post_opt with
+            | None ->
+                some_post
+            | Some joined_post ->
+                Some (Domain.join joined_post post) )
     in
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->

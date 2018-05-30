@@ -191,7 +191,7 @@ module BoundMap = struct
               Node.IdMap.add node_id BasicCost.zero bound_map
     in
     let bound_map =
-      List.fold (NodeCFG.nodes node_cfg) ~f:compute_node_upper_bound ~init:Node.IdMap.empty
+      NodeCFG.fold_nodes node_cfg ~f:compute_node_upper_bound ~init:Node.IdMap.empty
     in
     print_upper_bound_map bound_map ; bound_map
 
@@ -215,10 +215,10 @@ end
 module StructuralConstraints = struct
   type t = {single: Node.id list; sum: Node.IdSet.t list}
 
-  (* 
-  Finds subset of constraints of node k. 
-  It returns a pair (single_constraints, sum_constraints) where single constraints are 
-  of the form 'x_k <= x_j' and  sum constraints are of the form 'x_k <= x_j1 +...+ x_jn'. 
+  (*
+  Finds subset of constraints of node k.
+  It returns a pair (single_constraints, sum_constraints) where single constraints are
+  of the form 'x_k <= x_j' and  sum constraints are of the form 'x_k <= x_j1 +...+ x_jn'.
   *)
   let get_constraints_of_node constraints k =
     let c = Node.IdMap.find_opt k constraints in
@@ -267,7 +267,7 @@ module StructuralConstraints = struct
         {single= List.append preds.single succs.single; sum= List.append preds.sum succs.sum} acc
     in
     let constraints =
-      List.fold (NodeCFG.nodes node_cfg) ~f:compute_node_constraints ~init:Node.IdMap.empty
+      NodeCFG.fold_nodes node_cfg ~f:compute_node_constraints ~init:Node.IdMap.empty
     in
     print_constraints_map constraints ; constraints
 end
@@ -411,12 +411,12 @@ module MinTree = struct
       with_cache (minimum_propagation bound_map constraints) |> Staged.unstage
     in
     let min_trees =
-      List.fold
+      NodeCFG.fold_nodes node_cfg
         ~f:(fun acc node ->
           let nid = Node.id node in
           let tree = minimum_propagation (nid, Node.IdSet.empty) in
           (nid, tree) :: acc )
-        ~init:[] (NodeCFG.nodes node_cfg)
+        ~init:[]
     in
     List.iter
       ~f:(fun (nid, t) -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
@@ -599,7 +599,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
         "@\n[COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"
         Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
-        (List.length (NodeCFG.nodes node_cfg))
+        (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
         BasicCost.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary

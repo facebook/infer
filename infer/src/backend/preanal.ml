@@ -139,8 +139,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let node_removetmps_instruction loc ids =
     if ids <> [] then Some (Sil.Remove_temps (List.rev ids, loc)) else None
   in
-  List.iter
-    ~f:(fun node ->
+  Container.iter nullify_proc_cfg ~fold:ProcCfg.Exceptional.fold_nodes ~f:(fun node ->
       match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
       | Some (_, to_nullify) ->
           let pvars_to_nullify, ids_to_remove =
@@ -162,8 +161,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
           |> IList.opt_cons (node_removetmps_instruction loc ids_to_remove)
           |> Procdesc.Node.append_instrs node
       | None ->
-          () )
-    (ProcCfg.Exceptional.nodes nullify_proc_cfg) ;
+          () ) ;
   (* nullify all address taken variables *)
   if not (AddressTaken.Domain.is_empty address_taken_vars) then
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in

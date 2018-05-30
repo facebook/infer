@@ -300,10 +300,12 @@ let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Pat
     Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons) ;
     L.d_ln () ;
     propagate wl pname ~is_exception:false prop_incons exit_node ) ;
-  ProcCfg.Exceptional.normal_succs proc_cfg curr_node
-  |> List.iter ~f:(propagate wl pname ~is_exception:false pset_ok) ;
-  ProcCfg.Exceptional.exceptional_succs proc_cfg curr_node
-  |> List.iter ~f:(propagate wl pname ~is_exception:true pset_exn)
+  Container.iter curr_node
+    ~fold:(ProcCfg.Exceptional.fold_normal_succs proc_cfg)
+    ~f:(propagate wl pname ~is_exception:false pset_ok) ;
+  Container.iter curr_node
+    ~fold:(ProcCfg.Exceptional.fold_exceptional_succs proc_cfg)
+    ~f:(propagate wl pname ~is_exception:true pset_exn)
 
 
 (* ===================== END of symbolic execution ===================== *)
@@ -313,13 +315,11 @@ let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Pat
 let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let curr_node_id = ProcCfg.Exceptional.id curr_node in
-  let succ_nodes = ProcCfg.Exceptional.normal_succs proc_cfg curr_node in
   let new_dset = edgeset_todo in
   let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
   let old_dset', new_dset' = Dom.pathset_join pname tenv old_dset new_dset in
   Join_table.add wl.Worklist.join_table curr_node_id (Paths.PathSet.union old_dset' new_dset') ;
-  List.iter
-    ~f:(fun node ->
+  Container.iter curr_node ~fold:(ProcCfg.Exceptional.fold_normal_succs proc_cfg) ~f:(fun node ->
       Paths.PathSet.iter
         (fun prop path ->
           State.set_path path None ;
@@ -327,7 +327,6 @@ let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
             (Paths.PathSet.from_renamed_list [(prop, path)])
             node )
         new_dset' )
-    succ_nodes
 
 
 let prop_max_size = ref (0, Prop.prop_emp)

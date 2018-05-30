@@ -322,19 +322,14 @@ module Report = struct
     let rec is_end_of_block_or_procedure (cfg: CFG.t) node rem_instrs =
       List.for_all rem_instrs ~f:Sil.instr_is_auxiliary
       &&
-      match CFG.succs cfg node with
-      | [] ->
+      match IContainer.singleton_or_more node ~fold:(CFG.fold_succs cfg) with
+      | IContainer.Empty ->
           true
-      | [succ]
-        -> (
-          is_end_of_block_or_procedure cfg succ (CFG.instrs succ)
-          ||
-          match CFG.preds cfg succ with
-          | _ :: _ :: _ ->
-              true (* [succ] is a join, i.e. [node] is the end of a block *)
-          | _ ->
-              false )
-      | _ :: _ :: _ ->
+      | Singleton succ ->
+          (* [succ] is a join, i.e. [node] is the end of a block *)
+          IContainer.mem_nth succ 1 ~fold:(CFG.fold_preds cfg)
+          || is_end_of_block_or_procedure cfg succ (CFG.instrs succ)
+      | More ->
           false
   end
 
@@ -503,8 +498,7 @@ module Report = struct
   let check_proc
       : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg inv_map ->
-    CFG.nodes cfg
-    |> List.fold ~f:(check_node summary pdesc tenv cfg inv_map) ~init:PO.ConditionSet.empty
+    CFG.fold_nodes cfg ~f:(check_node summary pdesc tenv cfg inv_map) ~init:PO.ConditionSet.empty
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =

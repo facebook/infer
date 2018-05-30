@@ -51,7 +51,10 @@ let tests =
     let pp_node_list fmt l = F.pp_print_list ~pp_sep Procdesc.Node.pp fmt l in
     F.fprintf fmt "Expected output %a but got %a" pp_node_list expected pp_node_list actual
   in
-  let create_test input expected _ = assert_equal ~cmp ~pp_diff input expected in
+  let create_test ~fold input expected _ =
+    let input = Container.to_list input ~fold in
+    assert_equal ~cmp ~pp_diff input expected
+  in
   let instr_test =
     let instr_test_ _ =
       ( match ProcCfg.Normal.instrs n1 with
@@ -83,66 +86,70 @@ let tests =
       let n1'' = BackwardInstrCfg.underlying_node backward_instr_n1 in
       assert_bool "underlying_node should return node of underlying CFG type" (phys_equal n1 n1'') ;
       (* test the preds/succs using backward + instr cfg *)
-      let check_backward_instr_ f backward_instr_node expected_instrs =
-        match f backward_instr_proc_cfg backward_instr_node with
+      let check_backward_instr_ fold backward_instr_node expected_instrs =
+        match Container.to_list ~fold:(fold backward_instr_proc_cfg) backward_instr_node with
         | [n] ->
             assert_equal (BackwardInstrCfg.instrs n) expected_instrs
         | _ ->
             assert_failure "Expected exactly one node"
       in
-      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n1 [dummy_instr2] ;
+      check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n1 [dummy_instr2] ;
       let backward_instr_n2 = BackwardInstrCfg.of_underlying_node n2 in
-      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n2 [] ;
+      check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n2 [] ;
       let backward_instr_n3 = BackwardInstrCfg.of_underlying_node n3 in
-      check_backward_instr_ BackwardInstrCfg.preds backward_instr_n3 [] ;
-      check_backward_instr_ BackwardInstrCfg.normal_succs backward_instr_n2 [dummy_instr2]
+      check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n3 [] ;
+      check_backward_instr_ BackwardInstrCfg.fold_normal_succs backward_instr_n2 [dummy_instr2]
     in
     "instr_test" >:: instr_test_
   in
   let graph_tests =
     [ (* test the succs of the normal cfg. forward... *)
-      ("succs_n1", ProcCfg.Normal.succs normal_proc_cfg n1, [n2])
-    ; ("normal_succs_n1", ProcCfg.Normal.normal_succs normal_proc_cfg n1, [n2])
-    ; ("succs_n2", ProcCfg.Normal.succs normal_proc_cfg n2, [n4])
-    ; ("normal_succs_n2", ProcCfg.Normal.normal_succs normal_proc_cfg n2, [n4])
-    ; ("succs_n3", ProcCfg.Normal.succs normal_proc_cfg n3, [n4])
-    ; ("normal_succs_n3", ProcCfg.Normal.normal_succs normal_proc_cfg n3, [n4])
+      ("succs_n1", ProcCfg.Normal.fold_succs normal_proc_cfg, n1, [n2])
+    ; ("normal_succs_n1", ProcCfg.Normal.fold_normal_succs normal_proc_cfg, n1, [n2])
+    ; ("succs_n2", ProcCfg.Normal.fold_succs normal_proc_cfg, n2, [n4])
+    ; ("normal_succs_n2", ProcCfg.Normal.fold_normal_succs normal_proc_cfg, n2, [n4])
+    ; ("succs_n3", ProcCfg.Normal.fold_succs normal_proc_cfg, n3, [n4])
+    ; ("normal_succs_n3", ProcCfg.Normal.fold_normal_succs normal_proc_cfg, n3, [n4])
     ; (* ... and backward... *)
-      ("succs_n1_bw", BackwardCfg.preds backward_proc_cfg n1, [n2])
-    ; ("normal_succs_n1_bw", BackwardCfg.normal_preds backward_proc_cfg n1, [n2])
-    ; ("succs_n2_bw", BackwardCfg.preds backward_proc_cfg n2, [n4])
-    ; ("normal_succs_n2_bw", BackwardCfg.normal_preds backward_proc_cfg n2, [n4])
-    ; ("succs_n3_bw", BackwardCfg.preds backward_proc_cfg n3, [n4])
-    ; ("normal_succs_n3_bw", BackwardCfg.normal_preds backward_proc_cfg n3, [n4])
+      ("succs_n1_bw", BackwardCfg.fold_preds backward_proc_cfg, n1, [n2])
+    ; ("normal_succs_n1_bw", BackwardCfg.fold_normal_preds backward_proc_cfg, n1, [n2])
+    ; ("succs_n2_bw", BackwardCfg.fold_preds backward_proc_cfg, n2, [n4])
+    ; ("normal_succs_n2_bw", BackwardCfg.fold_normal_preds backward_proc_cfg, n2, [n4])
+    ; ("succs_n3_bw", BackwardCfg.fold_preds backward_proc_cfg, n3, [n4])
+    ; ("normal_succs_n3_bw", BackwardCfg.fold_normal_preds backward_proc_cfg, n3, [n4])
     ; (* test the preds of the normal cfg... *)
-      ("preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1])
-    ; ("normal_preds_n2", ProcCfg.Normal.normal_preds normal_proc_cfg n2, [n1])
+      ("preds_n2", ProcCfg.Normal.fold_normal_preds normal_proc_cfg, n2, [n1])
+    ; ("normal_preds_n2", ProcCfg.Normal.fold_normal_preds normal_proc_cfg, n2, [n1])
     ; (* ...and the backward cfg... *)
-      ("preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1])
-    ; ("normal_preds_n2_bw", BackwardCfg.normal_succs backward_proc_cfg n2, [n1])
+      ("preds_n2_bw", BackwardCfg.fold_normal_succs backward_proc_cfg, n2, [n1])
+    ; ("normal_preds_n2_bw", BackwardCfg.fold_normal_succs backward_proc_cfg, n2, [n1])
     ; (* we shouldn't see any exn succs or preds even though we added them *)
-      ("no_exn_succs_n1", ProcCfg.Normal.exceptional_succs normal_proc_cfg n1, [])
-    ; ("no_exn_preds_n3", ProcCfg.Normal.exceptional_preds normal_proc_cfg n3, [])
+      ("no_exn_succs_n1", ProcCfg.Normal.fold_exceptional_succs normal_proc_cfg, n1, [])
+    ; ("no_exn_preds_n3", ProcCfg.Normal.fold_exceptional_preds normal_proc_cfg, n3, [])
     ; (* same in the backward cfg *)
-      ("no_exn_succs_n1_bw", BackwardCfg.exceptional_preds backward_proc_cfg n1, [])
-    ; ("no_exn_preds_n3_bw", BackwardCfg.exceptional_succs backward_proc_cfg n3, [])
+      ("no_exn_succs_n1_bw", BackwardCfg.fold_exceptional_preds backward_proc_cfg, n1, [])
+    ; ("no_exn_preds_n3_bw", BackwardCfg.fold_exceptional_succs backward_proc_cfg, n3, [])
     ; (* now, test the exceptional succs in the exceptional cfg. *)
-      ("exn_succs_n1", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n1, [n3])
-    ; ("exn_succs_n2", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n2, [n3])
-    ; ("exn_succs_n3", ProcCfg.Exceptional.exceptional_succs exceptional_proc_cfg n3, [n4])
+      ("exn_succs_n1", ProcCfg.Exceptional.fold_exceptional_succs exceptional_proc_cfg, n1, [n3])
+    ; ("exn_succs_n2", ProcCfg.Exceptional.fold_exceptional_succs exceptional_proc_cfg, n2, [n3])
+    ; ("exn_succs_n3", ProcCfg.Exceptional.fold_exceptional_succs exceptional_proc_cfg, n3, [n4])
     ; (* test exceptional pred links *)
-      ("exn_preds_n3", ProcCfg.Exceptional.exceptional_preds exceptional_proc_cfg n3, [n2; n1])
+      ( "exn_preds_n3"
+      , ProcCfg.Exceptional.fold_exceptional_preds exceptional_proc_cfg
+      , n3
+      , [n2; n1] )
     ; (* succs should return both normal and exceptional successors *)
-      ("exn_all_succs_n1", ProcCfg.Exceptional.succs exceptional_proc_cfg n1, [n3; n2])
+      ("exn_all_succs_n1", ProcCfg.Exceptional.fold_succs exceptional_proc_cfg, n1, [n3; n2])
     ; (* but, should not return duplicates *)
-      ("exn_all_succs_n3", ProcCfg.Exceptional.succs exceptional_proc_cfg n3, [n4])
+      ("exn_all_succs_n3", ProcCfg.Exceptional.fold_succs exceptional_proc_cfg, n3, [n4])
     ; (* similarly, preds should return both normal and exceptional predecessors *)
-      ("exn_all_preds_n3", ProcCfg.Exceptional.preds exceptional_proc_cfg n3, [n2; n1])
-    ; ("exn_all_preds_n4", ProcCfg.Exceptional.preds exceptional_proc_cfg n4, [n3; n2])
+      ("exn_all_preds_n3", ProcCfg.Exceptional.fold_preds exceptional_proc_cfg, n3, [n2; n1])
+    ; ("exn_all_preds_n4", ProcCfg.Exceptional.fold_preds exceptional_proc_cfg, n4, [n3; n2])
     ; (* finally, normal_succs/normal_preds shouldn't return exceptional edges *)
-      ("exn_normal_succs_n1", ProcCfg.Exceptional.normal_succs exceptional_proc_cfg n1, [n2])
-    ; ("exn_normal_preds_n2", ProcCfg.Exceptional.normal_preds exceptional_proc_cfg n2, [n1]) ]
-    |> List.map ~f:(fun (name, test, expected) -> name >:: create_test test expected)
+      ("exn_normal_succs_n1", ProcCfg.Exceptional.fold_normal_succs exceptional_proc_cfg, n1, [n2])
+    ; ("exn_normal_preds_n2", ProcCfg.Exceptional.fold_normal_preds exceptional_proc_cfg, n2, [n1])
+    ]
+    |> List.map ~f:(fun (name, fold, input, expected) -> name >:: create_test ~fold input expected)
   in
   let tests = instr_test :: graph_tests in
   "procCfgSuite" >::: tests
