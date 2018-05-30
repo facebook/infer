@@ -75,6 +75,12 @@ let type_desc_of_builtin_type_kind builtin_type_kind =
       Typ.Tvoid
 
 
+let type_of_builtin_type_kind ?(is_const= false) builtin_type_kind =
+  let desc = type_desc_of_builtin_type_kind builtin_type_kind in
+  let quals = Typ.mk_type_quals ~is_const () in
+  Typ.mk ~quals desc
+
+
 let pointer_attribute_of_objc_attribute attr_info =
   match attr_info.Clang_ast_t.ati_lifetime with
   | `OCL_None | `OCL_Strong ->

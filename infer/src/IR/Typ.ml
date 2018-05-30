@@ -184,6 +184,8 @@ let mk_array ?default ?quals ?length ?stride elt : t =
   mk ?default ?quals (Tarray {elt; length; stride})
 
 
+let void = mk Tvoid
+
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
 
 let merge_quals quals1 quals2 =

@@ -43,8 +43,6 @@ let create_char_type = builtin_to_qual_type `Char_S
 
 let create_char_star_type ?quals () = create_pointer_qual_type ?quals create_char_type
 
-let create_BOOL_type = builtin_to_qual_type `SChar
-
 let create_class_qual_type ?quals typename =
   create_qual_type ?quals (Clang_ast_extend.ClassType typename)
 

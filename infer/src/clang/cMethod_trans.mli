@@ -20,8 +20,6 @@ type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 
 val equal_method_call_type : method_call_type -> method_call_type -> bool
 
-val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
-
 val create_local_procdesc :
   ?set_objc_accessor_attr:bool -> CFrontend_config.translation_unit_context -> Cfg.t -> Tenv.t
   -> CMethodSignature.t -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool
@@ -39,11 +37,6 @@ val get_class_name_method_call_from_receiver_kind :
 val get_class_name_method_call_from_clang :
   CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.obj_c_message_expr_info
   -> Typ.Name.t option
-
-val method_signature_of_decl :
-  CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.decl
-  -> CModule_type.block_data option
-  -> CMethodSignature.t * Clang_ast_t.stmt option * CModule_type.instr_type list
 
 val method_signature_of_pointer :
   CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.pointer

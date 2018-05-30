@@ -106,13 +106,20 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | None ->
             ([], None)
       in
+      let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
+      let procname, block_return_type =
+        match block_data_opt with
+        | Some (_, block_return_type, procname, _) ->
+            (procname, Some block_return_type)
+        | _ ->
+            (CType_decl.CProcname.from_decl ~is_cpp ~tenv func_decl, None)
+      in
       let ms, body_opt, extra_instrs =
-        CMethod_trans.method_signature_of_decl trans_unit_ctx tenv func_decl block_data_opt
+        CType_decl.method_signature_body_of_decl ~is_cpp tenv func_decl ?block_return_type procname
       in
       match body_opt with
       | Some body ->
           (* Only in the case the function declaration has a defined body we create a procdesc *)
-          let procname = ms.CMethodSignature.name in
           let return_param_typ_opt = ms.CMethodSignature.return_param_typ in
           if CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] captured_vars
           then
@@ -127,9 +134,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
   let process_method_decl ?(set_objc_accessor_attr= false) ?(is_destructor= false) trans_unit_ctx
       tenv cfg curr_class meth_decl ~is_objc =
+    let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
     try
       let ms, body_opt, extra_instrs =
-        CMethod_trans.method_signature_of_decl trans_unit_ctx tenv meth_decl None
+        let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
+        CType_decl.method_signature_body_of_decl ~is_cpp tenv meth_decl procname
       in
       match body_opt with
       | Some body ->
@@ -407,7 +416,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               Option.value_exn (Pvar.get_initializer_pname global)
             in
             let ms =
-              CMethodSignature.mk procname [] Ast_expressions.create_void_type []
+              CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
                 decl_info.Clang_ast_t.di_source_range ProcAttributes.C_FUNCTION
                 trans_unit_ctx.CFrontend_config.lang None None None `None
             in

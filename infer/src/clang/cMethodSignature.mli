@@ -12,11 +12,15 @@ open! IStd
 (** Define the signature of a method consisting of its name, its arguments, return type, location
    and whether its an instance method. *)
 
+type param_type =
+  {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; is_value: bool; annot: Annot.Item.t}
+
 type t =
   { name: Typ.Procname.t
   ; access: Clang_ast_t.access_specifier
-  ; args: (Mangled.t * Clang_ast_t.qual_type) list
-  ; ret_type: Clang_ast_t.qual_type
+  ; class_param: param_type option
+  ; params: param_type list
+  ; ret_type: Typ.t * Annot.Item.t
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
   ; method_kind: ProcAttributes.clang_method_kind
@@ -33,10 +37,14 @@ val is_getter : t -> bool
 val is_setter : t -> bool
 
 val mk :
-  Typ.Procname.t -> (Mangled.t * Clang_ast_t.qual_type) list -> Clang_ast_t.qual_type
+  Typ.Procname.t -> param_type option -> param_type list -> Typ.t * Annot.Item.t
   -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> ProcAttributes.clang_method_kind
   -> ?is_cpp_virtual:bool -> ?is_cpp_nothrow:bool -> CFrontend_config.clang_lang
   -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> Typ.t option
   -> Clang_ast_t.access_specifier -> t
 
 val pp : Format.formatter -> t -> unit
+
+val mk_param_type :
+  ?is_value:bool -> ?is_pointer_to_const:bool -> ?annot:Annot.Item.t -> Mangled.t -> Typ.t
+  -> param_type

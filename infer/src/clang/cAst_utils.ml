@@ -200,12 +200,6 @@ let name_opt_of_typedef_qual_type qual_type =
       None
 
 
-let string_of_qual_type {Clang_ast_t.qt_type_ptr; qt_is_const} =
-  Printf.sprintf "%s%s"
-    (if qt_is_const then "is_const " else "")
-    (Clang_ast_extend.type_ptr_to_string qt_type_ptr)
-
-
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
      Ast_expressions *)

@@ -14,8 +14,6 @@ open! IStd
 
 module L = Logging
 
-exception Invalid_declaration
-
 (** When the methoc call is MCStatic, means that it is a class method.  When it is MCVirtual, it
     means that it is an instance method and that the method to be called will be determined at
     runtime. If it is MCNoVirtual it means that it is an instance method but that the method to be
@@ -24,224 +22,17 @@ type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 
 let equal_method_call_type = [%compare.equal : method_call_type]
 
-type function_method_decl_info =
-  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.qual_type
-  | Cpp_Meth_decl_info of
-      Clang_ast_t.function_decl_info
-      * Clang_ast_t.cxx_method_decl_info
-      * Clang_ast_t.pointer
-      * Clang_ast_t.qual_type
-  | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * Clang_ast_t.pointer
-  | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.qual_type * CContext.t
-
-let get_method_kind function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info _ ->
-      ProcAttributes.C_FUNCTION
-  | Block_decl_info _ ->
-      ProcAttributes.BLOCK
-  | Cpp_Meth_decl_info (_, method_decl_info, _, _) ->
-      if method_decl_info.Clang_ast_t.xmdi_is_static then ProcAttributes.CPP_CLASS
-      else ProcAttributes.CPP_INSTANCE
-  | ObjC_Meth_decl_info (method_decl_info, _) ->
-      if method_decl_info.Clang_ast_t.omdi_is_instance_method then ProcAttributes.OBJC_INSTANCE
-      else ProcAttributes.OBJC_CLASS
-
-
-let get_original_return_type function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info (_, typ) | Cpp_Meth_decl_info (_, _, _, typ) | Block_decl_info (_, typ, _) ->
-      CType.return_type_of_function_type typ
-  | ObjC_Meth_decl_info (method_decl_info, _) ->
-      method_decl_info.Clang_ast_t.omdi_result_type
-
-
-let get_class_param function_method_decl_info =
-  match get_method_kind function_method_decl_info with
-  | ProcAttributes.CPP_INSTANCE | ProcAttributes.OBJC_INSTANCE -> (
-    match function_method_decl_info with
-    | Cpp_Meth_decl_info (_, _, class_decl_ptr, _) ->
-        let class_type = CAst_utils.qual_type_of_decl_ptr class_decl_ptr in
-        [(Mangled.from_string CFrontend_config.this, class_type)]
-    | ObjC_Meth_decl_info (_, class_decl_ptr) ->
-        let class_type = CAst_utils.qual_type_of_decl_ptr class_decl_ptr in
-        [(Mangled.from_string CFrontend_config.self, class_type)]
-    | _ ->
-        [] )
-  | _ ->
-      []
-
-
-let should_add_return_param return_type ~is_objc_method =
-  match return_type.Typ.desc with Tstruct _ -> not is_objc_method | _ -> false
-
-
-let is_objc_method function_method_decl_info =
-  match function_method_decl_info with ObjC_Meth_decl_info _ -> true | _ -> false
-
-
-let get_return_param tenv function_method_decl_info =
-  let is_objc_method = is_objc_method function_method_decl_info in
-  let return_qual_type = get_original_return_type function_method_decl_info in
-  let return_typ = CType_decl.qual_type_to_sil_type tenv return_qual_type in
-  if should_add_return_param return_typ ~is_objc_method then
-    [ ( Mangled.from_string CFrontend_config.return_param
-      , Ast_expressions.create_pointer_qual_type return_qual_type ) ]
-  else []
-
-
-let get_param_decls function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info (function_decl_info, _) | Cpp_Meth_decl_info (function_decl_info, _, _, _) ->
-      function_decl_info.Clang_ast_t.fdi_parameters
-  | ObjC_Meth_decl_info (method_decl_info, _) ->
-      method_decl_info.Clang_ast_t.omdi_parameters
-  | Block_decl_info (block_decl_info, _, _) ->
-      block_decl_info.Clang_ast_t.bdi_parameters
-
-
-let get_language trans_unit_ctx function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info (_, _) ->
-      trans_unit_ctx.CFrontend_config.lang
-  | Cpp_Meth_decl_info _ ->
-      CFrontend_config.CPP
-  | ObjC_Meth_decl_info _ ->
-      CFrontend_config.ObjC
-  | Block_decl_info _ ->
-      CFrontend_config.ObjC
-
-
-let is_cpp_virtual function_method_decl_info =
-  match function_method_decl_info with
-  | Cpp_Meth_decl_info (_, mdi, _, _) ->
-      mdi.Clang_ast_t.xmdi_is_virtual
-  | _ ->
-      false
-
-
-let is_cpp_nothrow function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info (fdi, _) | Cpp_Meth_decl_info (fdi, _, _, _) ->
-      fdi.Clang_ast_t.fdi_is_no_throw
-  | _ ->
-      false
-
-
-(** Returns parameters of a function/method. They will have following order:
-    1. self/this parameter (optional, only for methods)
-    2. normal parameters
-    3. return parameter (optional) *)
-let get_parameters trans_unit_ctx tenv decl_info function_method_decl_info =
-  let par_to_ms_par par =
-    match par with
-    | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
-        let _, mangled = CGeneral_utils.get_var_name_mangled decl_info name_info var_decl_info in
-        let param_typ = CType_decl.qual_type_to_sil_type tenv qt in
-        let new_qt =
-          match param_typ.Typ.desc with
-          | Tstruct _ when CGeneral_utils.is_cpp_translation trans_unit_ctx ->
-              Ast_expressions.create_reference_qual_type qt
-          | _ ->
-              qt
-        in
-        (mangled, new_qt)
-    | _ ->
-        assert false
-  in
-  let pars = List.map ~f:par_to_ms_par (get_param_decls function_method_decl_info) in
-  get_class_param function_method_decl_info @ pars
-  @ get_return_param tenv function_method_decl_info
-
-
-(** get return type of the function and optionally type of function's return parameter *)
-let get_return_val_and_param_types tenv function_method_decl_info =
-  let return_qual_type = get_original_return_type function_method_decl_info in
-  let return_typ = CType_decl.qual_type_to_sil_type tenv return_qual_type in
-  let is_objc_method = is_objc_method function_method_decl_info in
-  if should_add_return_param return_typ ~is_objc_method then
-    (Ast_expressions.create_void_type, Some (CType.add_pointer_to_typ return_typ))
-  else (return_qual_type, None)
-
-
-let build_method_signature trans_unit_ctx tenv decl_info procname function_method_decl_info
-    parent_pointer pointer_to_property_opt =
-  let source_range = decl_info.Clang_ast_t.di_source_range in
-  let tp, return_param_type_opt = get_return_val_and_param_types tenv function_method_decl_info in
-  let method_kind = get_method_kind function_method_decl_info in
-  let parameters = get_parameters trans_unit_ctx tenv decl_info function_method_decl_info in
-  let attributes = decl_info.Clang_ast_t.di_attributes in
-  let lang = get_language trans_unit_ctx function_method_decl_info in
-  let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
-  let is_cpp_nothrow = is_cpp_nothrow function_method_decl_info in
-  let access = decl_info.Clang_ast_t.di_access in
-  CMethodSignature.mk procname parameters tp attributes source_range method_kind ~is_cpp_virtual
-    ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt return_param_type_opt access
-
-
-let get_init_list_instrs method_decl_info =
-  let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
-  List.map ~f:create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
-
-
-let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
-  let open Clang_ast_t in
-  let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
-  match (meth_decl, block_data_opt) with
-  | FunctionDecl (decl_info, _, qt, fdi), _ ->
-      let func_decl = Func_decl_info (fdi, qt) in
-      let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
-      let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
-      (ms, fdi.Clang_ast_t.fdi_body, [])
-  | CXXMethodDecl (decl_info, _, qt, fdi, mdi), _
-  | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
-  | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
-  | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
-      let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
-      let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
-      let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt) in
-      let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms =
-        build_method_signature trans_unit_ctx tenv decl_info procname method_decl parent_pointer
-          None
-      in
-      let init_list_instrs = get_init_list_instrs mdi in
-      (* it will be empty for methods *)
-      (ms, fdi.Clang_ast_t.fdi_body, init_list_instrs)
-  | ObjCMethodDecl (decl_info, _, mdi), _ ->
-      let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
-      let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
-      let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
-      let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let pointer_to_property_opt =
-        match mdi.Clang_ast_t.omdi_property_decl with
-        | Some decl_ref ->
-            Some decl_ref.Clang_ast_t.dr_decl_pointer
-        | None ->
-            None
-      in
-      let ms =
-        build_method_signature trans_unit_ctx tenv decl_info procname method_decl parent_pointer
-          pointer_to_property_opt
-      in
-      (ms, mdi.omdi_body, [])
-  | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
-      let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
-      (ms, bdi.bdi_body, [])
-  | _ ->
-      raise Invalid_declaration
-
-
 let method_signature_of_pointer trans_unit_ctx tenv pointer =
+  let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
   try
     match CAst_utils.get_decl pointer with
     | Some meth_decl ->
-        let ms, _, _ = method_signature_of_decl trans_unit_ctx tenv meth_decl None in
+        let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
+        let ms = CType_decl.method_signature_of_decl ~is_cpp tenv meth_decl procname in
         Some ms
     | None ->
         None
-  with Invalid_declaration -> None
+  with CFrontend_config.Invalid_declaration -> None
 
 
 let get_method_name_from_clang tenv ms_opt =
@@ -335,42 +126,6 @@ let get_objc_method_data obj_c_message_expr_info =
       (selector, pointer, MCStatic)
 
 
-let get_formal_parameters tenv ms =
-  let rec defined_parameters pl =
-    match pl with
-    | [] ->
-        []
-    | (mangled, qual_type) :: pl' ->
-        let should_add_pointer name ms =
-          let is_objc_self =
-            String.equal name CFrontend_config.self
-            && CFrontend_config.equal_clang_lang ms.CMethodSignature.lang CFrontend_config.ObjC
-          in
-          let is_cxx_this =
-            String.equal name CFrontend_config.this
-            && CFrontend_config.equal_clang_lang ms.CMethodSignature.lang CFrontend_config.CPP
-          in
-          is_objc_self
-          && ProcAttributes.equal_clang_method_kind ms.CMethodSignature.method_kind
-               ProcAttributes.OBJC_INSTANCE
-          || is_cxx_this
-        in
-        let qt =
-          if should_add_pointer (Mangled.to_string mangled) ms then
-            Ast_expressions.create_pointer_qual_type qual_type
-          else qual_type
-        in
-        let typ = CType_decl.qual_type_to_sil_type tenv qt in
-        (mangled, typ) :: defined_parameters pl'
-  in
-  defined_parameters ms.CMethodSignature.args
-
-
-let get_return_type tenv ms =
-  let return_type = ms.CMethodSignature.ret_type in
-  CType_decl.qual_type_to_sil_type tenv return_type
-
-
 let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al =
     match al with
@@ -403,31 +158,24 @@ let should_create_procdesc cfg procname defined set_objc_accessor_attr =
       true
 
 
-let sil_method_annotation_of_args args method_type : Annot.Method.t =
-  let args_types = List.map ~f:snd args in
-  let param_annots = List.map ~f:CAst_utils.sil_annot_of_type args_types in
-  let retval_annot = CAst_utils.sil_annot_of_type method_type in
-  (retval_annot, param_annots)
-
-
 (** Returns a list of the indices of expressions in [args] which point to const-typed values. Each
     index is offset by [shift]. *)
-let get_const_args_indices ~shift args =
+let get_const_params_indices ~shift params =
   let i = ref shift in
   let rec aux result = function
     | [] ->
         List.rev result
-    | (_, qual_type) :: tl ->
+    | ({is_pointer_to_const}: CMethodSignature.param_type) :: tl ->
         incr i ;
-        if CType.is_pointer_to_const qual_type then aux (!i - 1 :: result) tl else aux result tl
+        if is_pointer_to_const then aux (!i - 1 :: result) tl else aux result tl
   in
-  aux [] args
+  aux [] params
 
 
-let get_byval_args_indices ~shift args =
-  List.filter_mapi args ~f:(fun index (_, qual_type) ->
+let get_byval_params_indices ~shift params =
+  List.filter_mapi params ~f:(fun index ({is_value}: CMethodSignature.param_type) ->
       let index' = index + shift in
-      Option.some_if (CType.is_value qual_type) index' )
+      Option.some_if is_value index' )
 
 
 let get_objc_property_accessor tenv ms =
@@ -473,8 +221,6 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
   let proc_name = ms.CMethodSignature.name in
   let pname = Typ.Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes ms.CMethodSignature.attributes in
-  let method_ret_type = ms.CMethodSignature.ret_type in
-  let method_annotation = sil_method_annotation_of_args ms.CMethodSignature.args method_ret_type in
   let clang_method_kind = ms.CMethodSignature.method_kind in
   let is_cpp_nothrow = ms.CMethodSignature.is_cpp_nothrow in
   let access =
@@ -489,16 +235,22 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
         PredSymb.Protected
   in
   let create_new_procdesc () =
-    let formals = get_formal_parameters tenv ms in
+    let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
+    let params_annots =
+      List.map ~f:(fun ({annot}: CMethodSignature.param_type) -> annot) all_params
+    in
+    let return_annot = snd ms.CMethodSignature.ret_type in
+    let method_annotation = (return_annot, params_annots) in
+    let formals =
+      List.map ~f:(fun ({name; typ}: CMethodSignature.param_type) -> (name, typ)) all_params
+    in
     let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var, t)) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_mangled @ formals in
     let const_formals =
-      get_const_args_indices ~shift:(List.length captured_mangled) ms.CMethodSignature.args
+      get_const_params_indices ~shift:(List.length captured_mangled) all_params
     in
-    let by_vals =
-      get_byval_args_indices ~shift:(List.length captured_mangled) ms.CMethodSignature.args
-    in
+    let by_vals = get_byval_params_indices ~shift:(List.length captured_mangled) all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname ;
     L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
@@ -512,7 +264,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
       CLocation.location_of_source_range ~pick_location:`End
         trans_unit_ctx.CFrontend_config.source_file source_range
     in
-    let ret_type = get_return_type tenv ms in
+    let ret_type = fst ms.CMethodSignature.ret_type in
     let objc_property_accessor =
       if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
     in

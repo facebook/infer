@@ -12,19 +12,11 @@ open Clang_ast_t
 
 (** This module creates extra ast constructs that are needed for the translation *)
 
-val create_class_qual_type : ?quals:Typ.type_quals -> Typ.Name.t -> qual_type
-
 val create_pointer_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
 val create_reference_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
 val create_char_star_type : ?quals:Typ.type_quals -> unit -> qual_type
-
-val create_id_type : qual_type
-
-val create_void_type : qual_type
-
-val create_BOOL_type : qual_type
 
 val make_next_object_exp :
   stmt_info -> stmt -> Clang_ast_t.stmt -> Clang_ast_t.stmt * Clang_ast_t.stmt

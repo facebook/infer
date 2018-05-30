@@ -40,6 +40,8 @@ let incorrect_assumption position source_range ?ast_node fmt =
 
 type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}
 
+exception Invalid_declaration
+
 (** Constants *)
 
 let alloc = "alloc"

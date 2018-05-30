@@ -239,7 +239,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ret_id_typ = (Ident.create_fresh Ident.knormal, return_type) in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
-      if CMethod_trans.should_add_return_param return_type ~is_objc_method then
+      if CType_decl.should_add_return_param return_type ~is_objc_method then
         let param_type = Typ.mk (Typ.Tptr (return_type, Typ.Pk_pointer)) in
         let var_exp =
           match trans_state.var_exp_typ with

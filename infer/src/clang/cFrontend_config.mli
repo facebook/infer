@@ -41,6 +41,8 @@ val incorrect_assumption :
 
 type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}
 
+exception Invalid_declaration
+
 (** Constants *)
 
 val alloc : string

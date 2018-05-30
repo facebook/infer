@@ -64,8 +64,6 @@ val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> QualifiedCppNam
 
 val name_opt_of_typedef_qual_type : Clang_ast_t.qual_type -> QualifiedCppName.t option
 
-val string_of_qual_type : Clang_ast_t.qual_type -> string
-
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
 val qual_type_of_decl_ptr : Clang_ast_t.pointer -> Clang_ast_t.qual_type
