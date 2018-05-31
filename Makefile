@@ -456,7 +456,7 @@ install: infer $(INFER_MANUALS_GZIPPED)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/'
-	find facebook-clang-plugins/clang/install -type d -print0 | xargs -0 -n 1 \
+	find -L facebook-clang-plugins/clang/install -type d -print0 | xargs -0 -n 1 \
 	  $(SHELL) -x -c "test -d '$(DESTDIR)$(libdir)'/infer/\$$1 || \
 	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/' || \
@@ -491,7 +491,7 @@ endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib' \
 	  '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib'
-	find facebook-clang-plugins/clang/install -not -type d -not -name '*.a' -print0 \
+	find -L facebook-clang-plugins/clang/install -not -type d -not -name '*.a' -print0 \
 	  | xargs -0 -I \{\} $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	find infer/lib/clang_wrappers/* -print0 | xargs -0 -I \{\} \
 	  $(INSTALL_PROGRAM) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
