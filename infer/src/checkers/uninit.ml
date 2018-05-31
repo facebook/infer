@@ -28,12 +28,12 @@ end)
 
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
 
-let rec is_basic_type t =
+let should_report_on_type t =
   match t.Typ.desc with
-  | Tint _ | Tfloat _ | Tvoid ->
+  | Tptr (_, Pk_reference) ->
+      false
+  | Tint _ | Tfloat _ | Tvoid | Tptr _ ->
       true
-  | Tptr (t', _) ->
-      is_basic_type t'
   | _ ->
       false
 
@@ -76,7 +76,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match (AccessExpression.get_typ access_expr tenv, base) with
     | Some typ, (Var.ProgramVar pv, _) ->
         not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
-        && D.mem access_expr uninit_vars && is_basic_type typ
+        && D.mem access_expr uninit_vars && should_report_on_type typ
     | _, _ ->
         false
 
@@ -271,7 +271,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               false
           | Some lhs_ap_typ ->
-              not (Typ.is_pointer lhs_ap_typ)
+              not (Typ.is_reference lhs_ap_typ)
         in
         ( match rhs_expr with
         | AccessExpression rhs_access_expr ->

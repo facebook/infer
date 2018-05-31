@@ -11,7 +11,9 @@
 class A {
 
  public:
+  int* ptr;
   std::string a_name;
+  std::string* p_a_name;
   int i;
 
   A() {} // user defined default constructor.
@@ -60,6 +62,16 @@ int access_members_bad3() {
   B b; // no constructor is called
   std::string n = b.a_name;
   int i = b.i;
+
+  return 0;
+};
+
+int access_pointer_members_bad() {
+  A a;
+
+  int* p = a.ptr;
+  int i = a.i;
+  std::string* pn = a.p_a_name;
 
   return 0;
 };

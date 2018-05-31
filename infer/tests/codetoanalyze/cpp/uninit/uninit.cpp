@@ -181,11 +181,11 @@ int ret_undef_bad() {
   return *p; // report as p was not initialized
 }
 
-int ret_undef_FP() {
+int copy_pointer_bad() {
   int* p;
   int* q;
-  p = q; // no report as we copy an address
-  return *p; // NO report as we don't keep track of aliasing (for now)
+  p = q; // error
+  return *p;
 }
 
 void use_an_int2(int*);
@@ -262,4 +262,23 @@ int FP_no_warning_noreturn_callee_ok(bool t) {
     noreturn_function();
   }
   return x;
+}
+
+void some_f(void* p);
+
+int* FP_pointer_param_void_star_ok() {
+  A a;
+  int* res;
+  some_f(&a); // the type of a here is void*, hence no fields are found
+  return a.ptr; // false positive
+}
+
+short FP_union_ok() {
+  union {
+    int* a;
+    short* b;
+  } u;
+  init(u.a);
+  short* p = u.b; // false positive
+  return *p;
 }

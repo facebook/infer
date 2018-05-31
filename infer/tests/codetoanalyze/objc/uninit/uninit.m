@@ -30,4 +30,20 @@
   return labelSize.height; // Here we should not report uninit
 }
 
+typedef NS_ENUM(NSUInteger, SomeEnum) { ValueA, ValueB };
+
+CGColorRef FP_switch_ok(SomeEnum e, CGColorRef defaultcolor) {
+  CGColorRef color;
+
+  switch (e) {
+    case ValueA:
+      color = defaultcolor;
+      break;
+    case ValueB:
+      color = defaultcolor;
+      break;
+  }
+  return color; // false positive because of exausted switch
+}
+
 @end
