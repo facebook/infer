@@ -2637,13 +2637,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and blockExpr_trans trans_state stmt_info expr_info decl =
     let context = trans_state.context in
     let outer_proc = Procdesc.get_proc_name context.CContext.procdesc in
-    let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
-        let block_pname =
-          CType_decl.CProcname.from_decl decl ~tenv:context.tenv ~is_cpp ~outer_proc
-        in
+        let block_pname = CType_decl.CProcname.from_decl decl ~tenv:context.tenv ~outer_proc in
         let captured_pvars =
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables

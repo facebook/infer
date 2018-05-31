@@ -27,7 +27,7 @@ let method_signature_of_pointer trans_unit_ctx tenv pointer =
   try
     match CAst_utils.get_decl pointer with
     | Some meth_decl ->
-        let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
+        let procname = CType_decl.CProcname.from_decl ~tenv meth_decl in
         let ms = CType_decl.method_signature_of_decl ~is_cpp tenv meth_decl procname in
         Some ms
     | None ->
@@ -333,8 +333,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
             ( CType_decl.CProcname.NoAstDecl.cpp_method_of_string context.tenv class_name name
             , ProcAttributes.CPP_INSTANCE )
         | None ->
-            let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
-            ( CType_decl.CProcname.NoAstDecl.c_function_of_string ~is_cpp context.tenv name
+            ( CType_decl.CProcname.NoAstDecl.c_function_of_string context.tenv name
             , ProcAttributes.C_FUNCTION )
       in
       create_external_procdesc context.cfg callee_name method_kind None ;

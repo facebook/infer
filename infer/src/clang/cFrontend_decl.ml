@@ -112,7 +112,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | Some (_, block_return_type, procname, _) ->
             (procname, Some block_return_type)
         | _ ->
-            (CType_decl.CProcname.from_decl ~is_cpp ~tenv func_decl, None)
+            (CType_decl.CProcname.from_decl ~tenv func_decl, None)
       in
       let ms, body_opt, extra_instrs =
         CType_decl.method_signature_body_of_decl ~is_cpp tenv func_decl ?block_return_type procname
@@ -137,7 +137,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
     try
       let ms, body_opt, extra_instrs =
-        let procname = CType_decl.CProcname.from_decl ~is_cpp ~tenv meth_decl in
+        let procname = CType_decl.CProcname.from_decl ~tenv meth_decl in
         CType_decl.method_signature_body_of_decl ~is_cpp tenv meth_decl procname
       in
       match body_opt with

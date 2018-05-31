@@ -510,7 +510,7 @@ and get_template_info tenv (fdi: Clang_ast_t.function_decl_info) =
       Typ.NoTemplate
 
 
-and mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
+and mk_c_function ?tenv name function_decl_info_opt =
   let file =
     match function_decl_info_opt with
     | Some (decl_info, function_decl_info) -> (
@@ -531,12 +531,12 @@ and mk_c_function ?tenv ~is_cpp name function_decl_info_opt =
     | None ->
         ""
   in
-  let mangled_opt =
+  let mangled_opt, is_cpp =
     match function_decl_info_opt with
     | Some (_, function_decl_info) ->
-        function_decl_info.Clang_ast_t.fdi_mangled_name
+        (function_decl_info.Clang_ast_t.fdi_mangled_name, function_decl_info.Clang_ast_t.fdi_is_cpp)
     | _ ->
-        None
+        (None, false)
   in
   let mangled_name = match mangled_opt with Some m when is_cpp -> m | _ -> "" in
   let template_info =
@@ -606,13 +606,12 @@ and objc_block_procname outer_proc_opt =
 
 
 (* TODO: get the parameters from BuildMethodSignature.get_parameters and pass it to the method names *)
-and from_decl ?tenv ~is_cpp ?outer_proc meth_decl =
+and from_decl ?tenv ?outer_proc meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
-      let function_info = Some (decl_info, fdi) in
-      mk_c_function ~is_cpp ?tenv name function_info
+      mk_c_function ?tenv name (Some (decl_info, fdi))
   | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
@@ -641,7 +640,7 @@ and get_struct_methods struct_decl tenv =
       | CXXDestructorDecl _
       | ObjCMethodDecl _
       | BlockDecl _ ->
-          Some (from_decl ~is_cpp:true ~tenv decl)
+          Some (from_decl ~tenv decl)
       | _ ->
           None )
 
@@ -700,9 +699,9 @@ module CProcname = struct
   let from_decl = from_decl
 
   module NoAstDecl = struct
-    let c_function_of_string ~is_cpp tenv name =
+    let c_function_of_string tenv name =
       let qual_name = QualifiedCppName.of_qual_string name in
-      mk_c_function ~is_cpp ~tenv qual_name None
+      mk_c_function ~tenv qual_name None
 
 
     let cpp_method_of_string tenv class_name method_name =
@@ -713,7 +712,7 @@ module CProcname = struct
       mk_objc_method class_name method_name method_kind
   end
 
-  let from_decl_for_linters ~is_cpp method_decl =
+  let from_decl_for_linters method_decl =
     let open Clang_ast_t in
     match method_decl with
     | ObjCMethodDecl (decl_info, name_info, mdi) ->
@@ -726,7 +725,7 @@ module CProcname = struct
         in
         objc_method_procname decl_info method_name mdi
     | _ ->
-        from_decl ~is_cpp method_decl
+        from_decl method_decl
 end
 
 let get_type_from_expr_info ei tenv =

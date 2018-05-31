@@ -436,12 +436,12 @@ let expand_checkers macro_map path_map checkers =
 
 
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue ~is_cpp method_decl_opt (node: Ctl_parser_types.ast_node)
+let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
     (issue_desc: CIssue.issue_desc) linters_def_file =
   let procname =
     match method_decl_opt with
     | Some method_decl ->
-        CType_decl.CProcname.from_decl_for_linters ~is_cpp method_decl
+        CType_decl.CProcname.from_decl_for_linters method_decl
     | None ->
         Typ.Procname.Linters_dummy_method
   in
@@ -471,12 +471,7 @@ let fill_issue_desc_info_and_log context an (issue_desc: CIssue.issue_desc) lint
   let description = process_message issue_desc.description in
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
-  let is_cpp =
-    CGeneral_utils.is_cpp_translation context.CLintersContext.translation_unit_context
-  in
-  try
-    log_frontend_issue ~is_cpp context.CLintersContext.current_method an issue_desc'
-      linters_def_file
+  try log_frontend_issue context.CLintersContext.current_method an issue_desc' linters_def_file
   with CFrontend_config.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
     ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
