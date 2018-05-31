@@ -17,7 +17,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-Infer is BSD-licensed. We also provide an additional patent grant.
+Infer is MIT-licensed.
 
 Note: Enabling Java support may require you to download and install 
 components licensed under the GPL.

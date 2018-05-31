@@ -1,74 +1,74 @@
 /* @generated */
 digraph cfg {
-"callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_1" [label="1: Start destructor_scope::callgetZ\nFormals: \nLocals:  0$?%__sil_tmp__temp_return_n$2:destructor_scope::Z \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_return_n$2); [line 84, column 1]\n " color=yellow style=filled]
+"callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_1" [label="1: Start destructor_scope::callgetZ\nFormals: \nLocals:  0$?%__sil_tmp__temp_return_n$2:destructor_scope::Z \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_return_n$2); [line 82, column 1]\n " color=yellow style=filled]
 	
 
 	 "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_1" -> "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_3" ;
 "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_2" [label="2: Exit destructor_scope::callgetZ \n  " color=yellow style=filled]
 	
 
-"callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_3" [label="3:  Call _fun_destructor_scope::getZ \n   n$3=_fun_destructor_scope::getZ(&0$?%__sil_tmp__temp_return_n$2:destructor_scope::Z*) [line 84, column 19]\n " shape="box"]
+"callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_3" [label="3:  Call _fun_destructor_scope::getZ \n   n$3=_fun_destructor_scope::getZ(&0$?%__sil_tmp__temp_return_n$2:destructor_scope::Z*) [line 82, column 19]\n " shape="box"]
 	
 
 	 "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_3" -> "callgetZ#destructor_scope#16418724657639342926.f4c0cbb2a5d892ea82496dd2540a9ead_2" ;
-"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_1" [label="1: Start destructor_scope::getX\nFormals:  __return_param:destructor_scope::X*\nLocals:  x:destructor_scope::X \n   DECLARE_LOCALS(&return,&x); [line 70, column 1]\n " color=yellow style=filled]
+"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_1" [label="1: Start destructor_scope::getX\nFormals:  __return_param:destructor_scope::X*\nLocals:  x:destructor_scope::X \n   DECLARE_LOCALS(&return,&x); [line 68, column 1]\n " color=yellow style=filled]
 	
 
 	 "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_1" -> "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_4" ;
 "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_2" [label="2: Exit destructor_scope::getX \n  " color=yellow style=filled]
 	
 
-"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::X* [line 72, column 3]\n  n$1=_fun_destructor_scope::X_X(n$0:destructor_scope::X*,&x:destructor_scope::X&) [line 72, column 10]\n  _=*&x:destructor_scope::X [line 72, column 10]\n  n$3=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 72, column 10]\n " shape="box"]
+"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::X* [line 70, column 3]\n  n$1=_fun_destructor_scope::X_X(n$0:destructor_scope::X*,&x:destructor_scope::X&) [line 70, column 10]\n  _=*&x:destructor_scope::X [line 70, column 10]\n  n$3=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 70, column 10]\n " shape="box"]
 	
 
 	 "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_3" -> "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_2" ;
-"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_4" [label="4:  DeclStmt \n   n$5=_fun_destructor_scope::X_X(&x:destructor_scope::X*) [line 71, column 5]\n " shape="box"]
+"getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_4" [label="4:  DeclStmt \n   n$5=_fun_destructor_scope::X_X(&x:destructor_scope::X*) [line 69, column 5]\n " shape="box"]
 	
 
 	 "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_4" -> "getX#destructor_scope#11739464242911605656.40a1d0621360ad71d65c4cc39bf927eb_3" ;
-"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_1" [label="1: Start destructor_scope::getZ\nFormals:  __return_param:destructor_scope::Z*\nLocals:  z:destructor_scope::Z \n   DECLARE_LOCALS(&return,&z); [line 75, column 1]\n " color=yellow style=filled]
+"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_1" [label="1: Start destructor_scope::getZ\nFormals:  __return_param:destructor_scope::Z*\nLocals:  z:destructor_scope::Z \n   DECLARE_LOCALS(&return,&z); [line 73, column 1]\n " color=yellow style=filled]
 	
 
 	 "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_1" -> "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_4" ;
 "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_2" [label="2: Exit destructor_scope::getZ \n  " color=yellow style=filled]
 	
 
-"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::Z* [line 77, column 3]\n  n$1=_fun_destructor_scope::Z_Z(n$0:destructor_scope::Z*,&z:destructor_scope::Z&) [line 77, column 10]\n  _=*&z:destructor_scope::Z [line 77, column 10]\n  n$3=_fun_destructor_scope::Z_~Z(&z:destructor_scope::Z*) [line 77, column 10]\n " shape="box"]
+"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::Z* [line 75, column 3]\n  n$1=_fun_destructor_scope::Z_Z(n$0:destructor_scope::Z*,&z:destructor_scope::Z&) [line 75, column 10]\n  _=*&z:destructor_scope::Z [line 75, column 10]\n  n$3=_fun_destructor_scope::Z_~Z(&z:destructor_scope::Z*) [line 75, column 10]\n " shape="box"]
 	
 
 	 "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_3" -> "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_2" ;
-"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_4" [label="4:  DeclStmt \n   n$5=_fun_destructor_scope::Z_Z(&z:destructor_scope::Z*) [line 76, column 5]\n " shape="box"]
+"getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_4" [label="4:  DeclStmt \n   n$5=_fun_destructor_scope::Z_Z(&z:destructor_scope::Z*) [line 74, column 5]\n " shape="box"]
 	
 
 	 "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_4" -> "getZ#destructor_scope#13110319947448813202.fe2bc6519a3d7998283b70bbacc3915e_3" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_1" [label="1: Start destructor_scope::test1\nFormals:  a:_Bool b:_Bool\nLocals:  y3:destructor_scope::Y y1:destructor_scope::Y x3:destructor_scope::X y2:destructor_scope::Y x2:destructor_scope::X s:destructor_scope::S x1:destructor_scope::X \n   DECLARE_LOCALS(&return,&y3,&y1,&x3,&y2,&x2,&s,&x1); [line 39, column 1]\n " color=yellow style=filled]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_1" [label="1: Start destructor_scope::test1\nFormals:  a:_Bool b:_Bool\nLocals:  y3:destructor_scope::Y y1:destructor_scope::Y x3:destructor_scope::X y2:destructor_scope::Y x2:destructor_scope::X s:destructor_scope::S x1:destructor_scope::X \n   DECLARE_LOCALS(&return,&y3,&y1,&x3,&y2,&x2,&s,&x1); [line 37, column 1]\n " color=yellow style=filled]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_1" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_21" ;
 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" [label="2: Exit destructor_scope::test1 \n  " color=yellow style=filled]
 	
 
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" [label="3:  Destruction \n   _=*&y1:destructor_scope::Y [line 57, column 1]\n  n$1=_fun_destructor_scope::Y_~Y(&y1:destructor_scope::Y*) [line 57, column 1]\n  _=*&s:destructor_scope::S [line 57, column 1]\n  n$3=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 57, column 1]\n  _=*&x1:destructor_scope::X [line 57, column 1]\n  n$5=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 57, column 1]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" [label="3:  Destruction \n   _=*&y1:destructor_scope::Y [line 55, column 1]\n  n$1=_fun_destructor_scope::Y_~Y(&y1:destructor_scope::Y*) [line 55, column 1]\n  _=*&s:destructor_scope::S [line 55, column 1]\n  n$3=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 55, column 1]\n  _=*&x1:destructor_scope::X [line 55, column 1]\n  n$5=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 55, column 1]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" [label="4:  Destruction \n   _=*&y3:destructor_scope::Y [line 56, column 11]\n  n$8=_fun_destructor_scope::Y_~Y(&y3:destructor_scope::Y*) [line 56, column 11]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" [label="4:  Destruction \n   _=*&y3:destructor_scope::Y [line 54, column 11]\n  n$8=_fun_destructor_scope::Y_~Y(&y3:destructor_scope::Y*) [line 54, column 11]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_3" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_5" [label="5:  DeclStmt \n   n$10=_fun_destructor_scope::Y_Y(&y3:destructor_scope::Y*) [line 56, column 7]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_5" [label="5:  DeclStmt \n   n$10=_fun_destructor_scope::Y_Y(&y3:destructor_scope::Y*) [line 54, column 7]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_5" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_4" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" [label="6:  DeclStmt \n   n$11=_fun_destructor_scope::Y_Y(&y1:destructor_scope::Y*) [line 55, column 5]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" [label="6:  DeclStmt \n   n$11=_fun_destructor_scope::Y_Y(&y1:destructor_scope::Y*) [line 53, column 5]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_5" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" [label="7:  Destruction \n   _=*&y2:destructor_scope::Y [line 54, column 3]\n  n$13=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 54, column 3]\n  _=*&x2:destructor_scope::X [line 54, column 3]\n  n$15=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 54, column 3]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" [label="7:  Destruction \n   _=*&y2:destructor_scope::Y [line 52, column 3]\n  n$13=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 52, column 3]\n  _=*&x2:destructor_scope::X [line 52, column 3]\n  n$15=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 52, column 3]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_6" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" [label="8:  Destruction \n   _=*&x3:destructor_scope::X [line 53, column 5]\n  n$18=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 53, column 5]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" [label="8:  Destruction \n   _=*&x3:destructor_scope::X [line 51, column 5]\n  n$18=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 51, column 5]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" ;
@@ -76,19 +76,19 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch, if) \n   n$20=*&b:_Bool [line 50, column 11]\n  PRUNE(n$20, true); [line 50, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch, if) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(n$20, true); [line 48, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch, if) \n   n$20=*&b:_Bool [line 50, column 11]\n  PRUNE(!n$20, false); [line 50, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch, if) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(!n$20, false); [line 48, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" [label="12:  Return Stmt \n   _=*&x3:destructor_scope::X [line 51, column 9]\n  n$22=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 51, column 9]\n  _=*&y2:destructor_scope::Y [line 51, column 9]\n  n$24=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 51, column 9]\n  _=*&x2:destructor_scope::X [line 51, column 9]\n  n$26=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 51, column 9]\n  _=*&s:destructor_scope::S [line 51, column 9]\n  n$28=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 51, column 9]\n  _=*&x1:destructor_scope::X [line 51, column 9]\n  n$30=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 51, column 9]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" [label="12:  Return Stmt \n   _=*&x3:destructor_scope::X [line 49, column 9]\n  n$22=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 49, column 9]\n  _=*&y2:destructor_scope::Y [line 49, column 9]\n  n$24=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 49, column 9]\n  _=*&x2:destructor_scope::X [line 49, column 9]\n  n$26=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 49, column 9]\n  _=*&s:destructor_scope::S [line 49, column 9]\n  n$28=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 49, column 9]\n  _=*&x1:destructor_scope::X [line 49, column 9]\n  n$30=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 49, column 9]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" [label="13:  DeclStmt \n   n$35=_fun_destructor_scope::X_X(&x3:destructor_scope::X*) [line 49, column 9]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" [label="13:  DeclStmt \n   n$35=_fun_destructor_scope::X_X(&x3:destructor_scope::X*) [line 47, column 9]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" ;
@@ -97,43 +97,43 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch, if) \n   n$36=*&a:_Bool [line 45, column 9]\n  PRUNE(n$36, true); [line 45, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch, if) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(n$36, true); [line 43, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch, if) \n   n$36=*&a:_Bool [line 45, column 9]\n  PRUNE(!n$36, false); [line 45, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch, if) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(!n$36, false); [line 43, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" [label="17:  Return Stmt \n   _=*&y2:destructor_scope::Y [line 46, column 7]\n  n$38=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 46, column 7]\n  _=*&x2:destructor_scope::X [line 46, column 7]\n  n$40=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 46, column 7]\n  _=*&s:destructor_scope::S [line 46, column 7]\n  n$42=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 46, column 7]\n  _=*&x1:destructor_scope::X [line 46, column 7]\n  n$44=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 46, column 7]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" [label="17:  Return Stmt \n   _=*&y2:destructor_scope::Y [line 44, column 7]\n  n$38=_fun_destructor_scope::Y_~Y(&y2:destructor_scope::Y*) [line 44, column 7]\n  _=*&x2:destructor_scope::X [line 44, column 7]\n  n$40=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 44, column 7]\n  _=*&s:destructor_scope::S [line 44, column 7]\n  n$42=_fun_destructor_scope::S_~S(&s:destructor_scope::S*) [line 44, column 7]\n  _=*&x1:destructor_scope::X [line 44, column 7]\n  n$44=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 44, column 7]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_2" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_18" [label="18:  DeclStmt \n   n$49=_fun_destructor_scope::Y_Y(&y2:destructor_scope::Y*) [line 44, column 7]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_18" [label="18:  DeclStmt \n   n$49=_fun_destructor_scope::Y_Y(&y2:destructor_scope::Y*) [line 42, column 7]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_18" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" ;
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_18" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_19" [label="19:  DeclStmt \n   n$50=_fun_destructor_scope::X_X(&x2:destructor_scope::X*) [line 43, column 7]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_19" [label="19:  DeclStmt \n   n$50=_fun_destructor_scope::X_X(&x2:destructor_scope::X*) [line 41, column 7]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_19" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_18" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_20" [label="20:  DeclStmt \n   n$51=_fun_destructor_scope::S_S(&s:destructor_scope::S*) [line 41, column 5]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_20" [label="20:  DeclStmt \n   n$51=_fun_destructor_scope::S_S(&s:destructor_scope::S*) [line 39, column 5]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_20" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_19" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_21" [label="21:  DeclStmt \n   n$52=_fun_destructor_scope::X_X(&x1:destructor_scope::X*) [line 40, column 5]\n " shape="box"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_21" [label="21:  DeclStmt \n   n$52=_fun_destructor_scope::X_X(&x1:destructor_scope::X*) [line 38, column 5]\n " shape="box"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_21" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_20" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_1" [label="1: Start destructor_scope::test2\nFormals:  a:_Bool\nLocals:  x2:destructor_scope::X x3:destructor_scope::X x1:destructor_scope::X \n   DECLARE_LOCALS(&return,&x2,&x3,&x1); [line 59, column 1]\n " color=yellow style=filled]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_1" [label="1: Start destructor_scope::test2\nFormals:  a:_Bool\nLocals:  x2:destructor_scope::X x3:destructor_scope::X x1:destructor_scope::X \n   DECLARE_LOCALS(&return,&x2,&x3,&x1); [line 57, column 1]\n " color=yellow style=filled]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_1" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_11" ;
 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" [label="2: Exit destructor_scope::test2 \n  " color=yellow style=filled]
 	
 
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" [label="3:  Destruction \n   _=*&x1:destructor_scope::X [line 68, column 1]\n  n$1=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 68, column 1]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" [label="3:  Destruction \n   _=*&x1:destructor_scope::X [line 66, column 1]\n  n$1=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 66, column 1]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" ;
@@ -141,108 +141,108 @@ digraph cfg {
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_4" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch, if) \n   n$3=*&a:_Bool [line 61, column 7]\n  PRUNE(n$3, true); [line 61, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch, if) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(n$3, true); [line 59, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch, if) \n   n$3=*&a:_Bool [line 61, column 7]\n  PRUNE(!n$3, false); [line 61, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch, if) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(!n$3, false); [line 59, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_7" [label="7:  Return Stmt \n   *&return:int=1 [line 63, column 5]\n  _=*&x2:destructor_scope::X [line 63, column 12]\n  n$5=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 63, column 12]\n  _=*&x1:destructor_scope::X [line 63, column 12]\n  n$7=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 63, column 12]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_7" [label="7:  Return Stmt \n   *&return:int=1 [line 61, column 5]\n  _=*&x2:destructor_scope::X [line 61, column 12]\n  n$5=_fun_destructor_scope::X_~X(&x2:destructor_scope::X*) [line 61, column 12]\n  _=*&x1:destructor_scope::X [line 61, column 12]\n  n$7=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 61, column 12]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_7" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" [label="8:  DeclStmt \n   n$9=_fun_destructor_scope::X_X(&x2:destructor_scope::X*) [line 62, column 7]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" [label="8:  DeclStmt \n   n$9=_fun_destructor_scope::X_X(&x2:destructor_scope::X*) [line 60, column 7]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_7" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_9" [label="9:  Return Stmt \n   *&return:int=2 [line 66, column 5]\n  _=*&x3:destructor_scope::X [line 66, column 12]\n  n$11=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 66, column 12]\n  _=*&x1:destructor_scope::X [line 66, column 12]\n  n$13=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 66, column 12]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_9" [label="9:  Return Stmt \n   *&return:int=2 [line 64, column 5]\n  _=*&x3:destructor_scope::X [line 64, column 12]\n  n$11=_fun_destructor_scope::X_~X(&x3:destructor_scope::X*) [line 64, column 12]\n  _=*&x1:destructor_scope::X [line 64, column 12]\n  n$13=_fun_destructor_scope::X_~X(&x1:destructor_scope::X*) [line 64, column 12]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_9" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" [label="10:  DeclStmt \n   n$15=_fun_destructor_scope::X_X(&x3:destructor_scope::X*) [line 65, column 7]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" [label="10:  DeclStmt \n   n$15=_fun_destructor_scope::X_X(&x3:destructor_scope::X*) [line 63, column 7]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_9" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_11" [label="11:  DeclStmt \n   n$17=_fun_destructor_scope::X_X(&x1:destructor_scope::X*) [line 60, column 5]\n " shape="box"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_11" [label="11:  DeclStmt \n   n$17=_fun_destructor_scope::X_X(&x1:destructor_scope::X*) [line 58, column 5]\n " shape="box"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_11" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" ;
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_11" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" ;
-"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_1" [label="1: Start destructor_scope::S_S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 8]\n " color=yellow style=filled]
+"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_1" [label="1: Start destructor_scope::S_S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 8]\n " color=yellow style=filled]
 	
 
 	 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_1" -> "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" ;
 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_2" [label="2: Exit destructor_scope::S_S \n  " color=yellow style=filled]
 	
 
-"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" [label="3:  Constructor Init \n   n$2=*&this:destructor_scope::S* [line 21, column 8]\n  n$3=_fun_destructor_scope::X_X(n$2.x1:destructor_scope::X*) [line 21, column 8]\n " shape="box"]
+"S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" [label="3:  Constructor Init \n   n$2=*&this:destructor_scope::S* [line 19, column 8]\n  n$3=_fun_destructor_scope::X_X(n$2.x1:destructor_scope::X*) [line 19, column 8]\n " shape="box"]
 	
 
 	 "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_3" -> "S#S#destructor_scope#{12210000843635331998|constexpr}.cb28b79e3a75cf83720c23a83cf5bf01_2" ;
-"X#X#destructor_scope#{2603426817540977396|constexpr}.fb840cb7c96da056d7b59829caa7231d_1" [label="1: Start destructor_scope::X_X\nFormals:  this:destructor_scope::X* __param_0:destructor_scope::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 8]\n " color=yellow style=filled]
+"X#X#destructor_scope#{2603426817540977396|constexpr}.fb840cb7c96da056d7b59829caa7231d_1" [label="1: Start destructor_scope::X_X\nFormals:  this:destructor_scope::X* __param_0:destructor_scope::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 8]\n " color=yellow style=filled]
 	
 
 	 "X#X#destructor_scope#{2603426817540977396|constexpr}.fb840cb7c96da056d7b59829caa7231d_1" -> "X#X#destructor_scope#{2603426817540977396|constexpr}.fb840cb7c96da056d7b59829caa7231d_2" ;
 "X#X#destructor_scope#{2603426817540977396|constexpr}.fb840cb7c96da056d7b59829caa7231d_2" [label="2: Exit destructor_scope::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#destructor_scope#{8756367833784077567|constexpr}.fe7f9d502bc5b73ec7451a152e49956f_1" [label="1: Start destructor_scope::X_X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 8]\n " color=yellow style=filled]
+"X#X#destructor_scope#{8756367833784077567|constexpr}.fe7f9d502bc5b73ec7451a152e49956f_1" [label="1: Start destructor_scope::X_X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 8]\n " color=yellow style=filled]
 	
 
 	 "X#X#destructor_scope#{8756367833784077567|constexpr}.fe7f9d502bc5b73ec7451a152e49956f_1" -> "X#X#destructor_scope#{8756367833784077567|constexpr}.fe7f9d502bc5b73ec7451a152e49956f_2" ;
 "X#X#destructor_scope#{8756367833784077567|constexpr}.fe7f9d502bc5b73ec7451a152e49956f_2" [label="2: Exit destructor_scope::X_X \n  " color=yellow style=filled]
 	
 
-"Y#Y#destructor_scope#{15345452000440546376|constexpr}.7b3401cb4ba53beb88d6ca2de7e20249_1" [label="1: Start destructor_scope::Y_Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 8]\n " color=yellow style=filled]
+"Y#Y#destructor_scope#{15345452000440546376|constexpr}.7b3401cb4ba53beb88d6ca2de7e20249_1" [label="1: Start destructor_scope::Y_Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 8]\n " color=yellow style=filled]
 	
 
 	 "Y#Y#destructor_scope#{15345452000440546376|constexpr}.7b3401cb4ba53beb88d6ca2de7e20249_1" -> "Y#Y#destructor_scope#{15345452000440546376|constexpr}.7b3401cb4ba53beb88d6ca2de7e20249_2" ;
 "Y#Y#destructor_scope#{15345452000440546376|constexpr}.7b3401cb4ba53beb88d6ca2de7e20249_2" [label="2: Exit destructor_scope::Y_Y \n  " color=yellow style=filled]
 	
 
-"Z#Z#destructor_scope#{18164697736739450765|constexpr}.d06f6f2e94b3e6404a0952bf77a2514e_1" [label="1: Start destructor_scope::Z_Z\nFormals:  this:destructor_scope::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 8]\n " color=yellow style=filled]
+"Z#Z#destructor_scope#{18164697736739450765|constexpr}.d06f6f2e94b3e6404a0952bf77a2514e_1" [label="1: Start destructor_scope::Z_Z\nFormals:  this:destructor_scope::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 8]\n " color=yellow style=filled]
 	
 
 	 "Z#Z#destructor_scope#{18164697736739450765|constexpr}.d06f6f2e94b3e6404a0952bf77a2514e_1" -> "Z#Z#destructor_scope#{18164697736739450765|constexpr}.d06f6f2e94b3e6404a0952bf77a2514e_2" ;
 "Z#Z#destructor_scope#{18164697736739450765|constexpr}.d06f6f2e94b3e6404a0952bf77a2514e_2" [label="2: Exit destructor_scope::Z_Z \n  " color=yellow style=filled]
 	
 
-"Z#Z#destructor_scope#{8043287043140791634|constexpr}.7d5fabaed2fb79e3cac825824cb16f47_1" [label="1: Start destructor_scope::Z_Z\nFormals:  this:destructor_scope::Z* __param_0:destructor_scope::Z&\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 8]\n " color=yellow style=filled]
+"Z#Z#destructor_scope#{8043287043140791634|constexpr}.7d5fabaed2fb79e3cac825824cb16f47_1" [label="1: Start destructor_scope::Z_Z\nFormals:  this:destructor_scope::Z* __param_0:destructor_scope::Z&\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 8]\n " color=yellow style=filled]
 	
 
 	 "Z#Z#destructor_scope#{8043287043140791634|constexpr}.7d5fabaed2fb79e3cac825824cb16f47_1" -> "Z#Z#destructor_scope#{8043287043140791634|constexpr}.7d5fabaed2fb79e3cac825824cb16f47_2" ;
 "Z#Z#destructor_scope#{8043287043140791634|constexpr}.7d5fabaed2fb79e3cac825824cb16f47_2" [label="2: Exit destructor_scope::Z_Z \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_1" [label="1: Start destructor_scope::S___infer_inner_destructor_~S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 8]\n " color=yellow style=filled]
+"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_1" [label="1: Start destructor_scope::S___infer_inner_destructor_~S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 8]\n " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_1" -> "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" ;
 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_2" [label="2: Exit destructor_scope::S___infer_inner_destructor_~S \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 21, column 8]\n  _=*n$0.x1:destructor_scope::X [line 21, column 8]\n  n$2=_fun_destructor_scope::X_~X(n$0.x1:destructor_scope::X*) [line 21, column 8]\n " shape="box"]
+"__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0.x1:destructor_scope::X [line 19, column 8]\n  n$2=_fun_destructor_scope::X_~X(n$0.x1:destructor_scope::X*) [line 19, column 8]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_3" -> "__infer_inner_destructor_~S#S#destructor_scope#(9287491061312513566).4ef80b764b293fdc4260c9ce06a110d3_2" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_1" [label="1: Start destructor_scope::W___infer_inner_destructor_~W\nFormals:  this:destructor_scope::W*\nLocals:  y:destructor_scope::Y x:destructor_scope::X \n   DECLARE_LOCALS(&return,&y,&x); [line 31, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_1" [label="1: Start destructor_scope::W___infer_inner_destructor_~W\nFormals:  this:destructor_scope::W*\nLocals:  y:destructor_scope::Y x:destructor_scope::X \n   DECLARE_LOCALS(&return,&y,&x); [line 29, column 3]\n " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_1" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_10" ;
 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_2" [label="2: Exit destructor_scope::W___infer_inner_destructor_~W \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 36, column 3]\n  _=*n$0.s:destructor_scope::S [line 36, column 3]\n  n$6=_fun_destructor_scope::S_~S(n$0.s:destructor_scope::S*) [line 36, column 3]\n  _=*n$0.y:destructor_scope::Y [line 36, column 3]\n  n$4=_fun_destructor_scope::Y_~Y(n$0.y:destructor_scope::Y*) [line 36, column 3]\n  _=*n$0.x:destructor_scope::X [line 36, column 3]\n  n$2=_fun_destructor_scope::X_~X(n$0.x:destructor_scope::X*) [line 36, column 3]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0.s:destructor_scope::S [line 34, column 3]\n  n$6=_fun_destructor_scope::S_~S(n$0.s:destructor_scope::S*) [line 34, column 3]\n  _=*n$0.y:destructor_scope::Y [line 34, column 3]\n  n$4=_fun_destructor_scope::Y_~Y(n$0.y:destructor_scope::Y*) [line 34, column 3]\n  _=*n$0.x:destructor_scope::X [line 34, column 3]\n  n$2=_fun_destructor_scope::X_~X(n$0.x:destructor_scope::X*) [line 34, column 3]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_2" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" [label="4:  Destruction \n   _=*&y:destructor_scope::Y [line 36, column 3]\n  n$9=_fun_destructor_scope::Y_~Y(&y:destructor_scope::Y*) [line 36, column 3]\n  _=*&x:destructor_scope::X [line 36, column 3]\n  n$11=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 36, column 3]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" [label="4:  Destruction \n   _=*&y:destructor_scope::Y [line 34, column 3]\n  n$9=_fun_destructor_scope::Y_~Y(&y:destructor_scope::Y*) [line 34, column 3]\n  _=*&x:destructor_scope::X [line 34, column 3]\n  n$11=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 34, column 3]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_3" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_5" [label="5:  DeclStmt \n   n$13=_fun_destructor_scope::Y_Y(&y:destructor_scope::Y*) [line 35, column 7]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_5" [label="5:  DeclStmt \n   n$13=_fun_destructor_scope::Y_Y(&y:destructor_scope::Y*) [line 33, column 7]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_5" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_4" ;
@@ -250,78 +250,78 @@ digraph cfg {
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_6" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_5" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" [label="7: Prune (true branch, if) \n   n$14=*&this:destructor_scope::W* [line 33, column 9]\n  n$15=*n$14.b:_Bool [line 33, column 9]\n  PRUNE(n$15, true); [line 33, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" [label="7: Prune (true branch, if) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(n$15, true); [line 31, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_9" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" [label="8: Prune (false branch, if) \n   n$14=*&this:destructor_scope::W* [line 33, column 9]\n  n$15=*n$14.b:_Bool [line 33, column 9]\n  PRUNE(!n$15, false); [line 33, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" [label="8: Prune (false branch, if) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(!n$15, false); [line 31, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_6" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_9" [label="9:  Return Stmt \n   _=*&x:destructor_scope::X [line 34, column 7]\n  n$17=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 34, column 7]\n  n$19=*&this:destructor_scope::W* [line 34, column 7]\n  _=*n$19.s:destructor_scope::S [line 34, column 7]\n  n$25=_fun_destructor_scope::S_~S(n$19.s:destructor_scope::S*) [line 34, column 7]\n  _=*n$19.y:destructor_scope::Y [line 34, column 7]\n  n$23=_fun_destructor_scope::Y_~Y(n$19.y:destructor_scope::Y*) [line 34, column 7]\n  _=*n$19.x:destructor_scope::X [line 34, column 7]\n  n$21=_fun_destructor_scope::X_~X(n$19.x:destructor_scope::X*) [line 34, column 7]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_9" [label="9:  Return Stmt \n   _=*&x:destructor_scope::X [line 32, column 7]\n  n$17=_fun_destructor_scope::X_~X(&x:destructor_scope::X*) [line 32, column 7]\n  n$19=*&this:destructor_scope::W* [line 32, column 7]\n  _=*n$19.s:destructor_scope::S [line 32, column 7]\n  n$25=_fun_destructor_scope::S_~S(n$19.s:destructor_scope::S*) [line 32, column 7]\n  _=*n$19.y:destructor_scope::Y [line 32, column 7]\n  n$23=_fun_destructor_scope::Y_~Y(n$19.y:destructor_scope::Y*) [line 32, column 7]\n  _=*n$19.x:destructor_scope::X [line 32, column 7]\n  n$21=_fun_destructor_scope::X_~X(n$19.x:destructor_scope::X*) [line 32, column 7]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_9" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_2" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_10" [label="10:  DeclStmt \n   n$30=_fun_destructor_scope::X_X(&x:destructor_scope::X*) [line 32, column 7]\n " shape="box"]
+"__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_10" [label="10:  DeclStmt \n   n$30=_fun_destructor_scope::X_X(&x:destructor_scope::X*) [line 30, column 7]\n " shape="box"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_10" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_7" ;
 	 "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_10" -> "__infer_inner_destructor_~W#W#destructor_scope#(7330614824551855498).609202c747c70b122a8a5785422f4f26_8" ;
-"__infer_inner_destructor_~X#X#destructor_scope#(17752465063768331075).9ca577a457cb5911ce3106f5186a6435_1" [label="1: Start destructor_scope::X___infer_inner_destructor_~X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~X#X#destructor_scope#(17752465063768331075).9ca577a457cb5911ce3106f5186a6435_1" [label="1: Start destructor_scope::X___infer_inner_destructor_~X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 3]\n " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~X#X#destructor_scope#(17752465063768331075).9ca577a457cb5911ce3106f5186a6435_1" -> "__infer_inner_destructor_~X#X#destructor_scope#(17752465063768331075).9ca577a457cb5911ce3106f5186a6435_2" ;
 "__infer_inner_destructor_~X#X#destructor_scope#(17752465063768331075).9ca577a457cb5911ce3106f5186a6435_2" [label="2: Exit destructor_scope::X___infer_inner_destructor_~X \n  " color=yellow style=filled]
 	
 
-"__infer_inner_destructor_~Y#Y#destructor_scope#(1552422738585060844).721fb5af17f63315cc8e6bdcce2453e5_1" [label="1: Start destructor_scope::Y___infer_inner_destructor_~Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~Y#Y#destructor_scope#(1552422738585060844).721fb5af17f63315cc8e6bdcce2453e5_1" [label="1: Start destructor_scope::Y___infer_inner_destructor_~Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~Y#Y#destructor_scope#(1552422738585060844).721fb5af17f63315cc8e6bdcce2453e5_1" -> "__infer_inner_destructor_~Y#Y#destructor_scope#(1552422738585060844).721fb5af17f63315cc8e6bdcce2453e5_2" ;
 "__infer_inner_destructor_~Y#Y#destructor_scope#(1552422738585060844).721fb5af17f63315cc8e6bdcce2453e5_2" [label="2: Exit destructor_scope::Y___infer_inner_destructor_~Y \n  " color=yellow style=filled]
 	
 
-"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_1" [label="1: Start destructor_scope::S_~S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 8]\n " color=yellow style=filled]
+"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_1" [label="1: Start destructor_scope::S_~S\nFormals:  this:destructor_scope::S*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 8]\n " color=yellow style=filled]
 	
 
 	 "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_1" -> "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" ;
 "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_2" [label="2: Exit destructor_scope::S_~S \n  " color=yellow style=filled]
 	
 
-"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 21, column 8]\n  _=*n$0:destructor_scope::S [line 21, column 8]\n  n$2=_fun_destructor_scope::S___infer_inner_destructor_~S(n$0:destructor_scope::S*) [line 21, column 8]\n " shape="box"]
+"~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::S* [line 19, column 8]\n  _=*n$0:destructor_scope::S [line 19, column 8]\n  n$2=_fun_destructor_scope::S___infer_inner_destructor_~S(n$0:destructor_scope::S*) [line 19, column 8]\n " shape="box"]
 	
 
 	 "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_3" -> "~S#S#destructor_scope#(9287491061312513566).aca6b266020a04cd52a80258435bda76_2" ;
-"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_1" [label="1: Start destructor_scope::W_~W\nFormals:  this:destructor_scope::W*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31, column 3]\n " color=yellow style=filled]
+"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_1" [label="1: Start destructor_scope::W_~W\nFormals:  this:destructor_scope::W*\nLocals:  \n   DECLARE_LOCALS(&return); [line 29, column 3]\n " color=yellow style=filled]
 	
 
 	 "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_1" -> "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" ;
 "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_2" [label="2: Exit destructor_scope::W_~W \n  " color=yellow style=filled]
 	
 
-"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 36, column 3]\n  _=*n$0:destructor_scope::W [line 36, column 3]\n  n$2=_fun_destructor_scope::W___infer_inner_destructor_~W(n$0:destructor_scope::W*) [line 36, column 3]\n " shape="box"]
+"~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::W* [line 34, column 3]\n  _=*n$0:destructor_scope::W [line 34, column 3]\n  n$2=_fun_destructor_scope::W___infer_inner_destructor_~W(n$0:destructor_scope::W*) [line 34, column 3]\n " shape="box"]
 	
 
 	 "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_3" -> "~W#W#destructor_scope#(7330614824551855498).f9ed98feeae8b94c6906cf3cd29688b3_2" ;
-"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_1" [label="1: Start destructor_scope::X_~X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_1" [label="1: Start destructor_scope::X_~X\nFormals:  this:destructor_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 3]\n " color=yellow style=filled]
 	
 
 	 "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_1" -> "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" ;
 "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_2" [label="2: Exit destructor_scope::X_~X \n  " color=yellow style=filled]
 	
 
-"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::X* [line 12, column 9]\n  _=*n$0:destructor_scope::X [line 12, column 9]\n  n$2=_fun_destructor_scope::X___infer_inner_destructor_~X(n$0:destructor_scope::X*) [line 12, column 9]\n " shape="box"]
+"~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::X* [line 10, column 9]\n  _=*n$0:destructor_scope::X [line 10, column 9]\n  n$2=_fun_destructor_scope::X___infer_inner_destructor_~X(n$0:destructor_scope::X*) [line 10, column 9]\n " shape="box"]
 	
 
 	 "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_3" -> "~X#X#destructor_scope#(17752465063768331075).e9440dc26d00e6a493a0ae5908b3f399_2" ;
-"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_1" [label="1: Start destructor_scope::Y_~Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
+"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_1" [label="1: Start destructor_scope::Y_~Y\nFormals:  this:destructor_scope::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
 	 "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_1" -> "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" ;
 "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_2" [label="2: Exit destructor_scope::Y_~Y \n  " color=yellow style=filled]
 	
 
-"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::Y* [line 16, column 9]\n  _=*n$0:destructor_scope::Y [line 16, column 9]\n  n$2=_fun_destructor_scope::Y___infer_inner_destructor_~Y(n$0:destructor_scope::Y*) [line 16, column 9]\n " shape="box"]
+"~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" [label="3:  Destruction \n   n$0=*&this:destructor_scope::Y* [line 14, column 9]\n  _=*n$0:destructor_scope::Y [line 14, column 9]\n  n$2=_fun_destructor_scope::Y___infer_inner_destructor_~Y(n$0:destructor_scope::Y*) [line 14, column 9]\n " shape="box"]
 	
 
 	 "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_3" -> "~Y#Y#destructor_scope#(1552422738585060844).f631a64648f2fd67ee421a0da2149c2a_2" ;

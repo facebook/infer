@@ -10,7 +10,7 @@
 
   <licenses>
     <license>
-      <name>BSD license</name>
+      <name>MIT license</name>
       <url>https://github.com/facebook/infer/blob/master/LICENSE</url>
       <distribution>repo</distribution>
     </license>

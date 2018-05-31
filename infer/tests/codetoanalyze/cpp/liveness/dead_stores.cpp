@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #include <exception>
@@ -63,8 +61,7 @@ void FN_capture_no_read_bad() {
 
 void init_capture_reassign_bad() {
   int i = 1; // this is a dead store
-  return [i = 1]() { return i; }
-  ();
+  return [i = 1]() { return i; }();
 }
 
 void init_capture_no_call_bad() {
@@ -72,8 +69,7 @@ void init_capture_no_call_bad() {
 }
 
 int FN_init_capture_no_read_bad() {
-  return [i = 1]() { return 0; }
-  ();
+  return [i = 1]() { return 0; }();
 }
 
 int return_ok() {
@@ -218,41 +214,35 @@ int FN_capture_by_ref_reuseBad() {
 }
 
 int init_capture1_ok() {
-  return [i = 1]() { return i; }
-  ();
+  return [i = 1]() { return i; }();
 }
 
 int init_capture2_ok() {
   int i = 1;
-  return [j = i]() { return j; }
-  ();
+  return [j = i]() { return j; }();
 }
 
 int init_capture3_ok() {
   int i = 1;
-  return [i = i]() { return i; }
-  ();
+  return [i = i]() { return i; }();
 }
 
 int init_capture4_ok() {
   int i = 1;
   int j = 1;
-  return [ a = 1, b = i, c = j ]() { return a + b + c; }
-  ();
+  return [a = 1, b = i, c = j]() { return a + b + c; }();
 }
 
 int init_capture5_ok() {
   int i = 1;
-  int k = [j = i]() { return j; }
-  ();
+  int k = [j = i]() { return j; }();
   i = 5; // should not be flagged
   return i + k;
 }
 
 int init_capture6_ok() {
   int i = 1;
-  int k = [i = i + 1]() { return i; }
-  ();
+  int k = [i = i + 1]() { return i; }();
   i = 5; // should not be flagged;
   return i + k;
 }
@@ -481,4 +471,4 @@ class Exceptions {
   }
 };
 
-}
+} // namespace dead_stores

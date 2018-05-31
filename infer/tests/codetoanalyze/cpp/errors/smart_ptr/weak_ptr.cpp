@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #include <memory>
@@ -72,7 +70,7 @@ std::weak_ptr<Base> fromSharedDerivedAssign(std::shared_ptr<Derived> d) {
   result = sd;
   return result;
 }
-}
+} // namespace weak_ptr_constructors
 
 namespace weak_ptr_derefs {
 using namespace weak_ptr_constructors;
@@ -154,7 +152,7 @@ int safeGetFromSharedDerivedAssign_bad(int v) {
   b->f1 = nullptr;
   return *s->f1;
 }
-}
+} // namespace weak_ptr_derefs
 
 namespace weak_ptr_modifiers {
 
@@ -164,7 +162,7 @@ void swap(std::weak_ptr<int>& p) {
   std::weak_ptr<int> q;
   q.swap(p);
 }
-}
+} // namespace weak_ptr_modifiers
 
 namespace weak_ptr_observers {
 using namespace weak_ptr_constructors;
@@ -253,4 +251,4 @@ bool owner_before(std::weak_ptr<Base>& p, std::weak_ptr<Base>& q) {
 bool owner_before(std::weak_ptr<Base>& p, std::shared_ptr<Derived>& q) {
   return p.owner_before(q);
 }
-}
+} // namespace weak_ptr_observers

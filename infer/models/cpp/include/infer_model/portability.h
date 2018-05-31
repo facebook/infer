@@ -1,17 +1,15 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
 // This is a hacky attempt to follow what folly does
 // https://github.com/facebook/folly/blob/b1eb6819f3ffe6b645f39d505ca8ace3116b7873/folly/configure.ac#L232
-// Depending whether the project is compiled with libc++ or stdlibc++, include their
-// internal config headers to get information about versions
+// Depending whether the project is compiled with libc++ or stdlibc++, include
+// their internal config headers to get information about versions
 // clang-format off
 #if __has_include(<__config>) // defines _LIBCPP_VERSION
 #include <__config>

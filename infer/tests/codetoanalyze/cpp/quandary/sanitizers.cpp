@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #include <stdlib.h>
@@ -78,8 +76,8 @@ void escape_url_to_sql_bad() {
 void dead_sanitizer_bad() {
   auto source = __infer_taint_source();
   auto sanitized = __infer_all_sanitizer(source);
-  __infer_taint_sink(
-      source); // the sink does not use the sanitized value; report
+  __infer_taint_sink(source); // the sink does not use the sanitized value;
+                              // report
 }
 
 void kill_sanitizer_bad() {

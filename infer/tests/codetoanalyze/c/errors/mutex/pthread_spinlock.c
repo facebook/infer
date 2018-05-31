@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 #include <pthread.h>
 
@@ -13,11 +11,11 @@
 typedef struct {
   int __whatever;
 } pthread_spinlock_t;
-extern int pthread_spin_init(pthread_spinlock_t *__lock, int __pshared);
-extern int pthread_spin_destroy (pthread_spinlock_t *__lock);
-extern int pthread_spin_lock (pthread_spinlock_t *__lock);
-extern int pthread_spin_trylock (pthread_spinlock_t *__lock);
-extern int pthread_spin_unlock (pthread_spinlock_t *__lock);
+extern int pthread_spin_init(pthread_spinlock_t* __lock, int __pshared);
+extern int pthread_spin_destroy(pthread_spinlock_t* __lock);
+extern int pthread_spin_lock(pthread_spinlock_t* __lock);
+extern int pthread_spin_trylock(pthread_spinlock_t* __lock);
+extern int pthread_spin_unlock(pthread_spinlock_t* __lock);
 #endif
 
 void spinlock_double_lock_bad(pthread_spinlock_t* m) {

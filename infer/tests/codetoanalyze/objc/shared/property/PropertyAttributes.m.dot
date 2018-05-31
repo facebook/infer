@@ -1,36 +1,36 @@
 /* @generated */
 digraph cfg {
-"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals:  a2:PropertyA*\nLocals:  a:PropertyA* \n   DECLARE_LOCALS(&return,&a); [line 42, column 1]\n " color=yellow style=filled]
+"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals:  a2:PropertyA*\nLocals:  a:PropertyA* \n   DECLARE_LOCALS(&return,&a); [line 40, column 1]\n " color=yellow style=filled]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  Return Stmt \n   *&return:int=0 [line 46, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 45, column 4]\n  n$1=_fun_NSObject_release(n$0:PropertyA*) virtual [line 45, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject_release(n$0:PropertyA*) virtual [line 43, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 44, column 3]\n  n$2=*&a2:PropertyA* [line 44, column 17]\n  n$4=_fun_PropertyA_setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 44, column 5]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA_setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 43, column 19]\n  n$6=_fun_PropertyA_init(n$5:PropertyA*) virtual [line 43, column 18]\n  *&a:PropertyA*=n$6 [line 43, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA_init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" [label="1: Start PropertyA_copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n   DECLARE_LOCALS(&return,&other); [line 30, column 1]\n " color=yellow style=filled]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" [label="1: Start PropertyA_copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n   DECLARE_LOCALS(&return,&other); [line 28, column 1]\n " color=yellow style=filled]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" ;
 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA_copy \n  " color=yellow style=filled]
 	
 
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 37, column 10]\n  *&return:PropertyA*=n$1 [line 37, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n  *&return:PropertyA*=n$1 [line 35, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" ;
@@ -38,39 +38,39 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" [label="5: Prune (true branch, if) \n   n$2=*&other:PropertyA* [line 32, column 7]\n  PRUNE(n$2, true); [line 32, column 7]\n " shape="invhouse"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" [label="5: Prune (true branch, if) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(n$2, true); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" [label="6: Prune (false branch, if) \n   n$2=*&other:PropertyA* [line 32, column 7]\n  PRUNE(!n$2, false); [line 32, column 7]\n " shape="invhouse"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" [label="6: Prune (false branch, if) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(!n$2, false); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&other:PropertyA* [line 35, column 5]\n  n$4=*&self:PropertyA* [line 35, column 21]\n  n$5=*n$4._child:PropertyA* [line 35, column 21]\n  *n$3._child:PropertyA*=n$5 [line 35, column 5]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&other:PropertyA* [line 33, column 5]\n  n$4=*&self:PropertyA* [line 33, column 21]\n  n$5=*n$4._child:PropertyA* [line 33, column 21]\n  *n$3._child:PropertyA*=n$5 [line 33, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$6=*&other:PropertyA* [line 34, column 5]\n  n$7=*&self:PropertyA* [line 34, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 34, column 25]\n  *n$6._last_name:PropertyA*=n$8 [line 34, column 5]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$6=*&other:PropertyA* [line 32, column 5]\n  n$7=*&self:PropertyA* [line 32, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 32, column 25]\n  *n$6._last_name:PropertyA*=n$8 [line 32, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&other:PropertyA* [line 33, column 5]\n  n$10=*&self:PropertyA* [line 33, column 20]\n  n$11=*n$10._name:PropertyA* [line 33, column 20]\n  *n$9._name:PropertyA*=n$11 [line 33, column 5]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&other:PropertyA* [line 31, column 5]\n  n$10=*&self:PropertyA* [line 31, column 20]\n  n$11=*n$10._name:PropertyA* [line 31, column 20]\n  *n$9._name:PropertyA*=n$11 [line 31, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 31, column 23]\n  n$15=_fun_PropertyA_init(n$14:PropertyA*) virtual [line 31, column 22]\n  *&other:PropertyA*=n$15 [line 31, column 3]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA_init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" ;
-"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA_init\nFormals:  self:PropertyA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA_init\nFormals:  self:PropertyA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 
 	 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" -> "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" ;
 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" [label="2: Exit PropertyA_init \n  " color=yellow style=filled]
 	
 
-"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" [label="3:  Return Stmt \n   n$0=*&self:PropertyA* [line 27, column 10]\n  *&return:objc_object*=n$0 [line 27, column 3]\n " shape="box"]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" [label="3:  Return Stmt \n   n$0=*&self:PropertyA* [line 25, column 10]\n  *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]
 	
 
 	 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" -> "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" ;

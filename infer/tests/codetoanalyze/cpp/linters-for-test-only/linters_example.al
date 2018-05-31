@@ -1,3 +1,8 @@
+// Copyright (c) 2018-present, Facebook, Inc.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
 DEFINE-CHECKER FIND_CXX_COPY_CONSTRUCTOR = {
 
 LET is_copy_constructor =

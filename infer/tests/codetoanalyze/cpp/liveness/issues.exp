@@ -10,7 +10,7 @@ codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_then_live_bad, 1, 
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::easy_bad, 0, DEAD_STORE, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::init_capture_no_call_bad, 1, DEAD_STORE, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::init_capture_reassign_bad, 1, DEAD_STORE, ERROR, [Write of unused value]
-codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::lambda_bad::lambda_dead_stores.cpp:149:11_operator(), 1, DEAD_STORE, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::lambda_bad::lambda_dead_stores.cpp:145:11_operator(), 1, DEAD_STORE, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus1_bad, 2, DEAD_STORE, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus2_bad, 2, DEAD_STORE, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::plus_plus3_bad, 2, DEAD_STORE, ERROR, [Write of unused value]

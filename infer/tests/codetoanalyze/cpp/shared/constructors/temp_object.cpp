@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 namespace temp_object {
@@ -43,4 +41,4 @@ int getX_method_div0() { return getX(0, 1).div(); }
 int temp_field_div1() { return div(X(1, 0).f); }
 
 int getX_field_div1() { return div(getX(1, 0).f); }
-}
+} // namespace temp_object

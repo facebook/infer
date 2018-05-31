@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 #include <mutex>
 
@@ -22,7 +20,7 @@ inline int try_lock_impl(std::mutex* lock) {
   return EBUSY;
 }
 
-}
+} // namespace detail
 
 template <typename T>
 int lp_lock(T* lock) {
@@ -36,7 +34,7 @@ int lp_lock(T* lock) {
       if (rv == 0) {
         return 0;
       }
-    /* fallthrough */
+      /* fallthrough */
     }
     default:
       return rv;
@@ -63,10 +61,7 @@ void bad_usage2() {
 template <typename T>
 class LpLockGuard {
  public:
-  LpLockGuard(T& lock)
-      : lock_(lock) {
-    lp_lock(&lock_);
-  }
+  LpLockGuard(T& lock) : lock_(lock) { lp_lock(&lock_); }
 
  private:
   T& lock_;
@@ -74,9 +69,7 @@ class LpLockGuard {
 
 struct LockMapBucket {
  public:
-  void good_usage2() {
-    LpLockGuard<std::mutex> lock(bucketLock);
-  }
+  void good_usage2() { LpLockGuard<std::mutex> lock(bucketLock); }
 
   void bad_usage3() {
     LpLockGuard<std::mutex> lock(bucketLock);

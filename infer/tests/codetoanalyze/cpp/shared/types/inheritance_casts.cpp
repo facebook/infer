@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 namespace inheritance_casts {
 struct A {
@@ -32,4 +30,4 @@ int div1_A() { return div(getA(1)); }
 int div0_B() { return div(getB(0)); }
 
 int div1_B() { return div(getB(1)); }
-}
+} // namespace inheritance_casts

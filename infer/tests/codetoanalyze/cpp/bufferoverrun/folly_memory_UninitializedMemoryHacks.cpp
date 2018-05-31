@@ -30,7 +30,7 @@ namespace {
 // allowing the resulting methods to be inline-able.  If you think that
 // seems hacky keep reading...
 struct FollyMemoryDetailTranslationUnitTag {};
-} // anon namespace
+} // namespace
 namespace folly {
 namespace detail {
 void unsafeStringSetLargerSize(std::string& s, std::size_t n);
@@ -117,11 +117,10 @@ inline void resizeWithoutInitialization(std::string& s, std::size_t n) {
  *
  * IMPORTANT: Read the warning at the top of this header file.
  */
-template <
-    typename T,
-    typename = typename std::enable_if<
-        std::is_trivially_destructible<T>::value &&
-        !std::is_same<T, bool>::value>::type>
+template <typename T,
+          typename = typename std::enable_if<
+              std::is_trivially_destructible<T>::value &&
+              !std::is_same<T, bool>::value>::type>
 void resizeWithoutInitialization(std::vector<T>& v, std::size_t n) {
   if (n <= v.size()) {
     v.resize(n);
@@ -146,9 +145,8 @@ namespace detail {
 
 template <typename Tag, typename T, typename A, A Ptr__set_size>
 struct MakeUnsafeStringSetLargerSize {
-  friend void unsafeStringSetLargerSize(
-      std::basic_string<T>& s,
-      std::size_t n) {
+  friend void unsafeStringSetLargerSize(std::basic_string<T>& s,
+                                        std::size_t n) {
     // s.__set_size(n);
     (s.*Ptr__set_size)(n);
     (&s[0])[n] = '\0';
@@ -165,9 +163,8 @@ template struct MakeUnsafeStringSetLargerSize<
 
 template <typename Tag, typename T, typename A, A Ptrstore_>
 struct MakeUnsafeStringSetLargerSize {
-  friend void unsafeStringSetLargerSize(
-      std::basic_string<T>& s,
-      std::size_t n) {
+  friend void unsafeStringSetLargerSize(std::basic_string<T>& s,
+                                        std::size_t n) {
     // s.store_.expandNoinit(n - s.size(), false);
     (s.*Ptrstore_).expandNoinit(n - s.size(), false);
   }
@@ -189,9 +186,8 @@ namespace detail {
 
 template <typename Tag, typename T, typename A, A Ptr_M_set_length>
 struct MakeUnsafeStringSetLargerSize {
-  friend void unsafeStringSetLargerSize(
-      std::basic_string<T>& s,
-      std::size_t n) {
+  friend void unsafeStringSetLargerSize(std::basic_string<T>& s,
+                                        std::size_t n) {
     // s._M_set_length(n);
     (s.*Ptr_M_set_length)(n);
   }
@@ -212,17 +208,15 @@ template void std::string::_Rep::_M_set_length_and_sharable(std::size_t);
 namespace folly {
 namespace detail {
 
-template <
-    typename Tag,
-    typename T,
-    typename A,
-    A Ptr_M_rep,
-    typename B,
-    B Ptr_M_set_length_and_sharable>
+template <typename Tag,
+          typename T,
+          typename A,
+          A Ptr_M_rep,
+          typename B,
+          B Ptr_M_set_length_and_sharable>
 struct MakeUnsafeStringSetLargerSize {
-  friend void unsafeStringSetLargerSize(
-      std::basic_string<T>& s,
-      std::size_t n) {
+  friend void unsafeStringSetLargerSize(std::basic_string<T>& s,
+                                        std::size_t n) {
     // s._M_rep()->_M_set_length_and_sharable(n);
     auto rep = (s.*Ptr_M_rep)();
     (rep->*Ptr_M_set_length_and_sharable)(n);
@@ -253,9 +247,8 @@ inline void unsafeStringSetLargerSize(std::string& s, std::size_t n) {
   namespace detail {                                                     \
   void unsafeVectorSetLargerSizeImpl(std::vector<TYPE>& v, std::size_t); \
   template <>                                                            \
-  inline void unsafeVectorSetLargerSize<TYPE>(                           \
-      std::vector<TYPE> & v,                                             \
-      std::size_t n) {                                                   \
+  inline void unsafeVectorSetLargerSize<TYPE>(std::vector<TYPE> & v,     \
+                                              std::size_t n) {           \
     unsafeVectorSetLargerSizeImpl(v, n);                                 \
   }                                                                      \
   }                                                                      \
@@ -269,10 +262,9 @@ struct MakeUnsafeVectorSetLargerSize {
   friend void unsafeVectorSetLargerSizeImpl(std::vector<T>& v, std::size_t n) {
     // v.__end_ += (n - v.size());
     using Base = std::__vector_base<T, std::allocator<T>>;
-    static_assert(
-        std::is_standard_layout<std::vector<T>>::value &&
-            sizeof(std::vector<T>) == sizeof(Base),
-        "reinterpret_cast safety conditions not met");
+    static_assert(std::is_standard_layout<std::vector<T>>::value &&
+                      sizeof(std::vector<T>) == sizeof(Base),
+                  "reinterpret_cast safety conditions not met");
     reinterpret_cast<Base&>(v).*Ptr__end_ += (n - v.size());
   }
 };
@@ -288,13 +280,12 @@ struct MakeUnsafeVectorSetLargerSize {
 #elif defined(_GLIBCXX_VECTOR)
 // libstdc++
 
-template <
-    typename Tag,
-    typename T,
-    typename A,
-    A Ptr_M_impl,
-    typename B,
-    B Ptr_M_finish>
+template <typename Tag,
+          typename T,
+          typename A,
+          A Ptr_M_impl,
+          typename B,
+          B Ptr_M_finish>
 struct MakeUnsafeVectorSetLargerSize : std::vector<T> {
   friend void unsafeVectorSetLargerSizeImpl(std::vector<T>& v, std::size_t n) {
     // v._M_impl._M_finish += (n - v.size());
@@ -316,11 +307,11 @@ struct MakeUnsafeVectorSetLargerSize : std::vector<T> {
 #elif defined(_MSC_VER)
 // MSVC
 
-#define FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(TYPE) \
-  extern inline void unsafeVectorSetLargerSizeImpl(    \
-      std::vector<TYPE>& v, std::size_t n) {           \
-    v._Mylast() += (n - v.size());                     \
-  }                                                    \
+#define FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(TYPE)                   \
+  extern inline void unsafeVectorSetLargerSizeImpl(std::vector<TYPE>& v, \
+                                                   std::size_t n) {      \
+    v._Mylast() += (n - v.size());                                       \
+  }                                                                      \
   FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT_IMPL(TYPE)
 
 #else
@@ -335,12 +326,11 @@ FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(char)
 FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(unsigned char)
 #endif
 
-
 namespace infer_test {
-  void foo_string(std::string* s, std::size_t n) {
-    folly::resizeWithoutInitialization(*s, n);
-  }
-  void foo_vector(std::vector<std::vector<int>> &v, std::size_t n) {
-    folly::resizeWithoutInitialization(v, n);
-  }
+void foo_string(std::string* s, std::size_t n) {
+  folly::resizeWithoutInitialization(*s, n);
 }
+void foo_vector(std::vector<std::vector<int>>& v, std::size_t n) {
+  folly::resizeWithoutInitialization(v, n);
+}
+} // namespace infer_test

@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
@@ -328,10 +326,10 @@ struct __infer_atomic_integral : public __infer_atomic_base<T> {
     return ret;
   }
 
-  T operator++(int)volatile noexcept { return fetch_add(T(1)); }
-  T operator++(int)noexcept { return fetch_add(T(1)); }
-  T operator--(int)volatile noexcept { return fetch_sub(T(1)); }
-  T operator--(int)noexcept { return fetch_sub(T(1)); }
+  T operator++(int) volatile noexcept { return fetch_add(T(1)); }
+  T operator++(int) noexcept { return fetch_add(T(1)); }
+  T operator--(int) volatile noexcept { return fetch_sub(T(1)); }
+  T operator--(int) noexcept { return fetch_sub(T(1)); }
   T operator++() volatile noexcept { return fetch_add(T(1)) + T(1); }
   T operator++() noexcept { return fetch_add(T(1)) + T(1); }
   T operator--() volatile noexcept { return fetch_sub(T(1)) - T(1); }
@@ -614,10 +612,10 @@ struct atomic<T*> : public __infer_atomic_base<T*> {
     return ret;
   }
 
-  T* operator++(int)volatile noexcept { return fetch_add(1); }
-  T* operator++(int)noexcept { return fetch_add(1); }
-  T* operator--(int)volatile noexcept { return fetch_sub(1); }
-  T* operator--(int)noexcept { return fetch_sub(1); }
+  T* operator++(int) volatile noexcept { return fetch_add(1); }
+  T* operator++(int) noexcept { return fetch_add(1); }
+  T* operator--(int) volatile noexcept { return fetch_sub(1); }
+  T* operator--(int) noexcept { return fetch_sub(1); }
   T* operator++() volatile noexcept { return fetch_add(1) + 1; }
   T* operator++() noexcept { return fetch_add(1) + T(1); }
   T* operator--() volatile noexcept { return fetch_sub(1) - 1; }

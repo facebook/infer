@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 #include <iostream>
 #include <fstream>
@@ -72,4 +70,4 @@ void read_file_from_flag_ok(int length) {
 
 void url_from_flag_ok() { __infer_url_sink(FLAGS_cli_string); }
 
-}
+} // namespace files

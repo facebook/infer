@@ -1,9 +1,7 @@
-# Copyright (c) 2016 - present Facebook, Inc.
-# All rights reserved.
+# Copyright (c) 2016-present, Facebook, Inc.
 #
-# This source code is licensed under the BSD style license found in the
-# LICENSE file in the root directory of this source tree. An additional grant
-# of patent rights can be found in the PATENTS file in the same directory.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
 
 # This is mostly a copy-paste-adapt of other integration tests with the twist that the code to
 # analyze in placed in a path that contains utf8 characters. This does not provide a 'compile'

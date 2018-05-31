@@ -1,17 +1,17 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25, column 7]\n " color=yellow style=filled]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 23, column 7]\n " color=yellow style=filled]
 	
 
 	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" ;
 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" [label="2: Exit objc_blockMy_manager_m_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 26, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 26, column 5]\n " shape="box"]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
 	
 
 	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 21, column 1]\n " color=yellow style=filled]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 19, column 1]\n " color=yellow style=filled]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" ;
@@ -26,44 +26,44 @@ digraph cfg {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 30, column 7]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 28, column 7]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" ;
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 30, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 30, column 7]\n " shape="invhouse"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 31, column 13]\n  n$2=*n$1:int [line 31, column 12]\n  *&return:int=n$2 [line 31, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 29, column 13]\n  n$2=*n$1:int [line 29, column 12]\n  *&return:int=n$2 [line 29, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 33, column 12]\n  *&return:int=n$3 [line 33, column 5]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 31, column 12]\n  *&return:int=n$3 [line 31, column 5]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   *&p:int*=null [line 29, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   *&p:int*=null [line 27, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 28, column 3]\n  n$6=n$5() [line 28, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,(n$7 &z:int)) [line 25, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,(n$7 &z:int)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   *&z:int=3 [line 24, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   *&z:int=3 [line 22, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 22, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 20, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" ;

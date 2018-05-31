@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 2009 - 2013 Monoidics ltd.
- * Copyright (c) 2013 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2009-2013, Monoidics ltd.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 // Basic modelling of some libc functions
@@ -96,7 +94,8 @@ extern int errno;
 #ifdef __APPLE__
 #define __ERRNO_FUN_NAME __error
 #else
-#define __ERRNO_FUN_NAME() __errno_location(void) __THROW __attribute__ ((__const__))
+#define __ERRNO_FUN_NAME() \
+  __errno_location(void) __THROW __attribute__((__const__))
 #endif
 int* __ERRNO_FUN_NAME() { return &errno; }
 
@@ -1479,8 +1478,7 @@ int pthread_mutex_destroy(pthread_mutex_t* mutex) {
   __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
   INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
                               "DESTROYING_UNINITIALIZED_MUTEX");
-  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0,
-                              "DESTROYING_LOCKED_MUTEX");
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0, "DESTROYING_LOCKED_MUTEX");
   model->initialized = -1;
   return __infer_nondet_int();
 }
@@ -1533,8 +1531,7 @@ int pthread_mutex_unlock(pthread_mutex_t* mutex) {
   __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
   INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
                               "UNLOCKING_UNINITIALIZED_MUTEX");
-  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0,
-                              "UNLOCKING_UNLOCKED_MUTEX");
+  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0, "UNLOCKING_UNLOCKED_MUTEX");
   model->locked = 0;
   return __infer_nondet_int();
 }
@@ -1578,26 +1575,31 @@ typedef __infer_model_pthread_spinlock_t pthread_spinlock_t;
 #endif
 
 int pthread_spin_destroy(pthread_spinlock_t* lock) {
-  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  __infer_model_pthread_spinlock_t* model =
+      (__infer_model_pthread_spinlock_t*)lock;
   INFER_EXCLUDE_CONDITION_MSG(model->locked != 0, "DESTROYING_LOCKED_SPINLOCK");
   return 0;
 }
 
 int pthread_spin_init(pthread_spinlock_t* lock, int pshared) {
-  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  __infer_model_pthread_spinlock_t* model =
+      (__infer_model_pthread_spinlock_t*)lock;
   model->locked = 0;
   return 0;
 }
 
 int pthread_spin_lock(pthread_spinlock_t* lock) {
-  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
-  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0, "LOCKING_ALREADY_LOCKED_SPINLOCK");
+  __infer_model_pthread_spinlock_t* model =
+      (__infer_model_pthread_spinlock_t*)lock;
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0,
+                              "LOCKING_ALREADY_LOCKED_SPINLOCK");
   model->locked = 1;
   return 0;
 }
 
 int pthread_spin_trylock(pthread_spinlock_t* lock) {
-  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  __infer_model_pthread_spinlock_t* model =
+      (__infer_model_pthread_spinlock_t*)lock;
   if (model->locked) {
     return EBUSY;
   } else {
@@ -1607,8 +1609,10 @@ int pthread_spin_trylock(pthread_spinlock_t* lock) {
 }
 
 int pthread_spin_unlock(pthread_spinlock_t* lock) {
-  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
-  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0, "UNLOCKING_UNLOCKED_SPINLOCK");
+  __infer_model_pthread_spinlock_t* model =
+      (__infer_model_pthread_spinlock_t*)lock;
+  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0,
+                              "UNLOCKING_UNLOCKED_SPINLOCK");
   model->locked = 0;
   return 0;
 }
@@ -1659,9 +1663,7 @@ int isatty(int fildes) {
   return ret;
 }
 
-void perror(const char* s) {
-    __require_allocated_array(s);
-}
+void perror(const char* s) { __require_allocated_array(s); }
 
 int pipe(int fildes[2]) {
   int ret = __infer_nondet_int();

@@ -1,59 +1,59 @@
 /* @generated */
 digraph cfg {
-"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" [label="1: Start init_from_ptr\nFormals:  par:int*\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 22, column 1]\n " color=yellow style=filled]
+"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" [label="1: Start init_from_ptr\nFormals:  par:int*\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 20, column 1]\n " color=yellow style=filled]
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" ;
 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_2" [label="2: Exit init_from_ptr \n  " color=yellow style=filled]
 	
 
-"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_3" [label="3:  DeclStmt \n   n$1=*&par:int* [line 25, column 12]\n  *&p:int*=n$1 [line 25, column 3]\n " shape="box"]
+"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_3" [label="3:  DeclStmt \n   n$1=*&par:int* [line 23, column 12]\n  *&p:int*=n$1 [line 23, column 3]\n " shape="box"]
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_3" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_2" ;
-"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_4" [label="4:  DeclStmt \n   n$2=*&par:int* [line 24, column 13]\n  *&d:int&=n$2 [line 24, column 3]\n " shape="box"]
+"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_4" [label="4:  DeclStmt \n   n$2=*&par:int* [line 22, column 13]\n  *&d:int&=n$2 [line 22, column 3]\n " shape="box"]
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_4" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_3" ;
-"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" [label="5:  DeclStmt \n   n$3=*&par:int* [line 23, column 12]\n  n$4=*n$3:int [line 23, column 11]\n  *&v:int=n$4 [line 23, column 3]\n " shape="box"]
+"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" [label="5:  DeclStmt \n   n$3=*&par:int* [line 21, column 12]\n  n$4=*n$3:int [line 21, column 11]\n  *&v:int=n$4 [line 21, column 3]\n " shape="box"]
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_4" ;
-"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" [label="1: Start init_from_ref\nFormals:  par:int&\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 10, column 1]\n " color=yellow style=filled]
+"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" [label="1: Start init_from_ref\nFormals:  par:int&\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 8, column 1]\n " color=yellow style=filled]
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" ;
 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_2" [label="2: Exit init_from_ref \n  " color=yellow style=filled]
 	
 
-"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_3" [label="3:  DeclStmt \n   n$1=*&par:int& [line 13, column 13]\n  *&p:int*=n$1 [line 13, column 3]\n " shape="box"]
+"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_3" [label="3:  DeclStmt \n   n$1=*&par:int& [line 11, column 13]\n  *&p:int*=n$1 [line 11, column 3]\n " shape="box"]
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_3" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_2" ;
-"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_4" [label="4:  DeclStmt \n   n$2=*&par:int& [line 12, column 12]\n  *&d:int&=n$2 [line 12, column 3]\n " shape="box"]
+"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_4" [label="4:  DeclStmt \n   n$2=*&par:int& [line 10, column 12]\n  *&d:int&=n$2 [line 10, column 3]\n " shape="box"]
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_4" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_3" ;
-"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" [label="5:  DeclStmt \n   n$3=*&par:int& [line 11, column 11]\n  n$4=*n$3:int [line 11, column 11]\n  *&v:int=n$4 [line 11, column 3]\n " shape="box"]
+"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" [label="5:  DeclStmt \n   n$3=*&par:int& [line 9, column 11]\n  n$4=*n$3:int [line 9, column 11]\n  *&v:int=n$4 [line 9, column 3]\n " shape="box"]
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_4" ;
-"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" [label="1: Start init_from_val\nFormals:  par:int\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 16, column 1]\n " color=yellow style=filled]
+"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" [label="1: Start init_from_val\nFormals:  par:int\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 14, column 1]\n " color=yellow style=filled]
 	
 
 	 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" -> "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_5" ;
 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_2" [label="2: Exit init_from_val \n  " color=yellow style=filled]
 	
 
-"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_3" [label="3:  DeclStmt \n   *&p:int*=&par [line 19, column 3]\n " shape="box"]
+"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_3" [label="3:  DeclStmt \n   *&p:int*=&par [line 17, column 3]\n " shape="box"]
 	
 
 	 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_3" -> "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_2" ;
-"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_4" [label="4:  DeclStmt \n   *&d:int&=&par [line 18, column 3]\n " shape="box"]
+"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_4" [label="4:  DeclStmt \n   *&d:int&=&par [line 16, column 3]\n " shape="box"]
 	
 
 	 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_4" -> "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_3" ;
-"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_5" [label="5:  DeclStmt \n   n$1=*&par:int [line 17, column 11]\n  *&v:int=n$1 [line 17, column 3]\n " shape="box"]
+"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_5" [label="5:  DeclStmt \n   n$1=*&par:int [line 15, column 11]\n  *&v:int=n$1 [line 15, column 3]\n " shape="box"]
 	
 
 	 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_5" -> "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_4" ;

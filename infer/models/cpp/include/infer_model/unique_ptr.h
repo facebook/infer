@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
@@ -33,6 +31,7 @@ struct unique_ptr {
    public:
     typedef decltype(__test<_Del>(0)) type;
   };
+
  public:
   typedef typename _Pointer::type pointer;
   typedef _Tp element_type;
@@ -251,11 +250,10 @@ struct unique_ptr<_Tp[], _Dp> {
     model_set(__cast_to_infer_ptr(this), ptr);
   }
 
-  unique_ptr(
-      pointer ptr,
-      typename conditional<
-          is_reference<deleter_type>::value,
-          deleter_type,
+  unique_ptr(pointer ptr,
+             typename conditional<
+                 is_reference<deleter_type>::value,
+                 deleter_type,
                  typename add_lvalue_reference<const deleter_type>::type>::type
                  __d) noexcept
       : unique_ptr(ptr) {}

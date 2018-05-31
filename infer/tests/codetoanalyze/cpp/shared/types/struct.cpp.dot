@@ -1,25 +1,25 @@
 /* @generated */
 digraph cfg {
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  xc:X_class* xs:X_struct* \n   DECLARE_LOCALS(&return,&xc,&xs); [line 21, column 1]\n " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  xc:X_class* xs:X_struct* \n   DECLARE_LOCALS(&return,&xc,&xs); [line 19, column 1]\n " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&xc:X_class* [line 29, column 3]\n  *n$1.b:int=20 [line 29, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&xc:X_class* [line 27, column 3]\n  *n$1.b:int=20 [line 27, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&xc:X_class* [line 28, column 3]\n  *n$2.a:int=10 [line 28, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&xc:X_class* [line 26, column 3]\n  *n$2.a:int=10 [line 26, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&xs:X_struct* [line 25, column 3]\n  *n$3.b:int=20 [line 25, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&xs:X_struct* [line 23, column 3]\n  *n$3.b:int=20 [line 23, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  BinaryOperatorStmt: Assign \n   n$4=*&xs:X_struct* [line 24, column 3]\n  *n$4.a:int=10 [line 24, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  BinaryOperatorStmt: Assign \n   n$4=*&xs:X_struct* [line 22, column 3]\n  *n$4.a:int=10 [line 22, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;

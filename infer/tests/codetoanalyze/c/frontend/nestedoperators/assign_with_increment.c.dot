@@ -1,29 +1,29 @@
 /* @generated */
 digraph cfg {
-"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals: \nLocals:  e:int d:int c:int b:int a:int \n   DECLARE_LOCALS(&return,&e,&d,&c,&b,&a); [line 10, column 1]\n " color=yellow style=filled]
+"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals: \nLocals:  e:int d:int c:int b:int a:int \n   DECLARE_LOCALS(&return,&e,&d,&c,&b,&a); [line 8, column 1]\n " color=yellow style=filled]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_7" ;
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$0=*&a:int [line 15, column 11]\n  *&a:int=(n$0 - 1) [line 15, column 11]\n  *&e:int=n$0 [line 15, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  DeclStmt \n   n$0=*&a:int [line 13, column 11]\n  *&a:int=(n$0 - 1) [line 13, column 11]\n  *&e:int=n$0 [line 13, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$1=*&a:int [line 14, column 11]\n  *&a:int=(n$1 - 1) [line 14, column 11]\n  *&d:int=(n$1 - 1) [line 14, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   n$1=*&a:int [line 12, column 11]\n  *&a:int=(n$1 - 1) [line 12, column 11]\n  *&d:int=(n$1 - 1) [line 12, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$2=*&a:int [line 13, column 11]\n  *&a:int=(n$2 + 1) [line 13, column 11]\n  *&c:int=n$2 [line 13, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   n$2=*&a:int [line 11, column 11]\n  *&a:int=(n$2 + 1) [line 11, column 11]\n  *&c:int=n$2 [line 11, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$3=*&a:int [line 12, column 11]\n  *&a:int=(n$3 + 1) [line 12, column 11]\n  *&b:int=(n$3 + 1) [line 12, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$3=*&a:int [line 10, column 11]\n  *&a:int=(n$3 + 1) [line 10, column 11]\n  *&b:int=(n$3 + 1) [line 10, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  DeclStmt \n   *&a:int=3 [line 11, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_7" [label="7:  DeclStmt \n   *&a:int=3 [line 9, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_7" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;

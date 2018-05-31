@@ -1,4 +1,4 @@
-codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 20, SUBCLASSING_TEST_EXAMPLE, WARNING, []
-codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 26, FORBIDDEN_NAME_EXAMPLE, WARNING, []
+codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 18, SUBCLASSING_TEST_EXAMPLE, WARNING, []
+codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 24, FORBIDDEN_NAME_EXAMPLE, WARNING, []
+codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 34, STRONG_UIAPPLICATION_WARNING, WARNING, []
 codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 36, STRONG_UIAPPLICATION_WARNING, WARNING, []
-codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 38, STRONG_UIAPPLICATION_WARNING, WARNING, []

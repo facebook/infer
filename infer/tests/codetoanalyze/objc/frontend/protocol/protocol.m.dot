@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" ;
@@ -15,16 +15,16 @@ digraph cfg {
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 25, column 8]\n  n$1=_fun_NSObject_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 25, column 7]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 25, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 25, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" ;

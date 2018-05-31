@@ -5,6 +5,7 @@
  ((name checkCopyright)
   (flags (%s))
   (libraries (core str))
+  (preprocess (pps (ppx_compare)))
  ))
 |}
      (String.concat " " common_cflags)

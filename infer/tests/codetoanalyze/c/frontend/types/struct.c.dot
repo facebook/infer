@@ -1,17 +1,17 @@
 /* @generated */
 digraph cfg {
-"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals: \nLocals:  x:X \n   DECLARE_LOCALS(&return,&x); [line 15, column 1]\n " color=yellow style=filled]
+"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals: \nLocals:  x:X \n   DECLARE_LOCALS(&return,&x); [line 13, column 1]\n " color=yellow style=filled]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
 "test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int=20 [line 18, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int=20 [line 16, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.a:int=10 [line 17, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  BinaryOperatorStmt: Assign \n   *&x.a:int=10 [line 15, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;

@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 namespace copy_move_constructor {
@@ -79,4 +77,4 @@ int copyY_moveY_div1() {
   int d2 = 1 / getY(2).f;
   return d1 + d2;
 }
-}
+} // namespace copy_move_constructor

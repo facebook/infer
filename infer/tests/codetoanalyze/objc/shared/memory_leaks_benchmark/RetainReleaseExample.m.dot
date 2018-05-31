@@ -1,32 +1,32 @@
 /* @generated */
 digraph cfg {
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" [label="1: Start retain_release_test\nFormals: \nLocals:  a:RRA* \n   DECLARE_LOCALS(&return,&a); [line 24, column 1]\n " color=yellow style=filled]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" [label="1: Start retain_release_test\nFormals: \nLocals:  a:RRA* \n   DECLARE_LOCALS(&return,&a); [line 22, column 1]\n " color=yellow style=filled]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" ;
 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" [label="2: Exit retain_release_test \n  " color=yellow style=filled]
 	
 
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 27, column 4]\n  n$1=_fun_NSObject_release(n$0:RRA*) virtual [line 27, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 25, column 4]\n  n$1=_fun_NSObject_release(n$0:RRA*) virtual [line 25, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$2=*&a:RRA* [line 26, column 4]\n  n$3=_fun_NSObject_retain(n$2:RRA*) virtual [line 26, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$2=*&a:RRA* [line 24, column 4]\n  n$3=_fun_NSObject_retain(n$2:RRA*) virtual [line 24, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 25, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 25, column 12]\n  *&a:RRA*=n$5 [line 25, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 23, column 13]\n  n$5=_fun_RRA_init(n$4:RRA*) virtual [line 23, column 12]\n  *&a:RRA*=n$5 [line 23, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;
-"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA_init\nFormals:  self:RRA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA_init\nFormals:  self:RRA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
 	
 
 	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" ;
 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" [label="2: Exit RRA_init \n  " color=yellow style=filled]
 	
 
-"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 19, column 10]\n  *&return:objc_object*=n$0 [line 19, column 3]\n " shape="box"]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:RRA* [line 17, column 10]\n  *&return:objc_object*=n$0 [line 17, column 3]\n " shape="box"]
 	
 
 	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" ;

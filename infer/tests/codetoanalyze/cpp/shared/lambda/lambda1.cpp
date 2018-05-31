@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 int bar() {
@@ -40,14 +38,12 @@ int capture_by_ref() {
 }
 
 int init_capture1() {
-  return [i = 0]() { return i; }
-  ();
+  return [i = 0]() { return i; }();
 }
 
 int init_capture2() {
   int i = 0;
-  return [ a = i, b = 0, c = 3 ]() { return a + b + c; }
-  ();
+  return [a = i, b = 0, c = 3]() { return a + b + c; }();
 }
 
 class Capture {
@@ -56,7 +52,7 @@ class Capture {
   }
 
   void capture_star_this() {
-    auto lambda = [*this](){
+    auto lambda = [*this]() {
 
     };
   }

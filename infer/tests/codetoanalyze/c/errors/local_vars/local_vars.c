@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2013 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 int m1(int z) {
@@ -22,17 +20,17 @@ int m1(int z) {
 }
 
 int m2(int z) {
-    int y = 0;
-    int x = 5;
-    if (z < 10) {
-        int x = 7;
-        if (x == 6)
-            return x / y;
-    }
-    if (x == 5)
-        return x / y;
-    else
-        return 0;
+  int y = 0;
+  int x = 5;
+  if (z < 10) {
+    int x = 7;
+    if (x == 6)
+      return x / y;
+  }
+  if (x == 5)
+    return x / y;
+  else
+    return 0;
 }
 
 int mm() {

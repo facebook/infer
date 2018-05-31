@@ -1,94 +1,94 @@
 /* @generated */
 digraph cfg {
-"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_1" [label="1: Start div0_namespace_resolution\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_1" [label="1: Start div0_namespace_resolution\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
 	 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_1" -> "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" ;
 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_2" [label="2: Exit div0_namespace_resolution \n  " color=yellow style=filled]
 	
 
-"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get() [line 24, column 47]\n  n$1=_fun_f2::get() [line 24, column 59]\n  *&return:int=(1 / (n$0 + n$1)) [line 24, column 35]\n " shape="box"]
+"div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get() [line 22, column 47]\n  n$1=_fun_f2::get() [line 22, column 59]\n  *&return:int=(1 / (n$0 + n$1)) [line 22, column 35]\n " shape="box"]
 	
 
 	 "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_3" -> "div0_namespace_resolution#14165120127941064123.2433829c6d52c7e69a43e89e30e4c7fc_2" ;
-"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_1" [label="1: Start div0_using\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_1" [label="1: Start div0_using\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 
 	 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_1" -> "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" ;
 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_2" [label="2: Exit div0_using \n  " color=yellow style=filled]
 	
 
-"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get0() [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n " shape="box"]
+"div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" [label="3:  Return Stmt \n   n$0=_fun_f1::get0() [line 19, column 14]\n  *&return:int=(1 / n$0) [line 19, column 3]\n " shape="box"]
 	
 
 	 "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_3" -> "div0_using#4232634229583313075.9331f51b08b546cc4cf3f4b4f22e46ff_2" ;
-"get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_1" [label="1: Start f1::get\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 1]\n " color=yellow style=filled]
+"get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_1" [label="1: Start f1::get\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 1]\n " color=yellow style=filled]
 	
 
 	 "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_1" -> "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_3" ;
 "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_2" [label="2: Exit f1::get \n  " color=yellow style=filled]
 	
 
-"get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11, column 13]\n " shape="box"]
+"get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_3" [label="3:  Return Stmt \n   *&return:int=1 [line 9, column 13]\n " shape="box"]
 	
 
 	 "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_3" -> "get#f1#11182918362941702717.40a87222281cbcdb639beb16ed92bf79_2" ;
-"get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_1" [label="1: Start f2::get\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_1" [label="1: Start f2::get\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
 	
 
 	 "get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_1" -> "get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_3" ;
 "get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_2" [label="2: Exit f2::get \n  " color=yellow style=filled]
 	
 
-"get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_3" [label="3:  Return Stmt \n   *&return:int=-1 [line 16, column 13]\n " shape="box"]
+"get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_3" [label="3:  Return Stmt \n   *&return:int=-1 [line 14, column 13]\n " shape="box"]
 	
 
 	 "get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_3" -> "get#f2#4584566886545893232.5a8ac538c5463a04db693a70ff1f379b_2" ;
-"get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_1" [label="1: Start f1::get0\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
+"get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_1" [label="1: Start f1::get0\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
 	
 
 	 "get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_1" -> "get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_3" ;
 "get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_2" [label="2: Exit f1::get0 \n  " color=yellow style=filled]
 	
 
-"get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_3" [label="3:  Return Stmt \n   *&return:int=0 [line 12, column 14]\n " shape="box"]
+"get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_3" [label="3:  Return Stmt \n   *&return:int=0 [line 10, column 14]\n " shape="box"]
 	
 
 	 "get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_3" -> "get0#f1#8249585443771353912.5f8dd295c37fb33ddae3c72efc338f89_2" ;
-"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" [label="1: Start type_alias_div0\nFormals: \nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 38, column 1]\n " color=yellow style=filled]
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" [label="1: Start type_alias_div0\nFormals: \nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 36, column 1]\n " color=yellow style=filled]
 	
 
 	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_1" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" ;
 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_2" [label="2: Exit type_alias_div0 \n  " color=yellow style=filled]
 	
 
-"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 41, column 14]\n  *&return:int=(1 / n$0) [line 41, column 3]\n " shape="box"]
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 39, column 14]\n  *&return:int=(1 / n$0) [line 39, column 3]\n " shape="box"]
 	
 
 	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_2" ;
-"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" [label="4:  DeclStmt \n   *&x:int=0 [line 40, column 3]\n " shape="box"]
+"type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" [label="4:  DeclStmt \n   *&x:int=0 [line 38, column 3]\n " shape="box"]
 	
 
 	 "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_4" -> "type_alias_div0#11064282270104671255.675c026241b82e6430f7456d997b57b4_3" ;
-"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_1" [label="1: Start using_div0\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
+"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_1" [label="1: Start using_div0\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 31, column 1]\n " color=yellow style=filled]
 	
 
 	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_1" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" ;
 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" [label="2: Exit using_div0 \n  " color=yellow style=filled]
 	
 
-"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C_ret_zero() [line 35, column 14]\n  *&return:int=(1 / n$1) [line 35, column 3]\n " shape="box"]
+"using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C_ret_zero() [line 33, column 14]\n  *&return:int=(1 / n$1) [line 33, column 3]\n " shape="box"]
 	
 
 	 "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_3" -> "using_div0#15267107907897398237.0f32134dc9668df527885e12e16348fe_2" ;
-"ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_1" [label="1: Start f3::C_ret_zero\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29, column 3]\n " color=yellow style=filled]
+"ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_1" [label="1: Start f3::C_ret_zero\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 3]\n " color=yellow style=filled]
 	
 
 	 "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_1" -> "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_3" ;
 "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_2" [label="2: Exit f3::C_ret_zero \n  " color=yellow style=filled]
 	
 
-"ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 29, column 27]\n " shape="box"]
+"ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 27, column 27]\n " shape="box"]
 	
 
 	 "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_3" -> "ret_zero#C#f3#(14815103288805165028).4dbfdc84a3e84f15300709ed03f3f5c1_2" ;

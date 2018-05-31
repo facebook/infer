@@ -1,145 +1,171 @@
 (*
- * Copyright (c) 2015 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  *)
 
 open! Core
 module F = Format
 
-let copyright_modified_exit_code = 1
+type copyright_event = CopyrightMalformed | CopyrightModified
 
-let copyright_malformed_exit_code = 3
+exception CopyrightEvent of copyright_event
 
-(* error code 2 is for OCaml uncaught exceptions *)
+let exit_code_of_event = function CopyrightModified -> 1 | CopyrightMalformed -> 3
 
 type comment_style =
   | Line of string * bool
       (** line comments, eg "#" for shell, and whether there should be a
                               newline before the copyright notice *)
-  | Block of string * string * string  (** block comments, eg ("(*", "*", "*)") for ocaml *)
+  | Block of string * string * string * bool  (** block comments, eg ("(*", "*", "*)") for ocaml *)
+[@@deriving compare]
 
-let comment_style_ocaml = Block ("(*", "*", "*)")
+let equal_comment_style = [%compare.equal : comment_style]
 
-let comment_style_c = Block ("/*", "*", "*/")
+let comment_style_al = Line ("//", false)
 
-let comment_style_shell = Line ("#", true)
-
-let comment_style_make = Line ("#", false)
+let comment_style_c = Block ("/*", "*", "*/", false)
 
 let comment_style_llvm = Line (";", true)
 
-let comment_styles =
-  [ comment_style_ocaml
-  ; comment_style_c
-  ; comment_style_shell
-  ; comment_style_llvm
-  ; comment_style_make ]
+let comment_style_m4 = Line ("dnl", false)
+
+let comment_style_make = Line ("#", false)
+
+let comment_style_ocaml = Block ("(*", "*", "*)", false)
+
+let comment_style_php = Line ("//", true)
+
+let comment_style_python = Line ("#", false)
+
+let comment_style_shell = Line ("#", true)
+
+let comment_styles_lang =
+  [ (comment_style_al, "AL")
+  ; (comment_style_c, "C")
+  ; (comment_style_llvm, "LLVM")
+  ; (comment_style_m4, "M4")
+  ; (comment_style_make, "Makefile")
+  ; (comment_style_ocaml, "OCaml")
+  ; (comment_style_php, "PHP")
+  ; (comment_style_python, "python")
+  ; (comment_style_shell, "shell") ]
 
 
-let lang_of_com_style style =
-  if style = comment_style_ocaml then "ocaml"
-  else if style = comment_style_c then "c"
-  else if style = comment_style_shell then "shell"
-  else if style = comment_style_llvm then "llvm"
-  else if style = comment_style_make then "make"
-  else "??unknown??"
+let lang_of_comment_style style =
+  List.Assoc.find_exn ~equal:equal_comment_style comment_styles_lang style
 
 
-let default_start_line_of_com_style style =
-  match style with Line (_, true) -> 2 | Line (_, false) -> 0 | Block _ -> 0
+let comment_styles = List.map comment_styles_lang ~f:fst
+
+let starts_with_newline = function
+  | Line (_, starts_with_newline) | Block (_, _, _, starts_with_newline) ->
+      starts_with_newline
 
 
-let prefix_of_comment_style = function
+let default_start_line_of_com_style style = if starts_with_newline style then 1 else 0
+
+let indent_of_comment_style = function
   | Line _ ->
       ""
-  | Block (_, inter, _) ->
+  | Block (_, inter, _, _) ->
       String.make (String.length inter) ' '
 
+
+let keep_going = ref false
 
 (** If true, update the copyright message of the files. *)
 let update_files = ref false
 
+let show_diff = ref false
+
 let line_contains_copyright line = String.is_substring ~substring:"opyright " line
 
-let rec find_copyright_line lines n =
-  match lines with
-  | [] ->
-      None
-  | line :: lines' ->
-      if line_contains_copyright line then Some n else find_copyright_line lines' (n + 1)
+let find_copyright_line lines =
+  List.findi lines ~f:(fun _ line -> line_contains_copyright line) |> Option.map ~f:fst
 
 
-let find_comment_start_and_style lines_arr n =
-  (* are we in a line comment? *)
-  let cur_line_comment =
-    List.find comment_styles ~f:(function
-      | Line (s, starts_with_newline) when String.is_prefix ~prefix:s lines_arr.(n) ->
-          if starts_with_newline then n <> 0 else true
-      | _ ->
-          false )
-  in
-  let is_start line =
-    match cur_line_comment with
-    | Some (Line _) ->
-        cur_line_comment
-    | _ ->
-        List.find comment_styles ~f:(function
-          | Block (s, _, _) ->
-              String.is_substring ~substring:s line
-          | _ ->
-              false )
-  in
-  let i = ref (max (n - 1) 0) in
-  (* hacky fake line comment to avoid an option type *)
-  let found = ref (-1, Line (">>>>>>>>>>>", false)) in
-  while !i >= 0 && fst !found = -1 do
-    match is_start lines_arr.(!i) with Some style -> found := (!i, style) | None -> decr i
+let array_rev_find_mapi_from array ~from ~f =
+  let i = ref from in
+  let found = ref None in
+  while !i >= 0 && Option.is_none !found do
+    found := f !i array.(!i) ;
+    decr i
   done ;
   !found
 
 
-let find_comment_end lines_arr n com_style =
+let find_comment_start_and_style lines n =
+  (* are we in a line comment? *)
+  let cur_line_comment =
+    List.find comment_styles ~f:(function
+      | Line (s, starts_with_newline) when String.is_prefix ~prefix:s lines.(n) ->
+          if starts_with_newline then n <> 0 else true
+      | _ ->
+          false )
+  in
+  let is_start i line =
+    match cur_line_comment with
+    | Some (Line _) ->
+        cur_line_comment
+    | Some (Block _) | None ->
+        List.find comment_styles ~f:(function
+          | Block (s, _, _, starts_with_newline) when String.is_substring ~substring:s line ->
+              if starts_with_newline then i <> 0 else true
+          | _ ->
+              false )
+  in
+  let find_in_line i line = is_start i line |> Option.map ~f:(fun style -> (i, style)) in
+  array_rev_find_mapi_from lines ~from:n ~f:find_in_line
+
+
+let find_comment_end lines n com_style =
   let is_end line =
     match com_style with
     | Line (s, _) ->
-        not (String.is_prefix ~prefix:s line)
-    | Block (_, _, s) ->
-        String.is_substring ~substring:s line
+        (not (String.is_prefix ~prefix:s line), `After)
+    | Block (_, _, s, _) ->
+        (String.is_substring ~substring:s line, `OnIt)
   in
   let i = ref (n + 1) in
-  let len = Array.length lines_arr in
+  let len = Array.length lines in
   let found = ref (len - 1) in
   while !i < len && !found = len - 1 do
-    if is_end lines_arr.(!i) then found := !i ;
+    ( match is_end lines.(!i) with
+    | true, `OnIt ->
+        found := !i
+    | true, `After ->
+        found := !i - 1
+    | false, _ ->
+        () ) ;
     incr i
   done ;
   match com_style with Line _ -> !found | Block _ -> !found
 
 
 (** Heuristic to check if this looks like a copyright message. *)
-let looks_like_copyright_message cstart cend lines_arr =
+let looks_like_copyright_message cstart cend lines =
   let max_len = 100 in
   let check_len () =
     let ok = ref true in
-    for i = cstart to cend do if String.length lines_arr.(i) > max_len then ok := false done ;
+    for i = cstart to cend do if String.length lines.(i) > max_len then ok := false done ;
     !ok
   in
   cstart >= 0 && cend - cstart <= 10 && check_len ()
 
 
-let contains_monoidics cstart cend lines_arr =
+let contains_string ~substring cstart cend lines =
   let found = ref false in
-  for i = cstart to cend do
-    if String.is_substring ~substring:"Monoidics" lines_arr.(i) then found := true
-  done ;
+  for i = cstart to cend do if String.is_substring ~substring lines.(i) then found := true done ;
   !found
 
 
-let get_fb_year cstart cend lines_arr =
+let contains_monoidics cstart cend lines = contains_string ~substring:"Monoidics" cstart cend lines
+
+let contains_ropas cstart cend lines = contains_string ~substring:"ROPAS" cstart cend lines
+
+let get_copyright_year cstart cend lines =
   let found = ref None in
   let do_line line =
     try
@@ -151,141 +177,217 @@ let get_fb_year cstart cend lines_arr =
     with Caml.Not_found -> ()
   in
   for i = cstart to cend do
-    let line = lines_arr.(i) in
-    if String.is_substring ~substring:"Facebook" line then do_line line
+    let line = lines.(i) in
+    if String.is_substring ~substring:"Copyright" line then do_line line
   done ;
   !found
 
 
-let pp_copyright mono fb_year com_style fmt prefix_ =
-  let running_comment = match com_style with Line (s, _) | Block (_, s, _) -> s in
-  let prefix = prefix_ ^ running_comment in
-  let pp_line str = F.fprintf fmt "%s%s@\n" prefix str in
+let pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt =
+  let running_comment = match com_style with Line (s, _) | Block (_, s, _, _) -> s in
+  let indent = indent_of_comment_style com_style in
+  let pp_line str =
+    F.kfprintf (fun fmt -> F.fprintf fmt "@\n") fmt ("%s%s" ^^ str) indent running_comment
+  in
   let pp_start () =
-    match com_style with
-    | Line (_, starts_with_newline) ->
-        if starts_with_newline then F.fprintf fmt "@\n"
-    | Block (start, _, _) ->
-        F.fprintf fmt "%s@\n" start
+    match com_style with Line _ -> () | Block (start, _, _, _) -> F.fprintf fmt "%s@\n" start
   in
   let pp_end () =
     match com_style with
     | Line _ ->
-        F.fprintf fmt "@\n"
-    | Block (_, _, finish) ->
-        F.fprintf fmt "%s%s@\n" prefix_ finish
+        ()
+    | Block (_, _, finish, _) ->
+        F.fprintf fmt "%s%s@\n" indent finish
   in
   pp_start () ;
-  if mono then pp_line " Copyright (c) 2009 - 2013 Monoidics ltd." ;
-  pp_line (F.sprintf " Copyright (c) %d - present Facebook, Inc." fb_year) ;
-  pp_line " All rights reserved." ;
+  if ropas then (
+    pp_line " Copyright (c) %d-present" copyright_year ;
+    pp_line "" ;
+    pp_line " Programming Research Laboratory (ROPAS)" ;
+    pp_line " Seoul National University, Korea" )
+  else (
+    if monoidics then pp_line " Copyright (c) 2009-2013, Monoidics ltd." ;
+    pp_line " Copyright (c) %d-present, Facebook, Inc." copyright_year ) ;
   pp_line "" ;
-  pp_line " This source code is licensed under the BSD style license found in the" ;
-  pp_line " LICENSE file in the root directory of this source tree. An additional grant" ;
-  pp_line " of patent rights can be found in the PATENTS file in the same directory." ;
+  pp_line " This source code is licensed under the MIT license found in the" ;
+  pp_line " LICENSE file in the root directory of this source tree." ;
   pp_end ()
 
 
-let copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr =
+let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas
+    ~copyright_year com_style =
   let old_copyright =
     let r = ref "" in
-    for i = cstart to cend do r := !r ^ lines_arr.(i) ^ "\n" done ;
+    for i = cstart to cend do r := !r ^ lines.(i) ^ "\n" done ;
     !r
   in
   let new_copyright =
-    let pp fmt = pp_copyright mono fb_year com_style fmt prefix in
-    Format.asprintf "%t" pp
+    Format.asprintf "%t" (pp_copyright ~monoidics ~ropas ~copyright_year com_style)
   in
-  old_copyright <> new_copyright
-
-
-let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
-  try
-    let cout = Out_channel.create fname in
-    let fmt = F.formatter_of_out_channel cout in
-    for i = 0 to cstart - 1 do F.fprintf fmt "%s@." lines_arr.(i) done ;
-    pp_copyright mono fb_year com_style fmt prefix ;
-    for i = cend + 1 to Array.length lines_arr - 1 do F.fprintf fmt "%s@\n" lines_arr.(i) done ;
-    F.fprintf fmt "@?" ;
-    Out_channel.close cout
-  with _ -> ()
+  let changed = not (String.equal old_copyright new_copyright) in
+  if !show_diff && changed then (
+    let with_suffix fname suff = Filename.basename fname ^ suff in
+    let orig_fname = with_suffix fname ".orig" in
+    let new_fname = with_suffix fname ".new" in
+    Out_channel.write_lines orig_fname [old_copyright] ;
+    Out_channel.write_lines new_fname [new_copyright] ;
+    () ) ;
+  changed
 
 
 let com_style_of_lang =
-  [ (".ml", comment_style_ocaml)
+  [ (".ac", comment_style_m4)
+  ; (".al", comment_style_al)
+  ; (".c", comment_style_c)
+  ; (".cpp", comment_style_c)
+  ; (".h", comment_style_c)
+  ; (".java", comment_style_c)
+  ; (".ll", comment_style_llvm)
+  ; (".m", comment_style_c)
+  ; (".m4", comment_style_m4)
+  ; (".make", comment_style_make)
+  ; (".ml", comment_style_ocaml)
   ; (".mli", comment_style_ocaml)
-  ; (".mly", comment_style_c)
   ; (".mll", comment_style_ocaml)
+  ; (".mly", comment_style_c)
+  ; (".mm", comment_style_c)
+  ; (".php", comment_style_php)
+  ; (".py", comment_style_python)
   ; (".re", comment_style_c)
   ; (".rei", comment_style_c)
-  ; (".c", comment_style_c)
-  ; (".h", comment_style_c)
-  ; (".cpp", comment_style_c)
-  ; (".m", comment_style_c)
-  ; (".mm", comment_style_c)
-  ; (".ll", comment_style_llvm)
-  ; (".java", comment_style_c)
   ; (".sh", comment_style_shell)
-  ; (".py", comment_style_shell)
-  ; ("Makefile", comment_style_make)
-  ; (".make", comment_style_make) ]
+  ; ("Makefile", comment_style_make) ]
 
 
-let file_should_have_copyright fname =
-  List.Assoc.mem com_style_of_lang ~equal:Filename.check_suffix fname
+let comment_style_of_filename fname =
+  List.Assoc.find com_style_of_lang ~equal:Filename.check_suffix fname
 
 
-let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix =
-  let range = cend - cstart in
-  let lang = lang_of_com_style com_style in
-  F.eprintf "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@." fname cstart n
-    cend len range lang mono fb_year ;
-  for i = cstart to cend do F.printf "%s@." lines_arr.(i) done ;
-  F.printf "-----@." ;
-  F.printf "@[<v>%a@]" (pp_copyright mono fb_year com_style) prefix ;
-  if !update_files then update_file fname mono fb_year com_style prefix cstart cend lines_arr
+let output_diff ~fname lines ?notice_range ?(monoidics= false) ?(ropas= false) ~copyright_year
+    com_style =
+  let lang = lang_of_comment_style com_style in
+  let pp_range_opt fmt = function
+    | None ->
+        F.pp_print_string fmt "none"
+    | Some (s, e) ->
+        F.fprintf fmt "%d-%d" s e
+  in
+  F.eprintf "%s (lang:%s notice:%a monoidics:%b ropas:%b year:%d)\n%!" fname lang pp_range_opt
+    notice_range monoidics ropas copyright_year ;
+  let pp_newfile fmt =
+    let copy_lines_before, copy_lines_after =
+      match notice_range with
+      | Some (s, e) ->
+          (s - 1, e + 1)
+      | None ->
+          let insert_notice_at = default_start_line_of_com_style com_style in
+          (insert_notice_at - 1, insert_notice_at)
+    in
+    for i = 0 to copy_lines_before do F.fprintf fmt "%s\n" lines.(i) done ;
+    if
+      starts_with_newline com_style && copy_lines_before > 0 && lines.(copy_lines_before - 1) <> ""
+    then F.fprintf fmt "@\n" ;
+    pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt ;
+    for i = copy_lines_after to Array.length lines - 1 do F.fprintf fmt "%s\n" lines.(i) done ;
+    F.fprintf fmt "%!"
+  in
+  if !update_files then
+    Out_channel.with_file fname ~f:(fun cout ->
+        let fmt = F.formatter_of_out_channel cout in
+        pp_newfile fmt )
+  else pp_newfile F.std_formatter
 
 
 let check_copyright fname =
-  let lines = In_channel.with_file fname ~f:In_channel.input_lines in
-  let lines_arr = Array.of_list lines in
-  match find_copyright_line lines 0 with
-  | None ->
-      if file_should_have_copyright fname then (
-        let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
-        let com_style = List.Assoc.find_exn com_style_of_lang ~equal:Filename.check_suffix fname in
-        let prefix = prefix_of_comment_style com_style in
-        let start = default_start_line_of_com_style com_style in
-        output_diff fname lines_arr start (-1) (-1) 0 false year com_style prefix ;
-        Pervasives.exit copyright_modified_exit_code )
-  | Some n ->
-      let line = lines_arr.(n) in
-      let cstart, com_style = find_comment_start_and_style lines_arr n in
-      let cend = find_comment_end lines_arr n com_style in
-      if looks_like_copyright_message cstart cend lines_arr then (
-        let mono = contains_monoidics cstart cend lines_arr in
-        match get_fb_year cstart cend lines_arr with
+  let lines_list = In_channel.read_lines fname in
+  let lines = Array.of_list lines_list in
+  match (find_copyright_line lines_list, comment_style_of_filename fname) with
+  | None, None ->
+      ()
+  | None, Some com_style ->
+      let copyright_year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
+      output_diff ~fname lines ~copyright_year com_style ;
+      raise (CopyrightEvent CopyrightModified)
+  | Some n, fname_com_style ->
+      let cstart, contents_com_style =
+        find_comment_start_and_style lines n |> Option.value ~default:(0, Line ("#", false))
+      in
+      let com_style =
+        match fname_com_style with
         | None ->
-            F.eprintf "Can't find fb year: %s@." fname ;
-            Pervasives.exit copyright_malformed_exit_code
-        | Some fb_year ->
-            let prefix = prefix_of_comment_style com_style in
-            if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then (
-              let len = String.length line in
-              output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix ;
-              Pervasives.exit copyright_modified_exit_code ) )
-      else (
+            contents_com_style
+        | Some fname_com_style ->
+            let inferred_styles_agree =
+              match (fname_com_style, contents_com_style) with
+              | Line (fs, _), Line (cs, _) ->
+                  String.equal fs cs
+              | Block (fstart, fbody, fend, _), Block (cstart, cbody, cend, _) ->
+                  String.equal fstart cstart && String.equal fbody cbody && String.equal fend cend
+              | _ ->
+                  false
+            in
+            if not inferred_styles_agree then (
+              F.eprintf
+                "Inferred comment style doesn't match the filename '%s':@\n\
+                 From the filename I was expecting the %s comment style, but looking inside the \
+                 file I found %s instead.@."
+                fname
+                (lang_of_comment_style fname_com_style)
+                (lang_of_comment_style contents_com_style) ;
+              raise (CopyrightEvent CopyrightMalformed) ) ;
+            fname_com_style
+      in
+      (* hack to detect shebangs regardless of the inferred style *)
+      let com_style =
+        match com_style with
+        | Line ("#", false) when String.is_prefix ~prefix:"#!" lines.(0) ->
+            comment_style_shell
+        | _ ->
+            com_style
+      in
+      let cend = find_comment_end lines n com_style in
+      if not (looks_like_copyright_message cstart cend lines) then (
         F.eprintf "Copyright not recognized: %s@." fname ;
-        Pervasives.exit copyright_malformed_exit_code )
+        raise (CopyrightEvent CopyrightMalformed) ) ;
+      let monoidics = contains_monoidics cstart cend lines in
+      let ropas = contains_ropas cstart cend lines in
+      match get_copyright_year cstart cend lines with
+      | None ->
+          F.eprintf "Can't find copyright year: %s@." fname ;
+          raise (CopyrightEvent CopyrightMalformed)
+      | Some copyright_year ->
+          if
+            copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas
+              ~copyright_year com_style
+          then (
+            output_diff ~fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas ~copyright_year
+              com_style ;
+            raise (CopyrightEvent CopyrightModified) )
 
 
-let speclist = [("-i", Arg.Set update_files, "Update copyright notice in-place")]
+let speclist =
+  [ ("-i", Arg.Set update_files, "Update copyright notice in-place")
+  ; ("--inplace", Arg.Set update_files, "Update copyright notice in-place")
+  ; ("-k", Arg.Set keep_going, "Exit with code 0 no matter what")
+  ; ("--keep-going", Arg.Set keep_going, "Exit with code 0 no matter what")
+  ; ( "--show-diff"
+    , Arg.Set show_diff
+    , "Write file.orig and file.new files to inspect the differences found" ) ]
 
-let usage_msg = "checkCopyright [-i] file1 ..."
+
+let usage_msg = "checkCopyright [-i] [-k] [--show-diff] file1 ..."
 
 let () =
   let to_check = ref [] in
-  let add_file_to_check fname = to_check := fname :: !to_check in
+  let add_file_to_check fname =
+    (* hack: LICENSE looks copyrightable but is not... *)
+    if not (String.is_prefix ~prefix:"LICENSE" (Filename.basename fname)) then
+      to_check := fname :: !to_check
+  in
   Arg.parse (Arg.align speclist) add_file_to_check usage_msg ;
-  List.iter ~f:check_copyright (List.rev !to_check) ;
-  Pervasives.exit 0
+  let to_check = List.rev !to_check in
+  let exit_code = ref 0 in
+  List.iter to_check ~f:(fun file ->
+      try check_copyright file with CopyrightEvent event ->
+        if not !keep_going then exit_code := exit_code_of_event event ) ;
+  exit !exit_code

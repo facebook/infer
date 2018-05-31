@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 #include <mutex>
 
@@ -24,9 +22,7 @@ void no_alarm1(std::mutex& m) {
   }
 }
 
-void ensure_locked(std::mutex& m) {
-  m.try_lock();
-}
+void ensure_locked(std::mutex& m) { m.try_lock(); }
 
 void ensure_unlocked(std::mutex& m) {
   ensure_locked(m);

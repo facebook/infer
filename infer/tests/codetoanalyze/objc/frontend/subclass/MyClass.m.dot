@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_1" [label="1: Start MyClass_myNumber\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
+"myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_1" [label="1: Start MyClass_myNumber\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
 	
 
 	 "myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_1" -> "myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_3" ;
 "myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_2" [label="2: Exit MyClass_myNumber \n  " color=yellow style=filled]
 	
 
-"myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_3" [label="3:  Return Stmt \n   *&return:int=1 [line 15, column 3]\n " shape="box"]
+"myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13, column 3]\n " shape="box"]
 	
 
 	 "myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_3" -> "myNumber#MyClass#instance.b5167e9607437362e48461937478a06c_2" ;

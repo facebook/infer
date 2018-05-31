@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_1" [label="1: Start conversion_operator::branch_div0\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 34, column 1]\n " color=yellow style=filled]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_1" [label="1: Start conversion_operator::branch_div0\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 32, column 1]\n " color=yellow style=filled]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_1" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" ;
 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_2" [label="2: Exit conversion_operator::branch_div0 \n  " color=yellow style=filled]
 	
 
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 40, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 40, column 10]\n  *&return:int=n$1 [line 40, column 3]\n  _=*&x:conversion_operator::X [line 40, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 40, column 10]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 38, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 38, column 10]\n  *&return:int=n$1 [line 38, column 3]\n  _=*&x:conversion_operator::X [line 38, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 38, column 10]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_3" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_2" ;
@@ -15,39 +15,39 @@ digraph cfg {
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_4" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_3" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 36, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 36, column 7]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 34, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 34, column 7]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_6" ;
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_7" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 36, column 7]\n " shape="invhouse"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 34, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_6" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 36, column 7]\n " shape="invhouse"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 34, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_7" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_4" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 38, column 16]\n  *&return:int=(1 / n$7) [line 38, column 5]\n  _=*&x:conversion_operator::X [line 38, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 38, column 16]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 36, column 16]\n  *&return:int=(1 / n$7) [line 36, column 5]\n  _=*&x:conversion_operator::X [line 36, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 36, column 16]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_2" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 37, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 37, column 13]\n  *&v:int=n$12 [line 37, column 5]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 35, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 35, column 13]\n  *&v:int=n$12 [line 35, column 5]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_9" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_8" ;
-"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,1:_Bool) [line 35, column 5]\n " shape="box"]
+"branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,1:_Bool) [line 33, column 5]\n " shape="box"]
 	
 
 	 "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_10" -> "branch_div0#conversion_operator#6762751670974669482.0ad6ec49c1dc8988836c6e44e9d2b402_5" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_1" [label="1: Start conversion_operator::branch_div1\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 63, column 1]\n " color=yellow style=filled]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_1" [label="1: Start conversion_operator::branch_div1\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 61, column 1]\n " color=yellow style=filled]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_1" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" ;
 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_2" [label="2: Exit conversion_operator::branch_div1 \n  " color=yellow style=filled]
 	
 
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 69, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 69, column 10]\n  *&return:int=n$1 [line 69, column 3]\n  _=*&x:conversion_operator::X [line 69, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 69, column 10]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 67, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 67, column 10]\n  *&return:int=n$1 [line 67, column 3]\n  _=*&x:conversion_operator::X [line 67, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 67, column 10]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_3" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_2" ;
@@ -55,39 +55,39 @@ digraph cfg {
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_4" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_3" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 65, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 65, column 7]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 63, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 63, column 7]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_6" ;
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_7" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 65, column 7]\n " shape="invhouse"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 63, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_6" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 65, column 7]\n " shape="invhouse"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 63, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_7" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_4" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 67, column 16]\n  *&return:int=(1 / n$7) [line 67, column 5]\n  _=*&x:conversion_operator::X [line 67, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 67, column 16]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 65, column 16]\n  *&return:int=(1 / n$7) [line 65, column 5]\n  _=*&x:conversion_operator::X [line 65, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 65, column 16]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_2" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 66, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 66, column 13]\n  *&v:int=n$12 [line 66, column 5]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 64, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 64, column 13]\n  *&v:int=n$12 [line 64, column 5]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_9" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_8" ;
-"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,1:int,1:_Bool) [line 64, column 5]\n " shape="box"]
+"branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,1:int,1:_Bool) [line 62, column 5]\n " shape="box"]
 	
 
 	 "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_10" -> "branch_div1#conversion_operator#6025807300888085665.f3ee34cea9ff5d10407119d4b377adc2_5" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_1" [label="1: Start conversion_operator::branch_no_div\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 54, column 1]\n " color=yellow style=filled]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_1" [label="1: Start conversion_operator::branch_no_div\nFormals: \nLocals:  v:int x:conversion_operator::X \n   DECLARE_LOCALS(&return,&v,&x); [line 52, column 1]\n " color=yellow style=filled]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_1" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" ;
 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_2" [label="2: Exit conversion_operator::branch_no_div \n  " color=yellow style=filled]
 	
 
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 60, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 60, column 10]\n  *&return:int=n$1 [line 60, column 3]\n  _=*&x:conversion_operator::X [line 60, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 60, column 10]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_3" [label="3:  Return Stmt \n   _=*&x:conversion_operator::X [line 58, column 10]\n  n$1=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 58, column 10]\n  *&return:int=n$1 [line 58, column 3]\n  _=*&x:conversion_operator::X [line 58, column 10]\n  n$3=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 58, column 10]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_3" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_2" ;
@@ -95,39 +95,39 @@ digraph cfg {
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_4" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_3" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 56, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 56, column 7]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&x:conversion_operator::X [line 54, column 7]\n  n$6=_fun_conversion_operator::X_operator_bool(&x:conversion_operator::X&) [line 54, column 7]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_6" ;
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_7" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 56, column 7]\n " shape="invhouse"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_6" [label="6: Prune (true branch, if) \n   PRUNE(n$6, true); [line 54, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_6" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 56, column 7]\n " shape="invhouse"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$6, false); [line 54, column 7]\n " shape="invhouse"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_7" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_4" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 58, column 16]\n  *&return:int=(1 / n$7) [line 58, column 5]\n  _=*&x:conversion_operator::X [line 58, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 58, column 16]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" [label="8:  Return Stmt \n   n$7=*&v:int [line 56, column 16]\n  *&return:int=(1 / n$7) [line 56, column 5]\n  _=*&x:conversion_operator::X [line 56, column 16]\n  n$9=_fun_conversion_operator::X_~X(&x:conversion_operator::X*) [line 56, column 16]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_2" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 57, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 57, column 13]\n  *&v:int=n$12 [line 57, column 5]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" [label="9:  DeclStmt \n   _=*&x:conversion_operator::X [line 55, column 13]\n  n$12=_fun_conversion_operator::X_operator_int(&x:conversion_operator::X&) [line 55, column 13]\n  *&v:int=n$12 [line 55, column 5]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_9" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_8" ;
-"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,0:_Bool) [line 55, column 5]\n " shape="box"]
+"branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" [label="10:  DeclStmt \n   n$15=_fun_conversion_operator::X_X(&x:conversion_operator::X*,0:int,0:_Bool) [line 53, column 5]\n " shape="box"]
 	
 
 	 "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_10" -> "branch_no_div#conversion_operator#18429458682592639842.4c7cf0cc20989fd2ea431840e11b2521_5" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" [label="1: Start conversion_operator::y_branch_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X const  v:int 0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X const  y:conversion_operator::Y \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmp__temp_construct_n$8,&0$?%__sil_tmpSIL_materialize_temp__n$9,&v,&0$?%__sil_tmp__temp_construct_n$17,&0$?%__sil_tmpSIL_materialize_temp__n$18,&y); [line 43, column 1]\n " color=yellow style=filled]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" [label="1: Start conversion_operator::y_branch_div0\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X const  v:int 0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X 0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X const  y:conversion_operator::Y \n   DECLARE_LOCALS(&return,&0$?%__sil_tmp__temp_construct_n$0,&0$?%__sil_tmpSIL_materialize_temp__n$1,&0$?%__sil_tmp__temp_construct_n$8,&0$?%__sil_tmpSIL_materialize_temp__n$9,&v,&0$?%__sil_tmp__temp_construct_n$17,&0$?%__sil_tmpSIL_materialize_temp__n$18,&y); [line 41, column 1]\n " color=yellow style=filled]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_1" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" ;
 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" [label="2: Exit conversion_operator::y_branch_div0 \n  " color=yellow style=filled]
 	
 
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" [label="3:  Return Stmt \n   _=*&y:conversion_operator::Y [line 51, column 13]\n  n$4=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X*) [line 51, column 13]\n  n$5=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 51, column 10]\n  n$6=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X&) [line 51, column 10]\n  *&return:int=n$6 [line 51, column 3]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" [label="3:  Return Stmt \n   _=*&y:conversion_operator::Y [line 49, column 13]\n  n$4=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X*) [line 49, column 13]\n  n$5=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 49, column 10]\n  n$6=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmp__temp_construct_n$0:conversion_operator::X&) [line 49, column 10]\n  *&return:int=n$6 [line 49, column 3]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" ;
@@ -135,106 +135,106 @@ digraph cfg {
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_4" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_3" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&y:conversion_operator::Y [line 47, column 10]\n  n$12=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X*) [line 47, column 10]\n  n$13=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X const &) [line 47, column 7]\n  n$14=_fun_conversion_operator::X_operator_bool(&0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X&) [line 47, column 7]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" [label="5:  Call _fun_conversion_operator::X_operator_bool \n   _=*&y:conversion_operator::Y [line 45, column 10]\n  n$12=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X*) [line 45, column 10]\n  n$13=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$9:conversion_operator::X const &) [line 45, column 7]\n  n$14=_fun_conversion_operator::X_operator_bool(&0$?%__sil_tmp__temp_construct_n$8:conversion_operator::X&) [line 45, column 7]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" ;
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$14, true); [line 47, column 7]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" [label="6: Prune (true branch, if) \n   PRUNE(n$14, true); [line 45, column 7]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_6" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$14, false); [line 47, column 7]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$14, false); [line 45, column 7]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_7" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_4" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" [label="8:  Return Stmt \n   n$15=*&v:int [line 49, column 16]\n  *&return:int=(1 / n$15) [line 49, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" [label="8:  Return Stmt \n   n$15=*&v:int [line 47, column 16]\n  *&return:int=(1 / n$15) [line 47, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_2" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" [label="9:  DeclStmt \n   _=*&y:conversion_operator::Y [line 48, column 16]\n  n$21=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X*) [line 48, column 16]\n  n$22=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X const &) [line 48, column 13]\n  n$23=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X&) [line 48, column 13]\n  *&v:int=n$23 [line 48, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" [label="9:  DeclStmt \n   _=*&y:conversion_operator::Y [line 46, column 16]\n  n$21=_fun_conversion_operator::Y_operator_X(&y:conversion_operator::Y&,&0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X*) [line 46, column 16]\n  n$22=_fun_conversion_operator::X_X(&0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$18:conversion_operator::X const &) [line 46, column 13]\n  n$23=_fun_conversion_operator::X_operator_int(&0$?%__sil_tmp__temp_construct_n$17:conversion_operator::X&) [line 46, column 13]\n  *&v:int=n$23 [line 46, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_9" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_8" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_10" [label="10:  BinaryOperatorStmt: Assign \n   *&y.b:int=1 [line 46, column 3]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_10" [label="10:  BinaryOperatorStmt: Assign \n   *&y.b:int=1 [line 44, column 3]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_10" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_5" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" [label="11:  BinaryOperatorStmt: Assign \n   *&y.f:int=0 [line 45, column 3]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" [label="11:  BinaryOperatorStmt: Assign \n   *&y.f:int=0 [line 43, column 3]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_10" ;
-"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" [label="12:  DeclStmt \n   n$26=_fun_conversion_operator::Y_Y(&y:conversion_operator::Y*) [line 44, column 5]\n " shape="box"]
+"y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" [label="12:  DeclStmt \n   n$26=_fun_conversion_operator::Y_Y(&y:conversion_operator::Y*) [line 42, column 5]\n " shape="box"]
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" ;
-"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_1" [label="1: Start conversion_operator::X_X\nFormals:  this:conversion_operator::X* x:conversion_operator::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 3]\n " color=yellow style=filled]
+"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_1" [label="1: Start conversion_operator::X_X\nFormals:  this:conversion_operator::X* x:conversion_operator::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 3]\n " color=yellow style=filled]
 	
 
 	 "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_1" -> "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_4" ;
 "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_2" [label="2: Exit conversion_operator::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:conversion_operator::X* [line 23, column 5]\n  n$2=*&x:conversion_operator::X const & [line 23, column 10]\n  n$3=*n$2.b_:_Bool [line 23, column 10]\n  *n$1.b_:_Bool=n$3 [line 23, column 5]\n " shape="box"]
+"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:conversion_operator::X* [line 21, column 5]\n  n$2=*&x:conversion_operator::X const & [line 21, column 10]\n  n$3=*n$2.b_:_Bool [line 21, column 10]\n  *n$1.b_:_Bool=n$3 [line 21, column 5]\n " shape="box"]
 	
 
 	 "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_3" -> "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_2" ;
-"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&this:conversion_operator::X* [line 22, column 5]\n  n$5=*&x:conversion_operator::X const & [line 22, column 10]\n  n$6=*n$5.f_:int [line 22, column 10]\n  *n$4.f_:int=n$6 [line 22, column 5]\n " shape="box"]
+"X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&this:conversion_operator::X* [line 20, column 5]\n  n$5=*&x:conversion_operator::X const & [line 20, column 10]\n  n$6=*n$5.f_:int [line 20, column 10]\n  *n$4.f_:int=n$6 [line 20, column 5]\n " shape="box"]
 	
 
 	 "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_4" -> "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_3" ;
-"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_1" [label="1: Start conversion_operator::X_X\nFormals:  this:conversion_operator::X* f:int b:_Bool\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 3]\n " color=yellow style=filled]
+"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_1" [label="1: Start conversion_operator::X_X\nFormals:  this:conversion_operator::X* f:int b:_Bool\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
 	
 
 	 "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_1" -> "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_4" ;
 "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_2" [label="2: Exit conversion_operator::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:conversion_operator::X* [line 19, column 5]\n  n$2=*&b:_Bool [line 19, column 10]\n  *n$1.b_:_Bool=n$2 [line 19, column 5]\n " shape="box"]
+"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&this:conversion_operator::X* [line 17, column 5]\n  n$2=*&b:_Bool [line 17, column 10]\n  *n$1.b_:_Bool=n$2 [line 17, column 5]\n " shape="box"]
 	
 
 	 "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_3" -> "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_2" ;
-"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&this:conversion_operator::X* [line 18, column 5]\n  n$4=*&f:int [line 18, column 10]\n  *n$3.f_:int=n$4 [line 18, column 5]\n " shape="box"]
+"X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_4" [label="4:  BinaryOperatorStmt: Assign \n   n$3=*&this:conversion_operator::X* [line 16, column 5]\n  n$4=*&f:int [line 16, column 10]\n  *n$3.f_:int=n$4 [line 16, column 5]\n " shape="box"]
 	
 
 	 "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_4" -> "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_3" ;
-"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" [label="1: Start conversion_operator::Y_Y\nFormals:  this:conversion_operator::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 8]\n " color=yellow style=filled]
+"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" [label="1: Start conversion_operator::Y_Y\nFormals:  this:conversion_operator::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 8]\n " color=yellow style=filled]
 	
 
 	 "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" -> "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" ;
 "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" [label="2: Exit conversion_operator::Y_Y \n  " color=yellow style=filled]
 	
 
-"operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_1" [label="1: Start conversion_operator::Y_operator_X\nFormals:  this:conversion_operator::Y* __return_param:conversion_operator::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 29, column 3]\n " color=yellow style=filled]
+"operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_1" [label="1: Start conversion_operator::Y_operator_X\nFormals:  this:conversion_operator::Y* __return_param:conversion_operator::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 27, column 3]\n " color=yellow style=filled]
 	
 
 	 "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_1" -> "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_3" ;
 "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_2" [label="2: Exit conversion_operator::Y_operator_X \n  " color=yellow style=filled]
 	
 
-"operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_3" [label="3:  Return Stmt \n   n$0=*&__return_param:conversion_operator::X* [line 29, column 18]\n  n$2=*&this:conversion_operator::Y* [line 29, column 27]\n  n$3=*n$2.f:int [line 29, column 27]\n  n$4=*&this:conversion_operator::Y* [line 29, column 30]\n  n$5=*n$4.b:int [line 29, column 30]\n  n$6=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const *,n$3:int,n$5:_Bool) [line 29, column 25]\n  n$7=_fun_conversion_operator::X_X(n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 29, column 25]\n " shape="box"]
+"operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_3" [label="3:  Return Stmt \n   n$0=*&__return_param:conversion_operator::X* [line 27, column 18]\n  n$2=*&this:conversion_operator::Y* [line 27, column 27]\n  n$3=*n$2.f:int [line 27, column 27]\n  n$4=*&this:conversion_operator::Y* [line 27, column 30]\n  n$5=*n$4.b:int [line 27, column 30]\n  n$6=_fun_conversion_operator::X_X(&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const *,n$3:int,n$5:_Bool) [line 27, column 25]\n  n$7=_fun_conversion_operator::X_X(n$0:conversion_operator::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const &) [line 27, column 25]\n " shape="box"]
 	
 
 	 "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_3" -> "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_2" ;
-"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" [label="1: Start conversion_operator::X_operator_bool\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" [label="1: Start conversion_operator::X_operator_bool\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
 	
 
 	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" ;
 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" [label="2: Exit conversion_operator::X_operator_bool \n  " color=yellow style=filled]
 	
 
-"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 14, column 28]\n  n$1=*n$0.b_:_Bool [line 14, column 28]\n  *&return:_Bool=n$1 [line 14, column 21]\n " shape="box"]
+"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 12, column 28]\n  n$1=*n$0.b_:_Bool [line 12, column 28]\n  *&return:_Bool=n$1 [line 12, column 21]\n " shape="box"]
 	
 
 	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" ;
-"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" [label="1: Start conversion_operator::X_operator_int\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 3]\n " color=yellow style=filled]
+"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" [label="1: Start conversion_operator::X_operator_int\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
 	
 
 	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" ;
 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" [label="2: Exit conversion_operator::X_operator_int \n  " color=yellow style=filled]
 	
 
-"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 13, column 27]\n  n$1=*n$0.f_:int [line 13, column 27]\n  *&return:int=n$1 [line 13, column 20]\n " shape="box"]
+"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 11, column 27]\n  n$1=*n$0.f_:int [line 11, column 27]\n  *&return:int=n$1 [line 11, column 20]\n " shape="box"]
 	
 
 	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" ;

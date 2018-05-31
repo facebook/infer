@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #include <functional>
@@ -25,7 +23,7 @@ void foo(std::weak_ptr<int> p) {
   auto self = p.lock();
   std::shared_ptr<int> x = joinT(self);
 }
-}
+} // namespace weak_ptr_lock_repro_small
 
 namespace weak_ptr_lock_repro_large {
 
@@ -58,9 +56,9 @@ class RDC : DC {
 
 std::shared_ptr<RDC> RDC::create(std::function<DCC()> cf) {
   auto dc = std::make_shared<RDC>();
-  dc->dcf =
-      [ cf = std::move(cf),
-        weakSelf = std::weak_ptr<RDC>(dc) ]() mutable->std::shared_ptr<DC> {
+  dc->dcf = [cf = std::move(cf),
+             weakSelf =
+                 std::weak_ptr<RDC>(dc)]() mutable -> std::shared_ptr<DC> {
     if (auto self = weakSelf.lock()) {
       return self->cdm->gdc([&]() mutable {
         auto c = cf();
@@ -72,7 +70,7 @@ std::shared_ptr<RDC> RDC::create(std::function<DCC()> cf) {
   };
   return dc;
 }
-}
+} // namespace weak_ptr_lock_repro_large
 
 namespace weak_ptr_owner_less {
 class K {};
@@ -88,4 +86,4 @@ class C {
   std::unordered_map<K, S> u;
 #endif
 };
-}
+} // namespace weak_ptr_owner_less

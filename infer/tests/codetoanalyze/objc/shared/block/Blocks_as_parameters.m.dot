@@ -1,28 +1,28 @@
 /* @generated */
 digraph cfg {
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 26, column 11]\n " color=yellow style=filled]
+"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 24, column 11]\n " color=yellow style=filled]
 	
 
 	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" ;
 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" [label="2: Exit objc_blockB_f_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 27, column 9]\n  *n$3.x:int=5 [line 27, column 9]\n " shape="box"]
+"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
 	
 
 	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" ;
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" ;
 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_2" [label="2: Exit B_f \n  " color=yellow style=filled]
 	
 
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 29, column 10]\n  n$1=*n$0.y:int [line 29, column 10]\n  *&return:int=n$1 [line 29, column 3]\n " shape="box"]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 27, column 10]\n  n$1=*n$0.y:int [line 27, column 10]\n  *&return:int=n$1 [line 27, column 3]\n " shape="box"]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_2" ;
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 25, column 10]\n  n$5=*n$4.h:int [line 25, column 10]\n  n$2=*&self:B* const  [line 26, column 11]\n  n$6=_fun_B_foo:and:(n$5:int,(_fun_objc_blockB_f_1,(n$2 &self:B* const )):_fn_(*)) block_params [line 25, column 3]\n " shape="box"]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" [label="4:  Message Call: foo:and: \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B_foo:and:(n$5:int,(_fun_objc_blockB_f_1,(n$2 &self:B* const )):_fn_(*)) block_params [line 23, column 3]\n " shape="box"]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_3" ;

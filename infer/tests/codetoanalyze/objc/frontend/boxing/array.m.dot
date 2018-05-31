@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  item:NSString* germanCars:NSArray* s:NSString* \n   DECLARE_LOCALS(&return,&item,&germanCars,&s); [line 12, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  item:NSString* germanCars:NSArray* s:NSString* \n   DECLARE_LOCALS(&return,&item,&germanCars,&s); [line 10, column 1]\n " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 30, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 28, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
@@ -15,36 +15,36 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: NE \n   n$0=*&item:NSString* [line 26, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  BinaryOperatorStmt: NE \n   n$0=*&item:NSString* [line 24, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 != null), true); [line 26, column 3]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (true branch, while) \n   PRUNE((n$0 != null), true); [line 24, column 3]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 != null), false); [line 26, column 3]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7: Prune (false branch, while) \n   PRUNE(!(n$0 != null), false); [line 24, column 3]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&germanCars:NSArray* [line 26, column 26]\n  n$2=_fun_NSArray_nextObject(n$1:NSArray*) virtual [line 26, column 3]\n  *&item:NSString*=n$2 [line 26, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&germanCars:NSArray* [line 24, column 26]\n  n$2=_fun_NSArray_nextObject(n$1:NSArray*) virtual [line 24, column 3]\n  *&item:NSString*=n$2 [line 24, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"%@\":char* const ) [line 27, column 11]\n  n$4=*&item:NSString* [line 27, column 18]\n  n$5=_fun_NSLog(n$3:objc_object*,n$4:NSString*) [line 27, column 5]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"%@\":char* const ) [line 25, column 11]\n  n$4=*&item:NSString* [line 25, column 18]\n  n$5=_fun_NSLog(n$3:objc_object*,n$4:NSString*) [line 25, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$7=*&germanCars:NSArray* [line 26, column 26]\n  n$8=_fun_NSArray_nextObject(n$7:NSArray*) virtual [line 26, column 3]\n  *&item:NSString*=n$8 [line 26, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  BinaryOperatorStmt: Assign \n   n$7=*&germanCars:NSArray* [line 24, column 26]\n  n$8=_fun_NSArray_nextObject(n$7:NSArray*) virtual [line 24, column 3]\n  *&item:NSString*=n$8 [line 24, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  BinaryOperatorStmt: Assign \n   n$9=*&germanCars:NSArray* [line 24, column 7]\n  n$10=_fun_NSArray_objectAtIndexedSubscript:(n$9:NSArray*,3:unsigned long) virtual [line 24, column 7]\n  *&s:NSString*=n$10 [line 24, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  BinaryOperatorStmt: Assign \n   n$9=*&germanCars:NSArray* [line 22, column 7]\n  n$10=_fun_NSArray_objectAtIndexedSubscript:(n$9:NSArray*,3:unsigned long) virtual [line 22, column 7]\n  *&s:NSString*=n$10 [line 22, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$16=_fun_NSString_stringWithUTF8String:(\"Mercedes-Benz\":char* const ) [line 17, column 5]\n  n$11=_fun_NSString_stringWithUTF8String:(\"BMW\":char* const ) [line 18, column 5]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Porsche\":char* const ) [line 19, column 5]\n  n$13=_fun_NSString_stringWithUTF8String:(\"Opel\":char* const ) [line 20, column 5]\n  n$14=_fun_NSString_stringWithUTF8String:(\"Volkswagen\":char* const ) [line 21, column 5]\n  n$15=_fun_NSString_stringWithUTF8String:(\"Audi\":char* const ) [line 22, column 5]\n  n$17=_fun_NSArray_arrayWithObjects:count:(n$16:objc_object*,n$11:objc_object*,n$12:objc_object*,n$13:objc_object*,n$14:objc_object*,n$15:objc_object*,null:objc_object*) [line 16, column 25]\n  *&germanCars:NSArray*=n$17 [line 16, column 3]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   n$16=_fun_NSString_stringWithUTF8String:(\"Mercedes-Benz\":char* const ) [line 15, column 5]\n  n$11=_fun_NSString_stringWithUTF8String:(\"BMW\":char* const ) [line 16, column 5]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Porsche\":char* const ) [line 17, column 5]\n  n$13=_fun_NSString_stringWithUTF8String:(\"Opel\":char* const ) [line 18, column 5]\n  n$14=_fun_NSString_stringWithUTF8String:(\"Volkswagen\":char* const ) [line 19, column 5]\n  n$15=_fun_NSString_stringWithUTF8String:(\"Audi\":char* const ) [line 20, column 5]\n  n$17=_fun_NSArray_arrayWithObjects:count:(n$16:objc_object*,n$11:objc_object*,n$12:objc_object*,n$13:objc_object*,n$14:objc_object*,n$15:objc_object*,null:objc_object*) [line 14, column 25]\n  *&germanCars:NSArray*=n$17 [line 14, column 3]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;

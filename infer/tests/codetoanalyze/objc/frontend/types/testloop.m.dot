@@ -1,35 +1,35 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_1" [label="1: Start __infer_globals_initializer___iPadVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_1" [label="1: Start __infer_globals_initializer___iPadVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_1" -> "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" ;
 "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_2" [label="2: Exit __infer_globals_initializer___iPadVideoAdLayout \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderWidth:float=554 [line 26, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderHeight:float=350 [line 26, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentLeftSidePadding:float=140 [line 26, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentRightSidePadding:float=60 [line 26, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.additionalPlaceholderOffset:float=40 [line 26, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentGap:float=11 [line 26, column 52]\n " shape="box"]
+"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderWidth:float=554 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderHeight:float=350 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentLeftSidePadding:float=140 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentRightSidePadding:float=60 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.additionalPlaceholderOffset:float=40 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentGap:float=11 [line 24, column 52]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" -> "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_2" ;
-"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_1" [label="1: Start __infer_globals_initializer___iPhoneVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 35, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_1" [label="1: Start __infer_globals_initializer___iPhoneVideoAdLayout\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_1" -> "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" ;
 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_2" [label="2: Exit __infer_globals_initializer___iPhoneVideoAdLayout \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float=244 [line 35, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float=175 [line 35, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float=20 [line 35, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float=20 [line 35, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float=0 [line 35, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float=7 [line 35, column 54]\n " shape="box"]
+"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float=244 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float=175 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float=0 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float=7 [line 33, column 54]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" -> "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_2" ;
-"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_1" [label="1: Start FBScrollViewDelegateProxy_layoutToUse\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 44, column 1]\n " color=yellow style=filled]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_1" [label="1: Start FBScrollViewDelegateProxy_layoutToUse\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 1]\n " color=yellow style=filled]
 	
 
 	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_1" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" ;
 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" [label="2: Exit FBScrollViewDelegateProxy_layoutToUse \n  " color=yellow style=filled]
 	
 
-"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout [line 45, column 10]\n  *&return:FBVideoAdLayout=n$0 [line 45, column 3]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout [line 43, column 10]\n  *&return:FBVideoAdLayout=n$0 [line 43, column 3]\n " shape="box"]
 	
 
 	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;

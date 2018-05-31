@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2016 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
@@ -325,8 +323,7 @@ class vector {
 
 template <class _Tp, class _Allocator>
 typename vector<_Tp, _Allocator>::size_type vector<_Tp, _Allocator>::max_size()
-    const noexcept {
-}
+    const noexcept {}
 
 template <class _Tp, class _Allocator>
 vector<_Tp, _Allocator>::vector(size_type __n) {

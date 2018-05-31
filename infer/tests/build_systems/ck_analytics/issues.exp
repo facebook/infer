@@ -21,7 +21,5 @@ TestComponentKitAnalytics.mm, Linters_dummy_method, 19, COMPONENT_FILE_LINE_COUN
 TestComponentKitAnalytics.mm, Linters_dummy_method, 20, COMPONENT_FILE_LINE_COUNT, INFO, []
 TestComponentKitAnalytics.mm, Linters_dummy_method, 21, COMPONENT_FILE_LINE_COUNT, INFO, []
 TestComponentKitAnalytics.mm, Linters_dummy_method, 22, COMPONENT_FILE_LINE_COUNT, INFO, []
-TestComponentKitAnalytics.mm, Linters_dummy_method, 23, COMPONENT_FILE_LINE_COUNT, INFO, []
-TestComponentKitAnalytics.mm, Linters_dummy_method, 24, COMPONENT_FILE_LINE_COUNT, INFO, []
+TestComponentKitAnalytics.mm, SomeClass_new, 14, COMPONENT_FILE_CYCLOMATIC_COMPLEXITY, INFO, []
 TestComponentKitAnalytics.mm, SomeClass_new, 16, COMPONENT_FILE_CYCLOMATIC_COMPLEXITY, INFO, []
-TestComponentKitAnalytics.mm, SomeClass_new, 18, COMPONENT_FILE_CYCLOMATIC_COMPLEXITY, INFO, []

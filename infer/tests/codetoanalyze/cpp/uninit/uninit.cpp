@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 #include <algorithm>
@@ -68,9 +66,8 @@ void use_square_ok1() {
 int use_square_ok2() {
 
   int i;
-  i = square_no_init(
-      2, i); // OK only for intraprocedural case. When analysis extended
-             // to interprocedural, it should report.
+  i = square_no_init(2, i); // OK only for intraprocedural case. When analysis
+                            // extended to interprocedural, it should report.
   return i;
 }
 
@@ -209,8 +206,7 @@ void init_capture_read_ok() {
   [x = 0]() {
     int y = x;
     return;
-  }
-  ();
+  }();
 }
 
 void init_capture_ok() {

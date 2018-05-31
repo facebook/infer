@@ -1,9 +1,7 @@
-dnl Copyright (c) 2015 - present Facebook, Inc.
-dnl All rights reserved.
+dnl Copyright (c) 2015-present, Facebook, Inc.
 dnl
-dnl This source code is licensed under the BSD style license found in the
-dnl LICENSE file in the root directory of this source tree. An additional grant
-dnl of patent rights can be found in the PATENTS file in the same directory.
+dnl This source code is licensed under the MIT license found in the
+dnl LICENSE file in the root directory of this source tree.
 
 dnl AC_CHECK_PYTHON_MODULE([python],[module])
 dnl

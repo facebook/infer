@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" [label="1: Start init_with_scoped_var\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 17, column 1]\n " color=yellow style=filled]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" [label="1: Start init_with_scoped_var\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 15, column 1]\n " color=yellow style=filled]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" ;
@@ -11,36 +11,36 @@ digraph cfg {
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_3" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" [label="4:  DeclStmt \n   *&i:int=10 [line 19, column 8]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" [label="4:  DeclStmt \n   *&i:int=10 [line 17, column 8]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_3" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 19, column 31]\n  *&i:int=(n$1 - 1) [line 19, column 31]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 17, column 31]\n  *&i:int=(n$1 - 1) [line 17, column 31]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_3" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 19, column 24]\n  PRUNE(n$2, true); [line 19, column 24]\n " shape="invhouse"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 17, column 24]\n  PRUNE(n$2, true); [line 17, column 24]\n " shape="invhouse"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 19, column 24]\n  PRUNE(!n$2, false); [line 19, column 24]\n " shape="invhouse"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 17, column 24]\n  PRUNE(!n$2, false); [line 17, column 24]\n " shape="invhouse"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_2" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" [label="8:  DeclStmt \n   n$3=*&i:int [line 19, column 28]\n  *&x:int=n$3 [line 19, column 20]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" [label="8:  DeclStmt \n   n$3=*&i:int [line 17, column 28]\n  *&x:int=n$3 [line 17, column 20]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_6" ;
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_8" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_7" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$5=*&x:int [line 20, column 15]\n  n$6=*&result:int [line 20, column 5]\n  *&result:int=(n$6 + n$5) [line 20, column 5]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$5=*&x:int [line 18, column 15]\n  n$6=*&result:int [line 18, column 5]\n  *&result:int=(n$6 + n$5) [line 18, column 5]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_9" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_5" ;
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" [label="10:  DeclStmt \n   *&result:int=0 [line 18, column 3]\n " shape="box"]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" [label="10:  DeclStmt \n   *&result:int=0 [line 16, column 3]\n " shape="box"]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" [label="1: Start simple_init\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 10, column 1]\n " color=yellow style=filled]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" [label="1: Start simple_init\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 8, column 1]\n " color=yellow style=filled]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_10" ;
@@ -51,32 +51,32 @@ digraph cfg {
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_3" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_4" [label="4:  DeclStmt \n   *&i:int=0 [line 12, column 8]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_4" [label="4:  DeclStmt \n   *&i:int=0 [line 10, column 8]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_4" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_3" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 12, column 30]\n  *&i:int=(n$1 + 1) [line 12, column 30]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" [label="5:  UnaryOperator \n   n$1=*&i:int [line 10, column 30]\n  *&i:int=(n$1 + 1) [line 10, column 30]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_3" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 12, column 23]\n  PRUNE(n$2, true); [line 12, column 23]\n " shape="invhouse"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" [label="6: Prune (true branch, for loop) \n   n$2=*&x:int [line 10, column 23]\n  PRUNE(n$2, true); [line 10, column 23]\n " shape="invhouse"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 12, column 23]\n  PRUNE(!n$2, false); [line 12, column 23]\n " shape="invhouse"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" [label="7: Prune (false branch, for loop) \n   n$2=*&x:int [line 10, column 23]\n  PRUNE(!n$2, false); [line 10, column 23]\n " shape="invhouse"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_2" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" [label="8:  DeclStmt \n   *&x:int=2 [line 12, column 19]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" [label="8:  DeclStmt \n   *&x:int=2 [line 10, column 19]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_6" ;
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_8" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_7" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&x:int [line 13, column 15]\n  n$5=*&result:int [line 13, column 5]\n  *&result:int=(n$5 + n$4) [line 13, column 5]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&x:int [line 11, column 15]\n  n$5=*&result:int [line 11, column 5]\n  *&result:int=(n$5 + n$4) [line 11, column 5]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_9" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_5" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_10" [label="10:  DeclStmt \n   *&result:int=0 [line 11, column 3]\n " shape="box"]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_10" [label="10:  DeclStmt \n   *&result:int=0 [line 9, column 3]\n " shape="box"]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_10" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_4" ;

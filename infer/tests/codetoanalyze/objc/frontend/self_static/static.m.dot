@@ -1,57 +1,57 @@
 /* @generated */
 digraph cfg {
-"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:MyClass* \n   DECLARE_LOCALS(&return,&myClass); [line 20, column 1]\n " color=yellow style=filled]
+"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:MyClass* \n   DECLARE_LOCALS(&return,&myClass); [line 18, column 1]\n " color=yellow style=filled]
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" ;
 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" [label="2: Exit MyClass_aClassMethod \n  " color=yellow style=filled]
 	
 
-"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 21, column 22]\n  *&myClass:MyClass*=n$0 [line 21, column 3]\n " shape="box"]
+"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 19, column 22]\n  *&myClass:MyClass*=n$0 [line 19, column 3]\n " shape="box"]
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" ;
-"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" [label="1: Start MyClass_aClassMethod2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 1]\n " color=yellow style=filled]
+"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" [label="1: Start MyClass_aClassMethod2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
 	
 
 	 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" -> "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" ;
 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_2" [label="2: Exit MyClass_aClassMethod2 \n  " color=yellow style=filled]
 	
 
-"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" [label="3:  Message Call: aClassMethod \n   n$2=_fun_MyClass_aClassMethod() [line 29, column 3]\n " shape="box"]
+"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" [label="3:  Message Call: aClassMethod \n   n$2=_fun_MyClass_aClassMethod() [line 27, column 3]\n " shape="box"]
 	
 
 	 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" -> "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_2" ;
-"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" [label="1: Start MyClass_anInstanceMethod\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" [label="1: Start MyClass_anInstanceMethod\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" ;
 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" [label="2: Exit MyClass_anInstanceMethod \n  " color=yellow style=filled]
 	
 
-"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" [label="3:  Message Call: aClassMethod \n   n$1=_fun_MyClass_aClassMethod() [line 25, column 3]\n " shape="box"]
+"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" [label="3:  Message Call: aClassMethod \n   n$1=_fun_MyClass_aClassMethod() [line 23, column 3]\n " shape="box"]
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" ;
-"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" [label="1: Start MyClass_anInstanceMethod2\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 36, column 1]\n " color=yellow style=filled]
+"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" [label="1: Start MyClass_anInstanceMethod2\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" ;
 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" [label="2: Exit MyClass_anInstanceMethod2 \n  " color=yellow style=filled]
 	
 
-"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" [label="3:  Message Call: getX \n   n$3=*&self:MyClass* [line 37, column 4]\n  n$4=_fun_MyClass_getX(n$3:MyClass*) virtual [line 37, column 3]\n " shape="box"]
+"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" [label="3:  Message Call: getX \n   n$3=*&self:MyClass* [line 35, column 4]\n  n$4=_fun_MyClass_getX(n$3:MyClass*) virtual [line 35, column 3]\n " shape="box"]
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" ;
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
 	
 
 	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" ;
 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" [label="2: Exit MyClass_getX \n  " color=yellow style=filled]
 	
 
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" [label="3:  Return Stmt \n   *&return:int=0 [line 33, column 3]\n " shape="box"]
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" [label="3:  Return Stmt \n   *&return:int=0 [line 31, column 3]\n " shape="box"]
 	
 
 	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_2" ;

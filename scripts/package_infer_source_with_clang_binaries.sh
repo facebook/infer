@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Copyright (c) 2013 - present Facebook, Inc.
-# All rights reserved.
+# Copyright (c) 2013-present, Facebook, Inc.
 #
-# This source code is licensed under the BSD style license found in the
-# LICENSE file in the root directory of this source tree. An additional grant
-# of patent rights can be found in the PATENTS file in the same directory.
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
 
 set -x
 set -e
@@ -73,7 +71,7 @@ rsync -a "$ROOT_INFER_DIR"/configure "$PKG_DIR"/configure
 mkdir -pv "$PKG_CLANG_PREFIX"/{bin,lib,include}
 mkdir -pv "$PKG_PLUGIN_DIR"/libtooling/build
 mkdir -pv "$PKG_PLUGIN_DIR"/clang-ocaml/build
-rsync -a "$CLANG_PLUGIN_DIR"/{CONTRIBUTING.md,LICENSE,LLVM-LICENSE,PATENTS,README.md} "$PKG_PLUGIN_DIR"
+rsync -a "$CLANG_PLUGIN_DIR"/{CONTRIBUTING.md,LICENSE,LLVM-LICENSE,README.md} "$PKG_PLUGIN_DIR"
 rsync -a "$CLANG_PREFIX"/bin/clang* "$PKG_CLANG_PREFIX"/bin/
 rsync -a --exclude '*.a' "$CLANG_PREFIX"/lib/ "$PKG_CLANG_PREFIX"/lib/
 rsync -a "$CLANG_PREFIX"/include/ "$PKG_CLANG_PREFIX"/include/

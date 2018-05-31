@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2014 - present Facebook, Inc.
- * All rights reserved.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 int main1(int y) {
@@ -16,7 +14,6 @@ int main1(int y) {
   int (^addblock)(int a, int b);
 
   addblock = ^(int c, int d) {
-
     int (^addblock2)(int a);
     int add2;
     int bla = 3;

@@ -1,43 +1,43 @@
 /* @generated */
 digraph cfg {
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_1" [label="1: Start test_call\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 23, column 1]\n " color=yellow style=filled]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_1" [label="1: Start test_call\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 21, column 1]\n " color=yellow style=filled]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_1" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" ;
 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" [label="2: Exit test_call \n  " color=yellow style=filled]
 	
 
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$1=*&a_ptr:A* [line 26, column 3]\n  n$2=*n$1.in:A::AIn* [line 26, column 3]\n  _=*n$2:A::AIn [line 26, column 3]\n  n$4=_fun_A::AIn_fun(n$2:A::AIn*) [line 26, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" [label="3:  Call _fun_A::AIn_fun \n   n$1=*&a_ptr:A* [line 24, column 3]\n  n$2=*n$1.in:A::AIn* [line 24, column 3]\n  _=*n$2:A::AIn [line 24, column 3]\n  n$4=_fun_A::AIn_fun(n$2:A::AIn*) [line 24, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_2" ;
-"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$5=*&a_ptr:A* [line 25, column 3]\n  _=*n$5:A [line 25, column 3]\n  n$7=_fun_A_fun(n$5:A*) [line 25, column 3]\n " shape="box"]
+"test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" [label="4:  Call _fun_A_fun \n   n$5=*&a_ptr:A* [line 23, column 3]\n  _=*n$5:A [line 23, column 3]\n  n$7=_fun_A_fun(n$5:A*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_4" -> "test_call#15378839304774239070.15b3496769d2a65d506975ce94efc03a_3" ;
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" [label="1: Start A_fun\nFormals:  this:A*\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 17, column 3]\n " color=yellow style=filled]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" [label="1: Start A_fun\nFormals:  this:A*\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 15, column 3]\n " color=yellow style=filled]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_1" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" ;
 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" [label="2: Exit A_fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 19, column 12]\n  *&return:int=(n$0 + 1) [line 19, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" [label="3:  Return Stmt \n   n$0=*&c:int [line 17, column 12]\n  *&return:int=(n$0 + 1) [line 17, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_2" ;
-"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   *&c:int=10 [line 18, column 5]\n " shape="box"]
+"fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" [label="4:  DeclStmt \n   *&c:int=10 [line 16, column 5]\n " shape="box"]
 	
 
 	 "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_4" -> "fun#A#(6769533171018954461).6e614e38165b38606d6bb10131a47562_3" ;
-"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_1" [label="1: Start A::AIn_fun\nFormals:  this:A::AIn*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 5]\n " color=yellow style=filled]
+"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_1" [label="1: Start A::AIn_fun\nFormals:  this:A::AIn*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 5]\n " color=yellow style=filled]
 	
 
 	 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_1" -> "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" ;
 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_2" [label="2: Exit A::AIn_fun \n  " color=yellow style=filled]
 	
 
-"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13, column 17]\n " shape="box"]
+"fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11, column 17]\n " shape="box"]
 	
 
 	 "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_3" -> "fun#AIn#A#(17528145322324410262).de07a32bd66fbc8be90423f331f88c1d_2" ;

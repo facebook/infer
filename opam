@@ -6,7 +6,7 @@ authors: "Facebook"
 homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
 dev-repo: "https://github.com/facebook/infer.git"
-license: "BSD"
+license: "MIT"
 build: [
   ["./autogen.sh"]
   ["./configure"
