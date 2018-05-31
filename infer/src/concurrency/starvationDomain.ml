@@ -52,45 +52,29 @@ module Lock = struct
   let owner_class ((_, typ), _) = Typ.inner_name typ
 end
 
-module Event = struct
-  type severity_t = Low | Medium | High [@@deriving compare]
+module type TraceElem = sig
+  type elem_t
 
-  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
+  type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
-  let pp_event fmt = function
-    | LockAcquire lock ->
-        Lock.pp fmt lock
-    | MayBlock (msg, _) ->
-        F.pp_print_string fmt msg
+  include PrettyPrintable.PrintableOrderedType with type t := t
 
+  val make : elem_t -> Location.t -> t
 
-  type t = {event: event_t; loc: Location.t; trace: CallSite.t list}
+  val get_loc : t -> Location.t
 
-  let is_lock_event e = match e.event with LockAcquire _ -> true | _ -> false
+  val make_loc_trace : ?reverse:bool -> t -> Errlog.loc_trace
 
-  (* ignore trace when comparing *)
-  let compare e e' =
-    if phys_equal e e' then 0
-    else
-      let res = compare_event_t e.event e'.event in
-      if not (Int.equal res 0) then res else Location.compare e.loc e'.loc
+  val with_callsite : t -> CallSite.t -> t
+end
 
+module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
+  TraceElem with type elem_t = Elem.t =
+struct
+  type elem_t = Elem.t
 
-  let locks_equal e e' =
-    match (e.event, e'.event) with
-    | LockAcquire lock, LockAcquire lock' ->
-        Lock.equal lock lock'
-    | _, _ ->
-        false
-
-
-  let locks_equal_modulo_base e e' =
-    match (e.event, e'.event) with
-    | LockAcquire lock, LockAcquire lock' ->
-        Lock.equal_modulo_base lock lock'
-    | _, _ ->
-        false
-
+  type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
+  [@@deriving compare]
 
   let pp fmt e =
     let pp_trace fmt = function
@@ -99,23 +83,10 @@ module Event = struct
       | trace ->
           F.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
     in
-    F.fprintf fmt "%a at %a%a" pp_event e.event Location.pp e.loc pp_trace e.trace
+    F.fprintf fmt "%a at %a%a" Elem.pp e.elem Location.pp e.loc pp_trace e.trace
 
 
-  let make_acquire lock loc = {event= LockAcquire lock; loc; trace= []}
-
-  let make_blocks msg sev loc = {event= MayBlock (msg, sev); loc; trace= []}
-
-  let make_blocking_call ~caller ~callee sev loc =
-    let descr =
-      F.asprintf "calls %a from %a"
-        (MF.wrap_monospaced Typ.Procname.pp)
-        callee
-        (MF.wrap_monospaced Typ.Procname.pp)
-        caller
-    in
-    make_blocks descr sev loc
-
+  let make elem loc = {elem; loc; trace= []}
 
   let get_loc {loc; trace} = List.hd trace |> Option.value_map ~default:loc ~f:CallSite.loc
 
@@ -130,10 +101,69 @@ module Event = struct
           let elem = Errlog.make_trace_element ns (CallSite.loc callsite) elem_descr [] in
           (elem :: tr, ns + 1) )
     in
-    let endpoint_descr = F.asprintf "%a" pp_event e.event in
+    let endpoint_descr = F.asprintf "%a" Elem.pp e.elem in
     let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
     let res = endpoint :: call_trace in
     if reverse then res else List.rev res
+
+
+  let with_callsite elem callsite = {elem with trace= callsite :: elem.trace}
+end
+
+module Event = struct
+  type severity_t = Low | Medium | High [@@deriving compare]
+
+  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
+
+  let pp_event fmt = function
+    | LockAcquire lock ->
+        Lock.pp fmt lock
+    | MayBlock (msg, _) ->
+        F.pp_print_string fmt msg
+
+
+  include MakeTraceElem (struct
+    type t = event_t [@@deriving compare]
+
+    let pp = pp_event
+  end)
+
+  let is_lock_event e = match e.elem with LockAcquire _ -> true | _ -> false
+
+  let locks_equal e e' =
+    match (e.elem, e'.elem) with
+    | LockAcquire lock, LockAcquire lock' ->
+        Lock.equal lock lock'
+    | _, _ ->
+        false
+
+
+  let locks_equal_modulo_base e e' =
+    match (e.elem, e'.elem) with
+    | LockAcquire lock, LockAcquire lock' ->
+        Lock.equal_modulo_base lock lock'
+    | _, _ ->
+        false
+
+
+  let make_acquire lock loc = make (LockAcquire lock) loc
+
+  let make_blocking_call ~caller ~callee sev loc =
+    let descr =
+      F.asprintf "calls %a from %a"
+        (MF.wrap_monospaced Typ.Procname.pp)
+        callee
+        (MF.wrap_monospaced Typ.Procname.pp)
+        caller
+    in
+    make (MayBlock (descr, sev)) loc
+end
+
+module EventDomain = struct
+  include AbstractDomain.FiniteSet (Event)
+
+  let with_callsite astate callsite =
+    fold (fun e acc -> add (Event.with_callsite e callsite) acc) astate empty
 end
 
 module Order = struct
@@ -159,16 +189,14 @@ module Order = struct
   let make_eventually eventually = {first= None; eventually}
 
   let make_first_and_eventually b eventually =
-    if not (Event.is_lock_event b) then L.(die InternalError) "Expected a lock event first." ;
+    if not (Event.is_lock_event b) then L.(die InternalError) "Expected a lock elem first." ;
     {first= Some b; eventually}
 
 
-  let with_callsite callsite o =
-    {o with eventually= {o.eventually with Event.trace= callsite :: o.eventually.Event.trace}}
-
+  let with_callsite callsite o = {o with eventually= Event.with_callsite o.eventually callsite}
 
   let get_loc {first; eventually} =
-    match first with Some event -> Event.get_loc event | None -> Event.get_loc eventually
+    match first with Some elem -> Event.get_loc elem | None -> Event.get_loc eventually
 
 
   let make_loc_trace o =
@@ -197,7 +225,7 @@ module LockState = struct
   include AbstractDomain.InvertedMap (Lock) (LockStack)
 
   let is_taken lock_event map =
-    match lock_event.Event.event with
+    match lock_event.Event.elem with
     | Event.LockAcquire lock -> (
       try not (find lock map |> LockStack.is_empty) with Caml.Not_found -> false )
     | _ ->
@@ -237,21 +265,32 @@ end
 
 module UIThreadDomain = AbstractDomain.BottomLifted (UIThreadExplanationDomain)
 
-type astate = {lock_state: LockState.astate; order: OrderDomain.astate; ui: UIThreadDomain.astate}
+type astate =
+  { lock_state: LockState.astate
+  ; events: EventDomain.astate
+  ; order: OrderDomain.astate
+  ; ui: UIThreadDomain.astate }
 
-let empty = {lock_state= LockState.empty; order= OrderDomain.empty; ui= UIThreadDomain.empty}
+let empty =
+  { lock_state= LockState.empty
+  ; events= EventDomain.empty
+  ; order= OrderDomain.empty
+  ; ui= UIThreadDomain.empty }
 
-let is_empty {lock_state; order; ui} =
-  LockState.is_empty lock_state && OrderDomain.is_empty order && UIThreadDomain.is_empty ui
+
+let is_empty {lock_state; events; order; ui} =
+  UIThreadDomain.is_empty ui && EventDomain.is_empty events && OrderDomain.is_empty order
+  && LockState.is_empty lock_state
 
 
-let pp fmt {lock_state; order; ui} =
-  F.fprintf fmt "{lock_state= %a; order= %a; ui= %a}" LockState.pp lock_state OrderDomain.pp order
-    UIThreadDomain.pp ui
+let pp fmt {lock_state; events; order; ui} =
+  F.fprintf fmt "{lock_state= %a; events= %a; order= %a; ui= %a}" LockState.pp lock_state
+    EventDomain.pp events OrderDomain.pp order UIThreadDomain.pp ui
 
 
 let join lhs rhs =
   { lock_state= LockState.join lhs.lock_state rhs.lock_state
+  ; events= EventDomain.join lhs.events rhs.events
   ; order= OrderDomain.join lhs.order rhs.order
   ; ui= UIThreadDomain.join lhs.ui rhs.ui }
 
@@ -259,7 +298,9 @@ let join lhs rhs =
 let widen ~prev ~next ~num_iters:_ = join prev next
 
 let ( <= ) ~lhs ~rhs =
-  UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui && OrderDomain.( <= ) ~lhs:lhs.order ~rhs:rhs.order
+  UIThreadDomain.( <= ) ~lhs:lhs.ui ~rhs:rhs.ui
+  && EventDomain.( <= ) ~lhs:lhs.events ~rhs:rhs.events
+  && OrderDomain.( <= ) ~lhs:lhs.order ~rhs:rhs.order
   && LockState.( <= ) ~lhs:lhs.lock_state ~rhs:rhs.lock_state
 
 
@@ -283,25 +324,28 @@ let add_order_pairs order lock_event acc =
     LockState.fold_over_events add_first_and_eventually order acc |> add_eventually
 
 
-let acquire ({lock_state; order} as astate) loc lockid =
-  let newlock_event = Event.make_acquire lockid loc in
+let acquire ({lock_state; events; order} as astate) loc lockid =
+  let new_event = Event.make_acquire lockid loc in
   { astate with
-    lock_state= LockState.acquire lockid newlock_event lock_state
-  ; order= add_order_pairs lock_state newlock_event order }
+    lock_state= LockState.acquire lockid new_event lock_state
+  ; events= EventDomain.add new_event events
+  ; order= add_order_pairs lock_state new_event order }
 
 
-let blocking_call ~caller ~callee sev loc ({lock_state; order} as astate) =
-  let newlock_event = Event.make_blocking_call ~caller ~callee sev loc in
-  {astate with order= add_order_pairs lock_state newlock_event order}
+let blocking_call ~caller ~callee sev loc ({lock_state; events; order} as astate) =
+  let new_event = Event.make_blocking_call ~caller ~callee sev loc in
+  { astate with
+    events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
 
 
 let release ({lock_state} as astate) lockid =
   {astate with lock_state= LockState.release lockid lock_state}
 
 
-let integrate_summary ({lock_state; order; ui} as astate) callee_pname loc callee_summary =
+let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname loc callee_summary =
   let callee_order = callee_summary.order in
   let callee_ui = callee_summary.ui in
+  let callee_events = callee_summary.events in
   (* for each pair (b,a) in the callee, add (l,b) and (l,a) to the current state, where
      l is held locally *)
   let do_elem elem acc =
@@ -311,7 +355,10 @@ let integrate_summary ({lock_state; order; ui} as astate) callee_pname loc calle
   let callsite = CallSite.make callee_pname loc in
   (* add callsite to the "eventually" trace *)
   let elems = OrderDomain.with_callsite callsite callee_order in
-  {astate with order= OrderDomain.fold do_elem elems order; ui= UIThreadDomain.join ui callee_ui}
+  { astate with
+    events= EventDomain.join events (EventDomain.with_callsite callee_events callsite)
+  ; order= OrderDomain.fold do_elem elems order
+  ; ui= UIThreadDomain.join ui callee_ui }
 
 
 let set_on_ui_thread ({ui} as astate) explain =

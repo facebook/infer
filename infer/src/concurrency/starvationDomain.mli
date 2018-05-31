@@ -29,10 +29,12 @@ module Event : sig
 
   val pp_event : F.formatter -> event_t -> unit
 
-  type t = private {event: event_t; loc: Location.t; trace: CallSite.t list}
+  type t = private {elem: event_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 end
+
+module EventDomain : module type of AbstractDomain.FiniteSet (Event)
 
 (** Represents either
 - the existence of a program path from the current method to the eventual acquisition of a lock
@@ -64,7 +66,11 @@ module LockState : AbstractDomain.WithBottom
 module UIThreadDomain :
   AbstractDomain.WithBottom with type astate = string AbstractDomain.Types.bottom_lifted
 
-type astate = {lock_state: LockState.astate; order: OrderDomain.astate; ui: UIThreadDomain.astate}
+type astate =
+  { lock_state: LockState.astate
+  ; events: EventDomain.astate
+  ; order: OrderDomain.astate
+  ; ui: UIThreadDomain.astate }
 
 include AbstractDomain.WithBottom with type astate := astate
 

@@ -220,21 +220,21 @@ end
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   let open StarvationDomain in
   match (current_elem.Order.first, current_elem.Order.eventually) with
-  | None, _ | Some {Event.event= MayBlock _}, _ | _, {Event.event= MayBlock _} ->
+  | None, _ | Some {Event.elem= MayBlock _}, _ | _, {Event.elem= MayBlock _} ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" Order.pp current_elem
-  | Some {Event.event= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
-      (* first event is a class object (see [lock_of_class]), so always report because the
+  | Some {Event.elem= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
+      (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur *)
       true
-  | Some {Event.event= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
-  | _, {Event.event= LockAcquire ((Var.LogicalVar _, _), _)} ->
-      (* first event has an ident root, but has a non-empty access path, which means we are
+  | Some {Event.elem= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
+  | _, {Event.elem= LockAcquire ((Var.LogicalVar _, _), _)} ->
+      (* first elem has an ident root, but has a non-empty access path, which means we are
          not filtering out local variables (see [exec_instr]), or,
-         second event has an ident root, which should not happen if we are filtering locals *)
+         second elem has an ident root, which should not happen if we are filtering locals *)
       L.die InternalError "Deadlock cannot occur on these logical variables: %a @." Order.pp
         current_elem
-  | Some {Event.event= LockAcquire ((_, typ1), _)}, {Event.event= LockAcquire ((_, typ2), _)} ->
+  | Some {Event.elem= LockAcquire ((_, typ1), _)}, {Event.elem= LockAcquire ((_, typ2), _)} ->
       (* use string comparison on types as a stable order to decide whether to report a deadlock *)
       let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
       c < 0
@@ -264,7 +264,7 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
     else
       let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
       match (current_elem.Order.eventually, elem.Order.eventually) with
-      | {Event.event= LockAcquire _}, {Event.event= LockAcquire _} ->
+      | {Event.elem= LockAcquire _}, {Event.elem= LockAcquire _} ->
           let error_message =
             Format.asprintf
               "Potential deadlock.@.Trace 1 (starts at %a), %a.@.Trace 2 (starts at %a), %a."
@@ -283,12 +283,12 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
   in
   let report_on_current_elem elem report_map =
     match elem with
-    | {Order.first= None} | {Order.eventually= {Event.event= Event.MayBlock _}} ->
+    | {Order.first= None} | {Order.eventually= {Event.elem= Event.MayBlock _}} ->
         report_map
-    | {Order.eventually= {Event.event= Event.LockAcquire endpoint_lock}} ->
+    | {Order.eventually= {Event.elem= Event.LockAcquire endpoint_lock}} ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
-               (* get the class of the root variable of the lock in the endpoint event
+               (* get the class of the root variable of the lock in the endpoint elem
                    and retrieve all the summaries of the methods of that class *)
                let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
@@ -303,14 +303,14 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
   OrderDomain.fold report_on_current_elem order report_map'
 
 
-let report_blocks_on_main_thread tenv current_pdesc {StarvationDomain.order; ui} report_map' =
+let report_starvation tenv current_pdesc {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let report_remote_block ui_explain current_elem current_lock endpoint_pname endpoint_elem
       report_map =
     match endpoint_elem with
-    | { Order.first= Some {Event.event= Event.LockAcquire lock}
-      ; eventually= {Event.event= Event.MayBlock (block_descr, sev)} }
+    | { Order.first= Some {Event.elem= Event.LockAcquire lock}
+      ; eventually= {Event.elem= Event.MayBlock (block_descr, sev)} }
       when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
@@ -329,19 +329,19 @@ let report_blocks_on_main_thread tenv current_pdesc {StarvationDomain.order; ui}
   in
   let report_on_current_elem ui_explain ({Order.eventually} as elem) report_map =
     match eventually with
-    | {Event.event= Event.MayBlock (_, sev)} ->
+    | {Event.elem= Event.MayBlock (_, sev)} ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain Event.pp_event eventually.Event.event
+            current_pname ui_explain Event.pp_event eventually.Event.elem
         in
         let loc = Order.get_loc elem in
         let ltr = make_trace_with_header elem current_pname in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
-    | {Event.event= Event.LockAcquire endpoint_lock} ->
+    | {Event.elem= Event.LockAcquire endpoint_lock} ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
-               (* get the class of the root variable of the lock in the endpoint event
+               (* get the class of the root variable of the lock in the endpoint elem
                  and retrieve all the summaries of the methods of that class *)
                let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
@@ -367,7 +367,7 @@ let reporting {Callbacks.procedures; exe_env} =
     Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
     |> Option.iter ~f:(fun summary ->
            report_deadlocks tenv proc_desc summary ReportMap.empty
-           |> report_blocks_on_main_thread tenv proc_desc summary |> ReportMap.log )
+           |> report_starvation tenv proc_desc summary |> ReportMap.log )
   in
   List.iter procedures ~f:report_procedure ;
   let sourcefile = exe_env.Exe_env.source_file in
