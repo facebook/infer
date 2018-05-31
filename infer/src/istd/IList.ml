@@ -162,6 +162,4 @@ let rec drop list index =
   match list with _ :: tl when index > 0 -> drop tl (index - 1) | _ -> list
 
 
-let mem_nth list index = drop list index |> List.is_empty |> not
-
 let opt_cons opt list = match opt with Some x -> x :: list | None -> list
