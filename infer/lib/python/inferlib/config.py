@@ -45,7 +45,7 @@ PMD_XML_FILENAME = 'report.xml'
 IOS_CAPTURE_ERRORS = 'errors'
 IOS_BUILD_OUTPUT = 'build_output'
 
-LOG_FILE = 'toplevel.log'
+LOG_FILE = 'infer.py.log'
 
 BUCK_INFER_OUT = 'infer'
 
