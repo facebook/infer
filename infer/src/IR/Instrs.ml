@@ -28,7 +28,7 @@ let for_all = List.for_all
 
 let count = List.length
 
-let nth_exists instrs index = List.drop instrs index |> List.is_empty |> not
+let nth_exists instrs index = IList.drop instrs index |> List.is_empty |> not
 
 let nth_exn = List.nth_exn
 
