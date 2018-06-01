@@ -1,3 +1,3 @@
-codetoanalyze/cpp/conflicts/test.cpp, test1_bad, 2, NULL_DEREFERENCE, ERROR, [start of procedure test1_bad(),Skipping nullableMethod(): method has no implementation]
-codetoanalyze/cpp/conflicts/test.cpp, test2_bad, 1, NULLABLE_DEREFERENCE, ERROR, [dereferencing the return of nullableMethod(),definition of nullableMethod]
-codetoanalyze/cpp/conflicts/test.cpp, test3_bad, 5, NULL_DEREFERENCE, ERROR, [start of procedure test3_bad(),Skipping nullableMethod(): method has no implementation,Loop condition is true. Entering loop body,Skipping nullableMethod(): method has no implementation,Loop condition is false. Leaving loop]
+codetoanalyze/cpp/conflicts/test.cpp, test1_bad, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test1_bad(),Skipping nullableMethod(): method has no implementation]
+codetoanalyze/cpp/conflicts/test.cpp, test2_bad, 1, NULLABLE_DEREFERENCE, no_bucket, ERROR, [dereferencing the return of nullableMethod(),definition of nullableMethod]
+codetoanalyze/cpp/conflicts/test.cpp, test3_bad, 5, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test3_bad(),Skipping nullableMethod(): method has no implementation,Loop condition is true. Entering loop body,Skipping nullableMethod(): method has no implementation,Loop condition is false. Leaving loop]

@@ -1,1 +1,1 @@
-hello.c, test, 2, NULL_DEREFERENCE, ERROR, [start of procedure test()]
+hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]

@@ -1,3 +1,3 @@
-codetoanalyze/java/lab/Leaks.java, void Leaks.acquireTwoForgetOneBad(), 4, RESOURCE_LEAK, ERROR, []
-codetoanalyze/java/lab/Leaks.java, void Leaks.basicLeakBad(), 2, RESOURCE_LEAK, ERROR, []
-codetoanalyze/java/lab/Leaks.java, void Leaks.doubleLeakBad(), 3, RESOURCE_LEAK, ERROR, []
+codetoanalyze/java/lab/Leaks.java, void Leaks.acquireTwoForgetOneBad(), 4, RESOURCE_LEAK, no_bucket, ERROR, []
+codetoanalyze/java/lab/Leaks.java, void Leaks.basicLeakBad(), 2, RESOURCE_LEAK, no_bucket, ERROR, []
+codetoanalyze/java/lab/Leaks.java, void Leaks.doubleLeakBad(), 3, RESOURCE_LEAK, no_bucket, ERROR, []

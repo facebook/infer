@@ -313,6 +313,18 @@ let pp_custom_of_report fmt report fields =
           Format.fprintf fmt "%s%s" (comma_separator index) issue.kind
       | `Issue_field_bug_type ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.bug_type
+      | `Issue_field_bucket ->
+          let bucket =
+            match
+              String.lsplit2 issue.qualifier ~on:']' |> Option.map ~f:fst
+              |> Option.bind ~f:(String.chop_prefix ~prefix:"[")
+            with
+            | Some bucket ->
+                bucket
+            | None ->
+                "no_bucket"
+          in
+          Format.fprintf fmt "%s%s" (comma_separator index) bucket
       | `Issue_field_qualifier ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
       | `Issue_field_severity ->

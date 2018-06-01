@@ -1,1 +1,1 @@
-build_systems/codetoanalyze/path with spaces/hel lo.c, test_hel_lo, 2, NULL_DEREFERENCE, ERROR, [start of procedure test_hel_lo()]
+build_systems/codetoanalyze/path with spaces/hel lo.c, test_hel_lo, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test_hel_lo()]

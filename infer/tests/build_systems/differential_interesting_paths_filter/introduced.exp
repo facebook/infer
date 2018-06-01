@@ -1,2 +1,2 @@
-NULL_DEREFERENCE, src/com/example/DiffClass3.java, int DiffClassThree.doStuff3(), 1, com.example.DiffClassThree.doStuff3():int.d5d2e8b4c4f1e60721b0e4cebf811191, com.example.DiffClassThree.doStuff3():int
-NULL_DEREFERENCE, src/com/example/DiffClassUnchanged.java, int DiffClassUnchanged.tellMeTheLength(), 1, com.example.DiffClassUnchanged.tellMeTheLength():int.06e7bdb4fc272c724e2b9dfc4e5026dc, com.example.DiffClassUnchanged.tellMeTheLength():int
+NULL_DEREFERENCE, no_bucket, src/com/example/DiffClass3.java, int DiffClassThree.doStuff3(), 1, com.example.DiffClassThree.doStuff3():int.d5d2e8b4c4f1e60721b0e4cebf811191, com.example.DiffClassThree.doStuff3():int
+NULL_DEREFERENCE, no_bucket, src/com/example/DiffClassUnchanged.java, int DiffClassUnchanged.tellMeTheLength(), 1, com.example.DiffClassUnchanged.tellMeTheLength():int.06e7bdb4fc272c724e2b9dfc4e5026dc, com.example.DiffClassUnchanged.tellMeTheLength():int

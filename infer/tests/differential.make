@@ -11,7 +11,7 @@ include $(TESTS_DIR)/base.make
 INFER_OUT = infer-out
 EXPECTED_TEST_OUTPUT = introduced.exp.test
 INFERPRINT_ISSUES_FIELDS = \
-	"bug_type,file,procedure,line_offset,procedure_id,procedure_id_without_crc"
+	"bug_type,bucket,file,procedure,line_offset,procedure_id,procedure_id_without_crc"
 
 CURRENT_DIR = infer-out-current
 PREVIOUS_DIR = infer-out-previous

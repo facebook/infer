@@ -1,1 +1,1 @@
-src/some_different_bugs.c, test1, 2, NULL_DEREFERENCE, ERROR, [start of procedure test1()]
+src/some_different_bugs.c, test1, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test1()]

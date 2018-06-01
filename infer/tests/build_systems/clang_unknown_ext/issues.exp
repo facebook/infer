@@ -1,1 +1,1 @@
-hello.unknown_ext, test, 2, NULL_DEREFERENCE, ERROR, [start of procedure test()]
+hello.unknown_ext, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]

@@ -1,3 +1,3 @@
-hello.c, test, 2, NULL_DEREFERENCE, ERROR, [start of procedure test()]
-hello2.c, test2, 2, NULL_DEREFERENCE, ERROR, [start of procedure test2()]
-hello3.c, test3, 2, NULL_DEREFERENCE, ERROR, [start of procedure test3()]
+hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
+hello2.c, test2, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test2()]
+hello3.c, test3, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test3()]

@@ -51,6 +51,7 @@ let issues_fields_symbols =
   [ ("bug_class", `Issue_field_bug_class)
   ; ("kind", `Issue_field_kind)
   ; ("bug_type", `Issue_field_bug_type)
+  ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)
   ; ("severity", `Issue_field_severity)
   ; ("visibility", `Issue_field_visibility)
@@ -1430,6 +1431,7 @@ and issues_fields =
       ; `Issue_field_procedure
       ; `Issue_field_line_offset
       ; `Issue_field_bug_type
+      ; `Issue_field_bucket
       ; `Issue_field_kind
       ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
     "Fields to emit with $(b,--issues-tests)"

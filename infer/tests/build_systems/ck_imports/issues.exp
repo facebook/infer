@@ -1,1 +1,1 @@
-TestIgnoreImports.mm, SomeClass_new, 20, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, ADVICE, []
+TestIgnoreImports.mm, SomeClass_new, 20, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, no_bucket, ADVICE, []

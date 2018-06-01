@@ -1,1 +1,1 @@
-src/hello.c, test3, 3, MEMORY_LEAK, ERROR, [start of procedure test3(),Taking true branch]
+src/hello.c, test3, 3, MEMORY_LEAK, no_bucket, ERROR, [start of procedure test3(),Taking true branch]

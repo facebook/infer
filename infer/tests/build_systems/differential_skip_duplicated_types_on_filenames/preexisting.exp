@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, src/DiffExample.java, int DiffExample.triggerNpeRenamed(), 1, DiffExample.triggerNpeRenamed():int.3e4070b89fdefd2c64fd437530b8dda9, DiffExample.triggerNpeRenamed():int
+NULL_DEREFERENCE, no_bucket, src/DiffExample.java, int DiffExample.triggerNpeRenamed(), 1, DiffExample.triggerNpeRenamed():int.3e4070b89fdefd2c64fd437530b8dda9, DiffExample.triggerNpeRenamed():int

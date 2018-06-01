@@ -1,2 +1,2 @@
-src/hello.c, test, 2, NULL_DEREFERENCE, ERROR, [start of procedure test()]
-src/hello2.c, test2, 2, NULL_DEREFERENCE, ERROR, [start of procedure test2()]
+src/hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
+src/hello2.c, test2, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test2()]

@@ -1,2 +1,2 @@
-xcodebuild/simple_app/simple_app/AppDelegate.m, f, 2, NULL_DEREFERENCE, ERROR, [start of procedure f()]
-xcodebuild/simple_app/simple_app/ViewController.m, Linters_dummy_method, 13, STRONG_DELEGATE_WARNING, WARNING, []
+xcodebuild/simple_app/simple_app/AppDelegate.m, f, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure f()]
+xcodebuild/simple_app/simple_app/ViewController.m, Linters_dummy_method, 13, STRONG_DELEGATE_WARNING, no_bucket, WARNING, []

@@ -1,1 +1,1 @@
-codetoanalyze/c/uninit/uninit.c, dereference_bad, 2, UNINITIALIZED_VALUE, ERROR, []
+codetoanalyze/c/uninit/uninit.c, dereference_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
