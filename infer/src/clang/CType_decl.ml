@@ -79,21 +79,22 @@ module BuildMethodSignature = struct
   (** Returns parameters of a function/method. They will have following order:
             1. normal parameters
             2. return parameter (optional) *)
-  let get_parameters qual_type_to_sil_type ~is_cpp tenv ~block_return_type method_decl =
+  let get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl =
+    let open Clang_ast_t in
     let par_to_ms_par par =
       match par with
-      | Clang_ast_t.ParmVarDecl (_, name_info, qt, var_decl_info) ->
+      | ParmVarDecl (_, name_info, qt, var_decl_info) ->
           let method_decl_info = Clang_ast_proj.get_decl_tuple method_decl in
           let _, name =
             CGeneral_utils.get_var_name_mangled method_decl_info name_info var_decl_info
           in
-          let param_typ = qual_type_to_sil_type tenv qt in
           let typ =
-            match param_typ.Typ.desc with
-            | Tstruct _ when is_cpp ->
-                qual_type_to_sil_type tenv (Ast_expressions.create_reference_qual_type qt)
+            ( match CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr with
+            | Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _) ->
+                Ast_expressions.create_reference_qual_type qt
             | _ ->
-                param_typ
+                qt )
+            |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
           let is_value = CType.is_value qt in
@@ -126,8 +127,7 @@ module BuildMethodSignature = struct
     else (return_typ, None, return_typ_annot)
 
 
-  let method_signature_of_decl qual_type_to_sil_type ~is_cpp tenv method_decl ?block_return_type
-      procname =
+  let method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type procname =
     let decl_info = Clang_ast_proj.get_decl_tuple method_decl in
     let loc = decl_info.Clang_ast_t.di_source_range in
     let ret_type, return_param_typ, ret_typ_annot =
@@ -136,9 +136,7 @@ module BuildMethodSignature = struct
     let method_kind = CMethodProperties.get_method_kind method_decl in
     let pointer_to_parent = decl_info.di_parent_pointer in
     let class_param = get_class_param qual_type_to_sil_type tenv method_decl in
-    let params =
-      get_parameters qual_type_to_sil_type ~is_cpp tenv ~block_return_type method_decl
-    in
+    let params = get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl in
     let attributes = decl_info.Clang_ast_t.di_attributes in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
     let is_cpp_nothrow = CMethodProperties.is_cpp_nothrow method_decl in
@@ -159,13 +157,12 @@ module BuildMethodSignature = struct
     ; return_param_typ }
 
 
-  let method_signature_body_of_decl qual_type_to_sil_type ~is_cpp tenv method_decl
-      ?block_return_type procname =
+  let method_signature_body_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
+      procname =
     let body = CMethodProperties.get_method_body method_decl in
     let init_list_instrs = CMethodProperties.get_init_list_instrs method_decl in
     let ms =
-      method_signature_of_decl qual_type_to_sil_type ~is_cpp tenv method_decl ?block_return_type
-        procname
+      method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type procname
     in
     (ms, body, init_list_instrs)
 end

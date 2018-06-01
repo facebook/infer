@@ -33,12 +33,9 @@ val get_class_name_method_call_from_receiver_kind :
   CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Exp.t * Typ.t) list -> Typ.Name.t
 
 val get_class_name_method_call_from_clang :
-  CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.obj_c_message_expr_info
-  -> Typ.Name.t option
+  Tenv.t -> Clang_ast_t.obj_c_message_expr_info -> Typ.Name.t option
 
-val method_signature_of_pointer :
-  CFrontend_config.translation_unit_context -> Tenv.t -> Clang_ast_t.pointer
-  -> CMethodSignature.t option
+val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer -> CMethodSignature.t option
 
 val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Typ.Procname.t option
 

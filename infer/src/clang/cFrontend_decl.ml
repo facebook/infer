@@ -104,7 +104,6 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | None ->
             ([], None)
       in
-      let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
       let procname, block_return_type =
         match block_data_opt with
         | Some (_, block_return_type, procname, _) ->
@@ -113,7 +112,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             (CType_decl.CProcname.from_decl ~tenv func_decl, None)
       in
       let ms, body_opt, extra_instrs =
-        CType_decl.method_signature_body_of_decl ~is_cpp tenv func_decl ?block_return_type procname
+        CType_decl.method_signature_body_of_decl tenv func_decl ?block_return_type procname
       in
       match body_opt with
       | Some body ->
@@ -132,11 +131,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
   let process_method_decl ?(set_objc_accessor_attr= false) ?(is_destructor= false) trans_unit_ctx
       tenv cfg curr_class meth_decl ~is_objc =
-    let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
     try
       let ms, body_opt, extra_instrs =
         let procname = CType_decl.CProcname.from_decl ~tenv meth_decl in
-        CType_decl.method_signature_body_of_decl ~is_cpp tenv meth_decl procname
+        CType_decl.method_signature_body_of_decl tenv meth_decl procname
       in
       match body_opt with
       | Some body ->

@@ -33,8 +33,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ms_opt =
       match method_pointer_opt with
       | Some pointer ->
-          CMethod_trans.method_signature_of_pointer context.translation_unit_context context.tenv
-            pointer
+          CMethod_trans.method_signature_of_pointer context.tenv pointer
       | None ->
           None
     in
@@ -585,10 +584,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Option.iter ~f:(call_translation context) decl_opt ;
     let method_name = CAst_utils.get_unqualified_name name_info in
     L.(debug Capture Verbose) "!!!!! Dealing with method '%s' @." method_name ;
-    let ms_opt =
-      CMethod_trans.method_signature_of_pointer context.translation_unit_context context.tenv
-        decl_ptr
-    in
+    let ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
     let is_instance_method =
       match ms_opt with
       | Some {CMethodSignature.method_kind= CPP_INSTANCE | OBJC_INSTANCE} ->
@@ -1217,8 +1213,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match receiver_kind with
       | `Class qual_type ->
           let class_opt =
-            CMethod_trans.get_class_name_method_call_from_clang context.translation_unit_context
-              context.CContext.tenv obj_c_message_expr_info
+            CMethod_trans.get_class_name_method_call_from_clang context.CContext.tenv
+              obj_c_message_expr_info
           in
           Some (new_or_alloc_trans trans_state_pri sil_loc si qual_type class_opt selector)
       | _ ->

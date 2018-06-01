@@ -46,12 +46,11 @@ val class_from_pointer_type : Tenv.t -> Clang_ast_t.qual_type -> Typ.Name.t
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Tenv.t -> Typ.t
 
 val method_signature_of_decl :
-  is_cpp:bool -> Tenv.t -> Clang_ast_t.decl -> ?block_return_type:Clang_ast_t.qual_type
-  -> Typ.Procname.t -> CMethodSignature.t
+  Tenv.t -> Clang_ast_t.decl -> ?block_return_type:Clang_ast_t.qual_type -> Typ.Procname.t
+  -> CMethodSignature.t
 
 val method_signature_body_of_decl :
-  is_cpp:bool -> Tenv.t -> Clang_ast_t.decl -> ?block_return_type:Clang_ast_t.qual_type
-  -> Typ.Procname.t
+  Tenv.t -> Clang_ast_t.decl -> ?block_return_type:Clang_ast_t.qual_type -> Typ.Procname.t
   -> CMethodSignature.t
      * Clang_ast_t.stmt option
      * [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list

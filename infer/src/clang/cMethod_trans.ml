@@ -20,13 +20,12 @@ type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 
 let equal_method_call_type = [%compare.equal : method_call_type]
 
-let method_signature_of_pointer trans_unit_ctx tenv pointer =
-  let is_cpp = CGeneral_utils.is_cpp_translation trans_unit_ctx in
+let method_signature_of_pointer tenv pointer =
   try
     match CAst_utils.get_decl pointer with
     | Some meth_decl ->
         let procname = CType_decl.CProcname.from_decl ~tenv meth_decl in
-        let ms = CType_decl.method_signature_of_decl ~is_cpp tenv meth_decl procname in
+        let ms = CType_decl.method_signature_of_decl tenv meth_decl procname in
         Some ms
     | None ->
         None
@@ -78,10 +77,10 @@ let get_superclass_curr_class_objc context =
 
 
 (* Gets the class name from a method signature found by clang, if search is successful *)
-let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr_info =
+let get_class_name_method_call_from_clang tenv obj_c_message_expr_info =
   match obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
   | Some pointer -> (
-    match method_signature_of_pointer trans_unit_ctx tenv pointer with
+    match method_signature_of_pointer tenv pointer with
     | Some ms -> (
       match ms.CMethodSignature.name with
       | Typ.Procname.ObjC_Cpp objc_cpp ->
@@ -318,7 +317,7 @@ let create_external_procdesc cfg proc_name clang_method_kind type_opt =
 
 let create_procdesc_with_pointer context pointer class_name_opt name =
   let open CContext in
-  match method_signature_of_pointer context.translation_unit_context context.tenv pointer with
+  match method_signature_of_pointer context.tenv pointer with
   | Some callee_ms ->
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
