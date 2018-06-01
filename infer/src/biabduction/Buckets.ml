@@ -112,16 +112,16 @@ let check_access access_opt de_opt =
       in
       Instrs.exists ~f:filter (Procdesc.Node.get_instrs node)
     in
-    let local_access_found = ref false in
-    let do_node node =
+    let do_node local_access_found node =
       if
         Int.equal (Procdesc.Node.get_loc node).Location.line line_number
         && has_call_or_sets_null node
-      then local_access_found := true
+      then true
+      else local_access_found
     in
     let path, pos_opt = State.get_path () in
-    Paths.Path.iter_all_nodes_nocalls do_node path ;
-    if !local_access_found then
+    let local_access_found = Paths.Path.fold_all_nodes_nocalls path ~init:false ~f:do_node in
+    if local_access_found then
       let bucket =
         if null_case_flag then Localise.BucketLevel.b5
         else if check_nested_loop path pos_opt then Localise.BucketLevel.b3

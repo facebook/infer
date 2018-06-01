@@ -48,8 +48,8 @@ module Path : sig
   val add_description : t -> string -> t
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
 
-  val iter_all_nodes_nocalls : (Procdesc.Node.t -> unit) -> t -> unit
-  (** iterate over each node in the path, excluding calls, once *)
+  val fold_all_nodes_nocalls : (t, Procdesc.Node.t, 'accum) Container.fold
+  (** fold over each node in the path, excluding calls, once *)
 
   val iter_shortest_sequence :
     (int -> t -> int -> Typ.Name.t option -> unit) -> PredSymb.path_pos option -> t -> unit
@@ -251,10 +251,16 @@ end = struct
   end
 
   (* End of module Invariant *)
-  (** iterate over each node in the path, excluding calls, once *)
-  let iter_all_nodes_nocalls f path =
-    Invariant.compute_stats false (fun node -> f node ; true) path ;
-    Invariant.reset_stats path
+  (** fold over each node in the path, excluding calls, once *)
+  let fold_all_nodes_nocalls path ~init ~f =
+    let acc = ref init in
+    Invariant.compute_stats false
+      (fun node ->
+        acc := f !acc node ;
+        true )
+      path ;
+    Invariant.reset_stats path ;
+    !acc
 
 
   let get_path_pos node =
@@ -647,9 +653,8 @@ end = struct
   (** check if the nodes in path p1 are a subset of those in p2 (not trace subset) *)
   let path_nodes_subset p1 p2 =
     let get_nodes p =
-      let s = ref Procdesc.NodeSet.empty in
-      Path.iter_all_nodes_nocalls (fun n -> s := Procdesc.NodeSet.add n !s) p ;
-      !s
+      Path.fold_all_nodes_nocalls p ~init:Procdesc.NodeSet.empty ~f:(fun s n ->
+          Procdesc.NodeSet.add n s )
     in
     Procdesc.NodeSet.subset (get_nodes p1) (get_nodes p2)
 

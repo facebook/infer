@@ -542,12 +542,12 @@ module Pmap = Caml.Map.Make (struct
   let compare = Prop.compare_prop
 end)
 
-let vset_ref_add_path vset_ref path =
-  Paths.Path.iter_all_nodes_nocalls (fun n -> vset_ref := Procdesc.NodeSet.add n !vset_ref) path
+let vset_add_path vset path =
+  Paths.Path.fold_all_nodes_nocalls path ~init:vset ~f:(fun vset n -> Procdesc.NodeSet.add n vset)
 
 
-let vset_ref_add_pathset vset_ref pathset =
-  Paths.PathSet.iter (fun _ path -> vset_ref_add_path vset_ref path) pathset
+let vset_add_pathset vset pathset =
+  Paths.PathSet.fold (fun _ path vset -> vset_add_path vset path) pathset vset
 
 
 let compute_visited vset =
@@ -594,9 +594,8 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
         else Some (Prop.normalize tenv (Prop.prop_sub (`Exp sub) post), path)
       in
       let visited =
-        let vset_ref = ref Procdesc.NodeSet.empty in
-        vset_ref_add_path vset_ref path ;
-        compute_visited !vset_ref
+        let vset = vset_add_path Procdesc.NodeSet.empty path in
+        compute_visited vset
       in
       (pre', post', visited)
     in
@@ -659,11 +658,10 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * BiabductionSumma
       let pathset = collect_do_abstract_post pname tenv pathset in
       let pathset_diverging = State.get_diverging_states_proc () in
       let visited =
-        let vset_ref = ref Procdesc.NodeSet.empty in
-        vset_ref_add_pathset vset_ref pathset ;
+        let vset = vset_add_pathset Procdesc.NodeSet.empty pathset in
         (* nodes from diverging states were also visited *)
-        vset_ref_add_pathset vset_ref pathset_diverging ;
-        compute_visited !vset_ref
+        let vset = vset_add_pathset vset pathset_diverging in
+        compute_visited vset
       in
       (do_join_post pname tenv pathset, visited)
     with Exceptions.Leak _ ->

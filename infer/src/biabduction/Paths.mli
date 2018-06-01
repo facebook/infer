@@ -42,8 +42,8 @@ module Path : sig
 
   val add_description : t -> string -> t
 
-  val iter_all_nodes_nocalls : (Procdesc.Node.t -> unit) -> t -> unit
-  (** iterate over each node in the path, excluding calls, once *)
+  val fold_all_nodes_nocalls : (t, Procdesc.Node.t, 'accum) Container.fold
+  (** fold over each node in the path, excluding calls, once *)
 
   val iter_shortest_sequence :
     (int -> t -> int -> Typ.Name.t option -> unit) -> PredSymb.path_pos option -> t -> unit
