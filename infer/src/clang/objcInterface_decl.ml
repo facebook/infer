@@ -87,7 +87,8 @@ let append_no_duplicates_typ_name =
 
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
-let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi =
+let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info decl_list
+    ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
   let interface_name = Typ.Name.Objc.from_qual_name class_name in
   let interface_desc = Typ.Tstruct interface_name in
@@ -114,7 +115,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   let methods =
     CGeneral_utils.append_no_duplicates_methods
-      (ObjcMethod_decl.get_methods interface_name decl_list)
+      (ObjcMethod_decl.get_methods procname_from_decl tenv decl_list)
       methods
   in
   ignore
@@ -124,11 +125,14 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
 
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
-let interface_declaration qual_type_to_sil_type tenv decl =
+let interface_declaration qual_type_to_sil_type procname_from_decl tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
-      let typ = add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi in
+      let typ =
+        add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info
+          decl_list ocidi
+      in
       let _ = add_class_implementation qual_type_to_sil_type tenv ocidi in
       let _ = add_super_class_decl qual_type_to_sil_type tenv ocidi in
       let _ = add_protocols_decl qual_type_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols in
@@ -140,19 +144,18 @@ let interface_declaration qual_type_to_sil_type tenv decl =
 
 
 (* Translate the methods defined in the implementation.*)
-let interface_impl_declaration qual_type_to_sil_type tenv decl =
+let interface_impl_declaration qual_type_to_sil_type procname_from_decl tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
       let class_name = CAst_utils.get_qualified_name name_info in
-      let interface_name = Typ.Name.Objc.from_qual_name class_name in
       L.(debug Capture Verbose)
         "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name ;
       let _ = add_class_decl qual_type_to_sil_type tenv idi in
       let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
       let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
       CField_decl.add_missing_fields tenv class_name fields ;
-      let methods = ObjcMethod_decl.get_methods interface_name decl_list in
+      let methods = ObjcMethod_decl.get_methods procname_from_decl tenv decl_list in
       ObjcMethod_decl.add_missing_methods tenv class_tn_name methods ;
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_desc = Typ.Tstruct class_tn_name in

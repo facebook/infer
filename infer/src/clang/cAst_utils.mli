@@ -64,6 +64,9 @@ val name_opt_of_typedef_qual_type : Clang_ast_t.qual_type -> QualifiedCppName.t 
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
+type procname_from_decl =
+  ?tenv:Tenv.t -> ?outer_proc:Typ.Procname.t -> Clang_ast_t.decl -> Typ.Procname.t
+
 val qual_type_of_decl_ptr : Clang_ast_t.pointer -> Clang_ast_t.qual_type
 
 val add_type_from_decl_ref_opt :

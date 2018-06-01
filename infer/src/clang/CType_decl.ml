@@ -460,15 +460,16 @@ and add_types_from_decl_to_tenv tenv decl =
   | ClassTemplateSpecializationDecl _ | CXXRecordDecl _ | RecordDecl _ ->
       get_record_declaration_type tenv decl
   | ObjCInterfaceDecl _ ->
-      ObjcInterface_decl.interface_declaration qual_type_to_sil_type tenv decl
+      ObjcInterface_decl.interface_declaration qual_type_to_sil_type procname_from_decl tenv decl
   | ObjCImplementationDecl _ ->
-      ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type tenv decl
+      ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type procname_from_decl tenv
+        decl
   | ObjCProtocolDecl _ ->
       ObjcProtocol_decl.protocol_decl qual_type_to_sil_type tenv decl
   | ObjCCategoryDecl _ ->
-      ObjcCategory_decl.category_decl qual_type_to_sil_type tenv decl
+      ObjcCategory_decl.category_decl qual_type_to_sil_type procname_from_decl tenv decl
   | ObjCCategoryImplDecl _ ->
-      ObjcCategory_decl.category_impl_decl qual_type_to_sil_type tenv decl
+      ObjcCategory_decl.category_impl_decl qual_type_to_sil_type procname_from_decl tenv decl
   | EnumDecl _ ->
       CEnum_decl.enum_decl decl
   | _ ->
@@ -601,7 +602,7 @@ and objc_block_procname outer_proc_opt =
 
 
 (* TODO: get the parameters from BuildMethodSignature.get_parameters and pass it to the method names *)
-and from_decl ?tenv ?outer_proc meth_decl =
+and procname_from_decl ?tenv ?outer_proc meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -635,7 +636,7 @@ and get_struct_methods struct_decl tenv =
       | CXXDestructorDecl _
       | ObjCMethodDecl _
       | BlockDecl _ ->
-          Some (from_decl ~tenv decl)
+          Some (procname_from_decl ~tenv decl)
       | _ ->
           None )
 
@@ -691,7 +692,7 @@ let method_signature_of_decl = BuildMethodSignature.method_signature_of_decl qua
 let should_add_return_param = BuildMethodSignature.should_add_return_param
 
 module CProcname = struct
-  let from_decl = from_decl
+  let from_decl = procname_from_decl
 
   module NoAstDecl = struct
     let c_function_of_string tenv name =

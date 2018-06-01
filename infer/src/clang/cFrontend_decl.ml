@@ -360,7 +360,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | ObjCInterfaceDecl (_, _, decl_list, _, _) ->
             let curr_class = CContext.ContextClsDeclPtr dec_ptr in
             ignore
-              (ObjcInterface_decl.interface_declaration CType_decl.qual_type_to_sil_type tenv dec) ;
+              (ObjcInterface_decl.interface_declaration CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec) ;
             process_methods trans_unit_ctx tenv cfg curr_class decl_list
         | ObjCProtocolDecl (_, _, decl_list, _, _) ->
             let curr_class = CContext.ContextClsDeclPtr dec_ptr in
@@ -368,16 +369,22 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             process_methods trans_unit_ctx tenv cfg curr_class decl_list
         | ObjCCategoryDecl (_, _, decl_list, _, _) ->
             let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-            ignore (ObjcCategory_decl.category_decl CType_decl.qual_type_to_sil_type tenv dec) ;
+            ignore
+              (ObjcCategory_decl.category_decl CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec) ;
             process_methods trans_unit_ctx tenv cfg curr_class decl_list
         | ObjCCategoryImplDecl (_, _, decl_list, _, _) ->
             let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-            ignore (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type tenv dec) ;
+            ignore
+              (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec) ;
             process_methods trans_unit_ctx tenv cfg curr_class decl_list
         | ObjCImplementationDecl (_, _, decl_list, _, _) ->
             let curr_class = CContext.ContextClsDeclPtr dec_ptr in
             let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
-            ignore (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type tenv dec) ;
+            ignore
+              (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec) ;
             process_methods trans_unit_ctx tenv cfg curr_class decl_list
         | CXXMethodDecl (decl_info, _, _, _, _)
         | CXXConstructorDecl (decl_info, _, _, _, _)

@@ -14,6 +14,9 @@ module L = Logging
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
+type procname_from_decl =
+  ?tenv:Tenv.t -> ?outer_proc:Typ.Procname.t -> Clang_ast_t.decl -> Typ.Procname.t
+
 let sanitize_name s = Str.global_replace (Str.regexp "[/ ]") "_" s
 
 let get_qual_name qual_name_list =

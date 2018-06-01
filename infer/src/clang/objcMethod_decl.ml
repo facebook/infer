@@ -8,18 +8,11 @@
 
 open! IStd
 
-let get_methods class_typename decl_list =
-  let open Clang_ast_t in
+let get_methods (from_decl: CAst_utils.procname_from_decl) tenv decl_list =
   let get_method list_methods decl =
     match decl with
-    | Clang_ast_t.ObjCMethodDecl (_, ndi, mdi) ->
-        let method_kind =
-          Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool mdi.omdi_is_instance_method
-        in
-        let method_name =
-          Typ.Procname.ObjC_Cpp
-            (Typ.Procname.ObjC_Cpp.make class_typename ndi.ni_name method_kind Typ.NoTemplate)
-        in
+    | Clang_ast_t.ObjCMethodDecl _ ->
+        let method_name = from_decl ~tenv decl in
         method_name :: list_methods
     | _ ->
         list_methods

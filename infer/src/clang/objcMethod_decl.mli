@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val get_methods : Typ.name -> Clang_ast_t.decl list -> Typ.Procname.t list
+val get_methods :
+  CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl list -> Typ.Procname.t list
 
 val add_missing_methods : Tenv.t -> Typ.name -> Typ.Procname.t list -> unit
