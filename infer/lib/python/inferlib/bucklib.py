@@ -240,11 +240,6 @@ class Wrapper:
 
     def __init__(self, infer_args, buck_cmd):
         self.timer = utils.Timer(logging.info)
-        # The reactive mode is not yet supported
-        if infer_args.reactive:
-            sys.stderr.write(
-                'Reactive is not supported for Java Buck project. Exiting.\n')
-            sys.exit(1)
         self.infer_args = infer_args
         self.timer.start('Computing library targets')
         base_cmd, buck_args = parse_buck_command(buck_cmd)

@@ -139,7 +139,7 @@ let cli_args fmt args =
   let pp_args fmt args =
     F.fprintf fmt "@[<hov2>  " ;
     seq ~sep:"" ~print_env:text_break F.pp_print_string fmt args ;
-    F.fprintf fmt "@]@\n"
+    F.fprintf fmt "@]"
   in
   let rec pp_argfile_args in_argfiles fmt args =
     let at_least_one = ref false in
@@ -156,8 +156,9 @@ let cli_args fmt args =
       let in_argfiles' = String.Set.add in_argfiles fname in
       match In_channel.read_lines fname with
       | args ->
-          F.fprintf fmt "++Contents of %s:@\n" (Escape.escape_in_single_quotes fname) ;
-          pp_args fmt args ;
+          F.fprintf fmt "++Contents of %s:@\n%a@\n"
+            (Escape.escape_in_single_quotes fname)
+            pp_args args ;
           pp_argfile_args in_argfiles' fmt args ;
           ()
       | exception exn ->

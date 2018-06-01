@@ -150,8 +150,7 @@ let command_error_handling ~always_die ~prog ~args = function
           L.external_error
         else L.die InternalError
       in
-      log "Error running '%s' %a:@\n  %s" prog Pp.cli_args args
-        (Unix.Exit_or_signal.to_string_hum status)
+      log "%a:@\n  %s" Pp.cli_args (prog :: args) (Unix.Exit_or_signal.to_string_hum status)
 
 
 let run_command ~prog ~args ?(cleanup= command_error_handling ~always_die:false ~prog ~args) () =
@@ -218,16 +217,17 @@ let capture ~changed_files mode =
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args
-          ( [ "--analyzer"
-            ; List.Assoc.find_exn ~equal:Config.equal_analyzer
-                (List.map ~f:(fun (n, a) -> (a, n)) Config.string_to_analyzer)
-                Config.analyzer ]
-          @ ( match Config.blacklist with
+          ( ( match Config.blacklist with
             | Some s when in_buck_mode ->
                 ["--blacklist-regex"; s]
             | _ ->
                 [] )
           @ (if not Config.continue_capture then [] else ["--continue"])
+          @ ( match Config.force_integration with
+            | None ->
+                []
+            | Some tool ->
+                ["--force-integration"; Config.string_of_build_system tool] )
           @ ( match Config.java_jar_compiler with
             | None ->
                 []
@@ -239,7 +239,6 @@ let capture ~changed_files mode =
             | _ ->
                 [] )
           @ (if not Config.debug_mode then [] else ["--debug"])
-          @ (if not Config.debug_exceptions then [] else ["--debug-exceptions"])
           @ (if Config.filtering then [] else ["--no-filtering"])
           @ (if not Config.flavors || not in_buck_mode then [] else ["--use-flavors"])
           @ "-j"
@@ -248,7 +247,6 @@ let capture ~changed_files mode =
           @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
           @ ["--project-root"; Config.project_root]
           @ (if not Config.quiet then [] else ["--quiet"])
-          @ (if not Config.reactive_mode then [] else ["--reactive"])
           @ "--out"
             :: Config.results_dir
             ::
@@ -464,9 +462,9 @@ let mode_of_build_command build_cmd =
   | prog :: args ->
       let build_system =
         match Config.force_integration with
-        | Some build_system ->
+        | Some build_system when CLOpt.is_originator ->
             build_system
-        | None ->
+        | _ ->
             Config.build_system_of_exe_name (Filename.basename prog)
       in
       assert_supported_build_system build_system ;
@@ -492,6 +490,8 @@ let mode_of_build_command build_cmd =
           Python args
       | BXcode when Config.xcpretty ->
           XcodeXcpretty (prog, args)
+      | BBuck when not Config.flavors && Config.reactive_mode ->
+          L.die UserError "The Buck Java integration does not support --reactive@."
       | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
           PythonCapture (build_system, build_cmd)
 

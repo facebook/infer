@@ -80,7 +80,7 @@ def split_args_to_parse():
 class FailSilentlyArgumentParser(argparse.ArgumentParser):
     '''We want to leave the handling of printing usage messages to the
     OCaml code. To do so, swallow error messages from ArgumentParser
-    and exit with a special error code (101) that infer.ml looks for.
+    and exit with a special error code that infer.ml looks for.
     '''
 
     def error(self, message):
@@ -115,10 +115,29 @@ def create_argparser(parents=[]):
     return parser
 
 
+class IgnoreFailuresArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        pass
+
+    def print_help(self, file=None):
+        pass
+
 def main():
     to_parse, cmd = split_args_to_parse()
+    # first pass to see if a capture module is forced
+    initial_argparser = IgnoreFailuresArgumentParser(
+        parents=[analyze.infer_parser],
+        add_help=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    initial_args = initial_argparser.parse_args(to_parse)
+
     # get the module name (if any), then load it
-    capture_module_name = os.path.basename(cmd[0]) if len(cmd) > 0 else None
+    capture_module_name = None
+    if initial_args.force_integration is not None:
+        capture_module_name = initial_args.force_integration
+    elif len(cmd) > 0:
+        capture_module_name = os.path.basename(cmd[0])
     mod_name = get_module_name(capture_module_name)
     imported_module = None
     if mod_name:

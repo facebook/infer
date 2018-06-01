@@ -21,25 +21,27 @@ def get_build_output(build_cmd):
     from inferlib import utils
     #  TODO make it return generator to be able to handle large builds
     proc = subprocess.Popen(build_cmd, stdout=subprocess.PIPE)
-    (verbose_out_chars, _) = proc.communicate()
-    if proc.returncode != 0:
+    (out_chars, err_chars) = proc.communicate()
+    out = utils.decode(out_chars) if out_chars is not None else ''
+    err = utils.decode(err_chars) if err_chars is not None else ''
+    if proc.returncode != os.EX_OK:
         utils.stderr(
             'ERROR: couldn\'t run compilation command `{}`'.format(build_cmd))
-        return (proc.returncode, None)
-    out = utils.decode(verbose_out_chars).split('\n')
-    return (os.EX_OK, out)
+        logging.error(
+            'ERROR: couldn\'t run compilation command `{}`:\n\
+            *** stdout:\n{}\n*** stderr:\n{}\n'
+            .format(build_cmd, out, err))
+    return (proc.returncode, (out, err))
 
 
-def run_compilation_commands(cmds, clean_cmd):
-    """runs compilation commands, and suggests a project cleaning command
-    in case there is nothing to compile.
+def run_compilation_commands(cmds):
+    """runs all the commands passed as argument
     """
-    from inferlib import utils
     #  TODO call it in parallel
     if cmds is None or len(cmds) == 0:
-        utils.stderr('Nothing to compile. Try running `{}` first.'
-                     .format(clean_cmd))
-        return os.EX_NOINPUT
+        # nothing to capture, the OCaml side will detect that and
+        # display the appropriate warning
+        return os.EX_OK
     for cmd in cmds:
         if cmd.start() != os.EX_OK:
             return os.EX_SOFTWARE

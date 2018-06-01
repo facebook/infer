@@ -32,9 +32,9 @@ class AntCapture:
     def __init__(self, args, cmd):
         self.args = args
         util.log_java_version()
-        logging.info(util.run_cmd_ignore_fail(['ant', '-version']))
+        logging.info(util.run_cmd_ignore_fail([cmd[0], '-version']))
         # TODO: make the extraction of targets smarter
-        self.build_cmd = ['ant', '-verbose'] + cmd[1:]
+        self.build_cmd = [cmd[0], '-verbose'] + cmd[1:]
 
     def is_interesting(self, content):
         return self.is_quoted(content) or content.endswith('.java')
@@ -56,7 +56,7 @@ class AntCapture:
         calls = []
         javac_arguments = []
         collect = False
-        for line in verbose_output:
+        for line in verbose_output.split('\n'):
             if javac_pattern in line:
                 if argument_start_pattern in line:
                     collect = True
@@ -77,9 +77,8 @@ class AntCapture:
         return calls
 
     def capture(self):
-        (code, verbose_out) = util.get_build_output(self.build_cmd)
+        (code, (verbose_out, _)) = util.get_build_output(self.build_cmd)
         if code != os.EX_OK:
             return code
-        clean_cmd = '\'{}\' clean'.format(self.build_cmd[0])
         cmds = self.get_infer_commands(verbose_out)
-        return util.run_compilation_commands(cmds, clean_cmd)
+        return util.run_compilation_commands(cmds)

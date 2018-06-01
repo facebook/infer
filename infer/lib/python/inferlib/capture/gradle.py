@@ -175,7 +175,7 @@ class GradleCapture:
         argument_start_pattern = ' Compiler arguments: '
         calls = []
         seen_build_cmds = set([])
-        for line in verbose_output:
+        for line in verbose_output.split('\n'):
             if argument_start_pattern in line:
                 content = line.partition(argument_start_pattern)[2].strip()
                 # if we're building both the debug and release configuration
@@ -209,9 +209,9 @@ class GradleCapture:
 
     def capture(self):
         print('Running and capturing gradle compilation...')
-        (code, verbose_out) = util.get_build_output(self.build_cmd)
-        if code != os.EX_OK:
-            return code
+        (build_code, (verbose_out, _)) = util.get_build_output(self.build_cmd)
         cmds = self.get_infer_commands(verbose_out)
-        clean_cmd = '%s clean' % self.build_cmd[0]
-        return util.run_compilation_commands(cmds, clean_cmd)
+        capture_code = util.run_compilation_commands(cmds)
+        if build_code != os.EX_OK:
+            return build_code
+        return capture_code
