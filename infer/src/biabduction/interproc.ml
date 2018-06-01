@@ -312,7 +312,7 @@ let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Pat
 (** Symbolic execution for a Join node *)
 let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
-  let curr_node_id = ProcCfg.Exceptional.id curr_node in
+  let curr_node_id = ProcCfg.Exceptional.Node.id curr_node in
   let new_dset = edgeset_todo in
   let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
   let old_dset', new_dset' = Dom.pathset_join pname tenv old_dset new_dset in
@@ -376,7 +376,7 @@ let instrs_get_normal_vars instrs =
 
 
 (** Perform symbolic execution for a node starting from an initial prop *)
-let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.node)
+let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.Node.t)
     (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
   State.mark_execution_start node ;
   let instrs = ProcCfg.Exceptional.instrs node in
@@ -452,7 +452,7 @@ let forward_tabulate exe_env tenv proc_cfg wl =
     L.d_ln () ;
     L.d_ln ()
   in
-  let do_prop (curr_node: ProcCfg.Exceptional.node) handle_exn prop path cnt num_paths =
+  let do_prop (curr_node: ProcCfg.Exceptional.Node.t) handle_exn prop path cnt num_paths =
     L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths) ;
     L.d_increase_indent 1 ;
     try
@@ -519,7 +519,7 @@ let remove_locals_formals_and_check tenv proc_cfg p =
   let pname = Procdesc.get_proc_name pdesc in
   let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
-    let loc = ProcCfg.Exceptional.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
+    let loc = ProcCfg.Exceptional.Node.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
     let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
@@ -531,7 +531,7 @@ let remove_locals_formals_and_check tenv proc_cfg p =
 (** Collect the analysis results for the exit node. *)
 let collect_analysis_result tenv wl proc_cfg : Paths.PathSet.t =
   let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
-  let exit_node_id = ProcCfg.Exceptional.id exit_node in
+  let exit_node_id = ProcCfg.Exceptional.Node.id exit_node in
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
   Paths.PathSet.map (remove_locals_formals_and_check tenv proc_cfg) pathset
 

@@ -22,10 +22,10 @@ module type S = sig
   (** type of the instructions the transfer functions operate on *)
   type instr
 
-  val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> instr -> Domain.astate
+  val exec_instr : Domain.astate -> extras ProcData.t -> CFG.Node.t -> instr -> Domain.astate
   (** {A} instr {A'}. [node] is the node of the current instruction *)
 
-  val pp_session_name : CFG.node -> Format.formatter -> unit
+  val pp_session_name : CFG.Node.t -> Format.formatter -> unit
   (** print session name for HTML debug *)
 end
 

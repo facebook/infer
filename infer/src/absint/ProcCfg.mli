@@ -40,42 +40,40 @@ end
 module type S = sig
   type t
 
-  type node
+  module Node : Node
 
-  include Node with type t := node
-
-  val instrs : node -> Instrs.t
+  val instrs : Node.t -> Instrs.t
   (** get the instructions from a node *)
 
-  val fold_succs : t -> (node, node, 'accum) Container.fold
+  val fold_succs : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over all successors (normal and exceptional) *)
 
-  val fold_preds : t -> (node, node, 'accum) Container.fold
+  val fold_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over all predecessors (normal and exceptional) *)
 
-  val fold_normal_succs : t -> (node, node, 'accum) Container.fold
+  val fold_normal_succs : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over non-exceptional successors *)
 
-  val fold_normal_preds : t -> (node, node, 'accum) Container.fold
+  val fold_normal_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over non-exceptional predecessors *)
 
-  val fold_exceptional_succs : t -> (node, node, 'accum) Container.fold
+  val fold_exceptional_succs : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over exceptional successors *)
 
-  val fold_exceptional_preds : t -> (node, node, 'accum) Container.fold
+  val fold_exceptional_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over exceptional predescessors *)
 
-  val start_node : t -> node
+  val start_node : t -> Node.t
 
-  val exit_node : t -> node
+  val exit_node : t -> Node.t
 
   val proc_desc : t -> Procdesc.t
 
-  val fold_nodes : (t, node, 'accum) Container.fold
+  val fold_nodes : (t, Node.t, 'accum) Container.fold
 
   val from_pdesc : Procdesc.t -> t
 
-  val is_loop_head : Procdesc.t -> node -> bool
+  val is_loop_head : Procdesc.t -> Node.t -> bool
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id
@@ -89,25 +87,16 @@ module InstrNode : sig
 end
 
 (** Forward CFG with no exceptional control-flow *)
-module Normal :
-  S with type t = Procdesc.t and type node = DefaultNode.t and type id = DefaultNode.id
+module Normal : S with type t = Procdesc.t and module Node = DefaultNode
 
 (** Forward CFG with exceptional control-flow *)
 module Exceptional :
-  S
-  with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
-   and type node = DefaultNode.t
-   and type id = DefaultNode.id
+  S with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t and module Node = DefaultNode
 
 (** Wrapper that reverses the direction of the CFG *)
-module Backward (Base : S) : S with type t = Base.t and type node = Base.node and type id = Base.id
+module Backward (Base : S) : S with type t = Base.t and module Node = Base.Node
 
-module OneInstrPerNode (Base : S with type node = DefaultNode.t and type id = DefaultNode.id) :
-  S
-  with type t = Base.t
-   and type node = InstrNode.t
-   and type id = InstrNode.id
-   and module IdMap = InstrNode.IdMap
-   and module IdSet = InstrNode.IdSet
+module OneInstrPerNode (Base : S with module Node = DefaultNode) :
+  S with type t = Base.t and module Node = InstrNode
 
 module NormalOneInstrPerNode : module type of OneInstrPerNode (Normal)

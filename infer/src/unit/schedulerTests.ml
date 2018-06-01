@@ -14,11 +14,7 @@ module MockNode = struct
 
   type id = int
 
-  let instrs _ = Instrs.empty
-
   let hash = Hashtbl.hash
-
-  let to_instr_nodes _ = assert false
 
   let id n = n
 
@@ -47,25 +43,25 @@ module MockNode = struct
 end
 
 module MockProcCfg = struct
-  type node = int
+  module Node = MockNode
 
-  include (MockNode : module type of MockNode with type t := node)
+  type t = (Node.t * Node.t list) list
 
-  type t = (node * node list) list
+  let instrs _ = Instrs.empty
 
   let equal_id = Int.equal
 
   let fold_succs t n ~init ~f =
-    let node_id = id n in
-    List.find ~f:(fun (node, _) -> equal_id (id node) node_id) t
+    let node_id = Node.id n in
+    List.find ~f:(fun (node, _) -> equal_id (Node.id node) node_id) t
     |> Option.value_map ~f:snd ~default:[] |> List.fold ~init ~f
 
 
   let fold_preds t n ~init ~f =
     try
-      let node_id = id n in
+      let node_id = Node.id n in
       List.filter
-        ~f:(fun (_, succs) -> List.exists ~f:(fun node -> equal_id (id node) node_id) succs)
+        ~f:(fun (_, succs) -> List.exists ~f:(fun node -> equal_id (Node.id node) node_id) succs)
         t
       |> List.map ~f:fst |> List.fold ~init ~f
     with

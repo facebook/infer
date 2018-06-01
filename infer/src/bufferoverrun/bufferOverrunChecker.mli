@@ -17,4 +17,4 @@ type invariant_map
 
 val compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t
 
-val extract_pre : CFG.id -> invariant_map -> BufferOverrunDomain.Mem.t option
+val extract_pre : CFG.Node.id -> invariant_map -> BufferOverrunDomain.Mem.t option

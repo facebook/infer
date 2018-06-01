@@ -347,7 +347,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.pp_id (CFG.id node)
+  let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode
@@ -399,7 +399,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
       (ProcData.make proc_desc tenv (formal_map, summary))
       ~initial:init ~debug:false
   in
-  match Analyzer.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map with
+  match Analyzer.extract_post (CFG.Node.id (CFG.exit_node cfg)) invariant_map with
   | Some
       ( {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
       , _ ) ->

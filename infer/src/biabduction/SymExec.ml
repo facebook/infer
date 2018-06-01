@@ -1831,7 +1831,7 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
         Instrs.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
       in
       let curr_node = State.get_node () in
-      match ProcCfg.Exceptional.kind curr_node with
+      match ProcCfg.Exceptional.Node.kind curr_node with
       | Procdesc.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
           (* don't check for leaks in prune nodes, unless there is abstraction anyway,*)
           (* but force them into either branch *)
@@ -1873,14 +1873,14 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
-let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.PathSet.t)
-    : Paths.PathSet.t =
+let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.Node.t)
+    (pset: Paths.PathSet.t) : Paths.PathSet.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
       if
         Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
-        && ProcCfg.Exceptional.kind node <> Procdesc.Node.exn_handler_kind
+        && ProcCfg.Exceptional.Node.kind node <> Procdesc.Node.exn_handler_kind
         (* skip normal instructions if an exception was thrown,
             unless this is an exception handler node *)
       then (

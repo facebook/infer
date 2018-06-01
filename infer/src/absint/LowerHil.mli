@@ -28,9 +28,9 @@ module Make
 
   type extras = TransferFunctions.extras
 
-  val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Domain.astate
+  val exec_instr : Domain.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Domain.astate
 
-  val pp_session_name : CFG.node -> Format.formatter -> unit
+  val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end
 
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)

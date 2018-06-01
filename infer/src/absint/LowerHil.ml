@@ -31,7 +31,7 @@ struct
 
   let pp_pre_post pre post hil_instr node =
     if Config.write_html then (
-      let underyling_node = CFG.underlying_node node in
+      let underyling_node = CFG.Node.underlying_node node in
       NodePrinter.start_session ~pp_name:(pp_session_name node) underyling_node ;
       L.d_strln
         (Format.asprintf "PRE: %a@.INSTR: %a@.POST: %a@." TransferFunctions.Domain.pp pre

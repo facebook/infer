@@ -54,7 +54,7 @@ module NullifyTransferFunctions = struct
   type extras = LivenessAnalysis.invariant_map
 
   let postprocess ((reaching_defs, _) as astate) node {ProcData.extras} =
-    let node_id = Procdesc.Node.get_id (CFG.underlying_node node) in
+    let node_id = Procdesc.Node.get_id (CFG.Node.underlying_node node) in
     match LivenessAnalysis.extract_state node_id extras with
     (* note: because the analysis is backward, post and pre are reversed *)
     | Some {AbstractInterpreter.post= live_before; pre= live_after} ->
@@ -137,7 +137,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     if ids <> [] then Some (Sil.Remove_temps (List.rev ids, loc)) else None
   in
   Container.iter nullify_proc_cfg ~fold:ProcCfg.Exceptional.fold_nodes ~f:(fun node ->
-      match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
+      match NullifyAnalysis.extract_post (ProcCfg.Exceptional.Node.id node) nullify_inv_map with
       | Some (_, to_nullify) ->
           let pvars_to_nullify, ids_to_remove =
             VarDomain.fold

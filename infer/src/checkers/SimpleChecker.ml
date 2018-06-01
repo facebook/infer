@@ -67,7 +67,7 @@ module Make (Spec : Spec) : S = struct
     type extras = ProcData.no_extras
 
     let exec_instr astate_set proc_data node instr =
-      let node_kind = CFG.kind node in
+      let node_kind = CFG.Node.kind node in
       let pname = Procdesc.get_proc_name proc_data.ProcData.pdesc in
       Domain.fold
         (fun astate acc ->
@@ -93,7 +93,7 @@ module Make (Spec : Spec) : S = struct
             nodes
         in
         Domain.iter
-          (fun astate -> Spec.report astate (ProcCfg.Exceptional.loc node) proc_name)
+          (fun astate -> Spec.report astate (ProcCfg.Exceptional.Node.loc node) proc_name)
           astate_set
     in
     let inv_map =

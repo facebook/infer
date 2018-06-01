@@ -68,21 +68,21 @@ let tests =
           assert_bool "Second instr should be dummy_instr1" (phys_equal instr2 dummy_instr1)
       | _ ->
           assert_failure "Expected exactly two instructions" ) ;
-      let instr_n1 = InstrCfg.of_underlying_node n1 in
+      let instr_n1 = InstrCfg.Node.of_underlying_node n1 in
       ( match InstrCfg.instrs instr_n1 |> list_of_instrs with
       | [instr] ->
           assert_bool "Only instr should be dummy_instr1" (phys_equal instr dummy_instr1)
       | _ ->
           assert_failure "Expected exactly one instruction" ) ;
-      let n1' = InstrCfg.underlying_node instr_n1 in
+      let n1' = InstrCfg.Node.underlying_node instr_n1 in
       assert_bool "underlying_node should return node of underlying CFG type" (phys_equal n1 n1') ;
-      let backward_instr_n1 = BackwardInstrCfg.of_underlying_node n1 in
+      let backward_instr_n1 = BackwardInstrCfg.Node.of_underlying_node n1 in
       ( match BackwardInstrCfg.instrs backward_instr_n1 |> list_of_instrs with
       | [instr] ->
           assert_bool "Only instr should be dummy_instr1" (phys_equal instr dummy_instr1)
       | _ ->
           assert_failure "Expected exactly one instruction" ) ;
-      let n1'' = BackwardInstrCfg.underlying_node backward_instr_n1 in
+      let n1'' = BackwardInstrCfg.Node.underlying_node backward_instr_n1 in
       assert_bool "underlying_node should return node of underlying CFG type" (phys_equal n1 n1'') ;
       (* test the preds/succs using backward + instr cfg *)
       let check_backward_instr_ fold backward_instr_node expected_instrs =
@@ -94,9 +94,9 @@ let tests =
       in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n1
         (Instrs.single dummy_instr2) ;
-      let backward_instr_n2 = BackwardInstrCfg.of_underlying_node n2 in
+      let backward_instr_n2 = BackwardInstrCfg.Node.of_underlying_node n2 in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n2 Instrs.empty ;
-      let backward_instr_n3 = BackwardInstrCfg.of_underlying_node n3 in
+      let backward_instr_n3 = BackwardInstrCfg.Node.of_underlying_node n3 in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n3 Instrs.empty ;
       check_backward_instr_ BackwardInstrCfg.fold_normal_succs backward_instr_n2
         (Instrs.single dummy_instr2)

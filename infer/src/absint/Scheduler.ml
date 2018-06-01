@@ -12,10 +12,10 @@ module type S = sig
 
   type t
 
-  val schedule_succs : t -> CFG.node -> t
+  val schedule_succs : t -> CFG.Node.t -> t
   (** schedule the successors of [node] *)
 
-  val pop : t -> (CFG.node * CFG.id list * t) option
+  val pop : t -> (CFG.Node.t * CFG.Node.id list * t) option
   (** remove and return the node with the highest priority, the ids of its visited
       predecessors, and the new schedule *)
 
@@ -30,13 +30,13 @@ end
     and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module M = CFG.IdMap
+  module M = CFG.Node.IdMap
 
   module WorkUnit = struct
-    module IdSet = CFG.IdSet
+    module IdSet = CFG.Node.IdSet
 
     type t =
-      { node: CFG.node  (** node whose instructions will be analyzed *)
+      { node: CFG.Node.t  (** node whose instructions will be analyzed *)
       ; visited_preds: IdSet.t
             (** predecessors of [node] we have already visited in current iter *)
       ; priority: int  (** |preds| - |visited preds|. *) }
@@ -68,10 +68,10 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
 
   (** schedule the succs of [node] for analysis *)
   let schedule_succs t node =
-    let node_id = CFG.id node in
+    let node_id = CFG.Node.id node in
     (* mark [node] as a visited pred of [node_to_schedule] and schedule it *)
     let schedule_succ worklist_acc node_to_schedule =
-      let id_to_schedule = CFG.id node_to_schedule in
+      let id_to_schedule = CFG.Node.id node_to_schedule in
       let old_work =
         try M.find id_to_schedule worklist_acc with Caml.Not_found ->
           WorkUnit.make t.cfg node_to_schedule
@@ -100,7 +100,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       in
       let max_priority_work = M.find max_priority_id t.worklist in
       let node = WorkUnit.node max_priority_work in
-      let t' = {t with worklist= M.remove (CFG.id node) t.worklist} in
+      let t' = {t with worklist= M.remove (CFG.Node.id node) t.worklist} in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
     with Caml.Not_found -> None
 

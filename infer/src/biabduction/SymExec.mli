@@ -11,7 +11,7 @@ open! IStd
 (** Symbolic Execution *)
 
 val node :
-  (exn -> unit) -> Exe_env.t -> Tenv.t -> ProcCfg.Exceptional.t -> ProcCfg.Exceptional.node
+  (exn -> unit) -> Exe_env.t -> Tenv.t -> ProcCfg.Exceptional.t -> ProcCfg.Exceptional.Node.t
   -> Paths.PathSet.t -> Paths.PathSet.t
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 

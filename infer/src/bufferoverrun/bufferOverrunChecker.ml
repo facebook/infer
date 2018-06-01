@@ -209,7 +209,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     L.(debug BufferOverrun Verbose) "================================@\n@."
 
 
-  let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate =
+  let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate =
    fun mem {pdesc; tenv} node instr ->
     let pname = Procdesc.get_proc_name pdesc in
     let output_mem =
@@ -244,7 +244,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Call (ret, Const (Cfun callee_pname), params, location, _) -> (
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->
-            let node_hash = CFG.hash node in
+            let node_hash = CFG.Node.hash node in
             let model_env = Models.mk_model_env callee_pname node_hash location tenv ~ret in
             exec model_env mem
         | None ->
@@ -262,7 +262,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               |> Dom.Mem.add_heap Loc.unknown val_unknown )
       | Declare_locals (locals, location) ->
           (* array allocation in stack e.g., int arr[10] *)
-          let node_hash = CFG.hash node in
+          let node_hash = CFG.Node.hash node in
           let rec decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem =
             match typ.Typ.desc with
             | Typ.Tarray {elt= typ; length; stride} ->
@@ -301,7 +301,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     output_mem
 
 
-  let pp_session_name node fmt = F.fprintf fmt "bufferoverrun %a" CFG.pp_id (CFG.id node)
+  let pp_session_name node fmt = F.fprintf fmt "bufferoverrun %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode
@@ -331,14 +331,14 @@ module Report = struct
           false
   end
 
-  let check_unreachable_code summary tenv (cfg: CFG.t) (node: CFG.node) instr rem_instrs =
+  let check_unreachable_code summary tenv (cfg: CFG.t) (node: CFG.Node.t) instr rem_instrs =
     match instr with
     | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
         ()
     | Sil.Prune (cond, location, true_branch, _) ->
         let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
         let desc =
-          Errdesc.explain_condition_always_true_false tenv i cond (CFG.underlying_node node)
+          Errdesc.explain_condition_always_true_false tenv i cond (CFG.Node.underlying_node node)
             location
         in
         let exn = Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
@@ -425,7 +425,7 @@ module Report = struct
 
 
   let check_instr
-      : Procdesc.t -> Tenv.t -> CFG.node -> Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t
+      : Procdesc.t -> Tenv.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
    fun pdesc tenv node instr mem cond_set ->
     let pname = Procdesc.get_proc_name pdesc in
@@ -435,7 +435,7 @@ module Report = struct
     | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
       match Models.Call.dispatch callee_pname params with
       | Some {Models.check} ->
-          let node_hash = CFG.hash node in
+          let node_hash = CFG.Node.hash node in
           check (Models.mk_model_env pname node_hash location tenv) mem cond_set
       | None ->
         match Payload.read pdesc callee_pname with
@@ -460,7 +460,7 @@ module Report = struct
 
 
   let check_instrs
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.node -> Instrs.t
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.Node.t -> Instrs.t
         -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg node instrs state cond_set ->
     match state with
@@ -486,9 +486,9 @@ module Report = struct
 
   let check_node
       : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t
-        -> CFG.node -> PO.ConditionSet.t =
+        -> CFG.Node.t -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg inv_map cond_set node ->
-    match Analyzer.extract_state (CFG.id node) inv_map with
+    match Analyzer.extract_state (CFG.Node.id node) inv_map with
     | Some state ->
         let instrs = CFG.instrs node in
         check_instrs summary pdesc tenv cfg node instrs state cond_set
@@ -573,8 +573,8 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   let pdata = ProcData.make_default proc_desc tenv in
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let cfg = CFG.from_pdesc proc_desc in
-  let entry_mem = extract_post (CFG.start_node cfg |> CFG.id) inv_map in
-  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.id) inv_map in
+  let entry_mem = extract_post (CFG.start_node cfg |> CFG.Node.id) inv_map in
+  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map in
   let cond_set =
     Report.check_proc summary proc_desc tenv cfg inv_map |> Report.report_errors summary proc_desc
   in

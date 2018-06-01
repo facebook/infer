@@ -147,7 +147,7 @@ module StructuredSil = struct
     make_call ?return args
 end
 
-module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
+module Make (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
 struct
   open StructuredSil
   module I = AbstractInterpreter.Make (CFG) (T)
@@ -220,7 +220,7 @@ struct
           let node = create_node (Procdesc.Node.Stmt_node "Invariant") [] in
           set_succs last_node [node] ~exn_handlers ;
           (* add the assertion to be checked after analysis converges *)
-          (node, M.add (CFG.id node) (inv_str, inv_label) assert_map)
+          (node, M.add (CFG.Node.id node) (inv_str, inv_label) assert_map)
     and structured_instrs_to_node last_node assert_map exn_handlers instrs =
       List.fold
         ~f:(fun acc instr -> structured_instr_to_node acc exn_handlers instr)

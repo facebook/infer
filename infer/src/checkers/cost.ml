@@ -67,8 +67,8 @@ module TransferFunctionsNodesBasicCost = struct
 
 
   let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
-      {ProcData.pdesc; tenv} (node: CFG.node) instr : CostDomain.NodeInstructionToCostMap.astate =
-    let key = CFG.id node in
+      {ProcData.pdesc; tenv} (node: CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate =
+    let key = CFG.Node.id node in
     let astate' =
       match instr with
       | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), params, _, _) ->
@@ -95,12 +95,12 @@ module TransferFunctionsNodesBasicCost = struct
 
 
   let exec_instr costmap ({ProcData.extras= inferbo_invariant_map} as pdata) node instr =
-    let inferbo_mem = BufferOverrunChecker.extract_pre (CFG.id node) inferbo_invariant_map in
+    let inferbo_mem = BufferOverrunChecker.extract_pre (CFG.Node.id node) inferbo_invariant_map in
     let costmap = exec_instr_cost inferbo_mem costmap pdata node instr in
     costmap
 
 
-  let pp_session_name node fmt = F.fprintf fmt "cost(basic) %a" CFG.pp_id (CFG.id node)
+  let pp_session_name node fmt = F.fprintf fmt "cost(basic) %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module AnalyzerNodesBasicCost =
@@ -149,13 +149,13 @@ module BoundMap = struct
       Procdesc.get_formals node_cfg |> List.map ~f:(fun (m, _) -> Pvar.mk m pname)
     in
     let compute_node_upper_bound bound_map node =
-      let node_id = NodeCFG.id node in
+      let node_id = NodeCFG.Node.id node in
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
           Node.IdMap.add node_id BasicCost.one bound_map
       | _ ->
           let entry_state_opt =
-            let instr_node_id = InstrCFG.of_underlying_node node |> InstrCFG.id in
+            let instr_node_id = InstrCFG.Node.of_underlying_node node |> InstrCFG.Node.id in
             BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map
           in
           match entry_state_opt with
@@ -251,17 +251,17 @@ module StructuralConstraints = struct
         | [] ->
             {single= []; sum= []}
         | [single] ->
-            {single= [NodeCFG.id single]; sum= []}
+            {single= [NodeCFG.Node.id single]; sum= []}
         | nodes ->
             let sum =
               List.fold nodes ~init:Node.IdSet.empty ~f:(fun idset node ->
-                  Node.IdSet.add (NodeCFG.id node) idset )
+                  Node.IdSet.add (NodeCFG.Node.id node) idset )
             in
             {single= []; sum= [sum]}
       in
       let preds = constraints_add node Procdesc.Node.get_preds in
       let succs = constraints_add node Procdesc.Node.get_succs in
-      Node.IdMap.add (NodeCFG.id node)
+      Node.IdMap.add (NodeCFG.Node.id node)
         {single= List.append preds.single succs.single; sum= List.append preds.sum succs.sum} acc
     in
     let constraints =
@@ -486,24 +486,24 @@ module TransferFunctionsWCET = struct
         let c_node = BasicCost.mult c t in
         let c_node' = BasicCost.plus acc c_node in
         L.(debug Analysis Medium)
-          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" InstrCFG.pp_id
+          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c =%a  t = %a @\n" InstrCFG.Node.pp_id
           instr_node_id BasicCost.pp c BasicCost.pp t ;
         L.(debug Analysis Medium)
-          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c_node=%a  cost = %a @\n" InstrCFG.pp_id
+          "@\n  [AnalyzerWCET] Adding cost: (%a) --> c_node=%a  cost = %a @\n" InstrCFG.Node.pp_id
           instr_node_id BasicCost.pp c_node BasicCost.pp c_node' ;
         c_node' )
       m BasicCost.zero
 
 
-  let exec_instr ((_, reported_so_far): Domain.astate) {ProcData.extras} (node: CFG.node) instr
+  let exec_instr ((_, reported_so_far): Domain.astate) {ProcData.extras} (node: CFG.Node.t) instr
       : Domain.astate =
     let {basic_cost_map= invariant_map_cost; min_trees_map= trees; summary} = extras in
     let cost_node =
-      let instr_node_id = CFG.id node in
+      let instr_node_id = CFG.Node.id node in
       match AnalyzerNodesBasicCost.extract_post instr_node_id invariant_map_cost with
       | Some node_map ->
           L.(debug Analysis Medium)
-            "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.pp_id instr_node_id ;
+            "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.Node.pp_id instr_node_id ;
           map_cost trees node_map
       | _ ->
           assert false
@@ -512,7 +512,7 @@ module TransferFunctionsWCET = struct
       "@\n[>>>AnalyzerWCET] Instr: %a   Cost: %a@\n" (Sil.pp_instr Pp.text) instr BasicCost.pp
       cost_node ;
     let astate' =
-      let und_node = CFG.underlying_node node in
+      let und_node = CFG.Node.underlying_node node in
       let preds = Procdesc.Node.get_preds und_node in
       let reported_so_far =
         if

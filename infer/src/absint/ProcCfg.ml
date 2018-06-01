@@ -38,7 +38,7 @@ module type Node = sig
   module IdSet : PrettyPrintable.PPSet with type elt = id
 end
 
-module DefaultNode = struct
+module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id = struct
   type t = Procdesc.Node.t
 
   type id = Procdesc.Node.id
@@ -71,7 +71,13 @@ module DefaultNode = struct
   module IdSet = PrettyPrintable.MakePPSet (OrderedId)
 end
 
-module InstrNode = struct
+module InstrNode : sig
+  type instr_index = int
+
+  include Node
+          with type t = Procdesc.Node.t * instr_index
+           and type id = Procdesc.Node.id * instr_index
+end = struct
   type instr_index = int [@@deriving compare]
 
   type t = Procdesc.Node.t * instr_index
@@ -107,50 +113,46 @@ end
 module type S = sig
   type t
 
-  type node
+  module Node : Node
 
-  include Node with type t := node
-
-  val instrs : node -> Instrs.t
+  val instrs : Node.t -> Instrs.t
   (** get the instructions from a node *)
 
-  val fold_succs : t -> (node, node, 'accum) Container.fold
+  val fold_succs : t -> (Node.t, Node.t, 'accum) Container.fold
 
-  val fold_preds : t -> (node, node, 'accum) Container.fold
+  val fold_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over all predecessors (normal and exceptional) *)
 
-  val fold_normal_succs : t -> (node, node, 'accum) Container.fold
+  val fold_normal_succs : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over non-exceptional successors *)
 
-  val fold_normal_preds : t -> (node, node, 'accum) Container.fold
+  val fold_normal_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over non-exceptional predecessors *)
 
-  val fold_exceptional_succs : t -> (node, node, 'accum) Container.fold
+  val fold_exceptional_succs : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over exceptional successors *)
 
-  val fold_exceptional_preds : t -> (node, node, 'accum) Container.fold
+  val fold_exceptional_preds : t -> (Node.t, Node.t, 'accum) Container.fold
   (** fold over exceptional predecessors *)
 
-  val start_node : t -> node
+  val start_node : t -> Node.t
 
-  val exit_node : t -> node
+  val exit_node : t -> Node.t
 
   val proc_desc : t -> Procdesc.t
 
-  val fold_nodes : (t, node, 'accum) Container.fold
+  val fold_nodes : (t, Node.t, 'accum) Container.fold
 
   val from_pdesc : Procdesc.t -> t
 
-  val is_loop_head : Procdesc.t -> node -> bool
+  val is_loop_head : Procdesc.t -> Node.t -> bool
 end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal = struct
   type t = Procdesc.t
 
-  type node = DefaultNode.t
-
-  include (DefaultNode : module type of DefaultNode with type t := node)
+  module Node = DefaultNode
 
   let instrs = Procdesc.Node.get_instrs
 
@@ -182,13 +184,11 @@ end
 
 (** Forward CFG with exceptional control-flow *)
 module Exceptional = struct
-  type node = DefaultNode.t
+  module Node = DefaultNode
 
-  type id_node_map = node list Procdesc.IdMap.t
+  type id_node_map = Node.t list Procdesc.IdMap.t
 
   type t = Procdesc.t * id_node_map
-
-  include (DefaultNode : module type of DefaultNode with type t := node)
 
   let fold_exceptional_succs _ n ~init ~f = n |> Procdesc.Node.get_exn |> List.fold ~init ~f
 
@@ -234,11 +234,12 @@ module Exceptional = struct
     let acc_normal = fold_normal_alpha t n ~init ~f in
     let normal_set =
       lazy
-        (fold_normal_idset t n ~init:IdSet.empty ~f:(fun set node ->
-             IdSet.add (Procdesc.Node.get_id node) set ))
+        (fold_normal_idset t n ~init:Node.IdSet.empty ~f:(fun set node ->
+             Node.IdSet.add (Procdesc.Node.get_id node) set ))
     in
     let f acc node =
-      if IdSet.mem (Procdesc.Node.get_id node) (Lazy.force_val normal_set) then acc else f acc node
+      if Node.IdSet.mem (Procdesc.Node.get_id node) (Lazy.force_val normal_set) then acc
+      else f acc node
     in
     fold_exceptional t n ~init:acc_normal ~f
 
@@ -285,21 +286,12 @@ module Backward (Base : S) = struct
   let fold_exceptional_preds = Base.fold_exceptional_succs
 end
 
-module OneInstrPerNode (Base : S with type node = Procdesc.Node.t and type id = Procdesc.Node.id) =
+module OneInstrPerNode (Base : S with module Node = DefaultNode) :
+  S with type t = Base.t and module Node = InstrNode =
 struct
   type t = Base.t
 
-  type node = InstrNode.t
-
-  type id = InstrNode.id
-
-  include (
-    InstrNode :
-      Node
-      with type t := node
-       and type id := id
-       and module IdMap = InstrNode.IdMap
-       and module IdSet = InstrNode.IdSet )
+  module Node = InstrNode
 
   let instrs (node, index) =
     let instrs = Base.instrs node in

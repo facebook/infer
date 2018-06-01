@@ -13,7 +13,7 @@ type 'a state = {pre: 'a; post: 'a; visit_count: int}
 module type S = sig
   module TransferFunctions : TransferFunctions.SIL
 
-  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
+  module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
@@ -40,8 +40,9 @@ module MakeNoCFG
     (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
 struct
   module CFG = Scheduler.CFG
-  module InvariantMap = CFG.IdMap
+  module Node = CFG.Node
   module TransferFunctions = TransferFunctions
+  module InvariantMap = TransferFunctions.CFG.Node.IdMap
   module Domain = TransferFunctions.Domain
 
   type invariant_map = Domain.astate state InvariantMap.t
@@ -60,7 +61,7 @@ struct
 
 
   let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
-    let node_id = CFG.id node in
+    let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
       let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
@@ -71,14 +72,14 @@ struct
       if debug then
         NodePrinter.start_session
           ~pp_name:(TransferFunctions.pp_session_name node)
-          (CFG.underlying_node node) ;
+          (Node.underlying_node node) ;
       let astate_post = Instrs.fold ~f:compute_post ~init:pre instrs in
       if debug then (
         L.d_strln
           (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
              (Instrs.pp Pp.(html Green))
              instrs Domain.pp astate_post) ;
-        NodePrinter.finish_session (CFG.underlying_node node) ) ;
+        NodePrinter.finish_session (Node.underlying_node node) ) ;
       let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
       (inv_map', Scheduler.schedule_succs work_queue node)
     in
@@ -104,7 +105,7 @@ struct
 
   let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
     let compute_pre node inv_map =
-      let extract_post_ pred = extract_post (CFG.id pred) inv_map in
+      let extract_post_ pred = extract_post (Node.id pred) inv_map in
       CFG.fold_preds cfg node ~init:None ~f:(fun joined_post_opt pred ->
           match extract_post_ pred with
           | None ->
@@ -150,7 +151,7 @@ struct
   let compute_post ?(debug= Config.write_html) ({ProcData.pdesc} as proc_data) ~initial =
     let cfg = CFG.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data ~initial ~debug in
-    extract_post (CFG.id (CFG.exit_node cfg)) inv_map
+    extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
 
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =

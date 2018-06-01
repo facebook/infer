@@ -73,7 +73,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let pp_session_name node fmt = F.fprintf fmt "liveness %a" CFG.pp_id (CFG.id node)
+  let pp_session_name node fmt = F.fprintf fmt "liveness %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
@@ -183,7 +183,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     let captured_by_ref_vars =
       match
         CapturedByRefAnalyzer.extract_post
-          (ProcCfg.Exceptional.id (CFG.underlying_node node))
+          (ProcCfg.Exceptional.Node.id (CFG.Node.underlying_node node))
           captured_by_ref_invariant_map
       with
       | Some post ->
@@ -191,7 +191,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
       | None ->
           VarSet.empty
     in
-    let node_id = CFG.id node in
+    let node_id = CFG.Node.id node in
     Instrs.iter (CFG.instrs node) ~f:(fun instr ->
         match Analyzer.extract_pre node_id invariant_map with
         | Some live_vars ->

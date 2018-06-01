@@ -13,7 +13,7 @@ type 'a state = {pre: 'a; post: 'a; visit_count: int}
 module type S = sig
   module TransferFunctions : TransferFunctions.SIL
 
-  module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
+  module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
   (** invariant map from node id -> state representing postcondition for node id *)
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
@@ -48,9 +48,9 @@ end
 module MakeNoCFG
     (Scheduler : Scheduler.S)
     (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) :
-  S with module TransferFunctions = TransferFunctions and module InvariantMap = Scheduler.CFG.IdMap
+  S with module TransferFunctions = TransferFunctions
 
 (** create an intraprocedural abstract interpreter from a CFG and functors for creating a scheduler/
     transfer functions from a CFG *)
 module Make (CFG : ProcCfg.S) (MakeTransferFunctions : TransferFunctions.MakeSIL) :
-  S with module TransferFunctions = MakeTransferFunctions(CFG) and module InvariantMap = CFG.IdMap
+  S with module TransferFunctions = MakeTransferFunctions(CFG)

@@ -67,7 +67,7 @@ module TransferFunctionsDataDeps (CFG : ProcCfg.S) = struct
 
 
   let pp_session_name node fmt =
-    F.fprintf fmt "data dependency analysis %a" CFG.pp_id (CFG.id node)
+    F.fprintf fmt "data dependency analysis %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module ControlDepSet = VarSet
@@ -109,7 +109,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   let pp_session_name node fmt =
-    F.fprintf fmt "control dependency analysis %a" CFG.pp_id (CFG.id node)
+    F.fprintf fmt "control dependency analysis %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module CFG = ProcCfg.Normal
@@ -156,8 +156,7 @@ let gather_all_deps control_map data_map =
 
 
 let compute_all_deps data_invariant_map control_invariant_map node =
-  let und_node = CFG.underlying_node node in
-  let node_id = Procdesc.Node.get_id und_node in
+  let node_id = CFG.Node.id node in
   let deps = VarSet.empty in
   ControlDepAnalyzer.extract_post node_id control_invariant_map
   |> Option.map ~f:(fun control_deps ->
