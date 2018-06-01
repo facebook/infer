@@ -96,7 +96,10 @@ module Exceptional :
 (** Wrapper that reverses the direction of the CFG *)
 module Backward (Base : S) : S with type t = Base.t and module Node = Base.Node
 
-module OneInstrPerNode (Base : S with module Node = DefaultNode) :
-  S with type t = Base.t and module Node = InstrNode
+module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
+  include S with type t = Base.t and module Node = InstrNode
+
+  val last_of_underlying_node : Procdesc.Node.t -> Node.t
+end
 
 module NormalOneInstrPerNode : module type of OneInstrPerNode (Normal)

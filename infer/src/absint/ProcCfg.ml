@@ -286,9 +286,11 @@ module Backward (Base : S) = struct
   let fold_exceptional_preds = Base.fold_exceptional_succs
 end
 
-module OneInstrPerNode (Base : S with module Node = DefaultNode) :
-  S with type t = Base.t and module Node = InstrNode =
-struct
+module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
+  include S with type t = Base.t and module Node = InstrNode
+
+  val last_of_underlying_node : Procdesc.Node.t -> Node.t
+end = struct
   type t = Base.t
 
   module Node = InstrNode
@@ -301,6 +303,8 @@ struct
   let first_of_node node = (node, 0)
 
   let last_of_node node = (node, max 0 (Instrs.count (Base.instrs node) - 1))
+
+  let last_of_underlying_node = last_of_node
 
   let fold_normal_succs _ _ ~init:_ ~f:_ = (* not used *) assert false
 

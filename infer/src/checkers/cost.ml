@@ -154,11 +154,11 @@ module BoundMap = struct
       | Procdesc.Node.Exit_node _ ->
           Node.IdMap.add node_id BasicCost.one bound_map
       | _ ->
-          let entry_state_opt =
-            let instr_node_id = InstrCFG.Node.of_underlying_node node |> InstrCFG.Node.id in
-            BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map
+          let exit_state_opt =
+            let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
+            BufferOverrunChecker.extract_post instr_node_id inferbo_invariant_map
           in
-          match entry_state_opt with
+          match exit_state_opt with
           | Some entry_mem ->
               (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
               let all_deps =
