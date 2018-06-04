@@ -27,12 +27,12 @@ class JavaIO {
   }
 
   @UiThread
-  void fileReadBad() throws IOException {
+  void FN_fileReadBad() throws IOException {
     doFileRead();
   }
 
   @UiThread
-  void streamReadBad() throws IOException {
+  void FN_streamReadBad() throws IOException {
     doStreamRead();
   }
 

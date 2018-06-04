@@ -5,26 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.io.FileReader;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.CountDownLatch;
 import android.support.annotation.UiThread;
 import java.io.IOException;
 
 class Dedup {
-  FileReader reader;
   CountDownLatch latch;
+  Future future;
 
   // only one report should be seen
   @UiThread
-  void onUiThreadBad() throws InterruptedException, IOException {
+  void onUiThreadBad() throws InterruptedException, ExecutionException {
     callMethodWithMultipleBlocksBad();
   }
 
   // three reports are expected
   @UiThread
-  void callMethodWithMultipleBlocksBad() throws InterruptedException, IOException  {
-    reader.read();
+  void callMethodWithMultipleBlocksBad() throws InterruptedException, ExecutionException {
+    future.get();
     latch.await();
-    reader.read();
+    future.get();
   }
 }

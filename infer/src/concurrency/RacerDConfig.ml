@@ -647,10 +647,10 @@ module Models = struct
                 classes (non-channel based I/O), to methods `(Reader|InputStream).read*`.
                 Initially, (Writer|OutputStream).(flush|close) were also matched, but this generated too
                 many reports *)
-  let is_blocking_java_io =
-    is_call_of_class_or_superclass ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
-      "read"
 
+  (* let is_blocking_java_io =
+    is_call_of_class_or_superclass ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
+      "read" *)
 
   let actuals_are_empty_or_timeout = function
     | [_] ->
@@ -702,8 +702,7 @@ module Models = struct
   let may_block =
     let open StarvationDomain.Event in
     let matchers =
-      [ (is_blocking_java_io, Low)
-      ; (is_countdownlatch_await, Medium)
+      [ (is_countdownlatch_await, Medium)
       ; (is_two_way_binder_transact, High)
       ; (is_getWindowVisibleDisplayFrame, Low)
       ; (is_future_get, High)
