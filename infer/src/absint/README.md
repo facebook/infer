@@ -1,3 +1,3 @@
 # AbsInt
 
-Code + utilties for the Infer.AI abstract interpretation framework.
+Code + utilities for the Infer.AI abstract interpretation framework.
