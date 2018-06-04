@@ -47,6 +47,8 @@ module MockProcCfg = struct
 
   type t = (Node.t * Node.t list) list
 
+  type instrs_dir = Instrs.not_reversed
+
   let instrs _ = Instrs.empty
 
   let equal_id = Int.equal

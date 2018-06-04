@@ -196,7 +196,7 @@ let force_delayed_print fmt =
             i Io_infer.Html.pp_end_color ()
         else Sil.pp_instr Pp.text fmt i
     | L.PTinstr_list, il ->
-        let il : Instrs.t = Obj.obj il in
+        let il : Instrs.not_reversed_t = Obj.obj il in
         if Config.write_html then
           F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Pp.Green
             (Instrs.pp (Pp.html Green))

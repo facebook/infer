@@ -88,7 +88,7 @@ let tests =
       let check_backward_instr_ fold backward_instr_node expected_instrs =
         match Container.to_list ~fold:(fold backward_instr_proc_cfg) backward_instr_node with
         | [n] ->
-            assert_equal (BackwardInstrCfg.instrs n) expected_instrs
+            assert_equal (BackwardInstrCfg.instrs n) (expected_instrs |> Instrs.reverse_order)
         | _ ->
             assert_failure "Expected exactly one node"
       in

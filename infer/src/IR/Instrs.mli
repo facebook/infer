@@ -7,44 +7,52 @@
 
 open! IStd
 
-type t
+type reversed
 
-val empty : t
+type not_reversed
 
-val singleton : Sil.instr -> t
+type 'r t
 
-val append_list : t -> Sil.instr list -> t
+type not_reversed_t = not_reversed t
 
-val prepend_one : Sil.instr -> t -> t
+val empty : not_reversed_t
 
-val reverse_order : t -> t
+val singleton : Sil.instr -> not_reversed_t
 
-val is_empty : t -> bool
+val append_list : not_reversed_t -> Sil.instr list -> not_reversed_t
 
-val count : t -> int
+val prepend_one : Sil.instr -> not_reversed_t -> not_reversed_t
 
-val exists : t -> f:(Sil.instr -> bool) -> bool
+val of_list : Sil.instr list -> not_reversed_t
 
-val for_all : t -> f:(Sil.instr -> bool) -> bool
+val of_rev_list : Sil.instr list -> not_reversed_t
 
-val nth_exists : t -> int -> bool
+val filter_map : not_reversed_t -> f:(Sil.instr -> Sil.instr option) -> not_reversed_t
 
-val nth_exn : t -> int -> Sil.instr
+val map_changed :
+  equal:(Sil.instr -> Sil.instr -> bool) -> not_reversed_t -> f:(Sil.instr -> Sil.instr)
+  -> not_reversed_t
 
-val last : t -> Sil.instr option
+val reverse_order : not_reversed_t -> reversed t
 
-val find_map : t -> f:(Sil.instr -> 'a option) -> 'a option
+val is_empty : _ t -> bool
 
-val pp : Pp.env -> Format.formatter -> t -> unit
+val count : _ t -> int
 
-val filter_map : t -> f:(Sil.instr -> Sil.instr option) -> t
+val exists : _ t -> f:(Sil.instr -> bool) -> bool
 
-val map_changed : equal:(Sil.instr -> Sil.instr -> bool) -> t -> f:(Sil.instr -> Sil.instr) -> t
+val for_all : _ t -> f:(Sil.instr -> bool) -> bool
 
-val fold : (t, Sil.instr, 'a) Container.fold
+val nth_exists : _ t -> int -> bool
 
-val iter : (t, Sil.instr) Container.iter
+val nth_exn : _ t -> int -> Sil.instr
 
-val of_list : Sil.instr list -> t
+val last : _ t -> Sil.instr option
 
-val of_rev_list : Sil.instr list -> t
+val find_map : _ t -> f:(Sil.instr -> 'a option) -> 'a option
+
+val pp : Pp.env -> Format.formatter -> _ t -> unit
+
+val fold : (_ t, Sil.instr, 'a) Container.fold
+
+val iter : (_ t, Sil.instr) Container.iter

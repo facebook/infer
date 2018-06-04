@@ -66,7 +66,7 @@ module Node : sig
   val get_id : t -> id
   (** Get the unique id of the node *)
 
-  val get_instrs : t -> Instrs.t
+  val get_instrs : t -> Instrs.not_reversed_t
   (** Get the instructions to be executed *)
 
   val get_kind : t -> nodekind

@@ -460,7 +460,7 @@ module Report = struct
 
 
   let check_instrs
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.Node.t -> Instrs.t
+      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.Node.t -> Instrs.not_reversed_t
         -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun summary pdesc tenv cfg node instrs state cond_set ->
     match state with

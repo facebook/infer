@@ -63,25 +63,28 @@ struct
   let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
-      let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
-      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      let instrs =
-        let instrs = CFG.instrs node in
-        if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs
+      let exec_instrs instrs =
+        if debug then
+          NodePrinter.start_session
+            ~pp_name:(TransferFunctions.pp_session_name node)
+            (Node.underlying_node node) ;
+        let astate_post =
+          let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
+          Instrs.fold ~f:compute_post ~init:pre instrs
+        in
+        if debug then (
+          L.d_strln
+            (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
+               (Instrs.pp Pp.(html Green))
+               instrs Domain.pp astate_post) ;
+          NodePrinter.finish_session (Node.underlying_node node) ) ;
+        let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
+        (inv_map', Scheduler.schedule_succs work_queue node)
       in
-      if debug then
-        NodePrinter.start_session
-          ~pp_name:(TransferFunctions.pp_session_name node)
-          (Node.underlying_node node) ;
-      let astate_post = Instrs.fold ~f:compute_post ~init:pre instrs in
-      if debug then (
-        L.d_strln
-          (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
-             (Instrs.pp Pp.(html Green))
-             instrs Domain.pp astate_post) ;
-        NodePrinter.finish_session (Node.underlying_node node) ) ;
-      let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
-      (inv_map', Scheduler.schedule_succs work_queue node)
+      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+      let instrs = CFG.instrs node in
+      if Instrs.is_empty instrs then exec_instrs (Instrs.singleton Sil.skip_instr)
+      else exec_instrs instrs
     in
     if InvariantMap.mem node_id inv_map then (
       let old_state = InvariantMap.find node_id inv_map in

@@ -113,9 +113,11 @@ end
 module type S = sig
   type t
 
+  type instrs_dir
+
   module Node : Node
 
-  val instrs : Node.t -> Instrs.t
+  val instrs : Node.t -> instrs_dir Instrs.t
   (** get the instructions from a node *)
 
   val fold_succs : t -> (Node.t, Node.t, 'accum) Container.fold
@@ -152,6 +154,8 @@ end
 module Normal = struct
   type t = Procdesc.t
 
+  type instrs_dir = Instrs.not_reversed
+
   module Node = DefaultNode
 
   let instrs = Procdesc.Node.get_instrs
@@ -185,6 +189,8 @@ end
 (** Forward CFG with exceptional control-flow *)
 module Exceptional = struct
   module Node = DefaultNode
+
+  type instrs_dir = Instrs.not_reversed
 
   type id_node_map = Node.t list Procdesc.IdMap.t
 
@@ -264,8 +270,12 @@ module Exceptional = struct
 end
 
 (** Wrapper that reverses the direction of the CFG *)
-module Backward (Base : S) = struct
-  include Base
+module Backward (Base : S with type instrs_dir = Instrs.not_reversed) = struct
+  include (
+    Base :
+      S with type t = Base.t and type instrs_dir := Base.instrs_dir and module Node = Base.Node )
+
+  type instrs_dir = Instrs.reversed
 
   let instrs n = Instrs.reverse_order (Base.instrs n)
 
@@ -287,11 +297,16 @@ module Backward (Base : S) = struct
 end
 
 module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
-  include S with type t = Base.t and module Node = InstrNode
+  include S
+          with type t = Base.t
+           and module Node = InstrNode
+           and type instrs_dir = Instrs.not_reversed
 
   val last_of_underlying_node : Procdesc.Node.t -> Node.t
 end = struct
   type t = Base.t
+
+  type instrs_dir = Instrs.not_reversed
 
   module Node = InstrNode
 

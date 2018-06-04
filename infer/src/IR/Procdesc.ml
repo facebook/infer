@@ -33,7 +33,7 @@ module Node = struct
     { id: id  (** unique id of the node *)
     ; mutable dist_exit: int option  (** distance to the exit node *)
     ; mutable exn: t list  (** exception nodes in the cfg *)
-    ; mutable instrs: Instrs.t  (** instructions for symbolic execution *)
+    ; mutable instrs: Instrs.not_reversed_t  (** instructions for symbolic execution *)
     ; kind: nodekind  (** kind of node *)
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
