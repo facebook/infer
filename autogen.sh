@@ -25,10 +25,10 @@ fi
 
 # We need to record the date that the documentation was last modified to put in our man
 # pages. Unfortunately that information is only available reliably from `git`, which we don't have
-# access to from other distributions of the infer source code, for instance our source
-# releases. However, we do distribute the "configure" script in that case, so the idea is to bake
-# this date inside "configure" so that it's available at build time. We do that by generating an m4
-# macro that hardcodes the date we compute in this script for "configure" to find.
+# access to from other distributions of the infer source code. Such source distributions should
+# distribute the "configure" script too. The idea is to bake this date inside "configure" so that
+# it's available at build time. We do that by generating an m4 macro that hardcodes the date we
+# compute in this script for "configure" to find.
 MAN_LAST_MODIFIED_M4=m4/__GENERATED__ac_check_infer_man_last_modified.m4
 printf 'generating %s' "$MAN_LAST_MODIFIED_M4... "
 if test -d '.git' ; then

@@ -40,9 +40,10 @@ rm -fr "$RELEASE_NAME"
 
 ./build-infer.sh --only-setup-opam
 eval $(opam config env)
+touch .release
 ./autogen.sh
 ./configure --prefix="/$RELEASE_NAME"
-BUILD_MODE=opt make -j "$JOBS" install DESTDIR="$ROOT_DIR" libdir_relative_to_bindir=../lib
+make -j "$JOBS" install BUILD_MODE=opt DESTDIR="$ROOT_DIR" libdir_relative_to_bindir=../lib
 popd
 
 if [ "$DRYRUN" = "no" ]; then

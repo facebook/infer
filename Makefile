@@ -257,7 +257,6 @@ clang_setup:
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup
-ifeq ($(IS_RELEASE_TREE),no)
 	$(QUIET)$(call silent_on_success,Building clang plugin,\
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
 	  CC=$(CC) CXX=$(CXX) \
@@ -275,7 +274,6 @@ ifeq ($(IS_RELEASE_TREE),no)
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
 	  CLANG_INCLUDES=$(CLANG_INCLUDES))
-endif
 
 .PHONY: clang_plugin_test
 clang_plugin_test: clang_setup
@@ -558,11 +556,9 @@ endif
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
 .PHONY: ocaml_clean
 ocaml_clean:
-ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins OCaml build,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean)
-endif
 endif
 	$(QUIET)$(call silent_on_success,Cleaning infer OCaml build,\
 	$(MAKE) -C $(SRC_DIR) clean)
@@ -571,11 +567,9 @@ endif
 
 .PHONY: clean
 clean: test_clean ocaml_clean
-ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins C++ build,\
 	$(MAKE) -C $(FCP_DIR) clean)
-endif
 endif
 	$(QUIET)$(call silent_on_success,Cleaning Java annotations,\
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean)

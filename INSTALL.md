@@ -1,22 +1,18 @@
 # How to install Infer from source
 
-## Pre-compiled clang versions
+## Binary versions
 
-We provide a source release of Infer packaged with pre-build binaries
-for clang and facebook-clang-plugins for Linux and MacOS. We encourage
-you to use this release as compiling clang is time-consuming. Install
-the dependencies as explained in the next section, then follow the
-instructions in our [Getting
+We provide a binary release of Infer. We encourage you to use this
+release as compiling infer's dependencies is time-consuming. Follow
+the instructions in our [Getting
 Started](http://fbinfer.com/docs/getting-started.html#install-from-source)
-page to compile and install Infer.
+page to install Infer.
 
 
 ## Infer dependencies for MacOSX
 
 Here are the prerequisites to be able to compile Infer on MacOSX. This
-is required to be able to [use the
-release](http://fbinfer.com/docs/getting-started.html) (faster), or to
-compile everything from source (see the end of this document).
+is required to compile everything from source.
 
 - opam 1.2.2 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
@@ -41,9 +37,7 @@ brew cask install java
 ## Infer dependencies for Linux
 
 Here are the prerequisites to be able to compile Infer on Linux. This
-is required to be able to [use the
-release](http://fbinfer.com/docs/getting-started.html) (faster), or to
-compile everything from source (see the end of this document).
+is required to compile everything from source.
 
 - opam 1.2.2
 - Python 2.7
@@ -73,9 +67,7 @@ Replace `./build-infer.sh java` with `./build-infer.sh clang` to build
 the C and Objective-C analyzer from source. Beware that this command
 may take a really long time because it will compile a custom version
 of clang. This custom version is used by Infer to parse C and
-Objective-C source code. We encourage you to use [a
-release](https://github.com/facebook/infer/releases/) instead, which
-ship with clang already compiled.
+Objective-C source code.
 
 See `./build-infer.sh --help` for more options, eg `./build-infer.sh`
 on its own will build the analyzers for both Java and C/ObjC.

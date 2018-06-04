@@ -201,12 +201,10 @@ if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
 fi
 
 echo "preparing build... " >&2
-if [ ! -f .release ]; then
-  if [ "$BUILD_CLANG" = "no" ]; then
-    SKIP_SUBMODULES=true ./autogen.sh > /dev/null
-  else
-    ./autogen.sh > /dev/null
-  fi
+if [ "$BUILD_CLANG" = "no" ]; then
+  SKIP_SUBMODULES=true ./autogen.sh > /dev/null
+else
+  ./autogen.sh > /dev/null
 fi
 
 if [ "$BUILD_CLANG" = "no" ]; then

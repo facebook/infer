@@ -77,10 +77,10 @@ BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
 AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
 AC_ARG_WITH(fcp-clang,
-  AS_HELP_STRING([--without-fcp-clang],
-    [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
+  AS_HELP_STRING([--with-fcp-clang],
+    [use $CLANG_PREFIX/bin/clang to override the default compiler (default is not to override)]),
   ,
-  with_fcp_clang=$is_release_tree)
+  with_fcp_clang=no)
 
 AS_IF([test "x$enable_c_analyzers" = "xyes"], [
   AC_MSG_CHECKING([whether to use the compilers in $CLANG_PREFIX/bin])
@@ -103,9 +103,7 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
   AC_ASSERT_PROG([shasum], [$SHASUM])
   # cmake is required to build llvm+clang
   AC_CHECK_TOOL([CMAKE], [cmake], [no])
-  AS_IF([test "x$is_release_tree" = "xno"], [
-    AC_ASSERT_PROG([cmake], [$CMAKE])
-  ])
+  AC_ASSERT_PROG([cmake], [$CMAKE])
   AC_ARG_ENABLE(ocamlopt-custom-cc,
     AS_HELP_STRING([--enable-ocamlopt-custom-cc], [use CC in ocamlopt invocations]),
     ,
@@ -163,8 +161,7 @@ gcc version >= 4.7.2 or clang version >= 3.1.
 See the output of `./configure --help` to force the use of a different
 C compiler.
 
-Alternatively, you can checkout a release of infer with clang
-pre-compiled here:
+Alternatively, you can checkout a binary release of infer:
 
   https://github.com/facebook/infer/releases/])
    ]
