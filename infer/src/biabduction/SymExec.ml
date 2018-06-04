@@ -1623,7 +1623,7 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
-    try instrs exe_env tenv pdesc (Instrs.single load_instr) result
+    try instrs exe_env tenv pdesc (Instrs.singleton load_instr) result
     with e when SymOp.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
@@ -1722,7 +1722,7 @@ and sym_exec_alloc_model exe_env pname ret_typ tenv ret_id_typ pdesc loc prop pa
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.malloc_no_fail) in
   let alloc_instr = Sil.Call (ret_id_typ, alloc_fun, args, loc, CallFlags.default) in
   L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
-  instrs exe_env tenv pdesc (Instrs.single alloc_instr) [(prop, path)]
+  instrs exe_env tenv pdesc (Instrs.singleton alloc_instr) [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)

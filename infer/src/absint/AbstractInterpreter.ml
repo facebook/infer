@@ -67,7 +67,7 @@ struct
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
       let instrs =
         let instrs = CFG.instrs node in
-        if Instrs.is_empty instrs then Instrs.single Sil.skip_instr else instrs
+        if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs
       in
       if debug then
         NodePrinter.start_session

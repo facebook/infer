@@ -297,7 +297,8 @@ end = struct
 
   let instrs (node, index) =
     let instrs = Base.instrs node in
-    if Instrs.is_empty instrs then Instrs.empty else Instrs.nth_exn instrs index |> Instrs.single
+    if Instrs.is_empty instrs then Instrs.empty
+    else Instrs.nth_exn instrs index |> Instrs.singleton
 
 
   let first_of_node node = (node, 0)

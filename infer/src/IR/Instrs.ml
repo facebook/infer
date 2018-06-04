@@ -12,7 +12,7 @@ type t = Sil.instr list
 
 let empty = []
 
-let single instr = [instr]
+let singleton instr = [instr]
 
 let append_list = List.append
 

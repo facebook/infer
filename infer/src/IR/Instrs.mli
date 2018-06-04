@@ -11,7 +11,7 @@ type t
 
 val empty : t
 
-val single : Sil.instr -> t
+val singleton : Sil.instr -> t
 
 val append_list : t -> Sil.instr list -> t
 

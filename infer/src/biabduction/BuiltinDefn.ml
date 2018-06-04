@@ -20,7 +20,7 @@ let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; args; loc; exe_e
   match args with
   | [_; _; (lexp3, typ3)] ->
       let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
-      SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.single instr') [(prop_, path)]
+      SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton instr') [(prop_, path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -628,7 +628,7 @@ let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r)
           let set_instr =
             Sil.Store (field_exp, Typ.mk Tvoid, Exp.Const (Const.Cstr typ_string), loc)
           in
-          SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.single set_instr) res
+          SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) res
       | _ ->
           res )
   | _ ->
@@ -758,7 +758,7 @@ let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} 
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.single set_instr) [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) [(prop_, path)]
 
 
 (* translate builtin assertion failure *)
@@ -773,7 +773,7 @@ let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env}
   let set_instr =
     Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc)
   in
-  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.single set_instr) [(prop_, path)]
+  SymExec.instrs ~mask_errors:true exe_env tenv pdesc (Instrs.singleton set_instr) [(prop_, path)]
 
 
 let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
@@ -792,7 +792,7 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt
     Sil.Call
       (ret_id_typ, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, CallFlags.default)
   in
-  SymExec.instrs exe_env tenv pdesc (Instrs.single alloc_instr) symb_state
+  SymExec.instrs exe_env tenv pdesc (Instrs.singleton alloc_instr) symb_state
 
 
 (* NSArray models *)

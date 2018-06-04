@@ -93,13 +93,13 @@ let tests =
             assert_failure "Expected exactly one node"
       in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n1
-        (Instrs.single dummy_instr2) ;
+        (Instrs.singleton dummy_instr2) ;
       let backward_instr_n2 = BackwardInstrCfg.Node.of_underlying_node n2 in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n2 Instrs.empty ;
       let backward_instr_n3 = BackwardInstrCfg.Node.of_underlying_node n3 in
       check_backward_instr_ BackwardInstrCfg.fold_preds backward_instr_n3 Instrs.empty ;
       check_backward_instr_ BackwardInstrCfg.fold_normal_succs backward_instr_n2
-        (Instrs.single dummy_instr2)
+        (Instrs.singleton dummy_instr2)
     in
     "instr_test" >:: instr_test_
   in
