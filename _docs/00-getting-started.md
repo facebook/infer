@@ -5,31 +5,38 @@ layout: docs
 permalink: /docs/getting-started.html
 ---
 
-## Install Infer on Mac
+## Get Infer
 
-You'll need [Homebrew](http://brew.sh/). Simply type this into a terminal:
+You can use Homebrew (Mac only), our binary releases, build infer from
+source, or use our Docker image.
+
+On Mac, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a terminal:
 
 ```sh
 brew install infer
 ```
 
-If you get the following error...
+On Linux, or if you do not wish to use Homebrew on Mac, use our
+latest [binary
+release](https://github.com/facebook/infer/releases/latest). Download
+the tarball then extract it anywhere on your system to start using
+infer. For example, this downloads infer in /opt on Linux (replace
+`VERSION` with the latest release, eg `VERSION=0.15.0`):
 
 ```sh
-Error: No available formula for infer 
-Searching taps...
-homebrew/science/infernal
+VERSION=0.XX.Y \
+curl -sSL "https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux64-v$VERSION.tar.xz" \
+| sudo tar -C /opt xf && \
+ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
 ```
-... Then you must run this command first:
 
-```sh
-brew update
-```
-And wait a few minutes, and then run `brew install infer`. More info [here](https://github.com/facebook/infer/issues/36).
+If the binaries do not work for you, or if you would rather build
+infer from source, follow the [install from
+source](docs/getting-started.html#install-from-source) instructions
+below to install Infer on your system.
 
-## Install Infer on Linux
-
-Follow the [install from source](docs/getting-started.html#install-from-source) instructions below to install Infer on your system. Alternatively, use our [Docker](https://docs.docker.com/engine/installation/) image:
+Alternatively, use our
+[Docker](https://docs.docker.com/engine/installation/) image:
 
 ```sh
 wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/Dockerfile
@@ -43,13 +50,5 @@ Try Infer on a small example on [Codeboard](https://codeboard.io/projects/11587?
 
 ## Install from source
 
-We recommend that you start from our latest [GitHub release](https://github.com/facebook/infer/releases/latest), which contains a pre-compiled version of clang, used for our C/Objective-C analyzers.
-
-You'll need to first install the [build dependencies](https://github.com/facebook/infer/blob/master/INSTALL.md#pre-compiled-versions), then run the following commands:
-
-```sh
-tar xf infer-<release>.tar.xz
-cd infer-<release>/
-./build-infer.sh
-make install
-```
+Follow our guide in
+[INSTALL.md](https://github.com/facebook/infer/blob/master/INSTALL.md#install-infer-from-source).
