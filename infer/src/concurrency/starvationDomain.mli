@@ -25,11 +25,15 @@ module Event : sig
 
   type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
 
-  val pp_event : F.formatter -> event_t -> unit
-
   type t = private {elem: event_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
+
+  val pp_no_trace : F.formatter -> t -> unit
+
+  val get_loc : t -> Location.t
+
+  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
 module EventDomain : module type of AbstractDomain.FiniteSet (Event)
@@ -40,7 +44,7 @@ module EventDomain : module type of AbstractDomain.FiniteSet (Event)
 - the "first" lock being taken *in the current method* and, before its release, the eventual
   acquisition of "eventually" *)
 module Order : sig
-  type t = private {first: Event.t option; eventually: Event.t}
+  type t = private {first: Event.t; eventually: Event.t}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
@@ -48,9 +52,9 @@ module Order : sig
   (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
       variable name at the root of each path. *)
 
-  val make_loc_trace : t -> Errlog.loc_trace
-
   val get_loc : t -> Location.t
+
+  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
 module OrderDomain : sig

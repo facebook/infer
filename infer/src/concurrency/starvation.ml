@@ -132,20 +132,6 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
 
 
-let make_trace_with_header ?(header= "") elem pname =
-  let trace = StarvationDomain.Order.make_loc_trace elem in
-  let trace_descr = Format.asprintf "%s %a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
-  let start_loc =
-    List.hd trace |> Option.value_map ~default:Location.dummy ~f:(fun lt -> lt.Errlog.lt_loc)
-  in
-  Errlog.make_trace_element 0 start_loc trace_descr [] :: trace
-
-
-let make_loc_trace pname trace_id elem =
-  let header = Printf.sprintf "[Trace %d] " trace_id in
-  make_trace_with_header ~header elem pname
-
-
 let get_summaries_of_methods_in_class tenv clazz =
   let tstruct_opt = Tenv.lookup tenv clazz in
   let methods =
@@ -218,21 +204,21 @@ end
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   let open StarvationDomain in
   match (current_elem.Order.first, current_elem.Order.eventually) with
-  | None, _ | Some {Event.elem= MayBlock _}, _ | _, {Event.elem= MayBlock _} ->
+  | {Event.elem= MayBlock _}, _ | _, {Event.elem= MayBlock _} ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" Order.pp current_elem
-  | Some {Event.elem= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
+  | {Event.elem= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur *)
       true
-  | Some {Event.elem= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
+  | {Event.elem= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
   | _, {Event.elem= LockAcquire ((Var.LogicalVar _, _), _)} ->
       (* first elem has an ident root, but has a non-empty access path, which means we are
          not filtering out local variables (see [exec_instr]), or,
          second elem has an ident root, which should not happen if we are filtering locals *)
       L.die InternalError "Deadlock cannot occur on these logical variables: %a @." Order.pp
         current_elem
-  | Some {Event.elem= LockAcquire ((_, typ1), _)}, {Event.elem= LockAcquire ((_, typ2), _)} ->
+  | {Event.elem= LockAcquire ((_, typ1), _)}, {Event.elem= LockAcquire ((_, typ2), _)} ->
       (* use string comparison on types as a stable order to decide whether to report a deadlock *)
       let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
       c < 0
@@ -271,9 +257,9 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
               (MF.wrap_monospaced Typ.Procname.pp)
               endpoint_pname Order.pp elem
           in
-          let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
-          let second_trace = make_loc_trace endpoint_pname 2 elem in
-          let ltr = List.rev_append first_trace second_trace in
+          let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
+          let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
+          let ltr = first_trace @ second_trace in
           let loc = Order.get_loc current_elem in
           ReportMap.add_deadlock current_pname loc ltr error_message report_map
       | _, _ ->
@@ -281,7 +267,7 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
   in
   let report_on_current_elem elem report_map =
     match elem with
-    | {Order.first= None} | {Order.eventually= {Event.elem= Event.MayBlock _}} ->
+    | {Order.eventually= {Event.elem= Event.MayBlock _}} ->
         report_map
     | {Order.eventually= {Event.elem= Event.LockAcquire endpoint_lock}} ->
         Lock.owner_class endpoint_lock
@@ -301,14 +287,12 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
   OrderDomain.fold report_on_current_elem order report_map'
 
 
-let report_starvation tenv current_pdesc {StarvationDomain.order; ui} report_map' =
+let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_map' =
   let open StarvationDomain in
   let current_pname = Procdesc.get_proc_name current_pdesc in
-  let report_remote_block ui_explain current_elem current_lock endpoint_pname endpoint_elem
-      report_map =
-    match endpoint_elem with
-    | { Order.first= Some {Event.elem= Event.LockAcquire lock}
-      ; eventually= {Event.elem= Event.MayBlock (block_descr, sev)} }
+  let report_remote_block ui_explain event current_lock endpoint_pname endpoint_elem report_map =
+    match (endpoint_elem.Order.first, endpoint_elem.Order.eventually) with
+    | {Event.elem= Event.LockAcquire lock}, {Event.elem= Event.MayBlock (block_descr, sev)}
       when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
@@ -317,26 +301,26 @@ let report_starvation tenv current_pdesc {StarvationDomain.order; ui} report_map
             (MF.wrap_monospaced Typ.Procname.pp)
             current_pname ui_explain Lock.pp lock block_descr
         in
-        let first_trace = List.rev (make_loc_trace current_pname 1 current_elem) in
-        let second_trace = make_loc_trace endpoint_pname 2 endpoint_elem in
-        let ltr = List.rev_append first_trace second_trace in
-        let loc = Order.get_loc current_elem in
+        let first_trace = Event.make_trace ~header:"[Trace 1] " current_pname event in
+        let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem in
+        let ltr = first_trace @ second_trace in
+        let loc = Event.get_loc event in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
     | _ ->
         report_map
   in
-  let report_on_current_elem ui_explain ({Order.eventually} as elem) report_map =
-    match eventually with
-    | {Event.elem= Event.MayBlock (_, sev)} ->
+  let report_on_current_elem ui_explain event report_map =
+    match event.Event.elem with
+    | Event.MayBlock (_, sev) ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain Event.pp_event eventually.Event.elem
+            current_pname ui_explain Event.pp_no_trace event
         in
-        let loc = Order.get_loc elem in
-        let ltr = make_trace_with_header elem current_pname in
+        let loc = Event.get_loc event in
+        let ltr = Event.make_trace current_pname event in
         ReportMap.add_starvation sev current_pname loc ltr error_message report_map
-    | {Event.elem= Event.LockAcquire endpoint_lock} ->
+    | Event.LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
                (* get the class of the root variable of the lock in the endpoint elem
@@ -348,7 +332,7 @@ let report_starvation tenv current_pdesc {StarvationDomain.order; ui} report_map
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
                      OrderDomain.fold
-                       (report_remote_block ui_explain elem endpoint_lock endpoint_pname)
+                       (report_remote_block ui_explain event endpoint_lock endpoint_pname)
                        order acc
                    else acc ) )
   in
@@ -356,7 +340,7 @@ let report_starvation tenv current_pdesc {StarvationDomain.order; ui} report_map
   | AbstractDomain.Types.Bottom ->
       report_map'
   | AbstractDomain.Types.NonBottom ui_explain ->
-      OrderDomain.fold (report_on_current_elem ui_explain) order report_map'
+      EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
 let reporting {Callbacks.procedures; exe_env} =
