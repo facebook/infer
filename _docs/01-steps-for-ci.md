@@ -45,11 +45,11 @@ The following CI script runs the `infer` and `eradicate` analyzers. Assume again
 ```bash
 git diff --name-only origin/feature..origin/master > index.txt
 infer capture -- ./gradlew --offline assembleDebug
-infer analyze --fail-on-issue -a infer --changed-files-index ./index.txt
-infer analyze --fail-on-issue -a eradicate --changed-files-index ./index.txt
+infer analyze --fail-on-issue --eradicate --changed-files-index ./index.txt
 ```
 
 Notice that
 - We use git to find the changed files `git diff --name-only`
 - We run capture only once, and the output is kept for the subsequent analyses
-- We run the analyses only for the changed files `--changed-files-index ./index.txt`
+- We run the eradicate analysis alongside the default analyses: `--eradicate`
+- We analyze only the changed files `--changed-files-index ./index.txt`
