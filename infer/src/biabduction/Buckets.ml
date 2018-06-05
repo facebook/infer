@@ -62,31 +62,44 @@ let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node =
       (* find ids obtained by a letref on a formal parameter *)
-      let node_instrs = Procdesc.Node.get_instrs node in
-      let formals =
-        match State.get_prop_tenv_pdesc () with
-        | None ->
-            []
-        | Some (_, _, pdesc) ->
-            Procdesc.get_formals pdesc
+      let is_formal =
+        let formals =
+          match State.get_prop_tenv_pdesc () with
+          | None ->
+              []
+          | Some (_, _, pdesc) ->
+              Procdesc.get_formals pdesc
+        in
+        fun pvar ->
+          let name = Pvar.get_name pvar in
+          List.exists ~f:(fun (formal_name, _) -> Mangled.equal name formal_name) formals
       in
-      let formal_names = List.map ~f:fst formals in
-      let is_formal pvar =
-        let name = Pvar.get_name pvar in
-        List.exists ~f:(Mangled.equal name) formal_names
-      in
-      let formal_ids = ref [] in
       let process_formal_letref = function
         | Sil.Load (id, Exp.Lvar pvar, _, _) ->
             let is_java_this = Language.curr_language_is Java && Pvar.is_this pvar in
-            if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
+            if not is_java_this && is_formal pvar then Some id else None
         | _ ->
-            ()
+            None
       in
-      Instrs.iter ~f:process_formal_letref node_instrs ;
-      !formal_ids
+      let node_instrs = Procdesc.Node.get_instrs node in
+      IContainer.rev_filter_map_to_list node_instrs ~fold:Instrs.fold ~f:process_formal_letref
     in
-    let formal_param_used_in_call = ref false in
+    let formal_param_used_in_call node =
+      let f = function
+        | Sil.Call (_, _, args, _, _) ->
+            let formal_ids = find_formal_ids node in
+            let arg_is_formal_param = function
+              | Exp.Var id, _ ->
+                  List.exists ~f:(Ident.equal id) formal_ids
+              | _ ->
+                  false
+            in
+            List.exists ~f:arg_is_formal_param args
+        | _ ->
+            false
+      in
+      Instrs.exists ~f (Procdesc.Node.get_instrs node)
+    in
     let has_call_or_sets_null node =
       let rec exp_is_null exp =
         match exp with
@@ -98,12 +111,7 @@ let check_access access_opt de_opt =
             false
       in
       let filter = function
-        | Sil.Call (_, _, etl, _, _) ->
-            let formal_ids = find_formal_ids node in
-            let arg_is_formal_param (e, _) =
-              match e with Exp.Var id -> List.exists ~f:(Ident.equal id) formal_ids | _ -> false
-            in
-            if List.exists ~f:arg_is_formal_param etl then formal_param_used_in_call := true ;
+        | Sil.Call _ ->
             true
         | Sil.Store (_, _, e, _) ->
             exp_is_null e
@@ -112,24 +120,25 @@ let check_access access_opt de_opt =
       in
       Instrs.exists ~f:filter (Procdesc.Node.get_instrs node)
     in
-    let do_node local_access_found node =
-      if
-        Int.equal (Procdesc.Node.get_loc node).Location.line line_number
-        && has_call_or_sets_null node
-      then true
-      else local_access_found
+    let do_node node =
+      Int.equal (Procdesc.Node.get_loc node).Location.line line_number
+      && has_call_or_sets_null node
     in
     let path, pos_opt = State.get_path () in
-    let local_access_found = Paths.Path.fold_all_nodes_nocalls path ~init:false ~f:do_node in
-    if local_access_found then
-      let bucket =
-        if null_case_flag then Localise.BucketLevel.b5
-        else if check_nested_loop path pos_opt then Localise.BucketLevel.b3
-        else if !formal_param_used_in_call then Localise.BucketLevel.b2
-        else Localise.BucketLevel.b1
-      in
-      Some bucket
-    else None
+    match
+      IContainer.rev_filter_to_list path ~fold:Paths.Path.fold_all_nodes_nocalls ~f:do_node
+    with
+    | [] ->
+        None
+    | local_access_nodes ->
+        let bucket =
+          if null_case_flag then Localise.BucketLevel.b5
+          else if check_nested_loop path pos_opt then Localise.BucketLevel.b3
+          else if List.exists local_access_nodes ~f:formal_param_used_in_call then
+            Localise.BucketLevel.b2
+          else Localise.BucketLevel.b1
+        in
+        Some bucket
   in
   match access_opt with
   | Some (Localise.Last_assigned (n, ncf)) ->

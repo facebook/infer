@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+(* Extension of Base.Container, i.e. generic definitions of container operations in terms of fold. *)
 
 open! IStd
 
@@ -26,6 +27,10 @@ let mem_nth ~fold t index =
 let forto excl ~init ~f =
   let rec aux excl ~f acc i = if i >= excl then acc else aux excl ~f (f acc i) (i + 1) in
   aux excl ~f init 0
+
+
+let rev_filter_to_list ~fold t ~f =
+  fold t ~init:[] ~f:(fun acc item -> if f item then item :: acc else acc)
 
 
 let rev_map_to_list ~fold t ~f = fold t ~init:[] ~f:(fun acc item -> f item :: acc)
