@@ -59,7 +59,9 @@ git clone https://github.com/facebook/infer.git
 cd infer
 # Compile Infer
 ./build-infer.sh java
-# Install Infer into your PATH
+# install Infer system-wide...
+sudo make install
+# ...or, alternatively, install Infer into your PATH
 export PATH=`pwd`/infer/bin:$PATH
 ```
 
@@ -82,17 +84,18 @@ some means other than opam, you can still compile Infer by running:
 ./autogen.sh
 ./configure # Disable Java or C/C++/ObjC analyzers with --disable-java-analyzers or --disable-c-analyzers
 make
-# Install Infer into your PATH...
-export PATH=`pwd`/infer/bin:$PATH
-# ...or, alternatively, install Infer system-wide
+# install Infer system-wide...
 sudo make install
+# ...or, alternatively, install Infer into your PATH
+export PATH=`pwd`/infer/bin:$PATH
 ```
 
 
 ## How to install the dependencies on Linux
 
 See the Dockerfile in docker/ for inspiration. It includes the
-dependencies needed to build infer on Debian 9 (stretch).
+dependencies needed to build Infer on Debian 9 (stretch).
+
 
 ### Setting up opam
 
