@@ -32,8 +32,8 @@ ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
 
 If the binaries do not work for you, or if you would rather build
 infer from source, follow the [install from
-source](docs/getting-started.html#install-from-source) instructions
-below to install Infer on your system.
+source](https://github.com/facebook/infer/blob/master/INSTALL.md#install-infer-from-source)
+instructions to install Infer on your system.
 
 Alternatively, use our
 [Docker](https://docs.docker.com/engine/installation/) image:
@@ -47,8 +47,3 @@ sh run.sh
 ## Try Infer in your browser
 
 Try Infer on a small example on [Codeboard](https://codeboard.io/projects/11587?view=2.1-21.0-22.0).
-
-## Install from source
-
-Follow our guide in
-[INSTALL.md](https://github.com/facebook/infer/blob/master/INSTALL.md#install-infer-from-source).
