@@ -37,3 +37,13 @@ void intraprocdpd() {
   *y = 42;
   z = y;
 }
+
+short union_ok(int* param) {
+  union {
+    int* a;
+    short* b;
+  } u;
+  u.a = param;
+  short* p = u.b;
+  return *p;
+}

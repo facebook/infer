@@ -38,3 +38,13 @@ int unknown_ctor_assume_no_dangling_ok() {
   delete t1;
   return ret;
 }
+
+short union_ok(int* param) {
+  union {
+    int* a;
+    short* b;
+  } u;
+  u.a = param;
+  short* p = u.b;
+  return *p;
+}

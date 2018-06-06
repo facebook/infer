@@ -954,13 +954,21 @@ let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ lo
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
           ptsto_lookup pdesc tenv prop_ren (lexp, strexp, sizeof_data) offlist id
         in
+        let is_union_field =
+          match rhs_exp with
+          | Exp.Lfield (_, _, {Typ.desc= Tstruct name}) when Typ.Name.is_union name ->
+              true
+          | _ ->
+              false
+        in
         let update acc (pi, sigma) =
           let pi' = Sil.Aeq (Exp.Var id, contents) :: pi in
           let sigma' = new_ptsto :: sigma in
           let iter' = update_iter iter_ren pi' sigma' in
           let prop' = Prop.prop_iter_to_prop tenv iter' in
           let prop'' =
-            if lookup_uninitialized then
+            (* T30105165 remove `is_union_field` check after we improve union translation *)
+            if lookup_uninitialized && not is_union_field then
               Attribute.add_or_replace tenv prop' (Apred (Adangling DAuninit, [Exp.Var id]))
             else prop'
           in
