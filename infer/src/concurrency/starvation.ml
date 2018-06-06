@@ -158,21 +158,29 @@ module ReportMap = struct
 
   let empty : report_t list LocMap.t = LocMap.empty
 
-  let add issue pname loc ltr message map =
-    let rep = {issue; pname; ltr; message} in
-    let preexisting = try LocMap.find loc map with Caml.Not_found -> [] in
-    LocMap.add loc (rep :: preexisting) map
+  let issue_type issue =
+    match issue with Deadlock -> IssueType.deadlock | Starvation _ -> IssueType.starvation
 
 
-  let add_deadlock pname loc ltr exn map = add Deadlock pname loc ltr exn map
+  let add tenv issue pdesc loc ltr message map =
+    let pname = Procdesc.get_proc_name pdesc in
+    let issue_type = issue_type issue in
+    if Reporting.is_suppressed tenv pdesc issue_type ~field_name:None then map
+    else
+      let rep = {issue; pname; ltr; message} in
+      let preexisting = try LocMap.find loc map with Caml.Not_found -> [] in
+      LocMap.add loc (rep :: preexisting) map
 
-  let add_starvation sev pname loc ltr exn map = add (Starvation sev) pname loc ltr exn map
+
+  let add_deadlock tenv pdesc loc ltr exn map = add tenv Deadlock pdesc loc ltr exn map
+
+  let add_starvation tenv sev pdesc loc ltr exn map =
+    add tenv (Starvation sev) pdesc loc ltr exn map
+
 
   let log map =
     let log_report loc {issue; pname; ltr; message} =
-      let issue_type =
-        match issue with Deadlock -> IssueType.deadlock | Starvation _ -> IssueType.starvation
-      in
+      let issue_type = issue_type issue in
       let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc message) in
       Reporting.log_issue_external pname Exceptions.Kerror ~loc ~ltr exn
     in
@@ -261,7 +269,7 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
           let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
           let ltr = first_trace @ second_trace in
           let loc = Order.get_loc current_elem in
-          ReportMap.add_deadlock current_pname loc ltr error_message report_map
+          ReportMap.add_deadlock tenv current_pdesc loc ltr error_message report_map
       | _, _ ->
           report_map
   in
@@ -305,7 +313,7 @@ let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_ma
         let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem in
         let ltr = first_trace @ second_trace in
         let loc = Event.get_loc event in
-        ReportMap.add_starvation sev current_pname loc ltr error_message report_map
+        ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message report_map
     | _ ->
         report_map
   in
@@ -319,7 +327,7 @@ let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_ma
         in
         let loc = Event.get_loc event in
         let ltr = Event.make_trace current_pname event in
-        ReportMap.add_starvation sev current_pname loc ltr error_message report_map
+        ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message report_map
     | Event.LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->

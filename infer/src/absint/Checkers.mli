@@ -9,7 +9,6 @@ open! IStd
 
 (** Module for user-defined checkers. *)
 
-(** State that persists in the .specs files. *)
 module ST : sig
   val report_error :
     Tenv.t -> Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t

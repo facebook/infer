@@ -45,3 +45,7 @@ val log_issue_external :
   Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.err_kind
   -> log_t
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
+
+val is_suppressed :
+  Tenv.t -> Procdesc.t -> IssueType.t -> ?field_name:Typ.Fieldname.t option -> bool
+(** should an issue report be suppressed due to a [@SuppressLint("issue")] annotation? *)
