@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 type 'a state = {pre: 'a; post: 'a; visit_count: int}
@@ -60,6 +61,24 @@ struct
     match extract_state node_id inv_map with Some state -> Some state.pre | None -> None
 
 
+  let debug_absint_operation op node =
+    let pp_name fmt =
+      TransferFunctions.pp_session_name node fmt ;
+      match op with
+      | `Join _ ->
+          F.pp_print_string fmt " JOIN"
+      | `Widen (num_iters, _) ->
+          F.fprintf fmt " WIDEN(num_iters= %d)" num_iters
+    in
+    let underlying_node = Node.underlying_node node in
+    NodePrinter.start_session ~pp_name underlying_node ;
+    let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
+    L.d_strln
+      (Format.asprintf "LEFT: %a@.RIGHT: %a@.RESULT: %a@." Domain.pp left Domain.pp right Domain.pp
+         result) ;
+    NodePrinter.finish_session underlying_node
+
+
   let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
@@ -89,8 +108,13 @@ struct
     if InvariantMap.mem node_id inv_map then (
       let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
-        if CFG.is_loop_head pdesc node then
-          Domain.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count
+        if CFG.is_loop_head pdesc node then (
+          let num_iters = old_state.visit_count in
+          let prev = old_state.pre in
+          let next = astate_pre in
+          let res = Domain.widen ~prev ~next ~num_iters in
+          if debug then debug_absint_operation (`Widen (num_iters, (prev, next, res))) node ;
+          res )
         else astate_pre
       in
       if Domain.( <= ) ~lhs:widened_pre ~rhs:old_state.pre then (inv_map, work_queue)
@@ -118,7 +142,9 @@ struct
             | None ->
                 some_post
             | Some joined_post ->
-                Some (Domain.join joined_post post) )
+                let res = Domain.join joined_post post in
+                if debug then debug_absint_operation (`Join (joined_post, post, res)) node ;
+                Some res )
     in
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
