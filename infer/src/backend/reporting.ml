@@ -100,7 +100,7 @@ let log_issue_external procname ?clang_method_kind err_kind ?loc ?node_id ?sessi
     ?linters_def_file ?doc_url ?access exn
 
 
-let is_suppressed tenv proc_desc kind ?(field_name= None) =
+let is_suppressed ?(field_name= None) tenv proc_desc kind =
   let lookup = Tenv.lookup tenv in
   let proc_attributes = Summary.pdesc_resolve_attributes proc_desc in
   (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be

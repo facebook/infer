@@ -47,5 +47,5 @@ val log_issue_external :
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
 
 val is_suppressed :
-  Tenv.t -> Procdesc.t -> IssueType.t -> ?field_name:Typ.Fieldname.t option -> bool
+  ?field_name:Typ.Fieldname.t option -> Tenv.t -> Procdesc.t -> IssueType.t -> bool
 (** should an issue report be suppressed due to a [@SuppressLint("issue")] annotation? *)
