@@ -360,7 +360,9 @@ let get_locals cfg tenv pdesc =
       let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
       let base_access_expr = AccessExpression.Base (Var.of_pvar pvar, var_data.typ) in
       match var_data.typ.Typ.desc with
-      | Typ.Tstruct qual_name -> (
+      | Typ.Tstruct qual_name
+      (* T30105165 remove filtering after we improve union translation *)
+        when not (Typ.Name.is_union qual_name) -> (
         match Tenv.lookup tenv qual_name with
         | Some {fields} ->
             let flist =

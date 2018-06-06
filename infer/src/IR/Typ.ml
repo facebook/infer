@@ -364,6 +364,8 @@ module Name = struct
 
   let is_class = function CppClass _ | JavaClass _ | ObjcClass _ -> true | _ -> false
 
+  let is_union = function CUnion _ -> true | _ -> false
+
   let is_objc_protocol name = match name with ObjcProtocol _ -> true | _ -> false
 
   let is_same_type t1 t2 =

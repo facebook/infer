@@ -269,12 +269,12 @@ int* FP_pointer_param_void_star_ok() {
   return a.ptr; // false positive
 }
 
-short FP_union_ok() {
+short union_ok() {
   union {
     int* a;
     short* b;
   } u;
   init(u.a);
-  short* p = u.b; // false positive
+  short* p = u.b;
   return *p;
 }

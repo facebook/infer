@@ -134,6 +134,9 @@ module Name : sig
   val is_class : t -> bool
   (** [is_class name] holds if [name] names CPP/Objc/Java class *)
 
+  val is_union : t -> bool
+  (** [is_union name] holds if [name] names C/CPP union *)
+
   val is_same_type : t -> t -> bool
   (** [is_class name1 name2] holds if [name1] and [name2] name same kind of type *)
 

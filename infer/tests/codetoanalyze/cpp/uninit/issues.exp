@@ -10,7 +10,6 @@ codetoanalyze/cpp/uninit/struct.cpp, pass_basic_type_field_bad, 3, UNINITIALIZED
 codetoanalyze/cpp/uninit/struct.cpp, struct_uninit_bad, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, FP_no_warning_noreturn_callee_ok, 7, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, FP_pointer_param_void_star_ok, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-codetoanalyze/cpp/uninit/uninit.cpp, FP_union_ok, 6, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, bad1, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, bad2, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, branch1_FP, 11, UNINITIALIZED_VALUE, no_bucket, ERROR, []

@@ -425,6 +425,8 @@ and get_record_typename ?tenv decl =
       let args = get_template_args tenv spec_info in
       let mangled = if String.equal "" mangling then None else Some mangling in
       Typ.Name.Cpp.from_qual_name (Typ.Template {mangled; args}) tname
+  | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
+      Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
   | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
   | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
