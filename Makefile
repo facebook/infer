@@ -629,7 +629,7 @@ opam.lock: opam
 # This is a magical version number that doesn't reinstall the world when added on top of what we
 # have in opam.lock. To upgrade this version number, manually try to install several utop versions
 # until you find one that doesn't recompile the world. TODO(t20828442): get rid of magic
-OPAM_DEV_DEPS = ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 2) ocp-indent merlin utop.2.1.0
+OPAM_DEV_DEPS = ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 2) ocp-indent merlin utop.2.1.0 webbrowser
 
 ifneq ($(EMACS),no)
 OPAM_DEV_DEPS += tuareg
@@ -705,6 +705,18 @@ devsetup: Makefile.autoconf
 	  echo >&2; \
 	  echo '$(TERM_INFO)  eval $$(opam config env)$(TERM_RESET)' >&2; \
 	fi
+
+.PHONY: doc
+doc: src_build_common
+	$(QUIET)$(call silent_on_success,Generating infer documentation,\
+	$(MAKE_SOURCE) doc)
+	$(QUIET)$(call silent_on_success,Opening in browser,\
+	browse $(SRC_DIR)/_build/$(BUILD_MODE)/_doc/_html/index.html)
+	$(QUIET)echo "Tip: you can generate the doc for all the opam dependencies of infer like this:"
+	$(QUIET)echo
+	$(QUIET)echo "  odig odoc # takes a while, run it only when the dependencies change"
+	$(QUIET)echo "  odig doc"
+
 
 # print list of targets
 .PHONY: show-targets

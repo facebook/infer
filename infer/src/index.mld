@@ -1,0 +1,63 @@
+{1 Library infer}
+These are the modules used by infer that are not packaged into sub-libraries.
+
+The entry point of this library is the module:
+{!module-InferModules}.
+
+
+The modules are split into several directories in the source tree of infer.
+
+{2 absint/}
+Code + utilities for the Infer.AI abstract interpretation framework. Start at {!module-InferModules.AbstractInterpreter}.
+
+{2 backend/}
+The backend is responsible for the analysis of a project starting from an intermediate representation stored in the results directory, typically [infer-out].
+
+The entry point for the analysis is the module {!module-InferModules.InferAnalyze}.
+
+The module {!module-InferModules.InferPrint} is used to export the analysis results.
+
+{2 checkers/}
+Transfer functions, abstract domains, and checker configuration.
+
+{2 clang/}
+This is the frontend for the clang compiler. The main entry point is {!module-InferModules.ClangWrapper}.
+
+{3 General structure}
++ Given a compilation command from the build system, sanitize it, attach [ASTExporter] clang plugin to the relevant commands and run it.
++ Parse the AST (Abstract Syntax Tree) from the Biniou format into an OCaml data structure.
++ If enabled, invoke translation to [SIL] via {!module-InferModules.CFrontend}.
++ If enabled, invoke linters via {!module-InferModules.CFrontend_checkers_main}. More on linters here: {:http://fbinfer.com/docs/linters.html}.
+
+{3 Format of the AST}
+The OCaml data type is defined in [atd] format. The [clang_ast_t.atd] file is generated from the comments in the {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ASTExporter.h} [ASTExporter.h]} file.
+
+For more information, refer to the relevant documentation in [facebook-clang-plugins]:
+- {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ATD_GUIDELINES.md} [libtooling/ATD_GUIDELINES.md]}
+- {{:https://github.com/facebook/facebook-clang-plugins/blob/master/clang-ocaml/README.md} [clang-ocaml/README.md]}
+
+{3 Hacking on the [.atd] file}
++ Create a simple example ([example.cpp]) source file with construct that needs to be exported. The smaller the better.
++ Export the extra information by changing the code in {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ASTExporter.h} [libtooling/ASTExporter.h]}. For more information, refer to the {{:https://github.com/facebook/facebook-clang-plugins/blob/master/libtooling/ATD_GUIDELINES.md} [ATD_GUIDELINES]}.
++ Compile Infer with the new version of [facebook-clang-plugins]. Running [make] from top level of Infer repository will do that. Sometimes there may be compilation errors due to [.atd] file changes - they need to be fixed.
++ Use newly exported information information in the frontend.
+
+Tips & Tricks:
+- To view the AST in a human readable version, Infer can generate [.bdump] file: [infer -g -- clang -c example.cpp && sh example.cpp.ast.sh]. Then open [example.cpp.ast.bdump].
+- To inspect AST dump visually: [clang -c example.cpp -Xclang -ast-dump]. It doesn't include all the information that Infer sees, but it's pretty concise
+- If running [bdump] is failing (it happens on huge sources sometimes), there is a way to view it in "Yojson" format. To do that, replace all occurrences of [BiniouASTExporter] with [YojsonASTExporter] in the [.ast.sh] script.
+
+{2 eradicate/ }
+Eradicate [@Nullable] Checker
+
+Eradicate is a type checker for [@Nullable] annotations for Java. The goal is to eradicate null pointer exceptions. See the online docs at {:http://fbinfer.com/docs/eradicate.html}.
+
+The main entry point is module {!module-InferModules.Eradicate}.
+
+{2 java/}
+Java Frontend; this is the frontend for Java compilers.
+
+The main entry point is {!module-InferModules.JMain}.
+
+{2 infer executable}
+You'll find the infer binary in infer.ml. It is not part of this library.

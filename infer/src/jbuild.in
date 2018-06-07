@@ -52,11 +52,17 @@ let stanzas =
         {|
 (library
  ((name InferModules)
+  (public_name infer)
   (flags (%s))
   (ocamlopt_flags (%s))
   (libraries (%s))
   (modules (:standard \ %s infertop))
   (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
+ ))
+
+(documentation
+ ((package infer)
+  (mld_files (index))
  ))
 |}
         (String.concat " " infer_cflags)

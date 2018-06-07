@@ -75,7 +75,7 @@ module ThreadsDomain : sig
         etc.) *)
     | AnyThreadButSelf
         (** Current thread can run in parallel with other threads, but not with a copy of itself.
-        (concretization : { t | t \in TIDs ^ t != t_cur } ) *)
+        (concretization : \{ t | t \in TIDs ^ t != t_cur \} ) *)
     | AnyThread
         (** Current thread can run in parallel with any thread, including itself (concretization:
             set of all TIDs ) *)

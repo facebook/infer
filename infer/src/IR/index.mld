@@ -1,0 +1,11 @@
+{1 Library InferIR: Intermediate Representation}
+The Intermediate Representation, called [SIL], is a format used by the back-end for analysis. It is produced by the front-ends.
+
+The entry point of this library is the module:
+{!module-InferIR}.
+
+The main entry point is the intermediate language in {!module-InferIR.Sil}.
+
+The control flow graph module is {!module-InferIR.Cfg}.
+
+The type environment module is {!module-InferIR.Tenv}.

@@ -1,0 +1,5 @@
+{1 Library InferGenerated}
+Source code that is generated from ATD definitions.
+
+The entry point of this library is the module:
+{!module-InferGenerated}.

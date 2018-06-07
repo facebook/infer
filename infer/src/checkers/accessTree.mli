@@ -23,7 +23,7 @@ module type S = sig
     | Star  (** special leaf for starred access paths *)
 
   (** map from base var -> access subtree. Here's how to represent a few different kinds of
-      trace * access path associations:
+      trace * access path associations: {[
       (x, T)               := { x |-> (T, Subtree {}) }
       (x.f, T)             := { x |-> (empty, Subtree { f |-> (T, Subtree {}) }) }
       (x*, T)              := { x |-> (T, Star) }
@@ -31,6 +31,7 @@ module type S = sig
       (x, T1), (y, T2)     := { x |-> (T1, Subtree {}), y |-> (T2, Subtree {}) }
       (x.f, T1), (x.g, T2) := { x |-> (empty, Subtree { f |-> (T1, Subtree {}),
                                                         g |-> (T2, Subtree {}) }) }
+      ]}
   *)
   type t = node BaseMap.t
 

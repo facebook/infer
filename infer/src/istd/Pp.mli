@@ -9,7 +9,7 @@
 open! IStd
 module F = Format
 
-(** Pretty Printing} *)
+(** Pretty Printing *)
 
 (** Colors supported in printing *)
 type color = Black | Blue | Green | Orange | Red [@@deriving compare]
