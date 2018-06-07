@@ -18,6 +18,7 @@ typedef struct s_ {
 - (T* _Nullable)nullableT;
 @property(nonatomic) S structProperty;
 @property(nonatomic) S* pointerProperty;
+@property(nonatomic, nullable) NSObject* nullableProperty;
 @end
 
 @implementation T {
@@ -126,6 +127,10 @@ typedef struct s_ {
   NSObject* nullableObject = [self nullableMethod];
   NSArray* array = @[ nullableObject ]; // reports here
   return array;
+}
+
+- (NSArray*)nullablePropertyInNSArrayBad {
+  return @[ self.nullableMethod ]; // reports here
 }
 
 - (NSArray*)nullableMethodCheckedForNullAndReturnOkay {
