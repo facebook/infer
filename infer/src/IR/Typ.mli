@@ -364,6 +364,14 @@ module Procname : sig
     (** Check if the method belongs to one of the specified external packages *)
   end
 
+  module Parameter : sig
+    (** [Some name] means the parameter is of type pointer to struct, with [name]
+  being the name of the struct, [None] means the parameter is of some other type. *)
+    type t = Name.t option
+
+    val of_typ : typ -> t
+  end
+
   module ObjC_Cpp : sig
     type kind =
       | CPPMethod of {mangled: string option}

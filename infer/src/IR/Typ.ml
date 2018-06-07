@@ -733,6 +733,23 @@ module Procname = struct
       Option.exists ~f:Config.java_package_is_external package
   end
 
+  module Parameter = struct
+    (** [Some name] means the parameter is of type pointer to struct, with [name]
+being the name of the struct, [None] means the parameter is of some other type. *)
+    type t = Name.t option [@@deriving compare]
+
+    let of_typ typ =
+      match typ.T.desc with T.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None
+
+
+    let parameters_to_string parameters =
+      let name_opt_to_string par_opt =
+        match par_opt with Some par -> Name.to_string par | None -> ""
+      in
+      let string_pars = List.map ~f:name_opt_to_string parameters in
+      if List.is_empty parameters then "" else "(" ^ String.concat ~sep:"," string_pars ^ ")"
+  end
+
   module ObjC_Cpp = struct
     type kind =
       | CPPMethod of {mangled: string option}
