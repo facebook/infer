@@ -128,6 +128,17 @@ Old-style containers such as `Vector` are synchronized on the object monitor, wh
 
 Infer has support for detecting these deadlocks too.
 
+To suppress reports of deadlocks in a method `m()` use the `@SuppressLint("DEADLOCK")` annotation, as follows:
+
+```java
+  import android.annotation.SuppressLint;
+
+  @SuppressLint("DEADLOCK")
+  public void m() {
+  ...
+  }
+```
+
 ## <a name="STARVATION"></a>UI Thread Starvation
 
 This error is reported in Java, and specifically on Android.  These reports are triggered when a method that runs on the UI thread may block, thus potentially leading to an Application Not Responding error.
@@ -146,3 +157,28 @@ Calls that may block are considered:
 - Two way `Binder.transact` calls.
 - Certain OS calls.
 - `Future` or `AsyncTask` calls to `get` without timeouts, or with too large timeouts.
+
+To suppress starvation reports in a method `m()` use the `@SuppressLint("STARVATION")` annotation, as follows:
+
+```java
+  import android.annotation.SuppressLint;
+
+  @SuppressLint("STARVATION")
+  public void m() {
+  ...
+  }
+```
+
+To signal to Infer that a method does not perform any blocking calls, despite appearences, you can use the `@NonBlocking` annotation:
+
+```java
+  import com.facebook.infer.annotation.NonBlocking;
+
+  @NonBlocking
+  public void m() {
+  ...
+  }
+```
+
+This instructs Infer to filter out any potentially blocking calls in `m()` (also, transitively), and thus any other method can expect no starvation reports due to a call to `m()`.  You will need to set up your class path appropriately to include the JAR files in `infer/annotations` for this annotation to work.
+
