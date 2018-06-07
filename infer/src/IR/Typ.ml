@@ -837,7 +837,11 @@ being the name of the struct, [None] means the parameter is of some other type. 
   end
 
   (** Type of c procedure names. *)
-  type c = {name: QualifiedCppName.t; mangled: string option; template_args: template_spec_info}
+  type c =
+    { name: QualifiedCppName.t
+    ; mangled: string option
+    ; parameters: Parameter.t list
+    ; template_args: template_spec_info }
   [@@deriving compare]
 
   (** Type of Objective C block names. *)
@@ -867,10 +871,16 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   let empty_block = Block ""
 
-  let c name mangled template_args = {name; mangled= Some mangled; template_args}
+  let c name mangled parameters template_args =
+    {name; mangled= Some mangled; parameters; template_args}
+
 
   let from_string_c_fun (name: string) =
-    C {name= QualifiedCppName.of_qual_string name; mangled= None; template_args= NoTemplate}
+    C
+      { name= QualifiedCppName.of_qual_string name
+      ; mangled= None
+      ; parameters= []
+      ; template_args= NoTemplate }
 
 
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
@@ -990,9 +1000,19 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
 
   (** to_string for C_function type *)
-  let to_readable_string (c1, c2) verbose =
-    let plain = QualifiedCppName.to_qual_string c1 in
-    if verbose then match c2 with None -> plain | Some s -> plain ^ "{" ^ s ^ "}" else plain
+  let c_function_to_string {name; mangled; parameters} verbose =
+    let plain = QualifiedCppName.to_qual_string name in
+    match verbose with
+    | Simple ->
+        plain ^ "()"
+    | Non_verbose ->
+        plain
+    | Verbose ->
+      match mangled with
+      | None ->
+          plain ^ Parameter.parameters_to_string parameters
+      | Some s ->
+          plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}"
 
 
   let with_blocks_parameters_to_string base blocks to_string_f =
@@ -1005,8 +1025,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
     match pn with
     | Java j ->
         Java.to_string j Verbose
-    | C {name; mangled} ->
-        to_readable_string (name, mangled) true
+    | C osig ->
+        c_function_to_string osig Verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Verbose
     | Block name ->
@@ -1022,8 +1042,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
     match p with
     | Java j ->
         Java.to_string j Non_verbose
-    | C {name; mangled} ->
-        to_readable_string (name, mangled) false
+    | C osig ->
+        c_function_to_string osig Non_verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Non_verbose
     | Block name ->
@@ -1039,8 +1059,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
     match p with
     | Java j ->
         Java.to_string ~withclass j Simple
-    | C {name; mangled} ->
-        to_readable_string (name, mangled) false ^ "()"
+    | C osig ->
+        c_function_to_string osig Simple
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Simple
     | Block _ ->

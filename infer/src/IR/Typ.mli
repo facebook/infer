@@ -423,7 +423,10 @@ module Procname : sig
 
   (** Type of c procedure names. *)
   type c = private
-    {name: QualifiedCppName.t; mangled: string option; template_args: template_spec_info}
+    { name: QualifiedCppName.t
+    ; mangled: string option
+    ; parameters: Parameter.t list
+    ; template_args: template_spec_info }
 
   (** Type of Objective C block names. *)
   type block_name
@@ -466,7 +469,7 @@ module Procname : sig
 
   module SQLiteList : SqliteUtils.Data with type t = t list
 
-  val c : QualifiedCppName.t -> string -> template_spec_info -> c
+  val c : QualifiedCppName.t -> string -> Parameter.t list -> template_spec_info -> c
   (** Create a C procedure name from plain and mangled name. *)
 
   val empty_block : t

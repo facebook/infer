@@ -261,7 +261,7 @@ let get_initializer_pname {pv_name; pv_kind} =
         | Some file ->
             let mangled = SourceFile.to_string file |> Utils.string_crc_hex32 in
             Typ.Procname.C
-              (Typ.Procname.c (QualifiedCppName.of_qual_string name) mangled Typ.NoTemplate)
+              (Typ.Procname.c (QualifiedCppName.of_qual_string name) mangled [] Typ.NoTemplate)
             |> Option.return
         | None ->
             None

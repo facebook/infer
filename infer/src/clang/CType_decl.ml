@@ -508,7 +508,7 @@ and get_template_info tenv (fdi: Clang_ast_t.function_decl_info) =
       Typ.NoTemplate
 
 
-and mk_c_function ?tenv name function_decl_info_opt =
+and mk_c_function ?tenv name function_decl_info_opt parameters =
   let file =
     match function_decl_info_opt with
     | Some (decl_info, function_decl_info) -> (
@@ -547,7 +547,7 @@ and mk_c_function ?tenv name function_decl_info_opt =
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then
     Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Typ.Procname.C (Typ.Procname.c name mangled template_info)
+  else Typ.Procname.C (Typ.Procname.c name mangled parameters template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
@@ -605,7 +605,7 @@ and objc_block_procname outer_proc_opt =
 
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   let open Clang_ast_t in
-  let _ =
+  let parameters =
     match tenv with
     | Some tenv ->
         let parameters =
@@ -621,7 +621,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
-      mk_c_function ?tenv name (Some (decl_info, fdi))
+      mk_c_function ?tenv name (Some (decl_info, fdi)) parameters
   | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
@@ -711,7 +711,7 @@ module CProcname = struct
   module NoAstDecl = struct
     let c_function_of_string tenv name =
       let qual_name = QualifiedCppName.of_qual_string name in
-      mk_c_function ~tenv qual_name None
+      mk_c_function ~tenv qual_name None []
 
 
     let cpp_method_of_string tenv class_name method_name =
