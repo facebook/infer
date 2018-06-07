@@ -603,9 +603,21 @@ and objc_block_procname outer_proc_opt =
   Typ.Procname.mangled_objc_block name
 
 
-(* TODO: get the parameters from BuildMethodSignature.get_parameters and pass it to the method names *)
-and procname_from_decl ?tenv ?outer_proc meth_decl =
+and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   let open Clang_ast_t in
+  let _ =
+    match tenv with
+    | Some tenv ->
+        let parameters =
+          BuildMethodSignature.get_parameters qual_type_to_sil_type ~block_return_type tenv
+            meth_decl
+        in
+        List.map
+          ~f:(fun ({typ}: CMethodSignature.param_type) -> Typ.Procname.Parameter.of_typ typ)
+          parameters
+    | None ->
+        []
+  in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in

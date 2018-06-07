@@ -8,7 +8,9 @@
 open! IStd
 
 module CProcname : sig
-  val from_decl : ?tenv:Tenv.t -> ?outer_proc:Typ.Procname.t -> Clang_ast_t.decl -> Typ.Procname.t
+  val from_decl :
+    ?tenv:Tenv.t -> ?block_return_type:Clang_ast_t.qual_type -> ?outer_proc:Typ.Procname.t
+    -> Clang_ast_t.decl -> Typ.Procname.t
   (** Given decl, return its procname. This function should be used for all procedures
       present in original AST *)
 
