@@ -14,8 +14,6 @@ open! IStd
 include sig
     (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
-    [@@@warning "-60"]
-
     type +'a t
 
     (* O(1) time and O(1) allocation *)
@@ -64,4 +62,4 @@ include sig
 
     val fold_unordered : ('a t, 'a, 'accum) Container.fold
     (** Always better than [fold_left] when you do not care about the order. *)
-end
+end[@@warning "-32"]

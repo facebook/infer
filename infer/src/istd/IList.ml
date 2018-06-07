@@ -161,3 +161,13 @@ let rec drop list index =
 
 
 let opt_cons opt list = match opt with Some x -> x :: list | None -> list
+
+let remove_first =
+  let rec aux list ~f rev_front =
+    match list with
+    | [] ->
+        None
+    | hd :: tl ->
+        if f hd then Some (List.rev_append rev_front tl) else aux tl ~f (hd :: rev_front)
+  in
+  fun list ~f -> aux list ~f []

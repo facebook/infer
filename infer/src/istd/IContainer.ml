@@ -7,6 +7,7 @@
 (* Extension of Base.Container, i.e. generic definitions of container operations in terms of fold. *)
 
 open! IStd
+module F = Format
 
 type 'a singleton_or_more = Empty | Singleton of 'a | More
 
@@ -29,6 +30,8 @@ let forto excl ~init ~f =
   aux excl ~f init 0
 
 
+let to_rev_list ~fold t = fold t ~init:[] ~f:(fun tl hd -> hd :: tl)
+
 let rev_filter_to_list ~fold t ~f =
   fold t ~init:[] ~f:(fun acc item -> if f item then item :: acc else acc)
 
@@ -37,3 +40,31 @@ let rev_map_to_list ~fold t ~f = fold t ~init:[] ~f:(fun acc item -> f item :: a
 
 let rev_filter_map_to_list ~fold t ~f =
   fold t ~init:[] ~f:(fun acc item -> IList.opt_cons (f item) acc)
+
+
+let iter_consecutive ~fold t ~f =
+  let _ : _ option =
+    fold t ~init:None ~f:(fun prev_opt curr ->
+        (match prev_opt with Some prev -> f prev curr | None -> ()) ;
+        Some curr )
+  in
+  ()
+
+
+let pp_collection ~fold ~pp_item fmt c =
+  let f prev_opt item =
+    prev_opt |> Option.iter ~f:(F.fprintf fmt "@[<h>%a,@]@ " pp_item) ;
+    Some item
+  in
+  let pp_aux fmt c = fold c ~init:None ~f |> Option.iter ~f:(F.fprintf fmt "@[<h>%a@] " pp_item) in
+  F.fprintf fmt "@[<hv 2>{ %a}@]" pp_aux c
+
+
+let pp_seq ~fold ~sep pp_item fmt c =
+  let f first item =
+    if not first then F.pp_print_string fmt sep ;
+    pp_item fmt item ;
+    false
+  in
+  let _is_empty : bool = fold c ~init:true ~f in
+  ()

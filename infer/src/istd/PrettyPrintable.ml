@@ -32,18 +32,7 @@ module type PPMap = sig
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
-let pp_collection ~pp_item fmt c =
-  let rec pp_list fmt = function
-    | [] ->
-        ()
-    | [item] ->
-        F.fprintf fmt "@[<h>%a@] " pp_item item
-    | item :: items ->
-        F.fprintf fmt "@[<h>%a,@]@ " pp_item item ;
-        pp_list fmt items
-  in
-  F.fprintf fmt "@[<hv 2>{ %a}@]" pp_list c
-
+let pp_collection ~pp_item fmt c = IContainer.pp_collection ~fold:List.fold ~pp_item fmt c
 
 module MakePPSet (Ord : PrintableOrderedType) = struct
   include Caml.Set.Make (Ord)
