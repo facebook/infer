@@ -706,17 +706,49 @@ devsetup: Makefile.autoconf
 	  echo '$(TERM_INFO)  eval $$(opam config env)$(TERM_RESET)' >&2; \
 	fi
 
+GHPAGES ?= no
+
 .PHONY: doc
 doc: src_build_common
 	$(QUIET)$(call silent_on_success,Generating infer documentation,\
 	$(MAKE_SOURCE) doc)
+# do not call the browser if we are publishing the docs
+ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 	$(QUIET)$(call silent_on_success,Opening in browser,\
 	browse $(SRC_DIR)/_build/$(BUILD_MODE)/_doc/_html/index.html)
 	$(QUIET)echo "Tip: you can generate the doc for all the opam dependencies of infer like this:"
 	$(QUIET)echo
 	$(QUIET)echo "  odig odoc # takes a while, run it only when the dependencies change"
 	$(QUIET)echo "  odig doc"
+endif
 
+.PHONY: doc-publish
+doc-publish: doc $(INFER_MANUALS)
+ifeq ($(GHPAGES),no)
+	$(QUIET)echo "$(TERM_ERROR)Please set GHPAGES to a checkout of the gh-pages branch of the GitHub repo of infer$(TERM_RESET)" >&2
+	$(QUIET)exit 1
+endif
+#	sanity check to avoid cryptic error messages and potentially annoying side-effects
+	$(QUIET)if ! [ -d "$(GHPAGES)"/static/man ]; then \
+	  echo "$(TERM_ERROR)ERROR: GHPAGES doesn't seem to point to a checkout of the gh-pages branch of the GitHub repo of infer:$(TERM_RESET)" >&2; \
+	  echo "$(TERM_ERROR)ERROR:   '$(GHPAGES)/static/man' not found or not a directory.$(TERM_RESET)" >&2; \
+	  echo "$(TERM_ERROR)ERROR: Please fix this and try again.$(TERM_RESET)" >&2; \
+	  exit 1; \
+	fi
+	$(QUIET)$(call silent_on_success,Copying man pages,\
+	$(REMOVE_DIR) "$(GHPAGES)"/static/man/*; \
+	for man in $(INFER_MANUALS); do \
+	  groff -Thtml "$$man" > "$(GHPAGES)"/static/man/$$(basename "$$man").html; \
+	done)
+ifeq ($(IS_FACEBOOK_TREE),no)
+	$(QUIET)$(call silent_on_success,Copying OCaml modules documentation,\
+	version=$$($(INFER_BIN) --version | head -1 | cut -d ' ' -f 3 | cut -c 2-); \
+	rsync -a --delete $(SRC_DIR)/_build/$(BUILD_MODE)/_doc/_html/ "$(GHPAGES)"/static/odoc/"$$version"; \
+	$(REMOVE) "$(GHPAGES)"/static/odoc/latest; \
+	$(LN_S) "$$version" "$(GHPAGES)"/static/odoc/latest)
+else
+	$(QUIET)echo "Not an open-source tree, skipping the API docs generation"
+endif
 
 # print list of targets
 .PHONY: show-targets
