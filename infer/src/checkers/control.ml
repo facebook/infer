@@ -8,11 +8,16 @@
 open! IStd
 module F = Format
 module L = Logging
-(* forward dependency analysis for computing set of variables that affect the control flow at each program point
-   1. perform a control flow dependency analysis CF dependency analysis by
-      getting all the variables that appear in the control flow path up to that node.
+(* forward dependency analysis for computing set of variables that
+   affect the control flow at each program point
+
+   1. perform a control flow dependency analysis by getting all the
+   variables that appear in the control flow path up to that node.
+
    2. perform a data dependency analysis
-   3. for each control dependency per node, find its respective data dependencies *)
+
+   3. for each control dependency per node, find its respective data
+   dependencies *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
 module DataDepSet = VarSet
@@ -71,41 +76,71 @@ module TransferFunctionsDataDeps (CFG : ProcCfg.S) = struct
 end
 
 module ControlDepSet = VarSet
+module GuardNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+
+(** Map exit node -> prune nodes in the loop guard  *)
+module ExitNodeToGuardNodes = AbstractDomain.Map (Procdesc.Node) (GuardNodes)
+
+(** Map loop header node -> prune nodes in the loop guard  *)
+module LoopHeaderToGuardNodes = AbstractDomain.Map (Procdesc.Node) (GuardNodes)
+
+type loop_control_maps =
+  {exit_map: ExitNodeToGuardNodes.astate; loop_header_map: LoopHeaderToGuardNodes.astate}
 
 (* forward transfer function for control dependencies *)
 module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ControlDepSet
 
-  type extras = ProcData.no_extras
+  type extras = loop_control_maps
 
-  let exec_instr astate _ _ instr =
-    match instr with
-    | Sil.Prune (exp, _, true_branch, if_kind) ->
-        (* Only keep track of control flow variables for loop prune nodes with the true branch *)
-        (* For false branches, remove the var from the set for fixpoint *)
-        let astate' =
-          Exp.free_vars exp |> Sequence.map ~f:Var.of_id |> Sequence.to_list
-          |> ControlDepSet.of_list
-          |>
-          if (true_branch && Sil.is_loop if_kind) || Language.curr_language_is Java then
-            Domain.union astate
-          else Domain.diff astate
-        in
-        Exp.program_vars exp |> Sequence.map ~f:Var.of_pvar |> Sequence.to_list
-        |> ControlDepSet.of_list
-        |>
-        if (true_branch && Sil.is_loop if_kind) || Language.curr_language_is Java then
-          Domain.union astate'
-        else Domain.diff astate'
-    | Sil.Load _
-    | Sil.Store _
-    | Sil.Call _
-    | Declare_locals _
-    | Remove_temps _
-    | Abstract _
-    | Nullify _ ->
-        astate
+  let get_vars_in_exp exp =
+    let aux f_free_vars f_to_var =
+      f_free_vars exp |> Sequence.map ~f:f_to_var |> Sequence.to_list |> ControlDepSet.of_list
+    in
+    assert (Domain.is_empty (aux Exp.program_vars Var.of_pvar)) ;
+    (* We should never have program variables in prune nodes *)
+    aux Exp.free_vars Var.of_id
+
+
+  (* extract vars from the prune instructions in the node *)
+  let get_control_vars loop_nodes =
+    GuardNodes.fold
+      (fun loop_node acc ->
+        let instrs = Procdesc.Node.get_instrs loop_node in
+        Instrs.fold ~init:acc
+          ~f:(fun astate instr ->
+            match instr with
+            | Sil.Prune (exp, _, _, _) ->
+                Domain.union (get_vars_in_exp exp) astate
+            | _ ->
+                (* prune nodes include other instructions like REMOVE_TEMPS *)
+                astate )
+          instrs )
+      loop_nodes Domain.empty
+
+
+  (* Each time we pass through
+     - a loop header, add control variables of its guard nodes 
+     - a loop exit node, remove control variables of its guard nodes
+     This is correct because the CVs are only going to be temporaries. *)
+  let exec_instr astate {ProcData.extras= {exit_map; loop_header_map}} (node: CFG.Node.t) _ =
+    let node = CFG.Node.underlying_node node in
+    let astate' =
+      match LoopHeaderToGuardNodes.find_opt node loop_header_map with
+      | Some loop_nodes ->
+          L.(debug Analysis Medium) "@\n>>> Loop header %a \n" Procdesc.Node.pp node ;
+          Domain.union astate (get_control_vars loop_nodes)
+      | _ ->
+          astate
+    in
+    match ExitNodeToGuardNodes.find_opt node exit_map with
+    | Some loop_nodes ->
+        L.(debug Analysis Medium)
+          "@\n>>>Exit node %a loop nodes=%a  @\n\n" Procdesc.Node.pp node GuardNodes.pp loop_nodes ;
+        get_control_vars loop_nodes |> Domain.diff astate'
+    | _ ->
+        astate'
 
 
   let pp_session_name node fmt =

@@ -553,6 +553,8 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   let proc_data = ProcData.make_default proc_desc tenv in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
+  (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
+  let control_maps = Loop_control.get_control_maps node_cfg in
   (* computes the data dependencies: node -> (var -> var set) *)
   let data_dep_invariant_map =
     Control.DataDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.DataDepMap.empty
@@ -560,6 +562,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   (* computes the control dependencies: node -> var set *)
   let control_dep_invariant_map =
+    let proc_data = ProcData.make proc_desc tenv control_maps in
     Control.ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.ControlDepSet.empty
       ~debug:true
   in

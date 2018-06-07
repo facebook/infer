@@ -149,3 +149,56 @@ int simulated_nested_loop_more_expensive(int p) {
   }
   return k;
 }
+
+int real_while() {
+  int i = 0;
+  int j = 3 * i;
+  while (i < 30) {
+    j = j + i;
+    i++;
+  }
+  return j;
+}
+
+// Examples with gotos
+
+/* The following program is the version of real_while() with gotos */
+
+int simulated_while() {
+  int i = 0;
+  int j = 3 * i;
+LOOP_COND:
+  if (i < 30) {
+    goto INCR;
+  } else {
+    goto RETURN;
+  }
+INCR:
+  j = j + i;
+  i++;
+  goto LOOP_COND;
+RETURN:
+  return j;
+}
+
+/* Conditional inside goto loop  */
+int simulated_nested_loop_cond_in_goto(int p) {
+  int k = 0;
+  int t = 5;
+  int j = 0;
+  for (int i = 0; i < 5; i++) {
+  B:
+    if (i > 2) {
+      t = 3;
+    } else {
+      t = 4;
+    }
+    j++;
+    if (j >= 100)
+      j = 0;
+    else {
+      goto B; // continue;
+    }
+  }
+  return k;
+}

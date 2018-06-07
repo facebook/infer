@@ -15,9 +15,8 @@ int compound_while(int m) {
   return j;
 }
 
-/* B will be in the loop and executed ~100 times-- we get infinity due to
- * control variable problem with gotos */
-int simulated_while_with_and(int p) {
+/* this should give Theta(100) once we have extract_post in the range */
+int simplified_simulated_while_with_and(int p) {
   int k = 0;
   int j = 0;
 B:
@@ -26,6 +25,23 @@ B:
     goto B; // continue;
   }
   return k;
+}
+
+/* simulated goto that contains && */
+int simulated_while_with_and(int p) {
+  int i = 0;
+  int k = 0;
+LOOP_COND:
+  if (k == 0 && i < p) {
+    goto INCR;
+  } else {
+    goto RETURN;
+  }
+INCR:
+  i++;
+  goto LOOP_COND;
+RETURN:
+  return i;
 }
 
 /* shortcut in the conditional, hence we won't loop, and get constant cost */
@@ -43,22 +59,37 @@ B:
 /* p should be in control vars */
 void while_and_or(int p) {
   int i = 0;
-  while (p == 1 || (i < 30 && i > 0)) {
+  while (p == 1 || (i < 30 && i >= 0)) {
     i++;
   }
 }
 
-// should be constant cost, but due to p occuring in control vars, we would get
-// +oo for p
+// should be constant cost
 int nested_while_and_or(int p) {
   int i = 0;
   int j = 3 * i;
-  while (p == 1 || (i < 30 && i > 0)) {
-    while (p == 1 || (j < 5 && j > 0)) {
+  while (p == 1 || (i < 30 && i >= 0)) {
+    while (p == 1 || (j < 5 && j >= 0)) {
 
       return j;
     }
     i++;
   }
   return j;
+}
+
+/* k,j and i will be control variables for B  */
+int simulated_nested_loop_with_and(int p) {
+  int k = 0;
+  int t = 5;
+  int j = 0;
+  for (int i = 0; i < 5; i++) {
+  B:
+    t = 3;
+    j++;
+    if (k == 0 && j < 100) {
+      goto B; // continue;
+    }
+  }
+  return k;
 }
