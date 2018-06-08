@@ -15,6 +15,19 @@ let is_on_ui_thread pn =
   RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
 
 
+let is_nonblocking tenv proc_desc =
+  let proc_attributes = Procdesc.get_attributes proc_desc in
+  let is_method_suppressed =
+    Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_nonblocking
+  in
+  let is_class_suppressed =
+    PatternMatch.get_this_type proc_attributes
+    |> Option.bind ~f:(PatternMatch.type_get_annotation tenv)
+    |> Option.value_map ~default:false ~f:Annotations.ia_is_nonblocking
+  in
+  is_method_suppressed || is_class_suppressed
+
+
 module Payload = SummaryPayload.Make (struct
   type t = StarvationDomain.summary
 
@@ -104,6 +117,7 @@ let die_if_not_java proc_desc =
 
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
+  let open StarvationDomain in
   die_if_not_java proc_desc ;
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
@@ -128,7 +142,17 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     RacerDConfig.Models.runs_on_ui_thread tenv proc_desc
     |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial)
   in
-  Analyzer.compute_post proc_data ~initial
+  let filter_blocks =
+    if is_nonblocking tenv proc_desc then fun ({events; order} as astate) ->
+      { astate with
+        events= EventDomain.filter (function {elem= MayBlock _} -> false | _ -> true) events
+      ; order=
+          OrderDomain.filter
+            (function {eventually= {elem= MayBlock _}} -> false | _ -> true)
+            order }
+    else Fn.id
+  in
+  Analyzer.compute_post proc_data ~initial |> Option.map ~f:filter_blocks
   |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
 
 

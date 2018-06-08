@@ -112,22 +112,22 @@ let is_suppressed ?(field_name= None) tenv proc_desc kind =
     let normalize str = Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
     let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
     let normalized_equal s1 s2 = String.equal (normalize s1) (normalize s2) in
-    let is_parameter_suppressed =
+    let is_parameter_suppressed () =
       String.is_suffix a.class_name ~suffix:Annotations.suppress_lint
       && List.mem ~equal:normalized_equal a.parameters kind.IssueType.unique_id
     in
-    let is_annotation_suppressed =
+    let is_annotation_suppressed () =
       String.is_suffix
         ~suffix:(normalize (drop_prefix kind.IssueType.unique_id))
         (normalize a.class_name)
     in
-    is_parameter_suppressed || is_annotation_suppressed
+    is_parameter_suppressed () || is_annotation_suppressed ()
   in
-  let is_method_suppressed =
+  let is_method_suppressed () =
     Annotations.ma_has_annotation_with proc_attributes.ProcAttributes.method_annotation
       annotation_matches
   in
-  let is_field_suppressed =
+  let is_field_suppressed () =
     match (field_name, PatternMatch.get_this_type proc_attributes) with
     | Some field_name, Some t -> (
       match Typ.Struct.get_field_type_and_annotation ~lookup field_name t with
@@ -138,7 +138,7 @@ let is_suppressed ?(field_name= None) tenv proc_desc kind =
     | _ ->
         false
   in
-  let is_class_suppressed =
+  let is_class_suppressed () =
     match PatternMatch.get_this_type proc_attributes with
     | Some t -> (
       match PatternMatch.type_get_annotation tenv t with
@@ -149,4 +149,4 @@ let is_suppressed ?(field_name= None) tenv proc_desc kind =
     | None ->
         false
   in
-  is_method_suppressed || is_field_suppressed || is_class_suppressed
+  is_method_suppressed () || is_field_suppressed () || is_class_suppressed ()

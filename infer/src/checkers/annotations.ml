@@ -67,6 +67,8 @@ let on_unbind = "OnUnbind"
 
 let on_unmount = "OnUnmount"
 
+let nonblocking = "NonBlocking"
+
 let notnull = "NotNull"
 
 let not_thread_safe = "NotThreadSafe"
@@ -183,6 +185,8 @@ let ia_is_thread_safe ia = ia_ends_with ia thread_safe
 let ia_is_thrift_service ia = ia_ends_with ia thrift_service
 
 let ia_is_true_on_null ia = ia_ends_with ia true_on_null
+
+let ia_is_nonblocking ia = ia_ends_with ia nonblocking
 
 let ia_is_initializer ia = ia_ends_with ia initializer_
 
