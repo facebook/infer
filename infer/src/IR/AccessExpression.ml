@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 type t =
   | Base of AccessPath.base
@@ -215,9 +214,7 @@ let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id: Var
           | Tptr (t, _) ->
               t
           | _ ->
-              L.internal_error
-                "Translation from SIL to HIL expected pointer type for exp %a, but got %a@." Exp.pp
-                lhs_exp (Typ.pp_full Pp.text) typ ;
+              (* T29630813 investigate cases where this is not a pointer *)
               typ
         in
         of_exp ~include_array_indexes ~add_deref:true lhs_exp typ' ~f_resolve_id
