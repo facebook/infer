@@ -102,7 +102,7 @@ let log_issue_external procname ?clang_method_kind err_kind ?loc ?node_id ?sessi
 
 let is_suppressed ?(field_name= None) tenv proc_desc kind =
   let lookup = Tenv.lookup tenv in
-  let proc_attributes = Summary.pdesc_resolve_attributes proc_desc in
+  let proc_attributes = Procdesc.get_attributes proc_desc in
   (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
          suppressed with the following annotations:
          - @android.annotation.SuppressLint("checker-error-name")

@@ -101,9 +101,6 @@ val pp_html : SourceFile.t -> Pp.color -> Format.formatter -> t -> unit
 val pp_text : Format.formatter -> t -> unit
 (** Print the summary in text format *)
 
-val pdesc_resolve_attributes : Procdesc.t -> ProcAttributes.t
-(** Like proc_resolve_attributes but start from a proc_desc. *)
-
 val proc_resolve_attributes : Typ.Procname.t -> ProcAttributes.t option
 (** Try to find the attributes for a defined proc.
     First look at specs (to get attributes computed by analysis)

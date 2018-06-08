@@ -335,11 +335,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             Typ.Procname.Java.is_access_method java_pname
         | _ ->
             false )
-        || (Summary.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
+        || (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else
         let annotated_signature =
-          Models.get_modelled_annotated_signature (Summary.pdesc_resolve_attributes proc_desc)
+          Models.get_modelled_annotated_signature (Procdesc.get_attributes proc_desc)
         in
         Some annotated_signature
     in

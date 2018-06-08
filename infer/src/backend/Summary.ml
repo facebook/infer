@@ -224,17 +224,6 @@ let proc_resolve_attributes proc_name =
       Attributes.load proc_name
 
 
-(** Like proc_resolve_attributes but start from a proc_desc. *)
-let pdesc_resolve_attributes proc_desc =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  match proc_resolve_attributes proc_name with
-  | Some proc_attributes ->
-      proc_attributes
-  | None ->
-      (* this should not happen *)
-      assert false
-
-
 (** Save summary for the procedure into the spec database *)
 let store (summ: t) =
   let final_summary = {summ with status= Status.Analyzed} in
