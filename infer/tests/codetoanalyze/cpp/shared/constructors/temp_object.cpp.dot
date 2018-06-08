@@ -114,6 +114,17 @@ digraph cfg {
 	
 
 	 "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_3" -> "temp_method_div0#temp_object#17009651611825801298.b27a48cdb872e8bc72f1181813e5d666_2" ;
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" [label="1: Start temp_object::X_div\nFormals:  this:temp_object::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" ;
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" [label="2: Exit temp_object::X_div \n  " color=yellow style=filled]
+	
+
+"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 16, column 26]\n  n$1=*n$0.f:int [line 16, column 26]\n  *&return:int=(1 / n$1) [line 16, column 15]\n " shape="box"]
+	
+
+	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
 "X#X#temp_object#{5376484276992466061}.a1cfaf9ee9d8c713d3d1751acbb77f32_1" [label="1: Start temp_object::X_X\nFormals:  this:temp_object::X* x:temp_object::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
@@ -147,15 +158,4 @@ digraph cfg {
 	
 
 	 "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_3" -> "X#X#temp_object#{9561113765655638015}.59d66724d587fdb6aca1a26e1f705f23_2" ;
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" [label="1: Start temp_object::X_div\nFormals:  this:temp_object::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 3]\n " color=yellow style=filled]
-	
-
-	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_1" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" ;
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" [label="2: Exit temp_object::X_div \n  " color=yellow style=filled]
-	
-
-"div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" [label="3:  Return Stmt \n   n$0=*&this:temp_object::X* [line 16, column 26]\n  n$1=*n$0.f:int [line 16, column 26]\n  *&return:int=(1 / n$1) [line 16, column 15]\n " shape="box"]
-	
-
-	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_3" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
 }

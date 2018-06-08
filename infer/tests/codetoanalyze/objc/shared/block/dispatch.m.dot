@@ -179,17 +179,6 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" ;
-"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA_init\nFormals:  self:DispatchA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
-	
-
-	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" ;
-"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" [label="2: Exit DispatchA_init \n  " color=yellow style=filled]
-	
-
-"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" [label="3:  Return Stmt \n   n$0=*&self:DispatchA* [line 22, column 10]\n  *&return:objc_object*=n$0 [line 22, column 3]\n " shape="box"]
-	
-
-	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" ;
 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" [label="1: Start DispatchA_sharedInstance\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 1]\n " color=yellow style=filled]
 	
 
@@ -224,4 +213,15 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" ;
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA_init\nFormals:  self:DispatchA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
+	
+
+	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" ;
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" [label="2: Exit DispatchA_init \n  " color=yellow style=filled]
+	
+
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" [label="3:  Return Stmt \n   n$0=*&self:DispatchA* [line 22, column 10]\n  *&return:objc_object*=n$0 [line 22, column 3]\n " shape="box"]
+	
+
+	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_2" ;
 }

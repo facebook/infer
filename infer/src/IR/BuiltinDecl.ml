@@ -18,11 +18,12 @@ let create_procname name =
   register pname ; pname
 
 
-let create_objc_class_method class_name method_name =
+let create_objc_class_method class_name method_name parameters =
   let method_kind = Typ.Procname.ObjC_Cpp.ObjCClassMethod in
   let tname = Typ.Name.Objc.from_string class_name in
   let pname =
-    Typ.Procname.ObjC_Cpp (Typ.Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate)
+    Typ.Procname.ObjC_Cpp
+      (Typ.Procname.ObjC_Cpp.make tname method_name method_kind Typ.NoTemplate parameters)
   in
   register pname ; pname
 
@@ -83,8 +84,10 @@ let __objc_alloc_no_fail = create_procname "__objc_alloc_no_fail"
 
 let __objc_cast = create_procname "__objc_cast"
 
+(* We don't need to add parameters to this one because it is used to translate dictionary literals
+and the actual method doesn't appear in the AST, instead we create the corresponding AST bit in cTrans. *)
 let __objc_dictionary_literal =
-  create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:"
+  create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:" []
 
 
 let __placement_delete = create_procname "__placement_delete"
@@ -133,9 +136,14 @@ let malloc = create_procname "malloc"
 
 let malloc_no_fail = create_procname "malloc_no_fail"
 
-let nsArray_arrayWithObjects = create_objc_class_method "NSArray" "arrayWithObjects:"
+let nsArray_arrayWithObjects =
+  let objc_object = Typ.Name.C.from_string "objc_object" in
+  create_objc_class_method "NSArray" "arrayWithObjects:" [Some objc_object]
 
-let nsArray_arrayWithObjectsCount = create_objc_class_method "NSArray" "arrayWithObjects:count:"
+
+(* We don't need to add parameters to this one because it is used to translate array literals
+  and the actual method doesn't appear in the AST, instead we create the corresponding AST bit in cTrans. *)
+let nsArray_arrayWithObjectsCount = create_objc_class_method "NSArray" "arrayWithObjects:count:" []
 
 let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
 

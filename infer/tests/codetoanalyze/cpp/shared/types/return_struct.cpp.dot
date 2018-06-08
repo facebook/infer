@@ -97,6 +97,17 @@ digraph cfg {
 	
 
 	 "get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_3" -> "get_method_div1#return_struct#1525840708539595762.816387a0cceab2d825a8393a6ca5d5a1_2" ;
+"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" [label="1: Start return_struct::X_div\nFormals:  this:return_struct::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+	
+
+	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" ;
+"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" [label="2: Exit return_struct::X_div \n  " color=yellow style=filled]
+	
+
+"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" [label="3:  Return Stmt \n   n$0=*&this:return_struct::X* [line 15, column 26]\n  n$1=*n$0.f:int [line 15, column 26]\n  *&return:int=(1 / n$1) [line 15, column 15]\n " shape="box"]
+	
+
+	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" ;
 "X#X#return_struct#{16980707005325791470}.5cc7c757bfe221e617030d485a90aa08_1" [label="1: Start return_struct::X_X\nFormals:  this:return_struct::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
@@ -119,15 +130,4 @@ digraph cfg {
 	
 
 	 "X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_3" -> "X#X#return_struct#{2874542973664462157}.c7820661c77babcd49c610d7742e613f_2" ;
-"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" [label="1: Start return_struct::X_div\nFormals:  this:return_struct::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
-	
-
-	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_1" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" ;
-"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" [label="2: Exit return_struct::X_div \n  " color=yellow style=filled]
-	
-
-"div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" [label="3:  Return Stmt \n   n$0=*&this:return_struct::X* [line 15, column 26]\n  n$1=*n$0.f:int [line 15, column 26]\n  *&return:int=(1 / n$1) [line 15, column 15]\n " shape="box"]
-	
-
-	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_3" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" ;
 }

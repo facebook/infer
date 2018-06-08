@@ -338,9 +338,9 @@ let get_record_definition decl =
       decl
 
 
-let mk_objc_method class_typename method_name method_kind =
+let mk_objc_method class_typename method_name method_kind parameters =
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate)
+    (Typ.Procname.ObjC_Cpp.make class_typename method_name method_kind Typ.NoTemplate parameters)
 
 
 let rec get_mangled_method_name function_decl_info method_decl_info =
@@ -550,7 +550,7 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   else Typ.Procname.C (Typ.Procname.c name mangled parameters template_info)
 
 
-and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
+and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
@@ -573,7 +573,7 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
         Typ.NoTemplate
   in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info)
+    (Typ.Procname.ObjC_Cpp.make class_name method_name method_kind template_info parameters)
 
 
 and get_class_typename ?tenv method_decl_info =
@@ -593,14 +593,14 @@ and objc_method_procname ?tenv decl_info method_name mdi =
   mk_objc_method class_typename method_name method_kind
 
 
-and objc_block_procname outer_proc_opt =
+and objc_block_procname outer_proc_opt parameters =
   let outer_proc_string = Option.value_map ~f:Typ.Procname.to_string outer_proc_opt ~default:"" in
   let block_procname_with_index i =
     Printf.sprintf "%s%s%s%d" Config.anonymous_block_prefix outer_proc_string
       Config.anonymous_block_num_sep i
   in
   let name = block_procname_with_index (CFrontend_config.get_fresh_block_index ()) in
-  Typ.Procname.mangled_objc_block name
+  Typ.Procname.mangled_objc_block name parameters
 
 
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
@@ -629,11 +629,11 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
       let mangled = get_mangled_method_name fdi mdi in
       let method_name = CAst_utils.get_unqualified_name name_info in
       let class_typename = get_class_typename ?tenv decl_info in
-      mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
+      mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
-      objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi
+      objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi parameters
   | BlockDecl _ ->
-      objc_block_procname outer_proc
+      objc_block_procname outer_proc parameters
   | _ ->
       Logging.die InternalError "Expected method decl, but got %s."
         (Clang_ast_proj.get_decl_kind_string meth_decl)
@@ -715,11 +715,11 @@ module CProcname = struct
 
 
     let cpp_method_of_string tenv class_name method_name =
-      mk_cpp_method ~tenv class_name method_name None
+      mk_cpp_method ~tenv class_name method_name None []
 
 
     let objc_method_of_string_kind class_name method_name method_kind =
-      mk_objc_method class_name method_name method_kind
+      mk_objc_method class_name method_name method_kind []
   end
 
   let from_decl_for_linters method_decl =
@@ -733,7 +733,7 @@ module CProcname = struct
           | _ ->
               name_info.Clang_ast_t.ni_name
         in
-        objc_method_procname decl_info method_name mdi
+        objc_method_procname decl_info method_name mdi []
     | _ ->
         from_decl method_decl
 end

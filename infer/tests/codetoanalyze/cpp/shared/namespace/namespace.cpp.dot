@@ -91,13 +91,6 @@ digraph cfg {
 	
 
 	 "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_3" -> "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_2" ;
-"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" [label="1: Start foo::my_record_\nFormals:  this:foo::my_record*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 9]\n " color=yellow style=filled]
-	
-
-	 "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" -> "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_2" ;
-"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_2" [label="2: Exit foo::my_record_ \n  " color=yellow style=filled]
-	
-
 "Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_1" [label="1: Start bar::Rectangle_Rectangle\nFormals:  this:bar::Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 7]\n " color=yellow style=filled]
 	
 
@@ -110,6 +103,13 @@ digraph cfg {
 
 	 "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_1" -> "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_2" ;
 "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_2" [label="2: Exit foo::Rectangle_Rectangle \n  " color=yellow style=filled]
+	
+
+"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" [label="1: Start foo::my_record_\nFormals:  this:foo::my_record*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 9]\n " color=yellow style=filled]
+	
+
+	 "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" -> "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_2" ;
+"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_2" [label="2: Exit foo::my_record_ \n  " color=yellow style=filled]
 	
 
 }

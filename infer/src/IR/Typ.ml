@@ -761,11 +761,15 @@ being the name of the struct, [None] means the parameter is of some other type. 
     [@@deriving compare]
 
     type t =
-      {method_name: string; class_name: Name.t; kind: kind; template_args: template_spec_info}
+      { class_name: Name.t
+      ; kind: kind
+      ; method_name: string
+      ; parameters: Parameter.t list
+      ; template_args: template_spec_info }
     [@@deriving compare]
 
-    let make class_name method_name kind template_args =
-      {class_name; method_name; kind; template_args}
+    let make class_name method_name kind template_args parameters =
+      {class_name; method_name; kind; template_args; parameters}
 
 
     let get_class_name objc_cpp = Name.name objc_cpp.class_name
@@ -833,7 +837,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
           Name.name osig.class_name ^ "_" ^ osig.method_name
       | Verbose ->
           let m_str = kind_to_verbose_string osig.kind in
-          Name.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
+          Name.name osig.class_name ^ "_" ^ osig.method_name
+          ^ Parameter.parameters_to_string osig.parameters ^ m_str
   end
 
   (** Type of c procedure names. *)
@@ -852,7 +857,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | Java of Java.t
     | C of c
     | Linters_dummy_method
-    | Block of block_name
+    | Block of block_name * Parameter.t list
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
   [@@deriving compare]
@@ -863,13 +868,13 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   let block_name_of_procname procname =
     match procname with
-    | Block block_name ->
+    | Block (block_name, _) ->
         block_name
     | _ ->
         Logging.die InternalError "Only to be called with Objective-C block names"
 
 
-  let empty_block = Block ""
+  let empty_block = Block ("", [])
 
   let c name mangled parameters template_args =
     {name; mangled= Some mangled; parameters; template_args}
@@ -885,8 +890,17 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
-  (** Create an objc procedure name from a class_name and method_name. *)
-  let mangled_objc_block name = Block name
+  let mangled_objc_block name parameters = Block (name, parameters)
+
+  let objc_block_to_string (name, parameters) detail_level =
+    match detail_level with
+    | Simple ->
+        "block"
+    | Non_verbose ->
+        name
+    | Verbose ->
+        name ^ Parameter.parameters_to_string parameters
+
 
   let is_java = function Java _ -> true | _ -> false
 
@@ -938,7 +952,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
         get_method base
     | C {name} ->
         QualifiedCppName.to_qual_string name
-    | Block name ->
+    | Block (name, _) ->
         name
     | Java j ->
         j.method_name
@@ -1029,8 +1043,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
         c_function_to_string osig Verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Verbose
-    | Block name ->
-        name
+    | Block (name, parameters) ->
+        objc_block_to_string (name, parameters) Verbose
     | WithBlockParameters (base, blocks) ->
         with_blocks_parameters_to_string base blocks to_unique_id
     | Linters_dummy_method ->
@@ -1046,8 +1060,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
         c_function_to_string osig Non_verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Non_verbose
-    | Block name ->
-        name
+    | Block (name, parameters) ->
+        objc_block_to_string (name, parameters) Non_verbose
     | WithBlockParameters (base, blocks) ->
         with_blocks_parameters_to_string base blocks to_string
     | Linters_dummy_method ->
@@ -1063,8 +1077,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
         c_function_to_string osig Simple
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Simple
-    | Block _ ->
-        "block"
+    | Block (name, parameters) ->
+        objc_block_to_string (name, parameters) Simple
     | WithBlockParameters (base, _) ->
         to_simplified_string base
     | Linters_dummy_method ->

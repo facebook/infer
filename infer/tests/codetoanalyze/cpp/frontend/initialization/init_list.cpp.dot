@@ -88,6 +88,13 @@ digraph cfg {
 	
 
 	 "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_5" -> "zero_init_record#init_list#7364160241041626579.8baaea62666796dca7b4a7b11bf4f2bb_4" ;
+"f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_1" [label="1: Start init_list::C_f\nFormals:  this:init_list::C*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 3]\n " color=yellow style=filled]
+	
+
+	 "f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_1" -> "f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_2" ;
+"f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_2" [label="2: Exit init_list::C_f \n  " color=yellow style=filled]
+	
+
 "C#C#init_list#{17260491501636558446}.47559f88c2f7136a0ceafb8b6a3b78ad_1" [label="1: Start init_list::C_C\nFormals:  this:init_list::C* a:int b:int x:init_list::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 3]\n " color=yellow style=filled]
 	
 
@@ -162,11 +169,4 @@ digraph cfg {
 	
 
 	 "Y#Y#init_list#{9181657051811221357}.e663651ceaf28a9c0d59b3f85499f583_3" -> "Y#Y#init_list#{9181657051811221357}.e663651ceaf28a9c0d59b3f85499f583_2" ;
-"f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_1" [label="1: Start init_list::C_f\nFormals:  this:init_list::C*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 3]\n " color=yellow style=filled]
-	
-
-	 "f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_1" -> "f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_2" ;
-"f#C#init_list#(17813515084368904036).f077ed1f0db2e84c012845f48373d63b_2" [label="2: Exit init_list::C_f \n  " color=yellow style=filled]
-	
-
 }

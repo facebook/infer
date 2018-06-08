@@ -384,10 +384,14 @@ module Procname : sig
 
     (** Type of Objective C and C++ procedure names: method signatures. *)
     type t =
-      {method_name: string; class_name: Name.t; kind: kind; template_args: template_spec_info}
+      { class_name: Name.t
+      ; kind: kind
+      ; method_name: string
+      ; parameters: Parameter.t list
+      ; template_args: template_spec_info }
     [@@deriving compare]
 
-    val make : Name.t -> string -> kind -> template_spec_info -> t
+    val make : Name.t -> string -> kind -> template_spec_info -> Parameter.t list -> t
     (** Create an objc procedure name from a class_name and method_name. *)
 
     val get_class_name : t -> string
@@ -441,7 +445,7 @@ module Procname : sig
     | Java of Java.t
     | C of c
     | Linters_dummy_method
-    | Block of block_name
+    | Block of block_name * Parameter.t list
     | ObjC_Cpp of ObjC_Cpp.t
     | WithBlockParameters of t * block_name list
   [@@deriving compare]
@@ -502,7 +506,7 @@ module Procname : sig
   val is_java : t -> bool
   (** Check if this is a Java procedure name. *)
 
-  val mangled_objc_block : string -> t
+  val mangled_objc_block : string -> Parameter.t list -> t
   (** Create an objc block name. *)
 
   val with_block_parameters : t -> block_name list -> t

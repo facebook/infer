@@ -24,7 +24,7 @@ void __infer_assume(bool cond);
   return [NSArray alloc];
 }
 
-+ (instancetype)arrayWithObject:(char*)anObject {
++ (instancetype)arrayWithObject:(id)anObject {
   id a = ((NSObject*)anObject)->isa;
   return [NSArray alloc];
 }

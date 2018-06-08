@@ -11,6 +11,13 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
+"foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_1" [label="1: Start A_foo\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 3]\n " color=yellow style=filled]
+	
+
+	 "foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_1" -> "foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_2" ;
+"foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_2" [label="2: Exit A_foo \n  " color=yellow style=filled]
+	
+
 "A#A#{14779048587651412014}.4ba2c6594c8960564bedc7b6cbdf6ae0_1" [label="1: Start A_A\nFormals:  this:A* __param_0:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 3]\n " color=yellow style=filled]
 	
 
@@ -29,11 +36,4 @@ digraph cfg {
 	
 
 	 "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_3" -> "A#B#{18258347749069050656}.8db05fedcc195ce779d29dca399277d8_2" ;
-"foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_1" [label="1: Start A_foo\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 3]\n " color=yellow style=filled]
-	
-
-	 "foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_1" -> "foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_2" ;
-"foo#A#(11285596688767843576).de1b7dc3a8a24aa7cc49648c6a039113_2" [label="2: Exit A_foo \n  " color=yellow style=filled]
-	
-
 }

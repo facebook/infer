@@ -168,6 +168,28 @@ digraph cfg {
 	
 
 	 "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_12" -> "y_branch_div0#conversion_operator#7606471872775172252.4a93f184f35976e9e7dc6663bc4d47a2_11" ;
+"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" [label="1: Start conversion_operator::X_operator_int\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
+	
+
+	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" ;
+"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" [label="2: Exit conversion_operator::X_operator_int \n  " color=yellow style=filled]
+	
+
+"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 11, column 27]\n  n$1=*n$0.f_:int [line 11, column 27]\n  *&return:int=n$1 [line 11, column 20]\n " shape="box"]
+	
+
+	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" ;
+"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" [label="1: Start conversion_operator::X_operator_bool\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+	
+
+	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" ;
+"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" [label="2: Exit conversion_operator::X_operator_bool \n  " color=yellow style=filled]
+	
+
+"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 12, column 28]\n  n$1=*n$0.b_:_Bool [line 12, column 28]\n  *&return:_Bool=n$1 [line 12, column 21]\n " shape="box"]
+	
+
+	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" ;
 "X#X#conversion_operator#{10042806963993343440}.3443e3517905e53c0b3c27c57963d3c9_1" [label="1: Start conversion_operator::X_X\nFormals:  this:conversion_operator::X* x:conversion_operator::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 3]\n " color=yellow style=filled]
 	
 
@@ -198,13 +220,6 @@ digraph cfg {
 	
 
 	 "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_4" -> "X#X#conversion_operator#{3369558305026158368}.bef059c92c6377f62516e101c1177cad_3" ;
-"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" [label="1: Start conversion_operator::Y_Y\nFormals:  this:conversion_operator::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 8]\n " color=yellow style=filled]
-	
-
-	 "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" -> "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" ;
-"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" [label="2: Exit conversion_operator::Y_Y \n  " color=yellow style=filled]
-	
-
 "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_1" [label="1: Start conversion_operator::Y_operator_X\nFormals:  this:conversion_operator::Y* __return_param:conversion_operator::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:conversion_operator::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 27, column 3]\n " color=yellow style=filled]
 	
 
@@ -216,26 +231,11 @@ digraph cfg {
 	
 
 	 "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_3" -> "operator_X#Y#conversion_operator#(9875474444891926125).7f70b2cd003a12c6c9b239bf43d976ea_2" ;
-"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" [label="1: Start conversion_operator::X_operator_bool\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" [label="1: Start conversion_operator::Y_Y\nFormals:  this:conversion_operator::Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 8]\n " color=yellow style=filled]
 	
 
-	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_1" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" ;
-"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" [label="2: Exit conversion_operator::X_operator_bool \n  " color=yellow style=filled]
+	 "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_1" -> "Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" ;
+"Y#Y#conversion_operator#{2209317117193064868}.b5b04122b8822499b024fd96b2c79e26_2" [label="2: Exit conversion_operator::Y_Y \n  " color=yellow style=filled]
 	
 
-"operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 12, column 28]\n  n$1=*n$0.b_:_Bool [line 12, column 28]\n  *&return:_Bool=n$1 [line 12, column 21]\n " shape="box"]
-	
-
-	 "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_3" -> "operator_bool#X#conversion_operator#(8462049473072140514).68eca81e12b5c1864b348d6f60158ae6_2" ;
-"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" [label="1: Start conversion_operator::X_operator_int\nFormals:  this:conversion_operator::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
-	
-
-	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_1" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" ;
-"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" [label="2: Exit conversion_operator::X_operator_int \n  " color=yellow style=filled]
-	
-
-"operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" [label="3:  Return Stmt \n   n$0=*&this:conversion_operator::X* [line 11, column 27]\n  n$1=*n$0.f_:int [line 11, column 27]\n  *&return:int=n$1 [line 11, column 20]\n " shape="box"]
-	
-
-	 "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_3" -> "operator_int#X#conversion_operator#(11584960464019118495).bbe1ab264905e56e75a1b45ae475ffe0_2" ;
 }

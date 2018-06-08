@@ -88,28 +88,32 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" ;
-"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_1" [label="1: Start vec_begin\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 3]\n " color=yellow style=filled]
+"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_1" [label="1: Start iterator_operator++\nFormals:  this:iterator* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
 	
 
-	 "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_1" -> "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" ;
-"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_2" [label="2: Exit vec_begin \n  " color=yellow style=filled]
+	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_1" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" ;
+"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_2" [label="2: Exit iterator_operator++ \n  " color=yellow style=filled]
 	
 
-"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 26, column 22]\n  n$1=*&this:vec* [line 26, column 29]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.begin_:iterator&) [line 26, column 29]\n " shape="box"]
+"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 13, column 5]\n  n$1=*&this:iterator* [line 13, column 13]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1:iterator&) [line 13, column 12]\n " shape="box"]
 	
 
-	 "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" -> "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_2" ;
-"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_1" [label="1: Start vec_end\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 3]\n " color=yellow style=filled]
+	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_2" ;
+"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" [label="4:  BinaryOperatorStmt: AddAssign \n   n$4=*&this:iterator* [line 12, column 5]\n  n$5=*n$4.val:int [line 12, column 5]\n  *n$4.val:int=(n$5 + 1) [line 12, column 5]\n " shape="box"]
 	
 
-	 "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_1" -> "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" ;
-"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_2" [label="2: Exit vec_end \n  " color=yellow style=filled]
+	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" ;
+"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" [label="1: Start iterator_operator*\nFormals:  this:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
 	
 
-"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 27, column 20]\n  n$1=*&this:vec* [line 27, column 27]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.end_:iterator&) [line 27, column 27]\n " shape="box"]
+	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" ;
+"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" [label="2: Exit iterator_operator* \n  " color=yellow style=filled]
 	
 
-	 "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" -> "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_2" ;
+"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" [label="3:  Return Stmt \n   n$0=*&this:iterator* [line 16, column 12]\n  n$1=*n$0.val:int [line 16, column 12]\n  *&return:int=n$1 [line 16, column 5]\n " shape="box"]
+	
+
+	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" ;
 "iterator#iterator#{11413353760466671846|constexpr}.a278508d3bccc69caf1a1db6246cf788_1" [label="1: Start iterator_iterator\nFormals:  this:iterator* __param_0:iterator const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 8]\n " color=yellow style=filled]
 	
 
@@ -139,32 +143,28 @@ digraph cfg {
 	
 
 	 "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_3" -> "iterator#iterator#{3083368405611515834|constexpr}.86fcbefb2af88c097bfa7e085c4b4f40_2" ;
-"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" [label="1: Start iterator_operator*\nFormals:  this:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_1" [label="1: Start vec_end\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 3]\n " color=yellow style=filled]
 	
 
-	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_1" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" ;
-"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" [label="2: Exit iterator_operator* \n  " color=yellow style=filled]
+	 "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_1" -> "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" ;
+"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_2" [label="2: Exit vec_end \n  " color=yellow style=filled]
 	
 
-"operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" [label="3:  Return Stmt \n   n$0=*&this:iterator* [line 16, column 12]\n  n$1=*n$0.val:int [line 16, column 12]\n  *&return:int=n$1 [line 16, column 5]\n " shape="box"]
+"end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 27, column 20]\n  n$1=*&this:vec* [line 27, column 27]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.end_:iterator&) [line 27, column 27]\n " shape="box"]
 	
 
-	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_3" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" ;
-"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_1" [label="1: Start iterator_operator++\nFormals:  this:iterator* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
+	 "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_3" -> "end#vec#(14240882620331653738).9e08a46e9d5bcb3339794674882c80a3_2" ;
+"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_1" [label="1: Start vec_begin\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 3]\n " color=yellow style=filled]
 	
 
-	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_1" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" ;
-"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_2" [label="2: Exit iterator_operator++ \n  " color=yellow style=filled]
+	 "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_1" -> "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" ;
+"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_2" [label="2: Exit vec_begin \n  " color=yellow style=filled]
 	
 
-"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 13, column 5]\n  n$1=*&this:iterator* [line 13, column 13]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1:iterator&) [line 13, column 12]\n " shape="box"]
+"begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:iterator* [line 26, column 22]\n  n$1=*&this:vec* [line 26, column 29]\n  n$2=_fun_iterator_iterator(n$0:iterator*,n$1.begin_:iterator&) [line 26, column 29]\n " shape="box"]
 	
 
-	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_2" ;
-"operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" [label="4:  BinaryOperatorStmt: AddAssign \n   n$4=*&this:iterator* [line 12, column 5]\n  n$5=*n$4.val:int [line 12, column 5]\n  *n$4.val:int=(n$5 + 1) [line 12, column 5]\n " shape="box"]
-	
-
-	 "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_4" -> "operator++#iterator#(14034081864165661659).8f8d47641e87add0a7463df1d1fa7b15_3" ;
+	 "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_3" -> "begin#vec#(1866137161906470488).7bca21f38283b3487a15399a2f8cb73c_2" ;
 "vec#vec#{13876720186060950809}.c3c9a518fcec87e97d6b52a59f13d428_1" [label="1: Start vec_vec\nFormals:  this:vec* size:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 3]\n " color=yellow style=filled]
 	
 

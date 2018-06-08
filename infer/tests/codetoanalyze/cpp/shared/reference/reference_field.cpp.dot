@@ -324,6 +324,28 @@ digraph cfg {
 	
 
 	 "val_getI_div0#reference_field#1916539470996695608.683d462cf87abbc81874a14e4872564a_7" -> "val_getI_div0#reference_field#1916539470996695608.683d462cf87abbc81874a14e4872564a_6" ;
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" [label="1: Start reference_field::Ptr_getF\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" ;
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" [label="2: Exit reference_field::Ptr_getF \n  " color=yellow style=filled]
+	
+
+"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 33, column 23]\n  n$1=*n$0.x:reference_field::X* [line 33, column 23]\n  n$2=*n$1.f:int [line 33, column 23]\n  *&return:int=n$2 [line 33, column 16]\n " shape="box"]
+	
+
+	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" ;
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" [label="1: Start reference_field::Ptr_getI\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" ;
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" [label="2: Exit reference_field::Ptr_getI \n  " color=yellow style=filled]
+	
+
+"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 34, column 24]\n  n$1=*n$0.i:int* [line 34, column 24]\n  n$2=*n$1:int [line 34, column 23]\n  *&return:int=n$2 [line 34, column 16]\n " shape="box"]
+	
+
+	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" ;
 "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_1" [label="1: Start reference_field::Ptr_Ptr\nFormals:  this:reference_field::Ptr* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 3]\n " color=yellow style=filled]
 	
 
@@ -339,6 +361,28 @@ digraph cfg {
 	
 
 	 "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_4" -> "Ptr#Ptr#reference_field#{6088279996118893652}.360bbf008525cb3c23d8ada20f2a72af_3" ;
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" [label="1: Start reference_field::Ref_getI\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" ;
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" [label="2: Exit reference_field::Ref_getI \n  " color=yellow style=filled]
+	
+
+"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 26, column 23]\n  n$1=*n$0.i:int& [line 26, column 23]\n  n$2=*n$1:int [line 26, column 23]\n  *&return:int=n$2 [line 26, column 16]\n " shape="box"]
+	
+
+	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" ;
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" [label="1: Start reference_field::Ref_getF\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" ;
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" [label="2: Exit reference_field::Ref_getF \n  " color=yellow style=filled]
+	
+
+"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 25, column 23]\n  n$1=*n$0.x:reference_field::X& [line 25, column 23]\n  n$2=*n$1.f:int [line 25, column 23]\n  *&return:int=n$2 [line 25, column 16]\n " shape="box"]
+	
+
+	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" ;
 "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_1" [label="1: Start reference_field::Ref_Ref\nFormals:  this:reference_field::Ref* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 3]\n " color=yellow style=filled]
 	
 
@@ -354,6 +398,28 @@ digraph cfg {
 	
 
 	 "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_4" -> "Ref#Ref#reference_field#{1778104277749367423}.02a281ecc4e6bde89182d1ef952810a2_3" ;
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" [label="1: Start reference_field::Val_getI\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 3]\n " color=yellow style=filled]
+	
+
+	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" ;
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" [label="2: Exit reference_field::Val_getI \n  " color=yellow style=filled]
+	
+
+"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 42, column 23]\n  n$1=*n$0.i:int [line 42, column 23]\n  *&return:int=n$1 [line 42, column 16]\n " shape="box"]
+	
+
+	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" ;
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" [label="1: Start reference_field::Val_getF\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 41, column 3]\n " color=yellow style=filled]
+	
+
+	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" ;
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" [label="2: Exit reference_field::Val_getF \n  " color=yellow style=filled]
+	
+
+"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 41, column 23]\n  n$1=*n$0.x.f:int [line 41, column 23]\n  *&return:int=n$1 [line 41, column 16]\n " shape="box"]
+	
+
+	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" ;
 "Val#Val#reference_field#{10086609758499948489}.3f0d77ba0039a38103c912b5065ccdaa_1" [label="1: Start reference_field::Val_Val\nFormals:  this:reference_field::Val* r_:reference_field::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 40, column 3]\n " color=yellow style=filled]
 	
 
@@ -387,70 +453,4 @@ digraph cfg {
 "X#X#reference_field#{2751762285772383996}.b7c8700d1b15a5db2c677bfc2eb37a5f_2" [label="2: Exit reference_field::X_X \n  " color=yellow style=filled]
 	
 
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" [label="1: Start reference_field::Ptr_getF\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_1" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" ;
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" [label="2: Exit reference_field::Ptr_getF \n  " color=yellow style=filled]
-	
-
-"getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 33, column 23]\n  n$1=*n$0.x:reference_field::X* [line 33, column 23]\n  n$2=*n$1.f:int [line 33, column 23]\n  *&return:int=n$2 [line 33, column 16]\n " shape="box"]
-	
-
-	 "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_3" -> "getF#Ptr#reference_field#(6867936719957773992).53c4cdb31ea7c9aac827b2830f575dd5_2" ;
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" [label="1: Start reference_field::Ref_getF\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_1" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" ;
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" [label="2: Exit reference_field::Ref_getF \n  " color=yellow style=filled]
-	
-
-"getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 25, column 23]\n  n$1=*n$0.x:reference_field::X& [line 25, column 23]\n  n$2=*n$1.f:int [line 25, column 23]\n  *&return:int=n$2 [line 25, column 16]\n " shape="box"]
-	
-
-	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_3" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" ;
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" [label="1: Start reference_field::Val_getF\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 41, column 3]\n " color=yellow style=filled]
-	
-
-	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_1" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" ;
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" [label="2: Exit reference_field::Val_getF \n  " color=yellow style=filled]
-	
-
-"getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 41, column 23]\n  n$1=*n$0.x.f:int [line 41, column 23]\n  *&return:int=n$1 [line 41, column 16]\n " shape="box"]
-	
-
-	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_3" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" ;
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" [label="1: Start reference_field::Ptr_getI\nFormals:  this:reference_field::Ptr*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_1" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" ;
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" [label="2: Exit reference_field::Ptr_getI \n  " color=yellow style=filled]
-	
-
-"getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ptr* [line 34, column 24]\n  n$1=*n$0.i:int* [line 34, column 24]\n  n$2=*n$1:int [line 34, column 23]\n  *&return:int=n$2 [line 34, column 16]\n " shape="box"]
-	
-
-	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_3" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" ;
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" [label="1: Start reference_field::Ref_getI\nFormals:  this:reference_field::Ref*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" ;
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" [label="2: Exit reference_field::Ref_getI \n  " color=yellow style=filled]
-	
-
-"getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Ref* [line 26, column 23]\n  n$1=*n$0.i:int& [line 26, column 23]\n  n$2=*n$1:int [line 26, column 23]\n  *&return:int=n$2 [line 26, column 16]\n " shape="box"]
-	
-
-	 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_3" -> "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_2" ;
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" [label="1: Start reference_field::Val_getI\nFormals:  this:reference_field::Val*\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 3]\n " color=yellow style=filled]
-	
-
-	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" ;
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" [label="2: Exit reference_field::Val_getI \n  " color=yellow style=filled]
-	
-
-"getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" [label="3:  Return Stmt \n   n$0=*&this:reference_field::Val* [line 42, column 23]\n  n$1=*n$0.i:int [line 42, column 23]\n  *&return:int=n$1 [line 42, column 16]\n " shape="box"]
-	
-
-	 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_3" -> "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_2" ;
 }

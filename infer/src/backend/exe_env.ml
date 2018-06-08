@@ -95,7 +95,10 @@ let get_tenv exe_env proc_name =
             "get_tenv: tenv not found for %a in file '%a'" Typ.Procname.pp proc_name SourceFile.pp
             exe_env.source_file )
     | None ->
-        L.(die InternalError) "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
+        let loc = State.get_loc () in
+        L.(die InternalError)
+          "get_tenv: file_data not found for %a in file %a at %a" Typ.Procname.pp proc_name
+          SourceFile.pp loc.Location.file Location.pp loc
 
 
 (** return the cfg associated to the procedure *)

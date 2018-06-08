@@ -74,20 +74,6 @@ digraph cfg {
 	
 
 	 "div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_3" -> "div0_templ_int#6723189882400805523.156da066b41947aa58ec7afb9551dc47_2" ;
-"B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_1" [label="1: Start B<int>_B\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 8]\n " color=yellow style=filled]
-	
-
-	 "B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_1" -> "B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_2" ;
-"B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
-	
-
-"B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_1" [label="1: Start B<A>_B\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 8]\n " color=yellow style=filled]
-	
-
-	 "B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_1" -> "B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_2" ;
-"B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
-	
-
 "div0#B<int>#(9546261644456360892).132a3992ba75c40ad8966e1504521d7d_1" [label="1: Start B<int>_div0\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
@@ -99,6 +85,13 @@ digraph cfg {
 	
 
 	 "div0#B<int>#(9546261644456360892).132a3992ba75c40ad8966e1504521d7d_3" -> "div0#B<int>#(9546261644456360892).132a3992ba75c40ad8966e1504521d7d_2" ;
+"B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_1" [label="1: Start B<int>_B\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 8]\n " color=yellow style=filled]
+	
+
+	 "B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_1" -> "B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_2" ;
+"B#B<int>#{17682530858649742785|constexpr}.578f27c1234efbc7eadc69dc4ca9042c_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
+	
+
 "div0#B<A>#(10848361513712066289).6e41f7aae5452f098d414bfe7ad8cf85_1" [label="1: Start B<A>_div0\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
 	
 
@@ -110,4 +103,11 @@ digraph cfg {
 	
 
 	 "div0#B<A>#(10848361513712066289).6e41f7aae5452f098d414bfe7ad8cf85_3" -> "div0#B<A>#(10848361513712066289).6e41f7aae5452f098d414bfe7ad8cf85_2" ;
+"B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_1" [label="1: Start B<A>_B\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 8]\n " color=yellow style=filled]
+	
+
+	 "B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_1" -> "B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_2" ;
+"B#B<A>#{9925592449220811998|constexpr}.262c24bdb23f603bce26438cb30cea71_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
+	
+
 }

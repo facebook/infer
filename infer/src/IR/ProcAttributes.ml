@@ -243,7 +243,8 @@ let pp f
       (Pp.hashtbl ~key:F.pp_print_string ~value:F.pp_print_string)
       proc_flags ;
   (* always print ret type *)
-  F.fprintf f "; ret_type= %a }@]" (Typ.pp_full Pp.text) ret_type
+  F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
+  F.fprintf f "; proc_id= %s }@]" (Typ.Procname.to_unique_id proc_name)
 
 
 module SQLite = SqliteUtils.MarshalledData (struct

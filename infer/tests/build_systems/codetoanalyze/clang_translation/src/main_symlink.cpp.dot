@@ -478,21 +478,6 @@ digraph cfg {
 	
 
 	 "__infer_atomic_integral#__infer_atomic_integral<int>#std#{10860901722123512962|constexpr}.f85ea1dfc790b10c2617a4d4f5cafd29_3" -> "__infer_atomic_integral#__infer_atomic_integral<int>#std#{10860901722123512962|constexpr}.f85ea1dfc790b10c2617a4d4f5cafd29_2" ;
-"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_1" [label="1: Start std::shared_ptr<int>___infer_inner_destructor_~shared_ptr\nFormals:  this:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 178, column 3]\n " color=yellow style=filled]
-	
-
-	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_1" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" ;
-"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_2" [label="2: Exit std::shared_ptr<int>___infer_inner_destructor_~shared_ptr \n  " color=yellow style=filled]
-	
-
-"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" [label="3:  Destruction \n   n$0=*&this:int** [line 178, column 39]\n  _=*n$0:int* [line 178, column 39]\n  n$2=_fun_std::std__shared_ptr<int>___infer_inner_destructor_~std__shared_ptr(n$0:int**) [line 178, column 39]\n " shape="box"]
-	
-
-	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_2" ;
-"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" [label="4:  Call _fun_std::shared_ptr<int>_reset<int,_void> \n   n$5=*&this:int** [line 178, column 19]\n  _=*n$5:int* [line 178, column 19]\n  n$7=_fun_std::shared_ptr<int>_reset<int,_void>(n$5:int**,null:int*) [line 178, column 19]\n " shape="box"]
-	
-
-	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" ;
 "atomic#atomic<unsigned short>#std#{18219637643674479567|constexpr}.a4a5467727100ba5642b3dca850c391b_1" [label="1: Start std::atomic<unsigned short>_atomic\nFormals:  this:std::atomic<unsigned short>* d:unsigned short\nLocals:  \n   DECLARE_LOCALS(&return); [line 406, column 3]\n " color=yellow style=filled]
 	
 
@@ -647,17 +632,6 @@ digraph cfg {
 	
 
 	 "atomic#atomic<long long>#std#{13242178517795487559|constexpr}.b120a6c4bb0f1e110121c7888150bd59_3" -> "atomic#atomic<long long>#std#{13242178517795487559|constexpr}.b120a6c4bb0f1e110121c7888150bd59_2" ;
-"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_1" [label="1: Start std::atomic_flag_atomic_flag\nFormals:  this:std::atomic_flag* i:_Bool\nLocals:  \n   DECLARE_LOCALS(&return); [line 927, column 3]\n " color=yellow style=filled]
-	
-
-	 "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_1" -> "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" ;
-"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_2" [label="2: Exit std::atomic_flag_atomic_flag \n  " color=yellow style=filled]
-	
-
-"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" [label="3:  Constructor Init \n   n$2=*&this:std::atomic_flag* [line 927, column 44]\n  n$3=*&i:_Bool [line 927, column 46]\n  *n$2.a:_Bool=n$3 [line 927, column 44]\n " shape="box"]
-	
-
-	 "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" -> "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_2" ;
 "clear#atomic_flag#std#(3684357514402407574).b0b9e53b3e4cf6978b960d4491c0af6d_1" [label="1: Start std::atomic_flag_clear\nFormals:  this:std::atomic_flag* mo:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 943, column 3]\n " color=yellow style=filled]
 	
 
@@ -680,6 +654,55 @@ digraph cfg {
 	
 
 	 "clear#atomic_flag#std#(4757429354090136896).a3ca4a9a64ba2fa439a627057e253cfc_3" -> "clear#atomic_flag#std#(4757429354090136896).a3ca4a9a64ba2fa439a627057e253cfc_2" ;
+"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_1" [label="1: Start std::atomic_flag_test_and_set\nFormals:  this:std::atomic_flag* mo:int\nLocals:  ret:_Bool \n   DECLARE_LOCALS(&return,&ret); [line 932, column 3]\n " color=yellow style=filled]
+	
+
+	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_1" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" ;
+"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_2" [label="2: Exit std::atomic_flag_test_and_set \n  " color=yellow style=filled]
+	
+
+"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" [label="3:  Return Stmt \n   n$0=*&ret:_Bool [line 935, column 12]\n  *&return:_Bool=n$0 [line 935, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_2" ;
+"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:std::atomic_flag* [line 934, column 5]\n  *n$2.a:_Bool=1 [line 934, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" ;
+"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" [label="5:  DeclStmt \n   n$3=*&this:std::atomic_flag* [line 933, column 16]\n  n$4=*n$3.a:_Bool [line 933, column 16]\n  *&ret:_Bool=n$4 [line 933, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" ;
+"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_1" [label="1: Start std::atomic_flag_test_and_set\nFormals:  this:std::atomic_flag* mo:int\nLocals:  ret:_Bool \n   DECLARE_LOCALS(&return,&ret); [line 937, column 3]\n " color=yellow style=filled]
+	
+
+	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_1" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" ;
+"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_2" [label="2: Exit std::atomic_flag_test_and_set \n  " color=yellow style=filled]
+	
+
+"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" [label="3:  Return Stmt \n   n$0=*&ret:_Bool [line 940, column 12]\n  *&return:_Bool=n$0 [line 940, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_2" ;
+"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:std::atomic_flag* [line 939, column 5]\n  *n$2.a:_Bool=1 [line 939, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" ;
+"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" [label="5:  DeclStmt \n   n$3=*&this:std::atomic_flag* [line 938, column 16]\n  n$4=*n$3.a:_Bool [line 938, column 16]\n  *&ret:_Bool=n$4 [line 938, column 5]\n " shape="box"]
+	
+
+	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" ;
+"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_1" [label="1: Start std::atomic_flag_atomic_flag\nFormals:  this:std::atomic_flag* i:_Bool\nLocals:  \n   DECLARE_LOCALS(&return); [line 927, column 3]\n " color=yellow style=filled]
+	
+
+	 "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_1" -> "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" ;
+"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_2" [label="2: Exit std::atomic_flag_atomic_flag \n  " color=yellow style=filled]
+	
+
+"atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" [label="3:  Constructor Init \n   n$2=*&this:std::atomic_flag* [line 927, column 44]\n  n$3=*&i:_Bool [line 927, column 46]\n  *n$2.a:_Bool=n$3 [line 927, column 44]\n " shape="box"]
+	
+
+	 "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_3" -> "atomic_flag#atomic_flag#std#{10931176997288531904|constexpr}.57d7555f5addc9691c180d812b1aad13_2" ;
 "model_set#shared_ptr<int>#std#(4823396094259928824).b93622435d16d4672bfaf2944380f1be_1" [label="1: Start std::shared_ptr<int>_model_set\nFormals:  self:void const ** value:void*\nLocals:  \n   DECLARE_LOCALS(&return); [line 64, column 3]\n " color=yellow style=filled]
 	
 
@@ -728,44 +751,21 @@ digraph cfg {
 	
 
 	 "shared_ptr#shared_ptr<int>#std#{8741815665871862164|constexpr}.f88ab7f65e0cffeda975c68f431824d1_4" -> "shared_ptr#shared_ptr<int>#std#{8741815665871862164|constexpr}.f88ab7f65e0cffeda975c68f431824d1_3" ;
-"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_1" [label="1: Start std::atomic_flag_test_and_set\nFormals:  this:std::atomic_flag* mo:int\nLocals:  ret:_Bool \n   DECLARE_LOCALS(&return,&ret); [line 932, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_1" [label="1: Start std::shared_ptr<int>___infer_inner_destructor_~shared_ptr\nFormals:  this:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 178, column 3]\n " color=yellow style=filled]
 	
 
-	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_1" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" ;
-"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_2" [label="2: Exit std::atomic_flag_test_and_set \n  " color=yellow style=filled]
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_1" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" ;
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_2" [label="2: Exit std::shared_ptr<int>___infer_inner_destructor_~shared_ptr \n  " color=yellow style=filled]
 	
 
-"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" [label="3:  Return Stmt \n   n$0=*&ret:_Bool [line 935, column 12]\n  *&return:_Bool=n$0 [line 935, column 5]\n " shape="box"]
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" [label="3:  Destruction \n   n$0=*&this:int** [line 178, column 39]\n  _=*n$0:int* [line 178, column 39]\n  n$2=_fun_std::std__shared_ptr<int>___infer_inner_destructor_~std__shared_ptr(n$0:int**) [line 178, column 39]\n " shape="box"]
 	
 
-	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_2" ;
-"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:std::atomic_flag* [line 934, column 5]\n  *n$2.a:_Bool=1 [line 934, column 5]\n " shape="box"]
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_2" ;
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" [label="4:  Call _fun_std::shared_ptr<int>_reset<int,_void> \n   n$5=*&this:int** [line 178, column 19]\n  _=*n$5:int* [line 178, column 19]\n  n$7=_fun_std::shared_ptr<int>_reset<int,_void>(n$5:int**,null:int*) [line 178, column 19]\n " shape="box"]
 	
 
-	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_3" ;
-"test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" [label="5:  DeclStmt \n   n$3=*&this:std::atomic_flag* [line 933, column 16]\n  n$4=*n$3.a:_Bool [line 933, column 16]\n  *&ret:_Bool=n$4 [line 933, column 5]\n " shape="box"]
-	
-
-	 "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_5" -> "test_and_set#atomic_flag#std#(6342589292624928640).e1a95571862fb026e9cf3fed47e15f71_4" ;
-"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_1" [label="1: Start std::atomic_flag_test_and_set\nFormals:  this:std::atomic_flag* mo:int\nLocals:  ret:_Bool \n   DECLARE_LOCALS(&return,&ret); [line 937, column 3]\n " color=yellow style=filled]
-	
-
-	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_1" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" ;
-"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_2" [label="2: Exit std::atomic_flag_test_and_set \n  " color=yellow style=filled]
-	
-
-"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" [label="3:  Return Stmt \n   n$0=*&ret:_Bool [line 940, column 12]\n  *&return:_Bool=n$0 [line 940, column 5]\n " shape="box"]
-	
-
-	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_2" ;
-"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:std::atomic_flag* [line 939, column 5]\n  *n$2.a:_Bool=1 [line 939, column 5]\n " shape="box"]
-	
-
-	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_3" ;
-"test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" [label="5:  DeclStmt \n   n$3=*&this:std::atomic_flag* [line 938, column 16]\n  n$4=*n$3.a:_Bool [line 938, column 16]\n  *&ret:_Bool=n$4 [line 938, column 5]\n " shape="box"]
-	
-
-	 "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_5" -> "test_and_set#atomic_flag#std#(6471561702066990866).1f32ee5584df8a2cd5807312ee98cdb7_4" ;
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_4" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(11841665744792554656).9277443e4e3f26d7cc1cd9ee0f2e3637_3" ;
 "~shared_ptr#shared_ptr<int>#std#(11841665744792554656).57eab4801b4a7454644bdf188ec5633a_1" [label="1: Start std::shared_ptr<int>_~shared_ptr\nFormals:  this:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 178, column 3]\n " color=yellow style=filled]
 	
 
