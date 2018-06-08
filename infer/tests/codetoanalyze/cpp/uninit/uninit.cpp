@@ -278,3 +278,11 @@ short union_ok() {
   short* p = u.b;
   return *p;
 }
+
+int condition_no_init_bad() {
+  int x;
+  if (x) {
+    return 1;
+  }
+  return 0;
+}

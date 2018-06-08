@@ -343,7 +343,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ~f:(report_on_function_params pdesc tenv uninit_vars actuals loc extras)
           pname_opt ;
         {astate with uninit_vars}
-    | Assume _ ->
+    | Assume (expr, _, _, loc) ->
+        ( match expr with
+        | AccessExpression rhs_access_expr ->
+            if should_report_var pdesc tenv astate.uninit_vars rhs_access_expr then
+              report_intra rhs_access_expr loc (snd extras)
+        | _ ->
+            () ) ;
         astate
 
 
