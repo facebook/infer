@@ -75,6 +75,9 @@ module Node : sig
   val get_last_loc : t -> Location.t
   (** Get the source location of the last instruction in the node *)
 
+  val find_in_node_or_preds : t -> f:(t -> Sil.instr -> 'a option) -> 'a option
+  (** Find in the given node or its predecessors *)
+
   val get_loc : t -> Location.t
   (** Get the source location of the node *)
 

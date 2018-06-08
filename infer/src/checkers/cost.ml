@@ -142,8 +142,7 @@ module BoundMap = struct
         false
 
 
-  let compute_upperbound_map node_cfg inferbo_invariant_map data_invariant_map
-      control_invariant_map =
+  let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map =
     let pname = Procdesc.get_proc_name node_cfg in
     let formal_pvars =
       Procdesc.get_formals node_cfg |> List.map ~f:(fun (m, _) -> Pvar.mk m pname)
@@ -161,9 +160,7 @@ module BoundMap = struct
           match exit_state_opt with
           | Some entry_mem ->
               (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
-              let all_deps =
-                Control.compute_all_deps data_invariant_map control_invariant_map node
-              in
+              let all_deps = Control.compute_all_deps control_invariant_map node in
               L.(debug Analysis Medium)
                 "@\n>>> All dependencies for node = %a : %a  @\n\n" Procdesc.Node.pp node
                 Control.VarSet.pp all_deps ;
@@ -986,15 +983,9 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let inferbo_invariant_map, summary =
     BufferOverrunChecker.compute_invariant_map_and_check callback_args
   in
-  let proc_data = ProcData.make_default proc_desc tenv in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps = Loop_control.get_control_maps node_cfg in
-  (* computes the data dependencies: node -> (var -> var set) *)
-  let data_dep_invariant_map =
-    Control.DataDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.DataDepMap.empty
-      ~debug:true
-  in
   (* computes the control dependencies: node -> var set *)
   let control_dep_invariant_map =
     let proc_data = ProcData.make proc_desc tenv control_maps in
@@ -1010,8 +1001,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
-    BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map data_dep_invariant_map
-      control_dep_invariant_map
+    BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
   in
   let _ = ConstraintSolver.collect_constraints node_cfg in
   let constraints = StructuralConstraints.compute_structural_constraints node_cfg in

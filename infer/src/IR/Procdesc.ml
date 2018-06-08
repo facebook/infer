@@ -112,6 +112,27 @@ module Node = struct
     n |> get_instrs |> Instrs.last |> Option.value_map ~f:Sil.instr_get_loc ~default:n.loc
 
 
+  let find_in_node_or_preds =
+    let rec find ~f visited nodes =
+      match nodes with
+      | node :: nodes when not (NodeSet.mem node visited)
+        -> (
+          let instrs = get_instrs node in
+          match Instrs.find_map ~f:(f node) instrs with
+          | Some res ->
+              Some res
+          | None ->
+              let nodes = get_preds node |> List.rev_append nodes in
+              let visited = NodeSet.add node visited in
+              find ~f visited nodes )
+      | _ :: nodes ->
+          find ~f visited nodes
+      | _ ->
+          None
+    in
+    fun start_node ~f -> find ~f NodeSet.empty [start_node]
+
+
   let pp_id f id = F.pp_print_int f id
 
   let pp f node = pp_id f (get_id node)

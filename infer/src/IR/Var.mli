@@ -22,6 +22,9 @@ val of_pvar : Pvar.t -> t
 val of_formal_index : int -> t
 (** Create a variable representing the ith formal of the current procedure *)
 
+val get_all_vars_in_exp : Exp.t -> t Sequence.t
+(** Get all free and program vars *)
+
 val to_exp : t -> Exp.t
 
 val is_global : t -> bool
