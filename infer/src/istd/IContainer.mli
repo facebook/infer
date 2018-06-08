@@ -32,8 +32,3 @@ val iter_consecutive :
 val pp_collection :
   fold:('t, 'a, 'a option) Container.fold -> pp_item:(F.formatter -> 'a -> unit) -> F.formatter
   -> 't -> unit
-
-val pp_seq :
-  fold:('t, 'a, bool) Container.fold -> sep:string -> (F.formatter -> 'a -> unit) -> F.formatter
-  -> 't -> unit
-  [@@warning "-32"]

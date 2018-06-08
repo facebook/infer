@@ -233,6 +233,11 @@ module ControlFlowCost = struct
 
     let normalize ~(normalizer: t -> [> t]) (x: t) : t =
       match normalizer x with #t as x -> x | _ -> assert false
+
+
+    let is_node i = match i with `Node nid -> Some nid | _ -> None
+
+    let of_node i = `Node i
   end
 
   module Sum = struct
@@ -280,6 +285,8 @@ module ControlFlowCost = struct
   end
 
   type t = [Item.t | Sum.t]
+
+  let is_node i = match i with `Node nid -> Some nid | _ -> None
 
   let compare : t -> t -> int =
    fun x y ->
@@ -500,6 +507,8 @@ struct
 
     let pp_equalities fmt t = H.pp_bindings Repr.pp Set.pp_equalities fmt t
 
+    let fold_equalities t ~init ~f = H.fold t ~init ~f
+
     let normalize_sums ~normalizer t =
       H.iter (fun _repr set -> Set.normalize_sums ~normalizer set) t
 
@@ -564,6 +573,8 @@ struct
 
 
   let pp_equalities fmt t = Sets.pp_equalities fmt t.sets
+
+  let fold_equalities t ~init ~f = Sets.fold_equalities t.sets ~init ~f
 
   let normalizer t = Reprs.normalizer t.reprs
 
@@ -794,6 +805,7 @@ module MinTree = struct
             let branch =
               List.fold_left
                 ~f:(fun branch set_addend ->
+                  assert (Node.IdSet.cardinal set_addend >= 2) ;
                   if Node.IdSet.is_empty (Node.IdSet.inter set_addend visited_acc') then
                     SetOfSetsOfNodes.add set_addend branch
                   else branch )
@@ -804,11 +816,9 @@ module MinTree = struct
     let node, branch, visited_res = build_min (Min []) SetOfSetsOfNodes.empty visited [q] in
     SetOfSetsOfNodes.fold
       (fun addend i_node ->
-        if Node.IdSet.cardinal addend < 2 then assert false
-        else (
-          L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
-          Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
-          L.(debug Analysis Medium) " }@\n " ) ;
+        L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
+        Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
+        L.(debug Analysis Medium) " }@\n " ;
         let plus_node =
           Node.IdSet.fold
             (fun n acc ->
@@ -836,29 +846,68 @@ module MinTree = struct
     Staged.stage f_with_cache
 
 
+  let find_tree_eq_rel n trees representative_map =
+    match Node.IdMap.find_opt n representative_map with
+    | Some representative -> (
+      match Node.IdMap.find_opt representative trees with
+      | Some t ->
+          t
+      | _ ->
+          L.(die InternalError) "@\n Equivalent tree not found. Stop.@\n" )
+    | _ ->
+        L.(die InternalError)
+          "@\n Equivalence-class representative for %a not found. Stop.@\n" Node.pp_id n
+
+
+  (* update map where every element of an equivalence class map to its representative *)
+  let update_representative_map (acc_representative: Node.id Node.IdMap.t)
+      ({items}: ControlFlowCost.Set.t) (rep: Node.id) =
+    ARList.fold_left items ~init:acc_representative ~f:(fun acc it ->
+        match ControlFlowCost.Item.is_node it with Some k -> Node.IdMap.add k rep acc | _ -> acc )
+
+
   let compute_trees_from_contraints bound_map node_cfg constraints =
+    let start_node = Node.id (NodeCFG.start_node node_cfg) in
+    let start_node_item = ControlFlowCost.Item.of_node start_node in
+    let eqs = ConstraintSolver.collect_constraints node_cfg in
+    let start_node_reprs = ConstraintSolver.Equalities.Reprs.find eqs.reprs start_node_item in
+    L.(debug Analysis Verbose) "@\n =========== Computed Equalities ==========@\n" ;
+    L.(debug Analysis Verbose) "[Equalities] %a@\n" ConstraintSolver.Equalities.pp_equalities eqs ;
     let minimum_propagation =
       with_cache (minimum_propagation bound_map constraints) |> Staged.unstage
     in
-    let min_trees =
-      NodeCFG.fold_nodes node_cfg
-        ~f:(fun acc node ->
-          let nid = Node.id node in
-          let tree = minimum_propagation (nid, Node.IdSet.empty) in
-          (nid, tree) :: acc )
-        ~init:[]
+    let min_trees, representative_map =
+      ConstraintSolver.Equalities.fold_equalities eqs ~init:(Node.IdMap.empty, Node.IdMap.empty)
+        ~f:(fun (acc_trees, acc_representative) (rep, eq_cl) ->
+          let rep_id =
+            match ControlFlowCost.is_node (rep :> ControlFlowCost.t) with
+            | Some nid ->
+                nid
+            | _ ->
+                assert false
+          in
+          let acc_representative' = update_representative_map acc_representative eq_cl rep_id in
+          let tree =
+            if ConstraintSolver.Equalities.Repr.equal start_node_reprs rep then
+              (* for any node in the same equivalence class as the start node we give the trivial MinTree:
+                min(1)
+                *)
+              add_leaf (Min []) rep_id (BoundMap.upperbound bound_map rep_id)
+            else minimum_propagation (rep_id, Node.IdSet.empty)
+          in
+          (Node.IdMap.add rep_id tree acc_trees, acc_representative') )
     in
-    List.iter
-      ~f:(fun (nid, t) -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
+    Node.IdMap.iter
+      (fun nid t -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
       min_trees ;
-    min_trees
+    (min_trees, representative_map)
 end
 
 module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; min_trees_map: BasicCost.astate Node.IdMap.t
+  ; min_trees_map: BasicCost.astate Node.IdMap.t * Node.id Node.IdMap.t
   ; summary: Summary.t }
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -911,10 +960,16 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost trees m : BasicCost.astate =
+  let map_cost (trees, representative_map) m : BasicCost.astate =
     CostDomain.NodeInstructionToCostMap.fold
       (fun ((node_id, _) as instr_node_id) c acc ->
-        let t = Node.IdMap.find node_id trees in
+        let t =
+          match Node.IdMap.find_opt node_id trees with
+          | Some t' ->
+              t'
+          | None ->
+              MinTree.find_tree_eq_rel node_id trees representative_map
+        in
         let c_node = BasicCost.mult c t in
         let c_node' = BasicCost.plus acc c_node in
         L.(debug Analysis Medium)
@@ -1003,31 +1058,36 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let bound_map =
     BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
   in
-  let _ = ConstraintSolver.collect_constraints node_cfg in
   let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-  let min_trees = MinTree.compute_trees_from_contraints bound_map node_cfg constraints in
+  let min_trees, representative_map =
+    MinTree.compute_trees_from_contraints bound_map node_cfg constraints
+  in
   let trees_valuation =
-    List.fold
-      ~f:(fun acc (nid, t) ->
+    Node.IdMap.fold
+      (fun nid t acc ->
         let res = MinTree.evaluate_tree t in
         L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
         Node.IdMap.add nid res acc )
-      ~init:Node.IdMap.empty min_trees
+      min_trees Node.IdMap.empty
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match
     AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
-         {basic_cost_map= invariant_map_NodesBasicCost; min_trees_map= trees_valuation; summary})
+         { basic_cost_map= invariant_map_NodesBasicCost
+         ; min_trees_map= (trees_valuation, representative_map)
+         ; summary })
       ~debug:true ~initial:initWCET
   with
   | Some (exit_cost, _) ->
       L.internal_error
-        "@\n[COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"
+        "@\n\
+         [COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i |Trees|=%i FINAL COST \
+         = %a @\n"
         Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-        BasicCost.pp exit_cost ;
+        (Node.IdMap.cardinal min_trees) BasicCost.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary
   | None ->

@@ -58,13 +58,3 @@ let pp_collection ~fold ~pp_item fmt c =
   in
   let pp_aux fmt c = fold c ~init:None ~f |> Option.iter ~f:(F.fprintf fmt "@[<h>%a@] " pp_item) in
   F.fprintf fmt "@[<hv 2>{ %a}@]" pp_aux c
-
-
-let pp_seq ~fold ~sep pp_item fmt c =
-  let f first item =
-    if not first then F.pp_print_string fmt sep ;
-    pp_item fmt item ;
-    false
-  in
-  let _is_empty : bool = fold c ~init:true ~f in
-  ()
