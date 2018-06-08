@@ -425,15 +425,26 @@ module Procname : sig
     (** Return true if the procname is operator= *)
   end
 
-  (** Type of c procedure names. *)
-  type c = private
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; parameters: Parameter.t list
-    ; template_args: template_spec_info }
+  module C : sig
+    (** Type of c procedure names. *)
+    type t = private
+      { name: QualifiedCppName.t
+      ; mangled: string option
+      ; parameters: Parameter.t list
+      ; template_args: template_spec_info }
 
-  (** Type of Objective C block names. *)
-  type block_name
+    val c : QualifiedCppName.t -> string -> Parameter.t list -> template_spec_info -> t
+    (** Create a C procedure name from plain and mangled name. *)
+  end
+
+  module Block : sig
+    (** Type of Objective C block names. *)
+    type block_name = string
+
+    type t = {name: block_name; parameters: Parameter.t list} [@@deriving compare]
+
+    val make : block_name -> Parameter.t list -> t
+  end
 
   (** Type of procedure names.
   WithBlockParameters is used for creating an instantiation of a method that contains block parameters
@@ -443,14 +454,14 @@ module Procname : sig
   where foo_my_block is created with WithBlockParameters (foo, [my_block]) *)
   type t =
     | Java of Java.t
-    | C of c
+    | C of C.t
     | Linters_dummy_method
-    | Block of block_name * Parameter.t list
+    | Block of Block.t
     | ObjC_Cpp of ObjC_Cpp.t
-    | WithBlockParameters of t * block_name list
+    | WithBlockParameters of t * Block.block_name list
   [@@deriving compare]
 
-  val block_name_of_procname : t -> block_name
+  val block_name_of_procname : t -> Block.block_name
 
   val equal : t -> t -> bool
 
@@ -473,14 +484,8 @@ module Procname : sig
 
   module SQLiteList : SqliteUtils.Data with type t = t list
 
-  val c : QualifiedCppName.t -> string -> Parameter.t list -> template_spec_info -> c
-  (** Create a C procedure name from plain and mangled name. *)
-
   val empty_block : t
   (** Empty block name. *)
-
-  val from_string_c_fun : string -> t
-  (** Convert a string to a proc name. *)
 
   val get_language : t -> Language.t
   (** Return the language of the procedure. *)
@@ -506,10 +511,7 @@ module Procname : sig
   val is_java : t -> bool
   (** Check if this is a Java procedure name. *)
 
-  val mangled_objc_block : string -> Parameter.t list -> t
-  (** Create an objc block name. *)
-
-  val with_block_parameters : t -> block_name list -> t
+  val with_block_parameters : t -> Block.block_name list -> t
   (** Create a procedure name instantiated with block parameters from a base procedure name
     and a list of block procedure names (the arguments). *)
 
@@ -536,6 +538,9 @@ module Procname : sig
 
   val to_simplified_string : ?withclass:bool -> t -> string
   (** Convert a proc name into a easy string for the user to see in an IDE. *)
+
+  val from_string_c_fun : string -> t
+  (** Convert a string to a c function name. *)
 
   val hashable_name : t -> string
   (** Print the procedure name in a format suitable for computing the bug hash *)

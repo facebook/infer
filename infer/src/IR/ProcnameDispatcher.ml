@@ -21,7 +21,7 @@ and non_empty
 
 type typ = Typ.t
 
-type c = Typ.Procname.c
+type c = Typ.Procname.C.t
 
 type objc_cpp = Typ.Procname.ObjC_Cpp.t
 

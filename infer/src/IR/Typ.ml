@@ -841,66 +841,75 @@ being the name of the struct, [None] means the parameter is of some other type. 
           ^ Parameter.parameters_to_string osig.parameters ^ m_str
   end
 
-  (** Type of c procedure names. *)
-  type c =
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; parameters: Parameter.t list
-    ; template_args: template_spec_info }
-  [@@deriving compare]
+  module C = struct
+    (** Type of c procedure names. *)
+    type t =
+      { name: QualifiedCppName.t
+      ; mangled: string option
+      ; parameters: Parameter.t list
+      ; template_args: template_spec_info }
+    [@@deriving compare]
 
-  (** Type of Objective C block names. *)
-  type block_name = string [@@deriving compare]
-
-  (** Type of procedure names. *)
-  type t =
-    | Java of Java.t
-    | C of c
-    | Linters_dummy_method
-    | Block of block_name * Parameter.t list
-    | ObjC_Cpp of ObjC_Cpp.t
-    | WithBlockParameters of t * block_name list
-  [@@deriving compare]
-
-  let equal = [%compare.equal : t]
-
-  let hash = Hashtbl.hash
-
-  let block_name_of_procname procname =
-    match procname with
-    | Block (block_name, _) ->
-        block_name
-    | _ ->
-        Logging.die InternalError "Only to be called with Objective-C block names"
+    let c name mangled parameters template_args =
+      {name; mangled= Some mangled; parameters; template_args}
 
 
-  let empty_block = Block ("", [])
-
-  let c name mangled parameters template_args =
-    {name; mangled= Some mangled; parameters; template_args}
-
-
-  let from_string_c_fun (name: string) =
-    C
+    let from_string name =
       { name= QualifiedCppName.of_qual_string name
       ; mangled= None
       ; parameters= []
       ; template_args= NoTemplate }
 
 
+    (** to_string for C_function type *)
+    let to_string {name; mangled; parameters} verbose =
+      let plain = QualifiedCppName.to_qual_string name in
+      match verbose with
+      | Simple ->
+          plain ^ "()"
+      | Non_verbose ->
+          plain
+      | Verbose ->
+        match mangled with
+        | None ->
+            plain ^ Parameter.parameters_to_string parameters
+        | Some s ->
+            plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}"
+  end
+
+  module Block = struct
+    (** Type of Objective C block names. *)
+    type block_name = string [@@deriving compare]
+
+    type t = {name: block_name; parameters: Parameter.t list} [@@deriving compare]
+
+    let make name parameters = {name; parameters}
+
+    let to_string bsig detail_level =
+      match detail_level with
+      | Simple ->
+          "block"
+      | Non_verbose ->
+          bsig.name
+      | Verbose ->
+          bsig.name ^ Parameter.parameters_to_string bsig.parameters
+  end
+
+  (** Type of procedure names. *)
+  type t =
+    | Java of Java.t
+    | C of C.t
+    | Linters_dummy_method
+    | Block of Block.t
+    | ObjC_Cpp of ObjC_Cpp.t
+    | WithBlockParameters of t * Block.block_name list
+  [@@deriving compare]
+
+  let equal = [%compare.equal : t]
+
+  let hash = Hashtbl.hash
+
   let with_block_parameters base blocks = WithBlockParameters (base, blocks)
-
-  let mangled_objc_block name parameters = Block (name, parameters)
-
-  let objc_block_to_string (name, parameters) detail_level =
-    match detail_level with
-    | Simple ->
-        "block"
-    | Non_verbose ->
-        name
-    | Verbose ->
-        name ^ Parameter.parameters_to_string parameters
-
 
   let is_java = function Java _ -> true | _ -> false
 
@@ -915,6 +924,16 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | name ->
         is_c_function name
 
+
+  let block_name_of_procname procname =
+    match procname with
+    | Block block ->
+        block.name
+    | _ ->
+        Logging.die InternalError "Only to be called with Objective-C block names"
+
+
+  let empty_block = Block {name= ""; parameters= []}
 
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
@@ -952,7 +971,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
         get_method base
     | C {name} ->
         QualifiedCppName.to_qual_string name
-    | Block (name, _) ->
+    | Block {name} ->
         name
     | Java j ->
         j.method_name
@@ -1013,22 +1032,6 @@ being the name of the struct, [None] means the parameter is of some other type. 
         None
 
 
-  (** to_string for C_function type *)
-  let c_function_to_string {name; mangled; parameters} verbose =
-    let plain = QualifiedCppName.to_qual_string name in
-    match verbose with
-    | Simple ->
-        plain ^ "()"
-    | Non_verbose ->
-        plain
-    | Verbose ->
-      match mangled with
-      | None ->
-          plain ^ Parameter.parameters_to_string parameters
-      | Some s ->
-          plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}"
-
-
   let with_blocks_parameters_to_string base blocks to_string_f =
     let base_id = to_string_f base in
     String.concat ~sep:"_" (base_id :: blocks)
@@ -1040,11 +1043,11 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | Java j ->
         Java.to_string j Verbose
     | C osig ->
-        c_function_to_string osig Verbose
+        C.to_string osig Verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Verbose
-    | Block (name, parameters) ->
-        objc_block_to_string (name, parameters) Verbose
+    | Block bsig ->
+        Block.to_string bsig Verbose
     | WithBlockParameters (base, blocks) ->
         with_blocks_parameters_to_string base blocks to_unique_id
     | Linters_dummy_method ->
@@ -1057,11 +1060,11 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | Java j ->
         Java.to_string j Non_verbose
     | C osig ->
-        c_function_to_string osig Non_verbose
+        C.to_string osig Non_verbose
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Non_verbose
-    | Block (name, parameters) ->
-        objc_block_to_string (name, parameters) Non_verbose
+    | Block bsig ->
+        Block.to_string bsig Non_verbose
     | WithBlockParameters (base, blocks) ->
         with_blocks_parameters_to_string base blocks to_string
     | Linters_dummy_method ->
@@ -1074,16 +1077,18 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | Java j ->
         Java.to_string ~withclass j Simple
     | C osig ->
-        c_function_to_string osig Simple
+        C.to_string osig Simple
     | ObjC_Cpp osig ->
         ObjC_Cpp.to_string osig Simple
-    | Block (name, parameters) ->
-        objc_block_to_string (name, parameters) Simple
+    | Block bsig ->
+        Block.to_string bsig Simple
     | WithBlockParameters (base, _) ->
         to_simplified_string base
     | Linters_dummy_method ->
         to_unique_id p
 
+
+  let from_string_c_fun func = C (C.from_string func)
 
   let hashable_name p =
     match p with

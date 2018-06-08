@@ -547,7 +547,7 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then
     Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Typ.Procname.C (Typ.Procname.c name mangled parameters template_info)
+  else Typ.Procname.C (Typ.Procname.C.c name mangled parameters template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
@@ -600,7 +600,7 @@ and objc_block_procname outer_proc_opt parameters =
       Config.anonymous_block_num_sep i
   in
   let name = block_procname_with_index (CFrontend_config.get_fresh_block_index ()) in
-  Typ.Procname.mangled_objc_block name parameters
+  Typ.Procname.Block (Typ.Procname.Block.make name parameters)
 
 
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
