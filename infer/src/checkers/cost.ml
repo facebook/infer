@@ -235,8 +235,6 @@ module ControlFlowCost = struct
       match normalizer x with #t as x -> x | _ -> assert false
 
 
-    let is_node i = match i with `Node nid -> Some nid | _ -> None
-
     let of_node i = `Node i
   end
 
@@ -286,7 +284,7 @@ module ControlFlowCost = struct
 
   type t = [Item.t | Sum.t]
 
-  let is_node i = match i with `Node nid -> Some nid | _ -> None
+  let assert_node = function `Node nid -> nid | _ -> assert false
 
   let compare : t -> t -> int =
    fun x y ->
@@ -683,68 +681,51 @@ module MinTree = struct
     Staged.stage f_with_cache
 
 
-  let find_tree_eq_rel n trees representative_map =
-    match Node.IdMap.find_opt n representative_map with
-    | Some representative -> (
-      match Node.IdMap.find_opt representative trees with
-      | Some t ->
-          t
-      | _ ->
-          L.(die InternalError) "@\n Equivalent tree not found. Stop.@\n" )
+  let find_tree_eq_rel n trees equalities =
+    let elt = ControlFlowCost.make_node n in
+    let repr = ConstraintSolver.Equalities.find equalities elt in
+    let repr_node = ControlFlowCost.assert_node (repr :> ControlFlowCost.t) in
+    match Node.IdMap.find_opt repr_node trees with
+    | Some t ->
+        t
     | _ ->
-        L.(die InternalError)
-          "@\n Equivalence-class representative for %a not found. Stop.@\n" Node.pp_id n
+        L.(die InternalError) "@\n Equivalent tree not found. Stop.@\n"
 
 
-  (* update map where every element of an equivalence class map to its representative *)
-  let update_representative_map (acc_representative: Node.id Node.IdMap.t)
-      ({items}: ControlFlowCost.Set.t) (rep: Node.id) =
-    ARList.fold_left items ~init:acc_representative ~f:(fun acc it ->
-        match ControlFlowCost.Item.is_node it with Some k -> Node.IdMap.add k rep acc | _ -> acc )
-
-
-  let compute_trees_from_contraints bound_map node_cfg constraints =
+  let compute_trees_from_contraints bound_map node_cfg eqs constraints =
     let start_node = Node.id (NodeCFG.start_node node_cfg) in
     let start_node_item = ControlFlowCost.Item.of_node start_node in
-    let eqs = ConstraintSolver.collect_constraints node_cfg in
-    let start_node_reprs = ConstraintSolver.Equalities.find eqs start_node_item in
+    let start_node_repr = ConstraintSolver.Equalities.find eqs start_node_item in
     L.(debug Analysis Verbose) "@\n =========== Computed Equalities ==========@\n" ;
     L.(debug Analysis Verbose) "[Equalities] %a@\n" ConstraintSolver.Equalities.pp_equalities eqs ;
     let minimum_propagation =
       with_cache (minimum_propagation bound_map constraints) |> Staged.unstage
     in
-    let min_trees, representative_map =
-      ConstraintSolver.Equalities.fold_sets eqs ~init:(Node.IdMap.empty, Node.IdMap.empty) ~f:
-        (fun (acc_trees, acc_representative) (rep, eq_cl) ->
-          let rep_id =
-            match ControlFlowCost.is_node (rep :> ControlFlowCost.t) with
-            | Some nid ->
-                nid
-            | _ ->
-                assert false
-          in
-          let acc_representative' = update_representative_map acc_representative eq_cl rep_id in
+    let min_trees =
+      ConstraintSolver.Equalities.fold_sets eqs ~init:Node.IdMap.empty ~f:
+        (fun acc_trees (rep, _eq_cl) ->
+          let rep_id = ControlFlowCost.assert_node (rep :> ControlFlowCost.t) in
           let tree =
-            if ConstraintSolver.Equalities.Repr.equal start_node_reprs rep then
+            if ConstraintSolver.Equalities.Repr.equal start_node_repr rep then
               (* for any node in the same equivalence class as the start node we give the trivial MinTree:
                 min(1)
                 *)
               add_leaf (Min []) rep_id (BoundMap.upperbound bound_map rep_id)
             else minimum_propagation (rep_id, Node.IdSet.empty)
           in
-          (Node.IdMap.add rep_id tree acc_trees, acc_representative') )
+          Node.IdMap.add rep_id tree acc_trees )
     in
     Node.IdMap.iter
       (fun nid t -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
       min_trees ;
-    (min_trees, representative_map)
+    min_trees
 end
 
 module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; min_trees_map: BasicCost.astate Node.IdMap.t * Node.id Node.IdMap.t
+  ; min_trees_map: BasicCost.astate Node.IdMap.t * ConstraintSolver.Equalities.t
   ; summary: Summary.t }
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -797,7 +778,7 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost (trees, representative_map) m : BasicCost.astate =
+  let map_cost (trees, equalities) m : BasicCost.astate =
     CostDomain.NodeInstructionToCostMap.fold
       (fun ((node_id, _) as instr_node_id) c acc ->
         let t =
@@ -805,7 +786,7 @@ module TransferFunctionsWCET = struct
           | Some t' ->
               t'
           | None ->
-              MinTree.find_tree_eq_rel node_id trees representative_map
+              MinTree.find_tree_eq_rel node_id trees equalities
         in
         let c_node = BasicCost.mult c t in
         let c_node' = BasicCost.plus acc c_node in
@@ -896,8 +877,9 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
   in
   let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-  let min_trees, representative_map =
-    MinTree.compute_trees_from_contraints bound_map node_cfg constraints
+  let equalities = ConstraintSolver.collect_constraints node_cfg in
+  let min_trees =
+    MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
   in
   let trees_valuation =
     Node.IdMap.fold
@@ -912,7 +894,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
          { basic_cost_map= invariant_map_NodesBasicCost
-         ; min_trees_map= (trees_valuation, representative_map)
+         ; min_trees_map= (trees_valuation, equalities)
          ; summary })
       ~debug:true ~initial:initWCET
   with
