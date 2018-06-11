@@ -32,3 +32,6 @@ val iter_consecutive :
 val pp_collection :
   fold:('t, 'a, 'a option) Container.fold -> pp_item:(F.formatter -> 'a -> unit) -> F.formatter
   -> 't -> unit
+
+val filter :
+  fold:('t, 'a, 'accum) Container.fold -> filter:('a -> bool) -> ('t, 'a, 'accum) Container.fold

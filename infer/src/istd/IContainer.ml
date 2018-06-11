@@ -58,3 +58,7 @@ let pp_collection ~fold ~pp_item fmt c =
   in
   let pp_aux fmt c = fold c ~init:None ~f |> Option.iter ~f:(F.fprintf fmt "@[<h>%a@] " pp_item) in
   F.fprintf fmt "@[<hv 2>{ %a}@]" pp_aux c
+
+
+let filter ~fold ~filter t ~init ~f =
+  fold t ~init ~f:(fun acc item -> if filter item then f acc item else acc)
