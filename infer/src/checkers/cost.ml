@@ -725,7 +725,7 @@ module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
   { basic_cost_map: AnalyzerNodesBasicCost.invariant_map
-  ; min_trees_map: BasicCost.astate Node.IdMap.t * ConstraintSolver.Equalities.t
+  ; get_node_nb_exec: Node.id -> BasicCost.astate
   ; summary: Summary.t }
 
 (* Calculate the final Worst Case Execution Time predicted for each node.
@@ -778,16 +778,10 @@ module TransferFunctionsWCET = struct
       preds
 
 
-  let map_cost (trees, equalities) m : BasicCost.astate =
+  let map_cost get_node_nb_exec m : BasicCost.astate =
     CostDomain.NodeInstructionToCostMap.fold
       (fun ((node_id, _) as instr_node_id) c acc ->
-        let t =
-          match Node.IdMap.find_opt node_id trees with
-          | Some t' ->
-              t'
-          | None ->
-              MinTree.find_tree_eq_rel node_id trees equalities
-        in
+        let t = get_node_nb_exec node_id in
         let c_node = BasicCost.mult c t in
         let c_node' = BasicCost.plus acc c_node in
         L.(debug Analysis Medium)
@@ -802,14 +796,14 @@ module TransferFunctionsWCET = struct
 
   let exec_instr ((_, reported_so_far): Domain.astate) {ProcData.extras} (node: CFG.Node.t) instr
       : Domain.astate =
-    let {basic_cost_map= invariant_map_cost; min_trees_map= trees; summary} = extras in
+    let {basic_cost_map= invariant_map_cost; get_node_nb_exec; summary} = extras in
     let cost_node =
       let instr_node_id = CFG.Node.id node in
       match AnalyzerNodesBasicCost.extract_post instr_node_id invariant_map_cost with
       | Some node_map ->
           L.(debug Analysis Medium)
             "@\n [AnalyzerWCET] Final map for node: %a @\n" CFG.Node.pp_id instr_node_id ;
-          map_cost trees node_map
+          map_cost get_node_nb_exec node_map
       | _ ->
           assert false
     in
@@ -876,37 +870,45 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let bound_map =
     BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
   in
-  let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-  let equalities = ConstraintSolver.collect_constraints node_cfg in
-  let min_trees =
-    MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
-  in
-  let trees_valuation =
-    Node.IdMap.fold
-      (fun nid t acc ->
-        let res = MinTree.evaluate_tree t in
-        L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
-        Node.IdMap.add nid res acc )
-      min_trees Node.IdMap.empty
+  let pp_extra, get_node_nb_exec =
+    let equalities = ConstraintSolver.collect_constraints node_cfg in
+    let min_trees =
+      let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
+      MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
+    in
+    let trees_valuation =
+      Node.IdMap.fold
+        (fun nid t acc ->
+          let res = MinTree.evaluate_tree t in
+          L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
+          Node.IdMap.add nid res acc )
+        min_trees Node.IdMap.empty
+    in
+    let pp_extra fmt = F.fprintf fmt "|Trees|=%i" (Node.IdMap.cardinal min_trees) in
+    let get_node_nb_exec node_id =
+      match Node.IdMap.find_opt node_id trees_valuation with
+      | Some t ->
+          t
+      | None ->
+          MinTree.find_tree_eq_rel node_id trees_valuation equalities
+    in
+    (pp_extra, get_node_nb_exec)
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match
     AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
-         { basic_cost_map= invariant_map_NodesBasicCost
-         ; min_trees_map= (trees_valuation, equalities)
-         ; summary })
+         {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
       ~debug:true ~initial:initWCET
   with
   | Some (exit_cost, _) ->
       L.internal_error
         "@\n\
-         [COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i |Trees|=%i FINAL COST \
-         = %a @\n"
+         [COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i %t FINAL COST = %a @\n"
         Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-        (Node.IdMap.cardinal min_trees) BasicCost.pp exit_cost ;
+        pp_extra BasicCost.pp exit_cost ;
       check_and_report_infinity exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary
   | None ->
