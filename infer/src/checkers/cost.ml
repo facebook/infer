@@ -594,7 +594,7 @@ module MinTree = struct
     | Leaf (_, c) ->
         c
     | Min l ->
-        evaluate_operator BasicCost.min l
+        evaluate_operator BasicCost.min_default_left l
     | Plus l ->
         evaluate_operator BasicCost.plus l
 

@@ -1005,6 +1005,13 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
     let increasing_union ~f m1 m2 = union (fun _ v1 v2 -> Some (f v1 v2)) m1 m2
 
+    let zip m1 m2 = merge (fun _ opt1 opt2 -> Some (opt1, opt2)) m1 m2
+
+    let fold_no_key m ~init ~f =
+      let f _k v acc = f acc v in
+      fold f m init
+
+
     let le ~le_elt m1 m2 =
       match
         merge
@@ -1022,6 +1029,12 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
           true
       | exception Exit ->
           false
+
+
+    let xcompare ~xcompare_elt ~lhs ~rhs =
+      (* TODO: avoid creating zipped map *)
+      zip lhs rhs
+      |> PartialOrder.container ~fold:fold_no_key ~xcompare_elt:(PartialOrder.of_opt ~xcompare_elt)
   end
 
   (** If x < y < z then
@@ -1078,7 +1091,9 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
   let is_one : t -> bool = fun {const; terms} -> NonNegativeInt.is_one const && M.is_empty terms
 
-  let is_symbolic : t -> bool = fun {terms} -> not (M.is_empty terms)
+  let is_constant : t -> bool = fun {terms} -> M.is_empty terms
+
+  let is_symbolic : t -> bool = fun p -> not (is_constant p)
 
   let rec plus : t -> t -> t =
    fun p1 p2 ->
@@ -1132,6 +1147,14 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:( <= ) lhs.terms rhs.terms
 
 
+  let rec xcompare ~lhs ~rhs =
+    let cmp_const =
+      PartialOrder.of_compare ~compare:NonNegativeInt.compare ~lhs:lhs.const ~rhs:rhs.const
+    in
+    let cmp_terms = M.xcompare ~xcompare_elt:xcompare ~lhs:lhs.terms ~rhs:rhs.terms in
+    PartialOrder.join cmp_const cmp_terms
+
+
   (* Possible optimization for later: x join x^2 = x^2 instead of x + x^2 *)
   let rec join : t -> t -> t =
    fun p1 p2 ->
@@ -1141,11 +1164,15 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
   (* assumes symbols are not comparable *)
   (* TODO: improve this for comparable symbols *)
-  let min : t -> t -> t =
+  let min_default_left : t -> t -> t =
    fun p1 p2 ->
-    if ( <= ) ~lhs:p1 ~rhs:p2 then p1
-    else (* either can't decide which one is smaller or p2 is smaller  *)
-      p2
+    match xcompare ~lhs:p1 ~rhs:p2 with
+    | `Equal | `LeftSmallerThanRight ->
+        p1
+    | `RightSmallerThanLeft ->
+        p2
+    | `NotComparable ->
+        if is_constant p1 then p1 else if is_constant p2 then p2 else p1
 
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
@@ -1233,12 +1260,12 @@ module NonNegativePolynomial = struct
 
   let mult = top_lifted_increasing ~f:NonNegativeNonTopPolynomial.mult
 
-  let min p1 p2 =
+  let min_default_left p1 p2 =
     match (p1, p2) with
     | Top, x | x, Top ->
         x
     | NonTop p1, NonTop p2 ->
-        NonTop (NonNegativeNonTopPolynomial.min p1 p2)
+        NonTop (NonNegativeNonTopPolynomial.min_default_left p1 p2)
 
 
   let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top

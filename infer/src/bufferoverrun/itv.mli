@@ -72,7 +72,7 @@ module NonNegativePolynomial : sig
 
   val mult : astate -> astate -> astate
 
-  val min : astate -> astate -> astate
+  val min_default_left : astate -> astate -> astate
 
   val subst : astate -> Bound.t bottom_lifted SymbolMap.t -> astate
 end
