@@ -1106,19 +1106,27 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
   let callee_attributes = Summary.get_attributes callee_summary in
   (* if the callee is a model, then we don't have a tenv for it *)
   if not callee_attributes.ProcAttributes.is_model && add_fields then
-    let callee_tenv = Exe_env.get_tenv exe_env callee_pname in
-    let add_field_in_hpred hpred =
-      match hpred with
-      | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) -> (
-        match Tenv.lookup callee_tenv name with
-        | Some {fields} ->
-            List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
-        | None ->
-            () )
-      | _ ->
-          ()
+    let callee_tenv_opt =
+      try Some (Exe_env.get_tenv exe_env callee_pname) with _ ->
+        let source_file = callee_attributes.ProcAttributes.loc.Location.file in
+        Tenv.load source_file
     in
-    List.iter ~f:add_field_in_hpred hpreds
+    match callee_tenv_opt with
+    | None ->
+        ()
+    | Some callee_tenv ->
+        let add_field_in_hpred hpred =
+          match hpred with
+          | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ= {desc= Typ.Tstruct name}}) -> (
+            match Tenv.lookup callee_tenv name with
+            | Some {fields} ->
+                List.iter ~f:(fun field -> Tenv.add_field caller_tenv name field) fields
+            | None ->
+                () )
+          | _ ->
+              ()
+        in
+        List.iter ~f:add_field_in_hpred hpreds
 
 
 (** Perform symbolic execution for a single spec *)
