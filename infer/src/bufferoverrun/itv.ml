@@ -690,19 +690,7 @@ module Bound = struct
 
   let eq : t -> t -> bool = fun x y -> le x y && le y x
 
-  let xcompare ~lhs ~rhs =
-    let ller = le lhs rhs in
-    let rlel = le rhs lhs in
-    match (ller, rlel) with
-    | true, true ->
-        `Equal
-    | true, false ->
-        `LeftSmallerThanRight
-    | false, true ->
-        `RightSmallerThanLeft
-    | false, false ->
-        `NotComparable
-
+  let xcompare = PartialOrder.of_le ~le
 
   let remove_max_int : t -> t =
    fun x ->
