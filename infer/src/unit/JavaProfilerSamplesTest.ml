@@ -158,8 +158,8 @@ let test_jni_to_java_type_with_invalid_input =
 
 
 let test_from_json_string_with_valid_input =
-  let create_test input expected _ =
-    let found = JavaProfilerSamples.from_json_string input ~use_signature:true in
+  let create_test input expected ~use_signature _ =
+    let found = JavaProfilerSamples.from_json_string input ~use_signature in
     assert_equal
       ~cmp:(List.equal ~equal:JavaProfilerSamples.equal_labeled_profiler_sample)
       expected found
@@ -222,9 +222,39 @@ let test_from_json_string_with_valid_input =
                    (Some (mk_split (None, "void")))
                    "methodOne" [] Java.Non_Static)) ] ) ]
   in
-  [("test_from_json_string_1", input1, expected1); ("test_from_json_string_2", input2, expected2)]
-  |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+  let expected3 =
+    [ ( "label1"
+      , JavaProfilerSamples.ProfilerSample.of_list
+          [ Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "lll.mmm.Nnn")
+                   None "<init>" [] Java.Non_Static))
+          ; Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "ggg.hhh.Iii")
+                   None "<clinit>" [] Java.Non_Static)) ] )
+    ; ( "label2"
+      , JavaProfilerSamples.ProfilerSample.of_list
+          [ Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "ddd.eee.Fff")
+                   (Some (mk_split (None, "void")))
+                   "methodTwo" [] Java.Non_Static))
+          ; Typ.Procname.(
+              Java
+                (Java.make
+                   (Typ.Name.Java.from_string "aaa.bbb.Ccc")
+                   (Some (mk_split (None, "void")))
+                   "methodOne" [] Java.Non_Static)) ] ) ]
+  in
+  [ ("test_from_json_string_1", input1, expected1, true)
+  ; ("test_from_json_string_2", input2, expected2, true)
+  ; ("test_from_json_string_3", input2, expected3, false) ]
+  |> List.map ~f:(fun (name, test_input, expected_output, use_signature) ->
+         name >:: create_test test_input expected_output ~use_signature )
 
 
 let test_from_json_string_with_invalid_input =
