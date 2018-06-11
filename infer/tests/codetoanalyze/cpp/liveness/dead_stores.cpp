@@ -338,6 +338,11 @@ struct NoDestructor {};
 
 void dead_struct_no_destructor_bad() { NoDestructor dead; }
 
+void no_destructor_void_read_ok() {
+  NoDestructor dead;
+  (void)dead;
+}
+
 struct NoDestructorDefinition {
   ~NoDestructorDefinition();
 };

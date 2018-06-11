@@ -480,6 +480,16 @@ let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
       (instrs, (deref_exp, cast_typ))
   | `NullToPointer ->
       if Exp.is_zero exp then ([], (Exp.null, cast_typ)) else ([], (exp, cast_typ))
+  | `ToVoid ->
+      (* If exp is not used later, i.e. as in `(void) exp;` we miss reads *)
+      (* We create a call to skip function passing the exp as a parameter *)
+      let skip_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_skip) in
+      let args = [(exp, typ)] in
+      let no_id = Ident.create_none () in
+      let call_instr =
+        Sil.Call ((no_id, cast_typ), skip_builtin, args, sil_loc, CallFlags.default)
+      in
+      ([call_instr], (exp, cast_typ))
   | _ ->
       L.(debug Capture Verbose)
         "@\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...@\n"
