@@ -245,8 +245,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.Node.hash node in
-            let model_env = Models.mk_model_env callee_pname node_hash location tenv ~ret in
-            exec model_env mem
+            let model_env = Models.mk_model_env callee_pname node_hash location tenv in
+            exec model_env ~ret mem
         | None ->
           match Payload.read pdesc callee_pname with
           | Some summary ->

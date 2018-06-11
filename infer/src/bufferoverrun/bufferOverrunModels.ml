@@ -16,16 +16,11 @@ module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
-type model_env =
-  { pname: Typ.Procname.t
-  ; node_hash: int
-  ; location: Location.t
-  ; tenv: Tenv.t
-  ; ret: (Ident.t * Typ.t) option }
+type model_env = {pname: Typ.Procname.t; node_hash: int; location: Location.t; tenv: Tenv.t}
 
-let mk_model_env pname node_hash location ?ret tenv = {pname; node_hash; location; tenv; ret}
+let mk_model_env pname node_hash location tenv = {pname; node_hash; location; tenv}
 
-type exec_fun = model_env -> Dom.Mem.astate -> Dom.Mem.astate
+type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
 
 type check_fun = model_env -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t
 
@@ -81,80 +76,62 @@ let set_uninitialized location (typ: Typ.t) ploc mem =
 
 
 let malloc size_exp =
-  let exec {pname; ret; node_hash; location; tenv} mem =
-    match ret with
-    | Some (id, _) ->
-        let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
-        let typ, stride, length0, dyn_length = get_malloc_info size_exp in
-        let length = Sem.eval length0 mem in
-        let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
-        let v =
-          Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero
-            ~size:(Dom.Val.get_itv length) ~inst_num:0 ~dimension:1
-          |> Dom.Val.set_traces traces
-        in
-        mem |> Dom.Mem.add_stack (Loc.of_id id) v
-        |> set_uninitialized location typ (Dom.Val.get_array_locs v)
-        |> BoUtils.Exec.init_array_fields tenv pname ~node_hash typ (Dom.Val.get_array_locs v)
-             ?dyn_length
-    | _ ->
-        L.(debug BufferOverrun Verbose)
-          "/!\\ Do not know where to model malloc at %a@\n" Location.pp location ;
-        mem
+  let exec {pname; node_hash; location; tenv} ~ret:(id, _) mem =
+    let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+    let typ, stride, length0, dyn_length = get_malloc_info size_exp in
+    let length = Sem.eval length0 mem in
+    let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+    let v =
+      Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero
+        ~size:(Dom.Val.get_itv length) ~inst_num:0 ~dimension:1
+      |> Dom.Val.set_traces traces
+    in
+    mem |> Dom.Mem.add_stack (Loc.of_id id) v
+    |> set_uninitialized location typ (Dom.Val.get_array_locs v)
+    |> BoUtils.Exec.init_array_fields tenv pname ~node_hash typ (Dom.Val.get_array_locs v)
+         ?dyn_length
   and check = check_alloc_size size_exp in
   {exec; check}
 
 
 let realloc src_exp size_exp =
-  let exec {ret; location; tenv} mem =
-    match ret with
-    | Some (id, _) ->
-        let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
-        let typ, _, length0, dyn_length = get_malloc_info size_exp in
-        let length = Sem.eval length0 mem in
-        let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
-        let v =
-          Sem.eval src_exp mem |> Dom.Val.set_array_size (Dom.Val.get_itv length)
-          |> Dom.Val.set_traces traces
-        in
-        let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
-        Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
-            let dyn_length = Dom.Val.get_itv (Sem.eval dyn_length mem) in
-            BoUtils.Exec.set_dyn_length tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
-    | _ ->
-        mem
+  let exec {location; tenv} ~ret:(id, _) mem =
+    let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
+    let typ, _, length0, dyn_length = get_malloc_info size_exp in
+    let length = Sem.eval length0 mem in
+    let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+    let v =
+      Sem.eval src_exp mem |> Dom.Val.set_array_size (Dom.Val.get_itv length)
+      |> Dom.Val.set_traces traces
+    in
+    let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
+    Option.value_map dyn_length ~default:mem ~f:(fun dyn_length ->
+        let dyn_length = Dom.Val.get_itv (Sem.eval dyn_length mem) in
+        BoUtils.Exec.set_dyn_length tenv typ (Dom.Val.get_array_locs v) dyn_length mem )
   and check = check_alloc_size size_exp in
   {exec; check}
 
 
 let placement_new allocated_mem_exp =
-  let exec {ret} mem =
-    match ret with
-    | Some (id, _) ->
-        let v = Sem.eval allocated_mem_exp mem in
-        Dom.Mem.add_stack (Loc.of_id id) v mem
-    | None ->
-        mem
+  let exec _ ~ret:(id, _) mem =
+    let v = Sem.eval allocated_mem_exp mem in
+    Dom.Mem.add_stack (Loc.of_id id) v mem
   in
   {exec; check= no_check}
 
 
 let inferbo_min e1 e2 =
-  let exec {ret} mem =
-    match ret with
-    | Some (id, _) ->
-        let i1 = Sem.eval e1 mem |> Dom.Val.get_itv in
-        let i2 = Sem.eval e2 mem |> Dom.Val.get_itv in
-        let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
-        mem |> Dom.Mem.add_stack (Loc.of_id id) v
-    | _ ->
-        mem
+  let exec _ ~ret:(id, _) mem =
+    let i1 = Sem.eval e1 mem |> Dom.Val.get_itv in
+    let i2 = Sem.eval e2 mem |> Dom.Val.get_itv in
+    let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
+    mem |> Dom.Mem.add_stack (Loc.of_id id) v
   in
   {exec; check= no_check}
 
 
 let inferbo_set_size e1 e2 =
-  let exec _model_env mem =
+  let exec _model_env ~ret:_ mem =
     let locs = Sem.eval e1 mem |> Dom.Val.get_pow_loc in
     let size = Sem.eval e2 mem |> Dom.Val.get_itv in
     Dom.Mem.transform_mem ~f:(Dom.Val.set_array_size size) locs mem
@@ -162,28 +139,20 @@ let inferbo_set_size e1 e2 =
   {exec; check}
 
 
-let model_by_value value ret mem =
-  match ret with
-  | Some (id, _) ->
-      Dom.Mem.add_stack (Loc.of_id id) value mem
-  | None ->
-      L.(debug BufferOverrun Verbose)
-        "/!\\ Do not know where to model value %a@\n" Dom.Val.pp value ;
-      mem
-
+let model_by_value value (id, _) mem = Dom.Mem.add_stack (Loc.of_id id) value mem
 
 let by_value =
-  let exec ~value {ret} mem = model_by_value value ret mem in
+  let exec ~value _ ~ret mem = model_by_value value ret mem in
   fun value -> {exec= exec ~value; check= no_check}
 
 
 let bottom =
-  let exec _model_env _mem = Bottom in
+  let exec _model_env ~ret:_ _mem = Bottom in
   {exec; check= no_check}
 
 
 let infer_print e =
-  let exec {location} mem =
+  let exec {location} ~ret:_ mem =
     L.(debug BufferOverrun Medium)
       "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp (Sem.eval e mem) ;
     mem
@@ -192,7 +161,7 @@ let infer_print e =
 
 
 let get_array_length array_exp =
-  let exec {ret} mem =
+  let exec _ ~ret mem =
     let arr = Sem.eval_arr array_exp mem in
     let traces = Dom.Val.get_traces arr in
     let length = arr |> Dom.Val.get_array_blk |> ArrayBlk.sizeof in
@@ -203,7 +172,7 @@ let get_array_length array_exp =
 
 
 let set_array_length array length_exp =
-  let exec {pname; node_hash; location} mem =
+  let exec {pname; node_hash; location} ~ret:_ mem =
     match array with
     | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
         let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
@@ -236,7 +205,9 @@ end
 module Boost = struct
   module Split = struct
     let std_vector vector_arg =
-      let exec {location} mem = Split.std_vector ~adds_at_least_one:true vector_arg location mem in
+      let exec {location} ~ret:_ mem =
+        Split.std_vector ~adds_at_least_one:true vector_arg location mem
+      in
       {exec; check= no_check}
   end
 end
@@ -244,7 +215,7 @@ end
 module Folly = struct
   module Split = struct
     let std_vector vector_arg ignore_empty_opt =
-      let exec {location} mem =
+      let exec {location} ~ret:_ mem =
         let adds_at_least_one =
           match ignore_empty_opt with
           | Some ignore_empty_exp ->
@@ -278,19 +249,15 @@ module StdArray = struct
 
 
   let constructor _size =
-    let exec _model_env mem = mem (* initialize? *) in
+    let exec _model_env ~ret:_ mem = mem (* initialize? *) in
     {exec; check= no_check}
 
 
   let at _size (array_exp, _) (index_exp, _) =
     (* TODO? use size *)
-    let exec {ret} mem =
+    let exec _ ~ret:(id, _) mem =
       L.(debug BufferOverrun Verbose) "Using model std::array<_, %Ld>::at" _size ;
-      match ret with
-      | Some (id, _) ->
-          BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
-      | None ->
-          mem
+      BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
     and check {pname; location} mem cond_set =
       BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
     in
@@ -298,7 +265,7 @@ module StdArray = struct
 
 
   let no_model =
-    let exec {pname; location} mem =
+    let exec {pname; location} ~ret:_ mem =
       L.(debug BufferOverrun Verbose)
         "No model for %a at %a" Typ.Procname.pp pname Location.pp location ;
       mem
