@@ -28,4 +28,24 @@ class Dedup {
     latch.await();
     future.get();
   }
+
+  Object lockA, lockB;
+
+  // deadlock should be reported between oneWayBad and anotherWayBad only
+  void oneWayBad() {
+    synchronized(lockA) {
+      synchronized(lockB) {}
+    }
+  }
+
+  void anotherWayBad() {
+    synchronized(lockB) {
+      synchronized(lockA) {}
+    }
+  }
+
+  // this is creating a longer trace than anotherWayBad, so should be suppressed
+  void thirdLongerWayBad() {
+    anotherWayBad();
+  }
 }

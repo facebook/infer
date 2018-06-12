@@ -168,44 +168,55 @@ let get_summaries_of_methods_in_class tenv clazz =
 
 
 (** per-procedure report map, which takes care of deduplication *)
-module ReportMap = struct
-  type issue_t = Starvation of StarvationDomain.Event.severity_t | Deadlock [@@deriving compare]
+module ReportMap : sig
+  type t
 
-  type report_t =
-    { issue: issue_t
-    ; pname: Typ.Procname.t [@compare.ignore]
-    ; ltr: Errlog.loc_trace [@compare.ignore]
-    ; message: string [@compare.ignore] }
-  [@@deriving compare]
+  val empty : t
+
+  val add_deadlock : Tenv.t -> Procdesc.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
+
+  val add_starvation :
+    Tenv.t -> StarvationDomain.Event.severity_t -> Procdesc.t -> Location.t -> Errlog.loc_trace
+    -> string -> t -> t
+
+  val log : t -> unit
+end = struct
+  type starvation_t = StarvationDomain.Event.severity_t
+
+  type deadlock_t = int
+
+  type 'weight_t report_t =
+    {weight: 'weight_t; pname: Typ.Procname.t; ltr: Errlog.loc_trace; message: string}
 
   module LocMap = PrettyPrintable.MakePPMap (Location)
 
-  let empty : report_t list LocMap.t = LocMap.empty
+  type t = (deadlock_t report_t list * starvation_t report_t list) LocMap.t
 
-  let issue_type issue =
-    match issue with Deadlock -> IssueType.deadlock | Starvation _ -> IssueType.starvation
+  let empty : t = LocMap.empty
 
-
-  let add tenv issue pdesc loc ltr message map =
+  let add_deadlock tenv pdesc loc ltr message (map: t) =
     let pname = Procdesc.get_proc_name pdesc in
-    let issue_type = issue_type issue in
-    if Reporting.is_suppressed tenv pdesc issue_type ~field_name:None then map
+    if Reporting.is_suppressed tenv pdesc IssueType.deadlock ~field_name:None then map
     else
-      let rep = {issue; pname; ltr; message} in
-      let preexisting = try LocMap.find loc map with Caml.Not_found -> [] in
-      LocMap.add loc (rep :: preexisting) map
+      let rep = {weight= -List.length ltr; pname; ltr; message} in
+      let deadlocks, starvations = try LocMap.find loc map with Caml.Not_found -> ([], []) in
+      let new_reports = (rep :: deadlocks, starvations) in
+      LocMap.add loc new_reports map
 
 
-  let add_deadlock tenv pdesc loc ltr exn map = add tenv Deadlock pdesc loc ltr exn map
-
-  let add_starvation tenv sev pdesc loc ltr exn map =
-    add tenv (Starvation sev) pdesc loc ltr exn map
+  let add_starvation tenv sev pdesc loc ltr message map =
+    let pname = Procdesc.get_proc_name pdesc in
+    if Reporting.is_suppressed tenv pdesc IssueType.starvation ~field_name:None then map
+    else
+      let rep = {weight= sev; pname; ltr; message} in
+      let deadlocks, starvations = try LocMap.find loc map with Caml.Not_found -> ([], []) in
+      let new_reports = (deadlocks, rep :: starvations) in
+      LocMap.add loc new_reports map
 
 
   let log map =
-    let log_report loc {issue; pname; ltr; message} =
-      let issue_type = issue_type issue in
-      let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc message) in
+    let log_report issuetype loc {pname; ltr; message} =
+      let exn = Exceptions.Checkers (issuetype, Localise.verbatim_desc message) in
       Reporting.log_issue_external pname Exceptions.Kerror ~loc ~ltr exn
     in
     let mk_deduped_report num_of_reports ({message} as report) =
@@ -214,21 +225,20 @@ module ReportMap = struct
           Printf.sprintf "%s %d more starvation report(s) on the same line suppressed." message
             (num_of_reports - 1) }
     in
-    let log_location loc reports =
-      let deadlocks, starvations =
-        List.partition_tf ~f:(function {issue= Deadlock} -> true | _ -> false) reports
-      in
-      (* report all deadlocks *)
-      List.iter ~f:(log_report loc) deadlocks ;
-      match starvations with
+    let log_loc_reports issuetype compare loc = function
       | [] ->
           ()
       | [report] ->
-          log_report loc report
-      | _ ->
-          List.max_elt ~compare:compare_report_t starvations
+          log_report issuetype loc report
+      | reports ->
+          List.max_elt ~compare:(fun {weight} {weight= weight'} -> compare weight weight') reports
           |> Option.iter ~f:(fun rep ->
-                 mk_deduped_report (List.length starvations) rep |> log_report loc )
+                 mk_deduped_report (List.length reports) rep |> log_report issuetype loc )
+    in
+    let log_location loc (deadlocks, starvations) =
+      log_loc_reports IssueType.deadlock Int.compare loc deadlocks ;
+      log_loc_reports IssueType.starvation StarvationDomain.Event.compare_severity_t loc
+        starvations
     in
     LocMap.iter log_location map
 end
