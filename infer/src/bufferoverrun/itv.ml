@@ -1144,7 +1144,9 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
   (* assumes symbols are not comparable *)
   let rec ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
-    NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:( <= ) lhs.terms rhs.terms
+    phys_equal lhs rhs
+    || NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const
+       && M.le ~le_elt:( <= ) lhs.terms rhs.terms
 
 
   let rec xcompare ~lhs ~rhs =
@@ -1158,8 +1160,10 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
   (* Possible optimization for later: x join x^2 = x^2 instead of x + x^2 *)
   let rec join : t -> t -> t =
    fun p1 p2 ->
-    { const= NonNegativeInt.max p1.const p2.const
-    ; terms= M.increasing_union ~f:join p1.terms p2.terms }
+    if phys_equal p1 p2 then p1
+    else
+      { const= NonNegativeInt.max p1.const p2.const
+      ; terms= M.increasing_union ~f:join p1.terms p2.terms }
 
 
   (* assumes symbols are not comparable *)

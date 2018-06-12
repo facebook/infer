@@ -23,6 +23,8 @@ end)
    Currently it's set randomly to 200. *)
 let expensive_threshold = BasicCost.of_int_exn 200
 
+let solver = `ConstraintSolver
+
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
@@ -280,9 +282,15 @@ module ControlFlowCost = struct
           Some (e :> [Item.t | t])
       | Some l ->
           Some (`Sum (len - 1, l))
+
+
+    let cost ~of_item (`Sum (_, l)) =
+      List.fold l ~init:BasicCost.zero ~f:(fun cost item -> BasicCost.plus cost (of_item item))
   end
 
   type t = [Item.t | Sum.t]
+
+  let is_node = function `Node nid -> Some nid | _ -> None
 
   let assert_node = function `Node nid -> nid | _ -> assert false
 
@@ -314,7 +322,11 @@ module ControlFlowCost = struct
   module Set = struct
     type elt = t [@@deriving compare]
 
-    type t = {mutable size: int; mutable items: Item.t ARList.t; mutable sums: Sum.t ARList.t}
+    type t =
+      { mutable size: int
+      ; mutable items: Item.t ARList.t
+      ; mutable sums: Sum.t ARList.t
+      ; mutable cost: BasicCost.astate }
 
     let create e =
       let items, sums =
@@ -324,13 +336,15 @@ module ControlFlowCost = struct
         | #Sum.t as sum ->
             (ARList.empty, ARList.singleton sum)
       in
-      {size= 1; items; sums}
+      {size= 1; items; sums; cost= BasicCost.top}
 
 
     let compare_size {size= size1} {size= size2} = Int.compare size1 size2
 
     (* Invalidation is just a sanity check, union-find already takes care of it. *)
     let is_valid {size} = size >= 1
+
+    let cost {cost} = cost
 
     (* move semantics, should not be called with aliases *)
     let merge ~from ~to_ =
@@ -364,22 +378,54 @@ module ControlFlowCost = struct
       |> IContainer.iter_consecutive ~fold:List.fold ~f:on_infer
 
 
+    let sum_items t =
+      t.sums
+      |> ARList.fold_unordered ~init:ARList.empty ~f:(fun acc sum ->
+             sum |> Sum.items |> ARList.of_list |> ARList.append acc )
+      |> IContainer.to_rev_list ~fold:ARList.fold_unordered
+      |> List.dedup_and_sort ~compare:Item.compare
+
+
     let infer_equalities_from_sums
         : on_infer:(elt -> elt -> unit) -> normalizer:(elt -> elt) -> t -> unit =
      fun ~on_infer ~normalizer t ->
       normalize_sums ~normalizer t ;
-      let all_items =
-        t.sums
-        |> ARList.fold_unordered ~init:ARList.empty ~f:(fun acc sum ->
-               sum |> Sum.items |> ARList.of_list |> ARList.append acc )
-        |> IContainer.to_rev_list ~fold:ARList.fold_unordered
-        |> List.dedup_and_sort ~compare:Item.compare
-      in
       (* Keep in mind that [on_infer] can modify [t].
         It happens only if we merge a node while infering equalities from it, i.e. in the case an item appears in an equality class both alone and in two sums, i.e. X = A + X = A + B.
         This is not a problem here (we could stop if it happens but it is not necessary as existing equalities still remain true after merges) *)
       (* Also keep in mind that the current version, in the worst-case scenario, is quadratic-ish in the size of the CFG *)
-      List.iter all_items ~f:(fun item -> infer_equalities_by_removing_item ~on_infer t item)
+      sum_items t |> List.iter ~f:(fun item -> infer_equalities_by_removing_item ~on_infer t item)
+
+
+    let init_cost : of_node:(Node.id -> BasicCost.astate) -> t -> unit =
+     fun ~of_node t ->
+      let min_if_node cost item =
+        match item with `Node node -> BasicCost.min_default_left cost (of_node node) | _ -> cost
+      in
+      t.cost <- ARList.fold_unordered t.items ~init:t.cost ~f:min_if_node
+
+
+    let improve_cost_from_sums
+        : on_improve:(Sum.t -> BasicCost.astate -> BasicCost.astate -> unit)
+          -> of_item:(Item.t -> BasicCost.astate) -> t -> unit =
+     fun ~on_improve ~of_item t ->
+      let f sum =
+        let cost_of_sum = Sum.cost ~of_item sum in
+        let new_cost = BasicCost.min_default_left t.cost cost_of_sum in
+        if not (BasicCost.( <= ) ~lhs:t.cost ~rhs:new_cost) then (
+          on_improve sum cost_of_sum new_cost ;
+          t.cost <- new_cost )
+      in
+      Container.iter t.sums ~fold:ARList.fold_unordered ~f
+
+
+    let improve_cost_with t cost' =
+      let old_cost = t.cost in
+      let new_cost = BasicCost.min_default_left old_cost cost' in
+      if not (BasicCost.( <= ) ~lhs:old_cost ~rhs:new_cost) then (
+        t.cost <- new_cost ;
+        Some old_cost )
+      else None
   end
 end
 
@@ -398,6 +444,13 @@ module ConstraintSolver = struct
       IContainer.pp_collection ~fold:fold_sets ~pp_item fmt equalities
 
 
+    let pp_costs fmt equalities =
+      let pp_item fmt (repr, set) =
+        F.fprintf fmt "%a --> %a" pp_repr repr BasicCost.pp (ControlFlowCost.Set.cost set)
+      in
+      IContainer.pp_collection ~fold:fold_sets ~pp_item fmt equalities
+
+
     let log_union equalities e1 e2 =
       match union equalities e1 e2 with
       | None ->
@@ -408,6 +461,26 @@ module ConstraintSolver = struct
           L.(debug Analysis Verbose)
             "[UF] Union %a into %a@\n" ControlFlowCost.pp e1 ControlFlowCost.pp e2 ;
           true
+
+
+    let try_to_improve ~on_improve ~f equalities ~max =
+      let f did_improve repr_set =
+        if did_improve then (
+          f ~did_improve:(fun () -> ()) repr_set ;
+          true )
+        else
+          let did_improve = ref false in
+          f ~did_improve:(fun () -> did_improve := true) repr_set ;
+          !did_improve
+      in
+      let rec loop max =
+        if fold_sets equalities ~init:false ~f then (
+          on_improve () ;
+          if max > 0 then loop (max - 1)
+          else
+            L.(debug Analysis Verbose) "[ConstraintSolver] Maximum number of iterations reached@\n" )
+      in
+      loop max
 
 
     (**
@@ -424,20 +497,14 @@ module ConstraintSolver = struct
   *)
     let infer_equalities_from_sums equalities ~max =
       let normalizer = normalizer equalities in
-      let f did_infer (_repr, set) =
-        let did_infer = ref did_infer in
-        let on_infer e1 e2 = if log_union equalities e1 e2 then did_infer := true in
-        ControlFlowCost.Set.infer_equalities_from_sums ~on_infer ~normalizer set ;
-        !did_infer
+      let f ~did_improve (_repr, set) =
+        let on_infer e1 e2 = if log_union equalities e1 e2 then did_improve () in
+        ControlFlowCost.Set.infer_equalities_from_sums ~on_infer ~normalizer set
       in
-      let rec loop max =
-        if fold_sets equalities ~init:false ~f then (
-          L.(debug Analysis Verbose) "[ConstraintSolver] %a@\n" pp_equalities equalities ;
-          if max > 0 then loop (max - 1)
-          else
-            L.(debug Analysis Verbose) "[ConstraintSolver] Maximum number of iterations reached@\n" )
+      let on_improve () =
+        L.(debug Analysis Verbose) "[ConstraintSolver][EInfe] %a@\n" pp_equalities equalities
       in
-      loop max
+      try_to_improve ~on_improve ~f equalities ~max
 
 
     let normalize_sums equalities =
@@ -449,6 +516,55 @@ module ConstraintSolver = struct
     let union equalities e1 e2 =
       let _ : bool = log_union equalities e1 e2 in
       ()
+
+
+    let init_costs bound_map equalities =
+      let of_node node_id = BoundMap.upperbound bound_map node_id in
+      Container.iter equalities ~fold:fold_sets ~f:(fun (_repr, set) ->
+          ControlFlowCost.Set.init_cost ~of_node set )
+
+
+    (**
+      From sums: if A = B + C, do cost(A) = min(cost(A), cost(B) + cost(C))
+      From inequalities: if A = B + C, then B <= A, do cost(B) = min(cost(B), cost(A))
+    *)
+    let improve_costs equalities ~max =
+      let of_item (item: ControlFlowCost.Item.t) =
+        (item :> ControlFlowCost.t) |> find equalities |> find_set equalities
+        |> Option.value_map ~f:ControlFlowCost.Set.cost ~default:BasicCost.top
+      in
+      let f ~did_improve (repr, set) =
+        let on_improve sum cost_of_sum new_cost =
+          L.(debug Analysis Verbose)
+            "[ConstraintSolver][CImpr] Improved cost of %a using %a (cost: %a), from %a to %a@\n"
+            pp_repr repr ControlFlowCost.Sum.pp sum BasicCost.pp cost_of_sum BasicCost.pp
+            (ControlFlowCost.Set.cost set) BasicCost.pp new_cost ;
+          did_improve ()
+        in
+        ControlFlowCost.Set.improve_cost_from_sums ~on_improve ~of_item set ;
+        let try_from_inequality (sum_item: ControlFlowCost.Item.t) =
+          let sum_item_set =
+            (sum_item :> ControlFlowCost.t) |> find equalities |> find_create_set equalities
+          in
+          match
+            ControlFlowCost.Set.improve_cost_with sum_item_set (ControlFlowCost.Set.cost set)
+          with
+          | Some previous_cost ->
+              L.(debug Analysis Verbose)
+                "[ConstraintSolver][CImpr] Improved cost of %a <= %a (cost: %a), from %a to %a@\n"
+                ControlFlowCost.Item.pp sum_item pp_repr repr BasicCost.pp
+                (ControlFlowCost.Set.cost set) BasicCost.pp previous_cost BasicCost.pp
+                (ControlFlowCost.Set.cost sum_item_set) ;
+              did_improve ()
+          | None ->
+              ()
+        in
+        ControlFlowCost.Set.sum_items set |> List.iter ~f:try_from_inequality
+      in
+      let on_improve () =
+        L.(debug Analysis Verbose) "[ConstraintSolver][CImpr] %a@\n" pp_costs equalities
+      in
+      try_to_improve ~on_improve ~f equalities ~max
   end
 
   let add_constraints equalities node get_nodes make =
@@ -474,12 +590,30 @@ module ConstraintSolver = struct
     L.(debug Analysis Verbose)
       "[ConstraintSolver] Procedure %a @@ %a@\n" Typ.Procname.pp (Procdesc.get_proc_name node_cfg)
       Location.pp_file_pos (Procdesc.get_loc node_cfg) ;
-    L.(debug Analysis Verbose) "[ConstraintSolver] %a@\n" Equalities.pp_equalities equalities ;
+    L.(debug Analysis Verbose)
+      "[ConstraintSolver][EInit] %a@\n" Equalities.pp_equalities equalities ;
     Equalities.normalize_sums equalities ;
-    L.(debug Analysis Verbose) "[ConstraintSolver] %a@\n" Equalities.pp_equalities equalities ;
+    L.(debug Analysis Verbose)
+      "[ConstraintSolver][ENorm] %a@\n" Equalities.pp_equalities equalities ;
     Equalities.infer_equalities_from_sums equalities ~max:10 ;
-    L.(debug Analysis Verbose) "[ConstraintSolver] %a@\n" Equalities.pp_equalities equalities ;
+    L.(debug Analysis Verbose)
+      "[ConstraintSolver][EInfe] %a@\n" Equalities.pp_equalities equalities ;
     equalities
+
+
+  let compute_costs bound_map equalities =
+    Equalities.init_costs bound_map equalities ;
+    L.(debug Analysis Verbose) "[ConstraintSolver][CInit] %a@\n" Equalities.pp_costs equalities ;
+    Equalities.improve_costs equalities ~max:10 ;
+    L.(debug Analysis Verbose) "[ConstraintSolver][CImpr] %a@\n" Equalities.pp_costs equalities
+
+
+  let get_node_nb_exec equalities node_id =
+    let set =
+      node_id |> ControlFlowCost.make_node |> Equalities.find equalities
+      |> Equalities.find_set equalities
+    in
+    Option.value_exn set |> ControlFlowCost.Set.cost
 end
 
 (* Structural Constraints are expressions of the kind:
@@ -704,16 +838,19 @@ module MinTree = struct
     let min_trees =
       ConstraintSolver.Equalities.fold_sets eqs ~init:Node.IdMap.empty ~f:
         (fun acc_trees (rep, _eq_cl) ->
-          let rep_id = ControlFlowCost.assert_node (rep :> ControlFlowCost.t) in
-          let tree =
-            if ConstraintSolver.Equalities.Repr.equal start_node_repr rep then
-              (* for any node in the same equivalence class as the start node we give the trivial MinTree:
+          match ControlFlowCost.is_node (rep :> ControlFlowCost.t) with
+          | None ->
+              acc_trees
+          | Some rep_id ->
+              let tree =
+                if ConstraintSolver.Equalities.Repr.equal start_node_repr rep then
+                  (* for any node in the same equivalence class as the start node we give the trivial MinTree:
                 min(1)
                 *)
-              add_leaf (Min []) rep_id (BoundMap.upperbound bound_map rep_id)
-            else minimum_propagation (rep_id, Node.IdSet.empty)
-          in
-          Node.IdMap.add rep_id tree acc_trees )
+                  add_leaf (Min []) rep_id (BoundMap.upperbound bound_map rep_id)
+                else minimum_propagation (rep_id, Node.IdSet.empty)
+              in
+              Node.IdMap.add rep_id tree acc_trees )
     in
     Node.IdMap.iter
       (fun nid t -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
@@ -872,27 +1009,34 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   let pp_extra, get_node_nb_exec =
     let equalities = ConstraintSolver.collect_constraints node_cfg in
-    let min_trees =
-      let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-      MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
-    in
-    let trees_valuation =
-      Node.IdMap.fold
-        (fun nid t acc ->
-          let res = MinTree.evaluate_tree t in
-          L.(debug Analysis Medium) "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
-          Node.IdMap.add nid res acc )
-        min_trees Node.IdMap.empty
-    in
-    let pp_extra fmt = F.fprintf fmt "|Trees|=%i" (Node.IdMap.cardinal min_trees) in
-    let get_node_nb_exec node_id =
-      match Node.IdMap.find_opt node_id trees_valuation with
-      | Some t ->
-          t
-      | None ->
-          MinTree.find_tree_eq_rel node_id trees_valuation equalities
-    in
-    (pp_extra, get_node_nb_exec)
+    match solver with
+    | `MinTree ->
+        let min_trees =
+          let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
+          MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
+        in
+        let trees_valuation =
+          Node.IdMap.fold
+            (fun nid t acc ->
+              let res = MinTree.evaluate_tree t in
+              L.(debug Analysis Medium)
+                "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
+              Node.IdMap.add nid res acc )
+            min_trees Node.IdMap.empty
+        in
+        let pp_extra fmt = F.fprintf fmt "|Trees|=%i" (Node.IdMap.cardinal min_trees) in
+        let get_node_nb_exec node_id =
+          match Node.IdMap.find_opt node_id trees_valuation with
+          | Some t ->
+              t
+          | None ->
+              MinTree.find_tree_eq_rel node_id trees_valuation equalities
+        in
+        (pp_extra, get_node_nb_exec)
+    | `ConstraintSolver ->
+        let () = ConstraintSolver.compute_costs bound_map equalities in
+        let pp_extra _ = () in
+        (pp_extra, ConstraintSolver.get_node_nb_exec equalities)
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match

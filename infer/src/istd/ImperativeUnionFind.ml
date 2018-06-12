@@ -75,6 +75,8 @@ module Make (Set : Set) = struct
 
     let create () = H.create 1
 
+    let find t r = H.find_opt t r
+
     let find_create t (r: Repr.t) =
       match H.find_opt t r with
       | Some set ->
@@ -111,13 +113,15 @@ module Make (Set : Set) = struct
     else t.to_remove <- from_r :: t.to_remove
 
 
+  let find_create_set t repr = Sets.find_create t.sets repr
+
   let union t e1 e2 =
     let repr1 = find t e1 in
     let repr2 = find t e2 in
     if Repr.equal repr1 repr2 then None
     else
-      let set1 = Sets.find_create t.sets repr1 in
-      let set2 = Sets.find_create t.sets repr2 in
+      let set1 = find_create_set t repr1 in
+      let set2 = find_create_set t repr2 in
       let cmp_size = Set.compare_size set1 set2 in
       if cmp_size < 0 || (Int.equal cmp_size 0 && Repr.is_simpler_than repr2 repr1) then (
         (* A desired side-effect of using [is_simpler_than] is that the representative for a set will always be a [`Node]. For now. *)
@@ -137,6 +141,8 @@ module Make (Set : Set) = struct
       List.iter t.to_remove ~f:(Sets.remove_now t.sets) ;
       t.to_remove <- [] )
 
+
+  let find_set t r = Sets.find t.sets r
 
   let fold_sets t ~init ~f =
     t.nb_iterators <- t.nb_iterators + 1 ;

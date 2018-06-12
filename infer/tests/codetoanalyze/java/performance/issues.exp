@@ -43,6 +43,7 @@ codetoanalyze/java/performance/Cost_test_deps.java, int Cost_test_deps.two_loops
 codetoanalyze/java/performance/Cost_test_deps.java, int Cost_test_deps.two_loops(), 7, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 545]
 codetoanalyze/java/performance/Cost_test_deps.java, void Cost_test_deps.if_bad(int), 6, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 608]
 codetoanalyze/java/performance/Cost_test_deps.java, void Cost_test_deps.if_bad(int), 6, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 607]
+codetoanalyze/java/performance/EvilCfg.java, void EvilCfg.foo(int,int,boolean), 0, INFINITE_EXECUTION_TIME_CALL, no_bucket, ERROR, []
 codetoanalyze/java/performance/JsonArray.java, void JsonArray.addStringEntry(String), 0, INFINITE_EXECUTION_TIME_CALL, no_bucket, ERROR, []
 codetoanalyze/java/performance/JsonMap.java, void JsonMap.addEntry(String,JsonType), 0, INFINITE_EXECUTION_TIME_CALL, no_bucket, ERROR, []
 codetoanalyze/java/performance/JsonMap.java, void JsonMap.addEntry(String,Object), 0, INFINITE_EXECUTION_TIME_CALL, no_bucket, ERROR, []

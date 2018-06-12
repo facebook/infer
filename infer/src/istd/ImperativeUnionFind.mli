@@ -35,6 +35,10 @@ module Make (Set : Set) : sig
   val union : t -> Set.elt -> Set.elt -> (Set.elt * Set.elt) option
   (** [union t e1 e2] returns [None] if [e1] and [e2] were already in the same set, [Some (a, b)] if [a] is merged into [b] (were [(a, b)] is either [(e1, e2)] or [(e2, e1)]). *)
 
+  val find_create_set : t -> Repr.t -> Set.t
+
+  val find_set : t -> Repr.t -> Set.t option
+
   val fold_sets : (t, Repr.t * Set.t, 'accum) Container.fold
   (** It is safe to call [find] or [union] while folding. *)
 end
