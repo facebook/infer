@@ -624,53 +624,48 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.Java.t =
-  let resolve_from_args resolved_pname_java args =
+let resolve_pname tenv prop args pname call_flags : Typ.Procname.t =
+  let resolve_from_args resolved_pname args =
     let resolved_params =
       List.fold2_exn
         ~f:(fun accu (arg_exp, _) name ->
           match resolve_typename prop arg_exp with
           | Some class_name ->
-              Typ.Name.Java.Split.of_string (Typ.Name.name class_name) :: accu
+              Typ.Procname.parameter_of_name resolved_pname class_name :: accu
           | None ->
               name :: accu )
         ~init:[] args
-        (Typ.Procname.Java.get_parameters resolved_pname_java)
+        (Typ.Procname.get_parameters resolved_pname)
       |> List.rev
     in
-    Typ.Procname.Java.replace_parameters resolved_params resolved_pname_java
+    Typ.Procname.replace_parameters resolved_params resolved_pname
   in
-  let resolved_pname_java, other_args =
-    let pname = Typ.Procname.Java pname_java
-    and parameters = Typ.Procname.Java.get_parameters pname_java in
+  let resolved_pname, other_args =
+    let parameters = Typ.Procname.get_parameters pname in
     let match_parameters args = Int.equal (List.length args) (List.length parameters) in
     match args with
     | [] ->
-        (pname_java, [])
+        (pname, [])
     | (first_arg, _) :: other_args when call_flags.CallFlags.cf_virtual ->
         let resolved =
           match resolve_typename prop first_arg with
-          | Some class_name -> (
-            match resolve_method tenv class_name pname with
-            | Typ.Procname.Java resolved_pname_java ->
-                resolved_pname_java
-            | _ ->
-                pname_java )
+          | Some class_name ->
+              resolve_method tenv class_name pname
           | None ->
-              pname_java
+              pname
         in
         (resolved, other_args)
     | _ :: other_args
       when match_parameters other_args (* Non-virtual call, e.g. constructors or private methods *) ->
-        (pname_java, other_args)
+        (pname, other_args)
     | args when match_parameters args (* Static call *) ->
-        (pname_java, args)
+        (pname, args)
     | args ->
         L.(die InternalError)
           "Call mismatch: method %a has %i paramters but is called with %i arguments@."
           Typ.Procname.pp pname (List.length parameters) (List.length args)
   in
-  resolve_from_args resolved_pname_java other_args
+  resolve_from_args resolved_pname other_args
 
 
 (** Resolve the procedure name and run the analysis of the resolved procedure
@@ -697,13 +692,7 @@ let resolve_and_analyze tenv ~caller_pdesc prop args callee_proc_name call_flags
       in
       Option.bind resolved_proc_desc_option ~f:analyze
   in
-  let resolved_pname =
-    match callee_proc_name with
-    | Typ.Procname.Java callee_proc_name_java ->
-        Typ.Procname.Java (resolve_java_pname tenv prop args callee_proc_name_java call_flags)
-    | _ ->
-        callee_proc_name
-  in
+  let resolved_pname = resolve_pname tenv prop args callee_proc_name call_flags in
   (resolved_pname, analyze_ondemand resolved_pname)
 
 

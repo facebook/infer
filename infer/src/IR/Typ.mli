@@ -162,10 +162,6 @@ module Name : sig
 
       val make : ?package:string -> string -> t
 
-      val of_string : string -> t
-      (** Given a package.class_name string, look for the latest dot and split the string
-        in two (package, class_name). *)
-
       val java_lang_object : t
 
       val java_lang_string : t
@@ -365,11 +361,15 @@ module Procname : sig
   end
 
   module Parameter : sig
-    (** [Some name] means the parameter is of type pointer to struct, with [name]
-  being the name of the struct, [None] means the parameter is of some other type. *)
-    type t = Name.t option
+    (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to struct, with [name]
+being the name of the struct, [None] means the parameter is of some other type. *)
+    type clang_parameter = Name.t option [@@deriving compare]
 
-    val of_typ : typ -> t
+    (** Type for parameters in procnames, for java and clang. *)
+    type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
+    [@@deriving compare]
+
+    val of_typ : typ -> clang_parameter
   end
 
   module ObjC_Cpp : sig
@@ -387,11 +387,12 @@ module Procname : sig
       { class_name: Name.t
       ; kind: kind
       ; method_name: string
-      ; parameters: Parameter.t list
+      ; parameters: Parameter.clang_parameter list
       ; template_args: template_spec_info }
     [@@deriving compare]
 
-    val make : Name.t -> string -> kind -> template_spec_info -> Parameter.t list -> t
+    val make :
+      Name.t -> string -> kind -> template_spec_info -> Parameter.clang_parameter list -> t
     (** Create an objc procedure name from a class_name and method_name. *)
 
     val get_class_name : t -> string
@@ -430,10 +431,11 @@ module Procname : sig
     type t = private
       { name: QualifiedCppName.t
       ; mangled: string option
-      ; parameters: Parameter.t list
+      ; parameters: Parameter.clang_parameter list
       ; template_args: template_spec_info }
 
-    val c : QualifiedCppName.t -> string -> Parameter.t list -> template_spec_info -> t
+    val c :
+      QualifiedCppName.t -> string -> Parameter.clang_parameter list -> template_spec_info -> t
     (** Create a C procedure name from plain and mangled name. *)
   end
 
@@ -441,9 +443,9 @@ module Procname : sig
     (** Type of Objective C block names. *)
     type block_name = string
 
-    type t = {name: block_name; parameters: Parameter.t list} [@@deriving compare]
+    type t = {name: block_name; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
-    val make : block_name -> Parameter.t list -> t
+    val make : block_name -> Parameter.clang_parameter list -> t
   end
 
   (** Type of procedure names.
@@ -464,6 +466,12 @@ module Procname : sig
   val block_name_of_procname : t -> Block.block_name
 
   val equal : t -> t -> bool
+
+  val get_parameters : t -> Parameter.t list
+
+  val replace_parameters : Parameter.t list -> t -> t
+
+  val parameter_of_name : t -> Name.t -> Parameter.t
 
   (** Hash tables with proc names as keys. *)
   module Hash : Caml.Hashtbl.S with type key = t

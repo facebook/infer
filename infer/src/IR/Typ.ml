@@ -593,6 +593,8 @@ module Procname = struct
           type_to_string_verbosity head verbosity ^ "," ^ param_list_to_string rest verbosity
 
 
+    let java_type_of_name class_name = Name.Java.Split.of_string (Name.name class_name)
+
     (** It is the same as java_type_to_string_verbosity, but Java return types are optional because
         of constructors without type *)
     let return_type_to_string j verbosity =
@@ -734,9 +736,13 @@ module Procname = struct
   end
 
   module Parameter = struct
-    (** [Some name] means the parameter is of type pointer to struct, with [name]
-being the name of the struct, [None] means the parameter is of some other type. *)
-    type t = Name.t option [@@deriving compare]
+    (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to struct, with [name]
+  being the name of the struct, [None] means the parameter is of some other type. *)
+    type clang_parameter = Name.t option [@@deriving compare]
+
+    (** Type for parameters in procnames, for java and clang. *)
+    type t = JavaParameter of Java.java_type | ClangParameter of clang_parameter
+    [@@deriving compare]
 
     let of_typ typ =
       match typ.T.desc with T.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None
@@ -748,6 +754,9 @@ being the name of the struct, [None] means the parameter is of some other type. 
       in
       let string_pars = List.map ~f:name_opt_to_string parameters in
       if List.is_empty parameters then "" else "(" ^ String.concat ~sep:"," string_pars ^ ")"
+
+
+    let clang_param_of_name class_name : clang_parameter = Some class_name
   end
 
   module ObjC_Cpp = struct
@@ -764,7 +773,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
       { class_name: Name.t
       ; kind: kind
       ; method_name: string
-      ; parameters: Parameter.t list
+      ; parameters: Parameter.clang_parameter list
       ; template_args: template_spec_info }
     [@@deriving compare]
 
@@ -839,6 +848,11 @@ being the name of the struct, [None] means the parameter is of some other type. 
           let m_str = kind_to_verbose_string osig.kind in
           Name.name osig.class_name ^ "_" ^ osig.method_name
           ^ Parameter.parameters_to_string osig.parameters ^ m_str
+
+
+    let get_parameters osig = osig.parameters
+
+    let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
   end
 
   module C = struct
@@ -846,7 +860,7 @@ being the name of the struct, [None] means the parameter is of some other type. 
     type t =
       { name: QualifiedCppName.t
       ; mangled: string option
-      ; parameters: Parameter.t list
+      ; parameters: Parameter.clang_parameter list
       ; template_args: template_spec_info }
     [@@deriving compare]
 
@@ -875,13 +889,18 @@ being the name of the struct, [None] means the parameter is of some other type. 
             plain ^ Parameter.parameters_to_string parameters
         | Some s ->
             plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}"
+
+
+    let get_parameters c = c.parameters
+
+    let replace_parameters new_parameters c = {c with parameters= new_parameters}
   end
 
   module Block = struct
     (** Type of Objective C block names. *)
     type block_name = string [@@deriving compare]
 
-    type t = {name: block_name; parameters: Parameter.t list} [@@deriving compare]
+    type t = {name: block_name; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
     let make name parameters = {name; parameters}
 
@@ -893,6 +912,11 @@ being the name of the struct, [None] means the parameter is of some other type. 
           bsig.name
       | Verbose ->
           bsig.name ^ Parameter.parameters_to_string bsig.parameters
+
+
+    let get_parameters block = block.parameters
+
+    let replace_parameters new_parameters block = {block with parameters= new_parameters}
   end
 
   (** Type of procedure names. *)
@@ -1105,6 +1129,71 @@ being the name of the struct, [None] means the parameter is of some other type. 
     | _ ->
         (* Other cases for C and C++ method names *)
         to_simplified_string ~withclass:true p
+
+
+  let rec get_parameters procname =
+    let clang_param_to_param clang_params =
+      List.map ~f:(fun par -> Parameter.ClangParameter par) clang_params
+    in
+    match procname with
+    | Java j ->
+        List.map ~f:(fun par -> Parameter.JavaParameter par) (Java.get_parameters j)
+    | C osig ->
+        clang_param_to_param (C.get_parameters osig)
+    | ObjC_Cpp osig ->
+        clang_param_to_param (ObjC_Cpp.get_parameters osig)
+    | Block bsig ->
+        clang_param_to_param (Block.get_parameters bsig)
+    | WithBlockParameters (base, _) ->
+        get_parameters base
+    | Linters_dummy_method ->
+        []
+
+
+  let rec replace_parameters new_parameters procname =
+    let params_to_java_params params =
+      List.map
+        ~f:(fun param ->
+          match param with
+          | Parameter.JavaParameter par ->
+              par
+          | _ ->
+              Logging.(die InternalError)
+                "Expected Java parameters in Java procname, but got Clang parameters" params )
+        params
+    in
+    let params_to_clang_params params =
+      List.map
+        ~f:(fun param ->
+          match param with
+          | Parameter.ClangParameter par ->
+              par
+          | _ ->
+              Logging.(die InternalError)
+                "Expected Clang parameters in Clang procname, but got Java parameters" params )
+        params
+    in
+    match procname with
+    | Java j ->
+        Java (Java.replace_parameters (params_to_java_params new_parameters) j)
+    | C osig ->
+        C (C.replace_parameters (params_to_clang_params new_parameters) osig)
+    | ObjC_Cpp osig ->
+        ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
+    | Block bsig ->
+        Block (Block.replace_parameters (params_to_clang_params new_parameters) bsig)
+    | WithBlockParameters (base, blocks) ->
+        WithBlockParameters (replace_parameters new_parameters base, blocks)
+    | Linters_dummy_method ->
+        procname
+
+
+  let parameter_of_name procname class_name =
+    match procname with
+    | Java _ ->
+        Parameter.JavaParameter (Java.java_type_of_name class_name)
+    | _ ->
+        Parameter.ClangParameter (Parameter.clang_param_of_name class_name)
 
 
   (** Pretty print a proc name *)
