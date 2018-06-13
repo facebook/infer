@@ -35,3 +35,15 @@ int if_out_loop(int t) {
   }
   return p;
 }
+
+void larger_state_FN() {
+
+  int i = 0, k = 0;
+  while (k < 100) {
+    i++;
+    if (i >= 10000) {
+      k++;
+      i = 0;
+    }
+  }
+}
