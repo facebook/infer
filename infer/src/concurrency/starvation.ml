@@ -46,6 +46,16 @@ let lock_of_class class_id =
   AccessPath.of_id ident typ'
 
 
+let is_call_to_superclass tenv ~caller ~callee =
+  match (caller, callee) with
+  | Typ.Procname.Java caller_method, Typ.Procname.Java callee_method ->
+      let caller_type = Typ.Procname.Java.get_class_type_name caller_method in
+      let callee_type = Typ.Procname.Java.get_class_type_name callee_method in
+      PatternMatch.is_subtype tenv caller_type callee_type
+  | _ ->
+      L.(die InternalError "Not supposed to run on non-Java code.")
+
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = StarvationDomain
@@ -93,13 +103,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let explanation = F.asprintf "it calls %a" (MF.wrap_monospaced Typ.Procname.pp) callee in
           Domain.set_on_ui_thread astate explanation
       | NoEffect ->
-        match Models.may_block tenv callee actuals with
-        | Some sev ->
-            let caller = Procdesc.get_proc_name pdesc in
-            Domain.blocking_call ~caller ~callee sev loc astate
-        | None ->
-            Payload.read pdesc callee
-            |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
+          let caller = Procdesc.get_proc_name pdesc in
+          match Models.may_block tenv callee actuals with
+          | Some sev ->
+              Domain.blocking_call ~caller ~callee sev loc astate
+          | None ->
+              Payload.read pdesc callee
+              |> Option.value_map ~default:astate ~f:(fun summary ->
+                     (* if not calling a method in a superclass then set order to empty
+                        to avoid blaming a caller in one class for deadlock/starvation
+                        happening in the callee class *)
+                     let summary =
+                       if is_call_to_superclass tenv ~caller ~callee then summary
+                       else {summary with Domain.order= Domain.OrderDomain.empty}
+                     in
+                     Domain.integrate_summary astate callee loc summary ) )
     | _ ->
         astate
 
@@ -148,23 +166,12 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         events= EventDomain.filter (function {elem= MayBlock _} -> false | _ -> true) events
       ; order=
           OrderDomain.filter
-            (function {eventually= {elem= MayBlock _}} -> false | _ -> true)
+            (function {elem= {eventually= {elem= MayBlock _}}} -> false | _ -> true)
             order }
     else Fn.id
   in
   Analyzer.compute_post proc_data ~initial |> Option.map ~f:filter_blocks
   |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
-
-
-let get_summaries_of_methods_in_class tenv clazz =
-  let tstruct_opt = Tenv.lookup tenv clazz in
-  let methods =
-    Option.value_map tstruct_opt ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
-  in
-  let summaries = List.rev_filter_map methods ~f:Ondemand.analyze_proc_name in
-  List.rev_filter_map summaries ~f:(fun sum ->
-      Option.map sum.Summary.payloads.Payloads.starvation ~f:(fun p ->
-          (Summary.get_proc_name sum, p) ) )
 
 
 (** per-procedure report map, which takes care of deduplication *)
@@ -222,7 +229,7 @@ end = struct
     let mk_deduped_report num_of_reports ({message} as report) =
       { report with
         message=
-          Printf.sprintf "%s %d more starvation report(s) on the same line suppressed." message
+          Printf.sprintf "%s %d more report(s) on the same line suppressed." message
             (num_of_reports - 1) }
     in
     let log_loc_reports issuetype compare loc = function
@@ -245,30 +252,47 @@ end
 
 let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   let open StarvationDomain in
-  match (current_elem.Order.first, current_elem.Order.eventually) with
-  | {Event.elem= MayBlock _}, _ | _, {Event.elem= MayBlock _} ->
+  match (current_elem.Order.elem.first, current_elem.Order.elem.eventually.elem) with
+  | _, MayBlock _ ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" Order.pp current_elem
-  | {Event.elem= LockAcquire ((Var.LogicalVar _, _), [])}, _ ->
+  | ((Var.LogicalVar _, _), []), _ ->
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur *)
       true
-  | {Event.elem= LockAcquire ((Var.LogicalVar _, _), _ :: _)}, _
-  | _, {Event.elem= LockAcquire ((Var.LogicalVar _, _), _)} ->
+  | ((Var.LogicalVar _, _), _ :: _), _ | _, LockAcquire ((Var.LogicalVar _, _), _) ->
       (* first elem has an ident root, but has a non-empty access path, which means we are
          not filtering out local variables (see [exec_instr]), or,
          second elem has an ident root, which should not happen if we are filtering locals *)
       L.die InternalError "Deadlock cannot occur on these logical variables: %a @." Order.pp
         current_elem
-  | {Event.elem= LockAcquire ((_, typ1), _)}, {Event.elem= LockAcquire ((_, typ2), _)} ->
+  | ((_, typ1), _), LockAcquire ((_, typ2), _) ->
       (* use string comparison on types as a stable order to decide whether to report a deadlock *)
       let c = String.compare (Typ.to_string typ1) (Typ.to_string typ2) in
       c < 0
       || Int.equal 0 c
          && (* same class, so choose depending on location *)
-            Location.compare current_elem.Order.eventually.Event.loc
-              endpoint_elem.Order.eventually.Event.loc
+            Location.compare current_elem.Order.elem.eventually.Event.loc
+              endpoint_elem.Order.elem.eventually.Event.loc
             < 0
+
+
+let fold_reportable_summaries (tenv, current_pdesc) get_proc_desc clazz ~init ~f =
+  let methods =
+    Tenv.lookup tenv clazz
+    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
+  in
+  let f acc mthd =
+    get_proc_desc mthd
+    |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
+           match Procdesc.get_access other_pdesc with
+           | PredSymb.Private ->
+               acc
+           | _ ->
+               Payload.read current_pdesc mthd |> Option.map ~f:(fun payload -> (mthd, payload))
+               |> Option.fold ~init:acc ~f )
+  in
+  List.fold methods ~init ~f
 
 
 (*  Note about how many times we report a deadlock: normally twice, at each trace starting point.
@@ -278,9 +302,29 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
          inner class but this is no longer obvious in the path, because of nested-class path normalisation.
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map' =
+let report_deadlocks env get_proc_desc {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
+  let tenv, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
+  let pp_acquire fmt (lock, loc, pname) =
+    F.fprintf fmt "%a (%a in %a)" Lock.pp lock Location.pp loc
+      (MF.wrap_monospaced Typ.Procname.pp)
+      pname
+  in
+  let pp_thread fmt
+      ( pname
+      , { Order.loc= loc1
+        ; trace= trace1
+        ; elem= {first= lock1; eventually= {elem= event; loc= loc2; trace= trace2}} } ) =
+    match event with
+    | LockAcquire lock2 ->
+        let pname1 = List.last trace1 |> Option.value_map ~default:pname ~f:CallSite.pname in
+        let pname2 = List.last trace2 |> Option.value_map ~default:pname1 ~f:CallSite.pname in
+        F.fprintf fmt "first %a and then %a" pp_acquire (lock1, loc1, pname1) pp_acquire
+          (lock2, loc2, pname2)
+    | _ ->
+        L.die InternalError "Trying to report a deadlock without two lock events."
+  in
   let report_endpoint_elem current_elem endpoint_pname elem report_map =
     if
       not
@@ -289,15 +333,15 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
     then report_map
     else
       let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
-      match (current_elem.Order.eventually, elem.Order.eventually) with
-      | {Event.elem= LockAcquire _}, {Event.elem= LockAcquire _} ->
+      match (current_elem.Order.elem.eventually.elem, elem.Order.elem.eventually.elem) with
+      | LockAcquire _, LockAcquire _ ->
           let error_message =
             Format.asprintf
-              "Potential deadlock.@.Trace 1 (starts at %a), %a.@.Trace 2 (starts at %a), %a."
+              "Potential deadlock.@.Trace 1 (starts at %a) %a.@.Trace 2 (starts at %a), %a."
               (MF.wrap_monospaced Typ.Procname.pp)
-              current_pname Order.pp current_elem
+              current_pname pp_thread (current_pname, current_elem)
               (MF.wrap_monospaced Typ.Procname.pp)
-              endpoint_pname Order.pp elem
+              endpoint_pname pp_thread (endpoint_pname, elem)
           in
           let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
           let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
@@ -308,17 +352,16 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
           report_map
   in
   let report_on_current_elem elem report_map =
-    match elem with
-    | {Order.eventually= {Event.elem= Event.MayBlock _}} ->
+    match elem.Order.elem.eventually.elem with
+    | MayBlock _ ->
         report_map
-    | {Order.eventually= {Event.elem= Event.LockAcquire endpoint_lock}} ->
+    | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
                (* get the class of the root variable of the lock in the endpoint elem
                    and retrieve all the summaries of the methods of that class *)
-               let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               List.fold endpoint_summaries ~init:report_map ~f:
+               fold_reportable_summaries env get_proc_desc endpoint_class ~init:report_map ~f:
                  (fun acc (endp_pname, endpoint_summary) ->
                    let endp_order = endpoint_summary.order in
                    let endp_ui = endpoint_summary.ui in
@@ -329,13 +372,14 @@ let report_deadlocks tenv current_pdesc {StarvationDomain.order; ui} report_map'
   OrderDomain.fold report_on_current_elem order report_map'
 
 
-let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_map' =
+let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map' =
   let open StarvationDomain in
+  let tenv, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
   let report_remote_block ui_explain event current_lock endpoint_pname endpoint_elem report_map =
-    match (endpoint_elem.Order.first, endpoint_elem.Order.eventually) with
-    | {Event.elem= Event.LockAcquire lock}, {Event.elem= Event.MayBlock (block_descr, sev)}
-      when Lock.equal current_lock lock ->
+    let lock = endpoint_elem.Order.elem.first in
+    match endpoint_elem.Order.elem.eventually.elem with
+    | MayBlock (block_descr, sev) when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
             "Method %a runs on UI thread (because %s) and %a, which may be held by another thread \
@@ -353,23 +397,22 @@ let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_ma
   in
   let report_on_current_elem ui_explain event report_map =
     match event.Event.elem with
-    | Event.MayBlock (_, sev) ->
+    | MayBlock (_, sev) ->
         let error_message =
           Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain Event.pp_no_trace event
+            current_pname ui_explain Event.pp event
         in
         let loc = Event.get_loc event in
         let ltr = Event.make_trace current_pname event in
         ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message report_map
-    | Event.LockAcquire endpoint_lock ->
+    | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock
         |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
                (* get the class of the root variable of the lock in the endpoint elem
                  and retrieve all the summaries of the methods of that class *)
-               let endpoint_summaries = get_summaries_of_methods_in_class tenv endpoint_class in
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               List.fold endpoint_summaries ~init:report_map ~f:
+               fold_reportable_summaries env get_proc_desc endpoint_class ~init:report_map ~f:
                  (fun acc (endpoint_pname, {order; ui}) ->
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
@@ -385,13 +428,14 @@ let report_starvation tenv current_pdesc {StarvationDomain.events; ui} report_ma
       EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
-let reporting {Callbacks.procedures; exe_env} =
-  let report_procedure (tenv, proc_desc) =
+let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
+  let report_procedure ((_, proc_desc) as env) =
     die_if_not_java proc_desc ;
-    Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
-    |> Option.iter ~f:(fun summary ->
-           report_deadlocks tenv proc_desc summary ReportMap.empty
-           |> report_starvation tenv proc_desc summary |> ReportMap.log )
+    if Procdesc.get_access proc_desc <> PredSymb.Private then
+      Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
+      |> Option.iter ~f:(fun summary ->
+             report_deadlocks env get_proc_desc summary ReportMap.empty
+             |> report_starvation env get_proc_desc summary |> ReportMap.log )
   in
   List.iter procedures ~f:report_procedure ;
   let sourcefile = exe_env.Exe_env.source_file in

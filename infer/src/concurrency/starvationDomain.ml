@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module L = Logging
 module MF = MarkupFormatter
 
 module Lock = struct
@@ -63,11 +62,9 @@ module type TraceElem = sig
 
   val get_loc : t -> Location.t
 
-  val make_loc_trace : t -> Errlog.loc_trace
+  val make_loc_trace : ?nesting:int -> t -> Errlog.loc_trace
 
   val with_callsite : t -> CallSite.t -> t
-
-  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
 module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
@@ -94,9 +91,9 @@ struct
 
   let get_loc {loc; trace} = List.hd trace |> Option.value_map ~default:loc ~f:CallSite.loc
 
-  let make_loc_trace e =
+  let make_loc_trace ?(nesting= 0) e =
     let call_trace, nesting =
-      List.fold e.trace ~init:([], 0) ~f:(fun (tr, ns) callsite ->
+      List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
           let elem_descr =
             F.asprintf "Method call: %a"
               (MF.wrap_monospaced Typ.Procname.pp)
@@ -111,13 +108,6 @@ struct
 
 
   let with_callsite elem callsite = {elem with trace= callsite :: elem.trace}
-
-  let make_trace ?(header= "") pname elem =
-    let trace = make_loc_trace elem in
-    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
-    let start_loc = get_loc elem in
-    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
-    header_step :: trace
 end
 
 module Event = struct
@@ -135,16 +125,6 @@ module Event = struct
           F.pp_print_string fmt msg
   end)
 
-  let is_lock_event e = match e.elem with LockAcquire _ -> true | _ -> false
-
-  let locks_equal_modulo_base e e' =
-    match (e.elem, e'.elem) with
-    | LockAcquire lock, LockAcquire lock' ->
-        Lock.equal_modulo_base lock lock'
-    | _, _ ->
-        false
-
-
   let make_acquire lock loc = make (LockAcquire lock) loc
 
   let make_blocking_call ~caller ~callee sev loc =
@@ -156,6 +136,14 @@ module Event = struct
         caller
     in
     make (MayBlock (descr, sev)) loc
+
+
+  let make_trace ?(header= "") pname elem =
+    let trace = make_loc_trace elem in
+    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+    let start_loc = get_loc elem in
+    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
+    header_step :: trace
 end
 
 module EventDomain = struct
@@ -166,29 +154,30 @@ module EventDomain = struct
 end
 
 module Order = struct
-  type t = {first: Event.t; eventually: Event.t} [@@deriving compare]
+  type order_t = {first: Lock.t; eventually: Event.t} [@@deriving compare]
 
-  let pp fmt {first; eventually} =
-    F.fprintf fmt "first %a, and before releasing it, %a" Event.pp first Event.pp eventually
+  module E = struct
+    type t = order_t
+
+    let compare = compare_order_t
+
+    let pp fmt {first} = Lock.pp fmt first
+  end
+
+  include MakeTraceElem (E)
+
+  let may_deadlock {elem= {first; eventually}} {elem= {first= first'; eventually= eventually'}} =
+    match (eventually.elem, eventually'.elem) with
+    | LockAcquire e, LockAcquire e' ->
+        Lock.equal_modulo_base first e' && Lock.equal_modulo_base first' e
+    | _, _ ->
+        false
 
 
-  let may_deadlock {first; eventually} {first= first'; eventually= eventually'} =
-    Event.locks_equal_modulo_base first eventually'
-    && Event.locks_equal_modulo_base first' eventually
-
-
-  let make first eventually =
-    if not (Event.is_lock_event first) then L.(die InternalError) "Expected a lock elem first." ;
-    {first; eventually}
-
-
-  let with_callsite o callsite = {o with first= Event.with_callsite o.first callsite}
-
-  let get_loc {first} = Event.get_loc first
-
-  let make_loc_trace {first; eventually} =
-    let first_trace = Event.make_loc_trace first in
-    let eventually_trace = Event.make_loc_trace eventually in
+  let make_loc_trace ?(nesting= 0) ({elem= {eventually}} as order) =
+    let first_trace = make_loc_trace ~nesting order in
+    let first_nesting = List.length first_trace in
+    let eventually_trace = Event.make_loc_trace ~nesting:first_nesting eventually in
     first_trace @ eventually_trace
 
 
@@ -297,10 +286,13 @@ let add_order_pairs lock_state event acc =
   (* add no pairs whatsoever if we already hold that lock *)
   if LockState.is_taken event lock_state then acc
   else
-    let add_first_and_eventually acc first =
-      (* never add a pair of the form (a,a) -- should never happen due to the check above *)
-      let elem = Order.make first event in
-      OrderDomain.add elem acc
+    let add_first_and_eventually acc f =
+      match f.Event.elem with
+      | LockAcquire first ->
+          let elem = Order.make {first; eventually= event} f.Event.loc in
+          OrderDomain.add elem acc
+      | _ ->
+          acc
     in
     LockState.fold_over_events add_first_and_eventually lock_state acc
 
@@ -326,10 +318,18 @@ let release ({lock_state} as astate) lock =
 let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname loc callee_summary =
   let callsite = CallSite.make callee_pname loc in
   let callee_order = OrderDomain.with_callsite callee_summary.order callsite in
+  let filtered_order =
+    OrderDomain.filter
+      (fun {elem= {eventually}} -> LockState.is_taken eventually lock_state |> not)
+      callee_order
+  in
   let callee_events = EventDomain.with_callsite callee_summary.events callsite in
-  let order' = EventDomain.fold (add_order_pairs lock_state) callee_events callee_order in
+  let filtered_events =
+    EventDomain.filter (fun e -> LockState.is_taken e lock_state |> not) callee_events
+  in
+  let order' = EventDomain.fold (add_order_pairs lock_state) filtered_events filtered_order in
   { astate with
-    events= EventDomain.join events callee_events
+    events= EventDomain.join events filtered_events
   ; order= OrderDomain.join order order'
   ; ui= UIThreadDomain.join ui callee_summary.ui }
 

@@ -19,40 +19,55 @@ module Lock : sig
   val equal : t -> t -> bool
 end
 
-(** Event type.  Equality/comparison disregards the call trace but includes location. *)
-module Event : sig
-  type severity_t = Low | Medium | High [@@deriving compare]
+module type TraceElem = sig
+  type elem_t
 
-  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
-
-  type t = private {elem: event_t; loc: Location.t; trace: CallSite.t list}
+  (** An [elem] which occured [loc], after the chain of procedure calls in [trace] *)
+  type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
   val pp_no_trace : F.formatter -> t -> unit
 
+  val make : elem_t -> Location.t -> t
+
   val get_loc : t -> Location.t
+  (** Starting location of the trace: this is either [loc] if [trace] is empty, or the head of [trace]. *)
+
+  val make_loc_trace : ?nesting:int -> t -> Errlog.loc_trace
+
+  val with_callsite : t -> CallSite.t -> t
+  (** Push given callsite onto [trace], extending the call chain by one. *)
+end
+
+(** Represents the existence of a program path from the current method to the eventual acquisition
+    of a lock or a blocking call.  Equality/comparison disregards the call trace but includes
+    location. *)
+module Event : sig
+  type severity_t = Low | Medium | High [@@deriving compare]
+
+  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
+
+  include TraceElem with type elem_t = event_t
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
 module EventDomain : module type of AbstractDomain.FiniteSet (Event)
 
-(** Represents either
-- the existence of a program path from the current method to the eventual acquisition of a lock
-  ("eventually"), or,
-- the "first" lock being taken *in the current method* and, before its release, the eventual
-  acquisition of "eventually" *)
+(** Represents the existence of a program path to the [first] lock being taken in the current
+  method or, transitively, a callee *in the same class*, and, which continues (to potentially
+  another class) until the [eventually] event, schematically -->first-->eventually.
+  It is guaranteed that during the second part of the trace (first-->eventually) the lock [first]
+  is not released.  *)
 module Order : sig
-  type t = private {first: Event.t; eventually: Event.t}
+  type order_t = private {first: Lock.t; eventually: Event.t}
 
-  include PrettyPrintable.PrintableOrderedType with type t := t
+  include TraceElem with type elem_t = order_t
 
   val may_deadlock : t -> t -> bool
   (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
       variable name at the root of each path. *)
-
-  val get_loc : t -> Location.t
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
