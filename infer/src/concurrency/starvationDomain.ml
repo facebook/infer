@@ -56,8 +56,6 @@ module type TraceElem = sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val pp_no_trace : F.formatter -> t -> unit
-
   val make : elem_t -> Location.t -> t
 
   val get_loc : t -> Location.t
@@ -75,17 +73,7 @@ struct
   type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
   [@@deriving compare]
 
-  let pp_no_trace fmt {elem; loc} = F.fprintf fmt "%a at %a" Elem.pp elem Location.pp loc
-
-  let pp fmt e =
-    let pp_trace fmt = function
-      | [] ->
-          ()
-      | trace ->
-          F.fprintf fmt " (trace: %a)" (Pp.semicolon_seq CallSite.pp) trace
-    in
-    F.fprintf fmt "%a%a" pp_no_trace e pp_trace e.trace
-
+  let pp fmt {elem; loc} = F.fprintf fmt "%a at %a" Elem.pp elem Location.pp loc
 
   let make elem loc = {elem; loc; trace= []}
 

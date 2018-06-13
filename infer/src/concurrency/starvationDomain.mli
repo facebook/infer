@@ -27,8 +27,6 @@ module type TraceElem = sig
 
   include PrettyPrintable.PrintableOrderedType with type t := t
 
-  val pp_no_trace : F.formatter -> t -> unit
-
   val make : elem_t -> Location.t -> t
 
   val get_loc : t -> Location.t
