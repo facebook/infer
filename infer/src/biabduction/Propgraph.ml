@@ -13,7 +13,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-type t = Prop.normal Prop.t
+type 'a t = 'a Prop.t
 
 type sub_entry = Ident.t * Exp.t
 
@@ -88,13 +88,13 @@ let edge_equal e1 e2 =
 
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
     searching the footprint part if [footprint_part] is true. *)
-let contains_edge (footprint_part: bool) (g: t) (e: edge) =
+let contains_edge (footprint_part: bool) (g: _ t) (e: edge) =
   List.exists ~f:(fun e' -> edge_equal e e') (get_edges footprint_part g)
 
 
 (** Graph annotated with the differences w.r.t. a previous graph *)
-type diff =
-  { diff_newgraph: t  (** the new graph *)
+type 'a diff =
+  { diff_newgraph: 'a t  (** the new graph *)
   ; diff_changed_norm: Obj.t list  (** objects changed in the normal part *)
   ; diff_cmap_norm: Pp.colormap  (** colormap for the normal part *)
   ; diff_changed_foot: Obj.t list  (** objects changed in the footprint part *)
@@ -169,7 +169,7 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list =
 
 
 (** [compute_diff oldgraph newgraph] returns the list of edges which are only in [newgraph] *)
-let compute_diff default_color oldgraph newgraph : diff =
+let compute_diff default_color oldgraph newgraph : _ diff =
   let compute_changed footprint_part =
     let newedges = get_edges footprint_part newgraph in
     let changed = ref [] in
@@ -224,7 +224,7 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let add_base_stack prop =
     if extract_stack then Prop.set prop ~sigma:(base_stack @ prop.Prop.sigma) else Prop.expose prop
   in
-  let update_pe_diff (prop: Prop.normal Prop.t) : Pp.env =
+  let update_pe_diff (prop: _ Prop.t) : Pp.env =
     if Config.print_using_diff then
       let diff = compute_diff Blue (from_prop base_prop) (from_prop prop) in
       let cmap_norm = diff_get_colormap false diff in
