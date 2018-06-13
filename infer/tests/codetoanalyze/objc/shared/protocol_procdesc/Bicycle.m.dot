@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_1" [label="1: Start Bicycle_lockToStructure:\nFormals:  self:Bicycle* theStructure:objc_object*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
+"lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_1" [label="1: Start Bicycle_lockToStructure:\nFormals:  self:Bicycle* theStructure:objc_object*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
 	
 
-	 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_1" -> "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" ;
-"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" [label="2: Exit Bicycle_lockToStructure: \n  " color=yellow style=filled]
+	 "lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_1" -> "lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_3" ;
+"lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_2" [label="2: Exit Bicycle_lockToStructure: \n  " color=yellow style=filled]
 	
 
-"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" [label="3:  Call _fun_NSLog \n   n$10=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char* const ) [line 31, column 9]\n  n$11=_fun_NSLog(n$10:objc_object*) [line 31, column 3]\n " shape="box"]
+"lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_3" [label="3:  Call _fun_NSLog \n   n$10=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char* const ) [line 31, column 9]\n  n$11=_fun_NSLog(n$10:objc_object*) [line 31, column 3]\n " shape="box"]
 	
 
-	 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" -> "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" ;
+	 "lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_3" -> "lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_2" ;
 "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_1" [label="1: Start Bicycle_removeFrontWheel\nFormals:  self:Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 1]\n " color=yellow style=filled]
 	
 

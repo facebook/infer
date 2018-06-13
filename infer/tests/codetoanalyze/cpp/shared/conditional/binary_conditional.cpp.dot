@@ -92,21 +92,21 @@ digraph cfg {
 	
 
 	 "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_11" -> "conditional#binary_conditional#4777209206611953450.41decaebdce6325bd31c1d47d4647c45_5" ;
-"getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_1" [label="1: Start binary_conditional::getX\nFormals:  __return_param:binary_conditional::X*\nLocals:  x:binary_conditional::X \n   DECLARE_LOCALS(&return,&x); [line 14, column 1]\n " color=yellow style=filled]
+"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_1" [label="1: Start binary_conditional::getX\nFormals:  __return_param:binary_conditional::X*\nLocals:  x:binary_conditional::X \n   DECLARE_LOCALS(&return,&x); [line 14, column 1]\n " color=yellow style=filled]
 	
 
-	 "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_1" -> "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_4" ;
-"getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_2" [label="2: Exit binary_conditional::getX \n  " color=yellow style=filled]
+	 "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_1" -> "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_4" ;
+"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_2" [label="2: Exit binary_conditional::getX \n  " color=yellow style=filled]
 	
 
-"getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_3" [label="3:  Return Stmt \n   n$0=*&__return_param:binary_conditional::X* [line 16, column 3]\n  n$1=_fun_binary_conditional::X_X(n$0:binary_conditional::X*,&x:binary_conditional::X&) [line 16, column 10]\n  _=*&x:binary_conditional::X [line 16, column 10]\n  n$3=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) [line 16, column 10]\n " shape="box"]
+"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" [label="3:  Return Stmt \n   n$0=*&__return_param:binary_conditional::X* [line 16, column 3]\n  n$1=_fun_binary_conditional::X_X(n$0:binary_conditional::X*,&x:binary_conditional::X&) [line 16, column 10]\n  _=*&x:binary_conditional::X [line 16, column 10]\n  n$3=_fun_binary_conditional::X_~X(&x:binary_conditional::X*) [line 16, column 10]\n " shape="box"]
 	
 
-	 "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_3" -> "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_2" ;
-"getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_4" [label="4:  DeclStmt \n   n$5=_fun_binary_conditional::X_X(&x:binary_conditional::X*) [line 15, column 5]\n " shape="box"]
+	 "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" -> "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_2" ;
+"getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_4" [label="4:  DeclStmt \n   n$5=_fun_binary_conditional::X_X(&x:binary_conditional::X*) [line 15, column 5]\n " shape="box"]
 	
 
-	 "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_4" -> "getX#binary_conditional#7708042186122353096.ec6c66051810049a5e5688caadbf0f96_3" ;
+	 "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_4" -> "getX#binary_conditional(class binary_conditional::X)#7708042186122353096.8825a5a3afa327848f6dcf77ec0e3f60_3" ;
 "operator_bool#X#binary_conditional#(663222161121279878).1074e20ff76c2575638dad4d7c1539a7_1" [label="1: Start binary_conditional::X_operator_bool\nFormals:  this:binary_conditional::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
 	
 

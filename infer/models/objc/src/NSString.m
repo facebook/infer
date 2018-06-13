@@ -13,6 +13,8 @@ size_t __get_array_length(const void* arr);
 void __infer_assume(bool cond);
 void __set_wont_leak_attribute(const void* ptr);
 
+typedef NSUInteger NSStringEncoding;
+
 @implementation NSString
 
 + (instancetype)stringWithUTF8String:(const char*)bytes {
@@ -48,7 +50,7 @@ void __set_wont_leak_attribute(const void* ptr);
 
 - (instancetype)initWithBytesNoCopy:(char*)bytes
                              length:(NSUInteger)length
-                           encoding:(id)encoding
+                           encoding:(NSStringEncoding)encoding
                        freeWhenDone:(BOOL)flag {
   if (flag == YES) {
     if (bytes) {

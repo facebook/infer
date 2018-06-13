@@ -540,32 +540,32 @@ digraph cfg {
 	
 
 	 "operator!=#iterator#break_scope#(15861647440981693631).5a328db1c01702ad115b55855603e1eb_9" -> "operator!=#iterator#break_scope#(15861647440981693631).5a328db1c01702ad115b55855603e1eb_2" ;
-"operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_1" [label="1: Start break_scope::iterator_operator++\nFormals:  this:break_scope::iterator* __return_param:break_scope::iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 3]\n " color=yellow style=filled]
+"operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_1" [label="1: Start break_scope::iterator_operator++\nFormals:  this:break_scope::iterator* __return_param:break_scope::iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 3]\n " color=yellow style=filled]
 	
 
-	 "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_1" -> "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_4" ;
-"operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_2" [label="2: Exit break_scope::iterator_operator++ \n  " color=yellow style=filled]
+	 "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_1" -> "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_4" ;
+"operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_2" [label="2: Exit break_scope::iterator_operator++ \n  " color=yellow style=filled]
 	
 
-"operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 24, column 5]\n  n$1=*&this:break_scope::iterator* [line 24, column 13]\n  n$2=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,n$1:break_scope::iterator&) [line 24, column 12]\n " shape="box"]
+"operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 24, column 5]\n  n$1=*&this:break_scope::iterator* [line 24, column 13]\n  n$2=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,n$1:break_scope::iterator&) [line 24, column 12]\n " shape="box"]
 	
 
-	 "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_3" -> "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_2" ;
-"operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_4" [label="4:  UnaryOperator \n   n$4=*&this:break_scope::iterator* [line 23, column 5]\n  n$5=*n$4.position:int [line 23, column 5]\n  *n$4.position:int=(n$5 + 1) [line 23, column 5]\n " shape="box"]
+	 "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_3" -> "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_2" ;
+"operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_4" [label="4:  UnaryOperator \n   n$4=*&this:break_scope::iterator* [line 23, column 5]\n  n$5=*n$4.position:int [line 23, column 5]\n  *n$4.position:int=(n$5 + 1) [line 23, column 5]\n " shape="box"]
 	
 
-	 "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_4" -> "operator++#iterator#break_scope#(2766485846133390801).11d4c93e59bfd59c8af952e0b96f50cf_3" ;
-"operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_1" [label="1: Start break_scope::iterator_operator*\nFormals:  this:break_scope::iterator* __return_param:break_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 42, column 1]\n " color=yellow style=filled]
+	 "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_4" -> "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_3" ;
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_1" [label="1: Start break_scope::iterator_operator*\nFormals:  this:break_scope::iterator* __return_param:break_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 42, column 1]\n " color=yellow style=filled]
 	
 
-	 "operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_1" -> "operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_3" ;
-"operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_2" [label="2: Exit break_scope::iterator_operator* \n  " color=yellow style=filled]
+	 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_1" -> "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" ;
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_2" [label="2: Exit break_scope::iterator_operator* \n  " color=yellow style=filled]
 	
 
-"operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::X* [line 42, column 33]\n  n$2=*&this:break_scope::iterator const * [line 42, column 40]\n  n$3=*n$2.vector:break_scope::vec const * [line 42, column 40]\n  _=*n$3:break_scope::vec const  [line 42, column 40]\n  n$5=*&this:break_scope::iterator const * [line 42, column 52]\n  n$6=*n$5.position:int [line 42, column 52]\n  n$8=_fun_break_scope::vec_get(n$3:break_scope::vec const *,n$6:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X*) [line 42, column 40]\n  n$9=_fun_break_scope::X_X(n$0:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const &) [line 42, column 40]\n " shape="box"]
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::X* [line 42, column 33]\n  n$2=*&this:break_scope::iterator const * [line 42, column 40]\n  n$3=*n$2.vector:break_scope::vec const * [line 42, column 40]\n  _=*n$3:break_scope::vec const  [line 42, column 40]\n  n$5=*&this:break_scope::iterator const * [line 42, column 52]\n  n$6=*n$5.position:int [line 42, column 52]\n  n$8=_fun_break_scope::vec_get(n$3:break_scope::vec const *,n$6:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X*) [line 42, column 40]\n  n$9=_fun_break_scope::X_X(n$0:break_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const &) [line 42, column 40]\n " shape="box"]
 	
 
-	 "operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_3" -> "operator*#iterator#break_scope#(4328339407583570703).cdad0941eaaed797f70482510d139870_2" ;
+	 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_3" -> "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_2" ;
 "iterator#iterator#break_scope#{13325232528858742422|constexpr}.df2bdd1dc650d74172db385b1dec541f_1" [label="1: Start break_scope::iterator_iterator\nFormals:  this:break_scope::iterator* __param_0:break_scope::iterator const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 8]\n " color=yellow style=filled]
 	
 
@@ -581,21 +581,21 @@ digraph cfg {
 	
 
 	 "iterator#iterator#break_scope#{13325232528858742422|constexpr}.df2bdd1dc650d74172db385b1dec541f_4" -> "iterator#iterator#break_scope#{13325232528858742422|constexpr}.df2bdd1dc650d74172db385b1dec541f_3" ;
-"iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_1" [label="1: Start break_scope::iterator_iterator\nFormals:  this:break_scope::iterator* v:break_scope::vec const * pos:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 3]\n " color=yellow style=filled]
+"iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_1" [label="1: Start break_scope::iterator_iterator\nFormals:  this:break_scope::iterator* v:break_scope::vec const * pos:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 3]\n " color=yellow style=filled]
 	
 
-	 "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_1" -> "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_4" ;
-"iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_2" [label="2: Exit break_scope::iterator_iterator \n  " color=yellow style=filled]
+	 "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_1" -> "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_4" ;
+"iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_2" [label="2: Exit break_scope::iterator_iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_3" [label="3:  Constructor Init \n   n$2=*&this:break_scope::iterator* [line 20, column 52]\n  n$3=*&v:break_scope::vec const * [line 20, column 59]\n  *n$2.vector:break_scope::vec const *=n$3 [line 20, column 52]\n " shape="box"]
+"iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_3" [label="3:  Constructor Init \n   n$2=*&this:break_scope::iterator* [line 20, column 52]\n  n$3=*&v:break_scope::vec const * [line 20, column 59]\n  *n$2.vector:break_scope::vec const *=n$3 [line 20, column 52]\n " shape="box"]
 	
 
-	 "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_3" -> "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_2" ;
-"iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_4" [label="4:  Constructor Init \n   n$4=*&this:break_scope::iterator* [line 20, column 37]\n  n$5=*&pos:int [line 20, column 46]\n  *n$4.position:int=n$5 [line 20, column 37]\n " shape="box"]
+	 "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_3" -> "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_2" ;
+"iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_4" [label="4:  Constructor Init \n   n$4=*&this:break_scope::iterator* [line 20, column 37]\n  n$5=*&pos:int [line 20, column 46]\n  *n$4.position:int=n$5 [line 20, column 37]\n " shape="box"]
 	
 
-	 "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_4" -> "iterator#iterator#break_scope#{16869174875139255019}.6ab4697f81ed961d5f192c83dffe5de4_3" ;
+	 "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_4" -> "iterator#iterator#break_scope(class break_scope::vec)#{16869174875139255019}.5bff0f8e93c62e2b970e10e384e3b9df_3" ;
 "iterator#iterator#break_scope#{3654715460407933162|constexpr}.a69cb17d37da9b3963eb407e0dec4509_1" [label="1: Start break_scope::iterator_iterator\nFormals:  this:break_scope::iterator* __param_0:break_scope::iterator&\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 8]\n " color=yellow style=filled]
 	
 
@@ -611,39 +611,39 @@ digraph cfg {
 	
 
 	 "iterator#iterator#break_scope#{3654715460407933162|constexpr}.a69cb17d37da9b3963eb407e0dec4509_4" -> "iterator#iterator#break_scope#{3654715460407933162|constexpr}.a69cb17d37da9b3963eb407e0dec4509_3" ;
-"get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_1" [label="1: Start break_scope::vec_get\nFormals:  this:break_scope::vec* pos:int __return_param:break_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 37, column 3]\n " color=yellow style=filled]
+"get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_1" [label="1: Start break_scope::vec_get\nFormals:  this:break_scope::vec* pos:int __return_param:break_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 37, column 3]\n " color=yellow style=filled]
 	
 
-	 "get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_1" -> "get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_3" ;
-"get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_2" [label="2: Exit break_scope::vec_get \n  " color=yellow style=filled]
+	 "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_1" -> "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_3" ;
+"get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_2" [label="2: Exit break_scope::vec_get \n  " color=yellow style=filled]
 	
 
-"get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::X* [line 37, column 26]\n  n$1=*&this:break_scope::vec const * [line 37, column 33]\n  n$2=*&pos:int [line 37, column 39]\n  n$3=_fun_break_scope::X_X(n$0:break_scope::X*,n$1._data[n$2]:break_scope::X const &) [line 37, column 33]\n " shape="box"]
+"get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::X* [line 37, column 26]\n  n$1=*&this:break_scope::vec const * [line 37, column 33]\n  n$2=*&pos:int [line 37, column 39]\n  n$3=_fun_break_scope::X_X(n$0:break_scope::X*,n$1._data[n$2]:break_scope::X const &) [line 37, column 33]\n " shape="box"]
 	
 
-	 "get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_3" -> "get#vec#break_scope#(1283787980840570343).8c225fcc5fb36e3f37c7fa3dc5e9f9db_2" ;
-"end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_1" [label="1: Start break_scope::vec_end\nFormals:  this:break_scope::vec* __return_param:break_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 35, column 3]\n " color=yellow style=filled]
+	 "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_3" -> "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_2" ;
+"end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_1" [label="1: Start break_scope::vec_end\nFormals:  this:break_scope::vec* __return_param:break_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 35, column 3]\n " color=yellow style=filled]
 	
 
-	 "end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_1" -> "end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_3" ;
-"end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_2" [label="2: Exit break_scope::vec_end \n  " color=yellow style=filled]
+	 "end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_1" -> "end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_3" ;
+"end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_2" [label="2: Exit break_scope::vec_end \n  " color=yellow style=filled]
 	
 
-"end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 35, column 20]\n  n$2=*&this:break_scope::vec* [line 35, column 36]\n  n$3=_fun_break_scope::iterator_iterator(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator*,n$2:break_scope::vec*,10:int) [line 35, column 27]\n  n$4=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator&) [line 35, column 27]\n " shape="box"]
+"end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 35, column 20]\n  n$2=*&this:break_scope::vec* [line 35, column 36]\n  n$3=_fun_break_scope::iterator_iterator(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator*,n$2:break_scope::vec*,10:int) [line 35, column 27]\n  n$4=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator&) [line 35, column 27]\n " shape="box"]
 	
 
-	 "end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_3" -> "end#vec#break_scope#(4427317924121915380).244553a42bbf0c7e825bfd96f82a9063_2" ;
-"begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_1" [label="1: Start break_scope::vec_begin\nFormals:  this:break_scope::vec* __return_param:break_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 34, column 3]\n " color=yellow style=filled]
+	 "end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_3" -> "end#vec#break_scope(class break_scope::iterator)#(4427317924121915380).28b4ffbb5a64aa367cc424acb2a0de9b_2" ;
+"begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_1" [label="1: Start break_scope::vec_begin\nFormals:  this:break_scope::vec* __return_param:break_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 34, column 3]\n " color=yellow style=filled]
 	
 
-	 "begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_1" -> "begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_3" ;
-"begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_2" [label="2: Exit break_scope::vec_begin \n  " color=yellow style=filled]
+	 "begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_1" -> "begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_3" ;
+"begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_2" [label="2: Exit break_scope::vec_begin \n  " color=yellow style=filled]
 	
 
-"begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 34, column 22]\n  n$2=*&this:break_scope::vec* [line 34, column 38]\n  n$3=_fun_break_scope::iterator_iterator(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator*,n$2:break_scope::vec*,0:int) [line 34, column 29]\n  n$4=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator&) [line 34, column 29]\n " shape="box"]
+"begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_3" [label="3:  Return Stmt \n   n$0=*&__return_param:break_scope::iterator* [line 34, column 22]\n  n$2=*&this:break_scope::vec* [line 34, column 38]\n  n$3=_fun_break_scope::iterator_iterator(&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator*,n$2:break_scope::vec*,0:int) [line 34, column 29]\n  n$4=_fun_break_scope::iterator_iterator(n$0:break_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator&) [line 34, column 29]\n " shape="box"]
 	
 
-	 "begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_3" -> "begin#vec#break_scope#(5557509884489875894).e034f7c9d5268cece0387739b5adfebe_2" ;
+	 "begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_3" -> "begin#vec#break_scope(class break_scope::iterator)#(5557509884489875894).5dac1fcfbf012c7c4e9ccd6f67cbd1ce_2" ;
 "vec#vec#break_scope#{8713994320815093146}.a7abdfa106915d365eda869e8e136554_1" [label="1: Start break_scope::vec_vec\nFormals:  this:break_scope::vec*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 3]\n " color=yellow style=filled]
 	
 

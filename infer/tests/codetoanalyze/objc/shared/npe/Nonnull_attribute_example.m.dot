@@ -22,23 +22,23 @@ digraph cfg {
 	
 
 	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_2" ;
-"initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC_initWithCoder:and:(<> <> <_Nonnull>) \n   DECLARE_LOCALS(&return,&y,&a1); [line 36, column 1]\n " color=yellow style=filled]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC_initWithCoder:and:(<> <> <_Nonnull>) \n   DECLARE_LOCALS(&return,&y,&a1); [line 36, column 1]\n " color=yellow style=filled]
 	
 
-	 "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_1" -> "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_5" ;
-"initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_2" [label="2: Exit NonnullC_initWithCoder:and: \n  " color=yellow style=filled]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_2" [label="2: Exit NonnullC_initWithCoder:and: \n  " color=yellow style=filled]
 	
 
-"initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_3" [label="3:  Return Stmt \n   n$0=*&self:NonnullC* [line 39, column 10]\n  *&return:objc_object*=n$0 [line 39, column 3]\n " shape="box"]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" [label="3:  Return Stmt \n   n$0=*&self:NonnullC* [line 39, column 10]\n  *&return:objc_object*=n$0 [line 39, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_3" -> "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_2" ;
-"initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_4" [label="4:  DeclStmt \n   n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_2" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" [label="4:  DeclStmt \n   n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_4" -> "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_3" ;
-"initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_5" [label="5:  DeclStmt \n   n$3=*&a:NonnullA* [line 37, column 19]\n  n$4=_fun_NonnullA_getA(n$3:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$4 [line 37, column 3]\n " shape="box"]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" [label="5:  DeclStmt \n   n$3=*&a:NonnullA* [line 37, column 19]\n  n$4=_fun_NonnullA_getA(n$3:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$4 [line 37, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_5" -> "initWithCoder:and:#NonnullC#instance.0360cbf0c434f47ea58689c925d7c008_4" ;
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" ;
 }

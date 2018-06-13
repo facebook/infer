@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
+"call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
 	
 
-	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_1" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" ;
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
+	 "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_1" -> "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" ;
+"call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" [label="3:  Call _fun_XForward_call \n   n$1=*&x:XForward* [line 33, column 51]\n  _=*n$1:XForward [line 33, column 51]\n  n$3=_fun_XForward_call(n$1:XForward*) [line 33, column 51]\n " shape="box"]
+"call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" [label="3:  Call _fun_XForward_call \n   n$1=*&x:XForward* [line 33, column 51]\n  _=*n$1:XForward [line 33, column 51]\n  n$3=_fun_XForward_call(n$1:XForward*) [line 33, column 51]\n " shape="box"]
 	
 
-	 "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_3" -> "call_with_forward_declaration#16178135517860387666.7dab8d0b16e63b8b27f5ae7c5c45a070_2" ;
+	 "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_3" -> "call_with_forward_declaration(class XForward)#16178135517860387666.c1f98de069e5c7098edbbc8efaea56a0_2" ;
 "getX#13708790503777666214.a992c0752db0283a341b47e16da10f48_1" [label="1: Start getX\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
 	
 

@@ -56,17 +56,17 @@ digraph cfg {
 	
 
 	 "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_4" -> "div0_method_op#16458634010327501325.9f8c8af0fef3459b668ce9bd6f32558b_3" ;
-"div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_1" [label="1: Start div0_method_op_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_1" [label="1: Start div0_method_op_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
 	
 
-	 "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_1" -> "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" ;
-"div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
+	 "div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_1" -> "div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_3" ;
+"div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
 	
 
-"div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 24, column 45]\n  n$2=_fun_X_operator[](n$1:X&,0:int) [line 24, column 43]\n  *&return:int=(1 / n$2) [line 24, column 32]\n " shape="box"]
+"div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 24, column 45]\n  n$2=_fun_X_operator[](n$1:X&,0:int) [line 24, column 43]\n  *&return:int=(1 / n$2) [line 24, column 32]\n " shape="box"]
 	
 
-	 "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_3" -> "div0_method_op_ptr#10912550985860444792.096d01aa199facb5a8d76aa262f16057_2" ;
+	 "div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_3" -> "div0_method_op_ptr(class X)#10912550985860444792.208aa82119402d74edf40f4f285108ee_2" ;
 "div1_method_op#5439663249593761892.a2cc6fb171f5c009c72f5f33927b41f0_1" [label="1: Start div1_method_op\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 43, column 1]\n " color=yellow style=filled]
 	
 

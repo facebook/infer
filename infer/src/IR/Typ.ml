@@ -749,11 +749,10 @@ module Procname = struct
 
 
     let parameters_to_string parameters =
-      let name_opt_to_string par_opt =
-        match par_opt with Some par -> Name.to_string par | None -> ""
+      let string_pars =
+        List.filter_map ~f:(fun name_opt -> Option.map ~f:Name.to_string name_opt) parameters
       in
-      let string_pars = List.map ~f:name_opt_to_string parameters in
-      if List.is_empty parameters then "" else "(" ^ String.concat ~sep:"," string_pars ^ ")"
+      if List.is_empty string_pars then "" else "(" ^ String.concat ~sep:"," string_pars ^ ")"
 
 
     let clang_param_of_name class_name : clang_parameter = Some class_name
@@ -1247,10 +1246,13 @@ module Procname = struct
     in
     let proc_id =
       match pname with
-      | C {mangled} ->
-          get_qual_name_str pname :: Option.to_list mangled |> String.concat ~sep:"#"
+      | C {parameters; mangled} ->
+          (get_qual_name_str pname ^ Parameter.parameters_to_string parameters)
+          :: Option.to_list mangled
+          |> String.concat ~sep:"#"
       | ObjC_Cpp objc_cpp ->
-          get_qual_name_str pname ^ "#" ^ ObjC_Cpp.kind_to_verbose_string objc_cpp.kind
+          get_qual_name_str pname ^ Parameter.parameters_to_string objc_cpp.parameters ^ "#"
+          ^ ObjC_Cpp.kind_to_verbose_string objc_cpp.kind
       | _ ->
           to_unique_id pname
     in

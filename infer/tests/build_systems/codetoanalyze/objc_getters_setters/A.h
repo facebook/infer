@@ -20,6 +20,8 @@ typedef void (^MyBlock)(int x);
     and_also:(_Nonnull MyBlock)block2
          and:(nullable NSString*)name;
 
+- (instancetype)withMetadata:(NSString*)name;
+
 @end
 
 void c_function(_Nonnull MyBlock block1,

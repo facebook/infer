@@ -11,36 +11,36 @@ digraph cfg {
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
-"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_1" [label="1: Start A_test1:\nFormals:  self:A* a:A*\nLocals:  aa:A* \n   DECLARE_LOCALS(&return,&aa); [line 23, column 1]\n " color=yellow style=filled]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" [label="1: Start A_test1:\nFormals:  self:A* a:A*\nLocals:  aa:A* \n   DECLARE_LOCALS(&return,&aa); [line 23, column 1]\n " color=yellow style=filled]
 	
 
-	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_1" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" ;
-"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_2" [label="2: Exit A_test1: \n  " color=yellow style=filled]
+	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" ;
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" [label="2: Exit A_test1: \n  " color=yellow style=filled]
 	
 
-"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" [label="3:  Return Stmt \n   n$1=*&aa:A* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n " shape="box"]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" [label="3:  Return Stmt \n   n$1=*&aa:A* [line 25, column 10]\n  n$2=*n$1.x:int [line 25, column 10]\n  *&return:int=n$2 [line 25, column 3]\n " shape="box"]
 	
 
-	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_2" ;
-"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" [label="4:  DeclStmt \n   n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A_child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n " shape="box"]
+	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_2" ;
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" [label="4:  DeclStmt \n   n$3=*&a:A* [line 24, column 12]\n  n$4=_fun_A_child(n$3:A*) [line 24, column 11]\n  *&aa:A*=n$4 [line 24, column 3]\n " shape="box"]
 	
 
-	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" ;
-"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_1" [label="1: Start A_test2:\nFormals:  self:A* a:A*\nLocals:  aa:A*\nAnnotation: <> A_test2:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return,&aa); [line 28, column 1]\n " color=yellow style=filled]
+	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" ;
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" [label="1: Start A_test2:\nFormals:  self:A* a:A*\nLocals:  aa:A*\nAnnotation: <> A_test2:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return,&aa); [line 28, column 1]\n " color=yellow style=filled]
 	
 
-	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_1" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" ;
-"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_2" [label="2: Exit A_test2: \n  " color=yellow style=filled]
+	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" ;
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" [label="2: Exit A_test2: \n  " color=yellow style=filled]
 	
 
-"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" [label="3:  Return Stmt \n   n$5=*&aa:A* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n " shape="box"]
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" [label="3:  Return Stmt \n   n$5=*&aa:A* [line 30, column 10]\n  n$6=*n$5.x:int [line 30, column 10]\n  *&return:int=n$6 [line 30, column 3]\n " shape="box"]
 	
 
-	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_2" ;
-"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" [label="4:  DeclStmt \n   n$7=*&a:A* [line 29, column 12]\n  n$8=_fun_A_child(n$7:A*) [line 29, column 11]\n  *&aa:A*=n$8 [line 29, column 3]\n " shape="box"]
+	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_2" ;
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" [label="4:  DeclStmt \n   n$7=*&a:A* [line 29, column 12]\n  n$8=_fun_A_child(n$7:A*) [line 29, column 11]\n  *&aa:A*=n$8 [line 29, column 3]\n " shape="box"]
 	
 
-	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" ;
+	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" ;
 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" [label="1: Start A_test3:\nFormals:  self:A* successBlock:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
 	
 

@@ -22,17 +22,17 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals:  __return_param:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_1" [label="1: Start test\nFormals:  __return_param:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_1" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" ;
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n  n$1=_fun_X_X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
+	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" [label="1: Start test2\nFormals: \nLocals:  local:int \n   DECLARE_LOCALS(&return,&local); [line 17, column 1]\n " color=yellow style=filled]
 	
 

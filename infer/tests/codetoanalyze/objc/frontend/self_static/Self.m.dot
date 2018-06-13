@@ -72,42 +72,42 @@ digraph cfg {
 "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_2" [label="2: Exit A_test_class \n  " color=yellow style=filled]
 	
 
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 92, column 1]\n " color=yellow style=filled]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 92, column 1]\n " color=yellow style=filled]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_1" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" [label="2: Exit A_used_in_binary_op: \n  " color=yellow style=filled]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_1" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" [label="2: Exit A_used_in_binary_op: \n  " color=yellow style=filled]
 	
 
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_3" [label="3: + \n  " ]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_3" [label="3: + \n  " ]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_3" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_3" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" [label="5:  BinaryOperatorStmt: NE \n   n$23=*sizeof(t=A):objc_class* [line 93, column 7]\n  n$24=*&c:objc_class* [line 93, column 15]\n " shape="box"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" [label="5:  BinaryOperatorStmt: NE \n   n$23=*sizeof(t=A):objc_class* [line 93, column 7]\n  n$24=*&c:objc_class* [line 93, column 15]\n " shape="box"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" ;
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch, if) \n   PRUNE((n$23 != n$24), true); [line 93, column 7]\n " shape="invhouse"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" ;
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" [label="6: Prune (true branch, if) \n   PRUNE((n$23 != n$24), true); [line 93, column 7]\n " shape="invhouse"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$23 != n$24), false); [line 93, column 7]\n " shape="invhouse"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_8" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$23 != n$24), false); [line 93, column 7]\n " shape="invhouse"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" [label="8:  Return Stmt \n   *&return:int=1 [line 94, column 5]\n " shape="box"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_8" [label="8:  Return Stmt \n   *&return:int=1 [line 94, column 5]\n " shape="box"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" [label="9:  Return Stmt \n   *&return:int=0 [line 96, column 5]\n " shape="box"]
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_8" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" [label="9:  Return Stmt \n   *&return:int=0 [line 96, column 5]\n " shape="box"]
 	
 
-	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
+	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" [label="1: Start A_call_alloc_instance\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 59, column 1]\n " color=yellow style=filled]
 	
 
@@ -196,17 +196,17 @@ digraph cfg {
 "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:A* object:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 76, column 1]\n " color=yellow style=filled]
+"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:A* object:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 76, column 1]\n " color=yellow style=filled]
 	
 
-	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_1" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" ;
-"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
+	 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_1" -> "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" ;
+"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$16=*&object:B* [line 77, column 11]\n  n$17=_fun_B_isC:(n$16:B*,sizeof(t=A):unsigned long) virtual [line 77, column 10]\n  *&return:_Bool=n$17 [line 77, column 3]\n " shape="box"]
+"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" [label="3:  Return Stmt \n   n$16=*&object:B* [line 77, column 11]\n  n$17=_fun_B_isC:(n$16:B*,sizeof(t=A):unsigned long) virtual [line 77, column 10]\n  *&return:_Bool=n$17 [line 77, column 3]\n " shape="box"]
 	
 
-	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" ;
+	 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" -> "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_2" ;
 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" [label="1: Start B_b_m\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
 	
 
@@ -214,15 +214,15 @@ digraph cfg {
 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" [label="2: Exit B_b_m \n  " color=yellow style=filled]
 	
 
-"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_1" [label="1: Start B_isC:\nFormals:  self:B* aClass:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
+"isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" [label="1: Start B_isC:\nFormals:  self:B* aClass:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
 	
 
-	 "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_1" -> "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" ;
-"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_2" [label="2: Exit B_isC: \n  " color=yellow style=filled]
+	 "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" -> "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_3" ;
+"isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_2" [label="2: Exit B_isC: \n  " color=yellow style=filled]
 	
 
-"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 22, column 3]\n " shape="box"]
+"isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 22, column 3]\n " shape="box"]
 	
 
-	 "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" -> "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_2" ;
+	 "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_3" -> "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_2" ;
 }

@@ -59,21 +59,21 @@ digraph cfg {
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
-"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 40, column 1]\n " color=yellow style=filled]
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 40, column 1]\n " color=yellow style=filled]
 	
 
-	 "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_1" -> "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" ;
-"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_2" [label="2: Exit struct_forward_declare::X_ptr_div0 \n  " color=yellow style=filled]
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" ;
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" [label="2: Exit struct_forward_declare::X_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X_getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n " shape="box"]
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" [label="3:  Return Stmt \n   n$0=*&x:struct_forward_declare::X* [line 42, column 14]\n  _=*n$0:struct_forward_declare::X [line 42, column 14]\n  n$2=_fun_struct_forward_declare::X_getF(n$0:struct_forward_declare::X*) [line 42, column 14]\n  *&return:int=(1 / n$2) [line 42, column 3]\n " shape="box"]
 	
 
-	 "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_3" -> "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_2" ;
-"X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&x:struct_forward_declare::X* [line 41, column 3]\n  *n$4.f:int=0 [line 41, column 3]\n " shape="box"]
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_2" ;
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&x:struct_forward_declare::X* [line 41, column 3]\n  *n$4.f:int=0 [line 41, column 3]\n " shape="box"]
 	
 
-	 "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_4" -> "X_ptr_div0#struct_forward_declare#16748991602723853091.556e298a3b72ac8fb2b17fe94b42ea70_3" ;
+	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" ;
 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" [label="1: Start struct_forward_declare::Z_div0\nFormals: \nLocals:  z:struct_forward_declare::Z \n   DECLARE_LOCALS(&return,&z); [line 55, column 1]\n " color=yellow style=filled]
 	
 
@@ -93,32 +93,32 @@ digraph cfg {
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
-"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_1" [label="1: Start struct_forward_declare::Z_ptr_div0\nFormals:  z:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 61, column 1]\n " color=yellow style=filled]
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" [label="1: Start struct_forward_declare::Z_ptr_div0\nFormals:  z:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 61, column 1]\n " color=yellow style=filled]
 	
 
-	 "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_1" -> "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" ;
-"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_2" [label="2: Exit struct_forward_declare::Z_ptr_div0 \n  " color=yellow style=filled]
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" ;
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" [label="2: Exit struct_forward_declare::Z_ptr_div0 \n  " color=yellow style=filled]
 	
 
-"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z_getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n  *&return:int=(1 / n$2) [line 66, column 3]\n " shape="box"]
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" [label="3:  Return Stmt \n   n$0=*&z:struct_forward_declare::Z* [line 66, column 14]\n  _=*n$0:struct_forward_declare::Z [line 66, column 14]\n  n$2=_fun_struct_forward_declare::Z_getF(n$0:struct_forward_declare::Z*) [line 66, column 14]\n  *&return:int=(1 / n$2) [line 66, column 3]\n " shape="box"]
 	
 
-	 "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_3" -> "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_2" ;
-"Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&z:struct_forward_declare::Z* [line 65, column 3]\n  *n$4.f:int=0 [line 65, column 3]\n " shape="box"]
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_2" ;
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" [label="4:  BinaryOperatorStmt: Assign \n   n$4=*&z:struct_forward_declare::Z* [line 65, column 3]\n  *n$4.f:int=0 [line 65, column 3]\n " shape="box"]
 	
 
-	 "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_4" -> "Z_ptr_div0#struct_forward_declare#18058661690516691263.44cb0d131c1ef6157feb3014da966171_3" ;
-"fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_1" [label="1: Start struct_forward_declare::fun_with_Z\nFormals:  z1:struct_forward_declare::Z*\nLocals:  z2:struct_forward_declare::Z* \n   DECLARE_LOCALS(&return,&z2); [line 24, column 1]\n " color=yellow style=filled]
+	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" ;
+"fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" [label="1: Start struct_forward_declare::fun_with_Z\nFormals:  z1:struct_forward_declare::Z*\nLocals:  z2:struct_forward_declare::Z* \n   DECLARE_LOCALS(&return,&z2); [line 24, column 1]\n " color=yellow style=filled]
 	
 
-	 "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_1" -> "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" ;
-"fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_2" [label="2: Exit struct_forward_declare::fun_with_Z \n  " color=yellow style=filled]
+	 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" -> "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" ;
+"fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_2" [label="2: Exit struct_forward_declare::fun_with_Z \n  " color=yellow style=filled]
 	
 
-"fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" [label="3:  DeclStmt \n   n$1=*&z1:struct_forward_declare::Z* [line 24, column 34]\n  *&z2:struct_forward_declare::Z*=n$1 [line 24, column 26]\n " shape="box"]
+"fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" [label="3:  DeclStmt \n   n$1=*&z1:struct_forward_declare::Z* [line 24, column 34]\n  *&z2:struct_forward_declare::Z*=n$1 [line 24, column 26]\n " shape="box"]
 	
 
-	 "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_3" -> "fun_with_Z#struct_forward_declare#10740368644462176169.5b35208973ee3067771f8ce79f1cde31_2" ;
+	 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" -> "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_2" ;
 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 3]\n " color=yellow style=filled]
 	
 

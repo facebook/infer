@@ -1,35 +1,35 @@
 /* @generated */
 digraph cfg {
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$4:X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 19, column 1]\n " color=yellow style=filled]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$4:X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 19, column 1]\n " color=yellow style=filled]
 	
 
-	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_1" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" ;
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" ;
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n  _=*&x:X [line 21, column 16]\n  n$2=_fun_X_~X(&x:X*) [line 21, column 16]\n " shape="box"]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 21, column 14]\n  *&return:int=(1 / n$0) [line 21, column 3]\n  _=*&x:X [line 21, column 16]\n  n$2=_fun_X_~X(&x:X*) [line 21, column 16]\n " shape="box"]
 	
 
-	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_3" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_2" ;
-"test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" [label="4:  DeclStmt \n   n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A_get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) [line 20, column 9]\n  n$9=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n " shape="box"]
+	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" [label="4:  DeclStmt \n   n$5=*&a:A* [line 20, column 9]\n  _=*n$5:A [line 20, column 9]\n  n$8=_fun_A_get(n$5:A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$4:X*) [line 20, column 9]\n  n$9=_fun_X_X(&x:X*,&0$?%__sil_tmpSIL_materialize_temp__n$4:X&) [line 20, column 9]\n " shape="box"]
 	
 
-	 "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_4" -> "test#14183353284361723530.9ab958283f2da536d334b673bc9197cb_3" ;
-"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_1" [label="1: Start A_get\nFormals:  this:A* p:int __return_param:X*\nLocals:  x:X \n   DECLARE_LOCALS(&return,&x); [line 13, column 3]\n " color=yellow style=filled]
+	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" [label="1: Start A_get\nFormals:  this:A* p:int __return_param:X*\nLocals:  x:X \n   DECLARE_LOCALS(&return,&x); [line 13, column 3]\n " color=yellow style=filled]
 	
 
-	 "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_1" -> "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" ;
-"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_2" [label="2: Exit A_get \n  " color=yellow style=filled]
+	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" ;
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" [label="2: Exit A_get \n  " color=yellow style=filled]
 	
 
-"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 5]\n  n$1=_fun_X_X(n$0:X*,&x:X&) [line 15, column 12]\n  _=*&x:X [line 15, column 12]\n  n$3=_fun_X_~X(&x:X*) [line 15, column 12]\n " shape="box"]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 15, column 5]\n  n$1=_fun_X_X(n$0:X*,&x:X&) [line 15, column 12]\n  _=*&x:X [line 15, column 12]\n  n$3=_fun_X_~X(&x:X*) [line 15, column 12]\n " shape="box"]
 	
 
-	 "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_3" -> "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_2" ;
-"get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" [label="4:  DeclStmt \n   n$5=_fun_X_X(&x:X*) [line 14, column 7]\n " shape="box"]
+	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_2" ;
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" [label="4:  DeclStmt \n   n$5=_fun_X_X(&x:X*) [line 14, column 7]\n " shape="box"]
 	
 
-	 "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_4" -> "get#A#(1761444600576643509).c838940fa5c6fe767006cf7dd748d7f6_3" ;
+	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" ;
 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_1" [label="1: Start X_X\nFormals:  this:X* __param_0:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 8]\n " color=yellow style=filled]
 	
 

@@ -11,38 +11,38 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_1" [label="1: Start field_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 45, column 1]\n " color=yellow style=filled]
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_1" [label="1: Start field_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 45, column 1]\n " color=yellow style=filled]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_1" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_5" ;
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_1" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_6" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_2" [label="2: Exit field_div0_ptr \n  " color=yellow style=filled]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_1" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_5" ;
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_1" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_6" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_2" [label="2: Exit field_div0_ptr \n  " color=yellow style=filled]
 	
 
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_3" [label="3: + \n  " ]
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_3" [label="3: + \n  " ]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_3" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_4" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_3" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_4" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_4" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_2" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 46, column 7]\n  PRUNE(n$1, true); [line 46, column 7]\n " shape="invhouse"]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_4" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_2" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 46, column 7]\n  PRUNE(n$1, true); [line 46, column 7]\n " shape="invhouse"]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_5" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_8" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 46, column 7]\n  PRUNE(!n$1, false); [line 46, column 7]\n " shape="invhouse"]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_5" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_8" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 46, column 7]\n  PRUNE(!n$1, false); [line 46, column 7]\n " shape="invhouse"]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_6" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_3" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 48, column 12]\n  _=*n$2:X [line 48, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 48, column 12]\n  *&return:int=n$4 [line 48, column 5]\n " shape="box"]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_6" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_3" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 48, column 12]\n  _=*n$2:X [line 48, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 48, column 12]\n  *&return:int=n$4 [line 48, column 5]\n " shape="box"]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_7" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_2" ;
-"field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_8" [label="8:  Call _fun_set_field_ptr \n   n$6=*&x:X* [line 47, column 19]\n  n$7=_fun_set_field_ptr(n$6:X*,0:int) [line 47, column 5]\n " shape="box"]
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_2" ;
+"field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_8" [label="8:  Call _fun_set_field_ptr \n   n$6=*&x:X* [line 47, column 19]\n  n$7=_fun_set_field_ptr(n$6:X*,0:int) [line 47, column 5]\n " shape="box"]
 	
 
-	 "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_8" -> "field_div0_ptr#2555781581744357321.4ee118b9c5178d1d4e02dcf5eed47814_7" ;
+	 "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_8" -> "field_div0_ptr(class X)#2555781581744357321.6b797bfc0b5ae2232a6e90651b2c1e32_7" ;
 "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_1" [label="1: Start field_div0_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 93, column 1]\n " color=yellow style=filled]
 	
 
@@ -58,38 +58,38 @@ digraph cfg {
 	
 
 	 "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_4" -> "field_div0_ref#11723804822630548942.b7eb5245bed0a75cdc2d181e5af92008_3" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_1" [label="1: Start field_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 52, column 1]\n " color=yellow style=filled]
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_1" [label="1: Start field_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 52, column 1]\n " color=yellow style=filled]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_1" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_5" ;
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_1" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_6" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_2" [label="2: Exit field_div1_ptr \n  " color=yellow style=filled]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_1" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_5" ;
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_1" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_6" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_2" [label="2: Exit field_div1_ptr \n  " color=yellow style=filled]
 	
 
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_3" [label="3: + \n  " ]
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_3" [label="3: + \n  " ]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_3" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_4" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_3" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_4" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_4" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_2" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 53, column 7]\n  PRUNE(n$1, true); [line 53, column 7]\n " shape="invhouse"]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_4" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_2" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 53, column 7]\n  PRUNE(n$1, true); [line 53, column 7]\n " shape="invhouse"]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_5" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_8" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 53, column 7]\n  PRUNE(!n$1, false); [line 53, column 7]\n " shape="invhouse"]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_5" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_8" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 53, column 7]\n  PRUNE(!n$1, false); [line 53, column 7]\n " shape="invhouse"]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_6" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_3" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 55, column 12]\n  _=*n$2:X [line 55, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 55, column 12]\n  *&return:int=n$4 [line 55, column 5]\n " shape="box"]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_6" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_3" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 55, column 12]\n  _=*n$2:X [line 55, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 55, column 12]\n  *&return:int=n$4 [line 55, column 5]\n " shape="box"]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_7" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_2" ;
-"field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_8" [label="8:  Call _fun_set_field_ptr \n   n$6=*&x:X* [line 54, column 19]\n  n$7=_fun_set_field_ptr(n$6:X*,1:int) [line 54, column 5]\n " shape="box"]
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_2" ;
+"field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_8" [label="8:  Call _fun_set_field_ptr \n   n$6=*&x:X* [line 54, column 19]\n  n$7=_fun_set_field_ptr(n$6:X*,1:int) [line 54, column 5]\n " shape="box"]
 	
 
-	 "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_8" -> "field_div1_ptr#10491775926176760544.af54450738e6dc8210ec4a97e984707b_7" ;
+	 "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_8" -> "field_div1_ptr(class X)#10491775926176760544.81717de1848fc0d3e24eb39e45b574dd_7" ;
 "field_div1_ref#1499715418357335887.5b6e5f87301df1903e4a04faae98d6d5_1" [label="1: Start field_div1_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 98, column 1]\n " color=yellow style=filled]
 	
 
@@ -279,38 +279,38 @@ digraph cfg {
 	
 
 	 "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_5" -> "get_global_ref_div1_method#9218905628510589917.1d66d8c44e8582bb6fcdcb7df79e3215_4" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_1" [label="1: Start method_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31, column 1]\n " color=yellow style=filled]
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_1" [label="1: Start method_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31, column 1]\n " color=yellow style=filled]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_1" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_5" ;
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_1" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_6" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_2" [label="2: Exit method_div0_ptr \n  " color=yellow style=filled]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_1" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_5" ;
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_1" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_6" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_2" [label="2: Exit method_div0_ptr \n  " color=yellow style=filled]
 	
 
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_3" [label="3: + \n  " ]
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_3" [label="3: + \n  " ]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_3" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_4" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_3" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_4" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_4" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_2" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 32, column 7]\n  PRUNE(n$1, true); [line 32, column 7]\n " shape="invhouse"]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_4" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_2" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 32, column 7]\n  PRUNE(n$1, true); [line 32, column 7]\n " shape="invhouse"]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_5" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_8" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 32, column 7]\n  PRUNE(!n$1, false); [line 32, column 7]\n " shape="invhouse"]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_5" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_8" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 32, column 7]\n  PRUNE(!n$1, false); [line 32, column 7]\n " shape="invhouse"]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_6" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_3" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 34, column 12]\n  _=*n$2:X [line 34, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 34, column 12]\n  *&return:int=n$4 [line 34, column 5]\n " shape="box"]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_6" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_3" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 34, column 12]\n  _=*n$2:X [line 34, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 34, column 12]\n  *&return:int=n$4 [line 34, column 5]\n " shape="box"]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_7" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_2" ;
-"method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_8" [label="8:  Call _fun_zero_ptr \n   n$6=*&x:X* [line 33, column 14]\n  n$7=_fun_zero_ptr(n$6:X*) [line 33, column 5]\n " shape="box"]
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_2" ;
+"method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_8" [label="8:  Call _fun_zero_ptr \n   n$6=*&x:X* [line 33, column 14]\n  n$7=_fun_zero_ptr(n$6:X*) [line 33, column 5]\n " shape="box"]
 	
 
-	 "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_8" -> "method_div0_ptr#6106785648087401281.a4bd2a817d503af4e1865afa4416bdb5_7" ;
+	 "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_8" -> "method_div0_ptr(class X)#6106785648087401281.dd62393e799ba25c316919114a8426e7_7" ;
 "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_1" [label="1: Start method_div0_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 83, column 1]\n " color=yellow style=filled]
 	
 
@@ -326,38 +326,38 @@ digraph cfg {
 	
 
 	 "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_4" -> "method_div0_ref#12048348997540346822.5280d482da62ad0e098e3e6ad4e7915e_3" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_1" [label="1: Start method_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 38, column 1]\n " color=yellow style=filled]
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_1" [label="1: Start method_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 38, column 1]\n " color=yellow style=filled]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_1" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_5" ;
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_1" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_6" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_2" [label="2: Exit method_div1_ptr \n  " color=yellow style=filled]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_1" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_5" ;
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_1" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_6" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_2" [label="2: Exit method_div1_ptr \n  " color=yellow style=filled]
 	
 
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_3" [label="3: + \n  " ]
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_3" [label="3: + \n  " ]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_3" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_4" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_3" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_4" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_4" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_2" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 39, column 7]\n  PRUNE(n$1, true); [line 39, column 7]\n " shape="invhouse"]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_4" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_2" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_5" [label="5: Prune (true branch, if) \n   n$1=*&x:X* [line 39, column 7]\n  PRUNE(n$1, true); [line 39, column 7]\n " shape="invhouse"]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_5" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_8" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 39, column 7]\n  PRUNE(!n$1, false); [line 39, column 7]\n " shape="invhouse"]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_5" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_8" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_6" [label="6: Prune (false branch, if) \n   n$1=*&x:X* [line 39, column 7]\n  PRUNE(!n$1, false); [line 39, column 7]\n " shape="invhouse"]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_6" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_3" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 41, column 12]\n  _=*n$2:X [line 41, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 41, column 12]\n  *&return:int=n$4 [line 41, column 5]\n " shape="box"]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_6" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_3" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" [label="7:  Return Stmt \n   n$2=*&x:X* [line 41, column 12]\n  _=*n$2:X [line 41, column 12]\n  n$4=_fun_X_div(n$2:X*) [line 41, column 12]\n  *&return:int=n$4 [line 41, column 5]\n " shape="box"]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_7" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_2" ;
-"method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_8" [label="8:  Call _fun_nonzero_ptr \n   n$6=*&x:X* [line 40, column 17]\n  n$7=_fun_nonzero_ptr(n$6:X*) [line 40, column 5]\n " shape="box"]
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_2" ;
+"method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_8" [label="8:  Call _fun_nonzero_ptr \n   n$6=*&x:X* [line 40, column 17]\n  n$7=_fun_nonzero_ptr(n$6:X*) [line 40, column 5]\n " shape="box"]
 	
 
-	 "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_8" -> "method_div1_ptr#3061685040798671000.94d1209c17222ffe12cc388ae1ff112d_7" ;
+	 "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_8" -> "method_div1_ptr(class X)#3061685040798671000.64eb0c6fbbafc7f2c6db9ccea560251c_7" ;
 "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_1" [label="1: Start method_div1_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 88, column 1]\n " color=yellow style=filled]
 	
 
@@ -373,17 +373,17 @@ digraph cfg {
 	
 
 	 "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_4" -> "method_div1_ref#18445848838166655559.1ecfa9c02aff37ba12fb556cb038f32c_3" ;
-"nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_1" [label="1: Start nonzero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
+"nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_1" [label="1: Start nonzero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-	 "nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_1" -> "nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_3" ;
-"nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_2" [label="2: Exit nonzero_ptr \n  " color=yellow style=filled]
+	 "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_1" -> "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" ;
+"nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_2" [label="2: Exit nonzero_ptr \n  " color=yellow style=filled]
 	
 
-"nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_3" [label="3:  Call _fun_X_nonzero \n   n$1=*&x:X* [line 17, column 26]\n  _=*n$1:X [line 17, column 26]\n  n$3=_fun_X_nonzero(n$1:X*) [line 17, column 26]\n " shape="box"]
+"nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" [label="3:  Call _fun_X_nonzero \n   n$1=*&x:X* [line 17, column 26]\n  _=*n$1:X [line 17, column 26]\n  n$3=_fun_X_nonzero(n$1:X*) [line 17, column 26]\n " shape="box"]
 	
 
-	 "nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_3" -> "nonzero_ptr#1716920554390102131.73cd383c8a42e9a8d0f617a226ea9df9_2" ;
+	 "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_3" -> "nonzero_ptr(class X)#1716920554390102131.ab3e0f6dea34ce6bb6abf3732e2b1b66_2" ;
 "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_1" [label="1: Start nonzero_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 23, column 1]\n " color=yellow style=filled]
 	
 
@@ -395,17 +395,17 @@ digraph cfg {
 	
 
 	 "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_3" -> "nonzero_ref#2062801655575406720.e5794366c34a5ecd10e2fd062a659f30_2" ;
-"set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_1" [label="1: Start set_field_ptr\nFormals:  x:X* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+"set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_1" [label="1: Start set_field_ptr\nFormals:  x:X* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
 	
 
-	 "set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_1" -> "set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_3" ;
-"set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_2" [label="2: Exit set_field_ptr \n  " color=yellow style=filled]
+	 "set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_1" -> "set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_3" ;
+"set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_2" [label="2: Exit set_field_ptr \n  " color=yellow style=filled]
 	
 
-"set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&x:X* [line 19, column 37]\n  n$2=*&val:int [line 19, column 44]\n  *n$1.f:int=n$2 [line 19, column 37]\n " shape="box"]
+"set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&x:X* [line 19, column 37]\n  n$2=*&val:int [line 19, column 44]\n  *n$1.f:int=n$2 [line 19, column 37]\n " shape="box"]
 	
 
-	 "set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_3" -> "set_field_ptr#10262801862810946974.0df004d43278f4c67506fb9e7451494c_2" ;
+	 "set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_3" -> "set_field_ptr(class X)#10262801862810946974.624982a2696b528e07aa0054da333ca2_2" ;
 "set_field_ref#15177497547761982491.aa4620ee8933c900acc4164344e57432_1" [label="1: Start set_field_ref\nFormals:  x:X& val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 1]\n " color=yellow style=filled]
 	
 
@@ -417,17 +417,17 @@ digraph cfg {
 	
 
 	 "set_field_ref#15177497547761982491.aa4620ee8933c900acc4164344e57432_3" -> "set_field_ref#15177497547761982491.aa4620ee8933c900acc4164344e57432_2" ;
-"zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_1" [label="1: Start zero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+"zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_1" [label="1: Start zero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
 	
 
-	 "zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_1" -> "zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_3" ;
-"zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_2" [label="2: Exit zero_ptr \n  " color=yellow style=filled]
+	 "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_1" -> "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" ;
+"zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_2" [label="2: Exit zero_ptr \n  " color=yellow style=filled]
 	
 
-"zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_3" [label="3:  Call _fun_X_zero \n   n$1=*&x:X* [line 15, column 23]\n  _=*n$1:X [line 15, column 23]\n  n$3=_fun_X_zero(n$1:X*) [line 15, column 23]\n " shape="box"]
+"zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" [label="3:  Call _fun_X_zero \n   n$1=*&x:X* [line 15, column 23]\n  _=*n$1:X [line 15, column 23]\n  n$3=_fun_X_zero(n$1:X*) [line 15, column 23]\n " shape="box"]
 	
 
-	 "zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_3" -> "zero_ptr#12528709853087384868.d5a909d971ab439311f13a14aded5aa9_2" ;
+	 "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_3" -> "zero_ptr(class X)#12528709853087384868.d08145759acbbf21c345f01eb7eefc7e_2" ;
 "zero_ref#14077465191616488315.9f868765c76672369ef06a4d03ded4f3_1" [label="1: Start zero_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
 	
 

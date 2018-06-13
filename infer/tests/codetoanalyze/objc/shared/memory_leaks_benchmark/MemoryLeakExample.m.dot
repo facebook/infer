@@ -90,17 +90,17 @@ digraph cfg {
 	
 
 	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" ;
-"test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_1" [label="1: Start MemoryLeakExample_test1:\nFormals:  str:__CFAttributedString const *\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 1]\n " color=yellow style=filled]
+"test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_1" [label="1: Start MemoryLeakExample_test1:\nFormals:  str:__CFAttributedString const *\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 1]\n " color=yellow style=filled]
 	
 
-	 "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_1" -> "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_3" ;
-"test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_2" [label="2: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
+	 "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_1" -> "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_3" ;
+"test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_2" [label="2: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
 	
 
-"test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_3" [label="3:  Call _fun_CTFramesetterCreateWithAttributedString \n   n$21=*&str:__CFAttributedString const * [line 43, column 43]\n  n$22=_fun_CTFramesetterCreateWithAttributedString(n$21:__CFAttributedString const *) [line 43, column 3]\n " shape="box"]
+"test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_3" [label="3:  Call _fun_CTFramesetterCreateWithAttributedString \n   n$21=*&str:__CFAttributedString const * [line 43, column 43]\n  n$22=_fun_CTFramesetterCreateWithAttributedString(n$21:__CFAttributedString const *) [line 43, column 3]\n " shape="box"]
 	
 
-	 "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_3" -> "test1:#MemoryLeakExample#class.6a178021c88203c49ec4a36c5d873685_2" ;
+	 "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_3" -> "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_2" ;
 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" [label="1: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:__CTFramesetter const * \n   DECLARE_LOCALS(&return,&framesetter); [line 46, column 1]\n " color=yellow style=filled]
 	
 
@@ -116,17 +116,17 @@ digraph cfg {
 	
 
 	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" ;
-"test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_1" [label="1: Start MemoryLeakExample_test2:\nFormals:  trust:__SecTrust*\nLocals:  \n   DECLARE_LOCALS(&return); [line 64, column 1]\n " color=yellow style=filled]
+"test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_1" [label="1: Start MemoryLeakExample_test2:\nFormals:  trust:__SecTrust*\nLocals:  \n   DECLARE_LOCALS(&return); [line 64, column 1]\n " color=yellow style=filled]
 	
 
-	 "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_1" -> "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_3" ;
-"test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_2" [label="2: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
+	 "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_1" -> "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_3" ;
+"test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_2" [label="2: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
 	
 
-"test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_3" [label="3:  Call _fun_SecTrustCopyPublicKey \n   n$34=*&trust:__SecTrust* [line 65, column 25]\n  n$35=_fun_SecTrustCopyPublicKey(n$34:__SecTrust*) [line 65, column 3]\n " shape="box"]
+"test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_3" [label="3:  Call _fun_SecTrustCopyPublicKey \n   n$34=*&trust:__SecTrust* [line 65, column 25]\n  n$35=_fun_SecTrustCopyPublicKey(n$34:__SecTrust*) [line 65, column 3]\n " shape="box"]
 	
 
-	 "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_3" -> "test2:#MemoryLeakExample#class.4d854f1c80289cc8e5422233831af105_2" ;
+	 "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_3" -> "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_2" ;
 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" [label="1: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:__SecKey* \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 68, column 1]\n " color=yellow style=filled]
 	
 

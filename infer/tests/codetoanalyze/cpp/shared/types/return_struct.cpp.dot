@@ -1,24 +1,24 @@
 /* @generated */
 digraph cfg {
-"get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_1" [label="1: Start return_struct::get\nFormals:  a:int __return_param:return_struct::X*\nLocals:  x:return_struct::X \n   DECLARE_LOCALS(&return,&x); [line 19, column 1]\n " color=yellow style=filled]
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_1" [label="1: Start return_struct::get\nFormals:  a:int __return_param:return_struct::X*\nLocals:  x:return_struct::X \n   DECLARE_LOCALS(&return,&x); [line 19, column 1]\n " color=yellow style=filled]
 	
 
-	 "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_1" -> "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_5" ;
-"get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_2" [label="2: Exit return_struct::get \n  " color=yellow style=filled]
+	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_1" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" ;
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_2" [label="2: Exit return_struct::get \n  " color=yellow style=filled]
 	
 
-"get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n  n$1=_fun_return_struct::X_X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n  _=*&x:return_struct::X [line 22, column 10]\n  n$3=_fun_return_struct::X_~X(&x:return_struct::X*) [line 22, column 10]\n " shape="box"]
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n  n$1=_fun_return_struct::X_X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n  _=*&x:return_struct::X [line 22, column 10]\n  n$3=_fun_return_struct::X_~X(&x:return_struct::X*) [line 22, column 10]\n " shape="box"]
 	
 
-	 "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_3" -> "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_2" ;
-"get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_4" [label="4:  BinaryOperatorStmt: Assign \n   n$5=*&a:int [line 21, column 9]\n  *&x.f:int=n$5 [line 21, column 3]\n " shape="box"]
+	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_2" ;
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" [label="4:  BinaryOperatorStmt: Assign \n   n$5=*&a:int [line 21, column 9]\n  *&x.f:int=n$5 [line 21, column 3]\n " shape="box"]
 	
 
-	 "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_4" -> "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_3" ;
-"get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_5" [label="5:  DeclStmt \n   n$6=_fun_return_struct::X_X(&x:return_struct::X*) [line 20, column 5]\n " shape="box"]
+	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" ;
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" [label="5:  DeclStmt \n   n$6=_fun_return_struct::X_X(&x:return_struct::X*) [line 20, column 5]\n " shape="box"]
 	
 
-	 "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_5" -> "get#return_struct#15206943163581446197.ccfaa809d6b1c936572851236a9ccb10_4" ;
+	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" ;
 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_1" [label="1: Start return_struct::get_div0\nFormals: \nLocals:  x:return_struct::X 0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X const  \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 25, column 1]\n " color=yellow style=filled]
 	
 
