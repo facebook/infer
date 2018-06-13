@@ -99,7 +99,8 @@ module Node : sig
   val pp_id : Format.formatter -> id -> unit
   (** Pretty print a node id *)
 
-  val pp_instrs : Pp.env -> sub_instrs:bool -> Sil.instr option -> Format.formatter -> t -> unit
+  val pp_instrs :
+    Pp.env -> sub_instrs:bool -> instro:Sil.instr option -> Format.formatter -> t -> unit
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
 end

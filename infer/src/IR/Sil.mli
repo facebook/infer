@@ -270,20 +270,11 @@ val pp_texp_full : Pp.env -> F.formatter -> Exp.t -> unit
 val d_texp_full : Exp.t -> unit
 (** Dump a type expression with all the details. *)
 
-val pp_exp_list : Pp.env -> F.formatter -> Exp.t list -> unit
-(** Pretty print a list of expressions. *)
-
 val d_exp_list : Exp.t list -> unit
 (** Dump a list of expressions. *)
 
-val pp_offset : Pp.env -> F.formatter -> offset -> unit
-(** Pretty print an offset *)
-
 val offset_to_string : offset -> string
 (** Convert an offset to a string *)
-
-val pp_offset_list : Pp.env -> F.formatter -> offset list -> unit
-(** Pretty print a list of offsets *)
 
 val d_offset_list : offset list -> unit
 (** Dump a list of offsets *)
@@ -317,9 +308,6 @@ val pp_sexp : Pp.env -> F.formatter -> strexp -> unit
 
 val d_sexp : strexp -> unit
 (** Dump a strexp. *)
-
-val pp_sexp_list : Pp.env -> F.formatter -> strexp list -> unit
-(** Pretty print a strexp list. *)
 
 val pp_hpred : Pp.env -> F.formatter -> hpred -> unit
 (** Pretty print a hpred. *)

@@ -164,163 +164,11 @@ end
 (* =============== Printing functions =============== *)
 
 (** Execute the delayed print actions *)
-let force_delayed_print fmt =
-  let pe_default = if Config.write_html then Pp.html Black else Pp.text in
-  function
-    | L.PTatom, a ->
-        let a : Sil.atom = Obj.obj a in
-        Sil.pp_atom pe_default fmt a
-    | L.PTattribute, a ->
-        let a : PredSymb.t = Obj.obj a in
-        F.pp_print_string fmt (PredSymb.to_string pe_default a)
-    | L.PTdecrease_indent, n ->
-        let n : int = Obj.obj n in
-        for _ = 1 to n do F.fprintf fmt "@]" done
-    | L.PTexp, e ->
-        let e : Exp.t = Obj.obj e in
-        Sil.pp_exp_printenv pe_default fmt e
-    | L.PTexp_list, el ->
-        let el : Exp.t list = Obj.obj el in
-        Sil.pp_exp_list pe_default fmt el
-    | L.PThpred, hpred ->
-        let hpred : Sil.hpred = Obj.obj hpred in
-        Sil.pp_hpred pe_default fmt hpred
-    | L.PTincrease_indent, n ->
-        let n : int = Obj.obj n in
-        F.fprintf fmt "%s@[" (String.make (2 * n) ' ')
-    | L.PTinstr, i ->
-        let i : Sil.instr = Obj.obj i in
-        if Config.write_html then
-          F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Pp.Green
-            (Sil.pp_instr (Pp.html Green))
-            i Io_infer.Html.pp_end_color ()
-        else Sil.pp_instr Pp.text fmt i
-    | L.PTinstr_list, il ->
-        let il : Instrs.not_reversed_t = Obj.obj il in
-        if Config.write_html then
-          F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Pp.Green
-            (Instrs.pp (Pp.html Green))
-            il Io_infer.Html.pp_end_color ()
-        else Instrs.pp Pp.text fmt il
-    | L.PTjprop_list, shallow_jpl ->
-        let (shallow: bool), (jpl: Prop.normal BiabductionSummary.Jprop.t list) =
-          Obj.obj shallow_jpl
-        in
-        BiabductionSummary.Jprop.pp_list pe_default ~shallow fmt jpl
-    | L.PTjprop_short, jp ->
-        let jp : Prop.normal BiabductionSummary.Jprop.t = Obj.obj jp in
-        BiabductionSummary.Jprop.pp_short pe_default fmt jp
-    | L.PTloc, loc ->
-        let loc : Location.t = Obj.obj loc in
-        Location.pp fmt loc
-    | L.PTnode_instrs, b_n ->
-        let (b: bool), (io: Sil.instr option), (n: Procdesc.Node.t) = Obj.obj b_n in
-        if Config.write_html then
-          F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Pp.Green
-            (Procdesc.Node.pp_instrs (Pp.html Green) io ~sub_instrs:b)
-            n Io_infer.Html.pp_end_color ()
-        else Procdesc.Node.pp_instrs Pp.text io ~sub_instrs:b fmt n
-    | L.PToff, off ->
-        let off : Sil.offset = Obj.obj off in
-        Sil.pp_offset pe_default fmt off
-    | L.PToff_list, offl ->
-        let offl : Sil.offset list = Obj.obj offl in
-        Sil.pp_offset_list pe_default fmt offl
-    | L.PTpathset, ps ->
-        let ps : Paths.PathSet.t = Obj.obj ps in
-        F.fprintf fmt "%a@\n" (Paths.PathSet.pp pe_default) ps
-    | L.PTpi, pi ->
-        let pi : Sil.atom list = Obj.obj pi in
-        Prop.pp_pi pe_default fmt pi
-    | L.PTpath, path ->
-        let path : Paths.Path.t = Obj.obj path in
-        Paths.Path.pp fmt path
-    | L.PTprop, p ->
-        let p : Prop.normal Prop.t = Obj.obj p in
-        Prop.pp_prop pe_default fmt p
-    | L.PTproplist, x ->
-        let (p: Prop.normal Prop.t), (pl: Prop.normal Prop.t list) = Obj.obj x in
-        Propgraph.pp_proplist pe_default "PROP" (p, false) fmt pl
-    | L.PTprop_list_with_typ, plist ->
-        let pl : Prop.normal Prop.t list = Obj.obj plist in
-        Prop.pp_proplist_with_typ pe_default fmt pl
-    | L.PTprop_with_typ, p ->
-        let p : Prop.normal Prop.t = Obj.obj p in
-        Prop.pp_prop_with_typ pe_default fmt p
-    | L.PTpvar, pvar ->
-        let pvar : Pvar.t = Obj.obj pvar in
-        Pvar.pp pe_default fmt pvar
-    | L.PTsexp, se ->
-        let se : Sil.strexp = Obj.obj se in
-        Sil.pp_sexp pe_default fmt se
-    | L.PTsexp_list, sel ->
-        let sel : Sil.strexp list = Obj.obj sel in
-        Sil.pp_sexp_list pe_default fmt sel
-    | L.PTsigma, sigma ->
-        let sigma : Sil.hpred list = Obj.obj sigma in
-        Prop.pp_sigma pe_default fmt sigma
-    | L.PTspec, spec ->
-        let spec : Prop.normal BiabductionSummary.spec = Obj.obj spec in
-        BiabductionSummary.pp_spec
-          (if Config.write_html then Pp.html Blue else Pp.text)
-          None fmt spec
-    | L.PTstr, s ->
-        let s : string = Obj.obj s in
-        F.pp_print_string fmt s
-    | L.PTstr_color, s ->
-        let (s: string), (c: Pp.color) = Obj.obj s in
-        if Config.write_html then
-          F.fprintf fmt "%a%s%a" Io_infer.Html.pp_start_color c s Io_infer.Html.pp_end_color ()
-        else F.pp_print_string fmt s
-    | L.PTstrln, s ->
-        let s : string = Obj.obj s in
-        F.fprintf fmt "%s@\n" s
-    | L.PTstrln_color, s ->
-        let (s: string), (c: Pp.color) = Obj.obj s in
-        if Config.write_html then
-          F.fprintf fmt "%a%s%a@\n" Io_infer.Html.pp_start_color c s Io_infer.Html.pp_end_color ()
-        else F.fprintf fmt "%s@\n" s
-    | L.PTsub, sub ->
-        let sub : Sil.subst = Obj.obj sub in
-        Prop.pp_sub pe_default fmt sub
-    | L.PTtexp_full, te ->
-        let te : Exp.t = Obj.obj te in
-        Sil.pp_texp_full pe_default fmt te
-    | L.PTtyp_full, t ->
-        let t : Typ.t = Obj.obj t in
-        Typ.pp_full pe_default fmt t
-    | L.PTtyp_list, tl ->
-        let tl : Typ.t list = Obj.obj tl in
-        Pp.seq (Typ.pp pe_default) fmt tl
-    | L.PTerror, s ->
-        let s : string = Obj.obj s in
-        if Config.write_html then
-          F.fprintf fmt "%aERROR: %s%a" Io_infer.Html.pp_start_color Pp.Red s
-            Io_infer.Html.pp_end_color ()
-        else F.fprintf fmt "ERROR: %s" s
-    | L.PTwarning, s ->
-        let s : string = Obj.obj s in
-        if Config.write_html then
-          F.fprintf fmt "%aWARNING: %s%a" Io_infer.Html.pp_start_color Pp.Orange s
-            Io_infer.Html.pp_end_color ()
-        else F.fprintf fmt "WARNING: %s" s
-    | L.PTinfo, s ->
-        let s : string = Obj.obj s in
-        if Config.write_html then
-          F.fprintf fmt "%aINFO: %s%a" Io_infer.Html.pp_start_color Pp.Blue s
-            Io_infer.Html.pp_end_color ()
-        else F.fprintf fmt "INFO: %s" s
-
-
-(** Set printer hook as soon as this module is loaded *)
-let () = L.printer_hook := force_delayed_print
-
-(** Execute the delayed print actions *)
 let force_delayed_prints () =
   Config.forcing_delayed_prints := true ;
   F.fprintf !curr_html_formatter "@?" ;
   (* flush html stream *)
-  List.iter ~f:(force_delayed_print !curr_html_formatter) (List.rev (L.get_delayed_prints ())) ;
+  L.force_delayed_prints !curr_html_formatter (L.get_delayed_prints ()) ;
   F.fprintf !curr_html_formatter "@?" ;
   L.reset_delayed_prints () ;
   Config.forcing_delayed_prints := false
@@ -337,7 +185,7 @@ let start_session ~pp_name node (loc: Location.t) proc_name session source =
   then
     F.fprintf !curr_html_formatter "%a<LISTING>%a</LISTING>%a" Io_infer.Html.pp_start_color
       Pp.Green
-      (Procdesc.Node.pp_instrs (Pp.html Green) None ~sub_instrs:true)
+      (Procdesc.Node.pp_instrs (Pp.html Green) ~instro:None ~sub_instrs:true)
       node Io_infer.Html.pp_end_color () ;
   F.fprintf !curr_html_formatter "%a%a %t" Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)

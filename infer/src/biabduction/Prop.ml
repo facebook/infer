@@ -153,7 +153,7 @@ let pp_sub pe f = function
 
 
 (** Dump a substitution. *)
-let d_sub (sub: Sil.subst) = L.add_print_action (PTsub, Obj.repr sub)
+let d_sub (sub: Sil.subst) = L.add_print_with_pe pp_sub sub
 
 let pp_sub_entry pe0 f entry =
   let pe, changed = Sil.color_pre_wrapper pe0 f entry in
@@ -175,7 +175,7 @@ let pp_pi pe =
 
 
 (** Dump a pi. *)
-let d_pi (pi: pi) = L.add_print_action (PTpi, Obj.repr pi)
+let d_pi (pi: pi) = L.add_print_with_pe pp_pi pi
 
 (** Pretty print a sigma. *)
 let pp_sigma pe = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe)
@@ -208,7 +208,7 @@ let pp_sigma_simple pe env fmt sigma =
 
 
 (** Dump a sigma. *)
-let d_sigma (sigma: sigma) = L.add_print_action (PTsigma, Obj.repr sigma)
+let d_sigma (sigma: sigma) = L.add_print_with_pe pp_sigma sigma
 
 (** Dump a pi and a sigma *)
 let d_pi_sigma pi sigma =
@@ -345,7 +345,7 @@ let pp_prop pe0 f prop =
 let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p
 
 (** Dump a proposition. *)
-let d_prop (prop: 'a t) = L.add_print_action (PTprop, Obj.repr prop)
+let d_prop (prop: 'a t) = L.add_print_with_pe pp_prop prop
 
 (** Print a list of propositions, prepending each one with the given string *)
 let pp_proplist_with_typ pe f plist =
@@ -361,7 +361,7 @@ let pp_proplist_with_typ pe f plist =
 
 
 (** dump a proplist *)
-let d_proplist_with_typ (pl: 'a t list) = L.add_print_action (PTprop_list_with_typ, Obj.repr pl)
+let d_proplist_with_typ (pl: 'a t list) = L.add_print_with_pe pp_proplist_with_typ pl
 
 (** {1 Functions for computing free non-program variables} *)
 

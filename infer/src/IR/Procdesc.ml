@@ -168,7 +168,7 @@ module Node = struct
 
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
-  let pp_instrs pe0 ~sub_instrs instro fmt node =
+  let pp_instrs pe0 ~sub_instrs ~instro fmt node =
     if sub_instrs then
       let pe =
         match instro with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
@@ -196,7 +196,7 @@ module Node = struct
 
   (** Dump extended instructions for the node *)
   let d_instrs ~(sub_instrs: bool) (curr_instr: Sil.instr option) (node: t) =
-    L.add_print_action (L.PTnode_instrs, Obj.repr (sub_instrs, curr_instr, node))
+    L.add_print_with_pe ~color:Pp.Green (pp_instrs ~sub_instrs ~instro:curr_instr) node
 
 
   (** Return a description of the cfg node *)
@@ -216,7 +216,7 @@ module Node = struct
       | Join_node ->
           "Join"
     in
-    let pp fmt = F.fprintf fmt "%s@.%a" str (pp_instrs pe None ~sub_instrs:true) node in
+    let pp fmt = F.fprintf fmt "%s@.%a" str (pp_instrs pe ~instro:None ~sub_instrs:true) node in
     F.asprintf "%t" pp
 end
 

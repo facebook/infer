@@ -37,12 +37,6 @@ module Jprop : sig
   val map : ('a Prop.t -> 'b Prop.t) -> 'a t -> 'b t
   (** map the function to each prop in the jprop, pointwise *)
 
-  val pp_list : Pp.env -> shallow:bool -> Format.formatter -> Prop.normal t list -> unit
-  (** Print a list of joined props, the boolean indicates whether to print subcomponents of joined props *)
-
-  val pp_short : Pp.env -> Format.formatter -> Prop.normal t -> unit
-  (** Print the toplevel prop *)
-
   val to_prop : 'a t -> 'a Prop.t
   (** Extract the toplevel jprop of a prop *)
 end
@@ -70,14 +64,11 @@ end
 val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
 (** Cast a list of normalized specs to a list of specs *)
 
-val d_spec : 'a spec -> unit
+val d_spec : _ spec -> unit
 (** Dump a spec *)
 
 val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 (** Convert spec into normal form w.r.t. variable renaming *)
-
-val pp_spec : Pp.env -> (int * int) option -> Format.formatter -> Prop.normal spec -> unit
-(** Print the spec *)
 
 type phase = FOOTPRINT | RE_EXECUTION
 

@@ -257,5 +257,7 @@ let to_string pe = function
       "WONT_LEAK"
 
 
+let pp pe fmt a = F.pp_print_string fmt (to_string pe a)
+
 (** dump an attribute *)
-let d_attribute (a: t) = L.add_print_action (L.PTattribute, Obj.repr a)
+let d_attribute (a: t) = L.add_print_with_pe pp a

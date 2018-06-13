@@ -490,10 +490,13 @@ module Name = struct
 end
 
 (** dump a type with all the details. *)
-let d_full (t: t) = L.add_print_action (L.PTtyp_full, Obj.repr t)
+let d_full (t: t) = L.add_print_with_pe pp_full t
 
 (** dump a list of types. *)
-let d_list (tl: t list) = L.add_print_action (L.PTtyp_list, Obj.repr tl)
+let d_list (tl: t list) =
+  let pp pe = Pp.seq (pp pe) in
+  L.add_print_with_pe pp tl
+
 
 let name typ = match typ.desc with Tstruct name -> Some name | _ -> None
 

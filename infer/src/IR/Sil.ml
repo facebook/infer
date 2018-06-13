@@ -274,13 +274,13 @@ let pp_exp_printenv pe0 f e0 =
 
 
 (** dump an expression. *)
-let d_exp (e: Exp.t) = L.add_print_action (L.PTexp, Obj.repr e)
+let d_exp (e: Exp.t) = L.add_print_with_pe pp_exp_printenv e
 
 (** Pretty print a list of expressions. *)
 let pp_exp_list pe f expl = Pp.seq (pp_exp_printenv pe) f expl
 
 (** dump a list of expressions. *)
-let d_exp_list (el: Exp.t list) = L.add_print_action (L.PTexp_list, Obj.repr el)
+let d_exp_list (el: Exp.t list) = L.add_print_with_pe pp_exp_list el
 
 let pp_texp pe f = function
   | Exp.Sizeof {typ; nbytes; dynamic_length; subtype} ->
@@ -304,7 +304,7 @@ let pp_texp_full pe f = function
 
 
 (** Dump a type expression with all the details. *)
-let d_texp_full (te: Exp.t) = L.add_print_action (L.PTtexp_full, Obj.repr te)
+let d_texp_full (te: Exp.t) = L.add_print_with_pe pp_texp_full te
 
 (** Pretty print an offset *)
 let pp_offset pe f = function
@@ -328,7 +328,7 @@ let rec pp_offset_list pe f = function
 
 
 (** Dump a list of offsets *)
-let d_offset_list (offl: offset list) = L.add_print_action (L.PToff_list, Obj.repr offl)
+let d_offset_list (offl: offset list) = L.add_print_with_pe pp_offset_list offl
 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t
 
@@ -430,7 +430,7 @@ let add_with_block_parameters_flag instr =
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
 (** Dump an instruction. *)
-let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
+let d_instr (i: instr) = L.add_print_with_pe ~color:Pp.Green pp_instr i
 
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
@@ -449,7 +449,7 @@ let pp_atom pe0 f a =
 
 
 (** dump an atom *)
-let d_atom (a: atom) = L.add_print_action (L.PTatom, Obj.repr a)
+let d_atom (a: atom) = L.add_print_with_pe pp_atom a
 
 let pp_lseg_kind f = function Lseg_NE -> F.pp_print_string f "ne" | Lseg_PE -> ()
 
@@ -881,13 +881,10 @@ let pp_hpara_dll pe f = pp_hpara_dll_env pe None f
 let pp_hpred pe f = pp_hpred_env pe None f
 
 (** dump a strexp. *)
-let d_sexp (se: strexp) = L.add_print_action (L.PTsexp, Obj.repr se)
-
-(** Pretty print a list of expressions. *)
-let pp_sexp_list pe f sel = (Pp.seq (fun f se -> (pp_sexp pe) f se)) f sel
+let d_sexp (se: strexp) = L.add_print_with_pe pp_sexp se
 
 (** dump a hpred. *)
-let d_hpred (hpred: hpred) = L.add_print_action (L.PThpred, Obj.repr hpred)
+let d_hpred (hpred: hpred) = L.add_print_with_pe pp_hpred hpred
 
 (** {2 Functions for traversing SIL data types} *)
 

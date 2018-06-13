@@ -453,7 +453,7 @@ end = struct
     add_delayed path ; doit 0 fmt path ; print_delayed ()
 
 
-  let d p = L.add_print_action (L.PTpath, Obj.repr p)
+  let d p = L.add_print pp p
 
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in
@@ -593,9 +593,6 @@ module PathSet : sig
   val partition : (Prop.normal Prop.t -> bool) -> t -> t * t
   (** partition a pathset on the prop component *)
 
-  val pp : Pp.env -> Format.formatter -> t -> unit
-  (** pretty print the pathset *)
-
   val size : t -> int
   (** number of elements in the pathset *)
 
@@ -705,7 +702,10 @@ end = struct
     iter f ps
 
 
-  let d (ps: t) = L.add_print_action (L.PTpathset, Obj.repr ps)
+  let d (ps: t) =
+    let pp pe fmt ps = F.fprintf fmt "%a@\n" (pp pe) ps in
+    L.add_print_with_pe pp ps
+
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
   let from_renamed_list (pl: ('a Prop.t * Path.t) list) : t =

@@ -262,4 +262,5 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
 
 (** dump a propset *)
 let d_proplist (p: 'a Prop.t) (pl: 'b Prop.t list) =
-  L.add_print_action (L.PTproplist, Obj.repr (p, pl))
+  let pp pe = pp_proplist pe "PROP" (p, false) in
+  L.add_print_with_pe pp pl

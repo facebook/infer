@@ -56,9 +56,6 @@ module Path : sig
   val join : t -> t -> t
   (** join two paths *)
 
-  val pp : Format.formatter -> t -> unit
-  (** pretty print a path *)
-
   val pp_stats : Format.formatter -> t -> unit
     [@@warning "-32"]
   (** pretty print statistics of the path *)
@@ -109,9 +106,6 @@ module PathSet : sig
 
   val partition : (Prop.normal Prop.t -> bool) -> t -> t * t
   (** partition a pathset on the prop component *)
-
-  val pp : Pp.env -> Format.formatter -> t -> unit
-  (** pretty print the pathset *)
 
   val size : t -> int
   (** number of elements in the pathset *)

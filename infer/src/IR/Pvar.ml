@@ -97,7 +97,7 @@ let pp pe f pv =
 
 
 (** Dump a program variable. *)
-let d (pvar: t) = L.add_print_action (L.PTpvar, Obj.repr pvar)
+let d (pvar: t) = L.add_print_with_pe pp pvar
 
 let get_name pv = pv.pv_name
 

@@ -87,60 +87,18 @@ val reset_formatters : unit -> unit
 
 (** Delayed printing (HTML debug, ...) *)
 
-(** type of printable elements *)
-type print_type =
-  | PTatom
-  | PTattribute
-  | PTdecrease_indent
-  | PTexp
-  | PTexp_list
-  | PThpred
-  | PTincrease_indent
-  | PTinstr
-  | PTinstr_list
-  | PTjprop_list
-  | PTjprop_short
-  | PTloc
-  | PTnode_instrs
-  | PToff
-  | PToff_list
-  | PTpath
-  | PTprop
-  | PTproplist
-  | PTprop_list_with_typ
-  | PTprop_with_typ
-  | PTpvar
-  | PTspec
-  | PTstr
-  | PTstr_color
-  | PTstrln
-  | PTstrln_color
-  | PTpathset
-  | PTpi
-  | PTsexp
-  | PTsexp_list
-  | PTsigma
-  | PTtexp_full
-  | PTsub
-  | PTtyp_full
-  | PTtyp_list
-  | PTwarning
-  | PTerror
-  | PTinfo
+type delayed_prints
 
-(** delayable print action *)
-type print_action = print_type * Obj.t  (** data to be printed *)
+val add_print : (F.formatter -> 'a -> unit) -> 'a -> unit
 
-val printer_hook : (F.formatter -> print_action -> unit) ref
-(** hook for the current printer of delayed print actions *)
+val add_print_with_pe : ?color:Pp.color -> (Pp.env -> F.formatter -> 'a -> unit) -> 'a -> unit
 
-val add_print_action : print_action -> unit
-(** extend he current print log *)
+val force_delayed_prints : F.formatter -> delayed_prints -> unit
 
-val get_delayed_prints : unit -> print_action list
+val get_delayed_prints : unit -> delayed_prints
 (** return the delayed print actions *)
 
-val set_delayed_prints : print_action list -> unit
+val set_delayed_prints : delayed_prints -> unit
 (** set the delayed print actions *)
 
 val reset_delayed_prints : unit -> unit

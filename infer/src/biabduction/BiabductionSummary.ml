@@ -60,7 +60,7 @@ module Jprop = struct
   let pp_short pe f jp = Prop.pp_prop pe f (to_prop jp)
 
   (** Dump the toplevel prop *)
-  let d_shallow (jp: Prop.normal t) = L.add_print_action (L.PTjprop_short, Obj.repr jp)
+  let d_shallow (jp: Prop.normal t) = L.add_print_with_pe pp_short jp
 
   (** Get identifies of the jprop *)
   let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
@@ -85,7 +85,7 @@ module Jprop = struct
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
   let d_list ~(shallow: bool) (jplist: Prop.normal t list) =
-    L.add_print_action (L.PTjprop_list, Obj.repr (shallow, jplist))
+    L.add_print_with_pe (pp_list ~shallow) jplist
 
 
   let rec gen_free_vars =
@@ -264,7 +264,9 @@ let pp_spec pe num_opt fmt spec =
 
 
 (** Dump a spec *)
-let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
+let d_spec (spec: 'a spec) =
+  L.add_print (pp_spec (if Config.write_html then Pp.html Blue else Pp.text) None) spec
+
 
 let pp_specs pe fmt specs =
   let total = List.length specs in

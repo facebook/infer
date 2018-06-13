@@ -49,9 +49,6 @@ val compare_prop : 'a t -> 'a t -> int
 val equal_sigma : sigma -> sigma -> bool
 (** Check the equality of two sigma's *)
 
-val pp_sub : Pp.env -> Format.formatter -> subst -> unit
-(** Pretty print a substitution. *)
-
 val d_sub : subst -> unit
 (** Dump a substitution. *)
 
@@ -60,9 +57,6 @@ val pp_pi : Pp.env -> Format.formatter -> pi -> unit
 
 val d_pi : pi -> unit
 (** Dump a pi. *)
-
-val pp_sigma : Pp.env -> Format.formatter -> sigma -> unit
-(** Pretty print a sigma. *)
 
 val d_sigma : sigma -> unit
 (** Dump a sigma. *)
@@ -80,17 +74,11 @@ val prop_update_obj_sub : Pp.env -> 'a t -> Pp.env
 val pp_prop : Pp.env -> Format.formatter -> 'a t -> unit
 (** Pretty print a proposition. *)
 
-val pp_prop_with_typ : Pp.env -> Format.formatter -> normal t -> unit
-(** Pretty print a proposition with type information *)
-
 val prop_pred_env : 'a t -> Sil.Predicates.env
 (** Create a predicate environment for a prop *)
 
 val d_prop : 'a t -> unit
 (** Dump a proposition. *)
-
-val pp_proplist_with_typ : Pp.env -> Format.formatter -> normal t list -> unit
-(** Pretty print a list propositions with type information *)
 
 val d_proplist_with_typ : 'a t list -> unit
 

@@ -75,7 +75,7 @@ let procedure_should_be_analyzed proc_name =
 type global_state =
   { abs_val: int
   ; abstraction_rules: Abs.rules
-  ; delayed_prints: L.print_action list
+  ; delayed_prints: L.delayed_prints
   ; footprint_mode: bool
   ; html_formatter: F.formatter
   ; name_generator: Ident.NameGenerator.t
