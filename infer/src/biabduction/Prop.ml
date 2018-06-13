@@ -95,7 +95,7 @@ include Core
 
 (** {2 Basic Functions for Propositions} *)
 
-let expose (p: normal t) : exposed t = Obj.magic p
+let expose (p: _ t) : exposed t = Obj.magic p
 
 let expose_sorted (p: sorted t) : exposed t = Obj.magic p
 

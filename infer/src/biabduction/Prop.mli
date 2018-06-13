@@ -167,7 +167,7 @@ val sigma_normalize_prop : Tenv.t -> 'a t -> hpred list -> hpred list
 val normalize : Tenv.t -> exposed t -> normal t
 (** normalize a prop *)
 
-val expose : normal t -> exposed t
+val expose : _ t -> exposed t
 (** expose a prop, no-op used to instantiate the sub-type relation *)
 
 (** {2 Compaction} *)
