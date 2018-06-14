@@ -277,6 +277,16 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
             < 0
 
 
+let should_report pdesc =
+  match Procdesc.get_proc_name pdesc with
+  | Typ.Procname.Java java_pname ->
+      Procdesc.get_access pdesc <> PredSymb.Private
+      && not (Typ.Procname.Java.is_autogen_method java_pname)
+      && not (Typ.Procname.Java.is_class_initializer java_pname)
+  | _ ->
+      L.(die InternalError "Not supposed to run on non-Java code.")
+
+
 let fold_reportable_summaries (tenv, current_pdesc) get_proc_desc clazz ~init ~f =
   let methods =
     Tenv.lookup tenv clazz
@@ -285,12 +295,10 @@ let fold_reportable_summaries (tenv, current_pdesc) get_proc_desc clazz ~init ~f
   let f acc mthd =
     get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
-           match Procdesc.get_access other_pdesc with
-           | PredSymb.Private ->
-               acc
-           | _ ->
-               Payload.read current_pdesc mthd |> Option.map ~f:(fun payload -> (mthd, payload))
-               |> Option.fold ~init:acc ~f )
+           if should_report other_pdesc then
+             Payload.read current_pdesc mthd |> Option.map ~f:(fun payload -> (mthd, payload))
+             |> Option.fold ~init:acc ~f
+           else acc )
   in
   List.fold methods ~init ~f
 
@@ -431,7 +439,7 @@ let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map
 let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
   let report_procedure ((_, proc_desc) as env) =
     die_if_not_java proc_desc ;
-    if Procdesc.get_access proc_desc <> PredSymb.Private then
+    if should_report proc_desc then
       Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
       |> Option.iter ~f:(fun summary ->
              report_deadlocks env get_proc_desc summary ReportMap.empty
