@@ -822,7 +822,7 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     in
     List.unzip new_formals_blocks_captured_vars_with_annots
   in
-  let source_file_captured =
+  let translation_unit =
     let pname = get_proc_name callee_pdesc in
     match Attributes.find_file_capturing_procedure pname with
     | Some (source_file, _) ->
@@ -840,7 +840,7 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     ; err_log= Errlog.empty ()
     ; formals= new_formals_blocks_captured_vars
     ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots)
-    ; source_file_captured }
+    ; translation_unit }
   in
   Attributes.store resolved_attributes ;
   let resolved_pdesc = from_proc_attributes resolved_attributes in

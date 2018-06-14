@@ -8,7 +8,6 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
-module L = Logging
 module GlobalVar = SiofTrace.GlobalVar
 module GlobalVarSet = SiofTrace.GlobalVarSet
 
@@ -193,14 +192,12 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
-let is_foreign tu_opt v =
-  match (Pvar.get_translation_unit v, tu_opt) with
-  | Some v_tu, Some current_tu ->
+let is_foreign current_tu v =
+  match Pvar.get_translation_unit v with
+  | Some v_tu ->
       not (SourceFile.equal current_tu v_tu)
-  | None, Some _ ->
+  | None ->
       true
-  | _, None ->
-      L.(die InternalError) "cannot be called with translation unit set to None"
 
 
 let report_siof summary trace pdesc gname loc =
@@ -237,13 +234,13 @@ let siof_check pdesc gname (summary: Summary.t) =
   match summary.payloads.siof with
   | Some (NonBottom post, _) ->
       let attrs = Procdesc.get_attributes pdesc in
-      let tu_opt =
+      let tu =
         let attrs = Procdesc.get_attributes pdesc in
         attrs.ProcAttributes.translation_unit
       in
       let foreign_sinks =
         SiofTrace.Sinks.filter
-          (fun sink -> SiofTrace.Sink.kind sink |> is_foreign tu_opt)
+          (fun sink -> SiofTrace.Sink.kind sink |> is_foreign tu)
           (SiofTrace.sinks post)
       in
       if not (SiofTrace.Sinks.is_empty foreign_sinks) then
@@ -269,8 +266,7 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Summary.t 
       in
       get_procs_in_file pname |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)
     in
-    Option.value_map ~default:false ~f:includes_iostream
-      (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
+    includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in
   let proc_data = ProcData.make_default proc_desc tenv in
   let initial =

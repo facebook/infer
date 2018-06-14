@@ -73,7 +73,7 @@ let save_attributes source_file cfg =
     let loc = attributes.loc in
     let attributes' =
       let loc' = if Location.equal loc Location.dummy then {loc with file= source_file} else loc in
-      {attributes with loc= loc'; source_file_captured= source_file}
+      {attributes with loc= loc'; translation_unit= source_file}
     in
     Attributes.store attributes'
   in

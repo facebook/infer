@@ -60,14 +60,13 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
-  ; translation_unit: SourceFile.t option  (** translation unit to which the procedure belongs *)
+  ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
-  ; ret_type: Typ.t  (** return type *)
-  ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
+  ; ret_type: Typ.t  (** return type *) }
 [@@deriving compare]
 
 val default : Typ.Procname.t -> t

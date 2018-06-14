@@ -135,7 +135,7 @@ let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:tr
 
 let find_file_capturing_procedure pname =
   Option.map (load pname) ~f:(fun proc_attributes ->
-      let source_file = proc_attributes.ProcAttributes.source_file_captured in
+      let source_file = proc_attributes.ProcAttributes.translation_unit in
       let origin =
         (* Procedure coming from include files if it has different location than the file where it
            was captured. *)

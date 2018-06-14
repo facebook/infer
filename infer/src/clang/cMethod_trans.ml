@@ -265,6 +265,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     let objc_property_accessor =
       if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
     in
+    let translation_unit = trans_unit_ctx.CFrontend_config.source_file in
     let procdesc =
       let proc_attributes =
         { (ProcAttributes.default proc_name) with
@@ -280,7 +281,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
         ; loc= loc_start
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
-        ; translation_unit= Some trans_unit_ctx.CFrontend_config.source_file
+        ; translation_unit
         ; method_annotation
         ; ret_type }
       in

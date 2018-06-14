@@ -47,10 +47,10 @@ let get_file_data exe_env pname =
           L.(debug Analysis Medium) "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname ;
           None
       | Some proc_attributes when Config.reactive_capture ->
-          let get_captured_file {ProcAttributes.source_file_captured} = source_file_captured in
+          let get_captured_file {ProcAttributes.translation_unit} = translation_unit in
           OndemandCapture.try_capture proc_attributes |> Option.map ~f:get_captured_file
       | Some proc_attributes ->
-          Some proc_attributes.ProcAttributes.source_file_captured
+          Some proc_attributes.ProcAttributes.translation_unit
     in
     let get_file_data_for_source source_file =
       let file_data = create_file_data exe_env.file_map source_file in

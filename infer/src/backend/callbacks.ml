@@ -97,12 +97,12 @@ let dump_duplicate_procs (exe_env: Exe_env.t) procs =
         match Exe_env.get_proc_desc exe_env pname with
         | Some pdesc when (* defined in the current file *) Procdesc.is_defined pdesc -> (
           match Attributes.load pname with
-          | Some {source_file_captured; loc}
+          | Some {translation_unit; loc}
             when (* defined in another file *)
-                 not (SourceFile.equal exe_env.source_file source_file_captured)
+                 not (SourceFile.equal exe_env.source_file translation_unit)
                  && (* really defined in the current file and not in an include *)
                     SourceFile.equal exe_env.source_file loc.file ->
-              Some (pname, source_file_captured)
+              Some (pname, translation_unit)
           | _ ->
               None )
         | _ ->
