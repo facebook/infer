@@ -102,27 +102,12 @@ infer run -- gradle build -x lint
 
 See also [this GitHub issue](https://github.com/facebook/infer/issues/58).
 
-### How do I use Infer in a CMake project?
-
-CMake hardcodes the compiler in generated Makefiles, which prevents
-Infer from capturing calls to your compiler. You need to reconfigure
-your project to use Infer's version of clang whenever you want Infer
-to run:
-
-```sh
-infer compile -- cmake .
-infer run -- make
-```
-
-See also [this GitHub issue](https://github.com/facebook/infer/issues/25).
-
 ### Running "infer [options] -- \<build command\>" fails with some other error
 
 Please make sure that:
 
 - \<build command\> runs successfully on its own.
 - `infer` is in your `$PATH` (try `which infer`, it should show where `infer` is located)
-- The paths of the files you want to analyze (including their names) do not have whitespaces in them. This is a [known issue](https://github.com/facebook/infer/issues/99).
 
 ### Running Infer fails with "ImportError: No module named xml.etree.ElementTree"
 
