@@ -9,27 +9,33 @@ open! IStd
 module F = Format
 module L = Logging
 (* forward dependency analysis for computing set of variables that
-   affect the control flow at each program point
+   affect the looping behavior of the program 
 
    1. perform a control flow dependency analysis by getting all the
-   variables that appear in the control flow path up to that node.
+   variables that appear in the guards of the loops.
 
    2. for each control dependency per node, find its respective data
    dependency
+
+   3. remove invariant vars in the loop from control vars 
  *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
-module ControlDepSet = VarSet
+module CFG = ProcCfg.Normal
+module ControlDepSet = AbstractDomain.FiniteSet (Var)
 module GuardNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+module LoopHeads = Procdesc.NodeSet
 
-(** Map exit node -> prune nodes in the loop guard  *)
-module ExitNodeToGuardNodes = AbstractDomain.Map (Procdesc.Node) (GuardNodes)
+(** Map exit node -> loop head set  *)
+module ExitNodeToLoopHeads = Procdesc.NodeMap
 
-(** Map loop header node -> prune nodes in the loop guard  *)
-module LoopHeaderToGuardNodes = AbstractDomain.Map (Procdesc.Node) (GuardNodes)
+(** Map loop head -> prune nodes in the loop guard  *)
+module LoopHeadToGuardNodes =
+Procdesc.NodeMap
 
 type loop_control_maps =
-  {exit_map: ExitNodeToGuardNodes.astate; loop_header_map: LoopHeaderToGuardNodes.astate}
+  { exit_map: LoopHeads.t ExitNodeToLoopHeads.t
+  ; loop_head_to_guard_nodes: GuardNodes.t LoopHeadToGuardNodes.t }
 
 (* forward transfer function for control dependencies *)
 module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
@@ -40,7 +46,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
   let collect_vars_in_exp exp =
     Var.get_all_vars_in_exp exp
-    |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc var -> ControlDepSet.add var acc)
+    |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc cvar -> ControlDepSet.add cvar acc)
 
 
   let find_vars_in_decl id _ = function
@@ -86,25 +92,40 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   (* Each time we pass through
-     - a loop header, add control variables of its guard nodes 
+     - a loop header, add control variables of its guard nodes,
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate {ProcData.extras= {exit_map; loop_header_map}} (node: CFG.Node.t) _ =
+  let exec_instr astate {ProcData.extras= {exit_map; loop_head_to_guard_nodes}} (node: CFG.Node.t)
+      _ =
     let node = CFG.Node.underlying_node node in
     let astate' =
-      match LoopHeaderToGuardNodes.find_opt node loop_header_map with
+      match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with
       | Some loop_nodes ->
-          L.(debug Analysis Medium) "@\n>>> Loop header %a \n" Procdesc.Node.pp node ;
           Domain.union astate (get_control_vars loop_nodes)
       | _ ->
           astate
     in
-    match ExitNodeToGuardNodes.find_opt node exit_map with
-    | Some loop_nodes ->
-        L.(debug Analysis Medium)
-          "@\n>>>Exit node %a loop nodes=%a  @\n\n" Procdesc.Node.pp node GuardNodes.pp loop_nodes ;
-        get_control_vars loop_nodes |> Domain.diff astate'
+    match Procdesc.Node.get_kind node with
+    | Procdesc.Node.Prune_node _ -> (
+      match ExitNodeToLoopHeads.find_opt node exit_map with
+      | Some loop_heads ->
+          LoopHeads.fold
+            (fun loop_head astate_acc ->
+              match LoopHeadToGuardNodes.find_opt loop_head loop_head_to_guard_nodes with
+              | Some guard_nodes ->
+                  L.(debug Analysis Medium)
+                    "@\n>>>Exit node %a, Loop head %a, guard nodes=%a  @\n\n" Procdesc.Node.pp node
+                    Procdesc.Node.pp loop_head GuardNodes.pp guard_nodes ;
+                  get_control_vars guard_nodes |> Domain.diff astate_acc
+              | _ ->
+                  (* Every loop head must have a guard node *)
+                  assert false )
+            loop_heads astate'
+      | _ ->
+          astate' )
     | _ ->
+        (* Exit node must be a prune node *)
+        assert (not (ExitNodeToLoopHeads.mem node exit_map)) ;
         astate'
 
 
@@ -112,22 +133,16 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
     F.fprintf fmt "control dependency analysis %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
-module CFG = ProcCfg.Normal
 module ControlDepAnalyzer = AbstractInterpreter.Make (CFG) (TransferFunctionsControlDeps)
 
-let report_control_deps control_map node =
-  Instrs.iter (Procdesc.Node.get_instrs node) ~f:(fun instr ->
-      L.(debug Analysis Medium) "@\n>>>Control dependencies of node = %a @\n" Procdesc.Node.pp node ;
-      List.iter (Sil.instr_get_exps instr) ~f:(fun exp ->
-          L.(debug Analysis Medium)
-            "@\n>>>for exp = %a : %a @\n\n" Exp.pp exp ControlDepSet.pp control_map ) )
-
-
-let compute_all_deps control_invariant_map node =
+let compute_control_vars control_invariant_map node =
   let node_id = CFG.Node.id node in
   let deps = VarSet.empty in
   ControlDepAnalyzer.extract_post node_id control_invariant_map
   |> Option.map ~f:(fun control_deps ->
-         report_control_deps control_deps node ;
+         (* loop_inv_map: loop head -> variables that are invariant in the loop *)
+         L.(debug Analysis Medium)
+           "@\n>>> Control dependencies of node %a : %a @\n" Procdesc.Node.pp node ControlDepSet.pp
+           control_deps ;
          control_deps )
   |> Option.value ~default:deps

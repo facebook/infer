@@ -27,4 +27,18 @@ private static int break_constant(int p)
   return break_loop(p, -1);
 }
 
+
+private static void break_outer_loop_FN (int maxI, int maxJ){
+    int i = 0 ;
+    outerloop:
+    while (i < maxI) {
+      int j = 0 ;
+      while (j < maxJ) {
+        if (i+j > 10)
+          break outerloop ;
+        j++ ;
+      }
+      i++ ;
+    }}
+
 }

@@ -92,39 +92,56 @@ let is_prune node =
   match Procdesc.Node.get_kind node with Procdesc.Node.Prune_node _ -> true | _ -> false
 
 
-(* Get a pair of two maps (exit_to_guard_map, loop_header_to_guard_map) where
-   exit_to_guard_map : exit_node -> guard_nodes
-   loop_header_to_guard_map : loop_header (i.e. target of the back edge) -> guard_nodes and
+(* Get a pair of maps (exit_map, loop_head_to_guard_map) where
+   exit_map : exit_node -> loop_head set (i.e. target of the back edges) 
+   loop_head_to_guard_map : loop_head -> guard_nodes and
    guard_nodes contains the nodes that may affect the looping behavior, i.e. 
    occur in the guard of the loop conditional. *)
 let get_control_maps cfg =
-  (* get back edges*)
-  let back_edge_set = get_back_edges cfg in
-  List.fold_left
-    ~f:(fun Control.({exit_map; loop_header_map}) {source; target} ->
+  (* Since there could be multiple back-edges per loop, collect all
+     source nodes per loop head *)
+  (* loop_head (target of back-edges) --> source nodes *)
+  let loop_head_to_source_nodes_map =
+    get_back_edges cfg
+    |> List.fold ~init:Procdesc.NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
+           Procdesc.NodeMap.update target
+             (function Some source_list -> Some (source :: source_list) | None -> Some [source])
+             loop_head_to_source_list )
+  in
+  Procdesc.NodeMap.fold
+    (fun loop_head source_list Control.({exit_map; loop_head_to_guard_nodes}) ->
       L.(debug Analysis Medium)
-        "Back-edge source: %i -> target: %i\n" (nid_int source) (nid_int target) ;
-      let loop_nodes = get_all_nodes_upwards_until target [source] in
+        "Back-edge source list : [%a] --> loop_head: %i \n" (Pp.comma_seq Procdesc.Node.pp)
+        source_list (nid_int loop_head) ;
+      let loop_nodes = get_all_nodes_upwards_until loop_head source_list in
       let exit_nodes = get_exit_nodes_in_loop loop_nodes in
+      L.(debug Analysis Medium) "Exit nodes: [%a]\n" (Pp.comma_seq Procdesc.Node.pp) exit_nodes ;
       (* find all the prune nodes in the loop guard *)
       let guard_prune_nodes =
-        get_all_nodes_upwards_until target exit_nodes |> Control.GuardNodes.filter is_prune
+        get_all_nodes_upwards_until loop_head exit_nodes |> Control.GuardNodes.filter is_prune
       in
       let exit_map' =
-        (List.fold_left ~init:exit_map ~f:(fun acc exit_node ->
-             (*Make sure an exit node only belongs to a single loop *)
-             assert (not (Control.ExitNodeToGuardNodes.mem exit_node acc)) ;
-             Control.ExitNodeToGuardNodes.add exit_node guard_prune_nodes acc ))
+        (List.fold_left ~init:exit_map ~f:(fun exit_map_acc exit_node ->
+             Control.ExitNodeToLoopHeads.update exit_node
+               (function
+                   | Some existing_loop_heads ->
+                       Some (Control.LoopHeads.add loop_head existing_loop_heads)
+                   | None ->
+                       Some (Control.LoopHeads.singleton loop_head))
+               exit_map_acc ))
           exit_nodes
       in
-      let loop_map' =
-        (*Make sure a loop header only belongs to a single loop *)
-        assert (not (Control.LoopHeaderToGuardNodes.mem target loop_header_map)) ;
-        Control.LoopHeaderToGuardNodes.add target guard_prune_nodes loop_header_map
+      let loop_head_to_guard_nodes' =
+        Control.LoopHeadToGuardNodes.update loop_head
+          (function
+              | Some existing_guard_nodes ->
+                  Some (Control.GuardNodes.union existing_guard_nodes guard_prune_nodes)
+              | None ->
+                  Some guard_prune_nodes)
+          loop_head_to_guard_nodes
       in
-      Control.{exit_map= exit_map'; loop_header_map= loop_map'} )
-    back_edge_set
-    ~init:
-      Control.
-        { exit_map= Control.ExitNodeToGuardNodes.empty
-        ; loop_header_map= Control.LoopHeaderToGuardNodes.empty }
+      Control.{exit_map= exit_map'; loop_head_to_guard_nodes= loop_head_to_guard_nodes'} )
+    loop_head_to_source_nodes_map
+    Control.
+      { exit_map= Control.ExitNodeToLoopHeads.empty
+      ; loop_head_to_guard_nodes= Control.LoopHeadToGuardNodes.empty }

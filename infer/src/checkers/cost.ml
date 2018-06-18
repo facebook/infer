@@ -161,11 +161,11 @@ module BoundMap = struct
           in
           match exit_state_opt with
           | Some entry_mem ->
-              (* compute all the dependencies, i.e. set of variables that affect the control flow upto the node *)
-              let all_deps = Control.compute_all_deps control_invariant_map node in
+              (* compute control vars, i.e. set of variables that affect the execution count *)
+              let control_vars = Control.compute_control_vars control_invariant_map node in
               L.(debug Analysis Medium)
                 "@\n>>> All dependencies for node = %a : %a  @\n\n" Procdesc.Node.pp node
-                Control.VarSet.pp all_deps ;
+                Control.VarSet.pp control_vars ;
               (* bound = env(v1) *... * env(vn) *)
               let bound =
                 match entry_mem with
@@ -177,7 +177,7 @@ module BoundMap = struct
                     BasicCost.zero
                 | NonBottom mem ->
                     BufferOverrunDomain.MemReach.heap_range
-                      ~filter_loc:(filter_loc formal_pvars all_deps)
+                      ~filter_loc:(filter_loc formal_pvars control_vars)
                       mem
               in
               L.(debug Analysis Medium)
