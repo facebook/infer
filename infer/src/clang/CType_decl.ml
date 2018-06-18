@@ -140,6 +140,7 @@ module BuildMethodSignature = struct
     let attributes = decl_info.Clang_ast_t.di_attributes in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
     let is_cpp_nothrow = CMethodProperties.is_cpp_nothrow method_decl in
+    let is_variadic = CMethodProperties.is_variadic method_decl in
     let access = decl_info.Clang_ast_t.di_access in
     let pointer_to_property_opt = CMethodProperties.get_pointer_to_property method_decl in
     { CMethodSignature.name= procname
@@ -152,6 +153,7 @@ module BuildMethodSignature = struct
     ; method_kind
     ; is_cpp_virtual
     ; is_cpp_nothrow
+    ; is_variadic
     ; pointer_to_parent
     ; pointer_to_property_opt
     ; return_param_typ }

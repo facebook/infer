@@ -130,3 +130,20 @@ let get_pointer_to_property method_decl =
 
 let is_objc_method method_decl =
   match method_decl with Clang_ast_t.ObjCMethodDecl _ -> true | _ -> false
+
+
+let is_variadic method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | FunctionDecl (_, _, _, function_decl_info)
+  | CXXMethodDecl (_, _, _, function_decl_info, _)
+  | CXXConstructorDecl (_, _, _, function_decl_info, _)
+  | CXXConversionDecl (_, _, _, function_decl_info, _)
+  | CXXDestructorDecl (_, _, _, function_decl_info, _) ->
+      function_decl_info.fdi_is_variadic
+  | ObjCMethodDecl (_, _, method_decl_info) ->
+      method_decl_info.Clang_ast_t.omdi_is_variadic
+  | BlockDecl (_, block_decl_info) ->
+      block_decl_info.bdi_is_variadic
+  | _ ->
+      raise CFrontend_config.Invalid_declaration

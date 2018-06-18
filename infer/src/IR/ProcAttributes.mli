@@ -58,6 +58,7 @@ type t =
   ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
+  ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)

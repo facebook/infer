@@ -24,6 +24,7 @@ type t =
   ; method_kind: ProcAttributes.clang_method_kind
   ; is_cpp_virtual: bool
   ; is_cpp_nothrow: bool
+  ; is_variadic: bool
   ; pointer_to_parent: Clang_ast_t.pointer option
   ; pointer_to_property_opt: Clang_ast_t.pointer option
   ; (* If set then method is a getter/setter *)
@@ -36,8 +37,9 @@ val is_setter : t -> bool
 val mk :
   Typ.Procname.t -> param_type option -> param_type list -> Typ.t * Annot.Item.t
   -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> ProcAttributes.clang_method_kind
-  -> ?is_cpp_virtual:bool -> ?is_cpp_nothrow:bool -> Clang_ast_t.pointer option
-  -> Clang_ast_t.pointer option -> Typ.t option -> Clang_ast_t.access_specifier -> t
+  -> ?is_cpp_virtual:bool -> ?is_cpp_nothrow:bool -> ?is_variadic:bool
+  -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> Typ.t option
+  -> Clang_ast_t.access_specifier -> t
 
 val pp : Format.formatter -> t -> unit
 

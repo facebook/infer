@@ -27,3 +27,5 @@ val get_init_list_instrs :
 val get_pointer_to_property : Clang_ast_t.decl -> Clang_ast_t.pointer option
 
 val is_objc_method : Clang_ast_t.decl -> bool
+
+val is_variadic : Clang_ast_t.decl -> bool

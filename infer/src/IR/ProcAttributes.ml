@@ -101,6 +101,7 @@ type t =
   ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
+  ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
@@ -130,6 +131,7 @@ let default proc_name =
   ; is_model= false
   ; is_specialized= false
   ; is_synthetic_method= false
+  ; is_variadic= false
   ; clang_method_kind= C_FUNCTION
   ; loc= Location.dummy
   ; translation_unit= SourceFile.invalid __FILE__
@@ -163,6 +165,7 @@ let pp f
      ; is_model
      ; is_specialized
      ; is_synthetic_method
+     ; is_variadic
      ; clang_method_kind
      ; loc
      ; translation_unit
@@ -214,6 +217,7 @@ let pp f
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
+  pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
   if not ([%compare.equal : clang_method_kind] default.clang_method_kind clang_method_kind) then
     F.fprintf f "; clang_method_kind= %a@,"
       (Pp.to_string ~f:string_of_clang_method_kind)
