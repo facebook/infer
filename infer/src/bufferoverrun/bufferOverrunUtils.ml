@@ -60,9 +60,8 @@ module Exec = struct
    fun ~decl_sym_val pname tenv ~node_hash location ~depth loc typ ?offset ?size ~inst_num
        ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
-    let itv_make_sym () = Itv.make_sym pname new_sym_num in
-    let offset = option_value offset itv_make_sym in
-    let size = option_value size itv_make_sym in
+    let offset = option_value offset (fun () -> Itv.make_sym pname new_sym_num) in
+    let size = option_value size (fun () -> Itv.make_sym ~unsigned:true pname new_sym_num) in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
     let arr =

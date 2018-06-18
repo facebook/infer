@@ -64,7 +64,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let size =
               match length with
               | Some length when may_last_field && (IntLit.iszero length || IntLit.isone length) ->
-                  Some (Itv.make_sym pname new_sym_num)
+                  None (* Will be made symbolic by [decl_sym_arr] *)
               | _ ->
                   Option.map ~f:Itv.of_int_lit length
             in
