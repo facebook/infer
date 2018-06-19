@@ -122,14 +122,23 @@ let build_system_exe_assoc =
   ; (BXcode, "xcodebuild") ]
 
 
+let string_of_build_system build_system =
+  List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
+
+
 let build_system_of_exe_name name =
   try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name with
   | Not_found_s _ | Caml.Not_found ->
-      L.(die InternalError) "Unsupported build command %s" name
-
-
-let string_of_build_system build_system =
-  List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
+      L.(die UserError)
+        "Unsupported build command '%s'.@\n\
+         If this is an alias for another build system that infer supports, you can use@\n\
+         `--force-integration <command>` where <command> is one of the following supported build \
+         systems:@\n\
+         @[<v2>  %a@]"
+        name
+        (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
+        ( List.map ~f:fst build_system_exe_assoc |> List.map ~f:string_of_build_system
+        |> List.dedup_and_sort ~compare:String.compare )
 
 
 (** Constant configuration values *)
