@@ -779,12 +779,12 @@ module Mem = struct
 
   let init : t = NonBottom MemReach.init
 
-  let f_lift_default : 'a -> (MemReach.t -> 'a) -> t -> 'a =
-   fun default f m -> match m with Bottom -> default | NonBottom m' -> f m'
+  let f_lift_default : default:'a -> (MemReach.t -> 'a) -> t -> 'a =
+   fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
 
-  let f_lift_default2 : 'a -> (MemReach.t -> MemReach.t -> 'a) -> t -> t -> 'a =
-   fun default f m1 m2 ->
+  let f_lift_default2 : default:'a -> (MemReach.t -> MemReach.t -> 'a) -> t -> t -> 'a =
+   fun ~default f m1 m2 ->
     match (m1, m2) with
     | Bottom, _ | _, Bottom ->
         default
@@ -793,7 +793,7 @@ module Mem = struct
 
 
   let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
-   fun f -> f_lift_default Bottom (fun m' -> NonBottom (f m'))
+   fun f -> f_lift_default ~default:Bottom (fun m' -> NonBottom (f m'))
 
 
   let pp_summary : F.formatter -> t -> unit =
@@ -805,29 +805,37 @@ module Mem = struct
         MemReach.pp_summary fmt m'
 
 
-  let find_stack : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_stack k)
+  let find_stack : Loc.t -> t -> Val.t =
+   fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
+
 
   let find_stack_set : PowLoc.t -> t -> Val.t =
-   fun k -> f_lift_default Val.bot (MemReach.find_stack_set k)
+   fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack_set k)
 
 
-  let find_heap : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_heap k)
+  let find_heap : Loc.t -> t -> Val.t =
+   fun k -> f_lift_default ~default:Val.bot (MemReach.find_heap k)
+
 
   let find_heap_set : PowLoc.t -> t -> Val.t =
-   fun k -> f_lift_default Val.bot (MemReach.find_heap_set k)
+   fun k -> f_lift_default ~default:Val.bot (MemReach.find_heap_set k)
 
 
-  let find_set : PowLoc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_set k)
+  let find_set : PowLoc.t -> t -> Val.t =
+   fun k -> f_lift_default ~default:Val.bot (MemReach.find_set k)
+
 
   let find_alias : Ident.t -> t -> AliasTarget.t option =
-   fun k -> f_lift_default None (MemReach.find_alias k)
+   fun k -> f_lift_default ~default:None (MemReach.find_alias k)
 
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
-   fun k -> f_lift_default None (MemReach.find_simple_alias k)
+   fun k -> f_lift_default ~default:None (MemReach.find_simple_alias k)
 
 
-  let find_ret_alias : t -> AliasTarget.t option = f_lift_default None MemReach.find_ret_alias
+  let find_ret_alias : t -> AliasTarget.t option =
+    f_lift_default ~default:None MemReach.find_ret_alias
+
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
    fun id loc -> f_lift (MemReach.load_alias id loc)
@@ -857,17 +865,17 @@ module Mem = struct
    fun p v -> f_lift (MemReach.weak_update_heap p v)
 
 
-  let get_return : t -> Val.t = f_lift_default Val.bot MemReach.get_return
+  let get_return : t -> Val.t = f_lift_default ~default:Val.bot MemReach.get_return
 
   let get_new_heap_locs : prev:t -> next:t -> PowLoc.t =
    fun ~prev ~next ->
-    f_lift_default2 PowLoc.empty
+    f_lift_default2 ~default:PowLoc.empty
       (fun m1 m2 -> MemReach.get_new_heap_locs ~prev:m1 ~next:m2)
       prev next
 
 
   let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
-   fun locs -> f_lift_default PowLoc.empty (MemReach.get_reachable_locs_from locs)
+   fun locs -> f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from locs)
 
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
