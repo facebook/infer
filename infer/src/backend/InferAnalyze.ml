@@ -16,10 +16,9 @@ let create_exe_env_tasks source_file exe_env : Tasks.t =
   Summary.clear_cache () ;
   Typ.Procname.SQLite.clear_cache () ;
   Random.self_init () ;
-  Tasks.create
-    [ (fun () ->
-        Callbacks.iterate_callbacks exe_env ;
-        if Config.write_html then Printer.write_all_html_files source_file ) ]
+  [ (fun () ->
+      Callbacks.iterate_callbacks exe_env ;
+      if Config.write_html then Printer.write_all_html_files source_file ) ]
 
 
 (** Create tasks to analyze a cluster *)
