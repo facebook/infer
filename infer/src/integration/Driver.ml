@@ -448,8 +448,6 @@ let assert_supported_build_system build_system =
           (`Java, Config.string_of_build_system build_system) )
       in
       assert_supported_mode analyzer build_string
-  | BAnalyze ->
-      ()
 
 
 let mode_of_build_command build_cmd =
@@ -469,11 +467,6 @@ let mode_of_build_command build_cmd =
       in
       assert_supported_build_system build_system ;
       match (build_system : Config.build_system) with
-      | BAnalyze ->
-          CLOpt.warnf
-            "WARNING: `infer -- analyze` is deprecated; use the `infer analyze` subcommand \
-             instead@." ;
-          Analyze
       | BBuck when Option.is_some Config.buck_compilation_database ->
           BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))
       | BClang ->

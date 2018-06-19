@@ -80,7 +80,6 @@ type compilation_database_dependencies =
 [@@deriving compare]
 
 type build_system =
-  | BAnalyze
   | BAnt
   | BBuck
   | BClang
@@ -100,8 +99,7 @@ let equal_build_system = [%compare.equal : build_system]
    system. In that case, the first one in the list will be used for printing, eg, in which mode
    infer is running. *)
 let build_system_exe_assoc =
-  [ (BAnalyze, "analyze")
-  ; (BAnt, "ant")
+  [ (BAnt, "ant")
   ; (BBuck, "buck")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")

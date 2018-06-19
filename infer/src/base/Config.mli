@@ -31,7 +31,6 @@ type compilation_database_dependencies =
 [@@deriving compare]
 
 type build_system =
-  | BAnalyze
   | BAnt
   | BBuck
   | BClang
