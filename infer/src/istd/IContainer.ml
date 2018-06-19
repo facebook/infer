@@ -17,6 +17,8 @@ let singleton_or_more ~fold t =
           match acc with Empty -> Singleton item | _ -> return More ) )
 
 
+let is_singleton ~fold t = match singleton_or_more ~fold t with Singleton _ -> true | _ -> false
+
 let mem_nth ~fold t index =
   With_return.with_return (fun {return} ->
       let _ : int =

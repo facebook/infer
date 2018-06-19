@@ -144,7 +144,7 @@ module BoundMap = struct
         false
 
 
-  let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map =
+  let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map loop_inv_map =
     let pname = Procdesc.get_proc_name node_cfg in
     let formal_pvars =
       Procdesc.get_formals node_cfg |> List.map ~f:(fun (m, _) -> Pvar.mk m pname)
@@ -162,7 +162,9 @@ module BoundMap = struct
           match exit_state_opt with
           | Some entry_mem ->
               (* compute control vars, i.e. set of variables that affect the execution count *)
-              let control_vars = Control.compute_control_vars control_invariant_map node in
+              let control_vars =
+                Control.compute_control_vars control_invariant_map loop_inv_map node
+              in
               L.(debug Analysis Medium)
                 "@\n>>> All dependencies for node = %a : %a  @\n\n" Procdesc.Node.pp node
                 Control.VarSet.pp control_vars ;
@@ -988,8 +990,14 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     BufferOverrunChecker.compute_invariant_map_and_check callback_args
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
+  let proc_data = ProcData.make_default proc_desc tenv in
+  (* computes reaching defs: node -> (var -> node set) *)
+  let reaching_defs_invariant_map =
+    ReachingDefs.Analyzer.exec_cfg node_cfg proc_data ~initial:ReachingDefs.ReachingDefsMap.empty
+      ~debug:true
+  in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
-  let control_maps = Loop_control.get_control_maps node_cfg in
+  let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
   (* computes the control dependencies: node -> var set *)
   let control_dep_invariant_map =
     let proc_data = ProcData.make proc_desc tenv control_maps in
@@ -1003,9 +1011,14 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
       ~debug:true
   in
+  (* compute loop invariant map for control var analysis *)
+  let loop_inv_map =
+    LoopInvariant.get_loop_inv_var_map reaching_defs_invariant_map loop_head_to_loop_nodes
+  in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
     BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
+      loop_inv_map
   in
   let pp_extra, get_node_nb_exec =
     let equalities = ConstraintSolver.collect_constraints node_cfg in

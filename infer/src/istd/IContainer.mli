@@ -13,6 +13,10 @@ type 'a singleton_or_more = Empty | Singleton of 'a | More
 val singleton_or_more :
   fold:('t, 'a, 'a singleton_or_more) Container.fold -> 't -> 'a singleton_or_more
 
+(* O(1) *)
+
+val is_singleton : fold:('t, 'a, 'a singleton_or_more) Container.fold -> 't -> bool
+
 val mem_nth : fold:('t, _, int) Container.fold -> 't -> int -> bool
 
 val forto : (int, int, 'accum) Container.fold

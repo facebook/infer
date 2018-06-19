@@ -22,7 +22,18 @@ module L = Logging
 
 module VarSet = AbstractDomain.FiniteSet (Var)
 module CFG = ProcCfg.Normal
-module ControlDepSet = AbstractDomain.FiniteSet (Var)
+module LoopHead = Procdesc.Node
+
+(* For each CV, track the loop head where it is originating from. This
+   is needed for invariant analysis. *)
+module CVar = struct
+  type t = {cvar: Var.t; loop_head: LoopHead.t} [@@deriving compare]
+
+  let pp fmt {cvar; loop_head} =
+    F.fprintf fmt "(cvar : %a; loop_head : %a)" Var.pp cvar LoopHead.pp loop_head
+end
+
+module ControlDepSet = AbstractDomain.FiniteSet (CVar)
 module GuardNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module LoopHeads = Procdesc.NodeSet
 
@@ -44,28 +55,31 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
   type extras = loop_control_maps
 
-  let collect_vars_in_exp exp =
+  let collect_vars_in_exp exp loop_head =
     Var.get_all_vars_in_exp exp
-    |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc cvar -> ControlDepSet.add cvar acc)
+    |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc cvar ->
+           ControlDepSet.add {cvar; loop_head} acc )
 
 
-  let find_vars_in_decl id _ = function
+  let find_vars_in_decl id loop_head _ = function
     | Sil.Load (lhs_id, exp, _, _) when Ident.equal lhs_id id ->
-        collect_vars_in_exp exp |> Option.some
+        collect_vars_in_exp exp loop_head |> Option.some
     | Sil.Call ((lhs_id, _), _, arg_list, _, _) when Ident.equal lhs_id id ->
         List.fold_left arg_list ~init:ControlDepSet.empty ~f:(fun deps (exp, _) ->
-            collect_vars_in_exp exp |> ControlDepSet.union deps )
+            collect_vars_in_exp exp loop_head |> ControlDepSet.union deps )
         |> Option.some
     | _ ->
         None
 
 
-  let get_vars_in_exp exp prune_node =
+  let get_vars_in_exp exp prune_node loop_head =
     assert (Exp.program_vars exp |> Sequence.is_empty) ;
     (* We should never have program variables in prune nodes *)
     Exp.free_vars exp
     |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc id ->
-           match Procdesc.Node.find_in_node_or_preds prune_node ~f:(find_vars_in_decl id) with
+           match
+             Procdesc.Node.find_in_node_or_preds prune_node ~f:(find_vars_in_decl id loop_head)
+           with
            | Some deps ->
                ControlDepSet.union deps acc
            | None ->
@@ -75,7 +89,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   (* extract vars from the prune instructions in the node *)
-  let get_control_vars loop_nodes =
+  let get_control_vars loop_nodes loop_head =
     GuardNodes.fold
       (fun prune_node acc ->
         let instrs = Procdesc.Node.get_instrs prune_node in
@@ -83,7 +97,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
           ~f:(fun astate instr ->
             match instr with
             | Sil.Prune (exp, _, _, _) ->
-                Domain.union (get_vars_in_exp exp prune_node) astate
+                Domain.union (get_vars_in_exp exp prune_node loop_head) astate
             | _ ->
                 (* prune nodes include other instructions like REMOVE_TEMPS or loads *)
                 astate )
@@ -92,7 +106,8 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
 
 
   (* Each time we pass through
-     - a loop header, add control variables of its guard nodes,
+     - a loop header, add control variables(CVs) of its guard nodes,
+     along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
   let exec_instr astate {ProcData.extras= {exit_map; loop_head_to_guard_nodes}} (node: CFG.Node.t)
@@ -101,7 +116,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
     let astate' =
       match LoopHeadToGuardNodes.find_opt node loop_head_to_guard_nodes with
       | Some loop_nodes ->
-          Domain.union astate (get_control_vars loop_nodes)
+          Domain.union astate (get_control_vars loop_nodes node)
       | _ ->
           astate
     in
@@ -116,7 +131,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
                   L.(debug Analysis Medium)
                     "@\n>>>Exit node %a, Loop head %a, guard nodes=%a  @\n\n" Procdesc.Node.pp node
                     Procdesc.Node.pp loop_head GuardNodes.pp guard_nodes ;
-                  get_control_vars guard_nodes |> Domain.diff astate_acc
+                  get_control_vars guard_nodes loop_head |> Domain.diff astate_acc
               | _ ->
                   (* Every loop head must have a guard node *)
                   assert false )
@@ -135,7 +150,20 @@ end
 
 module ControlDepAnalyzer = AbstractInterpreter.Make (CFG) (TransferFunctionsControlDeps)
 
-let compute_control_vars control_invariant_map node =
+(* Filter CVs which are invariant in the loop where the CV originated from *)
+let remove_invariant_vars control_vars loop_inv_map =
+  ControlDepSet.fold
+    (fun {cvar; loop_head} acc ->
+      match LoopInvariant.LoopHeadToInvVars.find_opt loop_head loop_inv_map with
+      | Some inv_vars ->
+          if LoopInvariant.InvariantVars.mem cvar inv_vars then acc else VarSet.add cvar acc
+      | _ ->
+          (* Each cvar is always attached to a loop head *)
+          assert false )
+    control_vars VarSet.empty
+
+
+let compute_control_vars control_invariant_map loop_inv_map node =
   let node_id = CFG.Node.id node in
   let deps = VarSet.empty in
   ControlDepAnalyzer.extract_post node_id control_invariant_map
@@ -144,5 +172,5 @@ let compute_control_vars control_invariant_map node =
          L.(debug Analysis Medium)
            "@\n>>> Control dependencies of node %a : %a @\n" Procdesc.Node.pp node ControlDepSet.pp
            control_deps ;
-         control_deps )
+         remove_invariant_vars control_deps loop_inv_map )
   |> Option.value ~default:deps
