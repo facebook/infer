@@ -205,19 +205,6 @@ let lint_issues_dir_name = "lint_issues"
 
 let linters_failed_sentinel_filename = "linters_failed_sentinel"
 
-(** letters used in the analysis output *)
-let log_analysis_file = "F"
-
-let log_analysis_procedure = "."
-
-let log_analysis_wallclock_timeout = "T"
-
-let log_analysis_symops_timeout = "S"
-
-let log_analysis_recursion_timeout = "R"
-
-let log_analysis_crash = "C"
-
 let manual_buck_compilation_db = "BUCK COMPILATION DATABASE OPTIONS"
 
 let manual_buck_flavors = "BUCK FLAVORS OPTIONS"
@@ -456,13 +443,7 @@ let linters_def_default_file = linters_def_dir ^/ "linters.al"
 
 let wrappers_dir = lib_dir ^/ "wrappers"
 
-let ncpu =
-  try
-    Utils.with_process_in "getconf _NPROCESSORS_ONLN 2>/dev/null" (fun chan ->
-        Scanf.bscanf (Scanf.Scanning.from_channel chan) "%d" (fun n -> n) )
-    |> fst
-  with _ -> 1
-
+let ncpu = Setcore.numcores ()
 
 let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -> Unix
 
@@ -2755,7 +2736,7 @@ and procedures_filter = !procedures_filter
 
 and procedures_name = !procedures_name
 
-and procedures_per_process = !procedures_per_process
+and[@warning "-32"] procedures_per_process = !procedures_per_process
 
 and procedures_source_file = !procedures_source_file
 

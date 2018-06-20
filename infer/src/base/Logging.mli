@@ -23,15 +23,6 @@ val environment_info : ('a, F.formatter, unit) format -> 'a
 val progress : ('a, F.formatter, unit) format -> 'a
 (** print immediately to standard error unless --quiet is specified *)
 
-val progressbar_file : unit -> unit
-(** Progress bar: start of the analysis of a file. *)
-
-val progressbar_procedure : unit -> unit
-(** Progress bar: start of the analysis of a procedure. *)
-
-val progressbar_timeout_event : SymOp.failure_kind -> unit
-(** Progress bar: log a timeout event if in developer mode. *)
-
 val result : ('a, F.formatter, unit) format -> 'a
 (** Emit a result to stdout. Use only if the output format is stable and useful enough that it may
     conceivably get piped to another program, ie, almost never (use [progress] instead otherwise).

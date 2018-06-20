@@ -11,24 +11,13 @@ open! IStd
 module L = Logging
 
 (** Create tasks to analyze an execution environment *)
-let create_exe_env_tasks source_file exe_env : Tasks.t =
-  L.progressbar_file () ;
-  Summary.clear_cache () ;
-  Typ.Procname.SQLite.clear_cache () ;
-  Random.self_init () ;
-  [ (fun () ->
-      Callbacks.analyze_file exe_env source_file ;
-      if Config.write_html then Printer.write_all_html_files source_file ) ]
-
-
-(** Create tasks to analyze a cluster *)
-let create_source_file_tasks (source_file: SourceFile.t) : Tasks.t =
+let analyze_source_file : SourceFile.t Tasks.doer =
+ fun source_file ->
   let exe_env = Exe_env.mk () in
   L.(debug Analysis Medium) "@\nProcessing '%a'@." SourceFile.pp source_file ;
-  create_exe_env_tasks source_file exe_env
+  Callbacks.analyze_file exe_env source_file ;
+  if Config.write_html then Printer.write_all_html_files source_file
 
-
-let analyze_source_file source_file = Tasks.run (create_source_file_tasks source_file)
 
 let output_json_makefile_stats clusters =
   let num_files = List.length clusters in
@@ -41,23 +30,6 @@ let output_json_makefile_stats clusters =
   (* write stats file to disk, intentionally overwriting old file if it already exists *)
   let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
-
-
-let print_legend () =
-  L.progress "Starting analysis...@\n" ;
-  L.progress "@\n" ;
-  L.progress "legend:@." ;
-  L.progress "  \"%s\" analyzing a file@\n" Config.log_analysis_file ;
-  L.progress "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure ;
-  if Config.debug_mode then (
-    L.progress "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash ;
-    L.progress "  \"%s\" timeout: procedure analysis took too much time@\n"
-      Config.log_analysis_wallclock_timeout ;
-    L.progress "  \"%s\" timeout: procedure analysis took too many symbolic execution steps@\n"
-      Config.log_analysis_symops_timeout ;
-    L.progress "  \"%s\" timeout: procedure analysis took too many recursive iterations@\n"
-      Config.log_analysis_recursion_timeout ) ;
-  L.progress "@\n@?"
 
 
 let source_file_should_be_analyzed ~changed_files source_file =
@@ -106,19 +78,16 @@ let main ~changed_files =
     else "" )
     (if Int.equal n_source_files 1 then "" else "s")
     Config.results_dir ;
-  print_legend () ;
+  (* empty all caches to minimize the process heap to have less work to do when forking *)
+  Summary.clear_cache () ;
+  Typ.Procname.SQLite.clear_cache () ;
+  Random.self_init () ;
   if Int.equal Config.jobs 1 then (
-    List.iter ~f:analyze_source_file source_files_to_analyze ;
+    Tasks.run_sequentially ~f:analyze_source_file source_files_to_analyze ;
     L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     (* Prepare tasks one cluster at a time while executing in parallel *)
-    let runner = Tasks.Runner.create ~jobs:Config.jobs in
-    let analyze source_file =
-      let tasks = create_source_file_tasks source_file in
-      let aggregate_tasks = Tasks.aggregate ~size:Config.procedures_per_process tasks in
-      Tasks.Runner.start runner ~tasks:aggregate_tasks
-    in
-    List.iter ~f:analyze source_files_to_analyze ;
-    Tasks.Runner.complete runner ) ;
+    let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_source_file in
+    Tasks.Runner.run runner ~tasks:source_files_to_analyze ) ;
   output_json_makefile_stats source_files_to_analyze

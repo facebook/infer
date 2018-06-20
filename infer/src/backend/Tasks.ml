@@ -8,18 +8,23 @@
 open! IStd
 module L = Logging
 
-type task = unit -> unit
+type 'a doer = 'a -> unit
 
-type t = task list
+let run_sequentially ~(f: 'a doer) (tasks: 'a list) : unit =
+  let task_bar =
+    if Config.show_progress_bar then TaskBar.create_multiline ~jobs:1 else TaskBar.create_dummy ()
+  in
+  (ProcessPoolState.update_status :=
+     fun t status ->
+       TaskBar.update_status task_bar ~slot:0 t status ;
+       TaskBar.refresh task_bar) ;
+  TaskBar.set_tasks_total task_bar (List.length tasks) ;
+  TaskBar.tasks_done_reset task_bar ;
+  List.iter
+    ~f:(fun task -> f task ; TaskBar.tasks_done_add task_bar 1 ; TaskBar.refresh task_bar)
+    tasks ;
+  TaskBar.finish task_bar
 
-(** Aggregate closures into groups of the given size *)
-let aggregate ~size t =
-  let group_to_closure group () = List.iter ~f:(fun closure -> closure ()) group in
-  let group_size = if size > 0 then size else List.length t / Config.jobs in
-  if group_size > 1 then List.chunks_of t ~length:group_size |> List.map ~f:group_to_closure else t
-
-
-let run t = List.iter ~f:(fun f -> f ()) t
 
 let fork_protect ~f x =
   EventLogger.prepare () ;
@@ -29,18 +34,26 @@ let fork_protect ~f x =
 
 
 module Runner = struct
-  type tasks = t
+  type 'a t = {pool: 'a ProcessPool.t; task_bar: TaskBar.t}
 
-  type t = {pool: ProcessPool.t}
+  let create ~jobs ~f =
+    let task_bar =
+      if Config.show_progress_bar then TaskBar.create_multiline ~jobs else TaskBar.create_dummy ()
+    in
+    { pool=
+        ProcessPool.create ~jobs
+          ~child_prelude:
+            ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
+             fork_protect ~f:(fun () -> () ))
+          task_bar ~f
+    ; task_bar }
 
-  let create ~jobs = {pool= ProcessPool.create ~jobs}
 
-  let start runner ~tasks =
-    let pool = runner.pool in
+  let run runner ~tasks =
     (* Flush here all buffers to avoid passing unflushed data to forked processes, leading to duplication *)
     Pervasives.flush_all () ;
-    List.iter ~f:(fun x -> ProcessPool.start_child ~f:(fun f -> fork_protect ~f ()) ~pool x) tasks
-
-
-  let complete runner = ProcessPool.wait_all runner.pool
+    (* Compact heap before forking *)
+    Gc.compact () ;
+    ProcessPool.run runner.pool tasks ;
+    TaskBar.finish runner.task_bar
 end

@@ -162,7 +162,7 @@ endif
 clusters:=base clang java IR
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
-inc_flags:=$(foreach dir,$(shell find . -type d),-I $(dir))
+inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
 

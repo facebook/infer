@@ -7,3 +7,7 @@
 
 val in_child : bool ref
 (** Keep track of whether the current execution is in a child process *)
+
+val update_status : (Mtime.t -> string -> unit) ref
+(** Ping the task bar whenever a new task is started with the start time and a description for the
+    task *)

@@ -28,6 +28,10 @@ let unset_callbacks () = callbacks_ref := None
 
 let nesting = ref 0
 
+(* Remember what the last status sent was so that we can update the status correctly when entering
+   and exiting nested ondemand analyses. In particular we need to remember the original time.*)
+let current_taskbar_status : (Mtime.t * string) option ref = ref None
+
 let is_active, add_active, remove_active =
   let currently_analyzed = ref Typ.Procname.Set.empty in
   let is_active proc_name = Typ.Procname.Set.mem proc_name !currently_analyzed
@@ -79,6 +83,8 @@ type global_state =
   ; footprint_mode: bool
   ; html_formatter: F.formatter
   ; name_generator: Ident.NameGenerator.t
+  ; proc_analysis_time: (Mtime.Span.t * string) option
+        (** the time elapsed doing [status] so far *)
   ; symexec_state: State.t }
 
 let save_global_state () =
@@ -90,6 +96,9 @@ let save_global_state () =
   ; footprint_mode= !Config.footprint
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()
+  ; proc_analysis_time=
+      Option.map !current_taskbar_status ~f:(fun (t0, status) ->
+          (Mtime.span t0 (Mtime_clock.now ()), status) )
   ; symexec_state= State.save_state () }
 
 
@@ -101,6 +110,14 @@ let restore_global_state st =
   Printer.curr_html_formatter := st.html_formatter ;
   Ident.NameGenerator.set_current st.name_generator ;
   State.restore_state st.symexec_state ;
+  current_taskbar_status :=
+    Option.map st.proc_analysis_time ~f:(fun (suspended_span, status) ->
+        (* forget about the time spent doing a nested analysis and resend the status of the outer
+           analysis with the updated "original" start time *)
+        let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span in
+        let new_t0 = Option.value_exn new_t0 in
+        !ProcessPoolState.update_status new_t0 status ;
+        (new_t0, status) ) ;
   Timeout.resume_previous_timeout ()
 
 
@@ -113,7 +130,6 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
         "Elapsed analysis time: %a: %a@\n" Typ.Procname.pp callee_pname Mtime.Span.pp
         (Mtime_clock.count start_time)
   in
-  L.progressbar_procedure () ;
   if Config.trace_ondemand then
     L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Typ.Procname.pp)
       (Option.map caller_pdesc ~f:Procdesc.get_proc_name)
@@ -170,7 +186,17 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
 
 let analyze_proc ?caller_pdesc callee_pdesc =
   let callbacks = Option.value_exn !callbacks_ref in
-  Some (run_proc_analysis callbacks.analyze_ondemand ~caller_pdesc callee_pdesc)
+  (* wrap [callbacks.analyze_ondemand] to update the status bar *)
+  let analyze_proc summary pdesc =
+    let proc_name = Procdesc.get_proc_name callee_pdesc in
+    let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
+    let t0 = Mtime_clock.now () in
+    let status = F.asprintf "%a: %a" SourceFile.pp source_file Typ.Procname.pp proc_name in
+    current_taskbar_status := Some (t0, status) ;
+    !ProcessPoolState.update_status t0 status ;
+    callbacks.analyze_ondemand summary pdesc
+  in
+  Some (run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc)
 
 
 let analyze_proc_desc ~caller_pdesc callee_pdesc =

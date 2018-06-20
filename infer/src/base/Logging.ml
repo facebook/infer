@@ -201,29 +201,6 @@ let phase fmt = log ~to_console:false phase_file_fmts fmt
 
 let progress fmt = log ~to_console:(not Config.quiet) progress_file_fmts fmt
 
-let progress_bar text =
-  log
-    ~to_console:(Config.show_progress_bar && not Config.quiet)
-    ~to_file:true progress_file_fmts "%s@?" text
-
-
-let progressbar_file () = progress_bar Config.log_analysis_file
-
-let progressbar_procedure () = progress_bar Config.log_analysis_procedure
-
-let progressbar_timeout_event failure_kind =
-  if Config.debug_mode then
-    match failure_kind with
-    | SymOp.FKtimeout ->
-        progress_bar Config.log_analysis_wallclock_timeout
-    | SymOp.FKsymops_timeout _ ->
-        progress_bar Config.log_analysis_symops_timeout
-    | SymOp.FKrecursion_timeout _ ->
-        progress_bar Config.log_analysis_recursion_timeout
-    | SymOp.FKcrash msg ->
-        progress_bar (Printf.sprintf "%s(%s)" Config.log_analysis_crash msg)
-
-
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 
 let user_error fmt = log ~to_console:true user_error_file_fmts fmt

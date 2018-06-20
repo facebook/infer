@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 (** Handle timeout events *)
 
@@ -118,6 +117,5 @@ let exe_timeout f x =
         None )
       ~finally:resume_previous_timeout
   with SymOp.Analysis_failure_exe kind ->
-    L.progressbar_timeout_event kind ;
     Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
     Some kind

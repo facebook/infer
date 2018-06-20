@@ -126,18 +126,6 @@ val linters_failed_sentinel_filename : string
 
 val load_average : float option
 
-val log_analysis_crash : string
-
-val log_analysis_file : string
-
-val log_analysis_procedure : string
-
-val log_analysis_recursion_timeout : string
-
-val log_analysis_symops_timeout : string
-
-val log_analysis_wallclock_timeout : string
-
 val max_widens : int
 
 val meet_level : int
@@ -539,8 +527,6 @@ val print_types : bool
 val print_using_diff : bool
 
 val printf_args : bool
-
-val procedures_per_process : int
 
 val procs_csv : string option
 
