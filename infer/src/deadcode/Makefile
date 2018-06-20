@@ -38,7 +38,7 @@ ml_src_files_from_mlly:=$(shell find .. -not -path "../*stubs*" -regex '\.\./[a-
 
 ml_src_files:=$(shell cd .. && find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.mli*')
 
-ml_src_files_without_mli:=$(shell cd .. && for i in */*.ml */*/*.ml; do [ -f $${i}i ] || echo $$i; done)
+ml_src_files_without_mli:=$(shell cd .. && for i in $$(find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml'); do [ -f $${i}i ] || echo $$i; done)
 
 .PHONY: depend
 depend:
@@ -49,7 +49,7 @@ depend:
 	  -I java -I labs -I python -I quandary -I unit -I unit/clang -I deadcode \
 	   $(ml_src_files) > deadcode/.depend
 
-%.cmi:
+%.cmi: %.cmx
 #	deal with the .ml *and* the .mli at the same time: when all the modules are inlined in one
 #	file, you need the module value to be defined before you can refer to it, even in
 #	signatures. Because of this, the order given by ocamldep is not enough to avoid "Unbound
@@ -109,6 +109,9 @@ $(ml_src_files_without_mli:.ml=.cmx):
 	$(QUIET)echo "  end " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "(* END OF MODULE $@ *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
+
+%.cmx:
+	$(QUIET)echo skipping '$@'
 
 -include .depend
 
