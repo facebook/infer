@@ -64,7 +64,7 @@ let is_virtual = function
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname ta loc
     : unit =
   if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
-    let origin_descr = TypeAnnotation.descr_origin tenv ta in
+    let origin_descr = TypeAnnotation.descr_origin ta in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
       (Some instr_ref) loc curr_pname
@@ -74,7 +74,7 @@ let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref e
 let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref array_exp fname ta
     loc indexed =
   if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
-    let origin_descr = TypeAnnotation.descr_origin tenv ta in
+    let origin_descr = TypeAnnotation.descr_origin ta in
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
       (Some instr_ref) loc curr_pname
@@ -208,12 +208,12 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       if should_report_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
     in
     if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname ;
-    let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
+    let origin_descr = TypeAnnotation.descr_origin ta_rhs in
     report_error tenv find_canonical_duplicate
       (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr)) (Some instr_ref) loc
       curr_pdesc ) ;
   if should_report_mutable then
-    let origin_descr = TypeAnnotation.descr_origin tenv ta_rhs in
+    let origin_descr = TypeAnnotation.descr_origin ta_rhs in
     report_error tenv find_canonical_duplicate (TypeErr.Field_not_mutable (fname, origin_descr))
       (Some instr_ref) loc curr_pdesc
 
@@ -321,7 +321,7 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
   | Some (_, final_ta, _) ->
       let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
       let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
-      let origin_descr = TypeAnnotation.descr_origin tenv final_ta in
+      let origin_descr = TypeAnnotation.descr_origin final_ta in
       let return_not_nullable =
         final_nullable && not ret_annotated_nullable && not ret_implicitly_nullable
         && not (return_nonnull_silent && ret_annotated_nonnull)
@@ -367,7 +367,7 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
           if null_method_call then AnnotatedSignature.Nullable else AnnotatedSignature.Present
         in
         let descr = explain_expr tenv node original_this_e in
-        let origin_descr = TypeAnnotation.descr_origin tenv this_ta in
+        let origin_descr = TypeAnnotation.descr_origin this_ta in
         report_error tenv find_canonical_duplicate
           (TypeErr.Call_receiver_annotation_inconsistent (ann, descr, callee_pname, origin_descr))
           (Some instr_ref) loc curr_pdesc
@@ -395,7 +395,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
         | None ->
             "formal parameter " ^ Mangled.to_string s1
       in
-      let origin_descr = TypeAnnotation.descr_origin tenv ta2 in
+      let origin_descr = TypeAnnotation.descr_origin ta2 in
       let callee_loc = callee_attributes.ProcAttributes.loc in
       report_error tenv find_canonical_duplicate
         (TypeErr.Parameter_annotation_inconsistent

@@ -13,7 +13,7 @@ type t [@@deriving compare]
 
 val const : AnnotatedSignature.annotation -> bool -> TypeOrigin.t -> t
 
-val descr_origin : Tenv.t -> t -> TypeErr.origin_descr
+val descr_origin : t -> TypeErr.origin_descr
 (** Human-readable description of the origin of a nullable value. *)
 
 val from_item_annotation : Annot.Item.t -> TypeOrigin.t -> t

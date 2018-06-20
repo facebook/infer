@@ -27,7 +27,7 @@ type t =
 
 val equal : t -> t -> bool
 
-val get_description : Tenv.t -> t -> TypeErr.origin_descr option
+val get_description : t -> TypeErr.origin_descr option
 (** Get a description to be used for error messages. *)
 
 val join : t -> t -> t

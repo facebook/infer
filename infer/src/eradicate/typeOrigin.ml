@@ -45,7 +45,7 @@ let rec to_string = function
       "Undef"
 
 
-let get_description tenv origin =
+let get_description origin =
   let atline loc = " at line " ^ string_of_int loc.Location.line in
   match origin with
   | Const loc ->
@@ -55,25 +55,12 @@ let get_description tenv origin =
   | Formal s ->
       Some ("method parameter " ^ Mangled.to_string s, None, None)
   | Proc po ->
-      let strict =
-        match TypeErr.Strict.signature_get_strict tenv po.annotated_signature with
-        | Some ann
-          -> (
-            let str = "@Strict" in
-            match ann.Annot.parameters with
-            | par1 :: _ ->
-                Printf.sprintf "%s(%s) " str par1
-            | [] ->
-                Printf.sprintf "%s " str )
-        | None ->
-            ""
-      in
       let modelled_in =
         if Models.is_modelled_nullable po.pname then " modelled in " ^ ModelTables.this_file
         else ""
       in
       let description =
-        Printf.sprintf "call to %s%s%s%s" strict
+        Printf.sprintf "call to %s%s%s"
           (Typ.Procname.to_simplified_string po.pname)
           modelled_in (atline po.loc)
       in

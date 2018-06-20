@@ -31,12 +31,6 @@ end
 
 module InstrRef : InstrRefT
 
-module Strict : sig
-  val signature_get_strict : Tenv.t -> AnnotatedSignature.t -> Annot.t option
-end
-
-(* Strict *)
-
 type origin_descr = string * Location.t option * AnnotatedSignature.t option
 
 (* callee signature *)

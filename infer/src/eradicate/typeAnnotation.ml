@@ -31,8 +31,8 @@ let set_nullable b = set_value Nullable b
 
 let set_present b = set_value Present b
 
-let descr_origin tenv ta =
-  let descr_opt = TypeOrigin.get_description tenv ta.origin in
+let descr_origin ta =
+  let descr_opt = TypeOrigin.get_description ta.origin in
   match descr_opt with
   | None ->
       ("", None, None)
