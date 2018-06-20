@@ -76,4 +76,11 @@ class FutureGet {
       future.get(5000001L, TimeUnit.MICROSECONDS);
     } catch (TimeoutException e) {}
   }
+
+  @UiThread
+  void getTimeout64BitsBad() throws InterruptedException, ExecutionException {
+    try {
+      future.get(9223372036854775807L, TimeUnit.MICROSECONDS);
+    } catch (TimeoutException e) {}
+  }
 }

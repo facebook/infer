@@ -88,6 +88,9 @@ val shift_right : t -> t -> t
 val sub : t -> t -> t
 
 val to_int : t -> int
+(** throws exception if literal is not representable as an OCaml int *)
+
+val to_float : t -> float
 
 val to_signed : t -> t option
 

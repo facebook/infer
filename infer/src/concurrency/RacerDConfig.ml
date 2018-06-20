@@ -632,7 +632,7 @@ module Models = struct
         | _, [AccessPath.FieldAccess field]
           when String.equal "java.util.concurrent.TimeUnit" (Typ.Fieldname.Java.get_class field) ->
             let fieldname = Typ.Fieldname.Java.get_field field in
-            let duration = float_of_int (IntLit.to_int duration_lit) in
+            let duration = IntLit.to_float duration_lit in
             String.Map.find time_units fieldname
             |> Option.value_map ~default:false ~f:(fun unit_in_secs ->
                    unit_in_secs *. duration >. android_anr_time_limit )
