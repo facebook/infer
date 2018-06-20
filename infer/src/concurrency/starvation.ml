@@ -436,7 +436,7 @@ let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map
       EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
-let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
+let reporting {Callbacks.procedures; source_file; get_proc_desc} =
   let report_procedure ((_, proc_desc) as env) =
     die_if_not_java proc_desc ;
     if should_report proc_desc then
@@ -446,5 +446,4 @@ let reporting {Callbacks.procedures; get_proc_desc; exe_env} =
              |> report_starvation env get_proc_desc summary |> ReportMap.log )
   in
   List.iter procedures ~f:report_procedure ;
-  let sourcefile = exe_env.Exe_env.source_file in
-  IssueLog.store Config.starvation_issues_dir_name sourcefile
+  IssueLog.store Config.starvation_issues_dir_name source_file

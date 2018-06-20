@@ -26,6 +26,7 @@ type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
   { procedures: (Tenv.t * Procdesc.t) list
+  ; source_file: SourceFile.t
   ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; exe_env: Exe_env.t }
 
@@ -37,5 +38,5 @@ val register_procedure_callback : ?dynamic_dispatch:bool -> Language.t -> proc_c
 val register_cluster_callback : Language.t -> cluster_callback_t -> unit
 (** register a cluster callback *)
 
-val iterate_callbacks : Exe_env.t -> unit
-(** Invoke all the registered callbacks. *)
+val analyze_file : Exe_env.t -> SourceFile.t -> unit
+(** Invoke all the registered callbacks on the given file. *)

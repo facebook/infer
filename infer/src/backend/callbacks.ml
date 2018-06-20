@@ -22,6 +22,7 @@ type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
   { procedures: (Tenv.t * Procdesc.t) list
+  ; source_file: SourceFile.t
   ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; exe_env: Exe_env.t }
 
@@ -75,10 +76,10 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
 
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
-let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
+let iterate_cluster_callbacks all_procs exe_env source_file get_proc_desc =
   if !cluster_callbacks <> [] then
     let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
-    let environment = {procedures; get_proc_desc; exe_env} in
+    let environment = {procedures; source_file; get_proc_desc; exe_env} in
     let language_matches language =
       match procedures with
       | (_, pdesc) :: _ ->
@@ -91,7 +92,7 @@ let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
       !cluster_callbacks
 
 
-let dump_duplicate_procs (exe_env: Exe_env.t) procs =
+let dump_duplicate_procs (exe_env: Exe_env.t) source_file procs =
   let duplicate_procs =
     List.filter_map procs ~f:(fun pname ->
         match Exe_env.get_proc_desc exe_env pname with
@@ -99,9 +100,9 @@ let dump_duplicate_procs (exe_env: Exe_env.t) procs =
           match Attributes.load pname with
           | Some {translation_unit; loc}
             when (* defined in another file *)
-                 not (SourceFile.equal exe_env.source_file translation_unit)
+                 not (SourceFile.equal source_file translation_unit)
                  && (* really defined in the current file and not in an include *)
-                    SourceFile.equal exe_env.source_file loc.file ->
+                    SourceFile.equal source_file loc.file ->
               Some (pname, translation_unit)
           | _ ->
               None )
@@ -114,8 +115,7 @@ let dump_duplicate_procs (exe_env: Exe_env.t) procs =
         let fmt = F.formatter_of_out_channel outc in
         List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
             F.fprintf fmt "@.DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@."
-              SourceFile.pp exe_env.source_file SourceFile.pp source_captured Typ.Procname.pp pname
-        ) )
+              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) )
   in
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
@@ -126,7 +126,7 @@ let create_perf_stats_report source_file =
 
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
-let iterate_callbacks (exe_env: Exe_env.t) =
+let analyze_file (exe_env: Exe_env.t) source_file =
   let saved_language = !Language.curr_language in
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
@@ -142,15 +142,15 @@ let iterate_callbacks (exe_env: Exe_env.t) =
   (* Invoke procedure callbacks using on-demand analysis schedulling *)
   let procs_to_analyze =
     (* analyze all the currently defined procedures *)
-    SourceFiles.proc_names_of_source exe_env.source_file
+    SourceFiles.proc_names_of_source source_file
   in
-  if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env procs_to_analyze ;
+  if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env source_file procs_to_analyze ;
   let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
-  iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;
+  iterate_cluster_callbacks procs_to_analyze exe_env source_file get_proc_desc ;
   (* Perf logging needs to remain at the end - after analysis work is complete *)
-  create_perf_stats_report exe_env.source_file ;
+  create_perf_stats_report source_file ;
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Language.curr_language := saved_language

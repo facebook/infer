@@ -366,7 +366,6 @@ let write_html_file linereader filename procs =
 
 (** Create filename.ext.html for each file in the cluster. *)
 let write_all_html_files cluster =
-  let exe_env = Exe_env.mk cluster in
   let opt_whitelist_regex =
     match Config.write_html_whitelist_regex with
     | [] ->
@@ -380,8 +379,8 @@ let write_all_html_files cluster =
         Str.string_match regex fname 0 )
   in
   let linereader = LineReader.create () in
-  Exe_env.iter_files
-    (fun _ cfg ->
+  let cfg = Cfg.load cluster in
+  Option.iter cfg ~f:(fun cfg ->
       let source_files_in_cfg, pdescs_in_cfg =
         Typ.Procname.Hash.fold
           (fun _ proc_desc (files, pdescs) ->
@@ -397,4 +396,3 @@ let write_all_html_files cluster =
       SourceFile.Set.iter
         (fun file -> write_html_file linereader file pdescs_in_cfg)
         source_files_in_cfg )
-    exe_env

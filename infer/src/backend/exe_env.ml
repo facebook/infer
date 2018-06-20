@@ -8,7 +8,8 @@
 
 open! IStd
 
-(** Support for Execution environments *)
+(** Execution environments: basically a cache of where procedures are and what is their CFG and type
+   environment *)
 
 module L = Logging
 
@@ -36,8 +37,7 @@ let create_file_data table source =
 
 type t =
   { proc_map: file_data Typ.Procname.Hash.t  (** map from procedure name to file data *)
-  ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *)
-  ; source_file: SourceFile.t  (** source file being analyzed *) }
+  ; file_map: file_data SourceFile.Hash.t  (** map from source files to file data *) }
 
 let get_file_data exe_env pname =
   try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Caml.Not_found ->
@@ -91,13 +91,14 @@ let get_tenv exe_env proc_name =
       | Some tenv ->
           tenv
       | None ->
+          let loc = State.get_loc () in
           L.(die InternalError)
-            "get_tenv: tenv not found for %a in file '%a'" Typ.Procname.pp proc_name SourceFile.pp
-            exe_env.source_file )
+            "get_tenv: tenv not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
+            SourceFile.pp loc.Location.file Location.pp loc )
     | None ->
         let loc = State.get_loc () in
         L.(die InternalError)
-          "get_tenv: file_data not found for %a in file %a at %a" Typ.Procname.pp proc_name
+          "get_tenv: file_data not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
           SourceFile.pp loc.Location.file Location.pp loc
 
 
@@ -119,12 +120,4 @@ let get_proc_desc exe_env pname =
       None
 
 
-let mk source_file =
-  {proc_map= Typ.Procname.Hash.create 17; file_map= SourceFile.Hash.create 1; source_file}
-
-
-(** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
-let iter_files f exe_env =
-  let source = exe_env.source_file in
-  let cfg = Cfg.load source in
-  Option.iter ~f:(f source) cfg
+let mk () = {proc_map= Typ.Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}

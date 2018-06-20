@@ -1483,7 +1483,7 @@ let aggregate_by_class file_env =
 (* Gathers results by analyzing all the methods in a file, then
    post-processes the results to check an (approximation of) thread
    safety *)
-let file_analysis {Callbacks.procedures; exe_env} =
+let file_analysis {Callbacks.procedures; source_file} =
   String.Map.iter
     ~f:(fun class_env ->
       let tenv = fst (List.hd_exn class_env) in
@@ -1493,5 +1493,4 @@ let file_analysis {Callbacks.procedures; exe_env} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env) )
     (aggregate_by_class procedures) ;
-  let sourcefile = exe_env.Exe_env.source_file in
-  IssueLog.store Config.racerd_issues_dir_name sourcefile
+  IssueLog.store Config.racerd_issues_dir_name source_file

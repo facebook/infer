@@ -17,13 +17,13 @@ let create_exe_env_tasks source_file exe_env : Tasks.t =
   Typ.Procname.SQLite.clear_cache () ;
   Random.self_init () ;
   [ (fun () ->
-      Callbacks.iterate_callbacks exe_env ;
+      Callbacks.analyze_file exe_env source_file ;
       if Config.write_html then Printer.write_all_html_files source_file ) ]
 
 
 (** Create tasks to analyze a cluster *)
 let create_source_file_tasks (source_file: SourceFile.t) : Tasks.t =
-  let exe_env = Exe_env.mk source_file in
+  let exe_env = Exe_env.mk () in
   L.(debug Analysis Medium) "@\nProcessing '%a'@." SourceFile.pp source_file ;
   create_exe_env_tasks source_file exe_env
 
