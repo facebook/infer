@@ -45,12 +45,10 @@ val get_unqualified_name : Clang_ast_t.named_decl_info -> string
 val get_class_name_from_member : Clang_ast_t.named_decl_info -> QualifiedCppName.t
 (** returns qualified class name given member name info *)
 
-val get_type :
-  ?source_range:Clang_ast_t.source_range -> Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
+val get_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 (** looks up clang pointer to type and returns c_type. It requires type_ptr to be `TPtr. *)
 
-val get_desugared_type :
-  ?source_range:Clang_ast_t.source_range -> Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
+val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 (** looks up clang pointer to type and resolves any sugar around it.
     See get_type for more info and restrictions *)
 

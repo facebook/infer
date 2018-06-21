@@ -1074,11 +1074,7 @@ let has_type_const_ptr_to_objc_class node =
   let open Clang_ast_t in
   match get_ast_node_type_ptr node with
   | Some type_ptr -> (
-    match
-      CAst_utils.get_desugared_type
-        ~source_range:(Ctl_parser_types.ast_node_source_range node)
-        type_ptr
-    with
+    match CAst_utils.get_desugared_type type_ptr with
     | Some (ObjCObjectPointerType (_, qt)) ->
         qt.qt_is_const
     | _ ->
