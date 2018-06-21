@@ -4,8 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#import <UIKit/UIKit.h>
 #import <AVFoundation/AVPlayer.h>
+#import <Foundation/NSDictionary.h>
+#import <Photos/PHAssetResource.h>
+#import <UIKit/UIImagePickerController.h>
+#import <UIKit/UIKit.h>
 
 @interface Unavailable_api_allowed_cases : NSObject
 
@@ -204,6 +207,16 @@
   if ([self.player respondsToSelector:@selector(playImmediatelyAtRate:)]) {
     [self.player playImmediatelyAtRate:-1.0];
   }
+}
+
+// no bug
+- (PHAsset*)improper_ios_version_good:(NSDictionary*)info {
+  PHAsset* videoAsset = NULL;
+  if (@available(iOS 11, *)) { // not strictly correct version number, should be
+                               // "11.0" We should handle this case anyway.
+    videoAsset = [info objectForKey:UIImagePickerControllerPHAsset];
+  }
+  return videoAsset;
 }
 
 @end
