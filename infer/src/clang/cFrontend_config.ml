@@ -44,8 +44,6 @@ exception Invalid_declaration
 
 let alloc = "alloc"
 
-let array_with_objects_count_m = "arrayWithObjects:count:"
-
 let assert_fail = "__assert_fail"
 
 let assert_rtn = "__assert_rtn"

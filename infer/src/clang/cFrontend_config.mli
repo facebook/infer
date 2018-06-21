@@ -45,8 +45,6 @@ exception Invalid_declaration
 
 val alloc : string
 
-val array_with_objects_count_m : string
-
 val assert_fail : string
 
 val assert_rtn : string

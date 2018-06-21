@@ -2566,34 +2566,40 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state message_stmt
 
 
-  and objCArrayLiteral_trans trans_state info stmt_info stmts =
-    let typ =
-      CType_decl.class_from_pointer_type trans_state.context.CContext.tenv
-        info.Clang_ast_t.ei_qual_type
-    in
-    let meth = CFrontend_config.array_with_objects_count_m in
-    let obj_c_mes_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
+  and objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer =
+    let open Clang_ast_t in
+    match CAst_utils.get_decl_opt method_pointer with
+    | Some (ObjCMethodDecl (decl_info, named_decl_info, _)) ->
+        let typ =
+          CAst_utils.qual_type_of_decl_ptr (Option.value_exn decl_info.di_parent_pointer)
+        in
+        let obj_c_mes_expr_info =
+          { Clang_ast_t.omei_selector= named_decl_info.Clang_ast_t.ni_name
+          ; omei_receiver_kind= `Class typ
+          ; omei_is_definition_found= true
+          ; omei_decl_pointer= method_pointer }
+        in
+        let message_stmt =
+          Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, expr_info, obj_c_mes_expr_info)
+        in
+        instruction trans_state message_stmt
+    | _ ->
+        Logging.die InternalError
+          "The method for translating array/dictionary literals is not available at %s"
+          (Clang_ast_j.string_of_stmt_info stmt_info)
+
+
+  and objCArrayLiteral_trans trans_state expr_info stmt_info stmts array_literal_info =
+    let method_pointer = array_literal_info.Clang_ast_t.oalei_array_method in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
-    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mes_expr_info) in
-    instruction trans_state message_stmt
+    objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
-  and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
-    let typ =
-      CType_decl.class_from_pointer_type trans_state.context.CContext.tenv
-        info.Clang_ast_t.ei_qual_type
-    in
-    let dictionary_literal_pname = BuiltinDecl.__objc_dictionary_literal in
-    let dictionary_literal_s = Typ.Procname.get_method dictionary_literal_pname in
-    let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ None
-    in
+  and objCDictionaryLiteral_trans trans_state expr_info stmt_info stmts dict_literal_info =
+    let method_pointer = dict_literal_info.Clang_ast_t.odlei_dict_method in
     let stmts = CGeneral_utils.swap_elements_list stmts in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
-    let message_stmt =
-      Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info)
-    in
-    instruction trans_state message_stmt
+    objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
   and objCStringLiteral_trans trans_state stmt_info stmts info =
@@ -3283,10 +3289,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           objCBoxedExpr_trans trans_state info sel stmt_info stmts
       | None ->
           assert false )
-    | ObjCArrayLiteral (stmt_info, stmts, info) ->
-        objCArrayLiteral_trans trans_state info stmt_info stmts
-    | ObjCDictionaryLiteral (stmt_info, stmts, info) ->
-        objCDictionaryLiteral_trans trans_state info stmt_info stmts
+    | ObjCArrayLiteral (stmt_info, stmts, expr_info, array_literal_info) ->
+        objCArrayLiteral_trans trans_state expr_info stmt_info stmts array_literal_info
+    | ObjCDictionaryLiteral (stmt_info, stmts, expr_info, dict_literal_info) ->
+        objCDictionaryLiteral_trans trans_state expr_info stmt_info stmts dict_literal_info
     | ObjCStringLiteral (stmt_info, stmts, info) ->
         objCStringLiteral_trans trans_state stmt_info stmts info
     | BreakStmt (stmt_info, _) ->

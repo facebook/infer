@@ -84,10 +84,8 @@ let __objc_alloc_no_fail = create_procname "__objc_alloc_no_fail"
 
 let __objc_cast = create_procname "__objc_cast"
 
-(* We don't need to add parameters to this one because it is used to translate dictionary literals
-and the actual method doesn't appear in the AST, instead we create the corresponding AST bit in cTrans. *)
 let __objc_dictionary_literal =
-  create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:" []
+  create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:" [None; None; None]
 
 
 let __placement_delete = create_procname "__placement_delete"
@@ -141,9 +139,9 @@ let nsArray_arrayWithObjects =
   create_objc_class_method "NSArray" "arrayWithObjects:" [Some objc_object]
 
 
-(* We don't need to add parameters to this one because it is used to translate array literals
-  and the actual method doesn't appear in the AST, instead we create the corresponding AST bit in cTrans. *)
-let nsArray_arrayWithObjectsCount = create_objc_class_method "NSArray" "arrayWithObjects:count:" []
+let nsArray_arrayWithObjectsCount =
+  create_objc_class_method "NSArray" "arrayWithObjects:count:" [None; None]
+
 
 let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
 
