@@ -45,6 +45,8 @@ val ui_thread : string
 
 val visibleForTesting : string
 
+val generated_graphql : string
+
 val annot_ends_with : Annot.t -> string -> bool
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
     is equal to [ann_name] *)
@@ -53,8 +55,6 @@ val ia_ends_with : Annot.Item.t -> string -> bool
 (** Check if there is an annotation in [ia] which ends with the given name *)
 
 val ia_has_annotation_with : Annot.Item.t -> (Annot.t -> bool) -> bool
-
-val ia_get_strict : Annot.Item.t -> Annot.t option
 
 val ia_is_false_on_null : Annot.Item.t -> bool
 

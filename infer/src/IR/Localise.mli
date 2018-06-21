@@ -41,9 +41,6 @@ module BucketLevel : sig
   (** lowest likelihood *)
 end
 
-val error_desc_extract_tag_value : error_desc -> string -> string
-(** returns the value of a tag or the empty string *)
-
 val error_desc_get_bucket : error_desc -> string option
 (** get the bucket value of an error_desc, if any *)
 

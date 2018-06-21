@@ -230,8 +230,7 @@ module IssuesJson = struct
       not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
     in
     if
-      key.in_footprint && error_filter source_file key.err_desc key.err_name
-      && should_report_source_file
+      key.in_footprint && error_filter source_file key.err_name && should_report_source_file
       && should_report key.err_kind key.err_name key.err_desc err_data.err_class
     then (
       let kind = Exceptions.err_kind_string key.err_kind in
@@ -380,7 +379,7 @@ module IssuesTxt = struct
           err_data.loc.Location.file
     in
     if
-      key.in_footprint && error_filter source_file key.err_desc key.err_name
+      key.in_footprint && error_filter source_file key.err_name
       && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
     then
       Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.err_kind
@@ -472,7 +471,7 @@ module Stats = struct
     let found_errors = ref false in
     let process_row (key: Errlog.err_key) (err_data: Errlog.err_data) =
       let type_str = key.err_name.IssueType.unique_id in
-      if key.in_footprint && error_filter key.err_desc key.err_name then
+      if key.in_footprint && error_filter key.err_name then
         match key.err_kind with
         | Exceptions.Kerror ->
             found_errors := true ;
@@ -646,13 +645,10 @@ module Issue = struct
     issues'
 end
 
-let error_filter filters proc_name file error_desc error_name =
-  let always_report () =
-    String.equal (Localise.error_desc_extract_tag_value error_desc "always_report") "true"
-  in
+let error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
-  && (filters.Inferconfig.path_filter file || always_report ())
-  && filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
+  && filters.Inferconfig.path_filter file && filters.Inferconfig.error_filter error_name
+  && filters.Inferconfig.proc_filter proc_name
 
 
 type report_kind = Issues | Procs | Stats | Summary [@@deriving compare]

@@ -211,63 +211,43 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
 
 (* print now if it's not a forall check *)
 
-module Strict = struct
-  let method_get_strict (signature: AnnotatedSignature.t) =
-    let ia, _ = signature.ret in
-    Annotations.ia_get_strict ia
+module Severity = struct
+  let get_severity ia =
+    if Annotations.ia_ends_with ia Annotations.generated_graphql then Some Exceptions.Kerror
+    else None
 
 
-  let this_type_get_strict tenv (signature: AnnotatedSignature.t) =
+  let this_type_get_severity tenv (signature: AnnotatedSignature.t) =
     match signature.params with
-    | (p, _, this_type) :: _ when String.equal (Mangled.to_string p) "this" -> (
-      match PatternMatch.type_get_annotation tenv this_type with
-      | Some ia ->
-          Annotations.ia_get_strict ia
-      | None ->
-          None )
+    | (p, _, this_type) :: _ when String.equal (Mangled.to_string p) "this" ->
+        Option.bind ~f:get_severity (PatternMatch.type_get_annotation tenv this_type)
     | _ ->
         None
 
 
-  let signature_get_strict tenv signature =
-    match method_get_strict signature with
-    | None ->
-        this_type_get_strict tenv signature
-    | Some x ->
-        Some x
-
-
-  let origin_descr_get_strict tenv origin_descr =
+  let origin_descr_get_severity tenv origin_descr =
     match origin_descr with
     | _, _, Some signature ->
-        signature_get_strict tenv signature
+        this_type_get_severity tenv signature
     | _, _, None ->
         None
 
 
-  let report_on_method_arguments = false
-
-  (* Return (Some parameters) if there is a method call on a @Nullable object,*)
-  (* where the origin of @Nullable in the analysis is the return value of a Strict method*)
-  (* with parameters. A method is Strict if it or its class are annotated @Strict. *)
-  let err_instance_get_strict tenv err_instance : Annot.t option =
+  let err_instance_get_severity tenv err_instance : Exceptions.err_kind option =
     match err_instance with
     | Call_receiver_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->
-        origin_descr_get_strict tenv origin_descr
-    | Parameter_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, _, _, origin_descr)
-      when report_on_method_arguments ->
-        origin_descr_get_strict tenv origin_descr
+        origin_descr_get_severity tenv origin_descr
     | _ ->
         None
 end
 
-(* Strict *)
+(* Severity *)
 
 type st_report_error =
   Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
   -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?always_report:bool -> string -> unit
+  -> ?severity:Exceptions.err_kind -> string -> unit
 
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error: st_report_error) err_instance loc pdesc : unit =
@@ -447,10 +427,10 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , None
         , None )
   in
-  let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
+  let severity = Severity.err_instance_get_severity tenv err_instance in
   st_report_error pname pdesc kind loc ~field_name ~origin_loc
     ~exception_kind:(fun k d -> Exceptions.Eradicate (k, d))
-    ~always_report description
+    ?severity description
 
 
 (** Report an error unless is has been reported already, or unless it's a forall error

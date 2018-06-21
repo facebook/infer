@@ -6,15 +6,24 @@
  *)
 
 open! IStd
+module L = Logging
 
 (** Module for user-defined checkers. *)
 
 module ST = struct
   let report_error tenv proc_name proc_desc kind loc ?(field_name= None) ?(origin_loc= None)
-      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(always_report= false) description =
-    let localized_description =
-      Localise.custom_desc description [("always_report", string_of_bool always_report)]
+      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(severity= Exceptions.Kwarning)
+      description =
+    let log =
+      match severity with
+      | Exceptions.Kwarning ->
+          Reporting.log_warning_deprecated
+      | Exceptions.Kerror ->
+          Reporting.log_error_deprecated
+      | _ ->
+          L.(die InternalError) "Severity not supported"
     in
+    let localized_description = Localise.custom_desc description [] in
     let exn = exception_kind kind localized_description in
     let suppressed = Reporting.is_suppressed tenv proc_desc kind ~field_name in
     let trace =
@@ -27,5 +36,5 @@ module ST = struct
       in
       origin_elements @ [Errlog.make_trace_element 0 loc description []]
     in
-    if not suppressed then Reporting.log_warning_deprecated proc_name ~loc ~ltr:trace exn
+    if not suppressed then log proc_name ~loc ~ltr:trace exn
 end

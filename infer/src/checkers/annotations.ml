@@ -85,7 +85,7 @@ let returns_ownership = "ReturnsOwnership"
 
 let synchronized_collection = "SynchronizedCollection"
 
-let strict = "com.facebook.infer.annotation.Strict"
+let generated_graphql = "GeneratedGraphQL"
 
 let suppress_lint = "SuppressLint"
 
@@ -131,8 +131,6 @@ let class_name_matches s ((annot: Annot.t), _) = String.equal s annot.class_name
 let ia_ends_with ia ann_name = List.exists ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
 
 let ia_contains ia ann_name = List.exists ~f:(class_name_matches ann_name) ia
-
-let ia_get ia ann_name = List.find ~f:(class_name_matches ann_name) ia |> Option.map ~f:fst
 
 let pdesc_get_return_annot pdesc =
   fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
@@ -218,8 +216,6 @@ let ia_is_field_injector_readwrite ia =
 
 
 let ia_is_mutable ia = ia_ends_with ia mutable_
-
-let ia_get_strict ia = ia_get ia strict
 
 let ia_is_verify ia = ia_contains ia verify_annotation
 

@@ -87,13 +87,6 @@ module BucketLevel = struct
   let b5 = "B5"
 end
 
-(** takes in input a tag to extract from the given error_desc
-    and returns its value *)
-let error_desc_extract_tag_value err_desc tag_to_extract =
-  let find_value tag v = match v with t, _ when String.equal t tag -> true | _ -> false in
-  match List.find ~f:(find_value tag_to_extract) err_desc.tags with Some (_, s) -> s | None -> ""
-
-
 (** get the bucket value of an error_desc, if any *)
 let error_desc_get_bucket err_desc = Tags.get err_desc.tags Tags.bucket
 

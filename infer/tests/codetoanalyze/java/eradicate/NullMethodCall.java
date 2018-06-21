@@ -305,4 +305,7 @@ public class NullMethodCall {
     manager.cancel(intent);
   }
 
+  String callingSeverSideNullableGetter(ServerSideDeserializer deserializer) {
+    return deserializer.nullableGetter().toString();
+  }
 }
