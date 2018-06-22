@@ -29,8 +29,6 @@ val stmt_node_child_type : ast_node -> string
 
 val ast_node_cast_kind : ast_node -> string
 
-val ast_node_source_range : ast_node -> Clang_ast_t.source_range
-
 val is_node_successor_of : is_successor:ast_node -> ast_node -> bool
 
 val get_direct_successor_nodes : ast_node -> ast_node list

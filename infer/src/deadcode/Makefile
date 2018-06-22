@@ -49,6 +49,7 @@ depend:
 	  -I java -I labs -I python -I quandary -I unit -I unit/clang -I deadcode \
 	   $(ml_src_files) > deadcode/.depend
 
+# circular dependency... not sure how to fix properly
 %.cmi: %.cmx
 #	deal with the .ml *and* the .mli at the same time: when all the modules are inlined in one
 #	file, you need the module value to be defined before you can refer to it, even in

@@ -88,16 +88,6 @@ let ast_node_kind node =
       Clang_ast_proj.get_decl_kind_string decl
 
 
-let ast_node_source_range node =
-  match node with
-  | Stmt stmt ->
-      let s_stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-      s_stmt_info.si_source_range
-  | Decl decl ->
-      let d_decl_info = Clang_ast_proj.get_decl_tuple decl in
-      d_decl_info.di_source_range
-
-
 (* true iff an ast node is a node of type among the list tl *)
 let ast_node_has_kind tl an =
   let an_alexp = ALVar.Const (ast_node_kind an) in
