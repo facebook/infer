@@ -8,6 +8,17 @@
 open! IStd
 module F = Format
 
+(** Master function for deciding whether RacerD should completely ignore a variable as the root
+    of an access path.  Currently fires on *static locals* and any variable which does not
+    appear in source code (eg, temporary variables and frontend introduced variables).
+    This is because currently reports on these variables would not be easily actionable.
+
+    This is here and not in RacerDConfig to avoid dependency cycles. *)
+let should_skip_var v =
+  not (Var.appears_in_source_code v)
+  || match v with Var.ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
+
+
 module Access = struct
   type t =
     | Read of AccessPath.t
@@ -304,7 +315,16 @@ module AccessSnapshot = struct
       thread lock OwnershipPrecondition.pp ownership_precondition
 end
 
-module AccessDomain = AbstractDomain.FiniteSet (AccessSnapshot)
+module AccessDomain = struct
+  include AbstractDomain.FiniteSet (AccessSnapshot)
+
+  let add ({AccessSnapshot.access= {kind}} as s) astate =
+    let skip =
+      Access.get_access_path kind
+      |> Option.value_map ~default:false ~f:(fun ((v, _), _) -> should_skip_var v)
+    in
+    if skip then astate else add s astate
+end
 
 module OwnershipAbstractValue = struct
   type astate = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
@@ -498,7 +518,7 @@ module StabilityDomain = struct
   let add_path (access_path: AccessPath.t) t =
     let (base, _), accesses = access_path in
     (* Without this check, short prefixes will override longer paths in the tree *)
-    if mem (AccessPath.Abs.Abstracted access_path) t then t
+    if should_skip_var base || mem (AccessPath.Abs.Abstracted access_path) t then t
     else
       match (base, accesses) with
       (* Do not add a vanilla "this" as a prefix *)

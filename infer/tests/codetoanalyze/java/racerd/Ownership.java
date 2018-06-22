@@ -353,7 +353,7 @@ public class Ownership {
     castThenReturn(o).f = new Object();
   }
 
-  void castThenReturnBad() {
+  void FN_castThenReturnBad() {
     Obj o = getMaybeUnownedObj();
     castThenReturn(o).f = new Object();
   }
@@ -450,7 +450,7 @@ public class Ownership {
     o.f = null; // don't know that this.unownedField2 is owned
   }
 
-  void reassignParamToUnownedBad() {
+  void FN_reassignParamToUnownedBad() {
     reassignParamToUnowned(new Obj()); // although o is owned here, it gets reassigned in the callee
   }
 

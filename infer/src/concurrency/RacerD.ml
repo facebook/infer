@@ -106,12 +106,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_access exp loc ~is_write_access accesses locks threads ownership
       (proc_data: extras ProcData.t) =
     let open Domain in
-    let is_static_access = function
-      | Var.ProgramVar pvar ->
-          Pvar.is_static_local pvar
-      | _ ->
-          false
-    in
     let rec add_field_accesses prefix_path access_acc = function
       | [] ->
           access_acc
@@ -145,7 +139,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     List.fold
       ~f:(fun acc access_expr ->
         let base, accesses = AccessExpression.to_access_path access_expr in
-        if is_static_access (fst base) then acc else add_field_accesses (base, []) acc accesses )
+        add_field_accesses (base, []) acc accesses )
       ~init:accesses (HilExp.get_access_exprs exp)
 
 

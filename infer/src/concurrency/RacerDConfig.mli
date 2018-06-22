@@ -15,10 +15,9 @@ module Models : sig
 
   type container_access = ContainerRead | ContainerWrite
 
-  (* TODO: clean this up so it takes only a procname *)
-
   val is_thread_utils_method : string -> Typ.Procname.t -> bool
-  (** return true if the given method name is a utility class for checking what thread we're on *)
+  (** return true if the given method name is a utility class for checking what thread we're on
+      TODO: clean this up so it takes only a procname *)
 
   val get_lock : Typ.Procname.t -> HilExp.t list -> lock
   (** describe how this procedure behaves with respect to locking *)

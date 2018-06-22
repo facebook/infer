@@ -77,7 +77,7 @@ struct TSL {
     BSS().toJson_ok();
   }
 
-  void not_locked_race(dynamic& ret) { BSS().toJson_race(ret); }
+  void FN_not_locked_race(dynamic& ret) { BSS().toJson_race(ret); }
 
   void locked_race(dynamic& ret) {
     std::lock_guard<std::mutex> lock(mutex_);
