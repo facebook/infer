@@ -125,4 +125,4 @@ void call_while_upto20_minus100_bad() { while_upto20_bad(-100); }
 
 void call_while_upto20_10_good() { while_upto20_bad(10); }
 
-void call_while_upto20_unsigned_good_FP(unsigned x) { while_upto20_bad(x); }
+void call_while_upto20_unsigned_good(unsigned x) { while_upto20_bad(x); }

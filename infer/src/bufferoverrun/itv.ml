@@ -156,6 +156,8 @@ module Ints : sig
 
     val one : t
 
+    val of_int : int -> t option
+
     val of_int_exn : int -> t
 
     val is_zero : t -> bool
@@ -195,6 +197,8 @@ end = struct
     let is_zero = function 0 -> true | _ -> false
 
     let is_one = function 1 -> true | _ -> false
+
+    let of_int i = if i < 0 then None else Some i
 
     let of_int_exn i =
       assert (i >= 0) ;
@@ -372,6 +376,13 @@ module SymLinear = struct
 
   let get_symbols : t -> Symbol.t list =
    fun x -> M.fold (fun symbol _coeff acc -> symbol :: acc) x []
+
+
+  (* we can give integer bounds (obviously 0) only when all symbols are unsigned *)
+
+  let int_lb x = if is_ge_zero x then Some 0 else None
+
+  let int_ub x = if is_le_zero x then Some 0 else None
 end
 
 module Bound = struct
@@ -614,6 +625,28 @@ module Bound = struct
         None
     | MInf | PInf | Linear _ ->
         assert false
+
+
+  let int_lb = function
+    | MInf ->
+        None
+    | PInf ->
+        assert false
+    | MinMax _ as b ->
+        int_lb_of_minmax b
+    | Linear (c, se) ->
+        SymLinear.int_lb se |> Option.map ~f:(( + ) c)
+
+
+  let int_ub = function
+    | MInf ->
+        assert false
+    | PInf ->
+        None
+    | MinMax _ as b ->
+        int_ub_of_minmax b
+    | Linear (c, se) ->
+        SymLinear.int_ub se |> Option.map ~f:(( + ) c)
 
 
   let linear_ub_of_minmax = function
@@ -970,6 +1003,13 @@ module NonNegativeBound = struct
 
   let of_bound b = if Bound.le b Bound.zero then Bound.zero else b
 
+  let int_lb b =
+    Bound.int_lb b |> Option.bind ~f:NonNegativeInt.of_int
+    |> Option.value ~default:NonNegativeInt.zero
+
+
+  let int_ub b = Bound.int_ub b |> Option.map ~f:NonNegativeInt.of_int_exn
+
   let classify = function
     | Bound.PInf ->
         ValTop
@@ -993,6 +1033,10 @@ end
 
 module type NonNegativeSymbol = sig
   type t [@@deriving compare]
+
+  val int_lb : t -> NonNegativeInt.t
+
+  val int_ub : t -> NonNegativeInt.t option
 
   val subst : t -> Bound.t bottom_lifted SymbolMap.t -> (NonNegativeInt.t, t) valclass
 
@@ -1141,12 +1185,33 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
       mult_const p1 p2.const |> M.fold (fun s p acc -> plus (mult_symb (mult p p1) s) acc) p2.terms
 
 
+  let rec int_lb {const; terms} =
+    M.fold
+      (fun symbol polynomial acc ->
+        let s_lb = S.int_lb symbol in
+        let p_lb = int_lb polynomial in
+        NonNegativeInt.((s_lb * p_lb) + acc) )
+      terms const
+
+
+  let rec int_ub {const; terms} =
+    M.fold
+      (fun symbol polynomial acc ->
+        Option.bind acc ~f:(fun acc ->
+            Option.bind (S.int_ub symbol) ~f:(fun s_ub ->
+                Option.map (int_ub polynomial) ~f:(fun p_ub -> NonNegativeInt.((s_ub * p_ub) + acc))
+            ) ) )
+      terms (Some const)
+
+
   (* assumes symbols are not comparable *)
   let rec ( <= ) : lhs:t -> rhs:t -> bool =
    fun ~lhs ~rhs ->
     phys_equal lhs rhs
     || NonNegativeInt.( <= ) ~lhs:lhs.const ~rhs:rhs.const
        && M.le ~le_elt:( <= ) lhs.terms rhs.terms
+    || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
+           NonNegativeInt.( <= ) ~lhs:lhs_ub ~rhs:(int_lb rhs) )
 
 
   let rec xcompare ~lhs ~rhs =
