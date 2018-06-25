@@ -940,7 +940,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* translating the operands.                                       *)
         let res_trans_e1 = instruction trans_state' s1 in
         let (exp1, typ1) as exp_typ1 = res_trans_e1.return in
-        let trans_state'' = {trans_state' with var_exp_typ= Some exp_typ1} in
+        let var_exp_typ =
+          match binary_operator_info.Clang_ast_t.boi_kind with
+          | `Assign ->
+              Some exp_typ1
+          | _ ->
+              None
+        in
+        let trans_state'' = {trans_state' with var_exp_typ} in
         let res_trans_e2 =
           (* translation of s2 is done taking care of block special case *)
           exec_with_block_priority_exception instruction trans_state'' s2 stmt_info

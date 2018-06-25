@@ -47,4 +47,7 @@ void list_init() {
   Y& yref = y;
   Y ty[3] = {{1, {2, nullptr}}, y, yref};
 }
+
+void init_in_binop(int x) { x = -x & ~int{0}; }
+
 } // namespace init_list

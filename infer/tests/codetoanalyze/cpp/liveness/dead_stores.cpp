@@ -476,4 +476,6 @@ class Exceptions {
   }
 };
 
+void init_in_binop_bad(int x) { x = -x & ~int{0}; }
+
 } // namespace dead_stores
