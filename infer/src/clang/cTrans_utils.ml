@@ -126,7 +126,7 @@ type trans_state =
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option
-  ; is_fst_arg_objc_method_call: bool }
+  ; is_fst_arg_objc_instance_method_call: bool }
 
 let default_trans_state context =
   { context
@@ -135,7 +135,7 @@ let default_trans_state context =
   ; priority= Free
   ; var_exp_typ= None
   ; opaque_exp= None
-  ; is_fst_arg_objc_method_call= false }
+  ; is_fst_arg_objc_instance_method_call= false }
 
 
 type control =

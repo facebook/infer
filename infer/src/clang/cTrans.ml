@@ -775,7 +775,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let return =
       if Self.is_var_self pvar (CContext.is_objc_method context) && CType.is_class typ then
         let class_name = CContext.get_curr_class_typename stmt_info context in
-        if trans_state.is_fst_arg_objc_method_call then
+        if trans_state.is_fst_arg_objc_instance_method_call then
           raise
             (Self.SelfClassException
                {class_name; position= __POS__; source_range= stmt_info.Clang_ast_t.si_source_range})
@@ -1198,7 +1198,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CMethod_trans.get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info
           act_params
       in
-      if trans_state.is_fst_arg_objc_method_call then
+      if trans_state.is_fst_arg_objc_instance_method_call then
         raise
           (Self.SelfClassException
              {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
@@ -1232,7 +1232,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           List.map ~f:(exec_with_glvalue_as_reference instruction trans_state_param) rest
         in
         try
-          let trans_state_param' = {trans_state_param with is_fst_arg_objc_method_call= true} in
+          let trans_state_param' =
+            match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
+            | `Instance | `SuperInstance ->
+                {trans_state_param with is_fst_arg_objc_instance_method_call= true}
+            | _ ->
+                {trans_state_param with is_fst_arg_objc_instance_method_call= false}
+          in
           let fst_res_trans = instruction trans_state_param' stmt in
           (obj_c_message_expr_info, fst_res_trans :: param_trans_results)
         with Self.SelfClassException e ->

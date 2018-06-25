@@ -6,6 +6,7 @@
  */
 
 #import <Foundation/NSObject.h>
+#import <Foundation/NSBundle.h>
 
 @interface B : NSObject
 
@@ -105,4 +106,18 @@ BOOL class_method_in_conditional() {
   }
   return NO;
 }
+
+- (NSBundle*)class_method_fst_arg_of_class_method {
+  return [NSBundle bundleForClass:[A class]];
+}
+
++ (NSBundle*)class_method_fst_arg_of_class_method_inside_instance_method {
+  static NSBundle* bundle;
+  NSString* stringsBundlePath =
+      [[NSBundle bundleForClass:[B class]] pathForResource:@"Strings"
+                                                    ofType:@"bundle"];
+  bundle = [NSBundle bundleWithPath:stringsBundlePath] ?: [NSBundle mainBundle];
+  return bundle;
+}
+
 @end
