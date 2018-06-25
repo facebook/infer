@@ -506,106 +506,81 @@ module AttributeMapDomain = struct
 end
 
 module StabilityDomain = struct
-  include AccessTree.PathSet (AccessTree.DefaultConfig)
+  include AbstractDomain.FiniteSet (AccessPath)
 
-  let get_all_paths t =
-    fold
-      (fun paths z _ ->
-        match z with AccessPath.Abs.Abstracted p | AccessPath.Abs.Exact p -> p :: paths )
-      t []
+  let is_prefix (base, accesses) (base', accesses') =
+    AccessPath.equal_base base base'
+    && List.is_prefix ~equal:AccessPath.equal_access ~prefix:accesses accesses'
 
 
-  let add_path (access_path: AccessPath.t) t =
-    let (base, _), accesses = access_path in
-    (* Without this check, short prefixes will override longer paths in the tree *)
-    if should_skip_var base || mem (AccessPath.Abs.Abstracted access_path) t then t
-    else
-      match (base, accesses) with
-      (* Do not add a vanilla "this" as a prefix *)
-      | Var.ProgramVar pvar, []
-        when Pvar.is_this pvar ->
-          t
-      | _ ->
-          let ap_abs = AccessPath.Abs.Exact access_path in
-          add_trace ap_abs true t
-
-
-  let add_wobbly_path_exp exp paths =
-    let access_paths = AccessExpression.to_access_paths (HilExp.get_access_exprs exp) in
-    List.fold ~f:(fun acc p -> add_path p acc) access_paths ~init:paths
-
-
-  let add_wobbly_actuals exps paths =
-    (* Checking conditions for inter-procedural stability:
-       automatically add duplicating actuals, "deep" stability
-       checking will be handled by processing the method's footprint
-       and rebasing (see StabilityDomain.rebase_paths). *)
-    let is_dup_access_path e =
-      List.count exps ~f:(fun x ->
-          match (x, e) with
-          | HilExp.AccessExpression ae1, HilExp.AccessExpression ae2 ->
-              AccessPath.equal
-                (AccessExpression.to_access_path ae1)
-                (AccessExpression.to_access_path ae2)
-          | _, _ ->
-              false )
-      > 1
-    in
-    let is_prefix_exp x e =
-      match (x, e) with
-      | HilExp.AccessExpression ae1, HilExp.AccessExpression ae2 ->
-          let open AccessExpression in
-          let ap1, ap2 = (to_access_path ae1, to_access_path ae2) in
-          AccessPath.is_prefix ap1 ap2 && not (AccessPath.equal ap1 ap2)
-      | _ ->
+  let is_proper_prefix (base, accesses) (base', accesses') =
+    let rec aux xs ys =
+      match (xs, ys) with
+      | [], _ ->
+          not (List.is_empty ys)
+      | _, [] ->
           false
+      | w :: ws, z :: zs ->
+          AccessPath.equal_access w z && aux ws zs
     in
-    let find_all_prefixes e = List.filter exps ~f:(fun x -> is_prefix_exp x e) in
-    let with_duplicates =
-      List.fold exps ~init:paths ~f:(fun acc e ->
-          if is_dup_access_path e then add_wobbly_path_exp e acc else acc )
-    in
-    let with_prefixes =
-      List.fold exps ~init:with_duplicates ~f:(fun acc_paths e ->
-          List.fold (find_all_prefixes e) ~init:acc_paths ~f:(fun acc1 e1 ->
-              add_wobbly_path_exp e1 acc1 ) )
-    in
-    with_prefixes
+    AccessPath.equal_base base base' && aux accesses accesses'
 
 
-  let add_wobbly_paths_assign lhs_path rhs_exp paths =
-    let paths_with_lhs = add_path lhs_path paths in
-    let paths_with_lsh_rhs = add_wobbly_path_exp rhs_exp paths_with_lhs in
-    paths_with_lsh_rhs
+  let exists_prefix path_to_check t = exists (fun path -> is_prefix path path_to_check) t
+
+  let exists_proper_prefix path_to_check t =
+    exists (fun path -> is_proper_prefix path path_to_check) t
 
 
-  let rebase_paths actuals pdesc t =
+  let add_path path_to_add t =
+    if should_skip_var (fst path_to_add |> fst) || exists_prefix path_to_add t then t
+    else filter (fun path -> is_prefix path_to_add path |> not) t |> add path_to_add
+
+
+  let add_exp exp paths =
+    AccessExpression.to_access_paths (HilExp.get_access_exprs exp)
+    |> List.fold ~f:(fun acc p -> add_path p acc) ~init:paths
+
+
+  let add_assign lhs_path rhs_exp paths = add_path lhs_path paths |> add_exp rhs_exp
+
+  let actual_to_access_path actual_exp =
+    match HilExp.get_access_exprs actual_exp with
+    | [actual] ->
+        Some (AccessExpression.to_access_path actual)
+    | _ ->
+        None
+
+
+  let rebase actuals pdesc t =
     let formal_map = FormalMap.make pdesc in
-    let remove_pure_formals paths =
-      List.filter paths ~f:(fun p ->
-          match p with
-          | base, [] when FormalMap.get_formal_index base formal_map |> Option.is_some ->
-              false
-          | _ ->
-              true )
+    let expand_path ((base, accesses) as p) =
+      FormalMap.get_formal_index base formal_map |> Option.bind ~f:(List.nth actuals)
+      |> Option.bind ~f:actual_to_access_path
+      |> Option.value_map ~default:p ~f:(fun ap -> AccessPath.append ap accesses)
     in
-    let expand_path ((base, accesses) as path) =
-      match FormalMap.get_formal_index base formal_map with
-      | Some formal_index -> (
-        match List.nth actuals formal_index with
-        | Some actual_exp -> (
-          match HilExp.get_access_exprs actual_exp with
-          | [actual] ->
-              AccessPath.append (AccessExpression.to_access_path actual) accesses
-          | _ ->
-              path )
-        | None ->
-            path )
-      | None ->
-          path
+    fold
+      (fun ((_, accesses) as path) acc ->
+        if List.is_empty accesses then acc else add_path (expand_path path) acc )
+      t empty
+
+
+  let integrate_summary actuals pdesc_opt ~callee ~caller =
+    let rebased =
+      Option.value_map pdesc_opt ~default:callee ~f:(fun pdesc -> rebase actuals pdesc callee)
     in
-    get_all_paths t |> remove_pure_formals |> List.map ~f:expand_path
-    |> List.fold ~f:(fun acc p -> add_path p acc) ~init:empty
+    let joined = join rebased caller in
+    let actual_aps = List.filter_map actuals ~f:actual_to_access_path in
+    let rec aux acc left right =
+      match right with
+      | [] ->
+          acc
+      | ap :: aps ->
+          let all = List.rev_append left aps in
+          let acc' = if List.exists all ~f:(is_prefix ap) then add_path ap acc else acc in
+          aux acc' (ap :: left) aps
+    in
+    aux joined [] actual_aps
 end
 
 type astate =

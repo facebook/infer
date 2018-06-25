@@ -196,15 +196,16 @@ module AttributeMapDomain : sig
 end
 
 module StabilityDomain : sig
-  include module type of AccessTree.PathSet (AccessTree.DefaultConfig)
+  include AbstractDomain.WithBottom
 
-  val rebase_paths : HilExp.t list -> Procdesc.t -> t -> t
+  val add_assign : AccessPath.t -> HilExp.t -> astate -> astate
 
-  val add_wobbly_paths_assign : AccessPath.t -> HilExp.t -> t -> t
+  val add_path : AccessPath.t -> astate -> astate
 
-  val add_path : AccessPath.t -> t -> t
+  val exists_proper_prefix : AccessPath.t -> astate -> bool
 
-  val add_wobbly_actuals : HilExp.t list -> t -> t
+  val integrate_summary :
+    HilExp.t list -> Procdesc.t option -> callee:astate -> caller:astate -> astate
 end
 
 type astate =

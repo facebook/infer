@@ -33,7 +33,7 @@ static class Field {
      x = a.f.g;
   }
 
-  public void stable_bad() {
+  public void FN_stable_bad() {
      int x = 42;
      synchronized (this) {
        a.f.g = 101;

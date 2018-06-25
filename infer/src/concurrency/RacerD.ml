@@ -358,10 +358,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let ownership =
           OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
         in
-        (* Record all actuals as wobbly paths *)
-        let wobbly_paths =
-          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths |> add_base ret_base
-        in
+        let wobbly_paths = add_base ret_base astate.wobbly_paths in
         {astate with accesses; ownership; wobbly_paths}
     | Call (ret_access_path, Direct callee_pname, actuals, call_flags, loc) ->
         let accesses_with_unannotated_calls =
@@ -372,10 +369,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
             astate.ownership proc_data
         in
-        let wobbly_paths =
-          StabilityDomain.add_wobbly_actuals actuals astate.wobbly_paths
-          |> add_base ret_access_path
-        in
+        let wobbly_paths = add_base ret_access_path astate.wobbly_paths in
         let astate = {astate with accesses; wobbly_paths} in
         let astate =
           match Models.get_thread callee_pname with
@@ -451,13 +445,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       propagate_return ret_access_path return_ownership return_attributes actuals
                         astate
                     in
-                    (* Remapping wobble paths; also bases that are not in caller's wobbly paths, i.e., callee's locals *)
-                    let callee_wps_rebased =
-                      Option.value_map ~default:callee_wps
-                        ~f:(fun summary -> StabilityDomain.rebase_paths actuals summary callee_wps)
-                        callee_pdesc
+                    let wobbly_paths =
+                      StabilityDomain.integrate_summary actuals callee_pdesc ~callee:callee_wps
+                        ~caller:wobbly_paths
                     in
-                    let wobbly_paths = StabilityDomain.join wobbly_paths callee_wps_rebased in
                     let threads =
                       ThreadsDomain.integrate_summary ~caller_astate:astate.threads
                         ~callee_astate:threads
@@ -553,15 +544,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let attribute_map =
           AttributeMapDomain.propagate_assignment lhs_access_path rhs_exp astate.attribute_map
         in
-        (* [TODO] Do not add this path as wobbly, if it's the _first_
-           initialization of a local variable (e.g. A z = getA(); -->
-           now z is considered wobbly).
-
-           At the moment, I don't know how to distinguish those from
-           plain re-assignnments, so a lot of spurious wobbly paths is
-           negerated. *)
         let wobbly_paths =
-          StabilityDomain.add_wobbly_paths_assign lhs_access_path rhs_exp astate.wobbly_paths
+          StabilityDomain.add_assign lhs_access_path rhs_exp astate.wobbly_paths
         in
         {astate with accesses; ownership; attribute_map; wobbly_paths}
     | Assume (assume_exp, _, _, loc) ->
@@ -924,33 +908,15 @@ let ignore_var v = Var.is_global v || Var.is_return v
 (* Checking for a wobbly path *)
 let get_contaminated_race_message access wobbly_paths =
   let open RacerDDomain in
-  let wobbly_path_opt =
-    match TraceElem.kind access with
-    | TraceElem.Kind.Read access_path
-    | Write access_path
-    (* Access paths rooted in static variables are always race-prone,
-         hence do not complain about contamination. *)
-      when not (access_path |> fst |> fst |> ignore_var) ->
-        let proper_prefix_path, _ = AccessPath.truncate access_path in
-        let base, accesses = proper_prefix_path in
-        let rec prefix_in_wobbly_paths prefix = function
-          | [] ->
-              let wobbly = (base, []) in
-              if StabilityDomain.mem (AccessPath.Abs.Exact wobbly) wobbly_paths then
-                Some (wobbly, access_path)
-              else None
-          | access :: accesses ->
-              let prefix' = prefix @ [access] in
-              let candidate = (base, prefix') in
-              if StabilityDomain.mem (AccessPath.Abs.Exact candidate) wobbly_paths then
-                Some (candidate, access_path)
-              else prefix_in_wobbly_paths prefix' accesses
-        in
-        prefix_in_wobbly_paths [] accesses
-    | _ ->
-        None
-  in
-  Option.map wobbly_path_opt ~f:(fun _ -> " [wob]")
+  match TraceElem.kind access with
+  | TraceElem.Kind.Read access_path
+  | Write access_path
+  (* Access paths rooted in static variables are always race-prone,
+       hence do not complain about contamination. *)
+    when not (access_path |> fst |> fst |> ignore_var) ->
+      if StabilityDomain.exists_proper_prefix access_path wobbly_paths then Some " [wob]" else None
+  | _ ->
+      None
 
 
 let log_issue current_pname ~loc ~ltr ~access exn =
