@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* while loop that contains && in the guard. It gives the correct bound  */
+/* while loop that contains && in the guard. It gives the correct bound.
+ * Expected: Theta(m)  */
 int compound_while(int m) {
   int i = 0;
   int j = 3 * i;

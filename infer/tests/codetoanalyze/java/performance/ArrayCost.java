@@ -6,6 +6,7 @@
  */
 public class ArrayCost {
 
+  // expected: Theta(mag.length)
   private void ArrayCost(int[] mag) {
 
     int i = 0;
@@ -16,6 +17,7 @@ public class ArrayCost {
     }
   }
 
+  // expected: ~31
   private static boolean isPowOfTwo_FP(int value) {
     int ones = 0;
     int v = value;

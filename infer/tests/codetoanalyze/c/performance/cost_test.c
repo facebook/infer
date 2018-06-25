@@ -79,6 +79,7 @@ int loop1_bad() {
   return 0;
 }
 
+// Expected: Theta(k)
 int loop2_bad(int k) {
 
   for (int i = 0; i < k; i++) {
@@ -87,6 +88,7 @@ int loop2_bad(int k) {
   return 0;
 }
 
+// Expected: ~15
 int loop3_bad(int k) {
 
   for (int i = k; i < k + 15; i++) {
@@ -109,3 +111,18 @@ int main_bad() {
   k4 = bar_OK() + foo_OK() + cond_OK(19) * 3;
   return 0;
 }
+
+// Expected: Theta(20-m)
+int while_upto20_bad(int m) {
+  while (m < 20) {
+    int l = 0;
+    m++;
+  }
+  return m;
+}
+
+void call_while_upto20_minus100_bad() { while_upto20_bad(-100); }
+
+void call_while_upto20_10_good() { while_upto20_bad(10); }
+
+void call_while_upto20_unsigned_good_FP(unsigned x) { while_upto20_bad(x); }

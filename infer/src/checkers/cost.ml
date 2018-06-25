@@ -133,10 +133,8 @@ module BoundMap = struct
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
 
-  let filter_loc formal_pvars vars_to_keep = function
+  let filter_loc vars_to_keep = function
     | AbsLoc.Loc.Var (Var.LogicalVar _) ->
-        false
-    | AbsLoc.Loc.Var (Var.ProgramVar pvar) when List.mem formal_pvars pvar ~equal:Pvar.equal ->
         false
     | AbsLoc.Loc.Var var when Control.VarSet.mem var vars_to_keep ->
         true
@@ -145,10 +143,6 @@ module BoundMap = struct
 
 
   let compute_upperbound_map node_cfg inferbo_invariant_map control_invariant_map loop_inv_map =
-    let pname = Procdesc.get_proc_name node_cfg in
-    let formal_pvars =
-      Procdesc.get_formals node_cfg |> List.map ~f:(fun (m, _) -> Pvar.mk m pname)
-    in
     let compute_node_upper_bound bound_map node =
       let node_id = NodeCFG.Node.id node in
       match Procdesc.Node.get_kind node with
@@ -178,8 +172,7 @@ module BoundMap = struct
                        unreachable returning cost 0 \n" ;
                     BasicCost.zero
                 | NonBottom mem ->
-                    BufferOverrunDomain.MemReach.heap_range
-                      ~filter_loc:(filter_loc formal_pvars control_vars)
+                    BufferOverrunDomain.MemReach.heap_range ~filter_loc:(filter_loc control_vars)
                       mem
               in
               L.(debug Analysis Medium)
