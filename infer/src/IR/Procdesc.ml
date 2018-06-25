@@ -578,7 +578,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
   let resolved_pname = get_proc_name resolved_pdesc in
   let convert_pvar pvar = Pvar.mk (Pvar.get_name pvar) resolved_pname in
   let mk_ptr_typ typename =
-    (* Only consider pointers from Java objects for now *)
+    (* Only consider pointers from objects for now *)
     Typ.mk (Tptr (Typ.mk (Tstruct typename), Typ.Pk_pointer))
   in
   let convert_exp = function
@@ -618,16 +618,14 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         Some set_instr
     | Sil.Call
         ( return_ids
-        , Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java))
+        , Exp.Const (Const.Cfun callee_pname)
         , (Exp.Var id, _) :: origin_args
         , loc
         , call_flags )
       when call_flags.CallFlags.cf_virtual && redirect_typename id <> None ->
         let redirected_typename = Option.value_exn (redirect_typename id) in
         let redirected_typ = mk_ptr_typ redirected_typename in
-        let redirected_pname =
-          Typ.Procname.replace_class (Typ.Procname.Java callee_pname_java) redirected_typename
-        in
+        let redirected_pname = Typ.Procname.replace_class callee_pname redirected_typename in
         let args =
           let other_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
           (Exp.Var id, redirected_typ) :: other_args
@@ -657,29 +655,56 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
   convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list
 
 
+exception UnmatchedParameters
+
 (** Creates a copy of a procedure description and a list of type substitutions of the form
     (name, typ) where name is a parameter. The resulting proc desc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types *)
-let specialize_types callee_pdesc resolved_pname args =
+let specialize_types ?(has_clang_model= false) callee_pdesc resolved_pname args =
   let callee_attributes = get_attributes callee_pdesc in
   let resolved_params, substitutions =
-    List.fold2_exn
-      ~f:(fun (params, subts) (param_name, param_typ) (_, arg_typ) ->
-        match arg_typ.Typ.desc with
-        | Tptr ({desc= Tstruct typename}, Pk_pointer) ->
-            (* Replace the type of the parameter by the type of the argument *)
-            ((param_name, arg_typ) :: params, Mangled.Map.add param_name typename subts)
-        | _ ->
-            ((param_name, param_typ) :: params, subts) )
-      ~init:([], Mangled.Map.empty) callee_attributes.formals args
+    try
+      List.fold2_exn
+        ~f:(fun (params, subts) (param_name, param_typ) (_, arg_typ) ->
+          match arg_typ.Typ.desc with
+          | Tptr ({desc= Tstruct typename}, Pk_pointer) ->
+              (* Replace the type of the parameter by the type of the argument *)
+              ((param_name, arg_typ) :: params, Mangled.Map.add param_name typename subts)
+          | _ ->
+              ((param_name, param_typ) :: params, subts) )
+        ~init:([], Mangled.Map.empty) callee_attributes.formals args
+    with Invalid_argument _ ->
+      L.internal_error
+        "Call mismatch: method %a has %i paramters but is called with %i arguments@."
+        Typ.Procname.pp resolved_pname
+        (List.length callee_attributes.formals)
+        (List.length args) ;
+      raise UnmatchedParameters
+  in
+  let translation_unit =
+    (* If it is a model, and we are using the procdesc stored in the summary, the default translation unit
+       won't be useful because we don't store that tenv, so we aim to find the source file of the caller to
+       use its tenv. *)
+    if has_clang_model then
+      let pname = get_proc_name callee_pdesc in
+      match Attributes.find_file_capturing_procedure pname with
+      | Some (source_file, _) ->
+          source_file
+      | None ->
+          Logging.die InternalError
+            "specialize_types should only be called with defined procedures, but we cannot find \
+             the captured file of procname %a"
+            Typ.Procname.pp pname
+    else callee_attributes.translation_unit
   in
   let resolved_attributes =
     { callee_attributes with
       formals= List.rev resolved_params
     ; proc_name= resolved_pname
     ; is_specialized= true
-    ; err_log= Errlog.empty () }
+    ; err_log= Errlog.empty ()
+    ; translation_unit }
   in
   Attributes.store resolved_attributes ;
   let resolved_pdesc = from_proc_attributes resolved_attributes in

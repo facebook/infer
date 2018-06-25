@@ -1456,9 +1456,9 @@ let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pna
   let spec_list, formal_params = spec_find_rename trace_call callee_summary in
   let nspecs = List.length spec_list in
   L.d_strln
-    (F.sprintf "Found %d specs for function %s" nspecs (Typ.Procname.to_string callee_pname)) ;
+    (F.sprintf "Found %d specs for function %s" nspecs (Typ.Procname.to_unique_id callee_pname)) ;
   L.d_strln
-    (F.sprintf "START EXECUTING SPECS FOR %s from state" (Typ.Procname.to_string callee_pname)) ;
+    (F.sprintf "START EXECUTING SPECS FOR %s from state" (Typ.Procname.to_unique_id callee_pname)) ;
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =

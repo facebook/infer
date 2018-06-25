@@ -27,6 +27,7 @@ SOURCES_DEFAULT = \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
 	memory_leaks_benchmark/CoreVideoExample.m \
 	memory_leaks_benchmark/RetainCycleLength3.m \
+  npe/dynamic_dispatch.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
   npe/Npe_with_equal_names.m \

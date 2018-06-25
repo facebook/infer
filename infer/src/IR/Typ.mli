@@ -473,6 +473,8 @@ being the name of the struct, [None] means the parameter is of some other type. 
 
   val parameter_of_name : t -> Name.t -> Parameter.t
 
+  val is_objc_method : t -> bool
+
   (** Hash tables with proc names as keys. *)
   module Hash : Caml.Hashtbl.S with type key = t
 

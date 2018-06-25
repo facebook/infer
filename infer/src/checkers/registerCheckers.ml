@@ -37,7 +37,7 @@ let all_checkers =
   ; { name= "biabduction"
     ; active= Config.biabduction
     ; callbacks=
-        [ (Procedure Interproc.analyze_procedure, Language.Clang)
+        [ (DynamicDispatch Interproc.analyze_procedure, Language.Clang)
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun"
     ; active= Config.bufferoverrun && not Config.cost (* Cost analysis already triggers Inferbo *)

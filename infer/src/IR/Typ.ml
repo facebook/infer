@@ -951,6 +951,10 @@ module Procname = struct
         is_c_function name
 
 
+  let is_objc_method procname =
+    match procname with ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | _ -> false
+
+
   let block_name_of_procname procname =
     match procname with
     | Block block ->

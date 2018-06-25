@@ -223,7 +223,9 @@ val is_captured_var : t -> Pvar.t -> bool
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 
-val specialize_types : t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> t
+exception UnmatchedParameters
+
+val specialize_types : ?has_clang_model:bool -> t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> t
 (** Creates a copy of a procedure description and a list of type substitutions of the form
     (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
