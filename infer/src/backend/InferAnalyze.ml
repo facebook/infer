@@ -10,11 +10,19 @@
 open! IStd
 module L = Logging
 
+let clear_caches () =
+  Ondemand.clear_cache () ;
+  Summary.clear_cache () ;
+  Typ.Procname.SQLite.clear_cache ()
+
+
 (** Create tasks to analyze an execution environment *)
 let analyze_source_file : SourceFile.t Tasks.doer =
  fun source_file ->
   let exe_env = Exe_env.mk () in
   L.(debug Analysis Medium) "@\nProcessing '%a'@." SourceFile.pp source_file ;
+  (* clear cache for each source file to avoid it growing unboundedly *)
+  clear_caches () ;
   Callbacks.analyze_file exe_env source_file ;
   if Config.write_html then Printer.write_all_html_files source_file
 
@@ -79,9 +87,7 @@ let main ~changed_files =
     (if Int.equal n_source_files 1 then "" else "s")
     Config.results_dir ;
   (* empty all caches to minimize the process heap to have less work to do when forking *)
-  Summary.clear_cache () ;
-  Typ.Procname.SQLite.clear_cache () ;
-  Random.self_init () ;
+  clear_caches () ;
   if Int.equal Config.jobs 1 then (
     Tasks.run_sequentially ~f:analyze_source_file source_files_to_analyze ;
     L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () )

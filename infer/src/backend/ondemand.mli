@@ -31,3 +31,6 @@ val set_callbacks : callbacks -> unit
 
 val unset_callbacks : unit -> unit
 (** Unset the callbacks used to perform on-demand analysis. *)
+
+val clear_cache : unit -> unit
+(** empty the cache of ondemand results *)
