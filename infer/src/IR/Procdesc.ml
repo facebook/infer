@@ -98,6 +98,14 @@ module Node = struct
   (** Get the predecessors of the node *)
   let get_preds node = node.preds
 
+  (** Get siblings *)
+  let get_siblings node =
+    get_preds node
+    |> List.fold_left ~init:[] ~f:(fun acc parent ->
+           let siblings = get_succs parent |> List.filter ~f:(fun n -> not (equal node n)) in
+           List.rev_append siblings acc )
+
+
   (** Get the node kind *)
   let get_kind node = node.kind
 

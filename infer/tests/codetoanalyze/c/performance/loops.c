@@ -36,6 +36,18 @@ int if_out_loop(int t) {
   return p;
 }
 
+int do_while_independent_of_p(int p) {
+  int a = 0;
+  do {
+    if (p == 15) {
+      p = p + 1;
+    }
+    a++;
+  } while (a < 25);
+
+  return 0;
+}
+
 void larger_state_FN() {
 
   int i = 0, k = 0;

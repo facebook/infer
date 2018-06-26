@@ -92,6 +92,22 @@ let is_prune node =
   match Procdesc.Node.get_kind node with Procdesc.Node.Prune_node _ -> true | _ -> false
 
 
+(* Remove pairs of prune nodes that are for the same condition,
+   i.e. sibling of the same parent. This is necessary to prevent
+   picking unnecessary control variables in do-while like loops *)
+let remove_prune_node_pairs exit_nodes guard_nodes =
+  let exit_nodes = Control.GuardNodes.of_list exit_nodes in
+  let except_exit_nodes = Control.GuardNodes.diff guard_nodes exit_nodes in
+  L.(debug Analysis Medium) "Except exit nodes: [%a]\n" Control.GuardNodes.pp except_exit_nodes ;
+  except_exit_nodes
+  |> Control.GuardNodes.filter (fun node ->
+         is_prune node
+         && Procdesc.Node.get_siblings node |> List.hd
+            |> Option.value_map ~default:false ~f:(fun sibling ->
+                   not (Control.GuardNodes.mem sibling except_exit_nodes) ) )
+  |> Control.GuardNodes.union exit_nodes
+
+
 (* Get a pair of maps (exit_map, loop_head_to_guard_map) where
    exit_map : exit_node -> loop_head set (i.e. target of the back edges) 
    loop_head_to_guard_map : loop_head -> guard_nodes and
@@ -119,7 +135,8 @@ let get_control_maps cfg =
       L.(debug Analysis Medium) "Exit nodes: [%a]\n" (Pp.comma_seq Procdesc.Node.pp) exit_nodes ;
       (* find all the prune nodes in the loop guard *)
       let guard_prune_nodes =
-        get_all_nodes_upwards_until loop_head exit_nodes |> Control.GuardNodes.filter is_prune
+        get_all_nodes_upwards_until loop_head exit_nodes |> remove_prune_node_pairs exit_nodes
+        |> Control.GuardNodes.filter is_prune
       in
       let exit_map' =
         (List.fold_left ~init:exit_map ~f:(fun exit_map_acc exit_node ->
