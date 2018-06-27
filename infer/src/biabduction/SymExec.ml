@@ -1121,6 +1121,7 @@ let resolve_and_analyze_clang current_pdesc tenv prop_r n_actual_params callee_p
   if
     Config.dynamic_dispatch && not (is_variadic_procname callee_pname)
     && Typ.Procname.is_objc_method callee_pname
+    || Typ.Procname.is_objc_block callee_pname
     (* to be extended to other methods *)
   then
     try
