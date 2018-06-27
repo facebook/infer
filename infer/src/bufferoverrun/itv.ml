@@ -97,6 +97,8 @@ module Symbol = struct
 
   let equal = [%compare.equal : t]
 
+  let paths_equal s1 s2 = phys_equal s1.path s2.path
+
   let make : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
    fun ~unsigned pname path bound_end id -> {id; pname; unsigned; path; bound_end}
 
@@ -165,6 +167,10 @@ module NonZeroInt : sig
   val plus : t -> t -> t option
 
   val exact_div_exn : t -> t -> t
+
+  val max : t -> t -> t
+
+  val min : t -> t -> t
 end = struct
   type t = int [@@deriving compare]
 
@@ -197,6 +203,11 @@ end = struct
   let exact_div_exn num den =
     if not (is_multiple num den) then raise DivisionNotExact ;
     num / den
+
+
+  let max = Int.max
+
+  let min = Int.min
 end
 
 module Ints : sig
@@ -419,6 +430,28 @@ module SymLinear = struct
   let int_lb x = if is_ge_zero x then Some 0 else None
 
   let int_ub x = if is_le_zero x then Some 0 else None
+
+  (** When two following symbols are from the same path, simplify what would lead to a zero sum. E.g. 2 * x.lb - x.ub = x.lb *)
+  let simplify_bound_ends_from_paths : t -> t =
+   fun x ->
+    let f (prev_opt, to_add) symb coeff =
+      match prev_opt with
+      | Some (prev_coeff, prev_symb)
+        when Symbol.paths_equal prev_symb symb
+             && NonZeroInt.is_positive coeff <> NonZeroInt.is_positive prev_coeff ->
+          let add_coeff =
+            (if NonZeroInt.is_positive coeff then NonZeroInt.max else NonZeroInt.min)
+              prev_coeff (NonZeroInt.( ~- ) coeff)
+          in
+          let to_add =
+            to_add |> M.add symb add_coeff |> M.add prev_symb (NonZeroInt.( ~- ) add_coeff)
+          in
+          (None, to_add)
+      | _ ->
+          (Some (coeff, symb), to_add)
+    in
+    let _, to_add = fold x ~init:(None, zero) ~f in
+    plus x to_add
 end
 
 module Bound = struct
@@ -1030,6 +1063,14 @@ module Bound = struct
   let subst_lb_exn x map = subst_exn ~subst_pos:BoundEnd.LowerBound x map
 
   let subst_ub_exn x map = subst_exn ~subst_pos:BoundEnd.UpperBound x map
+
+  let simplify_bound_ends_from_paths x =
+    match x with
+    | MInf | PInf | MinMax _ ->
+        x
+    | Linear (c, se) ->
+        let se' = SymLinear.simplify_bound_ends_from_paths se in
+        if phys_equal se se' then x else Linear (c, se')
 end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
@@ -1393,7 +1434,8 @@ module ItvRange = struct
 
   let of_bounds : lb:Bound.t -> ub:Bound.t -> t =
    fun ~lb ~ub ->
-    Bound.plus_u ub Bound.one |> Bound.plus_u (Bound.neg lb) |> NonNegativeBound.of_bound
+    Bound.plus_u ub Bound.one |> Bound.plus_u (Bound.neg lb)
+    |> Bound.simplify_bound_ends_from_paths |> NonNegativeBound.of_bound
 
 
   let to_top_lifted_polynomial : t -> NonNegativePolynomial.astate =
