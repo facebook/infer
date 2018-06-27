@@ -401,7 +401,7 @@ let mark_visited summary node =
   else Summary.Stats.add_visited_re stats node_id
 
 
-let forward_tabulate exe_env tenv proc_cfg wl =
+let forward_tabulate summary exe_env tenv proc_cfg wl =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let handle_exn_node curr_node exn =
     Exceptions.print_exception_html "Failure of symbolic execution: " exn ;
@@ -432,9 +432,9 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   let print_node_preamble curr_node session pathset_todo =
     let log_string proc_name =
-      let summary = Summary.get_unsafe proc_name in
       let phase_string =
-        BiabductionSummary.(summary.payloads.biabduction |> opt_get_phase |> string_of_phase_short)
+        let open BiabductionSummary in
+        summary.Summary.payloads.biabduction |> opt_get_phase |> string_of_phase_short
       in
       let status = Summary.get_status summary in
       F.sprintf "[%s:%s] %s" phase_string (Summary.Status.to_string status)
@@ -501,7 +501,6 @@ let forward_tabulate exe_env tenv proc_cfg wl =
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
-    let summary = Summary.get_unsafe pname in
     mark_visited summary curr_node ;
     (* mark nodes visited in fp and re phases *)
     let session = incr summary.Summary.sessions ; !(summary.Summary.sessions) in
@@ -749,7 +748,7 @@ let initial_prop_from_pre tenv curr_f pre =
 
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop exe_env wl tenv proc_cfg init_node
+let execute_filter_prop summary exe_env wl tenv proc_cfg init_node
     (precondition: Prop.normal BiabductionSummary.Jprop.t)
     : Prop.normal BiabductionSummary.spec option =
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
@@ -771,7 +770,7 @@ let execute_filter_prop exe_env wl tenv proc_cfg init_node
   try
     Worklist.add wl init_node ;
     ignore (path_set_put_todo wl init_node init_edgeset) ;
-    forward_tabulate exe_env tenv proc_cfg wl ;
+    forward_tabulate summary exe_env tenv proc_cfg wl ;
     do_before_node 0 init_node ;
     L.d_strln_color Green
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
@@ -853,7 +852,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
       L.d_decrease_indent 1 ;
       Worklist.add wl start_node ;
       ignore (path_set_put_todo wl start_node init_edgeset) ;
-      forward_tabulate exe_env tenv proc_cfg wl
+      forward_tabulate summary exe_env tenv proc_cfg wl
     in
     let get_results (wl: Worklist.t) () =
       State.process_execution_failures Reporting.log_warning_deprecated pname ;
@@ -883,7 +882,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
     let go () =
       let filter p =
         let wl = path_set_create_worklist proc_cfg in
-        let speco = execute_filter_prop exe_env wl tenv proc_cfg start_node p in
+        let speco = execute_filter_prop summary exe_env wl tenv proc_cfg start_node p in
         (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in
