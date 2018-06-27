@@ -240,4 +240,5 @@ let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
-  match !callbacks_ref with Some callbacks -> callbacks.get_proc_desc callee_pname | None -> None
+  let callbacks = Option.value_exn !callbacks_ref in
+  callbacks.get_proc_desc callee_pname
