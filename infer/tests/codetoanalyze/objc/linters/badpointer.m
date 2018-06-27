@@ -115,13 +115,6 @@ int good5(NSNumber* number, Simple* simple) {
   return 1;
 }
 
-int bad7(NSNumber* number) {
-  if (number < 0) {
-    return 0;
-  }
-  return 1;
-}
-
 int bad8(NSNumber* number) {
   if (number) {
     return 0;

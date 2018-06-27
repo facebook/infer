@@ -48,7 +48,7 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 			OR is_binop_with_kind("LT") OR is_binop_with_kind("LE"))
 		AND
 		( (is_node("ImplicitCastExpr") AND has_type("NSNumber *")
-			AND (has_cast_kind("IntegralToPointer") OR has_cast_kind("NullToPointer"))
+			AND has_cast_kind("IntegralToPointer")
 		) HOLDS-NEXT);
 
 	LET root_is_stmt_expecting_bool =
