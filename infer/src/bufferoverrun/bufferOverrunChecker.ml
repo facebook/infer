@@ -34,12 +34,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   let declare_symbolic_val
-      : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> Loc.t -> Typ.typ -> inst_num:int
-        -> new_sym_num:Itv.Counter.t -> Domain.t -> Domain.t =
-   fun pname tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
+      : Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int -> Location.t -> Loc.t
+        -> Typ.typ -> inst_num:int -> new_sym_num:Itv.Counter.t -> Domain.t -> Domain.t =
+   fun pname path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
     let new_alloc_num = Itv.Counter.make 1 in
-    let rec decl_sym_val pname tenv ~node_hash location ~depth ~may_last_field loc typ mem =
+    let rec decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem =
       if depth > max_depth then mem
       else
         let depth = depth + 1 in
@@ -47,18 +47,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Typ.Tint ikind ->
             let unsigned = Typ.ikind_is_unsigned ikind in
             let v =
-              Dom.Val.make_sym ~unsigned pname new_sym_num
+              Dom.Val.make_sym ~unsigned pname path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             Dom.Mem.add_heap loc v mem
         | Typ.Tfloat _ ->
             let v =
-              Dom.Val.make_sym pname new_sym_num
+              Dom.Val.make_sym pname path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             Dom.Mem.add_heap loc v mem
         | Typ.Tptr (typ, _) ->
-            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname tenv
+            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname path tenv
               ~node_hash location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length} ->
             let size =
@@ -71,18 +71,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let offset = Itv.zero in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname tenv ~node_hash location ~depth loc elt ~offset ?size ~inst_num ~new_sym_num
-              ~new_alloc_num mem
+              pname path tenv ~node_hash location ~depth loc elt ~offset ?size ~inst_num
+              ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch typename with
           | Some {Models.declare_symbolic} ->
               let model_env = Models.mk_model_env pname node_hash location tenv in
-              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) model_env ~depth loc
-                ~inst_num ~new_sym_num ~new_alloc_num mem
+              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
+                loc ~inst_num ~new_sym_num ~new_alloc_num mem
           | None ->
               let decl_fld ~may_last_field mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc ~fn in
-                decl_sym_val pname tenv ~node_hash location ~depth loc_fld typ ~may_last_field mem
+                let path = Itv.SymbolPath.field path fn in
+                decl_sym_val pname path tenv ~node_hash location ~depth loc_fld typ ~may_last_field
+                  mem
               in
               let decl_flds str =
                 IList.fold_last ~f:(decl_fld ~may_last_field:false)
@@ -97,7 +99,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 location ;
             mem
     in
-    decl_sym_val pname tenv ~node_hash location ~depth:0 ~may_last_field:true loc typ mem
+    decl_sym_val pname path tenv ~node_hash location ~depth:0 ~may_last_field:true loc typ mem
 
 
   let declare_symbolic_parameters
@@ -107,8 +109,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let new_sym_num = Itv.Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
+      let path = Itv.SymbolPath.of_pvar pvar in
       let mem =
-        declare_symbolic_val pname tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem
+        declare_symbolic_val pname path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem
       in
       (mem, inst_num + 1)
     in

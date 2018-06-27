@@ -29,6 +29,24 @@ module Boolean : sig
   val is_true : t -> bool
 end
 
+module SymbolPath : sig
+  type partial
+
+  type t
+
+  val of_pvar : Pvar.t -> partial
+
+  val index : partial -> partial
+
+  val field : partial -> Typ.Fieldname.t -> partial
+
+  val normal : partial -> t
+
+  val offset : partial -> t
+
+  val length : partial -> t
+end
+
 module Symbol : sig
   type t
 end
@@ -175,7 +193,7 @@ val of_int_lit : IntLit.t -> t
 
 val of_int64 : Int64.t -> t
 
-val make_sym : ?unsigned:bool -> Typ.Procname.t -> Counter.t -> t
+val make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t
 
 val lb : t -> Bound.t
 

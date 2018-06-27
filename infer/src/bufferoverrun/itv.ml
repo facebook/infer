@@ -42,22 +42,71 @@ module Boolean = struct
   let is_true = function True -> true | _ -> false
 end
 
-exception Not_one_symbol
+module BoundEnd = struct
+  type t = LowerBound | UpperBound
+
+  let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
+
+  let to_string = function LowerBound -> "lb" | UpperBound -> "ub"
+end
+
+module SymbolPath = struct
+  type partial = Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
+
+  type t = Normal of partial | Offset of partial | Length of partial
+
+  let of_pvar pvar = Pvar pvar
+
+  let field p fn = Field (fn, p)
+
+  let index p = Index p
+
+  let normal p = Normal p
+
+  let offset p = Offset p
+
+  let length p = Length p
+
+  let rec pp_partial fmt = function
+    | Pvar pvar ->
+        Pvar.pp_value fmt pvar
+    | Index p ->
+        F.fprintf fmt "%a[*]" pp_partial p
+    | Field (fn, p) ->
+        F.fprintf fmt "%a.%a" pp_partial p Typ.Fieldname.pp fn
+
+
+  let pp fmt = function
+    | Normal p ->
+        pp_partial fmt p
+    | Offset p ->
+        F.fprintf fmt "%a.offset" pp_partial p
+    | Length p ->
+        F.fprintf fmt "%a.length" pp_partial p
+end
 
 module Symbol = struct
-  type t = {pname: Typ.Procname.t; id: int; unsigned: bool} [@@deriving compare]
+  type t =
+    {id: int; pname: Typ.Procname.t; unsigned: bool; path: SymbolPath.t; bound_end: BoundEnd.t}
+
+  let compare s1 s2 =
+    (* Symbols only make sense within a given function, so shouldn't be compared across function boundaries. *)
+    assert (phys_equal s1.pname s2.pname) ;
+    Int.compare s1.id s2.id
+
 
   let equal = [%compare.equal : t]
 
-  let make : unsigned:bool -> Typ.Procname.t -> int -> t =
-   fun ~unsigned pname id -> {pname; id; unsigned}
+  let make : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
+   fun ~unsigned pname path bound_end id -> {id; pname; unsigned; path; bound_end}
 
 
   let pp : F.formatter -> t -> unit =
-   fun fmt {pname; id; unsigned} ->
-    let symbol_name = if unsigned then "u" else "s" in
-    if Config.bo_debug <= 1 then F.fprintf fmt "%s$%d" symbol_name id
-    else F.fprintf fmt "%s-%s$%d" (Typ.Procname.to_string pname) symbol_name id
+   fun fmt {pname; id; unsigned; path; bound_end} ->
+    F.fprintf fmt "%a.%s" SymbolPath.pp path (BoundEnd.to_string bound_end) ;
+    if Config.bo_debug > 1 then
+      let symbol_name = if unsigned then 'u' else 's' in
+      F.fprintf fmt "(%s-%c$%d)" (Typ.Procname.to_string pname) symbol_name id
 
 
   let is_unsigned : t -> bool = fun x -> x.unsigned
@@ -233,6 +282,8 @@ end
 
 open Ints
 
+exception Not_one_symbol
+
 module SymLinear = struct
   module M = SymbolMap
 
@@ -268,8 +319,9 @@ module SymLinear = struct
     M.for_all2 ~f:le_one_pair x y
 
 
-  let make : unsigned:bool -> Typ.Procname.t -> int -> t =
-   fun ~unsigned pname i -> singleton_one (Symbol.make ~unsigned pname i)
+  let make : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
+   fun ~unsigned pname path bound_end i ->
+    singleton_one (Symbol.make ~unsigned pname path bound_end i)
 
 
   let eq : t -> t -> bool =
@@ -367,12 +419,6 @@ module SymLinear = struct
   let int_lb x = if is_ge_zero x then Some 0 else None
 
   let int_ub x = if is_le_zero x then Some 0 else None
-end
-
-module BoundEnd = struct
-  type t = LowerBound | UpperBound
-
-  let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
 end
 
 module Bound = struct
@@ -1435,10 +1481,16 @@ module ItvPure = struct
 
   let of_int n = of_bound (Bound.of_int n)
 
-  let make_sym : unsigned:bool -> Typ.Procname.t -> Counter.t -> t =
-   fun ~unsigned pname new_sym_num ->
-    let lower = Bound.of_sym (SymLinear.make ~unsigned pname (Counter.next new_sym_num)) in
-    let upper = Bound.of_sym (SymLinear.make ~unsigned pname (Counter.next new_sym_num)) in
+  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t =
+   fun ~unsigned pname path new_sym_num ->
+    let lower =
+      Bound.of_sym
+        (SymLinear.make ~unsigned pname path BoundEnd.LowerBound (Counter.next new_sym_num))
+    in
+    let upper =
+      Bound.of_sym
+        (SymLinear.make ~unsigned pname path BoundEnd.UpperBound (Counter.next new_sym_num))
+    in
     (lower, upper)
 
 
@@ -1873,9 +1925,9 @@ let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> Counter.t -> t =
- fun ?(unsigned= false) pname new_sym_num ->
-  NonBottom (ItvPure.make_sym ~unsigned pname new_sym_num)
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t =
+ fun ?(unsigned= false) pname path new_sym_num ->
+  NonBottom (ItvPure.make_sym ~unsigned pname path new_sym_num)
 
 
 let neg : t -> t = lift1 ItvPure.neg

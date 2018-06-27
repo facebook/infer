@@ -49,19 +49,24 @@ module Exec = struct
 
 
   type decl_sym_val =
-    Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t
-    -> Dom.Mem.astate -> Dom.Mem.astate
+    Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int -> Location.t -> depth:int
+    -> Loc.t -> Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
 
   let decl_sym_arr
-      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t
-        -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t -> inst_num:int
-        -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
-        -> Dom.Mem.astate =
-   fun ~decl_sym_val pname tenv ~node_hash location ~depth loc typ ?offset ?size ~inst_num
+      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
+        -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t
+        -> ?size:Itv.t -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
+        -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ?offset ?size ~inst_num
        ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
-    let offset = option_value offset (fun () -> Itv.make_sym pname new_sym_num) in
-    let size = option_value size (fun () -> Itv.make_sym ~unsigned:true pname new_sym_num) in
+    let offset =
+      option_value offset (fun () -> Itv.make_sym pname (Itv.SymbolPath.offset path) new_sym_num)
+    in
+    let size =
+      option_value size (fun () ->
+          Itv.make_sym ~unsigned:true pname (Itv.SymbolPath.length path) new_sym_num )
+    in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
     let arr =
@@ -73,7 +78,8 @@ module Exec = struct
     let deref_loc =
       Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num)
     in
-    decl_sym_val pname tenv ~node_hash location ~depth deref_loc typ mem
+    let path = Itv.SymbolPath.index path in
+    decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
 
 
   let init_array_fields tenv pname ~node_hash typ locs ?dyn_length mem =
