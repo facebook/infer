@@ -3144,35 +3144,61 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Translates a clang instruction into SIL instructions. It takes a a [trans_state] containing
       current info on the translation and it returns a [trans_result].*)
-  and instruction trans_state instr : trans_result =
-    let pp_pointer f instr =
-      let {Clang_ast_t.si_pointer}, _ = Clang_ast_proj.get_stmt_tuple instr in
-      Format.pp_print_int f si_pointer
-    in
-    L.(debug Capture Verbose)
-      "Translating statement '%a' (pointer= '%a')@\n@[<hv2>"
-      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
-      instr pp_pointer instr ;
-    let trans_result =
-      try instruction_aux trans_state instr with e ->
-        IExn.reraise_after e ~f:(fun () ->
-            let {Clang_ast_t.si_source_range}, _ = Clang_ast_proj.get_stmt_tuple instr in
-            let source_file =
-              trans_state.context.CContext.translation_unit_context.CFrontend_config.source_file
-            in
-            let loc_start =
-              CLocation.location_of_source_range ~pick_location:`Start source_file si_source_range
-            in
-            let loc_end =
-              CLocation.location_of_source_range ~pick_location:`End source_file si_source_range
-            in
-            L.internal_error "%a: ERROR translating statement '%a'@\n" Location.pp_range
-              (loc_start, loc_end)
-              (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
-              instr )
-    in
-    L.(debug Capture Verbose) "@]" ;
-    trans_result
+  and instruction =
+    (* log errors only at the innermost recursive call *)
+    let logged_error = ref false in
+    fun trans_state instr ->
+      let pp_pointer f instr =
+        let {Clang_ast_t.si_pointer}, _ = Clang_ast_proj.get_stmt_tuple instr in
+        Format.pp_print_int f si_pointer
+      in
+      L.(debug Capture Verbose)
+        "Translating statement '%a' (pointer= '%a')@\n@[<hv2>"
+        (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+        instr pp_pointer instr ;
+      let trans_result =
+        try instruction_aux trans_state instr with e ->
+          IExn.reraise_after e ~f:(fun () ->
+              let should_log_error = not !logged_error in
+              if should_log_error then (
+                (* prevent from displaying the same issue multiple times as we climb up the call
+                   stack *)
+                logged_error := true ;
+                let {Clang_ast_t.si_source_range}, _ = Clang_ast_proj.get_stmt_tuple instr in
+                let source_file =
+                  trans_state.context.CContext.translation_unit_context
+                    .CFrontend_config.source_file
+                in
+                let loc_start =
+                  CLocation.location_of_source_range ~pick_location:`Start source_file
+                    si_source_range
+                in
+                let loc_end =
+                  CLocation.location_of_source_range ~pick_location:`End source_file
+                    si_source_range
+                in
+                (* Unfortunately this triggers regularly so do not show the message on the console
+                   unless asked to do so or if the error will crash the frontend. *)
+                let should_display_error =
+                  Config.debug_level_capture >= 1
+                  ||
+                  match e with
+                  | CFrontend_config.Unimplemented _ | CFrontend_config.IncorrectAssumption _ ->
+                      (* these are caught by default, do not print messages unless asked to do so *)
+                      false
+                  | _ ->
+                      (* we are going to crash, print message for more context *)
+                      true
+                in
+                (if should_display_error then L.internal_error else L.debug Capture Quiet)
+                  "%a: ERROR translating statement '%a'@\n" Location.pp_range (loc_start, loc_end)
+                  (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+                  instr ) )
+      in
+      L.(debug Capture Verbose) "@]" ;
+      (* don't forget to reset this so we output messages for future errors too *)
+      logged_error := false ;
+      trans_result
 
 
   and instruction_aux trans_state (instr: Clang_ast_t.stmt) =
