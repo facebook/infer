@@ -84,9 +84,6 @@ val get_loc : t -> Location.t
 val get_signature : t -> string
 (** Return the signature of a procedure declaration as a string *)
 
-val get_unsafe : Typ.Procname.t -> t
-(** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
-
 val get_status : t -> Status.t
 (** Return the status (active v.s. inactive) of a procedure summary *)
 

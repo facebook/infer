@@ -1137,11 +1137,9 @@ let update_summary tenv prev_summary specs phase res =
 
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc exe_env tenv proc_cfg : Summary.t =
+let analyze_proc summary exe_env tenv proc_cfg : Summary.t =
   let proc_desc = ProcCfg.Exceptional.proc_desc proc_cfg in
-  let proc_name = Procdesc.get_proc_name proc_desc in
   reset_global_values proc_desc ;
-  let summary = Summary.get_unsafe proc_name in
   let go, get_results = perform_analysis_phase exe_env tenv summary proc_cfg in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
@@ -1154,15 +1152,14 @@ let analyze_proc exe_env tenv proc_cfg : Summary.t =
 
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
-let transition_footprint_re_exe tenv proc_name joined_pres =
-  let summary = Summary.get_unsafe proc_name in
+let transition_footprint_re_exe summary tenv joined_pres : Summary.t =
   let summary' =
     if Config.only_footprint then
       match summary.Summary.payloads.biabduction with
       | Some ({phase= FOOTPRINT} as biabduction) ->
           { summary with
             Summary.payloads=
-              { summary.payloads with
+              { summary.Summary.payloads with
                 Payloads.biabduction= Some {biabduction with BiabductionSummary.phase= RE_EXECUTION}
               } }
       | _ ->
@@ -1182,12 +1179,12 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
       in
       {summary with Summary.payloads}
   in
-  Summary.add proc_name summary'
+  summary'
 
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition proc_cfg tenv proc_name =
+let perform_transition proc_cfg tenv proc_name summary =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
@@ -1214,24 +1211,24 @@ let perform_transition proc_cfg tenv proc_name =
         L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ocaml_pos_opt error.ocaml_pos ;
         []
     in
-    transition_footprint_re_exe tenv proc_name joined_pres
+    transition_footprint_re_exe summary tenv joined_pres
   in
-  match Summary.get proc_name with
-  | Some summary
-    when BiabductionSummary.(summary.payloads.biabduction |> opt_get_phase |> equal_phase FOOTPRINT) ->
-      transition summary
-  | _ ->
-      ()
+  if
+    let open BiabductionSummary in
+    summary.Summary.payloads.biabduction |> opt_get_phase |> equal_phase FOOTPRINT
+  then transition summary
+  else summary
 
 
-let analyze_procedure_aux exe_env tenv proc_desc =
+let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   Preanal.do_preanalysis proc_desc tenv ;
-  let summaryfp = Config.run_in_footprint_mode (analyze_proc exe_env tenv) proc_cfg in
-  Summary.add proc_name summaryfp ;
-  perform_transition proc_cfg tenv proc_name ;
-  let summaryre = Config.run_in_re_execution_mode (analyze_proc exe_env tenv) proc_cfg in
+  let summaryfp =
+    Config.run_in_footprint_mode (analyze_proc summary exe_env tenv) proc_cfg
+    |> perform_transition proc_cfg tenv proc_name
+  in
+  let summaryre = Config.run_in_re_execution_mode (analyze_proc summaryfp exe_env tenv) proc_cfg in
   let summary_compact =
     match summaryre.Summary.payloads.biabduction with
     | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->
@@ -1254,9 +1251,7 @@ let analyze_procedure_aux exe_env tenv proc_desc =
 let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t =
   (* make sure models have been registered *)
   BuiltinDefn.init () ;
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  Summary.add proc_name summary ;
-  ( try ignore (analyze_procedure_aux exe_env tenv proc_desc) with exn ->
-      IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
-      Reporting.log_error_deprecated proc_name exn ) ;
-  Summary.get_unsafe proc_name
+  try analyze_procedure_aux summary exe_env tenv proc_desc with exn ->
+    IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
+    Reporting.log_error summary exn ;
+    summary

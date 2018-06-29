@@ -201,8 +201,6 @@ let get proc_name =
     load_summary_to_spec_table proc_name
 
 
-let get_unsafe proc_name = Option.value_exn (get proc_name)
-
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
 let proc_is_library proc_attributes =
