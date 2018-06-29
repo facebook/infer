@@ -124,11 +124,9 @@ module BoundMap = struct
   type t = BasicCost.astate Node.IdMap.t
 
   let print_upper_bound_map bound_map =
-    L.(debug Analysis Medium) "@\n\n******* Bound Map ITV **** @\n" ;
-    Node.IdMap.iter
-      (fun nid b ->
-        L.(debug Analysis Medium) "@\n node: %a --> bound = %a @\n" Node.pp_id nid BasicCost.pp b
-        )
+    L.(debug Analysis Medium)
+      "@\n\n******* Bound Map : [node -> bound] ITV **** @\n %a @\n"
+      (Node.IdMap.pp ~pp_value:BasicCost.pp)
       bound_map ;
     L.(debug Analysis Medium) "@\n******* END Bound Map ITV **** @\n\n"
 
@@ -987,7 +985,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map =
     ReachingDefs.Analyzer.exec_cfg node_cfg proc_data ~initial:ReachingDefs.ReachingDefsMap.empty
-      ~debug:true
+      ~debug:false
   in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
@@ -995,14 +993,14 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let control_dep_invariant_map =
     let proc_data = ProcData.make proc_desc tenv control_maps in
     Control.ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.ControlDepSet.empty
-      ~debug:true
+      ~debug:false
   in
   let instr_cfg = InstrCFG.from_pdesc proc_desc in
   let invariant_map_NodesBasicCost =
     let proc_data = ProcData.make proc_desc tenv inferbo_invariant_map in
     (*compute_WCET cfg invariant_map min_trees in *)
     AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
-      ~debug:true
+      ~debug:false
   in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
@@ -1049,7 +1047,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     AnalyzerWCET.compute_post
       (ProcData.make proc_desc tenv
          {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
-      ~debug:true ~initial:initWCET
+      ~debug:false ~initial:initWCET
   with
   | Some (exit_cost, _) ->
       L.internal_error
