@@ -129,6 +129,23 @@ let create_analysis_stats_row base record =
   |> add_int ~key:"symops" ~data:record.symops
 
 
+type dynamic_dispatch =
+  | Dynamic_dispatch_successful
+  | Dynamic_dispatch_parameters_arguments_mismatch
+  | Dynamic_dispatch_model_specialization_failure
+
+let string_of_dynamic_dispatch_opt dd =
+  match dd with
+  | Some Dynamic_dispatch_successful ->
+      "dynamic dispatch successful"
+  | Some Dynamic_dispatch_parameters_arguments_mismatch ->
+      "dynamic dispatch failed with arguments mismatch"
+  | Some Dynamic_dispatch_model_specialization_failure ->
+      "dynamic dispatch model specialized failed"
+  | None ->
+      "no dynamic dispatch"
+
+
 type call_trace =
   { call_location: Location.t
   ; call_result: string
@@ -137,7 +154,8 @@ type call_trace =
   ; callee_name: string
   ; caller_name: string
   ; lang: string
-  ; reason: string option }
+  ; reason: string option
+  ; dynamic_dispatch: dynamic_dispatch option }
 
 let create_call_trace_row base record =
   let open JsonBuilder in
@@ -154,6 +172,8 @@ let create_call_trace_row base record =
   |> add_string ~key:"callee_name" ~data:record.callee_name
   |> add_string ~key:"caller_name" ~data:record.caller_name
   |> add_string ~key:"lang" ~data:record.lang |> add_string_opt ~key:"reason" ~data:record.reason
+  |> add_string ~key:"dynamic_dispatch"
+       ~data:(string_of_dynamic_dispatch_opt record.dynamic_dispatch)
 
 
 type frontend_exception =

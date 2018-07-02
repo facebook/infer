@@ -81,7 +81,7 @@ let print_results tenv actual_pre results =
   L.d_strln "***** END RESULTS FUNCTION CALL *******"
 
 
-let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason loc res =
+let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic_dispatch loc res =
   let get_valid_source_file loc =
     let file = loc.Location.file in
     if SourceFile.is_invalid file then None else Some file
@@ -108,7 +108,8 @@ let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason loc res 
       ; callee_name= Typ.Procname.to_string callee_name
       ; caller_name= Typ.Procname.to_string caller_name
       ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string
-      ; reason }
+      ; reason
+      ; dynamic_dispatch }
   in
   if !Config.footprint then EventLogger.log call_trace
 
@@ -1448,11 +1449,13 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call exe_env callee_summary tenv ret_id caller_pdesc callee_pname loc
-    actual_params prop path =
+let exe_function_call ?dynamic_dispatch exe_env callee_summary tenv ret_id caller_pdesc
+    callee_pname loc actual_params prop path =
   let callee_attributes = Summary.get_attributes callee_summary in
   let caller_name = Procdesc.get_proc_name caller_pdesc in
-  let trace_call = log_call_trace ~caller_name ~callee_name:callee_pname ~callee_attributes loc in
+  let trace_call =
+    log_call_trace ~caller_name ~callee_name:callee_pname ~callee_attributes ?dynamic_dispatch loc
+  in
   let spec_list, formal_params = spec_find_rename trace_call callee_summary in
   let nspecs = List.length spec_list in
   L.d_strln

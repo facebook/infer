@@ -25,6 +25,11 @@ type analysis_stats =
   ; num_preposts: int
   ; symops: int }
 
+type dynamic_dispatch =
+  | Dynamic_dispatch_successful
+  | Dynamic_dispatch_parameters_arguments_mismatch
+  | Dynamic_dispatch_model_specialization_failure
+
 type call_trace =
   { call_location: Location.t
   ; call_result: string
@@ -33,7 +38,8 @@ type call_trace =
   ; callee_name: string
   ; caller_name: string
   ; lang: string
-  ; reason: string option }
+  ; reason: string option
+  ; dynamic_dispatch: dynamic_dispatch option }
 
 type frontend_exception =
   { ast_node: string option

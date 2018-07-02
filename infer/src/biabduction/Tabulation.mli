@@ -17,7 +17,8 @@ type call_result =
 
 val log_call_trace :
   caller_name:Typ.Procname.t -> callee_name:Typ.Procname.t -> ?callee_attributes:ProcAttributes.t
-  -> ?reason:string -> Location.t -> call_result -> unit
+  -> ?reason:string -> ?dynamic_dispatch:EventLogger.dynamic_dispatch -> Location.t -> call_result
+  -> unit
 
 (** Interprocedural footprint analysis *)
 
@@ -46,9 +47,9 @@ val lookup_custom_errors : 'a Prop.t -> string option
 (** search in prop contains an error state *)
 
 val exe_function_call :
-  Exe_env.t -> Summary.t -> Tenv.t -> Ident.t -> Procdesc.t -> Typ.Procname.t -> Location.t
-  -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t
-  -> (Prop.normal Prop.t * Paths.Path.t) list
+  ?dynamic_dispatch:EventLogger.dynamic_dispatch -> Exe_env.t -> Summary.t -> Tenv.t -> Ident.t
+  -> Procdesc.t -> Typ.Procname.t -> Location.t -> (Exp.t * Typ.t) list -> Prop.normal Prop.t
+  -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Execute the function call and return the list of results with return value *)
 
 val get_specs_from_payload : Summary.t -> Prop.normal BiabductionSummary.spec list
