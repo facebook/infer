@@ -1412,7 +1412,7 @@ module Normalize = struct
       let find_captured_variable_in_the_heap captured' hpred =
         match hpred with
         | Hpointsto (Exp.Lvar var, Eexp (Exp.Var id, _), _) ->
-            List.map
+            IList.map_changed ~equal:phys_equal
               ~f:(fun ((e_captured, var_captured, t) as captured_item) ->
                 match e_captured with
                 | Exp.Var id_captured ->
@@ -1444,7 +1444,11 @@ module Normalize = struct
           if phys_equal exp new_exp then se else Eexp (new_exp, inst)
       | Estruct (fields, inst) ->
           let new_fields =
-            List.map ~f:(fun (field, se) -> (field, process_closures_in_se se)) fields
+            IList.map_changed ~equal:phys_equal
+              ~f:(fun ((field, se) as fse) ->
+                let se' = process_closures_in_se se in
+                if phys_equal se se' then fse else (field, se') )
+              fields
           in
           if phys_equal fields new_fields then se else Estruct (new_fields, inst)
       | _ ->
