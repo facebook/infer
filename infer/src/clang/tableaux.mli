@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 module ClosureHashtbl : Caml.Map.S with type key = CTL.t
 
 type context_linter_map = bool ClosureHashtbl.t

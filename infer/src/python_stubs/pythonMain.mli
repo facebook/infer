@@ -5,4 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 val go : string list -> unit

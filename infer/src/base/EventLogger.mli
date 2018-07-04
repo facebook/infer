@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 type analysis_issue =
   { bug_kind: string
   ; bug_type: string

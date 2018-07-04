@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 (** To be used in 'list_constraint *)
 type accept_more
  and end_of_list

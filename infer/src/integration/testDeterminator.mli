@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 val test_to_run_java : string option -> string option -> string option -> unit
 
 val _test_to_run_clang :

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 val resolve_method_with_block_args_and_analyze :
   caller_pdesc:Procdesc.t -> Typ.Procname.t -> (Exp.t * Typ.t) list
   -> (Summary.t * (Exp.t * Typ.t) list) option

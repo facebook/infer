@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 val add : SourceFile.t -> Cfg.t -> Tenv.per_file -> unit
 (** Add or replace the row corresponding to the source file into the database. *)
 

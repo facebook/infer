@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 val get_methods :
   CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl list -> Typ.Procname.t list
 

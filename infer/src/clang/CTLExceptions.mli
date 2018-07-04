@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 (** Raised when the parser encounters a violation of a certain invariant  *)
 exception ALParserInvariantViolationException of string
 

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! IStd
+
 module UnixDiff : sig
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
     type t = Unchanged | New | Old
