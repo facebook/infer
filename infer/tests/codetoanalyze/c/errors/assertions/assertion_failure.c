@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// TODO: remove this #define, it's here to get a specific version of
-// [assert], as others may confuse the clang frontend (t26324545)
-#define __STRICT_ANSI__
 #include <assert.h>
 #include <stdlib.h>
 
