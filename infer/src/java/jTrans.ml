@@ -73,10 +73,8 @@ let get_exit_location source_file bytecode =
 
 
 let retrieve_fieldname fieldname =
-  try
-    let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
-    List.last_exn subs
-  with _ -> assert false
+  let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
+  List.last_exn subs
 
 
 let get_field_name program static tenv cn fs =

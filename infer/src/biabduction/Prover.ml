@@ -2552,7 +2552,7 @@ let check_array_bounds tenv (sub1, sub2) prop =
         (* L.d_strln_color Orange "check_bound ";
            Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
         let indices_to_check =
-          match len2 with _ -> [Exp.BinOp (Binop.PlusA, len2, Exp.minus_one)]
+          [Exp.BinOp (Binop.PlusA, len2, Exp.minus_one)]
           (* only check len *)
         in
         List.iter ~f:(fail_if_le len1) indices_to_check
