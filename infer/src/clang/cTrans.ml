@@ -3417,10 +3417,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        sub-expressions *)
     | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         undefined_expr trans_state expr_info
+    | SubstNonTypeTemplateParmExpr (_, stmts, _) | SubstNonTypeTemplateParmPackExpr (_, stmts, _) ->
+        let[@warning "-8"] [expr] = stmts in
+        instruction trans_state expr
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
-    | SubstNonTypeTemplateParmExpr ({Clang_ast_t.si_source_range}, _, _)
-    | SubstNonTypeTemplateParmPackExpr ({Clang_ast_t.si_source_range}, _, _)
     | CXXDependentScopeMemberExpr ({Clang_ast_t.si_source_range}, _, _) ->
         CFrontend_config.unimplemented __POS__ si_source_range
           ~ast_node:(Clang_ast_proj.get_stmt_kind_string instr)
