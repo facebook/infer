@@ -189,16 +189,17 @@ let pp_dotty fmt cycle =
         Format.fprintf fmt ""
   in
   let pp_dotty_element fmt element =
-    Format.fprintf fmt "\t%a [label = \"%a | %a \"]@\n" pp_dotty_id element pp_dotty_obj element
-      pp_dotty_field element
+    Format.fprintf fmt "\t\"%a\" [label = \"%a | %a \"]@\n" pp_dotty_id element pp_dotty_obj
+      element pp_dotty_field element
   in
   let rec pp_dotty_edges fmt edges =
     match edges with
     | edge1 :: edge2 :: rest ->
-        Format.fprintf fmt "\t%a -> %a [color=\"blue\"];@\n" pp_dotty_id edge1 pp_dotty_id edge2 ;
+        Format.fprintf fmt "\t\"%a\" -> \"%a\" [color=\"blue\"];@\n" pp_dotty_id edge1 pp_dotty_id
+          edge2 ;
         pp_dotty_edges fmt (edge2 :: rest)
     | [edge] ->
-        Format.fprintf fmt "\t%a -> %a [color=\"blue\"];@\n" pp_dotty_id edge pp_dotty_id
+        Format.fprintf fmt "\t\"%a\" -> \"%a\" [color=\"blue\"];@\n" pp_dotty_id edge pp_dotty_id
           cycle.rc_head
     | [] ->
         ()
