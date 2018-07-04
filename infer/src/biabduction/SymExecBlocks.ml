@@ -38,7 +38,7 @@ let get_extended_args_for_method_with_block_analysis act_params =
             in
             append_no_duplicates_vars all_args captured
         | _ ->
-            append_no_duplicates_vars all_args [act_param] )
+            List.append all_args [act_param] )
   in
   List.map ~f:(fun (exp, _, typ) -> (exp, typ)) args_and_captured
 

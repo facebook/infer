@@ -74,6 +74,7 @@ SOURCES_BUCKET_ALL = \
   returnstmt/return_npe_test.m \
   shared/assertions/NSAssert_example.m \
   shared/block/BlockVar.m \
+  shared/block/AnonymousBlock.m \
   shared/block/block.m \
   shared/block/block_no_args.m \
   shared/block/block_release.m \
