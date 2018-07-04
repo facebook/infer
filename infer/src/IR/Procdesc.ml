@@ -101,9 +101,9 @@ module Node = struct
   (** Get siblings *)
   let get_siblings node =
     get_preds node
-    |> List.fold_left ~init:[] ~f:(fun acc parent ->
+    |> List.fold_left ~init:Sequence.empty ~f:(fun acc parent ->
            let siblings = get_succs parent |> List.filter ~f:(fun n -> not (equal node n)) in
-           List.rev_append siblings acc )
+           Sequence.append (Sequence.of_list siblings) acc )
 
 
   (** Get the node kind *)

@@ -84,7 +84,7 @@ module Node : sig
   val get_preds : t -> t list
   (** Get the predecessor nodes of the current node *)
 
-  val get_siblings : t -> t list
+  val get_siblings : t -> t Sequence.t
   (** Get siblings of the current node *)
 
   val get_proc_name : t -> Typ.Procname.t

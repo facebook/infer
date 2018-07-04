@@ -102,7 +102,7 @@ let remove_prune_node_pairs exit_nodes guard_nodes =
   except_exit_nodes
   |> Control.GuardNodes.filter (fun node ->
          is_prune node
-         && Procdesc.Node.get_siblings node |> List.hd
+         && Procdesc.Node.get_siblings node |> Sequence.hd
             |> Option.value_map ~default:false ~f:(fun sibling ->
                    not (Control.GuardNodes.mem sibling except_exit_nodes) ) )
   |> Control.GuardNodes.union exit_nodes
