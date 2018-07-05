@@ -19,6 +19,7 @@ let clear_caches () =
 (** Create tasks to analyze an execution environment *)
 let analyze_source_file : SourceFile.t Tasks.doer =
  fun source_file ->
+  DB.Results_dir.init source_file ;
   let exe_env = Exe_env.mk () in
   L.(debug Analysis Medium) "@\nProcessing '%a'@." SourceFile.pp source_file ;
   (* clear cache for each source file to avoid it growing unboundedly *)
