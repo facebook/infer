@@ -135,7 +135,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr astate {ProcData.pdesc} _ (instr: Sil.instr) =
     match instr with
-    | Load (_, exp, _, loc) | Store (_, _, exp, loc) | Prune (exp, loc, _, _) ->
+    | Store (Lvar global, Typ.({desc= Tptr _}), Lvar _, loc)
+      when (Option.equal Typ.Procname.equal)
+             (Pvar.get_initializer_pname global)
+             (Some (Procdesc.get_proc_name pdesc)) ->
+        (* if we are just taking the reference of another global then we are not really accessing
+           it. This is a dumb heuristic as something also might take that result and then
+           dereference it, thus requiring the target object to be initialized. Solving this would
+           involve a more complicated domain and analysis.
+
+           The heuristic is limited to the case where the access sets the global being initialized
+           in the current variable initializer function. *)
+        add_globals astate loc (GlobalVarSet.singleton global)
+    | Load (_, exp, _, loc) (* dereference -> add all the dangerous variables *)
+    | Store (_, _, exp, loc) (* except in the case above, consider all reads as dangerous *)
+    | Prune (exp, loc, _, _) ->
         get_globals pdesc exp |> add_globals astate loc
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
         at_least_nonbottom astate

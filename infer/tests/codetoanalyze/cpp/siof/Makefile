@@ -12,6 +12,7 @@ INFER_OPTIONS = --siof-only --cxx-infer-headers --debug-exceptions --project-roo
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
+  siof/by_ref.cpp \
   siof/const.cpp \
   siof/const_use.cpp \
   siof/duplicate_reports.cpp \
