@@ -249,7 +249,9 @@ let init_summary proc_desc =
 
 
 let dummy =
-  let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block in
+  let dummy_attributes =
+    ProcAttributes.default (SourceFile.invalid __FILE__) Typ.Procname.empty_block
+  in
   let dummy_proc_desc = Procdesc.from_proc_attributes dummy_attributes in
   init_summary dummy_proc_desc
 

@@ -155,7 +155,9 @@ struct
 
   let structured_program_to_cfg program test_pname =
     let cfg = Cfg.create () in
-    let pdesc = Cfg.create_proc_desc cfg (ProcAttributes.default test_pname) in
+    let pdesc =
+      Cfg.create_proc_desc cfg (ProcAttributes.default (SourceFile.invalid __FILE__) test_pname)
+    in
     let pname = Procdesc.get_proc_name pdesc in
     let create_node kind cmds = Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers =

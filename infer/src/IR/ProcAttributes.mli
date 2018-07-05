@@ -61,7 +61,7 @@ type t =
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
-  ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
+  ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
@@ -70,7 +70,7 @@ type t =
   ; ret_type: Typ.t  (** return type *) }
 [@@deriving compare]
 
-val default : Typ.Procname.t -> t
+val default : SourceFile.t -> Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)
 
 val pp : Format.formatter -> t -> unit

@@ -13,7 +13,10 @@ module BackwardInstrCfg = ProcCfg.Backward (InstrCfg)
 
 let tests =
   let cfg = Cfg.create () in
-  let test_pdesc = Cfg.create_proc_desc cfg (ProcAttributes.default Typ.Procname.empty_block) in
+  let test_pdesc =
+    Cfg.create_proc_desc cfg
+      (ProcAttributes.default (SourceFile.invalid __FILE__) Typ.Procname.empty_block)
+  in
   let dummy_instr1 = Sil.Remove_temps ([], Location.dummy) in
   let dummy_instr2 = Sil.Abstract Location.dummy in
   let dummy_instr3 = Sil.Remove_temps ([Ident.create_fresh Ident.knormal], Location.dummy) in

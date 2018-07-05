@@ -52,7 +52,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let recover () =
       Typ.Procname.Hash.remove cfg procname ;
       let method_kind = ms.CMethodSignature.method_kind in
-      CMethod_trans.create_external_procdesc cfg procname method_kind None
+      CMethod_trans.create_external_procdesc trans_unit_ctx cfg procname method_kind None
     in
     let pp_context fmt () =
       F.fprintf fmt "Aborting translation of method '%a' in file '%a'" Typ.Procname.pp procname

@@ -73,7 +73,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (proc_name, CMethod_trans.MCNoVirtual)
         else (proc_name, mc_type)
     | _ ->
-        CMethod_trans.create_external_procdesc context.cfg proc_name method_kind None ;
+        CMethod_trans.create_external_procdesc context.translation_unit_context context.cfg
+          proc_name method_kind None ;
         (proc_name, mc_type)
 
 

@@ -113,7 +113,7 @@ type t =
   ; ret_type: Typ.t  (** return type *) }
 [@@deriving compare]
 
-let default proc_name =
+let default translation_unit proc_name =
   { access= PredSymb.Default
   ; captured= []
   ; did_preanalysis= false
@@ -134,7 +134,7 @@ let default proc_name =
   ; is_variadic= false
   ; clang_method_kind= C_FUNCTION
   ; loc= Location.dummy
-  ; translation_unit= SourceFile.invalid __FILE__
+  ; translation_unit
   ; locals= []
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
@@ -175,10 +175,12 @@ let pp f
      ; proc_flags
      ; proc_name
      ; ret_type }[@warning "+9"]) =
-  let default = default proc_name in
+  let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b
   in
+  F.fprintf f "@[<v>{ proc_name= %a@,; translation_unit= %a@," Typ.Procname.pp proc_name
+    SourceFile.pp translation_unit ;
   if not (PredSymb.equal_access default.access access) then
     F.fprintf f "; access= %a@," (Pp.to_string ~f:PredSymb.string_of_access) access ;
   if not ([%compare.equal : (Mangled.t * Typ.t) list] default.captured captured) then
@@ -223,8 +225,6 @@ let pp f
       (Pp.to_string ~f:string_of_clang_method_kind)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp loc ;
-  if not ([%compare.equal : SourceFile.t] default.translation_unit translation_unit) then
-    F.fprintf f "; translation_unit= %a@," SourceFile.pp translation_unit ;
   if not ([%compare.equal : var_data list] default.locals locals) then
     F.fprintf f "; locals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)

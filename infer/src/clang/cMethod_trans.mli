@@ -23,8 +23,8 @@ val create_local_procdesc :
   -> CMethodSignature.t -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool
 
 val create_external_procdesc :
-  Cfg.t -> Typ.Procname.t -> ProcAttributes.clang_method_kind -> (Typ.t * Typ.t list) option
-  -> unit
+  CFrontend_config.translation_unit_context -> Cfg.t -> Typ.Procname.t
+  -> ProcAttributes.clang_method_kind -> (Typ.t * Typ.t list) option -> unit
 
 val get_objc_method_data :
   Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.pointer option * method_call_type

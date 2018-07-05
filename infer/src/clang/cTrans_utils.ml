@@ -378,7 +378,8 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
     CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
       Typ.Procname.ObjC_Cpp.ObjCInstanceMethod
   in
-  CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname method_kind None ;
+  CMethod_trans.create_external_procdesc trans_state.context.CContext.translation_unit_context
+    trans_state.context.CContext.cfg pname method_kind None ;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
   let ret_id_typ = (init_ret_id, alloc_ret_type) in
   let init_stmt_call =

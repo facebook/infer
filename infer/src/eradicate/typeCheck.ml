@@ -552,7 +552,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             in
             let ret_type = Typ.Procname.Java.get_return_typ callee_pname_java in
             let proc_attributes =
-              {(ProcAttributes.default callee_pname) with ProcAttributes.formals; ret_type}
+              { (ProcAttributes.default (SourceFile.invalid __FILE__) callee_pname) with
+                ProcAttributes.formals; ret_type }
             in
             proc_attributes
       in

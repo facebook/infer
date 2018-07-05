@@ -268,7 +268,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     let translation_unit = trans_unit_ctx.CFrontend_config.source_file in
     let procdesc =
       let proc_attributes =
-        { (ProcAttributes.default proc_name) with
+        { (ProcAttributes.default translation_unit proc_name) with
           ProcAttributes.captured= captured_mangled
         ; formals
         ; const_formals
@@ -282,7 +282,6 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
         ; loc= loc_start
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
-        ; translation_unit
         ; method_annotation
         ; ret_type }
       in
@@ -302,7 +301,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
 
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
-let create_external_procdesc cfg proc_name clang_method_kind type_opt =
+let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type_opt =
   if not (Typ.Procname.Hash.mem cfg proc_name) then
     let ret_type, formals =
       match type_opt with
@@ -312,7 +311,8 @@ let create_external_procdesc cfg proc_name clang_method_kind type_opt =
           (Typ.mk Typ.Tvoid, [])
     in
     let proc_attributes =
-      {(ProcAttributes.default proc_name) with ProcAttributes.formals; clang_method_kind; ret_type}
+      { (ProcAttributes.default trans_unit_ctx.CFrontend_config.source_file proc_name) with
+        ProcAttributes.formals; clang_method_kind; ret_type }
     in
     ignore (Cfg.create_proc_desc cfg proc_attributes)
 
@@ -335,7 +335,8 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
             ( CType_decl.CProcname.NoAstDecl.c_function_of_string context.tenv name
             , ProcAttributes.C_FUNCTION )
       in
-      create_external_procdesc context.cfg callee_name method_kind None ;
+      create_external_procdesc context.translation_unit_context context.cfg callee_name method_kind
+        None ;
       callee_name
 
 
