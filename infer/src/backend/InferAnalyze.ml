@@ -73,9 +73,7 @@ let main ~changed_files =
   | None ->
       () ) ;
   register_active_checkers () ;
-  (* delete all specs when doing a full analysis so that we do not report on procedures that do
-         not exist anymore *)
-  if not Config.reactive_mode then DB.Results_dir.clean_specs_dir () ;
+  DB.Results_dir.clean_specs_dir () ;
   let all_source_files = SourceFiles.get_all () in
   let source_files_to_analyze =
     List.filter ~f:(source_file_should_be_analyzed ~changed_files) all_source_files
