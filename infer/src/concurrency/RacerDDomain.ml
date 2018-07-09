@@ -533,16 +533,24 @@ module StabilityDomain = struct
 
 
   let add_path path_to_add t =
-    if should_skip_var (fst path_to_add |> fst) || exists_prefix path_to_add t then t
+    if
+      not Config.racerd_use_path_stability || should_skip_var (fst path_to_add |> fst)
+      || exists_prefix path_to_add t
+    then t
     else filter (fun path -> is_prefix path_to_add path |> not) t |> add path_to_add
 
 
   let add_exp exp paths =
-    AccessExpression.to_access_paths (HilExp.get_access_exprs exp)
-    |> List.fold ~f:(fun acc p -> add_path p acc) ~init:paths
+    if not Config.racerd_use_path_stability then paths
+    else
+      AccessExpression.to_access_paths (HilExp.get_access_exprs exp)
+      |> List.fold ~f:(fun acc p -> add_path p acc) ~init:paths
 
 
-  let add_assign lhs_path rhs_exp paths = add_path lhs_path paths |> add_exp rhs_exp
+  let add_assign lhs_path rhs_exp paths =
+    if not Config.racerd_use_path_stability then paths
+    else add_path lhs_path paths |> add_exp rhs_exp
+
 
   let actual_to_access_path actual_exp =
     match HilExp.get_access_exprs actual_exp with
@@ -566,21 +574,23 @@ module StabilityDomain = struct
 
 
   let integrate_summary actuals pdesc_opt ~callee ~caller =
-    let rebased =
-      Option.value_map pdesc_opt ~default:callee ~f:(fun pdesc -> rebase actuals pdesc callee)
-    in
-    let joined = join rebased caller in
-    let actual_aps = List.filter_map actuals ~f:actual_to_access_path in
-    let rec aux acc left right =
-      match right with
-      | [] ->
-          acc
-      | ap :: aps ->
-          let all = List.rev_append left aps in
-          let acc' = if List.exists all ~f:(is_prefix ap) then add_path ap acc else acc in
-          aux acc' (ap :: left) aps
-    in
-    aux joined [] actual_aps
+    if not Config.racerd_use_path_stability then caller
+    else
+      let rebased =
+        Option.value_map pdesc_opt ~default:callee ~f:(fun pdesc -> rebase actuals pdesc callee)
+      in
+      let joined = join rebased caller in
+      let actual_aps = List.filter_map actuals ~f:actual_to_access_path in
+      let rec aux acc left right =
+        match right with
+        | [] ->
+            acc
+        | ap :: aps ->
+            let all = List.rev_append left aps in
+            let acc' = if List.exists all ~f:(is_prefix ap) then add_path ap acc else acc in
+            aux acc' (ap :: left) aps
+      in
+      aux joined [] actual_aps
 end
 
 type astate =

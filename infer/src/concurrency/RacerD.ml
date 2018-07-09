@@ -347,20 +347,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (instr: HilInstr.t) =
     let open Domain in
     let open RacerDConfig in
-    let add_base ret_base wps = StabilityDomain.add_path (ret_base, []) wps in
     match instr with
     | Call (ret_base, Direct procname, actuals, _, loc)
       when Models.acquires_ownership procname tenv ->
+        let ret_access_path = (ret_base, []) in
         let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
             proc_data
         in
         let ownership =
-          OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
+          OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate.ownership
         in
-        let wobbly_paths = add_base ret_base astate.wobbly_paths in
+        let wobbly_paths = StabilityDomain.add_path ret_access_path astate.wobbly_paths in
         {astate with accesses; ownership; wobbly_paths}
-    | Call (ret_access_path, Direct callee_pname, actuals, call_flags, loc) ->
+    | Call (ret_base, Direct callee_pname, actuals, call_flags, loc) ->
+        let ret_access_path = (ret_base, []) in
         let accesses_with_unannotated_calls =
           add_unannotated_call_access callee_pname actuals call_flags loc tenv ~locks:astate.locks
             ~threads:astate.threads astate.accesses proc_data
@@ -369,7 +370,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
             astate.ownership proc_data
         in
-        let wobbly_paths = add_base ret_access_path astate.wobbly_paths in
+        let wobbly_paths = StabilityDomain.add_path ret_access_path astate.wobbly_paths in
         let astate = {astate with accesses; wobbly_paths} in
         let astate =
           match Models.get_thread callee_pname with
@@ -379,7 +380,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               {astate with threads= ThreadsDomain.AnyThreadButSelf}
           | MainThreadIfTrue ->
               let attribute_map =
-                AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.OnMainThread)
+                AttributeMapDomain.add_attribute ret_access_path (Choice Choice.OnMainThread)
                   astate.attribute_map
               in
               {astate with attribute_map}
@@ -411,7 +412,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 ; threads= update_for_lock_use astate.threads }
             | LockedIfTrue ->
                 let attribute_map =
-                  AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.LockHeld)
+                  AttributeMapDomain.add_attribute ret_access_path (Choice Choice.LockHeld)
                     astate.attribute_map
                 in
                 {astate with attribute_map; threads= update_for_lock_use astate.threads}
@@ -442,8 +443,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         loc
                     in
                     let ownership, attribute_map =
-                      propagate_return ret_access_path return_ownership return_attributes actuals
-                        astate
+                      propagate_return ret_base return_ownership return_attributes actuals astate
                     in
                     let wobbly_paths =
                       StabilityDomain.integrate_summary actuals callee_pdesc ~callee:callee_wps
@@ -470,7 +470,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           then
                             (* TODO: check for constants, which are functional? *)
                             let attribute_map =
-                              AttributeMapDomain.add_attribute (ret_access_path, []) Functional
+                              AttributeMapDomain.add_attribute ret_access_path Functional
                                 astate.attribute_map
                             in
                             {astate with attribute_map}
@@ -479,7 +479,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           astate
                     else if should_assume_returns_ownership call_flags actuals then
                       let ownership =
-                        OwnershipDomain.add (ret_access_path, []) OwnershipAbstractValue.owned
+                        OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned
                           astate.ownership
                       in
                       {astate with ownership}
@@ -487,7 +487,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let add_if_annotated predicate attribute attribute_map =
           if PatternMatch.override_exists predicate tenv callee_pname then
-            AttributeMapDomain.add_attribute (ret_access_path, []) attribute attribute_map
+            AttributeMapDomain.add_attribute ret_access_path attribute attribute_map
           else attribute_map
         in
         let attribute_map =
@@ -499,7 +499,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               (Models.has_return_annot Annotations.ia_is_returns_ownership)
               tenv callee_pname
           then
-            OwnershipDomain.add (ret_access_path, []) OwnershipAbstractValue.owned
+            OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned
               astate_callee.ownership
           else astate_callee.ownership
         in
@@ -903,20 +903,19 @@ let make_trace ~report_kind original_path pdesc =
       (original_trace, original_end, None)
 
 
-let ignore_var v = Var.is_global v || Var.is_return v
-
 (* Checking for a wobbly path *)
-let get_contaminated_race_message access wobbly_paths =
+let is_contaminated access wobbly_paths =
+  let ignore_var ((v, _), _) = Var.is_global v || Var.is_return v in
   let open RacerDDomain in
   match TraceElem.kind access with
   | TraceElem.Kind.Read access_path
   | Write access_path
   (* Access paths rooted in static variables are always race-prone,
        hence do not complain about contamination. *)
-    when not (access_path |> fst |> fst |> ignore_var) ->
-      if StabilityDomain.exists_proper_prefix access_path wobbly_paths then Some " [wob]" else None
+    when not (ignore_var access_path) ->
+      StabilityDomain.exists_proper_prefix access_path wobbly_paths
   | _ ->
-      None
+      false
 
 
 let log_issue current_pname ~loc ~ltr ~access exn =
@@ -931,42 +930,23 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
     let final_sink, _ = List.hd_exn sinks in
     let initial_sink, _ = List.last_exn sinks in
     let is_full_trace = TraceElem.is_direct final_sink in
-    let is_pvar_base initial_sink =
-      let access_path = Access.get_access_path (PathDomain.Sink.kind initial_sink) in
-      Option.value_map ~default:true access_path ~f:(fun ((var, _), _) ->
-          Var.appears_in_source_code var )
-    in
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
-       trace, it's probably going to be too confusing to be actionable. Skip it.
-       It is difficult to ensure that a report on an access path starting with a logical
-       variable or a temporary variable, is a race. We want to skip the reports, at least for now.*)
-    if
-      not Config.filtering
-      || (is_pvar_base initial_sink && (not (Typ.Procname.is_java pname) || is_full_trace))
-    then
-      let final_sink_site = PathDomain.Sink.call_site final_sink in
-      let initial_sink_site = PathDomain.Sink.call_site initial_sink in
-      let loc = CallSite.loc initial_sink_site in
-      let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
-      (* what the potential bug is *)
-      let description = make_description pname final_sink_site initial_sink_site initial_sink in
-      (* why we are reporting it *)
-      let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
-      let error_message = F.sprintf "%s%s" description explanation in
-      match get_contaminated_race_message access wobbly_paths with
-      | Some _ when Config.racerd_use_path_stability ->
-          (* don't report races on unstable paths when use_path_stability is on *)
-          ()
-      | contaminated_message_opt ->
-          let exn =
-            Exceptions.Checkers
-              ( issue_type
-              , Localise.verbatim_desc
-                  (error_message ^ Option.value contaminated_message_opt ~default:"") )
-          in
-          let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
-          let access = IssueAuxData.encode (pname, access, end_locs) in
-          log_issue pname ~loc ~ltr ~access exn
+       trace, it's probably going to be too confusing to be actionable. Skip it. *)
+    if not Config.filtering || not (Typ.Procname.is_java pname) || is_full_trace then
+      if not Config.racerd_use_path_stability || not (is_contaminated access wobbly_paths) then
+        let final_sink_site = PathDomain.Sink.call_site final_sink in
+        let initial_sink_site = PathDomain.Sink.call_site initial_sink in
+        let loc = CallSite.loc initial_sink_site in
+        let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
+        (* what the potential bug is *)
+        let description = make_description pname final_sink_site initial_sink_site initial_sink in
+        (* why we are reporting it *)
+        let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
+        let error_message = F.sprintf "%s%s" description explanation in
+        let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message) in
+        let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
+        let access = IssueAuxData.encode (pname, access, end_locs) in
+        log_issue pname ~loc ~ltr ~access exn
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
