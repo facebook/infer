@@ -52,7 +52,7 @@ val string_of_build_system : build_system -> string
 
 val env_inside_maven : Unix.env
 
-(** Constant configuration values *)
+(** {2 Constant configuration values} *)
 
 val anonymous_block_num_sep : string
 
@@ -158,18 +158,6 @@ val pp_version : Format.formatter -> unit -> unit
 
 val proc_stats_filename : string
 
-val procedures : bool
-
-val procedures_attributes : bool
-
-val procedures_definedness : bool
-
-val procedures_filter : string option
-
-val procedures_name : bool
-
-val procedures_source_file : bool
-
 val property_attributes : string
 
 val racerd_issues_dir_name : string
@@ -196,18 +184,6 @@ val smt_output : bool
 
 val source_file_extentions : string list
 
-val source_files : bool
-
-val source_files_filter : string option
-
-val source_files_cfgs : bool
-
-val source_files_type_environment : bool
-
-val source_files_procedure_names : bool
-
-val source_files_freshly_captured : bool
-
 val sources : string list
 
 val sourcepath : string option
@@ -232,7 +208,7 @@ val whitelisted_cpp_classes : string list
 
 val wrappers_dir : string
 
-(** Configuration values specified by command-line options *)
+(** {2 Configuration values specified by command-line options} *)
 
 val anon_args : string list
 
@@ -528,6 +504,18 @@ val print_using_diff : bool
 
 val printf_args : bool
 
+val procedures : bool
+
+val procedures_attributes : bool
+
+val procedures_definedness : bool
+
+val procedures_filter : string option
+
+val procedures_name : bool
+
+val procedures_source_file : bool
+
 val procs_csv : string option
 
 val project_root : string
@@ -587,6 +575,18 @@ val skip_analysis_in_path_skips_compilation : bool
 val skip_duplicated_types : bool
 
 val skip_translation_headers : string list
+
+val source_files : bool
+
+val source_files_filter : string option
+
+val source_files_cfgs : bool
+
+val source_files_type_environment : bool
+
+val source_files_procedure_names : bool
+
+val source_files_freshly_captured : bool
 
 val source_preview : bool
 
@@ -656,7 +656,7 @@ val xcode_developer_dir : string option
 
 val xcpretty : bool
 
-(** Global variables *)
+(** {2 Global variables} *)
 
 val arc_mode : bool ref
 
@@ -674,7 +674,7 @@ val forcing_delayed_prints : bool ref
 
 val pp_simple : bool ref
 
-(** Global variables with initial values specified by command-line options *)
+(** {2 Global variables with initial values specified by command-line options} *)
 
 val abs_val : int ref
 
@@ -688,11 +688,11 @@ val allow_leak : bool ref
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
 
-(** Command Line Interface Documentation *)
+(** {2 Command Line Interface Documentation} *)
 
 val print_usage_exit : unit -> 'a
 
-(** Miscellanous *)
+(** {2 Miscellanous} *)
 
 val register_late_epilogue : (unit -> unit) -> unit
 

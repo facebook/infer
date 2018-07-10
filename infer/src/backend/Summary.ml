@@ -233,9 +233,6 @@ let store (summ: t) =
     ~data:final_summary
 
 
-(** [init_summary (depend_list, nodes,
-    proc_flags, calls, in_out_calls_opt, proc_attributes)]
-    initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary proc_desc =
   let summary =
     { sessions= ref 0
