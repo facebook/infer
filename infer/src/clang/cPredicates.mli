@@ -36,6 +36,9 @@ val is_enum_constant_of_enum : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 val is_global_var : Ctl_parser_types.ast_node -> bool
 (** 'is_global_var an' is true iff an is a global variable (but not a static local) *)
 
+val is_static_local_var : Ctl_parser_types.ast_node -> bool
+(** 'is_static_local_var an' is true iff an is a static local variable *)
+
 val is_const_expr_var : Ctl_parser_types.ast_node -> bool
 (** 'is_const_expr_var an' is true iff an is a 'const' variable declaration *)
 

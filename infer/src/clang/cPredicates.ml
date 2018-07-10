@@ -500,6 +500,10 @@ let is_global_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_syntactically_global_var d | _ -> false
 
 
+let is_static_local_var an =
+  match an with Ctl_parser_types.Decl d -> CAst_utils.is_static_local_var d | _ -> false
+
+
 let is_const_expr_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
 

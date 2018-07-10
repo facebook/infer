@@ -16,3 +16,14 @@ SET report_when  =
 SET message = "Found Copy Constructor";
 
 };
+
+DEFINE-CHECKER FIND_STATIC_LOCAL_VAR = {
+
+SET report_when =
+  WHEN is_static_local_var
+  HOLDS-IN-NODE VarDecl;
+
+SET message = "Found static local var";
+
+};
+  
