@@ -641,7 +641,7 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Typ.Procname.t
       with Invalid_argument _ ->
         let loc = (Procdesc.get_attributes caller_pdesc).loc in
         let file = loc.Location.file in
-        L.internal_error
+        L.(debug Analysis Medium)
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Typ.Procname.pp pname (List.length resolved_parameters) (List.length args) SourceFile.pp
           file Location.pp loc ;
@@ -672,7 +672,7 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Typ.Procname.t
     | args ->
         let loc = (Procdesc.get_attributes caller_pdesc).loc in
         let file = loc.Location.file in
-        L.internal_error
+        L.(debug Analysis Medium)
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Typ.Procname.pp pname (List.length parameters) (List.length args) SourceFile.pp file
           Location.pp loc ;

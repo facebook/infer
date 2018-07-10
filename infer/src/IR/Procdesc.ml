@@ -684,7 +684,7 @@ let specialize_types ?(has_clang_model= false) callee_pdesc resolved_pname args 
               ((param_name, param_typ) :: params, subts) )
         ~init:([], Mangled.Map.empty) callee_attributes.formals args
     with Invalid_argument _ ->
-      L.internal_error
+      L.(debug Analysis Medium)
         "Call mismatch: method %a has %i paramters but is called with %i arguments@."
         Typ.Procname.pp resolved_pname
         (List.length callee_attributes.formals)
