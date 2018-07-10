@@ -4,6 +4,8 @@ codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(i
 codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(int), 12, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 889]
 codetoanalyze/java/performance/ArrayCost.java, void ArrayCost.ArrayCost(int[]), 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 6 + 5 * mag.length.ub]
 codetoanalyze/java/performance/ArrayCost.java, void ArrayCost.ArrayCost(int[]), 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 5 + 5 * mag.length.ub]
+codetoanalyze/java/performance/ArrayListTest.java, void ArrayListTest.iterate_over_arraylist(ArrayList), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 5 + 5 * list.length.ub]
+codetoanalyze/java/performance/ArrayListTest.java, void ArrayListTest.iterate_over_arraylist(ArrayList), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 6 + 5 * list.length.ub]
 codetoanalyze/java/performance/Break.java, int Break.break_constant(int), 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 8 + 7 * p.ub]
 codetoanalyze/java/performance/Break.java, int Break.break_loop(int,int), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1 + 7 * p.ub]
 codetoanalyze/java/performance/Break.java, int Break.break_loop(int,int), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 2 + 7 * p.ub]

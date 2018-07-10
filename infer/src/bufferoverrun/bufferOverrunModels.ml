@@ -185,7 +185,7 @@ let set_array_length array length_exp =
         mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
         |> set_uninitialized location elt (Dom.Val.get_array_locs v)
     | _ ->
-        L.(die InternalError) "Unexpected type of first argument for __set_array_length()"
+        L.(die InternalError) "Unexpected type of first argument for __set_array_length() "
   and check = check_alloc_size length_exp in
   {exec; check}
 
@@ -318,7 +318,8 @@ module Call = struct
       ; std_array0 >:: "array" &--> StdArray.constructor
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
-      ; -"std" &:: "array" &::.*--> StdArray.no_model ]
+      ; -"std" &:: "array" &::.*--> StdArray.no_model
+      ; -"java.util.ArrayList" &:: "size" <>$ capt_exp $!--> get_array_length ]
 end
 
 module TypName = struct

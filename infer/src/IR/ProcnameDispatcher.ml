@@ -25,6 +25,8 @@ type c = Typ.Procname.C.t
 
 type objc_cpp = Typ.Procname.ObjC_Cpp.t
 
+type java = Typ.Procname.Java.t
+
 type qual_name = QualifiedCppName.t
 
 type templated_name = qual_name * Typ.template_arg list
@@ -42,8 +44,6 @@ let template_args_of_template_spec_info = function
       args
 
 
-exception DoNotHandleJavaYet
-
 let templated_name_of_class_name class_name =
   let open Typ in
   match class_name with
@@ -51,8 +51,16 @@ let templated_name_of_class_name class_name =
       (qual_name, [])
   | CppClass (qual_name, template_spec_info) ->
       (qual_name, template_args_of_template_spec_info template_spec_info)
-  | JavaClass _ ->
-      raise DoNotHandleJavaYet
+  | JavaClass mangled_name ->
+      (QualifiedCppName.of_list [Mangled.to_string mangled_name], [])
+
+
+let templated_name_of_java java =
+  let qual_name =
+    QualifiedCppName.of_list
+      [Typ.Procname.Java.get_class_name java; Typ.Procname.Java.get_method java]
+  in
+  (qual_name, [])
 
 
 (* Intermediate matcher types *)
@@ -446,7 +454,8 @@ module Call = struct
 
   type ('f_in, 'f_out, 'captured_types) proc_matcher =
     { on_objc_cpp: 'f_in -> objc_cpp -> ('f_out * 'captured_types) option
-    ; on_c: 'f_in -> c -> ('f_out * 'captured_types) option }
+    ; on_c: 'f_in -> c -> ('f_out * 'captured_types) option
+    ; on_java: 'f_in -> java -> ('f_out * 'captured_types) option }
 
   type ('f_in, 'f_out, 'captured_types) on_args =
     'captured_types -> 'f_in * FuncArg.t list -> ('f_out * FuncArg.t list) option
@@ -475,7 +484,9 @@ module Call = struct
     ; marker_static_checker: 'markers -> bool }
 
   type 'f matcher =
-    {on_objc_cpp: objc_cpp -> FuncArg.t list -> 'f option; on_c: c -> FuncArg.t list -> 'f option}
+    { on_objc_cpp: objc_cpp -> FuncArg.t list -> 'f option
+    ; on_c: c -> FuncArg.t list -> 'f option
+    ; on_java: java -> FuncArg.t list -> 'f option }
 
   type 'f pre_result = DoesNotMatch | Matches of 'f | RetryWith of 'f matcher
 
@@ -489,7 +500,8 @@ module Call = struct
 
   type ('f_in, 'f_out) all_args_matcher =
     { on_objc_cpp: 'f_in -> objc_cpp -> FuncArg.t list -> 'f_out pre_result
-    ; on_c: 'f_in -> c -> FuncArg.t list -> 'f_out pre_result }
+    ; on_c: 'f_in -> c -> FuncArg.t list -> 'f_out pre_result
+    ; on_java: 'f_in -> java -> FuncArg.t list -> 'f_out pre_result }
 
   type 'f dispatcher = Typ.Procname.t -> FuncArg.t list -> 'f option
 
@@ -505,8 +517,11 @@ module Call = struct
         let template_args = template_args_of_template_spec_info c.template_args in
         on_templated_name f (c.name, template_args) |> Option.map ~f:get_captures
       in
+      let on_java f (java: java) =
+        on_templated_name f (templated_name_of_java java) |> Option.map ~f:get_captures
+      in
       let on_objc_cpp f objc_cpp = on_objc_cpp f objc_cpp |> Option.map ~f:get_captures in
-      let on_proc : (_, _, _) proc_matcher = {on_objc_cpp; on_c} in
+      let on_proc : (_, _, _) proc_matcher = {on_objc_cpp; on_c; on_java} in
       {on_proc; on_args; markers}
 
 
@@ -526,17 +541,18 @@ module Call = struct
       : ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
         -> ('f_proc_out, 'f_out, 'captured_types) func_args_end -> ('f_in, 'f_out) all_args_matcher =
    fun m func_args_end ->
-    let {on_proc= {on_c; on_objc_cpp}; on_args} = m in
+    let {on_proc= {on_c; on_java; on_objc_cpp}; on_args} = m in
     let on_c f c args = on_c f c |> pre_bind_opt ~f:(func_args_end ~on_args args) in
+    let on_java f java args = on_java f java |> pre_bind_opt ~f:(func_args_end ~on_args args) in
     let on_objc_cpp f objc_cpp args =
       on_objc_cpp f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args args)
     in
-    {on_c; on_objc_cpp}
+    {on_c; on_java; on_objc_cpp}
 
 
   let make_matcher : ('f_in, 'f_out) all_args_matcher -> 'f_in -> 'f_out matcher =
    fun m f ->
-    let {on_c; on_objc_cpp} : (_, _) all_args_matcher = m in
+    let {on_c; on_java; on_objc_cpp} : (_, _) all_args_matcher = m in
     let on_objc_cpp objc_cpp args =
       match on_objc_cpp f objc_cpp args with
       | DoesNotMatch ->
@@ -555,7 +571,16 @@ module Call = struct
       | RetryWith {on_c} ->
           on_c c args
     in
-    {on_objc_cpp; on_c}
+    let on_java java args =
+      match on_java f java args with
+      | DoesNotMatch ->
+          None
+      | Matches res ->
+          Some res
+      | RetryWith {on_java} ->
+          on_java java args
+    in
+    {on_objc_cpp; on_c; on_java}
 
 
   (** Simple implementation of a dispatcher, could be optimized later *)
@@ -567,12 +592,17 @@ module Call = struct
     let on_c c args =
       List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_c c args)
     in
+    let on_java java args =
+      List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_java java args)
+    in
     fun procname args ->
       match procname with
       | ObjC_Cpp objc_cpp ->
           on_objc_cpp objc_cpp args
       | C c ->
           on_c c args
+      | Java java ->
+          on_java java args
       | _ ->
           None
 
@@ -756,8 +786,9 @@ module Call = struct
         "Unexpected number/types of arguments for %a" Typ.Procname.pp procname
     in
     let on_c c _args = on_procname (C c) in
+    let on_java java _args = on_procname (Java java) in
     let on_objc_cpp objc_cpp _args = on_procname (ObjC_Cpp objc_cpp) in
-    {on_c; on_objc_cpp}
+    {on_c; on_java; on_objc_cpp}
 
 
   let ( $! ) path_matcher () = args_begin path_matcher
@@ -864,14 +895,29 @@ module ProcName = struct
     let on_objc_cpp objc_cpp =
       List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_objc_cpp objc_cpp)
     in
-    let on_c (c: c) =
-      let template_args = template_args_of_template_spec_info c.template_args in
-      let templated_name = (c.name, template_args) in
+    let on_templated_name templated_name =
       List.find_map matchers ~f:(fun (matcher: _ matcher) ->
           matcher.on_templated_name templated_name )
     in
+    let on_java (java: Typ.Procname.Java.t) =
+      let templated_name = templated_name_of_java java in
+      on_templated_name templated_name
+    in
+    let on_c (c: c) =
+      let template_args = template_args_of_template_spec_info c.template_args in
+      let templated_name = (c.name, template_args) in
+      on_templated_name templated_name
+    in
     fun procname ->
-      match procname with ObjC_Cpp objc_cpp -> on_objc_cpp objc_cpp | C c -> on_c c | _ -> None
+      match procname with
+      | ObjC_Cpp objc_cpp ->
+          on_objc_cpp objc_cpp
+      | C c ->
+          on_c c
+      | Java java ->
+          on_java java
+      | _ ->
+          None
 end
 
 module TypName = struct
@@ -881,10 +927,6 @@ module TypName = struct
 
   let make_dispatcher : 'f matcher list -> 'f dispatcher =
    fun matchers typname ->
-    match templated_name_of_class_name typname with
-    | exception DoNotHandleJavaYet ->
-        None
-    | templated_name ->
-        List.find_map matchers ~f:(fun (matcher: _ matcher) ->
-            matcher.on_templated_name templated_name )
+    let templated_name = templated_name_of_class_name typname in
+    List.find_map matchers ~f:(fun (matcher: _ matcher) -> matcher.on_templated_name templated_name)
 end
