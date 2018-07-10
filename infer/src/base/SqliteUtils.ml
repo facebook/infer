@@ -40,7 +40,7 @@ let sqlite_result_rev_list_step ?finalize:(do_finalize = true) db ~log stmt =
     match Sqlite3.step stmt with
     | Sqlite3.Rc.ROW ->
         (* the operation returned a result, get it *)
-        let value = Some (Sqlite3.column stmt 0) in
+        let value = Sqlite3.column stmt 0 in
         aux (value :: rev_results)
     | DONE ->
         rev_results
@@ -56,7 +56,7 @@ let sqlite_result_step ?finalize db ~log stmt =
   | [] ->
       None
   | [x] ->
-      x
+      Some x
   | l ->
       L.die InternalError "%s: zero or one result expected, got %d instead" log (List.length l)
 

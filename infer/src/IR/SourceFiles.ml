@@ -82,7 +82,7 @@ let get_all () =
   let db = ResultsDatabase.get_database () in
   Sqlite3.prepare db "SELECT source_file FROM source_files"
   |> SqliteUtils.sqlite_result_rev_list_step db ~log:"getting all source files"
-  |> List.filter_map ~f:(Option.map ~f:SourceFile.SQLite.deserialize)
+  |> List.map ~f:SourceFile.SQLite.deserialize
 
 
 let load_proc_names_statement =

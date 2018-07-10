@@ -20,7 +20,7 @@ val finalize : Sqlite3.db -> log:string -> Sqlite3.stmt -> unit
 (** Finalize the given [stmt]. Raises [Error] on failure. *)
 
 val sqlite_result_rev_list_step :
-  ?finalize:bool -> Sqlite3.db -> log:string -> Sqlite3.stmt -> Sqlite3.Data.t option list
+  ?finalize:bool -> Sqlite3.db -> log:string -> Sqlite3.stmt -> Sqlite3.Data.t list
 (** Return a reversed list of results obtained by repeatedly stepping through [stmt] and saving only column 0 of each returned row (all that's been needed so far). *)
 
 val sqlite_result_step :
