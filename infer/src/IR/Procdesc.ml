@@ -736,7 +736,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
       let block_name, extra_formals = Mangled.Map.find block_var substitutions in
       let ids, id_exp_typs, load_instrs =
         List.map extra_formals ~f:(fun (var, typ) ->
-            let id = Ident.create_fresh Ident.knormal in
+            let id = Ident.create_fresh_specialized_with_blocks Ident.knormal in
             let pvar = Pvar.mk var resolved_pname in
             (id, (Exp.Var id, pvar, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
         |> List.unzip3
