@@ -1706,9 +1706,8 @@ and procedures_filter =
     ~in_help:InferCommand.[(Explore, manual_generic)]
     "With $(b,--procedures), only print functions and methods (procedures) matching the specified \
      $(i,filter). A procedure filter is of the form $(i,path_pattern:procedure_name). Patterns \
-     are interpreted by SQLite: use $(b,_) to match any one character and $(b,%) to match any \
-     sequence of characters. For instance, to keep only methods named \"foo\", one can use the \
-     filter \"%:foo\"."
+     are interpreted as OCaml Str regular expressions. For instance, to keep only methods named \
+     \"foo\", one can use the filter \".*:foo\", or \"foo\" for short."
 
 
 and procedures_name =
@@ -1928,9 +1927,8 @@ and source_files_filter =
   CLOpt.mk_string_opt ~long:"source-files-filter" ~meta:"filter"
     ~in_help:InferCommand.[(Explore, manual_generic)]
     "With $(b,--source-files), only print source files matching the specified $(i,filter). The \
-     filter is a pattern that should match the file path. Patterns are interpreted by SQLite: use \
-     $(b,_) to match any one character and $(b,%) to match any  sequence of characters. For \
-     instance, \"lib/%.c\" matches only C files in the lib directory."
+     filter is a pattern that should match the file path. Patterns are interpreted as OCaml Str \
+     regular expressions."
 
 
 and source_files_cfgs =

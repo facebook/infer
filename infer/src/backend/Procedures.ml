@@ -8,54 +8,42 @@ open! IStd
 module F = Format
 module L = Logging
 
-let select_all_procedures_like_statement =
-  ResultsDatabase.register_statement
-    "SELECT * FROM procedures WHERE proc_name_hum LIKE :proc_name_like AND source_file LIKE \
-     :source_file_like"
+let select_all_procedures_statement = ResultsDatabase.register_statement "SELECT * FROM procedures"
 
-
-let pp_all ?filter ~proc_name ~attr_kind ~source_file ~proc_attributes fmt () =
-  let source_file_like, proc_name_like =
-    match filter with
-    | None ->
-        let wildcard = Sqlite3.Data.TEXT "%" in
-        (wildcard, wildcard)
-    | Some filter_string ->
-      match String.lsplit2 ~on:':' filter_string with
-      | Some (source_file_like, proc_name_like) ->
-          (Sqlite3.Data.TEXT source_file_like, Sqlite3.Data.TEXT proc_name_like)
-      | None ->
-          L.die UserError
-            "Invalid filter for procedures. Please see the documentation for --procedures-filter \
-             in `infer explore --help`."
-  in
-  ResultsDatabase.with_registered_statement select_all_procedures_like_statement ~f:(fun db stmt ->
-      Sqlite3.bind stmt 1 (* :proc_name_like *) proc_name_like
-      |> SqliteUtils.check_sqlite_error db ~log:"procedures filter pname bind" ;
-      Sqlite3.bind stmt 2 (* :source_file_like *) source_file_like
-      |> SqliteUtils.check_sqlite_error db ~log:"procedures filter source file bind" ;
-      let pp_if ?(new_line= false) condition title deserialize pp fmt column =
+let pp_all ?filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
+    ~proc_attributes fmt () =
+  let filter = Filtering.mk_procedure_name_filter ~filter |> Staged.unstage in
+  ResultsDatabase.with_registered_statement select_all_procedures_statement ~f:(fun db stmt ->
+      let pp_if ?(new_line= false) condition title pp fmt x =
         if condition then (
           if new_line then F.fprintf fmt "@[<v2>" else F.fprintf fmt "@[<h>" ;
-          F.fprintf fmt "%s:@ %a@]@;" title pp (Sqlite3.column stmt column |> deserialize) )
+          F.fprintf fmt "%s:@ %a@]@;" title pp x )
+      in
+      let pp_column_if ?new_line condition title deserialize pp fmt column =
+        if condition then
+          (* repeat the [condition] check so that we do not deserialize if there's nothing to do *)
+          pp_if ?new_line condition title pp fmt (Sqlite3.column stmt column |> deserialize)
+      in
+      let pp_row fmt source_file proc_name =
+        let[@warning "-8"] Sqlite3.Data.TEXT proc_name_hum = Sqlite3.column stmt 1 in
+        Format.fprintf fmt "@[<v2>%s@,%a%a%a%a@]@\n" proc_name_hum
+          (pp_if source_file_cond "source_file" SourceFile.pp)
+          source_file
+          (pp_if proc_name_cond "proc_name" Typ.Procname.pp)
+          proc_name
+          (pp_column_if attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
+             Attributes.pp_attributes_kind)
+          2
+          (pp_column_if ~new_line:true proc_attributes "attributes"
+             ProcAttributes.SQLite.deserialize ProcAttributes.pp)
+          4
       in
       let rec aux () =
         match Sqlite3.step stmt with
         | Sqlite3.Rc.ROW ->
-            let proc_name_hum =
-              match[@warning "-8"] Sqlite3.column stmt 1 with Sqlite3.Data.TEXT s -> s
-            in
-            Format.fprintf fmt "@[<v2>%s@,%a%a%a%a@]@\n" proc_name_hum
-              (pp_if source_file "source_file" SourceFile.SQLite.deserialize SourceFile.pp)
-              3
-              (pp_if proc_name "proc_name" Typ.Procname.SQLite.deserialize Typ.Procname.pp)
-              0
-              (pp_if attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
-                 Attributes.pp_attributes_kind)
-              2
-              (pp_if ~new_line:true proc_attributes "attributes" ProcAttributes.SQLite.deserialize
-                 ProcAttributes.pp)
-              4 ;
+            let proc_name = Sqlite3.column stmt 0 |> Typ.Procname.SQLite.deserialize in
+            let source_file = Sqlite3.column stmt 3 |> SourceFile.SQLite.deserialize in
+            if filter source_file proc_name then pp_row fmt source_file proc_name ;
             aux ()
         | DONE ->
             ()

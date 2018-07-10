@@ -151,14 +151,12 @@ let mark_all_stale () =
 
 
 let select_all_source_files_statement =
-  ResultsDatabase.register_statement
-    "SELECT * FROM source_files WHERE source_file LIKE :source_file_like"
+  ResultsDatabase.register_statement "SELECT * FROM source_files"
 
 
-let pp_all ?(filter= "%") ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
+let pp_all ?filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
+  let filter = Staged.unstage (Filtering.mk_source_file_filter ~filter) in
   ResultsDatabase.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
-      Sqlite3.bind stmt 1 (* :source_file_like *) (Sqlite3.Data.TEXT filter)
-      |> SqliteUtils.check_sqlite_error db ~log:"source files filter" ;
       let pp_procnames fmt procs =
         F.fprintf fmt "@[<v>" ;
         List.iter ~f:(F.fprintf fmt "%a@," Typ.Procname.pp) procs ;
@@ -168,21 +166,23 @@ let pp_all ?(filter= "%") ~cfgs ~type_environment ~procedure_names ~freshly_capt
         if condition then
           F.fprintf fmt "  @[<v2>%s@,%a@]@;" title pp (Sqlite3.column stmt column |> deserialize)
       in
+      let pp_row fmt source_file =
+        F.fprintf fmt "%a@,%a%a%a%a" SourceFile.pp source_file
+          (pp_if "cfgs" cfgs Cfg.SQLite.deserialize Cfg.pp_proc_signatures)
+          1
+          (pp_if "type_environment" type_environment Tenv.SQLite.deserialize Tenv.pp_per_file)
+          2
+          (pp_if "procedure_names" procedure_names Typ.Procname.SQLiteList.deserialize pp_procnames)
+          3
+          (pp_if "freshly_captured" freshly_captured deserialize_freshly_captured
+             Format.pp_print_bool)
+          4
+      in
       let rec aux fmt () =
         match Sqlite3.step stmt with
         | Sqlite3.Rc.ROW ->
-            F.fprintf fmt "%a@,%a%a%a%a" SourceFile.pp
-              (Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize)
-              (pp_if "cfgs" cfgs Cfg.SQLite.deserialize Cfg.pp_proc_signatures)
-              1
-              (pp_if "type_environment" type_environment Tenv.SQLite.deserialize Tenv.pp_per_file)
-              2
-              (pp_if "procedure_names" procedure_names Typ.Procname.SQLiteList.deserialize
-                 pp_procnames)
-              3
-              (pp_if "freshly_captured" freshly_captured deserialize_freshly_captured
-                 Format.pp_print_bool)
-              4 ;
+            let source_file = Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize in
+            if filter source_file then pp_row fmt source_file ;
             aux fmt ()
         | DONE ->
             ()
