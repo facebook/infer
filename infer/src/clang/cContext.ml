@@ -27,7 +27,6 @@ type t =
   ; tenv: Tenv.t
   ; cfg: Cfg.t
   ; procdesc: Procdesc.t
-  ; is_immediate_objc_method: bool
   ; immediate_curr_class: curr_class
   ; return_param_typ: Typ.t option
   ; outer_context: t option
@@ -36,14 +35,13 @@ type t =
   ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t }
 
 let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
-    is_immediate_objc_method outer_context vars_to_destroy =
+    outer_context vars_to_destroy =
   { translation_unit_context
   ; tenv
   ; cfg
   ; procdesc
   ; immediate_curr_class
   ; return_param_typ
-  ; is_immediate_objc_method
   ; outer_context
   ; blocks_static_vars= Typ.Procname.Map.empty
   ; label_map= Hashtbl.create 17
@@ -55,17 +53,17 @@ let rec is_objc_method context =
   | Some outer_context ->
       is_objc_method outer_context
   | None ->
-      context.is_immediate_objc_method
+      context.procdesc |> Procdesc.get_proc_name |> Typ.Procname.is_objc_method
 
 
-let rec is_objc_instance context =
+let rec is_objc_class_method context =
   match context.outer_context with
   | Some outer_context ->
-      is_objc_instance outer_context
+      is_objc_class_method outer_context
   | None ->
       let attrs = Procdesc.get_attributes context.procdesc in
       ProcAttributes.equal_clang_method_kind attrs.ProcAttributes.clang_method_kind
-        ProcAttributes.OBJC_INSTANCE
+        ProcAttributes.OBJC_CLASS
 
 
 let rec get_curr_class context =

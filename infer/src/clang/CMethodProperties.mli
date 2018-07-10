@@ -11,6 +11,8 @@ open! IStd
 
 val get_method_kind : Clang_ast_t.decl -> ProcAttributes.clang_method_kind
 
+val is_inside_objc_class_method : Clang_ast_t.decl -> bool
+
 val get_return_type : Clang_ast_t.decl -> Clang_ast_t.qual_type
 
 val get_param_decls : Clang_ast_t.decl -> Clang_ast_t.decl list
@@ -29,3 +31,5 @@ val get_pointer_to_property : Clang_ast_t.decl -> Clang_ast_t.pointer option
 val is_objc_method : Clang_ast_t.decl -> bool
 
 val is_variadic : Clang_ast_t.decl -> bool
+
+val get_block_captured_variables : Clang_ast_t.decl -> Clang_ast_t.block_captured_variable list

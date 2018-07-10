@@ -58,3 +58,6 @@ val method_signature_body_of_decl :
      * [> `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer] list
 
 val should_add_return_param : Typ.typ -> is_objc_method:bool -> bool
+
+val type_of_captured_var :
+  Tenv.t -> is_block_inside_objc_class_method:bool -> Clang_ast_t.decl_ref -> Typ.typ option

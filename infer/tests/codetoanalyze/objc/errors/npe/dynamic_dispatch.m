@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @interface DynamicDispatchClass : NSObject
 @end
@@ -47,6 +47,16 @@
 - (int)npe_bad {
   PInstance* object = [PInstance new];
   return [self get_ddclass_from:object] -> x;
+}
+
++ (int)dispatch_async_block_npe_bad {
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                 ^{
+                   PInstance* object = [PInstance new];
+                   DynamicDispatchMain* main = [DynamicDispatchMain new];
+                   int x = [main get_ddclass_from:object] -> x;
+                 });
+  return 0;
 }
 
 @end

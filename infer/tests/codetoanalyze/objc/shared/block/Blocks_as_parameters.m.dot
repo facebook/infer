@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 24, column 11]\n " color=yellow style=filled]
+"objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 24, column 11]\n " color=yellow style=filled]
 	
 
-	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_1" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" ;
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" [label="2: Exit objc_blockB_f_1 \n  " color=yellow style=filled]
+	 "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_1" -> "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_3" ;
+"objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_2" [label="2: Exit objc_blockB_f_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
+"objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
 	
 
-	 "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_3" -> "objc_blockB_f_1.9ca2cd9875647cc0e2a4803d22445f9c_2" ;
+	 "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_3" -> "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_2" ;
 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
 	
 

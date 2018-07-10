@@ -22,7 +22,6 @@ type t =
   ; tenv: Tenv.t
   ; cfg: Cfg.t
   ; procdesc: Procdesc.t
-  ; is_immediate_objc_method: bool
   ; immediate_curr_class: curr_class
   ; return_param_typ: Typ.t option
   ; outer_context: t option
@@ -42,12 +41,12 @@ val get_curr_class_decl_ptr : Clang_ast_t.stmt_info -> curr_class -> Clang_ast_t
 
 val is_objc_method : t -> bool
 
+val is_objc_class_method : t -> bool
+
 val create_context :
   CFrontend_config.translation_unit_context -> Tenv.t -> Cfg.t -> Procdesc.t -> curr_class
-  -> Typ.t option -> bool -> t option -> Clang_ast_t.decl list StmtMap.t -> t
+  -> Typ.t option -> t option -> Clang_ast_t.decl list StmtMap.t -> t
 
 val add_block_static_var : t -> Typ.Procname.t -> Pvar.t * Typ.t -> unit
-
-val is_objc_instance : t -> bool
 
 val get_outer_procname : t -> Typ.Procname.t

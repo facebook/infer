@@ -28,6 +28,21 @@ let get_method_kind meth_decl =
       raise CFrontend_config.Invalid_declaration
 
 
+let rec is_inside_objc_class_method meth_decl =
+  let open Clang_ast_t in
+  match meth_decl with
+  | ObjCMethodDecl _ ->
+      ProcAttributes.equal_clang_method_kind (get_method_kind meth_decl) ProcAttributes.OBJC_CLASS
+  | BlockDecl (di, _) -> (
+    match CAst_utils.get_decl_opt di.di_parent_pointer with
+    | Some decl ->
+        is_inside_objc_class_method decl
+    | None ->
+        false )
+  | _ ->
+      false
+
+
 let get_return_type method_decl =
   let open Clang_ast_t in
   match method_decl with
@@ -147,3 +162,12 @@ let is_variadic method_decl =
       block_decl_info.bdi_is_variadic
   | _ ->
       raise CFrontend_config.Invalid_declaration
+
+
+let get_block_captured_variables method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | BlockDecl (_, block_decl_info) ->
+      block_decl_info.bdi_captured_variables
+  | _ ->
+      []

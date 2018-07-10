@@ -84,6 +84,7 @@ codetoanalyze/objc/errors/npe/block.m, BlockA_foo3:, 3, NULL_DEREFERENCE, B1, ER
 codetoanalyze/objc/errors/npe/block.m, BlockA_foo4:, 6, NULL_DEREFERENCE, B1, ERROR, [start of procedure foo4:]
 codetoanalyze/objc/errors/npe/block.m, BlockA_foo7, 2, IVAR_NOT_NULL_CHECKED, B1, WARNING, [start of procedure foo7]
 codetoanalyze/objc/errors/npe/dynamic_dispatch.m, DynamicDispatchMain_npe_bad, 2, NULL_DEREFERENCE, B5, ERROR, [start of procedure npe_bad,start of procedure get_ddclass_from:,start of procedure get_ddclass,return from a call to PInstance_get_ddclass,return from a call to DynamicDispatchMain_get_ddclass_from:]
+codetoanalyze/objc/errors/npe/dynamic_dispatch.m, objc_blockDynamicDispatchMain_dispatch_async_block_npe_bad_1, 3, NULL_DEREFERENCE, B5, ERROR, [start of procedure block,start of procedure get_ddclass_from:,start of procedure get_ddclass,return from a call to PInstance_get_ddclass,return from a call to DynamicDispatchMain_get_ddclass_from:]
 codetoanalyze/objc/errors/npe/ivar_blocks.m, MyClass_ivar_npe, 1, IVAR_NOT_NULL_CHECKED, B1, WARNING, [start of procedure ivar_npe]
 codetoanalyze/objc/errors/npe/skip_method_with_nil_object.m, SkipMethodNilA_testBug:, 6, PARAMETER_NOT_NULL_CHECKED, B2, WARNING, [start of procedure testBug:,Message get_a with receiver nil returns nil.,Message skip_method with receiver nil returns nil.,Taking false branch]
 codetoanalyze/objc/errors/property/main.c, property_main, 3, MEMORY_LEAK, no_bucket, ERROR, [start of procedure property_main(),Skipping aProperty: method has no implementation]

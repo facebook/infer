@@ -75,25 +75,43 @@ let add_var_to_locals procdesc var_decl typ pvar =
       assert false
 
 
-let sil_var_of_captured_var decl_ref context source_range procname =
-  match decl_ref with
-  | {Clang_ast_t.dr_qual_type= Some qual_type} ->
-      ( sil_var_of_decl_ref context source_range decl_ref procname
-      , CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type )
-  | _ ->
-      assert false
-
-
-(* Returns a list of captured variables as sil variables. *)
-let captured_vars_from_block_info context source_range cvl =
-  let procname = Procdesc.get_proc_name context.CContext.procdesc in
-  let sil_var_of_captured_var {Clang_ast_t.bcv_variable} vars_acc =
-    match bcv_variable with
-    | Some ({Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} as decl_ref) ->
-        if String.equal ni_name CFrontend_config.self && not (CContext.is_objc_instance context)
-        then vars_acc
-        else sil_var_of_captured_var decl_ref context source_range procname :: vars_acc
+(* The context here is of the method that contains the block *)
+let sil_var_of_captured_var context source_range procname decl_ref =
+  let is_block_inside_objc_class_method = CContext.is_objc_class_method context in
+  let var_opt =
+    match decl_ref with
+    | {Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} ->
+        (* In Objective-C class methods, self is not the standard self instance, since in this
+        context we don't have an instance. Instead it is used to get the class of the method.
+        We translate this variables in a different way than normal, we don't treat them as
+        variables in Sil, instead we remove them and get the class directly in the frontend.
+        For that reason, we shouldn't add them as captured variables of blocks, since they
+        don't appear anywhere else in the translation. *)
+        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then
+          None
+        else Some (sil_var_of_decl_ref context source_range decl_ref procname)
     | _ ->
         assert false
   in
-  List.fold_right ~f:sil_var_of_captured_var cvl ~init:[]
+  let typ_opt =
+    CType_decl.type_of_captured_var context.CContext.tenv ~is_block_inside_objc_class_method
+      decl_ref
+  in
+  match (var_opt, typ_opt) with
+  | Some var, Some typ ->
+      Some (var, typ)
+  | None, None ->
+      None
+  | _ ->
+      Logging.die InternalError
+        "Not possible case, captured variable and its type should both be available or not at %s"
+        (Clang_ast_j.string_of_source_range source_range)
+
+
+(* Returns a list of captured variables as sil variables. *)
+let captured_vars_from_block_info context source_range captured_vars =
+  let procname = Procdesc.get_proc_name context.CContext.procdesc in
+  let cv_decl_ref_list =
+    List.map ~f:(fun cv -> Option.value_exn cv.Clang_ast_t.bcv_variable) captured_vars
+  in
+  List.filter_map ~f:(sil_var_of_captured_var context source_range procname) cv_decl_ref_list

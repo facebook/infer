@@ -19,8 +19,8 @@ val sil_var_of_decl_ref :
 val add_var_to_locals : Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
 
 val sil_var_of_captured_var :
-  Clang_ast_t.decl_ref -> CContext.t -> Clang_ast_t.source_range -> Typ.Procname.t
-  -> Pvar.t * Typ.typ
+  CContext.t -> Clang_ast_t.source_range -> Typ.Procname.t -> Clang_ast_t.decl_ref
+  -> (Pvar.t * Typ.typ) option
 
 val captured_vars_from_block_info :
   CContext.t -> Clang_ast_t.source_range -> Clang_ast_t.block_captured_variable list

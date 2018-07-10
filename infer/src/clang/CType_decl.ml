@@ -110,6 +110,37 @@ module BuildMethodSignature = struct
     params @ return_param
 
 
+  let type_of_captured_var qual_type_to_sil_type tenv ~is_block_inside_objc_class_method decl_ref =
+    match decl_ref with
+    | {Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} ->
+        (* In Objective-C class methods, self is not the standard self instance, since in this
+        context we don't have an instance. Instead it is used to get the class of the method.
+        We translate this variables in a different way than normal, we don't treat them as
+        variables in Sil, instead we remove them and get the class directly in the frontend.
+        For that reason, we shouldn't add them as captured variables of blocks, since they
+        don't appear anywhere else in the translation. *)
+        if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then
+          None
+        else Some (Option.value_exn decl_ref.Clang_ast_t.dr_qual_type |> qual_type_to_sil_type tenv)
+    | _ ->
+        assert false
+
+
+  let types_of_captured_vars qual_type_to_sil_type tenv meth_decl =
+    let captured_vars = CMethodProperties.get_block_captured_variables meth_decl in
+    let is_block =
+      ProcAttributes.equal_clang_method_kind
+        (CMethodProperties.get_method_kind meth_decl)
+        ProcAttributes.BLOCK
+    in
+    let is_block_inside_objc_class_method =
+      is_block && CMethodProperties.is_inside_objc_class_method meth_decl
+    in
+    List.map ~f:(fun cv -> Option.value_exn cv.Clang_ast_t.bcv_variable) captured_vars
+    |> List.filter_map
+         ~f:(type_of_captured_var qual_type_to_sil_type tenv ~is_block_inside_objc_class_method)
+
+
   (** get return type of the function and optionally type of function's return parameter *)
   let get_return_val_and_param_types qual_type_to_sil_type tenv ~block_return_type method_decl =
     let return_qual_type =
@@ -614,9 +645,13 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
           BuildMethodSignature.get_parameters qual_type_to_sil_type ~block_return_type tenv
             meth_decl
         in
-        List.map
-          ~f:(fun ({typ}: CMethodSignature.param_type) -> Typ.Procname.Parameter.of_typ typ)
-          parameters
+        let parameter_types =
+          List.map ~f:(fun ({typ}: CMethodSignature.param_type) -> typ) parameters
+        in
+        let captured_vars_types =
+          BuildMethodSignature.types_of_captured_vars qual_type_to_sil_type tenv meth_decl
+        in
+        List.map ~f:Typ.Procname.Parameter.of_typ (captured_vars_types @ parameter_types)
     | None ->
         []
   in
@@ -706,6 +741,8 @@ let method_signature_body_of_decl =
 let method_signature_of_decl = BuildMethodSignature.method_signature_of_decl qual_type_to_sil_type
 
 let should_add_return_param = BuildMethodSignature.should_add_return_param
+
+let type_of_captured_var = BuildMethodSignature.type_of_captured_var qual_type_to_sil_type
 
 module CProcname = struct
   let from_decl = procname_from_decl

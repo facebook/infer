@@ -2680,8 +2680,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let get_captured_pvar_typ decl_ref =
-      CVar_decl.sil_var_of_captured_var decl_ref context stmt_info.Clang_ast_t.si_source_range
-        procname
+      Option.value_exn
+        (CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
+           decl_ref)
     in
     let translate_capture_init (pvar, typ) init_decl =
       match init_decl with

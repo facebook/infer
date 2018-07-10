@@ -44,17 +44,17 @@ digraph cfg {
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
-"objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_1" [label="1: Start objc_blockDispatchA_block_attribute_2\nFormals:  a:DispatchA*\nLocals: \nCaptured:  a:DispatchA* \n   DECLARE_LOCALS(&return); [line 37, column 24]\n " color=yellow style=filled]
+"objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_1" [label="1: Start objc_blockDispatchA_block_attribute_2\nFormals:  a:DispatchA*\nLocals: \nCaptured:  a:DispatchA* \n   DECLARE_LOCALS(&return); [line 37, column 24]\n " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_1" -> "objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_3" ;
-"objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_2" [label="2: Exit objc_blockDispatchA_block_attribute_2 \n  " color=yellow style=filled]
+	 "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_1" -> "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_3" ;
+"objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_2" [label="2: Exit objc_blockDispatchA_block_attribute_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&a:DispatchA* [line 38, column 5]\n  *n$8._x:int=10 [line 38, column 5]\n " shape="box"]
+"objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&a:DispatchA* [line 38, column 5]\n  *n$8._x:int=10 [line 38, column 5]\n " shape="box"]
 	
 
-	 "objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_3" -> "objc_blockDispatchA_block_attribute_2.871f06a0b12b5767153a5d30f3798261_2" ;
+	 "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_3" -> "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_2" ;
 "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_1" [label="1: Start objc_blockDispatchA_dispatch_a_block_variable_4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 54, column 38]\n " color=yellow style=filled]
 	
 

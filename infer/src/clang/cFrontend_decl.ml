@@ -45,7 +45,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
   (** Translates the method/function's body into nodes of the cfg. *)
   let add_method ?(is_destructor_wrapper= false) trans_unit_ctx tenv cfg class_decl_opt procname
-      body ms has_return_param is_objc_method outer_context_opt extra_instrs =
+      body ms has_return_param outer_context_opt extra_instrs =
     L.(debug Capture Verbose)
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
     incr CFrontend_config.procedures_attempted ;
@@ -65,7 +65,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
           let context =
             CContext.create_context trans_unit_ctx tenv cfg procdesc class_decl_opt
-              has_return_param is_objc_method outer_context_opt vars_to_destroy
+              has_return_param outer_context_opt vars_to_destroy
           in
           let start_node = Procdesc.get_start_node procdesc in
           let exit_node = Procdesc.get_exit_node procdesc in
@@ -121,7 +121,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           if CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] captured_vars
           then
             add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms
-              return_param_typ_opt false outer_context_opt extra_instrs
+              return_param_typ_opt outer_context_opt extra_instrs
       | None ->
           ()
     with CFrontend_config.IncorrectAssumption e ->
@@ -130,7 +130,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
 
   let process_method_decl ?(set_objc_accessor_attr= false) ?(is_destructor= false) trans_unit_ctx
-      tenv cfg curr_class meth_decl ~is_objc =
+      tenv cfg curr_class meth_decl =
     try
       let ms, body_opt, extra_instrs =
         let procname = CType_decl.CProcname.from_decl ~tenv meth_decl in
@@ -150,7 +150,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
                   ms [body] []
               then
                 add_method trans_unit_ctx tenv cfg curr_class procname body ms return_param_typ_opt
-                  is_objc None extra_instrs ~is_destructor_wrapper:true ;
+                  None extra_instrs ~is_destructor_wrapper:true ;
               let new_method_name =
                 Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
               in
@@ -166,7 +166,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               [body] []
           then
             add_method trans_unit_ctx tenv cfg curr_class procname' body ms' return_param_typ_opt
-              is_objc None extra_instrs ~is_destructor_wrapper:false
+              None extra_instrs ~is_destructor_wrapper:false
       | None ->
           if set_objc_accessor_attr then
             ignore
@@ -186,7 +186,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           match CAst_utils.get_decl_opt_with_decl_ref pointer with
           | Some (ObjCMethodDecl _ as dec) ->
               process_method_decl ~set_objc_accessor_attr:true trans_unit_ctx tenv cfg curr_class
-                dec ~is_objc:true
+                dec
           | _ ->
               ()
         in
@@ -200,12 +200,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let open Clang_ast_t in
     match dec with
     | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _ ->
-        process_method_decl trans_unit_ctx tenv cfg curr_class dec ~is_objc:false
+        process_method_decl trans_unit_ctx tenv cfg curr_class dec
     | CXXDestructorDecl _ ->
-        process_method_decl trans_unit_ctx tenv cfg curr_class dec ~is_objc:false
-          ~is_destructor:true
+        process_method_decl trans_unit_ctx tenv cfg curr_class dec ~is_destructor:true
     | ObjCMethodDecl _ ->
-        process_method_decl trans_unit_ctx tenv cfg curr_class dec ~is_objc:true
+        process_method_decl trans_unit_ctx tenv cfg curr_class dec
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) ->
         process_property_implementation trans_unit_ctx tenv cfg curr_class
           obj_c_property_impl_decl_info
@@ -429,8 +428,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             in
             let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
             ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
-            add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None false
-              None []
+            add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None []
         (* Note that C and C++ records are treated the same way
           Skip translating implicit struct declarations, unless they have
           full definition (which happens with C++ lambdas) *)
