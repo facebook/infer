@@ -67,17 +67,17 @@ FROM (
 let replace pname pname_blob akind loc_file attr_blob =
   ResultsDatabase.with_registered_statement replace_statement ~f:(fun db replace_stmt ->
       Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind pname" ;
+      |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
       Sqlite3.bind replace_stmt 2
         (* :proc_name_hum *) (Sqlite3.Data.TEXT (Typ.Procname.to_string pname))
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind proc_name_hum" ;
+      |> SqliteUtils.check_result_code db ~log:"replace bind proc_name_hum" ;
       Sqlite3.bind replace_stmt 3 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind attribute kind" ;
+      |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
       Sqlite3.bind replace_stmt 4 (* :sfile *) loc_file
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind source file" ;
+      |> SqliteUtils.check_result_code db ~log:"replace bind source file" ;
       Sqlite3.bind replace_stmt 5 (* :pattr *) attr_blob
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind proc attributes" ;
-      SqliteUtils.sqlite_unit_step db ~finalize:false ~log:"Attributes.replace" replace_stmt )
+      |> SqliteUtils.check_result_code db ~log:"replace bind proc attributes" ;
+      SqliteUtils.result_unit db ~finalize:false ~log:"Attributes.replace" replace_stmt )
 
 
 let find_more_defined_statement =
@@ -93,10 +93,11 @@ WHERE proc_name = :pname
 let should_try_to_update pname_blob akind =
   ResultsDatabase.with_registered_statement find_more_defined_statement ~f:(fun db find_stmt ->
       Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind pname" ;
+      |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
       Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
-      |> SqliteUtils.check_sqlite_error db ~log:"replace bind attribute kind" ;
-      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.replace" db find_stmt
+      |> SqliteUtils.check_result_code db ~log:"replace bind attribute kind" ;
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.replace" db
+        find_stmt
       |> (* there is no entry with a strictly larger "definedness" for that proc name *)
          Option.is_none )
 
@@ -115,8 +116,9 @@ let find ~defined pname_blob =
   (if defined then select_defined_statement else select_statement)
   |> ResultsDatabase.with_registered_statement ~f:(fun db select_stmt ->
          Sqlite3.bind select_stmt 1 pname_blob
-         |> SqliteUtils.check_sqlite_error db ~log:"find bind proc name" ;
-         SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.find" db select_stmt
+         |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
+         SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db
+           select_stmt
          |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 

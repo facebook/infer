@@ -132,8 +132,8 @@ let load_global () : t option =
 let load source =
   ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
       SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_sqlite_error db ~log:"load bind source file" ;
-      SqliteUtils.sqlite_result_step ~finalize:false ~log:"Tenv.load" db load_stmt
+      |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
       |> Option.bind ~f:(fun x ->
              SQLite.deserialize x
              |> function Global -> load_global () | FileLocal tenv -> Some tenv ) )

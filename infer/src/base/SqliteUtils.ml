@@ -13,7 +13,7 @@ let error ~fatal fmt =
   (if fatal then Format.kasprintf (fun err -> raise (Error err)) else L.internal_error) fmt
 
 
-let check_sqlite_error ?(fatal= false) db ~log rc =
+let check_result_code ?(fatal= false) db ~log rc =
   match (rc : Sqlite3.Rc.t) with
   | OK | ROW ->
       ()
@@ -22,51 +22,64 @@ let check_sqlite_error ?(fatal= false) db ~log rc =
 
 
 let exec db ~log ~stmt =
-  (* Call [check_sqlite_error] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
-  try check_sqlite_error ~fatal:true db ~log (Sqlite3.exec db stmt) with Error err ->
+  (* Call [check_result_code] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
+  try check_result_code ~fatal:true db ~log (Sqlite3.exec db stmt) with Error err ->
     error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 
 let finalize db ~log stmt =
-  try check_sqlite_error ~fatal:true db ~log (Sqlite3.finalize stmt) with
+  try check_result_code ~fatal:true db ~log (Sqlite3.finalize stmt) with
   | Error err ->
       error ~fatal:true "finalize: %s (%s)" err (Sqlite3.errmsg db)
   | Sqlite3.Error err ->
       error ~fatal:true "finalize: %s: %s (%s)" log err (Sqlite3.errmsg db)
 
 
-let sqlite_result_rev_list_step ?finalize:(do_finalize = true) db ~log stmt =
-  let rec aux rev_results =
+let result_fold_rows ?finalize:(do_finalize = true) db ~log stmt ~init ~f =
+  let rec aux accum stmt =
     match Sqlite3.step stmt with
     | Sqlite3.Rc.ROW ->
         (* the operation returned a result, get it *)
-        let value = Sqlite3.column stmt 0 in
-        aux (value :: rev_results)
+        aux (f accum stmt) stmt
     | DONE ->
-        rev_results
+        accum
     | err ->
         L.die InternalError "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
   in
-  if do_finalize then protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux [])
-  else aux []
+  if do_finalize then
+    protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux init stmt)
+  else aux init stmt
 
 
-let sqlite_result_step ?finalize db ~log stmt =
-  match sqlite_result_rev_list_step ?finalize db ~log stmt with
+let result_fold_single_column_rows ?finalize db ~log stmt ~init ~f =
+  result_fold_rows ?finalize db ~log stmt ~init ~f:(fun accum stmt ->
+      f accum (Sqlite3.column stmt 0) )
+
+
+let zero_or_one_row ~log = function
   | [] ->
       None
   | [x] ->
       Some x
-  | l ->
-      L.die InternalError "%s: zero or one result expected, got %d instead" log (List.length l)
+  | _ :: _ :: _ as l ->
+      L.die InternalError "%s: zero or one result expected, got %d rows instead" log
+        (List.length l)
 
 
-let sqlite_unit_step ?finalize db ~log stmt =
-  match sqlite_result_rev_list_step ?finalize db ~log stmt with
-  | [] ->
-      ()
-  | l ->
-      L.die InternalError "%s: exactly zero result expected, got %d instead" log (List.length l)
+let result_option ?finalize db ~log ~read_row stmt =
+  IContainer.rev_map_to_list stmt ~f:read_row ~fold:(result_fold_rows ?finalize db ~log)
+  |> zero_or_one_row ~log
+
+
+let result_single_column_option ?finalize db ~log stmt =
+  Container.to_list stmt ~fold:(result_fold_single_column_rows ?finalize db ~log)
+  |> zero_or_one_row ~log
+
+
+let result_unit ?finalize db ~log stmt =
+  if
+    not (Container.is_empty stmt ~iter:(Container.iter ~fold:(result_fold_rows ?finalize db ~log)))
+  then L.die InternalError "%s: the SQLite query should not return any rows" log
 
 
 let db_close db =

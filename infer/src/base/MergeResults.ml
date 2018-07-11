@@ -26,7 +26,7 @@ WHERE
   OR main.attr_kind < sub.attr_kind
   OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
 |}
-  |> SqliteUtils.check_sqlite_error db
+  |> SqliteUtils.check_result_code db
        ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
 
 
@@ -38,19 +38,19 @@ let merge_source_files_table ~db_file =
     SELECT source_file, cfgs, type_environment, procedure_names, 1
     FROM attached.source_files
 |}
-  |> SqliteUtils.check_sqlite_error db
+  |> SqliteUtils.check_result_code db
        ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
 
 
 let merge ~db_file =
   let main_db = ResultsDatabase.get_database () in
   Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)
-  |> SqliteUtils.check_sqlite_error ~fatal:true main_db
+  |> SqliteUtils.check_result_code ~fatal:true main_db
        ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   merge_procedures_table ~db_file ;
   merge_source_files_table ~db_file ;
   Sqlite3.exec main_db "DETACH attached"
-  |> SqliteUtils.check_sqlite_error ~fatal:true main_db
+  |> SqliteUtils.check_result_code ~fatal:true main_db
        ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
   ()
 
