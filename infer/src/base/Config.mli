@@ -242,6 +242,8 @@ val bootclasspath : string option
 
 val bo_debug : int
 
+val bo_relational_domain : [`Bo_relational_domain_oct | `Bo_relational_domain_poly] option
+
 val buck : bool
 
 val buck_build_args : string list

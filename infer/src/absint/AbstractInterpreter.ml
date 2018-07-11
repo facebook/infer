@@ -93,7 +93,7 @@ struct
         in
         if debug then (
           L.d_strln
-            (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@." Domain.pp pre
+            (Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
                (Instrs.pp Pp.(html Green))
                instrs Domain.pp astate_post) ;
           NodePrinter.finish_session (Node.underlying_node node) ) ;

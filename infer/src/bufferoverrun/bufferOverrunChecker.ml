@@ -13,6 +13,7 @@ open AbsLoc
 open! AbstractDomain.Types
 module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
+module Relation = BufferOverrunDomainRelation
 module L = Logging
 module Models = BufferOverrunModels
 module Sem = BufferOverrunSemantics
@@ -47,16 +48,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Typ.Tint ikind ->
             let unsigned = Typ.ikind_is_unsigned ikind in
             let v =
-              Dom.Val.make_sym ~unsigned pname path new_sym_num
+              Dom.Val.make_sym ~unsigned loc pname path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
-            Dom.Mem.add_heap loc v mem
+            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tfloat _ ->
             let v =
-              Dom.Val.make_sym pname path new_sym_num
+              Dom.Val.make_sym loc pname path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
-            Dom.Mem.add_heap loc v mem
+            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname path tenv
               ~node_hash location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
@@ -182,6 +183,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     try List.fold2_exn formals actuals ~init:mem ~f with Invalid_argument _ -> mem
 
 
+  let forget_ret_relation ret callee_pname mem =
+    let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
+    let ret_var = Loc.of_var (Var.of_id (fst ret)) in
+    Dom.Mem.forget_locs (PowLoc.add ret_loc (PowLoc.singleton ret_var)) mem
+
+
   let instantiate_mem
       : Tenv.t -> Ident.t * Typ.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
         -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate =
@@ -191,12 +198,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let callee_ret_alias = Dom.Mem.find_ret_alias callee_exit_mem in
     match callee_pdesc with
     | Some pdesc ->
-        let subst_map, ret_alias =
+        let bound_subst_map, ret_alias, rel_subst_map =
           Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias
         in
-        instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem subst_map caller_mem
-          ret_alias location
-        |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location
+        let caller_mem =
+          instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem bound_subst_map
+            caller_mem ret_alias location
+          |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem bound_subst_map
+               location
+          |> forget_ret_relation ret callee_pname
+        in
+        Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
     | None ->
         caller_mem
 
@@ -224,6 +236,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Store (exp1, _, exp2, location) ->
           let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
           let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
+          let mem =
+            let sym_exps =
+              Dom.Relation.SymExp.of_exps ~get_int_sym_f:(Sem.get_sym_f mem)
+                ~get_offset_sym_f:(Sem.get_offset_sym_f mem)
+                ~get_size_sym_f:(Sem.get_size_sym_f mem) exp2
+            in
+            Dom.Mem.store_relation locs sym_exps mem
+          in
           let mem = Dom.Mem.update_mem locs v mem in
           let mem =
             if PowLoc.is_singleton locs then
@@ -364,7 +384,9 @@ module Report = struct
    fun pname ~is_plus ~e1 ~e2 location mem cond_set ->
     let arr = Sem.eval e1 mem in
     let idx = Sem.eval e2 mem in
-    BoUtils.Check.array_access ~arr ~idx ~is_plus pname location cond_set
+    let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) e2 in
+    let relation = Dom.Mem.get_relation mem in
+    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus pname location cond_set
 
 
   let check_binop
@@ -403,7 +425,10 @@ module Report = struct
     match exp with
     | Exp.Var _ ->
         let arr = Sem.eval exp mem in
-        BoUtils.Check.array_access ~arr ~idx:Dom.Val.Itv.zero ~is_plus:true pname location cond_set
+        let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
+        let relation = Dom.Mem.get_relation mem in
+        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true pname location
+          cond_set
     | Exp.BinOp (bop, e1, e2) ->
         check_binop pname ~bop ~e1 ~e2 location mem cond_set
     | _ ->
@@ -418,11 +443,13 @@ module Report = struct
     let callee_cond = Dom.Summary.get_cond_set summary in
     match callee_pdesc with
     | Some pdesc ->
-        let subst_map, _ =
+        let bound_subst_map, _, rel_subst_map =
           Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
         in
         let pname = Procdesc.get_proc_name pdesc in
-        PO.ConditionSet.subst callee_cond subst_map caller_pname pname location
+        let caller_rel = Dom.Mem.get_relation caller_mem in
+        PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel caller_pname
+          pname location
     | _ ->
         callee_cond
 
@@ -558,6 +585,9 @@ module Report = struct
         Reporting.log_error summary ~loc:location ~ltr:trace exn
     in
     PO.ConditionSet.check_all ~report cond_set
+
+
+  let forget_locs = PO.ConditionSet.forget_locs
 end
 
 let extract_pre = Analyzer.extract_pre
@@ -570,16 +600,34 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
     "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
 
 
+let get_local_decls cfg =
+  let accum_pvar_list acc pvars =
+    List.fold pvars ~init:acc ~f:(fun acc (pvar, _) -> PowLoc.add (Loc.of_pvar pvar) acc)
+  in
+  let accum_decls_of_instr acc instr =
+    match instr with Sil.Declare_locals (vars, _) -> accum_pvar_list acc vars | _ -> acc
+  in
+  let accum_decls_of_node acc node =
+    Instrs.fold (CFG.instrs node) ~init:acc ~f:accum_decls_of_instr
+  in
+  let decls = CFG.fold_nodes cfg ~init:PowLoc.empty ~f:accum_decls_of_node in
+  let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar (Procdesc.get_proc_name cfg)) in
+  PowLoc.remove ret_loc decls
+
+
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
  fun {proc_desc; tenv; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
   let pdata = ProcData.make_default proc_desc tenv in
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let cfg = CFG.from_pdesc proc_desc in
-  let entry_mem = extract_post (CFG.start_node cfg |> CFG.Node.id) inv_map in
-  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map in
+  let locals = get_local_decls cfg in
+  let forget_locals mem = Option.map ~f:(Dom.Mem.forget_locs locals) mem in
+  let entry_mem = extract_post (CFG.start_node cfg |> CFG.Node.id) inv_map |> forget_locals in
+  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map |> forget_locals in
   let cond_set =
     Report.check_proc summary proc_desc tenv cfg inv_map |> Report.report_errors summary proc_desc
+    |> Report.forget_locs locals
   in
   let summary =
     match (entry_mem, exit_mem) with

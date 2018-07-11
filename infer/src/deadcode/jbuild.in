@@ -1,6 +1,8 @@
 (* -*- tuareg -*- *)
 (* NOTE: prepend jbuild.common to this file! *)
 
+let deadcode_cflags = common_cflags @ ["-cclib -lparmap_stubs"]
+
 ;; Format.sprintf
      {|
 (executable
@@ -12,7 +14,7 @@
   (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
  ))
 |}
-     (String.concat " " common_cflags)
+     (String.concat " " deadcode_cflags)
      (String.concat " " common_optflags)
      (String.concat " " common_libraries)
    |> Jbuild_plugin.V1.send

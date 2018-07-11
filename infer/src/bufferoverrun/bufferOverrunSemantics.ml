@@ -314,7 +314,7 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
       Val.bot
 
 
-let get_allocsite : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension:int -> string =
+let get_allocsite : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension:int -> Allocsite.t =
  fun proc_name ~node_hash ~inst_num ~dimension ->
   let proc_name = Typ.Procname.to_string proc_name in
   let node_num = string_of_int node_hash in
@@ -324,14 +324,18 @@ let get_allocsite : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension
 
 
 let eval_array_alloc
-    : Typ.Procname.t -> node_hash:int -> Typ.t -> stride:int option -> offset:Itv.t -> size:Itv.t
-      -> inst_num:int -> dimension:int -> Val.t =
- fun pdesc ~node_hash typ ~stride ~offset ~size ~inst_num ~dimension ->
-  let allocsite = get_allocsite pdesc ~node_hash ~inst_num ~dimension in
+    : Allocsite.t -> Typ.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> Val.t =
+ fun allocsite typ ~stride ~offset ~size ->
   let int_stride = match stride with None -> sizeof typ | Some stride -> stride in
   let stride = Itv.of_int int_stride in
-  ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk
+  ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk ~allocsite
 
+
+let get_sym_f mem e = Val.get_sym (eval e mem)
+
+let get_offset_sym_f mem e = Val.get_offset_sym (eval e mem)
+
+let get_size_sym_f mem e = Val.get_size_sym (eval e mem)
 
 module Prune = struct
   type astate = {prune_pairs: PrunePairs.t; mem: Mem.astate}
@@ -423,12 +427,16 @@ module Prune = struct
 
 
   let is_unreachable_constant : Exp.t -> Mem.astate -> bool =
-   fun e m -> Val.( <= ) ~lhs:(eval e m) ~rhs:(Val.of_int 0)
+   fun e m ->
+    let v = eval e m in
+    Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0) && PowLoc.is_bot (Val.get_pow_loc v)
+    && ArrayBlk.is_bot (Val.get_array_blk v)
 
 
   let prune_unreachable : Exp.t -> astate -> astate =
    fun e ({mem} as astate) ->
-    if is_unreachable_constant e mem then {astate with mem= Mem.bot} else astate
+    if is_unreachable_constant e mem || Mem.is_relation_unsat mem then {astate with mem= Mem.bot}
+    else astate
 
 
   let rec prune_helper e astate =
@@ -461,6 +469,10 @@ module Prune = struct
   let prune : Exp.t -> Mem.astate -> Mem.astate =
    fun e mem ->
     let mem = Mem.apply_latest_prune e mem in
+    let mem =
+      let constrs = Relation.Constraints.of_exp e ~get_sym_f:(get_sym_f mem) in
+      Mem.meet_constraints constrs mem
+    in
     let {mem; prune_pairs} = prune_helper e {mem; prune_pairs= PrunePairs.empty} in
     Mem.set_prune_pairs prune_pairs mem
 end
@@ -472,13 +484,17 @@ let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
 
 
 let get_matching_pairs
-    : Tenv.t -> Val.t -> Val.t -> Typ.t -> Mem.astate -> Mem.astate
+    : Tenv.t -> Val.t -> Val.t -> Exp.t option -> Typ.t -> Mem.astate -> Mem.astate
       -> callee_ret_alias:AliasTarget.t option
-      -> (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list * AliasTarget.t option =
- fun tenv formal actual typ caller_mem callee_mem ~callee_ret_alias ->
+      -> (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
+         * AliasTarget.t option
+         * (Relation.Var.t * Relation.SymExp.t option) list =
+ fun tenv formal actual actual_exp_opt typ caller_mem callee_mem ~callee_ret_alias ->
   let get_itv v = Val.get_itv v in
   let get_offset v = v |> Val.get_array_blk |> ArrayBlk.offsetof in
   let get_size v = v |> Val.get_array_blk |> ArrayBlk.sizeof in
+  let get_offset_sym v = Val.get_offset_sym v in
+  let get_size_sym v = Val.get_size_sym v in
   let get_field_name (fn, _, _) = fn in
   let append_field v fn = PowLoc.append_field (Val.get_all_locs v) ~fn in
   let deref_field v fn mem = Mem.find_heap_set (append_field v fn) mem in
@@ -506,17 +522,38 @@ let get_matching_pairs
       else (lb itv1, NonBottom (lb itv2), traces) :: (ub itv1, NonBottom (ub itv2), traces) :: l
     else l
   in
-  let add_pair_val v1 v2 pairs =
+  let add_pair_sym_main_value v1 v2 ~e2_opt l =
+    Option.value_map (Val.get_sym_var v1) ~default:l ~f:(fun var ->
+        let sym_exp_opt =
+          Option.first_some
+            (Relation.SymExp.of_exp_opt ~get_sym_f:(get_sym_f caller_mem) e2_opt)
+            (Relation.SymExp.of_sym (Val.get_sym v2))
+        in
+        (var, sym_exp_opt) :: l )
+  in
+  let add_pair_sym s1 s2 l =
+    Option.value_map (Relation.Sym.get_var s1) ~default:l ~f:(fun var ->
+        (var, Relation.SymExp.of_sym s2) :: l )
+  in
+  let add_pair_val v1 v2 ~e2_opt (bound_pairs, rel_pairs) =
     add_ret_alias (Val.get_all_locs v1) (Val.get_all_locs v2) ;
-    pairs |> add_pair_itv (get_itv v1) (get_itv v2) (Val.get_traces v2)
-    |> add_pair_itv (get_offset v1) (get_offset v2) (Val.get_traces v2)
-    |> add_pair_itv (get_size v1) (get_size v2) (Val.get_traces v2)
+    let bound_pairs =
+      bound_pairs |> add_pair_itv (get_itv v1) (get_itv v2) (Val.get_traces v2)
+      |> add_pair_itv (get_offset v1) (get_offset v2) (Val.get_traces v2)
+      |> add_pair_itv (get_size v1) (get_size v2) (Val.get_traces v2)
+    in
+    let rel_pairs =
+      rel_pairs |> add_pair_sym_main_value v1 v2 ~e2_opt
+      |> add_pair_sym (get_offset_sym v1) (get_offset_sym v2)
+      |> add_pair_sym (get_size_sym v1) (get_size_sym v2)
+    in
+    (bound_pairs, rel_pairs)
   in
   let add_pair_field v1 v2 pairs fn =
     add_ret_alias (append_field v1 fn) (append_field v2 fn) ;
     let v1' = deref_field v1 fn callee_mem in
     let v2' = deref_field v2 fn caller_mem in
-    add_pair_val v1' v2' pairs
+    add_pair_val v1' v2' ~e2_opt:None pairs
   in
   let add_pair_ptr typ v1 v2 pairs =
     add_ret_alias (Val.get_all_locs v1) (Val.get_all_locs v2) ;
@@ -531,15 +568,17 @@ let get_matching_pairs
     | Typ.Tptr (_, _) ->
         let v1' = deref_ptr v1 callee_mem in
         let v2' = deref_ptr v2 caller_mem in
-        add_pair_val v1' v2' pairs
+        add_pair_val v1' v2' ~e2_opt:None pairs
     | _ ->
         pairs
   in
-  let pairs = [] |> add_pair_val formal actual |> add_pair_ptr typ formal actual in
-  (pairs, !ret_alias)
+  let bound_pairs, rel_pairs =
+    ([], []) |> add_pair_val formal actual ~e2_opt:actual_exp_opt |> add_pair_ptr typ formal actual
+  in
+  (bound_pairs, !ret_alias, rel_pairs)
 
 
-let subst_map_of_pairs
+let subst_map_of_bound_pairs
     : (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
       -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t =
  fun pairs ->
@@ -552,8 +591,16 @@ let subst_map_of_pairs
   List.fold ~f:add_pair ~init:(Itv.SymbolMap.empty, Itv.SymbolMap.empty) pairs
 
 
+let subst_map_of_rel_pairs
+    : (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t =
+ fun pairs ->
+  let add_pair rel_map (x, e) = Relation.SubstMap.add x e rel_map in
+  List.fold pairs ~init:Relation.SubstMap.empty ~f:add_pair
+
+
 let rec list_fold2_def
-    : default:Val.t -> f:('a -> Val.t -> 'b -> 'b) -> 'a list -> Val.t list -> init:'b -> 'b =
+    : default:Val.t * Exp.t option -> f:('a -> Val.t * Exp.t option -> 'b -> 'b) -> 'a list
+      -> (Val.t * Exp.t option) list -> init:'b -> 'b =
  fun ~default ~f xs ys ~init:acc ->
   match (xs, ys) with
   | [], _ ->
@@ -561,7 +608,9 @@ let rec list_fold2_def
   | x :: xs', [] ->
       list_fold2_def ~default ~f xs' ys ~init:(f x default acc)
   | [x], _ :: _ ->
-      f x (List.fold ~f:Val.join ~init:Val.bot ys) acc
+      let v = List.fold ys ~init:Val.bot ~f:(fun acc (y, _) -> Val.join y acc) in
+      let exp_opt = match ys with [(_, exp_opt)] -> exp_opt | _ -> None in
+      f x (v, exp_opt) acc
   | x :: xs', y :: ys' ->
       list_fold2_def ~default ~f xs' ys' ~init:(f x y acc)
 
@@ -570,18 +619,22 @@ let get_subst_map
     : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
       -> callee_ret_alias:AliasTarget.t option
       -> (Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t)
-         * AliasTarget.t option =
+         * AliasTarget.t option
+         * Relation.SubstMap.t =
  fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias ->
-  let add_pair (formal, typ) actual (l, ret_alias) =
+  let add_pair (formal, typ) (actual, actual_exp) (bound_l, ret_alias, rel_l) =
     let formal = Mem.find_heap (Loc.of_pvar formal) callee_entry_mem in
-    let new_matching, ret_alias' =
-      get_matching_pairs tenv formal actual typ caller_mem callee_entry_mem ~callee_ret_alias
+    let new_bound_matching, ret_alias', new_rel_matching =
+      get_matching_pairs tenv formal actual actual_exp typ caller_mem callee_entry_mem
+        ~callee_ret_alias
     in
-    (List.rev_append new_matching l, Option.first_some ret_alias ret_alias')
+    ( List.rev_append new_bound_matching bound_l
+    , Option.first_some ret_alias ret_alias'
+    , List.rev_append new_rel_matching rel_l )
   in
   let formals = get_formals callee_pdesc in
-  let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem) params in
-  let pairs, ret_alias =
-    list_fold2_def ~default:Val.Itv.top ~f:add_pair formals actuals ~init:([], None)
+  let actuals = List.map ~f:(fun (a, _) -> (eval a caller_mem, Some a)) params in
+  let bound_pairs, ret_alias, rel_pairs =
+    list_fold2_def ~default:(Val.Itv.top, None) ~f:add_pair formals actuals ~init:([], None, [])
   in
-  (subst_map_of_pairs pairs, ret_alias)
+  (subst_map_of_bound_pairs bound_pairs, ret_alias, subst_map_of_rel_pairs rel_pairs)
