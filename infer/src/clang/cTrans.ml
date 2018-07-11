@@ -2680,9 +2680,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let get_captured_pvar_typ decl_ref =
-      Option.value_exn
-        (CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
-           decl_ref)
+      CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
+        decl_ref
     in
     let translate_capture_init (pvar, typ) init_decl =
       match init_decl with
@@ -2724,15 +2723,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             false
       in
       match (lci_captured_var, lci_init_captured_vardecl) with
-      | Some captured_var_decl_ref, Some init_decl ->
-          (* capture and init *)
-          let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
-          ( translate_capture_init pvar_typ init_decl :: trans_results_acc
-          , (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
-      | Some captured_var_decl_ref, None ->
-          (* just capture *)
-          let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
-          translate_normal_capture ~is_by_ref pvar_typ acc
+      | Some captured_var_decl_ref, Some init_decl -> (
+        match (* capture and init *)
+              get_captured_pvar_typ captured_var_decl_ref with
+        | Some pvar_typ ->
+            ( translate_capture_init pvar_typ init_decl :: trans_results_acc
+            , (Exp.Lvar (fst pvar_typ), fst pvar_typ, snd pvar_typ) :: captured_vars_acc )
+        | None ->
+            (trans_results_acc, captured_vars_acc) )
+      | Some captured_var_decl_ref, None -> (
+        match (* just capture *)
+              get_captured_pvar_typ captured_var_decl_ref with
+        | Some pvar_typ ->
+            translate_normal_capture ~is_by_ref pvar_typ acc
+        | None ->
+            (trans_results_acc, captured_vars_acc) )
       | None, None ->
           if lci_capture_this then
             (* captured [this] *)
