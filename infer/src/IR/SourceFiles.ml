@@ -71,14 +71,16 @@ let add source_file cfg tenv =
       SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 
-let get_all () =
+let get_all ~filter () =
   let db = ResultsDatabase.get_database () in
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db "SELECT source_file FROM source_files"
-  |> IContainer.rev_map_to_list
-       ~fold:(SqliteUtils.result_fold_single_column_rows db ~log:"getting all source files")
-       ~f:SourceFile.SQLite.deserialize
+  |> IContainer.rev_filter_map_to_list
+       ~fold:(SqliteUtils.result_fold_single_column_rows db ~log:"getting all source files") ~f:
+       (fun column ->
+         let source_file = SourceFile.SQLite.deserialize column in
+         Option.some_if (filter source_file) source_file )
 
 
 let load_proc_names_statement =
@@ -151,8 +153,7 @@ let select_all_source_files_statement =
   ResultsDatabase.register_statement "SELECT * FROM source_files"
 
 
-let pp_all ?filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
-  let filter = Staged.unstage (Filtering.mk_source_file_filter ~filter) in
+let pp_all ~filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
   let pp_procnames fmt procs =
     F.fprintf fmt "@[<v>" ;
     List.iter ~f:(F.fprintf fmt "%a@," Typ.Procname.pp) procs ;

@@ -7,7 +7,12 @@
 
 open! IStd
 
-val mk_source_file_filter : filter:string option -> (SourceFile.t -> bool) Staged.t
+type source_files_filter = SourceFile.t -> bool
 
-val mk_procedure_name_filter :
-  filter:string option -> (SourceFile.t -> Typ.Procname.t -> bool) Staged.t
+type procedures_filter = SourceFile.t -> Typ.Procname.t -> bool
+
+val source_files_filter : source_files_filter Lazy.t
+(** filter corresponding to `--source-files-filter` *)
+
+val procedures_filter : procedures_filter Lazy.t
+(** filter corresponding to `--procedures-filter` *)

@@ -7,10 +7,19 @@
 open! IStd
 module F = Format
 
-let pp_all ?filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
+let get_all ~filter () =
+  let db = ResultsDatabase.get_database () in
+  let stmt = Sqlite3.prepare db "SELECT source_file, proc_name FROM procedures" in
+  SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[] ~f:
+    (fun rev_results stmt ->
+      let source_file = Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize in
+      let proc_name = Sqlite3.column stmt 1 |> Typ.Procname.SQLite.deserialize in
+      if filter source_file proc_name then proc_name :: rev_results else rev_results )
+
+
+let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
     ~proc_attributes fmt () =
   let db = ResultsDatabase.get_database () in
-  let filter = Filtering.mk_procedure_name_filter ~filter |> Staged.unstage in
   let pp_if ?(new_line= false) condition title pp fmt x =
     if condition then (
       if new_line then F.fprintf fmt "@[<v2>" else F.fprintf fmt "@[<h>" ;

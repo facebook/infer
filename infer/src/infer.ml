@@ -145,14 +145,16 @@ let () =
     | Explore when Config.procedures ->
         L.result "%a"
           Config.(
-            Procedures.pp_all ?filter:procedures_filter ~proc_name:procedures_name
-              ~attr_kind:procedures_definedness ~source_file:procedures_source_file
-              ~proc_attributes:procedures_attributes)
+            Procedures.pp_all
+              ~filter:(Lazy.force Filtering.procedures_filter)
+              ~proc_name:procedures_name ~attr_kind:procedures_definedness
+              ~source_file:procedures_source_file ~proc_attributes:procedures_attributes)
           ()
     | Explore when Config.source_files ->
         L.result "%a"
-          (SourceFiles.pp_all ?filter:Config.source_files_filter ~cfgs:Config.source_files_cfgs
-             ~type_environment:Config.source_files_type_environment
+          (SourceFiles.pp_all
+             ~filter:(Lazy.force Filtering.source_files_filter)
+             ~cfgs:Config.source_files_cfgs ~type_environment:Config.source_files_type_environment
              ~procedure_names:Config.source_files_procedure_names
              ~freshly_captured:Config.source_files_freshly_captured)
           ()

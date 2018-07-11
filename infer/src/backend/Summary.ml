@@ -256,4 +256,12 @@ let dummy =
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset proc_desc = init_summary proc_desc
 
-(* =============== END of support for spec tables =============== *)
+let reset_all ~filter () =
+  let reset proc_name =
+    let filename = res_dir_specs_filename proc_name in
+    Serialization.read_from_file summary_serializer filename
+    |> Option.iter ~f:(fun summary ->
+           let blank_summary = reset summary.proc_desc in
+           Serialization.write_to_file summary_serializer filename ~data:blank_summary )
+  in
+  Procedures.get_all ~filter () |> List.iter ~f:reset

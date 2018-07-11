@@ -111,3 +111,5 @@ val proc_is_library : ProcAttributes.t -> bool
 
 val store : t -> unit
 (** Save summary for the procedure into the spec database *)
+
+val reset_all : filter:Filtering.procedures_filter -> unit -> unit

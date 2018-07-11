@@ -1801,6 +1801,8 @@ and reactive_capture =
     "Compile source files only when required by analyzer (clang only)"
 
 
+and reanalyze = CLOpt.mk_bool ~long:"reanalyze" "Rerun the analysis"
+
 and relative_path_backtack =
   CLOpt.mk_int ~long:"backtrack-level" ~default:0 ~meta:"int"
     "Maximum level of backtracking to convert an absolute path to path relative to the common \
@@ -2761,6 +2763,8 @@ and racerd_use_path_stability = !racerd_use_path_stability
 and reactive_mode = !reactive || InferCommand.(equal Diff) command
 
 and reactive_capture = !reactive_capture
+
+and reanalyze = !reanalyze
 
 and relative_path_backtack = !relative_path_backtack
 

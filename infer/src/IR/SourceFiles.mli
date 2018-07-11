@@ -10,7 +10,7 @@ open! IStd
 val add : SourceFile.t -> Cfg.t -> Tenv.per_file -> unit
 (** Add or replace the row corresponding to the source file into the database. *)
 
-val get_all : unit -> SourceFile.t list
+val get_all : filter:Filtering.source_files_filter -> unit -> SourceFile.t list
 (** get all the source files in the database *)
 
 val proc_names_of_source : SourceFile.t -> Typ.Procname.t list
@@ -29,5 +29,5 @@ val mark_all_stale : unit -> unit
 (** mark all source files as stale; do be called at the start of a new capture phase *)
 
 val pp_all :
-  ?filter:string -> cfgs:bool -> type_environment:bool -> procedure_names:bool
-  -> freshly_captured:bool -> Format.formatter -> unit -> unit
+  filter:Filtering.source_files_filter -> cfgs:bool -> type_environment:bool
+  -> procedure_names:bool -> freshly_captured:bool -> Format.formatter -> unit -> unit

@@ -73,8 +73,11 @@ let main ~changed_files =
   | None ->
       () ) ;
   register_active_checkers () ;
-  DB.Results_dir.clean_specs_dir () ;
-  let all_source_files = SourceFiles.get_all () in
+  if Config.reanalyze then Summary.reset_all ~filter:(Lazy.force Filtering.procedures_filter) ()
+  else DB.Results_dir.clean_specs_dir () ;
+  let all_source_files =
+    SourceFiles.get_all ~filter:(Lazy.force Filtering.source_files_filter) ()
+  in
   let source_files_to_analyze =
     List.filter ~f:(source_file_should_be_analyzed ~changed_files) all_source_files
   in

@@ -538,6 +538,8 @@ val reactive_mode : bool
 
 val reactive_capture : bool
 
+val reanalyze : bool
+
 val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
