@@ -42,8 +42,6 @@ module Loc = struct
         F.fprintf fmt "%a.%a" pp l Typ.Fieldname.pp f
 
 
-  let to_string x = F.asprintf "%a" pp x
-
   let is_var = function Var _ -> true | _ -> false
 
   let rec contains_allocsite = function
@@ -91,12 +89,3 @@ module PowLoc = struct
 
   let is_singleton x = Int.equal (cardinal x) 1
 end
-
-(** unsound but ok for bug catching *)
-let always_strong_update = true
-
-let can_strong_update : PowLoc.t -> bool =
- fun ploc ->
-  if always_strong_update then true
-  else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
-  else false

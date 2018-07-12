@@ -18,7 +18,6 @@ CFLAGS = @CFLAGS@
 CLANG_INCLUDES = @CLANG_INCLUDES@
 CLANG_PREFIX = @CLANG_PREFIX@
 CMAKE = @CMAKE@
-CPATH = @CPATH@
 CPP = @CPP@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@
@@ -43,7 +42,6 @@ LDFLAGS = @LDFLAGS@
 libdir = @libdir@
 # override in your `make` command to make the install relocatable
 libdir_relative_to_bindir = $(libdir)
-LIBRARY_PATH = @LIBRARY_PATH@
 LIBS = @LIBS@
 mandir = @mandir@
 MENHIR = @MENHIR@
@@ -81,7 +79,5 @@ endif
 
 # Export parts of the config relevant to running other programs
 export PATH := $(PATH)
-export CPATH := $(CPATH)
-export LIBRARY_PATH := $(LIBRARY_PATH)
 export CAML_LD_LIBRARY_PATH := $(CAML_LD_LIBRARY_PATH)
 export OPAMROOT := $(OPAMROOT)

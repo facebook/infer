@@ -13,54 +13,31 @@ open AbsLoc
 open! AbstractDomain.Types
 module F = Format
 module L = Logging
-module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
+(** unsound but ok for bug catching *)
+let always_strong_update = true
+
 module Val = struct
   type astate =
-    { itv: Itv.astate
-    ; sym: Relation.Sym.astate
-    ; powloc: PowLoc.astate
-    ; arrayblk: ArrayBlk.astate
-    ; offset_sym: Relation.Sym.astate
-    ; size_sym: Relation.Sym.astate
-    ; traces: TraceSet.t }
+    {itv: Itv.astate; powloc: PowLoc.astate; arrayblk: ArrayBlk.astate; traces: TraceSet.t}
 
   type t = astate
 
-  let bot : t =
-    { itv= Itv.bot
-    ; sym= Relation.Sym.bot
-    ; powloc= PowLoc.bot
-    ; arrayblk= ArrayBlk.bot
-    ; offset_sym= Relation.Sym.bot
-    ; size_sym= Relation.Sym.bot
-    ; traces= TraceSet.empty }
-
+  let bot : t = {itv= Itv.bot; powloc= PowLoc.bot; arrayblk= ArrayBlk.bot; traces= TraceSet.empty}
 
   let pp fmt x =
-    let relation_sym_pp fmt sym =
-      if Option.is_some Config.bo_relational_domain then F.fprintf fmt ", %a" Relation.Sym.pp sym
-    in
-    let trace_pp fmt traces =
-      if Config.bo_debug <= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
-    in
-    F.fprintf fmt "(%a%a, %a, %a%a%a%a)" Itv.pp x.itv relation_sym_pp x.sym PowLoc.pp x.powloc
-      ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp
-      x.traces
+    if Config.bo_debug <= 1 then
+      F.fprintf fmt "(%a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+    else
+      F.fprintf fmt "(%a, %a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+        TraceSet.pp x.traces
 
 
   let unknown : traces:TraceSet.t -> t =
-   fun ~traces ->
-    { itv= Itv.top
-    ; sym= Relation.Sym.top
-    ; powloc= PowLoc.unknown
-    ; arrayblk= ArrayBlk.unknown
-    ; offset_sym= Relation.Sym.top
-    ; size_sym= Relation.Sym.top
-    ; traces }
+   fun ~traces -> {itv= Itv.top; powloc= PowLoc.unknown; arrayblk= ArrayBlk.unknown; traces}
 
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
@@ -74,11 +51,8 @@ module Val = struct
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
-      && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
+      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
-      && Relation.Sym.( <= ) ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
-      && Relation.Sym.( <= ) ~lhs:lhs.size_sym ~rhs:rhs.size_sym
 
 
   let equal x y = phys_equal x y || (( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x)
@@ -87,11 +61,8 @@ module Val = struct
     if phys_equal prev next then prev
     else
       { itv= Itv.widen ~prev:prev.itv ~next:next.itv ~num_iters
-      ; sym= Relation.Sym.widen ~prev:prev.sym ~next:next.sym ~num_iters
       ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
-      ; offset_sym= Relation.Sym.widen ~prev:prev.offset_sym ~next:next.offset_sym ~num_iters
-      ; size_sym= Relation.Sym.widen ~prev:prev.size_sym ~next:next.size_sym ~num_iters
       ; traces= TraceSet.join prev.traces next.traces }
 
 
@@ -100,19 +71,12 @@ module Val = struct
     if phys_equal x y then x
     else
       { itv= Itv.join x.itv y.itv
-      ; sym= Relation.Sym.join x.sym y.sym
       ; powloc= PowLoc.join x.powloc y.powloc
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
-      ; offset_sym= Relation.Sym.join x.offset_sym y.offset_sym
-      ; size_sym= Relation.Sym.join x.size_sym y.size_sym
       ; traces= TraceSet.join x.traces y.traces }
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
-
-  let get_sym : t -> Relation.Sym.astate = fun x -> x.sym
-
-  let get_sym_var : t -> Relation.Var.t option = fun x -> Relation.Sym.get_var x.sym
 
   let get_pow_loc : t -> PowLoc.t = fun x -> x.powloc
 
@@ -121,10 +85,6 @@ module Val = struct
   let get_array_locs : t -> PowLoc.t = fun x -> ArrayBlk.get_pow_loc x.arrayblk
 
   let get_all_locs : t -> PowLoc.t = fun x -> PowLoc.join x.powloc (get_array_locs x)
-
-  let get_offset_sym : t -> Relation.Sym.astate = fun x -> x.offset_sym
-
-  let get_size_sym : t -> Relation.Sym.astate = fun x -> x.size_sym
 
   let get_traces : t -> TraceSet.t = fun x -> x.traces
 
@@ -136,29 +96,20 @@ module Val = struct
 
   let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}
 
-  let of_array_blk : allocsite:Allocsite.t -> ArrayBlk.astate -> t =
-   fun ~allocsite a ->
-    { bot with
-      arrayblk= a
-    ; offset_sym= Relation.Sym.of_allocsite_offset allocsite
-    ; size_sym= Relation.Sym.of_allocsite_size allocsite }
-
+  let of_array_blk : ArrayBlk.astate -> t = fun a -> {bot with arrayblk= a}
 
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
-  let make_sym
-      : ?unsigned:bool -> Loc.t -> Typ.Procname.t -> Itv.SymbolPath.partial -> Itv.Counter.t -> t =
-   fun ?(unsigned= false) loc pname path new_sym_num ->
-    { bot with
-      itv= Itv.make_sym ~unsigned pname (Itv.SymbolPath.normal path) new_sym_num
-    ; sym= Relation.Sym.of_loc loc }
+  let make_sym : ?unsigned:bool -> Typ.Procname.t -> Itv.SymbolPath.partial -> Itv.Counter.t -> t =
+   fun ?(unsigned= false) pname path new_sym_num ->
+    {bot with itv= Itv.make_sym ~unsigned pname (Itv.SymbolPath.normal path) new_sym_num}
 
 
-  let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
+  let unknown_bit : t -> t = fun x -> {x with itv= Itv.top}
 
-  let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv; sym= Relation.Sym.top}
+  let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv}
 
-  let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool; sym= Relation.Sym.top}
+  let lnot : t -> t = fun x -> {x with itv= Itv.lnot x.itv |> Itv.of_bool}
 
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
    fun f x y -> {bot with itv= f x.itv y.itv; traces= TraceSet.join x.traces y.traces}
@@ -344,15 +295,6 @@ module Heap = struct
    fun ~f locs mem -> PowLoc.fold (fun loc -> find loc mem |> f |> add loc) locs mem
 
 
-  let add x v =
-    let sym = if Itv.is_empty (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x in
-    let offset_sym, size_sym =
-      if ArrayBlk.is_bot (Val.get_array_blk v) then (Relation.Sym.bot, Relation.Sym.bot)
-      else (Relation.Sym.of_loc_offset x, Relation.Sym.of_loc_size x)
-    in
-    add x {v with Val.sym; Val.offset_sym; Val.size_sym}
-
-
   let strong_update : PowLoc.t -> Val.t -> astate -> astate =
    fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
 
@@ -454,9 +396,10 @@ module AliasMap = struct
     let pp_sep fmt () = F.fprintf fmt ", @," in
     let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
     (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
-    F.fprintf fmt "@[<hov 2>{ " ;
+    F.fprintf fmt "@[<hov 2>{ @," ;
     F.pp_print_list ~pp_sep pp1 fmt (M.bindings x) ;
-    F.fprintf fmt " }@]"
+    F.fprintf fmt " }@]" ;
+    F.fprintf fmt "@]"
 
 
   let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc m -> M.add id loc m
@@ -563,7 +506,7 @@ module Alias = struct
 
   let pp : F.formatter -> astate -> unit =
    fun fmt (aliasmap, aliasret) ->
-    F.fprintf fmt "AliasMap:@;%a@;AliasRet:@;%a" AliasMap.pp aliasmap AliasRet.pp aliasret
+    F.fprintf fmt "AliasMap:@;%a@;AliasRet:@;%a@;" AliasMap.pp aliasmap AliasRet.pp aliasret
 end
 
 module PrunePairs = struct
@@ -650,21 +593,11 @@ end
 
 module MemReach = struct
   type astate =
-    { stack: Stack.astate
-    ; heap: Heap.astate
-    ; alias: Alias.astate
-    ; latest_prune: LatestPrune.astate
-    ; relation: Relation.astate }
+    {stack: Stack.astate; heap: Heap.astate; alias: Alias.astate; latest_prune: LatestPrune.astate}
 
   type t = astate
 
-  let init : t =
-    { stack= Stack.bot
-    ; heap= Heap.bot
-    ; alias= Alias.bot
-    ; latest_prune= LatestPrune.top
-    ; relation= Relation.empty }
-
+  let init : t = {stack= Stack.bot; heap= Heap.bot; alias= Alias.bot; latest_prune= LatestPrune.top}
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -672,7 +605,6 @@ module MemReach = struct
       Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack && Heap.( <= ) ~lhs:lhs.heap ~rhs:rhs.heap
       && Alias.( <= ) ~lhs:lhs.alias ~rhs:rhs.alias
       && LatestPrune.( <= ) ~lhs:lhs.latest_prune ~rhs:rhs.latest_prune
-      && Relation.( <= ) ~lhs:lhs.relation ~rhs:rhs.relation
 
 
   let widen ~prev ~next ~num_iters =
@@ -682,7 +614,7 @@ module MemReach = struct
       ; heap= Heap.widen ~prev:prev.heap ~next:next.heap ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters
       ; latest_prune= LatestPrune.widen ~prev:prev.latest_prune ~next:next.latest_prune ~num_iters
-      ; relation= Relation.widen ~prev:prev.relation ~next:next.relation ~num_iters }
+      }
 
 
   let join : t -> t -> t =
@@ -690,15 +622,12 @@ module MemReach = struct
     { stack= Stack.join x.stack y.stack
     ; heap= Heap.join x.heap y.heap
     ; alias= Alias.join x.alias y.alias
-    ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune
-    ; relation= Relation.join x.relation y.relation }
+    ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune }
 
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" Stack.pp x.stack Heap.pp x.heap Alias.pp x.alias ;
-    if Option.is_some Config.bo_relational_domain then
-      F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
+    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" Stack.pp x.stack Heap.pp x.heap Alias.pp x.alias
 
 
   let pp_summary : F.formatter -> t -> unit =
@@ -759,6 +688,13 @@ module MemReach = struct
 
 
   let get_return : t -> Val.t = fun m -> Heap.get_return m.heap
+
+  let can_strong_update : PowLoc.t -> bool =
+   fun ploc ->
+    if always_strong_update then true
+    else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
+    else false
+
 
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
@@ -832,41 +768,6 @@ module MemReach = struct
 
   let heap_range : filter_loc:(Loc.t -> bool) -> t -> Itv.NonNegativePolynomial.astate =
    fun ~filter_loc {heap} -> Heap.range ~filter_loc heap
-
-
-  let get_relation : t -> Relation.astate = fun m -> m.relation
-
-  let is_relation_unsat : t -> bool = fun m -> Relation.is_unsat m.relation
-
-  let lift_relation : (Relation.astate -> Relation.astate) -> t -> t =
-   fun f m -> {m with relation= f m.relation}
-
-
-  let meet_constraints : Relation.Constraints.t -> t -> t =
-   fun constrs -> lift_relation (Relation.meet_constraints constrs)
-
-
-  let store_relation
-      : PowLoc.t -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
-        -> t -> t =
-   fun locs symexp_opts -> lift_relation (Relation.store_relation locs symexp_opts)
-
-
-  let forget_locs : PowLoc.t -> t -> t = fun locs -> lift_relation (Relation.forget_locs locs)
-
-  let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
-
-  let init_array_relation
-      : Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t
-        -> t =
-   fun allocsite ~offset ~size ~size_exp_opt ->
-    lift_relation (Relation.init_array allocsite ~offset ~size ~size_exp_opt)
-
-
-  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
-   fun subst_map ~caller ~callee ->
-    { caller with
-      relation= Relation.instantiate subst_map ~caller:caller.relation ~callee:callee.relation }
 end
 
 module Mem = struct
@@ -993,42 +894,6 @@ module Mem = struct
 
   let update_latest_prune : Exp.t -> Exp.t -> t -> t =
    fun e1 e2 -> f_lift (MemReach.update_latest_prune e1 e2)
-
-
-  let get_relation : t -> Relation.astate =
-   fun m -> f_lift_default ~default:Relation.bot MemReach.get_relation m
-
-
-  let meet_constraints : Relation.Constraints.t -> t -> t =
-   fun constrs -> f_lift (MemReach.meet_constraints constrs)
-
-
-  let is_relation_unsat m = f_lift_default ~default:true MemReach.is_relation_unsat m
-
-  let store_relation
-      : PowLoc.t -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
-        -> t -> t =
-   fun locs symexp_opts -> f_lift (MemReach.store_relation locs symexp_opts)
-
-
-  let forget_locs : PowLoc.t -> t -> t = fun locs -> f_lift (MemReach.forget_locs locs)
-
-  let init_param_relation : Loc.t -> t -> t = fun loc -> f_lift (MemReach.init_param_relation loc)
-
-  let init_array_relation
-      : Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t
-        -> t =
-   fun allocsite ~offset ~size ~size_exp_opt ->
-    f_lift (MemReach.init_array_relation allocsite ~offset ~size ~size_exp_opt)
-
-
-  let instantiate_relation : Relation.SubstMap.t -> caller:t -> callee:t -> t =
-   fun subst_map ~caller ~callee ->
-    match callee with
-    | Bottom ->
-        caller
-    | NonBottom callee ->
-        f_lift (fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
 end
 
 module Summary = struct
@@ -1056,5 +921,5 @@ module Summary = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt (entry_mem, exit_mem, condition_set) ->
-    F.fprintf fmt "%a@;%a@;%a" Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp condition_set
+    F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp condition_set
 end

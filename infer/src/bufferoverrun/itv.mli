@@ -22,8 +22,6 @@ module Boolean : sig
 
   val top : t
 
-  val true_ : t
-
   val equal : t -> t -> bool
 
   val is_false : t -> bool

@@ -38,8 +38,7 @@ let infer_cflags =
     ; "-open"
     ; "InferIR"
     ; "-open"
-    ; "InferBase"
-    ; "-cclib -lparmap_stubs" ]
+    ; "InferBase" ]
 
 
 (** The build stanzas to be passed to jbuilder *)

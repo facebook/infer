@@ -35,8 +35,6 @@ module Boolean = struct
 
   let top = Top
 
-  let true_ = True
-
   let equal = [%compare.equal : t]
 
   let is_false = function False -> true | _ -> false

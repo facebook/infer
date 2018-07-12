@@ -10,7 +10,6 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module ItvPure = Itv.ItvPure
-module Relation = BufferOverrunDomainRelation
 module MF = MarkupFormatter
 module ValTraceSet = BufferOverrunTrace.Set
 
@@ -94,13 +93,7 @@ module AllocSizeCondition = struct
 end
 
 module ArrayAccessCondition = struct
-  type t =
-    { idx: ItvPure.astate
-    ; size: ItvPure.astate
-    ; idx_sym_exp: Relation.SymExp.t option
-    ; size_sym_exp: Relation.SymExp.t option
-    ; relation: Relation.astate }
-  [@@deriving compare]
+  type t = {idx: ItvPure.astate; size: ItvPure.astate} [@@deriving compare]
 
   let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
 
@@ -113,10 +106,7 @@ module ArrayAccessCondition = struct
   let pp : F.formatter -> t -> unit =
    fun fmt c ->
     let c = set_size_pos c in
-    F.fprintf fmt "%a < %a" ItvPure.pp c.idx ItvPure.pp c.size ;
-    if Option.is_some Config.bo_relational_domain then
-      F.fprintf fmt "@,%a < %a when %a" Relation.SymExp.pp_opt c.idx_sym_exp Relation.SymExp.pp_opt
-        c.size_sym_exp Relation.pp c.relation
+    F.fprintf fmt "%a < %a" ItvPure.pp c.idx ItvPure.pp c.size
 
 
   let pp_description : F.formatter -> t -> unit =
@@ -125,12 +115,9 @@ module ArrayAccessCondition = struct
     F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp c.idx ItvPure.pp c.size
 
 
-  let make
-      : idx:ItvPure.t -> size:ItvPure.t -> idx_sym_exp:Relation.SymExp.t option
-        -> size_sym_exp:Relation.SymExp.t option -> relation:Relation.astate -> t option =
-   fun ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation ->
-    if ItvPure.is_invalid idx || ItvPure.is_invalid size then None
-    else Some {idx; size; idx_sym_exp; size_sym_exp; relation}
+  let make : idx:ItvPure.t -> size:ItvPure.t -> t option =
+   fun ~idx ~size ->
+    if ItvPure.is_invalid idx || ItvPure.is_invalid size then None else Some {idx; size}
 
 
   let have_similar_bounds {idx= lidx; size= lsiz} {idx= ridx; size= rsiz} =
@@ -219,15 +206,8 @@ module ArrayAccessCondition = struct
     (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
     let c' = set_size_pos c in
     (* if sl < 0, use sl' = 0 *)
-    let not_overrun =
-      if Relation.lt_sat_opt c'.idx_sym_exp c'.size_sym_exp c'.relation then Itv.Boolean.true_
-      else ItvPure.lt_sem c'.idx c'.size
-    in
-    let not_underrun =
-      if Relation.le_sat_opt (Some Relation.SymExp.zero) c'.idx_sym_exp c'.relation then
-        Itv.Boolean.true_
-      else ItvPure.le_sem ItvPure.zero c'.idx
-    in
+    let not_overrun = ItvPure.lt_sem c'.idx c'.size in
+    let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
     (* il >= 0 and iu < sl, definitely not an error *)
     if Itv.Boolean.is_true not_overrun && Itv.Boolean.is_true not_underrun then
       {report_issue_type= None; propagate= false} (* iu < 0 or il >= su, definitely an error *)
@@ -255,22 +235,13 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst
-      : Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> Relation.SubstMap.t -> Relation.astate -> t
-        -> t option =
-   fun bound_map rel_map caller_relation c ->
+  let subst : Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> t -> t option =
+   fun bound_map c ->
     match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
     | NonBottom idx, NonBottom size ->
-        let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
-        let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
-        let relation = Relation.instantiate rel_map ~caller:caller_relation ~callee:c.relation in
-        Some {idx; size; idx_sym_exp; size_sym_exp; relation}
+        Some {idx; size}
     | _ ->
         None
-
-
-  let forget_locs : AbsLoc.PowLoc.t -> t -> t =
-   fun locs c -> {c with relation= Relation.forget_locs locs c.relation}
 end
 
 module Condition = struct
@@ -287,11 +258,11 @@ module Condition = struct
         ArrayAccessCondition.get_symbols c
 
 
-  let subst bound_map rel_map caller_relation = function
+  let subst bound_map = function
     | AllocSize c ->
         AllocSizeCondition.subst bound_map c |> make_alloc_size
     | ArrayAccess c ->
-        ArrayAccessCondition.subst bound_map rel_map caller_relation c |> make_array_access
+        ArrayAccessCondition.subst bound_map c |> make_array_access
 
 
   let have_similar_bounds c1 c2 =
@@ -335,14 +306,6 @@ module Condition = struct
         AllocSizeCondition.check c
     | ArrayAccess c ->
         ArrayAccessCondition.check c
-
-
-  let forget_locs locs x =
-    match x with
-    | ArrayAccess c ->
-        ArrayAccess (ArrayAccessCondition.forget_locs locs c)
-    | AllocSize _ ->
-        x
 end
 
 module ConditionTrace = struct
@@ -423,12 +386,12 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst (bound_map, trace_map) rel_map caller_relation caller_pname callee_pname location cwt =
+  let subst (bound_map, trace_map) caller_pname callee_pname location cwt =
     match Condition.get_symbols cwt.cond with
     | [] ->
         Some cwt
     | symbols ->
-      match Condition.subst bound_map rel_map caller_relation cwt.cond with
+      match Condition.subst bound_map cwt.cond with
       | None ->
           None
       | Some cond ->
@@ -462,9 +425,6 @@ module ConditionWithTrace = struct
     report_issue_type |> Option.map ~f:(set_buffer_overrun_u5 cwt)
     |> Option.iter ~f:(report cwt.cond cwt.trace) ;
     propagate
-
-
-  let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
 end
 
 module ConditionSet = struct
@@ -526,10 +486,9 @@ module ConditionSet = struct
         join [cwt] condset
 
 
-  let add_array_access pname location ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation val_traces
-      condset =
-    ArrayAccessCondition.make ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
-    |> Condition.make_array_access |> add_opt pname location val_traces condset
+  let add_array_access pname location ~idx ~size val_traces condset =
+    ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access
+    |> add_opt pname location val_traces condset
 
 
   let add_alloc_size pname location ~length val_traces condset =
@@ -537,12 +496,10 @@ module ConditionSet = struct
     |> add_opt pname location val_traces condset
 
 
-  let subst condset bound_map_trace_map rel_subst_map caller_relation caller_pname callee_pname
-      location =
+  let subst condset bound_map_trace_map caller_pname callee_pname location =
     let subst_add_cwt condset cwt =
       match
-        ConditionWithTrace.subst bound_map_trace_map rel_subst_map caller_relation caller_pname
-          callee_pname location cwt
+        ConditionWithTrace.subst bound_map_trace_map caller_pname callee_pname location cwt
       with
       | None ->
           condset
@@ -566,14 +523,12 @@ module ConditionSet = struct
 
   let pp : Format.formatter -> t -> unit =
    fun fmt condset ->
-    let pp_sep fmt () = F.fprintf fmt ",@," in
-    F.fprintf fmt "Safety conditions:@;@[<hov 2>{ %a }@]"
-      (F.pp_print_list ~pp_sep ConditionWithTrace.pp)
-      condset
-
-
-  let forget_locs : AbsLoc.PowLoc.t -> t -> t =
-   fun locs x -> List.map x ~f:(ConditionWithTrace.forget_locs locs)
+    let pp_sep fmt () = F.fprintf fmt ", @," in
+    F.fprintf fmt "@[<v 2>Safety conditions :@," ;
+    F.fprintf fmt "@[<hov 1>{" ;
+    F.pp_print_list ~pp_sep ConditionWithTrace.pp fmt condset ;
+    F.fprintf fmt " }@]" ;
+    F.fprintf fmt "@]"
 end
 
 let description cond trace =

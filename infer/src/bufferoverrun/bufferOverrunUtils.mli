@@ -8,7 +8,6 @@
 open! IStd
 open AbsLoc
 module Dom = BufferOverrunDomain
-module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 
 module Exec : sig
@@ -42,8 +41,7 @@ end
 
 module Check : sig
   val array_access :
-    arr:Dom.Val.t -> idx:Dom.Val.t -> idx_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.astate -> is_plus:bool -> Typ.Procname.t -> Location.t
+    arr:Dom.Val.t -> idx:Dom.Val.t -> is_plus:bool -> Typ.Procname.t -> Location.t
     -> PO.ConditionSet.t -> PO.ConditionSet.t
 
   val lindex :
