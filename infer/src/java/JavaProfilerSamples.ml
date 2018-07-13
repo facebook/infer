@@ -284,41 +284,27 @@ type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
 let equal_labeled_profiler_sample = [%compare.equal : labeled_profiler_sample]
 
-let from_json j ~use_signature =
-  let parse_profiler_result label result =
-    let methods =
-      match result with
-      | `Assoc [_; _; _; _; ("methods", `List j); _; _] ->
-          j
-      | _ ->
-          L.(die UserError "Unexpected JSON input for the collection of methods")
-    in
-    let rec parse_json j acc =
-      match j with
-      | `Assoc
-          [ ("class", `String classname)
-          ; _
-          ; ("method", `String methodname)
-          ; ("signature", `String signature)
-          ; _ ]
-        :: tl ->
-          let signature = if use_signature then signature else JNI.void_method_with_no_arguments in
-          let procname = create_procname ~classname ~methodname ~signature in
-          parse_json tl (procname :: acc)
-      | [] ->
-          acc
-      | _ ->
-          L.(die UserError "Unexpected JSON input for the description of a single method")
-    in
-    (label, ProfilerSample.of_list (parse_json methods []))
+let from_java_profiler_samples j ~use_signature =
+  let process_methods methods =
+    ProfilerSample.of_list
+      (List.map
+         ~f:(fun {Java_profiler_samples_t.classname; methodname; signature} ->
+           let signature =
+             if use_signature then signature else JNI.void_method_with_no_arguments
+           in
+           create_procname ~classname ~methodname ~signature )
+         methods)
   in
-  match j with
-  | `Assoc pr ->
-      List.map ~f:(fun (label, result) -> parse_profiler_result label result) pr
-  | _ ->
-      L.(die UserError "Unexpected JSON input for the list of profiler results")
+  List.map j ~f:(fun {Java_profiler_samples_t.test; methods} -> (test, process_methods methods))
 
 
-let from_json_string str ~use_signature = from_json (Yojson.Basic.from_string str) ~use_signature
+let from_json_string str ~use_signature =
+  from_java_profiler_samples
+    (Java_profiler_samples_j.java_profiler_samples_of_string str)
+    ~use_signature
 
-let from_json_file file ~use_signature = from_json (Yojson.Basic.from_file file) ~use_signature
+
+let from_json_file file ~use_signature =
+  from_java_profiler_samples
+    (Ag_util.Json.from_file Java_profiler_samples_j.read_java_profiler_samples file)
+    ~use_signature

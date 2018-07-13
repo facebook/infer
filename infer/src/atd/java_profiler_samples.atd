@@ -1,0 +1,12 @@
+type sampled_method = {
+    classname <json name="class"> : string;
+    methodname <json name="method"> : string;
+    signature : string;
+}
+
+type java_profiler_sample = {
+  test : string;
+  methods : sampled_method list;
+}
+
+type java_profiler_samples = java_profiler_sample list

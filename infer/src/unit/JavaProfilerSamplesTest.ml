@@ -164,22 +164,18 @@ let test_from_json_string_with_valid_input =
       ~cmp:(List.equal ~equal:JavaProfilerSamples.equal_labeled_profiler_sample)
       expected found
   in
-  let input1 =
-    "{\"label1\": {\"field1\": {}, \"field2\": {}, \"field3\": {}, \"field4\": {}, \"methods\": \
-     [], \"field6\": {},\"field7\": {}}}"
-  in
+  let input1 = "[{\"test\": \"label1\",\"methods\": []}]" in
   let expected1 = [("label1", JavaProfilerSamples.ProfilerSample.of_list [])] in
   let input2 =
     Printf.sprintf
-      "{\"label1\": {\"field1\": {}, \"field2\": {}, \"field3\": {}, \"field4\": {}, \"methods\": \
-       [{\"class\": \"ggg.hhh.Iii\", \"boo\": \"\", \"method\": \"<clinit>\", \"signature\": \
-       \"(Ljava/lang/String;[IJ)V\", \"wat\": \"\"},{\"class\": \"lll.mmm.Nnn\", \"boo\": \"\", \
-       \"method\": \"<init>\", \"signature\": \"(Ljava/lang/String;[IJ)V\", \"wat\": \"\"}], \
-       \"field6\": {},\"field7\": {}},\"label2\": {\"field1\": {}, \"field2\": {}, \"field3\": \
-       {}, \"field4\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
-       \"methodOne\", \"signature\": \"%s\", \"wat\": \"\"},{\"class\": \"ddd.eee.Fff\", \"boo\": \
-       \"\", \"method\": \"methodTwo\", \"signature\": \"(Ljava/lang/String;[IJ)[[C\", \"wat\": \
-       \"\"}], \"field6\": {},\"field7\": {}}}"
+      "[{\"foo\":{},\"test\": \"label1\",\"methods\": [{\"class\": \"ggg.hhh.Iii\", \"boo\": \
+       \"\", \"method\": \"<clinit>\", \"signature\": \"(Ljava/lang/String;[IJ)V\",\"wat\": \
+       \"\"},{\"class\": \"lll.mmm.Nnn\",\"boo\": \"\",\"method\": \"<init>\",\"signature\": \
+       \"(Ljava/lang/String;[IJ)V\",\"wat\": \"\"}]},{\"boo\":\"aaa\",\"test\": \
+       \"label2\",\"methods\": [{\"class\": \"aaa.bbb.Ccc\",\"boo\": \"\",\"method\": \
+       \"methodOne\",\"signature\": \"%s\",\"wat\": \"\"},{\"class\": \"ddd.eee.Fff\",\"boo\": \
+       \"\",\"method\": \"methodTwo\",\"signature\": \"(Ljava/lang/String;[IJ)[[C\",\"wat\": \
+       \"\"}]}]"
       JavaProfilerSamples.JNI.void_method_with_no_arguments
   in
   let expected2 =
@@ -264,14 +260,18 @@ let test_from_json_string_with_invalid_input =
   in
   [ ( "test_from_json_string_1"
     , "{\"whatever\": {}, \"methods\": []}"
-    , Logging.InferUserError "Unexpected JSON input for the collection of methods" )
+    , Yojson.Json_error
+        "Line 1, bytes 0-31:\nExpected '[' but found '{\"whatever\": {}, \"methods\": []}'" )
   ; ( "test_from_json_string_2"
     , Printf.sprintf
         "{\"whatever\": {}, \"methods\": [{\"class\": \"aaa.bbb.Ccc\", \"boo\": \"\", \"method\": \
          \"methodOne\", \"signature\": \"%s\"}], \"foo\": {}}"
         JavaProfilerSamples.JNI.void_method_with_no_arguments
-    , Logging.InferUserError "Unexpected JSON input for the collection of methods" )
-  ; ("test_from_json_string_3", "(", Yojson.Json_error "Line 1, bytes 0-1:\nInvalid token '('") ]
+    , Yojson.Json_error
+        "Line 1, bytes 0-33:\nExpected '[' but found '{\"whatever\": {}, \"methods\": [{\"cl'" )
+  ; ( "test_from_json_string_3"
+    , "("
+    , Yojson.Json_error "Line 1, bytes 0-1:\nExpected '[' but found '('" ) ]
   |> List.map ~f:(fun (name, test_input, expected_exception) ->
          name >:: create_test test_input expected_exception )
 

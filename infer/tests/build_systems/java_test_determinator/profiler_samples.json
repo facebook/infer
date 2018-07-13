@@ -1,9 +1,8 @@
-{
-    "label1": {
+[
+    {
       "field1": {},
+      "test": "label1",
       "field2": {},
-      "field3": {},
-      "field4": {},
       "methods": [
         {
           "class": "MyFavouriteClassTwo",
@@ -20,13 +19,13 @@
           "src_file": ""
         }
       ],
-      "field6": {},
-      "field7": {}
+      "field3": {}
     },
-    "label2": {
+    {
       "field1": {},
       "field2": {},
       "field3": {},
+      "test": "label2",
       "field4": {},
       "methods": [
         {
@@ -44,7 +43,7 @@
           "src_file": ""
         }
       ],
-      "field6": {},
-      "field7": {}
+      "field5": {},
+      "field6": {}
     }
-  }
+  ]
