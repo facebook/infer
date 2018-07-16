@@ -591,23 +591,28 @@ module Models = struct
        && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 
-  let is_call_of_class_or_superclass ?(method_prefix= false) ?(actuals_pred= fun _ -> true)
-      class_names method_name tenv pn actuals =
-    actuals_pred actuals
-    &&
-    match pn with
-    | Typ.Procname.Java java_pname ->
-        let classname = Typ.Procname.Java.get_class_type_name java_pname in
-        let mthd = Typ.Procname.Java.get_method java_pname in
-        let is_target_class =
-          let targets = List.map class_names ~f:Typ.Name.Java.from_string in
-          fun tname _ -> List.mem targets tname ~equal:Typ.Name.equal
-        in
-        ( if method_prefix then String.is_prefix mthd ~prefix:method_name
-        else String.equal mthd method_name )
-        && PatternMatch.supertype_exists tenv is_target_class classname
-    | _ ->
-        false
+  let is_call_of_class ?(search_superclasses= true) ?(method_prefix= false)
+      ?(actuals_pred= fun _ -> true) class_names method_name =
+    let is_target_class =
+      let target_set = List.map class_names ~f:Typ.Name.Java.from_string |> Typ.Name.Set.of_list in
+      fun tname -> Typ.Name.Set.mem tname target_set
+    in
+    let is_target_struct tname _ = is_target_class tname in
+    Staged.stage (fun tenv pn actuals ->
+        actuals_pred actuals
+        &&
+        match pn with
+        | Typ.Procname.Java java_pname ->
+            let classname = Typ.Procname.Java.get_class_type_name java_pname in
+            let mthd = Typ.Procname.Java.get_method java_pname in
+            ( if method_prefix then String.is_prefix mthd ~prefix:method_name
+            else String.equal mthd method_name )
+            &&
+            if search_superclasses then
+              PatternMatch.supertype_exists tenv is_target_struct classname
+            else is_target_class classname
+        | _ ->
+            false )
 
 
   (** magical value from https://developer.android.com/topic/performance/vitals/anr *)
@@ -649,7 +654,7 @@ module Models = struct
                 many reports *)
 
   (* let is_blocking_java_io =
-    is_call_of_class_or_superclass ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
+    is_call_of_class ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
       "read" *)
 
   let actuals_are_empty_or_timeout = function
@@ -663,8 +668,9 @@ module Models = struct
 
   (** is the method called CountDownLath.await or on subclass? *)
   let is_countdownlatch_await =
-    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
+    is_call_of_class ~actuals_pred:actuals_are_empty_or_timeout
       ["java.util.concurrent.CountDownLatch"] "await"
+    |> Staged.unstage
 
 
   (** an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
@@ -675,39 +681,43 @@ module Models = struct
     let actuals_pred actuals =
       List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
     in
-    is_call_of_class_or_superclass ~actuals_pred ["android.os.IBinder"] "transact"
+    is_call_of_class ~actuals_pred ["android.os.IBinder"] "transact" |> Staged.unstage
 
 
-  (** is it a call to android.view.View.getWindowVisibleDisplayFrame or on sublass? *)
+  (** is it a call to android.view.View.getWindowVisibleDisplayFrame? *)
   let is_getWindowVisibleDisplayFrame =
-    is_call_of_class_or_superclass ["android.view.View"] "getWindowVisibleDisplayFrame"
+    is_call_of_class ~search_superclasses:false ["android.view.View"]
+      "getWindowVisibleDisplayFrame"
+    |> Staged.unstage
 
 
-  (** is it a call to Future.get() or on sublass? *)
+  (** is it a call to Future.get()? *)
   let is_future_get =
-    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
+    is_call_of_class ~search_superclasses:false ~actuals_pred:actuals_are_empty_or_timeout
       ["java.util.concurrent.Future"] "get"
+    |> Staged.unstage
 
 
   let is_accountManager_setUserData =
-    is_call_of_class_or_superclass ["android.accounts.AccountManager"] "setUserData"
+    is_call_of_class ~search_superclasses:false ["android.accounts.AccountManager"] "setUserData"
+    |> Staged.unstage
 
 
   let is_asyncTask_get =
-    is_call_of_class_or_superclass ~actuals_pred:actuals_are_empty_or_timeout
-      ["android.os.AsyncTask"] "get"
+    is_call_of_class ~actuals_pred:actuals_are_empty_or_timeout ["android.os.AsyncTask"] "get"
+    |> Staged.unstage
 
 
-  (* at most one function is allowed to be true *)
+  (* at most one function is allowed to be true, sort from High to Low *)
   let may_block =
     let open StarvationDomain.Event in
     let matchers =
-      [ (is_countdownlatch_await, Medium)
+      [ (is_accountManager_setUserData, High)
       ; (is_two_way_binder_transact, High)
-      ; (is_getWindowVisibleDisplayFrame, Low)
-      ; (is_future_get, High)
-      ; (is_accountManager_setUserData, High)
-      ; (is_asyncTask_get, High) ]
+      ; (is_countdownlatch_await, High)
+      ; (is_getWindowVisibleDisplayFrame, Medium)
+      ; (is_asyncTask_get, Low)
+      ; (is_future_get, Low) ]
     in
     fun tenv pn actuals ->
       List.find_map matchers ~f:(fun (matcher, sev) -> Option.some_if (matcher tenv pn actuals) sev)
