@@ -158,6 +158,9 @@ module OwnershipDomain : sig
   val find : [`Use_get_owned_instead]  [@@warning "-32"]
 
   val propagate_assignment : AccessPath.t -> HilExp.t -> astate -> astate
+
+  val propagate_return :
+    AccessPath.t -> OwnershipAbstractValue.astate -> HilExp.t list -> astate -> astate
 end
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)

@@ -428,6 +428,22 @@ module OwnershipDomain = struct
     else
       let rhs_ownership_value = ownership_of_expr rhs_exp ownership in
       add lhs_access_path rhs_ownership_value ownership
+
+
+  let propagate_return ret_access_path return_ownership actuals ownership =
+    let get_ownership formal_index acc =
+      List.nth actuals formal_index |> Option.map ~f:(fun expr -> ownership_of_expr expr ownership)
+      (* simply skip formal if we cannot find its actual, as opposed to assuming non-ownership *)
+      |> Option.fold ~init:acc ~f:OwnershipAbstractValue.join
+    in
+    let ret_ownership_wrt_actuals =
+      match return_ownership with
+      | OwnershipAbstractValue.Owned | Unowned ->
+          return_ownership
+      | OwnershipAbstractValue.OwnedIf formal_indexes ->
+          IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
+    in
+    add ret_access_path ret_ownership_wrt_actuals ownership
 end
 
 module Choice = struct

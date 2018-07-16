@@ -24,34 +24,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
-  let propagate_return return ret_ownership ret_attributes actuals
-      {Domain.ownership; attribute_map} =
-    let open Domain in
-    let ret_access_path = (return, []) in
-    let get_ownership formal_index acc =
-      match List.nth actuals formal_index with
-      | Some (HilExp.AccessExpression access_expr) ->
-          let actual_ap = AccessExpression.to_access_path access_expr in
-          OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
-      | Some (HilExp.Constant _) ->
-          acc
-      | _ ->
-          OwnershipAbstractValue.unowned
-    in
-    let ownership' =
-      match ret_ownership with
-      | OwnershipAbstractValue.Owned | Unowned ->
-          OwnershipDomain.add ret_access_path ret_ownership ownership
-      | OwnershipAbstractValue.OwnedIf formal_indexes ->
-          let actuals_ownership =
-            IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
-          in
-          OwnershipDomain.add ret_access_path actuals_ownership ownership
-    in
-    let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
-    (ownership', attribute_map')
-
-
   (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
   let is_safe_access access prefix_path tenv =
@@ -442,8 +414,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       add_callee_accesses astate accesses locks threads actuals callee_pname pdesc
                         loc
                     in
-                    let ownership, attribute_map =
-                      propagate_return ret_base return_ownership return_attributes actuals astate
+                    let ownership =
+                      OwnershipDomain.propagate_return ret_access_path return_ownership actuals
+                        astate.ownership
+                    in
+                    let attribute_map =
+                      AttributeMapDomain.add ret_access_path return_attributes astate.attribute_map
                     in
                     let wobbly_paths =
                       StabilityDomain.integrate_summary actuals callee_pdesc ~callee:callee_wps
