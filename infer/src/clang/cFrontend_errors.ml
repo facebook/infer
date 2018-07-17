@@ -462,14 +462,16 @@ let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
 
-let fill_issue_desc_info_and_log context an (issue_desc: CIssue.issue_desc) linters_def_file loc =
+let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc: CIssue.issue_desc)
+    linters_def_file loc =
   let process_message message =
-    remove_new_lines_and_whitespace (expand_message_string context message an)
+    remove_new_lines_and_whitespace (expand_message_string context message current_node)
   in
   let description = process_message issue_desc.description in
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
-  try log_frontend_issue context.CLintersContext.current_method an issue_desc' linters_def_file
+  try
+    log_frontend_issue context.CLintersContext.current_method witness issue_desc' linters_def_file
   with CFrontend_config.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
     ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
@@ -485,7 +487,8 @@ let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node)
       List.iter
         ~f:(fun issue_desc ->
           if CIssue.should_run_check issue_desc.CIssue.mode then
-            fill_issue_desc_info_and_log context an issue_desc None issue_desc.CIssue.loc )
+            fill_issue_desc_info_and_log context ~witness:an ~current_node:an issue_desc None
+              issue_desc.CIssue.loc )
         issue_desc_list )
     checkers
 
@@ -500,7 +503,8 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_type
             ()
         | Some witness ->
             let loc = CFrontend_checkers.location_from_an context witness in
-            fill_issue_desc_info_and_log context witness linter.issue_desc linter.def_file loc )
+            fill_issue_desc_info_and_log context ~witness ~current_node:an linter.issue_desc
+              linter.def_file loc )
     parsed_linters
 
 

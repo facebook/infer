@@ -295,7 +295,9 @@ let report_issue an lcxt linter (*npo_condition*) =
     CTL.Debug.pp_formula linter.condition ;*)
   let loc = CFrontend_checkers.location_from_an lcxt an in
   let should_report = match an with Decl dec -> is_decl_allowed lcxt dec | Stmt _ -> true in
-  if should_report then fill_issue_desc_info_and_log lcxt an linter.issue_desc linter.def_file loc
+  if should_report then
+    fill_issue_desc_info_and_log lcxt ~witness:an ~current_node:an linter.issue_desc
+      linter.def_file loc
 
 
 let check_linter_map linter_map_contex phi =
