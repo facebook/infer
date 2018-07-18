@@ -70,10 +70,13 @@ module SymbolPath = struct
   let rec pp_partial fmt = function
     | Pvar pvar ->
         Pvar.pp_value fmt pvar
+    (* Temporary fix, see T31250173 *)
+    | Index p when Language.curr_language_is Java ->
+        F.fprintf fmt "%a" pp_partial p
     | Index p ->
         F.fprintf fmt "%a[*]" pp_partial p
     | Field (fn, p) ->
-        F.fprintf fmt "%a.%a" pp_partial p Typ.Fieldname.pp fn
+        F.fprintf fmt "%a.%s" pp_partial p (Typ.Fieldname.to_flat_string fn)
 
 
   let pp fmt = function
