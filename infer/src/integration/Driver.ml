@@ -375,10 +375,10 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (* else rely on the command line value *) Config.merge
   in
   if should_merge then MergeCapture.merge_captured_targets () ;
-  if should_analyze || should_report then (
-    if SourceFiles.is_empty () then error_nothing_to_analyze mode
-    else if should_analyze then execute_analyze ~changed_files ;
-    if should_report && Config.report then report ?suppress_console:suppress_console_report () )
+  if should_analyze then
+    if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
+    else execute_analyze ~changed_files ;
+  if should_report && Config.report then report ?suppress_console:suppress_console_report ()
 
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
