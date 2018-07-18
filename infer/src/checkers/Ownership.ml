@@ -109,15 +109,16 @@ module Domain = struct
 
 
   let report_use_after_lifetime (var, _) ~use_loc ~invalidated_loc summary =
-    let message =
-      F.asprintf "Variable %a is used at line %a after its lifetime ended at %a" Var.pp var
-        Location.pp use_loc Location.pp invalidated_loc
-    in
-    let ltr =
-      [ Errlog.make_trace_element 0 invalidated_loc "End of variable lifetime" []
-      ; Errlog.make_trace_element 0 use_loc "Use of invalid variable" [] ]
-    in
-    report message use_loc ltr summary
+    if Var.appears_in_source_code var then
+      let message =
+        F.asprintf "Variable %a is used at line %a after its lifetime ended at %a" Var.pp var
+          Location.pp use_loc Location.pp invalidated_loc
+      in
+      let ltr =
+        [ Errlog.make_trace_element 0 invalidated_loc "End of variable lifetime" []
+        ; Errlog.make_trace_element 0 use_loc "Use of invalid variable" [] ]
+      in
+      report message use_loc ltr summary
 
 
   (* complain if we do not have the right capability to access [var] *)
