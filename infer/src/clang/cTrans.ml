@@ -411,7 +411,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               List.map field_exp_typs ~f:(fun exp_typ -> (fill_typ_with_zero exp_typ).control)
               |> collect_controls trans_state.context.procdesc |> mk_trans_result exp_typ
           | Tarray {elt= field_typ; length= Some n} ->
-              let size = IntLit.to_int n in
+              let size = IntLit.to_int_exn n in
               let indices = CGeneral_utils.list_range 0 (size - 1) in
               List.map indices ~f:(fun i ->
                   let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in

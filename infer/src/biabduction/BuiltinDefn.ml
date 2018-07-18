@@ -717,7 +717,7 @@ let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args}
       match (n_lexp1, n_lexp2, n_lexp3) with
       | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil)
         -> (
-          let n = IntLit.to_int n_sil in
+          let n = IntLit.to_int_exn n_sil in
           try
             let parts = Str.split (Str.regexp_string str2) str1 in
             let n_part = List.nth_exn parts n in

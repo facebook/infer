@@ -177,7 +177,7 @@ let set_array_length array length_exp =
     match array with
     | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray {elt; stride}} ->
         let length = Sem.eval length_exp mem |> Dom.Val.get_itv in
-        let stride = Option.map ~f:IntLit.to_int stride in
+        let stride = Option.map ~f:IntLit.to_int_exn stride in
         let v =
           Sem.eval_array_alloc pname ~node_hash elt ~stride ~offset:Itv.zero ~size:length
             ~inst_num:0 ~dimension:1

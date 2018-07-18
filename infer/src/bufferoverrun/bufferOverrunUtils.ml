@@ -94,7 +94,7 @@ module Exec = struct
                   let i = Dom.Val.get_itv (Sem.eval dyn_length mem) in
                   Itv.plus i length )
             in
-            let stride = Option.map stride ~f:IntLit.to_int in
+            let stride = Option.map stride ~f:IntLit.to_int_exn in
             let v =
               Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero ~size:length
                 ~inst_num ~dimension

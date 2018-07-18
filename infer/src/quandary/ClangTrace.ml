@@ -330,7 +330,9 @@ module SinkKind = struct
             match HilExp.eval exp with
             | Some (Const.Cint i) ->
                 (* check if the data kind might be CURLOPT_URL *)
-                if controls_request (IntLit.to_int i) then taint_after_nth 1 URL actuals else None
+                IntLit.to_int i
+                |> Option.bind ~f:(fun n ->
+                       if controls_request n then taint_after_nth 1 URL actuals else None )
             | _ ->
                 (* can't statically resolve data kind; taint it just in case *)
                 taint_after_nth 1 URL actuals )

@@ -59,7 +59,9 @@ let of_int32 i = of_int64 (Int64.of_int32 i)
 
 let of_int i = of_int64 (Int64.of_int i)
 
-let to_int (_, i, _) = Int64.to_int_exn i
+let to_int (_, i, _) = Int64.to_int i
+
+let to_int_exn (_, i, _) = Int64.to_int_exn i
 
 let to_float (_, i, _) = Int64.to_float i
 

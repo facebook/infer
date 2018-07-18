@@ -388,7 +388,7 @@ let reason_to_skip ~callee_desc : string option =
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
   let string_lookup s n =
-    let c = try Char.to_int s.[IntLit.to_int n] with Invalid_argument _ -> 0 in
+    let c = try Char.to_int s.[IntLit.to_int_exn n] with Invalid_argument _ -> 0 in
     Exp.int (IntLit.of_int c)
   in
   match lexp with

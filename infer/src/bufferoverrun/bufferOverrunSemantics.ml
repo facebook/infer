@@ -14,8 +14,8 @@ open! AbstractDomain.Types
 open BufferOverrunDomain
 
 let eval_const : Const.t -> Val.t = function
-  | Const.Cint intlit -> (
-    try Val.of_int (IntLit.to_int intlit) with _ -> Val.Itv.top )
+  | Const.Cint intlit ->
+      Option.value_map ~default:Val.Itv.top ~f:Val.of_int (IntLit.to_int intlit)
   | Const.Cfloat f ->
       f |> int_of_float |> Val.of_int
   | _ ->
@@ -60,9 +60,9 @@ let rec sizeof (typ: Typ.t) : int =
   | Typ.Tstruct _ | Typ.TVar _ ->
       4 (* TODO *)
   | Typ.Tarray {length= Some length; stride= Some stride} ->
-      IntLit.to_int stride * IntLit.to_int length
+      IntLit.to_int_exn stride * IntLit.to_int_exn length
   | Typ.Tarray {elt; length= Some length; stride= None} ->
-      sizeof elt * IntLit.to_int length
+      sizeof elt * IntLit.to_int_exn length
   | _ ->
       4
 

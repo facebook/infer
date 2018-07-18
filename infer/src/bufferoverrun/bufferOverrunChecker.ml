@@ -269,7 +269,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let rec decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem =
             match typ.Typ.desc with
             | Typ.Tarray {elt= typ; length; stride} ->
-                let stride = Option.map ~f:IntLit.to_int stride in
+                let stride = Option.map ~f:IntLit.to_int_exn stride in
                 BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
                   ?stride ~inst_num ~dimension mem
             | Typ.Tstruct typname -> (
