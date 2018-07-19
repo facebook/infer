@@ -203,8 +203,6 @@ let lint_dotty_dir_name = "lint_dotty"
 
 let lint_issues_dir_name = "lint_issues"
 
-let linters_failed_sentinel_filename = "linters_failed_sentinel"
-
 let manual_buck_compilation_db = "BUCK COMPILATION DATABASE OPTIONS"
 
 let manual_buck_flavors = "BUCK FLAVORS OPTIONS"

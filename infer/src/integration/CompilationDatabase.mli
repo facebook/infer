@@ -19,6 +19,7 @@ type compilation_data =
             entry. *)
   }
 
-val filter_compilation_data : t -> f:(SourceFile.t -> bool) -> compilation_data list
+val filter_compilation_data :
+  t -> f:(SourceFile.t -> bool) -> (SourceFile.t * compilation_data) list
 
 val from_json_files : [< `Escaped of string | `Raw of string] list -> t

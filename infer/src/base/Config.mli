@@ -122,8 +122,6 @@ val lint_dotty_dir_name : string
 
 val lint_issues_dir_name : string
 
-val linters_failed_sentinel_filename : string
-
 val load_average : float option
 
 val max_widens : int

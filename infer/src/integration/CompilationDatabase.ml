@@ -17,7 +17,7 @@ let empty () = ref SourceFile.Map.empty
 let get_size database = SourceFile.Map.cardinal !database
 
 let filter_compilation_data database ~f =
-  SourceFile.Map.filter (fun s _ -> f s) !database |> SourceFile.Map.bindings |> List.map ~f:snd
+  SourceFile.Map.filter (fun s _ -> f s) !database |> SourceFile.Map.bindings
 
 
 let parse_command_and_arguments command_and_arguments =

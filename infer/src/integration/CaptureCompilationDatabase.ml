@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-let create_cmd (compilation_data: CompilationDatabase.compilation_data) =
+let create_cmd (source_file, (compilation_data: CompilationDatabase.compilation_data)) =
   let swap_executable cmd =
     if String.is_suffix ~suffix:"++" cmd then Config.wrappers_dir ^/ "clang++"
     else Config.wrappers_dir ^/ "clang"
@@ -18,42 +18,33 @@ let create_cmd (compilation_data: CompilationDatabase.compilation_data) =
     ClangQuotes.mk_arg_file "cdb_clang_args" ClangQuotes.EscapedNoQuotes
       compilation_data.escaped_arguments
   in
-  { CompilationDatabase.directory= compilation_data.directory
-  ; executable= swap_executable compilation_data.executable
-  ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] }
+  ( source_file
+  , { CompilationDatabase.directory= compilation_data.directory
+    ; executable= swap_executable compilation_data.executable
+    ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] } )
 
 
-(* A sentinel is a file which indicates that a failure occurred in another infer process.
-   Because infer processes run in parallel but do not share any memory, we use the
-   filesystem to signal failures across processes. *)
-let sentinel_exists sentinel_opt =
-  let file_exists sentinel = PolyVariantEqual.( = ) (Sys.file_exists sentinel) `Yes in
-  Option.value_map ~default:false sentinel_opt ~f:file_exists
-
-
-let invoke_cmd ~fail_sentinel (cmd: CompilationDatabase.compilation_data) =
-  let create_sentinel_if_needed () =
-    let create_empty_file fname = Utils.with_file_out ~f:(fun _ -> ()) fname in
-    Option.iter fail_sentinel ~f:create_empty_file
-  in
-  if sentinel_exists fail_sentinel then L.progress "E%!"
-  else
-    try
-      let pid =
-        let open Spawn in
-        spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable
-          ~argv:(cmd.executable :: cmd.escaped_arguments) ()
-      in
-      match Unix.waitpid (Pid.of_int pid) with
-      | Ok () ->
-          L.progress ".%!"
-      | Error _ ->
-          L.progress "!%!" ; create_sentinel_if_needed ()
-    with exn ->
-      let trace = Printexc.get_backtrace () in
-      L.external_error "@\nException caught:@\n%a.@\n%s@\n" Exn.pp exn trace ;
-      L.progress "X%!" ;
-      create_sentinel_if_needed ()
+let invoke_cmd (source_file, (cmd: CompilationDatabase.compilation_data)) =
+  let argv = cmd.executable :: cmd.escaped_arguments in
+  ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
+  | pid ->
+      !ProcessPoolState.update_status (Mtime_clock.now ()) (SourceFile.to_string source_file) ;
+      Unix.waitpid (Pid.of_int pid)
+      |> Result.map_error ~f:(fun unix_error ->
+             Unix.Exit_or_signal.to_string_hum (Error unix_error) )
+  | exception Unix.Unix_error (err, f, arg) ->
+      Error (F.asprintf "%s(%s): %s@." f arg (Unix.Error.message err)) )
+  |> function
+    | Ok () ->
+        ()
+    | Error error ->
+        let log_or_die fmt =
+          if Config.linters_ignore_clang_failures || Config.keep_going then
+            L.debug Capture Quiet fmt
+          else L.die ExternalError fmt
+        in
+        log_or_die "Error running compilation for '%a': %a:@\n%s@." SourceFile.pp source_file
+          Pp.cli_args argv error
 
 
 let run_compilation_database compilation_database should_capture_file =
@@ -64,23 +55,11 @@ let run_compilation_database compilation_database should_capture_file =
   L.(debug Capture Quiet)
     "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
   L.progress "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
-  let sequence = Parmap.L (List.map ~f:create_cmd compilation_data) in
-  let fail_sentinel_fname = Config.results_dir ^/ Config.linters_failed_sentinel_filename in
-  (* fail_sentinel = Some file means we will fail by compilation failures, None means we won't *)
-  let fail_sentinel =
-    if Config.linters_ignore_clang_failures || Config.keep_going then None
-    else Some fail_sentinel_fname
-  in
-  Utils.rmtree fail_sentinel_fname ;
-  let chunksize = min ((List.length compilation_data / Config.jobs) + 1) 10 in
-  Parmap.pariter ~ncores:Config.jobs ~chunksize (invoke_cmd ~fail_sentinel) sequence ;
+  let compilation_commands = List.map ~f:create_cmd compilation_data in
+  let runner = Tasks.Runner.create ~jobs:Config.jobs ~f:invoke_cmd in
+  Tasks.Runner.run runner ~tasks:compilation_commands ;
   L.progress "@." ;
-  L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs ;
-  if sentinel_exists fail_sentinel then (
-    L.progress
-      "Failure detected, capture did not finish successfully. Use `--keep-going` to ignore \
-       compilation errors. Terminating@." ;
-    L.exit 1 )
+  L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs
 
 
 (** Computes the compilation database files. *)
