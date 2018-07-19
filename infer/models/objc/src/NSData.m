@@ -51,6 +51,6 @@ NSData* __objc_alloc(NSData*);
 
 - (void)dealloc {
   if (self)
-    free(self->_bytes);
+    free((void*)self->_bytes);
 }
 @end

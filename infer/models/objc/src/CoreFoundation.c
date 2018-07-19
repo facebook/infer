@@ -6,7 +6,11 @@
  */
 #import <Foundation/Foundation.h>
 
+void __free_cf(CFTypeRef item);
+
 void CFRelease(CFTypeRef item) { __free_cf(item); }
+
+CFRunLoopObserverRef getAngelicObject();
 
 CFRunLoopObserverRef CFRunLoopObserverCreateWithHandler(
     CFAllocatorRef allocator,

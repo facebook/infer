@@ -160,7 +160,7 @@ let spec_find_rename trace_call summary
   let proc_name = Summary.get_proc_name summary in
   try
     let count = ref 0 in
-    let f spec = incr count ; (!count, spec_rename_vars proc_name spec) in
+    let rename_vars spec = incr count ; (!count, spec_rename_vars proc_name spec) in
     let specs = get_specs_from_payload summary in
     let formals = Summary.get_formals summary in
     if List.is_empty specs then (
@@ -169,7 +169,7 @@ let spec_find_rename trace_call summary
         (Exceptions.Precondition_not_found
            (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__)) ) ;
     let formal_parameters = List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
-    (List.map ~f specs, formal_parameters)
+    (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->
     L.d_strln
       ("ERROR: found no entry for procedure " ^ Typ.Procname.to_string proc_name ^ ". Give up...") ;

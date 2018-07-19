@@ -189,7 +189,9 @@ let to_callee pname pvar =
       {pvar with pv_kind= Callee_var pname}
   | Global_var _ ->
       pvar
-  | Callee_var _ | Abduced_retvar _ | Abduced_ref_param _ | Seed_var ->
+  | Callee_var _ ->
+      pvar
+  | Abduced_retvar _ | Abduced_ref_param _ | Seed_var ->
       L.d_str "Cannot convert pvar to callee: " ;
       d pvar ;
       L.d_ln () ;

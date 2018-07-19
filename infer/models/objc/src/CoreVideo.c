@@ -7,4 +7,6 @@
 #import <CoreVideo/CVBuffer.h>
 #import <CoreVideo/CVPixelBuffer.h>
 
+void __free_cf(CVPixelBufferRef item);
+
 void CVPixelBufferRelease(CVPixelBufferRef pxbuffer) { __free_cf(pxbuffer); }

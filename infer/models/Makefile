@@ -10,6 +10,7 @@ C_MODELS_DIR = c/src
 CPP_MODELS_DIR = cpp/src
 JAVA_MODELS_DIR = java
 OBJC_MODELS_DIR = objc/src
+OBJCPP_MODELS_DIR = objcpp/src
 
 MODELS_INFER_OUT = infer-out
 MODELS_INFER_OPTIONS = --biabduction-only --results-dir $(MODELS_INFER_OUT) --models-mode
@@ -33,12 +34,15 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(QUIET)$(MAKE) -C $(CPP_MODELS_DIR) clean
 ifneq (no, $(XCODE_SELECT))
 	$(QUIET)$(MAKE) -C $(OBJC_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(OBJCPP_MODELS_DIR) clean
 endif
 	$(QUIET)$(call silent_on_success,Capturing C models,\
 	  $(INFER_BIN) capture $(MODELS_INFER_OPTIONS) --continue -- $(MAKE) -C $(C_MODELS_DIR) all)
 	$(QUIET)$(call silent_on_success,Capturing C++ models,\
 	  $(INFER_BIN) capture $(MODELS_INFER_OPTIONS) --continue -- $(MAKE) -C $(CPP_MODELS_DIR) all)
 ifneq (no, $(XCODE_SELECT))
+	$(QUIET)$(call silent_on_success,Capturing ObjCPP models,\
+	  $(INFER_BIN) capture $(MODELS_INFER_OPTIONS) --continue -- $(MAKE) -C $(OBJCPP_MODELS_DIR) all)
 	$(QUIET)$(call silent_on_success,Capturing ObjC models,\
 	  $(INFER_BIN) capture $(MODELS_INFER_OPTIONS) --continue -- $(MAKE) -C $(OBJC_MODELS_DIR) all)
 endif
@@ -66,4 +70,5 @@ clean: clean_specs
 	$(QUIET)$(MAKE) -C $(CPP_MODELS_DIR) clean
 ifneq (no, $(XCODE_SELECT))
 	$(QUIET)$(MAKE) -C $(OBJC_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(OBJCPP_MODELS_DIR) clean
 endif

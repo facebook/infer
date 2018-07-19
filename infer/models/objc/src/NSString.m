@@ -7,6 +7,7 @@
 
 #import "NSString.h"
 #import <stdlib.h>
+#import <string.h>
 
 size_t __get_array_length(const void* arr);
 
@@ -25,7 +26,7 @@ typedef NSUInteger NSStringEncoding;
   s->value = (const char*)malloc(len);
   // The newly allocated string will be autoreleased by the runtime
   __set_wont_leak_attribute(s->value);
-  memcpy(s->value, bytes, len);
+  memcpy((void*)s->value, bytes, len);
   return s;
 }
 
@@ -36,7 +37,7 @@ typedef NSUInteger NSStringEncoding;
   s->value = (const char*)malloc(len);
   // The newly allocated string will be autoreleased by the runtime
   __set_wont_leak_attribute(s->value);
-  memcpy(s->value, aString->value, len);
+  memcpy((void*)s->value, aString->value, len);
   return s;
 }
 
@@ -83,7 +84,7 @@ typedef NSUInteger NSStringEncoding;
 
 - (void)dealloc {
   if (self != nil && self->value != 0) {
-    free(self->value);
+    free((void*)self->value);
   }
   [super dealloc];
 }
