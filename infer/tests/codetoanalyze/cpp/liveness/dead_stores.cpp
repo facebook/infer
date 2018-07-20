@@ -388,7 +388,7 @@ class Exceptions {
     return 0;
   }
 
-  int FN_unreachable_catch_bad() {
+  int unreachable_catch_bad() {
     int i = 1;
     try {
     } catch (...) {

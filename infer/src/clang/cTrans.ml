@@ -1909,8 +1909,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             try_control.root_nodes
           else try_control.leaf_nodes
         in
+        (* do not add exceptional successors to return nodes *)
         List.iter
-          ~f:(fun try_end -> Procdesc.set_succs_exn_only try_end catch_start_nodes)
+          ~f:(fun try_end ->
+            match Procdesc.Node.get_kind try_end with
+            | Procdesc.Node.Stmt_node "Return Stmt" ->
+                ()
+            | _ ->
+                Procdesc.set_succs_exn_only try_end catch_start_nodes )
           try_ends ;
         try_trans_result
     | _ ->

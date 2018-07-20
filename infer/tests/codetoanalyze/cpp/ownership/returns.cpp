@@ -128,4 +128,17 @@ const char* return_nullptr2_ok() {
   return local;
 }
 
+struct A {
+  ~A();
+};
+
+int try_catch_return_ok() {
+  A a;
+  try {
+    return 1;
+  } catch (...) {
+    return 2;
+  }
+}
+
 } // namespace returns
