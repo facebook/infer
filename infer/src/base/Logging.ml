@@ -91,12 +91,19 @@ let color_console ?(use_stdout= false) scheme =
   let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
   if can_colorize then (
     let styles = term_styles_of_style scheme in
+    let orig_out_functions = F.pp_get_formatter_out_functions formatter () in
     let out_string s p n =
-      let print = if use_stdout then ANSITerminal.print_string else ANSITerminal.prerr_string in
-      print styles (String.slice s p n)
+      let s = ANSITerminal.sprintf styles "%s" (String.slice s p n) in
+      orig_out_functions.F.out_string s 0 (String.length s)
+    in
+    let out_newline () =
+      (* erase to end-of-line to avoid garbage, in particular when writing over the taskbar *)
+      let erase_eol = "\027[0K" in
+      orig_out_functions.F.out_string erase_eol 0 (String.length erase_eol) ;
+      orig_out_functions.F.out_newline ()
     in
     F.pp_set_formatter_out_functions formatter
-      {(F.pp_get_formatter_out_functions formatter ()) with F.out_string} ;
+      {(F.pp_get_formatter_out_functions formatter ()) with F.out_string; out_newline} ;
     formatter )
   else formatter
 

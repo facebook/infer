@@ -38,13 +38,19 @@ type t =
   | Dummy  (** ignore everything *)
 
 (** print [c] [n] times *)
-let rec pp_n c oc n =
+let rec pp_n c fmt n =
   if n > 0 then (
-    Out_channel.output_char oc c ;
-    pp_n c oc (n - 1) )
+    F.pp_print_char fmt c ;
+    pp_n c fmt (n - 1) )
 
 
-let draw_top_bar ~term_width ~total ~finished ~elapsed =
+let move_bol = "\r"
+
+let move_cursor_up n = Printf.sprintf "\027[%iA" n
+
+let erase_eol = "\027[0K"
+
+let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
   let tasks_total_string = Int.to_string total in
   let bar_tasks_num_size = String.length tasks_total_string in
   let elapsed_string = F.asprintf "%a" Mtime.Span.pp elapsed in
@@ -56,7 +62,7 @@ let draw_top_bar ~term_width ~total ~finished ~elapsed =
     let ( +++ ) (f1, l1) f2 = (f1 ^^ f2, l1 + (string_of_format f2 |> String.length)) in
     ("%*d", bar_tasks_num_size (* finished *)) +++ "/" ++ ("%s", bar_tasks_num_size (* total *))
     +++ " [" ++ ("%a%a", 0 (* progress bar *)) +++ "] "
-    ++ ("%d%%", 3 (* "xx%", even though sometimes it's just "x%" *)) +++ " "
+    ++ ("%d%%", 3 (* "xxx%", even though sometimes it's just "x%" *)) +++ " "
     ++ ( "%s"
        , max (String.length elapsed_string) 9
          (* leave some room for elapsed_string to avoid flicker. 9 characters is "XXhXXmXXs" so it
@@ -67,40 +73,38 @@ let draw_top_bar ~term_width ~total ~finished ~elapsed =
   let progress_bar_size = top_bar_size - size_around_progress_bar in
   ( if progress_bar_size < min_acceptable_progress_bar then
       let s = Printf.sprintf "%d/%s %s" finished tasks_total_string elapsed_string in
-      Out_channel.output_string stderr (String.prefix s term_width)
+      F.fprintf fmt "%s" (String.prefix s term_width)
   else
     let bar_done_size = finished * progress_bar_size / total in
-    Printf.eprintf top_bar_fmt bar_tasks_num_size finished tasks_total_string (pp_n '#')
+    F.fprintf fmt top_bar_fmt bar_tasks_num_size finished tasks_total_string (pp_n '#')
       bar_done_size (pp_n '.')
       (progress_bar_size - bar_done_size)
       (finished * 100 / total)
       elapsed_string ) ;
-  ANSITerminal.erase Eol ;
-  Out_channel.output_string stderr "\n"
+  F.fprintf fmt "%s\n" erase_eol
 
 
-let draw_job_status ~term_width ~draw_time t ~status ~t0 =
+let draw_job_status fmt ~term_width ~draw_time t ~status ~t0 =
   let length = ref 0 in
   let job_prefix_size = String.length job_prefix in
   if term_width > job_prefix_size then (
-    ANSITerminal.(prerr_string [Bold; magenta]) job_prefix ;
+    F.fprintf fmt "%s" (ANSITerminal.(sprintf [Bold; magenta]) "%s" job_prefix) ;
     length := !length + job_prefix_size ) ;
   let time_width = 4 + (* actually drawing the time *) 3 (* "[] " *) in
   if draw_time && term_width > time_width + job_prefix_size then (
     let time_running = Mtime.span t0 t |> Mtime.Span.to_s in
-    Printf.eprintf "[%4.1fs] " time_running ;
+    F.fprintf fmt "[%4.1fs] " time_running ;
     length := !length + time_width ) ;
-  String.prefix status (term_width - !length) |> Out_channel.output_string stderr ;
-  ANSITerminal.erase Eol ;
-  Out_channel.output_string stderr "\n"
+  F.fprintf fmt "%s%s\n" (String.prefix status (term_width - !length)) erase_eol
 
 
 let refresh_multiline task_bar =
-  ANSITerminal.move_bol () ;
   let should_draw_progress_bar = task_bar.tasks_total > 0 && task_bar.tasks_done >= 0 in
   let term_width, _ = ANSITerminal.size () in
+  F.pp_print_string F.err_formatter move_bol ;
   if should_draw_progress_bar then
-    draw_top_bar ~term_width ~total:task_bar.tasks_total ~finished:task_bar.tasks_done
+    draw_top_bar F.err_formatter ~term_width ~total:task_bar.tasks_total
+      ~finished:task_bar.tasks_done
       ~elapsed:(Mtime_clock.count task_bar.start_time) ;
   let draw_time =
     (* When there is only 1 job we are careful not to spawn processes needlessly, thus there is no
@@ -110,12 +114,12 @@ let refresh_multiline task_bar =
   in
   let now = Mtime_clock.now () in
   Array.iter2_exn task_bar.jobs_statuses task_bar.jobs_start_times ~f:(fun status t0 ->
-      draw_job_status ~term_width ~draw_time now ~status ~t0 ) ;
+      draw_job_status F.err_formatter ~term_width ~draw_time now ~status ~t0 ) ;
   let lines_printed =
     let progress_bar = if should_draw_progress_bar then 1 else 0 in
     task_bar.jobs + progress_bar
   in
-  ANSITerminal.move_cursor 0 (-lines_printed) ;
+  F.eprintf "%s%!" (move_cursor_up lines_printed) ;
   ()
 
 
