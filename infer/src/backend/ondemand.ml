@@ -26,7 +26,10 @@ let set_callbacks (callbacks: callbacks) = callbacks_ref := Some callbacks
 
 let unset_callbacks () = callbacks_ref := None
 
-let nesting = ref 0
+(* always incremented before use *)
+let nesting = ref (-1)
+
+let max_nesting_to_print = 8
 
 (* Remember what the last status sent was so that we can update the status correctly when entering
    and exiting nested ondemand analyses. In particular we need to remember the original time.*)
@@ -191,7 +194,13 @@ let analyze_proc ?caller_pdesc callee_pdesc =
     let proc_name = Procdesc.get_proc_name callee_pdesc in
     let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
     let t0 = Mtime_clock.now () in
-    let status = F.asprintf "%a: %a" SourceFile.pp source_file Typ.Procname.pp proc_name in
+    let status =
+      let nesting =
+        if !nesting <= max_nesting_to_print then String.make !nesting '>'
+        else Printf.sprintf "%d>" !nesting
+      in
+      F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Typ.Procname.pp proc_name
+    in
     current_taskbar_status := Some (t0, status) ;
     !ProcessPoolState.update_status t0 status ;
     callbacks.analyze_ondemand summary pdesc
