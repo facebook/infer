@@ -30,7 +30,7 @@ let flags deps =
     {|(flags (%s %s))
       (ocamlc_flags (%s))
       (ocamlopt_flags (%s))
-      (preprocess (pps (ppx_compare ppx_sexp_conv ppx_trace %s ppx_driver.runner)))|}
+      (preprocess (pps ppx_compare ppx_sexp_conv ppx_trace %s ppx_driver.runner))|}
     common_flags
     (String.concat " "
        (List.map (fun d -> "-open " ^ String.capitalize_ascii d) ("core_kernel" :: deps)))

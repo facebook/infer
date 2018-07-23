@@ -147,17 +147,17 @@ OCAMLFORMAT_EXE?=ocamlformat
 fmt:
 	parallel $(OCAMLFORMAT_EXE) -i ::: $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
 
-JBUILD_ML:=$(shell find * -name 'jbuild*.in' | grep -v workspace | grep -v sledge)
+DUNE_ML:=$(shell find * -name 'dune*.in' | grep -v workspace | grep -v sledge)
 
-.PHONY: fmt_jbuild
-fmt_jbuild:
-	parallel $(OCAMLFORMAT_EXE) -i ::: $(JBUILD_ML)
+.PHONY: fmt_dune
+fmt_dune:
+	parallel $(OCAMLFORMAT_EXE) -i ::: $(DUNE_ML)
 
 SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies -or -path sledge/llvm \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
 
 .PHONY: fmt_all
 fmt_all:
-	parallel $(OCAMLFORMAT_EXE) -i ::: $(SRC_ML) $(JBUILD_ML)
+	parallel $(OCAMLFORMAT_EXE) -i ::: $(SRC_ML) $(DUNE_ML)
 
 # pre-building these avoids race conditions when building, eg src_build and test_build in parallel
 .PHONY: src_build_common

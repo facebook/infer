@@ -1,0 +1,22 @@
+(* -*- tuareg -*- *)
+(* NOTE: prepend dune.common to this file! *)
+;; Format.sprintf
+     {|
+(library
+ (name InferIR)
+ (public_name InferIR)
+ (flags (%s -open Core -open InferStdlib -open IStd -open InferGenerated -open InferBase))
+ (ocamlopt_flags (%s))
+ (libraries %s)
+ (preprocess (pps ppx_compare))
+)
+
+(documentation
+ (package InferIR)
+ (mld_files index)
+)
+|}
+     (String.concat " " common_cflags)
+     (String.concat " " common_optflags)
+     (String.concat " " ("InferBase" :: common_libraries))
+   |> Jbuild_plugin.V1.send

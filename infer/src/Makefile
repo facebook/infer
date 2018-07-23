@@ -9,7 +9,7 @@ include $(ROOT_DIR)/Makefile.config
 #### Global declarations ####
 
 ETC_DIR = $(INFER_DIR)/etc
-# paths to BUILD_DIR are relative because that's how jbuilder likes it
+# paths to BUILD_DIR are relative because that's how dune likes it
 # can be overriden to specify another build mode (eg opt)
 INFER_BUILD_DIR = _build/default
 
@@ -91,11 +91,11 @@ OCAML_SOURCES = \
 .PHONY: all
 all: infer
 
-GENERATED_FROM_AUTOCONF = jbuild.common jbuild-workspace base/Version.ml
+GENERATED_FROM_AUTOCONF = dune.common dune-workspace base/Version.ml
 
-GENERATED_JBUILDS += jbuild atd/jbuild base/jbuild IR/jbuild istd/jbuild scripts/jbuild
+GENERATED_DUNES += dune atd/dune base/dune IR/dune istd/dune scripts/dune
 
-SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_JBUILDS) $(OCAML_SOURCES)
+SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
 endif
@@ -106,19 +106,19 @@ src_build_common: $(SRC_BUILD_COMMON)
 # single out infer.exe as the source of truth for make, knowing that in fact several targets are
 # produced by the build
 $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)jbuilder build $(INFER_CONFIG_TARGETS)
+	$(QUIET)dune build $(INFER_CONFIG_TARGETS)
 #	let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
 
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)jbuilder build \
+	$(QUIET)dune build \
 	  $(patsubst $(INFER_BUILD_DIR)/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
 	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)jbuilder build @$(INFER_BUILD_DIR)/doc
+	$(QUIET)dune build @$(INFER_BUILD_DIR)/doc
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
 
@@ -141,7 +141,7 @@ endif
 infer: $(INFER_BIN).exe
 
 $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	jbuilder build $(INFER_CONFIG_TARGETS:.exe=.bc)
+	dune build $(INFER_CONFIG_TARGETS:.exe=.bc)
 	$(QUIET)touch $@
 
 $(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN_ALIASES)
@@ -181,7 +181,7 @@ dsort:
 	$(QUIET)ocamldep.opt -sort $(inc_flags) $(ml_src_files)
 
 $(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	jbuilder build $@
+	dune build $@
 	$(QUIET)touch $@
 
 .PHONY: toplevel
@@ -191,7 +191,7 @@ toplevel: $(INFER_BUILD_DIR)/infertop.bc
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 $(CHECKCOPYRIGHT_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	jbuilder build $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
+	dune build $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe $(CHECKCOPYRIGHT_BIN)
 
 define gen_atdgen_rules
@@ -258,20 +258,20 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	$(REMOVE) "$$TMPFILE"
-jbuild.common: jbuild.common.in
-jbuild-workspace: jbuild-workspace.in
+dune.common: dune.common.in
+dune-workspace: dune-workspace.in
 base/Version.ml: base/Version.ml.in
 
-$(GENERATED_JBUILDS): jbuild.common
+$(GENERATED_DUNES): dune.common
 	$(QUIET)cat $+ > $@
 
-jbuild: jbuild.in
-atd/jbuild: atd/jbuild.in
-base/jbuild: base/jbuild.in
-deadcode/jbuild: deadcode/jbuild.in
-IR/jbuild: IR/jbuild.in
-istd/jbuild: istd/jbuild.in
-scripts/jbuild: scripts/jbuild.in
+dune: dune.in
+atd/dune: atd/dune.in
+base/dune: base/dune.in
+deadcode/dune: deadcode/dune.in
+IR/dune: IR/dune.in
+istd/dune: istd/dune.in
+scripts/dune: scripts/dune.in
 
 .PHONY: clean
 clean:
@@ -281,8 +281,8 @@ clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
 	$(REMOVE) $(GENERATED_FROM_AUTOCONF)
-	$(REMOVE) $(GENERATED_JBUILDS)
-	$(REMOVE) base/Version.ml.tmp.* jbuild.tmp.* jbuild-workspace.tmp.*
+	$(REMOVE) $(GENERATED_DUNES)
+	$(REMOVE) base/Version.ml.tmp.* dune.tmp.* dune-workspace.tmp.*
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
 	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.bc,.exe} $(INFER_BIN_ALIASES) \

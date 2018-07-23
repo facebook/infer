@@ -1,5 +1,5 @@
 (* -*- tuareg -*- *)
-(* NOTE: prepend jbuild.common to this file! *)
+(* NOTE: prepend dune.common to this file! *)
 
 let ( ^/ ) = Filename.concat
 
@@ -41,29 +41,28 @@ let infer_cflags =
     ; "InferBase" ]
 
 
-(** The build stanzas to be passed to jbuilder *)
+(** The build stanzas to be passed to dune *)
 let stanzas =
-  ( if clang then
-      ["(ocamllex (types_lexer ctl_lexer))"; "(menhir ((modules (types_parser ctl_parser))))"]
+  ( if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
   else [] )
-  @ ( if python && facebook then ["(ocamllex (pythonLexer))"; "(menhir ((modules (pythonParser))))"]
+  @ ( if python && facebook then ["(ocamllex pythonLexer)"; "(menhir (modules pythonParser))"]
     else [] )
   @ [ Format.sprintf
         {|
 (library
- ((name InferModules)
-  (public_name infer)
-  (flags (%s))
-  (ocamlopt_flags (%s))
-  (libraries (%s))
-  (modules (:standard \ %s infertop))
-  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
- ))
+ (name InferModules)
+ (public_name infer)
+ (flags (%s))
+ (ocamlopt_flags (%s))
+ (libraries %s)
+ (modules :standard \ %s infertop)
+ (preprocess (pps ppx_compare ppx_sexp_conv -no-check))
+)
 
 (documentation
- ((package infer)
-  (mld_files (index))
- ))
+ (package infer)
+ (mld_files index)
+)
 |}
         (String.concat " " infer_cflags)
         (String.concat " " common_optflags)
@@ -72,13 +71,13 @@ let stanzas =
     ; Format.sprintf
         {|
 (executables
- ((names (%s))
-  (flags (%s -open InferModules))
-  (ocamlopt_flags (%s))
-  (libraries (InferModules))
-  (modules (%s))
-  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
- ))
+ (names %s)
+ (flags (%s -open InferModules))
+ (ocamlopt_flags (%s))
+ (libraries InferModules)
+ (modules %s)
+ (preprocess (pps ppx_compare ppx_sexp_conv -no-check))
+)
 |}
         (String.concat " " infer_binaries)
         (String.concat " " infer_cflags)
@@ -87,12 +86,13 @@ let stanzas =
     ; Format.sprintf
         {|
 (executable
- ((name infertop)
-  (flags (%s))
-  (libraries (utop InferModules))
-  (modules (Infertop))
-  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
-  (link_flags (-linkall -warn-error -31))))
+ (name infertop)
+ (flags (%s))
+ (libraries utop InferModules)
+ (modules Infertop)
+ (preprocess (pps ppx_compare ppx_sexp_conv -no-check))
+ (link_flags (-linkall -warn-error -31))
+)
 |}
         (String.concat " " infer_cflags) ]
   @ ( List.map

@@ -1,0 +1,5 @@
+(lang dune 1.0)
+
+(context (opam (switch @OPAMSWITCH@) (name default) (merlin)))
+(context (opam (switch @OPAMSWITCH@) (name opt)))
+(context (opam (switch @OPAMSWITCH@) (name test)))

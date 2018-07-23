@@ -18,7 +18,7 @@
 # 4. Kill detected dead code; repeat until dry.
 #
 # Infer is first compiled so that atdgen, ocamllex, and menhir generate the appropriate files. The
-# ocamllex and menhir files are generated inside ../_build by jbuilder, and copied here by this
+# ocamllex and menhir files are generated inside ../_build by dune, and copied here by this
 # Makefile.
 #
 # ocamldepend is used to `cat` the source files in the right order into all_infer_in_one_file.ml.
@@ -127,11 +127,11 @@ flatten_infer: infer.cmx unit/inferunit.cmx facebook/InferCreateTraceViewLinks.c
 .PHONY: detect_dead_code
 detect_dead_code:
 	$(MAKE) clean
-#	create a dummy implementation file to keep jbuilder happy, as we are about to generate the
-#	jbuilder file for this directory
+#	create a dummy implementation file to keep dune happy, as we are about to generate the
+#	dune file for this directory
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
-#	needed to get jbuild generated, and the generated code for the lexers and parsers in ../_build
-	$(MAKE) GENERATED_JBUILDS=deadcode/jbuild -C .. test
+#	needed to get dune generated, and the generated code for the lexers and parsers in ../_build
+	$(MAKE) GENERATED_DUNES=deadcode/dune -C .. test
 #	copy generated source files from ../_build
 	for file in $(ml_src_files_from_mlly); do \
 	  set +e; \
@@ -153,14 +153,14 @@ detect_dead_code:
 	$(MAKE) -j 1 ALL_INFER_IN_ONE_FILE_ML="$$tmp_file" flatten_infer; \
 	mv "$$tmp_file" $(ALL_INFER_IN_ONE_FILE_ML)
 #	build and get dead code warnings; clean in case of errors so as not to leave rubbish around
-	if ! jbuilder build $(INFER_BUILD_DIR)/deadcode/all_infer_in_one_file.bc; then \
+	if ! dune build $(INFER_BUILD_DIR)/deadcode/all_infer_in_one_file.bc; then \
 	  $(MAKE) clean; \
 	  exit 1; \
 	fi
 #	be paranoid about cleaning because we do not want to include infer_in_one_file into infer by
-#	accident and I don't know enough jbuilder to be positive that it won't happen
+#	accident and I don't know enough dune to be positive that it won't happen
 	$(MAKE) clean
 
 .PHONY: clean
 clean:
-	$(REMOVE) .depend *.ml *.mli jbuild
+	$(REMOVE) .depend *.ml *.mli dune

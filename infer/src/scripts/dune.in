@@ -1,0 +1,12 @@
+(* NOTE: prepend dune.common to this file! *)
+;; Format.sprintf
+     {|
+(executable
+ (name checkCopyright)
+ (flags (%s))
+ (libraries core str)
+ (preprocess (pps ppx_compare))
+)
+|}
+     (String.concat " " common_cflags)
+   |> Jbuild_plugin.V1.send

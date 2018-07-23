@@ -35,9 +35,9 @@ depends: [
   "conf-sqlite3" {build}
   "conf-zlib" {build}
   "ctypes" {>="0.9.2"}
+  "dune" {build & >="1.0"}
   "extlib-compat"
   "javalib" {>="2.3.4"}
-  "jbuilder" {build & >="1.0+beta14"}
   "mtime"
   "ocamlfind" {build}
   "ounit" {="2.0.5"}

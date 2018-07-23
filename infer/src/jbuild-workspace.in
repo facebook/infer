@@ -1,3 +1,0 @@
-(context ((switch @OPAMSWITCH@) (name default) (merlin)))
-(context ((switch @OPAMSWITCH@) (name opt)))
-(context ((switch @OPAMSWITCH@) (name test)))
