@@ -26,7 +26,7 @@ infer. For example, this downloads infer in /opt on Linux (replace
 ```sh
 VERSION=0.XX.Y \
 curl -sSL "https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux64-v$VERSION.tar.xz" \
-| sudo tar -C /opt xf && \
+| sudo tar -C /opt -xJ && \
 ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
 ```
 
