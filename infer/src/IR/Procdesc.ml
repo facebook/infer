@@ -728,6 +728,9 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
     | Exp.Lvar origin_pvar ->
         let new_pvar = convert_pvar origin_pvar in
         Exp.Lvar new_pvar
+    | Exp.Lfield (Exp.Lvar origin_pvar, fname, typ) ->
+        let new_pvar = convert_pvar origin_pvar in
+        Exp.Lfield (Exp.Lvar new_pvar, fname, typ)
     | _ ->
         exp
   in
