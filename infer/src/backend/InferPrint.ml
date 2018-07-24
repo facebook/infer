@@ -50,7 +50,7 @@ let compute_key (bug_type: string) (proc_name: Typ.Procname.t) (filename: string
 
 
 let compute_hash (kind: string) (bug_type: string) (proc_name: Typ.Procname.t) (filename: string)
-    (qualifier: string) (cost: CostDomain.summary option) =
+    (qualifier: string) =
   let base_filename = Filename.basename filename in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
   let location_independent_qualifier =
@@ -59,7 +59,7 @@ let compute_hash (kind: string) (bug_type: string) (proc_name: Typ.Procname.t) (
     Str.global_replace (Str.regexp "\\(line \\|column \\|n\\$\\)[0-9]+") "_" qualifier
   in
   Utils.better_hash
-    (kind, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier, cost)
+    (kind, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
   |> Caml.Digest.to_hex
 
 
@@ -212,7 +212,7 @@ module IssuesJson = struct
 
   let pp_json_close fmt () = F.fprintf fmt "]@\n@?"
 
-  let pp_issue fmt error_filter procname proc_loc_opt summary_opt (key: Errlog.err_key)
+  let pp_issue fmt error_filter procname proc_loc_opt (key: Errlog.err_key)
       (err_data: Errlog.err_data) =
     let pp x = F.fprintf fmt x in
     let source_file, procedure_start_line =
@@ -259,13 +259,6 @@ module IssuesJson = struct
         else base_qualifier
       in
       let bug =
-        let cost =
-          match summary_opt with
-          | Some summary ->
-              summary.Summary.payloads.Payloads.cost
-          | None ->
-              None
-        in
         { Jsonbug_j.bug_class= Exceptions.err_class_string err_data.err_class
         ; kind
         ; bug_type
@@ -281,7 +274,7 @@ module IssuesJson = struct
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
         ; node_key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
         ; key= compute_key bug_type procname file
-        ; hash= compute_hash kind bug_type procname file qualifier cost
+        ; hash= compute_hash kind bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= key.err_name.IssueType.hum
@@ -296,8 +289,8 @@ module IssuesJson = struct
 
 
   (** Write bug report in JSON format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname summary err_log =
-    Errlog.iter (pp_issue fmt error_filter procname proc_loc_opt summary) err_log
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log =
+    Errlog.iter (pp_issue fmt error_filter procname proc_loc_opt) err_log
 end
 
 let pp_custom_of_report fmt report fields =
@@ -394,7 +387,7 @@ module IssuesTxt = struct
 
 
   (** Write bug report in text format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ _ err_log =
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log =
     Errlog.iter (pp_issue fmt error_filter proc_loc_opt) err_log
 end
 
@@ -621,7 +614,7 @@ module PreconditionStats = struct
     L.result "Procedures with data constraints: %d@." !nr_dataconstraints
 end
 
-(** Wrapper of an issue that compares all parts except the procname and the summary *)
+(** Wrapper of an issue that compares all parts except the procname *)
 module Issue = struct
   type err_data_ = Errlog.err_data
 
@@ -632,22 +625,14 @@ module Issue = struct
 
   type proc_name_ = Typ.Procname.t
 
+  (* ignore proc name *)
   let compare_proc_name_ _ _ = 0
 
-  type summary_ = Summary.t
-
-  let compare_summary_ _ _ = 0
-
-  (* NOTE: procname and summary are ignored when comparing *)
   type t =
-    { proc_name: proc_name_
-    ; proc_location: Location.t
-    ; err_key: Errlog.err_key
-    ; err_data: err_data_
-    ; summary: summary_ }
+    {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
   [@@deriving compare]
 
-  (* If two issues are identical except for their procnames and summaries, they are probably duplicate reports on
+  (* If two issues are identical except for their procnames, they are probably duplicate reports on
      two different instantiations of the same template. We don't want to spam users by reporting
      identical warning on the same line. Accomplish this by sorting without regard to procname, then
      de-duplicating. *)
@@ -703,12 +688,11 @@ let get_outfile outfile =
 
 
 let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_filter
-    {Issue.proc_name; proc_location; err_key; err_data; summary} =
+    {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
   | Json ->
       let outf = get_outfile outfile_opt in
-      IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) (Some summary)
-        err_key err_data
+      IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Csv ->
       L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
@@ -755,10 +739,9 @@ let pp_stats_in_format (format_kind, _) =
       L.(die InternalError) "Printing stats in json/tests/text is not implemented"
 
 
-let pp_issues_of_error_log error_filter linereader proc_loc_opt procname summary err_log
-    bug_format_list =
+let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
   let pp_issues_in_format format =
-    pp_issues_in_format format error_filter linereader proc_loc_opt procname summary err_log
+    pp_issues_in_format format error_filter linereader proc_loc_opt procname err_log
   in
   List.iter ~f:pp_issues_in_format bug_format_list
 
@@ -768,8 +751,7 @@ let collect_issues summary issues_acc =
   let proc_name = Summary.get_proc_name summary in
   let proc_location = Summary.get_loc summary in
   Errlog.fold
-    (fun err_key err_data acc ->
-      {Issue.proc_name; proc_location; err_key; err_data; summary} :: acc )
+    (fun err_key err_data acc -> {Issue.proc_name; proc_location; err_key; err_data} :: acc)
     err_log issues_acc
 
 
@@ -848,12 +830,11 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
       L.(die UserError) "Error reading '%s': %s" fname error
 
 
-let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
-    summary =
+let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log =
   let pp_summary_by_report_kind (report_kind, format_list) =
     match (report_kind, format_list) with
     | Issues, _ :: _ ->
-        pp_issues_of_error_log error_filter linereader None procname summary error_log format_list
+        pp_issues_of_error_log error_filter linereader None procname error_log format_list
     | _ ->
         ()
   in
@@ -861,10 +842,9 @@ let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader
 
 
 (** Process lint issues of a procedure *)
-let pp_lint_issues filters formats_by_report_kind linereader summary procname error_log =
+let pp_lint_issues filters formats_by_report_kind linereader procname error_log =
   let error_filter = error_filter filters procname in
   pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
-    summary
 
 
 (** Process a summary *)
@@ -1006,7 +986,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
     [Config.lint_issues_dir_name; Config.starvation_issues_dir_name; Config.racerd_issues_dir_name]
     ~f:(fun dir_name ->
       IssueLog.load dir_name ;
-      IssueLog.iter (pp_lint_issues filters formats_by_report_kind linereader None) ) ;
+      IssueLog.iter (pp_lint_issues filters formats_by_report_kind linereader) ) ;
   finalize_and_close_files formats_by_report_kind stats
 
 
