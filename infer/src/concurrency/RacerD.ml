@@ -315,6 +315,54 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
 
+  let call_without_summary get_proc_desc callee_pname ret_access_path call_flags actuals astate =
+    let open RacerDConfig in
+    let open RacerDDomain in
+    let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
+      not call_flags.cf_interface && List.is_empty actuals
+    in
+    let is_abstract_getthis_like callee =
+      get_proc_desc callee
+      |> Option.value_map ~default:false ~f:(fun callee_pdesc ->
+             (Procdesc.get_attributes callee_pdesc).ProcAttributes.is_abstract
+             &&
+             match Procdesc.get_formals callee_pdesc with
+             | [(_, typ)] when Typ.equal typ (ret_access_path |> fst |> snd) ->
+                 true
+             | _ ->
+                 false )
+    in
+    if Models.is_box callee_pname then
+      match actuals with
+      | HilExp.AccessExpression actual_access_expr :: _ ->
+          let actual_ap = AccessExpression.to_access_path actual_access_expr in
+          if AttributeMapDomain.has_attribute actual_ap Functional astate.attribute_map then
+            (* TODO: check for constants, which are functional? *)
+            let attribute_map =
+              AttributeMapDomain.add_attribute ret_access_path Functional astate.attribute_map
+            in
+            {astate with attribute_map}
+          else astate
+      | _ ->
+          astate
+    else if should_assume_returns_ownership call_flags actuals then
+      (* assume non-interface methods with no summary and no parameters return ownership *)
+      let ownership =
+        OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned astate.ownership
+      in
+      {astate with ownership}
+    else if is_abstract_getthis_like callee_pname then
+      (* assume abstract, single-parameter methods whose return type is equal to that of the first
+         formal return conditional ownership -- an example is getThis in Litho *)
+      let ownership =
+        OwnershipDomain.add ret_access_path
+          (OwnershipAbstractValue.make_owned_if 0)
+          astate.ownership
+      in
+      {astate with ownership}
+    else astate
+
+
   let exec_instr (astate: Domain.astate) ({ProcData.tenv; extras; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
@@ -431,35 +479,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     in
                     {locks; threads; accesses; ownership; attribute_map; wobbly_paths}
                 | None ->
-                    let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
-                      (* assume non-interface methods with no summary and no parameters return
-                         ownership *)
-                      not call_flags.cf_interface && List.is_empty actuals
-                    in
-                    if Models.is_box callee_pname then
-                      match actuals with
-                      | HilExp.AccessExpression actual_access_expr :: _ ->
-                          let actual_ap = AccessExpression.to_access_path actual_access_expr in
-                          if
-                            AttributeMapDomain.has_attribute actual_ap Functional
-                              astate.attribute_map
-                          then
-                            (* TODO: check for constants, which are functional? *)
-                            let attribute_map =
-                              AttributeMapDomain.add_attribute ret_access_path Functional
-                                astate.attribute_map
-                            in
-                            {astate with attribute_map}
-                          else astate
-                      | _ ->
-                          astate
-                    else if should_assume_returns_ownership call_flags actuals then
-                      let ownership =
-                        OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned
-                          astate.ownership
-                      in
-                      {astate with ownership}
-                    else astate
+                    call_without_summary extras callee_pname ret_access_path call_flags actuals
+                      astate
         in
         let add_if_annotated predicate attribute attribute_map =
           if PatternMatch.override_exists predicate tenv callee_pname then
