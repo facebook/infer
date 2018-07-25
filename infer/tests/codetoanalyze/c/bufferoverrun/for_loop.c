@@ -60,3 +60,24 @@ void call_two_loops_Bad() {
   int m = 15;
   a[two_loops(m)] = 1;
 }
+
+struct payload {
+  int count;
+  int payload[];
+};
+
+#define COUNT 10
+
+// memleak but no array out of bounds error
+void malloc_sizeof_value_leak_good() {
+  struct payload* x;
+  x = malloc(sizeof(*x) + COUNT * sizeof(x->payload[0]));
+  if (x == NULL) {
+    return 1;
+  }
+  x->count = COUNT;
+  for (int i = 0; i < COUNT; i++) {
+    x->payload[i] = i;
+  }
+  /* missing free(x) */
+}

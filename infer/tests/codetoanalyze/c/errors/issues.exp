@@ -32,6 +32,8 @@ codetoanalyze/c/errors/memory_leaks/cleanup_attribute.c, FP_cleanup_string_good,
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 3, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 5, NULL_TEST_AFTER_DEREFERENCE, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 2, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, simple_leak, 2, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, uses_allocator, 3, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/mutex/pthread_mutex.c, double_init_bad, 2, PRECONDITION_NOT_MET, no_bucket

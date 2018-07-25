@@ -57,3 +57,23 @@ int* compound_return_no_leak() {
     p;
   });
 }
+
+struct payload {
+  int count;
+  int payload[];
+};
+
+#define COUNT 10
+
+void malloc_sizeof_value_leak_bad() {
+  struct payload* x;
+  x = malloc(sizeof(*x) + COUNT * sizeof(x->payload[0]));
+  if (x == NULL) {
+    return 1;
+  }
+  x->count = COUNT;
+  for (int i = 0; i < COUNT; i++) {
+    x->payload[i] = i;
+  }
+  /* missing free(x) */
+}
