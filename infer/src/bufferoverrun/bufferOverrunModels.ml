@@ -320,13 +320,17 @@ module ArrayList = struct
     {exec; check= no_check}
 
 
-  let increment_size_by extra_size alist_id _ ~ret:_ mem =
+  let change_size_by ~size_f alist_id _ ~ret:_ mem =
     let alist_v = Dom.Mem.find_stack (Loc.of_id alist_id) mem in
     let locs = Dom.Val.get_pow_loc alist_v in
-    Dom.Mem.transform_mem ~f:(fun a -> Dom.Val.plus_a a extra_size) locs mem
+    Dom.Mem.transform_mem ~f:size_f locs mem
 
 
-  let add alist_id = {exec= increment_size_by Dom.Val.Itv.one alist_id; check= no_check}
+  let incr_size = Dom.Val.plus_a Dom.Val.Itv.one
+
+  let decr_size size = Dom.Val.minus_a size Dom.Val.Itv.one
+
+  let add alist_id = {exec= change_size_by ~size_f:incr_size alist_id; check= no_check}
 
   let get_size alist mem = BoUtils.Exec.get_alist_size (Sem.eval alist mem) mem
 
@@ -341,7 +345,7 @@ module ArrayList = struct
   let addAll alist_id alist_to_add =
     let exec _model_env ~ret mem =
       let to_add_length = get_size alist_to_add mem in
-      increment_size_by to_add_length alist_id _model_env ~ret mem
+      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id _model_env ~ret mem
     in
     {exec; check= no_check}
 
@@ -352,13 +356,21 @@ module ArrayList = struct
       BoUtils.Check.arraylist_access ~array_exp ~index_exp ~is_arraylist_add:true mem pname
         location cond_set
     in
-    {exec= increment_size_by Dom.Val.Itv.one alist_id; check}
+    {exec= change_size_by ~size_f:incr_size alist_id; check}
+
+
+  let remove_at_index alist_id index_exp =
+    let check {pname; location} mem cond_set =
+      let array_exp = Exp.Var alist_id in
+      BoUtils.Check.arraylist_access ~array_exp ~index_exp mem pname location cond_set
+    in
+    {exec= change_size_by ~size_f:decr_size alist_id; check}
 
 
   let addAll_at_index alist_id index_exp alist_to_add =
     let exec _model_env ~ret mem =
       let to_add_length = get_size alist_to_add mem in
-      increment_size_by to_add_length alist_id _model_env ~ret mem
+      change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id _model_env ~ret mem
     in
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
@@ -411,6 +423,8 @@ module Call = struct
         $--> ArrayList.get_or_set_at_index
       ; -"java.util.ArrayList" &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $--> ArrayList.get_or_set_at_index
+      ; -"java.util.ArrayList" &:: "remove" <>$ capt_var_exn $+ capt_exp
+        $--> ArrayList.remove_at_index
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ any_arg $--> ArrayList.add
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $!--> ArrayList.add_at_index

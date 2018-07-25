@@ -143,4 +143,46 @@ public class ArrayListTest {
     list.set(1, 10);
   }
 
+
+  public void arraylist_remove_overrun_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.remove(1);
+  }
+
+   public void arraylist_remove_ok() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.add(1);
+    list.remove(0);
+    list.get(0);
+
+  }
+
+
+   public void arraylist_remove_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.add(1);
+    list.remove(0);
+    list.get(1);
+
+  }
+
+
+  // we can't set the size of the list to 10 because it depends on how
+  // many times the loop is executed. Should be fixed once we have
+  // relational domain working.
+   public void arraylist_remove_in_loop_Good_FP() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    for (int i = 0; i < 10; ++i) {
+      list.add(i);
+    }
+    for (int i = 0, size = list.size(); i < size; ++i) {
+      list.remove(i);
+    }
+
+   }
+
+
 }
