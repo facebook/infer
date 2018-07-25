@@ -94,6 +94,7 @@ codetoanalyze/java/infer/GuardedByExample.java, void GuardedByExample.writeFBadW
 codetoanalyze/java/infer/HashMapExample.java, int HashMapExample.getOneIntegerWithoutCheck(), 6, NULL_DEREFERENCE, B1, ERROR, [start of procedure getOneIntegerWithoutCheck()]
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.getAfterClearBad(), 5, NULL_DEREFERENCE, B1, ERROR, [start of procedure getAfterClearBad()]
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.getAfterRemovingTheKeyBad(), 5, NULL_DEREFERENCE, B1, ERROR, [start of procedure getAfterRemovingTheKeyBad()]
+codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.getFromKeySetGood_FP(HashMap), 3, NULL_DEREFERENCE, B2, ERROR, [start of procedure getFromKeySetGood_FP(...),Taking true branch]
 codetoanalyze/java/infer/HashMapExample.java, void HashMapExample.getTwoIntegersWithOneCheck(Integer,Integer), 11, NULL_DEREFERENCE, B2, ERROR, [start of procedure getTwoIntegersWithOneCheck(...),Taking true branch,Taking true branch]
 codetoanalyze/java/infer/IntegerExample.java, void IntegerExample.testIntegerEqualsBad(), 6, NULL_DEREFERENCE, B1, ERROR, [start of procedure testIntegerEqualsBad(),Taking true branch]
 codetoanalyze/java/infer/InvokeDynamic.java, int InvokeDynamic.lambda$npeInLambdaBad$1(String,String), 1, NULL_DEREFERENCE, B1, ERROR, [start of procedure lambda$npeInLambdaBad$1(...)]

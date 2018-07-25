@@ -109,4 +109,13 @@ public class HashMapExample {
     map.get(key).toString(); // NPE here
   }
 
+  void getFromKeySetGood_FP(HashMap<String, String> map) {
+    for (String key : map.keySet()) {
+      String s = map.get(key);
+      if (s.equals("foo")) {
+        System.out.println("true");
+      }
+    }
+  }
+
 }
