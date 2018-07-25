@@ -38,10 +38,14 @@ module Exec : sig
     -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
     -> Dom.Mem.astate
 
+  val decl_sym_java_ptr :
+    decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
+    -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> inst_num:int
+    -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate
+
   val decl_sym_arraylist :
-    Typ.Procname.t -> Itv.SymbolPath.partial -> node_hash:int -> Location.t -> Loc.t
-    -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
-    -> Dom.Mem.astate
+    Typ.Procname.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t -> new_sym_num:Itv.Counter.t
+    -> Dom.Mem.astate -> Dom.Mem.astate
 
   val init_array_fields :
     Tenv.t -> Typ.Procname.t -> node_hash:int -> Typ.t -> PowLoc.t -> ?dyn_length:Exp.t

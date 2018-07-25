@@ -105,20 +105,31 @@ module Exec = struct
     decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
 
 
-  let decl_sym_arraylist
-      : Typ.Procname.t -> Itv.SymbolPath.partial -> node_hash:int -> Location.t -> Loc.t
-        -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
-        -> Dom.Mem.astate -> Dom.Mem.astate =
-   fun pname path ~node_hash location loc ~inst_num ~new_sym_num ~new_alloc_num mem ->
+  let decl_sym_java_ptr
+      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
+        -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> inst_num:int
+        -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
+       mem ->
     let alloc_num = Itv.Counter.next new_alloc_num in
+    let elem = Trace.SymAssign (loc, location) in
     let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
     let alloc_loc = Loc.of_allocsite allocsite in
+    let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.add_trace_elem elem in
+    L.(debug BufferOverrun Verbose) "alloc_num:%d, depth:%d \n" alloc_num depth ;
+    let mem = Dom.Mem.add_heap loc v mem in
+    decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
+
+
+  let decl_sym_arraylist
+      : Typ.Procname.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
+        -> new_sym_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun pname path location loc ~new_sym_num mem ->
     let size =
       Itv.make_sym ~unsigned:true pname (Itv.SymbolPath.length path) new_sym_num |> Dom.Val.of_itv
       |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
     in
-    let alist = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) in
-    mem |> Dom.Mem.add_heap loc alist |> Dom.Mem.add_heap alloc_loc size
+    Dom.Mem.add_heap loc size mem
 
 
   let init_array_fields tenv pname ~node_hash typ locs ?dyn_length mem =

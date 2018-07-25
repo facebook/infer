@@ -299,10 +299,9 @@ module ArrayList = struct
     let declare_local ~decl_local:_ {pname; node_hash; location} loc ~inst_num ~dimension mem =
       BoUtils.Exec.decl_local_arraylist pname ~node_hash location loc ~inst_num ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val:_ path {pname; node_hash; location} ~depth:_ loc ~inst_num
-        ~new_sym_num ~new_alloc_num mem =
-      BoUtils.Exec.decl_sym_arraylist pname path ~node_hash location loc ~inst_num ~new_sym_num
-        ~new_alloc_num mem
+    let declare_symbolic ~decl_sym_val:_ path {pname; location} ~depth:_ loc ~inst_num:_
+        ~new_sym_num ~new_alloc_num:_ mem =
+      BoUtils.Exec.decl_sym_arraylist pname path location loc ~new_sym_num mem
     in
     {declare_local; declare_symbolic}
 

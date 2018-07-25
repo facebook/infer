@@ -172,6 +172,8 @@ let is_restrict {is_restrict} = is_restrict
 
 let is_volatile {is_volatile} = is_volatile
 
+let is_array {desc} = match desc with Tarray _ -> true | _ -> false
+
 let mk ?default ?quals desc : t =
   let default_ = {desc; quals= mk_type_quals ()} in
   let mk_aux ?(default= default_) ?(quals= default.quals) desc = {desc; quals} in

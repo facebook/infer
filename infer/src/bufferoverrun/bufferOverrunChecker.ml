@@ -57,10 +57,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             Dom.Mem.add_heap loc v mem
-        (* Temporary fix for ArrayLists in Java, need a better way to handle parameters, see T31498711 *)
-        | Typ.Tptr (typ, _)
-          when Language.curr_language_is Java ->
-            decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem
+        | Typ.Tptr (typ, _) when Language.curr_language_is Java && not (Typ.is_array typ) ->
+            BoUtils.Exec.decl_sym_java_ptr
+              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
+              pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname path tenv
               ~node_hash location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem

@@ -265,6 +265,8 @@ val is_pointer_to_cpp_class : t -> bool
 
 val is_pointer : t -> bool
 
+val is_array : t -> bool
+
 val is_reference : t -> bool
 
 val has_block_prefix : string -> bool
