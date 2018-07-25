@@ -10,6 +10,9 @@ package codetoanalyze.java.infer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
@@ -217,6 +220,30 @@ public class CloseableAsResourceExample {
     SomeResource res = new SomeResource();
     Integer key = 42;
     map.put(key, res);
+  }
+
+  public static void closeCloseable(Closeable closeable) {
+    try {
+      if (closeable != null) {
+        closeable.close();
+      }
+    } catch (Exception ex) {}
+  }
+
+  public void finallyCloseOk(File file, String fileContent) {
+    if (!file.exists()) {
+      FileWriter writer = null;
+      try {
+        writer = new FileWriter(file);
+        writer.write(fileContent);
+      } catch (FileNotFoundException e) {
+        e.printStackTrace();
+      } catch (IOException e) {
+        e.printStackTrace();
+      } finally {
+        closeCloseable(writer);
+      }
+    }
   }
 
 }
