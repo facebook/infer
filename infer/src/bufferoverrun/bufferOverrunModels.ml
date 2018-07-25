@@ -349,7 +349,8 @@ module ArrayList = struct
   let add_at_index (alist_id: Ident.t) index_exp =
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.lindex ~array_exp ~index_exp ~is_arraylist_add:true mem pname location cond_set
+      BoUtils.Check.arraylist_access ~array_exp ~index_exp ~is_arraylist_add:true mem pname
+        location cond_set
     in
     {exec= increment_size_by Dom.Val.Itv.one alist_id; check}
 
@@ -361,7 +362,17 @@ module ArrayList = struct
     in
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.lindex ~array_exp ~is_arraylist_add:true ~index_exp mem pname location cond_set
+      BoUtils.Check.arraylist_access ~index_exp ~array_exp ~is_arraylist_add:true mem pname
+        location cond_set
+    in
+    {exec; check}
+
+
+  let get_or_set_at_index alist_id index_exp =
+    let exec _model_env ~ret:_ mem = mem in
+    let check {pname; location} mem cond_set =
+      let array_exp = Exp.Var alist_id in
+      BoUtils.Check.arraylist_access ~index_exp ~array_exp mem pname location cond_set
     in
     {exec; check}
 end
@@ -396,6 +407,10 @@ module Call = struct
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> StdArray.no_model
+      ; -"java.util.ArrayList" &:: "get" <>$ capt_var_exn $+ capt_exp
+        $--> ArrayList.get_or_set_at_index
+      ; -"java.util.ArrayList" &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg
+        $--> ArrayList.get_or_set_at_index
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ any_arg $--> ArrayList.add
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $!--> ArrayList.add_at_index

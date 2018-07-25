@@ -203,18 +203,17 @@ module Check = struct
     check_access ~size ~idx:idx_in_blk ~arr ~idx_traces pname location cond_set
 
 
-  let add_arraylist ~array_exp ~idx mem pname location cond_set =
+  let arraylist_access ~array_exp ~index_exp ?(is_arraylist_add= false) mem pname location cond_set =
+    let idx = Sem.eval index_exp mem in
     let arr = Sem.eval array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in
     let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
     let idx = Dom.Val.get_itv idx in
-    check_access ~size ~idx ~arr ~idx_traces ~is_arraylist_add:true pname location cond_set
+    check_access ~size ~idx ~arr ~idx_traces ~is_arraylist_add pname location cond_set
 
 
-  let lindex ~array_exp ~index_exp ?(is_arraylist_add= false) mem pname location cond_set =
+  let lindex ~array_exp ~index_exp mem pname location cond_set =
     let idx = Sem.eval index_exp mem in
-    if is_arraylist_add then add_arraylist ~array_exp ~idx mem pname location cond_set
-    else
-      let arr = Sem.eval_arr array_exp mem in
-      array_access ~arr ~idx ~is_plus:true pname location cond_set
+    let arr = Sem.eval_arr array_exp mem in
+    array_access ~arr ~idx ~is_plus:true pname location cond_set
 end

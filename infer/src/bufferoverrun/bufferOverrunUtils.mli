@@ -56,6 +56,10 @@ module Check : sig
     -> PO.ConditionSet.t -> PO.ConditionSet.t
 
   val lindex :
+    array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Typ.Procname.t -> Location.t
+    -> PO.ConditionSet.t -> PO.ConditionSet.t
+
+  val arraylist_access :
     array_exp:Exp.t -> index_exp:Exp.t -> ?is_arraylist_add:bool -> Dom.Mem.astate
     -> Typ.Procname.t -> Location.t -> PO.ConditionSet.t -> PO.ConditionSet.t
 end

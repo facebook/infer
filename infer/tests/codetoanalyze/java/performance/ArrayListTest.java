@@ -92,4 +92,55 @@ public class ArrayListTest {
 
   }
 
+
+   public void arraylist_get_underrun_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.get(0);
+  }
+
+
+   public void arraylist_get_overrun_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.get(2);
+  }
+
+
+   public void arraylist_get_ok() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.add(1);
+    list.add(2);
+
+    for (int i = 0, size = list.size(); i < size; ++i) {
+      list.get(i);
+    }
+
+   }
+
+
+    public void arraylist_set_ok() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.add(1);
+    list.add(2);
+    for (int i = 0, size = list.size(); i < size; ++i) {
+      list.set(i, i);
+    }
+
+   }
+
+
+   public void arraylist_set_underrun_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.set(0, 10);
+  }
+
+
+   public void arraylist_set_overrun_bad() {
+    ArrayList<Integer> list = new ArrayList<Integer>();
+    list.add(0);
+    list.set(1, 10);
+  }
+
 }
