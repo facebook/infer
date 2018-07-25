@@ -10,7 +10,7 @@ ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/lib__module2__output/module2.jar
-INFER_OPTIONS = --eradicate
+INFER_OPTIONS = --eradicate --no-linters
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out
 

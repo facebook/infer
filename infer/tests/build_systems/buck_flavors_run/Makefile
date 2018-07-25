@@ -10,7 +10,7 @@ ANALYZER = checkers
 BUCK_TARGET = //src:hello
 SOURCES = src/hello.c src/hello2.c
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR) --no-linters
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = buck-out
 

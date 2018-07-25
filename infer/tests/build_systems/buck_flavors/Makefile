@@ -10,7 +10,7 @@ ANALYZER = checkers
 BUCK_TARGET = //src:hello @buck_target.txt 
 SOURCES = $(wildcard src/*.c) $(wildcard src/subtarget1/*.c) $(wildcard src/subtarget2/*.c)
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR) --no-linters
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = buck-out
 

@@ -13,7 +13,7 @@ include $(TESTS_DIR)/differential.make
 $(CURRENT_REPORT) $(PREVIOUS_REPORT): $(CLANG_DEPS)
 
 BUCK_TARGET = //src:hello
-INFER_OPTIONS = $(DIFFERENTIAL_ARGS) --flavors --reactive --debug-exceptions
+INFER_OPTIONS = $(DIFFERENTIAL_ARGS) --flavors --reactive --debug-exceptions --no-linters
 SRC_DIR = $(CURDIR)/../codetoanalyze
 
 .PHONY: compare_reports

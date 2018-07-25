@@ -485,6 +485,12 @@ let mode_of_build_command build_cmd =
           XcodeXcpretty (prog, args)
       | BBuck when not Config.flavors && Config.reactive_mode ->
           L.die UserError "The Buck Java integration does not support --reactive@."
+      | BBuck
+        when Option.is_none Config.buck_compilation_database && Config.flavors && Config.linters ->
+          L.user_warning
+            "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
+             set --no-linters to disable them and this warning.@." ;
+          PythonCapture (BBuck, build_cmd)
       | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
           PythonCapture (build_system, build_cmd)
 
