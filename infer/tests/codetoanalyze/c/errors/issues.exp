@@ -20,6 +20,7 @@ codetoanalyze/c/errors/dangling_deref/dpd.c, nodpd1, 3, NULL_DEREFERENCE, B1
 codetoanalyze/c/errors/initialization/compound_literal.c, divide_by_zero, 0, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/errors/initialization/initlistexpr.c, init_divide_by_zero, 2, Assert_failure, no_bucket
 codetoanalyze/c/errors/initialization/initlistexpr.c, init_divide_by_zero, 2, DIVIDE_BY_ZERO, no_bucket
+codetoanalyze/c/errors/lists/list_api.c, FP_list_build_and_free_good, 11, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/lists/lists.c, call_delete_all2, 5, PRECONDITION_NOT_MET, no_bucket
 codetoanalyze/c/errors/lists/lists.c, lists_main, 2, DIVIDE_BY_ZERO, no_bucket
 codetoanalyze/c/errors/local_vars/local_vars.c, m1, 6, DIVIDE_BY_ZERO, no_bucket
