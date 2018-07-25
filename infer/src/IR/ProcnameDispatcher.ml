@@ -450,6 +450,14 @@ module Call = struct
     let typ (_, ty) = ty
 
     let exp (e, _) = e
+
+    let get_var_exn arg =
+      match exp arg with
+      | Exp.Var v ->
+          v
+      | e ->
+          Logging.(die InternalError)
+            "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) (typ arg)
   end
 
   type ('f_in, 'f_out, 'captured_types) proc_matcher =
@@ -684,6 +692,13 @@ module Call = struct
     {get_captured_value; do_capture}
 
 
+  (** Capture the argument local var or fail *)
+  let capture_arg_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+    let get_captured_value arg = FuncArg.get_var_exn arg in
+    let do_capture f v = f v in
+    {get_captured_value; do_capture}
+
+
   let mandatory_arg =
     let on_empty _do_capture _f = None in
     let wrapper = Fn.id in
@@ -726,6 +741,10 @@ module Call = struct
 
   let capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_exp}
+
+
+  let capt_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+    {one_arg_matcher= match_any_arg; capture= capture_arg_var_exn}
 
 
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}

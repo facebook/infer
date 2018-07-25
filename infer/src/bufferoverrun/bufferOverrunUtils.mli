@@ -11,6 +11,8 @@ module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
 
 module Exec : sig
+  val get_alist_size : Dom.Val.t -> Dom.Mem.astate -> Dom.Val.astate
+
   val load_val : Ident.t -> Dom.Val.astate -> Dom.Mem.astate -> Dom.Mem.astate
 
   type decl_local =
@@ -22,6 +24,10 @@ module Exec : sig
     -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
     -> Dom.Mem.astate * int
 
+  val decl_local_arraylist :
+    Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
+    -> Dom.Mem.astate -> Dom.Mem.astate * int
+
   type decl_sym_val =
     Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int -> Location.t -> depth:int
     -> Loc.t -> Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
@@ -29,6 +35,11 @@ module Exec : sig
   val decl_sym_arr :
     decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
     -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t -> ?size:Itv.t
+    -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
+    -> Dom.Mem.astate
+
+  val decl_sym_arraylist :
+    Typ.Procname.t -> Itv.SymbolPath.partial -> node_hash:int -> Location.t -> Loc.t
     -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate
     -> Dom.Mem.astate
 
@@ -45,6 +56,6 @@ module Check : sig
     -> PO.ConditionSet.t -> PO.ConditionSet.t
 
   val lindex :
-    array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Typ.Procname.t -> Location.t
-    -> PO.ConditionSet.t -> PO.ConditionSet.t
+    array_exp:Exp.t -> index_exp:Exp.t -> ?is_arraylist_add:bool -> Dom.Mem.astate
+    -> Typ.Procname.t -> Location.t -> PO.ConditionSet.t -> PO.ConditionSet.t
 end

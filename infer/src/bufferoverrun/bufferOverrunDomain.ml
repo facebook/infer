@@ -244,9 +244,11 @@ module Val = struct
 
 
   module Itv = struct
+    let m1_255 = of_itv Itv.m1_255
+
     let nat = of_itv Itv.nat
 
-    let m1_255 = of_itv Itv.m1_255
+    let one = of_itv Itv.one
 
     let top = of_itv Itv.top
 

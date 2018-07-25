@@ -290,6 +290,82 @@ module StdArray = struct
     {declare_local; declare_symbolic}
 end
 
+(* Java's ArrayLists are represented by their size. We don't care about the elements. 
+- when they are constructed, we set the size to 0
+- each time we add an element, we increase the length of the array
+- each time we delete an element, we decrease the length of the array *)
+module ArrayList = struct
+  let typ =
+    let declare_local ~decl_local:_ {pname; node_hash; location} loc ~inst_num ~dimension mem =
+      BoUtils.Exec.decl_local_arraylist pname ~node_hash location loc ~inst_num ~dimension mem
+    in
+    let declare_symbolic ~decl_sym_val:_ path {pname; node_hash; location} ~depth:_ loc ~inst_num
+        ~new_sym_num ~new_alloc_num mem =
+      BoUtils.Exec.decl_sym_arraylist pname path ~node_hash location loc ~inst_num ~new_sym_num
+        ~new_alloc_num mem
+    in
+    {declare_local; declare_symbolic}
+
+
+  let new_list _ =
+    let exec {pname; node_hash; location} ~ret:(id, _) mem =
+      let loc = Loc.of_id id in
+      let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num:0 ~dimension:1 in
+      let alloc_loc = Loc.of_allocsite allocsite in
+      let init_size = Dom.Val.of_int 0 in
+      let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces init_size) in
+      let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.set_traces traces in
+      mem |> Dom.Mem.add_stack loc v |> Dom.Mem.add_heap alloc_loc init_size
+    in
+    {exec; check= no_check}
+
+
+  let increment_size_by extra_size alist_id _ ~ret:_ mem =
+    let alist_v = Dom.Mem.find_stack (Loc.of_id alist_id) mem in
+    let locs = Dom.Val.get_pow_loc alist_v in
+    Dom.Mem.transform_mem ~f:(fun a -> Dom.Val.plus_a a extra_size) locs mem
+
+
+  let add alist_id = {exec= increment_size_by Dom.Val.Itv.one alist_id; check= no_check}
+
+  let get_size alist mem = BoUtils.Exec.get_alist_size (Sem.eval alist mem) mem
+
+  let size array_exp =
+    let exec _ ~ret mem =
+      let size = get_size array_exp mem in
+      model_by_value size ret mem
+    in
+    {exec; check= no_check}
+
+
+  let addAll alist_id alist_to_add =
+    let exec _model_env ~ret mem =
+      let to_add_length = get_size alist_to_add mem in
+      increment_size_by to_add_length alist_id _model_env ~ret mem
+    in
+    {exec; check= no_check}
+
+
+  let add_at_index (alist_id: Ident.t) index_exp =
+    let check {pname; location} mem cond_set =
+      let array_exp = Exp.Var alist_id in
+      BoUtils.Check.lindex ~array_exp ~index_exp ~is_arraylist_add:true mem pname location cond_set
+    in
+    {exec= increment_size_by Dom.Val.Itv.one alist_id; check}
+
+
+  let addAll_at_index alist_id index_exp alist_to_add =
+    let exec _model_env ~ret mem =
+      let to_add_length = get_size alist_to_add mem in
+      increment_size_by to_add_length alist_id _model_env ~ret mem
+    in
+    let check {pname; location} mem cond_set =
+      let array_exp = Exp.Var alist_id in
+      BoUtils.Check.lindex ~array_exp ~is_arraylist_add:true ~index_exp mem pname location cond_set
+    in
+    {exec; check}
+end
+
 module Call = struct
   let dispatch : model ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -304,6 +380,7 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc
+      ; -"__new" <>$ capt_exp_of_typ (-"java.util.ArrayList") $+...$--> ArrayList.new_list
       ; -"__new" <>$ capt_exp $+...$--> malloc
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
       ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
@@ -319,7 +396,13 @@ module Call = struct
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> StdArray.no_model
-      ; -"java.util.ArrayList" &:: "size" <>$ capt_exp $!--> get_array_length ]
+      ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ any_arg $--> ArrayList.add
+      ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
+        $!--> ArrayList.add_at_index
+      ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> ArrayList.addAll
+      ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp
+        $!--> ArrayList.addAll_at_index
+      ; -"java.util.ArrayList" &:: "size" <>$ capt_exp $!--> ArrayList.size ]
 end
 
 module TypName = struct
@@ -327,5 +410,6 @@ module TypName = struct
     let open ProcnameDispatcher.TypName in
     make_dispatcher
       [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ
+      ; -"java.util.ArrayList" &::.*--> ArrayList.typ
       ; -"std" &:: "array" &::.*--> StdArray.no_typ_model ]
 end

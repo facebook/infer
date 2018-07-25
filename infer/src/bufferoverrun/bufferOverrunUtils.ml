@@ -16,6 +16,11 @@ module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
 module Exec = struct
+  let get_alist_size alist mem =
+    let size_powloc = Dom.Val.get_pow_loc alist in
+    Dom.Mem.find_heap_set size_powloc mem
+
+
   let load_val id val_ mem =
     let locs = val_ |> Dom.Val.get_all_locs in
     let v = Dom.Mem.find_heap_set locs mem in
@@ -44,6 +49,24 @@ module Exec = struct
     let loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension) in
     let mem, _ =
       decl_local pname ~node_hash location loc typ ~inst_num ~dimension:(dimension + 1) mem
+    in
+    (mem, inst_num + 1)
+
+
+  let decl_local_arraylist
+      : Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
+        -> Dom.Mem.astate -> Dom.Mem.astate * int =
+   fun pname ~node_hash location loc ~inst_num ~dimension mem ->
+    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
+    let alloc_loc = Loc.of_allocsite allocsite in
+    let alist =
+      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
+      |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+    in
+    let size = Dom.Val.of_int 0 in
+    let mem =
+      if Int.equal dimension 1 then Dom.Mem.add_stack loc alist mem
+      else Dom.Mem.add_heap loc alist mem |> Dom.Mem.add_heap alloc_loc size
     in
     (mem, inst_num + 1)
 
@@ -80,6 +103,22 @@ module Exec = struct
     in
     let path = Itv.SymbolPath.index path in
     decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
+
+
+  let decl_sym_arraylist
+      : Typ.Procname.t -> Itv.SymbolPath.partial -> node_hash:int -> Location.t -> Loc.t
+        -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
+        -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun pname path ~node_hash location loc ~inst_num ~new_sym_num ~new_alloc_num mem ->
+    let alloc_num = Itv.Counter.next new_alloc_num in
+    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
+    let alloc_loc = Loc.of_allocsite allocsite in
+    let size =
+      Itv.make_sym ~unsigned:true pname (Itv.SymbolPath.length path) new_sym_num |> Dom.Val.of_itv
+      |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
+    in
+    let alist = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) in
+    mem |> Dom.Mem.add_heap loc alist |> Dom.Mem.add_heap alloc_loc size
 
 
   let init_array_fields tenv pname ~node_hash typ locs ?dyn_length mem =
@@ -141,28 +180,41 @@ module Exec = struct
 end
 
 module Check = struct
+  let check_access ~size ~idx ~arr ~idx_traces ?(is_arraylist_add= false) pname location cond_set =
+    let arr_traces = Dom.Val.get_traces arr in
+    match (size, idx) with
+    | NonBottom length, NonBottom idx ->
+        let traces = TraceSet.merge ~arr_traces ~idx_traces location in
+        PO.ConditionSet.add_array_access pname location ~size:length ~idx ~is_arraylist_add traces
+          cond_set
+    | _ ->
+        cond_set
+
+
   let array_access ~arr ~idx ~is_plus pname location cond_set =
     let arr_blk = Dom.Val.get_array_blk arr in
-    let arr_traces = Dom.Val.get_traces arr in
     let size = ArrayBlk.sizeof arr_blk in
     let offset = ArrayBlk.offsetof arr_blk in
     let idx_itv = Dom.Val.get_itv idx in
     let idx_traces = Dom.Val.get_traces idx in
     let idx_in_blk = (if is_plus then Itv.plus else Itv.minus) offset idx_itv in
-    L.(debug BufferOverrun Verbose) "@[<v 2>Add condition :@," ;
-    L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr_blk ;
-    L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx_in_blk ;
-    L.(debug BufferOverrun Verbose) "@]@." ;
-    match (size, idx_in_blk) with
-    | NonBottom size, NonBottom idx ->
-        let traces = TraceSet.merge ~arr_traces ~idx_traces location in
-        PO.ConditionSet.add_array_access pname location ~size ~idx traces cond_set
-    | _ ->
-        cond_set
+    L.(debug BufferOverrun Verbose)
+      "@[<v 2>Add condition :@,array: %a@,  idx: %a@,@]@." ArrayBlk.pp arr_blk Itv.pp idx_in_blk ;
+    check_access ~size ~idx:idx_in_blk ~arr ~idx_traces pname location cond_set
 
 
-  let lindex ~array_exp ~index_exp mem pname location cond_set =
-    let arr = Sem.eval_arr array_exp mem in
+  let add_arraylist ~array_exp ~idx mem pname location cond_set =
+    let arr = Sem.eval array_exp mem in
+    let idx_traces = Dom.Val.get_traces idx in
+    let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
+    let idx = Dom.Val.get_itv idx in
+    check_access ~size ~idx ~arr ~idx_traces ~is_arraylist_add:true pname location cond_set
+
+
+  let lindex ~array_exp ~index_exp ?(is_arraylist_add= false) mem pname location cond_set =
     let idx = Sem.eval index_exp mem in
-    array_access ~arr ~idx ~is_plus:true pname location cond_set
+    if is_arraylist_add then add_arraylist ~array_exp ~idx mem pname location cond_set
+    else
+      let arr = Sem.eval_arr array_exp mem in
+      array_access ~arr ~idx ~is_plus:true pname location cond_set
 end

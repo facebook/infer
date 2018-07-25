@@ -217,6 +217,9 @@ module Call : sig
     -> (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression of the given type *)
 
+  val capt_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures one arg Var. Fails with an internal error if the expression is not a Var *)
+
   val typ1 : 'marker -> (unit, _, 'f, 'f, 'marker mtyp * _, 'marker * _) one_arg
   (** Matches first captured type *)
 

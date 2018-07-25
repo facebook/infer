@@ -201,12 +201,16 @@ module ArrayAccessCondition = struct
 
 
   (* check buffer overrun and return its confidence *)
-  let check : t -> checked_condition =
-   fun c ->
-    (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
+  let check : is_arraylist_add:bool -> t -> checked_condition =
+   fun ~is_arraylist_add c ->
+    (* idx = [il, iu], size = [sl, su], 
+       For arrays : we want to check that 0 <= idx < size
+       For adding into arraylists: we want to check that 0 <= idx <= size *)
     let c' = set_size_pos c in
     (* if sl < 0, use sl' = 0 *)
-    let not_overrun = ItvPure.lt_sem c'.idx c'.size in
+    let not_overrun =
+      if is_arraylist_add then ItvPure.le_sem c'.idx c'.size else ItvPure.lt_sem c'.idx c'.size
+    in
     let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
     (* il >= 0 and iu < sl, definitely not an error *)
     if Itv.Boolean.is_true not_overrun && Itv.Boolean.is_true not_underrun then
@@ -245,43 +249,48 @@ module ArrayAccessCondition = struct
 end
 
 module Condition = struct
-  type t = AllocSize of AllocSizeCondition.t | ArrayAccess of ArrayAccessCondition.t
+  type t =
+    | AllocSize of AllocSizeCondition.t
+    | ArrayAccess of {is_arraylist_add: bool; c: ArrayAccessCondition.t}
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
-  let make_array_access = Option.map ~f:(fun c -> ArrayAccess c)
+  let make_array_access ~is_arraylist_add =
+    Option.map ~f:(fun c -> ArrayAccess {is_arraylist_add; c})
+
 
   let get_symbols = function
     | AllocSize c ->
         AllocSizeCondition.get_symbols c
-    | ArrayAccess c ->
+    | ArrayAccess {c} ->
         ArrayAccessCondition.get_symbols c
 
 
   let subst bound_map = function
     | AllocSize c ->
         AllocSizeCondition.subst bound_map c |> make_alloc_size
-    | ArrayAccess c ->
-        ArrayAccessCondition.subst bound_map c |> make_array_access
+    | ArrayAccess {is_arraylist_add; c} ->
+        ArrayAccessCondition.subst bound_map c |> make_array_access ~is_arraylist_add
 
 
   let have_similar_bounds c1 c2 =
     match (c1, c2) with
     | AllocSize c1, AllocSize c2 ->
         AllocSizeCondition.have_similar_bounds c1 c2
-    | ArrayAccess c1, ArrayAccess c2 ->
+    | ArrayAccess {c= c1}, ArrayAccess {c= c2} ->
         ArrayAccessCondition.have_similar_bounds c1 c2
     | _ ->
         false
 
 
-  let has_infty = function ArrayAccess c -> ArrayAccessCondition.has_infty c | _ -> false
+  let has_infty = function ArrayAccess {c} -> ArrayAccessCondition.has_infty c | _ -> false
 
   let xcompare ~lhs ~rhs =
     match (lhs, rhs) with
     | AllocSize lhs, AllocSize rhs ->
         AllocSizeCondition.xcompare ~lhs ~rhs
-    | ArrayAccess lhs, ArrayAccess rhs ->
+    | ArrayAccess {is_arraylist_add= b1; c= lhs}, ArrayAccess {is_arraylist_add= b2; c= rhs}
+      when Bool.equal b1 b2 ->
         ArrayAccessCondition.xcompare ~lhs ~rhs
     | _ ->
         `NotComparable
@@ -290,22 +299,22 @@ module Condition = struct
   let pp fmt = function
     | AllocSize c ->
         AllocSizeCondition.pp fmt c
-    | ArrayAccess c ->
+    | ArrayAccess {c} ->
         ArrayAccessCondition.pp fmt c
 
 
   let pp_description fmt = function
     | AllocSize c ->
         AllocSizeCondition.pp_description fmt c
-    | ArrayAccess c ->
+    | ArrayAccess {c} ->
         ArrayAccessCondition.pp_description fmt c
 
 
   let check = function
     | AllocSize c ->
         AllocSizeCondition.check c
-    | ArrayAccess c ->
-        ArrayAccessCondition.check c
+    | ArrayAccess {is_arraylist_add; c} ->
+        ArrayAccessCondition.check ~is_arraylist_add c
 end
 
 module ConditionTrace = struct
@@ -486,8 +495,8 @@ module ConditionSet = struct
         join [cwt] condset
 
 
-  let add_array_access pname location ~idx ~size val_traces condset =
-    ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access
+  let add_array_access pname location ~idx ~size ~is_arraylist_add val_traces condset =
+    ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access ~is_arraylist_add
     |> add_opt pname location val_traces condset
 
 
