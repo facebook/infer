@@ -1361,6 +1361,8 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
     fun p map -> match subst p map with p -> NonTop p | exception ReturnTop -> Top
 
 
+  let rec degree {terms} : int = M.fold (fun _ p acc -> max acc (degree p + 1)) terms 0
+
   let pp : F.formatter -> t -> unit =
     let add_symb s (((last_s, last_occ) as last), others) =
       if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
@@ -1428,6 +1430,9 @@ module NonNegativePolynomial = struct
   let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top
 
   let subst p map = match p with Top -> Top | NonTop p -> NonNegativeNonTopPolynomial.subst p map
+
+  let degree p =
+    match p with Top -> None | NonTop p -> Some (NonNegativeNonTopPolynomial.degree p)
 end
 
 module ItvRange = struct

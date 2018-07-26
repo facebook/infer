@@ -882,16 +882,23 @@ module TransferFunctionsWCET = struct
 
 
   let do_report summary loc cost =
+    let degree_str =
+      match BasicCost.degree cost with
+      | Some degree ->
+          Format.sprintf ", degree = %d" degree
+      | None ->
+          ""
+    in
     let ltr =
-      let cost_desc = F.asprintf "with estimated cost %a" BasicCost.pp cost in
+      let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
       [Errlog.make_trace_element 0 loc cost_desc []]
     in
     let exn =
       let message =
         F.asprintf
           "The execution time from the beginning of the function up to this program point is \
-           likely above the acceptable threshold of %a (estimated cost %a)"
-          BasicCost.pp expensive_threshold BasicCost.pp cost
+           likely above the acceptable threshold of %a (estimated cost %a%s)"
+          BasicCost.pp expensive_threshold BasicCost.pp cost degree_str
       in
       Exceptions.Checkers (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
     in

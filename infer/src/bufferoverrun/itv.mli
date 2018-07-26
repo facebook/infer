@@ -93,6 +93,8 @@ module NonNegativePolynomial : sig
   val min_default_left : astate -> astate -> astate
 
   val subst : astate -> Bound.t bottom_lifted SymbolMap.t -> astate
+
+  val degree : astate -> int option
 end
 
 module ItvRange : sig
