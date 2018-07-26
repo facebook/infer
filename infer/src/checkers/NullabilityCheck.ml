@@ -59,22 +59,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       List.exists ~f:(String.equal simplified_callee_pname) blacklist
 
 
-  let is_objc_container_add_method : Typ.Procname.t -> bool =
-    let method_prefixes =
-      [ "addObject:"
-      ; "arrayByAddingObject:"
-      ; "arrayWithObjects:"
-      ; "dictionaryWithObjects:"
-      ; "dictionaryWithObjectsAndKeys:"
-      ; "initWithObjectsAndKeys:"
-      ; "insertObject:"
-      ; "setObject:" ]
-    in
-    fun proc_name ->
-      let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
-      List.exists
-        ~f:(fun prefix -> String.is_prefix ~prefix simplified_callee_pname)
-        method_prefixes
+  let container_method_regex =
+    Str.regexp @@ "^\\(NS.*_\\(arrayByAddingObject\\|arrayWithObjects\\|"
+    ^ "dictionaryWithObjects\\|dictionaryWithObjectsAndKeys\\|initWithObjectsAndKeys\\|"
+    ^ "addObject\\|insertObject\\|setObject\\):\\|" ^ "std::basic_string\\).*"
+
+
+  let is_objc_container_add_method proc_name =
+    let callee_pname = Typ.Procname.to_string proc_name in
+    Str.string_match container_method_regex callee_pname 0
 
 
   let is_conflicting_report summary report_location =
@@ -273,11 +266,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              Annotations.ia_is_nullable ->
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
+    | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
+        check_nil_in_objc_container proc_data loc args astate
     | Call (_, Direct callee_pname, HilExp.AccessExpression receiver :: _, _, loc)
       when is_non_objc_instance_method callee_pname ->
         check_ap proc_data loc (AccessExpression.to_access_path receiver) astate
-    | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
-        check_nil_in_objc_container proc_data loc args astate
     | Call
         ( ((_, ret_typ) as ret_var)
         , Direct callee_pname
