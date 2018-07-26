@@ -81,7 +81,9 @@ type err_data =
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
   ; doc_url: string option
-  ; access: string option }
+  ; access: string option
+  ; extras: Jsonbug_t.extra option
+  (* NOTE: Please consider adding new fields as part of extras *) }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
@@ -232,7 +234,7 @@ let update errlog_old errlog_new =
 
 
 let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_key) session ltr
-    ?linters_def_file ?doc_url ?access exn =
+    ?linters_def_file ?doc_url ?access ?extras exn =
   let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
   let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
@@ -283,7 +285,8 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
         ; visibility= error.visibility
         ; linters_def_file
         ; doc_url
-        ; access }
+        ; access
+        ; extras }
       in
       let err_key =
         { err_kind

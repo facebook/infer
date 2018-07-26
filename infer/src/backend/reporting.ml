@@ -10,12 +10,13 @@ module L = Logging
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * Caml.Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
+  -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
 let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url ?access exn =
+    ?linters_def_file ?doc_url ?access ?extras exn =
   let clang_method_kind =
     Option.map clang_method_kind ~f:ProcAttributes.string_of_clang_method_kind
   in
@@ -34,11 +35,11 @@ let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?nod
     in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
     Errlog.log_issue procname ?clang_method_kind err_kind err_log loc node_id session ltr
-      ?linters_def_file ?doc_url ?access exn
+      ?linters_def_file ?doc_url ?access ?extras exn
 
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-    ?access exn =
+    ?access ?extras exn =
   let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
   let clang_method_kind = attrs.clang_method_kind in
@@ -58,11 +59,11 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   else
     let err_log = Summary.get_err_log summary in
     log_issue_from_errlog procname ~clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
-      ?linters_def_file ?doc_url ?access exn
+      ?linters_def_file ?doc_url ?access ?extras exn
 
 
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url ?access exn =
+    ?linters_def_file ?doc_url ?access ?extras:_ exn =
   match Summary.get proc_name with
   | Some summary ->
       log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
@@ -94,10 +95,10 @@ let log_info_deprecated ?(store_summary= false) =
 
 
 let log_issue_external procname ?clang_method_kind err_kind ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url ?access exn =
+    ?linters_def_file ?doc_url ?access ?extras exn =
   let errlog = IssueLog.get_errlog procname in
   log_issue_from_errlog procname ?clang_method_kind err_kind errlog ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url ?access exn
+    ?linters_def_file ?doc_url ?access ?extras exn
 
 
 let is_suppressed ?(field_name= None) tenv proc_desc kind =

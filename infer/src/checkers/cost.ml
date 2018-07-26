@@ -858,6 +858,11 @@ type extras_TransferFunctionsWCET =
   ; get_node_nb_exec: Node.id -> BasicCost.astate
   ; summary: Summary.t }
 
+let compute_errlog_extras cost =
+  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCost.pp cost)
+  ; cost_degree= BasicCost.degree cost }
+
+
 (* Calculate the final Worst Case Execution Time predicted for each node.
    It uses the basic cost of the nodes (computed previously by AnalyzerNodesBasicCost)
    and MinTrees which give an upperbound on the number of times a node can be executed
@@ -902,7 +907,7 @@ module TransferFunctionsWCET = struct
       in
       Exceptions.Checkers (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
     in
-    Reporting.log_error summary ~loc ~ltr exn
+    Reporting.log_error summary ~loc ~ltr ~extras:(compute_errlog_extras cost) exn
 
 
   (* get a list of nodes and check if we have already reported for at
@@ -980,7 +985,7 @@ let check_and_report_infinity cost proc_desc summary =
     let exn =
       Exceptions.Checkers (IssueType.infinite_execution_time_call, Localise.verbatim_desc message)
     in
-    Reporting.log_error ~loc summary exn
+    Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary exn
 
 
 let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =

@@ -303,7 +303,7 @@ let mark_instr_fail exn =
 type log_issue =
   ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Caml.Digest.t
   -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string
-  -> ?access:string -> exn -> unit
+  -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =

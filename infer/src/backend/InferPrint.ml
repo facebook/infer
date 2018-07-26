@@ -282,7 +282,8 @@ module IssuesJson = struct
         ; doc_url= err_data.doc_url
         ; traceview_id= None
         ; censored_reason= censored_reason key.err_name source_file
-        ; access= err_data.access }
+        ; access= err_data.access
+        ; extras= err_data.extras }
       in
       if not !is_first_item then pp "," else is_first_item := false ;
       pp "%s@?" (Jsonbug_j.string_of_jsonbug bug) )

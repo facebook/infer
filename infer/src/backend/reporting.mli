@@ -11,7 +11,8 @@ open! IStd
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * Caml.Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
+  -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
 

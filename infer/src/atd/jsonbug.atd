@@ -13,6 +13,11 @@ type loc = {
   enum: int;
 }
 
+type extra = {
+  ?cost_polynomial : string option;
+  ?cost_degree : int option
+}
+
 type jsonbug = {
   bug_class : string;
   kind : string;
@@ -38,6 +43,7 @@ type jsonbug = {
   ?traceview_id: int option;
   censored_reason : string;
   ?access : string option;
+  ?extras : extra option;
 }
 
 type report = jsonbug list

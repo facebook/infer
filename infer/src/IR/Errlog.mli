@@ -55,7 +55,8 @@ type err_data = private
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
   ; doc_url: string option  (** url to documentation of the issue type *)
-  ; access: string option }
+  ; access: string option
+  ; extras: Jsonbug_t.extra option }
 
 (** Type of the error log *)
 type t [@@deriving compare]
@@ -95,4 +96,4 @@ val update : t -> t -> unit
 val log_issue :
   Typ.Procname.t -> ?clang_method_kind:string -> Exceptions.err_kind -> t -> Location.t
   -> int * Caml.Digest.t -> int -> loc_trace -> ?linters_def_file:string -> ?doc_url:string
-  -> ?access:string -> exn -> unit
+  -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
