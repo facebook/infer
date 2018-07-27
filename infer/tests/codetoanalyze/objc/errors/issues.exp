@@ -46,6 +46,7 @@ codetoanalyze/objc/errors/npe/UpdateDict.m, nullable_NSMapTable_objectForKey, 4,
 codetoanalyze/objc/errors/npe/UpdateDict.m, update_array_with_null, 5, NULL_DEREFERENCE, B1, ERROR, [start of procedure update_array_with_null()]
 codetoanalyze/objc/errors/npe/UpdateDict.m, update_dict_with_key_null, 10, NULL_DEREFERENCE, B1, ERROR, [start of procedure update_dict_with_key_null(),Skipping dictionaryWithObjectsAndKeys:: method has no implementation]
 codetoanalyze/objc/errors/npe/WeakCapturedVarsNPE.m, objc_blockWeakCapturedA_strongSelfNoCheck_2, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure block]
+codetoanalyze/objc/errors/npe/nil_in_array_literal.m, Arr_insertNilBad, 3, NULL_DEREFERENCE, B1, ERROR, [start of procedure insertNilBad,start of procedure initA,Taking true branch,return from a call to A_initA]
 codetoanalyze/objc/errors/npe/nil_in_array_literal.m, Arr_nilInArrayLiteral0, 4, NULL_DEREFERENCE, B1, ERROR, [start of procedure nilInArrayLiteral0]
 codetoanalyze/objc/errors/npe/nil_in_array_literal.m, Arr_nilInArrayLiteral1, 4, NULL_DEREFERENCE, B1, ERROR, [start of procedure nilInArrayLiteral1]
 codetoanalyze/objc/errors/npe/nil_in_array_literal.m, Arr_nilInArrayLiteral2, 4, NULL_DEREFERENCE, B1, ERROR, [start of procedure nilInArrayLiteral2]

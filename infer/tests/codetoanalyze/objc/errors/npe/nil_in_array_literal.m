@@ -11,6 +11,21 @@
 }
 @end
 
+@interface A : NSObject {
+}
+@end
+
+bool myrand(void);
+
+@implementation A
++ (instancetype)initA {
+  if (myrand())
+    return nil;
+  else
+    return [A new];
+}
+@end
+
 @implementation Arr
 
 - (void)noProblem {
@@ -58,6 +73,13 @@
   NSArray* foo = [NSArray arrayWithObject:str];
 
   return foo;
+}
+
+- (NSMutableArray*)insertNilBad {
+  NSMutableArray* ar = [NSMutableArray new];
+  A* a = [A initA];
+  [ar addObject:@[ a ]];
+  return ar;
 }
 
 @end
