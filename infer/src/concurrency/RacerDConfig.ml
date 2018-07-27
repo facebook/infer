@@ -618,8 +618,8 @@ module Models = struct
   (** magical value from https://developer.android.com/topic/performance/vitals/anr *)
   let android_anr_time_limit = 5.0
 
-  (** can this timeout cause an anr? *)
-  let is_excessive_timeout =
+  (* get time unit in seconds *)
+  let timeunit_of_exp =
     let time_units =
       String.Map.of_alist_exn
         [ ("NANOSECONDS", 0.000_000_001)
@@ -630,45 +630,68 @@ module Models = struct
         ; ("HOURS", 3_600.0)
         ; ("DAYS", 86_400.0) ]
     in
-    fun duration_exp timeunit_exp ->
-      match (duration_exp, timeunit_exp) with
-      | HilExp.Constant (Const.Cint duration_lit), HilExp.AccessExpression timeunit_acc_exp -> (
-        match AccessExpression.to_access_path timeunit_acc_exp with
-        | _, [AccessPath.FieldAccess field]
-          when String.equal "java.util.concurrent.TimeUnit" (Typ.Fieldname.Java.get_class field) ->
-            let fieldname = Typ.Fieldname.Java.get_field field in
-            let duration = IntLit.to_float duration_lit in
-            String.Map.find time_units fieldname
-            |> Option.value_map ~default:false ~f:(fun unit_in_secs ->
-                   unit_in_secs *. duration >. android_anr_time_limit )
-        | _ ->
-            false )
+    let str_of_access_path = function
+      | _, [AccessPath.FieldAccess field]
+        when String.equal "java.util.concurrent.TimeUnit" (Typ.Fieldname.Java.get_class field) ->
+          Some (Typ.Fieldname.Java.get_field field)
       | _ ->
-          false
+          None
+    in
+    let str_of_exp = function
+      | HilExp.AccessExpression timeunit_acc_exp ->
+          AccessExpression.to_access_path timeunit_acc_exp |> str_of_access_path
+      | _ ->
+          None
+    in
+    fun timeunit_exp -> str_of_exp timeunit_exp |> Option.bind ~f:(String.Map.find time_units)
 
 
-  (** It's surprisingly difficult making any sense of the official documentation on java.io classes
-                as to whether methods may block.  We approximate these by calls in traditionally blocking
-                classes (non-channel based I/O), to methods `(Reader|InputStream).read*`.
-                Initially, (Writer|OutputStream).(flush|close) were also matched, but this generated too
-                many reports *)
-
-  (* let is_blocking_java_io =
-    is_call_of_class ["java.io.Reader"; "java.io.InputStream"] ~method_prefix:true
-      "read" *)
-
-  let actuals_are_empty_or_timeout = function
+  (** check whether actuals of a method call either empty, denoting indefinite timeout,
+      or evaluate to a finite timeout greater than the android anr limit *)
+  let empty_or_excessive_timeout actuals =
+    let duration_of_exp = function
+      | HilExp.Constant (Const.Cint duration_lit) ->
+          Some (IntLit.to_float duration_lit)
+      | _ ->
+          None
+    in
+    (* all arguments in seconds *)
+    let is_excessive_secs duration = duration >. android_anr_time_limit in
+    match actuals with
     | [_] ->
+        (* this is a wait or lock call without timeout, thus it can block indefinitely *)
         true
-    | [_; duration; timeunit] ->
-        is_excessive_timeout duration timeunit
+    | [_; snd_arg] ->
+        (* this is an Object.wait(_) call, second argument should be a duration in milliseconds *)
+        duration_of_exp snd_arg
+        |> Option.value_map ~default:false ~f:(fun duration ->
+               is_excessive_secs (0.001 *. duration) )
+    | [_; snd_arg; third_arg] ->
+        (* this is either a call to Object.wait(_, _) or to a java.util.concurent.lock(_, _) method.
+           In the first case the arguments are a duration in milliseconds and an extra duration in
+           nanoseconds; in the second case, the arguments are a duration and a time unit. *)
+        duration_of_exp snd_arg
+        |> Option.value_map ~default:false ~f:(fun duration ->
+               match timeunit_of_exp third_arg with
+               | Some timeunit ->
+                   is_excessive_secs (timeunit *. duration)
+               | None ->
+                   duration_of_exp third_arg
+                   |> Option.value_map ~default:false ~f:(fun extra ->
+                          is_excessive_secs (0.001 *. (duration +. (0.000_001 *. extra))) ) )
     | _ ->
         false
 
 
+  (** is the method called Object.wait or on subclass, without timeout or with excessive timeout ? *)
+  let is_object_wait =
+    is_call_of_class ~actuals_pred:empty_or_excessive_timeout ["java.lang.Object"] "wait"
+    |> Staged.unstage
+
+
   (** is the method called CountDownLath.await or on subclass? *)
   let is_countdownlatch_await =
-    is_call_of_class ~actuals_pred:actuals_are_empty_or_timeout
+    is_call_of_class ~actuals_pred:empty_or_excessive_timeout
       ["java.util.concurrent.CountDownLatch"] "await"
     |> Staged.unstage
 
@@ -693,7 +716,7 @@ module Models = struct
 
   (** is it a call to Future.get()? *)
   let is_future_get =
-    is_call_of_class ~search_superclasses:false ~actuals_pred:actuals_are_empty_or_timeout
+    is_call_of_class ~search_superclasses:false ~actuals_pred:empty_or_excessive_timeout
       ["java.util.concurrent.Future"] "get"
     |> Staged.unstage
 
@@ -704,7 +727,7 @@ module Models = struct
 
 
   let is_asyncTask_get =
-    is_call_of_class ~actuals_pred:actuals_are_empty_or_timeout ["android.os.AsyncTask"] "get"
+    is_call_of_class ~actuals_pred:empty_or_excessive_timeout ["android.os.AsyncTask"] "get"
     |> Staged.unstage
 
 
@@ -715,6 +738,7 @@ module Models = struct
       [ (is_accountManager_setUserData, High)
       ; (is_two_way_binder_transact, High)
       ; (is_countdownlatch_await, High)
+      ; (is_object_wait, High)
       ; (is_getWindowVisibleDisplayFrame, Medium)
       ; (is_asyncTask_get, Low)
       ; (is_future_get, Low) ]
