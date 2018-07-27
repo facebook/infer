@@ -96,6 +96,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_unlock actuals astate
       | LockedIfTrue ->
           astate
+      | NoEffect when Models.should_skip_analysis tenv callee actuals ->
+          astate
       | NoEffect when Models.is_synchronized_library_call tenv callee ->
           (* model a synchronized call without visible internal behaviour *)
           do_lock actuals loc astate |> do_unlock actuals

@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import android.support.annotation.UiThread;
 import java.util.concurrent.TimeUnit;
+import com.google.common.util.concurrent.Futures;
 
 class FutureGet {
   Future future;
@@ -82,5 +83,10 @@ class FutureGet {
     try {
       future.get(9223372036854775807L, TimeUnit.MICROSECONDS);
     } catch (TimeoutException e) {}
+  }
+
+  @UiThread
+  Object getFuturesDoneOk(Future<Object> future) throws ExecutionException {
+    return Futures.getDone(future);
   }
 }

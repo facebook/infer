@@ -85,4 +85,7 @@ module Models : sig
   val is_synchronized_library_call : Tenv.t -> Typ.Procname.t -> bool
   (** does the method call lock-then-unlock the underlying object?
       legacy Java containers like Vector do this, and can interact with explicit locking *)
+
+  val should_skip_analysis : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+  (** should we go avoid analyzing a library method (eg in guava) to avoid FPs? *)
 end

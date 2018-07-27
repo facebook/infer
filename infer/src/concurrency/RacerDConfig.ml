@@ -734,4 +734,13 @@ module Models = struct
           List.exists targets ~f:(PatternMatch.is_subtype_of_str tenv classname)
       | _ ->
           false
+
+
+  let is_futures_getdone =
+    is_call_of_class ["com.google.common.util.concurrent.Futures"] "getDone" |> Staged.unstage
+
+
+  let should_skip_analysis =
+    let matchers = [is_futures_getdone] in
+    fun tenv pn actuals -> List.exists matchers ~f:(fun matcher -> matcher tenv pn actuals)
 end
