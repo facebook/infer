@@ -17,10 +17,51 @@ module Node = struct
 
   let equal_id = [%compare.equal : id]
 
+  type stmt_nodekind =
+    | AssertionFailure
+    | BetweenJoinAndExit
+    | BinaryConditionalStmtInit
+    | BinaryOperatorStmt of string
+    | Call of string
+    | CallObjCNew
+    | ClassCastException
+    | ConditionalStmtBranch
+    | ConstructorInit
+    | CXXDynamicCast
+    | CXXNewExpr
+    | CXXStdInitializerListExpr
+    | CXXTypeidExpr
+    | DeclStmt
+    | DefineBody
+    | Destruction
+    | ExceptionHandler
+    | ExceptionsSink
+    | FallbackNode
+    | FinallyBranch
+    | GCCAsmStmt
+    | GenericSelectionExpr
+    | IfStmtBranch
+    | InitializeDynamicArrayLength
+    | InitListExp
+    | MessageCall of string
+    | MethodBody
+    | MonitorEnter
+    | MonitorExit
+    | ObjCCPPThrow
+    | OutOfBound
+    | ReturnStmt
+    | Skip of string
+    | SwitchStmt
+    | ThisNotNull
+    | Throw
+    | ThrowNPE
+    | UnaryOperator
+  [@@deriving compare]
+
   type nodekind =
     | Start_node of Typ.Procname.t
     | Exit_node of Typ.Procname.t
-    | Stmt_node of string
+    | Stmt_node of stmt_nodekind
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
@@ -40,11 +81,11 @@ module Node = struct
     ; pname_opt: Typ.Procname.t option  (** name of the procedure the node belongs to *)
     ; mutable succs: t list  (** successor nodes in the cfg *) }
 
-  let exn_handler_kind = Stmt_node "exception handler"
+  let exn_handler_kind = Stmt_node ExceptionHandler
 
-  let exn_sink_kind = Stmt_node "exceptions sink"
+  let exn_sink_kind = Stmt_node ExceptionsSink
 
-  let throw_kind = Stmt_node "throw"
+  let throw_kind = Stmt_node Throw
 
   let dummy pname_opt =
     { id= 0
@@ -175,6 +216,85 @@ module Node = struct
     node.instrs <- Instrs.prepend_one instr node.instrs
 
 
+  let pp_stmt fmt = function
+    | AssertionFailure ->
+        F.pp_print_string fmt "Assertion failure"
+    | BetweenJoinAndExit ->
+        F.pp_print_string fmt "between_join_and_exit"
+    | BinaryConditionalStmtInit ->
+        F.pp_print_string fmt "BinaryConditionalStmt Init"
+    | BinaryOperatorStmt bop ->
+        F.fprintf fmt "BinaryOperatorStmt: %s" bop
+    | Call call ->
+        F.fprintf fmt "Call %s" call
+    | CallObjCNew ->
+        F.pp_print_string fmt "Call objC new"
+    | ClassCastException ->
+        F.pp_print_string fmt "Class cast exception"
+    | ConditionalStmtBranch ->
+        F.pp_print_string fmt "ConditionalStmt Branch"
+    | ConstructorInit ->
+        F.pp_print_string fmt "Constructor Init"
+    | CXXDynamicCast ->
+        F.pp_print_string fmt "CxxDynamicCast"
+    | CXXNewExpr ->
+        F.pp_print_string fmt "CXXNewExpr"
+    | CXXStdInitializerListExpr ->
+        F.pp_print_string fmt "CXXStdInitializerListExpr"
+    | CXXTypeidExpr ->
+        F.pp_print_string fmt "CXXTypeidExpr"
+    | DeclStmt ->
+        F.pp_print_string fmt "DeclStmt"
+    | DefineBody ->
+        F.pp_print_string fmt "define_body"
+    | Destruction ->
+        F.pp_print_string fmt "Destruction"
+    | ExceptionHandler ->
+        F.pp_print_string fmt "exception handler"
+    | ExceptionsSink ->
+        F.pp_print_string fmt "exceptions sink"
+    | FallbackNode ->
+        F.pp_print_string fmt "Fallback node"
+    | FinallyBranch ->
+        F.pp_print_string fmt "Finally branch"
+    | GCCAsmStmt ->
+        F.pp_print_string fmt "GCCAsmStmt"
+    | GenericSelectionExpr ->
+        F.pp_print_string fmt "GenericSelectionExpr"
+    | IfStmtBranch ->
+        F.pp_print_string fmt "IfStmt Branch"
+    | InitializeDynamicArrayLength ->
+        F.pp_print_string fmt "Initialize dynamic array length"
+    | InitListExp ->
+        F.pp_print_string fmt "InitListExp"
+    | MessageCall selector ->
+        F.fprintf fmt "Message Call: %s" selector
+    | MethodBody ->
+        F.pp_print_string fmt "method_body"
+    | MonitorEnter ->
+        F.pp_print_string fmt "MonitorEnter"
+    | MonitorExit ->
+        F.pp_print_string fmt "MonitorExit"
+    | ObjCCPPThrow ->
+        F.pp_print_string fmt "ObjCCPPThrow"
+    | OutOfBound ->
+        F.pp_print_string fmt "Out of bound"
+    | ReturnStmt ->
+        F.pp_print_string fmt "Return Stmt"
+    | Skip reason ->
+        F.pp_print_string fmt reason
+    | SwitchStmt ->
+        F.pp_print_string fmt "SwitchStmt"
+    | ThisNotNull ->
+        F.pp_print_string fmt "this not null"
+    | Throw ->
+        F.pp_print_string fmt "throw"
+    | ThrowNPE ->
+        F.pp_print_string fmt "Throw NPE"
+    | UnaryOperator ->
+        F.pp_print_string fmt "UnaryOperator"
+
+
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
   let pp_instrs pe0 ~sub_instrs ~instro fmt node =
@@ -188,7 +308,7 @@ module Node = struct
       let () =
         match get_kind node with
         | Stmt_node s ->
-            F.fprintf fmt "statements (%s)" s
+            F.fprintf fmt "statements (%a)" pp_stmt s
         | Prune_node (_, _, descr) ->
             F.fprintf fmt "assume %s" descr
         | Exit_node _ ->
@@ -409,7 +529,7 @@ let create_node pdesc loc kind instrs = create_node_internal pdesc loc kind (Ins
 let node_set_succs_exn pdesc (node: Node.t) succs exn =
   match (node.kind, succs) with
   | Join_node, [({Node.kind= Exit_node _} as exit_node)] ->
-      let kind = Node.Stmt_node "between_join_and_exit" in
+      let kind = Node.Stmt_node BetweenJoinAndExit in
       let node' = create_node_internal pdesc node.loc kind node.instrs in
       set_succs_exn_base node [node'] exn ;
       set_succs_exn_base node' [exit_node] exn
@@ -892,7 +1012,7 @@ let is_connected proc_desc =
   let is_exit_node n = match Node.get_kind n with Node.Exit_node _ -> true | _ -> false in
   let is_between_join_and_exit_node n =
     match Node.get_kind n with
-    | Node.Stmt_node "between_join_and_exit" | Node.Stmt_node "Destruction" -> (
+    | Node.Stmt_node BetweenJoinAndExit | Node.Stmt_node Destruction -> (
       match Node.get_succs n with [n'] when is_exit_node n' -> true | _ -> false )
     | _ ->
         false

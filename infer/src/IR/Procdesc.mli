@@ -18,11 +18,52 @@ module Node : sig
 
   val equal_id : id -> id -> bool
 
+  (** kind of statement node *)
+  type stmt_nodekind =
+    | AssertionFailure
+    | BetweenJoinAndExit
+    | BinaryConditionalStmtInit
+    | BinaryOperatorStmt of string
+    | Call of string
+    | CallObjCNew
+    | ClassCastException
+    | ConditionalStmtBranch
+    | ConstructorInit
+    | CXXDynamicCast
+    | CXXNewExpr
+    | CXXStdInitializerListExpr
+    | CXXTypeidExpr
+    | DeclStmt
+    | DefineBody
+    | Destruction
+    | ExceptionHandler
+    | ExceptionsSink
+    | FallbackNode
+    | FinallyBranch
+    | GCCAsmStmt
+    | GenericSelectionExpr
+    | IfStmtBranch
+    | InitializeDynamicArrayLength
+    | InitListExp
+    | MessageCall of string
+    | MethodBody
+    | MonitorEnter
+    | MonitorExit
+    | ObjCCPPThrow
+    | OutOfBound
+    | ReturnStmt
+    | Skip of string
+    | SwitchStmt
+    | ThisNotNull
+    | Throw
+    | ThrowNPE
+    | UnaryOperator
+
   (** kind of cfg node *)
   type nodekind =
     | Start_node of Typ.Procname.t
     | Exit_node of Typ.Procname.t
-    | Stmt_node of string
+    | Stmt_node of stmt_nodekind
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
@@ -101,6 +142,8 @@ module Node : sig
 
   val pp_id : Format.formatter -> id -> unit
   (** Pretty print a node id *)
+
+  val pp_stmt : Format.formatter -> stmt_nodekind -> unit
 
   val pp_instrs :
     Pp.env -> sub_instrs:bool -> instro:Sil.instr option -> Format.formatter -> t -> unit

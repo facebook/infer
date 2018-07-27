@@ -138,20 +138,20 @@ module PriorityNode : sig
   val own_priority_node : t -> Clang_ast_t.stmt_info -> bool
 
   val compute_controls_to_parent :
-    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> control list
-    -> control
+    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
+    -> control list -> control
   (** Used by translation functions to handle potential cfg nodes. It connects nodes returned by the
       translation of stmt children and deals with creating or not a cfg node depending of owning the
       priority_node. It returns the [control] that should be passed to the parent. *)
 
   val compute_results_to_parent :
-    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> return:Exp.t * Typ.t
-    -> trans_result list -> trans_result
+    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
+    -> return:Exp.t * Typ.t -> trans_result list -> trans_result
   (** convenience wrapper around [compute_controls_to_parent] *)
 
   val compute_result_to_parent :
-    trans_state -> Location.t -> node_name:string -> Clang_ast_t.stmt_info -> trans_result
-    -> trans_result
+    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
+    -> trans_result -> trans_result
   (** convenience function like [compute_results_to_parent] when there is a single [trans_result]
       to consider *)
 end

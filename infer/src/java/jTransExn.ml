@@ -60,7 +60,7 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
         in
         match handler.JBir.e_catch_type with
         | None ->
-            let finally_node = create_node loc (Procdesc.Node.Stmt_node "Finally branch") [] in
+            let finally_node = create_node loc (Procdesc.Node.Stmt_node FinallyBranch) [] in
             Procdesc.node_set_succs_exn procdesc finally_node catch_nodes exit_nodes ;
             [finally_node]
         | Some exn_class_name ->

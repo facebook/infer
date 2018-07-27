@@ -848,8 +848,8 @@ let instruction (context: JContext.t) pc instr : translation =
     Instr (create_node node_kind (instrs @ [deref_instr; instr]))
   in
   let create_node_kind procname =
-    let desc = "Call " ^ Typ.Procname.to_string procname in
-    Procdesc.Node.Stmt_node desc
+    let procname_string = Typ.Procname.to_string procname in
+    Procdesc.Node.Stmt_node (Call procname_string)
   in
   try
     match instr with
@@ -857,11 +857,11 @@ let instruction (context: JContext.t) pc instr : translation =
         let stml, sil_expr, sil_type = expression context pc expr in
         let pvar = JContext.set_pvar context var sil_type in
         let sil_instr = Sil.Store (Exp.Lvar pvar, sil_type, sil_expr, loc) in
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml @ [sil_instr]) in
         Instr node
     | JBir.Return expr_option ->
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node =
           match expr_option with
           | None ->
@@ -885,7 +885,7 @@ let instruction (context: JContext.t) pc instr : translation =
           Sil.Store (Exp.Lindex (sil_expr_array, sil_expr_index), value_typ, sil_expr_value, loc)
         in
         let final_instrs = instrs_array @ instrs_index @ instrs_value @ [sil_instr] in
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind final_instrs in
         Instr node
     | JBir.AffectField (e_lhs, cn, fs, e_rhs) ->
@@ -896,7 +896,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
         let sil_instr = Sil.Store (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
     | JBir.AffectStaticField (cn, fs, e_rhs) ->
@@ -912,7 +912,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
         let sil_instr = Sil.Store (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
         Instr node
     | JBir.Goto goto_pc ->
@@ -985,7 +985,7 @@ let instruction (context: JContext.t) pc instr : translation =
           Sil.Call ((ret_id, array_type), builtin_new_array, call_args, loc, CallFlags.default)
         in
         let set_instr = Sil.Store (Exp.Lvar array_name, array_type, Exp.Var ret_id, loc) in
-        let node_kind = Procdesc.Node.Stmt_node "method_body" in
+        let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (instrs @ [call_instr; set_instr]) in
         Instr node
     | JBir.InvokeStatic (var_opt, cn, ms, args) ->
@@ -1055,7 +1055,7 @@ let instruction (context: JContext.t) pc instr : translation =
         (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)
         let instrs, sil_expr, _ = expression context pc expr in
         let this_not_null_node =
-          create_node (Procdesc.Node.Stmt_node "this not null")
+          create_node (Procdesc.Node.Stmt_node ThisNotNull)
             (instrs @ [assume_not_null loc sil_expr])
         in
         Instr this_not_null_node
@@ -1070,7 +1070,7 @@ let instruction (context: JContext.t) pc instr : translation =
         let throw_npe_node =
           let sil_is_null = Exp.BinOp (Binop.Eq, sil_expr, Exp.null) in
           let sil_prune_null = Sil.Prune (sil_is_null, loc, true, Sil.Ik_if)
-          and npe_kind = Procdesc.Node.Stmt_node "Throw NPE"
+          and npe_kind = Procdesc.Node.Stmt_node ThrowNPE
           and npe_cn = JBasics.make_cn JConfig.npe_cl in
           let class_type = JTransType.get_class_type program tenv npe_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv npe_cn in
@@ -1117,7 +1117,7 @@ let instruction (context: JContext.t) pc instr : translation =
           in
           create_node in_bound_node_kind (instrs @ [sil_assume_in_bound])
         and throw_out_of_bound_node =
-          let out_of_bound_node_kind = Procdesc.Node.Stmt_node "Out of bound" in
+          let out_of_bound_node_kind = Procdesc.Node.Stmt_node OutOfBound in
           let sil_assume_out_of_bound =
             let sil_out_of_bound =
               let sil_negative_index =
@@ -1173,7 +1173,7 @@ let instruction (context: JContext.t) pc instr : translation =
         and throw_cast_exception_node =
           let check_is_true = Exp.BinOp (Binop.Ne, res_ex, Exp.one) in
           let asssume_not_instance_of = Sil.Prune (check_is_true, loc, true, Sil.Ik_if)
-          and throw_cast_exception_kind = Procdesc.Node.Stmt_node "Class cast exception"
+          and throw_cast_exception_kind = Procdesc.Node.Stmt_node ClassCastException
           and cce_cn = JBasics.make_cn JConfig.cce_cl in
           let class_type = JTransType.get_class_type program tenv cce_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv cce_cn in
@@ -1201,10 +1201,10 @@ let instruction (context: JContext.t) pc instr : translation =
         Prune (is_instance_node, throw_cast_exception_node)
     | JBir.MonitorEnter expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__set_locked_attribute
-          "MonitorEnter"
+          MonitorEnter
     | JBir.MonitorExit expr ->
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__delete_locked_attribute
-          "MonitorExit"
+          MonitorExit
     | _ ->
         Skip
   with Frontend_error s ->

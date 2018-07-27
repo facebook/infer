@@ -361,7 +361,7 @@ let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc fu
 let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
   let function_type, instrs, exp = create_alloc_instrs ~alloc_builtin loc function_type in
   let control_tmp = {empty_control with instrs} in
-  PriorityNode.compute_control_to_parent trans_state loc ~node_name:"Call alloc" stmt_info
+  PriorityNode.compute_control_to_parent trans_state loc ~node_name:(Call "alloc") stmt_info
     control_tmp
   |> mk_trans_result (exp, function_type)
 
@@ -387,7 +387,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   in
   let instrs = alloc_stmt_call @ [init_stmt_call] in
   let res_trans_tmp = {empty_control with instrs} in
-  let node_name = "Call objC new" in
+  let node_name = Procdesc.Node.CallObjCNew in
   PriorityNode.compute_control_to_parent trans_state loc ~node_name stmt_info res_trans_tmp
   |> mk_trans_result (Exp.Var init_ret_id, alloc_ret_type)
 
@@ -509,7 +509,7 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
   let exit_node = Procdesc.get_exit_node context.procdesc
   and failure_node =
     Procdesc.create_node context.CContext.procdesc sil_loc
-      (Procdesc.Node.Stmt_node "Assertion failure") [call_instr]
+      (Procdesc.Node.Stmt_node AssertionFailure) [call_instr]
   in
   Procdesc.node_set_succs_exn context.procdesc failure_node [exit_node] [] ;
   mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with root_nodes= [failure_node]}
