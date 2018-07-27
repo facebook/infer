@@ -9,9 +9,6 @@
   - name: Instagram
     url: https://www.instagram.com
     img: static/images/instagram.png
-  - name: Kiuwan
-    url: https://www.kiuwan.com/
-    img: static/images/kiuwan.png
   - name: Mozilla
     url: http://www.mozilla.com/
     img: static/images/mozilla.png
