@@ -48,6 +48,10 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
   | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
   | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
       (typ, nbytes, length, None)
+  (* In Java all arrays are dynamically allocated *)
+  | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length}
+    when Language.curr_language_is Java ->
+      (typ, nbytes, arr_length, Some arr_length)
   | Exp.Sizeof {typ; nbytes; dynamic_length} ->
       (typ, nbytes, Exp.one, dynamic_length)
   | x ->

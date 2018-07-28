@@ -283,11 +283,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   declare_local ~decl_local model_env loc ~inst_num ~dimension mem
               | None ->
                   (mem, inst_num) )
-            (* Temporary fix for ArrayLists in Java, need a better
-                 way to handle local vars, see T31498711 *)
-            | Typ.Tptr (typ, _)
-              when Language.curr_language_is Java ->
-                decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem
             | _ ->
                 (mem, inst_num)
           in
