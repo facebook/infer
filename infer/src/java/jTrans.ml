@@ -651,7 +651,7 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
       JBasics.cn_equal cn' (JBasics.make_cn JConfig.infer_builtins_cl)
       && BuiltinDecl.is_declared proc
     then proc
-    else JTransType.get_method_procname cn' ms method_kind
+    else JTransType.get_method_procname program tenv cn' ms method_kind
   in
   JClasspath.add_missing_callee program callee_procname cn' ms ;
   let call_instrs =

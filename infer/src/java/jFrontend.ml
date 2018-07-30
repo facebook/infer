@@ -134,11 +134,11 @@ let is_classname_cached cn = Sys.file_exists (path_of_cached_classname cn) = `Ye
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
-let create_icfg source_file linereader program icfg cn node =
+let create_icfg source_file linereader program tenv icfg cn node =
   L.(debug Capture Verbose) "\tclassname: %s@." (JBasics.cn_name cn) ;
   if Config.dependency_mode && not (is_classname_cached cn) then cache_classname cn ;
   let translate m =
-    let proc_name = JTransType.translate_method_name m in
+    let proc_name = JTransType.translate_method_name program tenv m in
     JClasspath.set_callee_translated program proc_name ;
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
@@ -198,7 +198,7 @@ let compute_source_icfg linereader classes program tenv source_basename package_
     JBasics.ClassMap.iter
       (select
          (should_capture classes package_opt source_basename)
-         (create_icfg source_file linereader program icfg))
+         (create_icfg source_file linereader program tenv icfg))
       (JClasspath.get_classmap program)
   in
   icfg.JContext.cfg
@@ -206,6 +206,6 @@ let compute_source_icfg linereader classes program tenv source_basename package_
 
 let compute_class_icfg source_file linereader program tenv node =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
-  ( try create_icfg source_file linereader program icfg (Javalib.get_name node) node
+  ( try create_icfg source_file linereader program tenv icfg (Javalib.get_name node) node
     with Bir.Subroutine -> () ) ;
   icfg.JContext.cfg

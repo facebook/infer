@@ -216,21 +216,6 @@ let get_method_kind m =
   if Javalib.is_static_method m then Typ.Procname.Java.Static else Typ.Procname.Java.Non_Static
 
 
-let get_method_procname cn ms method_kind =
-  let return_type_name, method_name, args_type_name = method_signature_names ms in
-  let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
-  let proc_name_java =
-    Typ.Procname.Java.make class_name return_type_name method_name args_type_name method_kind
-  in
-  Typ.Procname.Java proc_name_java
-
-
-(* create a mangled procname from an abstract or concrete method *)
-let translate_method_name m =
-  let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
-  get_method_procname cn ms (get_method_kind m)
-
-
 let fieldname_create cn fs =
   let fieldname = JBasics.fs_name fs in
   let classname = JBasics.cn_name cn in
@@ -310,7 +295,23 @@ let add_model_fields program classpath_fields cn =
   with Caml.Not_found -> classpath_fields
 
 
-let rec get_all_fields program tenv cn =
+let rec get_method_procname program tenv cn ms method_kind =
+  let _ : Typ.Struct.t = get_class_struct_typ program tenv cn in
+  let return_type_name, method_name, args_type_name = method_signature_names ms in
+  let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
+  let proc_name_java =
+    Typ.Procname.Java.make class_name return_type_name method_name args_type_name method_kind
+  in
+  Typ.Procname.Java proc_name_java
+
+
+(* create a mangled procname from an abstract or concrete method *)
+and translate_method_name program tenv m =
+  let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
+  get_method_procname program tenv cn ms (get_method_kind m)
+
+
+and get_all_fields program tenv cn =
   let extract_class_fields classname =
     let {Typ.Struct.fields; statics} = get_class_struct_typ program tenv classname in
     (statics, fields)
@@ -346,49 +347,60 @@ let rec get_all_fields program tenv cn =
   trans_fields cn
 
 
-and get_class_struct_typ program tenv cn =
-  let name = typename_of_classname cn in
-  match Tenv.lookup tenv name with
-  | Some struct_typ ->
-      struct_typ
-  | None ->
-    match JClasspath.lookup_node cn program with
-    | None ->
+and get_class_struct_typ =
+  let seen = ref JBasics.ClassSet.empty in
+  fun program tenv cn ->
+    let name = typename_of_classname cn in
+    match Tenv.lookup tenv name with
+    | Some struct_typ ->
+        struct_typ
+    | None when JBasics.ClassSet.mem cn !seen ->
         Tenv.mk_struct tenv name
-    | Some node ->
-        let create_super_list interface_names =
-          List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names ;
-          List.map ~f:typename_of_classname interface_names
-        in
-        let supers, fields, statics, annots =
-          match node with
-          | Javalib.JInterface jinterface ->
-              let statics, _ = get_all_fields program tenv cn in
-              let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
-              let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
-              (sil_interface_list, [], statics, item_annotation)
-          | Javalib.JClass jclass ->
-              let statics, nonstatics =
-                let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
-                add_model_fields program (classpath_static, classpath_nonstatic) cn
-              in
-              let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
-              let interface_list = create_super_list jclass.Javalib.c_interfaces in
-              let super_classname_list =
-                match jclass.Javalib.c_super_class with
-                | None ->
-                    interface_list (* base case of the recursion *)
-                | Some super_cn ->
-                    ignore (get_class_struct_typ program tenv super_cn) ;
-                    let super_classname = typename_of_classname super_cn in
-                    super_classname :: interface_list
-              in
-              (super_classname_list, nonstatics, statics, item_annotation)
-        in
-        let methods =
-          Javalib.m_fold (fun m procnames -> translate_method_name m :: procnames) node []
-        in
-        Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
+    | None ->
+        seen := JBasics.ClassSet.add cn !seen ;
+        match JClasspath.lookup_node cn program with
+        | None ->
+            Tenv.mk_struct tenv name
+        | Some node ->
+            let create_super_list interface_names =
+              List.iter
+                ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn))
+                interface_names ;
+              List.map ~f:typename_of_classname interface_names
+            in
+            let supers, fields, statics, annots =
+              match node with
+              | Javalib.JInterface jinterface ->
+                  let statics, _ = get_all_fields program tenv cn in
+                  let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
+                  let item_annotation =
+                    JAnnotation.translate_item jinterface.Javalib.i_annotations
+                  in
+                  (sil_interface_list, [], statics, item_annotation)
+              | Javalib.JClass jclass ->
+                  let statics, nonstatics =
+                    let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
+                    add_model_fields program (classpath_static, classpath_nonstatic) cn
+                  in
+                  let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
+                  let interface_list = create_super_list jclass.Javalib.c_interfaces in
+                  let super_classname_list =
+                    match jclass.Javalib.c_super_class with
+                    | None ->
+                        interface_list (* base case of the recursion *)
+                    | Some super_cn ->
+                        ignore (get_class_struct_typ program tenv super_cn) ;
+                        let super_classname = typename_of_classname super_cn in
+                        super_classname :: interface_list
+                  in
+                  (super_classname_list, nonstatics, statics, item_annotation)
+            in
+            let methods =
+              Javalib.m_fold
+                (fun m procnames -> translate_method_name program tenv m :: procnames)
+                node []
+            in
+            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
 
 
 let get_class_type_no_pointer program tenv cn =
