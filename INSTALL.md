@@ -43,7 +43,7 @@ is required to compile everything from source.
 - Python 2.7
 - pkg-config
 - Java (only needed for the Java analysis)
-- gcc >= 4.7.2 or clang >= 3.1 (only needed for the C/Objective-C analysis)
+- gcc >= 5.X or clang >= 3.4 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
 
 See also the distro-specific instructions for Ubuntu and Debian below.
