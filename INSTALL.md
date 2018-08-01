@@ -24,12 +24,14 @@ is required to compile everything from source.
   `xcode-select --install` (only needed for the C/Objective-C analysis)
 - Xcode >= 6.1 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
+- gmp
+- mpfr
 
 You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install autoconf automake cmake opam pkg-config sqlite
+brew install autoconf automake cmake opam pkg-config sqlite gmp mpfr
 brew cask install java
 ```
 

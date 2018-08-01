@@ -192,6 +192,8 @@ AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
+AC_ARG_VAR([CPATH], [Additional directories to search for C headers.])
+AC_ARG_VAR([LIBRARY_PATH], [Additional directories to search for C shared objects.])
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],
   [Additional directories to search for dynamically-loaded libraries.])
 AC_ARG_VAR([OPAMROOT], [Root of the local opam installation.])
@@ -323,6 +325,8 @@ AS_IF([test "$SED" != "xno"], [
 AC_SUBST([GNU_SED])
 
 AC_CHECK_TOOL([BREW], [brew], [no])
+
+AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
 
 # warn about broken pkg-config version for brew users
 if test "$BREW" != "no"; then

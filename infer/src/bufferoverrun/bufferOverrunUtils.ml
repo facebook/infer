@@ -10,6 +10,7 @@ open AbsLoc
 open! AbstractDomain.Types
 module L = Logging
 module Dom = BufferOverrunDomain
+module Relation = BufferOverrunDomainRelation
 module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
@@ -38,15 +39,18 @@ module Exec = struct
         -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
         -> Dom.Mem.astate * int =
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
+    let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
+    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
     let arr =
-      Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero ~size ~inst_num ~dimension
+      Sem.eval_array_alloc allocsite typ ~stride ~offset ~size
       |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
     in
     let mem =
       if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem else Dom.Mem.add_heap loc arr mem
     in
-    let loc = Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension) in
+    let mem = Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None mem in
+    let loc = Loc.of_allocsite allocsite in
     let mem, _ =
       decl_local pname ~node_hash location loc typ ~inst_num ~dimension:(dimension + 1) mem
     in
@@ -92,12 +96,14 @@ module Exec = struct
     in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
+    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
     let arr =
-      Sem.eval_array_alloc pname ~node_hash typ ~stride:None ~offset ~size ~inst_num
-        ~dimension:alloc_num
-      |> Dom.Val.add_trace_elem elem
+      Sem.eval_array_alloc allocsite typ ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
     in
-    let mem = Dom.Mem.add_heap loc arr mem in
+    let mem =
+      mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
+      |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
+    in
     let deref_loc =
       Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num)
     in
@@ -145,11 +151,11 @@ module Exec = struct
                   Itv.plus i length )
             in
             let stride = Option.map stride ~f:IntLit.to_int_exn in
-            let v =
-              Sem.eval_array_alloc pname ~node_hash typ ~stride ~offset:Itv.zero ~size:length
-                ~inst_num ~dimension
-            in
-            Dom.Mem.strong_update_heap field_loc v mem
+            let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
+            let offset, size = (Itv.zero, length) in
+            let v = Sem.eval_array_alloc allocsite typ ~stride ~offset ~size in
+            mem |> Dom.Mem.strong_update_heap field_loc v
+            |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->
             init_fields field_typ field_loc dimension ?dyn_length mem
       in
@@ -191,27 +197,36 @@ module Exec = struct
 end
 
 module Check = struct
-  let check_access ~size ~idx ~arr ~idx_traces ?(is_arraylist_add= false) pname location cond_set =
+  let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
+      ?(is_arraylist_add= false) pname location cond_set =
     let arr_traces = Dom.Val.get_traces arr in
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
         let traces = TraceSet.merge ~arr_traces ~idx_traces location in
-        PO.ConditionSet.add_array_access pname location ~size:length ~idx ~is_arraylist_add traces
-          cond_set
+        PO.ConditionSet.add_array_access pname location ~size:length ~idx ~size_sym_exp
+          ~idx_sym_exp ~relation ~is_arraylist_add traces cond_set
     | _ ->
         cond_set
 
 
-  let array_access ~arr ~idx ~is_plus pname location cond_set =
+  let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus pname location cond_set =
     let arr_blk = Dom.Val.get_array_blk arr in
     let size = ArrayBlk.sizeof arr_blk in
+    let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
     let offset = ArrayBlk.offsetof arr_blk in
+    let offset_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_offset_sym arr) in
     let idx_itv = Dom.Val.get_itv idx in
     let idx_traces = Dom.Val.get_traces idx in
     let idx_in_blk = (if is_plus then Itv.plus else Itv.minus) offset idx_itv in
+    let idx_sym_exp =
+      Option.map2 offset_sym_exp idx_sym_exp ~f:(fun offset_sym_exp idx_sym_exp ->
+          let op = if is_plus then Relation.SymExp.plus else Relation.SymExp.minus in
+          op idx_sym_exp offset_sym_exp )
+    in
     L.(debug BufferOverrun Verbose)
       "@[<v 2>Add condition :@,array: %a@,  idx: %a@,@]@." ArrayBlk.pp arr_blk Itv.pp idx_in_blk ;
-    check_access ~size ~idx:idx_in_blk ~arr ~idx_traces pname location cond_set
+    check_access ~size ~idx:idx_in_blk ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces pname
+      location cond_set
 
 
   let arraylist_access ~array_exp ~index_exp ?(is_arraylist_add= false) mem pname location cond_set =
@@ -220,11 +235,15 @@ module Check = struct
     let idx_traces = Dom.Val.get_traces idx in
     let size = Exec.get_alist_size arr mem |> Dom.Val.get_itv in
     let idx = Dom.Val.get_itv idx in
-    check_access ~size ~idx ~arr ~idx_traces ~is_arraylist_add pname location cond_set
+    let relation = Dom.Mem.get_relation mem in
+    check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
+      ~is_arraylist_add pname location cond_set
 
 
   let lindex ~array_exp ~index_exp mem pname location cond_set =
     let idx = Sem.eval index_exp mem in
     let arr = Sem.eval_arr array_exp mem in
-    array_access ~arr ~idx ~is_plus:true pname location cond_set
+    let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) index_exp in
+    let relation = Dom.Mem.get_relation mem in
+    array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true pname location cond_set
 end
