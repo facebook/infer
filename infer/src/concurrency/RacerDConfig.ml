@@ -540,11 +540,15 @@ module Models = struct
               (F.asprintf "class %s extends %s"
                  (MF.monospaced_to_string (Typ.Name.name current_class))
                  (MF.monospaced_to_string "android.app.Service"))
-        | Some (current_class, super_class :: _) ->
+        | Some (current_class, (super_class :: _ as super_classes)) ->
+            let middle =
+              if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
+              else F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) super_class
+            in
             Some
-              (F.asprintf "class %s extends %a, which is annotated %s"
+              (F.asprintf "class %s%s is annotated %s"
                  (MF.monospaced_to_string (Typ.Name.name current_class))
-                 (MF.wrap_monospaced Typ.Name.pp) super_class
+                 middle
                  (MF.monospaced_to_string Annotations.ui_thread))
         | _ ->
             None
