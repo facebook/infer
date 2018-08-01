@@ -735,6 +735,9 @@ module Models = struct
     |> Staged.unstage
 
 
+  (* consider any call to sleep as bad, even with timeouts lower than the anr limit *)
+  let is_thread_sleep = is_call_of_class ["java.lang.Thread"] "sleep" |> Staged.unstage
+
   (* at most one function is allowed to be true, sort from High to Low *)
   let may_block =
     let open StarvationDomain.Event in
@@ -742,6 +745,7 @@ module Models = struct
       [ (is_accountManager_setUserData, High)
       ; (is_two_way_binder_transact, High)
       ; (is_countdownlatch_await, High)
+      ; (is_thread_sleep, High)
       ; (is_object_wait, High)
       ; (is_getWindowVisibleDisplayFrame, Medium)
       ; (is_asyncTask_get, Low)
