@@ -24,3 +24,14 @@ DEFINE-CHECKER EXTRA_COPY = {
   //};
 
 };
+
+DEFINE-CHECKER NAMESPACE_STRING = {
+
+  SET report_when =
+    WHEN has_type("REGEXP('string')")
+    HOLDS-IN-NODE VarDecl;
+
+  SET message = "Found type strings with namespace";
+  SET mode = "ON";
+
+};
