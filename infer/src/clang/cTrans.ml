@@ -1195,6 +1195,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         None
 
 
+  and is_receiver_instance = function `Instance | `SuperInstance -> true | _ -> false
+
   and objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info method_type
       trans_state_pri sil_loc act_params =
     let context = trans_state.context in
@@ -1206,7 +1208,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CMethod_trans.get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info
           act_params
       in
-      if trans_state.is_fst_arg_objc_instance_method_call then
+      if trans_state.is_fst_arg_objc_instance_method_call && is_receiver_instance receiver_kind
+      then
         raise
           (Self.SelfClassException
              {class_name; position= __POS__; source_range= si.Clang_ast_t.si_source_range})
@@ -1241,11 +1244,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         try
           let trans_state_param' =
-            match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-            | `Instance | `SuperInstance ->
-                {trans_state_param with is_fst_arg_objc_instance_method_call= true}
-            | _ ->
-                {trans_state_param with is_fst_arg_objc_instance_method_call= false}
+            if is_receiver_instance obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind then
+              {trans_state_param with is_fst_arg_objc_instance_method_call= true}
+            else {trans_state_param with is_fst_arg_objc_instance_method_call= false}
           in
           let fst_res_trans = instruction trans_state_param' stmt in
           (obj_c_message_expr_info, fst_res_trans :: param_trans_results)
