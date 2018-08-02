@@ -518,11 +518,12 @@ let remove_locals_formals_and_check tenv proc_cfg p =
   let pname = Procdesc.get_proc_name pdesc in
   let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
-    let loc = ProcCfg.Exceptional.Node.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
-    let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
-    let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
-    let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-    Reporting.log_warning_deprecated pname exn
+    if not (Pvar.is_frontend_tmp pvar) then
+      let loc = ProcCfg.Exceptional.Node.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
+      let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
+      let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
+      let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
+      Reporting.log_warning_deprecated pname exn
   in
   List.iter ~f:check_pvar pvars ; p'
 

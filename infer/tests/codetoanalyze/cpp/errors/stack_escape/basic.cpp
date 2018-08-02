@@ -26,5 +26,5 @@ struct A {
 };
 
 struct B {
-  const A& return_ref() { return A(); }
+  const A& FN_return_ref_bad() { return A(); }
 };
