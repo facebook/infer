@@ -45,7 +45,7 @@ module Val = struct
       if Option.is_some Config.bo_relational_domain then F.fprintf fmt ", %a" Relation.Sym.pp sym
     in
     let trace_pp fmt traces =
-      if Config.bo_debug <= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
+      if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
     F.fprintf fmt "(%a%a, %a, %a%a%a%a)" Itv.pp x.itv relation_sym_pp x.sym PowLoc.pp x.powloc
       ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp
