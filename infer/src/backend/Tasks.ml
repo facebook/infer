@@ -11,9 +11,7 @@ module L = Logging
 type 'a doer = 'a -> unit
 
 let run_sequentially ~(f: 'a doer) (tasks: 'a list) : unit =
-  let task_bar =
-    if Config.show_progress_bar then TaskBar.create_multiline ~jobs:1 else TaskBar.create_dummy ()
-  in
+  let task_bar = TaskBar.create ~jobs:1 in
   (ProcessPoolState.update_status :=
      fun t status ->
        TaskBar.update_status task_bar ~slot:0 t status ;
@@ -38,19 +36,13 @@ let fork_protect ~f x =
 
 
 module Runner = struct
-  type 'a t = {pool: 'a ProcessPool.t; task_bar: TaskBar.t}
+  type 'a t = 'a ProcessPool.t
 
   let create ~jobs ~f =
-    let task_bar =
-      if Config.show_progress_bar then TaskBar.create_multiline ~jobs else TaskBar.create_dummy ()
-    in
-    { pool=
-        ProcessPool.create ~jobs
-          ~child_prelude:
-            ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
-             fork_protect ~f:(fun () -> () ))
-          task_bar ~f
-    ; task_bar }
+    ProcessPool.create ~jobs ~f
+      ~child_prelude:
+        ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
+         fork_protect ~f:(fun () -> () ))
 
 
   let run runner ~tasks =
@@ -58,6 +50,5 @@ module Runner = struct
     Pervasives.flush_all () ;
     (* Compact heap before forking *)
     Gc.compact () ;
-    ProcessPool.run runner.pool tasks ;
-    TaskBar.finish runner.task_bar
+    ProcessPool.run runner tasks
 end

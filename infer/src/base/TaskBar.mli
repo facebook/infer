@@ -12,15 +12,12 @@ type t
 val refresh : t -> unit
 (** draw the taskbar *)
 
-val create_multiline : jobs:int -> t
-(** creates a multiline task bar for running [jobs] jobs in parallel *)
-
-val create_dummy : unit -> t
-(** silent task bar *)
+val create : jobs:int -> t
+(** creates a task bar for running [jobs] jobs in parallel *)
 
 val update_status : t -> slot:int -> Mtime.t -> string -> unit
 (** [update_status task_bar ~slot t status] records an event described by [status] on slot [slot]
-   started at time [t] *)
+    started at time [t] *)
 
 val set_tasks_total : t -> int -> unit
 (** set the total number of tasks to do *)

@@ -1747,6 +1747,14 @@ and progress_bar =
     "Show a progress bar"
 
 
+and progress_bar_style =
+  CLOpt.mk_symbol ~long:"progress-bar-style"
+    ~symbols:[("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)] ~eq:Pervasives.( = )
+    ~default:`Auto ~in_help:[(Analyze, manual_generic); (Capture, manual_generic)]
+    "Style of the progress bar. $(b,auto) selects $(b,multiline) if connected to a tty, otherwise \
+     $(b,plain)."
+
+
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
     ~default:CLOpt.init_work_dir
@@ -2747,6 +2755,18 @@ and[@warning "-32"] procedures_per_process = !procedures_per_process
 
 and procedures_source_file = !procedures_source_file
 
+and progress_bar =
+  if !progress_bar then
+    match !progress_bar_style with
+    | `Auto when Unix.(isatty stdin && isatty stderr) ->
+        `MultiLine
+    | `Auto ->
+        `Plain
+    | (`Plain | `MultiLine) as style ->
+        style
+  else `Quiet
+
+
 and procs_csv = !procs_csv
 
 and project_root = !project_root
@@ -2798,8 +2818,6 @@ and seconds_per_iteration = !seconds_per_iteration
 and select = !select
 
 and show_buckets = !print_buckets
-
-and show_progress_bar = !progress_bar
 
 and siof = !siof
 

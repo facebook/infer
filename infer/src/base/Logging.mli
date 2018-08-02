@@ -23,6 +23,10 @@ val environment_info : ('a, F.formatter, unit) format -> 'a
 val progress : ('a, F.formatter, unit) format -> 'a
 (** print immediately to standard error unless --quiet is specified *)
 
+val task_progress : f:(unit -> unit) -> (F.formatter -> 'a -> unit) -> 'a -> unit
+(** [task_progress ~f pp x] executes [f] and log progress [pp x] in the log file and also on the
+    console unless there is an active task bar *)
+
 val result : ('a, F.formatter, unit) format -> 'a
 (** Emit a result to stdout. Use only if the output format is stable and useful enough that it may
     conceivably get piped to another program, ie, almost never (use [progress] instead otherwise).

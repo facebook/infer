@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 (** {2 arbitrary constants } *)
 
@@ -35,7 +34,7 @@ type multiline_info =
 type t =
   | MultiLine of multiline_info  (** interactive *)
   | NonInteractive  (** display terse progress, to use when output is redirected *)
-  | Dummy  (** ignore everything *)
+  | Quiet  (** ignore everything *)
 
 (** print [c] [n] times *)
 let rec pp_n c fmt n =
@@ -123,24 +122,26 @@ let refresh_multiline task_bar =
   ()
 
 
-let refresh = function MultiLine t -> refresh_multiline t | NonInteractive | Dummy -> ()
+let refresh = function MultiLine t -> refresh_multiline t | NonInteractive | Quiet -> ()
 
-let create_multiline ~jobs =
-  if Unix.(isatty stdin) && Unix.(isatty stderr) then (
-    let t0 = Mtime_clock.now () in
-    let task_bar =
-      { jobs
-      ; jobs_statuses= Array.create ~len:jobs "idle"
-      ; jobs_start_times= Array.create ~len:jobs t0
-      ; start_time= Mtime_clock.counter ()
-      ; tasks_done= 0
-      ; tasks_total= 0 }
-    in
-    ANSITerminal.erase Below ; MultiLine task_bar )
-  else NonInteractive
+let create ~jobs =
+  match Config.progress_bar with
+  | `Quiet ->
+      Quiet
+  | `Plain ->
+      NonInteractive
+  | `MultiLine ->
+      let t0 = Mtime_clock.now () in
+      let task_bar =
+        { jobs
+        ; jobs_statuses= Array.create ~len:jobs "idle"
+        ; jobs_start_times= Array.create ~len:jobs t0
+        ; start_time= Mtime_clock.counter ()
+        ; tasks_done= 0
+        ; tasks_total= 0 }
+      in
+      ANSITerminal.erase Below ; MultiLine task_bar
 
-
-let create_dummy () = Dummy
 
 let update_status_multiline task_bar ~slot:job t0 status =
   (task_bar.jobs_statuses).(job) <- status ;
@@ -152,7 +153,7 @@ let update_status task_bar ~slot t0 status =
   match task_bar with
   | MultiLine t ->
       update_status_multiline t ~slot t0 status
-  | NonInteractive | Dummy ->
+  | NonInteractive | Quiet ->
       ()
 
 
@@ -160,7 +161,7 @@ let set_tasks_total task_bar n =
   match task_bar with
   | MultiLine multiline ->
       multiline.tasks_total <- n
-  | NonInteractive | Dummy ->
+  | NonInteractive | Quiet ->
       ()
 
 
@@ -168,9 +169,7 @@ let tasks_done_add task_bar n =
   match task_bar with
   | MultiLine multiline ->
       multiline.tasks_done <- multiline.tasks_done + n
-  | NonInteractive ->
-      L.progress "#%!"
-  | Dummy ->
+  | NonInteractive | Quiet ->
       ()
 
 
@@ -178,7 +177,7 @@ let tasks_done_reset task_bar =
   match task_bar with
   | MultiLine multiline ->
       multiline.tasks_done <- 0
-  | NonInteractive | Dummy ->
+  | NonInteractive | Quiet ->
       ()
 
 
@@ -188,8 +187,8 @@ let finish = function
       Out_channel.output_string stderr "\n" ;
       ANSITerminal.erase Below ;
       Out_channel.flush stderr
-  | NonInteractive | Dummy ->
+  | NonInteractive | Quiet ->
       ()
 
 
-let is_interactive = function MultiLine _ -> true | NonInteractive | Dummy -> false
+let is_interactive = function MultiLine _ -> true | NonInteractive | Quiet -> false

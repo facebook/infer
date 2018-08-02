@@ -520,6 +520,8 @@ val procs_csv : string option
 
 val project_root : string
 
+val progress_bar : [`MultiLine | `Plain | `Quiet]
+
 val quandary : bool
 
 val quandary_endpoints : Yojson.Basic.json
@@ -561,8 +563,6 @@ val seconds_per_iteration : float option
 val select : int option
 
 val show_buckets : bool
-
-val show_progress_bar : bool
 
 val siof : bool
 

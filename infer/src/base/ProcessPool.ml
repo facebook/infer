@@ -229,8 +229,9 @@ let fork_child ~child_prelude ~slot (updates_r, updates_w) ~f =
       {pid; down_pipe= Unix.out_channel_of_descr to_child_w}
 
 
-let create : jobs:int -> child_prelude:(unit -> unit) -> TaskBar.t -> f:('a -> unit) -> 'a t =
- fun ~jobs ~child_prelude task_bar ~f ->
+let create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t =
+ fun ~jobs ~child_prelude ~f ->
+  let task_bar = TaskBar.create ~jobs in
   (* Pipe to communicate from children to parent. Only one pipe is needed: the messages sent by
       children include the identifier of the child sending the message (its [slot]). This way there
       is only one pipe to wait on for updates. *)
@@ -257,4 +258,5 @@ let run pool tasks =
   while not (List.is_empty pool.tasks && pool.idle_children >= pool.jobs) do
     process_updates pool buffer ; TaskBar.refresh pool.task_bar
   done ;
-  wait_all pool
+  wait_all pool ;
+  TaskBar.finish pool.task_bar

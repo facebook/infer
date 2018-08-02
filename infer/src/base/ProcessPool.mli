@@ -26,7 +26,7 @@ open! IStd
 (** A ['a t] process pool accepts tasks of type ['a]. ['a] will be marshalled over a Unix pipe.*)
 type _ t
 
-val create : jobs:int -> child_prelude:(unit -> unit) -> TaskBar.t -> f:('a -> unit) -> 'a t
+val create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
 val run : 'a t -> 'a list -> unit
