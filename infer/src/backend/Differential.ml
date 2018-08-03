@@ -53,7 +53,84 @@ let dedup (issues: Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
-type t = {introduced: Jsonbug_t.report; fixed: Jsonbug_t.report; preexisting: Jsonbug_t.report}
+module CostsSummary : sig
+  val to_json :
+    current_report:Jsonbug_t.report -> previous_report:Jsonbug_t.report -> Yojson.Basic.json
+end = struct
+  type 'a count = {top: 'a; zero: 'a; degrees: 'a Int.Map.t}
+
+  let init = {top= 0; zero= 0; degrees= Int.Map.empty}
+
+  type previous_current = {previous: int; current: int}
+
+  let zero_token_str =
+    Format.asprintf "%a" Itv.NonNegativePolynomial.pp Itv.NonNegativePolynomial.zero
+
+
+  let top_token_str =
+    Format.asprintf "%a" Itv.NonNegativePolynomial.pp Itv.NonNegativePolynomial.top
+
+
+  let count report =
+    let count_aux t (e: Jsonbug_t.extra) =
+      match e with
+      | {cost_polynomial= Some cp} when String.equal cp zero_token_str ->
+          {t with zero= t.zero + 1}
+      | {cost_polynomial= Some cp; cost_degree= None} when String.equal cp top_token_str ->
+          {t with top= t.top + 1}
+      | {cost_degree= Some v} ->
+          let degrees = Int.Map.update t.degrees v ~f:(function None -> 1 | Some x -> x + 1) in
+          {t with degrees}
+      | {cost_degree= None} ->
+          t
+    in
+    List.fold ~init
+      ~f:(fun acc v -> match v.Jsonbug_t.extras with None -> acc | Some v -> count_aux acc v)
+      report
+
+
+  let pair_counts ~current_counts ~previous_counts =
+    let compute_degrees current previous =
+      let merge_aux ~key:_ v =
+        match v with
+        | `Both (current, previous) ->
+            Some {current; previous}
+        | `Left current ->
+            Some {current; previous= 0}
+        | `Right previous ->
+            Some {current= 0; previous}
+      in
+      Int.Map.merge ~f:merge_aux current previous
+    in
+    { top= {current= current_counts.top; previous= previous_counts.top}
+    ; zero= {current= current_counts.zero; previous= previous_counts.zero}
+    ; degrees= compute_degrees current_counts.degrees previous_counts.degrees }
+
+
+  let to_json ~current_report ~previous_report =
+    let current_counts = count current_report in
+    let previous_counts = count previous_report in
+    let paired_counts = pair_counts ~current_counts ~previous_counts in
+    let json_degrees =
+      Int.Map.to_alist ~key_order:`Increasing paired_counts.degrees
+      |> List.map ~f:(fun (key, {current; previous}) ->
+             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)]
+         )
+    in
+    let create_assoc current previous =
+      `Assoc [("current", `Int current); ("previous", `Int previous)]
+    in
+    `Assoc
+      [ ("top", create_assoc paired_counts.top.current paired_counts.top.previous)
+      ; ("zero", create_assoc paired_counts.zero.current paired_counts.zero.previous)
+      ; ("degrees", `List json_degrees) ]
+end
+
+type t =
+  { introduced: Jsonbug_t.report
+  ; fixed: Jsonbug_t.report
+  ; preexisting: Jsonbug_t.report
+  ; costs_summary: Yojson.Basic.json }
 
 (** Set operations should keep duplicated issues with identical hashes *)
 let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.report) : t =
@@ -74,12 +151,15 @@ let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.
   let introduced, preexisting, fixed =
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
   in
-  {introduced= dedup introduced; fixed= dedup fixed; preexisting= dedup preexisting}
+  let costs_summary = CostsSummary.to_json ~current_report ~previous_report in
+  {introduced= dedup introduced; fixed= dedup fixed; preexisting= dedup preexisting; costs_summary}
 
 
-let to_files {introduced; fixed; preexisting} destdir =
+let to_files {introduced; fixed; preexisting; costs_summary} destdir =
   Out_channel.write_all (destdir ^/ "introduced.json")
     ~data:(Jsonbug_j.string_of_report introduced) ;
   Out_channel.write_all (destdir ^/ "fixed.json") ~data:(Jsonbug_j.string_of_report fixed) ;
   Out_channel.write_all (destdir ^/ "preexisting.json")
-    ~data:(Jsonbug_j.string_of_report preexisting)
+    ~data:(Jsonbug_j.string_of_report preexisting) ;
+  Out_channel.write_all (destdir ^/ "costs_summary.json")
+    ~data:(Yojson.Basic.to_string costs_summary)

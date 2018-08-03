@@ -7,7 +7,11 @@
 
 open! IStd
 
-type t = {introduced: Jsonbug_t.report; fixed: Jsonbug_t.report; preexisting: Jsonbug_t.report}
+type t =
+  { introduced: Jsonbug_t.report
+  ; fixed: Jsonbug_t.report
+  ; preexisting: Jsonbug_t.report
+  ; costs_summary: Yojson.Basic.json }
 
 val of_reports : current_report:Jsonbug_t.report -> previous_report:Jsonbug_t.report -> t
 

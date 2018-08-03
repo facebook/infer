@@ -145,7 +145,7 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     , list_map_fst preexisting' @ diff.preexisting
     , list_map_fst fixed_normalized' )
   in
-  {introduced; fixed; preexisting}
+  {introduced; fixed; preexisting; costs_summary= diff.costs_summary}
 
 
 let java_anon_class_pattern = Str.regexp "\\$[0-9]+"
@@ -210,7 +210,10 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   let introduced, preexisting, fixed =
     relative_complements ~compare ~pred diff.introduced diff.fixed
   in
-  {introduced; fixed; preexisting= preexisting @ diff.preexisting}
+  { introduced
+  ; fixed
+  ; preexisting= preexisting @ diff.preexisting
+  ; costs_summary= diff.costs_summary }
 
 
 (* Strip issues whose paths are not among those we're interested in *)
@@ -248,7 +251,8 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
   in
   { introduced= apply_paths_filter_if_needed `Introduced diff'.introduced
   ; fixed= apply_paths_filter_if_needed `Fixed diff'.fixed
-  ; preexisting= apply_paths_filter_if_needed `Preexisting diff'.preexisting }
+  ; preexisting= apply_paths_filter_if_needed `Preexisting diff'.preexisting
+  ; costs_summary= diff'.costs_summary }
 
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
