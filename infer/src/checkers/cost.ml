@@ -58,12 +58,11 @@ module TransferFunctionsNodesBasicCost = struct
             callee_cost Typ.Procname.pp callee_pname
       | Some inferbo_summary ->
           let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
-          let callee_entry_mem = BufferOverrunDomain.Summary.get_input inferbo_summary in
+          let callee_symbol_table = BufferOverrunDomain.Summary.get_symbol_table inferbo_summary in
           let callee_exit_mem = BufferOverrunDomain.Summary.get_output inferbo_summary in
-          let callee_ret_alias = BufferOverrunDomain.Mem.find_ret_alias callee_exit_mem in
           let (subst_map, _), _, _ =
             BufferOverrunSemantics.get_subst_map tenv callee_pdesc params inferbo_caller_mem
-              callee_entry_mem ~callee_ret_alias
+              callee_symbol_table callee_exit_mem
           in
           BasicCost.subst callee_cost subst_map
 

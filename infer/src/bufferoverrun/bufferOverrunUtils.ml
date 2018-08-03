@@ -80,19 +80,21 @@ module Exec = struct
     -> Loc.t -> Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
 
   let decl_sym_arr
-      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
-        -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t
+      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial
+        -> Tenv.t -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t
         -> ?size:Itv.t -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
         -> Dom.Mem.astate -> Dom.Mem.astate =
-   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ?offset ?size ~inst_num
-       ~new_sym_num ~new_alloc_num mem ->
+   fun ~decl_sym_val pname symbol_table path tenv ~node_hash location ~depth loc typ ?offset ?size
+       ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
-      option_value offset (fun () -> Itv.make_sym pname (Itv.SymbolPath.offset path) new_sym_num)
+      option_value offset (fun () ->
+          Itv.make_sym pname symbol_table (Itv.SymbolPath.offset path) new_sym_num )
     in
     let size =
       option_value size (fun () ->
-          Itv.make_sym ~unsigned:true pname (Itv.SymbolPath.length path) new_sym_num )
+          Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
+      )
     in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
@@ -128,12 +130,12 @@ module Exec = struct
 
 
   let decl_sym_arraylist
-      : Typ.Procname.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
+      : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
         -> new_sym_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
-   fun pname path location loc ~new_sym_num mem ->
+   fun pname symbol_table path location loc ~new_sym_num mem ->
     let size =
-      Itv.make_sym ~unsigned:true pname (Itv.SymbolPath.length path) new_sym_num |> Dom.Val.of_itv
-      |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
+      Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
+      |> Dom.Val.of_itv |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
     in
     Dom.Mem.add_heap loc size mem
 

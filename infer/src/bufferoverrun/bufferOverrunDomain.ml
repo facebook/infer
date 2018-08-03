@@ -147,10 +147,11 @@ module Val = struct
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
   let make_sym
-      : ?unsigned:bool -> Loc.t -> Typ.Procname.t -> Itv.SymbolPath.partial -> Itv.Counter.t -> t =
-   fun ?(unsigned= false) loc pname path new_sym_num ->
+      : ?unsigned:bool -> Loc.t -> Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial
+        -> Itv.Counter.t -> t =
+   fun ?(unsigned= false) loc pname symbol_table path new_sym_num ->
     { bot with
-      itv= Itv.make_sym ~unsigned pname (Itv.SymbolPath.normal path) new_sym_num
+      itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
     ; sym= Relation.Sym.of_loc loc }
 
 
@@ -361,14 +362,6 @@ module Heap = struct
 
   let weak_update : PowLoc.t -> Val.t -> astate -> astate =
    fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
-
-
-  let pp_summary : F.formatter -> astate -> unit =
-   fun fmt mem ->
-    let pp_map fmt (k, v) = F.fprintf fmt "%a -> %a" Loc.pp k Val.pp_summary v in
-    F.fprintf fmt "@[<v 2>{ " ;
-    F.pp_print_list pp_map fmt (bindings mem) ;
-    F.fprintf fmt " }@]"
 
 
   let get_return : astate -> Val.t =
@@ -703,15 +696,13 @@ module MemReach = struct
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
 
-  let pp_summary : F.formatter -> t -> unit =
-   fun fmt x -> F.fprintf fmt "@[<v 0>Parameters:@,%a@]" Heap.pp_summary x.heap
-
-
   let find_stack : Loc.t -> t -> Val.t = fun k m -> Stack.find k m.stack
 
   let find_stack_set : PowLoc.t -> t -> Val.t = fun k m -> Stack.find_set k m.stack
 
   let find_heap : Loc.t -> t -> Val.t = fun k m -> Heap.find k m.heap
+
+  let find_heap_opt : Loc.t -> t -> Val.t option = fun k m -> Heap.find_opt k m.heap
 
   let find_heap_set : PowLoc.t -> t -> Val.t = fun k m -> Heap.find_set k m.heap
 
@@ -810,12 +801,6 @@ module MemReach = struct
         {m with latest_prune= LatestPrune.Top}
 
 
-  let get_new_heap_locs : prev:t -> next:t -> PowLoc.t =
-   fun ~prev ~next ->
-    let add_loc loc _val acc = if Heap.mem loc prev.heap then acc else PowLoc.add loc acc in
-    Heap.fold add_loc next.heap PowLoc.empty
-
-
   let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
     let add_reachable1 ~root loc v acc =
       if Loc.equal root loc then PowLoc.union acc (Val.get_all_locs v)
@@ -884,26 +869,8 @@ module Mem = struct
    fun ~default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
 
-  let f_lift_default2 : default:'a -> (MemReach.t -> MemReach.t -> 'a) -> t -> t -> 'a =
-   fun ~default f m1 m2 ->
-    match (m1, m2) with
-    | Bottom, _ | _, Bottom ->
-        default
-    | NonBottom m1', NonBottom m2' ->
-        f m1' m2'
-
-
   let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
    fun f -> f_lift_default ~default:Bottom (fun m' -> NonBottom (f m'))
-
-
-  let pp_summary : F.formatter -> t -> unit =
-   fun fmt m ->
-    match m with
-    | Bottom ->
-        F.pp_print_string fmt "unreachable"
-    | NonBottom m' ->
-        MemReach.pp_summary fmt m'
 
 
   let find_stack : Loc.t -> t -> Val.t =
@@ -916,6 +883,10 @@ module Mem = struct
 
   let find_heap : Loc.t -> t -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_heap k)
+
+
+  let find_heap_opt : Loc.t -> t -> Val.t option =
+   fun k -> f_lift_default ~default:None (MemReach.find_heap_opt k)
 
 
   let find_heap_set : PowLoc.t -> t -> Val.t =
@@ -967,13 +938,6 @@ module Mem = struct
 
 
   let get_return : t -> Val.t = f_lift_default ~default:Val.bot MemReach.get_return
-
-  let get_new_heap_locs : prev:t -> next:t -> PowLoc.t =
-   fun ~prev ~next ->
-    f_lift_default2 ~default:PowLoc.empty
-      (fun m1 m2 -> MemReach.get_new_heap_locs ~prev:m1 ~next:m2)
-      prev next
-
 
   let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
    fun locs -> f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from locs)
@@ -1034,9 +998,9 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = Mem.t * Mem.t * PO.ConditionSet.t
+  type t = Itv.SymbolTable.summary_t * Mem.t * PO.ConditionSet.t
 
-  let get_input : t -> Mem.t = fst3
+  let get_symbol_table : t -> Itv.SymbolTable.summary_t = fst3
 
   let get_output : t -> Mem.t = snd3
 
@@ -1044,7 +1008,9 @@ module Summary = struct
 
   let get_return : t -> Val.t = fun s -> Mem.get_return (get_output s)
 
-  let pp_symbol_map : F.formatter -> t -> unit = fun fmt s -> Mem.pp_summary fmt (get_input s)
+  let pp_symbol_map : F.formatter -> t -> unit =
+   fun fmt s -> Itv.SymbolTable.pp fmt (get_symbol_table s)
+
 
   let pp_return : F.formatter -> t -> unit =
    fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
@@ -1057,6 +1023,7 @@ module Summary = struct
 
 
   let pp : F.formatter -> t -> unit =
-   fun fmt (entry_mem, exit_mem, condition_set) ->
-    F.fprintf fmt "%a@;%a@;%a" Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp condition_set
+   fun fmt (symbol_table, exit_mem, condition_set) ->
+    F.fprintf fmt "%a@;%a@;%a" Itv.SymbolTable.pp symbol_table Mem.pp exit_mem PO.ConditionSet.pp
+      condition_set
 end

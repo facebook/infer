@@ -32,9 +32,9 @@ module Boolean : sig
 end
 
 module SymbolPath : sig
-  type partial
+  type partial [@@deriving compare]
 
-  type t
+  type t [@@deriving compare]
 
   val of_pvar : Pvar.t -> partial
 
@@ -53,6 +53,20 @@ module Symbol : sig
   type t
 end
 
+module SymbolTable : sig
+  type summary_t
+
+  val pp : F.formatter -> summary_t -> unit
+
+  val find_opt : SymbolPath.t -> summary_t -> (Symbol.t * Symbol.t) option
+
+  type t
+
+  val empty : unit -> t
+
+  val summary_of : t -> summary_t
+end
+
 module SymbolMap : PrettyPrintable.PPMap with type key = Symbol.t
 
 module Bound : sig
@@ -65,8 +79,6 @@ module Bound : sig
   val is_not_infty : t -> bool
 
   val is_symbolic : t -> bool
-
-  val get_one_symbol : t -> Symbol.t
 
   val gt : t -> t -> bool
 
@@ -197,7 +209,7 @@ val of_int_lit : IntLit.t -> t
 
 val of_int64 : Int64.t -> t
 
-val make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t
+val make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
 
 val lb : t -> Bound.t
 

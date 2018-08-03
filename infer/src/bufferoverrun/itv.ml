@@ -45,7 +45,7 @@ module Boolean = struct
 end
 
 module BoundEnd = struct
-  type t = LowerBound | UpperBound
+  type t = LowerBound | UpperBound [@@deriving compare]
 
   let neg = function LowerBound -> UpperBound | UpperBound -> LowerBound
 
@@ -54,8 +54,11 @@ end
 
 module SymbolPath = struct
   type partial = Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
+  [@@deriving compare]
 
-  type t = Normal of partial | Offset of partial | Length of partial
+  type t = Normal of partial | Offset of partial | Length of partial [@@deriving compare]
+
+  let equal = [%compare.equal : t]
 
   let of_pvar pvar = Pvar pvar
 
@@ -99,7 +102,7 @@ module Symbol = struct
 
   let equal = [%compare.equal : t]
 
-  let paths_equal s1 s2 = phys_equal s1.path s2.path
+  let paths_equal s1 s2 = SymbolPath.equal s1.path s2.path
 
   let make : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
    fun ~unsigned pname path bound_end id -> {id; pname; unsigned; path; bound_end}
@@ -114,6 +117,35 @@ module Symbol = struct
 
 
   let is_unsigned : t -> bool = fun x -> x.unsigned
+end
+
+module SymbolTable = struct
+  module M = PrettyPrintable.MakePPMap (SymbolPath)
+
+  type summary_t = (Symbol.t * Symbol.t) M.t
+
+  let find_opt = M.find_opt
+
+  let pp = M.pp ~pp_value:(fun fmt (lb, ub) -> F.fprintf fmt "[%a, %a]" Symbol.pp lb Symbol.pp ub)
+
+  type t = summary_t ref
+
+  let empty () = ref M.empty
+
+  let lookup ~unsigned pname path symbol_table new_sym_num =
+    match M.find_opt path !symbol_table with
+    | Some s ->
+        s
+    | None ->
+        let s =
+          ( Symbol.make ~unsigned pname path LowerBound (Counter.next new_sym_num)
+          , Symbol.make ~unsigned pname path UpperBound (Counter.next new_sym_num) )
+        in
+        symbol_table := M.add path s !symbol_table ;
+        s
+
+
+  let summary_of x = !x
 end
 
 exception Symbol_not_found of Symbol.t
@@ -178,9 +210,10 @@ module SymLinear = struct
     M.for_all2 ~f:le_one_pair x y
 
 
-  let make : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> BoundEnd.t -> int -> t =
-   fun ~unsigned pname path bound_end i ->
-    singleton_one (Symbol.make ~unsigned pname path bound_end i)
+  let make : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t * t =
+   fun ~unsigned pname symbol_table path new_sym_num ->
+    let lb, ub = SymbolTable.lookup ~unsigned pname path symbol_table new_sym_num in
+    (singleton_one lb, singleton_one ub)
 
 
   let eq : t -> t -> bool =
@@ -1376,17 +1409,10 @@ module ItvPure = struct
 
   let of_int n = of_bound (Bound.of_int n)
 
-  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t =
-   fun ~unsigned pname path new_sym_num ->
-    let lower =
-      Bound.of_sym
-        (SymLinear.make ~unsigned pname path BoundEnd.LowerBound (Counter.next new_sym_num))
-    in
-    let upper =
-      Bound.of_sym
-        (SymLinear.make ~unsigned pname path BoundEnd.UpperBound (Counter.next new_sym_num))
-    in
-    (lower, upper)
+  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t =
+   fun ~unsigned pname symbol_table path new_sym_num ->
+    let lb, ub = SymLinear.make ~unsigned pname symbol_table path new_sym_num in
+    (Bound.of_sym lb, Bound.of_sym ub)
 
 
   let mone = of_bound Bound.mone
@@ -1820,9 +1846,9 @@ let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> Counter.t -> t =
- fun ?(unsigned= false) pname path new_sym_num ->
-  NonBottom (ItvPure.make_sym ~unsigned pname path new_sym_num)
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t =
+ fun ?(unsigned= false) pname symbol_table path new_sym_num ->
+  NonBottom (ItvPure.make_sym ~unsigned pname symbol_table path new_sym_num)
 
 
 let neg : t -> t = lift1 ItvPure.neg

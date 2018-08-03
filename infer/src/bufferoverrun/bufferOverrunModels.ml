@@ -17,9 +17,16 @@ module Relation = BufferOverrunDomainRelation
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
-type model_env = {pname: Typ.Procname.t; node_hash: int; location: Location.t; tenv: Tenv.t}
+type model_env =
+  { pname: Typ.Procname.t
+  ; node_hash: int
+  ; location: Location.t
+  ; tenv: Tenv.t
+  ; symbol_table: Itv.SymbolTable.t }
 
-let mk_model_env pname node_hash location tenv = {pname; node_hash; location; tenv}
+let mk_model_env pname node_hash location tenv symbol_table =
+  {pname; node_hash; location; tenv; symbol_table}
+
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
 
@@ -247,12 +254,12 @@ module StdArray = struct
       BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length ~inst_num
         ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val path {pname; tenv; node_hash; location} ~depth loc ~inst_num
-        ~new_sym_num ~new_alloc_num mem =
+    let declare_symbolic ~decl_sym_val path {pname; tenv; node_hash; location; symbol_table} ~depth
+        loc ~inst_num ~new_sym_num ~new_alloc_num mem =
       let offset = Itv.zero in
       let size = Itv.of_int64 length in
-      BoUtils.Exec.decl_sym_arr ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ
-        ~offset ~size ~inst_num ~new_sym_num ~new_alloc_num mem
+      BoUtils.Exec.decl_sym_arr ~decl_sym_val pname symbol_table path tenv ~node_hash location
+        ~depth loc typ ~offset ~size ~inst_num ~new_sym_num ~new_alloc_num mem
     in
     {declare_local; declare_symbolic}
 
@@ -307,9 +314,9 @@ module ArrayList = struct
     let declare_local ~decl_local:_ {pname; node_hash; location} loc ~inst_num ~dimension mem =
       BoUtils.Exec.decl_local_arraylist pname ~node_hash location loc ~inst_num ~dimension mem
     in
-    let declare_symbolic ~decl_sym_val:_ path {pname; location} ~depth:_ loc ~inst_num:_
-        ~new_sym_num ~new_alloc_num:_ mem =
-      BoUtils.Exec.decl_sym_arraylist pname path location loc ~new_sym_num mem
+    let declare_symbolic ~decl_sym_val:_ path {pname; location; symbol_table} ~depth:_ loc
+        ~inst_num:_ ~new_sym_num ~new_alloc_num:_ mem =
+      BoUtils.Exec.decl_sym_arraylist pname symbol_table path location loc ~new_sym_num mem
     in
     {declare_local; declare_symbolic}
 

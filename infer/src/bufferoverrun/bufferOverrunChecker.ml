@@ -32,12 +32,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
 
-  type extras = ProcData.no_extras
+  type extras = Itv.SymbolTable.t
 
   let declare_symbolic_val
-      : Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int -> Location.t -> Loc.t
-        -> Typ.typ -> inst_num:int -> new_sym_num:Itv.Counter.t -> Domain.t -> Domain.t =
-   fun pname path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
+      : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int
+        -> Location.t -> Loc.t -> Typ.typ -> inst_num:int -> new_sym_num:Itv.Counter.t -> Domain.t
+        -> Domain.t =
+   fun pname symbol_table path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
     let new_alloc_num = Itv.Counter.make 1 in
     let rec decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem =
@@ -48,13 +49,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Typ.Tint ikind ->
             let unsigned = Typ.ikind_is_unsigned ikind in
             let v =
-              Dom.Val.make_sym ~unsigned loc pname path new_sym_num
+              Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tfloat _ ->
             let v =
-              Dom.Val.make_sym loc pname path new_sym_num
+              Dom.Val.make_sym loc pname symbol_table path new_sym_num
               |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
             in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
@@ -63,8 +64,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
               pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem
         | Typ.Tptr (typ, _) ->
-            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname path tenv
-              ~node_hash location ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
+            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
+              symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
+              ~new_alloc_num mem
         | Typ.Tarray {elt; length} ->
             let size =
               match length with
@@ -76,12 +78,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let offset = Itv.zero in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname path tenv ~node_hash location ~depth loc elt ~offset ?size ~inst_num
-              ~new_sym_num ~new_alloc_num mem
+              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size
+              ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch typename with
           | Some {Models.declare_symbolic} ->
-              let model_env = Models.mk_model_env pname node_hash location tenv in
+              let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
               declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
                 loc ~inst_num ~new_sym_num ~new_alloc_num mem
           | None ->
@@ -108,34 +110,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let declare_symbolic_parameters
-      : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> inst_num:int
-        -> (Pvar.t * Typ.t) list -> Dom.Mem.astate -> Dom.Mem.astate =
-   fun pname tenv ~node_hash location ~inst_num formals mem ->
+      : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> Itv.SymbolTable.t
+        -> inst_num:int -> (Pvar.t * Typ.t) list -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun pname tenv ~node_hash location symbol_table ~inst_num formals mem ->
     let new_sym_num = Itv.Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
       let path = Itv.SymbolPath.of_pvar pvar in
       let mem =
-        declare_symbolic_val pname path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem
+        declare_symbolic_val pname symbol_table path tenv ~node_hash location loc typ ~inst_num
+          ~new_sym_num mem
       in
       (mem, inst_num + 1)
     in
     List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
 
 
-  let instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem subst_map mem ret_alias
-      location =
+  let instantiate_ret ret callee_pname ~callee_exit_mem subst_map mem ret_alias location =
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
-        let v =
-          Dom.Mem.find_heap loc callee_exit_mem |> (fun v -> Dom.Val.subst v subst_map location)
-          |> Dom.Val.add_trace_elem (Trace.Return location)
-        in
-        Dom.Mem.add_heap loc v acc
+        Option.value_map (Dom.Mem.find_heap_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
+            let v =
+              Dom.Val.subst v subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
+            in
+            Dom.Mem.add_heap loc v acc )
       in
-      let new_locs = Dom.Mem.get_new_heap_locs ~prev:callee_entry_mem ~next:callee_exit_mem in
       let reachable_locs = Dom.Mem.get_reachable_locs_from locs callee_exit_mem in
-      PowLoc.fold copy (PowLoc.inter new_locs reachable_locs) mem
+      PowLoc.fold copy reachable_locs mem
     in
     let id = fst ret in
     let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
@@ -148,7 +149,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
 
 
-  let instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location mem =
+  let instantiate_param tenv pdesc params callee_exit_mem subst_map location mem =
     let formals = Sem.get_formals pdesc in
     let actuals = List.map ~f:(fun (a, _) -> Sem.eval a mem) params in
     let f mem formal actual =
@@ -159,7 +160,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match Tenv.lookup tenv typename with
           | Some str ->
               let formal_locs =
-                Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
+                Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_exit_mem
                 |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
               in
               let instantiate_fld mem (fn, _, _) =
@@ -174,8 +175,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               mem )
         | _ ->
             let formal_locs =
-              Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
-              |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
+              Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_exit_mem |> Dom.Val.get_array_blk
+              |> ArrayBlk.get_pow_loc
             in
             let v = Dom.Mem.find_heap_set formal_locs callee_exit_mem in
             let actual_locs = Dom.Val.get_all_locs actual in
@@ -197,19 +198,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       : Tenv.t -> Ident.t * Typ.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
         -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate =
    fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
-    let callee_entry_mem = Dom.Summary.get_input summary in
+    let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
-    let callee_ret_alias = Dom.Mem.find_ret_alias callee_exit_mem in
     match callee_pdesc with
     | Some pdesc ->
         let bound_subst_map, ret_alias, rel_subst_map =
-          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias
+          Sem.get_subst_map tenv pdesc params caller_mem callee_symbol_table callee_exit_mem
         in
         let caller_mem =
-          instantiate_ret ret callee_pname ~callee_entry_mem ~callee_exit_mem bound_subst_map
-            caller_mem ret_alias location
-          |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem bound_subst_map
-               location
+          instantiate_ret ret callee_pname ~callee_exit_mem bound_subst_map caller_mem ret_alias
+            location
+          |> instantiate_param tenv pdesc params callee_exit_mem bound_subst_map location
           |> forget_ret_relation ret callee_pname
         in
         Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
@@ -229,7 +228,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate =
-   fun mem {pdesc; tenv} node instr ->
+   fun mem {pdesc; tenv; extras= symbol_table} node instr ->
     let pname = Procdesc.get_proc_name pdesc in
     let output_mem =
       match instr with
@@ -272,7 +271,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match Models.Call.dispatch callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.Node.hash node in
-            let model_env = Models.mk_model_env callee_pname node_hash location tenv in
+            let model_env =
+              Models.mk_model_env callee_pname node_hash location tenv symbol_table
+            in
             exec model_env ~ret mem
         | None ->
           match Payload.read pdesc callee_pname with
@@ -299,7 +300,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Typ.Tstruct typname -> (
               match Models.TypName.dispatch typname with
               | Some {Models.declare_local} ->
-                  let model_env = Models.mk_model_env pname node_hash location tenv in
+                  let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
                   declare_local ~decl_local model_env loc ~inst_num ~dimension mem
               | None ->
                   (mem, inst_num) )
@@ -312,7 +313,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           in
           let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) locals in
           let formals = Sem.get_formals pdesc in
-          declare_symbolic_parameters pname tenv ~node_hash location ~inst_num formals mem
+          declare_symbolic_parameters pname tenv ~node_hash location symbol_table ~inst_num formals
+            mem
       | Call (_, fun_exp, _, location, _) ->
           let () =
             L.(debug BufferOverrun Verbose)
@@ -443,12 +445,13 @@ module Report = struct
       : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
         -> Payload.t -> Location.t -> PO.ConditionSet.t =
    fun tenv caller_pname callee_pdesc params caller_mem summary location ->
-    let callee_entry_mem = Dom.Summary.get_input summary in
+    let callee_symbol_table = Dom.Summary.get_symbol_table summary in
+    let callee_exit_mem = Dom.Summary.get_output summary in
     let callee_cond = Dom.Summary.get_cond_set summary in
     match callee_pdesc with
     | Some pdesc ->
         let bound_subst_map, _, rel_subst_map =
-          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
+          Sem.get_subst_map tenv pdesc params caller_mem callee_symbol_table callee_exit_mem
         in
         let pname = Procdesc.get_proc_name pdesc in
         let caller_rel = Dom.Mem.get_relation caller_mem in
@@ -459,9 +462,9 @@ module Report = struct
 
 
   let check_instr
-      : Procdesc.t -> Tenv.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t
-        -> PO.ConditionSet.t =
-   fun pdesc tenv node instr mem cond_set ->
+      : Procdesc.t -> Tenv.t -> Itv.SymbolTable.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate
+        -> PO.ConditionSet.t -> PO.ConditionSet.t =
+   fun pdesc tenv symbol_table node instr mem cond_set ->
     let pname = Procdesc.get_proc_name pdesc in
     match instr with
     | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
@@ -470,7 +473,7 @@ module Report = struct
       match Models.Call.dispatch callee_pname params with
       | Some {Models.check} ->
           let node_hash = CFG.Node.hash node in
-          check (Models.mk_model_env pname node_hash location tenv) mem cond_set
+          check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
       | None ->
         match Payload.read pdesc callee_pname with
         | Some callee_summary ->
@@ -494,9 +497,10 @@ module Report = struct
 
 
   let check_instrs
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> CFG.Node.t -> Instrs.not_reversed_t
-        -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun summary pdesc tenv cfg node instrs state cond_set ->
+      : Summary.t -> Procdesc.t -> Tenv.t -> Itv.SymbolTable.t -> CFG.t -> CFG.Node.t
+        -> Instrs.not_reversed_t -> Dom.Mem.astate AbstractInterpreter.state -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
+   fun summary pdesc tenv symbol_table cfg node instrs state cond_set ->
     match state with
     | _ when Instrs.is_empty instrs ->
         cond_set
@@ -513,27 +517,30 @@ module Report = struct
           | NonBottom _ ->
               ()
         in
-        let cond_set = check_instr pdesc tenv node instr pre cond_set in
+        let cond_set = check_instr pdesc tenv symbol_table node instr pre cond_set in
         print_debug_info instr pre cond_set ;
         cond_set
 
 
   let check_node
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t
-        -> CFG.Node.t -> PO.ConditionSet.t =
-   fun summary pdesc tenv cfg inv_map cond_set node ->
+      : Summary.t -> Procdesc.t -> Tenv.t -> Itv.SymbolTable.t -> CFG.t -> Analyzer.invariant_map
+        -> PO.ConditionSet.t -> CFG.Node.t -> PO.ConditionSet.t =
+   fun summary pdesc tenv symbol_table cfg inv_map cond_set node ->
     match Analyzer.extract_state (CFG.Node.id node) inv_map with
     | Some state ->
         let instrs = CFG.instrs node in
-        check_instrs summary pdesc tenv cfg node instrs state cond_set
+        check_instrs summary pdesc tenv symbol_table cfg node instrs state cond_set
     | _ ->
         cond_set
 
 
   let check_proc
-      : Summary.t -> Procdesc.t -> Tenv.t -> CFG.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
-   fun summary pdesc tenv cfg inv_map ->
-    CFG.fold_nodes cfg ~f:(check_node summary pdesc tenv cfg inv_map) ~init:PO.ConditionSet.empty
+      : Summary.t -> Procdesc.t -> Tenv.t -> Itv.SymbolTable.t -> CFG.t -> Analyzer.invariant_map
+        -> PO.ConditionSet.t =
+   fun summary pdesc tenv symbol_table cfg inv_map ->
+    CFG.fold_nodes cfg
+      ~f:(check_node summary pdesc tenv symbol_table cfg inv_map)
+      ~init:PO.ConditionSet.empty
 
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
@@ -622,21 +629,23 @@ let get_local_decls cfg =
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
  fun {proc_desc; tenv; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
-  let pdata = ProcData.make_default proc_desc tenv in
+  let symbol_table = Itv.SymbolTable.empty () in
+  let pdata = ProcData.make proc_desc tenv symbol_table in
   let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let cfg = CFG.from_pdesc proc_desc in
   let locals = get_local_decls cfg in
-  let forget_locals mem = Option.map ~f:(Dom.Mem.forget_locs locals) mem in
-  let entry_mem = extract_post (CFG.start_node cfg |> CFG.Node.id) inv_map |> forget_locals in
-  let exit_mem = extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map |> forget_locals in
+  let exit_mem =
+    extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map
+    |> Option.map ~f:(Dom.Mem.forget_locs locals)
+  in
   let cond_set =
-    Report.check_proc summary proc_desc tenv cfg inv_map |> Report.report_errors summary proc_desc
-    |> Report.forget_locs locals
+    Report.check_proc summary proc_desc tenv symbol_table cfg inv_map
+    |> Report.report_errors summary proc_desc |> Report.forget_locs locals
   in
   let summary =
-    match (entry_mem, exit_mem) with
-    | Some entry_mem, Some exit_mem ->
-        let post = (entry_mem, exit_mem, cond_set) in
+    match exit_mem with
+    | Some exit_mem ->
+        let post = (Itv.SymbolTable.summary_of symbol_table, exit_mem, cond_set) in
         ( if Config.bo_debug >= 1 then
             let proc_name = Procdesc.get_proc_name proc_desc in
             print_summary proc_name post ) ;
