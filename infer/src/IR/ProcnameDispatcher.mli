@@ -25,7 +25,7 @@ type 'marker mtyp = Typ.t
 
 (* Intermediate matcher types *)
 
-type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
 
 type ( 'f_in
      , 'f_out
@@ -35,7 +35,7 @@ type ( 'f_in
      , 'markers_out
      , 'list_constraint ) template_arg
 
-type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
+type ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
   - [C/C++ function/method] --> [f]
@@ -53,11 +53,11 @@ type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constrain
 *)
 
 module type Common = sig
-  type 'f matcher
+  type ('context, 'f) matcher
 
-  type 'f dispatcher
+  type ('context, 'f) dispatcher
 
-  val make_dispatcher : 'f matcher list -> 'f dispatcher
+  val make_dispatcher : ('context, 'f) matcher list -> ('context, 'f) dispatcher
   (** Combines matchers to create a dispatcher *)
 
   (* Template arguments *)
@@ -100,11 +100,12 @@ module type Common = sig
     template_arg
   (** Captures all template args *)
 
-  val ( ~- ) : string -> ('f, 'f, unit, 'markers, 'markers) name_matcher
+  val ( ~- ) : string -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
   (** Starts a path with a name *)
 
   val ( &+ ) :
-    ( 'f_in
+    ( 'context
+    , 'f_in
     , 'f_interm
     , 'captured_types_in
     , 'markers_interm
@@ -119,11 +120,11 @@ module type Common = sig
        , 'markers_interm
        , 'lc )
        template_arg
-    -> ('f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
   (** Separate template arguments *)
 
   val ( < ) :
-    ('f_in, 'f_interm, 'captured_types_in, 'markers_interm, 'markers_out) name_matcher
+    ('context, 'f_in, 'f_interm, 'captured_types_in, 'markers_interm, 'markers_out) name_matcher
     -> ( 'f_interm
        , 'f_out
        , 'captured_types_in
@@ -132,27 +133,34 @@ module type Common = sig
        , 'markers_interm
        , 'lc )
        template_arg
-    -> ('f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+    -> ('context, 'f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
   (** Starts template arguments after a name *)
 
   val ( >:: ) :
-    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher -> string
-    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher
+    -> string -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Ends template arguments and starts a name *)
 
   val ( &+...>:: ) :
-    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, accept_more) templ_matcher
-    -> string -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    ( 'context
+    , 'f_in
+    , 'f_out
+    , 'captured_types
+    , 'markers_in
+    , 'markers_out
+    , accept_more )
+    templ_matcher -> string
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Ends template arguments with eats-ALL and starts a name *)
 
   val ( &:: ) :
-    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
-    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Separates names (accepts ALL template arguments on the left one) *)
 
   val ( <>:: ) :
-    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
-    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+    ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
+    -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
   (** Separates names (accepts NO template arguments on the left one) *)
 end
 
@@ -160,16 +168,20 @@ module type NameCommon = sig
   include Common
 
   val ( >--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
 
   val ( <>--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
 
   val ( &--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
 
   val ( &::.*--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
         accepts ALL function arguments, binds the function *)
 end
@@ -179,10 +191,11 @@ end
 include sig
     [@@@warning "-60"]
 
-    module ProcName : NameCommon with type 'f dispatcher = Typ.Procname.t -> 'f option
+    module ProcName :
+      NameCommon with type ('context, 'f) dispatcher = 'context -> Typ.Procname.t -> 'f option
 end
 
-module TypName : NameCommon with type 'f dispatcher = Typ.name -> 'f option
+module TypName : NameCommon with type ('context, 'f) dispatcher = 'context -> Typ.name -> 'f option
 
 module Call : sig
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
@@ -190,115 +203,129 @@ module Call : sig
     type t = Exp.t * Typ.t
   end
 
-  include Common with type 'f dispatcher = Typ.Procname.t -> FuncArg.t list -> 'f option
+  include Common
+          with type ('context, 'f) dispatcher =
+                      'context -> Typ.Procname.t -> FuncArg.t list -> 'f option
 
-  type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+  type ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 
-  type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
+  type ('context, 'arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
 
   (* Function args *)
 
-  val any_arg : (unit, _, 'f, 'f, _, _) one_arg
+  val any_arg : ('context, unit, _, 'f, 'f, _, _) one_arg
   (** Eats one arg *)
 
-  val capt_arg : (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  val capt_arg : ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg *)
 
-  val capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  val capt_exp : ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression *)
 
   val capt_arg_of_typ :
-    (unit, _, unit, unit, unit) name_matcher
-    -> (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+    ('context, unit, _, unit, unit, unit) name_matcher
+    -> ('context, FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg of the given type *)
 
   val capt_exp_of_typ :
-    (unit, _, unit, unit, unit) name_matcher
-    -> (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+    ('context, unit, _, unit, unit, unit) name_matcher
+    -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression of the given type *)
 
-  val capt_var_exn : (Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  val capt_var_exn : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg Var. Fails with an internal error if the expression is not a Var *)
 
-  val typ1 : 'marker -> (unit, _, 'f, 'f, 'marker mtyp * _, 'marker * _) one_arg
+  val typ1 : 'marker -> ('context, unit, _, 'f, 'f, 'marker mtyp * _, 'marker * _) one_arg
   (** Matches first captured type *)
 
-  val typ2 : 'marker -> (unit, _, 'f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) one_arg
+  val typ2 :
+    'marker -> ('context, unit, _, 'f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) one_arg
   (** Matches second captured type *)
 
   val typ3 :
-    'marker -> (unit, _, 'f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg
+    'marker
+    -> ('context, unit, _, 'f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg
   (** Matches third captured type *)
 
   val ( $+ ) :
-    ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
-    -> ('arg, 'arg, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
-    -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+    ('context, 'f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
+    -> ('context, 'arg, 'arg, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
+    -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Separate function arguments *)
 
   val ( $+? ) :
-    ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
-    -> ('arg, 'arg option, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
-    -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+    ('context, 'f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
+    -> ('context, 'arg, 'arg option, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
+    -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Add an optional argument *)
 
   val ( >$ ) :
-    ('f_in, 'f_proc_out, 'ct, unit, 'cm, _) templ_matcher
-    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'ct, 'cm) one_arg
-    -> ('f_in, 'f_proc_out, 'f_out, 'ct, 'cm) args_matcher
+    ('context, 'f_in, 'f_proc_out, 'ct, unit, 'cm, _) templ_matcher
+    -> ('context, 'arg, 'arg, 'f_proc_out, 'f_out, 'ct, 'cm) one_arg
+    -> ('context, 'f_in, 'f_proc_out, 'f_out, 'ct, 'cm) args_matcher
   (** Ends template arguments and starts function arguments *)
 
   val ( $--> ) :
-    ('f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** Ends function arguments, binds the function *)
 
   val ( $ ) :
-    ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
-    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
-    -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+    ('context, 'f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
+    -> ('context, 'arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
+    -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Ends a name with accept-ALL template arguments and starts function arguments *)
 
   val ( <>$ ) :
-    ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
-    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
-    -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+    ('context, 'f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
+    -> ('context, 'arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
+    -> ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Ends a name with accept-NO template arguments and starts function arguments *)
 
   val ( >--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** Ends template arguments, accepts ALL function arguments, binds the function *)
 
   val ( $+...$--> ) :
-    ('f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** Ends function arguments with eats-ALL and binds the function *)
 
   val ( >$$--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** Ends template arguments, accepts NO function arguments, binds the function *)
 
   val ( $$--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts ALL template arguments, accepts NO function arguments, binds the function *)
 
   val ( <>$$--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts NO template arguments, accepts NO function arguments, binds the function *)
 
   val ( &--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts ALL template arguments, accepts ALL function arguments, binds the function *)
 
   val ( <>--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the function *)
 
   val ( &::.*--> ) :
-    ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
       accepts ALL function arguments, binds the function *)
 
   val ( $!--> ) :
-    ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+    ('context, 'f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in
+    -> ('context, 'f_out) matcher
   (** Ends function arguments, accepts NO more function arguments.
     If the args do not match, raise an internal error.
  *)

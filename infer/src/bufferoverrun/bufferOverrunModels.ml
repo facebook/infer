@@ -305,7 +305,7 @@ module StdArray = struct
     {declare_local; declare_symbolic}
 end
 
-(* Java's ArrayLists are represented by their size. We don't care about the elements. 
+(* Java's ArrayLists are represented by their size. We don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
@@ -404,7 +404,7 @@ module ArrayList = struct
 end
 
 module Call = struct
-  let dispatch : model ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (unit, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
@@ -449,7 +449,7 @@ module Call = struct
 end
 
 module TypName = struct
-  let dispatch : typ_model ProcnameDispatcher.TypName.dispatcher =
+  let dispatch : (unit, typ_model) ProcnameDispatcher.TypName.dispatcher =
     let open ProcnameDispatcher.TypName in
     make_dispatcher
       [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ

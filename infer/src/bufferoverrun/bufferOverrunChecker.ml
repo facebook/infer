@@ -81,7 +81,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size
               ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
-          match Models.TypName.dispatch typename with
+          match Models.TypName.dispatch () typename with
           | Some {Models.declare_symbolic} ->
               let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
               declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
@@ -268,7 +268,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Prune (exp, _, _, _) ->
           Sem.Prune.prune exp mem
       | Call (ret, Const (Cfun callee_pname), params, location, _) -> (
-        match Models.Call.dispatch callee_pname params with
+        match Models.Call.dispatch () callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.Node.hash node in
             let model_env =
@@ -298,7 +298,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
                   ?stride ~inst_num ~dimension mem
             | Typ.Tstruct typname -> (
-              match Models.TypName.dispatch typname with
+              match Models.TypName.dispatch () typname with
               | Some {Models.declare_local} ->
                   let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
                   declare_local ~decl_local model_env loc ~inst_num ~dimension mem
@@ -470,7 +470,7 @@ module Report = struct
     | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
         check_expr pname exp location mem cond_set
     | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
-      match Models.Call.dispatch callee_pname params with
+      match Models.Call.dispatch () callee_pname params with
       | Some {Models.check} ->
           let node_hash = CFG.Node.hash node in
           check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
