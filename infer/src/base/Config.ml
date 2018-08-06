@@ -1550,11 +1550,9 @@ and max_nesting =
 
 
 and method_decls_info =
-  CLOpt.mk_string_opt ~long:"method-decls-info"
-    "Specifies the file containing the method declarations info     (eg. start line, end line, \
-     class, method name, etc.) when Infer is run Test Determinator mode. Used in combination with \
-     other options as follows: $(b,--test-determinator --modified-lines modified_line_file \
-     --profiler-sample profiler_sample_file --method-decls-info minfo.json)"
+  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
+    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
+     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
 and merge =
@@ -1574,11 +1572,9 @@ and ml_buckets =
 
 
 and modified_lines =
-  CLOpt.mk_string_opt ~long:"modified-lines"
-    "Specifies the file containing the modified lines when Infer is run Test Determinator mode. \
-     Used in combination with other options as follows:\n     \
-     $(b, --test-determinator --modified-lines modified_lines_file --profiler-sample \
-     profiler_sample_file)"
+  CLOpt.mk_path_opt ~long:"modified-lines"
+    "Specifies the file containing the modified lines when Infer is run Test Determinator mode \
+     with $(b,--test-determinator)."
 
 
 and modified_targets =
@@ -2059,9 +2055,8 @@ and symops_per_iteration =
 
 and test_determinator =
   CLOpt.mk_bool ~long:"test-determinator" ~default:false
-    "Run infer in Test Determinator mode. It is used together with the --modified-lines and \
-     --test-profiler flags   which speficy the relevant arguments. E.g. $(b, --test-determinator \
-     --modified-lines modified_line_file --profiler-sample profiler_sample_file)"
+    "Run infer in Test Determinator mode. It is used together with the $(b,--modified-lines) and \
+     $(b,--test-profiler) flags, which speficy the relevant arguments."
 
 
 and test_filtering =
@@ -2070,11 +2065,9 @@ and test_filtering =
 
 
 and profiler_samples =
-  CLOpt.mk_string_opt ~long:"profiler-samples"
-    "Specifies the file containing the profiler samples when Infer is run Test Determinator mode. \
-     Used in combination with other options as follows:\n     \
-     $(b,--test-determinator --modified-lines modified_line_file --profiler-samples \
-     profiler_samples_file)"
+  CLOpt.mk_path_opt ~long:"profiler-samples"
+    "File containing the profiler samples when Infer is run Test Determinator mode with \
+     $(b,--test-determinator)."
 
 
 and testing_mode =
