@@ -170,9 +170,8 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
 
 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
-  (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
-    Option.value_map ~f:Summary.get_loc ~default:Location.dummy (Summary.get pname)
+    Option.value_map ~f:Procdesc.get_loc ~default:Location.dummy (Ondemand.get_proc_desc pname)
   in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
