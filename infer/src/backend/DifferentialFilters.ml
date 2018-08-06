@@ -148,73 +148,9 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
   {introduced; fixed; preexisting; costs_summary= diff.costs_summary}
 
 
-let java_anon_class_pattern = Str.regexp "\\$[0-9]+"
-
-type procedure_id = string
-
-let compare_procedure_id pid1 pid2 =
-  (* THIS COMPARISON FUNCTION IS INTENDED FOR JAVA ONLY *)
-  let normalize_procedure_id pid =
-    let anon_token = "$ANON" in
-    Str.global_replace java_anon_class_pattern anon_token pid
-  in
-  let pid1_norm = normalize_procedure_id pid1 in
-  let pid2_norm = normalize_procedure_id pid2 in
-  (* NOTE: The CRC may swallow some extra chars if the anon class has more
-   * digits (e.g. ...$9.abcde():int.A1B2 and ...$10.abcde():in.C1FF), and this
-   * makes the 2 strings different.
-   * Cut the length to the min_length to match the 2 strings *)
-  let pid1_norm_trimmed, pid2_norm_trimmed =
-    let min_length = min (String.length pid1_norm) (String.length pid2_norm) in
-    (String.sub pid1_norm ~pos:0 ~len:min_length, String.sub pid2_norm ~pos:0 ~len:min_length)
-  in
-  String.compare pid1_norm_trimmed pid2_norm_trimmed
-
-
 type file_extension = string [@@deriving compare]
 
 type weak_hash = string * string * string * Caml.Digest.t [@@deriving compare]
-
-let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
-  (*
-   * THIS HEURISTIC IS INTENDED FOR JAVA ONLY.
-   * Two issues are similar (for the purpose of anonymous class renamings detection)
-   * when all of the following apply:
-   *  1) they are Java files
-   *  2) their weak hashes match
-   *  3) their anonymous procedure ids match
-   *)
-  let string_of_procedure_id issue = DB.strip_crc issue.Jsonbug_t.procedure_id in
-  let extension fname = snd (Filename.split_extension fname) in
-  let compare (i1: Jsonbug_t.jsonbug) (i2: Jsonbug_t.jsonbug) =
-    [%compare : file_extension option * weak_hash * procedure_id]
-      (extension i1.file, (i1.kind, i1.bug_type, i1.file, i1.key), string_of_procedure_id i1)
-      (extension i2.file, (i2.kind, i2.bug_type, i2.file, i2.key), string_of_procedure_id i2)
-  in
-  let pred (issue: Jsonbug_t.jsonbug) =
-    let is_java_file () =
-      match extension issue.file with
-      | Some ext ->
-          String.equal (String.lowercase ext) "java"
-      | None ->
-          false
-    in
-    let has_anonymous_class_token () =
-      try
-        ignore (Str.search_forward java_anon_class_pattern issue.procedure_id 0) ;
-        true
-      with Caml.Not_found -> false
-    in
-    is_java_file () && has_anonymous_class_token ()
-  in
-  let introduced, preexisting, fixed =
-    relative_complements ~compare ~pred diff.introduced diff.fixed
-  in
-  { introduced
-  ; fixed
-  ; preexisting= preexisting @ diff.preexisting
-  ; costs_summary= diff.costs_summary }
-
 
 (* Strip issues whose paths are not among those we're interested in *)
 let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
@@ -245,9 +181,7 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
     else issues
   in
   let diff' =
-    diff |> (if Config.biabduction then skip_anonymous_class_renamings else Fn.id)
-    |> (if skip_duplicated_types then skip_duplicated_types_on_filenames renamings else Fn.id)
-    |> Fn.id
+    if skip_duplicated_types then skip_duplicated_types_on_filenames renamings diff else diff
   in
   { introduced= apply_paths_filter_if_needed `Introduced diff'.introduced
   ; fixed= apply_paths_filter_if_needed `Fixed diff'.fixed
@@ -259,8 +193,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let relative_complements = relative_complements
 
   let skip_duplicated_types_on_filenames = skip_duplicated_types_on_filenames
-
-  let skip_anonymous_class_renamings = skip_anonymous_class_renamings
 
   let interesting_paths_filter = interesting_paths_filter
 end

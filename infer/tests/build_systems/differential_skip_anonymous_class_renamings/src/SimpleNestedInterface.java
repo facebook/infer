@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// This example tests the skip_anonymous_class_renamings filter
+// This example tests that anonymous class renaming does not affect the
+// computation of the pre-existing warnings
 public interface SimpleNestedInterface {
     public void doSomething();
 }

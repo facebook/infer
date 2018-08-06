@@ -188,121 +188,6 @@ let test_skip_duplicated_types_on_filenames =
   "test_skip_duplicated_types_on_filenames" >:: do_assert
 
 
-let test_skip_anonymous_class_renamings =
-  let create_test input_diff (exp_introduced, exp_fixed, exp_preexisting) _ =
-    let diff' =
-      DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.skip_anonymous_class_renamings
-        input_diff
-    in
-    assert_equal
-      ~pp_diff:(pp_diff_of_string_list "Hashes of introduced")
-      exp_introduced
-      (sorted_hashes_of_issues diff'.introduced) ;
-    assert_equal
-      ~pp_diff:(pp_diff_of_string_list "Hashes of fixed")
-      exp_fixed
-      (sorted_hashes_of_issues diff'.fixed) ;
-    assert_equal
-      ~pp_diff:(pp_diff_of_string_list "Hashes of preexisting")
-      exp_preexisting
-      (sorted_hashes_of_issues diff'.preexisting)
-  in
-  (* [(test_name, diff, expected hashes); ...] *)
-  [ ( "test_skip_anonymous_class_renamings_with_long_procedure_ids"
-    , Differential.of_reports
-        ~current_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                ( "com.whatever.package00.abcd."
-                ^ "ABasicExampleFragment$83.onMenuItemActionExpand(android.view.MenuItem):b."
-                ^ "5ab5e18cae498c35d887ce88f3d5fa82" )
-              ~file:"a.java" ~key:"1" ~hash:"3" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                ( "com.whatever.package00.abcd."
-                ^ "ABasicExampleFragment$83$7.onMenuItemActionExpand(android.view.MenuItem)."
-                ^ "522cc747174466169781c9d2fc980dbc" )
-              ~file:"a.java" ~key:"1" ~hash:"4" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:"procid5.c854fd4a98113d9ab5b82deb3545de89" ~file:"b.java" ~key:"5"
-              ~hash:"5" () ]
-        ~previous_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                ( "com.whatever.package00.abcd."
-                ^ "ABasicExampleFragment$9.onMenuItemActionExpand(android.view.MenuItem):bo."
-                ^ "ba1776155fba2899542401da5bc779a5" )
-              ~file:"a.java" ~key:"1" ~hash:"1" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:"procid2.92095aee3f1884c37e96feae031f4931" ~file:"b.java" ~key:"2"
-              ~hash:"2" () ]
-    , (["4"; "5"], ["2"], ["3"]) )
-  ; ( "test_skip_anonymous_class_renamings_with_empty_qualifier_tags"
-    , Differential.of_reports
-        ~current_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.java" ~key:"1" ~hash:"1" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:
-                "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.java" ~key:"1" ~hash:"3" () ]
-        ~previous_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:"1" ~hash:"2" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:
-                "com.whatever.package.Class$8.foo():bool.cffd4e941668063eb802183dbd3e856d"
-              ~file:"a.java" ~key:"1" ~hash:"4" () ]
-    , (["1"], ["2"], ["3"]) )
-  ; ( "test_skip_anonymous_class_renamings_with_matching_non_anonymous_procedure_ids"
-    , Differential.of_reports
-        ~current_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:"1" ~hash:"1" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:"1" ~hash:"3" () ]
-        ~previous_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:"1" ~hash:"2" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:"1" ~hash:"4" () ]
-    , (["1"; "3"], ["2"; "4"], []) )
-  ; ( "test_skip_anonymous_class_renamings_with_non_java_files"
-    , Differential.of_reports
-        ~current_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$3$1.foo():bool.9ff39eb5c53c81da9f6a7ade324345b6"
-              ~file:"a.java" ~key:"1" ~hash:"1" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:
-                "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.mm" ~key:"1" ~hash:"3" () ]
-        ~previous_report:
-          [ create_fake_jsonbug ~bug_type:"bug_type_1"
-              ~procedure_id:
-                "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:"1" ~hash:"2" ()
-          ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:
-                "com.whatever.package.Class$8.foo():bool.cffd4e941668063eb802183dbd3e856d"
-              ~file:"a.mm" ~key:"1" ~hash:"4" () ]
-    , (["3"], ["4"], ["1"]) ) ]
-  |> List.map ~f:(fun (name, diff, expected_output) -> name >:: create_test diff expected_output)
-
-
 let test_interesting_paths_filter =
   let report =
     [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:"1" ()
@@ -339,5 +224,5 @@ let test_interesting_paths_filter =
 let tests =
   "differential_filters_suite"
   >::: test_file_renamings_from_json @ test_file_renamings_find_previous
-       @ test_relative_complements @ test_skip_anonymous_class_renamings
-       @ test_interesting_paths_filter @ [test_skip_duplicated_types_on_filenames]
+       @ test_relative_complements @ test_interesting_paths_filter
+       @ [test_skip_duplicated_types_on_filenames]
