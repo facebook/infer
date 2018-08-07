@@ -50,7 +50,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_live_actuals_ actuals live_acc
 
 
-  let exec_instr astate _ _ = function
+  (* In C++14, for a lambda at block scope, constexpr variables in the
+     reaching scope may be used inside the lambda, even if they are
+     not captured.  For further details:
+     https://timsong-cpp.github.io/cppwp/n4140/expr.prim.lambda#12 *)
+  let add_local_consts_for_lambdas pdesc call_exp astate =
+    let pname = Procdesc.get_proc_name pdesc in
+    match call_exp with
+    | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp cpp_pname))
+      when Typ.Procname.ObjC_Cpp.is_cpp_lambda cpp_pname ->
+        Procdesc.get_locals pdesc
+        |> List.fold ~init:astate ~f:(fun acc var_data ->
+               let open ProcAttributes in
+               if Typ.is_const var_data.typ.quals then
+                 let const_local_var = Pvar.mk var_data.name pname |> Var.of_pvar in
+                 Domain.add const_local_var acc
+               else acc )
+    | _ ->
+        astate
+
+
+  let exec_instr astate {ProcData.pdesc} _ = function
     | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
@@ -68,7 +88,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         exp_add_live exp astate
     | Sil.Call ((ret_id, _), call_exp, actuals, _, _) ->
         Domain.remove (Var.of_id ret_id) astate |> exp_add_live call_exp
-        |> add_live_actuals actuals call_exp
+        |> add_live_actuals actuals call_exp |> add_local_consts_for_lambdas pdesc call_exp
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 
