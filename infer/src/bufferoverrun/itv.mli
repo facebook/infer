@@ -8,14 +8,8 @@
 open! IStd
 open! AbstractDomain.Types
 module F = Format
-
-module Counter : sig
-  type t
-
-  val make : int -> t
-
-  val next : t -> int
-end
+module Bound = Bounds.Bound
+module Counter = Counter
 
 module Boolean : sig
   type t
@@ -31,61 +25,10 @@ module Boolean : sig
   val is_true : t -> bool
 end
 
-module SymbolPath : sig
-  type partial [@@deriving compare]
-
-  type t [@@deriving compare]
-
-  val of_pvar : Pvar.t -> partial
-
-  val index : partial -> partial
-
-  val field : partial -> Typ.Fieldname.t -> partial
-
-  val normal : partial -> t
-
-  val offset : partial -> t
-
-  val length : partial -> t
-end
-
-module Symbol : sig
-  type t
-end
-
-module SymbolTable : sig
-  type summary_t
-
-  val pp : F.formatter -> summary_t -> unit
-
-  val find_opt : SymbolPath.t -> summary_t -> (Symbol.t * Symbol.t) option
-
-  type t
-
-  val empty : unit -> t
-
-  val summary_of : t -> summary_t
-end
-
-module SymbolMap : PrettyPrintable.PPMap with type key = Symbol.t
-
-module Bound : sig
-  type t [@@deriving compare]
-
-  val zero : t
-
-  val is_const : t -> int option
-
-  val is_not_infty : t -> bool
-
-  val is_symbolic : t -> bool
-
-  val gt : t -> t -> bool
-
-  val le : t -> t -> bool
-
-  val lt : t -> t -> bool
-end
+module SymbolMap = Symb.SymbolMap
+module Symbol = Symb.Symbol
+module SymbolPath = Symb.SymbolPath
+module SymbolTable = Symb.SymbolTable
 
 module NonNegativePolynomial : sig
   include AbstractDomain.WithTop
@@ -209,7 +152,8 @@ val of_int_lit : IntLit.t -> t
 
 val of_int64 : Int64.t -> t
 
-val make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
+val make_sym :
+  ?unsigned:bool -> Typ.Procname.t -> Symb.SymbolTable.t -> Symb.SymbolPath.t -> Counter.t -> t
 
 val lb : t -> Bound.t
 

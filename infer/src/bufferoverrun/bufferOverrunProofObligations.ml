@@ -13,6 +13,7 @@ module ItvPure = Itv.ItvPure
 module Relation = BufferOverrunDomainRelation
 module MF = MarkupFormatter
 module ValTraceSet = BufferOverrunTrace.Set
+module Bound = Bounds.Bound
 
 type checked_condition = {report_issue_type: IssueType.t option; propagate: bool}
 
@@ -70,13 +71,13 @@ module AllocSizeCondition = struct
       match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
       | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
           {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
-      | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.lb length) ->
+      | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
           {report_issue_type= Some IssueType.inferbo_alloc_may_be_negative; propagate= true}
       | cmp_mone ->
         match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
         | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
             {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
-        | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.ub length) ->
+        | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
             {report_issue_type= Some IssueType.inferbo_alloc_may_be_big; propagate= true}
         | cmp_big ->
             let propagate =
@@ -196,27 +197,27 @@ module ArrayAccessCondition = struct
     (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
     && (* except the following cases *)
        not
-         ( Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+         ( Bound.is_not_infty (ItvPure.lb c.idx)
            && (* idx non-infty lb < 0 *)
-              Itv.Bound.lt (ItvPure.lb c.idx) Itv.Bound.zero
-         || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+              Bound.lt (ItvPure.lb c.idx) Bound.zero
+         || Bound.is_not_infty (ItvPure.lb c.idx)
             && (* idx non-infty lb > size lb *)
-               Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
-         || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
+               Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
+         || Bound.is_not_infty (ItvPure.lb c.idx)
             && (* idx non-infty lb > size ub *)
-               Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
-         || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+               Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
+         || Bound.is_not_infty (ItvPure.ub c.idx)
             && (* idx non-infty ub > size lb *)
-               Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
-         || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+               Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
+         || Bound.is_not_infty (ItvPure.ub c.idx)
             && (* idx non-infty ub > size ub *)
-               Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
+               Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
 
 
   (* check buffer overrun and return its confidence *)
   let check : is_arraylist_add:bool -> t -> checked_condition =
    fun ~is_arraylist_add c ->
-    (* idx = [il, iu], size = [sl, su], 
+    (* idx = [il, iu], size = [sl, su],
        For arrays : we want to check that 0 <= idx < size
        For adding into arraylists: we want to check that 0 <= idx <= size *)
     let c' = set_size_pos c in
@@ -238,13 +239,11 @@ module ArrayAccessCondition = struct
       {report_issue_type= Some IssueType.buffer_overrun_l1; propagate= false}
       (* su <= iu < +oo, most probably an error *)
     else if
-      Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-      && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
+      Bound.is_not_infty (ItvPure.ub c.idx) && Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
     then {report_issue_type= Some IssueType.buffer_overrun_l2; propagate= false}
       (* symbolic il >= sl, probably an error *)
     else if
-      Itv.Bound.is_symbolic (ItvPure.lb c.idx)
-      && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
+      Bound.is_symbolic (ItvPure.lb c.idx) && Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
     then {report_issue_type= Some IssueType.buffer_overrun_s2; propagate= true}
     else
       (* other symbolic bounds are probably too noisy *)

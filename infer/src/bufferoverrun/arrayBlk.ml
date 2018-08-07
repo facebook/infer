@@ -11,6 +11,7 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
+module Bound = Bounds.Bound
 
 module ArrInfo = struct
   type t = {offset: Itv.t; size: Itv.t; stride: Itv.t} [@@deriving compare]
@@ -55,7 +56,7 @@ module ArrInfo = struct
 
   let diff : t -> t -> Itv.astate = fun arr1 arr2 -> Itv.minus arr1.offset arr2.offset
 
-  let subst : t -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> t =
+  let subst : t -> Bound.t bottom_lifted Itv.SymbolMap.t -> t =
    fun arr subst_map ->
     {arr with offset= Itv.subst arr.offset subst_map; size= Itv.subst arr.size subst_map}
 
@@ -136,7 +137,7 @@ let get_pow_loc : astate -> PowLoc.t =
   fold pow_loc_of_allocsite array PowLoc.bot
 
 
-let subst : astate -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> astate =
+let subst : astate -> Bound.t bottom_lifted Itv.SymbolMap.t -> astate =
  fun a subst_map -> map (fun info -> ArrInfo.subst info subst_map) a
 
 
