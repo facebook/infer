@@ -36,6 +36,7 @@ codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, MEM
 codetoanalyze/c/errors/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, simple_leak, 2, MEMORY_LEAK, no_bucket
 codetoanalyze/c/errors/memory_leaks/test.c, uses_allocator, 3, MEMORY_LEAK, no_bucket
+codetoanalyze/c/errors/mutex/pthread_create.c, pthread_create_deref_bad, 2, NULL_DEREFERENCE, B5
 codetoanalyze/c/errors/mutex/pthread_mutex.c, double_init_bad, 2, PRECONDITION_NOT_MET, no_bucket
 codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_bad2, 4, LOCKING_ALREADY_LOCKED_MUTEX, no_bucket
 codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_bad2, 4, LOCKING_UNINITIALIZED_MUTEX, no_bucket

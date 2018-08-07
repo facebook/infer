@@ -635,30 +635,39 @@ let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r)
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_pthread_create ({Builtin.tenv; prop_; path; args; exe_env} as builtin_args)
+let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as builtin_args)
     : Builtin.ret_typ =
   match args with
   | [_; _; start_routine; arg]
     -> (
       let routine_name = Prop.exp_normalize_prop tenv prop_ (fst start_routine) in
       let routine_arg = Prop.exp_normalize_prop tenv prop_ (fst arg) in
-      match (routine_name, snd start_routine) with
-      | Exp.Lvar pvar, _
-        -> (
-          let fun_name = Pvar.get_name pvar in
-          let fun_string = Mangled.to_string fun_name in
-          L.d_strln ("pthread_create: calling function " ^ fun_string) ;
-          match Summary.get (Typ.Procname.from_string_c_fun fun_string) with
-          | None ->
-              assert false
-          | Some callee_summary ->
-              SymExec.proc_call exe_env callee_summary
-                {builtin_args with args= [(routine_arg, snd arg)]} )
-      | _ ->
+      let pname =
+        match (routine_name, snd start_routine) with
+        | Exp.Lvar pvar, _ ->
+            let fun_name = Pvar.get_name pvar in
+            let fun_string = Mangled.to_string fun_name in
+            Some (Typ.Procname.from_string_c_fun fun_string)
+        | Exp.Const (Cfun pname), _ ->
+            Some pname
+        | _ ->
+            None
+      in
+      match pname with
+      | None ->
           L.d_str "pthread_create: unknown function " ;
           Sil.d_exp routine_name ;
           L.d_strln ", skipping call." ;
-          [(prop_, path)] )
+          [(prop_, path)]
+      | Some pname ->
+          L.d_strln ("pthread_create: calling function " ^ Typ.Procname.to_string pname) ;
+          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc pname with
+          | None ->
+              (* no precondition to check, skip *)
+              [(prop_, path)]
+          | Some callee_summary ->
+              SymExec.proc_call exe_env callee_summary
+                {builtin_args with args= [(routine_arg, snd arg)]} )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
