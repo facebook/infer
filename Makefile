@@ -93,7 +93,7 @@ ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck genrule
+BUILD_SYSTEMS_TESTS += buck genrule buck_javac_jar
 # Introduce the dependency only if the two tests are going to be built in parallel, so that they do
 # not run in parallel (otherwise Buck has a bad time). This works by checking if one of the main
 # testing targets was passed as a goal on the command line.
