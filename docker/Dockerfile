@@ -17,7 +17,6 @@ RUN apt-get update && \
       openjdk-8-jdk-headless \
       pkg-config \
       python2.7 \
-      libsqlite3-dev \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
