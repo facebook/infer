@@ -357,3 +357,5 @@ let untrusted_url_risk = from_string "UNTRUSTED_URL_RISK"
 let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 
 let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"
+
+let zero_execution_time_call = from_string ~enabled:false "ZERO_EXECUTION_TIME_CALL"

@@ -48,6 +48,7 @@ codetoanalyze/java/performance/Cost_test.java, int Cost_test.loop3(int), 2, EXPE
 codetoanalyze/java/performance/Cost_test.java, int Cost_test.main_bad(), 8, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 237, degree = 0]
 codetoanalyze/java/performance/Cost_test.java, int Cost_test.main_bad(), 8, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 205, degree = 0]
 codetoanalyze/java/performance/Cost_test.java, int Cost_test.main_bad(), 9, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 243, degree = 0]
+codetoanalyze/java/performance/Cost_test.java, void Cost_test.zeroCostFunction(), 0, ZERO_EXECUTION_TIME_CALL, no_bucket, ERROR, []
 codetoanalyze/java/performance/Cost_test_deps.java, int Cost_test_deps.if_bad_loop(), 12, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 201, degree = 0]
 codetoanalyze/java/performance/Cost_test_deps.java, int Cost_test_deps.loop_despite_inferbo(int), 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1303, degree = 0]
 codetoanalyze/java/performance/Cost_test_deps.java, int Cost_test_deps.loop_despite_inferbo(int), 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1302, degree = 0]

@@ -43,6 +43,8 @@ module NonNegativePolynomial : sig
 
   val is_top : astate -> bool
 
+  val is_zero : astate -> bool
+
   val plus : astate -> astate -> astate
 
   val mult : astate -> astate -> astate

@@ -270,3 +270,5 @@ val untrusted_variable_length_array : t
 val user_controlled_sql_risk : t
 
 val wrong_argument_number : t
+
+val zero_execution_time_call : t

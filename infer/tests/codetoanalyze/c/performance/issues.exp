@@ -46,6 +46,7 @@ codetoanalyze/c/performance/cost_test.c, main_bad, 8, EXPENSIVE_EXECUTION_TIME_C
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1 + 5 * (-m.lb + 20), degree = 1]
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1 + 5 * (-m.lb + 20), degree = 1]
 codetoanalyze/c/performance/cost_test.c, while_upto20_bad, 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 3 + 5 * (-m.lb + 20), degree = 1]
+codetoanalyze/c/performance/cost_test.c, zero_cost_function, 0, ZERO_EXECUTION_TIME_CALL, no_bucket, ERROR, []
 codetoanalyze/c/performance/cost_test_deps.c, if_bad_loop, 12, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 201, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1204, degree = 0]
 codetoanalyze/c/performance/cost_test_deps.c, loop_despite_inferbo, 3, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1204, degree = 0]

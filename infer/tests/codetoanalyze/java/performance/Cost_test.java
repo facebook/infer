@@ -116,4 +116,7 @@ public class Cost_test {
     k4 = bar_OK() + foo_OK() + cond_OK(19) * 3;
     return 0;
   }
+
+  // Cost: 0
+  private static void zeroCostFunction() {}
 }

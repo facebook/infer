@@ -368,6 +368,8 @@ module NonNegativePolynomial = struct
 
   let is_top = function Top -> true | _ -> false
 
+  let is_zero = function NonTop p when NonNegativeNonTopPolynomial.is_zero p -> true | _ -> false
+
   let top_lifted_increasing ~f p1 p2 =
     match (p1, p2) with Top, _ | _, Top -> Top | NonTop p1, NonTop p2 -> NonTop (f p1 p2)
 

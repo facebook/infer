@@ -974,17 +974,24 @@ end
 
 module AnalyzerWCET = AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsWCET)
 
-let check_and_report_infinity cost proc_desc summary =
-  if BasicCost.is_top cost then
-    let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
-    let message =
-      F.asprintf "The execution time of the function %a cannot be computed" Typ.Procname.pp
-        (Procdesc.get_proc_name proc_desc)
-    in
-    let exn =
-      Exceptions.Checkers (IssueType.infinite_execution_time_call, Localise.verbatim_desc message)
-    in
-    Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary exn
+let check_and_report_top_and_bottom cost proc_desc summary =
+  let message =
+    F.asprintf "The execution time of the function %a %s" Typ.Procname.pp
+      (Procdesc.get_proc_name proc_desc)
+  in
+  let exn_opt =
+    if BasicCost.is_top cost then
+      let msg = message "cannot be computed" in
+      Some
+        (Exceptions.Checkers (IssueType.infinite_execution_time_call, Localise.verbatim_desc msg))
+    else if BasicCost.is_zero cost then
+      let msg = message "is zero" in
+      Some (Exceptions.Checkers (IssueType.zero_execution_time_call, Localise.verbatim_desc msg))
+    else None
+  in
+  let loc () = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+  Option.iter exn_opt
+    ~f:(Reporting.log_error ~loc:(loc ()) ~extras:(compute_errlog_extras cost) summary)
 
 
 let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
@@ -1068,7 +1075,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
         pp_extra BasicCost.pp exit_cost ;
-      check_and_report_infinity exit_cost proc_desc summary ;
+      check_and_report_top_and_bottom exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
