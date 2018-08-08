@@ -82,36 +82,37 @@ let print_results tenv actual_pre results =
 
 
 let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic_dispatch loc res =
-  let get_valid_source_file loc =
-    let file = loc.Location.file in
-    if SourceFile.is_invalid file then None else Some file
-  in
-  let callee_clang_method_kind, callee_source_file =
-    match callee_attributes with
-    | Some attributes when Language.curr_language_is Language.Clang ->
-        let callee_clang_method_kind =
-          ProcAttributes.string_of_clang_method_kind attributes.ProcAttributes.clang_method_kind
-        in
-        let callee_source_file = get_valid_source_file attributes.ProcAttributes.loc in
-        (Some callee_clang_method_kind, callee_source_file)
-    | Some attributes ->
-        (None, get_valid_source_file attributes.ProcAttributes.loc)
-    | None ->
-        (None, None)
-  in
-  let call_trace =
-    EventLogger.CallTrace
-      { call_location= loc
-      ; call_result= string_of_call_result res
-      ; callee_clang_method_kind
-      ; callee_source_file
-      ; callee_name= Typ.Procname.to_string callee_name
-      ; caller_name= Typ.Procname.to_string caller_name
-      ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string
-      ; reason
-      ; dynamic_dispatch }
-  in
-  if !Config.footprint then EventLogger.log call_trace
+  if !Config.footprint then
+    let get_valid_source_file loc =
+      let file = loc.Location.file in
+      if SourceFile.is_invalid file then None else Some file
+    in
+    let callee_clang_method_kind, callee_source_file =
+      match callee_attributes with
+      | Some attributes when Language.curr_language_is Language.Clang ->
+          let callee_clang_method_kind =
+            ProcAttributes.string_of_clang_method_kind attributes.ProcAttributes.clang_method_kind
+          in
+          let callee_source_file = get_valid_source_file attributes.ProcAttributes.loc in
+          (Some callee_clang_method_kind, callee_source_file)
+      | Some attributes ->
+          (None, get_valid_source_file attributes.ProcAttributes.loc)
+      | None ->
+          (None, None)
+    in
+    let call_trace =
+      EventLogger.CallTrace
+        { call_location= loc
+        ; call_result= string_of_call_result res
+        ; callee_clang_method_kind
+        ; callee_source_file
+        ; callee_name= Typ.Procname.to_string callee_name
+        ; caller_name= Typ.Procname.to_string caller_name
+        ; lang= Typ.Procname.get_language caller_name |> Language.to_explicit_string
+        ; reason
+        ; dynamic_dispatch }
+    in
+    EventLogger.log call_trace
 
 
 (***************)
