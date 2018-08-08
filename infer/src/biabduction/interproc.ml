@@ -1245,7 +1245,6 @@ let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
     | _ ->
         summaryre
   in
-  Summary.add proc_name summary_compact ;
   summary_compact
 
 

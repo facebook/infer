@@ -36,20 +36,6 @@ end
 
 (** Create a module with the toplevel callback. *)
 module MkCallback (Extension : ExtensionT) : CallBackT = struct
-  (** Update the summary with stats from the checker. *)
-  let update_summary proc_name final_typestate_opt =
-    match Summary.get proc_name with
-    | Some old_summ ->
-        let new_summ =
-          { old_summ with
-            Summary.payloads=
-              Extension.update_payloads final_typestate_opt old_summ.Summary.payloads }
-        in
-        Summary.add proc_name new_summ
-    | None ->
-        ()
-
-
   let callback1 tenv find_canonical_duplicate calls_this checks get_proc_desc idenv curr_pname
       curr_pdesc annotated_signature linereader proc_loc
       : bool * Extension.extension TypeState.t option =
@@ -321,7 +307,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       EradicateChecks.check_overridden_annotations find_canonical_duplicate tenv curr_pname
         curr_pdesc annotated_signature ;
     TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pdesc ;
-    update_summary curr_pname final_typestate_opt
+    ()
 
 
   (** Entry point for the eradicate-based checker infrastructure. *)

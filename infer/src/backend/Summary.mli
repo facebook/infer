@@ -54,9 +54,6 @@ type t =
 val dummy : t
 (** dummy summary for testing *)
 
-val add : Typ.Procname.t -> t -> unit
-(** Add the summary to the table for the given function *)
-
 val has_model : Typ.Procname.t -> bool
 (** Check if a summary for a given procedure exists in the models directory *)
 
