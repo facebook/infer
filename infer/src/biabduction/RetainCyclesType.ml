@@ -94,7 +94,7 @@ let is_exp_null node =
   match node with Object obj -> Exp.is_null_literal obj.rc_from.rc_node_exp | Block _ -> false
 
 
-let _retain_cycle_node_to_string (node: retain_cycle_node) =
+let retain_cycle_node_to_string (node: retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
 
@@ -104,22 +104,22 @@ let retain_cycle_field_to_string (field: retain_cycle_field) =
     (Sil.inst_to_string field.rc_field_inst)
 
 
-let _retain_cycle_edge_to_string (edge: retain_cycle_edge) =
+let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
   match edge with
   | Object obj ->
       Format.sprintf "%s ->{%s}"
-        (_retain_cycle_node_to_string obj.rc_from)
+        (retain_cycle_node_to_string obj.rc_from)
         (retain_cycle_field_to_string obj.rc_field)
   | Block _ ->
       Format.sprintf "a block"
 
 
-let _retain_cycle_to_string cycle =
+let retain_cycle_to_string cycle =
   "Cycle= \n\t"
-  ^ String.concat ~sep:"->" (List.map ~f:_retain_cycle_edge_to_string cycle.rc_elements)
+  ^ String.concat ~sep:"->" (List.map ~f:retain_cycle_edge_to_string cycle.rc_elements)
 
 
-let print_cycle cycle = Logging.d_strln (_retain_cycle_to_string cycle)
+let print_cycle cycle = Logging.d_strln (retain_cycle_to_string cycle)
 
 let find_minimum_element cycle =
   List.reduce_exn cycle.rc_elements ~f:(fun el1 el2 ->

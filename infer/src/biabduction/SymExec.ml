@@ -1908,8 +1908,8 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
 
 
 (** perform symbolic execution for a single prop, and check for junk *)
-and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t), path)
-    : Paths.PathSet.t =
+and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
+    ((prop: Prop.normal Prop.t), path) : Paths.PathSet.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let prop_primed_to_normal p =
     (* Rename primed vars with fresh normal vars, and return them *)
@@ -1950,7 +1950,7 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
       (* Check for retain cycles after assignments and method calls *)
       ( match instr with
       | (Sil.Store _ | Sil.Call _) when !Config.footprint ->
-          List.iter ~f:(RetainCycles.report_cycle tenv pname) [p]
+          List.iter ~f:(RetainCycles.report_cycle tenv summary) [p]
       | _ ->
           () ) ;
       let node_has_abstraction node =
@@ -2000,7 +2000,7 @@ and sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr ((prop: Prop.normal 
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
-let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.Node.t)
+let node handle_exn exe_env tenv summary proc_cfg (node: ProcCfg.Exceptional.Node.t)
     (pset: Paths.PathSet.t) : Paths.PathSet.t =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
@@ -2015,7 +2015,7 @@ let node handle_exn exe_env tenv proc_cfg (node: ProcCfg.Exceptional.Node.t)
         Sil.d_instr instr ;
         L.d_strln " due to exception" ;
         Paths.PathSet.from_renamed_list [(p, tr)] )
-      else sym_exec_wrapper exe_env handle_exn tenv proc_cfg instr (p, tr)
+      else sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr (p, tr)
     in
     Paths.PathSet.union pset2 pset1
   in

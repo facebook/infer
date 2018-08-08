@@ -376,14 +376,14 @@ let instrs_get_normal_vars instrs =
 
 
 (** Perform symbolic execution for a node starting from an initial prop *)
-let do_symbolic_execution exe_env proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.Node.t)
-    (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
+let do_symbolic_execution exe_env summary proc_cfg handle_exn tenv
+    (node: ProcCfg.Exceptional.Node.t) (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
   State.mark_execution_start node ;
   let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs) ;
   let pset =
-    SymExec.node handle_exn exe_env tenv proc_cfg node
+    SymExec.node handle_exn exe_env tenv summary proc_cfg node
       (Paths.PathSet.from_renamed_list [(prop, path)])
   in
   L.d_strln ".... After Symbolic Execution ...." ;
@@ -457,7 +457,9 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     L.d_increase_indent 1 ;
     try
       State.reset_diverging_states_node () ;
-      let pset = do_symbolic_execution exe_env proc_cfg handle_exn tenv curr_node prop path in
+      let pset =
+        do_symbolic_execution exe_env summary proc_cfg handle_exn tenv curr_node prop path
+      in
       propagate_nodes_divergence tenv proc_cfg pset curr_node wl ;
       L.d_decrease_indent 1 ;
       L.d_ln ()

@@ -7,4 +7,4 @@
 
 open! IStd
 
-val report_cycle : Tenv.t -> Typ.Procname.t -> Prop.normal Prop.t -> unit
+val report_cycle : Tenv.t -> Summary.t -> Prop.normal Prop.t -> unit

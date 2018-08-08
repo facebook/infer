@@ -213,7 +213,7 @@ let get_cycles found_cycles root tenv prop =
       found_cycles
 
 
-(* Find all the cycles available in prop, up to a limit of 10 *)
+(** Find all the cycles available in prop, up to a limit of 10 *)
 let get_retain_cycles tenv prop =
   let get_retain_cycles_with_root acc_set root = get_cycles acc_set root tenv prop in
   let sigma = prop.Prop.sigma in
@@ -233,21 +233,16 @@ let exn_retain_cycle tenv cycle =
   Exceptions.Retain_cycle (desc, __POS__)
 
 
-let report_cycle tenv pname prop =
-  (* When there is a cycle in objc we ignore it
-        only if it's empty or it has weak or unsafe_unretained fields.
-        Otherwise we report a retain cycle. *)
+let report_cycle tenv summary prop =
+  (* When there is a cycle in objc we ignore it only if it's empty or it has weak or
+     unsafe_unretained fields.  Otherwise we report a retain cycle. *)
   let cycles = get_retain_cycles tenv prop in
   RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
-  match Summary.get pname with
-  | Some summary ->
-      if RetainCyclesType.Set.cardinal cycles > 0 then (
-        RetainCyclesType.Set.iter
-          (fun cycle ->
-            let exn = exn_retain_cycle tenv cycle in
-            Reporting.log_error summary exn )
-          cycles ;
-        (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
-        raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )
-  | None ->
-      ()
+  if RetainCyclesType.Set.cardinal cycles > 0 then (
+    RetainCyclesType.Set.iter
+      (fun cycle ->
+        let exn = exn_retain_cycle tenv cycle in
+        Reporting.log_error summary exn )
+      cycles ;
+    (* we report the retain cycles above but need to raise an exception as well to stop the analysis *)
+    raise (Exceptions.Dummy_exception (Localise.verbatim_desc "retain cycle found")) )

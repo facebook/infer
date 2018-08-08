@@ -30,9 +30,3 @@ val create_cycle : retain_cycle_edge list -> t option
 val pp_dotty : Format.formatter -> t -> unit
 
 val write_dotty_to_file : string -> t -> unit
-
-val _retain_cycle_edge_to_string : retain_cycle_edge -> string
-
-val _retain_cycle_node_to_string : retain_cycle_node -> string
-
-val _retain_cycle_to_string : t -> string
