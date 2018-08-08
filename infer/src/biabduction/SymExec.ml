@@ -1216,13 +1216,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
       Reporting.log_info_deprecated current_pname exn ;
       L.d_strln
         (F.sprintf "Skipping function '%s': %s" (Typ.Procname.to_string callee_pname) reason) ;
-      ( match Summary.get current_pname with
-      | None ->
-          ()
-      | Some summary ->
-          let caller_name = Summary.get_proc_name summary in
-          Tabulation.log_call_trace ~caller_name ~callee_name:callee_pname ?callee_attributes
-            ~reason loc Tabulation.CR_skip ) ;
+      Tabulation.log_call_trace ~caller_name:current_pname ~callee_name:callee_pname
+        ?callee_attributes ~reason loc Tabulation.CR_skip ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
         Builtin.
           { pdesc= current_pdesc
