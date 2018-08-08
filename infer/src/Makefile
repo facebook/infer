@@ -184,8 +184,12 @@ $(INFER_BUILD_DIR)/infertop.bc: $(SRC_DIR)/infertop.ml $(SRC_BUILD_COMMON) $(MAK
 	dune build $@
 	$(QUIET)touch $@
 
+$(INFERTOP_BIN): $(INFER_BUILD_DIR)/infertop.bc
+	$(QUIET)$(INSTALL_PROGRAM) $< $@
+	$(QUIET)touch $@
+
 .PHONY: toplevel
-toplevel: $(INFER_BUILD_DIR)/infertop.bc
+toplevel: $(INFERTOP_BIN)
 
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)

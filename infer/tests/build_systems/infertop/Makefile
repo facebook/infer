@@ -11,8 +11,8 @@ include $(TESTS_DIR)/base.make
 toplevel.exp.test: $(BUILD_DIR)/test/infertop.bc $(SCRIPT_DIR)/infer_repl \
                    $(SCRIPT_DIR)/toplevel_init $(INFER_DIR)/tests/repl/infer_batch_script.mltop
 	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
-	TOPLEVEL_DIR=$(BUILD_DIR)/test $(SCRIPT_DIR)/infer_repl \
-	  $(INFER_DIR)/tests/repl/infer_batch_script.mltop > $@)
+	BUILD_DIR=$(BUILD_DIR)/test \
+	$(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.mltop > $@)
 
 .PHONY: print
 print: toplevel.exp.test

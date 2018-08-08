@@ -202,13 +202,19 @@ endif
 endif
 
 
-.PHONY: toplevel
-toplevel: src_build_common
+.PHONY: toplevel toplevel_test
+toplevel toplevel_test: src_build_common
+
+toplevel:
 	$(QUIET)$(call silent_on_success,Building Infer REPL,\
 	$(MAKE_SOURCE) toplevel)
 	$(QUIET)echo
 	$(QUIET)echo "You can now use the infer REPL:"
 	$(QUIET)echo "  \"$(ABSOLUTE_ROOT_DIR)/scripts/infer_repl\""
+
+toplevel_test: test_build
+	$(QUIET)$(call silent_on_success,Building Infer REPL (test mode),\
+	$(MAKE_SOURCE) BUILD_MODE=test toplevel)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 byte src_build_common src_build test_build: fb-setup
@@ -355,7 +361,7 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_replace): infer
 	$(call silence_make,\
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_replace,%,$@) replace))
 
-build_infertop_print build_infertop_test build_infertop_replace: test_build
+build_infertop_print build_infertop_test build_infertop_replace: toplevel_test
 
 .PHONY: build_systems_tests
 build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)

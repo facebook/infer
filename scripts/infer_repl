@@ -5,8 +5,8 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # where to find toplevel.bc, can be overridden
-TOPLEVEL_DIR=${TOPLEVEL_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
-INCLUDE_FLAGS=$(find "$TOPLEVEL_DIR" -type d -name '*.objs' -exec printf -- '-I {}\n' \;)
+BUILD_DIR=${BUILD_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
+INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}\n' \;)
 
 # The -init option is effective only in interactive mode.
 # In batch mode, scripts need to import toplevel_init themselves.
@@ -19,7 +19,7 @@ INCLUDE_FLAGS=$(find "$TOPLEVEL_DIR" -type d -name '*.objs' -exec printf -- '-I 
 set -x
 # infertop expects to be run from where dune is located
 cd "$SCRIPT_DIR"/../infer
-"$TOPLEVEL_DIR"/infertop.bc \
+./bin/infertop.bc \
   -init "$SCRIPT_DIR"/toplevel_init \
   $INCLUDE_FLAGS \
   -I "$SCRIPT_DIR" \
