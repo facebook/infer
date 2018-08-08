@@ -17,9 +17,7 @@ INCLUDE_FLAGS=$(find "$BUILD_DIR" -type d -name '*.objs' -exec printf -- '-I {}\
 #       file. In interactive mode $SCRIPT_DIR isn't needed
 
 set -x
-# infertop expects to be run from where dune is located
-cd "$SCRIPT_DIR"/../infer
-./bin/infertop.bc \
+"$SCRIPT_DIR"/../infer/bin/infertop.bc \
   -init "$SCRIPT_DIR"/toplevel_init \
   $INCLUDE_FLAGS \
   -I "$SCRIPT_DIR" \
