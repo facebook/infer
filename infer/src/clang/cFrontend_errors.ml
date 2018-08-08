@@ -158,7 +158,7 @@ let remove_new_lines_and_whitespace message =
   String.concat words ~sep:" "
 
 
-let string_to_err_kind = function
+let string_to_severity = function
   | "WARNING" ->
       Exceptions.Kwarning
   | "ERROR" ->
@@ -221,7 +221,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
         | CDesc (av, sugg) when ALVar.is_suggestion_keyword av ->
             ({issue with suggestion= Some sugg}, cond, wl_paths, bl_paths)
         | CDesc (av, sev) when ALVar.is_severity_keyword av ->
-            ({issue with severity= string_to_err_kind sev}, cond, wl_paths, bl_paths)
+            ({issue with severity= string_to_severity sev}, cond, wl_paths, bl_paths)
         | CDesc (av, m) when ALVar.is_mode_keyword av ->
             ({issue with mode= string_to_issue_mode m}, cond, wl_paths, bl_paths)
         | CDesc (av, doc) when ALVar.is_doc_url_keyword av ->
@@ -449,7 +449,6 @@ let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
   in
   let exn = Exceptions.Frontend_warning ((issue_desc.id, issue_desc.name), err_desc, __POS__) in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
-  let err_kind = issue_desc.severity in
   let key_str =
     match node with
     | Decl dec ->
@@ -458,8 +457,8 @@ let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
         CAst_utils.generate_key_stmt st
   in
   let key = Utils.better_hash key_str in
-  Reporting.log_issue_from_errlog procname err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
-    ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
+  Reporting.log_issue_from_errlog procname issue_desc.severity errlog exn ~loc:issue_desc.loc
+    ~ltr:trace ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc: CIssue.issue_desc)

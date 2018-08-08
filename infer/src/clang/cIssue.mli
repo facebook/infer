@@ -21,7 +21,7 @@ type issue_desc =
                            by removing underscores and capitalizing first letters of words *)
     loc: Location.t
   ; (* location in the code *)
-    severity: Exceptions.err_kind
+    severity: Exceptions.severity
   ; suggestion: string option
   (* an optional suggestion or correction *) }
 

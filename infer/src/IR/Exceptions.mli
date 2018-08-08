@@ -21,16 +21,10 @@ val equal_visibility : visibility -> visibility -> bool
 
 val string_of_visibility : visibility -> string
 
-(** severity of bugs *)
-type severity =
-  | High  (** high severity bug *)
-  | Medium  (** medium severity bug *)
-  | Low  (** low severity bug *)
+(** severity of the report *)
+type severity = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
 
-(** kind of error/warning *)
-type err_kind = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
-
-val equal_err_kind : err_kind -> err_kind -> bool
+val equal_severity : severity -> severity -> bool
 
 (** class of error *)
 type err_class = Checker | Prover | Nocat | Linters
@@ -153,7 +147,7 @@ exception Wrong_argument_number of Logging.ocaml_pos
 val err_class_string : err_class -> string
 (** string describing an error class *)
 
-val err_kind_string : err_kind -> string
+val severity_string : severity -> string
 (** string describing an error kind *)
 
 val handle_exception : exn -> bool
@@ -163,7 +157,7 @@ val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
 val pp_err :
-  node_key:Caml.Digest.t -> Location.t -> err_kind -> IssueType.t -> Localise.error_desc
+  node_key:Caml.Digest.t -> Location.t -> severity -> IssueType.t -> Localise.error_desc
   -> Logging.ocaml_pos option -> Format.formatter -> unit -> unit
 (** pretty print an error *)
 
@@ -172,8 +166,7 @@ type t =
   ; description: Localise.error_desc
   ; ocaml_pos: Logging.ocaml_pos option  (** location in the infer source code *)
   ; visibility: visibility
-  ; severity: severity
-  ; kind: err_kind option
+  ; severity: severity option
   ; category: err_class }
 
 val recognize_exception : exn -> t

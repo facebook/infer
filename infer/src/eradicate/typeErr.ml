@@ -233,7 +233,7 @@ module Severity = struct
         None
 
 
-  let err_instance_get_severity tenv err_instance : Exceptions.err_kind option =
+  let err_instance_get_severity tenv err_instance : Exceptions.severity option =
     match err_instance with
     | Call_receiver_annotation_inconsistent (AnnotatedSignature.Nullable, _, _, origin_descr)
     | Null_field_access (_, _, origin_descr, _) ->
@@ -247,7 +247,7 @@ end
 type st_report_error =
   Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
   -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.err_kind -> string -> unit
+  -> ?severity:Exceptions.severity -> string -> unit
 
 (** Report an error right now. *)
 let report_error_now tenv (st_report_error: st_report_error) err_instance loc pdesc : unit =

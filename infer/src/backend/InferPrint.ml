@@ -49,8 +49,8 @@ let compute_key (bug_type: string) (proc_name: Typ.Procname.t) (filename: string
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
-let compute_hash (kind: string) (bug_type: string) (proc_name: Typ.Procname.t) (filename: string)
-    (qualifier: string) =
+let compute_hash (severity: string) (bug_type: string) (proc_name: Typ.Procname.t)
+    (filename: string) (qualifier: string) =
   let base_filename = Filename.basename filename in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
   let location_independent_qualifier =
@@ -59,7 +59,7 @@ let compute_hash (kind: string) (bug_type: string) (proc_name: Typ.Procname.t) (
     Str.global_replace (Str.regexp "\\(line \\|column \\|n\\$\\)[0-9]+") "_" qualifier
   in
   Utils.better_hash
-    (kind, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
+    (severity, bug_type, hashable_procedure_name, base_filename, location_independent_qualifier)
   |> Caml.Digest.to_hex
 
 
@@ -124,8 +124,8 @@ let summary_values summary =
   ; vsymop= Summary.Stats.symops stats
   ; verr=
       Errlog.size
-        (fun ekind in_footprint ->
-          Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint )
+        (fun severity in_footprint ->
+          Exceptions.equal_severity severity Exceptions.Kerror && in_footprint )
         err_log
   ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
@@ -161,7 +161,7 @@ module ProcsCsv = struct
     pp "%s@\n" sv.vproof_trace
 end
 
-let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =
+let should_report (issue_kind: Exceptions.severity) issue_type error_desc eclass =
   if not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
     let issue_kind_is_blacklisted =
@@ -231,9 +231,9 @@ module IssuesJson = struct
     in
     if
       key.in_footprint && error_filter source_file key.err_name && should_report_source_file
-      && should_report key.err_kind key.err_name key.err_desc err_data.err_class
+      && should_report key.severity key.err_name key.err_desc err_data.err_class
     then (
-      let kind = Exceptions.err_kind_string key.err_kind in
+      let severity = Exceptions.severity_string key.severity in
       let bug_type = key.err_name.IssueType.unique_id in
       let file = SourceFile.to_string source_file in
       let json_ml_loc =
@@ -260,10 +260,10 @@ module IssuesJson = struct
       in
       let bug =
         { Jsonbug_j.bug_class= Exceptions.err_class_string err_data.err_class
-        ; kind
+        ; kind= severity
         ; bug_type
         ; qualifier
-        ; severity= key.severity
+        ; severity
         ; visibility
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
@@ -271,10 +271,10 @@ module IssuesJson = struct
         ; procedure_id= Typ.Procname.to_filename procname
         ; procedure_start_line
         ; file
-        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
+        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.severity
         ; node_key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
         ; key= compute_key bug_type procname file
-        ; hash= compute_hash kind bug_type procname file qualifier
+        ; hash= compute_hash severity bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= key.err_name.IssueType.hum
@@ -383,7 +383,7 @@ module IssuesTxt = struct
       key.in_footprint && error_filter source_file key.err_name
       && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
     then
-      Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.err_kind
+      Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.severity
         key.err_name key.err_desc None fmt ()
 
 
@@ -473,7 +473,7 @@ module Stats = struct
     let process_row (key: Errlog.err_key) (err_data: Errlog.err_data) =
       let type_str = key.err_name.IssueType.unique_id in
       if key.in_footprint && error_filter key.err_name then
-        match key.err_kind with
+        match key.severity with
         | Exceptions.Kerror ->
             found_errors := true ;
             stats.nerrors <- stats.nerrors + 1 ;

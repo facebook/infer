@@ -32,7 +32,7 @@ val log_info_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
     Use log_info instead *)
 
 val log_issue_from_errlog :
-  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.err_kind
+  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.severity
   -> log_issue_from_errlog
 (** Report an issue of a given kind  in the given error log. *)
 
@@ -43,7 +43,7 @@ val log_warning : Summary.t -> log_t
 (** Add an warning to the given summary. *)
 
 val log_issue_external :
-  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.err_kind
+  Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.severity
   -> log_t
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
 

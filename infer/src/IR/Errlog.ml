@@ -63,11 +63,10 @@ let compute_local_exception_line loc_trace =
 type node_id_key = {node_id: int; node_key: Caml.Digest.t}
 
 type err_key =
-  { err_kind: Exceptions.err_kind
+  { severity: Exceptions.severity
   ; in_footprint: bool
   ; err_name: IssueType.t
-  ; err_desc: Localise.error_desc
-  ; severity: string }
+  ; err_desc: Localise.error_desc }
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -102,13 +101,13 @@ module ErrLogHash = struct
     (* NOTE: changing the hash function can change the order in which issues are reported. *)
     let hash key =
       Hashtbl.hash
-        (key.err_kind, key.in_footprint, key.err_name, Localise.error_desc_hash key.err_desc)
+        (key.severity, key.in_footprint, key.err_name, Localise.error_desc_hash key.err_desc)
 
 
     let equal key1 key2 =
-      [%compare.equal : Exceptions.err_kind * bool * IssueType.t]
-        (key1.err_kind, key1.in_footprint, key1.err_name)
-        (key2.err_kind, key2.in_footprint, key2.err_name)
+      [%compare.equal : Exceptions.severity * bool * IssueType.t]
+        (key1.severity, key1.in_footprint, key1.err_name)
+        (key2.severity, key2.in_footprint, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
   end
 
@@ -116,7 +115,7 @@ module ErrLogHash = struct
 end
 
 (** Type of the error log, to be reset once per function.
-    Map err_kind, fotprint / re - execution flag, error name,
+    Map severity, fotprint / re - execution flag, error name,
     error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
@@ -151,7 +150,7 @@ let size filter (err_log: t) =
   let count = ref 0 in
   ErrLogHash.iter
     (fun key err_datas ->
-      if filter key.err_kind key.in_footprint then count := !count + ErrDataSet.cardinal err_datas
+      if filter key.severity key.in_footprint then count := !count + ErrDataSet.cardinal err_datas
       )
     err_log ;
   !count
@@ -160,7 +159,7 @@ let size filter (err_log: t) =
 (** Print errors from error log *)
 let pp_errors fmt (errlog: t) =
   let f key _ =
-    if Exceptions.equal_err_kind key.err_kind Exceptions.Kerror then
+    if Exceptions.equal_severity key.severity Exceptions.Kerror then
       F.fprintf fmt "%a@ " IssueType.pp key.err_name
   in
   ErrLogHash.iter f errlog
@@ -169,7 +168,7 @@ let pp_errors fmt (errlog: t) =
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog: t) =
   let f key _ =
-    if Exceptions.equal_err_kind key.err_kind Exceptions.Kwarning then
+    if Exceptions.equal_severity key.severity Exceptions.Kwarning then
       F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
@@ -185,7 +184,7 @@ let pp_html source path_to_root fmt (errlog: t) =
     ErrDataSet.iter (pp_nodeid_session_loc fmt) err_datas
   in
   let pp_err_log do_fp ek key err_datas =
-    if Exceptions.equal_err_kind key.err_kind ek && Bool.equal do_fp key.in_footprint then
+    if Exceptions.equal_severity key.severity ek && Bool.equal do_fp key.in_footprint then
       F.fprintf fmt "<br>%a %a %a" IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
@@ -201,17 +200,6 @@ let pp_html source path_to_root fmt (errlog: t) =
   ErrLogHash.iter (pp_err_log true Exceptions.Kinfo) errlog ;
   F.fprintf fmt "%aINFOS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
   ErrLogHash.iter (pp_err_log false Exceptions.Kinfo) errlog
-
-
-(* I use string in case we want to display a different name to the user*)
-let severity_to_str severity =
-  match severity with
-  | Exceptions.High ->
-      "HIGH"
-  | Exceptions.Medium ->
-      "MEDIUM"
-  | Exceptions.Low ->
-      "LOW"
 
 
 (** Add an error description to the error log unless there is
@@ -233,11 +221,11 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_key) session ltr
+let log_issue procname ?clang_method_kind severity err_log loc (node_id, node_key) session ltr
     ?linters_def_file ?doc_url ?access ?extras exn =
   let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
-  let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
+  let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
     not Config.developer_mode && Language.curr_language_is Java && Int.equal loc.Location.line 0
@@ -264,7 +252,7 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
       let issue =
         EventLogger.AnalysisIssue
           { bug_type= error.name.IssueType.unique_id
-          ; bug_kind= Exceptions.err_kind_string err_kind
+          ; bug_kind= Exceptions.severity_string severity
           ; clang_method_kind= (match lang with Language.Clang -> clang_method_kind | _ -> None)
           ; exception_triggered_location= error.ocaml_pos
           ; lang= Language.to_explicit_string lang
@@ -289,11 +277,10 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
         ; extras }
       in
       let err_key =
-        { err_kind
+        { severity
         ; in_footprint= !Config.footprint
         ; err_name= error.name
-        ; err_desc= error.description
-        ; severity= severity_to_str error.severity }
+        ; err_desc= error.description }
       in
       add_issue err_log err_key (ErrDataSet.singleton err_data)
     in
@@ -301,9 +288,9 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
     let print_now () =
       L.(debug Analysis Medium)
         "@\n%a@\n@?"
-        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ocaml_pos)
+        (Exceptions.pp_err ~node_key loc severity error.name error.description error.ocaml_pos)
         () ;
-      if err_kind <> Exceptions.Kerror then (
+      if not (Exceptions.equal_severity severity Exceptions.Kerror) then (
         let warn_str =
           let pp fmt =
             Format.fprintf fmt "%s %a" error.name.IssueType.unique_id Localise.pp_error_desc
@@ -312,7 +299,7 @@ let log_issue procname ?clang_method_kind err_kind err_log loc (node_id, node_ke
           F.asprintf "%t" pp
         in
         let d =
-          match err_kind with
+          match severity with
           | Exceptions.Kerror ->
               L.d_error
           | Exceptions.Kwarning ->

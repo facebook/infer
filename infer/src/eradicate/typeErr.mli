@@ -67,7 +67,7 @@ val node_reset_forall : Procdesc.Node.t -> unit
 type st_report_error =
   Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
   -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.err_kind -> string -> unit
+  -> ?severity:Exceptions.severity -> string -> unit
 
 val report_error :
   Tenv.t -> st_report_error -> (Procdesc.Node.t -> Procdesc.Node.t) -> err_instance

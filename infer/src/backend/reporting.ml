@@ -15,7 +15,7 @@ type log_t =
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
+let log_issue_from_errlog procname ?clang_method_kind severity err_log ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access ?extras exn =
   let clang_method_kind =
     Option.map clang_method_kind ~f:ProcAttributes.string_of_clang_method_kind
@@ -34,11 +34,11 @@ let log_issue_from_errlog procname ?clang_method_kind err_kind err_log ?loc ?nod
       match session with None -> (State.get_session () :> int) | Some session -> session
     in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Errlog.log_issue procname ?clang_method_kind err_kind err_log loc node_id session ltr
+    Errlog.log_issue procname ?clang_method_kind severity err_log loc node_id session ltr
       ?linters_def_file ?doc_url ?access ?extras exn
 
 
-let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
+let log_issue_from_summary severity summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     ?access ?extras exn =
   let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
@@ -58,15 +58,15 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else
     let err_log = Summary.get_err_log summary in
-    log_issue_from_errlog procname ~clang_method_kind err_kind err_log ?loc ?node_id ?session ?ltr
+    log_issue_from_errlog procname ~clang_method_kind severity err_log ?loc ?node_id ?session ?ltr
       ?linters_def_file ?doc_url ?access ?extras exn
 
 
-let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr
+let log_issue_deprecated ?(store_summary= false) severity proc_name ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access ?extras:_ exn =
   match Summary.get proc_name with
   | Some summary ->
-      log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
+      log_issue_from_summary severity summary ?loc ?node_id ?session ?ltr ?linters_def_file
         ?doc_url ?access exn ;
       if store_summary then
         (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
@@ -94,10 +94,10 @@ let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
 
 
-let log_issue_external procname ?clang_method_kind err_kind ?loc ?node_id ?session ?ltr
+let log_issue_external procname ?clang_method_kind severity ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access ?extras exn =
   let errlog = IssueLog.get_errlog procname in
-  log_issue_from_errlog procname ?clang_method_kind err_kind errlog ?loc ?node_id ?session ?ltr
+  log_issue_from_errlog procname ?clang_method_kind severity errlog ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access ?extras exn
 
 

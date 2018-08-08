@@ -37,11 +37,10 @@ val compute_local_exception_line : loc_trace -> int option
 type node_id_key = private {node_id: int; node_key: Caml.Digest.t}
 
 type err_key = private
-  { err_kind: Exceptions.err_kind
+  { severity: Exceptions.severity
   ; in_footprint: bool
   ; err_name: IssueType.t
-  ; err_desc: Localise.error_desc
-  ; severity: string }
+  ; err_desc: Localise.error_desc }
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -87,13 +86,13 @@ val pp_warnings : Format.formatter -> t -> unit
 val pp_html : SourceFile.t -> DB.Results_dir.path -> Format.formatter -> t -> unit
 (** Print an error log in html format *)
 
-val size : (Exceptions.err_kind -> bool -> bool) -> t -> int
+val size : (Exceptions.severity -> bool -> bool) -> t -> int
 (** Return the number of elements in the error log which satisfy the filter.  *)
 
 val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-  Typ.Procname.t -> ?clang_method_kind:string -> Exceptions.err_kind -> t -> Location.t
+  Typ.Procname.t -> ?clang_method_kind:string -> Exceptions.severity -> t -> Location.t
   -> int * Caml.Digest.t -> int -> loc_trace -> ?linters_def_file:string -> ?doc_url:string
   -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit

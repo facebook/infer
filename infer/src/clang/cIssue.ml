@@ -21,7 +21,7 @@ type issue_desc =
                            by removing underscores and capitalizing first letters of words *)
     loc: Location.t
   ; (* location in the code *)
-    severity: Exceptions.err_kind
+    severity: Exceptions.severity
   ; suggestion: string option
   (* an optional suggestion or correction *) }
 
@@ -30,7 +30,7 @@ let string_of_mode m = match m with On -> "On" | Off -> "Off"
 let pp_issue fmt issue =
   Format.fprintf fmt "{@\n   Id = %s@\n" issue.id ;
   Format.fprintf fmt "{  Name = %s@\n" (Option.value ~default:"" issue.name) ;
-  Format.fprintf fmt "   Severity = %s@\n" (Exceptions.err_kind_string issue.severity) ;
+  Format.fprintf fmt "   Severity = %s@\n" (Exceptions.severity_string issue.severity) ;
   Format.fprintf fmt "   Mode = %s@\n" (string_of_mode issue.mode) ;
   Format.fprintf fmt "   Description = %s@\n" issue.description ;
   Format.fprintf fmt "   Suggestion = %s@\n" (Option.value ~default:"" issue.suggestion) ;
