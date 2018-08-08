@@ -36,9 +36,8 @@ end
 
 (** Create a module with the toplevel callback. *)
 module MkCallback (Extension : ExtensionT) : CallBackT = struct
-  let callback1 tenv find_canonical_duplicate calls_this checks get_proc_desc idenv curr_pname
-      curr_pdesc annotated_signature linereader proc_loc
-      : bool * Extension.extension TypeState.t option =
+  let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
+      annotated_signature linereader proc_loc : bool * Extension.extension TypeState.t option =
     let mk s = Pvar.mk s curr_pname in
     let add_formal typestate (s, ia, typ) =
       let pvar = mk s in
@@ -94,9 +93,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         NodePrinter.start_session ~pp_name node ;
         State.set_node node ;
         let typestates_succ, typestates_exn =
-          TypeCheck.typecheck_node tenv Extension.ext calls_this checks idenv get_proc_desc
-            curr_pname curr_pdesc find_canonical_duplicate annotated_signature typestate node
-            linereader
+          TypeCheck.typecheck_node tenv Extension.ext calls_this checks idenv curr_pname curr_pdesc
+            find_canonical_duplicate annotated_signature typestate node linereader
         in
         if Config.write_html then (
           let d_typestate ts = L.d_strln (F.asprintf "%a" (TypeState.pp Extension.ext) ts) in
@@ -122,8 +120,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
 
 
   let callback2 calls_this checks
-      {Callbacks.proc_desc= curr_pdesc; summary; get_proc_desc; tenv; get_procs_in_file}
-      annotated_signature linereader proc_loc : unit =
+      {Callbacks.proc_desc= curr_pdesc; summary; tenv; get_procs_in_file} annotated_signature
+      linereader proc_loc : unit =
     let idenv = Idenv.create curr_pdesc in
     let curr_pname = Summary.get_proc_name summary in
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
@@ -147,8 +145,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         if do_checks then (checks, calls_this)
         else ({TypeCheck.eradicate= false; check_extension= false; check_ret_type= []}, ref false)
       in
-      callback1 tenv find_canonical_duplicate calls_this' checks' get_proc_desc idenv_pn pname
-        pdesc ann_sig linereader loc
+      callback1 tenv find_canonical_duplicate calls_this' checks' idenv_pn pname pdesc ann_sig
+        linereader loc
     in
     let module Initializers = struct
       type init = Typ.Procname.t * Procdesc.t
@@ -180,7 +178,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
               PatternMatch.proc_calls Summary.proc_resolve_attributes init_pd filter
             in
             let do_called (callee_pn, _) =
-              match get_proc_desc callee_pn with
+              match Ondemand.get_proc_desc callee_pn with
               | Some callee_pd ->
                   res := (callee_pn, callee_pd) :: !res
               | None ->
@@ -234,7 +232,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         in
         let do_proc pname =
           if filter pname then
-            match get_proc_desc pname with
+            match Ondemand.get_proc_desc pname with
             | Some pdesc ->
                 res := (pname, pdesc) :: !res
             | None ->
@@ -357,7 +355,7 @@ module EmptyExtension : ExtensionT = struct
 
   let ext =
     let empty = () in
-    let check_instr _ _ _ _ ext _ _ = ext in
+    let check_instr _ _ _ ext _ _ = ext in
     let join () () = () in
     let pp _ () = () in
     {TypeState.empty; check_instr; join; pp}

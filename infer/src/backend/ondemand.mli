@@ -11,11 +11,9 @@ open! IStd
 
 type analyze_ondemand = Summary.t -> Procdesc.t -> Summary.t
 
-type get_proc_desc = Typ.Procname.t -> Procdesc.t option
+type callbacks = {exe_env: Exe_env.t; analyze_ondemand: analyze_ondemand}
 
-type callbacks = {analyze_ondemand: analyze_ondemand; get_proc_desc: get_proc_desc}
-
-val get_proc_desc : get_proc_desc
+val get_proc_desc : Typ.Procname.t -> Procdesc.t option
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 
 val analyze_proc_desc : caller_pdesc:Procdesc.t -> Procdesc.t -> Summary.t option

@@ -11,8 +11,7 @@ module F = Format
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args =
-  { get_proc_desc: Typ.Procname.t -> Procdesc.t option
-  ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
+  { get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
   ; summary: Summary.t
   ; proc_desc: Procdesc.t
@@ -21,10 +20,7 @@ type proc_callback_args =
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type cluster_callback_args =
-  { procedures: (Tenv.t * Procdesc.t) list
-  ; source_file: SourceFile.t
-  ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
-  ; exe_env: Exe_env.t }
+  {procedures: (Tenv.t * Procdesc.t) list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
 type cluster_callback_t = cluster_callback_args -> unit
 
@@ -54,7 +50,7 @@ let get_procedure_definition exe_env proc_name =
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
-let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
+let iterate_procedure_callbacks exe_env summary proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let procedure_language = Typ.Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
@@ -70,16 +66,16 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
   List.fold ~init:summary
     ~f:(fun summary {dynamic_dispatch; language; callback} ->
       if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized)
-      then callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc; exe_env}
+      then callback {get_procs_in_file; tenv; summary; proc_desc; exe_env}
       else summary )
     !procedure_callbacks
 
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
-let iterate_cluster_callbacks all_procs exe_env source_file get_proc_desc =
+let iterate_cluster_callbacks all_procs exe_env source_file =
   if !cluster_callbacks <> [] then
     let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
-    let environment = {procedures; source_file; get_proc_desc; exe_env} in
+    let environment = {procedures; source_file; exe_env} in
     let language_matches language =
       match procedures with
       | (_, pdesc) :: _ ->
@@ -128,18 +124,9 @@ let create_perf_stats_report source_file =
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let analyze_file (exe_env: Exe_env.t) source_file =
   let saved_language = !Language.curr_language in
-  let get_proc_desc proc_name =
-    match Exe_env.get_proc_desc exe_env proc_name with
-    | Some _ as pdesc_opt ->
-        pdesc_opt
-    | None ->
-        Option.map ~f:Summary.get_proc_desc (Summary.get proc_name)
-  in
-  let analyze_ondemand summary proc_desc =
-    iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
-  in
-  Ondemand.set_callbacks {Ondemand.analyze_ondemand; get_proc_desc} ;
+  let analyze_ondemand summary proc_desc = iterate_procedure_callbacks exe_env summary proc_desc in
   (* Invoke procedure callbacks using on-demand analysis schedulling *)
+  Ondemand.set_callbacks {Ondemand.exe_env; analyze_ondemand} ;
   let procs_to_analyze =
     (* analyze all the currently defined procedures *)
     SourceFiles.proc_names_of_source source_file
@@ -148,7 +135,7 @@ let analyze_file (exe_env: Exe_env.t) source_file =
   let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
-  iterate_cluster_callbacks procs_to_analyze exe_env source_file get_proc_desc ;
+  iterate_cluster_callbacks procs_to_analyze exe_env source_file ;
   (* Perf logging needs to remain at the end - after analysis work is complete *)
   create_perf_stats_report source_file ;
   (* Unregister callbacks *)

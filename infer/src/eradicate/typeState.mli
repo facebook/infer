@@ -12,14 +12,10 @@ open! IStd
 (** Parameters of a call. *)
 type parameters = (Exp.t * Typ.t) list
 
-type get_proc_desc = Typ.Procname.t -> Procdesc.t option
-
 (** Extension to a typestate with values of type 'a. *)
 type 'a ext =
   { empty: 'a  (** empty extension *)
-  ; check_instr:
-      Tenv.t -> get_proc_desc -> Typ.Procname.t -> Procdesc.t -> 'a -> Sil.instr -> parameters
-      -> 'a
+  ; check_instr: Tenv.t -> Typ.Procname.t -> Procdesc.t -> 'a -> Sil.instr -> parameters -> 'a
         (** check the extension for an instruction *)
   ; join: 'a -> 'a -> 'a  (** join two extensions *)
   ; pp: Format.formatter -> 'a -> unit  (** pretty print an extension *) }

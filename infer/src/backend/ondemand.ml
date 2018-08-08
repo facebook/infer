@@ -14,9 +14,7 @@ module F = Format
 
 type analyze_ondemand = Summary.t -> Procdesc.t -> Summary.t
 
-type get_proc_desc = Typ.Procname.t -> Procdesc.t option
-
-type callbacks = {analyze_ondemand: analyze_ondemand; get_proc_desc: get_proc_desc}
+type callbacks = {exe_env: Exe_env.t; analyze_ondemand: analyze_ondemand}
 
 let callbacks_ref = ref None
 
@@ -224,6 +222,16 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
       summary_option
 
 
+(** Find a proc desc for the procedure, perhaps loading it from disk. *)
+let get_proc_desc callee_pname =
+  let callbacks = Option.value_exn !callbacks_ref in
+  match Exe_env.get_proc_desc callbacks.exe_env callee_pname with
+  | Some _ as pdesc_opt ->
+      pdesc_opt
+  | None ->
+      Option.map ~f:Summary.get_proc_desc (Summary.get callee_pname)
+
+
 (** analyze_proc_name ?caller_pdesc proc_name performs an on-demand analysis of proc_name triggered
     during the analysis of caller_pdesc *)
 let analyze_proc_name ?caller_pdesc callee_pname =
@@ -232,9 +240,8 @@ let analyze_proc_name ?caller_pdesc callee_pname =
     let cache = Lazy.force cached_results in
     try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
       let summary_option =
-        let callbacks = Option.value_exn !callbacks_ref in
         if procedure_should_be_analyzed callee_pname then
-          match callbacks.get_proc_desc callee_pname with
+          match get_proc_desc callee_pname with
           | Some callee_pdesc ->
               analyze_proc ?caller_pdesc callee_pdesc
           | None ->
@@ -246,8 +253,3 @@ let analyze_proc_name ?caller_pdesc callee_pname =
 
 
 let clear_cache () = Typ.Procname.Hash.clear (Lazy.force cached_results)
-
-(** Find a proc desc for the procedure, perhaps loading it from disk. *)
-let get_proc_desc callee_pname =
-  let callbacks = Option.value_exn !callbacks_ref in
-  callbacks.get_proc_desc callee_pname

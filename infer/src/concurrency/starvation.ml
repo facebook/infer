@@ -289,13 +289,13 @@ let should_report pdesc =
       L.(die InternalError "Not supposed to run on non-Java code.")
 
 
-let fold_reportable_summaries (tenv, current_pdesc) get_proc_desc clazz ~init ~f =
+let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
   let methods =
     Tenv.lookup tenv clazz
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Typ.Struct.methods)
   in
   let f acc mthd =
-    get_proc_desc mthd
+    Ondemand.get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
            if should_report other_pdesc then
              Payload.read current_pdesc mthd |> Option.map ~f:(fun payload -> (mthd, payload))
@@ -312,7 +312,7 @@ let fold_reportable_summaries (tenv, current_pdesc) get_proc_desc clazz ~init ~f
          inner class but this is no longer obvious in the path, because of nested-class path normalisation.
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
-let report_deadlocks env get_proc_desc {StarvationDomain.order; ui} report_map' =
+let report_deadlocks env {StarvationDomain.order; ui} report_map' =
   let open StarvationDomain in
   let tenv, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
@@ -371,7 +371,7 @@ let report_deadlocks env get_proc_desc {StarvationDomain.order; ui} report_map' 
                (* get the class of the root variable of the lock in the endpoint elem
                    and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env get_proc_desc endpoint_class ~init:report_map ~f:
+               fold_reportable_summaries env endpoint_class ~init:report_map ~f:
                  (fun acc (endp_pname, endpoint_summary) ->
                    let endp_order = endpoint_summary.order in
                    let endp_ui = endpoint_summary.ui in
@@ -382,7 +382,7 @@ let report_deadlocks env get_proc_desc {StarvationDomain.order; ui} report_map' 
   OrderDomain.fold report_on_current_elem order report_map'
 
 
-let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map' =
+let report_starvation env {StarvationDomain.events; ui} report_map' =
   let open StarvationDomain in
   let tenv, current_pdesc = env in
   let current_pname = Procdesc.get_proc_name current_pdesc in
@@ -422,7 +422,7 @@ let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map
                (* get the class of the root variable of the lock in the endpoint elem
                  and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env get_proc_desc endpoint_class ~init:report_map ~f:
+               fold_reportable_summaries env endpoint_class ~init:report_map ~f:
                  (fun acc (endpoint_pname, {order; ui}) ->
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
@@ -438,14 +438,14 @@ let report_starvation env get_proc_desc {StarvationDomain.events; ui} report_map
       EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
-let reporting {Callbacks.procedures; source_file; get_proc_desc} =
+let reporting {Callbacks.procedures; source_file} =
   let report_procedure ((_, proc_desc) as env) =
     die_if_not_java proc_desc ;
     if should_report proc_desc then
       Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
       |> Option.iter ~f:(fun summary ->
-             report_deadlocks env get_proc_desc summary ReportMap.empty
-             |> report_starvation env get_proc_desc summary |> ReportMap.log )
+             report_deadlocks env summary ReportMap.empty |> report_starvation env summary
+             |> ReportMap.log )
   in
   List.iter procedures ~f:report_procedure ;
   IssueLog.store Config.starvation_issues_dir_name source_file

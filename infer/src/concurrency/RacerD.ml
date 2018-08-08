@@ -22,7 +22,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RacerDDomain
 
-  type extras = Typ.Procname.t -> Procdesc.t option
+  type extras = ProcData.no_extras
 
   (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
@@ -315,14 +315,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     AccessDomain.fold update_callee_access callee_accesses caller_astate.accesses
 
 
-  let call_without_summary get_proc_desc callee_pname ret_access_path call_flags actuals astate =
+  let call_without_summary callee_pname ret_access_path call_flags actuals astate =
     let open RacerDConfig in
     let open RacerDDomain in
     let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
       not call_flags.cf_interface && List.is_empty actuals
     in
     let is_abstract_getthis_like callee =
-      get_proc_desc callee
+      Ondemand.get_proc_desc callee
       |> Option.value_map ~default:false ~f:(fun callee_pdesc ->
              (Procdesc.get_attributes callee_pdesc).ProcAttributes.is_abstract
              &&
@@ -363,7 +363,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
-  let exec_instr (astate: Domain.astate) ({ProcData.tenv; extras; pdesc} as proc_data) _
+  let exec_instr (astate: Domain.astate) ({ProcData.tenv; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
     let open RacerDConfig in
@@ -438,7 +438,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 {astate with attribute_map; threads= update_for_lock_use astate.threads}
             | NoEffect ->
                 let summary_opt = get_summary pdesc callee_pname actuals loc tenv astate in
-                let callee_pdesc = extras callee_pname in
+                let callee_pdesc = Ondemand.get_proc_desc callee_pname in
                 match
                   Option.map summary_opt ~f:(fun summary ->
                       let rebased_accesses =
@@ -479,8 +479,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     in
                     {locks; threads; accesses; ownership; attribute_map; wobbly_paths}
                 | None ->
-                    call_without_summary extras callee_pname ret_access_path call_flags actuals
-                      astate
+                    call_without_summary callee_pname ret_access_path call_flags actuals astate
         in
         let add_if_annotated predicate attribute attribute_map =
           if PatternMatch.override_exists predicate tenv callee_pname then
@@ -632,7 +631,7 @@ let empty_post : RacerDDomain.summary =
   ; wobbly_paths= RacerDDomain.StabilityDomain.empty }
 
 
-let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
+let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let open RacerDConfig in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
   let is_initializer tenv proc_name =
@@ -641,7 +640,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let open RacerDDomain in
   if Models.should_analyze_proc proc_desc tenv then
     let formal_map = FormalMap.make proc_desc in
-    let proc_data = ProcData.make proc_desc tenv get_proc_desc in
+    let proc_data = ProcData.make proc_desc tenv ProcData.empty_extras in
     let initial =
       let threads =
         if

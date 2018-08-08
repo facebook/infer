@@ -136,8 +136,6 @@ type check_return_type =
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
-type get_proc_desc = TypeState.get_proc_desc
-
 type checks = {eradicate: bool; check_extension: bool; check_ret_type: check_return_type list}
 
 (** Typecheck an expression. *)
@@ -206,9 +204,8 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 
 
 (** Typecheck an instruction. *)
-let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get_proc_desc
-    curr_pname curr_pdesc find_canonical_duplicate annotated_signature instr_ref linereader
-    typestate instr =
+let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv curr_pname curr_pdesc
+    find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
   (* let print_current_state () = *)
   (*   L.stdout "Current Typestate in node %a@\n%a@." *)
   (*     Procdesc.Node.pp (TypeErr.InstrRef.get_node instr_ref) *)
@@ -834,8 +831,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in
                 let extension = TypeState.get_extension typestate1 in
                 let extension' =
-                  ext.TypeState.check_instr tenv get_proc_desc curr_pname curr_pdesc extension
-                    instr etl'
+                  ext.TypeState.check_instr tenv curr_pname curr_pdesc extension instr etl'
                 in
                 TypeState.set_extension typestate1 extension'
               else typestate1
@@ -1072,8 +1068,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
 
 
 (** Typecheck the instructions in a cfg node. *)
-let typecheck_node tenv ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
-    find_canonical_duplicate annotated_signature typestate node linereader =
+let typecheck_node tenv ext calls_this checks idenv curr_pname curr_pdesc find_canonical_duplicate
+    annotated_signature typestate node linereader =
   let instrs = Procdesc.Node.get_instrs node in
   let instr_ref_gen = TypeErr.InstrRef.create_generator node in
   let typestates_exn = ref [] in
@@ -1109,7 +1105,7 @@ let typecheck_node tenv ext calls_this checks idenv get_proc_desc curr_pname cur
       TypeErr.InstrRef.gen instr_ref_gen
     in
     let instr' =
-      typecheck_instr tenv ext calls_this checks node idenv get_proc_desc curr_pname curr_pdesc
+      typecheck_instr tenv ext calls_this checks node idenv curr_pname curr_pdesc
         find_canonical_duplicate annotated_signature instr_ref linereader typestate instr
     in
     handle_exceptions typestate instr ; instr'

@@ -9,8 +9,6 @@ open! IStd
 module TestInterpreter =
   AnalyzerTester.Make (ProcCfg.Exceptional) (BoundedCallTree.TransferFunctions)
 
-let mock_get_proc_desc _ = None
-
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
@@ -26,7 +24,7 @@ let tests =
       [ Stacktrace.make_frame class_name "foo" file_name (Some 16)
       ; Stacktrace.make_frame class_name "bar" file_name (Some 20) ]
   in
-  let extras = {BoundedCallTree.get_proc_desc= mock_get_proc_desc; stacktraces= [trace]} in
+  let extras = {BoundedCallTree.stacktraces= [trace]} in
   let multi_trace_1 =
     Stacktrace.make "java.lang.NullPointerException"
       [Stacktrace.make_frame class_name "foo" file_name (Some 16)]
@@ -35,9 +33,7 @@ let tests =
     Stacktrace.make "java.lang.NullPointerException"
       [Stacktrace.make_frame class_name "bar" file_name (Some 20)]
   in
-  let multi_trace_extras =
-    {BoundedCallTree.get_proc_desc= mock_get_proc_desc; stacktraces= [multi_trace_1; multi_trace_2]}
-  in
+  let multi_trace_extras = {BoundedCallTree.stacktraces= [multi_trace_1; multi_trace_2]} in
   let caller_foo_name = Typ.Procname.from_string_c_fun "foo" in
   let caller_bar_name = Typ.Procname.from_string_c_fun "bar" in
   let caller_baz_name = Typ.Procname.from_string_c_fun "baz" in

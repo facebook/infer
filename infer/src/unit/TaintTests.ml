@@ -118,8 +118,7 @@ let tests =
   let assert_empty = invariant "{ }" in
   (* hack: register an empty analyze_ondemand to prevent a crash because the callback is unset *)
   let analyze_ondemand summary _ = summary in
-  let get_proc_desc _ = None in
-  let callbacks = {Ondemand.analyze_ondemand; get_proc_desc} in
+  let callbacks = {Ondemand.exe_env= Exe_env.mk (); analyze_ondemand} in
   Ondemand.set_callbacks callbacks ;
   let test_list =
     [ ("source recorded", [assign_to_source "ret_id"; invariant "{ ret_id$0* => (SOURCE -> ?) }"])

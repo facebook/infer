@@ -10,8 +10,7 @@ open! IStd
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args =
-  { get_proc_desc: Typ.Procname.t -> Procdesc.t option
-  ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
+  { get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
   ; summary: Summary.t
   ; proc_desc: Procdesc.t
@@ -27,7 +26,6 @@ type proc_callback_t = proc_callback_args -> Summary.t
 type cluster_callback_args =
   { procedures: (Tenv.t * Procdesc.t) list
   ; source_file: SourceFile.t
-  ; get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; exe_env: Exe_env.t }
 
 type cluster_callback_t = cluster_callback_args -> unit
