@@ -35,3 +35,14 @@ DEFINE-CHECKER NAMESPACE_STRING = {
   SET mode = "ON";
 
 };
+
+DEFINE-CHECKER ITERATOR = {
+
+  SET report_when =
+    WHEN has_type("REGEXP('iterator')")
+    HOLDS-IN-NODE VarDecl;
+
+  SET message = "Found type iterator";
+  SET mode = "ON";
+
+};

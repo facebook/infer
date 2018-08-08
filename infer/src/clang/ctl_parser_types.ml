@@ -498,7 +498,27 @@ and c_type_equal c_type abs_ctype =
       typename_equal pointer ae
   | TypedefType (_, tdi), TypeName ae ->
       typename_equal tdi.tti_decl_ptr ae
+  | NoneType ti, TypeName _
+  | ComplexType ti, TypeName _
+  | DependentSizedExtVectorType ti, TypeName _
+  | VectorType ti, TypeName _
+  | ExtVectorType ti, TypeName _
+  | UnresolvedUsingType ti, TypeName _
+  | TypeOfExprType ti, TypeName _
+  | TypeOfType ti, TypeName _
+  | UnaryTransformType ti, TypeName _
+  | TemplateTypeParmType ti, TypeName _
+  | SubstTemplateTypeParmType ti, TypeName _
+  | SubstTemplateTypeParmPackType ti, TypeName _
+  | DeducedTemplateSpecializationType ti, TypeName _
+  | InjectedClassNameType ti, TypeName _
+  | DependentNameType ti, TypeName _
+  | DependentTemplateSpecializationType ti, TypeName _
+  | ObjCTypeParamType ti, TypeName _
+  | PackExpansionType ti, TypeName _
+  | PipeType ti, TypeName _
   | ElaboratedType ti, TypeName _
+  | AutoType ti, TypeName _
   | TypedefType (ti, _), ObjCGenProt _
   | AttributedType (ti, _), Pointer _ -> (
     match ti.ti_desugared_type with Some dt -> check_type_ptr dt abs_ctype | None -> false )

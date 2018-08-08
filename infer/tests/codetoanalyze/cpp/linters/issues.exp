@@ -1,3 +1,6 @@
 codetoanalyze/cpp/linters/extracopy.cpp, test_a, 27, EXTRA_COPY, no_bucket, WARNING, []
 codetoanalyze/cpp/linters/extracopy.cpp, test_map, 37, EXTRA_COPY, no_bucket, WARNING, []
-codetoanalyze/cpp/linters/type_namespace.cpp, test, 6, NAMESPACE_STRING, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/iter.cpp, test, 11, ITERATOR, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/iter.cpp, test, 12, EXTRA_COPY, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/iter.cpp, test, 12, ITERATOR, no_bucket, WARNING, []
+codetoanalyze/cpp/linters/type_namespace.cpp, test, 11, NAMESPACE_STRING, no_bucket, WARNING, []
