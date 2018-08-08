@@ -48,16 +48,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match typ.Typ.desc with
         | Typ.Tint ikind ->
             let unsigned = Typ.ikind_is_unsigned ikind in
-            let v =
-              Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num
-              |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
-            in
+            let v = Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num location in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tfloat _ ->
-            let v =
-              Dom.Val.make_sym loc pname symbol_table path new_sym_num
-              |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
-            in
+            let v = Dom.Val.make_sym loc pname symbol_table path new_sym_num location in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tptr (typ, _) when Language.curr_language_is Java && not (Typ.is_array typ) ->
             BoUtils.Exec.decl_sym_java_ptr

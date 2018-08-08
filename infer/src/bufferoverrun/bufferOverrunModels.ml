@@ -207,7 +207,7 @@ let set_array_length array length_exp =
 
 module Split = struct
   let std_vector ~adds_at_least_one (vector_exp, vector_typ) location mem =
-    let traces = BufferOverrunTrace.(Call location |> singleton |> Set.singleton) in
+    let traces = BufferOverrunTrace.(Set.singleton (Call location)) in
     let increment_itv = if adds_at_least_one then Itv.pos else Itv.nat in
     let increment = Dom.Val.of_itv ~traces increment_itv in
     let vector_type_name = Option.value_exn (vector_typ |> Typ.strip_ptr |> Typ.name) in

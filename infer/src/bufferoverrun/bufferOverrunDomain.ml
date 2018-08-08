@@ -65,9 +65,7 @@ module Val = struct
 
   let unknown_from : callee_pname:_ -> location:_ -> t =
    fun ~callee_pname ~location ->
-    let traces =
-      Trace.UnknownFrom (callee_pname, location) |> Trace.singleton |> TraceSet.singleton
-    in
+    let traces = TraceSet.singleton (Trace.UnknownFrom (callee_pname, location)) in
     unknown ~traces
 
 
@@ -148,11 +146,12 @@ module Val = struct
 
   let make_sym
       : ?unsigned:bool -> Loc.t -> Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial
-        -> Itv.Counter.t -> t =
-   fun ?(unsigned= false) loc pname symbol_table path new_sym_num ->
+        -> Itv.Counter.t -> Location.t -> t =
+   fun ?(unsigned= false) loc pname symbol_table path new_sym_num location ->
     { bot with
       itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
-    ; sym= Relation.Sym.of_loc loc }
+    ; sym= Relation.Sym.of_loc loc
+    ; traces= TraceSet.singleton (Trace.SymAssign (loc, location)) }
 
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
