@@ -34,8 +34,9 @@ struct
       let underyling_node = CFG.Node.underlying_node node in
       NodePrinter.start_session ~pp_name:(pp_session_name node) underyling_node ;
       L.d_strln
-        (Format.asprintf "PRE: %a@.INSTR: %a@.POST: %a@." TransferFunctions.Domain.pp pre
-           HilInstr.pp hil_instr TransferFunctions.Domain.pp post) ;
+        ( Format.asprintf "PRE: %a@.INSTR: %a@.POST: %a@." TransferFunctions.Domain.pp pre
+            HilInstr.pp hil_instr TransferFunctions.Domain.pp post
+        |> Escape.escape_xml ) ;
       NodePrinter.finish_session underyling_node )
 
 

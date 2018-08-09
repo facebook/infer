@@ -74,8 +74,9 @@ struct
     NodePrinter.start_session ~pp_name underlying_node ;
     let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
     L.d_strln
-      (Format.asprintf "LEFT: %a@.RIGHT: %a@.RESULT: %a@." Domain.pp left Domain.pp right Domain.pp
-         result) ;
+      ( Format.asprintf "LEFT: %a@.RIGHT: %a@.RESULT: %a@." Domain.pp left Domain.pp right
+          Domain.pp result
+      |> Escape.escape_xml ) ;
     NodePrinter.finish_session underlying_node
 
 
@@ -93,9 +94,10 @@ struct
         in
         if debug then (
           L.d_strln
-            (Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
-               (Instrs.pp Pp.(html Green))
-               instrs Domain.pp astate_post) ;
+            ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
+                (Instrs.pp Pp.(html Green))
+                instrs Domain.pp astate_post
+            |> Escape.escape_xml ) ;
           NodePrinter.finish_session (Node.underlying_node node) ) ;
         let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
         (inv_map', Scheduler.schedule_succs work_queue node)
