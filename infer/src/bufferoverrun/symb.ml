@@ -81,6 +81,8 @@ module Symbol = struct
 
 
   let is_unsigned : t -> bool = fun x -> x.unsigned
+
+  let path {path} = path
 end
 
 module SymbolTable = struct

@@ -20,6 +20,8 @@ module SymbolPath : sig
 
   type t
 
+  val pp : F.formatter -> t -> unit
+
   val of_pvar : Pvar.t -> partial
 
   val index : partial -> partial
@@ -45,6 +47,8 @@ module Symbol : sig
   val equal : t -> t -> bool
 
   val paths_equal : t -> t -> bool
+
+  val path : t -> SymbolPath.t
 end
 
 module SymbolMap : sig

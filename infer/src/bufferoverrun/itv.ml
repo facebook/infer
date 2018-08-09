@@ -483,7 +483,14 @@ module ItvPure = struct
 
 
   let pp : F.formatter -> t -> unit =
-   fun fmt (l, u) -> F.fprintf fmt "[%a, %a]" Bound.pp l Bound.pp u
+   fun fmt (l, u) ->
+    if Bound.equal l u then Bound.pp fmt l
+    else
+      match Bound.is_same_symbol l u with
+      | Some symbol ->
+          Symb.SymbolPath.pp fmt symbol
+      | None ->
+          F.fprintf fmt "[%a, %a]" Bound.pp l Bound.pp u
 
 
   let of_bound bound = (bound, bound)

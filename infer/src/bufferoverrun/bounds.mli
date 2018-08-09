@@ -39,6 +39,8 @@ module Bound : sig
 
   val compare : t -> t -> int
 
+  val equal : t -> t -> bool
+
   val pp : F.formatter -> t -> unit
 
   val of_int : int -> t
@@ -122,6 +124,8 @@ module Bound : sig
     -> t AbstractDomain.Types.bottom_lifted
 
   val simplify_bound_ends_from_paths : t -> t
+
+  val is_same_symbol : t -> t -> Symb.SymbolPath.t option
 end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop

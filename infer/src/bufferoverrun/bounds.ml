@@ -176,6 +176,14 @@ module SymLinear = struct
     in
     let _, to_add = fold x ~init:(None, zero) ~f in
     plus x to_add
+
+
+  let is_same_symbol x1 x2 =
+    match (get_one_symbol_opt x1, get_one_symbol_opt x2) with
+    | Some s1, Some s2 when Symb.Symbol.paths_equal s1 s2 ->
+        Some (Symb.Symbol.path s1)
+    | _ ->
+        None
 end
 
 module Bound = struct
@@ -221,6 +229,8 @@ module Bound = struct
     | MinMax of int * Sign.t * MinMax.t * int * Symb.Symbol.t
     | PInf
   [@@deriving compare]
+
+  let equal = [%compare.equal : t]
 
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
@@ -798,6 +808,14 @@ module Bound = struct
     | Linear (c, se) ->
         let se' = SymLinear.simplify_bound_ends_from_paths se in
         if phys_equal se se' then x else Linear (c, se')
+
+
+  let is_same_symbol b1 b2 =
+    match (b1, b2) with
+    | Linear (0, se1), Linear (0, se2) ->
+        SymLinear.is_same_symbol se1 se2
+    | _ ->
+        None
 end
 
 type ('c, 's) valclass = Constant of 'c | Symbolic of 's | ValTop
