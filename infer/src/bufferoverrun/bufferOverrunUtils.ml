@@ -43,7 +43,7 @@ module Exec = struct
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
     let arr =
-      Sem.eval_array_alloc allocsite typ ~stride ~offset ~size
+      Sem.eval_array_alloc allocsite ~stride ~offset ~size
       |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
     in
     let mem =
@@ -100,7 +100,7 @@ module Exec = struct
     let elem = Trace.SymAssign (loc, location) in
     let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
     let arr =
-      Sem.eval_array_alloc allocsite typ ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
+      Sem.eval_array_alloc allocsite ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
     in
     let mem =
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
@@ -145,7 +145,7 @@ module Exec = struct
       let field_loc = PowLoc.append_field locs ~fn:field_name in
       let mem =
         match field_typ.Typ.desc with
-        | Tarray {elt= typ; length= Some length; stride} ->
+        | Tarray {length= Some length; stride} ->
             let length = Itv.of_int_lit length in
             let length =
               Option.value_map dyn_length ~default:length ~f:(fun dyn_length ->
@@ -155,7 +155,7 @@ module Exec = struct
             let stride = Option.map stride ~f:IntLit.to_int_exn in
             let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
             let offset, size = (Itv.zero, length) in
-            let v = Sem.eval_array_alloc allocsite typ ~stride ~offset ~size in
+            let v = Sem.eval_array_alloc allocsite ~stride ~offset ~size in
             mem |> Dom.Mem.strong_update_heap field_loc v
             |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->

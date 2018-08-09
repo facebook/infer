@@ -22,51 +22,6 @@ let eval_const : Const.t -> Val.t = function
       Val.Itv.top
 
 
-(* TODO *)
-
-let sizeof_ikind : Typ.ikind -> int = function
-  | Typ.IChar | Typ.ISChar | Typ.IUChar | Typ.IBool ->
-      1
-  | Typ.IInt | Typ.IUInt ->
-      4
-  | Typ.IShort | Typ.IUShort ->
-      2
-  | Typ.ILong | Typ.IULong ->
-      4
-  | Typ.ILongLong | Typ.IULongLong ->
-      8
-  | Typ.I128 | Typ.IU128 ->
-      16
-
-
-let sizeof_fkind : Typ.fkind -> int = function
-  | Typ.FFloat ->
-      4
-  | Typ.FDouble | Typ.FLongDouble ->
-      8
-
-
-(* NOTE: assume 32bit machine *)
-let rec sizeof (typ: Typ.t) : int =
-  match typ.desc with
-  | Typ.Tint ikind ->
-      sizeof_ikind ikind
-  | Typ.Tfloat fkind ->
-      sizeof_fkind fkind
-  | Typ.Tvoid ->
-      1
-  | Typ.Tptr (_, _) ->
-      4
-  | Typ.Tstruct _ | Typ.TVar _ ->
-      4 (* TODO *)
-  | Typ.Tarray {length= Some length; stride= Some stride} ->
-      IntLit.to_int_exn stride * IntLit.to_int_exn length
-  | Typ.Tarray {elt; length= Some length; stride= None} ->
-      sizeof elt * IntLit.to_int_exn length
-  | _ ->
-      4
-
-
 let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool =
  fun e1 e2 m ->
   match (e1, e2) with
@@ -202,8 +157,8 @@ let rec eval : Exp.t -> Mem.astate -> Val.t =
         eval_lindex e1 e2 mem
     | Exp.Sizeof {nbytes= Some size} ->
         Val.of_int size
-    | Exp.Sizeof {typ; nbytes= None} ->
-        Val.of_int (sizeof typ)
+    | Exp.Sizeof {nbytes= None} ->
+        Val.Itv.nat
     | Exp.Exn _ | Exp.Closure _ ->
         Val.Itv.top
 
@@ -323,11 +278,9 @@ let get_allocsite : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension
   proc_name ^ "-" ^ node_num ^ "-" ^ inst_num ^ "-" ^ dimension |> Allocsite.make
 
 
-let eval_array_alloc
-    : Allocsite.t -> Typ.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> Val.t =
- fun allocsite typ ~stride ~offset ~size ->
-  let int_stride = match stride with None -> sizeof typ | Some stride -> stride in
-  let stride = Itv.of_int int_stride in
+let eval_array_alloc : Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> Val.t =
+ fun allocsite ~stride ~offset ~size ->
+  let stride = Option.value_map stride ~default:Itv.nat ~f:Itv.of_int in
   ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk ~allocsite
 
 
