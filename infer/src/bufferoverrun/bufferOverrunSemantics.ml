@@ -269,21 +269,6 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
       Val.bot
 
 
-let get_allocsite : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension:int -> Allocsite.t =
- fun proc_name ~node_hash ~inst_num ~dimension ->
-  let proc_name = Typ.Procname.to_string proc_name in
-  let node_num = string_of_int node_hash in
-  let inst_num = string_of_int inst_num in
-  let dimension = string_of_int dimension in
-  proc_name ^ "-" ^ node_num ^ "-" ^ inst_num ^ "-" ^ dimension |> Allocsite.make
-
-
-let eval_array_alloc : Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> Val.t =
- fun allocsite ~stride ~offset ~size ->
-  let stride = Option.value_map stride ~default:Itv.nat ~f:Itv.of_int in
-  ArrayBlk.make allocsite ~offset ~size ~stride |> Val.of_array_blk ~allocsite
-
-
 let get_sym_f mem e = Val.get_sym (eval e mem)
 
 let get_offset_sym_f mem e = Val.get_offset_sym (eval e mem)

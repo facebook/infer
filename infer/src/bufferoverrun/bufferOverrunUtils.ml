@@ -41,9 +41,9 @@ module Exec = struct
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
     let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
-    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
     let arr =
-      Sem.eval_array_alloc allocsite ~stride ~offset ~size
+      Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
       |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
     in
     let mem =
@@ -61,7 +61,7 @@ module Exec = struct
       : Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
         -> Dom.Mem.astate -> Dom.Mem.astate * int =
    fun pname ~node_hash location loc ~inst_num ~dimension mem ->
-    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
     let alloc_loc = Loc.of_allocsite allocsite in
     let alist =
       Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
@@ -98,16 +98,16 @@ module Exec = struct
     in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
-    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num in
     let arr =
-      Sem.eval_array_alloc allocsite ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
+      Dom.Val.of_array_alloc allocsite ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
     in
     let mem =
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
     let deref_loc =
-      Loc.of_allocsite (Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num)
+      Loc.of_allocsite (Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num)
     in
     let path = Itv.SymbolPath.index path in
     decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
@@ -121,7 +121,7 @@ module Exec = struct
        mem ->
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
-    let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension:alloc_num in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.add_trace_elem elem in
     L.(debug BufferOverrun Verbose) "alloc_num:%d, depth:%d \n" alloc_num depth ;
@@ -153,9 +153,9 @@ module Exec = struct
                   Itv.plus i length )
             in
             let stride = Option.map stride ~f:IntLit.to_int_exn in
-            let allocsite = Sem.get_allocsite pname ~node_hash ~inst_num ~dimension in
+            let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
             let offset, size = (Itv.zero, length) in
-            let v = Sem.eval_array_alloc allocsite ~stride ~offset ~size in
+            let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size in
             mem |> Dom.Mem.strong_update_heap field_loc v
             |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->

@@ -16,7 +16,14 @@ module Allocsite = struct
 
   let pp fmt s = Format.pp_print_string fmt s
 
-  let make x = x
+  let make : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension:int -> t =
+   fun proc_name ~node_hash ~inst_num ~dimension ->
+    let proc_name = Typ.Procname.to_string proc_name in
+    let node_num = string_of_int node_hash in
+    let inst_num = string_of_int inst_num in
+    let dimension = string_of_int dimension in
+    proc_name ^ "-" ^ node_num ^ "-" ^ inst_num ^ "-" ^ dimension
+
 
   let unknown = "Unknown"
 end

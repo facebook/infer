@@ -134,10 +134,11 @@ module Val = struct
 
   let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}
 
-  let of_array_blk : allocsite:Allocsite.t -> ArrayBlk.astate -> t =
-   fun ~allocsite a ->
+  let of_array_alloc : Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> t =
+   fun allocsite ~stride ~offset ~size ->
+    let stride = Option.value_map stride ~default:Itv.nat ~f:Itv.of_int in
     { bot with
-      arrayblk= a
+      arrayblk= ArrayBlk.make allocsite ~offset ~size ~stride
     ; offset_sym= Relation.Sym.of_allocsite_offset allocsite
     ; size_sym= Relation.Sym.of_allocsite_size allocsite }
 
