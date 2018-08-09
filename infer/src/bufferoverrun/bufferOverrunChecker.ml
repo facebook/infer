@@ -34,92 +34,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Itv.SymbolTable.t
 
-  let declare_symbolic_val
-      : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int
-        -> Location.t -> Loc.t -> Typ.typ -> inst_num:int -> new_sym_num:Itv.Counter.t -> Domain.t
-        -> Domain.t =
-   fun pname symbol_table path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
-    let max_depth = 2 in
-    let new_alloc_num = Itv.Counter.make 1 in
-    let rec decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem =
-      if depth > max_depth then mem
-      else
-        let depth = depth + 1 in
-        match typ.Typ.desc with
-        | Typ.Tint ikind ->
-            let unsigned = Typ.ikind_is_unsigned ikind in
-            let v = Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num location in
-            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
-        | Typ.Tfloat _ ->
-            let v = Dom.Val.make_sym loc pname symbol_table path new_sym_num location in
-            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
-        | Typ.Tptr (typ, _) when Language.curr_language_is Java && not (Typ.is_array typ) ->
-            BoUtils.Exec.decl_sym_java_ptr
-              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem
-        | Typ.Tptr (typ, _) ->
-            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
-              symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
-              ~new_alloc_num mem
-        | Typ.Tarray {elt; length} ->
-            let size =
-              match length with
-              | Some length when may_last_field && (IntLit.iszero length || IntLit.isone length) ->
-                  None (* Will be made symbolic by [decl_sym_arr] *)
-              | _ ->
-                  Option.map ~f:Itv.of_int_lit length
-            in
-            let offset = Itv.zero in
-            BoUtils.Exec.decl_sym_arr
-              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size
-              ~inst_num ~new_sym_num ~new_alloc_num mem
-        | Typ.Tstruct typename -> (
-          match Models.TypName.dispatch () typename with
-          | Some {Models.declare_symbolic} ->
-              let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
-              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
-                loc ~inst_num ~new_sym_num ~new_alloc_num mem
-          | None ->
-              let decl_fld ~may_last_field mem (fn, typ, _) =
-                let loc_fld = Loc.append_field loc ~fn in
-                let path = Itv.SymbolPath.field path fn in
-                decl_sym_val pname path tenv ~node_hash location ~depth loc_fld typ ~may_last_field
-                  mem
-              in
-              let decl_flds str =
-                IList.fold_last ~f:(decl_fld ~may_last_field:false)
-                  ~f_last:(decl_fld ~may_last_field) ~init:mem str.Typ.Struct.fields
-              in
-              let opt_struct = Tenv.lookup tenv typename in
-              Option.value_map opt_struct ~default:mem ~f:decl_flds )
-        | _ ->
-            if Config.bo_debug >= 3 then
-              L.(debug BufferOverrun Verbose)
-                "/!\\ decl_fld of unhandled type: %a at %a@." (Typ.pp Pp.text) typ Location.pp
-                location ;
-            mem
-    in
-    decl_sym_val pname path tenv ~node_hash location ~depth:0 ~may_last_field:true loc typ mem
-
-
-  let declare_symbolic_parameters
-      : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> Itv.SymbolTable.t
-        -> inst_num:int -> (Pvar.t * Typ.t) list -> Dom.Mem.astate -> Dom.Mem.astate =
-   fun pname tenv ~node_hash location symbol_table ~inst_num formals mem ->
-    let new_sym_num = Itv.Counter.make 0 in
-    let add_formal (mem, inst_num) (pvar, typ) =
-      let loc = Loc.of_pvar pvar in
-      let path = Itv.SymbolPath.of_pvar pvar in
-      let mem =
-        declare_symbolic_val pname symbol_table path tenv ~node_hash location loc typ ~inst_num
-          ~new_sym_num mem
-      in
-      (mem, inst_num + 1)
-    in
-    List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
-
-
   let instantiate_ret ret callee_pname ~callee_exit_mem subst_map mem ret_alias location =
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
@@ -223,7 +137,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate =
    fun mem {pdesc; tenv; extras= symbol_table} node instr ->
-    let pname = Procdesc.get_proc_name pdesc in
     let output_mem =
       match instr with
       | Load (id, _, _, _) when Ident.is_none id ->
@@ -245,6 +158,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let mem =
             if PowLoc.is_singleton locs then
               let loc_v = PowLoc.min_elt locs in
+              let pname = Procdesc.get_proc_name pdesc in
               match Typ.Procname.get_method pname with
               | "__inferbo_empty" when Loc.is_return loc_v -> (
                 match Sem.get_formals pdesc with
@@ -282,33 +196,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
               Dom.Mem.add_stack (Loc.of_id id) val_unknown mem
               |> Dom.Mem.add_heap Loc.unknown val_unknown )
-      | Declare_locals (locals, location) ->
-          (* array allocation in stack e.g., int arr[10] *)
-          let node_hash = CFG.Node.hash node in
-          let rec decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem =
-            match typ.Typ.desc with
-            | Typ.Tarray {elt= typ; length; stride} ->
-                let stride = Option.map ~f:IntLit.to_int_exn stride in
-                BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
-                  ?stride ~inst_num ~dimension mem
-            | Typ.Tstruct typname -> (
-              match Models.TypName.dispatch () typname with
-              | Some {Models.declare_local} ->
-                  let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
-                  declare_local ~decl_local model_env loc ~inst_num ~dimension mem
-              | None ->
-                  (mem, inst_num) )
-            | _ ->
-                (mem, inst_num)
-          in
-          let try_decl_local (mem, inst_num) (pvar, typ) =
-            let loc = Loc.of_pvar pvar in
-            decl_local pname ~node_hash location loc typ ~inst_num ~dimension:1 mem
-          in
-          let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) locals in
-          let formals = Sem.get_formals pdesc in
-          declare_symbolic_parameters pname tenv ~node_hash location symbol_table ~inst_num formals
-            mem
       | Call (_, fun_exp, _, location, _) ->
           let () =
             L.(debug BufferOverrun Verbose)
@@ -317,7 +204,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Remove_temps (temps, _) ->
           Dom.Mem.remove_temps temps mem
-      | Abstract _ | Nullify _ ->
+      | Abstract _ | Declare_locals _ | Nullify _ ->
           mem
     in
     print_debug_info instr mem output_mem ;
@@ -331,6 +218,125 @@ module CFG = ProcCfg.NormalOneInstrPerNode
 module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
 type invariant_map = Analyzer.invariant_map
+
+module Init = struct
+  let declare_symbolic_val
+      : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int
+        -> Location.t -> Loc.t -> Typ.typ -> inst_num:int -> new_sym_num:Itv.Counter.t -> Dom.Mem.t
+        -> Dom.Mem.t =
+   fun pname symbol_table path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
+    let max_depth = 2 in
+    let new_alloc_num = Itv.Counter.make 1 in
+    let rec decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem =
+      if depth > max_depth then mem
+      else
+        let depth = depth + 1 in
+        match typ.Typ.desc with
+        | Typ.Tint ikind ->
+            let unsigned = Typ.ikind_is_unsigned ikind in
+            let v = Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num location in
+            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
+        | Typ.Tfloat _ ->
+            let v = Dom.Val.make_sym loc pname symbol_table path new_sym_num location in
+            mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
+        | Typ.Tptr (typ, _) when Language.curr_language_is Java && not (Typ.is_array typ) ->
+            BoUtils.Exec.decl_sym_java_ptr
+              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
+              pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem
+        | Typ.Tptr (typ, _) ->
+            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
+              symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
+              ~new_alloc_num mem
+        | Typ.Tarray {elt; length} ->
+            let size =
+              match length with
+              | Some length when may_last_field && (IntLit.iszero length || IntLit.isone length) ->
+                  None (* Will be made symbolic by [decl_sym_arr] *)
+              | _ ->
+                  Option.map ~f:Itv.of_int_lit length
+            in
+            let offset = Itv.zero in
+            BoUtils.Exec.decl_sym_arr
+              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
+              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size
+              ~inst_num ~new_sym_num ~new_alloc_num mem
+        | Typ.Tstruct typename -> (
+          match Models.TypName.dispatch () typename with
+          | Some {Models.declare_symbolic} ->
+              let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
+              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
+                loc ~inst_num ~new_sym_num ~new_alloc_num mem
+          | None ->
+              let decl_fld ~may_last_field mem (fn, typ, _) =
+                let loc_fld = Loc.append_field loc ~fn in
+                let path = Itv.SymbolPath.field path fn in
+                decl_sym_val pname path tenv ~node_hash location ~depth loc_fld typ ~may_last_field
+                  mem
+              in
+              let decl_flds str =
+                IList.fold_last ~f:(decl_fld ~may_last_field:false)
+                  ~f_last:(decl_fld ~may_last_field) ~init:mem str.Typ.Struct.fields
+              in
+              let opt_struct = Tenv.lookup tenv typename in
+              Option.value_map opt_struct ~default:mem ~f:decl_flds )
+        | _ ->
+            if Config.bo_debug >= 3 then
+              L.(debug BufferOverrun Verbose)
+                "/!\\ decl_fld of unhandled type: %a at %a@." (Typ.pp Pp.text) typ Location.pp
+                location ;
+            mem
+    in
+    decl_sym_val pname path tenv ~node_hash location ~depth:0 ~may_last_field:true loc typ mem
+
+
+  let declare_symbolic_parameters
+      : Typ.Procname.t -> Tenv.t -> node_hash:int -> Location.t -> Itv.SymbolTable.t
+        -> inst_num:int -> (Pvar.t * Typ.t) list -> Dom.Mem.astate -> Dom.Mem.astate =
+   fun pname tenv ~node_hash location symbol_table ~inst_num formals mem ->
+    let new_sym_num = Itv.Counter.make 0 in
+    let add_formal (mem, inst_num) (pvar, typ) =
+      let loc = Loc.of_pvar pvar in
+      let path = Itv.SymbolPath.of_pvar pvar in
+      let mem =
+        declare_symbolic_val pname symbol_table path tenv ~node_hash location loc typ ~inst_num
+          ~new_sym_num mem
+      in
+      (mem, inst_num + 1)
+    in
+    List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
+
+
+  let initial_state {ProcData.pdesc; tenv; extras= symbol_table} start_node =
+    let locals = Procdesc.get_locals pdesc in
+    let node_hash = CFG.Node.hash start_node in
+    let location = CFG.Node.loc start_node in
+    let pname = Procdesc.get_proc_name pdesc in
+    let rec decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem =
+      match typ.Typ.desc with
+      | Typ.Tarray {elt= typ; length; stride} ->
+          let stride = Option.map ~f:IntLit.to_int_exn stride in
+          BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
+            ?stride ~inst_num ~dimension mem
+      | Typ.Tstruct typname -> (
+        match Models.TypName.dispatch () typname with
+        | Some {Models.declare_local} ->
+            let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
+            declare_local ~decl_local model_env loc ~inst_num ~dimension mem
+        | None ->
+            (mem, inst_num) )
+      | _ ->
+          (mem, inst_num)
+    in
+    let try_decl_local (mem, inst_num) {ProcAttributes.name; typ} =
+      let pvar = Pvar.mk name pname in
+      let loc = Loc.of_pvar pvar in
+      decl_local pname ~node_hash location loc typ ~inst_num ~dimension:1 mem
+    in
+    let mem = Dom.Mem.init in
+    let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) locals in
+    let formals = Sem.get_formals pdesc in
+    declare_symbolic_parameters pname tenv ~node_hash location symbol_table ~inst_num formals mem
+end
 
 module Report = struct
   module PO = BufferOverrunProofObligations
@@ -605,19 +611,14 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
     "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
 
 
-let get_local_decls cfg =
-  let accum_pvar_list acc pvars =
-    List.fold pvars ~init:acc ~f:(fun acc (pvar, _) -> PowLoc.add (Loc.of_pvar pvar) acc)
+let get_local_decls proc_desc =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let accum_local_decls acc {ProcAttributes.name} =
+    let pvar = Pvar.mk name proc_name in
+    let loc = Loc.of_pvar pvar in
+    PowLoc.add loc acc
   in
-  let accum_decls_of_instr acc instr =
-    match instr with Sil.Declare_locals (vars, _) -> accum_pvar_list acc vars | _ -> acc
-  in
-  let accum_decls_of_node acc node =
-    Instrs.fold (CFG.instrs node) ~init:acc ~f:accum_decls_of_instr
-  in
-  let decls = CFG.fold_nodes cfg ~init:PowLoc.empty ~f:accum_decls_of_node in
-  let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar (Procdesc.get_proc_name cfg)) in
-  PowLoc.remove ret_loc decls
+  Procdesc.get_locals proc_desc |> List.fold ~init:PowLoc.empty ~f:accum_local_decls
 
 
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
@@ -625,9 +626,10 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   Preanal.do_preanalysis proc_desc tenv ;
   let symbol_table = Itv.SymbolTable.empty () in
   let pdata = ProcData.make proc_desc tenv symbol_table in
-  let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
   let cfg = CFG.from_pdesc proc_desc in
-  let locals = get_local_decls cfg in
+  let initial = Init.initial_state pdata (CFG.start_node cfg) in
+  let inv_map = Analyzer.exec_pdesc ~initial pdata in
+  let locals = get_local_decls proc_desc in
   let exit_mem =
     extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map
     |> Option.map ~f:(Dom.Mem.forget_locs locals)
