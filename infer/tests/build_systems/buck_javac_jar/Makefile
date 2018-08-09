@@ -20,7 +20,7 @@ include $(TESTS_DIR)/infer.make
 $(OBJECTS): $(SOURCES) $(BUCKCONFIG)
 	$(BUCK) build --config tools.javac_jar= $(TARGET)
 
-infer-out/report.json: $(SOURCES) $(BUCKCONFIG)
+infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(BUCKCONFIG)
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java integration with javac_jar,\
 	INFER_BIN=$(INFER_BIN) \
