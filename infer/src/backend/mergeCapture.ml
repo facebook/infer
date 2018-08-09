@@ -34,7 +34,7 @@ let empty_stats () = {files_linked= 0; targets_merged= 0}
 
 let link_exists s =
   try
-    let _ = Unix.lstat s in
+    ignore (Unix.lstat s) ;
     true
   with Unix.Unix_error _ -> false
 

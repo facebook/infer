@@ -1932,16 +1932,14 @@ module Subtyping_check = struct
 end
 
 let cast_exception tenv texp1 texp2 e1 subs =
-  let _ =
-    match (texp1, texp2) with
-    | Exp.Sizeof {typ= t1}, Exp.Sizeof {typ= t2; subtype= st2} ->
-        if
-          Config.developer_mode
-          || (Subtype.is_cast st2 && not (Subtyping_check.check_subtype tenv t1 t2))
-        then ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
-    | _ ->
-        ()
-  in
+  ( match (texp1, texp2) with
+  | Exp.Sizeof {typ= t1}, Exp.Sizeof {typ= t2; subtype= st2} ->
+      if
+        Config.developer_mode
+        || (Subtype.is_cast st2 && not (Subtyping_check.check_subtype tenv t1 t2))
+      then ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
+  | _ ->
+      () ) ;
   raise (IMPL_EXC ("class cast exception", subs, EXC_FALSE))
 
 
@@ -2073,17 +2071,15 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2
   | Sil.Hpointsto (e2_, se2, texp2)
     -> (
       let e2 = Sil.exp_sub (`Exp (snd subs)) e2_ in
-      let _ =
-        match e2 with
-        | Exp.Lvar _ ->
-            ()
-        | Exp.Var v ->
-            if Ident.is_primed v then (
-              d_impl_err ("rhs |-> not implemented", subs, EXC_FALSE_HPRED hpred2) ;
-              raise (Exceptions.Abduction_case_not_implemented __POS__) )
-        | _ ->
-            ()
-      in
+      ( match e2 with
+      | Exp.Lvar _ ->
+          ()
+      | Exp.Var v ->
+          if Ident.is_primed v then (
+            d_impl_err ("rhs |-> not implemented", subs, EXC_FALSE_HPRED hpred2) ;
+            raise (Exceptions.Abduction_case_not_implemented __POS__) )
+      | _ ->
+          () ) ;
       match Prop.prop_iter_create prop1 with
       | None ->
           raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
@@ -2182,17 +2178,15 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2
     -> (
       (* for now ignore implications between PE and NE *)
       let e2, f2 = (Sil.exp_sub (`Exp (snd subs)) e2_, Sil.exp_sub (`Exp (snd subs)) f2_) in
-      let _ =
-        match e2 with
-        | Exp.Lvar _ ->
-            ()
-        | Exp.Var v ->
-            if Ident.is_primed v then (
-              d_impl_err ("rhs |-> not implemented", subs, EXC_FALSE_HPRED hpred2) ;
-              raise (Exceptions.Abduction_case_not_implemented __POS__) )
-        | _ ->
-            ()
-      in
+      ( match e2 with
+      | Exp.Lvar _ ->
+          ()
+      | Exp.Var v ->
+          if Ident.is_primed v then (
+            d_impl_err ("rhs |-> not implemented", subs, EXC_FALSE_HPRED hpred2) ;
+            raise (Exceptions.Abduction_case_not_implemented __POS__) )
+      | _ ->
+          () ) ;
       if Exp.equal e2 f2 && Sil.equal_lseg_kind k Sil.Lseg_PE then (subs, prop1)
       else
         match Prop.prop_iter_create prop1 with
@@ -2253,28 +2247,24 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2
       (* for now ignore implications between PE and NE *)
       let iF2, oF2 = (Sil.exp_sub (`Exp (snd subs)) iF2, Sil.exp_sub (`Exp (snd subs)) oF2) in
       let iB2, oB2 = (Sil.exp_sub (`Exp (snd subs)) iB2, Sil.exp_sub (`Exp (snd subs)) oB2) in
-      let _ =
-        match oF2 with
-        | Exp.Lvar _ ->
-            ()
-        | Exp.Var v ->
-            if Ident.is_primed v then (
-              d_impl_err ("rhs dllseg not implemented", subs, EXC_FALSE_HPRED hpred2) ;
-              raise (Exceptions.Abduction_case_not_implemented __POS__) )
-        | _ ->
-            ()
-      in
-      let _ =
-        match oB2 with
-        | Exp.Lvar _ ->
-            ()
-        | Exp.Var v ->
-            if Ident.is_primed v then (
-              d_impl_err ("rhs dllseg not implemented", subs, EXC_FALSE_HPRED hpred2) ;
-              raise (Exceptions.Abduction_case_not_implemented __POS__) )
-        | _ ->
-            ()
-      in
+      ( match oF2 with
+      | Exp.Lvar _ ->
+          ()
+      | Exp.Var v ->
+          if Ident.is_primed v then (
+            d_impl_err ("rhs dllseg not implemented", subs, EXC_FALSE_HPRED hpred2) ;
+            raise (Exceptions.Abduction_case_not_implemented __POS__) )
+      | _ ->
+          () ) ;
+      ( match oB2 with
+      | Exp.Lvar _ ->
+          ()
+      | Exp.Var v ->
+          if Ident.is_primed v then (
+            d_impl_err ("rhs dllseg not implemented", subs, EXC_FALSE_HPRED hpred2) ;
+            raise (Exceptions.Abduction_case_not_implemented __POS__) )
+      | _ ->
+          () ) ;
       match Prop.prop_iter_create prop1 with
       | None ->
           raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))

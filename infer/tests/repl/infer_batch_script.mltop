@@ -5,16 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* Example of ocaml script starting with infer code. To execute a scipt run:
-   ./scripts/infer_repl <path/to/this/script.ml>
+(** Example of ocaml script starting with infer code. To execute a scipt run:
+    ./scripts/infer_repl <path/to/this/script.ml>
    It's used as a basic integration test *)
 
 (* "import" infer code *)
 #use "toplevel_init";;
 
-let _ = Ident.create_fresh Ident.knormal in
+ignore (Ident.create_fresh Ident.knormal) ;
 let ident = Ident.create_fresh Ident.knormal in
 let e = Exp.Var ident in
-print_endline (Exp.to_string e);
+print_endline (Exp.to_string e) ;
 (* pass --flavors flag to change the value *)
 print_endline (string_of_bool Config.flavors)

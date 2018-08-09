@@ -133,11 +133,11 @@ let interface_declaration qual_type_to_sil_type procname_from_decl tenv decl =
         add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info
           decl_list ocidi
       in
-      let _ = add_class_implementation qual_type_to_sil_type tenv ocidi in
-      let _ = add_super_class_decl qual_type_to_sil_type tenv ocidi in
-      let _ = add_protocols_decl qual_type_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols in
+      add_class_implementation qual_type_to_sil_type tenv ocidi ;
+      add_super_class_decl qual_type_to_sil_type tenv ocidi ;
+      add_protocols_decl qual_type_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols ;
       let known_categories = ocidi.Clang_ast_t.otdi_known_categories in
-      let _ = add_categories_decl qual_type_to_sil_type tenv known_categories in
+      add_categories_decl qual_type_to_sil_type tenv known_categories ;
       typ
   | _ ->
       assert false
@@ -151,7 +151,7 @@ let interface_impl_declaration qual_type_to_sil_type procname_from_decl tenv dec
       let class_name = CAst_utils.get_qualified_name name_info in
       L.(debug Capture Verbose)
         "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name ;
-      let _ = add_class_decl qual_type_to_sil_type tenv idi in
+      add_class_decl qual_type_to_sil_type tenv idi ;
       let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
       let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
       CField_decl.add_missing_fields tenv class_name fields ;

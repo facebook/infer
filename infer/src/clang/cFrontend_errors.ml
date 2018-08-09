@@ -141,7 +141,7 @@ let rec expand_message_string context message an =
   (* reg exp should match alphanumeric id with possibly somee _ *)
   let re = Str.regexp "%[a-zA-Z0-9_]+%" in
   try
-    let _ = Str.search_forward re message 0 in
+    ignore (Str.search_forward re message 0) ;
     let ms = Str.matched_string message in
     let res = evaluate_place_holder context ms an in
     L.(debug Linters Medium) "@\nMatched string '%s'@\n" ms ;

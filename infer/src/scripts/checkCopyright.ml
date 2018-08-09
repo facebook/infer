@@ -170,7 +170,7 @@ let get_copyright_year cstart cend lines =
   let do_line line =
     try
       let fmt_re = Str.regexp "[0-9]+" in
-      let _ = Str.search_forward fmt_re line 0 in
+      ignore (Str.search_forward fmt_re line 0) ;
       let fmt_match = Str.matched_string line in
       if String.length fmt_match = 4 then
         try found := Some (int_of_string fmt_match) with _ -> ()

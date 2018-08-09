@@ -2079,7 +2079,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      }
   *)
   and objCForCollectionStmt_trans trans_state item items body stmt_info =
-    let _ = instruction trans_state item in
+    ignore (instruction trans_state item) ;
     (* Here we do ast transformation, so we don't need the value of the translation of the *)
     (* variable item but we still need to add the variable to the locals *)
     let assign_next_object, cond = Ast_expressions.make_next_object_exp stmt_info item items in

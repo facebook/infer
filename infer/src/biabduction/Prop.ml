@@ -2568,7 +2568,7 @@ let prop_iter_gc_fields iter =
   prop_iter_map f iter
 
 
-let prop_case_split tenv prop =
+let prop_expand tenv prop =
   let pi_sigma_list = Sil.sigma_to_sigma_ne prop.sigma in
   let f props_acc (pi, sigma) =
     let sigma' = sigma_normalize_prop tenv prop sigma in
@@ -2576,13 +2576,6 @@ let prop_case_split tenv prop =
     List.fold ~f:(Normalize.prop_atom_and tenv) ~init:prop' pi :: props_acc
   in
   List.fold ~f ~init:[] pi_sigma_list
-
-
-let prop_expand prop =
-  (*
-  let _ = check_prop_normalized prop in
-  *)
-  prop_case_split prop
 
 
 (*** START of module Metrics ***)

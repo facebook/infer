@@ -91,12 +91,12 @@ let category_decl qual_type_to_sil_type procname_from_decl tenv decl =
       let name = CAst_utils.get_qualified_name name_info in
       let class_name = get_classname_from_category_decl cdi in
       L.(debug Capture Verbose) "ADDING: ObjCCategoryDecl for '%a'@\n" QualifiedCppName.pp name ;
-      let _ = add_class_decl qual_type_to_sil_type tenv cdi in
+      add_class_decl qual_type_to_sil_type tenv cdi ;
       let typ =
         process_category qual_type_to_sil_type procname_from_decl tenv class_name decl_info
           decl_list
       in
-      let _ = add_category_implementation qual_type_to_sil_type tenv cdi in
+      add_category_implementation qual_type_to_sil_type tenv cdi ;
       typ
   | _ ->
       assert false
@@ -109,7 +109,7 @@ let category_impl_decl qual_type_to_sil_type procname_from_decl tenv decl =
       let name = CAst_utils.get_qualified_name name_info in
       let class_name = get_classname_from_category_impl cii in
       L.(debug Capture Verbose) "ADDING: ObjCCategoryImplDecl for '%a'@\n" QualifiedCppName.pp name ;
-      let _ = add_category_decl qual_type_to_sil_type tenv cii in
+      add_category_decl qual_type_to_sil_type tenv cii ;
       let typ =
         process_category qual_type_to_sil_type procname_from_decl tenv class_name decl_info
           decl_list

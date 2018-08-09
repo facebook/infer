@@ -95,7 +95,7 @@ let rec format_string_type_names (fmt_string: string) (start: int) : string list
   try
     let fmt_re = Str.regexp "%[0-9]*\\.?[0-9]*[A-mo-z]" in
     (* matches '%2.1d' etc. *)
-    let _ = Str.search_forward fmt_re fmt_string start in
+    ignore (Str.search_forward fmt_re fmt_string start) ;
     let fmt_match = Str.matched_string fmt_string in
     let fmt_type = String.sub fmt_match ~pos:(String.length fmt_match - 1) ~len:1 in
     fmt_type :: format_string_type_names fmt_string (Str.match_end ())
