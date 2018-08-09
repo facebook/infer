@@ -78,20 +78,20 @@ let log_issue_deprecated ?(store_summary= false) severity proc_name ?loc ?node_i
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_error = log_issue_from_summary Exceptions.Kerror
+let log_error = log_issue_from_summary Exceptions.Error
 
-let log_warning = log_issue_from_summary Exceptions.Kwarning
+let log_warning = log_issue_from_summary Exceptions.Warning
 
 let log_error_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Kerror
+  log_issue_deprecated ~store_summary Exceptions.Error
 
 
 let log_warning_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Kwarning
+  log_issue_deprecated ~store_summary Exceptions.Warning
 
 
 let log_info_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Kinfo
+  log_issue_deprecated ~store_summary Exceptions.Info
 
 
 let log_issue_external procname ?clang_method_kind severity ?loc ?node_id ?session ?ltr

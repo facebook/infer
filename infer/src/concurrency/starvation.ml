@@ -226,7 +226,7 @@ end = struct
   let log map =
     let log_report issuetype loc {pname; ltr; message} =
       let exn = Exceptions.Checkers (issuetype, Localise.verbatim_desc message) in
-      Reporting.log_issue_external pname Exceptions.Kerror ~loc ~ltr exn
+      Reporting.log_issue_external pname Exceptions.Error ~loc ~ltr exn
     in
     let mk_deduped_report num_of_reports ({message} as report) =
       { report with

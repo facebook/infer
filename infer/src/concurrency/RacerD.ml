@@ -915,7 +915,7 @@ let is_contaminated access wobbly_paths =
 
 
 let log_issue current_pname ~loc ~ltr ~access exn =
-  Reporting.log_issue_external current_pname Exceptions.Kerror ~loc ~ltr ~access exn
+  Reporting.log_issue_external current_pname Exceptions.Error ~loc ~ltr ~access exn
 
 
 let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread

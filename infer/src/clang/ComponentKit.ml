@@ -149,7 +149,7 @@ let mutable_local_vars_advice context an =
             Some
               { CIssue.id= "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
               ; name= None
-              ; severity= Exceptions.Kadvice
+              ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description=
                   "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name
@@ -186,7 +186,7 @@ let component_factory_function_advice context an =
           Some
             { CIssue.id= "COMPONENT_FACTORY_FUNCTION"
             ; name= None
-            ; severity= Exceptions.Kadvice
+            ; severity= Exceptions.Advice
             ; mode= CIssue.Off
             ; description= "Break out composite components"
             ; suggestion=
@@ -240,7 +240,7 @@ let component_with_unconventional_superclass_advice context an =
             Some
               { CIssue.id= "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"
               ; name= None
-              ; severity= Exceptions.Kadvice
+              ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description= "Never Subclass Components"
               ; suggestion= Some "Instead, create a new subclass of CKCompositeComponent."
@@ -300,7 +300,7 @@ let component_with_multiple_factory_methods_advice context an =
           ~f:(fun meth_decl ->
             { CIssue.id= "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
             ; name= None
-            ; severity= Exceptions.Kadvice
+            ; severity= Exceptions.Advice
             ; mode= CIssue.On
             ; description= "Avoid Overrides"
             ; suggestion=
@@ -382,7 +382,7 @@ let rec component_initializer_with_side_effects_advice_ (context: CLintersContex
             Some
               { CIssue.id= "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
               ; name= None
-              ; severity= Exceptions.Kadvice
+              ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description= "No Side-effects"
               ; suggestion=
@@ -420,7 +420,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
         ~f:(fun i ->
           { CIssue.id= "COMPONENT_FILE_LINE_COUNT"
           ; name= None
-          ; severity= Exceptions.Kinfo
+          ; severity= Exceptions.Info
           ; mode= CIssue.Off
           ; description= "Line count analytics"
           ; suggestion= None
@@ -471,7 +471,7 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
       Some
         { CIssue.id= "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
         ; name= None
-        ; severity= Exceptions.Kinfo
+        ; severity= Exceptions.Info
         ; mode= CIssue.Off
         ; description= "Cyclomatic Complexity Incremental Marker"
         ; suggestion= None

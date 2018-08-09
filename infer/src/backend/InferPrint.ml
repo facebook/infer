@@ -65,7 +65,7 @@ let compute_hash (severity: string) (bug_type: string) (proc_name: Typ.Procname.
 
 let loc_trace_to_jsonbug_record trace_list ekind =
   match ekind with
-  | Exceptions.Kinfo ->
+  | Exceptions.Info ->
       []
   | _ ->
       let trace_item_to_record trace_item =
@@ -125,7 +125,7 @@ let summary_values summary =
   ; verr=
       Errlog.size
         (fun severity in_footprint ->
-          Exceptions.equal_severity severity Exceptions.Kerror && in_footprint )
+          Exceptions.equal_severity severity Exceptions.Error && in_footprint )
         err_log
   ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
@@ -165,7 +165,7 @@ let should_report (issue_kind: Exceptions.severity) issue_type error_desc eclass
   if not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
     let issue_kind_is_blacklisted =
-      match issue_kind with Kinfo -> true | Kerror | Kwarning | Kadvice | Klike -> false
+      match issue_kind with Info -> true | Advice | Error | Like | Warning -> false
     in
     if issue_kind_is_blacklisted then false
     else
@@ -474,7 +474,7 @@ module Stats = struct
       let type_str = key.err_name.IssueType.unique_id in
       if key.in_footprint && error_filter key.err_name then
         match key.severity with
-        | Exceptions.Kerror ->
+        | Exceptions.Error ->
             found_errors := true ;
             stats.nerrors <- stats.nerrors + 1 ;
             let error_strs =
@@ -488,13 +488,13 @@ module Stats = struct
             in
             let trace = loc_trace_to_string_list linereader 1 err_data.loc_trace in
             stats.saved_errors <- List.rev_append (error_strs @ trace @ [""]) stats.saved_errors
-        | Exceptions.Kwarning ->
+        | Exceptions.Warning ->
             stats.nwarnings <- stats.nwarnings + 1
-        | Exceptions.Kinfo ->
+        | Exceptions.Info ->
             stats.ninfos <- stats.ninfos + 1
-        | Exceptions.Kadvice ->
+        | Exceptions.Advice ->
             stats.nadvice <- stats.nadvice + 1
-        | Exceptions.Klike ->
+        | Exceptions.Like ->
             stats.nlikes <- stats.nlikes + 1
     in
     Errlog.iter process_row err_log ; !found_errors

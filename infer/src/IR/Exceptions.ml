@@ -29,7 +29,7 @@ type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
 let equal_err_class = [%compare.equal : err_class]
 
 (** severity of the report *)
-type severity = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
+type severity = Advice | Error | Info | Like | Warning [@@deriving compare]
 
 let equal_severity = [%compare.equal : severity]
 
@@ -178,7 +178,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Checker }
   | Array_out_of_bounds_l2 (desc, ocaml_pos) ->
       { name= IssueType.array_out_of_bounds_l2
@@ -257,7 +257,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= Some Kinfo
+      ; severity= Some Info
       ; category= Checker }
   | Dangling_pointer_dereference (dko, desc, ocaml_pos) ->
       let visibility =
@@ -299,14 +299,14 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Checker }
   | Double_lock (desc, ocaml_pos) ->
       { name= IssueType.double_lock
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Prover }
   | Eradicate (kind, desc) ->
       { name= kind
@@ -320,14 +320,14 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Prover }
   | Field_not_null_checked (desc, ocaml_pos) ->
       { name= IssueType.field_not_null_checked
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kwarning
+      ; severity= Some Warning
       ; category= Nocat }
   | Frontend_warning ((name, hum), desc, ocaml_pos) ->
       { name= IssueType.from_string name ?hum
@@ -362,7 +362,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Checker }
   | Inherently_dangerous_function desc ->
       { name= IssueType.inherently_dangerous_function
@@ -439,7 +439,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kwarning
+      ; severity= Some Warning
       ; category= Nocat }
   | Precondition_not_found (desc, ocaml_pos) ->
       { name= IssueType.precondition_not_found
@@ -453,7 +453,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_developer
-      ; severity= Some Kwarning
+      ; severity= Some Warning
       ; category= Nocat }
       (* always a warning *)
   | Retain_cycle (desc, ocaml_pos) ->
@@ -468,7 +468,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Nocat }
   | Return_expression_required (desc, ocaml_pos) ->
       { name= IssueType.return_expression_required
@@ -482,7 +482,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kerror
+      ; severity= Some Error
       ; category= Nocat }
   | Return_statement_missing (desc, ocaml_pos) ->
       { name= IssueType.return_statement_missing
@@ -517,7 +517,7 @@ let recognize_exception exn =
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user
-      ; severity= Some Kinfo
+      ; severity= Some Info
       ; category= Nocat }
       (* always an info *)
   | Symexec_memory_error ocaml_pos ->
@@ -596,16 +596,16 @@ let print_exception_html s exn =
 
 (** string describing an error kind *)
 let severity_string = function
-  | Kwarning ->
-      "WARNING"
-  | Kerror ->
-      "ERROR"
-  | Kinfo ->
-      "INFO"
-  | Kadvice ->
+  | Advice ->
       "ADVICE"
-  | Klike ->
+  | Error ->
+      "ERROR"
+  | Info ->
+      "INFO"
+  | Like ->
       "LIKE"
+  | Warning ->
+      "WARNING"
 
 
 (** string describing an error class *)
@@ -625,7 +625,7 @@ let print_key = false
 
 (** pretty print an error  *)
 let pp_err ~node_key loc severity ex_name desc ocaml_pos_opt fmt () =
-  let kind = severity_string (if equal_severity severity Kinfo then Kwarning else severity) in
+  let kind = severity_string (if equal_severity severity Info then Warning else severity) in
   let pp_key fmt k = if print_key then F.fprintf fmt " key: %s " (Caml.Digest.to_hex k) else () in
   F.fprintf fmt "%a:%d: %s: %a %a%a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
     IssueType.pp ex_name Localise.pp_error_desc desc pp_key node_key L.pp_ocaml_pos_opt

@@ -115,7 +115,7 @@ module ErrLogHash = struct
 end
 
 (** Type of the error log, to be reset once per function.
-    Map severity, fotprint / re - execution flag, error name,
+    Map severity, footprint / re - execution flag, error name,
     error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
@@ -159,7 +159,7 @@ let size filter (err_log: t) =
 (** Print errors from error log *)
 let pp_errors fmt (errlog: t) =
   let f key _ =
-    if Exceptions.equal_severity key.severity Exceptions.Kerror then
+    if Exceptions.equal_severity key.severity Exceptions.Error then
       F.fprintf fmt "%a@ " IssueType.pp key.err_name
   in
   ErrLogHash.iter f errlog
@@ -168,7 +168,7 @@ let pp_errors fmt (errlog: t) =
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog: t) =
   let f key _ =
-    if Exceptions.equal_severity key.severity Exceptions.Kwarning then
+    if Exceptions.equal_severity key.severity Exceptions.Warning then
       F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
@@ -189,17 +189,17 @@ let pp_html source path_to_root fmt (errlog: t) =
         pp_eds err_datas
   in
   F.fprintf fmt "%aERRORS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Kerror) errlog ;
+  ErrLogHash.iter (pp_err_log true Exceptions.Error) errlog ;
   F.fprintf fmt "%aERRORS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Kerror) errlog ;
+  ErrLogHash.iter (pp_err_log false Exceptions.Error) errlog ;
   F.fprintf fmt "%aWARNINGS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Kwarning) errlog ;
+  ErrLogHash.iter (pp_err_log true Exceptions.Warning) errlog ;
   F.fprintf fmt "%aWARNINGS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Kwarning) errlog ;
+  ErrLogHash.iter (pp_err_log false Exceptions.Warning) errlog ;
   F.fprintf fmt "%aINFOS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Kinfo) errlog ;
+  ErrLogHash.iter (pp_err_log true Exceptions.Info) errlog ;
   F.fprintf fmt "%aINFOS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Kinfo) errlog
+  ErrLogHash.iter (pp_err_log false Exceptions.Info) errlog
 
 
 (** Add an error description to the error log unless there is
@@ -290,7 +290,7 @@ let log_issue procname ?clang_method_kind severity err_log loc (node_id, node_ke
         "@\n%a@\n@?"
         (Exceptions.pp_err ~node_key loc severity error.name error.description error.ocaml_pos)
         () ;
-      if not (Exceptions.equal_severity severity Exceptions.Kerror) then (
+      if not (Exceptions.equal_severity severity Exceptions.Error) then (
         let warn_str =
           let pp fmt =
             Format.fprintf fmt "%s %a" error.name.IssueType.unique_id Localise.pp_error_desc
@@ -300,11 +300,11 @@ let log_issue procname ?clang_method_kind severity err_log loc (node_id, node_ke
         in
         let d =
           match severity with
-          | Exceptions.Kerror ->
+          | Exceptions.Error ->
               L.d_error
-          | Exceptions.Kwarning ->
+          | Exceptions.Warning ->
               L.d_warning
-          | Exceptions.Kinfo | Exceptions.Kadvice | Exceptions.Klike ->
+          | Exceptions.Info | Exceptions.Advice | Exceptions.Like ->
               L.d_info
         in
         d warn_str ; L.d_ln () )

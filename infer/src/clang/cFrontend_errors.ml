@@ -160,15 +160,15 @@ let remove_new_lines_and_whitespace message =
 
 let string_to_severity = function
   | "WARNING" ->
-      Exceptions.Kwarning
+      Exceptions.Warning
   | "ERROR" ->
-      Exceptions.Kerror
+      Exceptions.Error
   | "INFO" ->
-      Exceptions.Kinfo
+      Exceptions.Info
   | "ADVICE" ->
-      Exceptions.Kadvice
+      Exceptions.Advice
   | "LIKE" ->
-      Exceptions.Klike
+      Exceptions.Like
   | s ->
       L.die InternalError "Severity %s does not exist" s
 
@@ -207,7 +207,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
       ; description= ""
       ; suggestion= None
       ; loc= Location.dummy
-      ; severity= Exceptions.Kwarning
+      ; severity= Exceptions.Warning
       ; doc_url= None
       ; mode= CIssue.On }
     in

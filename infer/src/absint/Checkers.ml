@@ -12,13 +12,13 @@ module L = Logging
 
 module ST = struct
   let report_error tenv proc_name proc_desc kind loc ?(field_name= None) ?(origin_loc= None)
-      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(severity= Exceptions.Kwarning)
+      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(severity= Exceptions.Warning)
       description =
     let log =
       match severity with
-      | Exceptions.Kwarning ->
+      | Exceptions.Warning ->
           Reporting.log_warning_deprecated
-      | Exceptions.Kerror ->
+      | Exceptions.Error ->
           Reporting.log_error_deprecated
       | _ ->
           L.(die InternalError) "Severity not supported"

@@ -213,7 +213,7 @@ let add_err find_canonical_duplicate err_instance instr_ref_opt loc =
 
 module Severity = struct
   let get_severity ia =
-    if Annotations.ia_ends_with ia Annotations.generated_graphql then Some Exceptions.Kerror
+    if Annotations.ia_ends_with ia Annotations.generated_graphql then Some Exceptions.Error
     else None
 
 

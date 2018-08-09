@@ -22,7 +22,7 @@ val equal_visibility : visibility -> visibility -> bool
 val string_of_visibility : visibility -> string
 
 (** severity of the report *)
-type severity = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
+type severity = Advice | Error | Info | Like | Warning [@@deriving compare]
 
 val equal_severity : severity -> severity -> bool
 
