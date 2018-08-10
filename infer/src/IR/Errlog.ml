@@ -188,18 +188,15 @@ let pp_html source path_to_root fmt (errlog: t) =
       F.fprintf fmt "<br>%a %a %a" IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
-  F.fprintf fmt "%aERRORS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Error) errlog ;
-  F.fprintf fmt "%aERRORS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Error) errlog ;
-  F.fprintf fmt "%aWARNINGS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Warning) errlog ;
-  F.fprintf fmt "%aWARNINGS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Warning) errlog ;
-  F.fprintf fmt "%aINFOS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log true Exceptions.Info) errlog ;
-  F.fprintf fmt "%aINFOS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
-  ErrLogHash.iter (pp_err_log false Exceptions.Info) errlog
+  let pp severity is_footprint phase =
+    F.fprintf fmt "%a%s DURING %s@\n" Io_infer.Html.pp_hline ()
+      (Exceptions.severity_string severity)
+      phase ;
+    ErrLogHash.iter (pp_err_log is_footprint severity) errlog
+  in
+  List.iter
+    Exceptions.[Advice; Error; Info; Like; Warning]
+    ~f:(fun severity -> pp severity true "FOOTPRINT" ; pp severity false "RE-EXECUTION")
 
 
 (** Add an error description to the error log unless there is
