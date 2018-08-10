@@ -22,4 +22,10 @@ public class Array {
       radii[i * 2 + 2] = radii[i] + 1;
     }
   }
+
+  void array_access_weird_ok(long[] optionNumerators, int length) {
+    for (int j = 0; j < length; ++j) {
+      if (10 < optionNumerators[j] + 1) {}
+    }
+  }
 }

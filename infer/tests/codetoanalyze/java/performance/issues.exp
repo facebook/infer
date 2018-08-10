@@ -1,4 +1,7 @@
 codetoanalyze/java/performance/Array.java, void Array.array_access_overrun_bad(), 4, BUFFER_OVERRUN_L2, no_bucket, ERROR, [ArrayDeclaration,Assignment,Assignment,ArrayAccess: Offset: [2, 8] Size: 8]
+codetoanalyze/java/performance/Array.java, void Array.array_access_weird_ok(long[],int), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1 + 15 * length.ub, degree = 1]
+codetoanalyze/java/performance/Array.java, void Array.array_access_weird_ok(long[],int), 1, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 2 + 15 * length.ub, degree = 1]
+codetoanalyze/java/performance/Array.java, void Array.array_access_weird_ok(long[],int), 2, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 1 + 15 * length.ub, degree = 1]
 codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(int), 4, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 882, degree = 0]
 codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(int), 4, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 883, degree = 0]
 codetoanalyze/java/performance/ArrayCost.java, boolean ArrayCost.isPowOfTwo_FP(int), 5, EXPENSIVE_EXECUTION_TIME_CALL, no_bucket, ERROR, [with estimated cost 882, degree = 0]

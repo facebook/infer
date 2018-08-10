@@ -239,10 +239,17 @@ module Init = struct
         | Typ.Tfloat _ ->
             let v = Dom.Val.make_sym loc pname symbol_table path new_sym_num location in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
-        | Typ.Tptr (typ, _) when Language.curr_language_is Java && not (Typ.is_array typ) ->
-            BoUtils.Exec.decl_sym_java_ptr
-              ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem
+        | Typ.Tptr (typ, _) when Language.curr_language_is Java -> (
+          match typ with
+          | {desc= Typ.Tarray {elt}} ->
+              BoUtils.Exec.decl_sym_arr
+                ~decl_sym_val:(decl_sym_val ~may_last_field:false)
+                pname symbol_table path tenv ~node_hash location ~depth loc elt ~inst_num
+                ~new_sym_num ~new_alloc_num mem
+          | _ ->
+              BoUtils.Exec.decl_sym_java_ptr
+                ~decl_sym_val:(decl_sym_val ~may_last_field:false)
+                pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem )
         | Typ.Tptr (typ, _) ->
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
               symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
