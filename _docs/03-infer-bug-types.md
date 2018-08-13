@@ -8,7 +8,6 @@ permalink: /docs/infer-bug-types.html
 Here is an overview of the types of bugs currently reported by Infer.
 
 - Bugs reported in Java
-  - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
   - [Unsafe_GuardedBy_Access](/docs/infer-bug-types.html#UNSAFE_GUARDEDBY_ACCESS)
@@ -265,12 +264,6 @@ as in the escaping example above.
 In an escaping example  maybe you could refactor lots of code so that try-with-resources applies, and maybe you cannot in a sensible way.
 This just illustrates that, though you might hear people say that try-with-resources "solves" the resource problem, it does not. It is very useful, but you cannot use it blindly
 when you see a resource-allocation site.
-
-## <a name="CONTEXT_LEAK"></a> Context leak
-
-This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
-
-Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
 
 ## <a name="MEMORY_LEAK"></a>Memory leak
 
