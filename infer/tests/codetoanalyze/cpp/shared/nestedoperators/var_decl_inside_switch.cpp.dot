@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"get#10177141129833125794.403aae26476e3a02c544075e122228e0_1" [label="1: Start get\nFormals:  a:int\nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 8, column 1]\n " color=yellow style=filled]
+"get#10177141129833125794.403aae26476e3a02c544075e122228e0_1" [label="1: Start get\nFormals:  a:int\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
 	 "get#10177141129833125794.403aae26476e3a02c544075e122228e0_1" -> "get#10177141129833125794.403aae26476e3a02c544075e122228e0_4" ;

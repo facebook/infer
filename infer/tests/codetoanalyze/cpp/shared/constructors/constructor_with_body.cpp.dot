@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_1" [label="1: Start constructor_with_body::test_div0\nFormals: \nLocals:  x:constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 28, column 1]\n " color=yellow style=filled]
+"test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_1" [label="1: Start constructor_with_body::test_div0\nFormals: \nLocals:  x:constructor_with_body::X \n  " color=yellow style=filled]
 	
 
 	 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_1" -> "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_4" -> "test_div0#constructor_with_body#14177342253516869661.07f5b28b5e0b5cf0bd1b639da4232d5e_3" ;
-"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_1" [label="1: Start constructor_with_body::test_div0_default_constructor\nFormals: \nLocals:  x:constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 33, column 1]\n " color=yellow style=filled]
+"test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_1" [label="1: Start constructor_with_body::test_div0_default_constructor\nFormals: \nLocals:  x:constructor_with_body::X \n  " color=yellow style=filled]
 	
 
 	 "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_1" -> "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_4" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_4" -> "test_div0_default_constructor#constructor_with_body#13388399293672727772.2d6a8a159f30a2a66b86eb8aec3b9543_3" ;
-"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_1" [label="1: Start constructor_with_body::test_div1\nFormals: \nLocals:  x:constructor_with_body::X \n   DECLARE_LOCALS(&return,&x); [line 38, column 1]\n " color=yellow style=filled]
+"test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_1" [label="1: Start constructor_with_body::test_div1\nFormals: \nLocals:  x:constructor_with_body::X \n  " color=yellow style=filled]
 	
 
 	 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_1" -> "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_4" -> "test_div1#constructor_with_body#14807027065269407206.e5673561e7edf9eb35b296211ab8d37d_3" ;
-"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+"init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" [label="1: Start constructor_with_body::X_init\nFormals:  this:constructor_with_body::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_1" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_3" -> "init#X#constructor_with_body#(11920920673411078151).40e39840a696bef95297e1afb2f57392_2" ;
-"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 3]\n " color=yellow style=filled]
+"div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" [label="1: Start constructor_with_body::X_div\nFormals:  this:constructor_with_body::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_1" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" ;
@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_3" -> "div#X#constructor_with_body#(13588730973960944321).0be58d73703c72cf5bf8f7e2a36ecf60_2" ;
-"X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 3]\n " color=yellow style=filled]
+"X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_1" -> "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" ;
@@ -78,7 +78,7 @@ digraph cfg {
 	
 
 	 "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_3" -> "X#X#constructor_with_body#{16871729092574880817}.54f479ca84639d148c4b988a7530253a_2" ;
-"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X* a:int b:int\nLocals:  c:int \n   DECLARE_LOCALS(&return,&c); [line 22, column 1]\n " color=yellow style=filled]
+"X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_1" [label="1: Start constructor_with_body::X_X\nFormals:  this:constructor_with_body::X* a:int b:int\nLocals:  c:int \n  " color=yellow style=filled]
 	
 
 	 "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_1" -> "X#X#constructor_with_body#{7540788797581315247}.c8826e9323020557160f8002c0b802f2_5" ;

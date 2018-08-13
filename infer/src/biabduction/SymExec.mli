@@ -10,6 +10,9 @@ open! IStd
 
 (** Symbolic Execution *)
 
+val declare_locals_and_ret : Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+(** Symbolic execution of the declaration of locals and return value. *)
+
 val node :
   (exn -> unit) -> Exe_env.t -> Tenv.t -> Summary.t -> ProcCfg.Exceptional.t
   -> ProcCfg.Exceptional.Node.t -> Paths.PathSet.t -> Paths.PathSet.t

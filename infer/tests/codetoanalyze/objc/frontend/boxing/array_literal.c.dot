@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"get_array.bca6b16c85e5b8ba530f380271b2ec79_1" [label="1: Start get_array\nFormals: \nLocals:  animals:NSArray* \n   DECLARE_LOCALS(&return,&animals); [line 10, column 1]\n " color=yellow style=filled]
+"get_array.bca6b16c85e5b8ba530f380271b2ec79_1" [label="1: Start get_array\nFormals: \nLocals:  animals:NSArray* \n  " color=yellow style=filled]
 	
 
 	 "get_array.bca6b16c85e5b8ba530f380271b2ec79_1" -> "get_array.bca6b16c85e5b8ba530f380271b2ec79_4" ;

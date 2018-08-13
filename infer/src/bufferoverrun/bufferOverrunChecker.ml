@@ -204,7 +204,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Remove_temps (temps, _) ->
           Dom.Mem.remove_temps temps mem
-      | Abstract _ | Declare_locals _ | Nullify _ ->
+      | Abstract _ | Nullify _ ->
           mem
     in
     print_debug_info instr mem output_mem ;

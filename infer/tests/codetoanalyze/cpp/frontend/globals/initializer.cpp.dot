@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_1" [label="1: Start __infer_globals_initializer_x\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_1" [label="1: Start __infer_globals_initializer_x\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_1" -> "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_3" -> "__infer_globals_initializer_x#346c89dda90b0be6289346ddbf0528bc.83245b9f254e67fb6f879cc1e35a1bb1_2" ;
-"__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_1" [label="1: Start __infer_globals_initializer_y\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_1" [label="1: Start __infer_globals_initializer_y\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_1" -> "__infer_globals_initializer_y#346c89dda90b0be6289346ddbf0528bc.e7d659d11156f551397be6d5db27f31c_3" ;

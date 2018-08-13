@@ -62,8 +62,6 @@ let singleton instr = of_array [|instr|]
 
 let append_list (NotReversed instrs) list = NotReversed (Array.append instrs (Array.of_list list))
 
-let prepend_one instr (NotReversed instrs) = NotReversed (Array.append [|instr|] instrs)
-
 let of_list l = NotReversed (Array.of_list l)
 
 let of_rev_list l = NotReversed (Array.of_list_rev l)

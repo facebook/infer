@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA_getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 20, column 1]\n " color=yellow style=filled]
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA_getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" ;
-"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_1" [label="1: Start ArcA_newS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 26, column 1]\n " color=yellow style=filled]
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_1" [label="1: Start ArcA_newS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_1" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" ;

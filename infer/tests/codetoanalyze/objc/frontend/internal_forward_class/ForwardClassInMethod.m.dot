@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" [label="1: Start A_foo\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+"foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" [label="1: Start A_foo\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_1" -> "foo#A#instance.a1bcc3cb6c1f00fc285817fb8454eaed_2" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:MyClass* \n   DECLARE_LOCALS(&return,&myClass); [line 18, column 1]\n " color=yellow style=filled]
+"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:MyClass* \n  " color=yellow style=filled]
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_1" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" ;
-"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" [label="1: Start MyClass_aClassMethod2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
+"aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" [label="1: Start MyClass_aClassMethod2\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_1" -> "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_3" -> "aClassMethod2#MyClass#class.98feaa0eae511501cde734a35e83bb61_2" ;
-"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" [label="1: Start MyClass_anInstanceMethod\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
+"anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" [label="1: Start MyClass_anInstanceMethod\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_1" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" ;
@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_3" -> "anInstanceMethod#MyClass#instance.7c18faea6ff486bf30aa019b169dffc3_2" ;
-"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" [label="1: Start MyClass_anInstanceMethod2\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34, column 1]\n " color=yellow style=filled]
+"anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" [label="1: Start MyClass_anInstanceMethod2\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_1" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_3" -> "anInstanceMethod2#MyClass#instance.d2b66ad8a2fe88927ba6f54fa43eabea_2" ;
-"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
+"getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass_getX\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" -> "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_3" ;

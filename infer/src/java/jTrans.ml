@@ -444,7 +444,6 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
     JContext.add_exn_node proc_name exn_node ;
     Procdesc.set_start_node procdesc start_node ;
     Procdesc.set_exit_node procdesc exit_node ;
-    Procdesc.Node.add_locals_ret_declaration start_node proc_attributes locals ;
     Some (procdesc, start_node, exit_node, exn_node, jbir_code)
   with JBir.Subroutine ->
     L.internal_error "create_procdesc raised JBir.Subroutine when translating %a in %a@."

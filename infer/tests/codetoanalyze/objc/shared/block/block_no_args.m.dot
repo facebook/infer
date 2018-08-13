@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 23, column 7]\n " color=yellow style=filled]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 19, column 1]\n " color=yellow style=filled]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_1" [label="1: Start __infer_globals_initializer_y\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_1" [label="1: Start __infer_globals_initializer_y\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_1" -> "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_3" -> "__infer_globals_initializer_y.0ea250be2dd991733c9131c53abc3c54_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  l:int \n   DECLARE_LOCALS(&return,&l); [line 25, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  l:int \n  " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"#anonymous_union_nestedoperators_union.cpp:13:1#{12517556114589879497}.421be16393d3467be45cc1c1ca7ddb2b_1" [label="1: Start anonymous_union_nestedoperators_union.cpp:13:1_\nFormals:  this:anonymous_union_nestedoperators_union.cpp:13:1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"#anonymous_union_nestedoperators_union.cpp:13:1#{12517556114589879497}.421be16393d3467be45cc1c1ca7ddb2b_1" [label="1: Start anonymous_union_nestedoperators_union.cpp:13:1_\nFormals:  this:anonymous_union_nestedoperators_union.cpp:13:1*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "#anonymous_union_nestedoperators_union.cpp:13:1#{12517556114589879497}.421be16393d3467be45cc1c1ca7ddb2b_1" -> "#anonymous_union_nestedoperators_union.cpp:13:1#{12517556114589879497}.421be16393d3467be45cc1c1ca7ddb2b_2" ;

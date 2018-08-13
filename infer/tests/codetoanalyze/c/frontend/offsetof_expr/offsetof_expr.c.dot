@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_1" [label="1: Start test_offsetof_expr\nFormals: \nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 16, column 1]\n " color=yellow style=filled]
+"test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_1" [label="1: Start test_offsetof_expr\nFormals: \nLocals:  i:int \n  " color=yellow style=filled]
 	
 
 	 "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_1" -> "test_offsetof_expr.8f3e634fd0f68dff5e4bfedc8f65a55f_10" ;

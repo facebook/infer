@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$2:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$2,&result,&x); [line 18, column 1]\n " color=yellow style=filled]
+"conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" [label="1: Start conditional_assignment\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$2:int result:int x:int \n  " color=yellow style=filled]
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_1" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" ;
@@ -69,7 +69,7 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_17" -> "conditional_assignment#8950169167588471442.be2d62cec5392b85b8d4d274664d86c5_16" ;
-"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 8, column 1]\n " color=yellow style=filled]
+"simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" [label="1: Start simple_assignment\nFormals: \nLocals:  a:int result:int x:int \n  " color=yellow style=filled]
 	
 
 	 "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_1" -> "simple_assignment#6454162814810356464.3b57619dd6c2d612798bc9ac9e7cf8ee_11" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample_test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 16, column 1]\n " color=yellow style=filled]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample_test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" [label="1: Start ExceptionExample_test1\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 25, column 1]\n " color=yellow style=filled]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" [label="1: Start ExceptionExample_test1\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" ;

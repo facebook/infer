@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" ;
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_1" [label="1: Start fields\nFormals:  __return_param:Fields*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
+"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_1" [label="1: Start fields\nFormals:  __return_param:Fields*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_1" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_2" ;
-"#Fields#{11740702837802970461|constexpr}.35c900b91f77169dcc7579a3ddf4fddf_1" [label="1: Start Fields_\nFormals:  this:Fields* __param_0:Fields const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 9]\n " color=yellow style=filled]
+"#Fields#{11740702837802970461|constexpr}.35c900b91f77169dcc7579a3ddf4fddf_1" [label="1: Start Fields_\nFormals:  this:Fields* __param_0:Fields const &\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "#Fields#{11740702837802970461|constexpr}.35c900b91f77169dcc7579a3ddf4fddf_1" -> "#Fields#{11740702837802970461|constexpr}.35c900b91f77169dcc7579a3ddf4fddf_5" ;

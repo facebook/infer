@@ -21,8 +21,6 @@ val singleton : Sil.instr -> not_reversed_t
 
 val append_list : not_reversed_t -> Sil.instr list -> not_reversed_t
 
-val prepend_one : Sil.instr -> not_reversed_t -> not_reversed_t
-
 val of_list : Sil.instr list -> not_reversed_t
 
 val of_rev_list : Sil.instr list -> not_reversed_t

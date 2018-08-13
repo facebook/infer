@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" [label="1: Start DispatchMain\nFormals: \nLocals:  p:int* b:DispatchA* \n   DECLARE_LOCALS(&return,&p,&b); [line 82, column 1]\n " color=yellow style=filled]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" [label="1: Start DispatchMain\nFormals: \nLocals:  p:int* b:DispatchA* \n  " color=yellow style=filled]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
-"objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_1" [label="1: Start objc_blockDispatchA_block_attribute_2\nFormals:  a:DispatchA*\nLocals: \nCaptured:  a:DispatchA* \n   DECLARE_LOCALS(&return); [line 37, column 24]\n " color=yellow style=filled]
+"objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_1" [label="1: Start objc_blockDispatchA_block_attribute_2\nFormals:  a:DispatchA*\nLocals: \nCaptured:  a:DispatchA* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_1" -> "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_3" ;
@@ -55,7 +55,7 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_3" -> "objc_blockDispatchA_block_attribute_2(class DispatchA).2825198b53dffef0e3209a90789e506f_2" ;
-"objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_1" [label="1: Start objc_blockDispatchA_dispatch_a_block_variable_4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 54, column 38]\n " color=yellow style=filled]
+"objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_1" [label="1: Start objc_blockDispatchA_dispatch_a_block_variable_4\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_1" -> "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_3" ;
@@ -66,7 +66,7 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_3" -> "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_2" ;
-"objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_1" [label="1: Start objc_blockDispatchA_dispatch_a_block_variable_from_macro_5\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 65, column 40]\n " color=yellow style=filled]
+"objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_1" [label="1: Start objc_blockDispatchA_dispatch_a_block_variable_from_macro_5\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_1" -> "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_3" ;
@@ -77,7 +77,7 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_3" -> "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_2" ;
-"objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_1" [label="1: Start objc_blockDispatchA_sharedInstance_1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 24]\n " color=yellow style=filled]
+"objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_1" [label="1: Start objc_blockDispatchA_sharedInstance_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_1" -> "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_3" ;
@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_3" -> "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_2" ;
-"objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_1" [label="1: Start objc_blockDispatchA_trans_3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 45, column 27]\n " color=yellow style=filled]
+"objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_1" [label="1: Start objc_blockDispatchA_trans_3\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_1" -> "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_3" ;
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_3" -> "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_2" ;
-"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" [label="1: Start DispatchA_block_attribute\nFormals: \nLocals:  a:DispatchA*(__block) \n   DECLARE_LOCALS(&return,&a); [line 34, column 1]\n " color=yellow style=filled]
+"block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" [label="1: Start DispatchA_block_attribute\nFormals: \nLocals:  a:DispatchA*(__block) \n  " color=yellow style=filled]
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_1" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" ;
@@ -118,7 +118,7 @@ digraph cfg {
 	
 
 	 "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_5" -> "block_attribute#DispatchA#class.df997e345dbf19ec3438c667c942e14a_4" ;
-"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" [label="1: Start DispatchA_dispatch_a_block_variable\nFormals: \nLocals:  initialization_block__:_fn_(*) \n   DECLARE_LOCALS(&return,&initialization_block__); [line 52, column 1]\n " color=yellow style=filled]
+"dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" [label="1: Start DispatchA_dispatch_a_block_variable\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
 	
 
 	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_1" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" ;
@@ -137,7 +137,7 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_5" -> "dispatch_a_block_variable#DispatchA#class.3cc12dd22127281b8293b7c046d21bb2_4" ;
-"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_1" [label="1: Start DispatchA_dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:_fn_(*) \n   DECLARE_LOCALS(&return,&initialization_block__); [line 62, column 1]\n " color=yellow style=filled]
+"dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_1" [label="1: Start DispatchA_dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_1" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_5" ;
@@ -160,7 +160,7 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_6" -> "dispatch_a_block_variable_from_macro#DispatchA#class.92567a38d5ab3cf637f72030b1097441_2" ;
-"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" [label="1: Start DispatchA_dispatch_a_block_variable_from_macro_delivers_initialised_object\nFormals: \nLocals:  a:DispatchA* \n   DECLARE_LOCALS(&return,&a); [line 74, column 1]\n " color=yellow style=filled]
+"dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" [label="1: Start DispatchA_dispatch_a_block_variable_from_macro_delivers_initialised_object\nFormals: \nLocals:  a:DispatchA* \n  " color=yellow style=filled]
 	
 
 	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_1" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" ;
@@ -179,7 +179,7 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_5" -> "dispatch_a_block_variable_from_macro_delivers_initialised_object#DispatchA#class.a58ef5afb5e1e9480b49788e2400c52c_4" ;
-"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" [label="1: Start DispatchA_sharedInstance\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 1]\n " color=yellow style=filled]
+"sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" [label="1: Start DispatchA_sharedInstance\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_1" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" ;
@@ -194,7 +194,7 @@ digraph cfg {
 	
 
 	 "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_4" -> "sharedInstance#DispatchA#class.8992c6086d1ce5c225093940f62386ac_3" ;
-"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" [label="1: Start DispatchA_trans\nFormals: \nLocals:  dummy_block:_fn_(*) \n   DECLARE_LOCALS(&return,&dummy_block); [line 43, column 1]\n " color=yellow style=filled]
+"trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" [label="1: Start DispatchA_trans\nFormals: \nLocals:  dummy_block:_fn_(*) \n  " color=yellow style=filled]
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_1" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" ;
@@ -213,7 +213,7 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_5" -> "trans#DispatchA#class.23f9d908a87deca79c235bc76ca6e941_4" ;
-"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA_init\nFormals:  self:DispatchA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
+"init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA_init\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" -> "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_3" ;

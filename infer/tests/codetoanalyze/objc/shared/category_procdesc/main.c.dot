@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_1" [label="1: Start CategoryProcdescMain\nFormals: \nLocals:  x:int* person:EOCPerson* \n   DECLARE_LOCALS(&return,&x,&person); [line 11, column 1]\n " color=yellow style=filled]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_1" [label="1: Start CategoryProcdescMain\nFormals: \nLocals:  x:int* person:EOCPerson* \n  " color=yellow style=filled]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_1" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"other_enum_main.572f04969b0ade4902dd1faf86fac461_1" [label="1: Start other_enum_main\nFormals: \nLocals:  foo_g:int foo_f:int foo_e:int foo_d:int foo_c:int foo_b:int foo_a:int \n   DECLARE_LOCALS(&return,&foo_g,&foo_f,&foo_e,&foo_d,&foo_c,&foo_b,&foo_a); [line 10, column 1]\n " color=yellow style=filled]
+"other_enum_main.572f04969b0ade4902dd1faf86fac461_1" [label="1: Start other_enum_main\nFormals: \nLocals:  foo_g:int foo_f:int foo_e:int foo_d:int foo_c:int foo_b:int foo_a:int \n  " color=yellow style=filled]
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_1" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_9" ;
@@ -35,7 +35,7 @@ digraph cfg {
 	
 
 	 "other_enum_main.572f04969b0ade4902dd1faf86fac461_9" -> "other_enum_main.572f04969b0ade4902dd1faf86fac461_8" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_1" [label="1: Start other_enum_test\nFormals: \nLocals:  foo_a:int foo_g:int \n   DECLARE_LOCALS(&return,&foo_a,&foo_g); [line 20, column 1]\n " color=yellow style=filled]
+"other_enum_test.100f3583adf0259001be6c944828c44a_1" [label="1: Start other_enum_test\nFormals: \nLocals:  foo_a:int foo_g:int \n  " color=yellow style=filled]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_1" -> "other_enum_test.100f3583adf0259001be6c944828c44a_11" ;

@@ -50,7 +50,6 @@ type instr =
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
-  | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
 [@@deriving compare]
 
 let equal_instr = [%compare.equal : instr]
@@ -61,7 +60,7 @@ let skip_instr = Remove_temps ([], Location.dummy)
 let instr_is_auxiliary = function
   | Load _ | Store _ | Prune _ | Call _ ->
       false
-  | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
+  | Nullify _ | Abstract _ | Remove_temps _ ->
       true
 
 
@@ -340,8 +339,7 @@ let instr_get_loc = function
   | Call (_, _, _, loc, _)
   | Nullify (_, loc)
   | Abstract loc
-  | Remove_temps (_, loc)
-  | Declare_locals (_, loc) ->
+  | Remove_temps (_, loc) ->
       loc
 
 
@@ -361,8 +359,6 @@ let instr_get_exps = function
       []
   | Remove_temps (temps, _) ->
       List.map ~f:(fun id -> Exp.Var id) temps
-  | Declare_locals _ ->
-      []
 
 
 (** Convert an if_kind to string  *)
@@ -404,10 +400,7 @@ let pp_instr pe0 f instr =
   | Abstract loc ->
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
   | Remove_temps (temps, loc) ->
-      F.fprintf f "REMOVE_TEMPS(%a); [%a]" Ident.pp_list temps Location.pp loc
-  | Declare_locals (ptl, loc) ->
-      let pp_typ fmt (pvar, _) = Pvar.pp pe fmt pvar in
-      F.fprintf f "DECLARE_LOCALS(%a); [%a]" (Pp.comma_seq pp_typ) ptl Location.pp loc ) ;
+      F.fprintf f "REMOVE_TEMPS(%a); [%a]" Ident.pp_list temps Location.pp loc ) ;
   color_post_wrapper changed f
 
 
@@ -1359,16 +1352,6 @@ let instr_sub_ids ~sub_id_binders f instr =
   | Remove_temps (ids, loc) ->
       let ids' = IList.map_changed ~equal:Ident.equal ~f:sub_id ids in
       if phys_equal ids' ids then instr else Remove_temps (ids', loc)
-  | Declare_locals (locals, loc) ->
-      let locals' =
-        IList.map_changed
-          ~equal:[%compare.equal : Pvar.t * Typ.t]
-          ~f:(fun ((name, typ) as local_var) ->
-            let typ' = sub_typ typ in
-            if phys_equal typ typ' then local_var else (name, typ') )
-          locals
-      in
-      if phys_equal locals locals' then instr else Declare_locals (locals', loc)
   | Nullify _ | Abstract _ ->
       instr
 

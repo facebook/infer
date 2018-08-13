@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" [label="1: Start test1\nFormals:  a:_Bool b:_Bool\nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 8, column 1]\n " color=yellow style=filled]
+"test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" [label="1: Start test1\nFormals:  a:_Bool b:_Bool\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_1" -> "test1#18336337528475129646.aabe036d545fef7e4b4a130ea21a585c_14" ;

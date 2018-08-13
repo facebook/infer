@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  callback:_fn_(*)\nLocals: \nAnnotation: <> NonnullAtrributeTest(<_Nonnull>) \n   DECLARE_LOCALS(&return); [line 44, column 1]\n " color=yellow style=filled]
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  callback:_fn_(*)\nLocals: \nAnnotation: <> NonnullAtrributeTest(<_Nonnull>) \n  " color=yellow style=filled]
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;
-"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" [label="1: Start NonnullA_getA\nFormals:  self:NonnullA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23, column 1]\n " color=yellow style=filled]
+"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" [label="1: Start NonnullA_getA\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_2" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC_initWithCoder:and:(<> <> <_Nonnull>) \n   DECLARE_LOCALS(&return,&y,&a1); [line 36, column 1]\n " color=yellow style=filled]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC_initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC_initWithCoder:and:(<> <> <_Nonnull>) \n  " color=yellow style=filled]
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" ;

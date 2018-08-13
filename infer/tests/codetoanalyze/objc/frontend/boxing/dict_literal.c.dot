@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"get_array1.5988b7ad8acf5c81cef9a72d072073c1_1" [label="1: Start get_array1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
+"get_array1.5988b7ad8acf5c81cef9a72d072073c1_1" [label="1: Start get_array1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get_array1.5988b7ad8acf5c81cef9a72d072073c1_1" -> "get_array1.5988b7ad8acf5c81cef9a72d072073c1_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "get_array1.5988b7ad8acf5c81cef9a72d072073c1_3" -> "get_array1.5988b7ad8acf5c81cef9a72d072073c1_2" ;
-"get_array2.84aa3c70cb20e7edbe4f0b8d0bd6aa3d_1" [label="1: Start get_array2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
+"get_array2.84aa3c70cb20e7edbe4f0b8d0bd6aa3d_1" [label="1: Start get_array2\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get_array2.84aa3c70cb20e7edbe4f0b8d0bd6aa3d_1" -> "get_array2.84aa3c70cb20e7edbe4f0b8d0bd6aa3d_3" ;

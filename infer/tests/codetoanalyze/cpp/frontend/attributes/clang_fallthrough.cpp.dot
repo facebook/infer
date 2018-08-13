@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_1" [label="1: Start h\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_1" [label="1: Start h\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_1" -> "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_3" -> "h#4941587955358707969.72d1ffab9146aba0866be6bd3e972603_2" ;
-"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_1" [label="1: Start switch_with_fallthrough\nFormals:  n:int\nLocals:  res:int \n   DECLARE_LOCALS(&return,&res); [line 10, column 1]\n " color=yellow style=filled]
+"switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_1" [label="1: Start switch_with_fallthrough\nFormals:  n:int\nLocals:  res:int \n  " color=yellow style=filled]
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_1" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" ;
@@ -70,7 +70,7 @@ digraph cfg {
 	
 
 	 "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_14" -> "switch_with_fallthrough#6355028676793350740.9380c19327ea36a0a69b7e115d031492_4" ;
-"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" [label="1: Start test_fallthrough\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 25, column 1]\n " color=yellow style=filled]
+"test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" [label="1: Start test_fallthrough\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_1" -> "test_fallthrough#10031967177420807224.9a3ad886bb67a8e65c703cdc289f5661_3" ;

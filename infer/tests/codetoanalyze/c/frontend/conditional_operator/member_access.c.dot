@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" [label="1: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&z,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 20, column 1]\n " color=yellow style=filled]
+"access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" [label="1: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_1" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_4" ;
@@ -32,7 +32,7 @@ digraph cfg {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_2" ;
-"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" [label="1: Start call_ife_then_access_field\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&z,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 18, column 1]\n " color=yellow style=filled]
+"call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" [label="1: Start call_ife_then_access_field\nFormals: \nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_1" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_4" ;
@@ -64,7 +64,7 @@ digraph cfg {
 	
 
 	 "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_8" -> "call_ife_then_access_field.b6f399d1a50b93c2421854974cd226e3_2" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" [label="1: Start ife_then_access_field\nFormals:  p:s* q:s*\nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:s* \n   DECLARE_LOCALS(&return,&z,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 14, column 1]\n " color=yellow style=filled]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" [label="1: Start ife_then_access_field\nFormals:  p:s* q:s*\nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:s* \n  " color=yellow style=filled]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" ;

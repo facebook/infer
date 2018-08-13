@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"bar.37b51d194a7513e45b56f6524f2d51f2_1" [label="1: Start bar\nFormals:  x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
+"bar.37b51d194a7513e45b56f6524f2d51f2_1" [label="1: Start bar\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_1" -> "bar.37b51d194a7513e45b56f6524f2d51f2_5" ;
@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_9" -> "bar.37b51d194a7513e45b56f6524f2d51f2_2" ;
-"baz.73feffa4b7f6bb68e44cf984c85f6e88_1" [label="1: Start baz\nFormals:  x:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 18, column 1]\n " color=yellow style=filled]
+"baz.73feffa4b7f6bb68e44cf984c85f6e88_1" [label="1: Start baz\nFormals:  x:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
 	
 
 	 "baz.73feffa4b7f6bb68e44cf984c85f6e88_1" -> "baz.73feffa4b7f6bb68e44cf984c85f6e88_6" ;
@@ -93,7 +93,7 @@ digraph cfg {
 	
 
 	 "baz.73feffa4b7f6bb68e44cf984c85f6e88_14" -> "baz.73feffa4b7f6bb68e44cf984c85f6e88_2" ;
-"identity.ff483d1ff591898a9942916050d2ca3f_1" [label="1: Start identity\nFormals:  x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"identity.ff483d1ff591898a9942916050d2ca3f_1" [label="1: Start identity\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "identity.ff483d1ff591898a9942916050d2ca3f_1" -> "identity.ff483d1ff591898a9942916050d2ca3f_3" ;
@@ -104,7 +104,7 @@ digraph cfg {
 	
 
 	 "identity.ff483d1ff591898a9942916050d2ca3f_3" -> "identity.ff483d1ff591898a9942916050d2ca3f_2" ;
-"neg.f24c2c15b9d03797c6874986a8d19516_1" [label="1: Start neg\nFormals:  x:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 27, column 1]\n " color=yellow style=filled]
+"neg.f24c2c15b9d03797c6874986a8d19516_1" [label="1: Start neg\nFormals:  x:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int \n  " color=yellow style=filled]
 	
 
 	 "neg.f24c2c15b9d03797c6874986a8d19516_1" -> "neg.f24c2c15b9d03797c6874986a8d19516_4" ;

@@ -1177,6 +1177,37 @@ let resolve_and_analyze_clang current_pdesc tenv prop_r n_actual_params callee_p
       call_flags
 
 
+let declare_locals_and_ret tenv pdesc (prop_: Prop.normal Prop.t) =
+  let sigma_locals_and_ret =
+    let mk_ptsto pvar typ =
+      let ptsto =
+        (pvar, Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, None)
+      in
+      Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial ptsto
+    in
+    let sigma_locals_and_ret () =
+      let pname = Procdesc.get_proc_name pdesc in
+      let sigma_ret =
+        let pvar = Procdesc.get_ret_var pdesc in
+        let typ = Procdesc.get_ret_type pdesc in
+        mk_ptsto pvar typ
+      in
+      let locals = Procdesc.get_locals pdesc in
+      let sigma_locals =
+        List.map locals ~f:(fun {ProcAttributes.name; typ} ->
+            let pvar = Pvar.mk name pname in
+            mk_ptsto pvar typ )
+      in
+      sigma_ret :: sigma_locals
+    in
+    Config.run_in_re_execution_mode (* no footprint vars for locals *)
+                                    sigma_locals_and_ret ()
+  in
+  let sigma' = prop_.Prop.sigma @ sigma_locals_and_ret in
+  let prop' = Prop.normalize tenv (Prop.set prop_ ~sigma:sigma') in
+  prop'
+
+
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
     : (Prop.normal Prop.t * Paths.Path.t) list =
@@ -1505,22 +1536,6 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               (Abs.abstract current_pname tenv prop_) ]
   | Sil.Remove_temps (temps, _) ->
       ret_old_path [Prop.exist_quantify tenv temps prop_]
-  | Sil.Declare_locals (ptl, _) ->
-      let sigma_locals =
-        let add_None (x, typ) =
-          (x, Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, None)
-        in
-        let sigma_locals () =
-          List.map
-            ~f:(Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial)
-            (List.map ~f:add_None ptl)
-        in
-        Config.run_in_re_execution_mode (* no footprint vars for locals *)
-                                        sigma_locals ()
-      in
-      let sigma' = prop_.Prop.sigma @ sigma_locals in
-      let prop' = Prop.normalize tenv (Prop.set prop_ ~sigma:sigma') in
-      ret_old_path [prop']
 
 
 and diverge prop path =

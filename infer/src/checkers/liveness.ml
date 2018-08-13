@@ -89,7 +89,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call ((ret_id, _), call_exp, actuals, _, _) ->
         Domain.remove (Var.of_id ret_id) astate |> exp_add_live call_exp
         |> add_live_actuals actuals call_exp |> add_local_consts_for_lambdas pdesc call_exp
-    | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
+    | Sil.Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 
 

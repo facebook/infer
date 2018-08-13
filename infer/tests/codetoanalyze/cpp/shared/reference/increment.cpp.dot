@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_1" [label="1: Start using_ref\nFormals: \nLocals:  q:int& r:int& vr:int& v:int \n   DECLARE_LOCALS(&return,&q,&r,&vr,&v); [line 14, column 1]\n " color=yellow style=filled]
+"using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_1" [label="1: Start using_ref\nFormals: \nLocals:  q:int& r:int& vr:int& v:int \n  " color=yellow style=filled]
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_1" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_6" ;
@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_6" -> "using_ref#11585308534136333375.096010b8466cdacb12ca24c30d2a7334_5" ;
-"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" [label="1: Start using_value\nFormals: \nLocals:  q:int& r:int& v:int \n   DECLARE_LOCALS(&return,&q,&r,&v); [line 8, column 1]\n " color=yellow style=filled]
+"using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" [label="1: Start using_value\nFormals: \nLocals:  q:int& r:int& v:int \n  " color=yellow style=filled]
 	
 
 	 "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_1" -> "using_value#13692921440907975250.fad67099f85ea68eb3281c85bd0ca170_5" ;

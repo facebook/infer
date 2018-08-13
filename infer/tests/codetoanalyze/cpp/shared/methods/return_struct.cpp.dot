@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$4:X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$4); [line 19, column 1]\n " color=yellow style=filled]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  x:X 0$?%__sil_tmpSIL_materialize_temp__n$4:X \n  " color=yellow style=filled]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_4" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;
-"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" [label="1: Start A_get\nFormals:  this:A* p:int __return_param:X*\nLocals:  x:X \n   DECLARE_LOCALS(&return,&x); [line 13, column 3]\n " color=yellow style=filled]
+"get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" [label="1: Start A_get\nFormals:  this:A* p:int __return_param:X*\nLocals:  x:X \n  " color=yellow style=filled]
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_1" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_4" -> "get#A(class X)#(1761444600576643509).0f83d3543d984a8645cb78162580d93f_3" ;
-"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_1" [label="1: Start X_X\nFormals:  this:X* __param_0:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 8]\n " color=yellow style=filled]
+"X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_1" [label="1: Start X_X\nFormals:  this:X* __param_0:X&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_1" -> "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" ;
@@ -41,7 +41,7 @@ digraph cfg {
 	
 
 	 "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_3" -> "X#X#{4662457305382278389|constexpr}.7a0af4be288b205dc1c04f6801938150_2" ;
-"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 8]\n " color=yellow style=filled]
+"X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_1" -> "X#X#{4951618003533511344}.a6c75b361b5e04dddb518f7e116a9ca2_2" ;

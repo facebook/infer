@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_1" [label="1: Start class_method_in_conditional\nFormals: \nLocals:  c:objc_class* \n   DECLARE_LOCALS(&return,&c); [line 102, column 1]\n " color=yellow style=filled]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_1" [label="1: Start class_method_in_conditional\nFormals: \nLocals:  c:objc_class* \n  " color=yellow style=filled]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_1" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" ;
@@ -32,7 +32,7 @@ digraph cfg {
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" ;
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_8" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_6" ;
-"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_1" [label="1: Start A_call_alloc_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 56, column 1]\n " color=yellow style=filled]
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_1" [label="1: Start A_call_alloc_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_1" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" ;
@@ -43,7 +43,7 @@ digraph cfg {
 	
 
 	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" ;
-"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_1" [label="1: Start A_call_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 52, column 1]\n " color=yellow style=filled]
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_1" [label="1: Start A_call_test_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_1" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" ;
@@ -54,7 +54,7 @@ digraph cfg {
 	
 
 	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" ;
-"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_1" [label="1: Start A_calling_super\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 81, column 1]\n " color=yellow style=filled]
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_1" [label="1: Start A_calling_super\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_1" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" ;
@@ -65,7 +65,7 @@ digraph cfg {
 	
 
 	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A_class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle* stringsBundlePath:NSString* \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$30,&stringsBundlePath); [line 114, column 1]\n " color=yellow style=filled]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" [label="1: Start A_class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$30:NSBundle* stringsBundlePath:NSString* \n  " color=yellow style=filled]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_1" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" ;
@@ -109,14 +109,14 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" ;
-"test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" [label="1: Start A_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 49, column 1]\n " color=yellow style=filled]
+"test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" [label="1: Start A_test_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" -> "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_2" ;
 "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_2" [label="2: Exit A_test_class \n  " color=yellow style=filled]
 	
 
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 93, column 1]\n " color=yellow style=filled]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:objc_class*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_1" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" ;
@@ -152,7 +152,7 @@ digraph cfg {
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
-"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" [label="1: Start A_call_alloc_instance\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 60, column 1]\n " color=yellow style=filled]
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" [label="1: Start A_call_alloc_instance\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" ;
@@ -163,7 +163,7 @@ digraph cfg {
 	
 
 	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" ;
-"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_1" [label="1: Start A_call_class_instance\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 64, column 1]\n " color=yellow style=filled]
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_1" [label="1: Start A_call_class_instance\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_1" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" ;
@@ -174,7 +174,7 @@ digraph cfg {
 	
 
 	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" ;
-"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_1" [label="1: Start A_call_class_instance_with_class_name\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 68, column 1]\n " color=yellow style=filled]
+"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_1" [label="1: Start A_call_class_instance_with_class_name\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_1" -> "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" ;
@@ -185,7 +185,7 @@ digraph cfg {
 	
 
 	 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" -> "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_2" ;
-"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_1" [label="1: Start A_call_test\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 45, column 1]\n " color=yellow style=filled]
+"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_1" [label="1: Start A_call_test\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_1" -> "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" ;
@@ -196,7 +196,7 @@ digraph cfg {
 	
 
 	 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" -> "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_2" ;
-"class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_1" [label="1: Start A_class_method_fst_arg_of_class_method\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 110, column 1]\n " color=yellow style=filled]
+"class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_1" [label="1: Start A_class_method_fst_arg_of_class_method\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_1" -> "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" ;
@@ -207,7 +207,7 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_3" -> "class_method_fst_arg_of_class_method#A#instance.cf9f3087f45649c74ef1f7ca002450f2_2" ;
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 85, column 1]\n " color=yellow style=filled]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" ;
@@ -218,7 +218,7 @@ digraph cfg {
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
-"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_1" [label="1: Start A_loggerName\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 89, column 1]\n " color=yellow style=filled]
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_1" [label="1: Start A_loggerName\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_1" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" ;
@@ -229,7 +229,7 @@ digraph cfg {
 	
 
 	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" ;
-"t#A#instance.e31b9a7bced712626784e2860af1a31b_1" [label="1: Start A_t\nFormals:  self:A*\nLocals:  b:B* \n   DECLARE_LOCALS(&return,&b); [line 72, column 1]\n " color=yellow style=filled]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_1" [label="1: Start A_t\nFormals:  self:A*\nLocals:  b:B* \n  " color=yellow style=filled]
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_1" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" ;
@@ -244,14 +244,14 @@ digraph cfg {
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" ;
-"test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_1" [label="1: Start A_test\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 1]\n " color=yellow style=filled]
+"test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_1" [label="1: Start A_test\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_1" -> "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_2" ;
 "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:A* object:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 77, column 1]\n " color=yellow style=filled]
+"use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:A* object:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_1" -> "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" ;
@@ -262,14 +262,14 @@ digraph cfg {
 	
 
 	 "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_3" -> "use_class_in_other_ways:#A(class B)#instance.7a96604c2c855db834d214f72f83a306_2" ;
-"b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" [label="1: Start B_b_m\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+"b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" [label="1: Start B_b_m\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" -> "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" ;
 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" [label="2: Exit B_b_m \n  " color=yellow style=filled]
 	
 
-"isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" [label="1: Start B_isC:\nFormals:  self:B* aClass:objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
+"isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" [label="1: Start B_isC:\nFormals:  self:B* aClass:objc_class*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_1" -> "isC:#B(struct objc_class)#instance.ab14fb7a19510df6032d65aa27b0f12d_3" ;

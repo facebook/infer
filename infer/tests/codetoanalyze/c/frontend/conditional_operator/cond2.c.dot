@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"bar.37b51d194a7513e45b56f6524f2d51f2_1" [label="1: Start bar\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int 0$?%__sil_tmpSIL_temp_conditional___n$5:int y:int x:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$1,&0$?%__sil_tmpSIL_temp_conditional___n$5,&y,&x); [line 19, column 1]\n " color=yellow style=filled]
+"bar.37b51d194a7513e45b56f6524f2d51f2_1" [label="1: Start bar\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int 0$?%__sil_tmpSIL_temp_conditional___n$5:int y:int x:int \n  " color=yellow style=filled]
 	
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_1" -> "bar.37b51d194a7513e45b56f6524f2d51f2_16" ;
@@ -86,7 +86,7 @@ digraph cfg {
 
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_21" -> "bar.37b51d194a7513e45b56f6524f2d51f2_5" ;
 	 "bar.37b51d194a7513e45b56f6524f2d51f2_21" -> "bar.37b51d194a7513e45b56f6524f2d51f2_6" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int 0$?%__sil_tmpSIL_temp_conditional___n$2:int 0$?%__sil_tmpSIL_temp_conditional___n$3:int n:int 0$?%__sil_tmpSIL_temp_conditional___n$6:int y:int x:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&0$?%__sil_tmpSIL_temp_conditional___n$2,&0$?%__sil_tmpSIL_temp_conditional___n$3,&n,&0$?%__sil_tmpSIL_temp_conditional___n$6,&y,&x); [line 8, column 1]\n " color=yellow style=filled]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int 0$?%__sil_tmpSIL_temp_conditional___n$2:int 0$?%__sil_tmpSIL_temp_conditional___n$3:int n:int 0$?%__sil_tmpSIL_temp_conditional___n$6:int y:int x:int \n  " color=yellow style=filled]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_37" ;

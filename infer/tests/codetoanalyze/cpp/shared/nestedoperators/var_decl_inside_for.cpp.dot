@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" [label="1: Start init_with_scoped_var\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 15, column 1]\n " color=yellow style=filled]
+"init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" [label="1: Start init_with_scoped_var\nFormals: \nLocals:  i:int x:int result:int \n  " color=yellow style=filled]
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_1" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" ;
@@ -40,7 +40,7 @@ digraph cfg {
 	
 
 	 "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_10" -> "init_with_scoped_var#8128013931289981830.1ee58ae56eeb1744bf4b3cc5c8cf5d42_4" ;
-"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" [label="1: Start simple_init\nFormals: \nLocals:  i:int x:int result:int \n   DECLARE_LOCALS(&return,&i,&x,&result); [line 8, column 1]\n " color=yellow style=filled]
+"simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" [label="1: Start simple_init\nFormals: \nLocals:  i:int x:int result:int \n  " color=yellow style=filled]
 	
 
 	 "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_1" -> "simple_init#1527365342003611175.8f75bf8cf2aefccd4d47ab9274e1f9af_10" ;

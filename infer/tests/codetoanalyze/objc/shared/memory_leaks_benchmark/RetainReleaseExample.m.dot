@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" [label="1: Start retain_release_test\nFormals: \nLocals:  a:RRA* \n   DECLARE_LOCALS(&return,&a); [line 22, column 1]\n " color=yellow style=filled]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" [label="1: Start retain_release_test\nFormals: \nLocals:  a:RRA* \n  " color=yellow style=filled]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_1" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;
-"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA_init\nFormals:  self:RRA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA_init\nFormals:  self:RRA*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" ;

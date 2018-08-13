@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_1" [label="1: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& b:int a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&b,&a); [line 20, column 1]\n " color=yellow style=filled]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_1" [label="1: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_1" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" ;
@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_6" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d9e3fa84dea455e7f_5" ;
-"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" [label="1: Start nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 14, column 1]\n " color=yellow style=filled]
+"nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" [label="1: Start nested\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n  " color=yellow style=filled]
 	
 
 	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_1" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" ;
@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_5" -> "nested#4768179933025409429.17c34afcb279e8ad08f7f8afaad41585_4" ;
-"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" [label="1: Start normal\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&a); [line 8, column 1]\n " color=yellow style=filled]
+"normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" [label="1: Start normal\nFormals: \nLocals:  ref_from_ref:int& ref_from_val:int& a:int \n  " color=yellow style=filled]
 	
 
 	 "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_1" -> "normal#16009437256715545217.c7cd9ebbb6d7cc9f4987cf90ce12a044_5" ;

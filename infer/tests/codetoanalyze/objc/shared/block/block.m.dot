@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"BlockMain.116013dceff9629776ec833c9d43561d_1" [label="1: Start BlockMain\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 43, column 1]\n " color=yellow style=filled]
+"BlockMain.116013dceff9629776ec833c9d43561d_1" [label="1: Start BlockMain\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "BlockMain.116013dceff9629776ec833c9d43561d_1" -> "BlockMain.116013dceff9629776ec833c9d43561d_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "BlockMain.116013dceff9629776ec833c9d43561d_3" -> "BlockMain.116013dceff9629776ec833c9d43561d_2" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:_fn_(*) add2:int add1:int x:int \n   DECLARE_LOCALS(&return,&addblock,&add2,&add1,&x); [line 8, column 1]\n " color=yellow style=filled]
+"main1.38f534a9576db7ec6ebcbca8c111f942_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:_fn_(*) add2:int add1:int x:int \n  " color=yellow style=filled]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_1" -> "main1.38f534a9576db7ec6ebcbca8c111f942_10" ;
@@ -50,7 +50,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_10" -> "main1.38f534a9576db7ec6ebcbca8c111f942_9" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" [label="1: Start objc_blockmain1_1\nFormals:  e:int f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 31, column 14]\n " color=yellow style=filled]
+"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" [label="1: Start objc_blockmain1_1\nFormals:  e:int f:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" ;
@@ -61,7 +61,7 @@ digraph cfg {
 	
 
 	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  x:int c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  x:int \n   DECLARE_LOCALS(&return,&bla,&add2,&addblock2); [line 16, column 14]\n " color=yellow style=filled]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  x:int c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  x:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" ;
@@ -84,7 +84,7 @@ digraph cfg {
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" ;
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" [label="1: Start objc_blockobjc_blockmain1_2_3\nFormals:  x:int bla:int z:int\nLocals: \nCaptured:  x:int bla:int \n   DECLARE_LOCALS(&return); [line 21, column 17]\n " color=yellow style=filled]
+"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" [label="1: Start objc_blockobjc_blockmain1_2_3\nFormals:  x:int bla:int z:int\nLocals: \nCaptured:  x:int bla:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  rect2:foo::Rectangle rect1:bar::Rectangle x:foo::my_record j:double i:int \n   DECLARE_LOCALS(&return,&rect2,&rect1,&x,&j,&i); [line 39, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  rect2:foo::Rectangle rect1:bar::Rectangle x:foo::my_record j:double i:int \n  " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
@@ -47,7 +47,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_1" [label="1: Start __infer_globals_initializer_bar::pi\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 1]\n " color=yellow style=filled]
+"pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_1" [label="1: Start __infer_globals_initializer_bar::pi\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_1" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" ;
@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" ;
-"rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_1" [label="1: Start __infer_globals_initializer_bar::rect\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
+"rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_1" [label="1: Start __infer_globals_initializer_bar::rect\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_1" -> "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_3" ;
@@ -69,7 +69,7 @@ digraph cfg {
 	
 
 	 "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_3" -> "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_2" ;
-"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_1" [label="1: Start bar::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 1]\n " color=yellow style=filled]
+"value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_1" [label="1: Start bar::value\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_1" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" ;
@@ -80,7 +80,7 @@ digraph cfg {
 	
 
 	 "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_3" -> "value#bar#16302148298864778751.e55afab5e7523c08687d7e6558d5dad5_2" ;
-"value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_1" [label="1: Start foo::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+"value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_1" [label="1: Start foo::value\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_1" -> "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_3" ;
@@ -91,21 +91,21 @@ digraph cfg {
 	
 
 	 "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_3" -> "value#foo#118977410660901546.9623db3632a56e3cb17951602d147a29_2" ;
-"Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_1" [label="1: Start bar::Rectangle_Rectangle\nFormals:  this:bar::Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 7]\n " color=yellow style=filled]
+"Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_1" [label="1: Start bar::Rectangle_Rectangle\nFormals:  this:bar::Rectangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_1" -> "Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_2" ;
 "Rectangle#Rectangle#bar#{16076319501091404979}.cb85c0acc359c05c70c9c64fe7f882ea_2" [label="2: Exit bar::Rectangle_Rectangle \n  " color=yellow style=filled]
 	
 
-"Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_1" [label="1: Start foo::Rectangle_Rectangle\nFormals:  this:foo::Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 7]\n " color=yellow style=filled]
+"Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_1" [label="1: Start foo::Rectangle_Rectangle\nFormals:  this:foo::Rectangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_1" -> "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_2" ;
 "Rectangle#Rectangle#foo#{8572033467385947510}.aa3c63f2774d4a30536ec4553aa11554_2" [label="2: Exit foo::Rectangle_Rectangle \n  " color=yellow style=filled]
 	
 
-"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" [label="1: Start foo::my_record_\nFormals:  this:foo::my_record*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 9]\n " color=yellow style=filled]
+"#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" [label="1: Start foo::my_record_\nFormals:  this:foo::my_record*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_1" -> "#my_record#foo#{787932800218645857}.139a63942c62b7df5ae81187e8434e41_2" ;

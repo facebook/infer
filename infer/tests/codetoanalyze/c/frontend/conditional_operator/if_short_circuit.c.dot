@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  block_size:char* spec:char* \n   DECLARE_LOCALS(&return,&block_size,&spec); [line 40, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  block_size:char* spec:char* \n  " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_19" ;
@@ -79,7 +79,7 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_19" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_19" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_1" [label="1: Start shortcircuit_and\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_1" [label="1: Start shortcircuit_and\nFormals:  x:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_1" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" ;
@@ -124,7 +124,7 @@ digraph cfg {
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_1" [label="1: Start shortcircuit_or\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_1" [label="1: Start shortcircuit_or\nFormals:  x:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_1" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" ;
@@ -173,7 +173,7 @@ digraph cfg {
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_12" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_3" ;
-"test_loop.254a9d372f8f45542e409771135b9322_1" [label="1: Start test_loop\nFormals: \nLocals:  block_size:char* spec:char* \n   DECLARE_LOCALS(&return,&block_size,&spec); [line 27, column 1]\n " color=yellow style=filled]
+"test_loop.254a9d372f8f45542e409771135b9322_1" [label="1: Start test_loop\nFormals: \nLocals:  block_size:char* spec:char* \n  " color=yellow style=filled]
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_1" -> "test_loop.254a9d372f8f45542e409771135b9322_13" ;

@@ -875,7 +875,7 @@ module TransferFunctionsWCET = struct
   let should_report_on_instr = function
     | Sil.Call _ | Sil.Load _ | Sil.Prune _ | Sil.Store _ ->
         true
-    | Sil.Abstract _ | Sil.Declare_locals _ | Sil.Nullify _ | Sil.Remove_temps _ ->
+    | Sil.Abstract _ | Sil.Nullify _ | Sil.Remove_temps _ ->
         false
 
 

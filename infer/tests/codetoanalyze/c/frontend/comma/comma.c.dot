@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"comma_1.bafaed8336991f5a2e612ee2580c1506_1" [label="1: Start comma_1\nFormals: \nLocals:  d:int b:int a:int \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 8, column 1]\n " color=yellow style=filled]
+"comma_1.bafaed8336991f5a2e612ee2580c1506_1" [label="1: Start comma_1\nFormals: \nLocals:  d:int b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "comma_1.bafaed8336991f5a2e612ee2580c1506_1" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_6" ;
@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "comma_1.bafaed8336991f5a2e612ee2580c1506_6" -> "comma_1.bafaed8336991f5a2e612ee2580c1506_5" ;
-"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" [label="1: Start comma_2\nFormals: \nLocals:  d:int b:int a:int \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 14, column 1]\n " color=yellow style=filled]
+"comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" [label="1: Start comma_2\nFormals: \nLocals:  d:int b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_1" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" ;
@@ -46,7 +46,7 @@ digraph cfg {
 	
 
 	 "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_6" -> "comma_2.aa5fd44d8dfe78041d816bb9ce86a85f_5" ;
-"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" [label="1: Start comma_3\nFormals: \nLocals:  d:int c:int b:int a:int \n   DECLARE_LOCALS(&return,&d,&c,&b,&a); [line 20, column 1]\n " color=yellow style=filled]
+"comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" [label="1: Start comma_3\nFormals: \nLocals:  d:int c:int b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_1" -> "comma_3.94b9d12e6a2f1dbb384d21928d4e092d_7" ;

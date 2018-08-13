@@ -128,7 +128,6 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   | Remove_temps (ids, _) ->
       Unbind (List.map ~f:Var.of_id ids)
   (* ignoring for now; will translate as builtin function call if needed *)
-  | Abstract _
-  | Declare_locals _ ->
+  | Abstract _ ->
       (* these don't seem useful for most analyses. can translate them later if we want to *)
       Ignore

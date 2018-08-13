@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 21, column 1]\n " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:A* \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" [label="1: Start A_init\nFormals:  this:A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 3]\n " color=yellow style=filled]
+"init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" [label="1: Start A_init\nFormals:  this:A* val:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_1" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_3" -> "init#A#(11888841587519675340).79bf6a1702f6a90708acc2d560532750_2" ;
-"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" [label="1: Start A_method\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" [label="1: Start A_method\nFormals:  this:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_1" -> "method#A#(5340410962252776012).be8cb65bc6e38d687825fbc80265a66c_4" ;

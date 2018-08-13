@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 134, column 1]\n " color=yellow style=filled]
+"getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" [label="1: Start getValue\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_1" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_3" -> "getValue.faa0c7b1433b0c97fcdc15fa47c8180f_2" ;
-"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" [label="1: Start test_switch1\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 10, column 1]\n " color=yellow style=filled]
+"test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" [label="1: Start test_switch1\nFormals: \nLocals:  x:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_1" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" ;
@@ -102,7 +102,7 @@ digraph cfg {
 	
 
 	 "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_22" -> "test_switch1.7c92c7e14d1a0ee28a9ab29b22df5d3f_4" ;
-"test_switch10.8a4170d3888102a2491712a5ad55ad8d_1" [label="1: Start test_switch10\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 182, column 1]\n " color=yellow style=filled]
+"test_switch10.8a4170d3888102a2491712a5ad55ad8d_1" [label="1: Start test_switch10\nFormals: \nLocals:  value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_1" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" ;
@@ -121,7 +121,7 @@ digraph cfg {
 	
 
 	 "test_switch10.8a4170d3888102a2491712a5ad55ad8d_5" -> "test_switch10.8a4170d3888102a2491712a5ad55ad8d_4" ;
-"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" [label="1: Start test_switch11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&value); [line 188, column 1]\n " color=yellow style=filled]
+"test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" [label="1: Start test_switch11\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_1" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" ;
@@ -178,7 +178,7 @@ digraph cfg {
 	
 
 	 "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_14" -> "test_switch11.a1a6d859e414d268a57ed2a2bb6f8a8e_5" ;
-"test_switch2.0717c55583f10f472ddb2d73d867e556_1" [label="1: Start test_switch2\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 36, column 1]\n " color=yellow style=filled]
+"test_switch2.0717c55583f10f472ddb2d73d867e556_1" [label="1: Start test_switch2\nFormals: \nLocals:  something:int z:int x:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_1" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_18" ;
@@ -252,7 +252,7 @@ digraph cfg {
 	
 
 	 "test_switch2.0717c55583f10f472ddb2d73d867e556_18" -> "test_switch2.0717c55583f10f472ddb2d73d867e556_4" ;
-"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_1" [label="1: Start test_switch3\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 59, column 1]\n " color=yellow style=filled]
+"test_switch3.d602e3f7cc0068667fd33a3e54ff193c_1" [label="1: Start test_switch3\nFormals: \nLocals:  z:int something:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_1" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" ;
@@ -323,7 +323,7 @@ digraph cfg {
 	
 
 	 "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_17" -> "test_switch3.d602e3f7cc0068667fd33a3e54ff193c_4" ;
-"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_1" [label="1: Start test_switch4\nFormals: \nLocals:  something:int z:int x:int value:int \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 77, column 1]\n " color=yellow style=filled]
+"test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_1" [label="1: Start test_switch4\nFormals: \nLocals:  something:int z:int x:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_1" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" ;
@@ -397,7 +397,7 @@ digraph cfg {
 	
 
 	 "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_18" -> "test_switch4.70d4e6e8539e8d1ee3505d4562bc236d_4" ;
-"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_1" [label="1: Start test_switch5\nFormals: \nLocals:  x:int value:int \n   DECLARE_LOCALS(&return,&x,&value); [line 100, column 1]\n " color=yellow style=filled]
+"test_switch5.1d93fcc376cd01517eabe22cb325bcfd_1" [label="1: Start test_switch5\nFormals: \nLocals:  x:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_1" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" ;
@@ -454,7 +454,7 @@ digraph cfg {
 	
 
 	 "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_14" -> "test_switch5.1d93fcc376cd01517eabe22cb325bcfd_4" ;
-"test_switch6.a23e54b3840073f4ece330ef3c560915_1" [label="1: Start test_switch6\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&z,&something,&value); [line 116, column 1]\n " color=yellow style=filled]
+"test_switch6.a23e54b3840073f4ece330ef3c560915_1" [label="1: Start test_switch6\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int z:int something:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_1" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_23" ;
@@ -550,7 +550,7 @@ digraph cfg {
 	
 
 	 "test_switch6.a23e54b3840073f4ece330ef3c560915_23" -> "test_switch6.a23e54b3840073f4ece330ef3c560915_5" ;
-"test_switch7.8298274f5578f21bdddf71ffa79afcb8_1" [label="1: Start test_switch7\nFormals: \nLocals:  z:int something:int value:int \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 136, column 1]\n " color=yellow style=filled]
+"test_switch7.8298274f5578f21bdddf71ffa79afcb8_1" [label="1: Start test_switch7\nFormals: \nLocals:  z:int something:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_1" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" ;
@@ -621,7 +621,7 @@ digraph cfg {
 	
 
 	 "test_switch7.8298274f5578f21bdddf71ffa79afcb8_17" -> "test_switch7.8298274f5578f21bdddf71ffa79afcb8_4" ;
-"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_1" [label="1: Start test_switch8\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int z:int something:int value:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_temp_conditional___n$1,&z,&something,&value); [line 154, column 1]\n " color=yellow style=filled]
+"test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_1" [label="1: Start test_switch8\nFormals: \nLocals:  a:int 0$?%__sil_tmpSIL_temp_conditional___n$1:int z:int something:int value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_1" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" ;
@@ -742,7 +742,7 @@ digraph cfg {
 	
 
 	 "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_29" -> "test_switch8.6a6653773b94c1bb3f3c90dc1790d1ed_4" ;
-"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_1" [label="1: Start test_switch9\nFormals: \nLocals:  value:int \n   DECLARE_LOCALS(&return,&value); [line 176, column 1]\n " color=yellow style=filled]
+"test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_1" [label="1: Start test_switch9\nFormals: \nLocals:  value:int \n  " color=yellow style=filled]
 	
 
 	 "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_1" -> "test_switch9.f4a96f02ca05cf92a483f69cdfe717b1_5" ;

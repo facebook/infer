@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"bar1.fa85cca91963d8f301e34247048fca39_1" [label="1: Start bar1\nFormals:  a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 29, column 1]\n " color=yellow style=filled]
+"bar1.fa85cca91963d8f301e34247048fca39_1" [label="1: Start bar1\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "bar1.fa85cca91963d8f301e34247048fca39_1" -> "bar1.fa85cca91963d8f301e34247048fca39_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "bar1.fa85cca91963d8f301e34247048fca39_3" -> "bar1.fa85cca91963d8f301e34247048fca39_2" ;
-"foo1.299a0be4a5a79e6a59fdd251b19d78bb_1" [label="1: Start foo1\nFormals:  a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 1]\n " color=yellow style=filled]
+"foo1.299a0be4a5a79e6a59fdd251b19d78bb_1" [label="1: Start foo1\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo1.299a0be4a5a79e6a59fdd251b19d78bb_1" -> "foo1.299a0be4a5a79e6a59fdd251b19d78bb_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "foo1.299a0be4a5a79e6a59fdd251b19d78bb_3" -> "foo1.299a0be4a5a79e6a59fdd251b19d78bb_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  o:AClass* x:int \n   DECLARE_LOCALS(&return,&o,&x); [line 31, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  o:AClass* x:int \n  " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
@@ -70,7 +70,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_1" [label="1: Start AClass_bar:\nFormals:  self:AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 1]\n " color=yellow style=filled]
+"bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_1" [label="1: Start AClass_bar:\nFormals:  self:AClass* a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_1" -> "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_3" ;
@@ -81,7 +81,7 @@ digraph cfg {
 	
 
 	 "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_3" -> "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_2" ;
-"foo:#AClass#instance.85442408d439a21334483f95effd3023_1" [label="1: Start AClass_foo:\nFormals:  self:AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 1]\n " color=yellow style=filled]
+"foo:#AClass#instance.85442408d439a21334483f95effd3023_1" [label="1: Start AClass_foo:\nFormals:  self:AClass* a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo:#AClass#instance.85442408d439a21334483f95effd3023_1" -> "foo:#AClass#instance.85442408d439a21334483f95effd3023_3" ;

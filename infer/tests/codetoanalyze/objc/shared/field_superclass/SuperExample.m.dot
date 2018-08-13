@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" [label="1: Start super_example_main\nFormals:  argc:int argv:char**\nLocals:  a:objc_object* \n   DECLARE_LOCALS(&return,&a); [line 38, column 1]\n " color=yellow style=filled]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" [label="1: Start super_example_main\nFormals:  argc:int argv:char**\nLocals:  a:objc_object* \n  " color=yellow style=filled]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;
-"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper_init\nFormals:  self:ASuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30, column 1]\n " color=yellow style=filled]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper_init\nFormals:  self:ASuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" ;
-"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" [label="1: Start BSuper_init\nFormals:  self:BSuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" [label="1: Start BSuper_init\nFormals:  self:BSuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" -> "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" ;

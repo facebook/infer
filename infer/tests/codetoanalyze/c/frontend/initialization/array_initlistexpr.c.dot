@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_1" [label="1: Start init_const_array\nFormals: \nLocals:  a:int[3*4][2*12] z:int \n   DECLARE_LOCALS(&return,&a,&z); [line 8, column 1]\n " color=yellow style=filled]
+"init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_1" [label="1: Start init_const_array\nFormals: \nLocals:  a:int[3*4][2*12] z:int \n  " color=yellow style=filled]
 	
 
 	 "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_1" -> "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_3" -> "init_const_array.b1cf412cdbd1beaf15a9f6a3789043b9_2" ;
-"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_1" [label="1: Start init_variable_array\nFormals:  len:int\nLocals:  a:int[_*4] x:int \n   DECLARE_LOCALS(&return,&a,&x); [line 13, column 1]\n " color=yellow style=filled]
+"init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_1" [label="1: Start init_variable_array\nFormals:  len:int\nLocals:  a:int[_*4] x:int \n  " color=yellow style=filled]
 	
 
 	 "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_1" -> "init_variable_array.8cdc6857adcb1fd04fb6555d8ce3e4c1_4" ;

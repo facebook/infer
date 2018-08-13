@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_1" [label="1: Start access_ptr\nFormals:  x:X*\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 18, column 1]\n " color=yellow style=filled]
+"access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_1" [label="1: Start access_ptr\nFormals:  x:X*\nLocals:  c:int f:int \n  " color=yellow style=filled]
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_1" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_4" -> "access_ptr(class X)#15321479508398739907.a2d5fea3989ac28d8e0f2d82bdcf9e45_3" ;
-"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_1" [label="1: Start access_ref\nFormals:  x:X&\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 13, column 1]\n " color=yellow style=filled]
+"access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_1" [label="1: Start access_ref\nFormals:  x:X&\nLocals:  c:int f:int \n  " color=yellow style=filled]
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_1" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_4" -> "access_ref#4794488565171451856.2c0cb1f039897d6498c9fea4cbfec99e_3" ;
-"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 3]\n " color=yellow style=filled]
+"call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_1" -> "call#X#(5770224879682844394).d055b894c8e89eaff4b8d412706da082_3" ;

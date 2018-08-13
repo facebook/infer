@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_1" [label="1: Start npe_property_nullable\nFormals: \nLocals:  child:Person* person:Person* \n   DECLARE_LOCALS(&return,&child,&person); [line 53, column 1]\n " color=yellow style=filled]
+"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_1" [label="1: Start npe_property_nullable\nFormals: \nLocals:  child:Person* person:Person* \n  " color=yellow style=filled]
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_1" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" ;
-"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User_initWithName:\nFormals:  self:User* name:NSString*\nLocals: \nAnnotation: <_Nullable> User_initWithName:(<> <_Nullable>) \n   DECLARE_LOCALS(&return); [line 29, column 1]\n " color=yellow style=filled]
+"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User_initWithName:\nFormals:  self:User* name:NSString*\nLocals: \nAnnotation: <_Nullable> User_initWithName:(<> <_Nullable>) \n  " color=yellow style=filled]
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_2" ;
-"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" [label="1: Start User_otherUserName\nFormals:  self:User*\nLocals:  ou:User* \n   DECLARE_LOCALS(&return,&ou); [line 48, column 1]\n " color=yellow style=filled]
+"otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" [label="1: Start User_otherUserName\nFormals:  self:User*\nLocals:  ou:User* \n  " color=yellow style=filled]
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_1" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_4" -> "otherUserName#User#instance.7b86b8d2191be71dec320c3203056cd7_3" ;
-"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User_tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User_tellMeSomething(<>) \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
+"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User_tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User_tellMeSomething(<>) \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" -> "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" -> "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_2" ;
-"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" [label="1: Start User_tellMeSomething:and:and:and:\nFormals:  self:User* s1:NSString* s2:NSString* s3:NSString* s4:NSString*\nLocals: \nAnnotation: <> User_tellMeSomething:and:and:and:(<> <> <> <_Nullable> <>) \n   DECLARE_LOCALS(&return); [line 41, column 1]\n " color=yellow style=filled]
+"tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" [label="1: Start User_tellMeSomething:and:and:and:\nFormals:  self:User* s1:NSString* s2:NSString* s3:NSString* s4:NSString*\nLocals: \nAnnotation: <> User_tellMeSomething:and:and:and:(<> <> <> <_Nullable> <>) \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_1" -> "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" ;
@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_3" -> "tellMeSomething:and:and:and:#User(class NSString,class NSString,class NSString,class NSString)#insta.486c16409126581cc0a8d6141cb33574_2" ;
-"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" [label="1: Start User_tellMeSomethingNotNullable\nFormals:  self:User*\nLocals:  \n   DECLARE_LOCALS(&return); [line 37, column 1]\n " color=yellow style=filled]
+"tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" [label="1: Start User_tellMeSomethingNotNullable\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_1" -> "tellMeSomethingNotNullable#User#instance.245a0cd3ebd907a23c846151021de342_3" ;

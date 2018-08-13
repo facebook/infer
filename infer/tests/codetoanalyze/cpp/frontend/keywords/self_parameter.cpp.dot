@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_1" [label="1: Start fun_with_self\nFormals:  self:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_1" [label="1: Start fun_with_self\nFormals:  self:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_1" -> "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_3" -> "fun_with_self#17802276037376540432.4639f371cac8e491a6b8c0363a0bc168_2" ;
-"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+"test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" [label="1: Start test\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_1" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_3" -> "test(class A)#14183353284361723530.f22d37fbaacc66a7efb8fb240415be10_2" ;
-"meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_1" [label="1: Start A_meth_with_self\nFormals:  this:A* self:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 3]\n " color=yellow style=filled]
+"meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_1" [label="1: Start A_meth_with_self\nFormals:  this:A* self:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_1" -> "meth_with_self#A#(5126246555081316972).087223c2fe95da4de39ef1116c167075_3" ;

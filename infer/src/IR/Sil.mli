@@ -47,7 +47,6 @@ type instr =
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
-  | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
 [@@deriving compare]
 
 val equal_instr : instr -> instr -> bool

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_1" [label="1: Start call_method_with_default_parameters\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 14, column 1]\n " color=yellow style=filled]
+"call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_1" [label="1: Start call_method_with_default_parameters\nFormals: \nLocals:  a_ptr:A* \n  " color=yellow style=filled]
 	
 
 	 "call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_1" -> "call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_5" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_5" -> "call_method_with_default_parameters#7436997991634263214.eaaed1a0020d12e677ebd0f9049f2e4a_4" ;
-"fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_1" [label="1: Start A_fun_default\nFormals:  this:A* a:int b:int c:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 11, column 3]\n " color=yellow style=filled]
+"fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_1" [label="1: Start A_fun_default\nFormals:  this:A* a:int b:int c:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_1" -> "fun_default#A#(5743605731228394805).32785ab130b2379c4e3e1b8b23953e73_3" ;

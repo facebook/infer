@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" [label="1: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:__CFDictionary const * bufferAttributes:NSDictionary* \n   DECLARE_LOCALS(&return,&dict,&bufferAttributes); [line 42, column 1]\n " color=yellow style=filled]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" [label="1: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:__CFDictionary const * bufferAttributes:NSDictionary* \n  " color=yellow style=filled]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" ;
-"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_1" [label="1: Start cfautorelease_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 38, column 1]\n " color=yellow style=filled]
+"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_1" [label="1: Start cfautorelease_test\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_1" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" [label="1: Start TollBridgeExample__readHTTPHeader\nFormals:  self:TollBridgeExample*\nLocals:  ref:__CFDictionary const * \n   DECLARE_LOCALS(&return,&ref); [line 32, column 1]\n " color=yellow style=filled]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" [label="1: Start TollBridgeExample__readHTTPHeader\nFormals:  self:TollBridgeExample*\nLocals:  ref:__CFDictionary const * \n  " color=yellow style=filled]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" ;
@@ -41,7 +41,7 @@ digraph cfg {
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" [label="1: Start TollBridgeExample_brideRetained\nFormals:  self:TollBridgeExample*\nLocals:  a:__CFLocale const * observer:objc_object* \n   DECLARE_LOCALS(&return,&a,&observer); [line 27, column 1]\n " color=yellow style=filled]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" [label="1: Start TollBridgeExample_brideRetained\nFormals:  self:TollBridgeExample*\nLocals:  a:__CFLocale const * observer:objc_object* \n  " color=yellow style=filled]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" [label="1: Start TollBridgeExample_bridge\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale const * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 22, column 1]\n " color=yellow style=filled]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" [label="1: Start TollBridgeExample_bridge\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale const * \n  " color=yellow style=filled]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" ;
@@ -71,7 +71,7 @@ digraph cfg {
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale const * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 17, column 1]\n " color=yellow style=filled]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale const * \n  " color=yellow style=filled]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" [label="1: Start struct_forward_declare::X_Y_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n   DECLARE_LOCALS(&return,&x); [line 45, column 1]\n " color=yellow style=filled]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" [label="1: Start struct_forward_declare::X_Y_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n  " color=yellow style=filled]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_1" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" ;
@@ -40,7 +40,7 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_10" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_9" ;
-"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" [label="1: Start struct_forward_declare::X_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n   DECLARE_LOCALS(&return,&x); [line 34, column 1]\n " color=yellow style=filled]
+"X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" [label="1: Start struct_forward_declare::X_div0\nFormals: \nLocals:  x:struct_forward_declare::X \n  " color=yellow style=filled]
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_1" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" ;
@@ -59,7 +59,7 @@ digraph cfg {
 	
 
 	 "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_5" -> "X_div0#struct_forward_declare#14943490796844086809.e860fd7462df24ba7720802867a02ac2_4" ;
-"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 40, column 1]\n " color=yellow style=filled]
+"X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_1" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" ;
@@ -74,7 +74,7 @@ digraph cfg {
 	
 
 	 "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_4" -> "X_ptr_div0#struct_forward_declare(class struct_forward_declare::X)#16748991602723853091.a5c80332fff139355cc770fc0a47092e_3" ;
-"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" [label="1: Start struct_forward_declare::Z_div0\nFormals: \nLocals:  z:struct_forward_declare::Z \n   DECLARE_LOCALS(&return,&z); [line 55, column 1]\n " color=yellow style=filled]
+"Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" [label="1: Start struct_forward_declare::Z_div0\nFormals: \nLocals:  z:struct_forward_declare::Z \n  " color=yellow style=filled]
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_1" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" ;
@@ -93,7 +93,7 @@ digraph cfg {
 	
 
 	 "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_5" -> "Z_div0#struct_forward_declare#1627203008264837059.744970cb2a0863ceafbc26504cb09faf_4" ;
-"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" [label="1: Start struct_forward_declare::Z_ptr_div0\nFormals:  z:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 61, column 1]\n " color=yellow style=filled]
+"Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" [label="1: Start struct_forward_declare::Z_ptr_div0\nFormals:  z:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_1" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" ;
@@ -108,7 +108,7 @@ digraph cfg {
 	
 
 	 "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_4" -> "Z_ptr_div0#struct_forward_declare(class struct_forward_declare::Z)#18058661690516691263.ce600c6da403f28f2c501df577604772_3" ;
-"fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" [label="1: Start struct_forward_declare::fun_with_Z\nFormals:  z1:struct_forward_declare::Z*\nLocals:  z2:struct_forward_declare::Z* \n   DECLARE_LOCALS(&return,&z2); [line 24, column 1]\n " color=yellow style=filled]
+"fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" [label="1: Start struct_forward_declare::fun_with_Z\nFormals:  z1:struct_forward_declare::Z*\nLocals:  z2:struct_forward_declare::Z* \n  " color=yellow style=filled]
 	
 
 	 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_1" -> "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" ;
@@ -119,7 +119,7 @@ digraph cfg {
 	
 
 	 "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_3" -> "fun_with_Z#struct_forward_declare(class struct_forward_declare::Z)#10740368644462176169.d708d356d0748993ed722a0113d84853_2" ;
-"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 3]\n " color=yellow style=filled]
+"getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_1" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" ;
@@ -130,14 +130,14 @@ digraph cfg {
 	
 
 	 "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_3" -> "getF#X#struct_forward_declare#(234869530037436282).15dd2207cd05d172845e5598032cd97a_2" ;
-"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" [label="1: Start struct_forward_declare::X_X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 8]\n " color=yellow style=filled]
+"X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" [label="1: Start struct_forward_declare::X_X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_1" -> "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_2" ;
 "X#X#struct_forward_declare#{12172734746422509138}.f95806aaac40e962cb02caab9f49a493_2" [label="2: Exit struct_forward_declare::X_X \n  " color=yellow style=filled]
 	
 
-"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" [label="1: Start struct_forward_declare::Z_getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28, column 3]\n " color=yellow style=filled]
+"getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" [label="1: Start struct_forward_declare::Z_getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_1" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" ;
@@ -148,7 +148,7 @@ digraph cfg {
 	
 
 	 "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_3" -> "getF#Z#struct_forward_declare#(5569044973946019300).d77d2dfdba7ae36577dff1573b1c79e7_2" ;
-"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" [label="1: Start struct_forward_declare::Z_Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 8]\n " color=yellow style=filled]
+"Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" [label="1: Start struct_forward_declare::Z_Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_1" -> "Z#Z#struct_forward_declare#{16651271592300819332}.ef9c70a1786f586f582ba5bab79ecd77_2" ;

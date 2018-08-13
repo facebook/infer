@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" [label="1: Start objc_blockMemoryLeakExample_blockCapturedVarLeak_1\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n   DECLARE_LOCALS(&return); [line 94, column 22]\n " color=yellow style=filled]
+"objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" [label="1: Start objc_blockMemoryLeakExample_blockCapturedVarLeak_1\nFormals:  x:int*\nLocals: \nCaptured:  x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_1" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_3" -> "objc_blockMemoryLeakExample_blockCapturedVarLeak_1.b434313b336514058f60e55fc6a4a73f_2" ;
-"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" [label="1: Start objc_blockMemoryLeakExample_blockFreeNoLeak_2\nFormals:  x:int*\nLocals:  i:int\nCaptured:  x:int* \n   DECLARE_LOCALS(&return,&i); [line 103, column 22]\n " color=yellow style=filled]
+"objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" [label="1: Start objc_blockMemoryLeakExample_blockFreeNoLeak_2\nFormals:  x:int*\nLocals:  i:int\nCaptured:  x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_1" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_5" -> "objc_blockMemoryLeakExample_blockFreeNoLeak_2.1717186f4031a201971ac91124f16c98_4" ;
-"createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_1" [label="1: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:CGRect\nLocals:  \n   DECLARE_LOCALS(&return); [line 51, column 1]\n " color=yellow style=filled]
+"createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_1" [label="1: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:CGRect\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_1" -> "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_4" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_4" -> "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_3" ;
-"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_1" [label="1: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:CGRect\nLocals:  path1:CGPath* lineThickness:double \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 56, column 1]\n " color=yellow style=filled]
+"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_1" [label="1: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:CGRect\nLocals:  path1:CGPath* lineThickness:double \n  " color=yellow style=filled]
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_1" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_5" ;
@@ -64,7 +64,7 @@ digraph cfg {
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_5" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" ;
-"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" [label="1: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
+"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" [label="1: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_1" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" ;
@@ -75,7 +75,7 @@ digraph cfg {
 	
 
 	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" ;
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" [label="1: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:__CFAttributedString* \n   DECLARE_LOCALS(&return,&maString); [line 36, column 1]\n " color=yellow style=filled]
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" [label="1: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:__CFAttributedString* \n  " color=yellow style=filled]
 	
 
 	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_1" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" ;
@@ -90,7 +90,7 @@ digraph cfg {
 	
 
 	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" ;
-"test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_1" [label="1: Start MemoryLeakExample_test1:\nFormals:  str:__CFAttributedString const *\nLocals:  \n   DECLARE_LOCALS(&return); [line 42, column 1]\n " color=yellow style=filled]
+"test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_1" [label="1: Start MemoryLeakExample_test1:\nFormals:  str:__CFAttributedString const *\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_1" -> "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_3" ;
@@ -101,7 +101,7 @@ digraph cfg {
 	
 
 	 "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_3" -> "test1:#MemoryLeakExample(struct __CFAttributedString)#class.5c69af4eb9da1845df6efe64785fd0c9_2" ;
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" [label="1: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:__CTFramesetter const * \n   DECLARE_LOCALS(&return,&framesetter); [line 46, column 1]\n " color=yellow style=filled]
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" [label="1: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:__CTFramesetter const * \n  " color=yellow style=filled]
 	
 
 	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_1" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" ;
@@ -116,7 +116,7 @@ digraph cfg {
 	
 
 	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" ;
-"test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_1" [label="1: Start MemoryLeakExample_test2:\nFormals:  trust:__SecTrust*\nLocals:  \n   DECLARE_LOCALS(&return); [line 64, column 1]\n " color=yellow style=filled]
+"test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_1" [label="1: Start MemoryLeakExample_test2:\nFormals:  trust:__SecTrust*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_1" -> "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_3" ;
@@ -127,7 +127,7 @@ digraph cfg {
 	
 
 	 "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_3" -> "test2:#MemoryLeakExample(struct __SecTrust)#class.0351c8bd25e5a49860146e05fbc5b49a_2" ;
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" [label="1: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:__SecKey* \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 68, column 1]\n " color=yellow style=filled]
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" [label="1: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:__SecKey* \n  " color=yellow style=filled]
 	
 
 	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_1" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" ;
@@ -142,7 +142,7 @@ digraph cfg {
 	
 
 	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" ;
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" [label="1: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:CGImage* \n   DECLARE_LOCALS(&return,&newImage); [line 73, column 1]\n " color=yellow style=filled]
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" [label="1: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:CGImage* \n  " color=yellow style=filled]
 	
 
 	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_1" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" ;
@@ -157,7 +157,7 @@ digraph cfg {
 	
 
 	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" [label="1: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 91, column 1]\n " color=yellow style=filled]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" [label="1: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n  " color=yellow style=filled]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_1" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" ;
@@ -180,7 +180,7 @@ digraph cfg {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
-"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" [label="1: Start MemoryLeakExample_blockFreeNoLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n   DECLARE_LOCALS(&return,&blk,&x); [line 100, column 1]\n " color=yellow style=filled]
+"blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" [label="1: Start MemoryLeakExample_blockFreeNoLeak\nFormals:  self:MemoryLeakExample*\nLocals:  blk:_fn_(*) x:int* \n  " color=yellow style=filled]
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_1" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" ;
@@ -203,7 +203,7 @@ digraph cfg {
 	
 
 	 "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_6" -> "blockFreeNoLeak#MemoryLeakExample#instance.6bcefe2afb9f172f8aadbab54d9bd144_5" ;
-"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_1" [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * attachmentContainerView:UIView* \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 17, column 1]\n " color=yellow style=filled]
+"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_1" [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * attachmentContainerView:UIView* \n  " color=yellow style=filled]
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_1" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" ;
@@ -226,7 +226,7 @@ digraph cfg {
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" ;
-"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_1" [label="1: Start MemoryLeakExample_regularLeak\nFormals:  self:MemoryLeakExample*\nLocals:  x:int* \n   DECLARE_LOCALS(&return,&x); [line 85, column 1]\n " color=yellow style=filled]
+"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_1" [label="1: Start MemoryLeakExample_regularLeak\nFormals:  self:MemoryLeakExample*\nLocals:  x:int* \n  " color=yellow style=filled]
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_1" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" ;
@@ -245,7 +245,7 @@ digraph cfg {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" [label="1: Start MemoryLeakExample_test\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * \n   DECLARE_LOCALS(&return,&shadowPath); [line 26, column 1]\n " color=yellow style=filled]
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" [label="1: Start MemoryLeakExample_test\nFormals:  self:MemoryLeakExample*\nLocals:  shadowPath:CGPath const * \n  " color=yellow style=filled]
 	
 
 	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_1" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" ;
@@ -260,7 +260,7 @@ digraph cfg {
 	
 
 	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" ;
-"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" [label="1: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:MemoryLeakExample*\nLocals:  borderColor:CGColor* \n   DECLARE_LOCALS(&return,&borderColor); [line 80, column 1]\n " color=yellow style=filled]
+"testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" [label="1: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:MemoryLeakExample*\nLocals:  borderColor:CGColor* \n  " color=yellow style=filled]
 	
 
 	 "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_1" -> "testFBColorCreateWithGray#MemoryLeakExample#instance.4f74b525e11effa846f82d4205d48a4a_4" ;

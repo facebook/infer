@@ -731,6 +731,7 @@ let initial_prop tenv (curr_f: Procdesc.t) (prop: 'a Prop.t) add_formals : Prop.
   in
   let prop2 = prop_init_formals_seed tenv new_formals prop1 in
   Prop.prop_rename_primed_footprint_vars tenv (Prop.normalize tenv prop2)
+  |> SymExec.declare_locals_and_ret tenv curr_f
 
 
 (** Construct an initial prop from the empty prop *)
@@ -751,9 +752,11 @@ let initial_prop_from_pre tenv curr_f pre =
 
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop summary exe_env wl tenv proc_cfg init_node
+let execute_filter_prop summary exe_env tenv proc_cfg
     (precondition: Prop.normal BiabductionSummary.Jprop.t)
     : Prop.normal BiabductionSummary.spec option =
+  let init_node = ProcCfg.Exceptional.start_node proc_cfg in
+  let wl = path_set_create_worklist proc_cfg in
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
@@ -884,8 +887,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
     let valid_specs = ref [] in
     let go () =
       let filter p =
-        let wl = path_set_create_worklist proc_cfg in
-        let speco = execute_filter_prop summary exe_env wl tenv proc_cfg start_node p in
+        let speco = execute_filter_prop summary exe_env tenv proc_cfg p in
         (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in

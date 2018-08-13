@@ -93,7 +93,7 @@ module NullifyTransferFunctions = struct
           (active_defs', to_nullify)
       | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) ->
           (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
-      | Sil.Store _ | Prune _ | Declare_locals _ | Remove_temps _ | Abstract _ ->
+      | Sil.Store _ | Prune _ | Remove_temps _ | Abstract _ ->
           astate
       | Sil.Nullify _ ->
           L.(die InternalError)

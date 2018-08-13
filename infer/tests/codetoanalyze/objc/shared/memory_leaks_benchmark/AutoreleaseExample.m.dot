@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" [label="1: Start autorelease_test1\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 32, column 1]\n " color=yellow style=filled]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" [label="1: Start autorelease_test1\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n  " color=yellow style=filled]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
@@ -39,7 +39,7 @@ digraph cfg {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" [label="1: Start autorelease_test2\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 45, column 1]\n " color=yellow style=filled]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" [label="1: Start autorelease_test2\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n  " color=yellow style=filled]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;
@@ -74,7 +74,7 @@ digraph cfg {
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" [label="1: Start autorelease_test3\nFormals: \nLocals:  c:NSString* string:NSString* pool:NSAutoreleasePool* \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 57, column 1]\n " color=yellow style=filled]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" [label="1: Start autorelease_test3\nFormals: \nLocals:  c:NSString* string:NSString* pool:NSAutoreleasePool* \n  " color=yellow style=filled]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" ;
@@ -97,7 +97,7 @@ digraph cfg {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
-"createA.48a5d7f480131d59bba69d521715b836_1" [label="1: Start createA\nFormals: \nLocals:  s1:Auto* \n   DECLARE_LOCALS(&return,&s1); [line 27, column 1]\n " color=yellow style=filled]
+"createA.48a5d7f480131d59bba69d521715b836_1" [label="1: Start createA\nFormals: \nLocals:  s1:Auto* \n  " color=yellow style=filled]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_1" -> "createA.48a5d7f480131d59bba69d521715b836_4" ;
@@ -112,7 +112,7 @@ digraph cfg {
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_4" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto_autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n   DECLARE_LOCALS(&return,&s); [line 20, column 1]\n " color=yellow style=filled]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto_autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;

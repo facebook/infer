@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n   DECLARE_LOCALS(&return); [line 24, column 11]\n " color=yellow style=filled]
+"objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_1" [label="1: Start objc_blockB_f_1\nFormals:  self:B* const \nLocals: \nCaptured:  self:B* const  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_1" -> "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_3" -> "objc_blockB_f_1(class B).6b5af83d1cf19e8038483ea8b08b7439_2" ;
-"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
+"f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" [label="1: Start B_f\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_1" -> "f#B#instance.f1371ff5e7f410d3df6a2e71ff0a814e_4" ;

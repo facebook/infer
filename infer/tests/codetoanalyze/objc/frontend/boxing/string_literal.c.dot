@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"get_string1.37988b3a9459aa3258beba816a2c79fc_1" [label="1: Start get_string1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10, column 1]\n " color=yellow style=filled]
+"get_string1.37988b3a9459aa3258beba816a2c79fc_1" [label="1: Start get_string1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get_string1.37988b3a9459aa3258beba816a2c79fc_1" -> "get_string1.37988b3a9459aa3258beba816a2c79fc_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "get_string1.37988b3a9459aa3258beba816a2c79fc_3" -> "get_string1.37988b3a9459aa3258beba816a2c79fc_2" ;
-"get_string2.896232467e9bb3980f16ff6f7a1da043_1" [label="1: Start get_string2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 15, column 1]\n " color=yellow style=filled]
+"get_string2.896232467e9bb3980f16ff6f7a1da043_1" [label="1: Start get_string2\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get_string2.896232467e9bb3980f16ff6f7a1da043_1" -> "get_string2.896232467e9bb3980f16ff6f7a1da043_3" ;

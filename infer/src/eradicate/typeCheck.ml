@@ -453,7 +453,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv cur
   | Sil.Remove_temps (idl, _) ->
       if remove_temps then List.fold_right ~f:TypeState.remove_id idl ~init:typestate
       else typestate
-  | Sil.Declare_locals _ | Sil.Abstract _ | Sil.Nullify _ ->
+  | Sil.Abstract _ | Sil.Nullify _ ->
       typestate
   | Sil.Load (id, e, typ, loc) ->
       typecheck_expr_for_errors typestate e loc ;

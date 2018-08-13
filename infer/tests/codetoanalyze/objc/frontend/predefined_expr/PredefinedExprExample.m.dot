@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" [label="1: Start A_testFunct\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 1]\n " color=yellow style=filled]
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" [label="1: Start A_testFunct\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" ;
-"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" [label="1: Start A_testFunction\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" [label="1: Start A_testFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" ;
-"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" [label="1: Start A_testPrettyFunction\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" [label="1: Start A_testPrettyFunction\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" -> "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" ;

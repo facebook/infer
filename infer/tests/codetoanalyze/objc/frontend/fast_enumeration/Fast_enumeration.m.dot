@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A_fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 19, column 1]\n " color=yellow style=filled]
+"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A_fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A_fast_loop_no_crash\nFormals:  self:A*\nLocals:  obj:objc_object* \n   DECLARE_LOCALS(&return,&obj); [line 36, column 1]\n " color=yellow style=filled]
+"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A_fast_loop_no_crash\nFormals:  self:A*\nLocals:  obj:objc_object* \n  " color=yellow style=filled]
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" ;
@@ -84,7 +84,7 @@ digraph cfg {
 	
 
 	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" [label="1: Start A_while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n   DECLARE_LOCALS(&return,&item,&size); [line 27, column 1]\n " color=yellow style=filled]
+"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" [label="1: Start A_while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 
 	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" ;

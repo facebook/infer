@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" [label="1: Start init_from_ptr\nFormals:  par:int*\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 20, column 1]\n " color=yellow style=filled]
+"init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" [label="1: Start init_from_ptr\nFormals:  par:int*\nLocals:  p:int* d:int& v:int \n  " color=yellow style=filled]
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_1" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_5" -> "init_from_ptr#9521990274512470149.d27094f3cfd0d42c143fba9593870578_4" ;
-"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" [label="1: Start init_from_ref\nFormals:  par:int&\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 8, column 1]\n " color=yellow style=filled]
+"init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" [label="1: Start init_from_ref\nFormals:  par:int&\nLocals:  p:int* d:int& v:int \n  " color=yellow style=filled]
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_1" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_5" -> "init_from_ref#17239877270654219020.166550b98b7cafba1c908639121bced8_4" ;
-"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" [label="1: Start init_from_val\nFormals:  par:int\nLocals:  p:int* d:int& v:int \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 14, column 1]\n " color=yellow style=filled]
+"init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" [label="1: Start init_from_val\nFormals:  par:int\nLocals:  p:int* d:int& v:int \n  " color=yellow style=filled]
 	
 
 	 "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_1" -> "init_from_val#14538961741925123970.e5e29991fa3b6aa0a341c0c9f54754a7_5" ;

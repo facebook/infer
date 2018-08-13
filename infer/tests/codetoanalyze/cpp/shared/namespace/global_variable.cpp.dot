@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" [label="1: Start div0_namepace_res\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 26, column 1]\n " color=yellow style=filled]
+"div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" [label="1: Start div0_namepace_res\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_1" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" ;
@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_5" -> "div0_namepace_res#2404445022135827615.21a14d3c59bb168093c5935b4fa42647_4" ;
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" [label="1: Start div0_static_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" [label="1: Start div0_static_field\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_1" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" ;
@@ -38,7 +38,7 @@ digraph cfg {
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" ;
-"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" [label="1: Start div0_static_field_member_access\nFormals:  a:f1::A* b:C*\nLocals:  \n   DECLARE_LOCALS(&return); [line 38, column 1]\n " color=yellow style=filled]
+"div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" [label="1: Start div0_static_field_member_access\nFormals:  a:f1::A* b:C*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_1" -> "div0_static_field_member_access(class f1::A,class C)#8775359855042425857.e5b80b8e0139e41ba35ea98be6addc52_5" ;

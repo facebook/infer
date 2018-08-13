@@ -75,9 +75,6 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
           let meth_body_nodes =
             T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
           in
-          let proc_attributes = Procdesc.get_attributes procdesc in
-          Procdesc.Node.add_locals_ret_declaration start_node proc_attributes
-            (Procdesc.get_locals procdesc) ;
           Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [] ;
           match Procdesc.is_connected procdesc with
           | Ok () ->

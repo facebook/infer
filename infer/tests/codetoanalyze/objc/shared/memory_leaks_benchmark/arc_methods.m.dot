@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" [label="1: Start main_arc_methods\nFormals: \nLocals:  ab:ArcMethodsA* a2:ArcMethodsA* aa:ArcMethodsA* a1:ArcMethodsA* \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 33, column 1]\n " color=yellow style=filled]
+"main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" [label="1: Start main_arc_methods\nFormals: \nLocals:  ab:ArcMethodsA* a2:ArcMethodsA* aa:ArcMethodsA* a1:ArcMethodsA* \n  " color=yellow style=filled]
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_1" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" ;
@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_7" -> "main_arc_methods.6924ccbb58d8dbb03048861dcbd6134b_6" ;
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" [label="1: Start ArcMethodsA_newA\nFormals: \nLocals:  a:ArcMethodsA* \n   DECLARE_LOCALS(&return,&a); [line 20, column 1]\n " color=yellow style=filled]
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" [label="1: Start ArcMethodsA_newA\nFormals: \nLocals:  a:ArcMethodsA* \n  " color=yellow style=filled]
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_1" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" ;
@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" [label="1: Start ArcMethodsA_someA\nFormals: \nLocals:  a:ArcMethodsA* \n   DECLARE_LOCALS(&return,&a); [line 25, column 1]\n " color=yellow style=filled]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" [label="1: Start ArcMethodsA_someA\nFormals: \nLocals:  a:ArcMethodsA* \n  " color=yellow style=filled]
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_1" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" ;

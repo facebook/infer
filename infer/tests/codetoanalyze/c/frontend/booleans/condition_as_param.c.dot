@@ -1,13 +1,13 @@
 /* @generated */
 digraph cfg {
-"check.0ba4439ee9a46d9d9f14c60f88f45f87_1" [label="1: Start check\nFormals:  x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"check.0ba4439ee9a46d9d9f14c60f88f45f87_1" [label="1: Start check\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "check.0ba4439ee9a46d9d9f14c60f88f45f87_1" -> "check.0ba4439ee9a46d9d9f14c60f88f45f87_2" ;
 "check.0ba4439ee9a46d9d9f14c60f88f45f87_2" [label="2: Exit check \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int x:int \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0,&x); [line 10, column 1]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:int x:int \n  " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;

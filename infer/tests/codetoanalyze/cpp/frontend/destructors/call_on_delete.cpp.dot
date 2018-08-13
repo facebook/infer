@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_1" [label="1: Start deleteInt\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 1]\n " color=yellow style=filled]
+"deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_1" [label="1: Start deleteInt\nFormals:  x:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_1" -> "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_3" -> "deleteInt#11507157942721721842.63c462d9916f225a70cc32ed39aaaf5f_2" ;
-"deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_1" [label="1: Start deleteX\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12, column 1]\n " color=yellow style=filled]
+"deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_1" [label="1: Start deleteX\nFormals:  x:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_1" -> "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_3" ;
@@ -22,14 +22,14 @@ digraph cfg {
 	
 
 	 "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_3" -> "deleteX(class X)#8359832236310221055.de7d98d32d68fd20c6aec48045fd1c8e_2" ;
-"__infer_inner_destructor_~X#X#(9850251229546392500).d48deae5dbd403872895c6ef0bdaa126_1" [label="1: Start X___infer_inner_destructor_~X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~X#X#(9850251229546392500).d48deae5dbd403872895c6ef0bdaa126_1" [label="1: Start X___infer_inner_destructor_~X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~X#X#(9850251229546392500).d48deae5dbd403872895c6ef0bdaa126_1" -> "__infer_inner_destructor_~X#X#(9850251229546392500).d48deae5dbd403872895c6ef0bdaa126_2" ;
 "__infer_inner_destructor_~X#X#(9850251229546392500).d48deae5dbd403872895c6ef0bdaa126_2" [label="2: Exit X___infer_inner_destructor_~X \n  " color=yellow style=filled]
 	
 
-"~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_1" [label="1: Start X_~X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 3]\n " color=yellow style=filled]
+"~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_1" [label="1: Start X_~X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_1" -> "~X#X#(9850251229546392500).92228f0925803df4b24e5d788ad29673_3" ;

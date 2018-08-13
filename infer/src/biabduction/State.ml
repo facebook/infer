@@ -116,8 +116,6 @@ let node_simple_key node =
             6
         | Sil.Remove_temps _ ->
             7
-        | Sil.Declare_locals _ ->
-            8
       in
       Some instr_key
   in

@@ -46,7 +46,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_acc
         in
         List.fold ~f:add_actual_by_ref ~init:astate actuals
-    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
+    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ ->
         astate
 
 

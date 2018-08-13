@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19, column 1]\n " color=yellow style=filled]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
-"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" [label="1: Start A_test1:\nFormals:  self:A* a:A*\nLocals:  aa:A* \n   DECLARE_LOCALS(&return,&aa); [line 23, column 1]\n " color=yellow style=filled]
+"test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" [label="1: Start A_test1:\nFormals:  self:A* a:A*\nLocals:  aa:A* \n  " color=yellow style=filled]
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_1" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_4" -> "test1:#A(class A)#instance.61440711d4e2388d4be3731c34a61289_3" ;
-"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" [label="1: Start A_test2:\nFormals:  self:A* a:A*\nLocals:  aa:A*\nAnnotation: <> A_test2:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return,&aa); [line 28, column 1]\n " color=yellow style=filled]
+"test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" [label="1: Start A_test2:\nFormals:  self:A* a:A*\nLocals:  aa:A*\nAnnotation: <> A_test2:(<> <_Nonnull>) \n  " color=yellow style=filled]
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_1" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" ;
@@ -41,7 +41,7 @@ digraph cfg {
 	
 
 	 "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_4" -> "test2:#A(class A)#instance.3b9594b6f023617f19d57dee6d35cf80_3" ;
-"test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" [label="1: Start A_test3:\nFormals:  self:A* successBlock:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 33, column 1]\n " color=yellow style=filled]
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" [label="1: Start A_test3:\nFormals:  self:A* successBlock:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
-"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A_test4:\nFormals:  self:A* successBlock:_fn_(*)\nLocals: \nAnnotation: <> A_test4:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return); [line 38, column 1]\n " color=yellow style=filled]
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A_test4:\nFormals:  self:A* successBlock:_fn_(*)\nLocals: \nAnnotation: <> A_test4:(<> <_Nonnull>) \n  " color=yellow style=filled]
 	
 
 	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" ;

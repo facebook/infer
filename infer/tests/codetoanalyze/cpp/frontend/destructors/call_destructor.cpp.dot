@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_1" [label="1: Start f\nFormals:  p:Person*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13, column 1]\n " color=yellow style=filled]
+"f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_1" [label="1: Start f\nFormals:  p:Person*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_1" -> "f(class Person)#3072121847520995784.d15d531febb371128c8a5206341d5cb9_3" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  xc:X_class* xs:X_struct* \n   DECLARE_LOCALS(&return,&xc,&xs); [line 19, column 1]\n " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  xc:X_class* xs:X_struct* \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;

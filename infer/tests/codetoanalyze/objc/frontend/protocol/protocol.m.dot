@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22, column 1]\n " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" ;

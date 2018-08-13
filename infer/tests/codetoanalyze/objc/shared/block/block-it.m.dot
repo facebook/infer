@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_1" [label="1: Start objc_blockMyBlock_array_1\nFormals:  object:objc_object* idx:unsigned long stop:_Bool*\nLocals:  ShouldStop:int \n   DECLARE_LOCALS(&return,&ShouldStop); [line 19, column 33]\n " color=yellow style=filled]
+"objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_1" [label="1: Start objc_blockMyBlock_array_1\nFormals:  object:objc_object* idx:unsigned long stop:_Bool*\nLocals:  ShouldStop:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_1" -> "objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_5" ;
@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_7" -> "objc_blockMyBlock_array_1(struct objc_object).7651ebbbe5ad11f35ec8fca80283945b_3" ;
-"objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_1" [label="1: Start objc_blockMyBlock_array_trans_2\nFormals:  object:objc_object* idx:unsigned long stop:_Bool*\nLocals:  ShouldStop:int \n   DECLARE_LOCALS(&return,&ShouldStop); [line 38, column 7]\n " color=yellow style=filled]
+"objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_1" [label="1: Start objc_blockMyBlock_array_trans_2\nFormals:  object:objc_object* idx:unsigned long stop:_Bool*\nLocals:  ShouldStop:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_1" -> "objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_5" ;
@@ -56,7 +56,7 @@ digraph cfg {
 	
 
 	 "objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_7" -> "objc_blockMyBlock_array_trans_2(struct objc_object).933574d9d3bae3fa7584d130e160b2ad_3" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_1" [label="1: Start MyBlock_array\nFormals:  self:MyBlock*\nLocals:  a:NSArray* \n   DECLARE_LOCALS(&return,&a); [line 16, column 1]\n " color=yellow style=filled]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_1" [label="1: Start MyBlock_array\nFormals:  self:MyBlock*\nLocals:  a:NSArray* \n  " color=yellow style=filled]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_1" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" ;
@@ -71,7 +71,7 @@ digraph cfg {
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_1" [label="1: Start MyBlock_array_trans\nFormals:  self:MyBlock*\nLocals:  idx:unsigned long object:objc_object* stop:_Bool* enumerateObjectsUsingBlock:_fn_(*) objects:NSArray* a:NSArray* \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&enumerateObjectsUsingBlock,&objects,&a); [line 30, column 1]\n " color=yellow style=filled]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_1" [label="1: Start MyBlock_array_trans\nFormals:  self:MyBlock*\nLocals:  idx:unsigned long object:objc_object* stop:_Bool* enumerateObjectsUsingBlock:_fn_(*) objects:NSArray* a:NSArray* \n  " color=yellow style=filled]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_1" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" ;

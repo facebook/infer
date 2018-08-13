@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:Polygon* \n   DECLARE_LOCALS(&return,&trgl); [line 68, column 1]\n " color=yellow style=filled]
+"call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:Polygon* \n  " color=yellow style=filled]
 	
 
 	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_1" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_4" -> "call_virtual_destructor#6847397116347440235.d267757a410b72cac399f5e3d0ee0f45_3" ;
-"poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:Polygon* poly:Polygon \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 51, column 1]\n " color=yellow style=filled]
+"poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:Polygon* poly:Polygon \n  " color=yellow style=filled]
 	
 
 	 "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_1" -> "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_5" ;
@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_5" -> "poly_area#4209622570361008343.816833144841084a7fd6071bbff4c354_4" ;
-"rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:Polygon* rect:Rectangle \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 36, column 1]\n " color=yellow style=filled]
+"rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:Polygon* rect:Rectangle \n  " color=yellow style=filled]
 	
 
 	 "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_1" -> "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_6" ;
@@ -57,7 +57,7 @@ digraph cfg {
 	
 
 	 "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_6" -> "rect_area#9087317270636867019.dedb17c23e2d96ddd6e1087003e78815_5" ;
-"tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 43, column 1]\n " color=yellow style=filled]
+"tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n  " color=yellow style=filled]
 	
 
 	 "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_1" -> "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_7" ;
@@ -84,7 +84,7 @@ digraph cfg {
 	
 
 	 "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_7" -> "tri_area#1215149030941579879.cc7663ab4ea89457778545059b70bc38_6" ;
-"tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 57, column 1]\n " color=yellow style=filled]
+"tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n  " color=yellow style=filled]
 	
 
 	 "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_1" -> "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_7" ;
@@ -111,7 +111,7 @@ digraph cfg {
 	
 
 	 "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_7" -> "tri_not_virtual_area#9435562296359660595.88e7106fc7dcfd34401502a9deb415ac_6" ;
-"area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_1" [label="1: Start Polygon_area\nFormals:  this:Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18, column 3]\n " color=yellow style=filled]
+"area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_1" [label="1: Start Polygon_area\nFormals:  this:Polygon*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_1" -> "area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_3" ;
@@ -122,7 +122,7 @@ digraph cfg {
 	
 
 	 "area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_3" -> "area#Polygon#(14534668876010564879).ccccc470b1eafda401273f4b27bbfa9f_2" ;
-"set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_1" [label="1: Start Polygon_set_values\nFormals:  this:Polygon* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14, column 3]\n " color=yellow style=filled]
+"set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_1" [label="1: Start Polygon_set_values\nFormals:  this:Polygon* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_1" -> "set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_4" ;
@@ -137,14 +137,14 @@ digraph cfg {
 	
 
 	 "set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_4" -> "set_values#Polygon#(2698446688876490094).f9216ba6d3085c8bce59aeddec27f348_3" ;
-"Polygon#Polygon#{10850889526924573388}.39fcc5831c0234f5743317d6969628c2_1" [label="1: Start Polygon_Polygon\nFormals:  this:Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 7]\n " color=yellow style=filled]
+"Polygon#Polygon#{10850889526924573388}.39fcc5831c0234f5743317d6969628c2_1" [label="1: Start Polygon_Polygon\nFormals:  this:Polygon*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Polygon#Polygon#{10850889526924573388}.39fcc5831c0234f5743317d6969628c2_1" -> "Polygon#Polygon#{10850889526924573388}.39fcc5831c0234f5743317d6969628c2_2" ;
 "Polygon#Polygon#{10850889526924573388}.39fcc5831c0234f5743317d6969628c2_2" [label="2: Exit Polygon_Polygon \n  " color=yellow style=filled]
 	
 
-"area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_1" [label="1: Start Rectangle_area\nFormals:  this:Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24, column 3]\n " color=yellow style=filled]
+"area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_1" [label="1: Start Rectangle_area\nFormals:  this:Rectangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_1" -> "area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_3" ;
@@ -155,7 +155,7 @@ digraph cfg {
 	
 
 	 "area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_3" -> "area#Rectangle#(14534668876010564879).9b17971eaa6024f5a21d98d4b495fbd8_2" ;
-"Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_1" [label="1: Start Rectangle_Rectangle\nFormals:  this:Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21, column 7]\n " color=yellow style=filled]
+"Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_1" [label="1: Start Rectangle_Rectangle\nFormals:  this:Rectangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_1" -> "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" ;
@@ -166,7 +166,7 @@ digraph cfg {
 	
 
 	 "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_3" -> "Rectangle#Rectangle#{548993796743293985}.386f89cceb4c14e4fc014bcc1ec86f4b_2" ;
-"area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_1" [label="1: Start Triangle_area\nFormals:  this:Triangle*\nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 30, column 3]\n " color=yellow style=filled]
+"area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_1" [label="1: Start Triangle_area\nFormals:  this:Triangle*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
 	 "area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_1" -> "area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_4" ;
@@ -181,7 +181,7 @@ digraph cfg {
 	
 
 	 "area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_4" -> "area#Triangle#(14534668876010564879).b2c96bbb8f170e9d12180637dc0d6da3_3" ;
-"Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_1" [label="1: Start Triangle_Triangle\nFormals:  this:Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27, column 7]\n " color=yellow style=filled]
+"Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_1" [label="1: Start Triangle_Triangle\nFormals:  this:Triangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_1" -> "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" ;
@@ -192,7 +192,7 @@ digraph cfg {
 	
 
 	 "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_3" -> "Triangle#Triangle#{15421032765127472541}.26bfd28d102273793a62fe013a50a7d1_2" ;
-"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_1" [label="1: Start Triangle___infer_inner_destructor_~Triangle\nFormals:  this:Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 29, column 3]\n " color=yellow style=filled]
+"__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_1" [label="1: Start Triangle___infer_inner_destructor_~Triangle\nFormals:  this:Triangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_1" -> "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" ;
@@ -203,7 +203,7 @@ digraph cfg {
 	
 
 	 "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_3" -> "__infer_inner_destructor_~Triangle#Triangle#(14073216405110724792).c04c3fa3cd50a3125c149616f3af0105_2" ;
-"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_1" [label="1: Start Triangle_~Triangle\nFormals:  this:Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 29, column 3]\n " color=yellow style=filled]
+"~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_1" [label="1: Start Triangle_~Triangle\nFormals:  this:Triangle*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_1" -> "~Triangle#Triangle#(14073216405110724792).8adff4889e6d988a35e49531a9afaad5_3" ;

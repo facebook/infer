@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_1" [label="1: Start objc_blockMy_manager_blockReleaseNoLeak_1\nFormals:  newImage:CGImage* a:int\nLocals: \nCaptured:  newImage:CGImage* \n   DECLARE_LOCALS(&return); [line 23, column 7]\n " color=yellow style=filled]
+"objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_1" [label="1: Start objc_blockMy_manager_blockReleaseNoLeak_1\nFormals:  newImage:CGImage* a:int\nLocals: \nCaptured:  newImage:CGImage* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_1" -> "objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_5" ;
@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_7" -> "objc_blockMy_manager_blockReleaseNoLeak_1(struct CGImage).d9015a9be6e156b53b1e0a2e237f4578_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_1" [label="1: Start My_manager_blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 18, column 1]\n " color=yellow style=filled]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_1" [label="1: Start My_manager_blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_1" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" ;

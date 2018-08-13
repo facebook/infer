@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_1" [label="1: Start dereference_in_array_access\nFormals:  p:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_1" [label="1: Start dereference_in_array_access\nFormals:  p:int**\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_1" -> "dereference_in_array_access.d3133bf0c1bc11000c355c50d0fbb3c0_18" ;

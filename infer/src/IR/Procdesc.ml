@@ -200,22 +200,6 @@ module Node = struct
     if not (phys_equal instrs' node.instrs) then node.instrs <- instrs'
 
 
-  (** Add declarations for local variables and return variable to the node *)
-  let add_locals_ret_declaration node (proc_attributes: ProcAttributes.t) locals =
-    let loc = get_loc node in
-    let pname = proc_attributes.proc_name in
-    let ret_var =
-      let ret_type = proc_attributes.ret_type in
-      (Pvar.get_ret_pvar pname, ret_type)
-    in
-    let construct_decl (var_data: ProcAttributes.var_data) =
-      (Pvar.mk var_data.name pname, var_data.typ)
-    in
-    let ptl = ret_var :: List.map ~f:construct_decl locals in
-    let instr = Sil.Declare_locals (ptl, loc) in
-    node.instrs <- Instrs.prepend_one instr node.instrs
-
-
   let pp_stmt fmt = function
     | AssertionFailure ->
         F.pp_print_string fmt "Assertion failure"
@@ -431,7 +415,7 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 (** Return the return type of the procedure *)
 let get_ret_type pdesc = pdesc.attributes.ret_type
 
-let get_ret_var pdesc = Pvar.mk Ident.name_return (get_proc_name pdesc)
+let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
 
 let get_start_node pdesc = pdesc.start_node
 
@@ -771,11 +755,6 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         Some call_instr
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         Some (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind))
-    | Sil.Declare_locals (typed_vars, loc) ->
-        let new_typed_vars =
-          List.map ~f:(fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars
-        in
-        Some (Sil.Declare_locals (new_typed_vars, loc))
     | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         None
@@ -919,11 +898,6 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         convert_generic_call return_ids origin_call_exp origin_args loc call_flags
     | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
         (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind) :: instrs, id_map)
-    | Sil.Declare_locals (typed_vars, loc) ->
-        let new_typed_vars =
-          List.map ~f:(fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars
-        in
-        (Sil.Declare_locals (new_typed_vars, loc) :: instrs, id_map)
     | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
         (* these are generated instructions that will be replaced by the preanalysis *)
         (instrs, id_map)

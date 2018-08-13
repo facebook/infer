@@ -80,9 +80,6 @@ module Node : sig
   val throw_kind : nodekind
   (** kind of Stmt_node for a throw instruction. *)
 
-  val add_locals_ret_declaration : t -> ProcAttributes.t -> ProcAttributes.var_data list -> unit
-  (** Add declarations for local variables and return variable to the node *)
-
   val append_instrs : t -> Sil.instr list -> unit
   (** Append the instructions to the list of instructions to execute *)
 

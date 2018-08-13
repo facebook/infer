@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_1" [label="1: Start div\nFormals:  v:int const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_1" [label="1: Start div\nFormals:  v:int const &\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_1" -> "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" ;
@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_3" -> "div#1879538779647861770.84b17ea73594d098fb69bd947fc358c0_2" ;
-"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_1" [label="1: Start div0_function_param_cast\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int const  \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$0); [line 15, column 1]\n " color=yellow style=filled]
+"div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_1" [label="1: Start div0_function_param_cast\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:int const  \n  " color=yellow style=filled]
 	
 
 	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_1" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_3" -> "div0_function_param_cast#10492767400319523474.071b9a9b757a9140938b53a95e971def_2" ;
-"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" [label="1: Start div0_init_expr\nFormals: \nLocals:  a:int const & 0$?%__sil_tmpSIL_materialize_temp__n$3:int const  \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_materialize_temp__n$3); [line 10, column 1]\n " color=yellow style=filled]
+"div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" [label="1: Start div0_init_expr\nFormals: \nLocals:  a:int const & 0$?%__sil_tmpSIL_materialize_temp__n$3:int const  \n  " color=yellow style=filled]
 	
 
 	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_1" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" ;
@@ -37,7 +37,7 @@ digraph cfg {
 	
 
 	 "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_4" -> "div0_init_expr#16429869714979266683.46e79db6a434bbf3e121689869095925_3" ;
-"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" [label="1: Start div0_no_const_ref\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 18, column 1]\n " color=yellow style=filled]
+"div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" [label="1: Start div0_no_const_ref\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
 	 "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_1" -> "div0_no_const_ref#2435860439272921671.329c6a0e35fd9b4b747df4dcffa5a9ef_4" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" [label="1: Start NpeMallocC_test\nFormals:  self:NpeMallocC*\nLocals:  person:Person* \n   DECLARE_LOCALS(&return,&person); [line 22, column 1]\n " color=yellow style=filled]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" [label="1: Start NpeMallocC_test\nFormals:  self:NpeMallocC*\nLocals:  person:Person* \n  " color=yellow style=filled]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" ;

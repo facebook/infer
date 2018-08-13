@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" [label="1: Start ptr_div0\nFormals: \nLocals:  p:int* a:int \n   DECLARE_LOCALS(&return,&p,&a); [line 11, column 1]\n " color=yellow style=filled]
+"ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" [label="1: Start ptr_div0\nFormals: \nLocals:  p:int* a:int \n  " color=yellow style=filled]
 	
 
 	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_1" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" ;
@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_6" -> "ptr_div0#14193575060740497524.6928690623c7c21a5a52547c8cdd4310_5" ;
-"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" [label="1: Start ptr_div0_function\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 18, column 1]\n " color=yellow style=filled]
+"ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" [label="1: Start ptr_div0_function\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_1" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" ;
@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_5" -> "ptr_div0_function#15472019236267517423.0a3eb7529edaa487d598988d34f0b091_4" ;
-"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" [label="1: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int* a:int \n   DECLARE_LOCALS(&return,&r,&a); [line 24, column 1]\n " color=yellow style=filled]
+"ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" [label="1: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int* a:int \n  " color=yellow style=filled]
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_1" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" ;
@@ -65,7 +65,7 @@ digraph cfg {
 	
 
 	 "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_6" -> "ptr_div0_function_temp_var#5150281836928396778.6b88ca0a7e844195f8de319fd04a3139_5" ;
-"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" [label="1: Start ref_div0\nFormals: \nLocals:  r:int& a:int \n   DECLARE_LOCALS(&return,&r,&a); [line 31, column 1]\n " color=yellow style=filled]
+"ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" [label="1: Start ref_div0\nFormals: \nLocals:  r:int& a:int \n  " color=yellow style=filled]
 	
 
 	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_1" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" ;
@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_6" -> "ref_div0#1043072996947162803.d8e5fefe42038c8549979f6316354144_5" ;
-"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" [label="1: Start ref_div0_function\nFormals: \nLocals:  a:int \n   DECLARE_LOCALS(&return,&a); [line 38, column 1]\n " color=yellow style=filled]
+"ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" [label="1: Start ref_div0_function\nFormals: \nLocals:  a:int \n  " color=yellow style=filled]
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_1" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" ;
@@ -107,7 +107,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_5" -> "ref_div0_function#15446684317306379342.095fd29aa2a7d2024ec0380b2c42aad4_4" ;
-"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" [label="1: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int& a:int \n   DECLARE_LOCALS(&return,&r,&a); [line 44, column 1]\n " color=yellow style=filled]
+"ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" [label="1: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int& a:int \n  " color=yellow style=filled]
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_1" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" ;
@@ -130,7 +130,7 @@ digraph cfg {
 	
 
 	 "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_6" -> "ref_div0_function_temp_var#14207866842047996477.a899517f09b367d539ea5f04365fd46e_5" ;
-"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" [label="1: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 51, column 1]\n " color=yellow style=filled]
+"ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" [label="1: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_1" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" ;
@@ -161,7 +161,7 @@ digraph cfg {
 	
 
 	 "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_8" -> "ref_div0_nested_assignment#17126972420420854569.bd6abb3056f6689fbac92af920ec6879_7" ;
-"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" [label="1: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 60, column 1]\n " color=yellow style=filled]
+"ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" [label="1: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int& r1:int& b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_1" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" ;
@@ -192,7 +192,7 @@ digraph cfg {
 	
 
 	 "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_8" -> "ref_div1_nested_assignment#5121576951592231820.a9f8511d9ff791c44569fd8a8eb9d3cf_7" ;
-"zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_1" [label="1: Start zero_ptr\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 8, column 1]\n " color=yellow style=filled]
+"zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_1" [label="1: Start zero_ptr\nFormals:  p:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_1" -> "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_3" ;
@@ -203,7 +203,7 @@ digraph cfg {
 	
 
 	 "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_3" -> "zero_ptr#10962438709356261388.c1a1091e7e1d49bd9bd5d8cac96703e9_2" ;
-"zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_1" [label="1: Start zero_ref\nFormals:  p:int&\nLocals:  \n   DECLARE_LOCALS(&return); [line 9, column 1]\n " color=yellow style=filled]
+"zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_1" [label="1: Start zero_ref\nFormals:  p:int&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_1" -> "zero_ref#8777441955929384761.2247f2b8d396eabba21c20ef967ac6ec_3" ;

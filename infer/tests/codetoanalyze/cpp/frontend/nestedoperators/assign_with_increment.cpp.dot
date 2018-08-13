@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  e:int d:int c:int b:int a:int \n   DECLARE_LOCALS(&return,&e,&d,&c,&b,&a); [line 8, column 1]\n " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  e:int d:int c:int b:int a:int \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
