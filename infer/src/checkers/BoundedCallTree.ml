@@ -91,7 +91,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let fname = F.sprintf "%s.%s.json" (Typ.Procname.to_filename caller) suffix in
     let fpath = Filename.concat dir fname in
     Utils.create_dir dir ;
-    Ag_util.Json.to_file Stacktree_j.write_stacktree fpath stacktree
+    Atdgen_runtime.Util.Json.to_file Stacktree_j.write_stacktree fpath stacktree
 
 
   let exec_instr astate proc_data _ = function

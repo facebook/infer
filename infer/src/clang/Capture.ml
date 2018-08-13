@@ -13,11 +13,13 @@ let debug_mode = Config.debug_mode || Config.frontend_stats
 (** This function reads the json file in fname, validates it, and encodes in the AST data structure
     defined in Clang_ast_t.  *)
 let validate_decl_from_file fname =
-  Ag_util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl fname
+  Atdgen_runtime.Util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size
+    Clang_ast_b.read_decl fname
 
 
 let validate_decl_from_channel chan =
-  Ag_util.Biniou.from_channel ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl chan
+  Atdgen_runtime.Util.Biniou.from_channel ~len:CFrontend_config.biniou_buffer_size
+    Clang_ast_b.read_decl chan
 
 
 let register_perf_stats_report source_file =

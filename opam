@@ -28,7 +28,7 @@ ocaml-version: [ >= "4.04.2" ]
 depends: [
   "ANSITerminal" {>="0.7"}
   "apron"
-  "atdgen" {>="1.6.0" & <"1.13.0"}
+  "atdgen" {>="2.0.0"}
   "base64"
   "cmdliner" {>="1.0.0"}
   "core"

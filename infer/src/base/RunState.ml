@@ -53,7 +53,7 @@ let load_and_validate () =
   if Sys.file_exists state_file_path <> `Yes then
     error "save state not found: '%s' does not exist" state_file_path
   else
-    match Ag_util.Json.from_file Runstate_j.read_t state_file_path with
+    match Atdgen_runtime.Util.Json.from_file Runstate_j.read_t state_file_path with
     | {Runstate_t.results_dir_format} as loaded_state
       when String.equal !state.Runstate_t.results_dir_format results_dir_format ->
         state := loaded_state ;

@@ -1,7 +1,8 @@
 ANSITerminal = 0.8
 apron = 20160125
-atd = 1.12.0
-atdgen = 1.12.0
+atd = 2.0.0
+atdgen = 2.0.0
+atdgen-runtime = 2.0.0
 base = v0.11.0
 base64 = 2.2.0
 bin_prot = v0.11.0

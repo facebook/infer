@@ -306,5 +306,5 @@ let from_json_string str ~use_signature =
 
 let from_json_file file ~use_signature =
   from_java_profiler_samples
-    (Ag_util.Json.from_file Java_profiler_samples_j.read_java_profiler_samples file)
+    (Atdgen_runtime.Util.Json.from_file Java_profiler_samples_j.read_java_profiler_samples file)
     ~use_signature

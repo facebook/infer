@@ -32,7 +32,7 @@ let visit_ast ?(visit_decl= empty_v) ?(visit_stmt= empty_v) ?(visit_type= empty_
   | Some error ->
       L.(die InternalError)
         "visiting the clang AST failed with error %s"
-        (Ag_util.Validation.string_of_error error)
+        (Atdgen_runtime.Util.Validation.string_of_error error)
 
 
 let get_ptr_from_node node =
