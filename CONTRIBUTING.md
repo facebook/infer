@@ -27,7 +27,7 @@ run:
 make devsetup
 ```
 
-### Tips and Tricks
+### Building Infer for Development
 
 - Build the code faster: `make -j BUILD_MODE=default`. By default `make` builds infer with flambda
   enabled, which makes it very slow (but makes infer significantly faster).
@@ -48,6 +48,37 @@ make devsetup
 
 - To switch the default build mode to flambda disabled, you can `export BUILD_MODE=default` in your
   shell.
+
+### Debugging OCaml Code
+
+- Printf-debug using `Logging.debug_dev`. It comes with a warning so
+  that you don't accidentally push code with calls to `debug_dev` to
+  the repo.
+
+- Browse the documentation of OCaml modules in your browser with `make doc`
+
+- When using `ocamldebug`, and in particular when setting break points
+  with `break @ <module> <line>` don't forget that an infer module `M`
+  is in reality called `InferModules__M`, or `InferBase__M`, or
+  ... See the html documentation of the OCaml modules from `make doc`
+  if you're unsure of a module name.
+
+```console
+$ ledit ocamldebug infer/bin/infer.bc
+(ocd) break @ InferModules__InferAnalyze 100
+Breakpoint 1 at 9409684: file backend/InferAnalyze.ml, line 99, characters 18-78
+```
+
+- To test the infer OCaml code you can use the OCaml toplevel. To
+  build the OCaml toplevel with the infer modules pre-loaded, run
+  `make toplevel` and follow the instructions.
+
+  To pass infer options to the toplevel, use `INFER_ARGS`, for
+  instance: `INFER_ARGS=--debug^-o^infer-out-foo`.
+
+  Many operations require the results directory and database to be
+  initialized with `ResultsDir.assert_results_dir ""`.
+
 
 ## Hacking on the Code in facebook-clang-plugins
 

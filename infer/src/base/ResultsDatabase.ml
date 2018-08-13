@@ -8,8 +8,6 @@
 open! IStd
 module L = Logging
 
-let database : Sqlite3.db option ref = ref None
-
 let database_filename = "results.db"
 
 let database_fullpath = Config.results_dir ^/ database_filename
@@ -71,21 +69,6 @@ let close_db_callbacks = ref []
 
 let on_close_database ~f = close_db_callbacks := f :: !close_db_callbacks
 
-let get_database () = Option.value_exn !database
-
-let reset_capture_tables () =
-  let db = get_database () in
-  SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
-  create_procedures_table db ;
-  SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
-  create_source_files_table db
-
-
-let db_canonicalize () =
-  let db = get_database () in
-  SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
-
-
 type registered_stmt = unit -> Sqlite3.stmt * Sqlite3.db
 
 let register_statement =
@@ -126,22 +109,56 @@ let do_db_close db =
   SqliteUtils.db_close db
 
 
-let db_close () =
-  Option.iter !database ~f:do_db_close ;
-  database := None
+module UnsafeDatabaseRef : sig
+  val get_database : unit -> Sqlite3.db
+
+  val db_close : unit -> unit
+
+  val new_database_connection : unit -> unit
+end = struct
+  let database : Sqlite3.db option ref = ref None
+
+  let get_database () =
+    match !database with
+    | Some db ->
+        db
+    | None ->
+        L.die InternalError
+          "Could not open the database. Did you forget to call `ResultsDir.assert_results_dir \
+           \"\"` or `ResultsDir.create_results_dir ()`?"
 
 
-let new_database_connection () =
-  (* we always want at most one connection alive throughout the lifetime of the module *)
-  db_close () ;
-  let db =
-    Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
-      database_fullpath
-  in
-  Sqlite3.busy_timeout db 10_000 ;
-  SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
-  database := Some db ;
-  List.iter ~f:(fun callback -> callback db) !new_db_callbacks
+  let db_close () =
+    Option.iter !database ~f:do_db_close ;
+    database := None
+
+
+  let new_database_connection () =
+    (* we always want at most one connection alive throughout the lifetime of the module *)
+    db_close () ;
+    let db =
+      Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
+        database_fullpath
+    in
+    Sqlite3.busy_timeout db 10_000 ;
+    SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
+    database := Some db ;
+    List.iter ~f:(fun callback -> callback db) !new_db_callbacks
+end
+
+include UnsafeDatabaseRef
+
+let reset_capture_tables () =
+  let db = get_database () in
+  SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
+  create_procedures_table db ;
+  SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
+  create_source_files_table db
+
+
+let db_canonicalize () =
+  let db = get_database () in
+  SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
 
 
 let () = Config.register_late_epilogue db_close
