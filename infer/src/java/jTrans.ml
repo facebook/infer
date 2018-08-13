@@ -266,7 +266,8 @@ let get_bytecode cm =
 
 
 let get_jbir_representation cm bytecode =
-  JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] cm bytecode
+  JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] ~almost_ssa:true cm
+    bytecode
 
 
 let trans_access = function
