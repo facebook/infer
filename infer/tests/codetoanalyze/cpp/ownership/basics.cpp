@@ -84,3 +84,19 @@ void iterator_pointer_arithmetic_ok(std::vector<Aggregate> v) {
     it->~Aggregate();
   }
 }
+
+struct A {
+  ~A();
+  int f(int i);
+};
+
+A getA();
+
+int struct_inside_loop_ok(std::vector<int> numbers) {
+  int sum;
+  for (auto number : numbers) {
+    A a = getA();
+    sum += a.f(number);
+  }
+  return sum;
+}

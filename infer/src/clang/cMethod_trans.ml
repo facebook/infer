@@ -237,6 +237,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
       List.map ~f:(fun ({annot}: CMethodSignature.param_type) -> annot) all_params
     in
     let return_annot = snd ms.CMethodSignature.ret_type in
+    let has_added_return_param = ms.CMethodSignature.has_added_return_param in
     let method_annotation = (return_annot, params_annots) in
     let formals =
       List.map ~f:(fun ({name; typ}: CMethodSignature.param_type) -> (name, typ)) all_params
@@ -273,6 +274,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
         ; formals
         ; const_formals
         ; by_vals
+        ; has_added_return_param
         ; access
         ; func_attributes= attributes
         ; is_defined= defined

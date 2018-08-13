@@ -154,14 +154,14 @@ module BuildMethodSignature = struct
     let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
     let is_objc_method = CMethodProperties.is_objc_method method_decl in
     if should_add_return_param return_typ ~is_objc_method then
-      (Typ.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty)
-    else (return_typ, None, return_typ_annot)
+      (Typ.void, Some (CType.add_pointer_to_typ return_typ), Annot.Item.empty, true)
+    else (return_typ, None, return_typ_annot, false)
 
 
   let method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type procname =
     let decl_info = Clang_ast_proj.get_decl_tuple method_decl in
     let loc = decl_info.Clang_ast_t.di_source_range in
-    let ret_type, return_param_typ, ret_typ_annot =
+    let ret_type, return_param_typ, ret_typ_annot, has_added_return_param =
       get_return_val_and_param_types qual_type_to_sil_type tenv ~block_return_type method_decl
     in
     let method_kind = CMethodProperties.get_method_kind method_decl in
@@ -179,6 +179,7 @@ module BuildMethodSignature = struct
     ; class_param
     ; params
     ; ret_type= (ret_type, ret_typ_annot)
+    ; has_added_return_param
     ; attributes
     ; loc
     ; method_kind

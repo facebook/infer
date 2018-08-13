@@ -110,7 +110,8 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
-  ; ret_type: Typ.t  (** return type *) }
+  ; ret_type: Typ.t  (** return type *)
+  ; has_added_return_param: bool  (** whether or not a return param was added *) }
 [@@deriving compare]
 
 let default translation_unit proc_name =
@@ -136,6 +137,7 @@ let default translation_unit proc_name =
   ; loc= Location.dummy
   ; translation_unit
   ; locals= []
+  ; has_added_return_param= false
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
   ; proc_flags= proc_flags_empty ()
@@ -170,6 +172,7 @@ let pp f
      ; loc
      ; translation_unit
      ; locals
+     ; has_added_return_param
      ; method_annotation
      ; objc_accessor
      ; proc_flags
@@ -229,6 +232,8 @@ let pp f
     F.fprintf f "; locals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)
       locals ;
+  pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
+    has_added_return_param f () ;
   if not (Annot.Method.equal default.method_annotation method_annotation) then
     F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
   if not ([%compare.equal : objc_accessor_type option] default.objc_accessor objc_accessor) then

@@ -215,6 +215,8 @@ val get_proc_name : t -> Typ.Procname.t
 val get_ret_type : t -> Typ.t
 (** Return the return type of the procedure and type string *)
 
+val has_added_return_param : t -> bool
+
 val get_ret_var : t -> Pvar.t
 
 val get_start_node : t -> Node.t

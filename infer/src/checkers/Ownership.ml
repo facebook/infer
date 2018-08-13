@@ -246,7 +246,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Option.some_if (is_aggregate base) base
 
 
+  let returns_struct pname =
+    (* Assumption: we add an extra return param for structs *)
+    Ondemand.get_proc_desc pname
+    |> Option.value_map ~default:false ~f:Procdesc.has_added_return_param
+
+
   let acquire_ownership call_exp return_base actuals loc summary astate =
+    let aquire_ownership_of_first_param actuals =
+      match actuals with
+      | HilExp.AccessExpression (AccessExpression.AddressOf access_expression) :: other_actuals -> (
+        match get_assigned_base access_expression with
+        | Some constructed_base ->
+            let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
+            Some (Domain.add constructed_base CapabilityDomain.Owned astate')
+        | None ->
+            Some astate )
+      | _ ->
+          Some astate
+    in
     match call_exp with
     | HilInstr.Direct pname ->
         (* TODO: support new[], malloc, others? *)
@@ -268,18 +286,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | _ ->
               L.die InternalError "Placement new without placement in %a %a" Typ.Procname.pp pname
                 Location.pp loc
-        else if Typ.Procname.is_constructor pname then
-          match actuals with
-          | HilExp.AccessExpression (AccessExpression.AddressOf access_expression) :: other_actuals
-                -> (
-            match get_assigned_base access_expression with
-            | Some constructed_base ->
-                let astate' = Domain.actuals_add_reads other_actuals loc summary astate in
-                Some (Domain.add constructed_base CapabilityDomain.Owned astate')
-            | None ->
-                Some astate )
-          | _ ->
-              Some astate
+        else if Typ.Procname.is_constructor pname then aquire_ownership_of_first_param actuals
+        else if returns_struct pname then aquire_ownership_of_first_param (List.rev actuals)
         else None
     | HilInstr.Indirect _ ->
         None

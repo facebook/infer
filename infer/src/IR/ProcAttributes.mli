@@ -67,7 +67,8 @@ type t =
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
-  ; ret_type: Typ.t  (** return type *) }
+  ; ret_type: Typ.t  (** return type *)
+  ; has_added_return_param: bool  (** whether or not a return param was added *) }
 [@@deriving compare]
 
 val default : SourceFile.t -> Typ.Procname.t -> t
