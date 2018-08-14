@@ -303,18 +303,18 @@ module StdArray = struct
     {declare_local; declare_symbolic}
 end
 
-(* Java's ArrayLists are represented by their size. We don't care about the elements.
+(* Java's Collections are represented by their size. We don't care about the elements. 
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
-module ArrayList = struct
+module Collection = struct
   let typ =
     let declare_local ~decl_local:_ {pname; node_hash; location} loc ~inst_num ~dimension mem =
-      BoUtils.Exec.decl_local_arraylist pname ~node_hash location loc ~inst_num ~dimension mem
+      BoUtils.Exec.decl_local_collection pname ~node_hash location loc ~inst_num ~dimension mem
     in
     let declare_symbolic ~decl_sym_val:_ path {pname; location; symbol_table} ~depth:_ loc
         ~inst_num:_ ~new_sym_num ~new_alloc_num:_ mem =
-      BoUtils.Exec.decl_sym_arraylist pname symbol_table path location loc ~new_sym_num mem
+      BoUtils.Exec.decl_sym_collection pname symbol_table path location loc ~new_sym_num mem
     in
     {declare_local; declare_symbolic}
 
@@ -383,7 +383,7 @@ module ArrayList = struct
   let add_at_index (alist_id: Ident.t) index_exp =
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.arraylist_access ~array_exp ~index_exp ~is_arraylist_add:true mem pname
+      BoUtils.Check.collection_access ~array_exp ~index_exp ~is_collection_add:true mem pname
         location cond_set
     in
     {exec= change_size_by ~size_f:incr_size alist_id; check}
@@ -392,7 +392,7 @@ module ArrayList = struct
   let remove_at_index alist_id index_exp =
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.arraylist_access ~array_exp ~index_exp mem pname location cond_set
+      BoUtils.Check.collection_access ~array_exp ~index_exp mem pname location cond_set
     in
     {exec= change_size_by ~size_f:decr_size alist_id; check}
 
@@ -404,7 +404,7 @@ module ArrayList = struct
     in
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.arraylist_access ~index_exp ~array_exp ~is_arraylist_add:true mem pname
+      BoUtils.Check.collection_access ~index_exp ~array_exp ~is_collection_add:true mem pname
         location cond_set
     in
     {exec; check}
@@ -414,13 +414,13 @@ module ArrayList = struct
     let exec _model_env ~ret:_ mem = mem in
     let check {pname; location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.arraylist_access ~index_exp ~array_exp mem pname location cond_set
+      BoUtils.Check.collection_access ~index_exp ~array_exp mem pname location cond_set
     in
     {exec; check}
 end
 
 module Call = struct
-  let dispatch : (unit, model) ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     let mk_std_array () = -"std" &:: "array" < any_typ &+ capt_int in
     let std_array0 = mk_std_array () in
@@ -433,7 +433,8 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc
-      ; -"__new" <>$ capt_exp_of_typ (-"java.util.ArrayList") $+...$--> ArrayList.new_list
+      ; -"__new" <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
+        $+...$--> Collection.new_list
       ; -"__new" <>$ capt_exp $+...$--> malloc
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
       ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
@@ -449,29 +450,31 @@ module Call = struct
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> StdArray.no_model
-      ; -"java.util.ArrayList" &:: "get" <>$ capt_var_exn $+ capt_exp
-        $--> ArrayList.get_or_set_at_index
-      ; -"java.util.ArrayList" &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg
-        $--> ArrayList.get_or_set_at_index
-      ; -"java.util.ArrayList" &:: "remove" <>$ capt_var_exn $+ capt_exp
-        $--> ArrayList.remove_at_index
-      ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ any_arg $--> ArrayList.add
-      ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
-        $!--> ArrayList.add_at_index
-      ; -"java.util.ArrayList" &:: "iterator" <>$ capt_exp $!--> ArrayList.iterator
-      ; -"java.util.Iterator" &:: "hasNext" <>$ capt_exp $!--> ArrayList.hasNext
-      ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> ArrayList.addAll
-      ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp
-        $!--> ArrayList.addAll_at_index
-      ; -"java.util.ArrayList" &:: "size" <>$ capt_exp $!--> ArrayList.size ]
+      ; +PatternMatch.implements_collection &:: "get" <>$ capt_var_exn $+ capt_exp
+        $--> Collection.get_or_set_at_index
+      ; +PatternMatch.implements_collection &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg
+        $--> Collection.get_or_set_at_index
+      ; +PatternMatch.implements_collection &:: "remove" <>$ capt_var_exn $+ capt_exp
+        $--> Collection.remove_at_index
+      ; +PatternMatch.implements_collection &:: "add" <>$ capt_var_exn $+ any_arg
+        $--> Collection.add
+      ; +PatternMatch.implements_collection &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
+        $!--> Collection.add_at_index
+      ; +PatternMatch.implements_collection &:: "iterator" <>$ capt_exp $!--> Collection.iterator
+      ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
+      ; +PatternMatch.implements_collection &:: "addAll" <>$ capt_var_exn $+ capt_exp
+        $--> Collection.addAll
+      ; +PatternMatch.implements_collection &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp
+        $!--> Collection.addAll_at_index
+      ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
 end
 
 module TypName = struct
-  let dispatch : (unit, typ_model) ProcnameDispatcher.TypName.dispatcher =
+  let dispatch : (Tenv.t, typ_model) ProcnameDispatcher.TypName.dispatcher =
     let open ProcnameDispatcher.TypName in
     make_dispatcher
       [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ
-      ; -"java.util.Iterator" &::.*--> ArrayList.typ
-      ; -"java.util.ArrayList" &::.*--> ArrayList.typ
+      ; +PatternMatch.implements_collection &::.*--> Collection.typ
+      ; +PatternMatch.implements_iterator &::.*--> Collection.typ
       ; -"std" &:: "array" &::.*--> StdArray.no_typ_model ]
 end

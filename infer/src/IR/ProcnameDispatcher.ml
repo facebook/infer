@@ -144,6 +144,27 @@ let name_cons
   {on_objc_cpp; on_qual_name; get_markers}
 
 
+let name_cons_f
+    : ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) path_matcher
+      -> ('context -> string -> bool)
+      -> ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
+ fun m f_name ->
+  let {on_templated_name; get_markers} = m in
+  let on_qual_name context f qual_name =
+    match QualifiedCppName.extract_last qual_name with
+    | Some (last, rest) when f_name context last ->
+        on_templated_name context f (rest, [])
+    | _ ->
+        None
+  in
+  let on_objc_cpp context f (objc_cpp: Typ.Procname.ObjC_Cpp.t) =
+    if f_name context objc_cpp.method_name then
+      on_templated_name context f (templated_name_of_class_name objc_cpp.class_name)
+    else None
+  in
+  {on_objc_cpp; on_qual_name; get_markers}
+
+
 let all_names_cons
     : ('context, 'f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, non_empty) path_matcher
       -> ( 'context
@@ -321,6 +342,10 @@ module type Common = sig
   val ( ~- ) : string -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
   (** Starts a path with a name *)
 
+  val ( ~+ ) :
+    ('context -> string -> bool) -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
+  (** Starts a path with a matching name that satisfies the given function *)
+
   val ( &+ ) :
     ( 'context
     , 'f_in
@@ -468,6 +493,8 @@ module Common = struct
   let ( &::.*! ) path_matcher () = all_names_cons path_matcher
 
   let ( ~- ) name = empty &::! name
+
+  let ( ~+ ) f_name = name_cons_f empty f_name
 
   let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
 

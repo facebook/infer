@@ -25,7 +25,7 @@ module Exec : sig
     -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
     -> Dom.Mem.astate * int
 
-  val decl_local_arraylist :
+  val decl_local_collection :
     Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
     -> Dom.Mem.astate -> Dom.Mem.astate * int
 
@@ -44,7 +44,7 @@ module Exec : sig
     -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> inst_num:int
     -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate
 
-  val decl_sym_arraylist :
+  val decl_sym_collection :
     Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
     -> new_sym_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate
 
@@ -65,7 +65,7 @@ module Check : sig
     array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Typ.Procname.t -> Location.t
     -> PO.ConditionSet.t -> PO.ConditionSet.t
 
-  val arraylist_access :
-    array_exp:Exp.t -> index_exp:Exp.t -> ?is_arraylist_add:bool -> Dom.Mem.astate
+  val collection_access :
+    array_exp:Exp.t -> index_exp:Exp.t -> ?is_collection_add:bool -> Dom.Mem.astate
     -> Typ.Procname.t -> Location.t -> PO.ConditionSet.t -> PO.ConditionSet.t
 end

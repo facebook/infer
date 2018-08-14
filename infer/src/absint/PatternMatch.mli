@@ -30,6 +30,12 @@ val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 val is_subtype_of_str : Tenv.t -> Typ.Name.t -> string -> bool
 (** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
 
+val implements_iterator : Tenv.t -> string -> bool
+(** Check whether class implements Java's Iterator *)
+
+val implements_collection : Tenv.t -> string -> bool
+(** Check whether class implements a Java's Collection *)
+
 val supertype_exists : Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> bool) -> Typ.Name.t -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 

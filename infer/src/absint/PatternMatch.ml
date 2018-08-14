@@ -49,6 +49,15 @@ let is_subtype_of_str tenv cn1 classname_str =
   is_subtype tenv cn1 typename
 
 
+let implements interface tenv typename =
+  let is_interface s _ = String.equal interface (Typ.Name.name s) in
+  supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
+
+
+let implements_iterator = implements "java.util.Iterator"
+
+let implements_collection = implements "java.util.Collection"
+
 (** The type the method is invoked on *)
 let get_this_type proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None

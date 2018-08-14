@@ -57,7 +57,7 @@ module Exec = struct
     (mem, inst_num + 1)
 
 
-  let decl_local_arraylist
+  let decl_local_collection
       : Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
         -> Dom.Mem.astate -> Dom.Mem.astate * int =
    fun pname ~node_hash location loc ~inst_num ~dimension mem ->
@@ -128,7 +128,7 @@ module Exec = struct
     decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
 
 
-  let decl_sym_arraylist
+  let decl_sym_collection
       : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
         -> new_sym_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
    fun pname symbol_table path location loc ~new_sym_num mem ->
@@ -199,13 +199,13 @@ end
 
 module Check = struct
   let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
-      ?(is_arraylist_add= false) pname location cond_set =
+      ?(is_collection_add= false) pname location cond_set =
     let arr_traces = Dom.Val.get_traces arr in
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
         let traces = TraceSet.merge ~arr_traces ~idx_traces location in
         PO.ConditionSet.add_array_access pname location ~size:length ~idx ~size_sym_exp
-          ~idx_sym_exp ~relation ~is_arraylist_add traces cond_set
+          ~idx_sym_exp ~relation ~is_collection_add traces cond_set
     | _ ->
         cond_set
 
@@ -230,7 +230,8 @@ module Check = struct
       location cond_set
 
 
-  let arraylist_access ~array_exp ~index_exp ?(is_arraylist_add= false) mem pname location cond_set =
+  let collection_access ~array_exp ~index_exp ?(is_collection_add= false) mem pname location
+      cond_set =
     let idx = Sem.eval index_exp mem in
     let arr = Sem.eval array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in
@@ -238,7 +239,7 @@ module Check = struct
     let idx = Dom.Val.get_itv idx in
     let relation = Dom.Mem.get_relation mem in
     check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
-      ~is_arraylist_add pname location cond_set
+      ~is_collection_add pname location cond_set
 
 
   let lindex ~array_exp ~index_exp mem pname location cond_set =

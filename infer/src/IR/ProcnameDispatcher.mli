@@ -103,6 +103,10 @@ module type Common = sig
   val ( ~- ) : string -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
   (** Starts a path with a name *)
 
+  val ( ~+ ) :
+    ('context -> string -> bool) -> ('context, 'f, 'f, unit, 'markers, 'markers) name_matcher
+  (** Starts a path with a matching name that satisfies the given function *)
+
   val ( &+ ) :
     ( 'context
     , 'f_in

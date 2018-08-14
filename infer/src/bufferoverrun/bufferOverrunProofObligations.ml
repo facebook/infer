@@ -215,15 +215,15 @@ module ArrayAccessCondition = struct
 
 
   (* check buffer overrun and return its confidence *)
-  let check : is_arraylist_add:bool -> t -> checked_condition =
-   fun ~is_arraylist_add c ->
-    (* idx = [il, iu], size = [sl, su],
+  let check : is_collection_add:bool -> t -> checked_condition =
+   fun ~is_collection_add c ->
+    (* idx = [il, iu], size = [sl, su], 
        For arrays : we want to check that 0 <= idx < size
        For adding into arraylists: we want to check that 0 <= idx <= size *)
     let c' = set_size_pos c in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun =
-      if is_arraylist_add then ItvPure.le_sem c'.idx c'.size
+      if is_collection_add then ItvPure.le_sem c'.idx c'.size
       else if Relation.lt_sat_opt c'.idx_sym_exp c'.size_sym_exp c'.relation then Itv.Boolean.true_
       else ItvPure.lt_sem c'.idx c'.size
     in
@@ -278,12 +278,12 @@ end
 module Condition = struct
   type t =
     | AllocSize of AllocSizeCondition.t
-    | ArrayAccess of {is_arraylist_add: bool; c: ArrayAccessCondition.t}
+    | ArrayAccess of {is_collection_add: bool; c: ArrayAccessCondition.t}
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
-  let make_array_access ~is_arraylist_add =
-    Option.map ~f:(fun c -> ArrayAccess {is_arraylist_add; c})
+  let make_array_access ~is_collection_add =
+    Option.map ~f:(fun c -> ArrayAccess {is_collection_add; c})
 
 
   let get_symbols = function
@@ -296,9 +296,9 @@ module Condition = struct
   let subst bound_map rel_map caller_relation = function
     | AllocSize c ->
         AllocSizeCondition.subst bound_map c |> make_alloc_size
-    | ArrayAccess {is_arraylist_add; c} ->
+    | ArrayAccess {is_collection_add; c} ->
         ArrayAccessCondition.subst bound_map rel_map caller_relation c
-        |> make_array_access ~is_arraylist_add
+        |> make_array_access ~is_collection_add
 
 
   let have_similar_bounds c1 c2 =
@@ -317,7 +317,7 @@ module Condition = struct
     match (lhs, rhs) with
     | AllocSize lhs, AllocSize rhs ->
         AllocSizeCondition.xcompare ~lhs ~rhs
-    | ArrayAccess {is_arraylist_add= b1; c= lhs}, ArrayAccess {is_arraylist_add= b2; c= rhs}
+    | ArrayAccess {is_collection_add= b1; c= lhs}, ArrayAccess {is_collection_add= b2; c= rhs}
       when Bool.equal b1 b2 ->
         ArrayAccessCondition.xcompare ~lhs ~rhs
     | _ ->
@@ -341,14 +341,14 @@ module Condition = struct
   let check = function
     | AllocSize c ->
         AllocSizeCondition.check c
-    | ArrayAccess {is_arraylist_add; c} ->
-        ArrayAccessCondition.check ~is_arraylist_add c
+    | ArrayAccess {is_collection_add; c} ->
+        ArrayAccessCondition.check ~is_collection_add c
 
 
   let forget_locs locs x =
     match x with
-    | ArrayAccess {is_arraylist_add; c} ->
-        ArrayAccess {is_arraylist_add; c= ArrayAccessCondition.forget_locs locs c}
+    | ArrayAccess {is_collection_add; c} ->
+        ArrayAccess {is_collection_add; c= ArrayAccessCondition.forget_locs locs c}
     | AllocSize _ ->
         x
 end
@@ -534,10 +534,10 @@ module ConditionSet = struct
         join [cwt] condset
 
 
-  let add_array_access pname location ~idx ~size ~is_arraylist_add ~idx_sym_exp ~size_sym_exp
+  let add_array_access pname location ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
       ~relation val_traces condset =
     ArrayAccessCondition.make ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
-    |> Condition.make_array_access ~is_arraylist_add |> add_opt pname location val_traces condset
+    |> Condition.make_array_access ~is_collection_add |> add_opt pname location val_traces condset
 
 
   let add_alloc_size pname location ~length val_traces condset =
