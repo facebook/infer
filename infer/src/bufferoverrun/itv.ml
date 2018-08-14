@@ -517,6 +517,8 @@ module ItvPure = struct
 
   let zero = of_bound Bound.zero
 
+  let get_iterator_itv (_, u) = (Bound.zero, Bound.plus_u u Bound.mone)
+
   let true_sem = one
 
   let false_sem = zero
@@ -933,6 +935,8 @@ let bind2b : (ItvPure.t -> ItvPure.t -> Boolean.t) -> t -> t -> Boolean.t =
 let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
+
+let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
 let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t =
  fun ?(unsigned= false) pname symbol_table path new_sym_num ->

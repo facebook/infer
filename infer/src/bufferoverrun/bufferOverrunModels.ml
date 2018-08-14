@@ -354,6 +354,24 @@ module ArrayList = struct
     {exec; check= no_check}
 
 
+  let iterator alist =
+    let exec _ ~ret mem =
+      let itr = Sem.eval alist mem in
+      model_by_value itr ret mem
+    in
+    {exec; check= no_check}
+
+
+  let hasNext iterator =
+    let exec _ ~ret mem =
+      (* Set the size of the iterator to be [0, size-1], so that range
+         will be size of the collection. *)
+      let collection_size = get_size iterator mem |> Dom.Val.get_iterator_itv in
+      model_by_value collection_size ret mem
+    in
+    {exec; check= no_check}
+
+
   let addAll alist_id alist_to_add =
     let exec _model_env ~ret mem =
       let to_add_length = get_size alist_to_add mem in
@@ -440,6 +458,8 @@ module Call = struct
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ any_arg $--> ArrayList.add
       ; -"java.util.ArrayList" &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
         $!--> ArrayList.add_at_index
+      ; -"java.util.ArrayList" &:: "iterator" <>$ capt_exp $!--> ArrayList.iterator
+      ; -"java.util.Iterator" &:: "hasNext" <>$ capt_exp $!--> ArrayList.hasNext
       ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> ArrayList.addAll
       ; -"java.util.ArrayList" &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp
         $!--> ArrayList.addAll_at_index
@@ -451,6 +471,7 @@ module TypName = struct
     let open ProcnameDispatcher.TypName in
     make_dispatcher
       [ -"std" &:: "array" < capt_typ `T &+ capt_int >--> StdArray.typ
+      ; -"java.util.Iterator" &::.*--> ArrayList.typ
       ; -"java.util.ArrayList" &::.*--> ArrayList.typ
       ; -"std" &:: "array" &::.*--> StdArray.no_typ_model ]
 end

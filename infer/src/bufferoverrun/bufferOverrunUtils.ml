@@ -124,7 +124,6 @@ module Exec = struct
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.add_trace_elem elem in
-    L.(debug BufferOverrun Verbose) "alloc_num:%d, depth:%d \n" alloc_num depth ;
     let mem = Dom.Mem.add_heap loc v mem in
     decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
 

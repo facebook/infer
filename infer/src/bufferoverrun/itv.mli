@@ -146,6 +146,8 @@ val top : t
 val zero : t
 (** 0 *)
 
+val get_iterator_itv : t -> t
+
 val of_bool : Boolean.t -> t
 
 val of_int : int -> t
