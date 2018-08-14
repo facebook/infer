@@ -382,9 +382,7 @@ module IssuesTxt = struct
     if
       key.in_footprint && error_filter source_file key.err_name
       && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
-    then
-      Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.severity
-        key.err_name key.err_desc None fmt ()
+    then Exceptions.pp_err err_data.loc key.severity key.err_name key.err_desc None fmt ()
 
 
   (** Write bug report in text format *)

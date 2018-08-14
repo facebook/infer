@@ -285,7 +285,7 @@ let log_issue procname ?clang_method_kind severity err_log loc (node_id, node_ke
     let print_now () =
       L.(debug Analysis Medium)
         "@\n%a@\n@?"
-        (Exceptions.pp_err ~node_key loc severity error.name error.description error.ocaml_pos)
+        (Exceptions.pp_err loc severity error.name error.description error.ocaml_pos)
         () ;
       if not (Exceptions.equal_severity severity Exceptions.Error) then (
         let warn_str =

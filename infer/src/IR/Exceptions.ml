@@ -620,16 +620,11 @@ let err_class_string = function
       "Linters"
 
 
-(** whether to print the bug key together with the error message *)
-let print_key = false
-
 (** pretty print an error  *)
-let pp_err ~node_key loc severity ex_name desc ocaml_pos_opt fmt () =
+let pp_err loc severity ex_name desc ocaml_pos_opt fmt () =
   let kind = severity_string (if equal_severity severity Info then Warning else severity) in
-  let pp_key fmt k = if print_key then F.fprintf fmt " key: %s " (Caml.Digest.to_hex k) else () in
-  F.fprintf fmt "%a:%d: %s: %a %a%a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
-    IssueType.pp ex_name Localise.pp_error_desc desc pp_key node_key L.pp_ocaml_pos_opt
-    ocaml_pos_opt
+  F.fprintf fmt "%a:%d: %s: %a %a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
+    IssueType.pp ex_name Localise.pp_error_desc desc L.pp_ocaml_pos_opt ocaml_pos_opt
 
 
 (** Return true if the exception is not serious and should be handled in timeout mode *)

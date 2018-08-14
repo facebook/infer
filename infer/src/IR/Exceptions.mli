@@ -157,8 +157,8 @@ val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
 val pp_err :
-  node_key:Caml.Digest.t -> Location.t -> severity -> IssueType.t -> Localise.error_desc
-  -> Logging.ocaml_pos option -> Format.formatter -> unit -> unit
+  Location.t -> severity -> IssueType.t -> Localise.error_desc -> Logging.ocaml_pos option
+  -> Format.formatter -> unit -> unit
 (** pretty print an error *)
 
 type t =
