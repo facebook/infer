@@ -1960,7 +1960,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
       (* Check for retain cycles after assignments and method calls *)
       ( match instr with
       | (Sil.Store _ | Sil.Call _) when !Config.footprint ->
-          List.iter ~f:(RetainCycles.report_cycle tenv summary) [p]
+          RetainCycles.report_cycle tenv summary p
       | _ ->
           () ) ;
       let node_has_abstraction node =

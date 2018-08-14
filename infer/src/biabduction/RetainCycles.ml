@@ -238,7 +238,7 @@ let report_cycle tenv summary prop =
      unsafe_unretained fields.  Otherwise we report a retain cycle. *)
   let cycles = get_retain_cycles tenv prop in
   RetainCyclesType.Set.iter RetainCyclesType.print_cycle cycles ;
-  if RetainCyclesType.Set.cardinal cycles > 0 then (
+  if not (RetainCyclesType.Set.is_empty cycles) then (
     RetainCyclesType.Set.iter
       (fun cycle ->
         let exn = exn_retain_cycle tenv cycle in
