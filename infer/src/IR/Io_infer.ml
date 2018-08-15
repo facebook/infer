@@ -181,17 +181,20 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
   let pp_session_link ?(with_name= false) ?proc_name source path_to_root fmt
       (node_id, session, linenum) =
     let node_name = "node" ^ string_of_int node_id in
-    let pos = "session" ^ string_of_int session in
-    let text = F.sprintf "%s#%s" node_name pos in
+    let text, pos =
+      if session > 0 then
+        let pos = "session" ^ string_of_int session in
+        let text = F.sprintf "%s#%s" node_name pos in
+        (text, Some pos)
+      else (node_name, None)
+    in
     let path_to_node =
       let node_fname =
         match proc_name with Some pname -> node_filename pname node_id | None -> node_name
       in
       path_to_root @ ["nodes"; node_fname]
     in
-    pp_link
-      ~name:(if with_name then Some pos else None)
-      ~pos:(Some pos) ~path:path_to_node fmt text ;
+    pp_link ~name:(if with_name then pos else None) ~pos ~path:path_to_node fmt text ;
     F.fprintf fmt "(%a)" (pp_line_link source path_to_root) linenum
 end
 

@@ -261,9 +261,9 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-  Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t -> ?session:int
-  -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string
-  -> ?extras:Jsonbug_t.extra -> exn -> unit
+  Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
+  -> exn -> unit
 
 let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =
