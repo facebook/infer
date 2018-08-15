@@ -42,7 +42,6 @@ JSON_INDEX_ISL_ENUM = 'enum'
 JSON_INDEX_KIND = 'kind'
 JSON_INDEX_LINE = 'line'
 JSON_INDEX_PROCEDURE = 'procedure'
-JSON_INDEX_PROCEDURE_ID = 'procedure_id'
 JSON_INDEX_QUALIFIER = 'qualifier'
 JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
 JSON_INDEX_TYPE = 'bug_type'
@@ -229,7 +228,7 @@ def _pmd_xml_of_issues(issues):
         successful_java = False
         if issue[JSON_INDEX_FILENAME].endswith('.java'):
             fully_qualified_method_name = re.search(
-                '(.*)\(.*', issue[JSON_INDEX_PROCEDURE_ID])
+                '(.*)\(.*', issue[JSON_INDEX_PROCEDURE])
             if fully_qualified_method_name is not None:
                 # probably Java, let's try
                 try:
