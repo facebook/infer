@@ -60,7 +60,7 @@ let compute_local_exception_line loc_trace =
   List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
-type node_id_key = {node_id: int; node_key: Caml.Digest.t}
+type node_id_key = {node_id: int; node_key: NodeKey.t}
 
 type err_key =
   { severity: Exceptions.severity
@@ -213,8 +213,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id:(node_id, node_key)
-    ~session ~ltr ~linters_def_file ~doc_url ~access ~extras exn =
+let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id_key ~session ~ltr
+    ~linters_def_file ~doc_url ~access ~extras exn =
   let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
   let severity = Option.value error.severity ~default:severity in
@@ -254,7 +254,6 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id:(node_i
       EventLogger.log issue ) ;
   if should_report && not hide_java_loc_zero && not hide_memory_error then
     let added =
-      let node_id_key = {node_id; node_key} in
       let err_data =
         { node_id_key
         ; session

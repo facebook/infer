@@ -10,7 +10,7 @@ open! IStd
 (** Type of functions to report issues to the error_log in a spec. *)
 
 type log_t =
-  ?loc:Location.t -> ?node_id:int * Caml.Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
+  ?loc:Location.t -> ?node_id_key:Errlog.node_id_key -> ?session:int -> ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
   -> exn -> unit
 
@@ -21,7 +21,7 @@ val log_issue_deprecated : Exceptions.severity -> Typ.Procname.t -> log_t
 
 val log_issue_from_errlog :
   Typ.Procname.t -> Exceptions.severity -> Errlog.t -> loc:Location.t
-  -> node_id:int * Caml.Digest.t -> ltr:Errlog.loc_trace -> linters_def_file:string option
+  -> node_id_key:Errlog.node_id_key -> ltr:Errlog.loc_trace -> linters_def_file:string option
   -> doc_url:string option -> exn -> unit
 (** Report an issue of a given kind  in the given error log. *)
 

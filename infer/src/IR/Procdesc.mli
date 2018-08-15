@@ -146,6 +146,8 @@ module Node : sig
     Pp.env -> sub_instrs:bool -> instro:Sil.instr option -> Format.formatter -> t -> unit
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
+
+  val compute_key : t -> NodeKey.t
 end
 
 (** Map with node id keys. *)

@@ -20,8 +20,7 @@ type failure_stats =
   ; (* number of node failures (i.e. at least one instruction failure) *)
     mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
-    mutable first_failure:
-      (Location.t * (int * Caml.Digest.t) * int * Errlog.loc_trace * exn) option
+    mutable first_failure: (Location.t * Errlog.node_id_key * int * Errlog.loc_trace * exn) option
   (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
@@ -95,46 +94,6 @@ let get_loc () =
 
 let get_node () = !gs.last_node
 
-(** simple key for a node: just look at the instructions *)
-let node_simple_key node =
-  let add_instr instr =
-    if Sil.instr_is_auxiliary instr then None
-    else
-      let instr_key =
-        match instr with
-        | Sil.Load _ ->
-            1
-        | Sil.Store _ ->
-            2
-        | Sil.Prune _ ->
-            3
-        | Sil.Call _ ->
-            4
-        | Sil.Nullify _ ->
-            5
-        | Sil.Abstract _ ->
-            6
-        | Sil.Remove_temps _ ->
-            7
-      in
-      Some instr_key
-  in
-  Procdesc.Node.get_instrs node |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr
-  |> Utils.better_hash
-
-
-(** key for a node: look at the current node, successors and predecessors *)
-let node_key node =
-  let succs = Procdesc.Node.get_succs node in
-  let preds = Procdesc.Node.get_preds node in
-  let v =
-    ( node_simple_key node
-    , List.rev_map ~f:node_simple_key succs
-    , List.rev_map ~f:node_simple_key preds )
-  in
-  Utils.better_hash v
-
-
 (** normalize the list of instructions by renaming let-bound ids *)
 let instrs_normalize instrs =
   let bound_ids =
@@ -205,7 +164,10 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
 
 let get_node_id () = Procdesc.Node.get_id !gs.last_node
 
-let get_node_id_key () = (Procdesc.Node.get_id !gs.last_node, node_key !gs.last_node)
+let get_node_id_key () =
+  { Errlog.node_id= (Procdesc.Node.get_id !gs.last_node :> int)
+  ; node_key= Procdesc.Node.compute_key !gs.last_node }
+
 
 let get_inst_update pos =
   let loc = get_loc () in
@@ -289,17 +251,17 @@ let mark_instr_ok () =
 
 let mark_instr_fail exn =
   let loc = get_loc () in
-  let key = (get_node_id_key () :> int * Caml.Digest.t) in
+  let node_id_key = get_node_id_key () in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
   if is_none fs.first_failure then
-    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, exn) ;
+    fs.first_failure <- Some (loc, node_id_key, (session :> int), loc_trace, exn) ;
   fs.instr_fail <- fs.instr_fail + 1
 
 
 type log_issue =
-  Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Caml.Digest.t -> ?session:int
+  Typ.Procname.t -> ?loc:Location.t -> ?node_id_key:Errlog.node_id_key -> ?session:int
   -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string
   -> ?extras:Jsonbug_t.extra -> exn -> unit
 
@@ -307,11 +269,11 @@ let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =
     (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match (fs.node_ok, fs.first_failure) with
-    | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions ->
+    | 0, Some (loc, node_id_key, _, loc_trace, exn) when not Config.debug_exceptions ->
         let error = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
         let exn' = Exceptions.Analysis_stops (desc', error.ocaml_pos) in
-        log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
+        log_issue pname ~loc ~node_id_key ~ltr:loc_trace exn'
     | _ ->
         ()
   in

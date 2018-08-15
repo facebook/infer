@@ -331,6 +331,41 @@ module Node = struct
     in
     let pp fmt = F.fprintf fmt "%s@.%a" str (pp_instrs pe ~instro:None ~sub_instrs:true) node in
     F.asprintf "%t" pp
+
+
+  (** simple key for a node: just look at the instructions *)
+  let simple_key node =
+    let add_instr instr =
+      if Sil.instr_is_auxiliary instr then None
+      else
+        let instr_key =
+          match instr with
+          | Sil.Load _ ->
+              1
+          | Sil.Store _ ->
+              2
+          | Sil.Prune _ ->
+              3
+          | Sil.Call _ ->
+              4
+          | Sil.Nullify _ ->
+              5
+          | Sil.Abstract _ ->
+              6
+          | Sil.Remove_temps _ ->
+              7
+        in
+        Some instr_key
+    in
+    get_instrs node |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr
+    |> Utils.better_hash
+
+
+  (** key for a node: look at the current node, successors and predecessors *)
+  let compute_key node =
+    let succs = get_succs node in
+    let preds = get_preds node in
+    NodeKey.compute node ~simple_key ~succs ~preds
 end
 
 (* =============== END of module Node =============== *)

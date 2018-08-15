@@ -34,7 +34,7 @@ val compute_local_exception_line : loc_trace -> int option
     This extra information adds value to the report itself, and may avoid
     digging into the trace to understand the cause of the report. *)
 
-type node_id_key = private {node_id: int; node_key: Caml.Digest.t}
+type node_id_key = {node_id: int; node_key: NodeKey.t}
 
 type err_key = private
   { severity: Exceptions.severity
@@ -94,5 +94,5 @@ val update : t -> t -> unit
 
 val log_issue :
   Typ.Procname.t -> clang_method_kind:string option -> Exceptions.severity -> t -> loc:Location.t
-  -> node_id:int * Caml.Digest.t -> session:int -> ltr:loc_trace -> linters_def_file:string option
+  -> node_id_key:node_id_key -> session:int -> ltr:loc_trace -> linters_def_file:string option
   -> doc_url:string option -> access:string option -> extras:Jsonbug_t.extra option -> exn -> unit
