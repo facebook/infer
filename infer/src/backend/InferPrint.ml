@@ -258,6 +258,13 @@ module IssuesJson = struct
               Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
         else base_qualifier
       in
+      let procedure =
+        match Typ.Procname.get_language procname with
+        | Language.Java ->
+            Typ.Procname.to_unique_id procname
+        | _ ->
+            Typ.Procname.to_string procname
+      in
       let bug =
         { Jsonbug_j.bug_class= Exceptions.err_class_string err_data.err_class
         ; kind= severity
@@ -267,7 +274,7 @@ module IssuesJson = struct
         ; visibility
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
-        ; procedure= Typ.Procname.to_string procname
+        ; procedure
         ; procedure_id= Typ.Procname.to_filename procname
         ; procedure_start_line
         ; file

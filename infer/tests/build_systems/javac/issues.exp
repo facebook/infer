@@ -1,1 +1,1 @@
-Hello.java, int Hello.test(), 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
+Hello.java, Hello.test():int, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
