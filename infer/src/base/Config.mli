@@ -246,6 +246,8 @@ val buck : bool
 
 val buck_build_args : string list
 
+val buck_build_args_no_inline : string list
+
 val buck_cache_mode : bool
 
 val buck_compilation_database : compilation_database_dependencies option
@@ -266,6 +268,8 @@ val check_nullable : bool
 val check_version : string option
 
 val clang_biniou_file : string option
+
+val clang_extra_flags : string list
 
 val clang_frontend_action_string : string
 

@@ -117,7 +117,7 @@ module Query = struct
 
   let exec expr =
     let query = F.asprintf "%a" pp expr in
-    let cmd = ["buck"; "query"; query] in
+    let cmd = ["buck"; "query"] @ List.rev_append Config.buck_build_args_no_inline [query] in
     let tmp_prefix = "buck_query_" in
     let debug = L.(debug Capture Medium) in
     Utils.with_process_lines ~debug ~cmd ~tmp_prefix ~f:Fn.id

@@ -21,7 +21,7 @@ let create_cmd (source_file, (compilation_data: CompilationDatabase.compilation_
   ( source_file
   , { CompilationDatabase.directory= compilation_data.directory
     ; executable= swap_executable compilation_data.executable
-    ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] } )
+    ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] @ List.rev Config.clang_extra_flags } )
 
 
 let invoke_cmd (source_file, (cmd: CompilationDatabase.compilation_data)) =
@@ -74,9 +74,8 @@ let get_compilation_database_files_buck ~prog ~args =
   | {command= "build" as command; rev_not_targets; targets} ->
       let targets_args = Buck.store_args_in_file targets in
       let build_args =
-        command
-        :: List.rev_append rev_not_targets
-             ("--config" :: "*//cxx.pch_enabled=false" :: targets_args)
+        command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline)
+        @ "--config" :: "*//cxx.pch_enabled=false" :: targets_args
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
@@ -86,7 +85,8 @@ let get_compilation_database_files_buck ~prog ~args =
         :: "targets"
         :: List.rev_append
              (Buck.filter_compatible `Targets rev_not_targets)
-             ("--show-output" :: targets_args)
+             (List.rev Config.buck_build_args_no_inline)
+        @ "--show-output" :: targets_args
       in
       let on_target_lines = function
         | [] ->

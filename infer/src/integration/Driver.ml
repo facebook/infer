@@ -29,17 +29,24 @@ type mode =
 
 let equal_mode = [%compare.equal : mode]
 
-let pp_mode fmt mode =
-  match mode with
-  | Analyze
-  | BuckGenrule _
-  | BuckCompilationDB _
-  | ClangCompilationDB _
-  | Python _
-  | PythonCapture (_, _)
-  | XcodeXcpretty _ ->
-      (* these are pretty boring, do not log anything *)
-      ()
+let pp_mode fmt = function
+  | Analyze ->
+      F.fprintf fmt "Analyze driver mode"
+  | BuckGenrule prog ->
+      F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
+  | BuckCompilationDB (prog, args) ->
+      F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args
+        args
+  | ClangCompilationDB _ ->
+      F.fprintf fmt "ClangCompilationDB driver mode"
+  | Python args ->
+      F.fprintf fmt "Python driver mode:@\nargs = %a" Pp.cli_args args
+  | PythonCapture (bs, args) ->
+      F.fprintf fmt "PythonCapture driver mode:@\nbuild system = '%s'@\nargs = %a"
+        (Config.string_of_build_system bs)
+        Pp.cli_args args
+  | XcodeXcpretty (prog, args) ->
+      F.fprintf fmt "XcodeXcpretty driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Javac (_, prog, args) ->
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Maven (prog, args) ->
@@ -184,8 +191,7 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 
-let capture ~changed_files mode =
-  match mode with
+let capture ~changed_files = function
   | Analyze ->
       ()
   | BuckCompilationDB (prog, args) ->
@@ -271,7 +277,11 @@ let capture ~changed_files mode =
                     ~extra_flavors:[] buck_args
                 in
                 let all_args = List.rev_append rev_not_targets targets in
-                let updated_buck_cmd = prog :: command :: Buck.store_args_in_file all_args in
+                let updated_buck_cmd =
+                  [prog; command]
+                  @ List.rev_append Config.buck_build_args_no_inline
+                      (Buck.store_args_in_file all_args)
+                in
                 Logging.(debug Capture Quiet)
                   "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
                 updated_buck_cmd )

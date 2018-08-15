@@ -190,6 +190,7 @@ let mk ~is_driver quoting_style ~prog ~args =
   let sanitized_args =
     filter_and_replace_unsupported_args ~blacklisted_flags:clang_blacklisted_flags
       ~blacklisted_flags_with_arg args
+    @ List.rev Config.clang_extra_flags
   in
   {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style; is_driver}
 

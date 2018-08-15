@@ -843,6 +843,13 @@ and buck_build_args =
     "Pass values as command-line arguments to invocations of $(i,`buck build`)"
 
 
+and buck_build_args_no_inline =
+  CLOpt.mk_string_list ~long:"Xbuck-no-inline"
+    ~in_help:InferCommand.[(Capture, manual_buck_flavors)]
+    "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
+     args starting with '@'"
+
+
 and buck_compilation_database_depth =
   CLOpt.mk_int_opt ~long:"buck-compilation-database-depth"
     ~in_help:InferCommand.[(Capture, manual_buck_compilation_db)]
@@ -886,6 +893,12 @@ and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
     ~in_help:InferCommand.[(Capture, manual_clang)]
     ~meta:"file" "Specify a file containing the AST of the program, in biniou format"
+
+
+and clang_extra_flags =
+  CLOpt.mk_string_list ~long:"Xclang"
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    "Pass values as command-line arguments to invocations of clang"
 
 
 and clang_compilation_dbs = ref []
@@ -2457,6 +2470,8 @@ and buck = !buck
 
 and buck_build_args = !buck_build_args
 
+and buck_build_args_no_inline = !buck_build_args_no_inline
+
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
 and buck_compilation_database =
@@ -2491,6 +2506,8 @@ and check_nullable = !check_nullable
 and check_version = !check_version
 
 and clang_biniou_file = !clang_biniou_file
+
+and clang_extra_flags = !clang_extra_flags
 
 and clang_ignore_regex = !clang_ignore_regex
 
