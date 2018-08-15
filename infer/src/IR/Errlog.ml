@@ -213,8 +213,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname ?clang_method_kind severity err_log loc (node_id, node_key) session ltr
-    ?linters_def_file ?doc_url ?access ?extras exn =
+let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id:(node_id, node_key)
+    ~session ~ltr ~linters_def_file ~doc_url ~access ~extras exn =
   let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
   let severity = Option.value error.severity ~default:severity in
