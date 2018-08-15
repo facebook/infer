@@ -96,7 +96,7 @@ end)
 (** Hash table to implement error logs *)
 module ErrLogHash = struct
   module Key = struct
-    type t = err_key [@@deriving compare]
+    type t = err_key
 
     (* NOTE: changing the hash function can change the order in which issues are reported. *)
     let hash key =
@@ -119,12 +119,7 @@ end
     error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
-let compare x y =
-  let bindings x = ErrLogHash.fold (fun k d l -> (k, d) :: l) x [] in
-  [%compare : (ErrLogHash.Key.t * ErrDataSet.t) list] (bindings x) (bindings y)
-
-
-let equal x y = [%compare.equal : t] x y
+let is_empty err_log = Int.equal 0 (ErrLogHash.length err_log)
 
 (** Empty error log *)
 let empty () = ErrLogHash.create 13

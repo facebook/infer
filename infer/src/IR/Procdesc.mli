@@ -163,7 +163,7 @@ module NodeSet : Caml.Set.S with type elt = Node.t
 (** procedure descriptions *)
 
 (** proc description *)
-type t [@@deriving compare]
+type t
 
 val append_locals : t -> ProcAttributes.var_data list -> unit
 (** append a list of new local variables to the existing list of local variables *)

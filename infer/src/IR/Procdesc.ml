@@ -355,7 +355,6 @@ type t =
   ; mutable start_node: Node.t  (** start node of this procedure *)
   ; mutable exit_node: Node.t  (** exit node of this procedure *)
   ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
-[@@deriving compare]
 
 let from_proc_attributes attributes =
   let pname_opt = Some attributes.ProcAttributes.proc_name in

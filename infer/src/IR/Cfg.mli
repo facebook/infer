@@ -27,7 +27,7 @@ val create : unit -> t
 val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 (** Create a new procdesc and add it to the cfg *)
 
-val iter_all_nodes : ?sorted:bool -> t -> f:(Procdesc.t -> Procdesc.Node.t -> unit) -> unit
+val iter_all_nodes : sorted:bool -> t -> f:(Procdesc.t -> Procdesc.Node.t -> unit) -> unit
 (** Iterate over all the nodes in the cfg *)
 
 val save_attributes : SourceFile.t -> t -> unit

@@ -15,10 +15,12 @@ type t = Procdesc.t Typ.Procname.Hash.t
 
 let create () = Typ.Procname.Hash.create 16
 
-let get_all_proc_descs cfg =
-  let procs = ref [] in
-  let f _ pdesc = procs := pdesc :: !procs in
-  Typ.Procname.Hash.iter f cfg ; !procs
+let iter_over_sorted_procs cfg ~f =
+  let compare_proc_desc_by_proc_name pdesc1 pdesc2 =
+    Typ.Procname.compare (Procdesc.get_proc_name pdesc1) (Procdesc.get_proc_name pdesc2)
+  in
+  Typ.Procname.Hash.fold (fun _ pdesc acc -> pdesc :: acc) cfg []
+  |> List.sort ~compare:compare_proc_desc_by_proc_name |> List.iter ~f
 
 
 let get_all_proc_names cfg =
@@ -35,20 +37,15 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) =
 
 
 (** Iterate over all the nodes in the cfg *)
-let iter_all_nodes ?(sorted= false) cfg ~f =
+let iter_all_nodes ~sorted cfg ~f =
   let do_proc_desc _ (pdesc: Procdesc.t) =
     List.iter ~f:(fun node -> f pdesc node) (Procdesc.get_nodes pdesc)
   in
   if not sorted then Typ.Procname.Hash.iter do_proc_desc cfg
   else
-    Typ.Procname.Hash.fold
-      (fun pname pdesc result ->
-        Procdesc.get_nodes pdesc
-        |> List.fold ~init:result ~f:(fun inner_result node -> (pname, pdesc, node) :: inner_result)
-        )
-      cfg []
-    |> List.sort ~compare:[%compare : Typ.Procname.t * Procdesc.t * Procdesc.Node.t]
-    |> List.iter ~f:(fun (_, d, n) -> f d n)
+    iter_over_sorted_procs cfg ~f:(fun pdesc ->
+        Procdesc.get_nodes pdesc |> List.sort ~compare:Procdesc.Node.compare
+        |> List.iter ~f:(fun node -> f pdesc node) )
 
 
 let load_statement =
@@ -157,8 +154,7 @@ let inline_java_synthetic_methods cfg =
 
 let pp_proc_signatures fmt cfg =
   F.fprintf fmt "@[<v>METHOD SIGNATURES@;" ;
-  let sorted_procs = List.sort ~compare:Procdesc.compare (get_all_proc_descs cfg) in
-  List.iter ~f:(Procdesc.pp_signature fmt) sorted_procs ;
+  iter_over_sorted_procs ~f:(Procdesc.pp_signature fmt) cfg ;
   F.fprintf fmt "@]"
 
 

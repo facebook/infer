@@ -10,7 +10,7 @@ open! IStd
 (** Attributes of a procedure. *)
 
 (** flags for a procedure *)
-type proc_flags = (string, string) Caml.Hashtbl.t [@@deriving compare]
+type proc_flags = (string, string) Caml.Hashtbl.t
 
 type clang_method_kind =
   | CPP_INSTANCE
@@ -26,19 +26,17 @@ val equal_clang_method_kind : clang_method_kind -> clang_method_kind -> bool
 val string_of_clang_method_kind : clang_method_kind -> string
 
 type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
-[@@deriving compare]
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
 
-type var_attribute =
-  | Modify_in_block
-  (* __block attribute of Objective-C variables, means that it will be modified inside a block *)
-[@@deriving compare]
+type var_attribute = Modify_in_block
+
+(* __block attribute of Objective-C variables, means that it will be modified inside a block *)
 
 val var_attribute_equal : var_attribute -> var_attribute -> bool
 (** Equality for var_attribute *)
 
-type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
+type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list}
 
 type t =
   { access: PredSymb.access  (** visibility access *)
@@ -69,7 +67,6 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
-[@@deriving compare]
 
 val default : SourceFile.t -> Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)

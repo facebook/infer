@@ -58,12 +58,12 @@ type err_data = private
   ; extras: Jsonbug_t.extra option }
 
 (** Type of the error log *)
-type t [@@deriving compare]
-
-val equal : t -> t -> bool
+type t
 
 val empty : unit -> t
 (** Empty error log *)
+
+val is_empty : t -> bool
 
 (** type of the function to be passed to iter *)
 type iter_fun = err_key -> err_data -> unit

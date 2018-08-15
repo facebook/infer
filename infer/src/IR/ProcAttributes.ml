@@ -14,11 +14,6 @@ module F = Format
 (** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
 
-let compare_proc_flags x y =
-  let bindings x = Hashtbl.fold (fun k d l -> (k, d) :: l) x [] in
-  [%compare : (string * string) list] (bindings x) (bindings y)
-
-
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
 type clang_method_kind =
@@ -112,7 +107,6 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
-[@@deriving compare]
 
 let default translation_unit proc_name =
   { access= PredSymb.Default
@@ -189,7 +183,7 @@ let pp f
   if not ([%compare.equal : (Mangled.t * Typ.t) list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
   pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
-  if not (Errlog.equal default.err_log err_log) then
+  if not (Errlog.is_empty err_log) then
     F.fprintf f "; err_log= [@[%a%a@]]@," Errlog.pp_errors err_log Errlog.pp_warnings err_log ;
   if not ([%compare.equal : string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
