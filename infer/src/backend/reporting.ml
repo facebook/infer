@@ -9,9 +9,8 @@ open! IStd
 module L = Logging
 
 type log_t =
-  ?loc:Location.t -> ?node_id_key:Errlog.node_id_key -> ?session:int -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
-  -> exn -> unit
+  ?loc:Location.t -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string
+  -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 let log_issue_from_errlog_internal procname ~clang_method_kind severity err_log ~loc ~node_id_key
     ~session ~ltr ~linters_def_file ~doc_url ~access ~extras exn =
@@ -28,7 +27,7 @@ let log_issue_from_errlog procname severity errlog ~loc ~node_id_key ~ltr ~linte
     ~session ~ltr ~linters_def_file ~doc_url ~access:None ~extras:None exn
 
 
-let log_issue_from_summary severity summary ?loc ?node_id_key ?session ?ltr ?linters_def_file
+let log_issue_from_summary severity summary ~node_id_key ?loc ?session ?ltr ?linters_def_file
     ?doc_url ?access ?extras exn =
   let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
@@ -49,9 +48,6 @@ let log_issue_from_summary severity summary ?loc ?node_id_key ?session ?ltr ?lin
     let err_log = Summary.get_err_log summary in
     let clang_method_kind = Some attrs.clang_method_kind in
     let loc = match loc with None -> State.get_loc () | Some loc -> loc in
-    let node_id_key =
-      match node_id_key with None -> State.get_node_id_key () | Some node_id_key -> node_id_key
-    in
     let session =
       match session with None -> (State.get_session () :> int) | Some session -> session
     in
@@ -60,11 +56,14 @@ let log_issue_from_summary severity summary ?loc ?node_id_key ?session ?ltr ?lin
       ~session ~ltr ~linters_def_file ~doc_url ~access ~extras exn
 
 
-let log_issue_deprecated severity proc_name ?loc ?node_id_key ?session ?ltr ?linters_def_file
+let log_issue_deprecated severity proc_name ?node_id_key ?loc ?session ?ltr ?linters_def_file
     ?doc_url ?access ?extras:_ exn =
   match Summary.get proc_name with
   | Some summary ->
-      log_issue_from_summary severity summary ?loc ?node_id_key ?session ?ltr ?linters_def_file
+      let node_id_key =
+        match node_id_key with None -> State.get_node_id_key () | Some node_id_key -> node_id_key
+      in
+      log_issue_from_summary severity summary ~node_id_key ?loc ?session ?ltr ?linters_def_file
         ?doc_url ?access exn
   | None ->
       L.(die InternalError)
@@ -73,9 +72,16 @@ let log_issue_deprecated severity proc_name ?loc ?node_id_key ?session ?ltr ?lin
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_error = log_issue_from_summary Exceptions.Error
+let log_issue_from_summary_simplified severity summary ?loc ?session ?ltr ?linters_def_file
+    ?doc_url ?access ?extras exn =
+  let node_id_key = State.get_node_id_key () in
+  log_issue_from_summary severity summary ~node_id_key ?loc ?session ?ltr ?linters_def_file
+    ?doc_url ?access ?extras exn
 
-let log_warning = log_issue_from_summary Exceptions.Warning
+
+let log_error = log_issue_from_summary_simplified Exceptions.Error
+
+let log_warning = log_issue_from_summary_simplified Exceptions.Warning
 
 let log_issue_external procname severity ~loc ~ltr ?access exn =
   let errlog = IssueLog.get_errlog procname in
