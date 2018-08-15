@@ -202,19 +202,54 @@ let censored_reason (issue_type: IssueType.t) source_file =
 
 let potential_exception_message = "potential exception at line"
 
-module IssuesJson = struct
+module type Printer = sig
+  type elt
+
+  val pp_open : F.formatter -> unit -> unit
+
+  val pp_close : F.formatter -> unit -> unit
+
+  val pp : F.formatter -> elt -> unit
+end
+
+module MakeJsonListPrinter (P : sig
+  type elt
+
+  val to_string : elt -> string option
+end) :
+  Printer with type elt = P.elt =
+struct
+  include P
+
   let is_first_item = ref true
 
-  let pp_json_open fmt () =
+  let pp_open fmt () =
     is_first_item := true ;
     F.fprintf fmt "[@?"
 
 
-  let pp_json_close fmt () = F.fprintf fmt "]@\n@?"
+  let pp_close fmt () = F.fprintf fmt "]@\n@?"
 
-  let pp_issue fmt error_filter procname proc_loc_opt (key: Errlog.err_key)
-      (err_data: Errlog.err_data) =
-    let pp x = F.fprintf fmt x in
+  let pp fmt elt =
+    match to_string elt with
+    | Some s ->
+        if !is_first_item then is_first_item := false else F.pp_print_char fmt ',' ;
+        F.fprintf fmt "%s@?" s
+    | None ->
+        ()
+end
+
+type json_issue_printer_typ =
+  { error_filter: SourceFile.t -> IssueType.t -> bool
+  ; proc_name: Typ.Procname.t
+  ; proc_loc_opt: Location.t option
+  ; err_key: Errlog.err_key
+  ; err_data: Errlog.err_data }
+
+module JsonIssuePrinter = MakeJsonListPrinter (struct
+  type elt = json_issue_printer_typ
+
+  let to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data}: elt) =
     let source_file, procedure_start_line =
       match proc_loc_opt with
       | Some proc_loc ->
@@ -224,17 +259,18 @@ module IssuesJson = struct
     in
     if SourceFile.is_invalid source_file then
       L.(die InternalError)
-        "Invalid source file for %a %a@.Trace: %a@." IssueType.pp key.err_name
-        Localise.pp_error_desc key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
+        "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.err_name
+        Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
     let should_report_source_file =
       not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
     in
     if
-      key.in_footprint && error_filter source_file key.err_name && should_report_source_file
-      && should_report key.severity key.err_name key.err_desc err_data.err_class
-    then (
-      let severity = Exceptions.severity_string key.severity in
-      let bug_type = key.err_name.IssueType.unique_id in
+      err_key.in_footprint && error_filter source_file err_key.err_name
+      && should_report_source_file
+      && should_report err_key.severity err_key.err_name err_key.err_desc err_data.err_class
+    then
+      let severity = Exceptions.severity_string err_key.severity in
+      let bug_type = err_key.err_name.IssueType.unique_id in
       let file = SourceFile.to_string source_file in
       let json_ml_loc =
         match err_data.loc_in_ml_source with
@@ -245,8 +281,8 @@ module IssuesJson = struct
       in
       let visibility = Exceptions.string_of_visibility err_data.visibility in
       let qualifier =
-        let base_qualifier = error_desc_to_plain_string key.err_desc in
-        if IssueType.(equal resource_leak) key.err_name then
+        let base_qualifier = error_desc_to_plain_string err_key.err_desc in
+        if IssueType.(equal resource_leak) err_key.err_name then
           match Errlog.compute_local_exception_line err_data.loc_trace with
           | None ->
               base_qualifier
@@ -259,11 +295,11 @@ module IssuesJson = struct
         else base_qualifier
       in
       let procedure =
-        match Typ.Procname.get_language procname with
+        match Typ.Procname.get_language proc_name with
         | Language.Java ->
-            Typ.Procname.to_unique_id procname
+            Typ.Procname.to_unique_id proc_name
         | _ ->
-            Typ.Procname.to_string procname
+            Typ.Procname.to_string proc_name
       in
       let bug =
         { Jsonbug_j.bug_class= Exceptions.err_class_string err_data.err_class
@@ -275,30 +311,35 @@ module IssuesJson = struct
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure
-        ; procedure_id= Typ.Procname.to_filename procname
+        ; procedure_id= Typ.Procname.to_filename proc_name
         ; procedure_start_line
         ; file
-        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.severity
+        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
         ; node_key= err_data.node_id_key.node_key |> Caml.Digest.to_hex
-        ; key= compute_key bug_type procname file
-        ; hash= compute_hash severity bug_type procname file qualifier
-        ; dotty= error_desc_to_dotty_string key.err_desc
+        ; key= compute_key bug_type proc_name file
+        ; hash= compute_hash severity bug_type proc_name file qualifier
+        ; dotty= error_desc_to_dotty_string err_key.err_desc
         ; infer_source_loc= json_ml_loc
-        ; bug_type_hum= key.err_name.IssueType.hum
+        ; bug_type_hum= err_key.err_name.IssueType.hum
         ; linters_def_file= err_data.linters_def_file
         ; doc_url= err_data.doc_url
         ; traceview_id= None
-        ; censored_reason= censored_reason key.err_name source_file
+        ; censored_reason= censored_reason err_key.err_name source_file
         ; access= err_data.access
         ; extras= err_data.extras }
       in
-      if not !is_first_item then pp "," else is_first_item := false ;
-      pp "%s@?" (Jsonbug_j.string_of_jsonbug bug) )
+      Some (Jsonbug_j.string_of_jsonbug bug)
+    else None
+end)
 
+module IssuesJson = struct
+  include JsonIssuePrinter
 
   (** Write bug report in JSON format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log =
-    Errlog.iter (pp_issue fmt error_filter procname proc_loc_opt) err_log
+  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log =
+    Errlog.iter
+      (fun err_key err_data -> pp fmt {error_filter; proc_name; proc_loc_opt; err_key; err_data})
+      err_log
 end
 
 let pp_custom_of_report fmt report fields =
@@ -698,7 +739,8 @@ let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_
   match format_kind with
   | Json ->
       let outf = get_outfile outfile_opt in
-      IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
+      IssuesJson.pp outf.fmt
+        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data}
   | Csv ->
       L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
@@ -936,7 +978,7 @@ let init_files format_list_by_kind =
           Report.pp_header outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
-          IssuesJson.pp_json_open outfile.fmt ()
+          IssuesJson.pp_open outfile.fmt ()
       | Csv, Summary | Logs, Stats | Json, (Procs | Stats | Summary) | Tests, _ | Text, _ ->
           ()
     in
@@ -956,7 +998,7 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
           F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
-          IssuesJson.pp_json_close outfile.fmt ()
+          IssuesJson.pp_close outfile.fmt ()
       | Csv, (Issues | Procs | Summary)
       | Logs, Stats
       | Json, (Procs | Stats | Summary)
