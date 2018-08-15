@@ -416,7 +416,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             in
             let ms =
               CMethodSignature.mk procname None [] (Typ.void, Annot.Item.empty) []
-                decl_info.Clang_ast_t.di_source_range ProcAttributes.C_FUNCTION None None None
+                decl_info.Clang_ast_t.di_source_range ClangMethodKind.C_FUNCTION None None None
                 `None
             in
             let stmt_info =

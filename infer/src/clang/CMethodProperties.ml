@@ -12,18 +12,18 @@ let get_method_kind meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl _ ->
-      ProcAttributes.C_FUNCTION
+      ClangMethodKind.C_FUNCTION
   | CXXMethodDecl (_, _, _, _, method_decl_info)
   | CXXConstructorDecl (_, _, _, _, method_decl_info)
   | CXXConversionDecl (_, _, _, _, method_decl_info)
   | CXXDestructorDecl (_, _, _, _, method_decl_info) ->
-      if method_decl_info.Clang_ast_t.xmdi_is_static then ProcAttributes.CPP_CLASS
-      else ProcAttributes.CPP_INSTANCE
+      if method_decl_info.Clang_ast_t.xmdi_is_static then ClangMethodKind.CPP_CLASS
+      else ClangMethodKind.CPP_INSTANCE
   | ObjCMethodDecl (_, _, method_decl_info) ->
-      if method_decl_info.Clang_ast_t.omdi_is_instance_method then ProcAttributes.OBJC_INSTANCE
-      else ProcAttributes.OBJC_CLASS
+      if method_decl_info.Clang_ast_t.omdi_is_instance_method then ClangMethodKind.OBJC_INSTANCE
+      else ClangMethodKind.OBJC_CLASS
   | BlockDecl _ ->
-      ProcAttributes.BLOCK
+      ClangMethodKind.BLOCK
   | _ ->
       raise CFrontend_config.Invalid_declaration
 
@@ -32,7 +32,7 @@ let rec is_inside_objc_class_method meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | ObjCMethodDecl _ ->
-      ProcAttributes.equal_clang_method_kind (get_method_kind meth_decl) ProcAttributes.OBJC_CLASS
+      ClangMethodKind.equal (get_method_kind meth_decl) ClangMethodKind.OBJC_CLASS
   | BlockDecl (di, _) -> (
     match CAst_utils.get_decl_opt di.di_parent_pointer with
     | Some decl ->

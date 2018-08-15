@@ -9,7 +9,7 @@ open! IStd
 
 (** Functions for extracting properties of functions or method declarations *)
 
-val get_method_kind : Clang_ast_t.decl -> ProcAttributes.clang_method_kind
+val get_method_kind : Clang_ast_t.decl -> ClangMethodKind.t
 
 val is_inside_objc_class_method : Clang_ast_t.decl -> bool
 

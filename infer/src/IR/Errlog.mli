@@ -93,6 +93,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-  Typ.Procname.t -> clang_method_kind:string option -> Exceptions.severity -> t -> loc:Location.t
-  -> node_id_key:node_id_key -> session:int -> ltr:loc_trace -> linters_def_file:string option
-  -> doc_url:string option -> access:string option -> extras:Jsonbug_t.extra option -> exn -> unit
+  Typ.Procname.t -> clang_method_kind:ClangMethodKind.t option -> Exceptions.severity -> t
+  -> loc:Location.t -> node_id_key:node_id_key -> session:int -> ltr:loc_trace
+  -> linters_def_file:string option -> doc_url:string option -> access:string option
+  -> extras:Jsonbug_t.extra option -> exn -> unit

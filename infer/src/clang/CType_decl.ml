@@ -12,9 +12,9 @@ open! IStd
 module BuildMethodSignature = struct
   let get_class_parameter_name method_kind =
     match method_kind with
-    | ProcAttributes.CPP_INSTANCE ->
+    | ClangMethodKind.CPP_INSTANCE ->
         Some (Mangled.from_string CFrontend_config.this)
-    | ProcAttributes.OBJC_INSTANCE ->
+    | ClangMethodKind.OBJC_INSTANCE ->
         Some (Mangled.from_string CFrontend_config.self)
     | _ ->
         None
@@ -41,7 +41,7 @@ module BuildMethodSignature = struct
       -> (
         let method_kind = CMethodProperties.get_method_kind method_decl in
         match method_kind with
-        | ProcAttributes.CPP_INSTANCE | ProcAttributes.OBJC_INSTANCE -> (
+        | ClangMethodKind.CPP_INSTANCE | ClangMethodKind.OBJC_INSTANCE -> (
           match (get_class_parameter_name method_kind, decl_info.di_parent_pointer) with
           | Some name, Some parent_pointer ->
               let qual_type = CAst_utils.qual_type_of_decl_ptr parent_pointer in
@@ -129,9 +129,7 @@ module BuildMethodSignature = struct
   let types_of_captured_vars qual_type_to_sil_type tenv meth_decl =
     let captured_vars = CMethodProperties.get_block_captured_variables meth_decl in
     let is_block =
-      ProcAttributes.equal_clang_method_kind
-        (CMethodProperties.get_method_kind meth_decl)
-        ProcAttributes.BLOCK
+      ClangMethodKind.equal (CMethodProperties.get_method_kind meth_decl) ClangMethodKind.BLOCK
     in
     let is_block_inside_objc_class_method =
       is_block && CMethodProperties.is_inside_objc_class_method meth_decl

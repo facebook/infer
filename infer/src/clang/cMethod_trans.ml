@@ -332,10 +332,10 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
         match class_name_opt with
         | Some class_name ->
             ( CType_decl.CProcname.NoAstDecl.cpp_method_of_string context.tenv class_name name
-            , ProcAttributes.CPP_INSTANCE )
+            , ClangMethodKind.CPP_INSTANCE )
         | None ->
             ( CType_decl.CProcname.NoAstDecl.c_function_of_string context.tenv name
-            , ProcAttributes.C_FUNCTION )
+            , ClangMethodKind.C_FUNCTION )
       in
       create_external_procdesc context.translation_unit_context context.cfg callee_name method_kind
         None ;

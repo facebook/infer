@@ -373,7 +373,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = {CallFlags.default with CallFlags.cf_virtual= is_instance} in
-  let method_kind = ProcAttributes.OBJC_INSTANCE in
+  let method_kind = ClangMethodKind.OBJC_INSTANCE in
   let pname =
     CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
       Typ.Procname.ObjC_Cpp.ObjCInstanceMethod

@@ -29,7 +29,7 @@ type t =
   ; has_added_return_param: bool
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
-  ; method_kind: ProcAttributes.clang_method_kind
+  ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
   ; is_cpp_nothrow: bool
   ; is_variadic: bool

@@ -28,7 +28,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let is_instance = mc_type <> CMethod_trans.MCStatic in
     let objc_method_kind = Typ.Procname.ObjC_Cpp.objc_method_kind_of_bool is_instance in
     let method_kind =
-      if is_instance then ProcAttributes.OBJC_INSTANCE else ProcAttributes.OBJC_CLASS
+      if is_instance then ClangMethodKind.OBJC_INSTANCE else ClangMethodKind.OBJC_CLASS
     in
     let ms_opt =
       match method_pointer_opt with

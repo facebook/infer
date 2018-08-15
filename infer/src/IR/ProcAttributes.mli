@@ -12,19 +12,6 @@ open! IStd
 (** flags for a procedure *)
 type proc_flags = (string, string) Caml.Hashtbl.t
 
-type clang_method_kind =
-  | CPP_INSTANCE
-  | OBJC_INSTANCE
-  | CPP_CLASS
-  | OBJC_CLASS
-  | BLOCK
-  | C_FUNCTION
-[@@deriving compare]
-
-val equal_clang_method_kind : clang_method_kind -> clang_method_kind -> bool
-
-val string_of_clang_method_kind : clang_method_kind -> string
-
 type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
@@ -57,7 +44,7 @@ type t =
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
-  ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
+  ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)

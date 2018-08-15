@@ -215,7 +215,6 @@ let update errlog_old errlog_new =
 
 let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id_key ~session ~ltr
     ~linters_def_file ~doc_url ~access ~extras exn =
-  let lang = Typ.Procname.get_language procname in
   let error = Exceptions.recognize_exception exn in
   let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
@@ -242,10 +241,18 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id_key ~se
   in
   ( if exn_developer then
       let issue =
+        let lang = Typ.Procname.get_language procname in
+        let clang_method_kind =
+          match lang with
+          | Language.Clang ->
+              Option.map ~f:ClangMethodKind.to_string clang_method_kind
+          | _ ->
+              None
+        in
         EventLogger.AnalysisIssue
           { bug_type= error.name.IssueType.unique_id
           ; bug_kind= Exceptions.severity_string severity
-          ; clang_method_kind= (match lang with Language.Clang -> clang_method_kind | _ -> None)
+          ; clang_method_kind
           ; exception_triggered_location= error.ocaml_pos
           ; lang= Language.to_explicit_string lang
           ; procedure_name= Typ.Procname.to_string procname

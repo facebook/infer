@@ -1460,8 +1460,8 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
                               current_pdesc loc prop path
                         | None, false ->
                             let is_objc_instance_method =
-                              ProcAttributes.equal_clang_method_kind
-                                attrs.ProcAttributes.clang_method_kind ProcAttributes.OBJC_INSTANCE
+                              ClangMethodKind.equal attrs.ProcAttributes.clang_method_kind
+                                ClangMethodKind.OBJC_INSTANCE
                             in
                             skip_call ~is_objc_instance_method ~callee_attributes:(Some attrs)
                               ~reason prop path resolved_pname ret_annots loc ret_id_typ ret_type
@@ -1907,7 +1907,7 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
   (* In case we call an objc instance method we add an extra spec
       where the receiver is null and the semantics of the call is nop *)
   match (!Language.curr_language, callee_attrs.ProcAttributes.clang_method_kind) with
-  | Language.Clang, ProcAttributes.OBJC_INSTANCE ->
+  | Language.Clang, ClangMethodKind.OBJC_INSTANCE ->
       handle_objc_instance_method_call actual_pars actual_params pre tenv (fst ret_id_typ) pdesc
         callee_pname loc path
         (Tabulation.exe_function_call ?dynamic_dispatch exe_env callee_summary)

@@ -47,9 +47,7 @@ let log_issue_from_summary severity summary ?loc ?node_id_key ?session ?ltr ?lin
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else
     let err_log = Summary.get_err_log summary in
-    let clang_method_kind =
-      Some (ProcAttributes.string_of_clang_method_kind attrs.clang_method_kind)
-    in
+    let clang_method_kind = Some attrs.clang_method_kind in
     let loc = match loc with None -> State.get_loc () | Some loc -> loc in
     let node_id_key =
       match node_id_key with None -> State.get_node_id_key () | Some node_id_key -> node_id_key

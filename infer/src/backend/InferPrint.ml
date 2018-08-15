@@ -594,7 +594,7 @@ module StatsLogs = struct
       match summary.payloads.biabduction with Some {preposts} -> List.length preposts | None -> 0
     in
     let clang_method_kind =
-      ProcAttributes.string_of_clang_method_kind (Summary.get_attributes summary).clang_method_kind
+      ClangMethodKind.to_string (Summary.get_attributes summary).clang_method_kind
     in
     let proc_name = Summary.get_proc_name summary in
     let lang = Typ.Procname.get_language proc_name in

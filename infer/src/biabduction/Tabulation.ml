@@ -91,7 +91,7 @@ let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic
       match callee_attributes with
       | Some attributes when Language.curr_language_is Language.Clang ->
           let callee_clang_method_kind =
-            ProcAttributes.string_of_clang_method_kind attributes.ProcAttributes.clang_method_kind
+            ClangMethodKind.to_string attributes.ProcAttributes.clang_method_kind
           in
           let callee_source_file = get_valid_source_file attributes.ProcAttributes.loc in
           (Some callee_clang_method_kind, callee_source_file)

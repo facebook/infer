@@ -16,32 +16,6 @@ type proc_flags = (string, string) Hashtbl.t
 
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
-type clang_method_kind =
-  | CPP_INSTANCE
-  | OBJC_INSTANCE
-  | CPP_CLASS
-  | OBJC_CLASS
-  | BLOCK
-  | C_FUNCTION
-[@@deriving compare]
-
-let equal_clang_method_kind = [%compare.equal : clang_method_kind]
-
-let string_of_clang_method_kind = function
-  | CPP_INSTANCE ->
-      "CPP_INSTANCE"
-  | OBJC_INSTANCE ->
-      "OBJC_INSTANCE"
-  | CPP_CLASS ->
-      "CPP_CLASS"
-  | OBJC_CLASS ->
-      "OBJC_CLASS"
-  | BLOCK ->
-      "BLOCK"
-  | C_FUNCTION ->
-      "C_FUNCTION"
-
-
 (** Type for ObjC accessors *)
 type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
 [@@deriving compare]
@@ -97,7 +71,7 @@ type t =
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
-  ; clang_method_kind: clang_method_kind  (** the kind of method the procedure is *)
+  ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
@@ -127,7 +101,7 @@ let default translation_unit proc_name =
   ; is_specialized= false
   ; is_synthetic_method= false
   ; is_variadic= false
-  ; clang_method_kind= C_FUNCTION
+  ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
   ; translation_unit
   ; locals= []
@@ -217,9 +191,9 @@ let pp f
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
-  if not ([%compare.equal : clang_method_kind] default.clang_method_kind clang_method_kind) then
+  if not (ClangMethodKind.equal default.clang_method_kind clang_method_kind) then
     F.fprintf f "; clang_method_kind= %a@,"
-      (Pp.to_string ~f:string_of_clang_method_kind)
+      (Pp.to_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp loc ;
   if not ([%compare.equal : var_data list] default.locals locals) then

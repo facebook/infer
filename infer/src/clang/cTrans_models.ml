@@ -75,7 +75,7 @@ let get_predefined_ms_method condition class_name method_name method_kind mk_pro
     let ms =
       CMethodSignature.mk procname None arguments return_type attributes
         (CAst_utils.dummy_source_range ())
-        ProcAttributes.C_FUNCTION None None None `None
+        ClangMethodKind.C_FUNCTION None None None `None
     in
     Some ms
   else None

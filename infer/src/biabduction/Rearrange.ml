@@ -1666,9 +1666,9 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
       -> (
         let {ProcAttributes.clang_method_kind} = Procdesc.get_attributes pdesc in
         match clang_method_kind with
-        | ProcAttributes.OBJC_INSTANCE ->
+        | ClangMethodKind.OBJC_INSTANCE ->
             Pvar.is_self pvar
-        | ProcAttributes.CPP_INSTANCE ->
+        | ClangMethodKind.CPP_INSTANCE ->
             Pvar.is_this pvar
         | _ ->
             false )

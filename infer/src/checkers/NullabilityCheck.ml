@@ -39,16 +39,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         Option.exists
           ~f:(fun attributes ->
-            ProcAttributes.equal_clang_method_kind attributes.ProcAttributes.clang_method_kind
-              ProcAttributes.CPP_INSTANCE )
+            ClangMethodKind.equal attributes.ProcAttributes.clang_method_kind
+              ClangMethodKind.CPP_INSTANCE )
           (Summary.proc_resolve_attributes callee_pname)
 
 
   let is_objc_instance_method callee_pname =
     Option.exists
       ~f:(fun attributes ->
-        ProcAttributes.equal_clang_method_kind attributes.ProcAttributes.clang_method_kind
-          ProcAttributes.OBJC_INSTANCE )
+        ClangMethodKind.equal attributes.ProcAttributes.clang_method_kind
+          ClangMethodKind.OBJC_INSTANCE )
       (Summary.proc_resolve_attributes callee_pname)
 
 
