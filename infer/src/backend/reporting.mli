@@ -10,11 +10,12 @@ open! IStd
 (** Type of functions to report issues to the error_log in a spec. *)
 
 type log_t =
-  ?loc:Location.t -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string
-  -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
+  ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string
+  -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 val log_issue_deprecated :
-  Exceptions.severity -> Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> log_t
+  Exceptions.severity -> Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t
+  -> log_t
 (** Report an issue in the given procedure.
     DEPRECATED as it can create race conditions between checkers.
     Use log_error/warning instead *)
@@ -25,10 +26,10 @@ val log_issue_from_errlog :
   -> doc_url:string option -> exn -> unit
 (** Report an issue of a given kind  in the given error log. *)
 
-val log_error : Summary.t -> log_t
+val log_error : Summary.t -> loc:Location.t -> log_t
 (** Add an error to the given summary. *)
 
-val log_warning : Summary.t -> log_t
+val log_warning : Summary.t -> loc:Location.t -> log_t
 (** Add an warning to the given summary. *)
 
 val log_issue_external :

@@ -149,7 +149,8 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     summary
   in
   let log_error_and_continue exn (summary: Summary.t) kind =
-    Reporting.log_error summary exn ;
+    let loc = State.get_loc () in
+    Reporting.log_error summary ~loc exn ;
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payloads =
       let biabduction =

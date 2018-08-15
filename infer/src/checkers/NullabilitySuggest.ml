@@ -198,7 +198,8 @@ let checker {Callbacks.summary; proc_desc; tenv} =
           | Some (loc, ltr) ->
               Reporting.log_warning summary ~loc ~ltr exn
           | None ->
-              Reporting.log_warning summary exn )
+              let loc = Procdesc.get_loc proc_desc in
+              Reporting.log_warning summary ~loc exn )
       | _ ->
           ()
     in
