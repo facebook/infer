@@ -22,6 +22,7 @@ codetoanalyze/cpp/quandary/arrays.cpp, arrays::wmemcpy_bad, 2, QUANDARY_TAINT_ER
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::wmemmove_bad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to wmemmove with tainted index 2]
 codetoanalyze/cpp/quandary/basics.cpp, basics::Obj_endpoint, 1, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from basics::Obj_endpoint,Call to basics::Obj_string_sink with tainted index 1]
 codetoanalyze/cpp/quandary/basics.cpp, basics::Obj_endpoint, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from basics::Obj_endpoint,Call to __infer_taint_sink with tainted index 0]
+codetoanalyze/cpp/quandary/basics.cpp, basics::funCall_bad1, 0, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to basics::funCall_bad2 with tainted index 1,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/basics.cpp, basics::object_source_sink_bad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from basics::Obj_method_source,Call to basics::Obj_method_sink with tainted index 1]
 codetoanalyze/cpp/quandary/basics.cpp, basics::propagateBad, 3, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source,Call to basics::callSink with tainted index 0,Call to __infer_taint_sink with tainted index 0]
 codetoanalyze/cpp/quandary/basics.cpp, basics::returnSourceToSinkBad, 2, QUANDARY_TAINT_ERROR, no_bucket, ERROR, [Return from __infer_taint_source with tainted data return*,Return from basics::returnSource,Call to __infer_taint_sink with tainted index 0]

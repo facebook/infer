@@ -33,6 +33,8 @@ module MakeSink (TraceElem : TraceElem.S) = struct
   let get _ _ _ _ = None
 
   let indexes _ = IntSet.empty
+
+  let with_indexes _ _ = assert false
 end
 
 module Make (TraceElem : TraceElem.S) = struct

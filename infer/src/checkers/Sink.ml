@@ -20,6 +20,8 @@ module type S = sig
   val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t option
 
   val indexes : t -> IntSet.t
+
+  val with_indexes : t -> IntSet.t -> t
 end
 
 module Make (Kind : Kind) = struct
@@ -44,6 +46,8 @@ module Make (Kind : Kind) = struct
 
 
   let with_callsite t callee_site = {t with site= callee_site}
+
+  let with_indexes t indexes = {t with indexes}
 
   let pp fmt s = F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 

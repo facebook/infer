@@ -45,6 +45,8 @@ module MockTraceElem = struct
   end)
 
   let with_callsite t _ = t
+
+  let with_indexes t _ = t
 end
 
 module MockSource = struct

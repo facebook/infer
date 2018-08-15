@@ -22,6 +22,8 @@ module type S = sig
 
   val indexes : t -> IntSet.t
   (** return the indexes where taint can flow into the sink *)
+
+  val with_indexes : t -> IntSet.t -> t
 end
 
 module Make (Kind : Kind) : S with module Kind = Kind

@@ -164,6 +164,15 @@ public class Basics {
     InferTaint.inferSensitiveSink(arr);
   }
 
+  void funCallBad1() {
+    Object src = InferTaint.inferSecretSource();
+    funCallBad2(2, src);
+  }
+
+  void funCallBad2(int x, Object src) {
+    InferTaint.inferSensitiveSink(src);
+  }
+
   /** should not report on these tests */
 
   void directOk1() {

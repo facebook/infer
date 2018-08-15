@@ -170,6 +170,10 @@ std::string* unsanitized_bad(Obj* obj) {
   return sanitized;
 }
 
+void funCall_bad2(int x, void* t) { __infer_taint_sink(t); }
+
+void funCall_bad1() { funCall_bad2(0, __infer_taint_source()); }
+
 void atomic_eq(std::atomic<std::chrono::duration<int, std::centi>> x,
                std::chrono::duration<int, std::centi> y) {
   // this gets translated as operator=(x, y, &tmp_return), which used to cause a

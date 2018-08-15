@@ -515,7 +515,7 @@ module Make (Spec : Spec) = struct
         else
           let known =
             List.map
-              ~f:(fun sink -> Source.with_callsite sink callee_site)
+              ~f:(fun source -> Source.with_callsite source callee_site)
               (Sources.Known.elements non_footprint_callee_sources)
             |> Sources.Known.of_list |> Sources.Known.union caller_trace.sources.known
           in
@@ -524,8 +524,16 @@ module Make (Spec : Spec) = struct
       let sinks =
         if Sinks.subset callee_trace.sinks caller_trace.sinks then caller_trace.sinks
         else
+          let footprint_indices =
+            Sources.Footprint.BaseMap.fold
+              (fun (vname, _) _ s ->
+                match Var.get_footprint_index vname with Some ind -> IntSet.add ind s | None -> s
+                )
+              callee_trace.sources.footprint IntSet.empty
+          in
           List.map
-            ~f:(fun sink -> Sink.with_callsite sink callee_site)
+            ~f:(fun sink ->
+              Sink.with_indexes (Sink.with_callsite sink callee_site) footprint_indices )
             (Sinks.elements callee_trace.sinks)
           |> Sinks.of_list |> Sinks.union caller_trace.sinks
       in
