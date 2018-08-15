@@ -16,20 +16,10 @@ type log_t =
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-val log_error_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
-(** Report an error in the given procedure.
+val log_issue_deprecated : Exceptions.severity -> Typ.Procname.t -> log_t
+(** Report an issue in the given procedure.
     DEPRECATED as it can create race conditions between checkers.
-    Use log_error instead *)
-
-val log_warning_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
-(** Report a warning in the given procedure.
-    DEPRECATED as it can create race conditions between checkers.
-    Use log_warning instead *)
-
-val log_info_deprecated : ?store_summary:bool -> Typ.Procname.t -> log_t
-(** Report an info in the given procedure.
-    DEPRECATED as it can create race conditions between checkers.
-    Use log_info instead *)
+    Use log_error/warning instead *)
 
 val log_issue_from_errlog :
   Typ.Procname.t -> ?clang_method_kind:ProcAttributes.clang_method_kind -> Exceptions.severity

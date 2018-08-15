@@ -353,7 +353,7 @@ let check_inherently_dangerous_function caller_pname callee_pname =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname)
     in
-    Reporting.log_warning_deprecated caller_pname exn
+    Reporting.log_issue_deprecated Exceptions.Warning caller_pname exn
 
 
 let reason_to_skip ~callee_desc : string option =
@@ -414,7 +414,7 @@ let check_arith_norm_exp tenv pname exp prop =
   | Some (Attribute.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero tenv div (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-      Reporting.log_warning_deprecated pname exn ;
+      Reporting.log_issue_deprecated Exceptions.Warning pname exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
@@ -422,7 +422,7 @@ let check_arith_norm_exp tenv pname exp prop =
           (State.get_loc ())
       in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
-      Reporting.log_warning_deprecated pname exn ;
+      Reporting.log_issue_deprecated Exceptions.Warning pname exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | None, prop' ->
       (Prop.exp_normalize_prop tenv prop exp, prop')
@@ -480,7 +480,7 @@ let check_already_dereferenced tenv pname cond prop =
           (State.get_loc ())
       in
       let exn = Exceptions.Null_test_after_dereference (desc, __POS__) in
-      Reporting.log_warning_deprecated pname exn
+      Reporting.log_issue_deprecated Exceptions.Warning pname exn
   | None ->
       ()
 
@@ -1244,7 +1244,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
       callee_pname ret_annots loc ret_id_typ ret_typ actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-      Reporting.log_info_deprecated current_pname exn ;
+      Reporting.log_issue_deprecated Exceptions.Info current_pname exn ;
       L.d_strln
         (F.sprintf "Skipping function '%s': %s" (Typ.Procname.to_string callee_pname) reason) ;
       Tabulation.log_call_trace ~caller_name:current_pname ~callee_name:callee_pname
@@ -1311,7 +1311,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) p
               let exn =
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__)
               in
-              Reporting.log_warning_deprecated current_pname exn
+              Reporting.log_issue_deprecated Exceptions.Warning current_pname exn
           | _ ->
               ()
       in

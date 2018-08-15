@@ -464,7 +464,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
           in
           State.set_path new_path path_pos_opt ;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          Reporting.log_warning_deprecated caller_pname exn )
+          Reporting.log_issue_deprecated Exceptions.Warning caller_pname exn )
     | _ ->
         ()
   in
@@ -1189,7 +1189,7 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
           missing_sigma_objc_class callee_summary ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
-        Reporting.log_warning_deprecated caller_pname exn
+        Reporting.log_issue_deprecated Exceptions.Warning caller_pname exn
       in
       let do_split () =
         process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld

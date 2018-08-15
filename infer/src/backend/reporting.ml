@@ -62,15 +62,12 @@ let log_issue_from_summary severity summary ?loc ?node_id ?session ?ltr ?linters
       ?linters_def_file ?doc_url ?access ?extras exn
 
 
-let log_issue_deprecated ?(store_summary= false) severity proc_name ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url ?access ?extras:_ exn =
+let log_issue_deprecated severity proc_name ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
+    ?access ?extras:_ exn =
   match Summary.get proc_name with
   | Some summary ->
       log_issue_from_summary severity summary ?loc ?node_id ?session ?ltr ?linters_def_file
-        ?doc_url ?access exn ;
-      if store_summary then
-        (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
-        Summary.store summary
+        ?doc_url ?access exn
   | None ->
       L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this \
@@ -81,18 +78,6 @@ let log_issue_deprecated ?(store_summary= false) severity proc_name ?loc ?node_i
 let log_error = log_issue_from_summary Exceptions.Error
 
 let log_warning = log_issue_from_summary Exceptions.Warning
-
-let log_error_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Error
-
-
-let log_warning_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Warning
-
-
-let log_info_deprecated ?(store_summary= false) =
-  log_issue_deprecated ~store_summary Exceptions.Info
-
 
 let log_issue_external procname ?clang_method_kind severity ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url ?access ?extras exn =
