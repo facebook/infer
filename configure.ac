@@ -134,7 +134,7 @@ if test "x$enable_c_analyzers" = "xyes"; then
   AC_PROG_CXX(clang++ g++)
   # AC_PROG_CXX doesn't set CXX to "no" in case of failure (I have no words...); from the manual:
   # "If none of those checks succeed, then as a last resort set CXX to g++. "
-  AS_IF([command -v "$CXX" > /dev/null], [], [AC_MSG_ERROR([no C++ compiler found])])
+  AS_IF([$CXX --version > /dev/null], [], [AC_MSG_ERROR([no C++ compiler found])])
 
   dnl clang wants either clang version >= 3.1 or gcc version >= 4.7.2 to
   dnl compile itself

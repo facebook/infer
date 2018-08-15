@@ -265,7 +265,7 @@ clang_setup:
 clang_plugin: clang_setup
 	$(QUIET)$(call silent_on_success,Building clang plugin,\
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
-	  CC=$(CC) CXX=$(CXX) \
+	  CC="$(CC)" CXX="$(CXX)" \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
