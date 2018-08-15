@@ -22,8 +22,6 @@ end
 module Make (Set : Set) : sig
   module Repr : sig
     type t = private Set.elt
-
-    val equal : t -> t -> bool
   end
 
   type t

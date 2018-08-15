@@ -23,8 +23,6 @@ end)
    Currently it's set randomly to 200. *)
 let expensive_threshold = BasicCost.of_int_exn 200
 
-let solver = `ConstraintSolver
-
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
@@ -120,8 +118,6 @@ module AnalyzerNodesBasicCost =
 
 *)
 module BoundMap = struct
-  type t = BasicCost.astate Node.IdMap.t
-
   let print_upper_bound_map bound_map =
     L.(debug Analysis Medium)
       "@\n\n******* Bound Map : [node -> bound] ITV **** @\n %a @\n"
@@ -227,9 +223,6 @@ module ControlFlowCost = struct
 
     let normalize ~(normalizer: t -> [> t]) (x: t) : t =
       match normalizer x with #t as x -> x | _ -> assert false
-
-
-    let of_node i = `Node i
   end
 
   module Sum = struct
@@ -281,10 +274,6 @@ module ControlFlowCost = struct
   end
 
   type t = [Item.t | Sum.t]
-
-  let is_node = function `Node nid -> Some nid | _ -> None
-
-  let assert_node = function `Node nid -> nid | _ -> assert false
 
   let compare : t -> t -> int =
    fun x y ->
@@ -608,248 +597,6 @@ module ConstraintSolver = struct
     Option.value_exn set |> ControlFlowCost.Set.cost
 end
 
-(* Structural Constraints are expressions of the kind:
-     n <= n1 +...+ nk
-
-   The informal meaning is: the number of times node n can be executed is less or
-   equal to the sum of the number of times nodes n1,..., nk can be executed.
-*)
-module StructuralConstraints = struct
-  type t = {single: Node.id list; sum: Node.IdSet.t list}
-
-  (*
-  Finds subset of constraints of node k.
-  It returns a pair (single_constraints, sum_constraints) where single constraints are
-  of the form 'x_k <= x_j' and  sum constraints are of the form 'x_k <= x_j1 +...+ x_jn'.
-  *)
-  let get_constraints_of_node constraints k =
-    let c = Node.IdMap.find_opt k constraints in
-    match c with Some c -> c | _ -> {single= []; sum= []}
-
-
-  let print_constraints_map constraints =
-    let pp_nidset fmt nidset = Pp.seq ~sep:" + " Node.pp_id fmt (Node.IdSet.elements nidset) in
-    L.(debug Analysis Medium)
-      "@\n\n******* Structural Constraints size = %i **** @\n" (Node.IdMap.cardinal constraints) ;
-    Node.IdMap.iter
-      (fun n {single; sum} ->
-        List.iter
-          ~f:(fun s -> L.(debug Analysis Medium) "@\n    %a <= %a @\n" Node.pp_id n Node.pp_id s)
-          single ;
-        List.iter
-          ~f:(fun s -> L.(debug Analysis Medium) "@\n    %a <= %a @\n" Node.pp_id n pp_nidset s)
-          sum )
-      constraints ;
-    L.(debug Analysis Medium) "@\n******* END Structural Constraints **** @\n\n"
-
-
-  (*  for each program point return a set of contraints of the kind
-
-     i<=Sum_{j \in Predecessors(i) } j
-     i<=Sum_{j \in Successors(i)} j
-*)
-  let compute_structural_constraints node_cfg =
-    let compute_node_constraints acc node =
-      let constraints_add node get_nodes =
-        match get_nodes node with
-        | [] ->
-            {single= []; sum= []}
-        | [single] ->
-            {single= [NodeCFG.Node.id single]; sum= []}
-        | nodes ->
-            let sum =
-              List.fold nodes ~init:Node.IdSet.empty ~f:(fun idset node ->
-                  Node.IdSet.add (NodeCFG.Node.id node) idset )
-            in
-            {single= []; sum= [sum]}
-      in
-      let preds = constraints_add node Procdesc.Node.get_preds in
-      let succs = constraints_add node Procdesc.Node.get_succs in
-      Node.IdMap.add (NodeCFG.Node.id node)
-        {single= List.append preds.single succs.single; sum= List.append preds.sum succs.sum} acc
-    in
-    let constraints =
-      NodeCFG.fold_nodes node_cfg ~f:compute_node_constraints ~init:Node.IdMap.empty
-    in
-    print_constraints_map constraints ; constraints
-end
-
-(* MinTree is used to compute:
-
-    \max (\Sum_{n \in Nodes} c_n * x_n )
-
-   given a set of contraints on x_n. The constraints involve the contro flow
-    of the program.
-
-*)
-module MinTree = struct
-  type mt_node =
-    | Leaf of (Node.id * BasicCost.astate)
-    | Min of mt_node list
-    | Plus of mt_node list
-
-  let add_leaf node nid leaf =
-    let leaf' = Leaf (nid, leaf) in
-    match node with Min l -> Min (leaf' :: l) | Plus l -> Plus (leaf' :: l) | _ -> assert false
-
-
-  let plus_seq pp f l = Pp.seq ~sep:" + " pp f l
-
-  let rec pp fmt node =
-    match node with
-    | Leaf (nid, c) ->
-        F.fprintf fmt "%a:%a" Node.pp_id nid BasicCost.pp c
-    | Min l ->
-        F.fprintf fmt "Min(%a)" (Pp.comma_seq pp) l
-    | Plus l ->
-        F.fprintf fmt "(%a)" (plus_seq pp) l
-
-
-  let add_child node child =
-    match child with
-    | Plus [] | Min [] ->
-        node (* if it's a dummy child, don't add it *)
-    | _ ->
-      match node with Plus l -> Plus (child :: l) | Min l -> Min (child :: l) | _ -> assert false
-
-
-  let rec evaluate_tree t =
-    match t with
-    | Leaf (_, c) ->
-        c
-    | Min l ->
-        evaluate_operator BasicCost.min_default_left l
-    | Plus l ->
-        evaluate_operator BasicCost.plus l
-
-
-  and evaluate_operator op l =
-    match l with
-    | [] ->
-        assert false
-    | [c] ->
-        evaluate_tree c
-    | c :: l' ->
-        let res_c = evaluate_tree c in
-        let res_l' = evaluate_operator op l' in
-        op res_c res_l'
-
-
-  (*  a plus node is well formed if has at least two addends *)
-  let is_well_formed_plus_node plus_node =
-    match plus_node with Plus (_ :: _ :: _) -> true | _ -> false
-
-
-  module SetOfSetsOfNodes = Caml.Set.Make (Node.IdSet)
-
-  module BuiltTreeMap = Caml.Map.Make (struct
-    type t = Node.id * Node.IdSet.t [@@deriving compare]
-  end)
-
-  let minimum_propagation (bound_map: BoundMap.t)
-      (constraints: StructuralConstraints.t Node.IdMap.t) self
-      ((q, visited): Node.id * Node.IdSet.t) =
-    let rec build_min node branch visited_acc worklist =
-      match worklist with
-      | [] ->
-          (node, branch, visited_acc)
-      | k :: rest ->
-          if Node.IdSet.mem k visited_acc then build_min node branch visited_acc rest
-          else
-            let visited_acc' = Node.IdSet.add k visited_acc in
-            let node = add_leaf node k (BoundMap.upperbound bound_map k) in
-            let k_constraints = StructuralConstraints.get_constraints_of_node constraints k in
-            let worklist' =
-              List.fold k_constraints.single ~init:rest ~f:(fun acc ub_id ->
-                  if Node.IdSet.mem ub_id visited_acc' then acc else ub_id :: acc )
-            in
-            let branch =
-              List.fold_left
-                ~f:(fun branch set_addend ->
-                  assert (Node.IdSet.cardinal set_addend >= 2) ;
-                  if Node.IdSet.is_empty (Node.IdSet.inter set_addend visited_acc') then
-                    SetOfSetsOfNodes.add set_addend branch
-                  else branch )
-                ~init:branch k_constraints.sum
-            in
-            build_min node branch visited_acc' worklist'
-    in
-    let node, branch, visited_res = build_min (Min []) SetOfSetsOfNodes.empty visited [q] in
-    SetOfSetsOfNodes.fold
-      (fun addend i_node ->
-        L.(debug Analysis Medium) "@\n\n|Set addends| = %i  {" (Node.IdSet.cardinal addend) ;
-        Node.IdSet.iter (fun e -> L.(debug Analysis Medium) " %a, " Node.pp_id e) addend ;
-        L.(debug Analysis Medium) " }@\n " ;
-        let plus_node =
-          Node.IdSet.fold
-            (fun n acc ->
-              let child = self (n, visited_res) in
-              add_child acc child )
-            addend (Plus [])
-        in
-        (* without this check it would add plus node with just one child, and give wrong results *)
-        if is_well_formed_plus_node plus_node then add_child i_node plus_node else i_node )
-      branch node
-
-
-  let with_cache f =
-    (* a map used for bookkeeping of the min trees that we have already built *)
-    let global_built_tree_map : mt_node BuiltTreeMap.t ref = ref BuiltTreeMap.empty in
-    let rec f_with_cache x =
-      match BuiltTreeMap.find_opt x !global_built_tree_map with
-      | Some v ->
-          v
-      | None ->
-          let v = f f_with_cache x in
-          global_built_tree_map := BuiltTreeMap.add x v !global_built_tree_map ;
-          v
-    in
-    Staged.stage f_with_cache
-
-
-  let find_tree_eq_rel n trees equalities =
-    let elt = ControlFlowCost.make_node n in
-    let repr = ConstraintSolver.Equalities.find equalities elt in
-    let repr_node = ControlFlowCost.assert_node (repr :> ControlFlowCost.t) in
-    match Node.IdMap.find_opt repr_node trees with
-    | Some t ->
-        t
-    | _ ->
-        L.(die InternalError) "@\n Equivalent tree not found. Stop.@\n"
-
-
-  let compute_trees_from_contraints bound_map node_cfg eqs constraints =
-    let start_node = Node.id (NodeCFG.start_node node_cfg) in
-    let start_node_item = ControlFlowCost.Item.of_node start_node in
-    let start_node_repr = ConstraintSolver.Equalities.find eqs start_node_item in
-    L.(debug Analysis Verbose) "@\n =========== Computed Equalities ==========@\n" ;
-    L.(debug Analysis Verbose) "[Equalities] %a@\n" ConstraintSolver.Equalities.pp_equalities eqs ;
-    let minimum_propagation =
-      with_cache (minimum_propagation bound_map constraints) |> Staged.unstage
-    in
-    let min_trees =
-      ConstraintSolver.Equalities.fold_sets eqs ~init:Node.IdMap.empty ~f:
-        (fun acc_trees (rep, _eq_cl) ->
-          match ControlFlowCost.is_node (rep :> ControlFlowCost.t) with
-          | None ->
-              acc_trees
-          | Some rep_id ->
-              let tree =
-                if ConstraintSolver.Equalities.Repr.equal start_node_repr rep then
-                  (* for any node in the same equivalence class as the start node we give the trivial MinTree:
-                min(1)
-                *)
-                  add_leaf (Min []) rep_id (BoundMap.upperbound bound_map rep_id)
-                else minimum_propagation (rep_id, Node.IdSet.empty)
-              in
-              Node.IdMap.add rep_id tree acc_trees )
-    in
-    Node.IdMap.iter
-      (fun nid t -> L.(debug Analysis Medium) "@\n node %a = %a @\n" Node.pp_id nid pp t)
-      min_trees ;
-    min_trees
-end
-
 module ReportedOnNodes = AbstractDomain.FiniteSetOfPPSet (Node.IdSet)
 
 type extras_TransferFunctionsWCET =
@@ -1029,36 +776,10 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
     BoundMap.compute_upperbound_map node_cfg inferbo_invariant_map control_dep_invariant_map
       loop_inv_map
   in
-  let pp_extra, get_node_nb_exec =
+  let get_node_nb_exec =
     let equalities = ConstraintSolver.collect_constraints node_cfg in
-    match solver with
-    | `MinTree ->
-        let min_trees =
-          let constraints = StructuralConstraints.compute_structural_constraints node_cfg in
-          MinTree.compute_trees_from_contraints bound_map node_cfg equalities constraints
-        in
-        let trees_valuation =
-          Node.IdMap.fold
-            (fun nid t acc ->
-              let res = MinTree.evaluate_tree t in
-              L.(debug Analysis Medium)
-                "@\n   Tree %a eval to %a @\n" Node.pp_id nid BasicCost.pp res ;
-              Node.IdMap.add nid res acc )
-            min_trees Node.IdMap.empty
-        in
-        let pp_extra fmt = F.fprintf fmt "|Trees|=%i" (Node.IdMap.cardinal min_trees) in
-        let get_node_nb_exec node_id =
-          match Node.IdMap.find_opt node_id trees_valuation with
-          | Some t ->
-              t
-          | None ->
-              MinTree.find_tree_eq_rel node_id trees_valuation equalities
-        in
-        (pp_extra, get_node_nb_exec)
-    | `ConstraintSolver ->
-        let () = ConstraintSolver.compute_costs bound_map equalities in
-        let pp_extra _ = () in
-        (pp_extra, ConstraintSolver.get_node_nb_exec equalities)
+    let () = ConstraintSolver.compute_costs bound_map equalities in
+    ConstraintSolver.get_node_nb_exec equalities
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match
@@ -1068,13 +789,11 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
       ~debug:false ~initial:initWCET
   with
   | Some (exit_cost, _) ->
-      L.internal_error
-        "@\n\
-         [COST ANALYSIS] PROCESSING MIN_TREE for PROCEDURE '%a' |CFG| = %i %t FINAL COST = %a @\n"
+      L.internal_error "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"
         Typ.Procname.pp
         (Procdesc.get_proc_name proc_desc)
         (Container.length ~fold:NodeCFG.fold_nodes node_cfg)
-        pp_extra BasicCost.pp exit_cost ;
+        BasicCost.pp exit_cost ;
       check_and_report_top_and_bottom exit_cost proc_desc summary ;
       Payload.update_summary {post= exit_cost} summary
   | None ->
