@@ -342,8 +342,31 @@ module IssuesJson = struct
       err_log
 end
 
+type json_costs_printer_typ =
+  {loc: Location.t; proc_name: Typ.Procname.t; cost_opt: CostDomain.summary option}
+
+module JsonCostsPrinter = MakeJsonListPrinter (struct
+  type elt = json_costs_printer_typ
+
+  let to_string {loc; proc_name; cost_opt} =
+    match cost_opt with
+    | Some {post} ->
+        let cost_item =
+          { Jsonbug_t.loc=
+              { Jsonbug_t.file= SourceFile.to_string loc.Location.file
+              ; lnum= loc.Location.line
+              ; cnum= loc.Location.col
+              ; enum= -1 }
+          ; procedure_id= Typ.Procname.to_string proc_name
+          ; polynomial= CostDomain.BasicCost.encode post }
+        in
+        Some (Jsonbug_j.string_of_cost_item cost_item)
+    | None ->
+        None
+end)
+
 let pp_custom_of_report fmt report fields =
-  let pp_custom_of_issue fmt issue =
+  let pp_custom_of_issue fmt (issue: Jsonbug_t.jsonbug) =
     let open Jsonbug_t in
     let comma_separator index = if index > 0 then ", " else "" in
     let pp_trace fmt trace comma =
@@ -698,9 +721,11 @@ let error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Issues | Procs | Stats | Summary [@@deriving compare]
+type report_kind = Costs | Issues | Procs | Stats | Summary [@@deriving compare]
 
 let _string_of_report_kind = function
+  | Costs ->
+      "Costs"
   | Issues ->
       "Issues"
   | Procs ->
@@ -824,10 +849,31 @@ let pp_summary summary =
     summary
 
 
+let pp_costs_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
+  match format_kind with
+  | Json ->
+      let outf = get_outfile outfile_opt in
+      JsonCostsPrinter.pp outf.fmt
+  | Csv | Tests | Text | Logs ->
+      L.(die InternalError) "Printing costs in csv/tests/text/logs is not implemented"
+
+
+let pp_costs summary costs_format_list =
+  let pp format =
+    pp_costs_in_format format
+      { loc= Summary.get_loc summary
+      ; proc_name= Summary.get_proc_name summary
+      ; cost_opt= summary.Summary.payloads.Payloads.cost }
+  in
+  List.iter ~f:pp costs_format_list
+
+
 let pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
     issues_acc =
   let pp_summary_by_report_kind (report_kind, format_list) =
     match (report_kind, format_list) with
+    | Costs, _ ->
+        pp_costs summary format_list
     | Procs, _ :: _ ->
         pp_procs summary format_list
     | Stats, _ :: _ ->
@@ -976,10 +1022,17 @@ let init_files format_list_by_kind =
       | Csv, Stats ->
           let outfile = get_outfile outfile_opt in
           Report.pp_header outfile.fmt ()
+      | Json, Costs ->
+          let outfile = get_outfile outfile_opt in
+          JsonCostsPrinter.pp_open outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_open outfile.fmt ()
-      | Csv, Summary | Logs, Stats | Json, (Procs | Stats | Summary) | Tests, _ | Text, _ ->
+      | Csv, (Costs | Summary)
+      | Logs, (Costs | Stats)
+      | Json, (Procs | Stats | Summary)
+      | Tests, _
+      | Text, _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -996,11 +1049,14 @@ let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
       | Csv, Stats ->
           let outfile = get_outfile outfile_opt in
           F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
+      | Json, Costs ->
+          let outfile = get_outfile outfile_opt in
+          JsonCostsPrinter.pp_close outfile.fmt ()
       | Json, Issues ->
           let outfile = get_outfile outfile_opt in
           IssuesJson.pp_close outfile.fmt ()
-      | Csv, (Issues | Procs | Summary)
-      | Logs, Stats
+      | Csv, (Costs | Issues | Procs | Summary)
+      | Logs, (Costs | Stats)
       | Json, (Procs | Stats | Summary)
       | Tests, _
       | Text, _ ->
@@ -1046,10 +1102,19 @@ let register_perf_stats_report () =
 let main ~report_json =
   let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
-    [ (Issues, issue_formats)
-    ; (Procs, init_procs_format_list ())
-    ; (Stats, init_stats_format_list ())
-    ; (Summary, []) ]
+    let costs_report_format_kind =
+      match report_json with
+      | Some _ ->
+          let file = Config.(results_dir ^/ Config.costs_report_json) in
+          [(Costs, mk_format Json file)]
+      | None ->
+          []
+    in
+    costs_report_format_kind
+    @ [ (Issues, issue_formats)
+      ; (Procs, init_procs_format_list ())
+      ; (Stats, init_stats_format_list ())
+      ; (Summary, []) ]
   in
   register_perf_stats_report () ;
   init_files formats_by_report_kind ;

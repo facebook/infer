@@ -80,6 +80,8 @@ val classnames_dir_name : string
 
 val classpath : string option
 
+val costs_report_json : string
+
 val cpp_extra_include_dir : string
 
 val driver_stats_dir_name : string

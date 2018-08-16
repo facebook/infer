@@ -168,6 +168,8 @@ let clang_inner_destructor_prefix = "__infer_inner_destructor_"
 
 let classnames_dir_name = "classnames"
 
+let costs_report_json = "costs-report.json"
+
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
 let csl_analysis = true
 

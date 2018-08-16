@@ -54,6 +54,8 @@ module NonNegativePolynomial : sig
   val subst : astate -> Bound.t bottom_lifted SymbolMap.t -> astate
 
   val degree : astate -> int option
+
+  val encode : astate -> string
 end
 
 module ItvRange : sig

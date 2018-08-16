@@ -392,6 +392,9 @@ module NonNegativePolynomial = struct
 
   let degree p =
     match p with Top -> None | NonTop p -> Some (NonNegativeNonTopPolynomial.degree p)
+
+
+  let encode astate = Marshal.to_string astate [] |> B64.encode
 end
 
 module ItvRange = struct
