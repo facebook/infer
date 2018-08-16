@@ -719,28 +719,16 @@ let resolve_and_analyze tenv ~caller_pdesc ?(has_clang_model= false) prop args c
       let analyze specialized_pdesc = Ondemand.analyze_proc_desc ~caller_pdesc specialized_pdesc in
       let resolved_proc_desc_option =
         match Ondemand.get_proc_desc resolved_pname with
-        | Some resolved_proc_desc ->
-            Some resolved_proc_desc
+        | Some _ as resolved_proc_desc ->
+            resolved_proc_desc
         | None ->
-            let procdesc_opt =
-              (* If it is a model, we aim to get the procdesc stored in a summary rather than the
-                 (empty) procdesc stored in the caller's cfg. *)
-              if has_clang_model then
-                match Summary.get callee_proc_name with
-                | Some summary ->
-                    Some (Summary.get_proc_desc summary)
-                | None ->
-                    Ondemand.get_proc_desc callee_proc_name
-              else Ondemand.get_proc_desc callee_proc_name
-            in
-            Option.map
-              ~f:(fun callee_proc_desc ->
-                (* It is possible that the types of the arguments are not as precise as the type of the objects
-                  in the heap, so we should update them to get the best results. *)
+            let procdesc_opt = Ondemand.get_proc_desc callee_proc_name in
+            Option.map procdesc_opt ~f:(fun callee_proc_desc ->
+                (* It is possible that the types of the arguments are not as precise as the type of
+                   the objects in the heap, so we should update them to get the best results. *)
                 let resolved_args = resolve_args prop args in
                 Procdesc.specialize_types ~has_clang_model callee_proc_desc resolved_pname
                   resolved_args )
-              procdesc_opt
       in
       (resolved_proc_desc_option, Option.bind resolved_proc_desc_option ~f:analyze)
   in
@@ -1145,8 +1133,8 @@ let resolve_and_analyze_clang current_pdesc tenv prop_r n_actual_params callee_p
           n_actual_params callee_pname call_flags
       in
       (* It could be useful to specialize a model, but also it could cause a failure,
-       because we don't have the correct fields in the tenv.
-    In that case, default to the non-specialized spec for the model. *)
+         because we don't have the correct fields in the tenv.
+         In that case, default to the non-specialized spec for the model. *)
       let clang_model_specialized_failure =
         match resolve_and_analyze_result.resolved_summary_opt with
         | Some summary when has_clang_model ->

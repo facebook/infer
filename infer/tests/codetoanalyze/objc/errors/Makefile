@@ -23,24 +23,24 @@ SOURCES_DEFAULT = \
   field_superclass/B.m \
   memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSString_models_tests.m \
-	memory_leaks_benchmark/NSData_models_tests.m \
+  memory_leaks_benchmark/NSData_models_tests.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
-	memory_leaks_benchmark/CoreVideoExample.m \
-	memory_leaks_benchmark/RetainCycleLength3.m \
-	memory_leaks_benchmark/ReleasedInBlock.m \
+  memory_leaks_benchmark/CoreVideoExample.m \
+  memory_leaks_benchmark/RetainCycleLength3.m \
+  memory_leaks_benchmark/ReleasedInBlock.m \
   npe/dynamic_dispatch.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
   npe/Npe_with_equal_names.m \
   npe/block.m \
-	npe/ivar_blocks.m \
+  npe/ivar_blocks.m \
   npe/skip_method_with_nil_object.m \
-	npe/Nsstring_length_no_npe.m \
-	npe/No_null_from_array.m \
+  npe/Nsstring_length_no_npe.m \
+  npe/No_null_from_array.m \
   procdescs/MethodCall.m \
   property/main.c \
   resource_leaks/ResourceLeakExample.m \
-	resource_leaks/Dispatch_sources.m \
+  resource_leaks/Dispatch_sources.m \
   shared/block/block-it.m \
   shared/block/dispatch.m \
   shared/category_procdesc/EOCPerson.m \
@@ -49,15 +49,15 @@ SOURCES_DEFAULT = \
   shared/memory_leaks_benchmark/MemoryLeakExample.m \
   shared/memory_leaks_benchmark/RetainReleaseExample.m \
   shared/memory_leaks_benchmark/arc_methods.m \
-	shared/npe/Available_expr.m \
+  shared/npe/Available_expr.m \
   shared/npe/Nonnull_attribute_example.m \
   shared/property/GetterExample.m \
   shared/property/PropertyAttributes.m \
   shared/protocol_procdesc/Bicycle.m \
   shared/protocol_procdesc/main.c \
-	shared/annotations/nullable_annotations.m \
-	shared/annotations/nullable_annotations_fields.m \
-	shared/annotations/nonnull_annotations.m \
+  shared/annotations/nullable_annotations.m \
+  shared/annotations/nullable_annotations_fields.m \
+  shared/annotations/nonnull_annotations.m \
   taint/sources.m \
   taint/viewController.m \
 
@@ -79,7 +79,7 @@ SOURCES_BUCKET_ALL = \
   shared/block/block_no_args.m \
   shared/block/block_release.m \
   shared/block/dispatch_in_macro.m \
-	shared/block/Blocks_as_parameters.m \
+  shared/block/Blocks_as_parameters.m \
   shared/category_procdesc/main.c \
   shared/field_superclass/SuperExample.m \
   shared/npe/npe_malloc.m \
@@ -87,18 +87,18 @@ SOURCES_BUCKET_ALL = \
 
 SOURCES_ARC = \
   field_superclass/SubtypingExample.m \
-	blocks_in_heap/BlockInHeap.m \
+  blocks_in_heap/BlockInHeap.m \
   initialization/struct_initlistexpr.c \
-	memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
-	memory_leaks_benchmark/RetainCycleExampleWeak.m \
+  memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
+  memory_leaks_benchmark/RetainCycleExampleWeak.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/retain_cycle.m \
   memory_leaks_benchmark/retain_cycle2.m \
-	memory_leaks_benchmark/RetainCycleBlocks.m \
-	memory_leaks_benchmark/RetainCyclePropertyInProtocol.m \
-	memory_leaks_benchmark/RetainCycleBlockAsParameter.m \
-	memory_leaks_benchmark/RetainCycleBlockCapturedVar.m \
-	memory_leaks_benchmark/RetainCycleDeduplication.m \
+  memory_leaks_benchmark/RetainCycleBlocks.m \
+  memory_leaks_benchmark/RetainCyclePropertyInProtocol.m \
+  memory_leaks_benchmark/RetainCycleBlockAsParameter.m \
+  memory_leaks_benchmark/RetainCycleBlockCapturedVar.m \
+  memory_leaks_benchmark/RetainCycleDeduplication.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \
@@ -107,7 +107,7 @@ SOURCES_ARC = \
   npe/nil_in_dictionary_literal.m \
   npe/npe_conditional.m \
   npe/npe_self.m \
-	npe/Npe_self_annotation.m \
+  npe/Npe_self_annotation.m \
   npe/nullable.m \
   property/ExplicitIvarName.m \
   shared/block/dispatch_examples.m \
