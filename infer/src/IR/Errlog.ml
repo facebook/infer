@@ -60,7 +60,7 @@ let compute_local_exception_line loc_trace =
   List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
-type node_id_key = {node_id: int; node_key: NodeKey.t}
+type node_id_key = {node_id: int; node_key: Procdesc.NodeKey.t}
 
 type err_key =
   { severity: Exceptions.severity

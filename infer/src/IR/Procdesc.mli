@@ -8,6 +8,14 @@
 
 open! IStd
 
+module NodeKey : sig
+  type t
+
+  val to_string : t -> string
+
+  val of_frontend_node_key : string -> t
+end
+
 (** node of the control flow graph *)
 module Node : sig
   (** type of nodes *)

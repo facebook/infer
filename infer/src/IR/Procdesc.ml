@@ -11,6 +11,21 @@ module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
+module NodeKey = struct
+  type t = Caml.Digest.t
+
+  let to_string = Caml.Digest.to_hex
+
+  let compute node ~simple_key ~succs ~preds =
+    let v =
+      (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds)
+    in
+    Utils.better_hash v
+
+
+  let of_frontend_node_key = Utils.better_hash
+end
+
 (* =============== START of module Node =============== *)
 module Node = struct
   type id = int [@@deriving compare]

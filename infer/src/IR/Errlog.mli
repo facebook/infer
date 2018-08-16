@@ -34,7 +34,7 @@ val compute_local_exception_line : loc_trace -> int option
     This extra information adds value to the report itself, and may avoid
     digging into the trace to understand the cause of the report. *)
 
-type node_id_key = {node_id: int; node_key: NodeKey.t}
+type node_id_key = {node_id: int; node_key: Procdesc.NodeKey.t}
 
 type err_key = private
   { severity: Exceptions.severity

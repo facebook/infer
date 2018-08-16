@@ -456,7 +456,7 @@ let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
     | Stmt st ->
         CAst_utils.generate_key_stmt st
   in
-  let node_key = NodeKey.of_frontend_node_key key_str in
+  let node_key = Procdesc.NodeKey.of_frontend_node_key key_str in
   Reporting.log_issue_from_errlog procname issue_desc.severity errlog exn ~loc:issue_desc.loc
     ~ltr:trace ~node_id_key:{Errlog.node_id= 0; node_key} ~linters_def_file
     ~doc_url:issue_desc.doc_url
