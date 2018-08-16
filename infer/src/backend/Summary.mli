@@ -49,7 +49,8 @@ type t =
   ; sessions: int ref  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
   ; status: Status.t
-  ; proc_desc: Procdesc.t }
+  ; proc_desc: Procdesc.t
+  ; err_log: Errlog.t }
 
 val dummy : t
 (** dummy summary for testing *)

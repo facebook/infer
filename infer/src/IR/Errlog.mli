@@ -63,8 +63,6 @@ type t
 val empty : unit -> t
 (** Empty error log *)
 
-val is_empty : t -> bool
-
 (** type of the function to be passed to iter *)
 type iter_fun = err_key -> err_data -> unit
 

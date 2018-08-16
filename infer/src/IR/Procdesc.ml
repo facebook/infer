@@ -847,7 +847,6 @@ let specialize_types ?(has_clang_model= false) callee_pdesc resolved_pname args 
       formals= List.rev resolved_params
     ; proc_name= resolved_pname
     ; is_specialized= true
-    ; err_log= Errlog.empty ()
     ; translation_unit }
   in
   Attributes.store resolved_attributes ;
@@ -1004,7 +1003,6 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     { callee_attributes with
       proc_name= pname_with_block_args
     ; is_defined= true
-    ; err_log= Errlog.empty ()
     ; formals= new_formals_blocks_captured_vars
     ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots)
     ; translation_unit }

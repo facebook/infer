@@ -29,7 +29,6 @@ type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
   ; mutable did_preanalysis: bool  (** true if we performed preanalysis on the CFG for this proc *)
-  ; err_log: Errlog.t  (** Error log for the procedure *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)

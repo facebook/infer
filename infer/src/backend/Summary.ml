@@ -73,7 +73,12 @@ module Status = struct
 end
 
 type t =
-  {payloads: Payloads.t; sessions: int ref; stats: Stats.t; status: Status.t; proc_desc: Procdesc.t}
+  { payloads: Payloads.t
+  ; sessions: int ref
+  ; stats: Stats.t
+  ; status: Status.t
+  ; proc_desc: Procdesc.t
+  ; err_log: Errlog.t }
 
 let get_status summary = summary.status
 
@@ -87,7 +92,7 @@ let get_ret_type summary = (get_attributes summary).ProcAttributes.ret_type
 
 let get_formals summary = (get_attributes summary).ProcAttributes.formals
 
-let get_err_log summary = (get_attributes summary).ProcAttributes.err_log
+let get_err_log summary = summary.err_log
 
 let get_loc summary = (get_attributes summary).ProcAttributes.loc
 
@@ -239,7 +244,8 @@ let init_summary proc_desc =
     ; payloads= Payloads.empty
     ; stats= Stats.empty
     ; status= Status.Pending
-    ; proc_desc }
+    ; proc_desc
+    ; err_log= Errlog.empty () }
   in
   Typ.Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
   summary

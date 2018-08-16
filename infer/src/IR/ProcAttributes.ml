@@ -56,7 +56,6 @@ type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
   ; mutable did_preanalysis: bool  (** true if we performed preanalysis on the CFG for this proc *)
-  ; err_log: Errlog.t  (** Error log for the procedure *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
@@ -86,7 +85,6 @@ let default translation_unit proc_name =
   { access= PredSymb.Default
   ; captured= []
   ; did_preanalysis= false
-  ; err_log= Errlog.empty ()
   ; exceptions= []
   ; formals= []
   ; const_formals= []
@@ -121,7 +119,6 @@ let pp f
     ({ access
      ; captured
      ; did_preanalysis
-     ; err_log
      ; exceptions
      ; formals
      ; const_formals
@@ -157,8 +154,6 @@ let pp f
   if not ([%compare.equal : (Mangled.t * Typ.t) list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
   pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
-  if not (Errlog.is_empty err_log) then
-    F.fprintf f "; err_log= [@[%a%a@]]@," Errlog.pp_errors err_log Errlog.pp_warnings err_log ;
   if not ([%compare.equal : string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)

@@ -119,8 +119,6 @@ end
     error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
-let is_empty err_log = Int.equal 0 (ErrLogHash.length err_log)
-
 (** Empty error log *)
 let empty () = ErrLogHash.create 13
 
