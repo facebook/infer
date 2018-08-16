@@ -20,11 +20,11 @@ val log_issue_deprecated :
     DEPRECATED as it can create race conditions between checkers.
     Use log_error/warning instead *)
 
-val log_issue_from_errlog :
+val log_frontend_issue :
   Typ.Procname.t -> Exceptions.severity -> Errlog.t -> loc:Location.t
-  -> node_id_key:Errlog.node_id_key -> ltr:Errlog.loc_trace -> linters_def_file:string option
+  -> node_key:Procdesc.NodeKey.t -> ltr:Errlog.loc_trace -> linters_def_file:string option
   -> doc_url:string option -> exn -> unit
-(** Report an issue of a given kind  in the given error log. *)
+(** Report a frontend issue of a given kind in the given error log. *)
 
 val log_error : Summary.t -> loc:Location.t -> log_t
 (** Add an error to the given summary. *)

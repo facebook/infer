@@ -12,8 +12,8 @@ type log_t =
   ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string
   -> ?extras:Jsonbug_t.extra -> exn -> unit
 
-let log_issue_from_errlog_internal procname ~clang_method_kind severity err_log ~loc ~node_id_key
-    ~ltr ~linters_def_file ~doc_url ~access ~extras exn =
+let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node_id_key ~ltr
+    ~linters_def_file ~doc_url ~access ~extras exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let session = (State.get_session () :> int) in
@@ -21,10 +21,10 @@ let log_issue_from_errlog_internal procname ~clang_method_kind severity err_log 
       ~linters_def_file ~doc_url ~access ~extras exn
 
 
-let log_issue_from_errlog procname severity errlog ~loc ~node_id_key ~ltr ~linters_def_file
-    ~doc_url exn =
-  log_issue_from_errlog_internal procname ~clang_method_kind:None severity errlog ~loc ~node_id_key
-    ~ltr ~linters_def_file ~doc_url ~access:None ~extras:None exn
+let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr ~linters_def_file ~doc_url exn =
+  let node_id_key = {Errlog.node_id= 0; node_key} in
+  log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node_id_key ~ltr
+    ~linters_def_file ~doc_url ~access:None ~extras:None exn
 
 
 let log_issue_from_summary severity summary ~node_id_key ~loc ?ltr ?linters_def_file ?doc_url
@@ -48,8 +48,8 @@ let log_issue_from_summary severity summary ~node_id_key ~loc ?ltr ?linters_def_
     let err_log = Summary.get_err_log summary in
     let clang_method_kind = Some attrs.clang_method_kind in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    log_issue_from_errlog_internal procname ~clang_method_kind severity err_log ~loc ~node_id_key
-      ~ltr ~linters_def_file ~doc_url ~access ~extras exn
+    log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node_id_key ~ltr
+      ~linters_def_file ~doc_url ~access ~extras exn
 
 
 let log_issue_deprecated severity proc_name ?node_id_key ?loc ?ltr ?linters_def_file ?doc_url
@@ -83,8 +83,8 @@ let log_warning = log_issue_from_summary_simplified Exceptions.Warning
 let log_issue_external procname severity ~loc ~ltr ?access exn =
   let errlog = IssueLog.get_errlog procname in
   let node_id_key = State.get_node_id_key () in
-  log_issue_from_errlog_internal procname ~clang_method_kind:None severity errlog ~loc ~node_id_key
-    ~ltr ~linters_def_file:None ~doc_url:None ~access ~extras:None exn
+  log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node_id_key ~ltr
+    ~linters_def_file:None ~doc_url:None ~access ~extras:None exn
 
 
 let is_suppressed ?(field_name= None) tenv proc_desc kind =
