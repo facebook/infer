@@ -56,4 +56,12 @@ module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct
     F.fprintf fmt "reaching defs analysis %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
+(* initialize formal parameters to have start node as reaching def *)
+let init_reaching_defs_with_formals pdesc =
+  let start_node_defs = Defs.singleton (Procdesc.get_start_node pdesc) in
+  BufferOverrunSemantics.get_formals pdesc
+  |> List.fold_left ~init:ReachingDefsMap.empty ~f:(fun acc (pvar, _) ->
+         ReachingDefsMap.add (Var.of_pvar pvar) start_node_defs acc )
+
+
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctionsReachingDefs)

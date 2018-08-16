@@ -36,6 +36,8 @@ let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -
 
 let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_footprint id
 
+let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
+
 let get_all_vars_in_exp e =
   let acc = Exp.free_vars e |> Sequence.map ~f:of_id in
   Exp.program_vars e |> Sequence.map ~f:of_pvar |> Sequence.append acc

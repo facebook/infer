@@ -75,7 +75,7 @@ let get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes =
   let process_var_once var inv_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
-    if InvariantVars.mem var inv_vars then (inv_vars, false)
+    if InvariantVars.mem var inv_vars || Var.is_none var then (inv_vars, false)
     else
       let loop_head_id = Procdesc.Node.get_id loop_head in
       ReachingDefs.Analyzer.extract_post loop_head_id reaching_defs_invariant_map
@@ -87,12 +87,12 @@ let get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes =
                     if LoopNodes.is_empty in_loop_defs then (InvariantVars.add var inv_vars, true)
                     else if
                       (* its definition is unique and invariant *)
-                      is_def_unique_and_satisfy var in_loop_defs
+                      is_def_unique_and_satisfy var def_nodes
                         (is_exp_invariant inv_vars loop_nodes reaching_defs)
                     then (InvariantVars.add var inv_vars, true)
                     else (inv_vars, false) )
              |> Option.value (* if a var is not declared, it must be invariant *)
-                  ~default:(InvariantVars.add var inv_vars, true) )
+                  ~default:(inv_vars, false) )
       |> Option.value ~default:(inv_vars, false)
   in
   let vars_in_loop = get_vars_in_loop loop_nodes in
