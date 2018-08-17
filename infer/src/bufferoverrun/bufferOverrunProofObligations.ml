@@ -217,7 +217,7 @@ module ArrayAccessCondition = struct
   (* check buffer overrun and return its confidence *)
   let check : is_collection_add:bool -> t -> checked_condition =
    fun ~is_collection_add c ->
-    (* idx = [il, iu], size = [sl, su], 
+    (* idx = [il, iu], size = [sl, su],
        For arrays : we want to check that 0 <= idx < size
        For adding into arraylists: we want to check that 0 <= idx <= size *)
     let c' = set_size_pos c in
@@ -386,7 +386,7 @@ module ConditionTrace = struct
     match ct.cond_trace with
     | Inter (_, pname, _)
       when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
-        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string pname ^ "()")
+        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string pname)
     | _ ->
         ()
 
