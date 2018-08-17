@@ -13,7 +13,7 @@ OBJC_MODELS_DIR = objc/src
 OBJCPP_MODELS_DIR = objcpp/src
 
 MODELS_INFER_OUT = infer-out
-MODELS_INFER_OPTIONS = --biabduction-only --results-dir $(MODELS_INFER_OUT) --models-mode
+MODELS_INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(MODELS_INFER_OUT) --models-mode
 
 all:
 
