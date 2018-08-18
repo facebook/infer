@@ -341,15 +341,6 @@ end
 
 (* MkCallback *)
 
-(** Given an extension to the typestate with a check, call the check on each instruction. *)
-module Build (Extension : ExtensionT) : CallBackT = struct
-  module Callback = MkCallback (Extension)
-
-  let callback = Callback.callback
-end
-
-(* Build *)
-
 module EmptyExtension : ExtensionT = struct
   type extension = unit
 
@@ -365,7 +356,11 @@ module EmptyExtension : ExtensionT = struct
     {payloads with typestate= typestate_opt}
 end
 
-module Main = Build (EmptyExtension)
+module Main = struct
+  module Callback = MkCallback (EmptyExtension)
+
+  let callback = Callback.callback
+end
 
 (** Eradicate checker for Java @Nullable annotations. *)
 let callback_eradicate =
