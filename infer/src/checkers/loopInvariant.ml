@@ -8,6 +8,7 @@ open! IStd
 module L = Logging
 module InvariantVars = AbstractDomain.FiniteSet (Var)
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+module Models = InvariantModels
 
 (** Map loop header node -> all nodes in the loop *)
 module LoopHeadToLoopNodes = Procdesc.NodeMap
@@ -19,7 +20,8 @@ let is_defined_outside loop_nodes reaching_defs var =
 
 
 (* check if the def of var is unique and satisfies function f_exp *)
-let is_def_unique_and_satisfy var (loop_nodes: LoopNodes.t) f_exp =
+let is_def_unique_and_satisfy tenv var (loop_nodes: LoopNodes.t) f_exp =
+  let equals_var id = Var.equal var (Var.of_id id) in
   (* Use O(1) is_singleton check *)
   (* tedious parameter wrangling to make IContainer's fold interface happy *)
   IContainer.is_singleton
@@ -29,11 +31,22 @@ let is_def_unique_and_satisfy var (loop_nodes: LoopNodes.t) f_exp =
        (fun node ->
          Procdesc.Node.get_instrs node
          |> Instrs.exists ~f:(function
-              | Sil.Load (id, exp_rhs, _, _) when Var.equal (Var.of_id id) var && f_exp exp_rhs ->
+              | Sil.Load (id, exp_rhs, _, _) when equals_var id && f_exp exp_rhs ->
                   true
               | Sil.Store (exp_lhs, _, exp_rhs, _)
                 when Exp.equal exp_lhs (Var.to_exp var) && f_exp exp_rhs ->
-                  true (* function calls are ignored at the moment  *)
+                  true
+              | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _) when equals_var id -> (
+                match
+                  (* Take into account invariance behavior of modeled
+                    functions *)
+                  Models.Call.dispatch tenv callee_pname params
+                with
+                | Some inv ->
+                    InvariantModels.is_invariant inv
+                    && List.for_all ~f:(fun (exp, _) -> f_exp exp) params
+                | None ->
+                    Config.cost_invariant_by_default )
               | _ ->
                   false ) )
        loop_nodes
@@ -71,7 +84,7 @@ let get_vars_in_loop loop_nodes =
 (* A variable is invariant if
      - its reaching definition is outside of the loop
      - o.w. its definition is constant or invariant itself *)
-let get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes =
+let get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes =
   let process_var_once var inv_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
@@ -87,7 +100,7 @@ let get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes =
                     if LoopNodes.is_empty in_loop_defs then (InvariantVars.add var inv_vars, true)
                     else if
                       (* its definition is unique and invariant *)
-                      is_def_unique_and_satisfy var def_nodes
+                      is_def_unique_and_satisfy tenv var def_nodes
                         (is_exp_invariant inv_vars loop_nodes reaching_defs)
                     then (InvariantVars.add var inv_vars, true)
                     else (inv_vars, false) )
@@ -114,11 +127,11 @@ let get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes =
 (** Map loop head ->  invariant vars in loop  *)
 module LoopHeadToInvVars = Procdesc.NodeMap
 
-let get_loop_inv_var_map reaching_defs_invariant_map loop_head_to_loop_nodes =
+let get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes =
   LoopHeadToLoopNodes.fold
     (fun loop_head loop_nodes inv_map ->
       let inv_vars_in_loop =
-        get_inv_vars_in_loop reaching_defs_invariant_map loop_head loop_nodes
+        get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
       in
       L.(debug Analysis Medium)
         "@\n>>> loop head: %a --> inv vars: %a @\n" Procdesc.Node.pp loop_head InvariantVars.pp

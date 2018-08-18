@@ -287,6 +287,8 @@ val continue_capture : bool
 
 val cost : bool
 
+val cost_invariant_by_default : bool
+
 val crashcontext : bool
 
 val current_to_previous_script : string option

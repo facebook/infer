@@ -959,6 +959,11 @@ and continue =
      a procedure was changed beforehand, keep the changed marking.)"
 
 
+and cost_invariant_by_default =
+  CLOpt.mk_bool ~long:"invariant-by-default" ~default:false
+    "[Cost]Consider functions to be invariant by default"
+
+
 and current_to_previous_script =
   CLOpt.mk_string_opt ~long:"current-to-previous-script"
     ~in_help:InferCommand.[(Diff, manual_generic)]
@@ -2522,6 +2527,8 @@ and compute_analytics = !compute_analytics
 and continue_capture = !continue
 
 and cost = !cost
+
+and cost_invariant_by_default = !cost_invariant_by_default
 
 and current_to_previous_script = !current_to_previous_script
 

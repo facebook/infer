@@ -4,6 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import java.util.List;
+
 class Invariant {
 
   // x is invariant
@@ -48,15 +50,18 @@ class Invariant {
     }
   }
 
-
   // m will be invariant
-  void do_while_invariant(int m, int k){
+  void do_while_invariant(int m, int k) {
     int i = 0;
-    do{
+    do {
       m = k;
       i++;
-    }
-    while (i < m);
+    } while (i < m);
   }
 
+  // before, we were getting items.size()^2 since all functions were
+  // assumed to be impure
+  void list_size_invariant(List<?> items) {
+    for (int i = 0; i < items.size(); i++) {}
+  }
 }

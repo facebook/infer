@@ -770,7 +770,7 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
-    LoopInvariant.get_loop_inv_var_map reaching_defs_invariant_map loop_head_to_loop_nodes
+    LoopInvariant.get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_nodes
   in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
   let bound_map =
