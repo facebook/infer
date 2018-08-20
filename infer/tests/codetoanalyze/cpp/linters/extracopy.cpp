@@ -44,3 +44,13 @@ void test_map() {
     std::cout << p.first << "->" << p.second << std::endl;
   }
 }
+
+int helper_ce(int x) { return 2 * x; }
+
+int test_const_exp(int x) {
+  int i = helper_ce(x); // notconst exp
+  int j = helper_ce(2); // not const exp
+  int k = 2 * 3; // const exp
+  int y = x + x; // not const exp
+  return 0;
+}

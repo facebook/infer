@@ -46,3 +46,15 @@ DEFINE-CHECKER ITERATOR = {
   SET mode = "ON";
 
 };
+
+DEFINE-CHECKER CXX11_CONSTANT_EXPR = {
+
+  SET report_when =
+    WHEN
+       is_init_expr_cxx11_constant()
+    HOLDS-IN-NODE VarDecl;
+
+  SET message = "Found cxx11 constant expression";
+  SET mode = "ON";
+
+};

@@ -1303,3 +1303,12 @@ let is_cxx_copy_constructor an =
       xcei.xcei_is_copy_constructor
   | _ ->
       false
+
+
+let is_init_expr_cxx11_constant an =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Decl (VarDecl (_, _, _, vdi)) ->
+      vdi.vdi_is_init_expr_cxx11_constant
+  | _ ->
+      false

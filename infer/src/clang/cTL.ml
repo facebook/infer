@@ -1142,6 +1142,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_method_called_by_superclass an
   | "is_cxx_copy_constructor", [], an ->
       CPredicates.is_cxx_copy_constructor an
+  | "is_init_expr_cxx11_constant", [], an ->
+      CPredicates.is_init_expr_cxx11_constant an
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
