@@ -711,13 +711,6 @@ module Models = struct
     is_call_of_class ~actuals_pred ["android.os.IBinder"] "transact" |> Staged.unstage
 
 
-  (** is it a call to android.view.View.getWindowVisibleDisplayFrame? *)
-  let is_getWindowVisibleDisplayFrame =
-    is_call_of_class ~search_superclasses:false ["android.view.View"]
-      "getWindowVisibleDisplayFrame"
-    |> Staged.unstage
-
-
   (** is it a call to Future.get()? *)
   let is_future_get =
     is_call_of_class ~search_superclasses:false ~actuals_pred:empty_or_excessive_timeout
@@ -747,7 +740,6 @@ module Models = struct
       ; (is_countdownlatch_await, High)
       ; (is_thread_sleep, High)
       ; (is_object_wait, High)
-      ; (is_getWindowVisibleDisplayFrame, Medium)
       ; (is_asyncTask_get, Low)
       ; (is_future_get, Low) ]
     in
