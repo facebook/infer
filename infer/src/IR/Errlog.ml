@@ -61,6 +61,7 @@ let compute_local_exception_line loc_trace =
 
 
 type node =
+  | UnknownNode
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
   | BackendNode of {node: Procdesc.Node.t}
 
@@ -264,6 +265,8 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
     let added =
       let node_id, node_key =
         match node with
+        | UnknownNode ->
+            (0, Procdesc.NodeKey.dummy)
         | FrontendNode {node_key} ->
             (0, node_key)
         | BackendNode {node} ->

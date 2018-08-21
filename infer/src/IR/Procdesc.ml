@@ -24,6 +24,8 @@ module NodeKey = struct
 
 
   let of_frontend_node_key = Utils.better_hash
+
+  let dummy = Utils.better_hash "DUMMY"
 end
 
 (* =============== START of module Node =============== *)

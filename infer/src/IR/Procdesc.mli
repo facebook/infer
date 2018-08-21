@@ -11,6 +11,8 @@ open! IStd
 module NodeKey : sig
   type t
 
+  val dummy : t
+
   val to_string : t -> string
 
   val of_frontend_node_key : string -> t

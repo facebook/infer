@@ -33,7 +33,7 @@ val log_warning : Summary.t -> loc:Location.t -> log_t
 
 val log_issue_external :
   Typ.Procname.t -> Exceptions.severity -> loc:Location.t -> ltr:Errlog.loc_trace -> ?access:string
-  -> exn -> unit
+  -> IssueType.t -> string -> unit
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
 
 val is_suppressed :

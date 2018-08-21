@@ -914,8 +914,9 @@ let is_contaminated access wobbly_paths =
       false
 
 
-let log_issue current_pname ~loc ~ltr ~access exn =
-  Reporting.log_issue_external current_pname Exceptions.Error ~loc ~ltr ~access exn
+let log_issue current_pname ~loc ~ltr ~access issue_type error_message =
+  Reporting.log_issue_external current_pname Exceptions.Error ~loc ~ltr ~access issue_type
+    error_message
 
 
 let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread
@@ -939,10 +940,9 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
         (* why we are reporting it *)
         let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
         let error_message = F.sprintf "%s%s" description explanation in
-        let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message) in
         let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
         let access = IssueAuxData.encode (pname, access, end_locs) in
-        log_issue pname ~loc ~ltr ~access exn
+        log_issue pname ~loc ~ltr ~access issue_type error_message
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)

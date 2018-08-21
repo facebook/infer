@@ -79,9 +79,10 @@ let log_error = log_issue_from_summary_simplified Exceptions.Error
 
 let log_warning = log_issue_from_summary_simplified Exceptions.Warning
 
-let log_issue_external procname severity ~loc ~ltr ?access exn =
+let log_issue_external procname severity ~loc ~ltr ?access issue_type error_message =
+  let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message) in
   let errlog = IssueLog.get_errlog procname in
-  let node = Errlog.BackendNode {node= State.get_node ()} in
+  let node = Errlog.UnknownNode in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~ltr
     ~linters_def_file:None ~doc_url:None ~access ~extras:None exn
 

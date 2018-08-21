@@ -35,6 +35,7 @@ val compute_local_exception_line : loc_trace -> int option
     digging into the trace to understand the cause of the report. *)
 
 type node =
+  | UnknownNode
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
   | BackendNode of {node: Procdesc.Node.t}
 
