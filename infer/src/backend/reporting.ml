@@ -22,7 +22,7 @@ let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~nod
 
 
 let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr ~linters_def_file ~doc_url exn =
-  let node_id_key = {Errlog.node_id= 0; node_key} in
+  let node_id_key = Errlog.FrontendNode {node_key} in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node_id_key ~ltr
     ~linters_def_file ~doc_url ~access:None ~extras:None exn
 

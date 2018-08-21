@@ -60,7 +60,9 @@ let compute_local_exception_line loc_trace =
   List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
-type node_id_key = {node_id: int; node_key: Procdesc.NodeKey.t}
+type node_id_key =
+  | FrontendNode of {node_key: Procdesc.NodeKey.t}
+  | BackendNode of {node_id: Procdesc.Node.id; node_key: Procdesc.NodeKey.t}
 
 type err_key =
   { severity: Exceptions.severity
@@ -171,8 +173,15 @@ let pp_warnings fmt (errlog: t) =
 let pp_html source path_to_root fmt (errlog: t) =
   let pp_eds fmt err_datas =
     let pp_nodeid_session_loc fmt err_data =
+      let node_id =
+        match err_data.node_id_key with
+        | FrontendNode _ ->
+            0
+        | BackendNode {node_id} ->
+            (node_id :> int)
+      in
       Io_infer.Html.pp_session_link source path_to_root fmt
-        (err_data.node_id_key.node_id, err_data.session, err_data.loc.Location.line)
+        (node_id, err_data.session, err_data.loc.Location.line)
     in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) err_datas
   in

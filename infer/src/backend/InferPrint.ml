@@ -301,6 +301,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         | _ ->
             Typ.Procname.to_string proc_name
       in
+      let node_key =
+        match err_data.node_id_key with
+        | FrontendNode {node_key} | BackendNode {node_key} ->
+            Procdesc.NodeKey.to_string node_key
+      in
       let bug =
         { Jsonbug_j.bug_class= Exceptions.err_class_string err_data.err_class
         ; kind= severity
@@ -315,7 +320,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
-        ; node_key= err_data.node_id_key.node_key |> Procdesc.NodeKey.to_string
+        ; node_key
         ; key= compute_key bug_type proc_name file
         ; hash= compute_hash severity bug_type proc_name file qualifier
         ; dotty= error_desc_to_dotty_string err_key.err_desc

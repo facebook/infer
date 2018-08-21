@@ -165,8 +165,8 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
 let get_node_id () = Procdesc.Node.get_id !gs.last_node
 
 let get_node_id_key () =
-  { Errlog.node_id= (Procdesc.Node.get_id !gs.last_node :> int)
-  ; node_key= Procdesc.Node.compute_key !gs.last_node }
+  Errlog.BackendNode
+    {node_id= Procdesc.Node.get_id !gs.last_node; node_key= Procdesc.Node.compute_key !gs.last_node}
 
 
 let get_inst_update pos =
