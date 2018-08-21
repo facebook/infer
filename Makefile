@@ -624,7 +624,10 @@ opam.lock: opam
 	  echo "ERROR: This is because opam.lock is generated from the HEAD commit." 1>&2; \
 	  exit 1; \
 	fi
+# allow users to not force a run of opam update since it's very slow
+ifeq ($(NO_OPAM_UPDATE),)
 	$(QUIET)$(call silent_on_success,opam update,$(OPAM) update)
+endif
 	$(QUIET)$(call silent_on_success,installing dependencies $(INFER_PKG_OPAMLOCK) opam package,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
 	  $(OPAM) pin add --yes --no-action -k git $(INFER_PKG_OPAMLOCK) .#HEAD; \
