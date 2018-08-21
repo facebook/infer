@@ -45,6 +45,3 @@ color:
   # or 'dark'
   primary-overlay: "dark"
   secondary-overlay: "light"
-
-plugins:
-  - jekyll-redirect-from

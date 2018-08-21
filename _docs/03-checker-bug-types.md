@@ -3,7 +3,6 @@ docid: checkers-bug-types
 title: Checkers bug types
 layout: docs
 permalink: /docs/checkers-bug-types.html
-redirect_from: /docs/infer-bug-types.html
 ---
 
 Here is an overview of the types of bugs currently reported by Infer checkers.
