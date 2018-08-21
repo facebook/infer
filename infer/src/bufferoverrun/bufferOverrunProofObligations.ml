@@ -82,7 +82,7 @@ module AllocSizeCondition = struct
         | cmp_big ->
             let propagate =
               match (cmp_mone, cmp_big) with
-              | `NotComparable, _ | _, `NotComparable ->
+              | (`NotComparable | `LeftSubsumesRight), _ | _, (`NotComparable | `LeftSubsumesRight) ->
                   true
               | _ ->
                   false

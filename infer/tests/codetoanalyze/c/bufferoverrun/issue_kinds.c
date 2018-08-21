@@ -5,6 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+int zero_or_ten(int ten) {
+  if (ten) {
+    return 10;
+  } else {
+    return 0;
+  }
+}
+
+int zero_to_infty() {
+  int r = 0;
+  for (int i = 0; i < zero_or_ten(0); i++) {
+    r++;
+  }
+  return r;
+}
+
 void l1_concrete_overrun_Bad() {
   int a[10];
   a[10] = 0;
@@ -26,14 +42,6 @@ void l1_symbolic_underrun_Bad(int i) {
   int a[10];
   if (i < 0) {
     a[i] = 0;
-  }
-}
-
-int zero_or_ten(int ten) {
-  if (ten) {
-    return 10;
-  } else {
-    return 0;
   }
 }
 
@@ -157,6 +165,17 @@ void alloc_may_be_big_Good_FP() {
   malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1);
 }
 
+/*
+  When the upper bound is infinity and the lower bound unknown,
+  we don't report but still propagate the error.
+*/
+void alloc_may_be_big2_Silenced(int n) { malloc(n + zero_to_infty()); }
+
+// Now that we have a lower bound, we can report it
+void call_to_alloc_may_be_big2_is_big_Bad() {
+  alloc_may_be_big2_Silenced(100 * 1000 * 1000);
+}
+
 void l1_unknown_function_Bad() {
   int a[5];
   int idx = unknown_function() * 10;
@@ -165,14 +184,6 @@ void l1_unknown_function_Bad() {
       a[idx] = 0;
     }
   }
-}
-
-int zero_to_infty() {
-  int r = 0;
-  for (int i = 0; i < zero_or_ten(0); i++) {
-    r++;
-  }
-  return r;
 }
 
 /* Inferbo raises U5 alarm because
