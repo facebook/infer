@@ -50,5 +50,5 @@ codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Bad, 3, BUFFER_OVERRUN
 codetoanalyze/cpp/bufferoverrun/vector.cpp, precise_subst_Good_FP, 3, BUFFER_OVERRUN_L3, no_bucket, ERROR, [ArrayDeclaration,Call,Parameter: init,Assignment,Call,Assignment,Call,Call,Assignment,Return,ArrayAccess: Offset: [-1, 0] Size: 10 by call to `access_minus_one` ]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, push_back_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,Call,Assignment,Call,Assignment,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: 1 Size: 1]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, reserve_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,Call,Assignment,Call,Call,Call,ArrayDeclaration,Assignment,Parameter: index,ArrayAccess: Offset: 0 Size: 0]
-codetoanalyze/cpp/bufferoverrun/vector.cpp, reserve_Bad, 3, INFERBO_ALLOC_IS_ZERO, no_bucket, ERROR, [Call,Call,Assignment,Call,Call,Call]
+codetoanalyze/cpp/bufferoverrun/vector.cpp, reserve_Bad, 3, INFERBO_ALLOC_IS_ZERO, no_bucket, ERROR, [Call,Call,Assignment,Call,Call,Call,Alloc: Length: 0]
 codetoanalyze/cpp/bufferoverrun/vector.cpp, safe_access3_Good, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []

@@ -11,6 +11,7 @@ module F = Format
 
 module BoTrace = struct
   type elem =
+    | Alloc of Location.t
     | ArrAccess of Location.t
     | ArrDecl of Location.t
     | Assign of Location.t
@@ -33,6 +34,8 @@ module BoTrace = struct
   let pp_elem : F.formatter -> elem -> unit =
    fun fmt elem ->
     match elem with
+    | Alloc location ->
+        F.fprintf fmt "Alloc (%a)" Location.pp_file_pos location
     | ArrAccess location ->
         F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos location
     | ArrDecl location ->

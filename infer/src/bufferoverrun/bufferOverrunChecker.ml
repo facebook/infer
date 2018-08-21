@@ -555,6 +555,9 @@ module Report = struct
    fun trace issue_desc ->
     let f elem (trace, depth) =
       match elem with
+      | Trace.Alloc location ->
+          let desc = "Alloc: " ^ issue_desc in
+          (Errlog.make_trace_element depth location desc [] :: trace, depth)
       | Trace.ArrAccess location ->
           let desc = "ArrayAccess: " ^ issue_desc in
           (Errlog.make_trace_element depth location desc [] :: trace, depth)

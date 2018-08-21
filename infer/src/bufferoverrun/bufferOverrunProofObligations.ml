@@ -24,7 +24,7 @@ module AllocSizeCondition = struct
 
   let pp fmt length = F.fprintf fmt "alloc(%a)" ItvPure.pp length
 
-  let pp_description fmt length = F.fprintf fmt "Alloc: %a" ItvPure.pp length
+  let pp_description fmt length = F.fprintf fmt "Length: %a" ItvPure.pp length
 
   let make ~length = if ItvPure.is_invalid length then None else Some length
 

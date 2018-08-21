@@ -73,7 +73,10 @@ let check_alloc_size size_exp {pname; location} mem cond_set =
   | Bottom ->
       cond_set
   | NonBottom length ->
-      let traces = Dom.Val.get_traces v_length in
+      let alloc_trace_elem = BufferOverrunTrace.Alloc location in
+      let traces =
+        Dom.Val.get_traces v_length |> BufferOverrunTrace.Set.add_elem alloc_trace_elem
+      in
       PO.ConditionSet.add_alloc_size pname location ~length traces cond_set
 
 
@@ -303,7 +306,7 @@ module StdArray = struct
     {declare_local; declare_symbolic}
 end
 
-(* Java's Collections are represented by their size. We don't care about the elements. 
+(* Java's Collections are represented by their size. We don't care about the elements.
 - when they are constructed, we set the size to 0
 - each time we add an element, we increase the length of the array
 - each time we delete an element, we decrease the length of the array *)
