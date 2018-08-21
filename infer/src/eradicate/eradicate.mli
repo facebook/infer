@@ -21,9 +21,5 @@ end
 
 (** Extension to the type checker. *)
 module type ExtensionT = sig
-  type extension
-
-  val ext : extension TypeState.ext
-
-  val update_payloads : extension TypeState.t option -> Payloads.t -> Payloads.t
+  val update_payloads : TypeState.t option -> Payloads.t -> Payloads.t
 end

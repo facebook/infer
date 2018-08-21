@@ -204,7 +204,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 
 
 (** Typecheck an instruction. *)
-let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv curr_pname curr_pdesc
+let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pname curr_pdesc
     find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
   (* let print_current_state () = *)
   (*   L.stdout "Current Typestate in node %a@\n%a@." *)
@@ -826,28 +826,18 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv cur
             if checks.eradicate then
               EradicateChecks.check_call_parameters tenv find_canonical_duplicate curr_pdesc node
                 callee_attributes resolved_params loc instr_ref ;
-            let typestate2 =
-              if checks.check_extension then
-                let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in
-                let extension = TypeState.get_extension typestate1 in
-                let extension' =
-                  ext.TypeState.check_instr tenv curr_pname curr_pdesc extension instr etl'
-                in
-                TypeState.set_extension typestate1 extension'
-              else typestate1
-            in
             if Models.is_check_not_null callee_pname then
               if Typ.Procname.Java.is_vararg callee_pname_java then
                 let last_parameter = List.length call_params in
-                do_preconditions_check_not_null last_parameter ~is_vararg:true typestate2
+                do_preconditions_check_not_null last_parameter ~is_vararg:true typestate1
               else
                 do_preconditions_check_not_null
                   (Models.get_check_not_null_parameter callee_pname)
-                  ~is_vararg:false typestate2
+                  ~is_vararg:false typestate1
             else if Models.is_check_state callee_pname || Models.is_check_argument callee_pname
-            then do_preconditions_check_state typestate2
-            else if Models.is_mapPut callee_pname then do_map_put typestate2
-            else typestate2 )
+            then do_preconditions_check_state typestate1
+            else if Models.is_mapPut callee_pname then do_map_put typestate1
+            else typestate1 )
           else typestate1
         in
         (typestate_after_call, resolved_ret)
@@ -856,7 +846,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv cur
   | Sil.Call _ ->
       typestate
   | Sil.Prune (cond, loc, true_branch, _) ->
-      let rec check_condition node' c : _ TypeState.t =
+      let rec check_condition node' c : TypeState.t =
         (* check if the expression is coming from a call, and return the argument *)
         let from_call filter_callee e : Exp.t option =
           match e with
@@ -1068,7 +1058,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv cur
 
 
 (** Typecheck the instructions in a cfg node. *)
-let typecheck_node tenv ext calls_this checks idenv curr_pname curr_pdesc find_canonical_duplicate
+let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canonical_duplicate
     annotated_signature typestate node linereader =
   let instrs = Procdesc.Node.get_instrs node in
   let instr_ref_gen = TypeErr.InstrRef.create_generator node in
@@ -1099,13 +1089,13 @@ let typecheck_node tenv ext calls_this checks idenv curr_pname curr_pdesc find_c
         ()
   in
   let canonical_node = find_canonical_duplicate node in
-  let do_instruction ext typestate instr =
+  let do_instruction typestate instr =
     let instr_ref =
       (* keep unique instruction reference per-node *)
       TypeErr.InstrRef.gen instr_ref_gen
     in
     let instr' =
-      typecheck_instr tenv ext calls_this checks node idenv curr_pname curr_pdesc
+      typecheck_instr tenv calls_this checks node idenv curr_pname curr_pdesc
         find_canonical_duplicate annotated_signature instr_ref linereader typestate instr
     in
     handle_exceptions typestate instr ; instr'
@@ -1113,7 +1103,7 @@ let typecheck_node tenv ext calls_this checks idenv curr_pname curr_pdesc find_c
   (* Reset 'always' field for forall errors to false. *)
   (* This is used to track if it is set to true for all visit to the node. *)
   TypeErr.node_reset_forall canonical_node ;
-  let typestate_succ = Instrs.fold ~f:(do_instruction ext) ~init:typestate instrs in
+  let typestate_succ = Instrs.fold ~f:do_instruction ~init:typestate instrs in
   let dont_propagate =
     Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind
     (* don't propagate exceptions *)

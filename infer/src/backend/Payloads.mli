@@ -18,7 +18,7 @@ type t =
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
-  ; typestate: unit TypeState.t option
+  ; typestate: TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option }

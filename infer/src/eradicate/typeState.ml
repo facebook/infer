@@ -11,21 +11,6 @@ module F = Format
 
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
-(** Parameters of a call. *)
-type parameters = (Exp.t * Typ.t) list
-
-(** Extension to a typestate with values of type 'a. *)
-type 'a ext =
-  { empty: 'a  (** empty extension *)
-  ; check_instr: Tenv.t -> Typ.Procname.t -> Procdesc.t -> 'a -> Sil.instr -> parameters -> 'a
-        (** check the extension for an instruction *)
-  ; join: 'a -> 'a -> 'a  (** join two extensions *)
-  ; pp: Format.formatter -> 'a -> unit  (** pretty print an extension *) }
-
-let unit_ext : unit ext =
-  {empty= (); check_instr= (fun _ _ _ () _ _ -> ()); join= (fun () () -> ()); pp= (fun _ () -> ())}
-
-
 module M = Caml.Map.Make (struct
   type t = Exp.t
 
@@ -34,16 +19,13 @@ end)
 
 type range = Typ.t * TypeAnnotation.t * Location.t list [@@deriving compare]
 
-type 'a t = {map: range M.t; extension: 'a} [@@deriving compare]
+type t = range M.t [@@deriving compare]
 
-(* Ignore the extension field, which is a pure instrumentation *)
-let compare t1 t2 = compare (fun _ _ -> 0) t1 t2
+let equal = [%compare.equal : t]
 
-let equal t1 t2 = Int.equal (compare t1 t2) 0
+let empty = M.empty
 
-let empty ext = {map= M.empty; extension= ext.empty}
-
-let pp ext fmt typestate =
+let pp fmt typestate =
   let pp_loc fmt loc = F.pp_print_int fmt loc.Location.line in
   let pp_locs fmt locs = F.fprintf fmt " [%a]" (Pp.seq pp_loc) locs in
   let pp_one exp (typ, ta, locs) =
@@ -52,7 +34,7 @@ let pp ext fmt typestate =
       (TypeAnnotation.to_string ta) (Typ.pp_full Pp.text) typ pp_locs locs
   in
   let pp_map map = M.iter pp_one map in
-  pp_map typestate.map ; ext.pp fmt typestate.extension
+  pp_map typestate
 
 
 let type_join typ1 typ2 = if PatternMatch.type_is_object typ1 then typ2 else typ1
@@ -105,36 +87,20 @@ let map_join m1 m2 =
   if phys_equal m1 m2 then m1 else ( M.iter extend_lhs m2 ; M.iter missing_rhs m1 ; !tjoined )
 
 
-let join ext t1 t2 =
-  let tjoin = {map= map_join t1.map t2.map; extension= ext.join t1.extension t2.extension} in
+let join t1 t2 =
+  let tjoin = map_join t1 t2 in
   ( if Config.write_html then
-      let s =
-        F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." (pp ext) t1 (pp ext) t2 (pp ext)
-          tjoin
-      in
+      let s = F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." pp t1 pp t2 pp tjoin in
       L.d_strln s ) ;
   tjoin
 
 
-let lookup_id id typestate = M.find_opt (Exp.Var id) typestate.map
+let lookup_id id typestate = M.find_opt (Exp.Var id) typestate
 
-let lookup_pvar pvar typestate = M.find_opt (Exp.Lvar pvar) typestate.map
+let lookup_pvar pvar typestate = M.find_opt (Exp.Lvar pvar) typestate
 
-let add_id id range typestate =
-  let map' = M.add (Exp.Var id) range typestate.map in
-  if phys_equal map' typestate.map then typestate else {typestate with map= map'}
+let add_id id range typestate = M.add (Exp.Var id) range typestate
 
+let add pvar range typestate = M.add (Exp.Lvar pvar) range typestate
 
-let add pvar range typestate =
-  let map' = M.add (Exp.Lvar pvar) range typestate.map in
-  if phys_equal map' typestate.map then typestate else {typestate with map= map'}
-
-
-let remove_id id typestate =
-  let map' = M.remove (Exp.Var id) typestate.map in
-  if phys_equal map' typestate.map then typestate else {typestate with map= map'}
-
-
-let get_extension typestate = typestate.extension
-
-let set_extension typestate extension = {typestate with extension}
+let remove_id id typestate = M.remove (Exp.Var id) typestate

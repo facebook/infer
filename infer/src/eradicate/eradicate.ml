@@ -27,17 +27,13 @@ end
 
 (** Extension to the type checker. *)
 module type ExtensionT = sig
-  type extension
-
-  val ext : extension TypeState.ext
-
-  val update_payloads : extension TypeState.t option -> Payloads.t -> Payloads.t
+  val update_payloads : TypeState.t option -> Payloads.t -> Payloads.t
 end
 
 (** Create a module with the toplevel callback. *)
 module MkCallback (Extension : ExtensionT) : CallBackT = struct
   let callback1 tenv find_canonical_duplicate calls_this checks idenv curr_pname curr_pdesc
-      annotated_signature linereader proc_loc : bool * Extension.extension TypeState.t option =
+      annotated_signature linereader proc_loc : bool * TypeState.t option =
     let mk s = Pvar.mk s curr_pname in
     let add_formal typestate (s, ia, typ) =
       let pvar = mk s in
@@ -48,7 +44,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       TypeState.add pvar (typ, ta, []) typestate
     in
     let get_initial_typestate () =
-      let typestate_empty = TypeState.empty Extension.ext in
+      let typestate_empty = TypeState.empty in
       List.fold ~f:add_formal ~init:typestate_empty annotated_signature.AnnotatedSignature.params
     in
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
@@ -74,18 +70,18 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     in
     let do_before_dataflow initial_typestate =
       if Config.eradicate_verbose then
-        L.result "Initial Typestate@\n%a@." (TypeState.pp Extension.ext) initial_typestate
+        L.result "Initial Typestate@\n%a@." TypeState.pp initial_typestate
     in
     let do_after_dataflow find_canonical_duplicate final_typestate =
       let exit_node = Procdesc.get_exit_node curr_pdesc in
       check_return find_canonical_duplicate exit_node final_typestate annotated_signature proc_loc
     in
     let module DFTypeCheck = MakeDF (struct
-      type t = Extension.extension TypeState.t
+      type t = TypeState.t
 
       let equal = TypeState.equal
 
-      let join = TypeState.join Extension.ext
+      let join = TypeState.join
 
       let pp_name fmt = F.pp_print_string fmt "eradicate"
 
@@ -93,11 +89,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         NodePrinter.start_session ~pp_name node ;
         State.set_node node ;
         let typestates_succ, typestates_exn =
-          TypeCheck.typecheck_node tenv Extension.ext calls_this checks idenv curr_pname curr_pdesc
+          TypeCheck.typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc
             find_canonical_duplicate annotated_signature typestate node linereader
         in
         if Config.write_html then (
-          let d_typestate ts = L.d_strln (F.asprintf "%a" (TypeState.pp Extension.ext) ts) in
+          let d_typestate ts = L.d_strln (F.asprintf "%a" TypeState.pp ts) in
           L.d_strln "before:" ;
           d_typestate typestate ;
           L.d_strln "after:" ;
@@ -291,8 +287,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
             curr_pdesc start_node Initializers.final_initializer_typestates_lazy
             Initializers.final_constructor_typestates_lazy proc_loc ;
-        if Config.eradicate_verbose then
-          L.result "Final Typestate@\n%a@." (TypeState.pp Extension.ext) typestate
+        if Config.eradicate_verbose then L.result "Final Typestate@\n%a@." TypeState.pp typestate
       in
       match typestate_opt with None -> () | Some typestate -> do_typestate typestate
     in
@@ -342,16 +337,6 @@ end
 (* MkCallback *)
 
 module EmptyExtension : ExtensionT = struct
-  type extension = unit
-
-  let ext =
-    let empty = () in
-    let check_instr _ _ _ ext _ _ = ext in
-    let join () () = () in
-    let pp _ () = () in
-    {TypeState.empty; check_instr; join; pp}
-
-
   let update_payloads typestate_opt (payloads: Payloads.t) =
     {payloads with typestate= typestate_opt}
 end

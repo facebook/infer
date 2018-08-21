@@ -18,7 +18,7 @@ type t =
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
-  ; typestate: unit TypeState.t option
+  ; typestate: TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option }
@@ -44,9 +44,7 @@ let pp pe fmt
   in
   F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
-    biabduction
-    (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
-    typestate
+    biabduction (pp_opt "TypeState" TypeState.pp) typestate
     (pp_opt "CrashContext" Crashcontext.pp_stacktree)
     crashcontext_frame
     (pp_opt "Quandary" QuandarySummary.pp)
