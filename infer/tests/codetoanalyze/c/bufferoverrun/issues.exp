@@ -35,6 +35,7 @@ codetoanalyze/c/bufferoverrun/issue_kinds.c, alloc_may_be_big_Good_FP, 1, INFERB
 codetoanalyze/c/bufferoverrun/issue_kinds.c, alloc_may_be_negative_Bad, 0, INFERBO_ALLOC_MAY_BE_NEGATIVE, no_bucket, ERROR, [Call,Assignment,Return,Alloc: Length: [-5, 5]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, alloc_may_be_negative_Good_FP, 0, INFERBO_ALLOC_MAY_BE_NEGATIVE, no_bucket, ERROR, [Call,Assignment,Return,Alloc: Length: [-5, 5]]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, call_to_alloc_may_be_big2_is_big_Bad, 1, INFERBO_ALLOC_IS_BIG, no_bucket, ERROR, [Call,Parameter: n,Alloc: Length: [100000000, +oo] by call to `alloc_may_be_big2_Silenced` ]
+codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_call_to_s2_symbolic_widened_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Offset: [1, +oo] Size: 1 by call to `s2_symbolic_widened_Bad` ]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_concrete_overrun_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_concrete_underrun_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: -1 Size: 10]
 codetoanalyze/c/bufferoverrun/issue_kinds.c, l1_symbolic_overrun_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Parameter: i,ArrayAccess: Offset: [max(10, i.lb), i.ub] Size: 10]

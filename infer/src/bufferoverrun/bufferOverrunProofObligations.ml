@@ -68,26 +68,29 @@ module AllocSizeCondition = struct
     | `LeftSmallerThanRight ->
         {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
     | _ ->
-      match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
-      | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
-          {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
-      | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
-          {report_issue_type= Some IssueType.inferbo_alloc_may_be_negative; propagate= true}
-      | cmp_mone ->
-        match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
-        | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
-            {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
-        | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
-            {report_issue_type= Some IssueType.inferbo_alloc_may_be_big; propagate= true}
-        | cmp_big ->
-            let propagate =
-              match (cmp_mone, cmp_big) with
-              | (`NotComparable | `LeftSubsumesRight), _ | _, (`NotComparable | `LeftSubsumesRight) ->
-                  true
-              | _ ->
-                  false
-            in
-            {report_issue_type= None; propagate}
+        let is_symbolic = ItvPure.is_symbolic length in
+        match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
+        | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
+            {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
+        | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
+            { report_issue_type= Some IssueType.inferbo_alloc_may_be_negative
+            ; propagate= is_symbolic }
+        | cmp_mone ->
+          match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
+          | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
+              {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
+          | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.ub length) ->
+              {report_issue_type= Some IssueType.inferbo_alloc_may_be_big; propagate= is_symbolic}
+          | cmp_big ->
+              let propagate =
+                match (cmp_mone, cmp_big) with
+                | (`NotComparable | `LeftSubsumesRight), _
+                | _, (`NotComparable | `LeftSubsumesRight) ->
+                    is_symbolic
+                | _ ->
+                    false
+              in
+              {report_issue_type= None; propagate}
 
 
   let subst bound_map length =
@@ -432,27 +435,29 @@ module ConditionWithTrace = struct
 
 
   let subst (bound_map, trace_map) rel_map caller_relation caller_pname callee_pname location cwt =
-    match Condition.get_symbols cwt.cond with
-    | [] ->
-        Some cwt
-    | symbols ->
-      match Condition.subst bound_map rel_map caller_relation cwt.cond with
-      | None ->
-          None
-      | Some cond ->
-          let traces_caller =
-            List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
-                match Itv.SymbolMap.find symbol trace_map with
-                | symbol_trace ->
-                    ValTraceSet.join symbol_trace val_traces
-                | exception Caml.Not_found ->
-                    val_traces )
-          in
-          let trace =
-            ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location
-              cwt.trace
-          in
-          Some {cond; trace}
+    let symbols = Condition.get_symbols cwt.cond in
+    if List.is_empty symbols then
+      L.(die InternalError)
+        "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
+         the first place?"
+        pp cwt Typ.Procname.pp callee_pname Location.pp location ;
+    match Condition.subst bound_map rel_map caller_relation cwt.cond with
+    | None ->
+        None
+    | Some cond ->
+        let traces_caller =
+          List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
+              match Itv.SymbolMap.find symbol trace_map with
+              | symbol_trace ->
+                  ValTraceSet.join symbol_trace val_traces
+              | exception Caml.Not_found ->
+                  val_traces )
+        in
+        let trace =
+          ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location
+            cwt.trace
+        in
+        Some {cond; trace}
 
 
   let set_buffer_overrun_u5 {cond; trace} issue_type =

@@ -134,6 +134,8 @@ int s2_symbolic_widened_Good_FP(int n) {
   }
 }
 
+int l1_call_to_s2_symbolic_widened_Bad() { s2_symbolic_widened_Bad(1); }
+
 void may_underrun_symbolic_Nowarn_Good(int n) {
   int a[n];
   a[n - 1] = 0;
@@ -160,6 +162,9 @@ void alloc_is_zero_Bad() { malloc(0 * sizeof(int)); }
 void alloc_is_big_Bad() { malloc(2 * 1000 * 1000 * 1000); }
 
 void alloc_may_be_big_Bad() { malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1); }
+
+// Non-symbolic, should not be propagated
+void call_to_alloc_may_be_big_Good() { alloc_may_be_big_Bad(); }
 
 void alloc_may_be_big_Good_FP() {
   malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1);
