@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/racerd.html
 ---
 
-RacerD finds data races in your Java code. 
+RacerD finds data races in your Java code.
 To run the analysis, you can use plain `infer` (to run RacerD along with other analyses that are run by default) or `infer --racerd-only` (to run only RacerD).
 
 For example, the command `infer --racerd-only -- javac File.java` will run RacerD on File.java.
@@ -30,7 +30,7 @@ RacerD will report an unprotected write when one or more writes can run in paral
 @ThreadSafe
 public class Dinner {
   private int mTemperature;
-  
+
   public void makeDinner() {     
     boilWater();
   }
@@ -60,7 +60,7 @@ public class Account {
   public void deposit(int amount) {
     if (amount > 0) {
       mBalance += amount;
-    } 
+    }
   }
 
   public int withdraw(int amount){
@@ -87,7 +87,7 @@ A solution to the threading problem here is to make both methods `synchronized` 
 In the following code, RacerD will report an `Interface not thread-safe` warning on the call to `i.bar()`:
 
 ```
-interface I { 
+interface I {
   void bar();
 }
 
@@ -176,7 +176,7 @@ RacerD does not warn on unprotected writes to *owned* objects. An object is owne
 @ThreadSafe
 public interface Car {
   @ReturnsOwnership abstract Car buyCar();
-  
+
   void carsStuff() {
     Car myCar = new Car();
     myCar.wheels = 4; // RacerD won't warn here because it knows myCar is owned
@@ -204,7 +204,7 @@ Unlike the other annotations shown here, this one lives in [Android](https://dev
 
 ## <a name="interprocedural"></a> Interprocedural Reasoning
 
-An important feature of RacerD is that it finds races by analyzing not just one file or class, but by looking at memory 
+An important feature of RacerD is that it finds races by analyzing not just one file or class, but by looking at memory
 accesses that occur after going through several procedure calls. It handles this even between classes and between files.
 
 Here is a very basic example
@@ -233,7 +233,7 @@ RacerD discovers this.
 ```
 InterProc.java:17: error: THREAD_SAFETY_VIOLATION
   Unprotected write. Non-private method `A.m1` indirectly writes to field `&this.B.x` outside of synchronization.
- Reporting because the current class is annotated `@ThreadSafe`, so we assume that this method can run in 
+ Reporting because the current class is annotated `@ThreadSafe`, so we assume that this method can run in
  parallel with other non-private methods in the class (incuding itself).
   15.   
   16.     void m1(B bb) {
@@ -245,15 +245,15 @@ InterProc.java:17: error: THREAD_SAFETY_VIOLATION
 RacerD does this sort of reasoning using what is known as a *compositional inteprocedural analysis*. There, each method is
 analyzed independently of its context to produce a summary of the behaviour of the procedure. In this case the summaries for `m1()' and `meth()' include information as follows.
 ```
-Procedure: void A.m1(B) 
-Accesses: { Unprotected({ 1 }) -> { Write to &bb.B.x at void B.meth_write() at line 17 } } 
+Procedure: void A.m1(B)
+Accesses: { Unprotected({ 1 }) -> { Write to &bb.B.x at void B.meth_write() at line 17 } }
 
-Procedure: void B.meth_write() 
-Accesses { Unprotected({ 0 }) -> { Write to &this.B.x at  at line 25 } } 
+Procedure: void B.meth_write()
+Accesses { Unprotected({ 0 }) -> { Write to &this.B.x at  at line 25 } }
 ```
-The descriptions here are cryptic and do not include all the information in the summaries, but the main point is 
-that you can use RacerD to look for races in codebases where the mutations done by threads might occur only 
-after a chain of procedure calls. 
+The descriptions here are cryptic and do not include all the information in the summaries, but the main point is
+that you can use RacerD to look for races in codebases where the mutations done by threads might occur only
+after a chain of procedure calls.
 
 ## <a name="context"></a> Context and Selected Related Work
 
@@ -266,19 +266,19 @@ The rapid growth in the number of interleavings is problematic for tools that at
 Static analysis for concurrency has attracted a lot of attention from researchers, but difficulties with scalability and precision have meant that previous techniques have had little industrial impact. Automatic static race detection itself has seen significant work.  The most advanced approaches, exemplified by the [Chord](http://www.cis.upenn.edu/~mhnaik/pubs/pldi06.pdf) tool, often use a whole-program analysis paired with a sophisticated alias analysis, two features we have consciously avoided. Generally speaking, the leading research tools can be more precise,  but RacerD is faster and can operate without the whole program: we have opted to go for speed in a way that enables industrial deployment on a large, rapidly changing codebase, while trying to use as simple techniques as possible to cover many (not all) of the patterns covered by slower but precise research tools.
 
 An industrial static analysis tool from [Contemplate](http://homepages.inf.ed.ac.uk/dts/pub/avocs2015.pdf) also targets @ThreadSafe annotations, but limits the amount of inter-procedural reasoning: “This analysis is interprocedural, but to keep the overall analysis scalable, only calls to private and protected methods on the same class are followed”. RacerD does deep, cross-file and cross-class inter-procedural reasoning, and yet still scales; the inter-class capability was one of the first requests from Facebook engineers.
-[A separate blog post looked at  100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/) in Infer's deployment in various bug categories, and for data races observed that 53 of them were inter-file (and thus involving multiple classes). [See above](http://fbinfer.com/docs/racerd.html#interprocedural) for an example of RacerD's interprocedural capabilities. 
+[A separate blog post looked at  100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/) in Infer's deployment in various bug categories, and for data races observed that 53 of them were inter-file (and thus involving multiple classes). [See above](http://fbinfer.com/docs/racerd.html#interprocedural) for an example of RacerD's interprocedural capabilities.
 
-One reaction to the challenge of developing effective static race detectors has been to ask the programmer to do more work to help the analyzer. Examples of this approach include the [Clang Thread Safety Analyzer](https://clang.llvm.org/docs/ThreadSafetyAnalysis.html), 
-the typing of [locks](https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including 
-in [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md). When lock annotations are present they make the analyzer's life easier, and we have [GuardedBy checking as part of Infer](http://fbinfer.com/docs/infer-bug-types.html#UNSAFE_GUARDEDBY_ACCESS) (though separate from the race detector). 
-Our GuardedBy checker can find some bugs that RacerD does not 
-(see [this example on anonymous inner classes](http://fbinfer.com/docs/infer-bug-types.html#anonymous_inner)), but the race detector finds a greater number because it can 
-work on un-annotated code. 
+One reaction to the challenge of developing effective static race detectors has been to ask the programmer to do more work to help the analyzer. Examples of this approach include the [Clang Thread Safety Analyzer](https://clang.llvm.org/docs/ThreadSafetyAnalysis.html),
+the typing of [locks](https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including
+in [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md). When lock annotations are present they make the analyzer's life easier, and we have [GuardedBy checking as part of Infer](http://fbinfer.com/docs/checkers-bug-types.html#UNSAFE_GUARDEDBY_ACCESS) (though separate from the race detector).
+Our GuardedBy checker can find some bugs that RacerD does not
+(see [this example on anonymous inner classes](http://fbinfer.com/docs/checkers-bug-types.html#anonymous_inner)), but the race detector finds a greater number because it can 
+work on un-annotated code.
 It is possible to have a very effective race analysis without decreeing that such annotations must be present. This was essential for our deployment, since *requiring* lock annotations would have been a show stopper for converting many thousands of lines of code to a concurrent context. We believe that this finding should be transportable to new type systems and language designs, as well as to other analyses for existing languages.
 
 Another reaction to difficulties in static race detection has been to instead develop dynamic analyses, automatic testing  tools which work by running a program to attempt to find flaws.  Google's Thread Sanitizer is a widely used and mature tool in this area, which has been used in production to find many bugs in C-family languages. [The Thread Sanitizer authors explicitly call out limitations with static race analyzers](http://www.cs.columbia.edu/~junfeng/11fa-e6121/papers/thread-sanitizer.pdf) as part of their motivation: “It seems unlikely that static detectors will work effectively in our environment: Google’s code is large and complex enough that it would be expensive to add the annotations required by a typical static detector”.
 
-We have worked to limit the annotations that RacerD needs, for reasons similar those expressed by the Thread Sanitizer authors. And we have sought to bring the complementary benefits of static analysis — possibility of cheaper analysis and fast reporting, and ability to analyze code before it is placed in a context to run — to race detection. But we are interested as well in the future in leveraging ideas in the dynamic techniques to improve or add to our analysis for race detection. 
+We have worked to limit the annotations that RacerD needs, for reasons similar those expressed by the Thread Sanitizer authors. And we have sought to bring the complementary benefits of static analysis — possibility of cheaper analysis and fast reporting, and ability to analyze code before it is placed in a context to run — to race detection. But we are interested as well in the future in leveraging ideas in the dynamic techniques to improve or add to our analysis for race detection.
 
 
 ## Limitations
@@ -287,13 +287,13 @@ There are a number of known limitations to the design of the race detector.
 * It looks for races involving syntactically identical access paths, and misses races due to aliasing
 * It misses races that arise from a locally declared object escaping its scope
 * It uses a boolean locks abstraction, and so misses races where two accesses are mistakenly protected by different locks
-* It assumes a deep ownership model, which misses races where local objects refer to or contain non-owned objects. 
+* It assumes a deep ownership model, which misses races where local objects refer to or contain non-owned objects.
 * It avoids reasoning about weak memory and Java's volatile keyword
 
 Most of these limitations are consistent with the design goal of reducing false positives, even if they lead to false negatives. They also allow technical tradeoffs which are different than if we were to favour reduction of false negatives over false positives.  
 
 A different kind of limitation concerns the bugs searched for: Data races are the most basic form of concurrency error, but
-there are many types of concurrency issues out there that RacerD does not check for (but might in the future). Examples include 
+there are many types of concurrency issues out there that RacerD does not check for (but might in the future). Examples include
 deadlock, atomicity, and check-then-act bugs (shown below). You must look for these bugs yourself!
 
 ```
@@ -301,12 +301,12 @@ deadlock, atomicity, and check-then-act bugs (shown below). You must look for th
 public class SynchronizedList<T> {
   synchronized boolean isEmpty() { ... }
   synchronized T add(T item) { ... }
-  
+
 // Not thread safe!!!
 public class ListUtil<T> {
   public void addIfEmpty(SynchronizedList<T> list, T item) {
     if (list.isEmpty()) {
-      // In a race, another thread can add to the list here. 
+      // In a race, another thread can add to the list here.
       list.add(item);
     }
   }

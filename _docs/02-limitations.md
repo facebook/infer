@@ -32,9 +32,9 @@ of bug types and language features.
 ## Bug types <a name="bugtypes"></a>
 
 At present Infer is reporting on a restricted collection of
-[bug types](/docs/infer-bug-types.html),
+[bug types](/docs/checkers-bug-types.html),
 typically involving null pointers and memory or resource leaks.
-The intitial set of bug types
+The initial set of bug types
 Infer has focused on was driven by the most pressing needs for serving the Facebook
 mobile developers. Our approach has been to report less initially, to iterate with developers and provide value to them,
 and gradually expand what we can do while still providing value.

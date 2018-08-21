@@ -22,9 +22,8 @@
   - id: limitations
 - title: Bug Types Reference
   items:
-  - id: infer-bug-types
-  - id: eradicate-warnings
   - id: checkers-bug-types
+  - id: eradicate-warnings
   - id: linters-bug-types
 - title: Contribute
   items:
