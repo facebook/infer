@@ -20,6 +20,8 @@ module type S = sig
 
   val update_summary : t -> Summary.t -> Summary.t
 
+  val of_summary : Summary.t -> t option
+
   val read : Procdesc.t -> Typ.Procname.t -> t option
 end
 

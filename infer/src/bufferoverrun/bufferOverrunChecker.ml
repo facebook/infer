@@ -103,25 +103,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let instantiate_mem
-      : Tenv.t -> Ident.t * Typ.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
+      : Tenv.t -> Ident.t * Typ.t -> Procdesc.t -> Typ.Procname.t -> (Exp.t * Typ.t) list
         -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate =
    fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
     let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
-    match callee_pdesc with
-    | Some pdesc ->
-        let bound_subst_map, ret_alias, rel_subst_map =
-          Sem.get_subst_map tenv pdesc params caller_mem callee_symbol_table callee_exit_mem
-        in
-        let caller_mem =
-          instantiate_ret ret callee_pname ~callee_exit_mem bound_subst_map caller_mem ret_alias
-            location
-          |> instantiate_param tenv pdesc params callee_exit_mem bound_subst_map location
-          |> forget_ret_relation ret callee_pname
-        in
-        Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
-    | None ->
-        caller_mem
+    let bound_subst_map, ret_alias, rel_subst_map =
+      Sem.get_subst_map tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem
+    in
+    let caller_mem =
+      instantiate_ret ret callee_pname ~callee_exit_mem bound_subst_map caller_mem ret_alias
+        location
+      |> instantiate_param tenv callee_pdesc params callee_exit_mem bound_subst_map location
+      |> forget_ret_relation ret callee_pname
+    in
+    Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
 
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit =
@@ -175,7 +171,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Prune (exp, _, _, _) ->
           Sem.Prune.prune exp mem
-      | Call (ret, Const (Cfun callee_pname), params, location, _) -> (
+      | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
         match Models.Call.dispatch tenv callee_pname params with
         | Some {Models.exec} ->
             let node_hash = CFG.Node.hash node in
@@ -184,18 +180,23 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             exec model_env ~ret mem
         | None ->
-          match Payload.read pdesc callee_pname with
-          | Some summary ->
-              let callee = Ondemand.get_proc_desc callee_pname in
-              instantiate_mem tenv ret callee callee_pname params mem summary location
+          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+          | Some callee_summary -> (
+            match Payload.of_summary callee_summary with
+            | Some payload ->
+                let callee_pdesc = Summary.get_proc_desc callee_summary in
+                instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
+            | None ->
+                (* This may happen for procedures with a biabduction model. *)
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ Call to %a at %a has no inferbo payload@\n" Typ.Procname.pp callee_pname
+                  Location.pp location ;
+                Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
           | None ->
               L.(debug BufferOverrun Verbose)
                 "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                 location ;
-              let id = fst ret in
-              let val_unknown = Dom.Val.unknown_from ~callee_pname ~location in
-              Dom.Mem.add_stack (Loc.of_id id) val_unknown mem
-              |> Dom.Mem.add_heap Loc.unknown val_unknown )
+              Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
       | Call (_, fun_exp, _, location, _) ->
           let () =
             L.(debug BufferOverrun Verbose)
@@ -449,23 +450,19 @@ module Report = struct
 
 
   let instantiate_cond
-      : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
+      : Tenv.t -> Typ.Procname.t -> Procdesc.t -> (Exp.t * Typ.t) list -> Dom.Mem.astate
         -> Payload.t -> Location.t -> PO.ConditionSet.t =
    fun tenv caller_pname callee_pdesc params caller_mem summary location ->
     let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
     let callee_cond = Dom.Summary.get_cond_set summary in
-    match callee_pdesc with
-    | Some pdesc ->
-        let bound_subst_map, _, rel_subst_map =
-          Sem.get_subst_map tenv pdesc params caller_mem callee_symbol_table callee_exit_mem
-        in
-        let pname = Procdesc.get_proc_name pdesc in
-        let caller_rel = Dom.Mem.get_relation caller_mem in
-        PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel caller_pname
-          pname location
-    | _ ->
-        callee_cond
+    let bound_subst_map, _, rel_subst_map =
+      Sem.get_subst_map tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem
+    in
+    let pname = Procdesc.get_proc_name callee_pdesc in
+    let caller_rel = Dom.Mem.get_relation caller_mem in
+    PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel caller_pname pname
+      location
 
 
   let check_instr
@@ -482,13 +479,17 @@ module Report = struct
           let node_hash = CFG.Node.hash node in
           check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
       | None ->
-        match Payload.read pdesc callee_pname with
-        | Some callee_summary ->
-            let callee = Ondemand.get_proc_desc callee_pname in
-            instantiate_cond tenv pname callee params mem callee_summary location
-            |> PO.ConditionSet.join cond_set
-        | _ ->
-            cond_set )
+        match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+        | Some callee_summary -> (
+          match Payload.of_summary callee_summary with
+          | Some callee_payload ->
+              let callee_pdesc = Summary.get_proc_desc callee_summary in
+              instantiate_cond tenv pname callee_pdesc params mem callee_payload location
+              |> PO.ConditionSet.join cond_set
+          | None ->
+              (* no inferbo payload *) cond_set )
+        | None ->
+            (* unknown call *) cond_set )
     | _ ->
         cond_set
 

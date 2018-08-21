@@ -741,6 +741,12 @@ module MemReach = struct
 
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v m -> {m with heap= Heap.add k v m.heap}
 
+  let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
+   fun id ~callee_pname ~location m ->
+    let val_unknown = Val.unknown_from ~callee_pname ~location in
+    add_stack (Loc.of_id id) val_unknown m |> add_heap Loc.unknown val_unknown
+
+
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
    fun p v m -> {m with heap= Heap.strong_update p v m.heap}
 
@@ -930,6 +936,10 @@ module Mem = struct
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_stack k v)
 
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_heap k v)
+
+  let add_unknown_from : Ident.t -> callee_pname:Typ.Procname.t -> location:Location.t -> t -> t =
+   fun id ~callee_pname ~location -> f_lift (MemReach.add_unknown_from id ~callee_pname ~location)
+
 
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
    fun p v -> f_lift (MemReach.strong_update_heap p v)
