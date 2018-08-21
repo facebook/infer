@@ -34,9 +34,9 @@ val compute_local_exception_line : loc_trace -> int option
     This extra information adds value to the report itself, and may avoid
     digging into the trace to understand the cause of the report. *)
 
-type node_id_key =
+type node =
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
-  | BackendNode of {node_id: Procdesc.Node.id; node_key: Procdesc.NodeKey.t}
+  | BackendNode of {node: Procdesc.Node.t}
 
 type err_key = private
   { severity: Exceptions.severity
@@ -47,7 +47,8 @@ type err_key = private
 
 (** Data associated to a specific error *)
 type err_data = private
-  { node_id_key: node_id_key
+  { node_id: int
+  ; node_key: Procdesc.NodeKey.t
   ; session: int
   ; loc: Location.t
   ; loc_in_ml_source: Logging.ocaml_pos option
@@ -94,6 +95,5 @@ val update : t -> t -> unit
 
 val log_issue :
   Typ.Procname.t -> clang_method_kind:ClangMethodKind.t option -> Exceptions.severity -> t
-  -> loc:Location.t -> node_id_key:node_id_key -> session:int -> ltr:loc_trace
-  -> linters_def_file:string option -> doc_url:string option -> access:string option
-  -> extras:Jsonbug_t.extra option -> exn -> unit
+  -> loc:Location.t -> node:node -> session:int -> ltr:loc_trace -> linters_def_file:string option
+  -> doc_url:string option -> access:string option -> extras:Jsonbug_t.extra option -> exn -> unit

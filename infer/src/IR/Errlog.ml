@@ -60,9 +60,9 @@ let compute_local_exception_line loc_trace =
   List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
-type node_id_key =
+type node =
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
-  | BackendNode of {node_id: Procdesc.Node.id; node_key: Procdesc.NodeKey.t}
+  | BackendNode of {node: Procdesc.Node.t}
 
 type err_key =
   { severity: Exceptions.severity
@@ -73,7 +73,8 @@ type err_key =
 
 (** Data associated to a specific error *)
 type err_data =
-  { node_id_key: node_id_key
+  { node_id: int
+  ; node_key: Procdesc.NodeKey.t
   ; session: int
   ; loc: Location.t
   ; loc_in_ml_source: L.ocaml_pos option
@@ -173,15 +174,8 @@ let pp_warnings fmt (errlog: t) =
 let pp_html source path_to_root fmt (errlog: t) =
   let pp_eds fmt err_datas =
     let pp_nodeid_session_loc fmt err_data =
-      let node_id =
-        match err_data.node_id_key with
-        | FrontendNode _ ->
-            0
-        | BackendNode {node_id} ->
-            (node_id :> int)
-      in
       Io_infer.Html.pp_session_link source path_to_root fmt
-        (node_id, err_data.session, err_data.loc.Location.line)
+        (err_data.node_id, err_data.session, err_data.loc.Location.line)
     in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) err_datas
   in
@@ -220,7 +214,7 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id_key ~session ~ltr
+let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
     ~linters_def_file ~doc_url ~access ~extras exn =
   let error = Exceptions.recognize_exception exn in
   let severity = Option.value error.severity ~default:severity in
@@ -268,8 +262,16 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node_id_key ~se
       EventLogger.log issue ) ;
   if should_report && not hide_java_loc_zero && not hide_memory_error then
     let added =
+      let node_id, node_key =
+        match node with
+        | FrontendNode {node_key} ->
+            (0, node_key)
+        | BackendNode {node} ->
+            ((Procdesc.Node.get_id node :> int), Procdesc.Node.compute_key node)
+      in
       let err_data =
-        { node_id_key
+        { node_id
+        ; node_key
         ; session
         ; loc
         ; loc_in_ml_source= error.ocaml_pos

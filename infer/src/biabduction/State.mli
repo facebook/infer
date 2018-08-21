@@ -37,9 +37,6 @@ val get_loc_trace : unit -> Errlog.loc_trace
 val get_node : unit -> Procdesc.Node.t
 (** Get last node seen in symbolic execution *)
 
-val get_node_id_key : unit -> Errlog.node_id_key
-(** Get id and key of last node seen in symbolic execution *)
-
 val get_normalized_pre :
   (Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
 (** return the normalized precondition extracted form the last prop seen, if any
@@ -75,7 +72,7 @@ val mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 
 type log_issue =
-  Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
+  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
   -> exn -> unit
 

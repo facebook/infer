@@ -14,8 +14,7 @@ type log_t =
   -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 val log_issue_deprecated :
-  Exceptions.severity -> Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t
-  -> log_t
+  Exceptions.severity -> Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> log_t
 (** Report an issue in the given procedure.
     DEPRECATED as it can create race conditions between checkers.
     Use log_error/warning instead *)

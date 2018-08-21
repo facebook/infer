@@ -20,7 +20,7 @@ type failure_stats =
   ; (* number of node failures (i.e. at least one instruction failure) *)
     mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
-    mutable first_failure: (Location.t * Errlog.node_id_key * int * Errlog.loc_trace * exn) option
+    mutable first_failure: (Location.t * Procdesc.Node.t * int * Errlog.loc_trace * exn) option
   (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
@@ -164,11 +164,6 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
 
 let get_node_id () = Procdesc.Node.get_id !gs.last_node
 
-let get_node_id_key () =
-  Errlog.BackendNode
-    {node_id= Procdesc.Node.get_id !gs.last_node; node_key= Procdesc.Node.compute_key !gs.last_node}
-
-
 let get_inst_update pos =
   let loc = get_loc () in
   Sil.inst_update loc pos
@@ -251,17 +246,17 @@ let mark_instr_ok () =
 
 let mark_instr_fail exn =
   let loc = get_loc () in
-  let node_id_key = get_node_id_key () in
+  let node = get_node () in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
-  let fs = get_failure_stats (get_node ()) in
+  let fs = get_failure_stats node in
   if is_none fs.first_failure then
-    fs.first_failure <- Some (loc, node_id_key, (session :> int), loc_trace, exn) ;
+    fs.first_failure <- Some (loc, node, (session :> int), loc_trace, exn) ;
   fs.instr_fail <- fs.instr_fail + 1
 
 
 type log_issue =
-  Typ.Procname.t -> ?node_id_key:Errlog.node_id_key -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
+  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
   -> exn -> unit
 
@@ -269,11 +264,11 @@ let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =
     (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match (fs.node_ok, fs.first_failure) with
-    | 0, Some (loc, node_id_key, _, loc_trace, exn) when not Config.debug_exceptions ->
+    | 0, Some (loc, node, _, loc_trace, exn) when not Config.debug_exceptions ->
         let error = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
         let exn' = Exceptions.Analysis_stops (desc', error.ocaml_pos) in
-        log_issue pname ~loc ~node_id_key ~ltr:loc_trace exn'
+        log_issue pname ~loc ~node ~ltr:loc_trace exn'
     | _ ->
         ()
   in
