@@ -139,7 +139,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       in
       let checks', calls_this' =
         if do_checks then (checks, calls_this)
-        else ({TypeCheck.eradicate= false; check_extension= false; check_ret_type= []}, ref false)
+        else ({TypeCheck.eradicate= false; check_ret_type= []}, ref false)
       in
       callback1 tenv find_canonical_duplicate calls_this' checks' idenv_pn pname pdesc ann_sig
         linereader loc
@@ -349,13 +349,11 @@ end
 
 (** Eradicate checker for Java @Nullable annotations. *)
 let callback_eradicate =
-  let checks = {TypeCheck.eradicate= true; check_extension= false; check_ret_type= []} in
+  let checks = {TypeCheck.eradicate= true; check_ret_type= []} in
   Main.callback checks
 
 
 (** Call the given check_return_type at the end of every procedure. *)
 let callback_check_return_type check_return_type callback_args =
-  let checks =
-    {TypeCheck.eradicate= false; check_extension= false; check_ret_type= [check_return_type]}
-  in
+  let checks = {TypeCheck.eradicate= false; check_ret_type= [check_return_type]} in
   Main.callback checks callback_args

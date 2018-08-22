@@ -136,7 +136,7 @@ type check_return_type =
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
-type checks = {eradicate: bool; check_extension: bool; check_ret_type: check_return_type list}
+type checks = {eradicate: bool; check_ret_type: check_return_type list}
 
 (** Typecheck an expression. *)
 let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref

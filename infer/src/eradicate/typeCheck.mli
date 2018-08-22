@@ -14,7 +14,7 @@ type check_return_type =
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
-type checks = {eradicate: bool; check_extension: bool; check_ret_type: check_return_type list}
+type checks = {eradicate: bool; check_ret_type: check_return_type list}
 
 val typecheck_node :
   Tenv.t -> bool ref -> checks -> Idenv.t -> Typ.Procname.t -> Procdesc.t
