@@ -48,8 +48,7 @@ let ml_bucket_symbols =
 
 
 let issues_fields_symbols =
-  [ ("bug_class", `Issue_field_bug_class)
-  ; ("kind", `Issue_field_kind)
+  [ ("kind", `Issue_field_kind)
   ; ("bug_type", `Issue_field_bug_type)
   ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)

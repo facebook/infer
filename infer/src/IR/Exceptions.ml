@@ -607,19 +607,6 @@ let severity_string = function
   | Warning ->
       "WARNING"
 
-
-(** string describing an error class *)
-let err_class_string = function
-  | Checker ->
-      "CHECKER"
-  | Prover ->
-      "PROVER"
-  | Nocat ->
-      ""
-  | Linters ->
-      "Linters"
-
-
 (** pretty print an error  *)
 let pp_err loc severity ex_name desc ocaml_pos_opt fmt () =
   let kind = severity_string (if equal_severity severity Info then Warning else severity) in

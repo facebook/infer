@@ -144,8 +144,6 @@ exception Use_after_free of Localise.error_desc * Logging.ocaml_pos
 
 exception Wrong_argument_number of Logging.ocaml_pos
 
-val err_class_string : err_class -> string
-(** string describing an error class *)
 
 val severity_string : severity -> string
 (** string describing an error kind *)
