@@ -58,14 +58,12 @@ let issues_fields_symbols =
   ; ("line", `Issue_field_line)
   ; ("column", `Issue_field_column)
   ; ("procedure", `Issue_field_procedure)
-  ; ("procedure_id", `Issue_field_procedure_id)
   ; ("procedure_start_line", `Issue_field_procedure_start_line)
   ; ("file", `Issue_field_file)
   ; ("bug_trace", `Issue_field_bug_trace)
   ; ("key", `Issue_field_key)
   ; ("hash", `Issue_field_hash)
   ; ("line_offset", `Issue_field_line_offset)
-  ; ("procedure_id_without_crc", `Issue_field_procedure_id_without_crc)
   ; ( "qualifier_contains_potential_exception_note"
     , `Issue_field_qualifier_contains_potential_exception_note ) ]
 

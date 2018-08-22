@@ -311,7 +311,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure
-        ; procedure_id= Typ.Procname.to_filename proc_name
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
@@ -408,8 +407,6 @@ let pp_custom_of_report fmt report fields =
           Format.fprintf fmt "%s%d" (comma_separator index) issue.column
       | `Issue_field_procedure ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.procedure
-      | `Issue_field_procedure_id ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.procedure_id
       | `Issue_field_procedure_start_line ->
           Format.fprintf fmt "%s%d" (comma_separator index) issue.procedure_start_line
       | `Issue_field_file ->
@@ -423,8 +420,6 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_line_offset ->
           Format.fprintf fmt "%s%d" (comma_separator index)
             (issue.line - issue.procedure_start_line)
-      | `Issue_field_procedure_id_without_crc ->
-          Format.fprintf fmt "%s%s" (comma_separator index) (DB.strip_crc issue.procedure_id)
       | `Issue_field_qualifier_contains_potential_exception_note ->
           Format.pp_print_bool fmt
             (String.is_substring issue.qualifier ~substring:potential_exception_message)

@@ -1,1 +1,1 @@
-RESOURCE_LEAK, no_bucket, src/com/example/DiffClass2.java, com.example.DiffClass2.openResource():void, 5, com.example.DiffClass2.openResource():void.6561ab0ad86c3847cc965b847ac80324, com.example.DiffClass2.openResource():void
+RESOURCE_LEAK, no_bucket, src/com/example/DiffClass2.java, com.example.DiffClass2.openResource():void, 5

@@ -28,11 +28,6 @@ let append_crc_cutoff ?(key= "") ?(crc_only= false) name =
   if crc_only then crc_str else Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str
 
 
-(* Lengh of .crc part: 32 characters of digest, plus 1 character of crc_token *)
-let dot_crc_len = 1 + 32
-
-let strip_crc str = String.slice str 0 (-dot_crc_len)
-
 let curr_source_file_encoding = `Enc_crc
 
 (** string encoding of a source file (including path) as a single filename *)

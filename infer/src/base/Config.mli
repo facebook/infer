@@ -406,14 +406,12 @@ val issues_fields :
   | `Issue_field_line
   | `Issue_field_column
   | `Issue_field_procedure
-  | `Issue_field_procedure_id
   | `Issue_field_procedure_start_line
   | `Issue_field_file
   | `Issue_field_bug_trace
   | `Issue_field_key
   | `Issue_field_hash
   | `Issue_field_line_offset
-  | `Issue_field_procedure_id_without_crc
   | `Issue_field_qualifier_contains_potential_exception_note ]
   list
 

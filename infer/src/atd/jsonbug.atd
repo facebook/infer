@@ -29,7 +29,6 @@ type jsonbug = {
   line: int;
   column: int;
   procedure : string;
-  procedure_id : string;
   procedure_start_line : int;
   file : string;
   bug_trace : json_trace_item list;
