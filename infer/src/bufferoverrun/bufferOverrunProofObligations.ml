@@ -416,10 +416,18 @@ module ConditionTrace = struct
    fun ct -> if has_unknown ct then Some IssueType.buffer_overrun_u5 else None
 end
 
-module ConditionWithTrace = struct
-  type t = {cond: Condition.t; trace: ConditionTrace.t}
+module Reported = struct
+  type t = IssueType.t [@@deriving compare]
 
-  let make cond trace = {cond; trace}
+  let make issue_type = issue_type
+
+  let equal = [%compare.equal : t]
+end
+
+module ConditionWithTrace = struct
+  type t = {cond: Condition.t; trace: ConditionTrace.t; reported: Reported.t option}
+
+  let make cond trace = {cond; trace; reported= None}
 
   let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
 
@@ -457,7 +465,7 @@ module ConditionWithTrace = struct
           ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location
             cwt.trace
         in
-        Some {cond; trace}
+        Some {cond; trace; reported= cwt.reported}
 
 
   let set_buffer_overrun_u5 {cond; trace} issue_type =
@@ -470,11 +478,34 @@ module ConditionWithTrace = struct
     else issue_type
 
 
+  let check_aux cwt =
+    let {report_issue_type; propagate} as checked = Condition.check cwt.cond in
+    match report_issue_type with
+    | None ->
+        checked
+    | Some issue_type ->
+        let issue_type = set_buffer_overrun_u5 cwt issue_type in
+        (* Only report if the precision has improved.
+        This is approximated by: only report if the issue_type has changed. *)
+        let report_issue_type =
+          match cwt.reported with
+          | Some reported when Reported.equal reported issue_type ->
+              (* already reported and the precision hasn't improved *) None
+          | _ ->
+              (* either never reported or already reported but the precision has improved *)
+              Some issue_type
+        in
+        {report_issue_type; propagate}
+
+
   let check ~report cwt =
-    let {report_issue_type; propagate} = Condition.check cwt.cond in
-    report_issue_type |> Option.map ~f:(set_buffer_overrun_u5 cwt)
-    |> Option.iter ~f:(report cwt.cond cwt.trace) ;
-    propagate
+    let {report_issue_type; propagate} = check_aux cwt in
+    match report_issue_type with
+    | Some issue_type ->
+        report cwt.cond cwt.trace issue_type ;
+        if propagate then Some {cwt with reported= Some (Reported.make issue_type)} else None
+    | None ->
+        Option.some_if propagate cwt
 
 
   let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
@@ -565,7 +596,7 @@ module ConditionSet = struct
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let check_all ~report condset = List.filter condset ~f:(ConditionWithTrace.check ~report)
+  let check_all ~report condset = List.filter_map condset ~f:(ConditionWithTrace.check ~report)
 
   let pp_summary : F.formatter -> t -> unit =
    fun fmt condset ->

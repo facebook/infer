@@ -120,21 +120,25 @@ void l5_external_Warn_Bad() {
   a[unknown_function()] = 0;
 }
 
-int s2_symbolic_widened_Bad(int n) {
+void s2_symbolic_widened_Bad(int n) {
   int a[n];
   for (int i = n; less_than(i, 2 * n); i++) {
     a[i] = 0;
   }
 }
 
-int s2_symbolic_widened_Good_FP(int n) {
+void s2_symbolic_widened_Good_FP(int n) {
   int a[n];
   for (int i = n; less_than(i, n); i++) {
     a[i] = 0;
   }
 }
 
-int l1_call_to_s2_symbolic_widened_Bad() { s2_symbolic_widened_Bad(1); }
+// Do not report as it was already reported in the callee with the same issue
+// type
+void call_s2_symbolic_widened_Silenced(int m) { s2_symbolic_widened_Bad(m); }
+
+void l1_call_to_s2_symbolic_widened_Bad() { s2_symbolic_widened_Bad(1); }
 
 void may_underrun_symbolic_Nowarn_Good(int n) {
   int a[n];
