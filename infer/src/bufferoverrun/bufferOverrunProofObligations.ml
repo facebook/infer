@@ -357,57 +357,52 @@ module Condition = struct
 end
 
 module ConditionTrace = struct
-  type cond_trace =
-    | Intra of Typ.Procname.t
-    | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
+  type cond_trace = Intra | Inter of {call_site: Location.t; callee_pname: Typ.Procname.t}
   [@@deriving compare]
 
-  type t =
-    { proc_name: Typ.Procname.t
-    ; cond_trace: cond_trace
-    ; location: Location.t
-    ; val_traces: ValTraceSet.t }
+  type t = {cond_trace: cond_trace; issue_location: Location.t; val_traces: ValTraceSet.t}
   [@@deriving compare]
 
-  let pp_location : F.formatter -> t -> unit = fun fmt ct -> Location.pp_file_pos fmt ct.location
+  let pp_location : F.formatter -> t -> unit =
+   fun fmt ct -> Location.pp_file_pos fmt ct.issue_location
+
 
   let pp : F.formatter -> t -> unit =
    fun fmt ct ->
     if Config.bo_debug <= 1 then F.fprintf fmt "at %a" pp_location ct
     else
       match ct.cond_trace with
-      | Inter (_, pname, location) ->
-          let pname = Typ.Procname.to_string pname in
+      | Inter {callee_pname; call_site} ->
+          let pname = Typ.Procname.to_string callee_pname in
           F.fprintf fmt "at %a by call to %s at %a (%a)" pp_location ct pname Location.pp_file_pos
-            location ValTraceSet.pp ct.val_traces
-      | Intra _ ->
+            call_site ValTraceSet.pp ct.val_traces
+      | Intra ->
           F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
 
 
   let pp_description : F.formatter -> t -> unit =
    fun fmt ct ->
     match ct.cond_trace with
-    | Inter (_, pname, _)
-      when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
-        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string pname)
+    | Inter {callee_pname}
+      when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.issue_location.Location.file) ->
+        F.fprintf fmt " by call to %a " MF.pp_monospaced (Typ.Procname.to_string callee_pname)
     | _ ->
         ()
 
 
-  let get_location : t -> Location.t = fun ct -> ct.location
-
-  let get_cond_trace : t -> cond_trace = fun ct -> ct.cond_trace
-
-  let make : Typ.Procname.t -> Location.t -> ValTraceSet.t -> t =
-   fun proc_name location val_traces ->
-    {proc_name; location; cond_trace= Intra proc_name; val_traces}
+  let get_report_location : t -> Location.t =
+   fun ct -> match ct.cond_trace with Intra -> ct.issue_location | Inter {call_site} -> call_site
 
 
-  let make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location ct =
+  let make : Location.t -> ValTraceSet.t -> t =
+   fun issue_location val_traces -> {issue_location; cond_trace= Intra; val_traces}
+
+
+  let make_call_and_subst ~traces_caller ~callee_pname call_site ct =
     let val_traces =
-      ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces location
+      ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces call_site
     in
-    {ct with cond_trace= Inter (caller_pname, callee_pname, location); val_traces}
+    {ct with cond_trace= Inter {callee_pname; call_site}; val_traces}
 
 
   let has_unknown ct = ValTraceSet.has_unknown ct.val_traces
@@ -442,13 +437,13 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst (bound_map, trace_map) rel_map caller_relation caller_pname callee_pname location cwt =
+  let subst (bound_map, trace_map) rel_map caller_relation callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if List.is_empty symbols then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
-        pp cwt Typ.Procname.pp callee_pname Location.pp location ;
+        pp cwt Typ.Procname.pp callee_pname Location.pp call_site ;
     match Condition.subst bound_map rel_map caller_relation cwt.cond with
     | None ->
         None
@@ -462,8 +457,7 @@ module ConditionWithTrace = struct
                   val_traces )
         in
         let trace =
-          ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location
-            cwt.trace
+          ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
         in
         Some {cond; trace; reported= cwt.reported}
 
@@ -561,32 +555,31 @@ module ConditionSet = struct
 
   let join condset1 condset2 = List.fold_left ~f:join_one condset1 ~init:condset2
 
-  let add_opt pname location val_traces condset = function
+  let add_opt location val_traces condset = function
     | None ->
         condset
     | Some cond ->
-        let trace = ConditionTrace.make pname location val_traces in
+        let trace = ConditionTrace.make location val_traces in
         let cwt = ConditionWithTrace.make cond trace in
         join [cwt] condset
 
 
-  let add_array_access pname location ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp
-      ~relation val_traces condset =
+  let add_array_access location ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation
+      val_traces condset =
     ArrayAccessCondition.make ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
-    |> Condition.make_array_access ~is_collection_add |> add_opt pname location val_traces condset
+    |> Condition.make_array_access ~is_collection_add |> add_opt location val_traces condset
 
 
-  let add_alloc_size pname location ~length val_traces condset =
+  let add_alloc_size location ~length val_traces condset =
     AllocSizeCondition.make ~length |> Condition.make_alloc_size
-    |> add_opt pname location val_traces condset
+    |> add_opt location val_traces condset
 
 
-  let subst condset bound_map_trace_map rel_subst_map caller_relation caller_pname callee_pname
-      location =
+  let subst condset bound_map_trace_map rel_subst_map caller_relation callee_pname call_site =
     let subst_add_cwt condset cwt =
       match
-        ConditionWithTrace.subst bound_map_trace_map rel_subst_map caller_relation caller_pname
-          callee_pname location cwt
+        ConditionWithTrace.subst bound_map_trace_map rel_subst_map caller_relation callee_pname
+          call_site cwt
       with
       | None ->
           condset

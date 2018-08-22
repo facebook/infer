@@ -393,38 +393,36 @@ module Report = struct
 
 
   let check_binop_array_access
-      : Typ.Procname.t -> is_plus:bool -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate
-        -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun pname ~is_plus ~e1 ~e2 location mem cond_set ->
+      : is_plus:bool -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
+   fun ~is_plus ~e1 ~e2 location mem cond_set ->
     let arr = Sem.eval e1 mem in
     let idx = Sem.eval e2 mem in
     let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) e2 in
     let relation = Dom.Mem.get_relation mem in
-    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus pname location cond_set
+    BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus location cond_set
 
 
   let check_binop
-      : Typ.Procname.t -> bop:Binop.t -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate
-        -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun pname ~bop ~e1 ~e2 location mem cond_set ->
+      : bop:Binop.t -> e1:Exp.t -> e2:Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
+   fun ~bop ~e1 ~e2 location mem cond_set ->
     match bop with
     | Binop.PlusPI ->
-        check_binop_array_access pname ~is_plus:true ~e1 ~e2 location mem cond_set
+        check_binop_array_access ~is_plus:true ~e1 ~e2 location mem cond_set
     | Binop.MinusPI ->
-        check_binop_array_access pname ~is_plus:false ~e1 ~e2 location mem cond_set
+        check_binop_array_access ~is_plus:false ~e1 ~e2 location mem cond_set
     | _ ->
         cond_set
 
 
-  let check_expr
-      : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
-        -> PO.ConditionSet.t =
-   fun pname exp location mem cond_set ->
+  let check_expr : Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t =
+   fun exp location mem cond_set ->
     let rec check_sub_expr exp cond_set =
       match exp with
       | Exp.Lindex (array_exp, index_exp) ->
           cond_set |> check_sub_expr array_exp |> check_sub_expr index_exp
-          |> BoUtils.Check.lindex ~array_exp ~index_exp mem pname location
+          |> BoUtils.Check.lindex ~array_exp ~index_exp mem location
       | Exp.BinOp (_, e1, e2) ->
           cond_set |> check_sub_expr e1 |> check_sub_expr e2
       | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e | Exp.Cast (_, e) ->
@@ -441,18 +439,17 @@ module Report = struct
         let arr = Sem.eval exp mem in
         let idx, idx_sym_exp = (Dom.Val.Itv.zero, Some Relation.SymExp.zero) in
         let relation = Dom.Mem.get_relation mem in
-        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true pname location
-          cond_set
+        BoUtils.Check.array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true location cond_set
     | Exp.BinOp (bop, e1, e2) ->
-        check_binop pname ~bop ~e1 ~e2 location mem cond_set
+        check_binop ~bop ~e1 ~e2 location mem cond_set
     | _ ->
         cond_set
 
 
   let instantiate_cond
-      : Tenv.t -> Typ.Procname.t -> Procdesc.t -> (Exp.t * Typ.t) list -> Dom.Mem.astate
-        -> Payload.t -> Location.t -> PO.ConditionSet.t =
-   fun tenv caller_pname callee_pdesc params caller_mem summary location ->
+      : Tenv.t -> Procdesc.t -> (Exp.t * Typ.t) list -> Dom.Mem.astate -> Payload.t -> Location.t
+        -> PO.ConditionSet.t =
+   fun tenv callee_pdesc params caller_mem summary location ->
     let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
     let callee_cond = Dom.Summary.get_cond_set summary in
@@ -461,22 +458,21 @@ module Report = struct
     in
     let pname = Procdesc.get_proc_name callee_pdesc in
     let caller_rel = Dom.Mem.get_relation caller_mem in
-    PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel caller_pname pname
-      location
+    PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel pname location
 
 
   let check_instr
       : Procdesc.t -> Tenv.t -> Itv.SymbolTable.t -> CFG.Node.t -> Sil.instr -> Dom.Mem.astate
         -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun pdesc tenv symbol_table node instr mem cond_set ->
-    let pname = Procdesc.get_proc_name pdesc in
     match instr with
     | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
-        check_expr pname exp location mem cond_set
+        check_expr exp location mem cond_set
     | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
       match Models.Call.dispatch tenv callee_pname params with
       | Some {Models.check} ->
           let node_hash = CFG.Node.hash node in
+          let pname = Procdesc.get_proc_name pdesc in
           check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
       | None ->
         match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
@@ -484,7 +480,7 @@ module Report = struct
           match Payload.of_summary callee_summary with
           | Some callee_payload ->
               let callee_pdesc = Summary.get_proc_desc callee_summary in
-              instantiate_cond tenv pname callee_pdesc params mem callee_payload location
+              instantiate_cond tenv callee_pdesc params mem callee_payload location
               |> PO.ConditionSet.join cond_set
           | None ->
               (* no inferbo payload *) cond_set )
@@ -582,29 +578,21 @@ module Report = struct
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
 
-  let report_errors : Summary.t -> Procdesc.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
-   fun summary pdesc cond_set ->
-    let pname = Procdesc.get_proc_name pdesc in
+  let report_errors : Summary.t -> PO.ConditionSet.t -> PO.ConditionSet.t =
+   fun summary cond_set ->
     let report cond trace issue_type =
-      let caller_pname, location =
-        match PO.ConditionTrace.get_cond_trace trace with
-        | PO.ConditionTrace.Inter (caller_pname, _, location) ->
-            (caller_pname, location)
-        | PO.ConditionTrace.Intra pname ->
-            (pname, PO.ConditionTrace.get_location trace)
+      let location = PO.ConditionTrace.get_report_location trace in
+      let description = PO.description cond trace in
+      let error_desc = Localise.desc_buffer_overrun description in
+      let exn = Exceptions.Checkers (issue_type, error_desc) in
+      let trace =
+        match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
+        | trace ->
+            make_err_trace trace description
+        | exception _ ->
+            [Errlog.make_trace_element 0 location description []]
       in
-      if Typ.Procname.equal pname caller_pname then
-        let description = PO.description cond trace in
-        let error_desc = Localise.desc_buffer_overrun description in
-        let exn = Exceptions.Checkers (issue_type, error_desc) in
-        let trace =
-          match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
-          | trace ->
-              make_err_trace trace description
-          | exception _ ->
-              [Errlog.make_trace_element 0 location description []]
-        in
-        Reporting.log_error summary ~loc:location ~ltr:trace exn
+      Reporting.log_error summary ~loc:location ~ltr:trace exn
     in
     PO.ConditionSet.check_all ~report cond_set
 
@@ -647,7 +635,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   in
   let cond_set =
     Report.check_proc summary proc_desc tenv symbol_table cfg inv_map
-    |> Report.report_errors summary proc_desc |> Report.forget_locs locals
+    |> Report.report_errors summary |> Report.forget_locs locals
   in
   let summary =
     match exit_mem with

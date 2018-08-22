@@ -199,18 +199,18 @@ end
 
 module Check = struct
   let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
-      ?(is_collection_add= false) pname location cond_set =
+      ?(is_collection_add= false) location cond_set =
     let arr_traces = Dom.Val.get_traces arr in
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
         let traces = TraceSet.merge ~arr_traces ~idx_traces location in
-        PO.ConditionSet.add_array_access pname location ~size:length ~idx ~size_sym_exp
-          ~idx_sym_exp ~relation ~is_collection_add traces cond_set
+        PO.ConditionSet.add_array_access location ~size:length ~idx ~size_sym_exp ~idx_sym_exp
+          ~relation ~is_collection_add traces cond_set
     | _ ->
         cond_set
 
 
-  let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus pname location cond_set =
+  let array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus location cond_set =
     let arr_blk = Dom.Val.get_array_blk arr in
     let size = ArrayBlk.sizeof arr_blk in
     let size_sym_exp = Relation.SymExp.of_sym (Dom.Val.get_size_sym arr) in
@@ -226,12 +226,11 @@ module Check = struct
     in
     L.(debug BufferOverrun Verbose)
       "@[<v 2>Add condition :@,array: %a@,  idx: %a@,@]@." ArrayBlk.pp arr_blk Itv.pp idx_in_blk ;
-    check_access ~size ~idx:idx_in_blk ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces pname
+    check_access ~size ~idx:idx_in_blk ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
       location cond_set
 
 
-  let collection_access ~array_exp ~index_exp ?(is_collection_add= false) mem pname location
-      cond_set =
+  let collection_access ~array_exp ~index_exp ?(is_collection_add= false) mem location cond_set =
     let idx = Sem.eval index_exp mem in
     let arr = Sem.eval array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in
@@ -239,13 +238,13 @@ module Check = struct
     let idx = Dom.Val.get_itv idx in
     let relation = Dom.Mem.get_relation mem in
     check_access ~size ~idx ~size_sym_exp:None ~idx_sym_exp:None ~relation ~arr ~idx_traces
-      ~is_collection_add pname location cond_set
+      ~is_collection_add location cond_set
 
 
-  let lindex ~array_exp ~index_exp mem pname location cond_set =
+  let lindex ~array_exp ~index_exp mem location cond_set =
     let idx = Sem.eval index_exp mem in
     let arr = Sem.eval_arr array_exp mem in
     let idx_sym_exp = Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) index_exp in
     let relation = Dom.Mem.get_relation mem in
-    array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true pname location cond_set
+    array_access ~arr ~idx ~idx_sym_exp ~relation ~is_plus:true location cond_set
 end

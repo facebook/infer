@@ -58,14 +58,14 @@ end
 module Check : sig
   val array_access :
     arr:Dom.Val.t -> idx:Dom.Val.t -> idx_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.astate -> is_plus:bool -> Typ.Procname.t -> Location.t
-    -> PO.ConditionSet.t -> PO.ConditionSet.t
+    -> relation:Relation.astate -> is_plus:bool -> Location.t -> PO.ConditionSet.t
+    -> PO.ConditionSet.t
 
   val lindex :
-    array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Typ.Procname.t -> Location.t
-    -> PO.ConditionSet.t -> PO.ConditionSet.t
+    array_exp:Exp.t -> index_exp:Exp.t -> Dom.Mem.astate -> Location.t -> PO.ConditionSet.t
+    -> PO.ConditionSet.t
 
   val collection_access :
-    array_exp:Exp.t -> index_exp:Exp.t -> ?is_collection_add:bool -> Dom.Mem.astate
-    -> Typ.Procname.t -> Location.t -> PO.ConditionSet.t -> PO.ConditionSet.t
+    array_exp:Exp.t -> index_exp:Exp.t -> ?is_collection_add:bool -> Dom.Mem.astate -> Location.t
+    -> PO.ConditionSet.t -> PO.ConditionSet.t
 end

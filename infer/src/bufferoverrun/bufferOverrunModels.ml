@@ -66,7 +66,7 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
       (Typ.mk (Typ.Tint Typ.IChar), Some 1, x, None)
 
 
-let check_alloc_size size_exp {pname; location} mem cond_set =
+let check_alloc_size size_exp {location} mem cond_set =
   let _, _, length0, _ = get_malloc_info size_exp in
   let v_length = Sem.eval length0 mem in
   match Dom.Val.get_itv v_length with
@@ -77,7 +77,7 @@ let check_alloc_size size_exp {pname; location} mem cond_set =
       let traces =
         Dom.Val.get_traces v_length |> BufferOverrunTrace.Set.add_elem alloc_trace_elem
       in
-      PO.ConditionSet.add_alloc_size pname location ~length traces cond_set
+      PO.ConditionSet.add_alloc_size location ~length traces cond_set
 
 
 let set_uninitialized location (typ: Typ.t) ploc mem =
@@ -275,8 +275,8 @@ module StdArray = struct
     let exec _ ~ret:(id, _) mem =
       L.(debug BufferOverrun Verbose) "Using model std::array<_, %Ld>::at" _size ;
       BoUtils.Exec.load_val id (Sem.eval_lindex array_exp index_exp mem) mem
-    and check {pname; location} mem cond_set =
-      BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
+    and check {location} mem cond_set =
+      BoUtils.Check.lindex ~array_exp ~index_exp mem location cond_set
     in
     {exec; check}
 
@@ -384,18 +384,18 @@ module Collection = struct
 
 
   let add_at_index (alist_id: Ident.t) index_exp =
-    let check {pname; location} mem cond_set =
+    let check {location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~array_exp ~index_exp ~is_collection_add:true mem pname
-        location cond_set
+      BoUtils.Check.collection_access ~array_exp ~index_exp ~is_collection_add:true mem location
+        cond_set
     in
     {exec= change_size_by ~size_f:incr_size alist_id; check}
 
 
   let remove_at_index alist_id index_exp =
-    let check {pname; location} mem cond_set =
+    let check {location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~array_exp ~index_exp mem pname location cond_set
+      BoUtils.Check.collection_access ~array_exp ~index_exp mem location cond_set
     in
     {exec= change_size_by ~size_f:decr_size alist_id; check}
 
@@ -405,19 +405,19 @@ module Collection = struct
       let to_add_length = get_size alist_to_add mem in
       change_size_by ~size_f:(Dom.Val.plus_a to_add_length) alist_id _model_env ~ret mem
     in
-    let check {pname; location} mem cond_set =
+    let check {location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~index_exp ~array_exp ~is_collection_add:true mem pname
-        location cond_set
+      BoUtils.Check.collection_access ~index_exp ~array_exp ~is_collection_add:true mem location
+        cond_set
     in
     {exec; check}
 
 
   let get_or_set_at_index alist_id index_exp =
     let exec _model_env ~ret:_ mem = mem in
-    let check {pname; location} mem cond_set =
+    let check {location} mem cond_set =
       let array_exp = Exp.Var alist_id in
-      BoUtils.Check.collection_access ~index_exp ~array_exp mem pname location cond_set
+      BoUtils.Check.collection_access ~index_exp ~array_exp mem location cond_set
     in
     {exec; check}
 end
