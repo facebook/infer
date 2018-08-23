@@ -197,12 +197,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                 location ;
               Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
-      | Call (_, fun_exp, _, location, _) ->
+      | Call ((id, _), fun_exp, _, location, _) ->
           let () =
             L.(debug BufferOverrun Verbose)
               "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp location
           in
-          mem
+          Dom.Mem.add_unknown_from_funcptr id ~location mem
       | Remove_temps (temps, _) ->
           Dom.Mem.remove_temps temps mem
       | Abstract _ | Nullify _ ->
@@ -571,8 +571,8 @@ module Report = struct
           else
             let desc = Format.asprintf "Parameter: %a" Loc.pp loc in
             (Errlog.make_trace_element depth location desc [] :: trace, depth)
-      | Trace.UnknownFrom (pname, location) ->
-          let desc = Format.asprintf "Unknown value from: %a" Typ.Procname.pp pname in
+      | Trace.UnknownFrom (pname_opt, location) ->
+          let desc = Format.asprintf "Unknown value from: %a" Trace.pp_pname_opt pname_opt in
           (Errlog.make_trace_element depth location desc [] :: trace, depth)
     in
     List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev

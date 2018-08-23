@@ -72,3 +72,21 @@ void call_by_struct_ptr_bad() {
   struct_ptr_set_to_zero(sp);
   arr[sp->field - 1] = 123;
 }
+
+int ret_zero() { return 0; }
+
+void call_function_ptr_good_FP() {
+  int (*func_ptr)(void) = &ret_zero;
+  int arr[10];
+  if ((*func_ptr)() != 0) {
+    arr[10] = 1;
+  }
+}
+
+void call_function_ptr_bad() {
+  int (*func_ptr)(void) = &ret_zero;
+  int arr[10];
+  if ((*func_ptr)() == 0) {
+    arr[10] = 1;
+  }
+}

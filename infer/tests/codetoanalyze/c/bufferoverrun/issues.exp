@@ -22,6 +22,8 @@ codetoanalyze/c/bufferoverrun/for_loop.c, for_loop, 10, BUFFER_OVERRUN_L3, no_bu
 codetoanalyze/c/bufferoverrun/function_call.c, call_by_arr_bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: -1 Size: 10]
 codetoanalyze/c/bufferoverrun/function_call.c, call_by_ptr_bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: -1 Size: 10]
 codetoanalyze/c/bufferoverrun/function_call.c, call_by_struct_ptr_bad, 5, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Call,Assignment,ArrayAccess: Offset: -1 Size: 10]
+codetoanalyze/c/bufferoverrun/function_call.c, call_function_ptr_bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 10 Size: 10]
+codetoanalyze/c/bufferoverrun/function_call.c, call_function_ptr_good_FP, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/function_call.c, function_call, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Call,Parameter: arr,Assignment,ArrayAccess: Offset: 100 Size: 10 by call to `arr_access` ]
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_bad_FN, 2, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/global.c, compare_global_const_enum_bad_FN, 2, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []

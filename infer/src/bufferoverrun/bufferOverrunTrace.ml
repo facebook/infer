@@ -18,7 +18,7 @@ module BoTrace = struct
     | Call of Location.t
     | Return of Location.t
     | SymAssign of Loc.t * Location.t
-    | UnknownFrom of Typ.Procname.t * Location.t
+    | UnknownFrom of Typ.Procname.t option * Location.t
   [@@deriving compare]
 
   type t = {length: int; trace: elem list} [@@deriving compare]
@@ -30,6 +30,13 @@ module BoTrace = struct
   let add_elem_last elem t = {length= t.length + 1; trace= t.trace @ [elem]}
 
   let append x y = {length= x.length + y.length; trace= x.trace @ y.trace}
+
+  let pp_pname_opt fmt = function
+    | None ->
+        F.fprintf fmt "non-const function"
+    | Some pname ->
+        Typ.Procname.pp fmt pname
+
 
   let pp_elem : F.formatter -> elem -> unit =
    fun fmt elem ->
@@ -48,8 +55,8 @@ module BoTrace = struct
         F.fprintf fmt "Return (%a)" Location.pp_file_pos location
     | SymAssign (loc, location) ->
         F.fprintf fmt "SymAssign (%a, %a)" Loc.pp loc Location.pp_file_pos location
-    | UnknownFrom (pname, location) ->
-        F.fprintf fmt "UnknownFrom (%a, %a)" Typ.Procname.pp pname Location.pp_file_pos location
+    | UnknownFrom (pname_opt, location) ->
+        F.fprintf fmt "UnknownFrom (%a, %a)" pp_pname_opt pname_opt Location.pp_file_pos location
 
 
   let pp : F.formatter -> t -> unit =
