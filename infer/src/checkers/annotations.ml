@@ -107,6 +107,8 @@ let visibleForTesting = "VisibleForTesting"
 
 let volatile = "volatile"
 
+let worker_thread = "WorkerThread"
+
 let ia_has_annotation_with (ia: Annot.Item.t) (predicate: Annot.t -> bool) : bool =
   List.exists ~f:(fun (a, _) -> predicate a) ia
 
@@ -242,3 +244,5 @@ let ia_is_on_unmount ia = ia_ends_with ia on_unmount
 let ia_is_ui_thread ia = ia_ends_with ia ui_thread
 
 let ia_is_thread_confined ia = ia_ends_with ia thread_confined
+
+let ia_is_worker_thread ia = ia_ends_with ia worker_thread

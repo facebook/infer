@@ -512,7 +512,14 @@ module Models = struct
       || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot
     in
     let pname = Procdesc.get_proc_name proc_desc in
-    if Annotations.pdesc_has_return_annot proc_desc is_annot then
+    if
+      Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
+      || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
+         |> Option.is_some
+      || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
+         |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
+    then None
+    else if Annotations.pdesc_has_return_annot proc_desc is_annot then
       Some
         (F.asprintf "%a is annotated %s"
            (MF.wrap_monospaced Typ.Procname.pp)

@@ -120,6 +120,8 @@ val ia_is_ui_thread : Annot.Item.t -> bool
 
 val ia_is_volatile : Annot.Item.t -> bool
 
+val ia_is_worker_thread : Annot.Item.t -> bool
+
 val pdesc_get_return_annot : Procdesc.t -> Annot.Item.t
 (** get the list of annotations on the return value of [pdesc] *)
 
