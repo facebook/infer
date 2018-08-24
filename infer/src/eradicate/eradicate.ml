@@ -15,8 +15,6 @@ open Dataflow
 
 (* ERADICATE CHECKER. TODOS:*)
 (* 1) add support for constructors for anonymous inner classes (currently not checked) *)
-(* check that nonnullable fields are initialized in constructors *)
-let check_field_initialization = true
 
 (** Type for a module that provides a main callback function *)
 module type CallBackT = sig
@@ -282,7 +280,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         if
           not calls_this
           (* if 'this(...)' is called, no need to check initialization *)
-          && check_field_initialization && checks.TypeCheck.eradicate
+          && checks.TypeCheck.eradicate
         then
           EradicateChecks.check_constructor_initialization tenv find_canonical_duplicate curr_pname
             curr_pdesc start_node Initializers.final_initializer_typestates_lazy
