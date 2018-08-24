@@ -586,7 +586,7 @@ module Report = struct
       let error_desc = Localise.desc_buffer_overrun description in
       let exn = Exceptions.Checkers (issue_type, error_desc) in
       let trace =
-        match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
+        match TraceSet.choose_shortest (PO.ConditionTrace.get_val_traces trace) with
         | trace ->
             make_err_trace trace description
         | exception _ ->

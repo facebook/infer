@@ -390,6 +390,8 @@ module ConditionTrace = struct
         ()
 
 
+  let get_val_traces {val_traces} = val_traces
+
   let get_report_location : t -> Location.t =
    fun ct -> match ct.cond_trace with Intra -> ct.issue_location | Inter {call_site} -> call_site
 
