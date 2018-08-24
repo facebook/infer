@@ -16,34 +16,30 @@ module MF = MarkupFormatter
 module Tags = struct
   type t = (string * string) list [@@deriving compare]
 
-  (* line where value was last assigned *)
   let bucket = "bucket"
 
-  (* name of the procedure called *)
   let call_line = "call_line"
 
-  (* line where value was dereferenced *)
+  (** expression where a value escapes to *)
   let escape_to = "escape_to"
 
-  (* expression where a value escapes to *)
   let line = "line"
 
-  (* 2nd Java type *)
+  (** string describing a C value, e.g. "x.date" *)
   let value = "value"
 
-  (* string describing a C value, e.g. "x.date" *)
+  (** describes a NPE that comes from parameter not nullable *)
   let parameter_not_null_checked = "parameter_not_null_checked"
 
-  (* describes a NPE that comes from parameter not nullable *)
+  (** describes a NPE that comes from field not nullable *)
   let field_not_null_checked = "field_not_null_checked"
 
-  (* describes a NPE that comes from field not nullable *)
+  (** @Nullable-annoted field/param/retval that causes a warning *)
   let nullable_src = "nullable_src"
 
-  (* @Nullable-annoted field/param/retval that causes a warning *)
+  (** Weak variable captured in a block that causes a warning *)
   let weak_captured_var_src = "weak_captured_var_src"
 
-  (* Weak variable captured in a block that causes a warning *)
   let double_lock = "double_lock"
 
   let empty_vector_access = "empty_vector_access"
