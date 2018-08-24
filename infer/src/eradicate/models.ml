@@ -12,9 +12,6 @@ module L = Logging
 
 (** Module for standard library models. *)
 
-(* use model annotations for library functions *)
-let use_models = true
-
 (** Module for inference of parameter and return annotations. *)
 module Inference = struct
   let enabled = false
@@ -142,20 +139,16 @@ let get_modelled_annotated_signature proc_attributes =
     if mark_r then AnnotatedSignature.mark_return AnnotatedSignature.Nullable ann_sig else ann_sig
   in
   let lookup_models_nullable ann_sig =
-    if use_models then
       try
         let mark = Hashtbl.find annotated_table_nullable proc_id in
         AnnotatedSignature.mark proc_name AnnotatedSignature.Nullable ann_sig mark
       with Caml.Not_found -> ann_sig
-    else ann_sig
   in
   let lookup_models_present ann_sig =
-    if use_models then
       try
         let mark = Hashtbl.find annotated_table_present proc_id in
         AnnotatedSignature.mark proc_name AnnotatedSignature.Present ann_sig mark
       with Caml.Not_found -> ann_sig
-    else ann_sig
   in
   annotated_signature |> lookup_models_nullable |> lookup_models_present |> infer_return
   |> infer_parameters
@@ -163,13 +156,11 @@ let get_modelled_annotated_signature proc_attributes =
 
 (** Return true when the procedure has been modelled for nullable. *)
 let is_modelled_nullable proc_name =
-  if use_models then
     let proc_id = Typ.Procname.to_unique_id proc_name in
     try
       ignore (Hashtbl.find annotated_table_nullable proc_id) ;
       true
     with Caml.Not_found -> false
-  else false
 
 
 (** Check if the procedure is one of the known Preconditions.checkNotNull. *)
