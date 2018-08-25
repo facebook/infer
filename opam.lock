@@ -44,6 +44,7 @@ ocaml-compiler-libs = v0.11.0
 ocaml-migrate-parsetree = 1.0.11
 ocamlbuild = 0.12.0
 ocamlfind = 1.8.0
+ocamlgraph = 1.8.8
 octavius = 1.2.0
 ounit = 2.0.5
 parmap = 1.0-rc10

@@ -43,6 +43,7 @@ depends: [
   "javalib" {>="2.3.5"}
   "mtime"
   "ocamlfind" {build}
+  "ocamlgraph"
   "ounit" {="2.0.5"}
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}

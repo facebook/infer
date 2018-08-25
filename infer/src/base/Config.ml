@@ -665,6 +665,7 @@ and ( annotation_reachability
     , linters
     , litho
     , liveness
+    , loop_hoisting
     , ownership
     , printf_args
     , quandary
@@ -713,6 +714,7 @@ and ( annotation_reachability
   and litho = mk_checker ~long:"litho" "Experimental checkers supporting the Litho framework"
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
+  and loop_hoisting = mk_checker ~long:"loop-hoisting" ~default:false "checker for loop-hoisting"
   and ownership = mk_checker ~long:"ownership" ~default:true "the detection of C++ lifetime bugs"
   and printf_args =
     mk_checker ~long:"printf-args" ~default:true
@@ -779,6 +781,7 @@ and ( annotation_reachability
   , linters
   , litho
   , liveness
+  , loop_hoisting
   , ownership
   , printf_args
   , quandary
@@ -2694,6 +2697,8 @@ and load_average =
 and log_events = !log_events
 
 and log_file = !log_file
+
+and loop_hoisting = !loop_hoisting
 
 and max_nesting = !max_nesting
 

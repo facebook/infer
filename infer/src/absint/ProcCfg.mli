@@ -116,3 +116,29 @@ module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
 end
 
 module NormalOneInstrPerNode : module type of OneInstrPerNode (Normal)
+
+module MakeOcamlGraph (Base : S) : sig
+  type t = Base.t
+
+  module V : sig
+    type t = Base.Node.t
+
+    val equal : t -> t -> bool
+
+    val compare : t -> t -> int
+
+    val hash : t -> int
+  end
+
+  val pred : t -> Base.Node.t -> Base.Node.t list
+
+  val succ : t -> Base.Node.t -> Base.Node.t list
+
+  val fold_vertex : (Base.Node.t -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val iter_vertex : (Base.Node.t -> unit) -> t -> unit
+
+  val iter_succ : (Base.Node.t -> unit) -> t -> Base.Node.t -> unit
+
+  val nb_vertex : t -> int
+end

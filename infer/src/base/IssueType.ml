@@ -256,6 +256,8 @@ let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
 
 let internal_error = from_string "Internal_error"
 
+let invariant_call = from_string "INVARIANT_CALL"
+
 let javascript_injection = from_string "JAVASCRIPT_INJECTION"
 
 let leak_after_array_abstraction = from_string "Leak_after_array_abstraction"

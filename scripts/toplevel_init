@@ -9,6 +9,7 @@
 #require "core.top";;
 #require "ctypes";;
 #require "ctypes.stubs";;
+#require "ocamlgraph";;
 #require "ppx_compare";;
 #require "sawja";;
 #require "sqlite3";;

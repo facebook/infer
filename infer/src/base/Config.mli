@@ -458,6 +458,8 @@ val log_events : bool
 
 val log_file : string
 
+val loop_hoisting : bool
+
 val max_nesting : int option
 
 val method_decls_info : string option

@@ -108,6 +108,14 @@ let remove_prune_node_pairs exit_nodes guard_nodes =
   |> Control.GuardNodes.union exit_nodes
 
 
+let get_loop_head_to_source_nodes cfg =
+  get_back_edges cfg
+  |> List.fold ~init:Procdesc.NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
+         Procdesc.NodeMap.update target
+           (function Some source_list -> Some (source :: source_list) | None -> Some [source])
+           loop_head_to_source_list )
+
+
 (* Get a pair of maps (exit_map, loop_head_to_guard_map) where
    exit_map : exit_node -> loop_head set (i.e. target of the back edges) 
    loop_head_to_guard_map : loop_head -> guard_nodes and
@@ -117,13 +125,7 @@ let get_control_maps cfg =
   (* Since there could be multiple back-edges per loop, collect all
      source nodes per loop head *)
   (* loop_head (target of back-edges) --> source nodes *)
-  let loop_head_to_source_nodes_map =
-    get_back_edges cfg
-    |> List.fold ~init:Procdesc.NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
-           Procdesc.NodeMap.update target
-             (function Some source_list -> Some (source :: source_list) | None -> Some [source])
-             loop_head_to_source_list )
-  in
+  let loop_head_to_source_nodes_map = get_loop_head_to_source_nodes cfg in
   Procdesc.NodeMap.fold
     (fun loop_head source_list
          (Control.({exit_map; loop_head_to_guard_nodes}), loop_head_to_loop_nodes) ->

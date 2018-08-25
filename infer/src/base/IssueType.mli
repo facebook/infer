@@ -173,6 +173,8 @@ val interface_not_thread_safe : t
 
 val internal_error : t
 
+val invariant_call : t
+
 val javascript_injection : t
 
 val leak_after_array_abstraction : t

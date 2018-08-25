@@ -100,6 +100,11 @@ let all_checkers =
     ; active= Config.cost
     ; callbacks= [(Procedure Cost.checker, Language.Clang); (Procedure Cost.checker, Language.Java)]
     }
+  ; { name= "loop hoisting"
+    ; active= Config.loop_hoisting
+    ; callbacks=
+        [(Procedure Hoisting.checker, Language.Clang); (Procedure Hoisting.checker, Language.Java)]
+    }
   ; { name= "Starvation analysis"
     ; active= Config.starvation
     ; callbacks=

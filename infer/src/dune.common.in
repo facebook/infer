@@ -65,6 +65,7 @@ let common_libraries =
     ; "elina"
     ; "extlib"
     ; "mtime.clock.os"
+    ; "ocamlgraph"
     ; "oUnit"
     ; "parmap"
     ; "sqlite3"

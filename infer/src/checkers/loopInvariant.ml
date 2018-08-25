@@ -19,34 +19,40 @@ let is_defined_outside loop_nodes reaching_defs var =
   |> Option.value ~default:true
 
 
-(* check if the def of var is unique and satisfies function f_exp *)
-let is_def_unique_and_satisfy tenv var (loop_nodes: LoopNodes.t) f_exp =
+let is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname params =
+  List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) params
+  &&
+  match
+    (* Take into account invariance behavior of modeled functions *)
+    Models.Call.dispatch tenv callee_pname params
+  with
+  | Some inv ->
+      InvariantModels.is_invariant inv
+  | None ->
+      is_inv_by_default
+
+
+(* check if the def of var is unique and invariant *)
+let is_def_unique_and_satisfy tenv var (loop_nodes: LoopNodes.t) ~is_inv_by_default
+    is_exp_invariant =
   let equals_var id = Var.equal var (Var.of_id id) in
   (* Use O(1) is_singleton check *)
   (* tedious parameter wrangling to make IContainer's fold interface happy *)
   IContainer.is_singleton
-    ~fold:(fun s ~init ~f -> LoopNodes.fold (fun acc x -> f x acc) s init)
+    ~fold:(fun s ~init ~f -> LoopNodes.fold (fun node acc -> f acc node) s init)
     loop_nodes
   && LoopNodes.for_all
        (fun node ->
          Procdesc.Node.get_instrs node
          |> Instrs.exists ~f:(function
-              | Sil.Load (id, exp_rhs, _, _) when equals_var id && f_exp exp_rhs ->
+              | Sil.Load (id, exp_rhs, _, _) when equals_var id && is_exp_invariant exp_rhs ->
                   true
               | Sil.Store (exp_lhs, _, exp_rhs, _)
-                when Exp.equal exp_lhs (Var.to_exp var) && f_exp exp_rhs ->
+                when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
                   true
-              | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _) when equals_var id -> (
-                match
-                  (* Take into account invariance behavior of modeled
-                    functions *)
-                  Models.Call.dispatch tenv callee_pname params
-                with
-                | Some inv ->
-                    InvariantModels.is_invariant inv
-                    && List.for_all ~f:(fun (exp, _) -> f_exp exp) params
-                | None ->
-                    Config.cost_invariant_by_default )
+              | Sil.Call ((id, _), Const (Cfun callee_pname), params, _, _) when equals_var id ->
+                  is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname
+                    params
               | _ ->
                   false ) )
        loop_nodes
@@ -84,7 +90,7 @@ let get_vars_in_loop loop_nodes =
 (* A variable is invariant if
      - its reaching definition is outside of the loop
      - o.w. its definition is constant or invariant itself *)
-let get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes =
+let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_inv_by_default loop_head loop_nodes =
   let process_var_once var inv_vars =
     (* if a variable is marked invariant once, it can't be invalidated
        (i.e. invariance is monotonic) *)
@@ -100,7 +106,7 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes =
                     if LoopNodes.is_empty in_loop_defs then (InvariantVars.add var inv_vars, true)
                     else if
                       (* its definition is unique and invariant *)
-                      is_def_unique_and_satisfy tenv var def_nodes
+                      is_def_unique_and_satisfy tenv var def_nodes ~is_inv_by_default
                         (is_exp_invariant inv_vars loop_nodes reaching_defs)
                     then (InvariantVars.add var inv_vars, true)
                     else (inv_vars, false) )
@@ -132,6 +138,7 @@ let get_loop_inv_var_map tenv reaching_defs_invariant_map loop_head_to_loop_node
     (fun loop_head loop_nodes inv_map ->
       let inv_vars_in_loop =
         get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
+          ~is_inv_by_default:Config.cost_invariant_by_default
       in
       L.(debug Analysis Medium)
         "@\n>>> loop head: %a --> inv vars: %a @\n" Procdesc.Node.pp loop_head InvariantVars.pp

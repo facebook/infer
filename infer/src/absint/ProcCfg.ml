@@ -373,3 +373,30 @@ end = struct
 end
 
 module NormalOneInstrPerNode = OneInstrPerNode (Normal)
+
+(* Make ProcCfg compatible with ocamlgraph *)
+module MakeOcamlGraph (Base : S) = struct
+  type t = Base.t
+
+  module V = struct
+    type t = Base.Node.t
+
+    let compare n1 n2 = Base.Node.compare_id (Base.Node.id n1) (Base.Node.id n2)
+
+    let equal = [%compare.equal : t]
+
+    let hash = Base.Node.hash
+  end
+
+  let pred g = IContainer.to_rev_list ~fold:(Base.fold_normal_preds g)
+
+  let succ g = IContainer.to_rev_list ~fold:(Base.fold_normal_succs g)
+
+  let iter_succ f g node = Container.iter ~fold:(Base.fold_normal_succs g) ~f node
+
+  let fold_vertex f g init = Base.fold_nodes ~init ~f:(Fn.flip f) g
+
+  let iter_vertex f g = Container.iter ~fold:Base.fold_nodes g ~f
+
+  let nb_vertex = Container.length ~fold:Base.fold_nodes
+end
