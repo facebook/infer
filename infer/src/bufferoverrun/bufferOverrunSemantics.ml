@@ -140,9 +140,8 @@ let rec eval : Exp.t -> Mem.astate -> Val.t =
     | Exp.Var id ->
         Mem.find_stack (Var.of_id id |> Loc.of_var) mem
     | Exp.Lvar pvar ->
-        let ploc = pvar |> Loc.of_pvar |> PowLoc.singleton in
-        let arr = Mem.find_stack_set ploc mem in
-        ploc |> Val.of_pow_loc |> Val.join arr
+        let ploc = Loc.of_pvar pvar in
+        if Mem.is_stack_loc ploc mem then Mem.find ploc mem else Val.of_loc ploc
     | Exp.UnOp (uop, e, _) ->
         eval_unop uop e mem
     | Exp.BinOp (bop, e1, e2) ->
@@ -249,7 +248,7 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
   | Exp.Var id -> (
     match Mem.find_alias id mem with
     | Some (AliasTarget.Simple loc) ->
-        Mem.find_heap loc mem
+        Mem.find loc mem
     | Some (AliasTarget.Empty _) | None ->
         Val.bot )
   | Exp.Lvar pvar ->
@@ -260,7 +259,7 @@ let rec eval_arr : Exp.t -> Mem.astate -> Val.t =
       eval_arr e mem
   | Exp.Lfield (e, fn, _) ->
       let locs = eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn in
-      Mem.find_heap_set locs mem
+      Mem.find_set locs mem
   | Exp.Lindex (e1, e2) ->
       let arr = eval e1 mem in
       let idx = eval e2 mem in
@@ -290,11 +289,11 @@ module Prune = struct
     | Exp.Var x -> (
       match Mem.find_alias x mem with
       | Some (AliasTarget.Simple lv) ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_ne_zero v in
           update_mem_in_prune lv v' astate
       | Some (AliasTarget.Empty lv) ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
       | None ->
@@ -302,11 +301,11 @@ module Prune = struct
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
       match Mem.find_alias x mem with
       | Some (AliasTarget.Simple lv) ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_eq_zero v in
           update_mem_in_prune lv v' astate
       | Some (AliasTarget.Empty lv) ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
           let v' = Val.modify_itv itv_v v in
           update_mem_in_prune lv v' astate
@@ -325,7 +324,7 @@ module Prune = struct
     | Exp.BinOp ((Binop.Ge as comp), Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_comp comp v (eval e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
@@ -333,7 +332,7 @@ module Prune = struct
     | Exp.BinOp (Binop.Eq, Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_eq v (eval e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
@@ -341,7 +340,7 @@ module Prune = struct
     | Exp.BinOp (Binop.Ne, Exp.Var x, e') -> (
       match Mem.find_simple_alias x mem with
       | Some lv ->
-          let v = Mem.find_heap lv mem in
+          let v = Mem.find lv mem in
           let v' = Val.prune_ne v (eval e' mem) in
           update_mem_in_prune lv v' astate
       | None ->
@@ -437,11 +436,11 @@ let get_matching_pairs
   let get_size_sym v = Val.get_size_sym v in
   let get_field_name (fn, _, _) = fn in
   let append_field v fn = PowLoc.append_field (Val.get_all_locs v) ~fn in
-  let deref_field v fn mem = Mem.find_heap_set (append_field v fn) mem in
+  let deref_field v fn mem = Mem.find_set (append_field v fn) mem in
   let deref_ptr v mem =
     let array_locs = Val.get_array_locs v in
     let locs = if PowLoc.is_empty array_locs then Val.get_pow_loc v else array_locs in
-    Mem.find_heap_set locs mem
+    Mem.find_set locs mem
   in
   let ret_alias = ref None in
   let add_ret_alias v1 v2 =
@@ -563,7 +562,7 @@ let get_subst_map
          * Relation.SubstMap.t =
  fun tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem ->
   let add_pair (formal, typ) (actual, actual_exp) (bound_l, ret_alias, rel_l) =
-    let callee_v = Mem.find_heap (Loc.of_pvar formal) callee_exit_mem in
+    let callee_v = Mem.find (Loc.of_pvar formal) callee_exit_mem in
     let new_bound_matching, ret_alias', new_rel_matching =
       get_matching_pairs tenv (Itv.SymbolPath.of_pvar formal) callee_v actual actual_exp typ
         caller_mem callee_symbol_table callee_exit_mem

@@ -165,8 +165,7 @@ module BoundMap = struct
                        unreachable returning cost 0 \n" ;
                     BasicCost.zero
                 | NonBottom mem ->
-                    BufferOverrunDomain.MemReach.heap_range ~filter_loc:(filter_loc control_vars)
-                      mem
+                    BufferOverrunDomain.MemReach.range ~filter_loc:(filter_loc control_vars) mem
               in
               L.(debug Analysis Medium)
                 "@\n>>>Setting bound for node = %a  to %a@\n\n" Node.pp_id node_id BasicCost.pp

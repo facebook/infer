@@ -83,7 +83,7 @@ let check_alloc_size size_exp {location} mem cond_set =
 let set_uninitialized location (typ: Typ.t) ploc mem =
   match typ.desc with
   | Tint _ | Tfloat _ ->
-      Dom.Mem.weak_update_heap ploc Dom.Val.Itv.top mem
+      Dom.Mem.weak_update ploc Dom.Val.Itv.top mem
   | _ ->
       L.(debug BufferOverrun Verbose)
         "/!\\ Do not know how to uninitialize type %a at %a@\n" (Typ.pp Pp.text) typ Location.pp
@@ -336,7 +336,7 @@ module Collection = struct
 
 
   let change_size_by ~size_f alist_id _ ~ret:_ mem =
-    let alist_v = Dom.Mem.find_stack (Loc.of_id alist_id) mem in
+    let alist_v = Dom.Mem.find (Loc.of_id alist_id) mem in
     let locs = Dom.Val.get_pow_loc alist_v in
     Dom.Mem.transform_mem ~f:size_f locs mem
 

@@ -132,6 +132,8 @@ module Val = struct
 
   let of_int n = of_itv (Itv.of_int n)
 
+  let of_loc : Loc.t -> t = fun x -> {bot with powloc= PowLoc.singleton x}
+
   let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}
 
   let of_array_alloc : Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> t =
@@ -308,63 +310,16 @@ module Val = struct
   end
 end
 
-module Stack = struct
-  include AbstractDomain.Map (Loc) (Val)
+module StackLocs = struct
+  include AbstractDomain.FiniteSet (Loc)
 
   let bot = empty
-
-  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Caml.Not_found -> Val.bot
-
-  let find_set : PowLoc.t -> astate -> Val.t =
-   fun locs mem ->
-    let find_join loc acc = Val.join acc (find loc mem) in
-    PowLoc.fold find_join locs Val.bot
-
-
-  let remove_temps : Ident.t list -> astate -> astate =
-   fun temps mem ->
-    let remove_temp mem temp =
-      let temp_loc = Loc.of_id temp in
-      remove temp_loc mem
-    in
-    List.fold temps ~init:mem ~f:remove_temp
 end
 
-module Heap = struct
+module MemPure = struct
   include AbstractDomain.Map (Loc) (Val)
 
   let bot = empty
-
-  let find : Loc.t -> astate -> Val.t =
-   fun l m -> try find l m with Caml.Not_found -> Val.Itv.top
-
-
-  let find_set : PowLoc.t -> astate -> Val.t =
-   fun locs mem ->
-    let find_join loc acc = Val.join acc (find loc mem) in
-    PowLoc.fold find_join locs Val.bot
-
-
-  let transform : f:(Val.t -> Val.t) -> PowLoc.t -> astate -> astate =
-   fun ~f locs mem -> PowLoc.fold (fun loc -> find loc mem |> f |> add loc) locs mem
-
-
-  let add x v =
-    let sym = if Itv.is_empty (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x in
-    let offset_sym, size_sym =
-      if ArrayBlk.is_bot (Val.get_array_blk v) then (Relation.Sym.bot, Relation.Sym.bot)
-      else (Relation.Sym.of_loc_offset x, Relation.Sym.of_loc_size x)
-    in
-    add x {v with Val.sym; Val.offset_sym; Val.size_sym}
-
-
-  let strong_update : PowLoc.t -> Val.t -> astate -> astate =
-   fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
-
-
-  let weak_update : PowLoc.t -> Val.t -> astate -> astate =
-   fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
-
 
   let get_return : astate -> Val.t =
    fun mem ->
@@ -464,10 +419,7 @@ module AliasMap = struct
 
   let find : Ident.t -> t -> AliasTarget.t option = fun k m -> M.find_opt k m
 
-  let remove_temps : Ident.t list -> t -> t =
-   fun temps m ->
-    let remove_temp m temp = M.remove temp m in
-    List.fold temps ~init:m ~f:remove_temp
+  let remove : Ident.t -> t -> t = M.remove
 end
 
 module AliasRet = struct
@@ -554,8 +506,8 @@ module Alias = struct
     else a
 
 
-  let remove_temps : Ident.t list -> astate -> astate =
-   fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
+  let remove_temp : Ident.t -> astate -> astate =
+   fun temp (alias_map, alias_ret) -> (AliasMap.remove temp alias_map, alias_ret)
 
 
   let pp : F.formatter -> astate -> unit =
@@ -647,8 +599,8 @@ end
 
 module MemReach = struct
   type astate =
-    { stack: Stack.astate
-    ; heap: Heap.astate
+    { stack_locs: StackLocs.astate
+    ; mem_pure: MemPure.astate
     ; alias: Alias.astate
     ; latest_prune: LatestPrune.astate
     ; relation: Relation.astate }
@@ -656,8 +608,8 @@ module MemReach = struct
   type t = astate
 
   let init : t =
-    { stack= Stack.bot
-    ; heap= Heap.bot
+    { stack_locs= StackLocs.bot
+    ; mem_pure= MemPure.bot
     ; alias= Alias.bot
     ; latest_prune= LatestPrune.top
     ; relation= Relation.empty }
@@ -666,7 +618,8 @@ module MemReach = struct
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack && Heap.( <= ) ~lhs:lhs.heap ~rhs:rhs.heap
+      StackLocs.( <= ) ~lhs:lhs.stack_locs ~rhs:rhs.stack_locs
+      && MemPure.( <= ) ~lhs:lhs.mem_pure ~rhs:rhs.mem_pure
       && Alias.( <= ) ~lhs:lhs.alias ~rhs:rhs.alias
       && LatestPrune.( <= ) ~lhs:lhs.latest_prune ~rhs:rhs.latest_prune
       && Relation.( <= ) ~lhs:lhs.relation ~rhs:rhs.relation
@@ -675,8 +628,8 @@ module MemReach = struct
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
-      { stack= Stack.widen ~prev:prev.stack ~next:next.stack ~num_iters
-      ; heap= Heap.widen ~prev:prev.heap ~next:next.heap ~num_iters
+      { stack_locs= StackLocs.widen ~prev:prev.stack_locs ~next:next.stack_locs ~num_iters
+      ; mem_pure= MemPure.widen ~prev:prev.mem_pure ~next:next.mem_pure ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters
       ; latest_prune= LatestPrune.widen ~prev:prev.latest_prune ~next:next.latest_prune ~num_iters
       ; relation= Relation.widen ~prev:prev.relation ~next:next.relation ~num_iters }
@@ -684,8 +637,8 @@ module MemReach = struct
 
   let join : t -> t -> t =
    fun x y ->
-    { stack= Stack.join x.stack y.stack
-    ; heap= Heap.join x.heap y.heap
+    { stack_locs= StackLocs.join x.stack_locs y.stack_locs
+    ; mem_pure= MemPure.join x.mem_pure y.mem_pure
     ; alias= Alias.join x.alias y.alias
     ; latest_prune= LatestPrune.join x.latest_prune y.latest_prune
     ; relation= Relation.join x.relation y.relation }
@@ -693,23 +646,28 @@ module MemReach = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" Stack.pp x.stack Heap.pp x.heap Alias.pp x.alias ;
+    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" StackLocs.pp x.stack_locs MemPure.pp x.mem_pure
+      Alias.pp x.alias ;
     if Option.is_some Config.bo_relational_domain then
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
 
-  let find_stack : Loc.t -> t -> Val.t = fun k m -> Stack.find k m.stack
+  let is_stack_loc : Loc.t -> t -> bool = fun l m -> StackLocs.mem l m.stack_locs
 
-  let find_stack_set : PowLoc.t -> t -> Val.t = fun k m -> Stack.find_set k m.stack
+  let find_opt : Loc.t -> t -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
-  let find_heap : Loc.t -> t -> Val.t = fun k m -> Heap.find k m.heap
+  let find_stack : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
 
-  let find_heap_opt : Loc.t -> t -> Val.t option = fun k m -> Heap.find_opt k m.heap
+  let find_heap : Loc.t -> t -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.Itv.top
 
-  let find_heap_set : PowLoc.t -> t -> Val.t = fun k m -> Heap.find_set k m.heap
+  let find : Loc.t -> t -> Val.t =
+   fun l m -> if is_stack_loc l m then find_stack l m else find_heap l m
+
 
   let find_set : PowLoc.t -> t -> Val.t =
-   fun k m -> Val.join (find_stack_set k m) (find_heap_set k m)
+   fun locs m ->
+    let find_join loc acc = Val.join acc (find loc m) in
+    PowLoc.fold find_join locs Val.bot
 
 
   let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
@@ -737,9 +695,29 @@ module MemReach = struct
    fun formal loc e m -> {m with alias= Alias.store_empty formal loc e m.alias}
 
 
-  let add_stack : Loc.t -> Val.t -> t -> t = fun k v m -> {m with stack= Stack.add k v m.stack}
+  let add_stack_loc : Loc.t -> t -> t = fun k m -> {m with stack_locs= StackLocs.add k m.stack_locs}
 
-  let add_heap : Loc.t -> Val.t -> t -> t = fun k v m -> {m with heap= Heap.add k v m.heap}
+  let add_stack : Loc.t -> Val.t -> t -> t =
+   fun k v m ->
+    {m with stack_locs= StackLocs.add k m.stack_locs; mem_pure= MemPure.add k v m.mem_pure}
+
+
+  let replace_stack : Loc.t -> Val.t -> t -> t =
+   fun k v m -> {m with mem_pure= MemPure.add k v m.mem_pure}
+
+
+  let add_heap : Loc.t -> Val.t -> t -> t =
+   fun x v m ->
+    let v =
+      let sym = if Itv.is_empty (Val.get_itv v) then Relation.Sym.bot else Relation.Sym.of_loc x in
+      let offset_sym, size_sym =
+        if ArrayBlk.is_bot (Val.get_array_blk v) then (Relation.Sym.bot, Relation.Sym.bot)
+        else (Relation.Sym.of_loc_offset x, Relation.Sym.of_loc_size x)
+      in
+      {v with Val.sym; Val.offset_sym; Val.size_sym}
+    in
+    {m with mem_pure= MemPure.add x v m.mem_pure}
+
 
   let add_unknown_from
       : Ident.t -> callee_pname:Typ.Procname.t option -> location:Location.t -> t -> t =
@@ -748,37 +726,48 @@ module MemReach = struct
     add_stack (Loc.of_id id) val_unknown m |> add_heap Loc.unknown val_unknown
 
 
-  let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
-   fun p v m -> {m with heap= Heap.strong_update p v m.heap}
+  let strong_update : PowLoc.t -> Val.t -> t -> t =
+   fun locs v m ->
+    let strong_update1 l m = if is_stack_loc l m then replace_stack l v m else add_heap l v m in
+    PowLoc.fold strong_update1 locs m
 
 
-  let transform_heap : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-   fun ~f p m -> {m with heap= Heap.transform ~f p m.heap}
+  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+   fun ~f locs m ->
+    let transform_mem1 l m =
+      let add, find =
+        if is_stack_loc l m then (replace_stack, find_stack) else (add_heap, find_heap)
+      in
+      add l (f (find l m)) m
+    in
+    PowLoc.fold transform_mem1 locs m
 
 
-  let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
-   fun p v m -> {m with heap= Heap.weak_update p v m.heap}
+  let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
 
-
-  let get_return : t -> Val.t = fun m -> Heap.get_return m.heap
+  let get_return : t -> Val.t = fun m -> MemPure.get_return m.mem_pure
 
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
-    if can_strong_update ploc then strong_update_heap ploc v s
+    if can_strong_update ploc then strong_update ploc v s
     else
       let () =
         L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
       in
-      weak_update_heap ploc v s
+      weak_update ploc v s
 
 
-  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
-   fun ~f ploc s -> transform_heap ~f ploc s
+  let remove_temp : Ident.t -> t -> t =
+   fun temp m ->
+    let l = Loc.of_id temp in
+    { m with
+      stack_locs= StackLocs.remove l m.stack_locs
+    ; mem_pure= MemPure.remove l m.mem_pure
+    ; alias= Alias.remove_temp temp m.alias }
 
 
   let remove_temps : Ident.t list -> t -> t =
-   fun temps m ->
-    {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
+   fun temps m -> List.fold temps ~init:m ~f:(fun acc temp -> remove_temp temp acc)
 
 
   let set_prune_pairs : PrunePairs.t -> t -> t =
@@ -820,14 +809,14 @@ module MemReach = struct
     and add_from_loc heap loc acc =
       if PowLoc.mem loc acc then acc
       else
-        let reachable_locs = Heap.fold (add_reachable1 ~root:loc) heap PowLoc.empty in
+        let reachable_locs = MemPure.fold (add_reachable1 ~root:loc) heap PowLoc.empty in
         add_from_locs heap reachable_locs (PowLoc.add loc acc)
     in
-    fun locs m -> add_from_locs m.heap locs PowLoc.empty
+    fun locs m -> add_from_locs m.mem_pure locs PowLoc.empty
 
 
-  let heap_range : filter_loc:(Loc.t -> bool) -> t -> Itv.NonNegativePolynomial.astate =
-   fun ~filter_loc {heap} -> Heap.range ~filter_loc heap
+  let range : filter_loc:(Loc.t -> bool) -> t -> Itv.NonNegativePolynomial.astate =
+   fun ~filter_loc {mem_pure} -> MemPure.range ~filter_loc mem_pure
 
 
   let get_relation : t -> Relation.astate = fun m -> m.relation
@@ -882,28 +871,22 @@ module Mem = struct
    fun f -> f_lift_default ~default:Bottom (fun m' -> NonBottom (f m'))
 
 
+  let is_stack_loc : Loc.t -> t -> bool =
+   fun k -> f_lift_default ~default:false (MemReach.is_stack_loc k)
+
+
+  let find : Loc.t -> t -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
+
   let find_stack : Loc.t -> t -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
 
 
-  let find_stack_set : PowLoc.t -> t -> Val.t =
-   fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack_set k)
-
-
-  let find_heap : Loc.t -> t -> Val.t =
-   fun k -> f_lift_default ~default:Val.bot (MemReach.find_heap k)
-
-
-  let find_heap_opt : Loc.t -> t -> Val.t option =
-   fun k -> f_lift_default ~default:None (MemReach.find_heap_opt k)
-
-
-  let find_heap_set : PowLoc.t -> t -> Val.t =
-   fun k -> f_lift_default ~default:Val.bot (MemReach.find_heap_set k)
-
-
   let find_set : PowLoc.t -> t -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_set k)
+
+
+  let find_opt : Loc.t -> t -> Val.t option =
+   fun k -> f_lift_default ~default:None (MemReach.find_opt k)
 
 
   let find_alias : Ident.t -> t -> AliasTarget.t option =
@@ -934,6 +917,8 @@ module Mem = struct
    fun formal loc e -> f_lift (MemReach.store_empty_alias formal loc e)
 
 
+  let add_stack_loc : Loc.t -> t -> t = fun k -> f_lift (MemReach.add_stack_loc k)
+
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_stack k v)
 
   let add_heap : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_heap k v)
@@ -947,13 +932,9 @@ module Mem = struct
    fun id ~location -> f_lift (MemReach.add_unknown_from id ~callee_pname:None ~location)
 
 
-  let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
-   fun p v -> f_lift (MemReach.strong_update_heap p v)
+  let strong_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.strong_update p v)
 
-
-  let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
-   fun p v -> f_lift (MemReach.weak_update_heap p v)
-
+  let weak_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.weak_update p v)
 
   let get_return : t -> Val.t = f_lift_default ~default:Val.bot MemReach.get_return
 

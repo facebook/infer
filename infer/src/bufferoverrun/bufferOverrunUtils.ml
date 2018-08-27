@@ -19,12 +19,12 @@ module TraceSet = Trace.Set
 module Exec = struct
   let get_alist_size alist mem =
     let size_powloc = Dom.Val.get_pow_loc alist in
-    Dom.Mem.find_heap_set size_powloc mem
+    Dom.Mem.find_set size_powloc mem
 
 
   let load_val id val_ mem =
     let locs = val_ |> Dom.Val.get_all_locs in
-    let v = Dom.Mem.find_heap_set locs mem in
+    let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
     if PowLoc.is_singleton locs then Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
     else mem
@@ -155,7 +155,7 @@ module Exec = struct
             let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
             let offset, size = (Itv.zero, length) in
             let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size in
-            mem |> Dom.Mem.strong_update_heap field_loc v
+            mem |> Dom.Mem.strong_update field_loc v
             |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->
             init_fields field_typ field_loc dimension ?dyn_length mem
@@ -188,7 +188,7 @@ module Exec = struct
           | Tarray {length= Some length} ->
               let length = Itv.plus (Itv.of_int_lit length) dyn_length in
               let v = Dom.Mem.find_set field_loc mem |> Dom.Val.set_array_size length in
-              Dom.Mem.strong_update_heap field_loc v mem
+              Dom.Mem.strong_update field_loc v mem
           | _ ->
               set_dyn_length tenv field_typ field_loc dyn_length mem )
       | _ ->

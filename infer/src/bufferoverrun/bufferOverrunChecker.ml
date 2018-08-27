@@ -37,7 +37,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let instantiate_ret ret callee_pname ~callee_exit_mem subst_map mem ret_alias location =
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
-        Option.value_map (Dom.Mem.find_heap_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
+        Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let v =
               Dom.Val.subst v subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
             in
@@ -48,7 +48,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let id = fst ret in
     let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-    let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
+    let ret_val = Dom.Mem.find ret_loc callee_exit_mem in
     let ret_var = Loc.of_var (Var.of_id id) in
     let add_ret_alias l = Dom.Mem.load_alias id l mem in
     let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
@@ -68,28 +68,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match Tenv.lookup tenv typename with
           | Some str ->
               let formal_locs =
-                Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_exit_mem
-                |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
+                Dom.Mem.find (Loc.of_pvar (fst formal)) callee_exit_mem |> Dom.Val.get_array_blk
+                |> ArrayBlk.get_pow_loc
               in
               let instantiate_fld mem (fn, _, _) =
                 let formal_fields = PowLoc.append_field formal_locs ~fn in
-                let v = Dom.Mem.find_heap_set formal_fields callee_exit_mem in
+                let v = Dom.Mem.find_set formal_fields callee_exit_mem in
                 let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) ~fn in
                 Dom.Val.subst v subst_map location
-                |> Fn.flip (Dom.Mem.strong_update_heap actual_fields) mem
+                |> Fn.flip (Dom.Mem.strong_update actual_fields) mem
               in
               List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
           | _ ->
               mem )
         | _ ->
             let formal_locs =
-              Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_exit_mem |> Dom.Val.get_array_blk
+              Dom.Mem.find (Loc.of_pvar (fst formal)) callee_exit_mem |> Dom.Val.get_array_blk
               |> ArrayBlk.get_pow_loc
             in
-            let v = Dom.Mem.find_heap_set formal_locs callee_exit_mem in
+            let v = Dom.Mem.find_set formal_locs callee_exit_mem in
             let actual_locs = Dom.Val.get_all_locs actual in
-            Dom.Val.subst v subst_map location
-            |> Fn.flip (Dom.Mem.strong_update_heap actual_locs) mem )
+            Dom.Val.subst v subst_map location |> Fn.flip (Dom.Mem.strong_update actual_locs) mem )
       | _ ->
           mem
     in
@@ -159,7 +158,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | "__inferbo_empty" when Loc.is_return loc_v -> (
                 match Sem.get_formals pdesc with
                 | [(formal, _)] ->
-                    let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
+                    let formal_v = Dom.Mem.find (Loc.of_pvar formal) mem in
                     Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
                 | _ ->
                     assert false )
@@ -171,33 +170,36 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
       | Prune (exp, _, _, _) ->
           Sem.Prune.prune exp mem
-      | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _) -> (
-        match Models.Call.dispatch tenv callee_pname params with
-        | Some {Models.exec} ->
-            let node_hash = CFG.Node.hash node in
-            let model_env =
-              Models.mk_model_env callee_pname node_hash location tenv symbol_table
-            in
-            exec model_env ~ret mem
-        | None ->
-          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
-          | Some callee_summary -> (
-            match Payload.of_summary callee_summary with
-            | Some payload ->
-                let callee_pdesc = Summary.get_proc_desc callee_summary in
-                instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
-            | None ->
-                (* This may happen for procedures with a biabduction model. *)
-                L.(debug BufferOverrun Verbose)
-                  "/!\\ Call to %a at %a has no inferbo payload@\n" Typ.Procname.pp callee_pname
-                  Location.pp location ;
-                Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+      | Call (((id, _) as ret), Const (Cfun callee_pname), params, location, _)
+        -> (
+          let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+          match Models.Call.dispatch tenv callee_pname params with
+          | Some {Models.exec} ->
+              let node_hash = CFG.Node.hash node in
+              let model_env =
+                Models.mk_model_env callee_pname node_hash location tenv symbol_table
+              in
+              exec model_env ~ret mem
           | None ->
-              L.(debug BufferOverrun Verbose)
-                "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
-                location ;
-              Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+            match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+            | Some callee_summary -> (
+              match Payload.of_summary callee_summary with
+              | Some payload ->
+                  let callee_pdesc = Summary.get_proc_desc callee_summary in
+                  instantiate_mem tenv ret callee_pdesc callee_pname params mem payload location
+              | None ->
+                  (* This may happen for procedures with a biabduction model. *)
+                  L.(debug BufferOverrun Verbose)
+                    "/!\\ Call to %a at %a has no inferbo payload@\n" Typ.Procname.pp callee_pname
+                    Location.pp location ;
+                  Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
+            | None ->
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
+                  location ;
+                Dom.Mem.add_unknown_from id ~callee_pname ~location mem )
       | Call ((id, _), fun_exp, _, location, _) ->
+          let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
           let () =
             L.(debug BufferOverrun Verbose)
               "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp location
