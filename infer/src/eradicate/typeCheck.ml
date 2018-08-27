@@ -17,26 +17,6 @@ let remove_temps = true
 
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
-  (** What complex expressions are considered constant, each case includes the previous ones.
-      Boolean checks (e.g. null check) and assignments on expressions considered constant are
-      retained across the control flow assuming there are no modifications in between. *)
-  type expressions_constant =
-    | FL_PARAMETER_STATIC
-    (* parameter.field and static fields *)
-    | FL_ALL_NESTED_FIELDS
-    (* all forms of var.field1. ... .fieldn *)
-    | FUNCTIONS_IDEMPOTENT
-
-  (* the above plus function calls are considered idempotent *)
-
-  let complex_expressions_flag = FUNCTIONS_IDEMPOTENT
-
-  let parameter_and_static_field () = complex_expressions_flag >= FL_PARAMETER_STATIC
-
-  let all_nested_fields () = complex_expressions_flag >= FL_ALL_NESTED_FIELDS
-
-  let functions_idempotent () = complex_expressions_flag >= FUNCTIONS_IDEMPOTENT
-
   let procname_optional_isPresent = Models.is_optional_isPresent
 
   let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
@@ -95,8 +75,7 @@ module ComplexExpressions = struct
       | DExp.Dderef de ->
           dexp_to_string de
       | DExp.Dfcall (fun_dexp, args, _, {CallFlags.cf_virtual= isvirtual})
-      | DExp.Dretcall (fun_dexp, args, _, {CallFlags.cf_virtual= isvirtual})
-        when functions_idempotent () ->
+      | DExp.Dretcall (fun_dexp, args, _, {CallFlags.cf_virtual= isvirtual}) ->
           let pp_arg fmt de = F.pp_print_string fmt (dexp_to_string de) in
           let pp_args fmt des = Pp.comma_seq pp_arg fmt des in
           let pp fmt =
@@ -104,8 +83,6 @@ module ComplexExpressions = struct
             F.fprintf fmt "%a(%a)%s" pp_arg fun_dexp pp_args args virt
           in
           F.asprintf "%t" pp
-      | DExp.Dfcall _ | DExp.Dretcall _ ->
-          case_not_handled ()
       | (DExp.Dpvar pv | DExp.Dpvaraddr pv) when not (Pvar.is_frontend_tmp pv) ->
           Pvar.to_string pv
       | DExp.Dpvar _ | DExp.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
@@ -293,11 +270,9 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
           default
     in
     match exp with
-    | Exp.Var id
-      when ComplexExpressions.functions_idempotent ()
-           && Errdesc.find_normal_variable_funcall node' id <> None ->
+    | Exp.Var id when Errdesc.find_normal_variable_funcall node' id <> None ->
         handle_function_call node' id
-    | Exp.Lvar pvar when ComplexExpressions.functions_idempotent () && Pvar.is_frontend_tmp pvar
+    | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar
       -> (
         let frontend_variable_assignment = Errdesc.find_program_variable_assignment node pvar in
         match frontend_variable_assignment with
@@ -307,7 +282,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
             default )
     | Exp.Lvar _ ->
         default
-    | Exp.Lfield (exp_, fn, typ) when ComplexExpressions.parameter_and_static_field () ->
+    | Exp.Lfield (exp_, fn, typ) ->
         let inner_origin =
           ( match exp_ with
           | Exp.Lvar pvar ->
@@ -347,7 +322,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar inner_origin fn typ in
               (Exp.Lvar pvar, typestate')
-          | (Exp.Lvar _ | Exp.Lfield _) when ComplexExpressions.all_nested_fields () -> (
+          | Exp.Lvar _ | Exp.Lfield _ -> (
             match
               (* treat var.field1. ... .fieldn as a constant *)
               ComplexExpressions.exp_to_string tenv node' exp
@@ -978,11 +953,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
                   | Some e1 ->
                       (typestate, e1, EradicateChecks.From_is_false_on_null)
                   | None ->
-                    match from_containsKey e with
-                    | Some _ when ComplexExpressions.functions_idempotent () ->
-                        handle_containsKey e
-                    | _ ->
-                        (typestate, e, EradicateChecks.From_condition)
+                      if Option.is_some (from_containsKey e) then handle_containsKey e
+                      else (typestate, e, EradicateChecks.From_condition)
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let typ, ta, _ =
