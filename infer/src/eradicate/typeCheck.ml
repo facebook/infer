@@ -640,20 +640,24 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
           res_typestate := pvar_apply loc (handle_pvar ann b) !res_typestate pvar
         in
         let handle_negated_condition cond_node =
-          let do_instr = function[@warning "-57"]
-            | Sil.Prune (Exp.BinOp (Binop.Eq, cond_e_, Exp.Const (Const.Cint i)), _, _, _)
+          let do_instr instr =
+            let set_flag expression =
+              let cond_e = Idenv.expand_expr_temps idenv cond_node expression in
+              match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
+              | Exp.Lvar pvar', _ ->
+                  set_flag pvar' AnnotatedSignature.Nullable false
+              | _ ->
+                  ()
+            in
+            match instr with
             | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), cond_e_), _, _, _)
-              when IntLit.iszero i
-              -> (
-                let cond_e = Idenv.expand_expr_temps idenv cond_node cond_e_ in
-                match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
-                | Exp.Lvar pvar', _ ->
-                    set_flag pvar' AnnotatedSignature.Nullable false
-                | _ ->
-                    () )
+              when IntLit.iszero i ->
+                set_flag cond_e_
+            | Sil.Prune (Exp.BinOp (Binop.Eq, cond_e_, Exp.Const (Const.Cint i)), _, _, _)
+              when IntLit.iszero i ->
+                set_flag cond_e_
             | _ ->
                 ()
-            (* FIXME: silenced warning may be legit *)
           in
           Instrs.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node)
         in
