@@ -171,8 +171,11 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
         false
   in
   let should_report pvar typ live_vars captured_by_ref_vars =
+    (* T32000971: a temporay fix for dead store false positives until we support __unused__ attribute *)
+    let is_unused_tmp_var pvar = String.equal "__tmp" (Pvar.to_string pvar) in
     not
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+      || is_unused_tmp_var pvar
       || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
       || Domain.mem (Var.of_pvar pvar) live_vars
       || Procdesc.is_captured_var proc_desc pvar

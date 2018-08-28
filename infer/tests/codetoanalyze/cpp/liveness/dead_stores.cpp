@@ -478,4 +478,16 @@ class Exceptions {
 
 void init_in_binop_bad(int x) { x = -x & ~int{0}; }
 
+void FN_unused_tmp_bad() {
+  // T32000971
+  int __tmp = 1;
+}
+
+#define UNUSED(a) __typeof__(&a) __attribute__((unused)) __tmp = &a;
+
+void unused_attribute_ok() {
+  int x;
+  UNUSED(x);
+}
+
 } // namespace dead_stores
