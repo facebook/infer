@@ -357,27 +357,32 @@ module Condition = struct
 end
 
 module ConditionTrace = struct
-  type cond_trace = Intra | Inter of {call_site: Location.t; callee_pname: Typ.Procname.t}
+  type intra_cond_trace = Intra | Inter of {call_site: Location.t; callee_pname: Typ.Procname.t}
   [@@deriving compare]
 
-  type t = {cond_trace: cond_trace; issue_location: Location.t; val_traces: ValTraceSet.t}
+  type 'cond_trace t0 =
+    {cond_trace: 'cond_trace; issue_location: Location.t; val_traces: ValTraceSet.t}
   [@@deriving compare]
 
-  let pp_location : F.formatter -> t -> unit =
-   fun fmt ct -> Location.pp_file_pos fmt ct.issue_location
+  type t = intra_cond_trace t0 [@@deriving compare]
+
+  type summary_t = unit t0
+
+  let pp_summary : F.formatter -> _ t0 -> unit =
+   fun fmt ct -> F.fprintf fmt "at %a" Location.pp_file_pos ct.issue_location
 
 
   let pp : F.formatter -> t -> unit =
    fun fmt ct ->
-    if Config.bo_debug <= 1 then F.fprintf fmt "at %a" pp_location ct
-    else
+    pp_summary fmt ct ;
+    if Config.bo_debug > 1 then
       match ct.cond_trace with
       | Inter {callee_pname; call_site} ->
           let pname = Typ.Procname.to_string callee_pname in
-          F.fprintf fmt "at %a by call to %s at %a (%a)" pp_location ct pname Location.pp_file_pos
-            call_site ValTraceSet.pp ct.val_traces
+          F.fprintf fmt " by call to %s at %a (%a)" pname Location.pp_file_pos call_site
+            ValTraceSet.pp ct.val_traces
       | Intra ->
-          F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
+          F.fprintf fmt " (%a)" ValTraceSet.pp ct.val_traces
 
 
   let pp_description : F.formatter -> t -> unit =
@@ -409,8 +414,11 @@ module ConditionTrace = struct
 
   let has_unknown ct = ValTraceSet.has_unknown ct.val_traces
 
-  let check : t -> IssueType.t option =
+  let check : _ t0 -> IssueType.t option =
    fun ct -> if has_unknown ct then Some IssueType.buffer_overrun_u5 else None
+
+
+  let for_summary : _ t0 -> summary_t = fun ct -> {ct with cond_trace= ()}
 end
 
 module Reported = struct
@@ -422,11 +430,16 @@ module Reported = struct
 end
 
 module ConditionWithTrace = struct
-  type t = {cond: Condition.t; trace: ConditionTrace.t; reported: Reported.t option}
+  type 'cond_trace t0 =
+    {cond: Condition.t; trace: 'cond_trace ConditionTrace.t0; reported: Reported.t option}
 
   let make cond trace = {cond; trace; reported= None}
 
   let pp fmt {cond; trace} = F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp trace
+
+  let pp_summary fmt {cond; trace} =
+    F.fprintf fmt "%a %a" Condition.pp cond ConditionTrace.pp_summary trace
+
 
   let have_similar_bounds {cond= cond1} {cond= cond2} = Condition.have_similar_bounds cond1 cond2
 
@@ -445,7 +458,7 @@ module ConditionWithTrace = struct
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
-        pp cwt Typ.Procname.pp callee_pname Location.pp call_site ;
+        pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
     match Condition.subst bound_map rel_map caller_relation cwt.cond with
     | None ->
         None
@@ -505,10 +518,17 @@ module ConditionWithTrace = struct
 
 
   let forget_locs locs cwt = {cwt with cond= Condition.forget_locs locs cwt.cond}
+
+  let for_summary {cond; trace; reported} =
+    {cond; trace= ConditionTrace.for_summary trace; reported}
 end
 
 module ConditionSet = struct
-  type t = ConditionWithTrace.t list
+  type 'cond_trace t0 = 'cond_trace ConditionWithTrace.t0 list
+
+  type t = ConditionTrace.intra_cond_trace t0
+
+  type summary_t = unit t0
 
   (* invariant: join_one of one of the elements should return the original list *)
 
@@ -593,12 +613,12 @@ module ConditionSet = struct
 
   let check_all ~report condset = List.filter_map condset ~f:(ConditionWithTrace.check ~report)
 
-  let pp_summary : F.formatter -> t -> unit =
+  let pp_summary : F.formatter -> _ t0 -> unit =
    fun fmt condset ->
     let pp_sep fmt () = F.fprintf fmt ", @," in
     F.fprintf fmt "@[<v 0>Safety conditions:@," ;
     F.fprintf fmt "@[<hov 2>{ " ;
-    F.pp_print_list ~pp_sep ConditionWithTrace.pp fmt condset ;
+    F.pp_print_list ~pp_sep ConditionWithTrace.pp_summary fmt condset ;
     F.fprintf fmt " }@]" ;
     F.fprintf fmt "@]"
 
@@ -611,8 +631,12 @@ module ConditionSet = struct
       condset
 
 
-  let forget_locs : AbsLoc.PowLoc.t -> t -> t =
+  let forget_locs : AbsLoc.PowLoc.t -> 'a t0 -> 'a t0 =
    fun locs x -> List.map x ~f:(ConditionWithTrace.forget_locs locs)
+
+
+  let for_summary : _ t0 -> summary_t =
+   fun condset -> List.map condset ~f:ConditionWithTrace.for_summary
 end
 
 let description cond trace =

@@ -26,11 +26,13 @@ end
 module ConditionSet : sig
   type t
 
+  type summary_t
+
   val empty : t
 
   val pp : Format.formatter -> t -> unit
 
-  val pp_summary : Format.formatter -> t -> unit
+  val pp_summary : Format.formatter -> summary_t -> unit
 
   val add_array_access :
     Location.t -> idx:ItvPure.astate -> size:ItvPure.astate -> is_collection_add:bool
@@ -42,11 +44,13 @@ module ConditionSet : sig
   val join : t -> t -> t
 
   val subst :
-    t -> Bounds.Bound.t bottom_lifted Symb.SymbolMap.t * ValTraceSet.t Symb.SymbolMap.t
+    summary_t -> Bounds.Bound.t bottom_lifted Symb.SymbolMap.t * ValTraceSet.t Symb.SymbolMap.t
     -> Relation.SubstMap.t -> Relation.astate -> Typ.Procname.t -> Location.t -> t
 
   val check_all : report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> t -> t
   (** Check the conditions, call [report] on those that trigger an issue, returns those that needs to be propagated to callers. *)
+
+  val for_summary : t -> summary_t
 
   val forget_locs : AbsLoc.PowLoc.t -> t -> t
 end

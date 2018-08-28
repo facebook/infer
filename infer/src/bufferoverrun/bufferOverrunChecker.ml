@@ -600,6 +600,8 @@ module Report = struct
 
 
   let forget_locs = PO.ConditionSet.forget_locs
+
+  let for_summary = PO.ConditionSet.for_summary
 end
 
 let extract_pre = Analyzer.extract_pre
@@ -609,7 +611,7 @@ let extract_post = Analyzer.extract_post
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
  fun proc_name s ->
   L.(debug BufferOverrun Medium)
-    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
+    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp s
 
 
 let get_local_decls proc_desc =
@@ -637,7 +639,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   in
   let cond_set =
     Report.check_proc summary proc_desc tenv symbol_table cfg inv_map
-    |> Report.report_errors summary |> Report.forget_locs locals
+    |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
   in
   let summary =
     match exit_mem with

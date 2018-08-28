@@ -289,10 +289,6 @@ module Val = struct
     {x with traces}
 
 
-  let pp_summary : F.formatter -> t -> unit =
-   fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
-
-
   let set_array_size : Itv.t -> t -> t =
    fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
 
@@ -320,12 +316,6 @@ module MemPure = struct
   include AbstractDomain.Map (Loc) (Val)
 
   let bot = empty
-
-  let get_return : astate -> Val.t =
-   fun mem ->
-    let mem = filter (fun l _ -> Loc.is_return l) mem in
-    if is_empty mem then Val.bot else snd (choose mem)
-
 
   let range : filter_loc:(Loc.t -> bool) -> astate -> Itv.NonNegativePolynomial.astate =
    fun ~filter_loc mem ->
@@ -745,8 +735,6 @@ module MemReach = struct
 
   let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
 
-  let get_return : t -> Val.t = fun m -> MemPure.get_return m.mem_pure
-
   let update_mem : PowLoc.t -> Val.t -> t -> t =
    fun ploc v s ->
     if can_strong_update ploc then strong_update ploc v s
@@ -936,8 +924,6 @@ module Mem = struct
 
   let weak_update : PowLoc.t -> Val.t -> t -> t = fun p v -> f_lift (MemReach.weak_update p v)
 
-  let get_return : t -> Val.t = f_lift_default ~default:Val.bot MemReach.get_return
-
   let get_reachable_locs_from : PowLoc.t -> t -> PowLoc.t =
    fun locs -> f_lift_default ~default:PowLoc.empty (MemReach.get_reachable_locs_from locs)
 
@@ -997,32 +983,16 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = Itv.SymbolTable.summary_t * Mem.t * PO.ConditionSet.t
+  type t = Itv.SymbolTable.summary_t * Mem.t * PO.ConditionSet.summary_t
 
   let get_symbol_table : t -> Itv.SymbolTable.summary_t = fst3
 
   let get_output : t -> Mem.t = snd3
 
-  let get_cond_set : t -> PO.ConditionSet.t = trd3
-
-  let get_return : t -> Val.t = fun s -> Mem.get_return (get_output s)
-
-  let pp_symbol_map : F.formatter -> t -> unit =
-   fun fmt s -> Itv.SymbolTable.pp fmt (get_symbol_table s)
-
-
-  let pp_return : F.formatter -> t -> unit =
-   fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
-
-
-  let pp_summary : F.formatter -> t -> unit =
-   fun fmt s ->
-    F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s PO.ConditionSet.pp_summary
-      (get_cond_set s)
-
+  let get_cond_set : t -> PO.ConditionSet.summary_t = trd3
 
   let pp : F.formatter -> t -> unit =
    fun fmt (symbol_table, exit_mem, condition_set) ->
-    F.fprintf fmt "%a@;%a@;%a" Itv.SymbolTable.pp symbol_table Mem.pp exit_mem PO.ConditionSet.pp
-      condition_set
+    F.fprintf fmt "%a@;%a@;%a" Itv.SymbolTable.pp symbol_table Mem.pp exit_mem
+      PO.ConditionSet.pp_summary condition_set
 end
