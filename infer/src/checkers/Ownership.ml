@@ -353,7 +353,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         , _
         , loc )
       when Typ.Procname.ObjC_Cpp.is_cpp_lambda callee_pname ->
-        (* invoking a lambda; check that it's captured vars are valid *)
+        (* invoking a lambda; check that its captured vars are valid *)
         Domain.check_var_lifetime lhs_base loc summary astate ;
         astate
     | Call (ret_id_typ, call_exp, actuals, _, loc) -> (
@@ -376,18 +376,24 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
 
-let report_invalid_return post end_loc formal_map summary =
+let report_invalid_return post end_loc summary =
+  let locals =
+    Procdesc.get_locals summary.Summary.proc_desc |> List.map ~f:(fun {ProcAttributes.name} -> name)
+  in
+  let is_local_to_procedure var =
+    Var.get_mangled var
+    |> Option.value_map ~default:false ~f:(fun mangled ->
+           List.mem ~equal:Mangled.equal locals mangled )
+  in
   (* look for return values that are borrowed from (now-invalid) local variables *)
   let report_invalid_return base (capability : CapabilityDomain.astate) =
     if Var.is_return (fst base) then
       match capability with
       | BorrowedFrom vars ->
           VarSet.iter
-            (fun borrowed_base ->
-              if
-                (not (FormalMap.is_formal borrowed_base formal_map))
-                && not (Var.is_global (fst borrowed_base))
-              then Domain.report_return_stack_var borrowed_base end_loc summary )
+            (fun ((var, _) as borrowed_base) ->
+              if is_local_to_procedure var then
+                Domain.report_return_stack_var borrowed_base end_loc summary )
             vars
       | InvalidatedAt invalidated_loc ->
           Domain.report_use_after_lifetime base ~use_loc:end_loc ~invalidated_loc summary
@@ -403,8 +409,7 @@ let checker {Callbacks.proc_desc; tenv; summary} =
   ( match Analyzer.compute_post proc_data ~initial with
   | Some post ->
       let end_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
-      let formal_map = FormalMap.make proc_desc in
-      report_invalid_return post end_loc formal_map summary
+      report_invalid_return post end_loc summary
   | None ->
       () ) ;
   summary

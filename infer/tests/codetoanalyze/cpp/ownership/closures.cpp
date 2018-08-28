@@ -113,3 +113,23 @@ std::function<int()> FN_ref_capture_return_lambda_bad() {
   return f; // if the caller invokes the lambda, it will try to read the invalid
             // stack address
 }
+
+int ref_capture_return_local_lambda_ok() {
+  S x;
+  auto f = [&x](void) -> S& {
+    // do not report this because there is a good chance that this function will
+    // only be used in the local scope
+    return x;
+  };
+  return f().f;
+}
+
+S& fn_ref_capture_return_local_lambda_bad() {
+  S x;
+  auto f = [&x](void) -> S& {
+    // no way to know if ok here
+    return x;
+  };
+  // woops, this returns a ref to a local!
+  return f();
+}
