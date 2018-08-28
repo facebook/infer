@@ -23,8 +23,7 @@ let check_nested_loop path pos_opt =
     match !loop_visits_log with
     | true :: true :: _ ->
         if verbose then L.d_strln "in nested loop" ;
-        true
-        (* last two loop visits were entering loops *)
+        true (* last two loop visits were entering loops *)
     | _ ->
         false
   in
@@ -77,7 +76,7 @@ let check_access access_opt de_opt =
       let process_formal_letref = function
         | Sil.Load (id, Exp.Lvar pvar, _, _) ->
             let is_java_this = Language.curr_language_is Java && Pvar.is_this pvar in
-            if not is_java_this && is_formal pvar then Some id else None
+            if (not is_java_this) && is_formal pvar then Some id else None
         | _ ->
             None
       in
@@ -147,8 +146,8 @@ let check_access access_opt de_opt =
       find_bucket n false
   | Some (Localise.Last_accessed (_, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
-  | _ ->
-    match de_opt with Some (DecompiledExp.Dconst _) -> Some Localise.BucketLevel.b1 | _ -> None
+  | _ -> (
+    match de_opt with Some (DecompiledExp.Dconst _) -> Some Localise.BucketLevel.b1 | _ -> None )
 
 
 let classify_access desc access_opt de_opt is_nullable =

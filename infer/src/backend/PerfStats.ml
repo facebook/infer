@@ -266,7 +266,7 @@ let compute_mem_stats () =
   (stats, mem)
 
 
-let compute_time_stats ?rtime_counter (initial_times: Unix.process_times) =
+let compute_time_stats ?rtime_counter (initial_times : Unix.process_times) =
   let exit_times = Unix.times () in
   let rtime_span = Mtime_clock.elapsed () in
   let rtime =

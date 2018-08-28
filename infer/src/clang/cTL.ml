@@ -32,7 +32,8 @@ type transitions =
 
 let is_transition_to_successor trans =
   match trans with
-  | Body | InitExpr | FieldName _ | Fields | ParameterName _ | ParameterPos _ | Parameters | Cond ->
+  | Body | InitExpr | FieldName _ | Fields | ParameterName _ | ParameterPos _ | Parameters | Cond
+    ->
       true
   | Super | PointerToDecl | Protocol | AccessorForProperty _ ->
       false
@@ -65,7 +66,7 @@ type t =
   | ET of ALVar.alexp list * transitions option * t
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let has_transition phi =
   match phi with
@@ -213,7 +214,7 @@ module Debug = struct
           (nodes_to_string arglist) pp_transition trans pp_formula phi
 
 
-  let pp_ast ~ast_node_to_highlight ?(prettifier= Fn.id) fmt root =
+  let pp_ast ~ast_node_to_highlight ?(prettifier = Fn.id) fmt root =
     let pp_node_info fmt an =
       let name = Ctl_parser_types.ast_node_name an in
       let typ = Ctl_parser_types.ast_node_type an in
@@ -229,7 +230,7 @@ module Debug = struct
           pp_children pp_node wrapper fmt level nodes
     in
     let rec pp_ast_aux fmt root level prefix =
-      let get_node_name (an: ast_node) =
+      let get_node_name (an : ast_node) =
         match an with
         | Stmt stmt ->
             Clang_ast_proj.get_stmt_kind_string stmt
@@ -266,7 +267,8 @@ module Debug = struct
           pp_stmts fmt next_level stmts
       | Decl decl ->
           let decls =
-            Clang_ast_proj.get_decl_context_tuple decl |> Option.map ~f:(fun (decls, _) -> decls)
+            Clang_ast_proj.get_decl_context_tuple decl
+            |> Option.map ~f:(fun (decls, _) -> decls)
             |> Option.value ~default:[]
           in
           pp_decls fmt next_level decls
@@ -320,7 +322,7 @@ module Debug = struct
 
     let explain t ~eval_node ~ast_node_to_display =
       let line_number an =
-        let line_of_source_range (sr: Clang_ast_t.source_range) =
+        let line_of_source_range (sr : Clang_ast_t.source_range) =
           let loc_info, _ = sr in
           loc_info.sl_line
         in
@@ -353,7 +355,9 @@ module Debug = struct
         let witness_str =
           match eval_node.content.witness with
           | Some witness ->
-              "\n- witness: " ^ Ctl_parser_types.ast_node_kind witness ^ " "
+              "\n- witness: "
+              ^ Ctl_parser_types.ast_node_kind witness
+              ^ " "
               ^ Ctl_parser_types.ast_node_name witness
           | None ->
               ""
@@ -679,8 +683,7 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
         []
   in
   match d with
-  | ObjCMethodDecl (di, method_decl_name, mdi)
-    -> (
+  | ObjCMethodDecl (di, method_decl_name, mdi) -> (
       (* infer whether this method may be a getter or setter (or
          neither) from its argument list *)
       let num_params = List.length mdi.omdi_parameters in
@@ -707,12 +710,12 @@ let transition_decl_to_decl_via_accessor_for_property d desired_kind =
               match accessor_decl_ref_of_property_decl_info opdi with
               | None ->
                   false
-              | Some dr ->
+              | Some dr -> (
                 match dr.dr_name with
                 | Some ni ->
                     String.equal method_decl_name.ni_name ni.ni_name
                 | _ ->
-                    false
+                    false )
             in
             let impl_decl_opt = CAst_utils.get_decl_opt di.di_parent_pointer in
             List.map ~f:(fun x -> Decl x) (find_property_for_accessor impl_decl_opt name_check) )
@@ -797,8 +800,7 @@ let parameter_of_corresp_name method_name args name =
     List.filter (String.split ~on:':' method_name) ~f:(fun label -> not (String.is_empty label))
   in
   match List.zip names args with
-  | Some names_args
-    -> (
+  | Some names_args -> (
       let names_arg_opt =
         List.find names_args ~f:(fun (arg_label, _) -> ALVar.compare_str_with_alexp arg_label name)
       in
@@ -863,7 +865,8 @@ let transition_via_parameter_pos an pos = transition_via_specified_parameter an 
 let transition_via_fields an =
   let open Clang_ast_t in
   match an with
-  | Decl (RecordDecl (_, _, _, decls, _, _, _)) | Decl (CXXRecordDecl (_, _, _, decls, _, _, _, _)) ->
+  | Decl (RecordDecl (_, _, _, decls, _, _, _)) | Decl (CXXRecordDecl (_, _, _, decls, _, _, _, _))
+    ->
       List.filter_map ~f:(fun d -> match d with FieldDecl _ -> Some (Decl d) | _ -> None) decls
   | Stmt (InitListExpr (_, stmts, _)) ->
       List.map ~f:(fun stmt -> Stmt stmt) stmts
@@ -881,10 +884,9 @@ let field_has_name name node =
 
 let field_of_name name nodes = List.filter ~f:(field_has_name name) nodes
 
-let field_of_corresp_name_from_init_list_expr name init_nodes (expr_info: Clang_ast_t.expr_info) =
+let field_of_corresp_name_from_init_list_expr name init_nodes (expr_info : Clang_ast_t.expr_info) =
   match CAst_utils.get_decl_from_typ_ptr expr_info.ei_qual_type.qt_type_ptr with
-  | Some decl
-    -> (
+  | Some decl -> (
       let fields = transition_via_fields (Decl decl) in
       match List.zip init_nodes fields with
       | Some init_nodes_fields ->
@@ -1182,8 +1184,8 @@ and eval_EF phi an lcxt trans =
       let witness_opt = eval_formula phi an lcxt in
       if Option.is_some witness_opt then witness_opt
       else
-        List.fold_left (Ctl_parser_types.get_direct_successor_nodes an) ~init:witness_opt ~f:
-          (fun acc node -> choose_witness_opt (eval_EF phi node lcxt trans) acc )
+        List.fold_left (Ctl_parser_types.get_direct_successor_nodes an) ~init:witness_opt
+          ~f:(fun acc node -> choose_witness_opt (eval_EF phi node lcxt trans) acc )
 
 (* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
 

@@ -9,7 +9,7 @@ open! IStd
 open PolyVariantEqual
 module L = Logging
 
-let count_newlines (path: string) : int =
+let count_newlines (path : string) : int =
   let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
   In_channel.with_file path ~f
 
@@ -24,7 +24,7 @@ type t =
   (* relative to infer models *)
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 module OrderedSourceFile = struct
   type nonrec t = t
@@ -43,7 +43,7 @@ module Hash = Caml.Hashtbl.Make (struct
   let hash = Caml.Hashtbl.hash
 end)
 
-let from_abs_path ?(warn_on_error= true) fname =
+let from_abs_path ?(warn_on_error = true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
@@ -58,13 +58,13 @@ let from_abs_path ?(warn_on_error= true) fname =
       RelativeProjectRoot path
   | None when Config.buck_cache_mode && Filename.check_suffix fname_real "java" ->
       L.(die InternalError) "%s is not relative to %s" fname_real project_root_real
-  | None ->
+  | None -> (
     match Utils.filename_to_relative ~root:models_dir_real fname_real with
     | Some path ->
         RelativeInferModel path
     | None ->
         (* fname_real is absolute already *)
-        Absolute fname_real
+        Absolute fname_real )
 
 
 let to_string fname =
@@ -142,7 +142,7 @@ let path_exists abs_path =
       result
 
 
-let of_header ?(warn_on_error= true) header_file =
+let of_header ?(warn_on_error = true) header_file =
   let abs_path = to_abs_path header_file in
   let source_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
   let header_exts = ["h"; "hh"; "hpp"; "hxx"] in
@@ -156,7 +156,7 @@ let of_header ?(warn_on_error= true) header_file =
       None
 
 
-let create ?(warn_on_error= true) path =
+let create ?(warn_on_error = true) path =
   if Filename.is_relative path then
     (* sources in changed-files-index may be specified relative to project root *)
     RelativeProjectRoot path

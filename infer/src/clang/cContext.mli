@@ -44,8 +44,15 @@ val is_objc_method : t -> bool
 val is_objc_class_method : t -> bool
 
 val create_context :
-  CFrontend_config.translation_unit_context -> Tenv.t -> Cfg.t -> Procdesc.t -> curr_class
-  -> Typ.t option -> t option -> Clang_ast_t.decl list StmtMap.t -> t
+     CFrontend_config.translation_unit_context
+  -> Tenv.t
+  -> Cfg.t
+  -> Procdesc.t
+  -> curr_class
+  -> Typ.t option
+  -> t option
+  -> Clang_ast_t.decl list StmtMap.t
+  -> t
 
 val add_block_static_var : t -> Typ.Procname.t -> Pvar.t * Typ.t -> unit
 

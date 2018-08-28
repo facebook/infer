@@ -59,7 +59,7 @@ type t =
   | URem
 [@@deriving compare, sexp]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let uncurry exp =
   let rec uncurry_ args op =
@@ -189,7 +189,7 @@ module Var = struct
 
   let fmt = fmt
 
-  let mk ?(loc= Loc.none) name typ = Var {name; typ; loc}
+  let mk ?(loc = Loc.none) name typ = Var {name; typ; loc}
 
   let name = function[@warning "p"] Var {name} -> name
 
@@ -214,15 +214,15 @@ module Global = struct
   include Comparator.Make (T)
 
   let fmt_defn ff g =
-    let[@warning "p"] Global {init; typ} = g in
-    let[@warning "p"] Typ.Pointer {elt= typ} = typ in
+    let[@warning "p"] (Global {init; typ}) = g in
+    let[@warning "p"] (Typ.Pointer {elt= typ}) = typ in
     Format.fprintf ff "@[<2>%a %a%a@]" Typ.fmt typ fmt g
       (option_fmt " =@ @[%a@]" fmt)
       init
 
   let fmt = fmt
 
-  let mk ?init ?(loc= Loc.none) name typ =
+  let mk ?init ?(loc = Loc.none) name typ =
     assert (
       Option.for_all init ~f:(fun exp ->
           Typ.equal typ (Typ.mkPointer ~elt:(typ_of exp)) ) ) ;
@@ -261,13 +261,13 @@ let mkVar = Fn.id
 
 let mkGlobal = Fn.id
 
-let mkNondet (typ: Typ.t) msg =
+let mkNondet (typ : Typ.t) msg =
   assert (match typ with Function _ -> false | _ -> true) ;
   Nondet {typ; loc= Loc.none; msg}
 
 let mkLabel ~parent ~name = Label {parent; name; loc= Loc.none}
 
-let mkNull (typ: Typ.t) =
+let mkNull (typ : Typ.t) =
   assert (match typ with Opaque _ | Function _ -> false | _ -> true) ;
   Null {typ}
 
@@ -314,7 +314,7 @@ let mkUpdIdx ~arr ~elt ~idx =
     | _ -> false ) ;
   mkApp3 UpdIdx arr elt idx
 
-let mkInteger data (typ: Typ.t) =
+let mkInteger data (typ : Typ.t) =
   assert (
     let in_range num bits =
       let lb = Z.(-(if bits = 1 then ~$1 else ~$1 lsl Int.(bits - 1)))
@@ -326,11 +326,11 @@ let mkInteger data (typ: Typ.t) =
 
 let mkBool b = mkInteger (Z.of_int (Bool.to_int b)) Typ.i1
 
-let mkFloat data (typ: Typ.t) =
+let mkFloat data (typ : Typ.t) =
   assert (match typ with Float _ -> true | _ -> false) ;
   Float {data; typ}
 
-let mkArray elts (typ: Typ.t) =
+let mkArray elts (typ : Typ.t) =
   assert (
     match typ with
     | Array {elt= elt_typ; len} ->
@@ -339,7 +339,7 @@ let mkArray elts (typ: Typ.t) =
     | _ -> false ) ;
   mkAppN (Array {typ}) elts
 
-let mkStruct elts (typ: Typ.t) =
+let mkStruct elts (typ : Typ.t) =
   assert (
     match typ with
     | Tuple {elts= elt_typs} | Struct {elts= elt_typs} ->
@@ -377,7 +377,7 @@ let mkCast exp typ =
   assert (Typ.compatible (typ_of exp) typ) ;
   mkApp1 (Cast {typ}) exp
 
-let mkConv exp ?(signed= false) typ =
+let mkConv exp ?(signed = false) typ =
   assert (Typ.compatible (typ_of exp) typ) ;
   mkApp1 (Conv {signed; typ}) exp
 

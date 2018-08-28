@@ -18,7 +18,8 @@ let is_results_dir ~check_correct_version () =
         ||
         ( not_found := d ^ "/" ;
           false ) )
-    && ( not check_correct_version || Sys.is_file ResultsDatabase.database_fullpath = `Yes
+    && ( (not check_correct_version)
+       || Sys.is_file ResultsDatabase.database_fullpath = `Yes
        ||
        ( not_found := ResultsDatabase.database_fullpath ;
          false ) )

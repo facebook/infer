@@ -10,7 +10,7 @@ module F = Format
 
 type attributes_kind = ProcUndefined | ProcObjCAccessor | ProcDefined [@@deriving compare]
 
-let equal_attributes_kind = [%compare.equal : attributes_kind]
+let equal_attributes_kind = [%compare.equal: attributes_kind]
 
 let attributes_kind_to_int64 =
   [(ProcUndefined, Int64.zero); (ProcObjCAccessor, Int64.one); (ProcDefined, Int64.of_int 2)]
@@ -23,10 +23,10 @@ let int64_of_attributes_kind a =
 let deserialize_attributes_kind =
   let int64_to_attributes_kind = List.Assoc.inverse attributes_kind_to_int64 in
   function[@warning "-8"]
-    | Sqlite3.Data.INT n -> List.Assoc.find_exn ~equal:Int64.equal int64_to_attributes_kind n
+  | Sqlite3.Data.INT n -> List.Assoc.find_exn ~equal:Int64.equal int64_to_attributes_kind n
 
 
-let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
+let proc_kind_of_attr (proc_attributes : ProcAttributes.t) =
   if proc_attributes.is_defined then ProcDefined
   else if Option.is_some proc_attributes.objc_accessor then ProcObjCAccessor
   else ProcUndefined
@@ -124,7 +124,7 @@ let find ~defined pname_blob =
 
 let load pname = Typ.Procname.SQLite.serialize pname |> find ~defined:false
 
-let store (attr: ProcAttributes.t) =
+let store (attr : ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
   let key = Typ.Procname.SQLite.serialize attr.proc_name in
   if should_try_to_update key pkind then

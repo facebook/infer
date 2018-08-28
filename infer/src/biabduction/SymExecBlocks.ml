@@ -56,7 +56,7 @@ let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
     when Procdesc.is_defined pdesc
          && Int.equal (List.length (Procdesc.get_formals pdesc)) (List.length act_params)
          (* only specialize defined methods, and when formals and actuals have the same length  *)
-    -> (
+        -> (
       (* a list with the same length of the actual params of the function,
         containing either a Closure or None. *)
       let block_args =
@@ -70,7 +70,7 @@ let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
       let pname_with_block_args =
         let block_name_args =
           List.filter_map block_args ~f:(function
-            | Some (cl: Exp.closure) ->
+            | Some (cl : Exp.closure) ->
                 Some (Typ.Procname.block_name_of_procname cl.name)
             | None ->
                 None )

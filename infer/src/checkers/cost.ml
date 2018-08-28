@@ -14,9 +14,9 @@ module NodesBasicCostDomain = CostDomain.NodeInstructionToCostMap
 module Payload = SummaryPayload.Make (struct
   type t = CostDomain.summary
 
-  let update_payloads sum (payloads: Payloads.t) = {payloads with cost= Some sum}
+  let update_payloads sum (payloads : Payloads.t) = {payloads with cost= Some sum}
 
-  let of_payloads (payloads: Payloads.t) = payloads.cost
+  let of_payloads (payloads : Payloads.t) = payloads.cost
 end)
 
 (* We use this treshold to give error if the cost is above it.
@@ -48,7 +48,7 @@ module TransferFunctionsNodesBasicCost = struct
         L.(die InternalError)
           "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
           callee_cost Typ.Procname.pp callee_pname
-    | Some callee_pdesc ->
+    | Some callee_pdesc -> (
       match BufferOverrunChecker.Payload.read caller_pdesc callee_pname with
       | None ->
           L.(die InternalError)
@@ -62,11 +62,12 @@ module TransferFunctionsNodesBasicCost = struct
             BufferOverrunSemantics.get_subst_map tenv callee_pdesc params inferbo_caller_mem
               callee_symbol_table callee_exit_mem
           in
-          BasicCost.subst callee_cost subst_map
+          BasicCost.subst callee_cost subst_map )
 
 
-  let exec_instr_cost inferbo_mem (astate: CostDomain.NodeInstructionToCostMap.astate)
-      {ProcData.pdesc; tenv} (node: CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate =
+  let exec_instr_cost inferbo_mem (astate : CostDomain.NodeInstructionToCostMap.astate)
+      {ProcData.pdesc; tenv} (node : CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate
+      =
     let key = CFG.Node.id node in
     let astate' =
       match instr with
@@ -141,7 +142,7 @@ module BoundMap = struct
       match Procdesc.Node.get_kind node with
       | Procdesc.Node.Exit_node _ ->
           Node.IdMap.add node_id BasicCost.one bound_map
-      | _ ->
+      | _ -> (
           let exit_state_opt =
             let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
             BufferOverrunChecker.extract_post instr_node_id inferbo_invariant_map
@@ -172,7 +173,7 @@ module BoundMap = struct
                 bound ;
               Node.IdMap.add node_id bound bound_map
           | _ ->
-              Node.IdMap.add node_id BasicCost.zero bound_map
+              Node.IdMap.add node_id BasicCost.zero bound_map )
     in
     let bound_map =
       NodeCFG.fold_nodes node_cfg ~f:compute_node_upper_bound ~init:Node.IdMap.empty
@@ -207,10 +208,10 @@ module ControlFlowCost = struct
       | `Edge _, `Node _ ->
           1
       | `Edge (f1, t1), `Edge (f2, t2) ->
-          [%compare : Node.id * Node.id] (f1, t1) (f2, t2)
+          [%compare: Node.id * Node.id] (f1, t1) (f2, t2)
 
 
-    let equal = [%compare.equal : t]
+    let equal = [%compare.equal: t]
 
     let pp : F.formatter -> t -> unit =
      fun fmt -> function
@@ -220,7 +221,7 @@ module ControlFlowCost = struct
           F.fprintf fmt "Edge(%a -> %a)" Node.pp_id f Node.pp_id t
 
 
-    let normalize ~(normalizer: t -> [> t]) (x: t) : t =
+    let normalize ~(normalizer : t -> [> t]) (x : t) : t =
       match normalizer x with #t as x -> x | _ -> assert false
   end
 
@@ -236,7 +237,7 @@ module ControlFlowCost = struct
 
 
     let compare : t -> t -> int =
-     fun (`Sum (l1, s1)) (`Sum (l2, s2)) -> [%compare : int * Item.t list] (l1, s1) (l2, s2)
+     fun (`Sum (l1, s1)) (`Sum (l2, s2)) -> [%compare: int * Item.t list] (l1, s1) (l2, s2)
 
 
     let pp : F.formatter -> t -> unit =
@@ -339,8 +340,8 @@ module ControlFlowCost = struct
 
     let pp_equalities fmt t =
       ARList.append (t.items :> elt ARList.t) (t.sums :> elt ARList.t)
-      |> IContainer.to_rev_list ~fold:ARList.fold_unordered |> List.sort ~compare
-      |> Pp.seq ~sep:" = " pp fmt
+      |> IContainer.to_rev_list ~fold:ARList.fold_unordered
+      |> List.sort ~compare |> Pp.seq ~sep:" = " pp fmt
 
 
     let normalize_sums : normalizer:(elt -> elt) -> t -> unit =
@@ -348,7 +349,8 @@ module ControlFlowCost = struct
       t.sums
       <- t.sums
          |> IContainer.rev_map_to_list ~fold:ARList.fold_unordered ~f:(Sum.normalize ~normalizer)
-         |> List.dedup_and_sort ~compare:Sum.compare |> ARList.of_list
+         |> List.dedup_and_sort ~compare:Sum.compare
+         |> ARList.of_list
 
 
     let infer_equalities_by_removing_item ~on_infer t item =
@@ -366,8 +368,8 @@ module ControlFlowCost = struct
       |> List.dedup_and_sort ~compare:Item.compare
 
 
-    let infer_equalities_from_sums
-        : on_infer:(elt -> elt -> unit) -> normalizer:(elt -> elt) -> t -> unit =
+    let infer_equalities_from_sums :
+        on_infer:(elt -> elt -> unit) -> normalizer:(elt -> elt) -> t -> unit =
      fun ~on_infer ~normalizer t ->
       normalize_sums ~normalizer t ;
       (* Keep in mind that [on_infer] can modify [t].
@@ -385,9 +387,11 @@ module ControlFlowCost = struct
       t.cost <- ARList.fold_unordered t.items ~init:t.cost ~f:min_if_node
 
 
-    let improve_cost_from_sums
-        : on_improve:(Sum.t -> BasicCost.astate -> BasicCost.astate -> unit)
-          -> of_item:(Item.t -> BasicCost.astate) -> t -> unit =
+    let improve_cost_from_sums :
+           on_improve:(Sum.t -> BasicCost.astate -> BasicCost.astate -> unit)
+        -> of_item:(Item.t -> BasicCost.astate)
+        -> t
+        -> unit =
      fun ~on_improve ~of_item t ->
       let f sum =
         let cost_of_sum = Sum.cost ~of_item sum in
@@ -415,7 +419,7 @@ module ConstraintSolver = struct
 
     let normalizer equalities e = (find equalities e :> ControlFlowCost.t)
 
-    let pp_repr fmt (repr: Repr.t) = ControlFlowCost.pp fmt (repr :> ControlFlowCost.t)
+    let pp_repr fmt (repr : Repr.t) = ControlFlowCost.pp fmt (repr :> ControlFlowCost.t)
 
     let pp_equalities fmt equalities =
       let pp_item fmt (repr, set) =
@@ -509,8 +513,9 @@ module ConstraintSolver = struct
       From inequalities: if A = B + C, then B <= A, do cost(B) = min(cost(B), cost(A))
     *)
     let improve_costs equalities ~max =
-      let of_item (item: ControlFlowCost.Item.t) =
-        (item :> ControlFlowCost.t) |> find equalities |> find_set equalities
+      let of_item (item : ControlFlowCost.Item.t) =
+        (item :> ControlFlowCost.t)
+        |> find equalities |> find_set equalities
         |> Option.value_map ~f:ControlFlowCost.Set.cost ~default:BasicCost.top
       in
       let f ~did_improve (repr, set) =
@@ -522,7 +527,7 @@ module ConstraintSolver = struct
           did_improve ()
         in
         ControlFlowCost.Set.improve_cost_from_sums ~on_improve ~of_item set ;
-        let try_from_inequality (sum_item: ControlFlowCost.Item.t) =
+        let try_from_inequality (sum_item : ControlFlowCost.Item.t) =
           let sum_item_set =
             (sum_item :> ControlFlowCost.t) |> find equalities |> find_create_set equalities
           in
@@ -628,7 +633,7 @@ module TransferFunctionsWCET = struct
   (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
    Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
   let should_report_cost cost =
-    not (BasicCost.is_top cost) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
+    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
 
 
   let do_report summary loc cost =
@@ -681,7 +686,7 @@ module TransferFunctionsWCET = struct
       m BasicCost.zero
 
 
-  let exec_instr ((_, reported_so_far): Domain.astate) {ProcData.extras} (node: CFG.Node.t) instr
+  let exec_instr ((_, reported_so_far) : Domain.astate) {ProcData.extras} (node : CFG.Node.t) instr
       : Domain.astate =
     let {basic_cost_map= invariant_map_cost; get_node_nb_exec; summary} = extras in
     let cost_node =
@@ -702,7 +707,8 @@ module TransferFunctionsWCET = struct
       let preds = Procdesc.Node.get_preds und_node in
       let reported_so_far =
         if
-          should_report_on_instr instr && should_report_on_node (und_node :: preds) reported_so_far
+          should_report_on_instr instr
+          && should_report_on_node (und_node :: preds) reported_so_far
           && should_report_cost cost_node
         then (
           do_report summary (Sil.instr_get_loc instr) cost_node ;

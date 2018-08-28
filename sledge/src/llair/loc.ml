@@ -12,7 +12,7 @@ type t = {dir: string; file: string; line: int; col: int}
 
 let none = {dir= ""; file= ""; line= 0; col= 0}
 
-let mk ?(dir= none.dir) ?(file= none.file) ?(col= none.col) ~line =
+let mk ?(dir = none.dir) ?(file = none.file) ?(col = none.col) ~line =
   {dir; file; line; col}
 
 let fmt ff {dir; file; line; col} =

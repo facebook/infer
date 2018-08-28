@@ -13,7 +13,7 @@ let error ~fatal fmt =
   (if fatal then Format.kasprintf (fun err -> raise (Error err)) else L.internal_error) fmt
 
 
-let check_result_code ?(fatal= false) db ~log rc =
+let check_result_code ?(fatal = false) db ~log rc =
   match (rc : Sqlite3.Rc.t) with
   | OK | ROW ->
       ()

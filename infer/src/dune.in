@@ -105,4 +105,5 @@ let stanzas =
     |> List.concat )
 
 
-;; String.concat "\n" stanzas |> Jbuild_plugin.V1.send
+;;
+String.concat "\n" stanzas |> Jbuild_plugin.V1.send

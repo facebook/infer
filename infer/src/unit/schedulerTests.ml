@@ -56,7 +56,8 @@ module MockProcCfg = struct
   let fold_succs t n ~init ~f =
     let node_id = Node.id n in
     List.find ~f:(fun (node, _) -> equal_id (Node.id node) node_id) t
-    |> Option.value_map ~f:snd ~default:[] |> List.fold ~init ~f
+    |> Option.value_map ~f:snd ~default:[]
+    |> List.fold ~init ~f
 
 
   let fold_preds t n ~init ~f =

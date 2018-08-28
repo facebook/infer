@@ -62,7 +62,7 @@ let mk_file_formatter file_fmt category0 =
       not (phys_equal !prev_category prefix)
     in
     if !is_newline || category_has_changed then (
-      if not !is_newline && category_has_changed then
+      if (not !is_newline) && category_has_changed then
         (* category change but previous line has not ended: print newline *)
         out_functions_orig.out_newline () ;
       is_newline := false ;
@@ -85,7 +85,7 @@ let mk_file_formatter file_fmt category0 =
   f
 
 
-let color_console ?(use_stdout= false) scheme =
+let color_console ?(use_stdout = false) scheme =
   let scheme = Option.value scheme ~default:Normal in
   let formatter = if use_stdout then F.std_formatter else F.err_formatter in
   let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
@@ -168,7 +168,7 @@ let close_logs () =
 
 let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
 
-let log ~to_console ?(to_file= true) (lazy formatters) =
+let log ~to_console ?(to_file = true) (lazy formatters) =
   match (to_console, to_file) with
   | false, false ->
       F.ifprintf F.std_formatter
@@ -343,17 +343,17 @@ let setup_log_file () =
 
 (** delayable print action *)
 type print_action =
-  | PTdecrease_indent: int -> print_action
-  | PTincrease_indent: int -> print_action
-  | PTstr: string -> print_action
-  | PTstr_color: string * Pp.color -> print_action
-  | PTstrln: string -> print_action
-  | PTstrln_color: string * Pp.color -> print_action
-  | PTwarning: string -> print_action
-  | PTerror: string -> print_action
-  | PTinfo: string -> print_action
-  | PT_generic: (Format.formatter -> 'a -> unit) * 'a -> print_action
-  | PT_generic_with_pe:
+  | PTdecrease_indent : int -> print_action
+  | PTincrease_indent : int -> print_action
+  | PTstr : string -> print_action
+  | PTstr_color : string * Pp.color -> print_action
+  | PTstrln : string -> print_action
+  | PTstrln_color : string * Pp.color -> print_action
+  | PTwarning : string -> print_action
+  | PTerror : string -> print_action
+  | PTinfo : string -> print_action
+  | PT_generic : (Format.formatter -> 'a -> unit) * 'a -> print_action
+  | PT_generic_with_pe :
       Pp.color option * (Pp.env -> Format.formatter -> 'a -> unit) * 'a
       -> print_action
 
@@ -372,7 +372,9 @@ let pp_maybe_with_color color pp fmt x =
 (** Execute the delayed print actions *)
 let force_delayed_print fmt = function
   | PTdecrease_indent n ->
-      for _ = 1 to n do F.fprintf fmt "@]" done
+      for _ = 1 to n do
+        F.fprintf fmt "@]"
+      done
   | PTincrease_indent n ->
       F.fprintf fmt "%s@[" (String.make (2 * n) ' ')
   | PTstr s ->
@@ -424,25 +426,25 @@ let get_delayed_prints () = !delayed_actions
 let set_delayed_prints new_delayed_actions = delayed_actions := new_delayed_actions
 
 (** dump a string *)
-let d_str (s: string) = add_print_action (PTstr s)
+let d_str (s : string) = add_print_action (PTstr s)
 
 (** dump a string with the given color *)
-let d_str_color (c: Pp.color) (s: string) = add_print_action (PTstr_color (s, c))
+let d_str_color (c : Pp.color) (s : string) = add_print_action (PTstr_color (s, c))
 
 (** dump an error string *)
-let d_error (s: string) = add_print_action (PTerror s)
+let d_error (s : string) = add_print_action (PTerror s)
 
 (** dump a warning string *)
-let d_warning (s: string) = add_print_action (PTwarning s)
+let d_warning (s : string) = add_print_action (PTwarning s)
 
 (** dump an info string *)
-let d_info (s: string) = add_print_action (PTinfo s)
+let d_info (s : string) = add_print_action (PTinfo s)
 
 (** dump a string plus newline *)
-let d_strln (s: string) = add_print_action (PTstrln s)
+let d_strln (s : string) = add_print_action (PTstrln s)
 
 (** dump a string plus newline with the given color *)
-let d_strln_color (c: Pp.color) (s: string) = add_print_action (PTstrln_color (s, c))
+let d_strln_color (c : Pp.color) (s : string) = add_print_action (PTstrln_color (s, c))
 
 (** dump a newline *)
 let d_ln () = add_print_action (PTstrln "")
@@ -455,7 +457,7 @@ let d_indent indent =
 
 
 (** dump command to increase the indentation level *)
-let d_increase_indent (indent: int) = add_print_action (PTincrease_indent indent)
+let d_increase_indent (indent : int) = add_print_action (PTincrease_indent indent)
 
 (** dump command to decrease the indentation level *)
-let d_decrease_indent (indent: int) = add_print_action (PTdecrease_indent indent)
+let d_decrease_indent (indent : int) = add_print_action (PTdecrease_indent indent)

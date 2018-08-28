@@ -8,6 +8,7 @@
 
 (** The Smallfoot Intermediate Language: Annotations *)
 open! IStd
+
 module F = Format
 
 type parameters = string list

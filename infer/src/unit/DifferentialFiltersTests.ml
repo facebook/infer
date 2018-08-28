@@ -65,7 +65,7 @@ let test_file_renamings_find_previous =
       ; {DifferentialFilters.FileRenamings.current= "ccc.java"; previous= "DDD.java"}
       ; {DifferentialFilters.FileRenamings.current= "eee.java"; previous= "FFF.java"} ]
   in
-  let cmp s1 s2 = [%compare.equal : string option] s1 s2 in
+  let cmp s1 s2 = [%compare.equal: string option] s1 s2 in
   let find_previous = DifferentialFilters.FileRenamings.find_previous in
   let pp_diff fmt (expected, actual) =
     let pp_str_opt fmt str_opt =

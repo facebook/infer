@@ -13,19 +13,21 @@ module F = Format
 
 type t = {plain: string; mangled: string option} [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 (** Convert a string to a mangled name *)
-let from_string (s: string) = {plain= s; mangled= None}
+let from_string (s : string) = {plain= s; mangled= None}
 
 (** Create a mangled name from a plain and mangled string *)
-let mangled (plain: string) (mangled: string) = {plain; mangled= Some (plain ^ "{" ^ mangled ^ "}")}
+let mangled (plain : string) (mangled : string) =
+  {plain; mangled= Some (plain ^ "{" ^ mangled ^ "}")}
+
 
 (** Convert a mangled name to a string *)
-let to_string (pn: t) = pn.plain
+let to_string (pn : t) = pn.plain
 
 (** Convert a full mangled name to a string *)
-let to_string_full (pn: t) =
+let to_string_full (pn : t) =
   match pn.mangled with Some mangled -> pn.plain ^ "{" ^ mangled ^ "}" | None -> pn.plain
 
 

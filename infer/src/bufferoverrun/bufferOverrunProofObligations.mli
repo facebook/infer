@@ -35,17 +35,29 @@ module ConditionSet : sig
   val pp_summary : Format.formatter -> summary_t -> unit
 
   val add_array_access :
-    Location.t -> idx:ItvPure.astate -> size:ItvPure.astate -> is_collection_add:bool
-    -> idx_sym_exp:Relation.SymExp.t option -> size_sym_exp:Relation.SymExp.t option
-    -> relation:Relation.astate -> ValTraceSet.t -> t -> t
+       Location.t
+    -> idx:ItvPure.astate
+    -> size:ItvPure.astate
+    -> is_collection_add:bool
+    -> idx_sym_exp:Relation.SymExp.t option
+    -> size_sym_exp:Relation.SymExp.t option
+    -> relation:Relation.astate
+    -> ValTraceSet.t
+    -> t
+    -> t
 
   val add_alloc_size : Location.t -> length:ItvPure.astate -> ValTraceSet.t -> t -> t
 
   val join : t -> t -> t
 
   val subst :
-    summary_t -> Bounds.Bound.t bottom_lifted Symb.SymbolMap.t * ValTraceSet.t Symb.SymbolMap.t
-    -> Relation.SubstMap.t -> Relation.astate -> Typ.Procname.t -> Location.t -> t
+       summary_t
+    -> Bounds.Bound.t bottom_lifted Symb.SymbolMap.t * ValTraceSet.t Symb.SymbolMap.t
+    -> Relation.SubstMap.t
+    -> Relation.astate
+    -> Typ.Procname.t
+    -> Location.t
+    -> t
 
   val check_all : report:(Condition.t -> ConditionTrace.t -> IssueType.t -> unit) -> t -> t
   (** Check the conditions, call [report] on those that trigger an issue, returns those that needs to be propagated to callers. *)

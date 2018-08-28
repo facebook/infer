@@ -22,7 +22,7 @@ end)
 (** Type for type environment. *)
 type t = Typ.Struct.t TypenameHash.t
 
-let pp fmt (tenv: t) =
+let pp fmt (tenv : t) =
   TypenameHash.iter
     (fun name typ ->
       Format.fprintf fmt "@[<6>NAME: %s@]@," (Typ.Name.to_string name) ;
@@ -44,7 +44,7 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?supers ?annots name =
 
 (** Look up a name in the global type environment. *)
 let lookup tenv name : Typ.Struct.t option =
-  try Some (TypenameHash.find tenv name) with Caml.Not_found ->
+  try Some (TypenameHash.find tenv name) with Caml.Not_found -> (
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
     match (name : Typ.Name.t) with
     | CStruct m -> (
@@ -52,7 +52,7 @@ let lookup tenv name : Typ.Struct.t option =
     | CppClass (m, NoTemplate) -> (
       try Some (TypenameHash.find tenv (CStruct m)) with Caml.Not_found -> None )
     | _ ->
-        None
+        None )
 
 
 let compare_fields (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2
@@ -131,7 +131,8 @@ let load_global () : t option =
 
 let load source =
   ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
       |> Option.bind ~f:(fun x ->

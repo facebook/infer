@@ -45,7 +45,7 @@ let is_matching patterns source_file =
 
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
-  not (BuiltinDecl.is_declared proc_name)
+  (not (BuiltinDecl.is_declared proc_name))
   && Language.equal (Typ.Procname.get_language proc_name) language
   && String.equal (Typ.Procname.get_method proc_name) method_name
 
@@ -73,14 +73,14 @@ module FileContainsStringMatcher = struct
       let source_map = ref SourceFile.Map.empty in
       let regexp = Str.regexp (String.concat ~sep:"\\|" s_patterns) in
       fun source_file ->
-        try SourceFile.Map.find source_file !source_map with Caml.Not_found ->
+        try SourceFile.Map.find source_file !source_map with Caml.Not_found -> (
           try
             let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
             let pattern_found = file_contains regexp file_in in
             In_channel.close file_in ;
             source_map := SourceFile.Map.add source_file pattern_found !source_map ;
             pattern_found
-          with Sys_error _ -> false
+          with Sys_error _ -> false )
 end
 
 type method_pattern = {class_name: string; method_name: string option}
@@ -220,7 +220,7 @@ let patterns_of_json_with_key (json_key, json) =
         error
   in
   (* Translate a JSON entry into a matching pattern *)
-  let create_pattern (assoc: (string * Yojson.Basic.json) list) =
+  let create_pattern (assoc : (string * Yojson.Basic.json) list) =
     let create_method_pattern assoc =
       let loop mp = function
         | key, `String s when String.equal key "class" ->
@@ -308,9 +308,10 @@ let filters_from_inferconfig inferconfig : filters =
       FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing
     in
     function
-      | source_file ->
-          whitelist_filter source_file && not (blacklist_filter source_file)
-          && not (blacklist_files_containing_filter source_file)
+    | source_file ->
+        whitelist_filter source_file
+        && (not (blacklist_filter source_file))
+        && not (blacklist_files_containing_filter source_file)
   in
   let error_filter = function
     | error_name ->

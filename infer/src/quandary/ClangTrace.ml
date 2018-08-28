@@ -71,8 +71,7 @@ module SourceKind = struct
   let get pname actuals tenv =
     let return = None in
     match pname with
-    | Typ.Procname.ObjC_Cpp cpp_name
-      -> (
+    | Typ.Procname.ObjC_Cpp cpp_name -> (
         let qualified_pname = Typ.Procname.get_qualifiers pname in
         match
           ( QualifiedCppName.to_list
@@ -84,8 +83,7 @@ module SourceKind = struct
             Some (ReadFile, Some 1)
         | _ ->
             get_external_source qualified_pname )
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access
-      -> (
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
         (* is this var a command line flag created by the popular C++ gflags library for creating
            command-line flags (https://github.com/gflags/gflags)? *)
         let is_gflag access_path =
@@ -134,15 +132,15 @@ module SourceKind = struct
       let overrides_service_method pname tenv =
         PatternMatch.override_exists
           (function
-              | Typ.Procname.ObjC_Cpp cpp_pname ->
-                  let class_name = Typ.Procname.ObjC_Cpp.get_class_name cpp_pname in
-                  let res =
-                    String.is_suffix ~suffix:"SvIf" class_name
-                    || String.is_suffix ~suffix:"SvAsyncIf" class_name
-                  in
-                  res
-              | _ ->
-                  false)
+            | Typ.Procname.ObjC_Cpp cpp_pname ->
+                let class_name = Typ.Procname.ObjC_Cpp.get_class_name cpp_pname in
+                let res =
+                  String.is_suffix ~suffix:"SvIf" class_name
+                  || String.is_suffix ~suffix:"SvAsyncIf" class_name
+                in
+                res
+            | _ ->
+                false)
           tenv pname
       in
       (* taint all formals except for [this] *)
@@ -315,8 +313,7 @@ module SinkKind = struct
       match Typ.Procname.to_string pname with
       | "creat" | "fopen" | "freopen" | "open" ->
           taint_nth 0 CreateFile actuals
-      | "curl_easy_setopt"
-        -> (
+      | "curl_easy_setopt" -> (
           (* magic constant for setting request URL *)
           let controls_request = function
             | 10002 (* CURLOPT_URL *) | 10015 (* CURLOPT_POSTFIELDS *) ->
@@ -398,7 +395,7 @@ module CppSanitizer = struct
     | All  (** sanitizes all forms of taint *)
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let of_string = function
     | "EscapeShell" ->
@@ -447,7 +444,7 @@ include Trace.Make (struct
      [escape_sanitizer] *)
   let is_injection_possible ?typ escape_sanitizer sanitizers =
     let is_escaped = List.mem sanitizers escape_sanitizer ~equal:Sanitizer.equal in
-    not is_escaped
+    (not is_escaped)
     &&
     match typ with
     | Some (Typ.Tint _ | Tfloat _ | Tvoid) ->
@@ -483,7 +480,8 @@ include Trace.Make (struct
     | (Endpoint _ | UserControlledEndpoint _), (SQLRead | SQLWrite) ->
         (* no injection risk, but still user-controlled *)
         Some IssueType.user_controlled_sql_risk
-    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec ->
+    | (CommandLineFlag (_, typ) | Endpoint (_, typ) | UserControlledEndpoint (_, typ)), ShellExec
+      ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)

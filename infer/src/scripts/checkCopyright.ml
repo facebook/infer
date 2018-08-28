@@ -21,7 +21,7 @@ type comment_style =
   | Block of string * string * string * bool  (** block comments, eg ("(*", "*", "*)") for ocaml *)
 [@@deriving compare]
 
-let equal_comment_style = [%compare.equal : comment_style]
+let equal_comment_style = [%compare.equal: comment_style]
 
 let comment_style_al = Line ("//", false)
 
@@ -149,7 +149,9 @@ let looks_like_copyright_message cstart cend lines =
   let max_len = 100 in
   let check_len () =
     let ok = ref true in
-    for i = cstart to cend do if String.length lines.(i) > max_len then ok := false done ;
+    for i = cstart to cend do
+      if String.length lines.(i) > max_len then ok := false
+    done ;
     !ok
   in
   cstart >= 0 && cend - cstart <= 10 && check_len ()
@@ -157,7 +159,9 @@ let looks_like_copyright_message cstart cend lines =
 
 let contains_string ~substring cstart cend lines =
   let found = ref false in
-  for i = cstart to cend do if String.is_substring ~substring lines.(i) then found := true done ;
+  for i = cstart to cend do
+    if String.is_substring ~substring lines.(i) then found := true
+  done ;
   !found
 
 
@@ -218,7 +222,9 @@ let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~r
     ~copyright_year com_style =
   let old_copyright =
     let r = ref "" in
-    for i = cstart to cend do r := !r ^ lines.(i) ^ "\n" done ;
+    for i = cstart to cend do
+      r := !r ^ lines.(i) ^ "\n"
+    done ;
     !r
   in
   let new_copyright =
@@ -263,7 +269,7 @@ let comment_style_of_filename fname =
   List.Assoc.find com_style_of_lang ~equal:Filename.check_suffix fname
 
 
-let output_diff ~fname lines ?notice_range ?(monoidics= false) ?(ropas= false) ~copyright_year
+let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false) ~copyright_year
     com_style =
   let lang = lang_of_comment_style com_style in
   let pp_range_opt fmt = function
@@ -283,12 +289,16 @@ let output_diff ~fname lines ?notice_range ?(monoidics= false) ?(ropas= false) ~
           let insert_notice_at = default_start_line_of_com_style com_style in
           (insert_notice_at - 1, insert_notice_at)
     in
-    for i = 0 to copy_lines_before do F.fprintf fmt "%s\n" lines.(i) done ;
+    for i = 0 to copy_lines_before do
+      F.fprintf fmt "%s\n" lines.(i)
+    done ;
     if
       starts_with_newline com_style && copy_lines_before > 0 && lines.(copy_lines_before - 1) <> ""
     then F.fprintf fmt "@\n" ;
     pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt ;
-    for i = copy_lines_after to Array.length lines - 1 do F.fprintf fmt "%s\n" lines.(i) done ;
+    for i = copy_lines_after to Array.length lines - 1 do
+      F.fprintf fmt "%s\n" lines.(i)
+    done ;
     F.fprintf fmt "%!"
   in
   if !update_files then
@@ -308,7 +318,7 @@ let check_copyright fname =
       let copyright_year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
       output_diff ~fname lines ~copyright_year com_style ;
       raise (CopyrightEvent CopyrightModified)
-  | Some n, fname_com_style ->
+  | Some n, fname_com_style -> (
       let cstart, contents_com_style =
         find_comment_start_and_style lines n |> Option.value ~default:(0, Line ("#", false))
       in
@@ -362,7 +372,7 @@ let check_copyright fname =
           then (
             output_diff ~fname lines ~notice_range:(cstart, cend) ~monoidics ~ropas ~copyright_year
               com_style ;
-            raise (CopyrightEvent CopyrightModified) )
+            raise (CopyrightEvent CopyrightModified) ) )
 
 
 let speclist =

@@ -102,10 +102,7 @@ let instrs_normalize instrs =
   in
   let subst =
     let count = ref Int.min_value in
-    let gensym id =
-      incr count ;
-      Ident.set_stamp id !count
-    in
+    let gensym id = incr count ; Ident.set_stamp id !count in
     Sil.subst_of_list (List.rev_map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
   let subst_and_add acc instr = Sil.instr_sub subst instr :: acc in
@@ -191,7 +188,9 @@ let extract_pre p tenv pdesc abstract_fun =
     let count = ref 0 in
     Sil.subst_of_list
       (List.map
-         ~f:(fun id -> incr count ; (id, Exp.Var (Ident.create_normal Ident.name_spec !count)))
+         ~f:(fun id ->
+           incr count ;
+           (id, Exp.Var (Ident.create_normal Ident.name_spec !count)) )
          idlist)
   in
   let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
@@ -202,8 +201,8 @@ let extract_pre p tenv pdesc abstract_fun =
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
-let get_normalized_pre (abstract_fun: Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t)
-    : Prop.normal Prop.t option =
+let get_normalized_pre (abstract_fun : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) :
+    Prop.normal Prop.t option =
   match get_prop_tenv_pdesc () with
   | None ->
       None
@@ -256,11 +255,18 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-  Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> ?extras:Jsonbug_t.extra
-  -> exn -> unit
+     Typ.Procname.t
+  -> ?node:Procdesc.Node.t
+  -> ?loc:Location.t
+  -> ?ltr:Errlog.loc_trace
+  -> ?linters_def_file:string
+  -> ?doc_url:string
+  -> ?access:string
+  -> ?extras:Jsonbug_t.extra
+  -> exn
+  -> unit
 
-let process_execution_failures (log_issue: log_issue) pname =
+let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =
     (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match (fs.node_ok, fs.first_failure) with
@@ -275,15 +281,15 @@ let process_execution_failures (log_issue: log_issue) pname =
   NodeHash.iter do_failure !gs.failure_map
 
 
-let set_instr (instr: Sil.instr) = !gs.last_instr <- Some instr
+let set_instr (instr : Sil.instr) = !gs.last_instr <- Some instr
 
 let set_path path pos_opt = !gs.last_path <- Some (path, pos_opt)
 
 let set_prop_tenv_pdesc prop tenv pdesc = !gs.last_prop_tenv_pdesc <- Some (prop, tenv, pdesc)
 
-let set_node (node: Procdesc.Node.t) =
+let set_node (node : Procdesc.Node.t) =
   !gs.last_instr <- None ;
   !gs.last_node <- node
 
 
-let set_session (session: int) = !gs.last_session <- session
+let set_session (session : int) = !gs.last_session <- session

@@ -110,7 +110,8 @@ module ItvPure : sig
   val widen : prev:t -> next:t -> num_iters:int -> t
 
   val xcompare :
-    lhs:t -> rhs:t
+       lhs:t
+    -> rhs:t
     -> [ `Equal
        | `LeftSmallerThanRight
        | `RightSmallerThanLeft

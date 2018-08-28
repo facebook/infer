@@ -72,7 +72,7 @@ module StructuredSil = struct
 
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp = Cmd (Sil.Store (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
-  let make_call ?(procname= dummy_procname) ?return:return_opt args =
+  let make_call ?(procname = dummy_procname) ?return:return_opt args =
     let ret_id_typ =
       match return_opt with
       | Some ret_id_typ ->
@@ -96,22 +96,22 @@ module StructuredSil = struct
     make_load ~rhs_typ (ident_of_str lhs_str) rhs_exp
 
 
-  let id_assign_exp ?(rhs_typ= dummy_typ) lhs rhs_exp =
+  let id_assign_exp ?(rhs_typ = dummy_typ) lhs rhs_exp =
     let lhs_id = ident_of_str lhs in
     make_load ~rhs_typ lhs_id rhs_exp
 
 
-  let id_assign_id ?(rhs_typ= dummy_typ) lhs rhs =
+  let id_assign_id ?(rhs_typ = dummy_typ) lhs rhs =
     id_assign_exp ~rhs_typ lhs (Exp.Var (ident_of_str rhs))
 
 
-  let id_assign_var ?(rhs_typ= dummy_typ) lhs rhs =
+  let id_assign_var ?(rhs_typ = dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = var_of_str rhs in
     make_load ~rhs_typ lhs_id rhs_exp
 
 
-  let id_set_id ?(rhs_typ= dummy_typ) lhs_id rhs_id =
+  let id_set_id ?(rhs_typ = dummy_typ) lhs_id rhs_id =
     let lhs_exp = Exp.Var (ident_of_str lhs_id) in
     let rhs_exp = Exp.Var (ident_of_str rhs_id) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
@@ -128,14 +128,14 @@ module StructuredSil = struct
     var_assign_exp ~rhs_typ lhs rhs_exp
 
 
-  let var_assign_id ?(rhs_typ= dummy_typ) lhs rhs =
+  let var_assign_id ?(rhs_typ = dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = Exp.Var (ident_of_str rhs) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
 
   (* x = &y *)
-  let var_assign_addrof_var ?(rhs_typ= dummy_typ) lhs rhs =
+  let var_assign_addrof_var ?(rhs_typ = dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = var_of_str rhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
@@ -276,7 +276,7 @@ struct
         OUnit2.assert_failure assert_fail_message
 
 
-  let create_tests ?(test_pname= Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
+  let create_tests ?(test_pname = Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
     List.map
       ~f:(fun (name, test_program) ->

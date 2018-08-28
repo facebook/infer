@@ -20,7 +20,7 @@ let callbacks_ref = ref None
 
 let cached_results = lazy (Typ.Procname.Hash.create 128)
 
-let set_callbacks (callbacks: callbacks) = callbacks_ref := Some callbacks
+let set_callbacks (callbacks : callbacks) = callbacks_ref := Some callbacks
 
 let unset_callbacks () = callbacks_ref := None
 
@@ -60,7 +60,8 @@ let should_be_analyzed proc_name proc_attributes =
     | None ->
         false
   in
-  should_create_summary proc_name proc_attributes && not (is_active proc_name)
+  should_create_summary proc_name proc_attributes
+  && (not (is_active proc_name))
   && (* avoid infinite loops *)
      not (already_analyzed proc_name)
 
@@ -148,7 +149,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue exn (summary: Summary.t) kind =
+  let log_error_and_continue exn (summary : Summary.t) kind =
     let loc = State.get_loc () in
     Reporting.log_error summary ~loc exn ;
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
@@ -172,7 +173,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     in
     let final_summary = postprocess summary in
     restore_global_state old_state ; final_summary
-  with exn ->
+  with exn -> (
     IExn.reraise_if exn ~f:(fun () -> restore_global_state old_state ; not Config.keep_going) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
       callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
@@ -183,7 +184,7 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
         log_error_and_continue exn initial_summary kind
     | _ ->
         (* this happens with assert false or some other unrecognized exception *)
-        log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
+        log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn)) )
 
 
 let analyze_proc ?caller_pdesc callee_pdesc =

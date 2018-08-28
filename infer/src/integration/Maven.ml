@@ -59,8 +59,7 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
         let tag_name = snd (fst tag) in
         if String.equal tag_name "profiles" then found_profiles_tag := true ;
         process xml_in xml_out (tag_name :: tag_stack)
-    | `El_end
-      -> (
+    | `El_end -> (
         ( match tag_stack with
         | "profiles" :: _ when not !found_infer_profile ->
             (* found the </profiles> tag but no infer profile found, add one *)
@@ -167,12 +166,13 @@ let capture ~prog ~args =
     "Running maven capture:@\n%s %s@." prog
     (String.concat ~sep:" " (List.map ~f:(Printf.sprintf "'%s'") capture_args)) ;
   (* let children infer processes know that they are spawned by Maven *)
-  Unix.fork_exec ~prog ~argv:(prog :: capture_args) ~env:Config.env_inside_maven () |> Unix.waitpid
+  Unix.fork_exec ~prog ~argv:(prog :: capture_args) ~env:Config.env_inside_maven ()
+  |> Unix.waitpid
   |> function
-    | Ok () ->
-        ()
-    | Error _ as status ->
-        L.(die UserError)
-          "*** Maven command failed:@\n*** %s@\n*** %s@\n"
-          (String.concat ~sep:" " (prog :: capture_args))
-          (Unix.Exit_or_signal.to_string_hum status)
+  | Ok () ->
+      ()
+  | Error _ as status ->
+      L.(die UserError)
+        "*** Maven command failed:@\n*** %s@\n*** %s@\n"
+        (String.concat ~sep:" " (prog :: capture_args))
+        (Unix.Exit_or_signal.to_string_hum status)

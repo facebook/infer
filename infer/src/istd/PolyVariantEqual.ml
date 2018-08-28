@@ -7,4 +7,4 @@
 
 open! Core
 
-let ( = ) (v1: [> ]) (v2: [> ]) = Polymorphic_compare.( = ) v1 v2
+let ( = ) (v1 : [> ]) (v2 : [> ]) = Polymorphic_compare.( = ) v1 v2

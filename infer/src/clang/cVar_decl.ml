@@ -38,7 +38,7 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
       let outer_procname = CContext.get_outer_procname context in
       let trans_unit_ctx = context.CContext.translation_unit_context in
       CGeneral_utils.mk_sil_var trans_unit_ctx name None procname outer_procname
-  | _ ->
+  | _ -> (
       let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
       if is_custom_var_pointer pointer then
         Pvar.mk (Mangled.from_string name.Clang_ast_t.ni_name) procname
@@ -51,7 +51,7 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
             CFrontend_config.incorrect_assumption __POS__ source_range
               "pointer '%d' for var decl not found. The var decl was: %a" pointer
               (Pp.to_string ~f:Clang_ast_j.string_of_decl_ref)
-              decl_ref
+              decl_ref )
 
 
 let get_var_attribute decl_info =

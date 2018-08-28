@@ -8,6 +8,7 @@
 
 (** The Smallfoot Intermediate Language *)
 open! IStd
+
 module F = Format
 
 (** {2 Programs and Types} *)

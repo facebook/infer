@@ -13,7 +13,10 @@ open! IStd
 (** {2 Join Operators} *)
 
 val pathset_join :
-  Typ.Procname.t -> Tenv.t -> Paths.PathSet.t -> Paths.PathSet.t
+     Typ.Procname.t
+  -> Tenv.t
+  -> Paths.PathSet.t
+  -> Paths.PathSet.t
   -> Paths.PathSet.t * Paths.PathSet.t
 (** Join two pathsets *)
 

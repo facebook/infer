@@ -105,7 +105,7 @@ let get_var_name_mangled decl_info name_info var_decl_info =
   (name_string, mangled)
 
 
-let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) decl_info
+let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name = fun _ x -> x) decl_info
     named_decl_info var_decl_info qt =
   let name_string, simple_name = get_var_name_mangled decl_info named_decl_info var_decl_info in
   let translation_unit =
@@ -130,7 +130,8 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) de
              None )
     |> Option.value_map ~default:true ~f:(function
          | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) ->
+         | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _)
+           ->
              xrdi_is_pod
          | _ ->
              true )
@@ -138,7 +139,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) de
   let is_static_global =
     var_decl_info.Clang_ast_t.vdi_is_global
     (* only top level declarations are really have file scope, static field members have a global scope *)
-    && not var_decl_info.Clang_ast_t.vdi_is_static_data_member
+    && (not var_decl_info.Clang_ast_t.vdi_is_static_data_member)
     && match var_decl_info.Clang_ast_t.vdi_storage_class with Some "static" -> true | _ -> false
   in
   Pvar.mk_global ~is_constexpr ~is_pod

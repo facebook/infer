@@ -297,7 +297,7 @@ module BooleanOr = struct
 
   let is_empty astate = not astate
 
-  let ( <= ) ~lhs ~rhs = not lhs || rhs
+  let ( <= ) ~lhs ~rhs = (not lhs) || rhs
 
   let join = ( || )
 

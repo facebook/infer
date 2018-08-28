@@ -22,17 +22,31 @@ val finalize : Sqlite3.db -> log:string -> Sqlite3.stmt -> unit
 (** Finalize the given [stmt]. Raises {!Error} on failure. *)
 
 val result_fold_rows :
-  ?finalize:bool -> Sqlite3.db -> log:string -> Sqlite3.stmt -> init:'a
-  -> f:('a -> Sqlite3.stmt -> 'a) -> 'a
+     ?finalize:bool
+  -> Sqlite3.db
+  -> log:string
+  -> Sqlite3.stmt
+  -> init:'a
+  -> f:('a -> Sqlite3.stmt -> 'a)
+  -> 'a
 (** Fold [f] over each row of the result. [f] must not access the database. *)
 
 val result_fold_single_column_rows :
-  ?finalize:bool -> Sqlite3.db -> log:string -> Sqlite3.stmt -> init:'b
-  -> f:('b -> Sqlite3.Data.t -> 'b) -> 'b
+     ?finalize:bool
+  -> Sqlite3.db
+  -> log:string
+  -> Sqlite3.stmt
+  -> init:'b
+  -> f:('b -> Sqlite3.Data.t -> 'b)
+  -> 'b
 (** Like {!result_fold_rows} but pass column 0 of each row in the results to [f]. *)
 
 val result_option :
-  ?finalize:bool -> Sqlite3.db -> log:string -> read_row:(Sqlite3.stmt -> 'a) -> Sqlite3.stmt
+     ?finalize:bool
+  -> Sqlite3.db
+  -> log:string
+  -> read_row:(Sqlite3.stmt -> 'a)
+  -> Sqlite3.stmt
   -> 'a option
 (** Same as {!result_fold_rows} but asserts that at most one row is returned. *)
 
@@ -58,5 +72,4 @@ end
 (** A default implementation of the Data API that encodes every objects as marshalled blobs *)
 module MarshalledData (D : sig
   type t
-end) :
-  Data with type t = D.t
+end) : Data with type t = D.t

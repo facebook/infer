@@ -22,7 +22,7 @@ module SymbolPath = struct
 
   type t = Normal of partial | Offset of partial | Length of partial [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let of_pvar pvar = Pvar pvar
 
@@ -64,7 +64,7 @@ module Symbol = struct
     Int.compare s1.id s2.id
 
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let paths_equal s1 s2 = SymbolPath.equal s1.path s2.path
 
@@ -130,7 +130,7 @@ module SymbolMap = struct
    fun m ->
     if is_empty m then None
     else
-      let (kmin, _) as binding = min_binding m in
+      let ((kmin, _) as binding) = min_binding m in
       let kmax, _ = max_binding m in
       if Symbol.equal kmin kmax then Some binding else None
 end

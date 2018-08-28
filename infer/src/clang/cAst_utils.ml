@@ -15,8 +15,11 @@ module L = Logging
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
 type procname_from_decl =
-  ?tenv:Tenv.t -> ?block_return_type:Clang_ast_t.qual_type -> ?outer_proc:Typ.Procname.t
-  -> Clang_ast_t.decl -> Typ.Procname.t
+     ?tenv:Tenv.t
+  -> ?block_return_type:Clang_ast_t.qual_type
+  -> ?outer_proc:Typ.Procname.t
+  -> Clang_ast_t.decl
+  -> Typ.Procname.t
 
 let sanitize_name s = Str.global_replace (Str.regexp "[/ ]") "_" s
 
@@ -24,7 +27,7 @@ let get_qual_name qual_name_list =
   List.map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_rev_list
 
 
-let get_qualified_name ?(linters_mode= false) name_info =
+let get_qualified_name ?(linters_mode = false) name_info =
   if not linters_mode then get_qual_name name_info.Clang_ast_t.ni_qual_name
   else
     (* Because we are in linters mode, we can't get precise info about templates,
@@ -142,8 +145,7 @@ let get_type type_ptr =
 let get_desugared_type type_ptr =
   let typ_opt = get_type type_ptr in
   match typ_opt with
-  | Some typ
-    -> (
+  | Some typ -> (
       let type_info = Clang_ast_proj.get_type_tuple typ in
       match type_info.Clang_ast_t.ti_desugared_type with Some ptr -> get_type ptr | _ -> typ_opt )
   | _ ->
@@ -201,7 +203,7 @@ let name_opt_of_typedef_qual_type qual_type =
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
      Ast_expressions *)
-  Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
+    Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
   ; qt_is_const= false
   ; qt_is_volatile= false
   ; qt_is_restrict= false }
@@ -239,7 +241,7 @@ let get_function_decl_with_body decl_ptr =
     | _ ->
         Some decl_ptr
   in
-  if [%compare.equal : int option] decl_ptr' (Some decl_ptr) then decl_opt
+  if [%compare.equal: int option] decl_ptr' (Some decl_ptr) then decl_opt
   else get_decl_opt decl_ptr'
 
 
@@ -349,7 +351,7 @@ let get_impl_decl_info dec =
 
 let default_blacklist = CFrontend_config.[nsobject_cl; nsproxy_cl]
 
-let rec is_objc_if_descendant ?(blacklist= default_blacklist) if_decl ancestors =
+let rec is_objc_if_descendant ?(blacklist = default_blacklist) if_decl ancestors =
   (* List of ancestors to check for and list of classes to short-circuit to
      false can't intersect *)
   if not String.Set.(is_empty (inter (of_list blacklist) (of_list ancestors))) then
@@ -358,7 +360,7 @@ let rec is_objc_if_descendant ?(blacklist= default_blacklist) if_decl ancestors 
     match if_decl with
     | Some (Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)) ->
         let in_list some_list = List.mem ~equal:String.equal some_list ndi.Clang_ast_t.ni_name in
-        not (in_list blacklist)
+        (not (in_list blacklist))
         && (in_list ancestors || is_objc_if_descendant ~blacklist (get_super_if if_decl) ancestors)
     | _ ->
         false
@@ -373,7 +375,7 @@ and ctype_to_objc_interface typ_opt =
   match (typ_opt : Clang_ast_t.c_type option) with
   | Some (ObjCInterfaceType (_, decl_ptr)) ->
       get_decl decl_ptr
-  | Some (ObjCObjectPointerType (_, (inner_qual_type: Clang_ast_t.qual_type))) ->
+  | Some (ObjCObjectPointerType (_, (inner_qual_type : Clang_ast_t.qual_type))) ->
       qual_type_to_objc_interface inner_qual_type
   | Some (FunctionProtoType (_, function_type_info, _))
   | Some (FunctionNoProtoType (_, function_type_info)) ->
@@ -402,7 +404,7 @@ let return_type_matches_class_type result_type interface_decl =
   if is_instance_type result_type then true
   else
     let return_type_decl_opt = qual_type_to_objc_interface result_type in
-    [%compare.equal : int option]
+    [%compare.equal: int option]
       (if_decl_to_di_pointer_opt interface_decl)
       (if_decl_to_di_pointer_opt return_type_decl_opt)
 
@@ -411,13 +413,13 @@ let is_objc_factory_method ~class_decl:interface_decl ~method_decl:meth_decl_opt
   let open Clang_ast_t in
   match meth_decl_opt with
   | Some (ObjCMethodDecl (_, _, omdi)) ->
-      not omdi.omdi_is_instance_method
+      (not omdi.omdi_is_instance_method)
       && return_type_matches_class_type omdi.omdi_result_type interface_decl
   | _ ->
       false
 
 
-let name_of_decl_ref_opt (decl_ref_opt: Clang_ast_t.decl_ref option) =
+let name_of_decl_ref_opt (decl_ref_opt : Clang_ast_t.decl_ref option) =
   match decl_ref_opt with
   | Some decl_ref -> (
     match decl_ref.dr_name with Some named_decl_info -> Some named_decl_info.ni_name | _ -> None )
@@ -529,7 +531,7 @@ let is_implicit_decl decl =
   decl_info.Clang_ast_t.di_is_implicit
 
 
-let get_superclass_curr_class_objc_from_decl (decl: Clang_ast_t.decl) =
+let get_superclass_curr_class_objc_from_decl (decl : Clang_ast_t.decl) =
   match decl with
   | ObjCInterfaceDecl (_, _, _, _, otdi) ->
       otdi.otdi_super

@@ -10,7 +10,7 @@ open! IStd
 module UnixDiff = struct
   type t = Unchanged | New | Old [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let directive_of_char c =
     match c with

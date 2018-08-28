@@ -3,8 +3,9 @@
 
 let cflags = common_cflags @ ["-w"; "-27-32-34-35-39"]
 
-;; Format.sprintf
-     {|
+;;
+Format.sprintf
+  {|
 (library
  (name InferGenerated)
  (public_name InferGenerated)
@@ -19,6 +20,6 @@ let cflags = common_cflags @ ["-w"; "-27-32-34-35-39"]
  (mld_files index)
 )
 |}
-     (String.concat " " cflags)
-     (String.concat " " common_optflags)
-   |> Jbuild_plugin.V1.send
+  (String.concat " " cflags)
+  (String.concat " " common_optflags)
+|> Jbuild_plugin.V1.send

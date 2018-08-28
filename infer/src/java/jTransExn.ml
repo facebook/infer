@@ -22,7 +22,7 @@ let create_handler_table impl =
   handler_tb
 
 
-let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler_table =
+let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handler_table =
   let catch_block_table = Hashtbl.create 1 in
   let exn_message = "exception handler" in
   let procdesc = context.procdesc in
@@ -149,7 +149,7 @@ let create_exception_handlers context exit_nodes get_body_nodes impl =
   match JBir.exc_tbl impl with
   | [] ->
       fun _ -> exit_nodes
-  | _ ->
+  | _ -> (
       let handler_table = create_handler_table impl in
       let catch_block_table =
         translate_exceptions context exit_nodes get_body_nodes handler_table
@@ -158,4 +158,4 @@ let create_exception_handlers context exit_nodes get_body_nodes impl =
         try
           let handler_list = Hashtbl.find handler_table pc in
           Hashtbl.find catch_block_table handler_list
-        with Caml.Not_found -> exit_nodes
+        with Caml.Not_found -> exit_nodes )

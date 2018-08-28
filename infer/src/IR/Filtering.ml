@@ -32,14 +32,14 @@ let mk_procedure_name_filter ~filter =
     match filter with
     | None ->
         (None, None)
-    | Some filter_string ->
+    | Some filter_string -> (
       match String.lsplit2 ~on:':' filter_string with
       | Some (source_file_filter, proc_name_filter) ->
           (Some (Str.regexp source_file_filter), Some (Str.regexp proc_name_filter))
       | None ->
           (* if only one filter is supplied assume it's for procedure names and the source files are
              a wildcard *)
-          (None, Some (Str.regexp filter_string))
+          (None, Some (Str.regexp filter_string)) )
   in
   let source_file_filter =
     filter_of_regexp_opt ~to_string:SourceFile.to_string source_file_regexp

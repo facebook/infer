@@ -59,7 +59,8 @@ module BottomLifted (Domain : S) : sig
 end
 
 (** Create a domain with Top element from a pre-domain *)
-include sig
+include
+  sig
     (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
     [@@@warning "-60"]
@@ -124,7 +125,8 @@ end
 
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
     true in both conditional branches. *)
-include sig
+include
+  sig
     (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
     [@@@warning "-60"]
@@ -146,10 +148,10 @@ end
 module CountDomain (MaxCount : MaxCount) : sig
   include WithBottom with type astate = private int
 
-  val top : astate  [@@warning "-32"]
+  val top : astate [@@warning "-32"]
   (** maximum value *)
 
-  val is_top : astate -> bool  [@@warning "-32"]
+  val is_top : astate -> bool [@@warning "-32"]
   (** return true if this is the maximum value *)
 
   val increment : astate -> astate

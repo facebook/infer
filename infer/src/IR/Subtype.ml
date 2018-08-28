@@ -19,18 +19,18 @@ let list_to_string list =
 type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t list
 [@@deriving compare]
 
-let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal : t'] st1 st2
+let equal_modulo_flag (st1, _) (st2, _) = [%compare.equal: t'] st1 st2
 
 (** denotes the current type and a list of types that are not their subtypes  *)
 type kind = CAST | INSTOF | NORMAL [@@deriving compare]
 
-let equal_kind = [%compare.equal : kind]
+let equal_kind = [%compare.equal: kind]
 
 type t = t' * kind [@@deriving compare]
 
 type result = No | Unknown | Yes [@@deriving compare]
 
-let equal_result = [%compare.equal : result]
+let equal_result = [%compare.equal: result]
 
 let sub_type tname_subst st_pair =
   let st, kind = st_pair in
@@ -44,7 +44,7 @@ let sub_type tname_subst st_pair =
 
 let max_result res1 res2 = if compare_result res1 res2 <= 0 then res2 else res1
 
-let is_interface tenv (class_name: Typ.Name.t) =
+let is_interface tenv (class_name : Typ.Name.t) =
   match (class_name, Tenv.lookup tenv class_name) with
   | JavaClass _, Some {fields= []; methods= []} ->
       true
@@ -98,7 +98,7 @@ let check_subtype =
         let is_subt = check_subclass_tenv tenv c1 c2 in
         subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
         is_subt
-    : result )
+      : result )
 
 
 let is_known_subtype tenv c1 c2 : bool = equal_result (check_subtype tenv c1 c2) Yes
@@ -227,7 +227,7 @@ let rec add_not_subtype tenv c1 l1 l2 =
         if should_add then c :: rest' else rest'
 
 
-let get_subtypes tenv (c1, ((st1, flag1): t)) (c2, ((st2, flag2): t)) =
+let get_subtypes tenv (c1, ((st1, flag1) : t)) (c2, ((st2, flag2) : t)) =
   let is_sub = is_known_subtype tenv c1 c2 in
   let pos_st, neg_st =
     match (st1, st2) with

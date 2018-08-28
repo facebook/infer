@@ -137,36 +137,37 @@ let get_control_maps cfg =
       L.(debug Analysis Medium) "Exit nodes: [%a]\n" (Pp.comma_seq Procdesc.Node.pp) exit_nodes ;
       (* find all the prune nodes in the loop guard *)
       let guard_prune_nodes =
-        get_all_nodes_upwards_until loop_head exit_nodes |> remove_prune_node_pairs exit_nodes
+        get_all_nodes_upwards_until loop_head exit_nodes
+        |> remove_prune_node_pairs exit_nodes
         |> Control.GuardNodes.filter is_prune
       in
       let exit_map' =
         (List.fold_left ~init:exit_map ~f:(fun exit_map_acc exit_node ->
              Control.ExitNodeToLoopHeads.update exit_node
                (function
-                   | Some existing_loop_heads ->
-                       Some (Control.LoopHeads.add loop_head existing_loop_heads)
-                   | None ->
-                       Some (Control.LoopHeads.singleton loop_head))
+                 | Some existing_loop_heads ->
+                     Some (Control.LoopHeads.add loop_head existing_loop_heads)
+                 | None ->
+                     Some (Control.LoopHeads.singleton loop_head))
                exit_map_acc ))
           exit_nodes
       in
       let loop_head_to_guard_nodes' =
         Control.LoopHeadToGuardNodes.update loop_head
           (function
-              | Some existing_guard_nodes ->
-                  Some (Control.GuardNodes.union existing_guard_nodes guard_prune_nodes)
-              | None ->
-                  Some guard_prune_nodes)
+            | Some existing_guard_nodes ->
+                Some (Control.GuardNodes.union existing_guard_nodes guard_prune_nodes)
+            | None ->
+                Some guard_prune_nodes)
           loop_head_to_guard_nodes
       in
       let loop_head_to_loop_nodes' =
         LoopInvariant.LoopHeadToLoopNodes.update loop_head
           (function
-              | Some existing_loop_nodes ->
-                  Some (LoopInvariant.LoopNodes.union existing_loop_nodes loop_nodes)
-              | None ->
-                  Some loop_nodes)
+            | Some existing_loop_nodes ->
+                Some (LoopInvariant.LoopNodes.union existing_loop_nodes loop_nodes)
+            | None ->
+                Some loop_nodes)
           loop_head_to_loop_nodes
       in
       let open Control in

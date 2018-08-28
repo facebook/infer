@@ -12,9 +12,9 @@ open Base
 (** = 'a array but covariant since imperative operations hidden *)
 type +'a t
 
-let v (a: 'a array) : 'a t = Caml.Obj.magic a
+let v (a : 'a array) : 'a t = Caml.Obj.magic a
 
-let a (v: 'a t) : 'a array = Caml.Obj.magic v
+let a (v : 'a t) : 'a array = Caml.Obj.magic v
 
 let compare cmp x y = Array.compare cmp (a x) (a y)
 

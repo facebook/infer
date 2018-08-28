@@ -86,7 +86,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         None
 
 
-  let exec_instr (astate: Domain.astate) proc_data _ (instr: HilInstr.t) =
+  let exec_instr (astate : Domain.astate) proc_data _ (instr : HilInstr.t) =
     match instr with
     | Assume (expr, _, _, loc) -> (
       match extract_null_compare_expr expr with
@@ -134,7 +134,7 @@ let make_error_trace astate ap ud =
         let msg = F.sprintf "%s is compared to null here" (name_of src) in
         let ltr = [Errlog.make_trace_element depth loc msg []] in
         Some (loc, ltr)
-    | DependsOn (loc, dep) ->
+    | DependsOn (loc, dep) -> (
       match Domain.find dep astate with
       | exception Caml.Not_found ->
           None
@@ -146,7 +146,7 @@ let make_error_trace astate ap ud =
           let seen' = Set.add ud' seen in
           Option.map
             (error_trace_impl seen' (depth + 1) dep ud')
-            ~f:(fun (_, trace) -> (loc, trace_elem :: trace))
+            ~f:(fun (_, trace) -> (loc, trace_elem :: trace)) )
   in
   error_trace_impl Set.empty 0 ap ud
 
@@ -175,7 +175,7 @@ let is_outside_codebase proc_name field_name =
 let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let annotation = Localise.nullable_annotation_name proc_name in
-  let report astate (proc_data: extras ProcData.t) =
+  let report astate (proc_data : extras ProcData.t) =
     let report_access_path ap udchain =
       match AccessPath.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) when is_outside_codebase proc_name field_name ->
@@ -184,8 +184,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)
           ()
-      | Some (field_name, _)
-        -> (
+      | Some (field_name, _) -> (
           let message =
             F.asprintf "Field %a should be annotated with %a" MF.pp_monospaced
               (pretty_field_name proc_data field_name)

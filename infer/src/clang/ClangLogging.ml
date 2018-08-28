@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-let log_frontend_exception (trans_unit_ctx: CFrontend_config.translation_unit_context)
+let log_frontend_exception (trans_unit_ctx : CFrontend_config.translation_unit_context)
     exception_type exception_triggered_location (source_location_start, source_location_end)
     ast_node =
   let frontend_exception =

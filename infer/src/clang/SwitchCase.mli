@@ -16,6 +16,6 @@ val in_switch_body : f:('a -> 'b) -> 'a -> t list * 'b
 
 val add : t -> unit
 
-val pp_condition : F.formatter -> condition -> unit  [@@warning "-32"]
+val pp_condition : F.formatter -> condition -> unit [@@warning "-32"]
 
-val pp : F.formatter -> t -> unit  [@@warning "-32"]
+val pp : F.formatter -> t -> unit [@@warning "-32"]

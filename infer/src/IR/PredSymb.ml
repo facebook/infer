@@ -20,7 +20,7 @@ let pp_func_attribute fmt = function FA_sentinel (i, j) -> F.fprintf fmt "sentin
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected [@@deriving compare]
 
-let equal_access = [%compare.equal : access]
+let equal_access = [%compare.equal: access]
 
 let string_of_access = function
   | Default ->
@@ -55,7 +55,7 @@ type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compar
 (** kind of resource action *)
 type res_act_kind = Racquire | Rrelease [@@deriving compare]
 
-let equal_res_act_kind = [%compare.equal : res_act_kind]
+let equal_res_act_kind = [%compare.equal: res_act_kind]
 
 (** kind of dangling pointers *)
 type dangling_kind =
@@ -69,7 +69,7 @@ type dangling_kind =
 (** position in a path: proc name, node id *)
 type path_pos = Typ.Procname.t * int [@@deriving compare]
 
-let equal_path_pos = [%compare.equal : path_pos]
+let equal_path_pos = [%compare.equal: path_pos]
 
 (** acquire/release action on a resource *)
 type res_action =
@@ -81,7 +81,7 @@ type res_action =
 
 (* ignore other values beside resources: arbitrary merging into one *)
 let compare_res_action {ra_kind= k1; ra_res= r1} {ra_kind= k2; ra_res= r2} =
-  [%compare : res_act_kind * resource] (k1, r1) (k2, r2)
+  [%compare: res_act_kind * resource] (k1, r1) (k2, r2)
 
 
 (* type aliases for components of t values that compare should ignore *)
@@ -123,7 +123,7 @@ type t =
   | Awont_leak  (** value do not participate in memory leak analysis *)
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 (** name of the allocation function for the given memory kind *)
 let mem_alloc_pname = function
@@ -162,7 +162,7 @@ type category =
   | ACwontleak
 [@@deriving compare]
 
-let equal_category = [%compare.equal : category]
+let equal_category = [%compare.equal: category]
 
 let to_category att =
   match att with
@@ -221,8 +221,11 @@ let to_string pe = function
       let str_vpath =
         if Config.trace_error then F.asprintf "%a" (DecompiledExp.pp_vpath pe) ra.ra_vpath else ""
       in
-      name ^ Binop.str pe Lt ^ Typ.Procname.to_string ra.ra_pname ^ ":"
-      ^ string_of_int ra.ra_loc.Location.line ^ Binop.str pe Gt ^ str_vpath
+      name ^ Binop.str pe Lt
+      ^ Typ.Procname.to_string ra.ra_pname
+      ^ ":"
+      ^ string_of_int ra.ra_loc.Location.line
+      ^ Binop.str pe Gt ^ str_vpath
   | Aautorelease ->
       "AUTORELEASE"
   | Adangling dk ->
@@ -260,4 +263,4 @@ let to_string pe = function
 let pp pe fmt a = F.pp_print_string fmt (to_string pe a)
 
 (** dump an attribute *)
-let d_attribute (a: t) = L.add_print_with_pe pp a
+let d_attribute (a : t) = L.add_print_with_pe pp a

@@ -15,7 +15,7 @@ module F = Format
 
     This is here and not in RacerDConfig to avoid dependency cycles. *)
 let should_skip_var v =
-  not (Var.appears_in_source_code v)
+  (not (Var.appears_in_source_code v))
   || match v with Var.ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
 
 
@@ -28,7 +28,7 @@ module Access = struct
     | InterfaceCall of Typ.Procname.t
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let suffix_matches (_, accesses1) (_, accesses2) =
     match (List.rev accesses1, List.rev accesses2) with
@@ -306,7 +306,8 @@ module AccessSnapshot = struct
 
 
   let is_unprotected {thread; lock; ownership_precondition} =
-    not (ThreadsDomain.is_any_but_self thread) && not lock
+    (not (ThreadsDomain.is_any_but_self thread))
+    && (not lock)
     && not (OwnershipPrecondition.is_true ownership_precondition)
 
 
@@ -432,7 +433,8 @@ module OwnershipDomain = struct
 
   let propagate_return ret_access_path return_ownership actuals ownership =
     let get_ownership formal_index acc =
-      List.nth actuals formal_index |> Option.map ~f:(fun expr -> ownership_of_expr expr ownership)
+      List.nth actuals formal_index
+      |> Option.map ~f:(fun expr -> ownership_of_expr expr ownership)
       (* simply skip formal if we cannot find its actual, as opposed to assuming non-ownership *)
       |> Option.fold ~init:acc ~f:OwnershipAbstractValue.join
     in
@@ -550,7 +552,8 @@ module StabilityDomain = struct
 
   let add_path path_to_add t =
     if
-      not Config.racerd_use_path_stability || should_skip_var (fst path_to_add |> fst)
+      (not Config.racerd_use_path_stability)
+      || should_skip_var (fst path_to_add |> fst)
       || exists_prefix path_to_add t
     then t
     else filter (fun path -> is_prefix path_to_add path |> not) t |> add path_to_add
@@ -579,7 +582,8 @@ module StabilityDomain = struct
   let rebase actuals pdesc t =
     let formal_map = FormalMap.make pdesc in
     let expand_path ((base, accesses) as p) =
-      FormalMap.get_formal_index base formal_map |> Option.bind ~f:(List.nth actuals)
+      FormalMap.get_formal_index base formal_map
+      |> Option.bind ~f:(List.nth actuals)
       |> Option.bind ~f:actual_to_access_path
       |> Option.value_map ~default:p ~f:(fun ap -> AccessPath.append ap accesses)
     in
@@ -629,7 +633,8 @@ let empty =
 
 let is_empty {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
   ThreadsDomain.is_empty threads && LocksDomain.is_empty locks && AccessDomain.is_empty accesses
-  && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
+  && OwnershipDomain.is_empty ownership
+  && AttributeMapDomain.is_empty attribute_map
   && StabilityDomain.is_empty wobbly_paths
 
 

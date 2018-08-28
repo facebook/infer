@@ -35,7 +35,7 @@ module Make (Kind : Kind) = struct
 
   let indexes t = t.indexes
 
-  let make ?(indexes= IntSet.empty) kind site = {kind; site; indexes}
+  let make ?(indexes = IntSet.empty) kind site = {kind; site; indexes}
 
   let get site actuals call_flags tenv =
     match Kind.get (CallSite.pname site) actuals call_flags tenv with

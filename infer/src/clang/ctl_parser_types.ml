@@ -63,8 +63,8 @@ let rec ast_node_name an =
               name
           | _ ->
               "" )
-        | `PropertyRef decl_ref ->
-          match decl_ref.dr_name with Some name -> name.ni_name | None -> ""
+        | `PropertyRef decl_ref -> (
+          match decl_ref.dr_name with Some name -> name.ni_name | None -> "" )
       in
       ast_node_name (Stmt stmt) ^ "." ^ property_str
   | Stmt (StringLiteral (_, _, _, l)) ->
@@ -110,12 +110,12 @@ let ast_node_cast_kind an =
   match an with
   | Decl _ ->
       ""
-  | Stmt stmt ->
+  | Stmt stmt -> (
     match Clang_ast_proj.get_cast_kind stmt with
     | Some cast_kind ->
         Clang_ast_proj.string_of_cast_kind cast_kind
     | None ->
-        ""
+        "" )
 
 
 let ast_node_equal node1 node2 = Int.equal (ast_node_pointer node1) (ast_node_pointer node2)
@@ -141,7 +141,7 @@ let get_successor_decls_of_decl decl =
   match Clang_ast_proj.get_decl_context_tuple decl with
   | Some (decls, _) ->
       decls
-  | None ->
+  | None -> (
     match decl with
     | FunctionDecl (_, _, _, fdi)
     | CXXMethodDecl (_, _, _, fdi, _)
@@ -154,7 +154,7 @@ let get_successor_decls_of_decl decl =
     | BlockDecl (_, block_decl_info) ->
         block_decl_info.Clang_ast_t.bdi_parameters
     | _ ->
-        []
+        [] )
 
 
 let get_successor_stmts_of_decl decl =
@@ -202,12 +202,12 @@ let rec is_node_successor_of ~is_successor:succ_node node =
   match succ_node with
   | Stmt _ ->
       let node_succ_stmts = get_successor_stmts node in
-      List.exists node_succ_stmts ~f:(fun (s: Clang_ast_t.stmt) ->
+      List.exists node_succ_stmts ~f:(fun (s : Clang_ast_t.stmt) ->
           ast_node_equal (Stmt s) succ_node
           || is_node_successor_of ~is_successor:succ_node (Stmt s) )
   | Decl _ ->
       let node_succ_decls = get_successor_decls node in
-      List.exists node_succ_decls ~f:(fun (d: Clang_ast_t.decl) ->
+      List.exists node_succ_decls ~f:(fun (d : Clang_ast_t.decl) ->
           ast_node_equal (Decl d) succ_node
           || is_node_successor_of ~is_successor:succ_node (Decl d) )
 
@@ -225,12 +225,12 @@ let get_direct_successor_nodes an =
       let _, succs_st = Clang_ast_proj.get_stmt_tuple st in
       let succs = List.map ~f:(fun s -> Stmt s) succs_st in
       succs @ get_decl_of_stmt st
-  | Decl dec ->
+  | Decl dec -> (
     match Clang_ast_proj.get_decl_context_tuple dec with
     | Some (decl_list, _) ->
         List.map ~f:(fun d -> Decl d) decl_list
     | None ->
-        []
+        [] )
 
 
 let infer_prefix = "__infer_ctl_"
@@ -274,7 +274,7 @@ type builtin_kind =
     | OCLReserveID | Dependent | Overload | BoundMember | PseudoObject
     | UnknownAny | BuiltinFn | ARCUnbridgedCast | OMPArraySection *)
 
-let equal_builtin_kind = [%compare.equal : builtin_kind]
+let equal_builtin_kind = [%compare.equal: builtin_kind]
 
 let builtin_kind_to_string t =
   match t with
@@ -395,7 +395,7 @@ let builtin_type_kind_assoc =
   ; (`Half, Half) ]
 
 
-let builtin_equal (bi: Clang_ast_t.builtin_type_kind) (abi: builtin_kind) =
+let builtin_equal (bi : Clang_ast_t.builtin_type_kind) (abi : builtin_kind) =
   match List.Assoc.find ~equal:PolyVariantEqual.( = ) builtin_type_kind_assoc bi with
   | Some assoc_abi when equal_builtin_kind assoc_abi abi ->
       true
@@ -486,7 +486,8 @@ and c_type_equal c_type abs_ctype =
       check_type_ptr tdi.tti_child_type.qt_type_ptr abs_ctype
   | PointerType _, BuiltIn _ | PointerType _, Pointer _ | ObjCObjectPointerType _, Pointer _ ->
       pointer_type_equal c_type abs_ctype
-  | LValueReferenceType (_, qt), Reference abs_typ | RValueReferenceType (_, qt), Reference abs_typ ->
+  | LValueReferenceType (_, qt), Reference abs_typ | RValueReferenceType (_, qt), Reference abs_typ
+    ->
       check_type_ptr qt.qt_type_ptr abs_typ
   | ObjCObjectPointerType (_, qt), ObjCGenProt _ ->
       check_type_ptr qt.qt_type_ptr abs_ctype
@@ -555,20 +556,19 @@ let ast_node_type an =
           typ_string_of_type_ptr expr_info.ei_qual_type.qt_type_ptr
       | _ ->
           "" )
-    | Decl decl ->
+    | Decl decl -> (
       match CAst_utils.type_of_decl decl with
       | Some type_ptr ->
           typ_string_of_type_ptr type_ptr
       | _ ->
-          ""
+          "" )
   in
   if String.length typ_str > 0 then typ_str else "<type not known>"
 
 
 let stmt_node_child_type an =
   match an with
-  | Stmt stmt
-    -> (
+  | Stmt stmt -> (
       let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
       match stmts with [stmt] -> ast_node_type (Stmt stmt) | _ -> "" )
   | _ ->

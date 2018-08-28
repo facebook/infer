@@ -42,7 +42,7 @@ let init_global_state_capture () =
   CFrontend_config.reset_block_counter ()
 
 
-let do_source_file (translation_unit_context: CFrontend_config.translation_unit_context) ast =
+let do_source_file (translation_unit_context : CFrontend_config.translation_unit_context) ast =
   let tenv = Tenv.create () in
   CType_decl.add_predefined_types tenv ;
   init_global_state_capture () ;

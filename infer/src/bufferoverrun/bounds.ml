@@ -51,9 +51,13 @@ module SymLinear = struct
     M.for_all2 ~f:le_one_pair x y
 
 
-  let make
-      : unsigned:bool -> Typ.Procname.t -> Symb.SymbolTable.t -> Symb.SymbolPath.t -> Counter.t
-        -> t * t =
+  let make :
+         unsigned:bool
+      -> Typ.Procname.t
+      -> Symb.SymbolTable.t
+      -> Symb.SymbolPath.t
+      -> Counter.t
+      -> t * t =
    fun ~unsigned pname symbol_table path new_sym_num ->
     let lb, ub = Symb.SymbolTable.lookup ~unsigned pname path symbol_table new_sym_num in
     (singleton_one lb, singleton_one ub)
@@ -61,8 +65,8 @@ module SymLinear = struct
 
   let eq : t -> t -> bool =
    fun x y ->
-    let eq_pair _ (coeff1: NonZeroInt.t option) (coeff2: NonZeroInt.t option) =
-      [%compare.equal : int option] (coeff1 :> int option) (coeff2 :> int option)
+    let eq_pair _ (coeff1 : NonZeroInt.t option) (coeff2 : NonZeroInt.t option) =
+      [%compare.equal: int option] (coeff1 :> int option) (coeff2 :> int option)
     in
     M.for_all2 ~f:eq_pair x y
 
@@ -192,7 +196,7 @@ module Bound = struct
   module Sign = struct
     type t = sign [@@deriving compare]
 
-    let equal = [%compare.equal : t]
+    let equal = [%compare.equal: t]
 
     let neg = function Plus -> Minus | Minus -> Plus
 
@@ -211,7 +215,7 @@ module Bound = struct
   module MinMax = struct
     type t = min_max [@@deriving compare]
 
-    let equal = [%compare.equal : t]
+    let equal = [%compare.equal: t]
 
     let neg = function Min -> Max | Max -> Min
 
@@ -230,7 +234,7 @@ module Bound = struct
     | PInf
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
@@ -294,12 +298,12 @@ module Bound = struct
       match m with
       | Min ->
           of_int (Sign.eval_int sign c d)
-      | Max ->
+      | Max -> (
         match sign with
         | Plus ->
             Linear (c, SymLinear.singleton_one s)
         | Minus ->
-            Linear (c, SymLinear.singleton_minus_one s)
+            Linear (c, SymLinear.singleton_minus_one s) )
     else MinMax (c, sign, m, d, s)
 
 
@@ -455,9 +459,11 @@ module Bound = struct
           mk_MinMax (c2, Plus, Min, c1 - c2, SymLinear.get_one_symbol x2)
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2 ->
           mk_MinMax (c1, Plus, Min, c2 - c1, SymLinear.get_one_symbol x1)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2 ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
+        ->
           mk_MinMax (c2, Minus, Max, c2 - c1, SymLinear.get_mone_symbol x2)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2 ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
+        ->
           mk_MinMax (c1, Minus, Max, c1 - c2, SymLinear.get_mone_symbol x1)
       | MinMax (c1, Plus, Min, d1, s), Linear (c2, se)
       | Linear (c2, se), MinMax (c1, Plus, Min, d1, s)
@@ -512,9 +518,11 @@ module Bound = struct
           mk_MinMax (c2, Plus, Max, c1 - c2, SymLinear.get_one_symbol x2)
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2 ->
           mk_MinMax (c1, Plus, Max, c2 - c1, SymLinear.get_one_symbol x1)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2 ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
+        ->
           mk_MinMax (c2, Minus, Min, c2 - c1, SymLinear.get_mone_symbol x2)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2 ->
+      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
+        ->
           mk_MinMax (c1, Minus, Min, c1 - c2, SymLinear.get_mone_symbol x1)
       | _, _ ->
           default
@@ -622,14 +630,14 @@ module Bound = struct
         if NonZeroInt.is_positive n then PInf else MInf
     | Linear (c, x') ->
         Linear (c * (n :> int), SymLinear.mult_const n x')
-    | MinMax _ ->
+    | MinMax _ -> (
         let int_bound =
           let bound_end' =
             if NonZeroInt.is_positive n then bound_end else Symb.BoundEnd.neg bound_end
           in
           int_of_minmax bound_end' x
         in
-        match int_bound with Some i -> of_int (i * (n :> int)) | None -> of_bound_end bound_end
+        match int_bound with Some i -> of_int (i * (n :> int)) | None -> of_bound_end bound_end )
 
 
   let mult_const_l = mult_const Symb.BoundEnd.LowerBound
@@ -701,8 +709,8 @@ module Bound = struct
 
 
   (** Substitutes ALL symbols in [x] with respect to [map]. Throws [Symbol_not_found] if a symbol in [x] can't be found in [map]. Under/over-Approximate as good as possible according to [subst_pos]. *)
-  let subst_exn
-      : subst_pos:Symb.BoundEnd.t -> t -> t bottom_lifted Symb.SymbolMap.t -> t bottom_lifted =
+  let subst_exn :
+      subst_pos:Symb.BoundEnd.t -> t -> t bottom_lifted Symb.SymbolMap.t -> t bottom_lifted =
    fun ~subst_pos x map ->
     let get_exn s =
       match Symb.SymbolMap.find s map with
@@ -722,21 +730,22 @@ module Bound = struct
           | NonBottom x ->
               let x = mult_const subst_pos coeff x in
               if Symb.Symbol.is_unsigned s then NonBottom (ub ~default:x zero x) else NonBottom x
-      with Caml.Not_found ->
+      with Caml.Not_found -> (
         (* For unsigned symbols, we can over/under-approximate with zero depending on [subst_pos] and the sign of the coefficient. *)
         match (Symb.Symbol.is_unsigned s, subst_pos, NonZeroInt.is_positive coeff) with
         | true, Symb.BoundEnd.LowerBound, true | true, Symb.BoundEnd.UpperBound, false ->
             NonBottom zero
         | _ ->
-            raise (Symbol_not_found s)
+            raise (Symbol_not_found s) )
     in
     match x with
     | MInf | PInf ->
         NonBottom x
     | Linear (c, se) ->
-        SymLinear.fold se ~init:(NonBottom (of_int c)) ~f:(fun acc s coeff ->
-            lift2 (plus subst_pos) acc (get_mult_const s coeff) )
-    | MinMax (c, sign, min_max, d, s) ->
+        SymLinear.fold se
+          ~init:(NonBottom (of_int c))
+          ~f:(fun acc s coeff -> lift2 (plus subst_pos) acc (get_mult_const s coeff))
+    | MinMax (c, sign, min_max, d, s) -> (
       match get_exn s with
       | Bottom ->
           Bottom
@@ -755,8 +764,7 @@ module Bound = struct
                 PInf
             | sign, Min, PInf | sign, Max, MInf ->
                 of_int (Sign.eval_int sign c d)
-            | _, _, Linear (c2, se)
-              -> (
+            | _, _, Linear (c2, se) -> (
                 if SymLinear.is_zero se then
                   of_int (Sign.eval_int sign c (MinMax.eval_int min_max d c2))
                 else if SymLinear.is_one_symbol se then
@@ -775,7 +783,7 @@ module Bound = struct
                       of_int i
                   | None ->
                       of_bound_end subst_pos )
-            | _, _, MinMax (c2, sign2, min_max2, d2, s2) ->
+            | _, _, MinMax (c2, sign2, min_max2, d2, s2) -> (
               match (min_max, sign2, min_max2) with
               | Min, Plus, Min | Max, Plus, Max ->
                   let c' = Sign.eval_int sign c c2 in
@@ -792,9 +800,9 @@ module Bound = struct
                   of_int
                     (Sign.eval_int sign c
                        (MinMax.eval_int min_max d
-                          (int_of_minmax bound_end x' |> Option.value ~default:d)))
+                          (int_of_minmax bound_end x' |> Option.value ~default:d))) )
           in
-          NonBottom res
+          NonBottom res )
 
 
   let subst_lb_exn x map = subst_exn ~subst_pos:Symb.BoundEnd.LowerBound x map
@@ -833,10 +841,10 @@ module NonNegativeBound = struct
         ValTop
     | Bound.MInf ->
         assert false
-    | b ->
+    | b -> (
       match Bound.is_const b with
       | None ->
           Symbolic b
       | Some c ->
-          Constant (NonNegativeInt.of_int_exn c)
+          Constant (NonNegativeInt.of_int_exn c) )
 end

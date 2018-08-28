@@ -18,7 +18,11 @@ module SymLinear : sig
   type t = Ints.NonZeroInt.t M.t
 
   val make :
-    unsigned:bool -> Typ.Procname.t -> Symb.SymbolTable.t -> Symb.SymbolPath.t -> Counter.t
+       unsigned:bool
+    -> Typ.Procname.t
+    -> Symb.SymbolTable.t
+    -> Symb.SymbolPath.t
+    -> Counter.t
     -> t * t
 
   val eq : t -> t -> bool
@@ -116,11 +120,13 @@ module Bound : sig
   val is_not_infty : t -> bool
 
   val subst_lb_exn :
-    t -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
+       t
+    -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
     -> t AbstractDomain.Types.bottom_lifted
 
   val subst_ub_exn :
-    t -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
+       t
+    -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
     -> t AbstractDomain.Types.bottom_lifted
 
   val simplify_bound_ends_from_paths : t -> t

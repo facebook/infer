@@ -198,7 +198,8 @@ let search_classes path =
       else if Filename.check_suffix p "jar" then
         (add_root_path p paths, collect_classnames classes p)
       else accu )
-    (String.Set.empty, JBasics.ClassSet.empty) path
+    (String.Set.empty, JBasics.ClassSet.empty)
+    path
 
 
 let search_sources () =
@@ -221,7 +222,8 @@ let load_from_arguments classes_out_path =
     List.fold ~f:append_path ~init:classpath (List.rev path_list)
   in
   let classpath =
-    combine (split Config.classpath) "" |> combine (String.Set.elements roots)
+    combine (split Config.classpath) ""
+    |> combine (String.Set.elements roots)
     |> combine (split Config.bootclasspath)
   in
   (classpath, search_sources (), classes)
@@ -266,7 +268,7 @@ let iter_missing_callees program ~f =
 let cleanup program = Javalib.close_class_path program.classpath.channel
 
 let lookup_node cn program =
-  try Some (JBasics.ClassMap.find cn (get_classmap program)) with Caml.Not_found ->
+  try Some (JBasics.ClassMap.find cn (get_classmap program)) with Caml.Not_found -> (
     try
       let jclass = javalib_get_class (get_classpath_channel program) cn in
       add_class cn jclass program ; Some jclass
@@ -276,7 +278,7 @@ let lookup_node cn program =
         None
     | (JBasics.Class_structure_error _ | Invalid_argument _) as exn ->
         L.internal_error "ERROR: %s@." (Exn.to_string exn) ;
-        None
+        None )
 
 
 let collect_classes start_classmap jar_filename =

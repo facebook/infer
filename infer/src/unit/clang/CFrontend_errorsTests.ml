@@ -12,7 +12,7 @@ let test_correct_removing_new_lines =
   let pp_diff_of_desc fmt (expected, actual) =
     Format.fprintf fmt "Expected: [%s] Found: [%s]" expected actual
   in
-  let create_test (desc: string) (expected_desc: string) _ =
+  let create_test (desc : string) (expected_desc : string) _ =
     let output = CFrontend_errors.remove_new_lines_and_whitespace desc in
     let cmp s1 s2 = String.equal s1 s2 in
     assert_equal ~pp_diff:pp_diff_of_desc ~cmp expected_desc output

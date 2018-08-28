@@ -15,7 +15,7 @@ end)
 
 type t = {map: bool AnnotationsMap.t; origin: TypeOrigin.t} [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let get_value ann ta = try AnnotationsMap.find ann ta.map with Caml.Not_found -> false
 

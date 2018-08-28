@@ -10,8 +10,8 @@ module F = Format
 module L = Logging
 
 (** Forward analysis to compute uninitialized variables at each program point *)
-module D =
-UninitDomain.Domain
+module D = UninitDomain.Domain
+
 module UninitVars = AbstractDomain.FiniteSet (AccessExpression)
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
 module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
@@ -19,9 +19,9 @@ module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
 module Payload = SummaryPayload.Make (struct
   type t = UninitDomain.summary
 
-  let update_payloads sum (payloads: Payloads.t) = {payloads with uninit= Some sum}
+  let update_payloads sum (payloads : Payloads.t) = {payloads with uninit= Some sum}
 
-  let of_payloads (payloads: Payloads.t) = payloads.uninit
+  let of_payloads (payloads : Payloads.t) = payloads.uninit
 end)
 
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
@@ -73,7 +73,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let base = AccessExpression.get_base access_expr in
     match (AccessExpression.get_typ access_expr tenv, base) with
     | Some typ, (Var.ProgramVar pv, _) ->
-        not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
+        (not (Pvar.is_frontend_tmp pv))
+        && (not (Procdesc.is_captured_var pdesc pv))
         && D.mem access_expr uninit_vars && should_report_on_type typ
     | _, _ ->
         false
@@ -89,12 +90,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_struct_field_passed_by_ref call t access_expr idx =
-    is_struct t && not (AccessExpression.is_base access_expr)
+    is_struct t
+    && (not (AccessExpression.is_base access_expr))
     && function_expects_a_pointer_as_nth_param call idx
 
 
   let is_array_element_passed_by_ref call t access_expr idx =
-    is_array t && not (AccessExpression.is_base access_expr)
+    is_array t
+    && (not (AccessExpression.is_base access_expr))
     && function_expects_a_pointer_as_nth_param call idx
 
 
@@ -110,7 +113,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | HilExp.AccessExpression access_expr ->
             let _, t = AccessExpression.get_base access_expr in
             if
-              should_report_var pdesc tenv uninit_vars access_expr && not (Typ.is_pointer t)
+              should_report_var pdesc tenv uninit_vars access_expr
+              && (not (Typ.is_pointer t))
               && not (is_struct_field_passed_by_ref call t access_expr idx)
             then report_intra access_expr loc (snd extras)
             else ()
@@ -122,7 +126,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let remove_all_fields tenv base uninit_vars =
     match base with
     | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} | _, {Typ.desc= Tstruct name_struct}
-          -> (
+      -> (
       match Tenv.lookup tenv name_struct with
       | Some {fields} ->
           List.fold
@@ -238,13 +242,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
-      (instr: HilInstr.t) =
+  let exec_instr (astate : Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
+      (instr : HilInstr.t) =
     let update_prepost access_expr rhs =
       let lhs_base = AccessExpression.get_base access_expr in
       if
-        FormalMap.is_formal lhs_base (fst extras) && Typ.is_pointer (snd lhs_base)
-        && ( not (is_pointer_assignment tenv access_expr rhs)
+        FormalMap.is_formal lhs_base (fst extras)
+        && Typ.is_pointer (snd lhs_base)
+        && ( (not (is_pointer_assignment tenv access_expr rhs))
            || not (AccessExpression.is_base access_expr) )
       then
         let pre' = D.add access_expr (fst astate.prepost) in
@@ -300,8 +305,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let uninit_vars =
           List.foldi ~init:astate.uninit_vars actuals ~f:(fun idx acc actual_exp ->
               match actual_exp with
-              | HilExp.AccessExpression access_expr
-                -> (
+              | HilExp.AccessExpression access_expr -> (
                   let access_expr_to_remove =
                     match access_expr with AddressOf ae -> ae | _ -> access_expr
                   in
@@ -320,15 +324,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     | _ ->
                         D.remove access_expr_to_remove acc )
                   | base
-                    when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt ->
+                    when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt
+                    ->
                       remove_all_fields tenv base (D.remove access_expr_to_remove acc)
                   | (_, {Typ.desc= Tptr _}) as base -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove true
                     | _ ->
-                        D.remove access_expr_to_remove acc |> remove_all_fields tenv base
-                        |> remove_all_array_elements base |> remove_dereference_access base )
+                        D.remove access_expr_to_remove acc
+                        |> remove_all_fields tenv base |> remove_all_array_elements base
+                        |> remove_dereference_access base )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
@@ -362,7 +368,7 @@ module Analyzer =
 
 let get_locals cfg tenv pdesc =
   List.fold
-    ~f:(fun acc (var_data: ProcAttributes.var_data) ->
+    ~f:(fun acc (var_data : ProcAttributes.var_data) ->
       let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
       let base_access_expr = AccessExpression.Base (Var.of_pvar pvar, var_data.typ) in
       match var_data.typ.Typ.desc with

@@ -66,8 +66,7 @@ module type TraceElem = sig
 end
 
 module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
-  TraceElem with type elem_t = Elem.t =
-struct
+  TraceElem with type elem_t = Elem.t = struct
   type elem_t = Elem.t
 
   type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
@@ -79,7 +78,7 @@ struct
 
   let get_loc {loc; trace} = List.hd trace |> Option.value_map ~default:loc ~f:CallSite.loc
 
-  let make_loc_trace ?(nesting= 0) e =
+  let make_loc_trace ?(nesting = 0) e =
     let call_trace, nesting =
       List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
           let elem_descr =
@@ -126,7 +125,7 @@ module Event = struct
     make (MayBlock (descr, sev)) loc
 
 
-  let make_trace ?(header= "") pname elem =
+  let make_trace ?(header = "") pname elem =
     let trace = make_loc_trace elem in
     let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
     let start_loc = get_loc elem in
@@ -162,14 +161,14 @@ module Order = struct
         false
 
 
-  let make_loc_trace ?(nesting= 0) ({elem= {eventually}} as order) =
+  let make_loc_trace ?(nesting = 0) ({elem= {eventually}} as order) =
     let first_trace = make_loc_trace ~nesting order in
     let first_nesting = List.length first_trace in
     let eventually_trace = Event.make_loc_trace ~nesting:first_nesting eventually in
     first_trace @ eventually_trace
 
 
-  let make_trace ?(header= "") pname elem =
+  let make_trace ?(header = "") pname elem =
     let trace = make_loc_trace elem in
     let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
     let start_loc = get_loc elem in

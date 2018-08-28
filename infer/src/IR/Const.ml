@@ -19,7 +19,7 @@ type t =
   | Cclass of Ident.name  (** class constant *)
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let kind_equal c1 c2 =
   let const_kind_number = function

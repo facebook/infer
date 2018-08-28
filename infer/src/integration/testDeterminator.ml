@@ -110,8 +110,7 @@ module DiffLines = struct
   (* Read the file containing info on changed lines and populate the map *)
   let init_changed_lines_map changed_lines_file' =
     match changed_lines_file' with
-    | Some changed_lines_file
-      -> (
+    | Some changed_lines_file -> (
         L.(debug TestDeterminator Medium)
           "Initializing changed lines map from file '%s'..." changed_lines_file ;
         match Utils.read_file changed_lines_file with
@@ -183,8 +182,8 @@ let affected_methods method_range_map file_changed_lines changed_lines =
 
 let compute_affected_methods_java changed_lines_map method_range_map =
   let affected_methods =
-    String.Map.fold changed_lines_map ~init:JPS.ProfilerSample.empty ~f:
-      (fun ~key:file_changed_lines ~data acc ->
+    String.Map.fold changed_lines_map ~init:JPS.ProfilerSample.empty
+      ~f:(fun ~key:file_changed_lines ~data acc ->
         let am = affected_methods method_range_map file_changed_lines data in
         JPS.ProfilerSample.union am acc )
   in

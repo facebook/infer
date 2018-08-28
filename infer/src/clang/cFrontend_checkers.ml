@@ -101,8 +101,7 @@ let receiver_method_call an =
 let ivar_name an =
   let open Clang_ast_t in
   match an with
-  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, rei))
-    -> (
+  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, rei)) -> (
       let dr_ref = rei.ovrei_decl_ref in
       let ivar_pointer = dr_ref.dr_decl_pointer in
       match CAst_utils.get_decl ivar_pointer with
@@ -144,8 +143,7 @@ let class_name node =
         ""
   in
   match CPredicates.get_ast_node_type_ptr node with
-  | Some type_ptr
-    -> (
+  | Some type_ptr -> (
       let typ = CAst_utils.get_desugared_type type_ptr in
       match typ with
       | Some (ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr})) ->

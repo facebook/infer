@@ -66,13 +66,12 @@ let build_sil_field qual_type_to_sil_type tenv class_tname field_name qual_type 
 (* Given a list of declarations in an interface returns a list of fields  *)
 let get_fields qual_type_to_sil_type tenv class_tname decl_list =
   let open Clang_ast_t in
-  let get_sil_field name_info (qt: qual_type) property_attributes =
+  let get_sil_field name_info (qt : qual_type) property_attributes =
     build_sil_field qual_type_to_sil_type tenv class_tname name_info qt property_attributes
   in
   let rec get_field fields decl =
     match decl with
-    | ObjCPropertyDecl (_, _, obj_c_property_decl_info)
-      -> (
+    | ObjCPropertyDecl (_, _, obj_c_property_decl_info) -> (
         let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
         let property_attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
         match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
@@ -81,8 +80,7 @@ let get_fields qual_type_to_sil_type tenv class_tname decl_list =
             CGeneral_utils.add_no_duplicates_fields field fields
         | _ ->
             fields )
-    | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info)
-      -> (
+    | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) -> (
         let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
         match CAst_utils.get_decl_opt_with_decl_ref property_decl_opt with
         | Some decl ->

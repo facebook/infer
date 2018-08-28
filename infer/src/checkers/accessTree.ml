@@ -90,7 +90,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
   module BaseMap = AccessPath.BaseMap
 
-  type node = (TraceDomain.astate * tree)
+  type node = TraceDomain.astate * tree
 
   and tree = Subtree of node AccessMap.t | Star
 
@@ -135,7 +135,7 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
 
 
   (** find all of the traces in the subtree and join them with [orig_trace] *)
-  let rec join_all_traces ?(join_traces= TraceDomain.join) orig_trace = function
+  let rec join_all_traces ?(join_traces = TraceDomain.join) orig_trace = function
     | Subtree subtree ->
         let join_all_traces_ orig_trace tree =
           let node_join_traces _ (trace, node) trace_acc =
@@ -356,28 +356,28 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
         f acc (AccessPath.Abs.Abstracted cur_ap_raw) node
 
 
-  let node_fold (f: 'a -> AccessPath.Abs.t -> node -> 'a) base node acc =
+  let node_fold (f : 'a -> AccessPath.Abs.t -> node -> 'a) base node acc =
     node_fold_ f base [] node acc
 
 
-  let fold (f: 'a -> AccessPath.Abs.t -> node -> 'a) tree acc_ =
+  let fold (f : 'a -> AccessPath.Abs.t -> node -> 'a) tree acc_ =
     BaseMap.fold (fun base node acc -> node_fold f base node acc) tree acc_
 
 
-  let trace_fold (f: 'a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) =
+  let trace_fold (f : 'a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) =
     let f_ acc ap (trace, _) = f acc ap trace in
     fold f_
 
 
   exception Found
 
-  let exists (f: AccessPath.Abs.t -> node -> bool) tree =
+  let exists (f : AccessPath.Abs.t -> node -> bool) tree =
     try
       fold (fun _ access_path node -> if f access_path node then raise Found else false) tree false
     with Found -> true
 
 
-  let iter (f: AccessPath.Abs.t -> node -> unit) tree =
+  let iter (f : AccessPath.Abs.t -> node -> unit) tree =
     fold (fun () access_path node -> f access_path node) tree ()
 
 

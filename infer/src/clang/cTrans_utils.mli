@@ -56,7 +56,10 @@ type trans_result =
 val empty_control : control
 
 val mk_trans_result :
-  ?method_name:BuiltinDecl.t -> ?is_cpp_call_virtual:bool -> Exp.t * Typ.typ -> control
+     ?method_name:BuiltinDecl.t
+  -> ?is_cpp_call_virtual:bool
+  -> Exp.t * Typ.typ
+  -> control
   -> trans_result
 
 val undefined_expression : unit -> Exp.t
@@ -93,16 +96,29 @@ val trans_assertion : trans_state -> Location.t -> trans_result
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 
 val builtin_trans :
-  trans_state -> Clang_ast_t.source_range -> Location.t -> trans_result list -> Typ.Procname.t
+     trans_state
+  -> Clang_ast_t.source_range
+  -> Location.t
+  -> trans_result list
+  -> Typ.Procname.t
   -> trans_result option
 
 val cxx_method_builtin_trans :
-  trans_state -> Clang_ast_t.source_range -> Location.t -> trans_result list -> Typ.Procname.t
+     trans_state
+  -> Clang_ast_t.source_range
+  -> Location.t
+  -> trans_result list
+  -> Typ.Procname.t
   -> trans_result option
 
 val new_or_alloc_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option
-  -> string -> trans_result
+     trans_state
+  -> Location.t
+  -> Clang_ast_t.stmt_info
+  -> Clang_ast_t.qual_type
+  -> Typ.Name.t option
+  -> string
+  -> trans_result
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.typ) list -> trans_result
 
@@ -111,8 +127,14 @@ module Nodes : sig
   val is_binary_assign_op : Clang_ast_t.binary_operator_info -> bool
 
   val create_prune_node :
-    Procdesc.t -> branch:bool -> negate_cond:bool -> Exp.t -> Sil.instr list -> Location.t
-    -> Sil.if_kind -> Procdesc.Node.t
+       Procdesc.t
+    -> branch:bool
+    -> negate_cond:bool
+    -> Exp.t
+    -> Sil.instr list
+    -> Location.t
+    -> Sil.if_kind
+    -> Procdesc.Node.t
 
   val is_true_prune_node : Procdesc.Node.t -> bool
 end
@@ -138,20 +160,33 @@ module PriorityNode : sig
   val own_priority_node : t -> Clang_ast_t.stmt_info -> bool
 
   val compute_controls_to_parent :
-    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
-    -> control list -> control
+       trans_state
+    -> Location.t
+    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Clang_ast_t.stmt_info
+    -> control list
+    -> control
   (** Used by translation functions to handle potential cfg nodes. It connects nodes returned by the
       translation of stmt children and deals with creating or not a cfg node depending of owning the
       priority_node. It returns the [control] that should be passed to the parent. *)
 
   val compute_results_to_parent :
-    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
-    -> return:Exp.t * Typ.t -> trans_result list -> trans_result
+       trans_state
+    -> Location.t
+    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Clang_ast_t.stmt_info
+    -> return:Exp.t * Typ.t
+    -> trans_result list
+    -> trans_result
   (** convenience wrapper around [compute_controls_to_parent] *)
 
   val compute_result_to_parent :
-    trans_state -> Location.t -> node_name:Procdesc.Node.stmt_nodekind -> Clang_ast_t.stmt_info
-    -> trans_result -> trans_result
+       trans_state
+    -> Location.t
+    -> node_name:Procdesc.Node.stmt_nodekind
+    -> Clang_ast_t.stmt_info
+    -> trans_result
+    -> trans_result
   (** convenience function like [compute_results_to_parent] when there is a single [trans_result]
       to consider *)
 end
@@ -195,8 +230,12 @@ module Self : sig
       ; source_range: Clang_ast_t.source_range }
 
   val add_self_parameter_for_super_instance :
-    Clang_ast_t.stmt_info -> CContext.t -> Typ.Procname.t -> Location.t
-    -> Clang_ast_t.obj_c_message_expr_info -> trans_result option
+       Clang_ast_t.stmt_info
+    -> CContext.t
+    -> Typ.Procname.t
+    -> Location.t
+    -> Clang_ast_t.obj_c_message_expr_info
+    -> trans_result option
 
   val is_var_self : Pvar.t -> bool -> bool
 end

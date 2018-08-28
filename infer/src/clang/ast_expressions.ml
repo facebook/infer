@@ -14,7 +14,7 @@ let stmt_info_with_fresh_pointer stmt_info =
   ; si_source_range= stmt_info.Clang_ast_t.si_source_range }
 
 
-let create_qual_type ?(quals= Typ.mk_type_quals ()) qt_type_ptr =
+let create_qual_type ?(quals = Typ.mk_type_quals ()) qt_type_ptr =
   { Clang_ast_t.qt_type_ptr
   ; qt_is_const= Typ.is_const quals
   ; qt_is_volatile= Typ.is_volatile quals
@@ -159,7 +159,7 @@ let make_next_object_exp stmt_info item items =
         (Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info), var_qual_type)
     | Clang_ast_t.DeclRefExpr (_, _, expr_info, _) ->
         (item, expr_info.Clang_ast_t.ei_qual_type)
-    | stmt ->
+    | stmt -> (
         let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
         match stmts with
         | [stmt] ->
@@ -168,7 +168,7 @@ let make_next_object_exp stmt_info item items =
             CFrontend_config.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
               "unexpected item %a"
               (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
-              item
+              item )
   in
   let var_decl_ref, var_type = get_decl_ref item in
   let message_call =

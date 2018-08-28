@@ -238,7 +238,8 @@ $(b,infer) $(i,[options])|}
     "cxx": false,
     "infer-blacklist-files-containing": ["@generated","@Generated"]
   }|}
-      ] ~see_also:InferCommand.all_commands "infer"
+      ]
+    ~see_also:InferCommand.all_commands "infer"
 
 
 let report =

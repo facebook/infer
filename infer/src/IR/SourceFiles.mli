@@ -29,5 +29,11 @@ val mark_all_stale : unit -> unit
 (** mark all source files as stale; do be called at the start of a new capture phase *)
 
 val pp_all :
-  filter:Filtering.source_files_filter -> cfgs:bool -> type_environment:bool
-  -> procedure_names:bool -> freshly_captured:bool -> Format.formatter -> unit -> unit
+     filter:Filtering.source_files_filter
+  -> cfgs:bool
+  -> type_environment:bool
+  -> procedure_names:bool
+  -> freshly_captured:bool
+  -> Format.formatter
+  -> unit
+  -> unit

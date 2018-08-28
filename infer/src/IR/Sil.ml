@@ -52,7 +52,7 @@ type instr =
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
 [@@deriving compare]
 
-let equal_instr = [%compare.equal : instr]
+let equal_instr = [%compare.equal: instr]
 
 let skip_instr = Remove_temps ([], Location.dummy)
 
@@ -77,7 +77,7 @@ type atom =
   | Anpred of PredSymb.t * Exp.t list  (** negated predicate symbol applied to exps *)
 [@@deriving compare]
 
-let equal_atom = [%compare.equal : atom]
+let equal_atom = [%compare.equal: atom]
 
 let atom_has_local_addr a =
   match a with
@@ -93,7 +93,7 @@ type lseg_kind =
   | Lseg_PE  (** possibly empty (possibly circular) listseg *)
 [@@deriving compare]
 
-let equal_lseg_kind = [%compare.equal : lseg_kind]
+let equal_lseg_kind = [%compare.equal: lseg_kind]
 
 (** The boolean is true when the pointer was dereferenced without testing for zero. *)
 type zero_flag = bool option [@@deriving compare]
@@ -117,7 +117,7 @@ type inst =
   | Ireturn_from_call of int
 [@@deriving compare]
 
-let equal_inst = [%compare.equal : inst]
+let equal_inst = [%compare.equal: inst]
 
 (** structured expressions represent a value of structured type, such as an array or a struct. *)
 type 'inst strexp0 =
@@ -135,11 +135,11 @@ type 'inst strexp0 =
 
 type strexp = inst strexp0
 
-let compare_strexp ?(inst= false) se1 se2 =
+let compare_strexp ?(inst = false) se1 se2 =
   compare_strexp0 (match inst with true -> compare_inst | false -> fun _ _ -> 0) se1 se2
 
 
-let equal_strexp ?(inst= false) se1 se2 = Int.equal (compare_strexp ~inst se1 se2) 0
+let equal_strexp ?(inst = false) se1 se2 = Int.equal (compare_strexp ~inst se1 se2) 0
 
 (** an atomic heap predicate *)
 type 'inst hpred0 =
@@ -180,23 +180,23 @@ and 'inst hpara_dll0 =
 type hpred = inst hpred0
 
 (** Comparison between heap predicates. Reverse natural order, and order first by anchor exp. *)
-let compare_hpred ?(inst= false) hpred1 hpred2 =
+let compare_hpred ?(inst = false) hpred1 hpred2 =
   compare_hpred0 (match inst with true -> compare_inst | false -> fun _ _ -> 0) hpred1 hpred2
 
 
-let equal_hpred ?(inst= false) hpred1 hpred2 = Int.equal (compare_hpred ~inst hpred1 hpred2) 0
+let equal_hpred ?(inst = false) hpred1 hpred2 = Int.equal (compare_hpred ~inst hpred1 hpred2) 0
 
 type hpara = inst hpara0
 
 let compare_hpara = compare_hpara0 (fun _ _ -> 0)
 
-let equal_hpara = [%compare.equal : hpara]
+let equal_hpara = [%compare.equal: hpara]
 
 type hpara_dll = inst hpara_dll0
 
 let compare_hpara_dll = compare_hpara_dll0 (fun _ _ -> 0)
 
-let equal_hpara_dll = [%compare.equal : hpara_dll]
+let equal_hpara_dll = [%compare.equal: hpara_dll]
 
 (** {2 Comparision and Inspection Functions} *)
 let is_objc_object = function
@@ -273,13 +273,13 @@ let pp_exp_printenv pe0 f e0 =
 
 
 (** dump an expression. *)
-let d_exp (e: Exp.t) = L.add_print_with_pe pp_exp_printenv e
+let d_exp (e : Exp.t) = L.add_print_with_pe pp_exp_printenv e
 
 (** Pretty print a list of expressions. *)
 let pp_exp_list pe f expl = Pp.seq (pp_exp_printenv pe) f expl
 
 (** dump a list of expressions. *)
-let d_exp_list (el: Exp.t list) = L.add_print_with_pe pp_exp_list el
+let d_exp_list (el : Exp.t list) = L.add_print_with_pe pp_exp_list el
 
 let pp_texp pe f = function
   | Exp.Sizeof {typ; nbytes; dynamic_length; subtype} ->
@@ -303,7 +303,7 @@ let pp_texp_full pe f = function
 
 
 (** Dump a type expression with all the details. *)
-let d_texp_full (te: Exp.t) = L.add_print_with_pe pp_texp_full te
+let d_texp_full (te : Exp.t) = L.add_print_with_pe pp_texp_full te
 
 (** Pretty print an offset *)
 let pp_offset pe f = function
@@ -327,7 +327,7 @@ let rec pp_offset_list pe f = function
 
 
 (** Dump a list of offsets *)
-let d_offset_list (offl: offset list) = L.add_print_with_pe pp_offset_list offl
+let d_offset_list (offl : offset list) = L.add_print_with_pe pp_offset_list offl
 
 let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (pp_exp_printenv pe) e (Typ.pp pe) t
 
@@ -423,7 +423,7 @@ let add_with_block_parameters_flag instr =
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
 (** Dump an instruction. *)
-let d_instr (i: instr) = L.add_print_with_pe ~color:Pp.Green pp_instr i
+let d_instr (i : instr) = L.add_print_with_pe ~color:Pp.Green pp_instr i
 
 let pp_atom pe0 f a =
   let pe, changed = color_pre_wrapper pe0 f a in
@@ -442,7 +442,7 @@ let pp_atom pe0 f a =
 
 
 (** dump an atom *)
-let d_atom (a: atom) = L.add_print_with_pe pp_atom a
+let d_atom (a : atom) = L.add_print_with_pe pp_atom a
 
 let pp_lseg_kind f = function Lseg_NE -> F.pp_print_string f "ne" | Lseg_PE -> ()
 
@@ -566,21 +566,21 @@ end = struct
       This can in turn extend the todo list for the nested predicates,
       which are then visited as well.
       Can be applied only once, as it destroys the todo list *)
-  let iter (env: env) f f_dll =
+  let iter (env : env) f f_dll =
     while env.todo <> [] || env.todo_dll <> [] do
       match env.todo with
       | hpara :: todo' ->
           env.todo <- todo' ;
           let n, emitted = HparaHash.find env.hash hpara in
           if not emitted then f n hpara
-      | [] ->
+      | [] -> (
         match env.todo_dll with
         | hpara_dll :: todo_dll' ->
             env.todo_dll <- todo_dll' ;
             let n, emitted = HparaDllHash.find env.hash_dll hpara_dll in
             if not emitted then f_dll n hpara_dll
         | [] ->
-            ()
+            () )
     done
 end
 
@@ -874,57 +874,57 @@ let pp_hpara_dll pe f = pp_hpara_dll_env pe None f
 let pp_hpred pe f = pp_hpred_env pe None f
 
 (** dump a strexp. *)
-let d_sexp (se: strexp) = L.add_print_with_pe pp_sexp se
+let d_sexp (se : strexp) = L.add_print_with_pe pp_sexp se
 
 (** dump a hpred. *)
-let d_hpred (hpred: hpred) = L.add_print_with_pe pp_hpred hpred
+let d_hpred (hpred : hpred) = L.add_print_with_pe pp_hpred hpred
 
 (** {2 Functions for traversing SIL data types} *)
 
-let rec strexp_expmap (f: Exp.t * inst option -> Exp.t * inst option) =
+let rec strexp_expmap (f : Exp.t * inst option -> Exp.t * inst option) =
   let fe e = fst (f (e, None)) in
   let fei (e, inst) =
     match f (e, Some inst) with e', None -> (e', inst) | e', Some inst' -> (e', inst')
   in
   function
-    | Eexp (e, inst) ->
-        let e', inst' = fei (e, inst) in
-        Eexp (e', inst')
-    | Estruct (fld_se_list, inst) ->
-        let f_fld_se (fld, se) = (fld, strexp_expmap f se) in
-        Estruct (List.map ~f:f_fld_se fld_se_list, inst)
-    | Earray (len, idx_se_list, inst) ->
-        let len' = fe len in
-        let f_idx_se (idx, se) =
-          let idx' = fe idx in
-          (idx', strexp_expmap f se)
-        in
-        Earray (len', List.map ~f:f_idx_se idx_se_list, inst)
+  | Eexp (e, inst) ->
+      let e', inst' = fei (e, inst) in
+      Eexp (e', inst')
+  | Estruct (fld_se_list, inst) ->
+      let f_fld_se (fld, se) = (fld, strexp_expmap f se) in
+      Estruct (List.map ~f:f_fld_se fld_se_list, inst)
+  | Earray (len, idx_se_list, inst) ->
+      let len' = fe len in
+      let f_idx_se (idx, se) =
+        let idx' = fe idx in
+        (idx', strexp_expmap f se)
+      in
+      Earray (len', List.map ~f:f_idx_se idx_se_list, inst)
 
 
-let hpred_expmap (f: Exp.t * inst option -> Exp.t * inst option) =
+let hpred_expmap (f : Exp.t * inst option -> Exp.t * inst option) =
   let fe e = fst (f (e, None)) in
   function
-    | Hpointsto (e, se, te) ->
-        let e' = fe e in
-        let se' = strexp_expmap f se in
-        let te' = fe te in
-        Hpointsto (e', se', te')
-    | Hlseg (k, hpara, root, next, shared) ->
-        let root' = fe root in
-        let next' = fe next in
-        let shared' = List.map ~f:fe shared in
-        Hlseg (k, hpara, root', next', shared')
-    | Hdllseg (k, hpara, iF, oB, oF, iB, shared) ->
-        let iF' = fe iF in
-        let oB' = fe oB in
-        let oF' = fe oF in
-        let iB' = fe iB in
-        let shared' = List.map ~f:fe shared in
-        Hdllseg (k, hpara, iF', oB', oF', iB', shared')
+  | Hpointsto (e, se, te) ->
+      let e' = fe e in
+      let se' = strexp_expmap f se in
+      let te' = fe te in
+      Hpointsto (e', se', te')
+  | Hlseg (k, hpara, root, next, shared) ->
+      let root' = fe root in
+      let next' = fe next in
+      let shared' = List.map ~f:fe shared in
+      Hlseg (k, hpara, root', next', shared')
+  | Hdllseg (k, hpara, iF, oB, oF, iB, shared) ->
+      let iF' = fe iF in
+      let oB' = fe oB in
+      let oF' = fe oF in
+      let iB' = fe iB in
+      let shared' = List.map ~f:fe shared in
+      Hdllseg (k, hpara, iF', oB', oF', iB', shared')
 
 
-let rec strexp_instmap (f: inst -> inst) strexp =
+let rec strexp_instmap (f : inst -> inst) strexp =
   match strexp with
   | Eexp (e, inst) ->
       Eexp (e, f inst)
@@ -936,15 +936,15 @@ let rec strexp_instmap (f: inst -> inst) strexp =
       Earray (len, List.map ~f:f_idx_se idx_se_list, f inst)
 
 
-let rec hpara_instmap (f: inst -> inst) hpara =
+let rec hpara_instmap (f : inst -> inst) hpara =
   {hpara with body= List.map ~f:(hpred_instmap f) hpara.body}
 
 
-and hpara_dll_instmap (f: inst -> inst) hpara_dll =
+and hpara_dll_instmap (f : inst -> inst) hpara_dll =
   {hpara_dll with body_dll= List.map ~f:(hpred_instmap f) hpara_dll.body_dll}
 
 
-and hpred_instmap (fn: inst -> inst) (hpred: hpred) : hpred =
+and hpred_instmap (fn : inst -> inst) (hpred : hpred) : hpred =
   match hpred with
   | Hpointsto (e, se, te) ->
       let se' = strexp_instmap fn se in
@@ -955,11 +955,11 @@ and hpred_instmap (fn: inst -> inst) (hpred: hpred) : hpred =
       Hdllseg (k, hpara_dll_instmap fn hpar_dll, e, f, g, h, el)
 
 
-let hpred_list_expmap (f: Exp.t * inst option -> Exp.t * inst option) (hlist: hpred list) =
+let hpred_list_expmap (f : Exp.t * inst option -> Exp.t * inst option) (hlist : hpred list) =
   List.map ~f:(hpred_expmap f) hlist
 
 
-let atom_expmap (f: Exp.t -> Exp.t) = function
+let atom_expmap (f : Exp.t -> Exp.t) = function
   | Aeq (e1, e2) ->
       Aeq (f e1, f e2)
   | Aneq (e1, e2) ->
@@ -981,7 +981,7 @@ let hpred_get_lexp acc = function
       e1 :: e2 :: acc
 
 
-let hpred_list_get_lexps (filter: Exp.t -> bool) (hlist: hpred list) : Exp.t list =
+let hpred_list_get_lexps (filter : Exp.t -> bool) (hlist : hpred list) : Exp.t list =
   let lexps = List.fold ~f:hpred_get_lexp ~init:[] hlist in
   List.filter ~f:filter lexps
 
@@ -993,10 +993,10 @@ let hpred_entries hpred = hpred_get_lexp [] hpred
 let atom_gen_free_vars =
   let open Sequence.Generator in
   function
-    | Aeq (e1, e2) | Aneq (e1, e2) ->
-        Exp.gen_free_vars e1 >>= fun () -> Exp.gen_free_vars e2
-    | Apred (_, es) | Anpred (_, es) ->
-        ISequence.gen_sequence_list es ~f:Exp.gen_free_vars
+  | Aeq (e1, e2) | Aneq (e1, e2) ->
+      Exp.gen_free_vars e1 >>= fun () -> Exp.gen_free_vars e2
+  | Apred (_, es) | Anpred (_, es) ->
+      ISequence.gen_sequence_list es ~f:Exp.gen_free_vars
 
 
 let atom_free_vars a = Sequence.Generator.run (atom_gen_free_vars a)
@@ -1004,35 +1004,35 @@ let atom_free_vars a = Sequence.Generator.run (atom_gen_free_vars a)
 let rec strexp_gen_free_vars =
   let open Sequence.Generator in
   function
-    | Eexp (e, _) ->
-        Exp.gen_free_vars e
-    | Estruct (fld_se_list, _) ->
-        ISequence.gen_sequence_list fld_se_list ~f:(fun (_, se) -> strexp_gen_free_vars se)
-    | Earray (len, idx_se_list, _) ->
-        Exp.gen_free_vars len
-        >>= fun () ->
-        ISequence.gen_sequence_list idx_se_list ~f:(fun (e, se) ->
-            Exp.gen_free_vars e >>= fun () -> strexp_gen_free_vars se )
+  | Eexp (e, _) ->
+      Exp.gen_free_vars e
+  | Estruct (fld_se_list, _) ->
+      ISequence.gen_sequence_list fld_se_list ~f:(fun (_, se) -> strexp_gen_free_vars se)
+  | Earray (len, idx_se_list, _) ->
+      Exp.gen_free_vars len
+      >>= fun () ->
+      ISequence.gen_sequence_list idx_se_list ~f:(fun (e, se) ->
+          Exp.gen_free_vars e >>= fun () -> strexp_gen_free_vars se )
 
 
 let hpred_gen_free_vars =
   let open Sequence.Generator in
   function
-    | Hpointsto (base, sexp, te) ->
-        Exp.gen_free_vars base
-        >>= fun () -> strexp_gen_free_vars sexp >>= fun () -> Exp.gen_free_vars te
-    | Hlseg (_, _, e1, e2, elist) ->
-        Exp.gen_free_vars e1
-        >>= fun () ->
-        Exp.gen_free_vars e2 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
-    | Hdllseg (_, _, e1, e2, e3, e4, elist) ->
-        Exp.gen_free_vars e1
-        >>= fun () ->
-        Exp.gen_free_vars e2
-        >>= fun () ->
-        Exp.gen_free_vars e3
-        >>= fun () ->
-        Exp.gen_free_vars e4 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
+  | Hpointsto (base, sexp, te) ->
+      Exp.gen_free_vars base
+      >>= fun () -> strexp_gen_free_vars sexp >>= fun () -> Exp.gen_free_vars te
+  | Hlseg (_, _, e1, e2, elist) ->
+      Exp.gen_free_vars e1
+      >>= fun () ->
+      Exp.gen_free_vars e2 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
+  | Hdllseg (_, _, e1, e2, e3, e4, elist) ->
+      Exp.gen_free_vars e1
+      >>= fun () ->
+      Exp.gen_free_vars e2
+      >>= fun () ->
+      Exp.gen_free_vars e3
+      >>= fun () ->
+      Exp.gen_free_vars e4 >>= fun () -> ISequence.gen_sequence_list elist ~f:Exp.gen_free_vars
 
 
 let hpred_free_vars h = Sequence.Generator.run (hpred_gen_free_vars h)
@@ -1102,7 +1102,7 @@ type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
 
 type subst_fun = [`Exp of Ident.t -> Exp.t | `Typ of (Typ.t -> Typ.t) * (Typ.Name.t -> Typ.Name.t)]
 
-let equal_exp_subst = [%compare.equal : exp_subst]
+let equal_exp_subst = [%compare.equal: exp_subst]
 
 let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
 
@@ -1168,11 +1168,11 @@ let sub_symmetric_difference sub1_in sub2_in =
 
 (** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter]. Raise [Not_found] if there isn't one. *)
-let sub_find filter (sub: exp_subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
+let sub_find filter (sub : exp_subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. *)
-let sub_filter filter (sub: exp_subst) = List.filter ~f:(fun (i, _) -> filter i) sub
+let sub_filter filter (sub : exp_subst) = List.filter ~f:(fun (i, _) -> filter i) sub
 
 (** [sub_filter_pair filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. *)
@@ -1180,11 +1180,13 @@ let sub_filter_pair = List.filter
 
 (** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. *)
-let sub_range_partition filter (sub: exp_subst) = List.partition_tf ~f:(fun (_, e) -> filter e) sub
+let sub_range_partition filter (sub : exp_subst) =
+  List.partition_tf ~f:(fun (_, e) -> filter e) sub
+
 
 (** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. *)
-let sub_domain_partition filter (sub: exp_subst) =
+let sub_domain_partition filter (sub : exp_subst) =
   List.partition_tf ~f:(fun (i, _) -> filter i) sub
 
 
@@ -1217,7 +1219,7 @@ let exp_subst_gen_free_vars sub =
 
 let exp_subst_free_vars sub = Sequence.Generator.run (exp_subst_gen_free_vars sub)
 
-let rec exp_sub_ids (f: subst_fun) exp =
+let rec exp_sub_ids (f : subst_fun) exp =
   let f_typ x = match f with `Exp _ -> x | `Typ (f, _) -> f x in
   let f_tname x = match f with `Exp _ -> x | `Typ (_, f) -> f x in
   match (exp : Exp.t) with
@@ -1238,8 +1240,7 @@ let rec exp_sub_ids (f: subst_fun) exp =
       if phys_equal e' e then exp else Exp.Exn e'
   | Closure c ->
       let captured_vars =
-        IList.map_changed
-          ~equal:[%compare.equal : Exp.t * Pvar.t * Typ.t]
+        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t]
           ~f:(fun ((e, pvar, typ) as captured) ->
             let e' = exp_sub_ids f e in
             let typ' = f_typ typ in
@@ -1301,7 +1302,7 @@ let apply_sub subst : subst_fun =
       `Typ (Typ.sub_type typ_subst, Typ.sub_tname typ_subst)
 
 
-let exp_sub (subst: subst) e = exp_sub_ids (apply_sub subst) e
+let exp_sub (subst : subst) e = exp_sub_ids (apply_sub subst) e
 
 (** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's *)
 let instr_sub_ids ~sub_id_binders f instr =
@@ -1333,8 +1334,7 @@ let instr_sub_ids ~sub_id_binders f instr =
       in
       let fun_exp' = exp_sub_ids f fun_exp in
       let actuals' =
-        IList.map_changed
-          ~equal:[%compare.equal : Exp.t * Typ.t]
+        IList.map_changed ~equal:[%compare.equal: Exp.t * Typ.t]
           ~f:(fun ((actual, typ) as actual_pair) ->
             let actual' = exp_sub_ids f actual in
             let typ' = sub_typ typ in
@@ -1357,7 +1357,7 @@ let instr_sub_ids ~sub_id_binders f instr =
 
 
 (** apply [subst] to all id's in [instr], including binder id's *)
-let instr_sub (subst: subst) instr = instr_sub_ids ~sub_id_binders:true (apply_sub subst) instr
+let instr_sub (subst : subst) instr = instr_sub_ids ~sub_id_binders:true (apply_sub subst) instr
 
 let atom_sub subst = atom_expmap (exp_sub subst)
 
@@ -1375,7 +1375,7 @@ let rec exp_replace_exp epairs e =
   match List.find ~f:(fun (e1, _) -> Exp.equal e e1) epairs with
   | Some (_, e2) ->
       e2
-  | None ->
+  | None -> (
     (* If e is a compound expression, we need to check for its subexpressions as well *)
     match e with
     | Exp.UnOp (op, e0, ty) ->
@@ -1396,7 +1396,7 @@ let rec exp_replace_exp epairs e =
         let index' = exp_replace_exp epairs index in
         if phys_equal base base' && phys_equal index index' then e else Exp.Lindex (base', index')
     | _ ->
-        e
+        e )
 
 
 let atom_replace_exp epairs atom = atom_expmap (fun e -> exp_replace_exp epairs e) atom
@@ -1568,7 +1568,7 @@ let hpara_instantiate para e1 e2 elist =
   in
   let subst =
     `Exp
-      (exp_subst_of_list ((para.root, e1) :: (para.next, e2) :: subst_for_svars @ subst_for_evars))
+      (exp_subst_of_list (((para.root, e1) :: (para.next, e2) :: subst_for_svars) @ subst_for_evars))
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body)
 
@@ -1578,7 +1578,7 @@ let hpara_instantiate para e1 e2 elist =
     then the result of the instantiation is
     [b\[cell / x, blink / y, flink / z, elist / xs, zs'_/ zs\]]
     for some fresh [_zs'].*)
-let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
+let hpara_dll_instantiate (para : hpara_dll) cell blink flink elist =
   let subst_for_svars =
     let g id e = (id, e) in
     try List.map2_exn ~f:g para.svars_dll elist with Invalid_argument _ -> assert false
@@ -1594,7 +1594,7 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   let subst =
     `Exp
       (exp_subst_of_list
-         ( (para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars
+         ( ((para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars)
          @ subst_for_evars ))
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body_dll)

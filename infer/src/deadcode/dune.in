@@ -1,8 +1,9 @@
 (* -*- tuareg -*- *)
 (* NOTE: prepend dune.common to this file! *)
 
-;; Format.sprintf
-     {|
+;;
+Format.sprintf
+  {|
 (executable
  (name all_infer_in_one_file)
  (flags (%s -w +60))
@@ -12,7 +13,7 @@
  (preprocess (pps ppx_compare ppx_sexp_conv -no-check))
 )
 |}
-     (String.concat " " common_cflags)
-     (String.concat " " common_optflags)
-     (String.concat " " common_libraries)
-   |> Jbuild_plugin.V1.send
+  (String.concat " " common_cflags)
+  (String.concat " " common_optflags)
+  (String.concat " " common_libraries)
+|> Jbuild_plugin.V1.send

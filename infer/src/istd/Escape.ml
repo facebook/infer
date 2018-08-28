@@ -141,14 +141,14 @@ let escape_shell =
   let easy_single_quotable = Str.regexp "^[^']+$" in
   let easy_double_quotable = Str.regexp "^[^$`\\!]+$" in
   function
-    | "" ->
-        "''"
-    | arg ->
-        if Str.string_match no_quote_needed arg 0 then arg
-        else if Str.string_match easy_single_quotable arg 0 then F.sprintf "'%s'" arg
-        else if Str.string_match easy_double_quotable arg 0 then
-          escape_double_quotes arg |> F.sprintf "\"%s\""
-        else
-          (* ends on-going single quote, output single quote inside double quotes, then open a new
+  | "" ->
+      "''"
+  | arg ->
+      if Str.string_match no_quote_needed arg 0 then arg
+      else if Str.string_match easy_single_quotable arg 0 then F.sprintf "'%s'" arg
+      else if Str.string_match easy_double_quotable arg 0 then
+        escape_double_quotes arg |> F.sprintf "\"%s\""
+      else
+        (* ends on-going single quote, output single quote inside double quotes, then open a new
              single quote *)
-          escape_map (function '\'' -> Some "'\"'\"'" | _ -> None) arg |> F.sprintf "'%s'"
+        escape_map (function '\'' -> Some "'\"'\"'" | _ -> None) arg |> F.sprintf "'%s'"

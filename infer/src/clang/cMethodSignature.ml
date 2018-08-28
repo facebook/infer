@@ -15,8 +15,8 @@ module F = Format
 type param_type =
   {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; is_value: bool; annot: Annot.Item.t}
 
-let mk_param_type ?(is_value= false) ?(is_pointer_to_const= false) ?(annot= Annot.Item.empty) name
-    typ =
+let mk_param_type ?(is_value = false) ?(is_pointer_to_const = false) ?(annot = Annot.Item.empty)
+    name typ =
   {name; typ; is_value; is_pointer_to_const; annot}
 
 
@@ -50,9 +50,9 @@ let is_setter {pointer_to_property_opt; params} =
   Option.is_some pointer_to_property_opt && Int.equal (List.length params) 1
 
 
-let mk name class_param params ret_type ?(has_added_return_param= false) attributes loc method_kind
-    ?(is_cpp_virtual= false) ?(is_cpp_nothrow= false) ?(is_variadic= false) pointer_to_parent
-    pointer_to_property_opt return_param_typ access =
+let mk name class_param params ret_type ?(has_added_return_param = false) attributes loc
+    method_kind ?(is_cpp_virtual = false) ?(is_cpp_nothrow = false) ?(is_variadic = false)
+    pointer_to_parent pointer_to_property_opt return_param_typ access =
   { name
   ; access
   ; class_param

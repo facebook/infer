@@ -10,7 +10,7 @@ open Core
 type t = Analyze | Capture | Compile | Diff | Events | Explore | Report | ReportDiff | Run
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let command_to_string =
   [ (Analyze, "analyze")

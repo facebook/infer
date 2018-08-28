@@ -128,7 +128,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
   (** Print end color *)
   let pp_end_color fmt () = F.pp_print_string fmt "</span>"
 
-  let pp_link ?(name= None) ?(pos= None) ~path fmt text =
+  let pp_link ?(name = None) ?(pos = None) ~path fmt text =
     let link_str =
       let escaped_path = List.map ~f:Escape.escape_url path in
       DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Rel escaped_path)
@@ -165,7 +165,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
 
 
   (** Print an html link to the given line number of the current source file *)
-  let pp_line_link ?(with_name= false) ?(text= None) source path_to_root fmt linenum =
+  let pp_line_link ?(with_name = false) ?(text = None) source path_to_root fmt linenum =
     let fname = DB.source_file_encoding source in
     let linenum_str = string_of_int linenum in
     let name = "LINE" ^ linenum_str in
@@ -178,7 +178,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
 
 
   (** Print an html link given node id and session *)
-  let pp_session_link ?(with_name= false) ?proc_name source path_to_root fmt
+  let pp_session_link ?(with_name = false) ?proc_name source path_to_root fmt
       (node_id, session, linenum) =
     let node_name = "node" ^ string_of_int node_id in
     let text, pos =

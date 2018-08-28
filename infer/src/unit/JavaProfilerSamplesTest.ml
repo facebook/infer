@@ -278,7 +278,7 @@ let test_from_json_string_with_invalid_input =
 
 let tests =
   "java_profiler_samples"
-  >::: test_jni_to_java_type_with_invalid_input :: test_jni_parse_str_with_valid_input
+  >::: (test_jni_to_java_type_with_invalid_input :: test_jni_parse_str_with_valid_input)
        @ test_jni_parse_str_with_invalid_input @ test_jni_parse_method_str_with_invalid_input
        @ test_jni_pp @ test_jni_to_java_type_with_valid_input
        @ test_from_json_string_with_valid_input @ test_from_json_string_with_invalid_input

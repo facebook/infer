@@ -11,9 +11,15 @@ open! IStd
     struct with the corresponding fields, potential superclass and list of defined methods *)
 
 val interface_declaration :
-  CAst_utils.qual_type_to_sil_type -> CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl
+     CAst_utils.qual_type_to_sil_type
+  -> CAst_utils.procname_from_decl
+  -> Tenv.t
+  -> Clang_ast_t.decl
   -> Typ.desc
 
 val interface_impl_declaration :
-  CAst_utils.qual_type_to_sil_type -> CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl
+     CAst_utils.qual_type_to_sil_type
+  -> CAst_utils.procname_from_decl
+  -> Tenv.t
+  -> Clang_ast_t.decl
   -> Typ.desc

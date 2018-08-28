@@ -27,7 +27,7 @@ type mode =
   | XcodeXcpretty of string * string list
 [@@deriving compare]
 
-let equal_mode = [%compare.equal : mode]
+let equal_mode = [%compare.equal: mode]
 
 let pp_mode fmt = function
   | Analyze ->
@@ -106,7 +106,7 @@ let clean_results_dir () =
     let suffixes_to_delete = [".txt"; ".csv"; ".json"] in
     fun name ->
       (* Keep the JSON report *)
-      not (String.equal (Filename.basename name) Config.report_json)
+      (not (String.equal (Filename.basename name) Config.report_json))
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
@@ -120,8 +120,7 @@ let clean_results_dir () =
               ( String.equal entry Filename.current_dir_name
               || String.equal entry Filename.parent_dir_name )
           then delete_temp_results (name ^/ entry) ;
-          cleandir dir
-          (* next entry *)
+          cleandir dir (* next entry *)
       | None ->
           Unix.closedir dir
     in
@@ -152,7 +151,7 @@ let command_error_handling ~always_die ~prog ~args = function
       ()
   | Error _ as status ->
       let log =
-        if not always_die && Config.keep_going then
+        if (not always_die) && Config.keep_going then
           (* Log error and proceed past the failure when keep going mode is on *)
           L.external_error
         else L.die InternalError
@@ -160,7 +159,7 @@ let command_error_handling ~always_die ~prog ~args = function
       log "%a:@\n  %s" Pp.cli_args (prog :: args) (Unix.Exit_or_signal.to_string_hum status)
 
 
-let run_command ~prog ~args ?(cleanup= command_error_handling ~always_die:false ~prog ~args) () =
+let run_command ~prog ~args ?(cleanup = command_error_handling ~always_die:false ~prog ~args) () =
   Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
   |> fun status ->
   cleanup status ;
@@ -246,15 +245,13 @@ let capture ~changed_files = function
                 [] )
           @ (if not Config.debug_mode then [] else ["--debug"])
           @ (if Config.filtering then [] else ["--no-filtering"])
-          @ (if not Config.flavors || not in_buck_mode then [] else ["--use-flavors"])
-          @ "-j"
-            :: string_of_int Config.jobs
+          @ (if (not Config.flavors) || not in_buck_mode then [] else ["--use-flavors"])
+          @ "-j" :: string_of_int Config.jobs
             :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
           @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
           @ ["--project-root"; Config.project_root]
           @ (if not Config.quiet then [] else ["--quiet"])
-          @ "--out"
-            :: Config.results_dir
+          @ "--out" :: Config.results_dir
             ::
             ( match Config.xcode_developer_dir with
             | None ->
@@ -264,37 +261,37 @@ let capture ~changed_files = function
           @ "--"
             ::
             ( if in_buck_mode && Config.flavors then (
-                (* let children infer processes know that they are inside Buck *)
-                let infer_args_with_buck =
-                  String.concat
-                    ~sep:(String.of_char CLOpt.env_var_sep)
-                    (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
-                in
-                Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-                let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
-                let {Buck.command; rev_not_targets; targets} =
-                  Buck.add_flavors_to_buck_arguments ~filter_kind:`Auto ~dep_depth:None
-                    ~extra_flavors:[] buck_args
-                in
-                let all_args = List.rev_append rev_not_targets targets in
-                let updated_buck_cmd =
-                  [prog; command]
-                  @ List.rev_append Config.buck_build_args_no_inline
-                      (Buck.store_args_in_file all_args)
-                in
-                Logging.(debug Capture Quiet)
-                  "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
-                updated_buck_cmd )
+              (* let children infer processes know that they are inside Buck *)
+              let infer_args_with_buck =
+                String.concat
+                  ~sep:(String.of_char CLOpt.env_var_sep)
+                  (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
+              in
+              Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
+              let prog, buck_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
+              let {Buck.command; rev_not_targets; targets} =
+                Buck.add_flavors_to_buck_arguments ~filter_kind:`Auto ~dep_depth:None
+                  ~extra_flavors:[] buck_args
+              in
+              let all_args = List.rev_append rev_not_targets targets in
+              let updated_buck_cmd =
+                [prog; command]
+                @ List.rev_append Config.buck_build_args_no_inline
+                    (Buck.store_args_in_file all_args)
+              in
+              Logging.(debug Capture Quiet)
+                "Processed buck command '%a'@\n" (Pp.seq F.pp_print_string) updated_buck_cmd ;
+              updated_buck_cmd )
             else build_cmd ) )
       in
       run_command ~prog:infer_py ~args
         ~cleanup:(function
-            | Error (`Exit_non_zero exit_code)
-              when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
-                (* swallow infer.py argument parsing error *)
-                Config.print_usage_exit ()
-            | status ->
-                command_error_handling ~always_die:true ~prog:infer_py ~args status)
+          | Error (`Exit_non_zero exit_code)
+            when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
+              (* swallow infer.py argument parsing error *)
+              Config.print_usage_exit ()
+          | status ->
+              command_error_handling ~always_die:true ~prog:infer_py ~args status)
         () ;
       PerfStats.get_reporter PerfStats.TotalFrontend ()
   | XcodeXcpretty (prog, args) ->
@@ -312,7 +309,7 @@ let execute_analyze ~changed_files =
   PerfStats.get_reporter PerfStats.TotalBackend ()
 
 
-let report ?(suppress_console= false) () =
+let report ?(suppress_console = false) () =
   let report_json = Config.(results_dir ^/ report_json) in
   InferPrint.main ~report_json:(Some report_json) ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
@@ -467,7 +464,7 @@ let mode_of_build_command build_cmd =
         assert_supported_mode `Clang "clang compilation database" ;
         ClangCompilationDB !Config.clang_compilation_dbs )
       else Analyze
-  | prog :: args ->
+  | prog :: args -> (
       let build_system =
         match Config.force_integration with
         | Some build_system when CLOpt.is_originator ->
@@ -493,7 +490,7 @@ let mode_of_build_command build_cmd =
           Python args
       | BXcode when Config.xcpretty ->
           XcodeXcpretty (prog, args)
-      | BBuck when not Config.flavors && Config.reactive_mode ->
+      | BBuck when (not Config.flavors) && Config.reactive_mode ->
           L.die UserError "The Buck Java integration does not support --reactive@."
       | BBuck
         when Option.is_none Config.buck_compilation_database && Config.flavors && Config.linters ->
@@ -502,7 +499,7 @@ let mode_of_build_command build_cmd =
              set --no-linters to disable them and this warning.@." ;
           PythonCapture (BBuck, build_cmd)
       | (BAnt | BBuck | BGradle | BNdk | BXcode) as build_system ->
-          PythonCapture (build_system, build_cmd)
+          PythonCapture (build_system, build_cmd) )
 
 
 let mode_from_command_line =
@@ -557,10 +554,10 @@ let read_config_changed_files () =
   match Config.changed_files_index with
   | None ->
       None
-  | Some index ->
+  | Some index -> (
     match Utils.read_file index with
     | Ok lines ->
         Some (SourceFile.changed_sources_from_changed_files lines)
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
-        None
+        None )

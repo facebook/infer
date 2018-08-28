@@ -108,8 +108,7 @@ module Models = struct
     in
     fun pname actuals ->
       match pname with
-      | Typ.Procname.Java java_pname
-        -> (
+      | Typ.Procname.Java java_pname -> (
           if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
           else
             match
@@ -190,7 +189,8 @@ module Models = struct
                 | "setValueAt" ) ) ->
                 Some ContainerWrite
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-              , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") ) ->
+              , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") )
+              ->
                 Some ContainerRead
             | ( "android.support.v4.util.SimpleArrayMap"
               , ( "clear"
@@ -251,8 +251,7 @@ module Models = struct
       (* The following order matters: we want to check if pname is a container write
          before we check if pname is a container read. This is due to a different
          treatment between std::map::operator[] and all other operator[]. *)
-      | (Typ.Procname.ObjC_Cpp _ | C _) as pname
-        when is_cpp_container_write pname ->
+      | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_container_write pname ->
           Some ContainerWrite
       | (Typ.Procname.ObjC_Cpp _ | C _) as pname when is_cpp_container_read pname ->
           Some ContainerRead
@@ -279,12 +278,12 @@ module Models = struct
            ; "std::vector" ])
     in
     function
-      | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
-          Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
-          || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-               (Typ.Procname.get_qualifiers pname)
-      | _ ->
-          false
+    | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
+        Typ.Procname.ObjC_Cpp.is_destructor cpp_pname
+        || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+             (Typ.Procname.get_qualifiers pname)
+    | _ ->
+        false
 
 
   (** return true if this function is library code from the JDK core libraries or Android *)
@@ -437,7 +436,7 @@ module Models = struct
   (* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
      as an alias of @ThreadSafe in a .inferconfig file. *)
   let is_thread_safe item_annot =
-    let f ((annot: Annot.t), _) =
+    let f ((annot : Annot.t), _) =
       List.exists
         ~f:(fun annot_string ->
           Annotations.annot_ends_with annot annot_string
@@ -469,15 +468,16 @@ module Models = struct
       find more bugs. this is just a temporary measure to avoid obvious false positives *)
   let should_analyze_proc pdesc tenv =
     let pn = Procdesc.get_proc_name pdesc in
-    not
-      ( match pn with
-      | Typ.Procname.Java java_pname ->
-          Typ.Procname.Java.is_class_initializer java_pname
-          || Typ.Name.Java.is_external (Typ.Procname.Java.get_class_type_name java_pname)
-      (* third party code may be hard to change, not useful to report races there *)
-      | _ ->
-          false )
-    && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)
+    (not
+       ( match pn with
+       | Typ.Procname.Java java_pname ->
+           Typ.Procname.Java.is_class_initializer java_pname
+           || Typ.Name.Java.is_external (Typ.Procname.Java.get_class_type_name java_pname)
+       (* third party code may be hard to change, not useful to report races there *)
+       | _ ->
+           false ))
+    && (not (FbThreadSafety.is_logging_method pn))
+    && (not (pdesc_is_assumed_thread_safe pdesc tenv))
     && not (should_skip pn)
 
 
@@ -509,7 +509,8 @@ module Models = struct
     let is_annot annot =
       Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
       || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
-      || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot
+      || Annotations.ia_is_on_unbind annot
+      || Annotations.ia_is_on_unmount annot
     in
     let pname = Procdesc.get_proc_name proc_desc in
     if
@@ -535,7 +536,7 @@ module Models = struct
                (MF.wrap_monospaced Typ.Procname.pp)
                override_pname
                (MF.monospaced_to_string Annotations.ui_thread))
-      | None ->
+      | None -> (
         match
           get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname
         with
@@ -558,7 +559,7 @@ module Models = struct
                  middle
                  (MF.monospaced_to_string Annotations.ui_thread))
         | _ ->
-            None
+            None )
 
 
   let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -566,9 +567,9 @@ module Models = struct
 
 
   let is_thread_safe_class pname tenv =
-    not
-      ((* current class not marked thread-safe *)
-       PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname)
+    (not
+       ((* current class not marked thread-safe *)
+        PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname))
     &&
     (* current class or superclass is marked thread-safe *)
     match get_current_class_and_threadsafe_superclasses tenv pname with
@@ -592,18 +593,18 @@ module Models = struct
   let should_report_on_proc proc_desc tenv =
     let proc_name = Procdesc.get_proc_name proc_desc in
     is_thread_safe_method proc_name tenv
-    || not
-         ( match proc_name with
-         | Typ.Procname.Java java_pname ->
-             Typ.Procname.Java.is_autogen_method java_pname
-         | _ ->
-             false )
+    || (not
+          ( match proc_name with
+          | Typ.Procname.Java java_pname ->
+              Typ.Procname.Java.is_autogen_method java_pname
+          | _ ->
+              false ))
        && Procdesc.get_access proc_desc <> PredSymb.Private
        && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 
-  let is_call_of_class ?(search_superclasses= true) ?(method_prefix= false)
-      ?(actuals_pred= fun _ -> true) class_names method_name =
+  let is_call_of_class ?(search_superclasses = true) ?(method_prefix = false)
+      ?(actuals_pred = fun _ -> true) class_names method_name =
     let is_target_class =
       let target_set = List.map class_names ~f:Typ.Name.Java.from_string |> Typ.Name.Set.of_list in
       fun tname -> Typ.Name.Set.mem tname target_set
@@ -675,8 +676,8 @@ module Models = struct
     | [_; snd_arg] ->
         (* this is an Object.wait(_) call, second argument should be a duration in milliseconds *)
         duration_of_exp snd_arg
-        |> Option.value_map ~default:false ~f:(fun duration ->
-               is_excessive_secs (0.001 *. duration) )
+        |> Option.value_map ~default:false ~f:(fun duration -> is_excessive_secs (0.001 *. duration)
+           )
     | [_; snd_arg; third_arg] ->
         (* this is either a call to Object.wait(_, _) or to a java.util.concurent.lock(_, _) method.
            In the first case the arguments are a duration in milliseconds and an extra duration in
@@ -703,7 +704,8 @@ module Models = struct
   (** is the method called CountDownLath.await or on subclass? *)
   let is_countdownlatch_await =
     is_call_of_class ~actuals_pred:empty_or_excessive_timeout
-      ["java.util.concurrent.CountDownLatch"] "await"
+      ["java.util.concurrent.CountDownLatch"]
+      "await"
     |> Staged.unstage
 
 
@@ -757,7 +759,7 @@ module Models = struct
   let is_synchronized_library_call =
     let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
     fun tenv pn ->
-      not (Typ.Procname.is_constructor pn)
+      (not (Typ.Procname.is_constructor pn))
       &&
       match pn with
       | Typ.Procname.Java java_pname ->

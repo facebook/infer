@@ -109,7 +109,7 @@ module ErrLogHash = struct
 
 
     let equal key1 key2 =
-      [%compare.equal : Exceptions.severity * bool * IssueType.t]
+      [%compare.equal: Exceptions.severity * bool * IssueType.t]
         (key1.severity, key1.in_footprint, key1.err_name)
         (key2.severity, key2.in_footprint, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
@@ -130,20 +130,20 @@ let empty () = ErrLogHash.create 13
 type iter_fun = err_key -> err_data -> unit
 
 (** Apply f to nodes and error names *)
-let iter (f: iter_fun) (err_log: t) =
+let iter (f : iter_fun) (err_log : t) =
   ErrLogHash.iter
     (fun err_key set -> ErrDataSet.iter (fun err_data -> f err_key err_data) set)
     err_log
 
 
-let fold (f: err_key -> err_data -> 'a -> 'a) t acc =
+let fold (f : err_key -> err_data -> 'a -> 'a) t acc =
   ErrLogHash.fold
     (fun err_key set acc -> ErrDataSet.fold (fun err_data acc -> f err_key err_data acc) set acc)
     t acc
 
 
 (** Return the number of elements in the error log which satisfy [filter] *)
-let size filter (err_log: t) =
+let size filter (err_log : t) =
   let count = ref 0 in
   ErrLogHash.iter
     (fun key err_datas ->
@@ -154,7 +154,7 @@ let size filter (err_log: t) =
 
 
 (** Print errors from error log *)
-let pp_errors fmt (errlog: t) =
+let pp_errors fmt (errlog : t) =
   let f key _ =
     if Exceptions.equal_severity key.severity Exceptions.Error then
       F.fprintf fmt "%a@ " IssueType.pp key.err_name
@@ -163,7 +163,7 @@ let pp_errors fmt (errlog: t) =
 
 
 (** Print warnings from error log *)
-let pp_warnings fmt (errlog: t) =
+let pp_warnings fmt (errlog : t) =
   let f key _ =
     if Exceptions.equal_severity key.severity Exceptions.Warning then
       F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
@@ -172,7 +172,7 @@ let pp_warnings fmt (errlog: t) =
 
 
 (** Print an error log in html format *)
-let pp_html source path_to_root fmt (errlog: t) =
+let pp_html source path_to_root fmt (errlog : t) =
   let pp_eds fmt err_datas =
     let pp_nodeid_session_loc fmt err_data =
       Io_infer.Html.pp_session_link source path_to_root fmt
@@ -198,7 +198,7 @@ let pp_html source path_to_root fmt (errlog: t) =
 
 (** Add an error description to the error log unless there is
     one already at the same node + session; return true if added *)
-let add_issue tbl err_key (err_datas: ErrDataSet.t) : bool =
+let add_issue tbl err_key (err_datas : ErrDataSet.t) : bool =
   try
     let current_eds = ErrLogHash.find tbl err_key in
     if ErrDataSet.subset err_datas current_eds then false
@@ -221,7 +221,7 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
   let severity = Option.value error.severity ~default:severity in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
-    not Config.developer_mode && Language.curr_language_is Java && Int.equal loc.Location.line 0
+    (not Config.developer_mode) && Language.curr_language_is Java && Int.equal loc.Location.line 0
   in
   let hide_memory_error =
     match Localise.error_desc_get_bucket error.description with
@@ -242,26 +242,26 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
     || (Config.developer_mode && exn_developer)
   in
   ( if exn_developer then
-      let issue =
-        let lang = Typ.Procname.get_language procname in
-        let clang_method_kind =
-          match lang with
-          | Language.Clang ->
-              Option.map ~f:ClangMethodKind.to_string clang_method_kind
-          | _ ->
-              None
-        in
-        EventLogger.AnalysisIssue
-          { bug_type= error.name.IssueType.unique_id
-          ; bug_kind= Exceptions.severity_string severity
-          ; clang_method_kind
-          ; exception_triggered_location= error.ocaml_pos
-          ; lang= Language.to_explicit_string lang
-          ; procedure_name= Typ.Procname.to_string procname
-          ; source_location= loc }
+    let issue =
+      let lang = Typ.Procname.get_language procname in
+      let clang_method_kind =
+        match lang with
+        | Language.Clang ->
+            Option.map ~f:ClangMethodKind.to_string clang_method_kind
+        | _ ->
+            None
       in
-      EventLogger.log issue ) ;
-  if should_report && not hide_java_loc_zero && not hide_memory_error then
+      EventLogger.AnalysisIssue
+        { bug_type= error.name.IssueType.unique_id
+        ; bug_kind= Exceptions.severity_string severity
+        ; clang_method_kind
+        ; exception_triggered_location= error.ocaml_pos
+        ; lang= Language.to_explicit_string lang
+        ; procedure_name= Typ.Procname.to_string procname
+        ; source_location= loc }
+    in
+    EventLogger.log issue ) ;
+  if should_report && (not hide_java_loc_zero) && not hide_memory_error then
     let added =
       let node_id, node_key =
         match node with

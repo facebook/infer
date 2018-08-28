@@ -36,14 +36,29 @@ val is_getter : t -> bool
 val is_setter : t -> bool
 
 val mk :
-  Typ.Procname.t -> param_type option -> param_type list -> Typ.t * Annot.Item.t
-  -> ?has_added_return_param:bool -> Clang_ast_t.attribute list -> Clang_ast_t.source_range
-  -> ClangMethodKind.t -> ?is_cpp_virtual:bool -> ?is_cpp_nothrow:bool -> ?is_variadic:bool
-  -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> Typ.t option
-  -> Clang_ast_t.access_specifier -> t
+     Typ.Procname.t
+  -> param_type option
+  -> param_type list
+  -> Typ.t * Annot.Item.t
+  -> ?has_added_return_param:bool
+  -> Clang_ast_t.attribute list
+  -> Clang_ast_t.source_range
+  -> ClangMethodKind.t
+  -> ?is_cpp_virtual:bool
+  -> ?is_cpp_nothrow:bool
+  -> ?is_variadic:bool
+  -> Clang_ast_t.pointer option
+  -> Clang_ast_t.pointer option
+  -> Typ.t option
+  -> Clang_ast_t.access_specifier
+  -> t
 
 val pp : Format.formatter -> t -> unit
 
 val mk_param_type :
-  ?is_value:bool -> ?is_pointer_to_const:bool -> ?annot:Annot.Item.t -> Mangled.t -> Typ.t
+     ?is_value:bool
+  -> ?is_pointer_to_const:bool
+  -> ?annot:Annot.Item.t
+  -> Mangled.t
+  -> Typ.t
   -> param_type

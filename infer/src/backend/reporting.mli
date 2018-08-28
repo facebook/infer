@@ -10,8 +10,13 @@ open! IStd
 (** Type of functions to report issues to the error_log in a spec. *)
 
 type log_t =
-  ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string
-  -> ?extras:Jsonbug_t.extra -> exn -> unit
+     ?ltr:Errlog.loc_trace
+  -> ?linters_def_file:string
+  -> ?doc_url:string
+  -> ?access:string
+  -> ?extras:Jsonbug_t.extra
+  -> exn
+  -> unit
 
 val log_issue_deprecated :
   Exceptions.severity -> Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> log_t
@@ -20,9 +25,16 @@ val log_issue_deprecated :
     Use log_error/warning instead *)
 
 val log_frontend_issue :
-  Typ.Procname.t -> Exceptions.severity -> Errlog.t -> loc:Location.t
-  -> node_key:Procdesc.NodeKey.t -> ltr:Errlog.loc_trace -> linters_def_file:string option
-  -> doc_url:string option -> exn -> unit
+     Typ.Procname.t
+  -> Exceptions.severity
+  -> Errlog.t
+  -> loc:Location.t
+  -> node_key:Procdesc.NodeKey.t
+  -> ltr:Errlog.loc_trace
+  -> linters_def_file:string option
+  -> doc_url:string option
+  -> exn
+  -> unit
 (** Report a frontend issue of a given kind in the given error log. *)
 
 val log_error : Summary.t -> loc:Location.t -> log_t
@@ -32,8 +44,14 @@ val log_warning : Summary.t -> loc:Location.t -> log_t
 (** Add an warning to the given summary. *)
 
 val log_issue_external :
-  Typ.Procname.t -> Exceptions.severity -> loc:Location.t -> ltr:Errlog.loc_trace -> ?access:string
-  -> IssueType.t -> string -> unit
+     Typ.Procname.t
+  -> Exceptions.severity
+  -> loc:Location.t
+  -> ltr:Errlog.loc_trace
+  -> ?access:string
+  -> IssueType.t
+  -> string
+  -> unit
 (** Log an issue to the error log in [IssueLog] associated with the given procname. *)
 
 val is_suppressed :

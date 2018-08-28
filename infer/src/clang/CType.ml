@@ -33,7 +33,7 @@ let is_class typ =
       false
 
 
-let rec return_type_of_function_qual_type (qual_type: Clang_ast_t.qual_type) =
+let rec return_type_of_function_qual_type (qual_type : Clang_ast_t.qual_type) =
   let open Clang_ast_t in
   match CAst_utils.get_type qual_type.qt_type_ptr with
   | Some (FunctionProtoType (_, function_type_info, _))

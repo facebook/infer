@@ -14,13 +14,24 @@ val declare_locals_and_ret : Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Prop.
 (** Symbolic execution of the declaration of locals and return value. *)
 
 val node :
-  (exn -> unit) -> Exe_env.t -> Tenv.t -> Summary.t -> ProcCfg.Exceptional.t
-  -> ProcCfg.Exceptional.Node.t -> Paths.PathSet.t -> Paths.PathSet.t
+     (exn -> unit)
+  -> Exe_env.t
+  -> Tenv.t
+  -> Summary.t
+  -> ProcCfg.Exceptional.t
+  -> ProcCfg.Exceptional.Node.t
+  -> Paths.PathSet.t
+  -> Paths.PathSet.t
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 
 val instrs :
-  ?mask_errors:bool -> Exe_env.t -> Tenv.t -> Procdesc.t -> Instrs.not_reversed_t
-  -> (Prop.normal Prop.t * Paths.Path.t) list -> (Prop.normal Prop.t * Paths.Path.t) list
+     ?mask_errors:bool
+  -> Exe_env.t
+  -> Tenv.t
+  -> Procdesc.t
+  -> Instrs.not_reversed_t
+  -> (Prop.normal Prop.t * Paths.Path.t) list
+  -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of a sequence of instructions.
     If errors occur and [mask_errors] is true, just treat as skip. *)
 

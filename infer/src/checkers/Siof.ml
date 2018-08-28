@@ -13,7 +13,7 @@ module GlobalVarSet = SiofTrace.GlobalVarSet
 
 let methods_whitelist = QualifiedCppName.Match.of_fuzzy_qual_names Config.siof_safe_methods
 
-let is_whitelisted (pname: Typ.Procname.t) =
+let is_whitelisted (pname : Typ.Procname.t) =
   Typ.Procname.get_qualifiers pname |> QualifiedCppName.Match.match_qualifiers methods_whitelist
 
 
@@ -60,9 +60,9 @@ let is_modelled =
 module Payload = SummaryPayload.Make (struct
   type t = SiofDomain.Summary.astate
 
-  let update_payloads astate (payloads: Payloads.t) = {payloads with siof= Some astate}
+  let update_payloads astate (payloads : Payloads.t) = {payloads with siof= Some astate}
 
-  let of_payloads (payloads: Payloads.t) = payloads.siof
+  let of_payloads (payloads : Payloads.t) = payloads.siof
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -87,7 +87,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
     in
     Staged.stage (fun (* gvar \notin initialized, up to some fuzzing *)
-                 gvar ->
+                      gvar ->
         QualifiedCppName.of_qual_string (Pvar.to_string gvar)
         |> Fn.non (QualifiedCppName.Match.match_qualifiers initialized_matcher) )
 
@@ -98,8 +98,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_globals pdesc e =
     let is_dangerous_global pv =
-      Pvar.is_global pv && not (Pvar.is_static_local pv) && not (Pvar.is_pod pv)
-      && not (Pvar.is_compile_constant pv) && not (is_compile_time_constructed pdesc pv)
+      Pvar.is_global pv
+      && (not (Pvar.is_static_local pv))
+      && (not (Pvar.is_pod pv))
+      && (not (Pvar.is_compile_constant pv))
+      && (not (is_compile_time_constructed pdesc pv))
       && is_not_always_initialized pv
     in
     Exp.program_vars e
@@ -133,7 +136,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.empty, Domain.VarNames.empty)
 
-  let exec_instr astate {ProcData.pdesc} _ (instr: Sil.instr) =
+  let exec_instr astate {ProcData.pdesc} _ (instr : Sil.instr) =
     match instr with
     | Store (Lvar global, Typ.({desc= Tptr _}), Lvar _, loc)
       when (Option.equal Typ.Procname.equal)
@@ -165,7 +168,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         Domain.join astate (NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun (ObjC_Cpp cpp_pname as callee_pname)), _ :: actuals_without_self, loc, _)
-      when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname ->
+      when Typ.Procname.is_constructor callee_pname && Typ.Procname.ObjC_Cpp.is_constexpr cpp_pname
+      ->
         add_actuals_globals astate pdesc loc actuals_without_self
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
@@ -190,7 +194,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               (Bottom, Domain.VarNames.empty)
         in
-        add_actuals_globals astate pdesc loc actuals |> Domain.join callee_astate
+        add_actuals_globals astate pdesc loc actuals
+        |> Domain.join callee_astate
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
            at_least_nonbottom
     | Call (_, _, actuals, loc, _) ->
@@ -244,7 +249,7 @@ let report_siof summary trace pdesc gname loc =
   else List.iter ~f:report_one_path reportable_paths
 
 
-let siof_check pdesc gname (summary: Summary.t) =
+let siof_check pdesc gname (summary : Summary.t) =
   match summary.payloads.siof with
   | Some (NonBottom post, _) ->
       let attrs = Procdesc.get_attributes pdesc in

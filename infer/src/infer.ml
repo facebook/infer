@@ -44,7 +44,7 @@ let setup () =
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if
-        CLOpt.is_originator && not Config.continue_capture
+        CLOpt.is_originator && (not Config.continue_capture)
         && not Driver.(equal_mode driver_mode Analyze)
       then SourceFiles.mark_all_stale ()
   | Explore ->
@@ -74,7 +74,8 @@ let log_environment_info () =
       L.environment_info "No .inferconfig file found@\n" ) ;
   L.environment_info "Project root = %s@\n" Config.project_root ;
   let infer_args =
-    Sys.getenv CLOpt.args_env_var |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
+    Sys.getenv CLOpt.args_env_var
+    |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
     |> Option.value ~default:["<not set>"]
   in
   L.environment_info "INFER_ARGS = %a" Pp.cli_args infer_args ;
@@ -99,11 +100,11 @@ let prepare_events_logging () =
 
 let () =
   ( if Config.linters_validate_syntax_only then
-      match CTLParserHelper.validate_al_files () with
-      | Ok () ->
-          L.exit 0
-      | Error e ->
-          print_endline e ; L.exit 3 ) ;
+    match CTLParserHelper.validate_al_files () with
+    | Ok () ->
+        L.exit 0
+    | Error e ->
+        print_endline e ; L.exit 3 ) ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then
@@ -119,9 +120,9 @@ let () =
   if Config.debug_mode && CLOpt.is_originator then
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
   ( if Config.test_determinator then (
-      TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
-        Config.method_decls_info ;
-      TestDeterminator.emit_tests_to_run () )
+    TestDeterminator.test_to_run_java Config.modified_lines Config.profiler_samples
+      Config.method_decls_info ;
+    TestDeterminator.emit_tests_to_run () )
   else
     match Config.command with
     | Analyze ->
@@ -165,8 +166,10 @@ let () =
         let if_true key opt args = if not opt then args else key :: args in
         let if_false key opt args = if opt then args else key :: args in
         let args =
-          if_some "--max-level" Config.max_nesting @@ if_true "--only-show" Config.only_show
-          @@ if_false "--no-source" Config.source_preview @@ if_true "--html" Config.html
+          if_some "--max-level" Config.max_nesting
+          @@ if_true "--only-show" Config.only_show
+          @@ if_false "--no-source" Config.source_preview
+          @@ if_true "--html" Config.html
           @@ if_some "--select" Config.select ["-o"; Config.results_dir]
         in
         let prog = Config.lib_dir ^/ "python" ^/ "inferTraceBugs" in

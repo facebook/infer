@@ -31,5 +31,5 @@ val wrap_bold : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> un
 val pp_bold : Format.formatter -> string -> unit
 (** pp to wrap into a bold block  *)
 
-val bold_to_string : string -> string  [@@warning "-32"]
+val bold_to_string : string -> string [@@warning "-32"]
 (** wrap into a bold block *)

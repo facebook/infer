@@ -38,7 +38,7 @@ let compare (unsigned1, i1, _) (unsigned2, i2, _) =
 
 
 let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =
-  [%compare : int * Int64.t] (area unsigned1 i1, i1) (area unsigned2 i2, i2)
+  [%compare: int * Int64.t] (area unsigned1 i1, i1) (area unsigned2 i2, i2)
 
 
 let eq i1 i2 = Int.equal (compare_value i1 i2) 0
@@ -81,9 +81,9 @@ let iszero (_, i, _) = Int64.equal i 0L
 
 let isnull (_, i, ptr) = Int64.equal i 0L && ptr
 
-let isminusone (unsigned, i, _) = not unsigned && Int64.equal i (-1L)
+let isminusone (unsigned, i, _) = (not unsigned) && Int64.equal i (-1L)
 
-let isnegative (unsigned, i, _) = not unsigned && i < 0L
+let isnegative (unsigned, i, _) = (not unsigned) && i < 0L
 
 let neg (unsigned, i, ptr) = (unsigned, Int64.neg i, ptr)
 

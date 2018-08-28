@@ -85,8 +85,11 @@ module type S = sig
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
 
   val to_loc_trace :
-    ?desc_of_source:(Source.t -> string) -> ?source_should_nest:(Source.t -> bool)
-    -> ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) -> path
+       ?desc_of_source:(Source.t -> string)
+    -> ?source_should_nest:(Source.t -> bool)
+    -> ?desc_of_sink:(Sink.t -> string)
+    -> ?sink_should_nest:(Sink.t -> bool)
+    -> path
     -> Errlog.loc_trace
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -400,14 +403,16 @@ module Make (Spec : Spec) = struct
 
 
   let to_loc_trace
-      ?(desc_of_source= fun source ->
-                          let callsite = Source.call_site source in
-                          Format.asprintf "return from %a" Typ.Procname.pp
-                            (CallSite.pname callsite)) ?(source_should_nest= fun _ -> true)
-      ?(desc_of_sink= fun sink ->
-                        let callsite = Sink.call_site sink in
-                        Format.asprintf "call to %a" Typ.Procname.pp (CallSite.pname callsite))
-      ?(sink_should_nest= fun _ -> true) (passthroughs, sources, sinks) =
+      ?(desc_of_source =
+        fun source ->
+          let callsite = Source.call_site source in
+          Format.asprintf "return from %a" Typ.Procname.pp (CallSite.pname callsite))
+      ?(source_should_nest = fun _ -> true)
+      ?(desc_of_sink =
+        fun sink ->
+          let callsite = Sink.call_site sink in
+          Format.asprintf "call to %a" Typ.Procname.pp (CallSite.pname callsite))
+      ?(sink_should_nest = fun _ -> true) (passthroughs, sources, sinks) =
     let trace_elems_of_passthroughs lt_level passthroughs acc0 =
       let trace_elem_of_passthrough passthrough acc =
         let passthrough_site = Passthrough.site passthrough in
@@ -517,7 +522,8 @@ module Make (Spec : Spec) = struct
             List.map
               ~f:(fun source -> Source.with_callsite source callee_site)
               (Sources.Known.elements non_footprint_callee_sources)
-            |> Sources.Known.of_list |> Sources.Known.union caller_trace.sources.known
+            |> Sources.Known.of_list
+            |> Sources.Known.union caller_trace.sources.known
           in
           {caller_trace.sources with Sources.known; sanitizers}
       in
@@ -557,7 +563,8 @@ module Make (Spec : Spec) = struct
 
   let ( <= ) ~lhs ~rhs =
     phys_equal lhs rhs
-    || Sources.( <= ) ~lhs:lhs.sources ~rhs:rhs.sources && Sinks.subset lhs.sinks rhs.sinks
+    || Sources.( <= ) ~lhs:lhs.sources ~rhs:rhs.sources
+       && Sinks.subset lhs.sinks rhs.sinks
        && Passthroughs.subset lhs.passthroughs rhs.passthroughs
 
 

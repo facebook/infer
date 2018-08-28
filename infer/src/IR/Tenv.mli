@@ -30,15 +30,21 @@ val lookup : t -> Typ.Name.t -> Typ.Struct.t option
 (** Look up a name in the global type environment. *)
 
 val mk_struct :
-  t -> ?default:Typ.Struct.t -> ?fields:Typ.Struct.fields -> ?statics:Typ.Struct.fields
-  -> ?methods:Typ.Procname.t list -> ?supers:Typ.Name.t list -> ?annots:Annot.Item.t -> Typ.Name.t
+     t
+  -> ?default:Typ.Struct.t
+  -> ?fields:Typ.Struct.fields
+  -> ?statics:Typ.Struct.fields
+  -> ?methods:Typ.Procname.t list
+  -> ?supers:Typ.Name.t list
+  -> ?annots:Annot.Item.t
+  -> Typ.Name.t
   -> Typ.Struct.t
 (** Construct a struct_typ, normalizing field types *)
 
 val add_field : t -> Typ.Name.t -> Typ.Struct.field -> unit
 (** Add a field to a given struct in the global type environment. *)
 
-val pp : Format.formatter -> t -> unit  [@@warning "-32"]
+val pp : Format.formatter -> t -> unit [@@warning "-32"]
 (** print a type environment *)
 
 val language_is : t -> Language.t -> bool

@@ -45,8 +45,8 @@ type reversed
 type not_reversed
 
 type 'rev t =
-  | NotReversed: Sil.instr Array.t -> not_reversed t
-  | Reversed: Sil.instr RevArray.t -> reversed t
+  | NotReversed : Sil.instr Array.t -> not_reversed t
+  | Reversed : Sil.instr RevArray.t -> reversed t
 
 type not_reversed_t = not_reversed t
 
@@ -70,7 +70,9 @@ let filter_map (NotReversed instrs) ~f = NotReversed (Array.filter_map instrs ~f
 
 let map_changed =
   let aux_changed arr ~f i =
-    for i = i to Array.length arr - 1 do Array.unsafe_get arr i |> f |> Array.unsafe_set arr i done ;
+    for i = i to Array.length arr - 1 do
+      Array.unsafe_get arr i |> f |> Array.unsafe_set arr i
+    done ;
     arr
   in
   let rec aux_unchanged ~equal arr ~f i =
@@ -93,7 +95,7 @@ let reverse_order (NotReversed instrs) = Reversed (RevArray.of_rev_array instrs)
 
 (* Functions on both reversed and non-reversed arrays *)
 
-let is_empty (type r) (t: r t) =
+let is_empty (type r) (t : r t) =
   match t with
   | NotReversed instrs ->
       Array.is_empty instrs
@@ -101,7 +103,7 @@ let is_empty (type r) (t: r t) =
       RevArray.is_empty rev_instrs
 
 
-let fold (type r) (t: r t) ~init ~f =
+let fold (type r) (t : r t) ~init ~f =
   match t with
   | NotReversed instrs ->
       Array.fold instrs ~init ~f
@@ -115,7 +117,7 @@ let exists t ~f = Container.exists ~iter t ~f
 
 let for_all t ~f = Container.for_all ~iter t ~f
 
-let count (type r) (t: r t) =
+let count (type r) (t : r t) =
   match t with
   | NotReversed instrs ->
       Array.length instrs
@@ -125,7 +127,7 @@ let count (type r) (t: r t) =
 
 let nth_exists t index = index < count t
 
-let nth_exn (type r) (t: r t) index =
+let nth_exn (type r) (t : r t) index =
   match t with
   | NotReversed instrs ->
       instrs.(index)
@@ -133,7 +135,7 @@ let nth_exn (type r) (t: r t) index =
       RevArray.get rev_instrs index
 
 
-let last (type r) (t: r t) =
+let last (type r) (t : r t) =
   match t with
   | NotReversed instrs ->
       if is_empty t then None else Some (Array.last instrs)

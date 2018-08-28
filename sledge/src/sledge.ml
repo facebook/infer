@@ -32,4 +32,5 @@ let main ~input ~output =
           (Caml.Printexc.to_string exn) ) ;
     Caml.Printexc.raise_with_backtrace exn bt
 
-;; Config.run main
+;;
+Config.run main

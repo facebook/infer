@@ -33,7 +33,7 @@ let parse_command_and_arguments command_and_arguments =
     to be compiled, the directory to be compiled in, and the compilation command as a list
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
-let decode_json_file (database: t) json_format =
+let decode_json_file (database : t) json_format =
   let json_path = match json_format with `Raw x | `Escaped x -> x in
   let unescape_path s =
     match json_format with
@@ -72,8 +72,7 @@ let decode_json_file (database: t) json_format =
           exit_format_error
             "the value of the \"command\" field is not a string; found '%s' instead"
             (Yojson.Basic.to_string json)
-      | "arguments", `List args
-        -> (
+      | "arguments", `List args -> (
           let args =
             List.map args ~f:(function
               | `String argument ->

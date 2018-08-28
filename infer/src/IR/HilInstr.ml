@@ -45,11 +45,11 @@ type translation =
    SSA temporary variable to the access path it represents. Evaluating the HIL instruction should
    produce the same result as evaluating the SIL instruction and replacing the temporary variables
    using [f_resolve_id]. *)
-let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
-  let exp_of_sil ?(add_deref= false) =
+let of_sil ~include_array_indexes ~f_resolve_id (instr : Sil.instr) =
+  let exp_of_sil ?(add_deref = false) =
     HilExp.of_sil ~include_array_indexes ~f_resolve_id ~add_deref
   in
-  let analyze_id_assignment ?(add_deref= false) lhs_id rhs_exp rhs_typ loc =
+  let analyze_id_assignment ?(add_deref = false) lhs_id rhs_exp rhs_typ loc =
     let rhs_hil_exp = exp_of_sil ~add_deref rhs_exp rhs_typ in
     match rhs_hil_exp with
     | AccessExpression rhs_access_expr ->
@@ -77,23 +77,21 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
         | AccessExpression access_expr ->
             access_expr
         | BinaryOperator (_, exp0, exp1) -> (
-          match
-            (* pointer arithmetic. somewhere in one of the expressions, there should be at least
+          (* pointer arithmetic. somewhere in one of the expressions, there should be at least
                one pointer type represented as an access path. just use that access path and forget
                about the arithmetic. if you need to model this more precisely, you should be using
                SIL instead *)
-            HilExp.get_access_exprs exp0
-          with
+          match HilExp.get_access_exprs exp0 with
           | ap :: _ ->
               ap
-          | [] ->
+          | [] -> (
             match HilExp.get_access_exprs exp1 with
             | ap :: _ ->
                 ap
             | [] ->
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
-                  Location.pp_file_pos loc )
+                  Location.pp_file_pos loc ) )
         | Constant (Const.Cint i) ->
             (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
                debugging. doesn't really matter what we do here, so just create a dummy var *)

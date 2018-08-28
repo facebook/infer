@@ -38,10 +38,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match call_exp with
     | Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)) when Typ.Procname.is_constructor pname -> (
-      match
-        (* first actual passed to a C++ constructor is actually written, not read *)
-        actuals
-      with
+      (* first actual passed to a C++ constructor is actually written, not read *)
+      match actuals with
       | (Exp.Lvar pvar, _) :: exps ->
           Domain.remove (Var.of_pvar pvar) live_acc |> add_live_actuals_ exps
       | exps ->
@@ -87,8 +85,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
     | Sil.Call ((ret_id, _), call_exp, actuals, _, _) ->
-        Domain.remove (Var.of_id ret_id) astate |> exp_add_live call_exp
-        |> add_live_actuals actuals call_exp |> add_local_consts_for_lambdas pdesc call_exp
+        Domain.remove (Var.of_id ret_id) astate
+        |> exp_add_live call_exp |> add_live_actuals actuals call_exp
+        |> add_local_consts_for_lambdas pdesc call_exp
     | Sil.Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 
@@ -175,8 +174,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     not
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
       || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
-      || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
-      || is_scope_guard typ || Procdesc.has_modify_in_block_attr proc_desc pvar )
+      || Domain.mem (Var.of_pvar pvar) live_vars
+      || Procdesc.is_captured_var proc_desc pvar
+      || is_scope_guard typ
+      || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in
   let log_report pvar typ loc =
     let message =
@@ -189,7 +190,8 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   in
   let report_dead_store live_vars captured_by_ref_vars = function
     | Sil.Store (Lvar pvar, typ, rhs_exp, loc)
-      when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp) ->
+      when should_report pvar typ live_vars captured_by_ref_vars && not (is_sentinel_exp rhs_exp)
+      ->
         log_report pvar typ loc
     | Sil.Call
         (_, Exp.Const (Cfun (Typ.Procname.ObjC_Cpp _ as pname)), (Exp.Lvar pvar, typ) :: _, loc, _)

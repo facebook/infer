@@ -142,7 +142,8 @@ let resolve_pattern_targets ~filter_kind ~dep_depth targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> (match dep_depth with None -> Fn.id | Some depth -> Query.deps ?depth)
   |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern ()) else Fn.id)
-  |> Query.exec |> die_if_empty (fun die -> die "*** buck query returned no targets.")
+  |> Query.exec
+  |> die_if_empty (fun die -> die "*** buck query returned no targets.")
 
 
 let resolve_alias_targets aliases =
@@ -207,7 +208,8 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
         parsed_args
     | param :: arg :: args when List.mem ~equal:String.equal parameters_with_argument param ->
         parse_cmd_args
-          {parsed_args with rev_not_targets'= arg :: param :: parsed_args.rev_not_targets'} args
+          {parsed_args with rev_not_targets'= arg :: param :: parsed_args.rev_not_targets'}
+          args
     | target :: args ->
         let parsed_args =
           match parse_target_string target with

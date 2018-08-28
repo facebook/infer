@@ -94,8 +94,11 @@ module type S = sig
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
 
   val to_loc_trace :
-    ?desc_of_source:(Source.t -> string) -> ?source_should_nest:(Source.t -> bool)
-    -> ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) -> path
+       ?desc_of_source:(Source.t -> string)
+    -> ?source_should_nest:(Source.t -> bool)
+    -> ?desc_of_sink:(Sink.t -> string)
+    -> ?sink_should_nest:(Sink.t -> bool)
+    -> path
     -> Errlog.loc_trace
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and

@@ -85,6 +85,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
 
   (* TODO: could do this slightly more efficiently by keeping a list of priority zero nodes for
      quick popping, and do a linear search only when this list is empty *)
+
   (** remove and return the node with the highest priority (note that smaller integers have higher
      priority), the ids of its visited predecessors, and new schedule *)
   let pop t =

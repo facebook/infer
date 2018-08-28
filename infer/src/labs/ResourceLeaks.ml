@@ -14,11 +14,11 @@ module Domain = ResourceLeakDomain
 module Payload = SummaryPayload.Make (struct
   type t = Domain.astate
 
-  let update_payloads resources_payload (payloads: Payloads.t) =
+  let update_payloads resources_payload (payloads : Payloads.t) =
     {payloads with resources= Some resources_payload}
 
 
-  let of_payloads (payloads: Payloads.t) = payloads.resources
+  let of_payloads (payloads : Payloads.t) = payloads.resources
 end)
 
 type extras = FormalMap.t
@@ -30,7 +30,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type nonrec extras = extras
 
   (* Take an abstract state and instruction, produce a new abstract state *)
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc; tenv} _ (instr: HilInstr.t) =
+  let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv} _ (instr : HilInstr.t) =
     let is_closeable procname tenv =
       match procname with
       | Typ.Procname.Java java_procname ->
@@ -59,8 +59,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           false
     in
     match instr with
-    | Call (_return_opt, Direct callee_procname, _actuals, _, _loc)
-      -> (
+    | Call (_return_opt, Direct callee_procname, _actuals, _, _loc) -> (
         (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
         (* 1(e) *)
         let astate' =
@@ -103,7 +102,7 @@ module Analyzer =
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
 let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
   (* Report an error when we have acquired more resources than we have released *)
-  let report leak_count (proc_data: extras ProcData.t) =
+  let report leak_count (proc_data : extras ProcData.t) =
     if leak_count > 0 (* 2(a) *) then
       let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
       let message = F.asprintf "Leaked %d resource(s)" leak_count in
@@ -111,7 +110,7 @@ let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
       Reporting.log_error summary ~loc:last_loc exn
   in
   (* Convert the abstract state to a summary. for now, just the identity function *)
-  let convert_to_summary (post: Domain.astate) : Domain.summary =
+  let convert_to_summary (post : Domain.astate) : Domain.summary =
     (* 4(a) *)
     post
   in

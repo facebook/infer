@@ -10,8 +10,11 @@ open! IStd
 type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
 
 val add_flavors_to_buck_arguments :
-  filter_kind:[< `Yes | `No | `Auto] -> dep_depth:int option option -> extra_flavors:string list
-  -> string list -> flavored_arguments
+     filter_kind:[< `Yes | `No | `Auto]
+  -> dep_depth:int option option
+  -> extra_flavors:string list
+  -> string list
+  -> flavored_arguments
 (** Add infer flavors to the targets in the given buck arguments, depending on the infer analyzer. For
     instance, in capture mode, the buck command:
     build //foo/bar:baz#some,flavor

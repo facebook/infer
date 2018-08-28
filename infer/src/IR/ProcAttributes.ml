@@ -39,7 +39,7 @@ type var_attribute = Modify_in_block [@@deriving compare]
 
 let string_of_var_attribute = function Modify_in_block -> "<Modify_in_block>"
 
-let var_attribute_equal = [%compare.equal : var_attribute]
+let var_attribute_equal = [%compare.equal: var_attribute]
 
 type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
 
@@ -151,24 +151,24 @@ let pp f
     SourceFile.pp translation_unit ;
   if not (PredSymb.equal_access default.access access) then
     F.fprintf f "; access= %a@," (Pp.to_string ~f:PredSymb.string_of_access) access ;
-  if not ([%compare.equal : (Mangled.t * Typ.t) list] default.captured captured) then
+  if not ([%compare.equal: (Mangled.t * Typ.t) list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
   pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
-  if not ([%compare.equal : string list] default.exceptions exceptions) then
+  if not ([%compare.equal: string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)
       exceptions ;
   (* always print formals *)
   F.fprintf f "; formals= [@[%a@]]@," pp_parameters formals ;
-  if not ([%compare.equal : int list] default.const_formals const_formals) then
+  if not ([%compare.equal: int list] default.const_formals const_formals) then
     F.fprintf f "; const_formals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       const_formals ;
-  if not ([%compare.equal : int list] default.by_vals by_vals) then
+  if not ([%compare.equal: int list] default.by_vals by_vals) then
     F.fprintf f "; by_vals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       by_vals ;
-  if not ([%compare.equal : PredSymb.func_attribute list] default.func_attributes func_attributes)
+  if not ([%compare.equal: PredSymb.func_attribute list] default.func_attributes func_attributes)
   then
     F.fprintf f "; func_attributes= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break PredSymb.pp_func_attribute)
@@ -191,7 +191,7 @@ let pp f
       (Pp.to_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp loc ;
-  if not ([%compare.equal : var_data list] default.locals locals) then
+  if not ([%compare.equal: var_data list] default.locals locals) then
     F.fprintf f "; locals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)
       locals ;
@@ -199,7 +199,7 @@ let pp f
     has_added_return_param f () ;
   if not (Annot.Method.equal default.method_annotation method_annotation) then
     F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
-  if not ([%compare.equal : objc_accessor_type option] default.objc_accessor objc_accessor) then
+  if not ([%compare.equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   if
     (* HACK: this hardcodes the default instead of comparing to [default.proc_flags], and tests

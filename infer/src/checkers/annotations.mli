@@ -130,8 +130,10 @@ val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
     value *)
 
 val pname_has_return_annot :
-  Typ.Procname.t -> attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
-  -> (Annot.Item.t -> bool) -> bool
+     Typ.Procname.t
+  -> attrs_of_pname:(Typ.Procname.t -> ProcAttributes.t option)
+  -> (Annot.Item.t -> bool)
+  -> bool
 (** return true if the given predicate evaluates to true on the annotation of [pname]'s return
     value. the function [attrs_of_pname] should resolve the proc attributes of [pname].
     Specs.proc_resolve_attributes is a good choice for this resolution function. *)

@@ -12,7 +12,7 @@ module F = Format
 
 type t = LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let compare_modulo_this x y =
   match (x, y) with

@@ -21,7 +21,7 @@ let test_unixdiff_process_raw_directives_with_valid_input =
   in
   [ ( "test_unixdiff_process_raw_directives_1"
     , "UOOU"
-    , UnixDiffTest.([Unchanged; Old; Old; Unchanged]) )
+    , UnixDiffTest.[Unchanged; Old; Old; Unchanged] )
   ; ("test_unixdiff_process_raw_directives_2", "", []) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )
@@ -56,7 +56,7 @@ let test_unixdiff_pp =
     in
     assert_equal ~cmp:String.equal ~pp_diff expected found
   in
-  [ ("test_unixdiff_pp_1", UnixDiffTest.([Unchanged; Old; Old; Unchanged]), "UOOU")
+  [ ("test_unixdiff_pp_1", UnixDiffTest.[Unchanged; Old; Old; Unchanged], "UOOU")
   ; ("test_unixdiff_pp_2", [], "") ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )

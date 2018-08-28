@@ -26,7 +26,7 @@ type t =
   | Undef
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let rec to_string = function
   | Const _ ->

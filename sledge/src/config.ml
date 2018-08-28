@@ -25,7 +25,7 @@ end = struct
 
   (** existential package of a Term and a setter for a ref to receive the
       parsed value *)
-  type arg = Arg: 'a Term.t * ('a -> unit) -> arg
+  type arg = Arg : 'a Term.t * ('a -> unit) -> arg
 
   (** convert a list of arg packages to a term for the tuple of all the arg
       terms, and apply it to a function that sets all the receiver refs *)
@@ -36,7 +36,7 @@ end = struct
       Arg (trm_xy, set_xy)
     in
     let init = Arg (Term.const (), fun () -> ()) in
-    let Arg (trm, set) = List.fold_right ~f:pair args ~init in
+    let (Arg (trm, set)) = List.fold_right ~f:pair args ~init in
     Term.app (Term.const set) trm
 
   let args : arg list ref = ref []
@@ -72,7 +72,8 @@ let info = Term.info "sledge" ~version:Version.version
 
 let validate () = `Ok ()
 
-;; parse info validate
+;;
+parse info validate
 
 let run main =
   Trace.init ~trace_all:!trace_all ;

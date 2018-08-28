@@ -63,7 +63,7 @@ let get_this_type proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
 
 
-let type_get_direct_supertypes tenv (typ: Typ.t) =
+let type_get_direct_supertypes tenv (typ : Typ.t) =
   match typ.desc with
   | Tptr ({desc= Tstruct name}, _) | Tstruct name -> (
     match Tenv.lookup tenv name with Some {supers} -> supers | None -> [] )
@@ -75,7 +75,7 @@ let type_get_class_name {Typ.desc} =
   match desc with Typ.Tptr (typ, _) -> Typ.name typ | _ -> None
 
 
-let type_get_annotation tenv (typ: Typ.t) : Annot.Item.t option =
+let type_get_annotation tenv (typ : Typ.t) : Annot.Item.t option =
   match typ.desc with
   | Tptr ({desc= Tstruct name}, _) | Tstruct name -> (
     match Tenv.lookup tenv name with Some {annots} -> Some annots | None -> None )
@@ -93,7 +93,7 @@ let rec get_type_name {Typ.desc} =
       "_"
 
 
-let get_field_type_name tenv (typ: Typ.t) (fieldname: Typ.Fieldname.t) : string option =
+let get_field_type_name tenv (typ : Typ.t) (fieldname : Typ.Fieldname.t) : string option =
   match typ.desc with
   | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
     match Tenv.lookup tenv name with
@@ -109,7 +109,7 @@ let get_field_type_name tenv (typ: Typ.t) (fieldname: Typ.Fieldname.t) : string 
       None
 
 
-let java_get_const_type_name (const: Const.t) : string =
+let java_get_const_type_name (const : Const.t) : string =
   match const with
   | Const.Cstr _ ->
       "java.lang.String"
@@ -121,7 +121,7 @@ let java_get_const_type_name (const: Const.t) : string =
       "_"
 
 
-let get_vararg_type_names tenv (call_node: Procdesc.Node.t) (ivar: Pvar.t) : string list =
+let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : string list =
   (* Is this the node creating ivar? *)
   let initializes_array instrs =
     instrs
@@ -224,7 +224,7 @@ let initializer_classes =
 let initializer_methods = ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"]
 
 (** Check if the type has in its supertypes from the initializer_classes list. *)
-let type_has_initializer (tenv: Tenv.t) (t: Typ.t) : bool =
+let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
   let is_initializer_class typename _ =
     List.mem ~equal:Typ.Name.equal initializer_classes typename
   in
@@ -236,7 +236,7 @@ let type_has_initializer (tenv: Tenv.t) (t: Typ.t) : bool =
 
 
 (** Check if the method is one of the known initializer methods. *)
-let method_is_initializer (tenv: Tenv.t) (proc_attributes: ProcAttributes.t) : bool =
+let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) : bool =
   match get_this_type proc_attributes with
   | Some this_type ->
       if type_has_initializer tenv this_type then
@@ -289,11 +289,10 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
     Instrs.iter ~f:(do_instruction node) instrs
   in
   let nodes = Procdesc.get_nodes pdesc in
-  List.iter ~f:do_node nodes ;
-  List.rev !res
+  List.iter ~f:do_node nodes ; List.rev !res
 
 
-let override_find ?(check_current_type= true) f tenv proc_name =
+let override_find ?(check_current_type = true) f tenv proc_name =
   let method_name = Typ.Procname.get_method proc_name in
   let is_override pname =
     (* Note: very coarse! TODO: match parameter names/types to get an exact match *)
@@ -325,7 +324,7 @@ let override_find ?(check_current_type= true) f tenv proc_name =
         None
 
 
-let override_exists ?(check_current_type= true) f tenv proc_name =
+let override_exists ?(check_current_type = true) f tenv proc_name =
   override_find ~check_current_type f tenv proc_name |> Option.is_some
 
 

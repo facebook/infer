@@ -28,7 +28,6 @@ module type InstrRefT = sig
 end
 
 (* InstrRefT *)
-
 module InstrRef : InstrRefT
 
 type origin_descr = string * Location.t option * AnnotatedSignature.t option
@@ -65,13 +64,26 @@ type err_instance =
 val node_reset_forall : Procdesc.Node.t -> unit
 
 type st_report_error =
-  Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
-  -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.severity -> string -> unit
+     Typ.Procname.t
+  -> Procdesc.t
+  -> IssueType.t
+  -> Location.t
+  -> ?field_name:Typ.Fieldname.t option
+  -> ?origin_loc:Location.t option
+  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
+  -> ?severity:Exceptions.severity
+  -> string
+  -> unit
 
 val report_error :
-  Tenv.t -> st_report_error -> (Procdesc.Node.t -> Procdesc.Node.t) -> err_instance
-  -> InstrRef.t option -> Location.t -> Procdesc.t -> unit
+     Tenv.t
+  -> st_report_error
+  -> (Procdesc.Node.t -> Procdesc.Node.t)
+  -> err_instance
+  -> InstrRef.t option
+  -> Location.t
+  -> Procdesc.t
+  -> unit
 
 val report_forall_checks_and_reset : Tenv.t -> st_report_error -> Procdesc.t -> unit
 

@@ -94,7 +94,11 @@ val acquire : astate -> Location.t -> Lock.t -> astate
 val release : astate -> Lock.t -> astate
 
 val blocking_call :
-  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Event.severity_t -> Location.t -> astate
+     caller:Typ.Procname.t
+  -> callee:Typ.Procname.t
+  -> Event.severity_t
+  -> Location.t
+  -> astate
   -> astate
 
 val set_on_ui_thread : astate -> string -> astate

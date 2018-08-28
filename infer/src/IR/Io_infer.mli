@@ -28,8 +28,13 @@ module Html : sig
   (** Open an Html file to append data *)
 
   val pp_line_link :
-    ?with_name:bool -> ?text:string option -> SourceFile.t -> DB.Results_dir.path
-    -> Format.formatter -> int -> unit
+       ?with_name:bool
+    -> ?text:string option
+    -> SourceFile.t
+    -> DB.Results_dir.path
+    -> Format.formatter
+    -> int
+    -> unit
   (** Print an html link to the given line number of the current source file *)
 
   val pp_hline : Format.formatter -> unit -> unit
@@ -39,8 +44,17 @@ module Html : sig
   (** Print end color *)
 
   val pp_node_link :
-    DB.Results_dir.path -> Typ.Procname.t -> description:string -> preds:int list -> succs:int list
-    -> exn:int list -> isvisited:bool -> isproof:bool -> Format.formatter -> int -> unit
+       DB.Results_dir.path
+    -> Typ.Procname.t
+    -> description:string
+    -> preds:int list
+    -> succs:int list
+    -> exn:int list
+    -> isvisited:bool
+    -> isproof:bool
+    -> Format.formatter
+    -> int
+    -> unit
   (** Print an html link to the given node.
       Usage: [pp_node_link path_to_root ... fmt id].
       [path_to_root] is the path to the dir for the procedure in the spec db.
@@ -50,8 +64,13 @@ module Html : sig
   (** Print an html link to the given proc *)
 
   val pp_session_link :
-    ?with_name:bool -> ?proc_name:Typ.Procname.t -> SourceFile.t -> string list -> Format.formatter
-    -> int * int * int -> unit
+       ?with_name:bool
+    -> ?proc_name:Typ.Procname.t
+    -> SourceFile.t
+    -> string list
+    -> Format.formatter
+    -> int * int * int
+    -> unit
   (** Print an html link given node id and session *)
 
   val pp_start_color : Format.formatter -> Pp.color -> unit

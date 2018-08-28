@@ -11,7 +11,7 @@ open PolyVariantEqual
 type zip_library = {zip_filename: string; zip_channel: Zip.in_file Lazy.t}
 
 let load_from_zip serializer zip_path zip_library =
-  let lazy zip_channel = zip_library.zip_channel in
+  let (lazy zip_channel) = zip_library.zip_channel in
   let deserialize = Serialization.read_from_string serializer in
   match deserialize (Zip.read_entry zip_channel (Zip.find_entry zip_channel zip_path)) with
   | Some data ->
@@ -45,7 +45,7 @@ let zip_libraries =
             line. *)
        List.rev_filter_map Config.specs_library ~f:load_zip
      in
-     if Config.biabduction && not Config.models_mode && Sys.file_exists Config.models_jar = `Yes
+     if Config.biabduction && (not Config.models_mode) && Sys.file_exists Config.models_jar = `Yes
      then mk_zip_lib Config.models_jar :: zip_libs
      else zip_libs)
 

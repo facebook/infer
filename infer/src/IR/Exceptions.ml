@@ -17,7 +17,7 @@ type visibility =
   | Exn_system  (** never add to error log *)
 [@@deriving compare]
 
-let equal_visibility = [%compare.equal : visibility]
+let equal_visibility = [%compare.equal: visibility]
 
 let string_of_visibility vis =
   match vis with Exn_user -> "user" | Exn_developer -> "developer" | Exn_system -> "system"
@@ -26,12 +26,12 @@ let string_of_visibility vis =
 (** class of error/warning *)
 type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
 
-let equal_err_class = [%compare.equal : err_class]
+let equal_err_class = [%compare.equal: err_class]
 
 (** severity of the report *)
 type severity = Advice | Error | Info | Like | Warning [@@deriving compare]
 
-let equal_severity = [%compare.equal : severity]
+let equal_severity = [%compare.equal: severity]
 
 exception Abduction_case_not_implemented of L.ocaml_pos
 

@@ -58,7 +58,7 @@ module MockSource = struct
     let get_tainted_formals _ = assert false
   end)
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 end
 
 module MockSink = struct
@@ -68,7 +68,7 @@ module MockSink = struct
 
   let indexes _ = IntSet.empty
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 end
 
 module MockTrace = Trace.Make (struct
@@ -77,7 +77,7 @@ module MockTrace = Trace.Make (struct
   module Sanitizer = Sanitizer.Dummy
 
   let get_report source sink _ =
-    if [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
+    if [%compare.equal: MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
       Some IssueType.quandary_taint_error
     else None
 end)

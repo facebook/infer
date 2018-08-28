@@ -27,7 +27,7 @@ module JNI = struct
     | Method of (t list * t)
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let void_method_with_no_arguments = "()V"
 
@@ -105,7 +105,7 @@ module JNI = struct
       match input with
       | [] ->
           List.rev acc
-      | c :: cs ->
+      | c :: cs -> (
         match c with
         | '(' ->
             tokenize_aux cs (NonTerminal SymMethodOpen :: acc)
@@ -147,7 +147,7 @@ module JNI = struct
             in
             tokenize_aux new_input (Terminal (FullyQualifiedClass fully_qualified_class) :: acc)
         | c ->
-            L.(die UserError "Unrecognized char '%c' while reading the input sequence" c)
+            L.(die UserError "Unrecognized char '%c' while reading the input sequence" c) )
     in
     let input_chars = String.to_list input in
     tokenize_aux input_chars []
@@ -172,7 +172,7 @@ module JNI = struct
           if collected_symbols then
             L.(die UserError "No symbols were reduced during a scan, failed parsing input")
           else (* no more symbols in input, terminate *) List.rev jnis
-      | Terminal t :: tl when not collected_symbols && not in_method ->
+      | Terminal t :: tl when (not collected_symbols) && not in_method ->
           reduce_aux ~symbols:tl ~unchanged_symbols ~in_method ~jnis_in_method ~jnis:(t :: jnis)
       | NonTerminal (SymMethod method_jnis) :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Method (method_jnis, t)) :: tl in
@@ -182,7 +182,8 @@ module JNI = struct
           reduce_aux ~symbols:new_symbols ~unchanged_symbols:[] ~in_method:false ~jnis_in_method:[]
             ~jnis
       | (NonTerminal SymMethodOpen as nt) :: tl ->
-          reduce_aux ~symbols:tl ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
+          reduce_aux ~symbols:tl
+            ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
             ~in_method:true ~jnis_in_method:[] ~jnis
       | NonTerminal SymArray :: Terminal t :: tl ->
           let transformed_symbols = Terminal (Array t) :: tl in
@@ -192,7 +193,8 @@ module JNI = struct
           reduce_aux ~symbols:new_symbols ~unchanged_symbols:[] ~in_method:false ~jnis_in_method:[]
             ~jnis
       | (NonTerminal SymArray as nt) :: tl ->
-          reduce_aux ~symbols:tl ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
+          reduce_aux ~symbols:tl
+            ~unchanged_symbols:(nt :: all_collected_symbols_so_far ())
             ~in_method:false ~jnis_in_method:[] ~jnis
       | NonTerminal SymMethodClose :: tl ->
           let new_method_non_terminal = NonTerminal (SymMethod (List.rev jnis_in_method)) in
@@ -282,7 +284,7 @@ let create_procname ~classname ~methodname ~signature =
 
 type labeled_profiler_sample = string * ProfilerSample.t [@@deriving compare]
 
-let equal_labeled_profiler_sample = [%compare.equal : labeled_profiler_sample]
+let equal_labeled_profiler_sample = [%compare.equal: labeled_profiler_sample]
 
 let from_java_profiler_samples j ~use_signature =
   let process_methods methods =

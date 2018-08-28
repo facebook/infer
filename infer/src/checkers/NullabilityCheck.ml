@@ -76,7 +76,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       Errlog.fold
         (fun {Errlog.err_name; err_desc; in_footprint} {Errlog.loc} found_confict ->
           found_confict
-          || in_footprint && IssueType.equal err_name IssueType.null_dereference
+          || in_footprint
+             && IssueType.equal err_name IssueType.null_dereference
              && Location.equal loc report_location
              && Localise.error_desc_is_reportable_bucket err_desc )
         (Summary.get_err_log summary) false
@@ -182,7 +183,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let assume_pnames_notnull ap (aps, checked_pnames) : Domain.astate =
     let remove_call_sites ap aps =
-      let add_diff (to_remove: CallSites.t) ap call_sites map =
+      let add_diff (to_remove : CallSites.t) ap call_sites map =
         let remaining_call_sites = CallSites.diff call_sites to_remove in
         if CallSites.is_empty remaining_call_sites then map
         else NullableAP.add ap remaining_call_sites map
@@ -206,12 +207,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let rec longest_nullable_prefix ap ((nullable_aps, _) as astate) =
-    try Some (ap, NullableAP.find ap nullable_aps) with Caml.Not_found ->
+    try Some (ap, NullableAP.find ap nullable_aps) with Caml.Not_found -> (
       match ap with
       | _, [] ->
           None
       | p ->
-          longest_nullable_prefix (fst (AccessPath.truncate p)) astate
+          longest_nullable_prefix (fst (AccessPath.truncate p)) astate )
 
 
   let check_ap proc_data loc ap astate =
@@ -236,7 +237,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         check_nil_in_objc_container proc_data loc other_args astate
 
 
-  let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
+  let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr : HilInstr.t) : Domain.astate =
     let is_pointer_assignment tenv lhs rhs =
       (* the rhs has type int when assigning the lhs to null *)
       if HilExp.is_null_literal rhs then true
@@ -286,8 +287,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_nullable_ap (ret_var, []) call_sites astate )
     | Call (ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
-    | Assign (lhs_access_expr, rhs, loc)
-      -> (
+    | Assign (lhs_access_expr, rhs, loc) -> (
         let lhs = AccessExpression.to_access_path lhs_access_expr in
         Option.iter
           ~f:(fun (nullable_ap, call_sites) ->

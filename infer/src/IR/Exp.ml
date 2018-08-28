@@ -47,7 +47,7 @@ and t =
   | Sizeof of sizeof_data
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let hash = Hashtbl.hash
 
@@ -268,18 +268,17 @@ let is_objc_block_closure = function
 let rec gen_free_vars =
   let open Sequence.Generator in
   function
-    | Var id ->
-        yield id
-    | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
-        gen_free_vars e
-    | Closure {captured_vars} ->
-        ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_free_vars e)
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
-    | Lvar _
-    | Sizeof {dynamic_length= None} ->
-        return ()
-    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-        gen_free_vars e1 >>= fun () -> gen_free_vars e2
+  | Var id ->
+      yield id
+  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+      gen_free_vars e
+  | Closure {captured_vars} ->
+      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_free_vars e)
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) | Lvar _ | Sizeof {dynamic_length= None}
+    ->
+      return ()
+  | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+      gen_free_vars e1 >>= fun () -> gen_free_vars e2
 
 
 let free_vars e = Sequence.Generator.run (gen_free_vars e)
@@ -289,16 +288,16 @@ let ident_mem e id = free_vars e |> Sequence.exists ~f:(Ident.equal id)
 let rec gen_program_vars =
   let open Sequence.Generator in
   function
-    | Lvar name ->
-        yield name
-    | Const _ | Var _ | Sizeof {dynamic_length= None} ->
-        return ()
-    | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
-        gen_program_vars e
-    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-        gen_program_vars e1 >>= fun () -> gen_program_vars e2
-    | Closure {captured_vars} ->
-        ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_program_vars e)
+  | Lvar name ->
+      yield name
+  | Const _ | Var _ | Sizeof {dynamic_length= None} ->
+      return ()
+  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+      gen_program_vars e
+  | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+      gen_program_vars e1 >>= fun () -> gen_program_vars e2
+  | Closure {captured_vars} ->
+      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _) -> gen_program_vars e)
 
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)

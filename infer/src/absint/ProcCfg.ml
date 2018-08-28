@@ -74,9 +74,8 @@ end
 module InstrNode : sig
   type instr_index = int
 
-  include Node
-          with type t = Procdesc.Node.t * instr_index
-           and type id = Procdesc.Node.id * instr_index
+  include
+    Node with type t = Procdesc.Node.t * instr_index and type id = Procdesc.Node.id * instr_index
 end = struct
   type instr_index = int [@@deriving compare]
 
@@ -297,10 +296,8 @@ module Backward (Base : S with type instrs_dir = Instrs.not_reversed) = struct
 end
 
 module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
-  include S
-          with type t = Base.t
-           and module Node = InstrNode
-           and type instrs_dir = Instrs.not_reversed
+  include
+    S with type t = Base.t and module Node = InstrNode and type instrs_dir = Instrs.not_reversed
 
   val last_of_underlying_node : Procdesc.Node.t -> Node.t
 end = struct
@@ -383,7 +380,7 @@ module MakeOcamlGraph (Base : S) = struct
 
     let compare n1 n2 = Base.Node.compare_id (Base.Node.id n1) (Base.Node.id n2)
 
-    let equal = [%compare.equal : t]
+    let equal = [%compare.equal: t]
 
     let hash = Base.Node.hash
   end

@@ -20,9 +20,9 @@ module Domain = AbstractDomain.FiniteSet (Typ.Procname)
 module SpecPayload = SummaryPayload.Make (struct
   type t = Stacktree_j.stacktree
 
-  let update_payloads frame (payloads: Payloads.t) = {payloads with crashcontext_frame= Some frame}
+  let update_payloads frame (payloads : Payloads.t) = {payloads with crashcontext_frame= Some frame}
 
-  let of_payloads (payloads: Payloads.t) = payloads.crashcontext_frame
+  let of_payloads (payloads : Payloads.t) = payloads.crashcontext_frame
 end)
 
 type extras_t = {stacktraces: Stacktrace.t list}
@@ -38,7 +38,7 @@ let line_range_of_pdesc pdesc =
   {Stacktree_j.start_line; end_line}
 
 
-let stacktree_of_pdesc pdesc ?(loc= Procdesc.get_loc pdesc) ?(callees= []) location_type =
+let stacktree_of_pdesc pdesc ?(loc = Procdesc.get_loc pdesc) ?(callees = []) location_type =
   let procname = Procdesc.get_proc_name pdesc in
   let frame_loc =
     Some
@@ -95,8 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr astate proc_data _ = function
-    | Sil.Call (_, Const (Const.Cfun pn), _, loc, _)
-      -> (
+    | Sil.Call (_, Const (Const.Cfun pn), _, loc, _) -> (
         let traces = proc_data.ProcData.extras.stacktraces in
         let caller = Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
@@ -123,8 +122,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Some frame ->
             let new_astate = Domain.add pn astate in
             ( if Stacktrace.frame_matches_location frame loc then
-                let pdesc = proc_data.ProcData.pdesc in
-                output_json_summary pdesc new_astate loc "call_site" ) ;
+              let pdesc = proc_data.ProcData.pdesc in
+              output_json_summary pdesc new_astate loc "call_site" ) ;
             new_astate
         | None ->
             astate )

@@ -25,7 +25,7 @@ module Set = struct
       (fun lhs ->
         not
           (APSet.exists
-             (fun rhs -> not (phys_equal lhs rhs) && AccessPath.Abs.( <= ) ~lhs ~rhs)
+             (fun rhs -> (not (phys_equal lhs rhs)) && AccessPath.Abs.( <= ) ~lhs ~rhs)
              aps) )
       aps
 

@@ -10,5 +10,11 @@ open! IStd
 val get_all : filter:Filtering.procedures_filter -> unit -> Typ.Procname.t list
 
 val pp_all :
-  filter:Filtering.procedures_filter -> proc_name:bool -> attr_kind:bool -> source_file:bool
-  -> proc_attributes:bool -> Format.formatter -> unit -> unit
+     filter:Filtering.procedures_filter
+  -> proc_name:bool
+  -> attr_kind:bool
+  -> source_file:bool
+  -> proc_attributes:bool
+  -> Format.formatter
+  -> unit
+  -> unit

@@ -38,8 +38,9 @@ module Ast_mapper = Selected_ast.Ast.Ast_mapper
 
 let debug = ref false
 
-;; Ppx_driver.add_arg "--debug" (Caml.Arg.Set debug)
-     ~doc:"Enable debug tracing output"
+;;
+Ppx_driver.add_arg "--debug" (Caml.Arg.Set debug)
+  ~doc:"Enable debug tracing output"
 
 let rec get_fun_name pat =
   match pat.ppat_desc with
@@ -65,11 +66,11 @@ let vb_stack_with, vb_stack_top =
   (with_, top)
 
 let mapper =
-  let value_binding (m: Ast_mapper.mapper) vb =
+  let value_binding (m : Ast_mapper.mapper) vb =
     vb_stack_with vb.pvb_pat ~f:(fun () ->
         Ast_mapper.default_mapper.value_binding m vb )
   in
-  let expr (m: Ast_mapper.mapper) exp =
+  let expr (m : Ast_mapper.mapper) exp =
     let append_here_args args =
       let mod_name = evar ~loc:Location.none "Caml.__MODULE__" in
       let fun_name =
@@ -114,4 +115,5 @@ let mapper =
 
 let impl = Selected_ast.Ast.map_structure mapper
 
-;; Ppx_driver.register_transformation "trace" ~impl
+;;
+Ppx_driver.register_transformation "trace" ~impl

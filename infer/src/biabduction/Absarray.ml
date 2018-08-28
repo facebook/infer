@@ -60,7 +60,7 @@ end = struct
   type path = Exp.t * syn_offset list
 
   (** Find a strexp and a type at the given syntactic offset list *)
-  let rec get_strexp_at_syn_offsets tenv se (t: Typ.t) syn_offs =
+  let rec get_strexp_at_syn_offsets tenv se (t : Typ.t) syn_offs =
     let fail () =
       L.d_strln "Failure of get_strexp_at_syn_offsets" ;
       L.d_str "se: " ;
@@ -90,7 +90,7 @@ end = struct
 
 
   (** Replace a strexp at the given syntactic offset list *)
-  let rec replace_strexp_at_syn_offsets tenv se (t: Typ.t) syn_offs update =
+  let rec replace_strexp_at_syn_offsets tenv se (t : Typ.t) syn_offs update =
     match (se, t.desc, syn_offs) with
     | _, _, [] ->
         update se
@@ -164,9 +164,9 @@ end = struct
 
 
   (** Find a sub strexp with the given property. Can raise [Not_found] *)
-  let find tenv (sigma: sigma) (pred: strexp_data -> bool) : t list =
+  let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
-    let rec find_offset_sexp sigma_other hpred root offs se (typ: Typ.t) =
+    let rec find_offset_sexp sigma_other hpred root offs se (typ : Typ.t) =
       let offs' = List.rev offs in
       let path = (root, offs') in
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
@@ -218,7 +218,7 @@ end = struct
 
 
   (** Get the matched strexp *)
-  let get_data tenv ((_, hpred, syn_offs): t) =
+  let get_data tenv ((_, hpred, syn_offs) : t) =
     match hpred with
     | Sil.Hpointsto (root, se, te) ->
         let t = Exp.texp_to_typ None te in
@@ -230,7 +230,7 @@ end = struct
 
 
   (** Replace the current hpred *)
-  let replace_hpred ((sigma, hpred, _): t) hpred' =
+  let replace_hpred ((sigma, hpred, _) : t) hpred' =
     List.map ~f:(fun hpred'' -> if phys_equal hpred'' hpred then hpred' else hpred'') sigma
 
 
@@ -260,15 +260,15 @@ end = struct
 
 
   (** Replace the strexp at a given position by a new strexp *)
-  let replace_strexp tenv footprint_part ((sigma, hpred, syn_offs): t) se_in =
+  let replace_strexp tenv footprint_part ((sigma, hpred, syn_offs) : t) se_in =
     let update _ = se_in in
     let hpred' = hpred_replace_strexp tenv footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
 
 
   (** Replace the index in the array at a given position with the new index *)
-  let replace_index tenv footprint_part ((sigma, hpred, syn_offs): t) (index: Exp.t)
-      (index': Exp.t) =
+  let replace_index tenv footprint_part ((sigma, hpred, syn_offs) : t) (index : Exp.t)
+      (index' : Exp.t) =
     let update se' =
       match se' with
       | Sil.Earray (len, esel, inst) ->
@@ -287,8 +287,8 @@ end
 
 (** This function renames expressions in [p]. The renaming is, roughly
     speaking, to replace [path.i] by [path.i'] for all (i, i') in [map]. *)
-let prop_replace_path_index tenv (p: Prop.exposed Prop.t) (path: StrexpMatch.path)
-    (map: (Exp.t * Exp.t) list) : Prop.exposed Prop.t =
+let prop_replace_path_index tenv (p : Prop.exposed Prop.t) (path : StrexpMatch.path)
+    (map : (Exp.t * Exp.t) list) : Prop.exposed Prop.t =
   let elist_path = StrexpMatch.path_to_exps path in
   let expmap_list =
     List.fold
@@ -313,8 +313,8 @@ let prop_replace_path_index tenv (p: Prop.exposed Prop.t) (path: StrexpMatch.pat
 
 (** This function uses [update] and transforms the two sigma parts of [p],
     the sigma of the current SH of [p] and that of the footprint of [p]. *)
-let prop_update_sigma_and_fp_sigma tenv (p: Prop.normal Prop.t)
-    (update: bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool =
+let prop_update_sigma_and_fp_sigma tenv (p : Prop.normal Prop.t)
+    (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool =
   let sigma', changed = update false p.Prop.sigma in
   let ep1 = Prop.set p ~sigma:sigma' in
   let ep2, changed2 =
@@ -332,11 +332,11 @@ let array_abstraction_performed = ref false
 (** This function abstracts strexps. The parameter [can_abstract] spots strexps
     where the abstraction might be applicable, and the parameter [do_abstract] does
     the abstraction to those spotted strexps. *)
-let generic_strexp_abstract tenv (abstraction_name: string) (p_in: Prop.normal Prop.t)
-    (can_abstract_: StrexpMatch.strexp_data -> bool)
-    (do_abstract:
-      bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool)
-    : Prop.normal Prop.t =
+let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal Prop.t)
+    (can_abstract_ : StrexpMatch.strexp_data -> bool)
+    (do_abstract :
+      bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool) :
+    Prop.normal Prop.t =
   let can_abstract data =
     let r = can_abstract_ data in
     if r then array_abstraction_performed := true ;
@@ -385,7 +385,8 @@ let generic_strexp_abstract tenv (abstraction_name: string) (p_in: Prop.normal P
 
 
 (** Return [true] if there's a pointer to the index *)
-let index_is_pointed_to tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Exp.t) : bool =
+let index_is_pointed_to tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (index : Exp.t) :
+    bool =
   let indices =
     let index_plus_one = Exp.BinOp (Binop.PlusA, index, Exp.one) in
     [index; index_plus_one]
@@ -406,8 +407,8 @@ let index_is_pointed_to tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (i
 
 
 (** Given [p] containing an array at [path], blur [index] in it *)
-let blur_array_index tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index: Exp.t)
-    : Prop.normal Prop.t =
+let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (index : Exp.t) :
+    Prop.normal Prop.t =
   try
     let fresh_index =
       Exp.Var (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed))
@@ -438,15 +439,15 @@ let blur_array_index tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (inde
 
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
-let blur_array_indices tenv (p: Prop.normal Prop.t) (root: StrexpMatch.path) (indices: Exp.t list)
-    : Prop.normal Prop.t * bool =
+let blur_array_indices tenv (p : Prop.normal Prop.t) (root : StrexpMatch.path)
+    (indices : Exp.t list) : Prop.normal Prop.t * bool =
   let f prop index = blur_array_index tenv prop root index in
   (List.fold ~f ~init:p indices, List.length indices > 0)
 
 
 (** Given [p] containing an array at [root], only keep [indices] in it *)
-let keep_only_indices tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (indices: Exp.t list)
-    : Prop.normal Prop.t * bool =
+let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path)
+    (indices : Exp.t list) : Prop.normal Prop.t * bool =
   let prune_sigma footprint_part sigma =
     try
       let matched = StrexpMatch.find_path sigma path in
@@ -478,7 +479,7 @@ let array_typ_can_abstract {Typ.desc} =
 
 
 (** This function checks whether we can apply an abstraction to a strexp *)
-let strexp_can_abstract ((_, se, typ): StrexpMatch.strexp_data) : bool =
+let strexp_can_abstract ((_, se, typ) : StrexpMatch.strexp_data) : bool =
   let can_abstract_se =
     match se with
     | Sil.Earray (_, esel, _) ->
@@ -491,8 +492,8 @@ let strexp_can_abstract ((_, se, typ): StrexpMatch.strexp_data) : bool =
 
 
 (** This function abstracts a strexp *)
-let strexp_do_abstract tenv footprint_part p ((path, se_in, _): StrexpMatch.strexp_data)
-    : Prop.normal Prop.t * bool =
+let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.strexp_data) :
+    Prop.normal Prop.t * bool =
   if Config.trace_absarray && footprint_part then (
     L.d_str "strexp_do_abstract (footprint)" ;
     L.d_ln () ) ;
@@ -565,7 +566,7 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _): StrexpMatch.stre
   if !Config.footprint then do_footprint () else do_reexecution ()
 
 
-let strexp_abstract tenv (p: Prop.normal Prop.t) : Prop.normal Prop.t =
+let strexp_abstract tenv (p : Prop.normal Prop.t) : Prop.normal Prop.t =
   generic_strexp_abstract tenv "strexp_abstract" p strexp_can_abstract (strexp_do_abstract tenv)
 
 
@@ -630,7 +631,8 @@ let remove_redundant_elements tenv prop =
   let occurs_at_most_once : Ident.t -> bool =
     let fav_curr =
       let ( @@@ ) = Sequence.append in
-      Sil.exp_subst_free_vars prop.Prop.sub @@@ Prop.pi_free_vars prop.Prop.pi
+      Sil.exp_subst_free_vars prop.Prop.sub
+      @@@ Prop.pi_free_vars prop.Prop.pi
       @@@ Prop.sigma_free_vars prop.Prop.sigma
     in
     let fav_foot =
@@ -656,9 +658,11 @@ let remove_redundant_elements tenv prop =
     in
     match (e, se) with
     | Exp.Const (Const.Cint i), Sil.Eexp (Exp.Var id, _)
-      when (not fp_part || IntLit.iszero i) && not (Ident.is_normal id) && occurs_at_most_once id ->
+      when ((not fp_part) || IntLit.iszero i)
+           && (not (Ident.is_normal id))
+           && occurs_at_most_once id ->
         remove () (* unknown value can be removed in re-execution mode or if the index is zero *)
-    | Exp.Var id, Sil.Eexp _ when not (Ident.is_normal id) && occurs_at_most_once id ->
+    | Exp.Var id, Sil.Eexp _ when (not (Ident.is_normal id)) && occurs_at_most_once id ->
         remove () (* index unknown can be removed *)
     | _ ->
         true

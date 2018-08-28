@@ -96,7 +96,7 @@ type ptr_kind =
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
 [@@deriving compare]
 
-let equal_ptr_kind = [%compare.equal : ptr_kind]
+let equal_ptr_kind = [%compare.equal: ptr_kind]
 
 let ptr_kind_string = function
   | Pk_reference ->
@@ -146,21 +146,21 @@ module T = struct
     | Template of {mangled: string option; args: template_arg list}
   [@@deriving compare]
 
-  let equal_desc = [%compare.equal : desc]
+  let equal_desc = [%compare.equal: desc]
 
-  let equal_quals = [%compare.equal : type_quals]
+  let equal_quals = [%compare.equal: type_quals]
 
-  let equal_template_arg = [%compare.equal : template_arg]
+  let equal_template_arg = [%compare.equal: template_arg]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 end
 
 include T
 
 let mk_type_quals ?default ?is_const ?is_restrict ?is_volatile () =
   let default_ = {is_const= false; is_restrict= false; is_volatile= false} in
-  let mk_aux ?(default= default_) ?(is_const= default.is_const) ?(is_restrict= default.is_restrict)
-      ?(is_volatile= default.is_volatile) () =
+  let mk_aux ?(default = default_) ?(is_const = default.is_const)
+      ?(is_restrict = default.is_restrict) ?(is_volatile = default.is_volatile) () =
     {is_const; is_restrict; is_volatile}
   in
   mk_aux ?default ?is_const ?is_restrict ?is_volatile ()
@@ -174,7 +174,7 @@ let is_volatile {is_volatile} = is_volatile
 
 let mk ?default ?quals desc : t =
   let default_ = {desc; quals= mk_type_quals ()} in
-  let mk_aux ?(default= default_) ?(quals= default.quals) desc = {desc; quals} in
+  let mk_aux ?(default = default_) ?(quals = default.quals) desc = {desc; quals} in
   mk_aux ?default ?quals desc
 
 
@@ -317,7 +317,7 @@ and sub_tname subst tname =
 module Name = struct
   type t = name [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let qual_name = function
     | CStruct name | CUnion name | ObjcClass name | ObjcProtocol name ->
@@ -490,10 +490,10 @@ module Name = struct
 end
 
 (** dump a type with all the details. *)
-let d_full (t: t) = L.add_print_with_pe pp_full t
+let d_full (t : t) = L.add_print_with_pe pp_full t
 
 (** dump a list of types. *)
-let d_list (tl: t list) =
+let d_list (tl : t list) =
   let pp pe = Pp.seq (pp pe) in
   L.add_print_with_pe pp tl
 
@@ -547,7 +547,7 @@ module Procname = struct
   (** Level of verbosity of some to_string functions. *)
   type detail_level = Verbose | Non_verbose | Simple [@@deriving compare]
 
-  let equal_detail_level = [%compare.equal : detail_level]
+  let equal_detail_level = [%compare.equal: detail_level]
 
   let is_verbose v = match v with Verbose -> true | _ -> false
 
@@ -625,7 +625,7 @@ module Procname = struct
     let get_parameters j = j.parameters
 
     (** Prints a string of a java procname with the given level of verbosity *)
-    let to_string ?(withclass= false) j verbosity =
+    let to_string ?(withclass = false) j verbosity =
       match verbosity with
       | Verbose | Non_verbose ->
           (* if verbose, then package.class.method(params): rtype,
@@ -830,7 +830,8 @@ module Procname = struct
       | CPPMethod {mangled} | CPPDestructor {mangled} ->
           "(" ^ Option.value ~default:"" mangled ^ ")"
       | CPPConstructor {mangled; is_constexpr} ->
-          "{" ^ Option.value ~default:"" mangled ^ (if is_constexpr then "|constexpr" else "")
+          "{" ^ Option.value ~default:"" mangled
+          ^ (if is_constexpr then "|constexpr" else "")
           ^ "}"
       | ObjCClassMethod ->
           "class"
@@ -849,7 +850,8 @@ module Procname = struct
       | Verbose ->
           let m_str = kind_to_verbose_string osig.kind in
           Name.name osig.class_name ^ "_" ^ osig.method_name
-          ^ Parameter.parameters_to_string osig.parameters ^ m_str
+          ^ Parameter.parameters_to_string osig.parameters
+          ^ m_str
 
 
     let get_parameters osig = osig.parameters
@@ -885,12 +887,12 @@ module Procname = struct
           plain ^ "()"
       | Non_verbose ->
           plain
-      | Verbose ->
+      | Verbose -> (
         match mangled with
         | None ->
             plain ^ Parameter.parameters_to_string parameters
         | Some s ->
-            plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}"
+            plain ^ Parameter.parameters_to_string parameters ^ "{" ^ s ^ "}" )
 
 
     let get_parameters c = c.parameters
@@ -931,7 +933,7 @@ module Procname = struct
     | WithBlockParameters of t * Block.block_name list
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let hash = Hashtbl.hash
 
@@ -967,7 +969,7 @@ module Procname = struct
 
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
-  let rec replace_class t (new_class: Name.t) =
+  let rec replace_class t (new_class : Name.t) =
     match t with
     | Java j ->
         Java {j with class_name= new_class}
@@ -983,7 +985,7 @@ module Procname = struct
     match t with ObjC_Cpp osig -> Name.is_objc_protocol osig.class_name | _ -> false
 
 
-  let rec objc_cpp_replace_method_name t (new_method_name: string) =
+  let rec objc_cpp_replace_method_name t (new_method_name : string) =
     match t with
     | ObjC_Cpp osig ->
         ObjC_Cpp {osig with method_name= new_method_name}
@@ -1102,7 +1104,7 @@ module Procname = struct
 
 
   (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
-  let rec to_simplified_string ?(withclass= false) p =
+  let rec to_simplified_string ?(withclass = false) p =
     match p with
     | Java j ->
         Java.to_string ~withclass j Simple
@@ -1258,7 +1260,9 @@ module Procname = struct
           :: Option.to_list mangled
           |> String.concat ~sep:"#"
       | ObjC_Cpp objc_cpp ->
-          get_qual_name_str pname ^ Parameter.parameters_to_string objc_cpp.parameters ^ "#"
+          get_qual_name_str pname
+          ^ Parameter.parameters_to_string objc_cpp.parameters
+          ^ "#"
           ^ ObjC_Cpp.kind_to_verbose_string objc_cpp.kind
       | _ ->
           to_unique_id pname
@@ -1304,7 +1308,7 @@ module Fieldname = struct
   type t = Clang of {class_name: Name.t; field_name: string} | Java of string
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   module T = struct
     type nonrec t = t
@@ -1444,15 +1448,15 @@ module Struct = struct
 
   let internal_mk_struct ?default ?fields ?statics ?methods ?supers ?annots () =
     let default_ = {fields= []; statics= []; methods= []; supers= []; annots= Annot.Item.empty} in
-    let mk_struct_ ?(default= default_) ?(fields= default.fields) ?(statics= default.statics)
-        ?(methods= default.methods) ?(supers= default.supers) ?(annots= default.annots) () =
+    let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
+        ?(methods = default.methods) ?(supers = default.supers) ?(annots = default.annots) () =
       {fields; statics; methods; supers; annots}
     in
     mk_struct_ ?default ?fields ?statics ?methods ?supers ?annots ()
 
 
   (** the element typ of the final extensible array in the given typ, if any *)
-  let rec get_extensible_array_element_typ ~lookup (typ: T.t) =
+  let rec get_extensible_array_element_typ ~lookup (typ : T.t) =
     match typ.desc with
     | Tarray {elt} ->
         Some elt
@@ -1471,7 +1475,7 @@ module Struct = struct
 
 
   (** If a struct type with field f, return the type of f. If not, return the default *)
-  let fld_typ ~lookup ~default fn (typ: T.t) =
+  let fld_typ ~lookup ~default fn (typ : T.t) =
     match typ.desc with
     | Tstruct name -> (
       match lookup name with
@@ -1484,7 +1488,7 @@ module Struct = struct
         default
 
 
-  let get_field_type_and_annotation ~lookup fn (typ: T.t) =
+  let get_field_type_and_annotation ~lookup fn (typ : T.t) =
     match typ.desc with
     | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
       match lookup name with

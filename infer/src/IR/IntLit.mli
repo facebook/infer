@@ -35,7 +35,7 @@ val of_int64 : int64 -> t
 
 val geq : t -> t -> bool
 
-val gt : t -> t -> bool  [@@warning "-32"]
+val gt : t -> t -> bool [@@warning "-32"]
 
 val isminusone : t -> bool
 

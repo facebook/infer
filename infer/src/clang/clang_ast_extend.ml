@@ -88,7 +88,7 @@ module TypePointerOrd = struct
         L.(die InternalError)
           "unexpected type_ptr variants: %s, %s" (type_ptr_to_string t1) (type_ptr_to_string t2)
 
-  and compare_qual_type (qt1: Clang_ast_t.qual_type) (qt2: Clang_ast_t.qual_type) =
+  and compare_qual_type (qt1 : Clang_ast_t.qual_type) (qt2 : Clang_ast_t.qual_type) =
     if phys_equal qt1 qt2 then 0
     else
       (* enable warning here to warn and update comparison funtion when new field is added *)

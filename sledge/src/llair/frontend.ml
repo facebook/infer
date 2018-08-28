@@ -15,7 +15,8 @@ let fmt_llblock ff t =
   Format.pp_print_string ff (Llvm.string_of_llvalue (Llvm.value_of_block t))
 
 (* gather debug locations *)
-let (scan_locs: Llvm.llmodule -> unit), (find_loc: Llvm.llvalue -> Loc.t) =
+let (scan_locs : Llvm.llmodule -> unit), (find_loc : Llvm.llvalue -> Loc.t)
+    =
   let loc_of_global g =
     Loc.mk
       ?dir:(Llvm.get_global_debug_loc_directory g)
@@ -80,7 +81,8 @@ let (scan_locs: Llvm.llmodule -> unit), (find_loc: Llvm.llvalue -> Loc.t) =
   in
   (scan_locs, find_loc)
 
-let (scan_names: Llvm.llmodule -> unit), (find_name: Llvm.llvalue -> string) =
+let ( (scan_names : Llvm.llmodule -> unit)
+    , (find_name : Llvm.llvalue -> string) ) =
   let name_tbl = Hashtbl.Poly.create () in
   let scan_name =
     let scope_tbl = Hashtbl.Poly.create () in
@@ -120,19 +122,19 @@ let (scan_names: Llvm.llmodule -> unit), (find_name: Llvm.llvalue -> string) =
             | Some count ->
                 Hashtbl.set void_tbl ~key:fname ~data:(count + 1) ;
                 Format.sprintf "%s.void.%i" fname count )
-        | _ ->
+        | _ -> (
           match Llvm.value_name llv with
           | "" ->
               (* anonymous values take the next SSA name *)
               let name = !next in
               next := name + 1 ;
               Int.to_string name
-          | name ->
+          | name -> (
             match Int.of_string name with
             | _ ->
                 (* escape to avoid clash with names of anonymous values *)
                 Format.sprintf "\"%s\"" name
-            | exception _ -> name
+            | exception _ -> name ) )
       in
       Hashtbl.add_exn name_tbl ~key:llv ~data:name
   in
@@ -385,7 +387,8 @@ and xlate_opcode : Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
   in
   ( match opcode with
   | BitCast | AddrSpaceCast -> cast ()
-  | Trunc | ZExt | FPToUI | UIToFP | FPTrunc | FPExt | PtrToInt | IntToPtr ->
+  | Trunc | ZExt | FPToUI | UIToFP | FPTrunc | FPExt | PtrToInt | IntToPtr
+    ->
       conv false
   | SExt | FPToSI | SIToFP -> conv true
   | ICmp -> (
@@ -547,8 +550,8 @@ let xlate_global : Llvm.llvalue -> Global.t =
 
 type pop_thunk = Loc.t -> Llair.inst list
 
-let pop_stack_frame_of_function
-    : Llvm.llvalue -> Llvm.llbasicblock -> pop_thunk =
+let pop_stack_frame_of_function :
+    Llvm.llvalue -> Llvm.llbasicblock -> pop_thunk =
  fun func entry_blk ->
   let append_stack_vars blk vars =
     Llvm.fold_right_instrs
@@ -587,13 +590,14 @@ let landingpad_typs : Llvm.llvalue -> Typ.t * Typ.t * Typ.t =
     | Tuple {elts} | Struct {elts} -> (
       match Vector.to_array elts with
       | [|i8p'; i32'|] ->
-          not (Typ.equal Typ.i8p i8p') || not (Typ.equal i32 i32')
+          (not (Typ.equal Typ.i8p i8p')) || not (Typ.equal i32 i32')
       | _ -> true )
     | _ -> true
   then
     todo "landingpad of type other than {i8*, i32}: %a" fmt_llvalue instr () ;
   let llcontext =
-    Llvm.(module_context (global_parent (block_parent (instr_parent instr))))
+    Llvm.(
+      module_context (global_parent (block_parent (instr_parent instr))))
   in
   let lli8p = Llvm.(pointer_type (integer_type llcontext 8)) in
   let ti = Llvm.(named_struct_type llcontext "class.std::type_info") in
@@ -616,9 +620,10 @@ let landingpad_arg : Llvm.llvalue -> Var.t =
     the result of applying [f] to each of the other [PHI] instructions.
     [pos] is the instruction iterator position before the first non-[PHI]
     instruction of [blk]. *)
-let rev_map_phis
-    : f:(Llvm.llvalue -> 'a) -> Llvm.llbasicblock
-      -> 'a option * 'a list * _ Llvm.llpos =
+let rev_map_phis :
+       f:(Llvm.llvalue -> 'a)
+    -> Llvm.llbasicblock
+    -> 'a option * 'a list * _ Llvm.llpos =
  fun ~f blk ->
   let rec block_args_ found_invoke_pred retn_arg rev_args pos =
     match (pos : _ Llvm.llpos) with
@@ -630,8 +635,8 @@ let rev_map_phis
              for each predecessor terminated by an invoke instr, this PHI
              instr takes the value of the invoke's return value. *)
           let has_invoke_pred, is_retn_arg =
-            List.fold (Llvm.incoming instr) ~init:(false, true) ~f:
-              (fun (has_invoke_pred, is_retn_arg) (arg, pred) ->
+            List.fold (Llvm.incoming instr) ~init:(false, true)
+              ~f:(fun (has_invoke_pred, is_retn_arg) (arg, pred) ->
                 match Llvm.block_terminator pred with
                 | Some instr -> (
                   match Llvm.instr_opcode instr with
@@ -698,7 +703,8 @@ let return_formal_is_used : Llvm.llvalue -> bool =
 let need_return_trampoline : Llvm.llvalue -> Llvm.llbasicblock -> bool =
  fun instr blk ->
   Option.is_none (fst3 (rev_map_phis blk ~f:Fn.id))
-  && Option.is_none (unique_pred blk) && return_formal_is_used instr
+  && Option.is_none (unique_pred blk)
+  && return_formal_is_used instr
 
 (** [unique_used_invoke_pred blk] is the unique predecessor of [blk], if it
     is an [Invoke] instruction, whose return value is used. *)
@@ -782,9 +788,11 @@ let rec xlate_func_name llv =
   | InlineAsm -> todo "inline asm: %a" fmt_llvalue llv ()
   | _ -> fail "unknown function: %a" fmt_llvalue llv ()
 
-let xlate_instr
-    : pop_thunk -> Llvm.llvalue
-      -> ((Llair.inst list * Llair.term -> code) -> code) -> code =
+let xlate_instr :
+       pop_thunk
+    -> Llvm.llvalue
+    -> ((Llair.inst list * Llair.term -> code) -> code)
+    -> code =
  fun pop instr continue ->
   [%Trace.call fun pf -> pf "%a" fmt_llvalue instr]
   ;
@@ -1202,7 +1210,7 @@ let xlate_function : Llvm.llvalue -> Llair.func =
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function llf entry_blk in
-      let[@warning "p"] entry_block :: entry_blocks =
+      let[@warning "p"] (entry_block :: entry_blocks) =
         xlate_block pop entry_blk
       in
       let entry =

@@ -75,13 +75,13 @@ let rec get_named_type vt : Typ.t =
   match vt with
   | JBasics.TBasic bt ->
       basic_type bt
-  | JBasics.TObject ot ->
+  | JBasics.TObject ot -> (
     match ot with
     | JBasics.TArray vt ->
         let content_type = get_named_type vt in
         Typ.mk (Tptr (Typ.mk_array content_type, Typ.Pk_pointer))
     | JBasics.TClass cn ->
-        Typ.mk (Tptr (Typ.mk (Tstruct (typename_of_classname cn)), Typ.Pk_pointer))
+        Typ.mk (Tptr (Typ.mk (Tstruct (typename_of_classname cn)), Typ.Pk_pointer)) )
 
 
 let rec create_array_type typ dim =
@@ -170,12 +170,12 @@ let rec string_of_type vt =
   match vt with
   | JBasics.TBasic bt ->
       string_of_basic_type bt
-  | JBasics.TObject ot ->
+  | JBasics.TObject ot -> (
     match ot with
     | JBasics.TArray vt ->
         string_of_type vt ^ "[]"
     | JBasics.TClass cn ->
-        JBasics.cn_name cn
+        JBasics.cn_name cn )
 
 
 let package_to_string = function [] -> None | p -> Some (String.concat ~sep:"." p)
@@ -190,12 +190,12 @@ let vt_to_java_type vt =
   match vt with
   | JBasics.TBasic bt ->
       Typ.Name.Java.Split.make (string_of_basic_type bt)
-  | JBasics.TObject ot ->
+  | JBasics.TObject ot -> (
     match ot with
     | JBasics.TArray vt ->
         Typ.Name.Java.Split.make (string_of_type vt ^ "[]")
     | JBasics.TClass cn ->
-        cn_to_java_type cn
+        cn_to_java_type cn )
 
 
 let method_signature_names ms =
@@ -356,7 +356,7 @@ and get_class_struct_typ =
         struct_typ
     | None when JBasics.ClassSet.mem cn !seen ->
         Tenv.mk_struct tenv name
-    | None ->
+    | None -> (
         seen := JBasics.ClassSet.add cn !seen ;
         match JClasspath.lookup_node cn program with
         | None ->
@@ -400,7 +400,7 @@ and get_class_struct_typ =
                 (fun m procnames -> translate_method_name program tenv m :: procnames)
                 node []
             in
-            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name
+            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots name )
 
 
 let get_class_type_no_pointer program tenv cn =
@@ -451,7 +451,7 @@ let param_type program tenv cn name vt =
   else value_type program tenv vt
 
 
-let get_var_type_from_sig (context: JContext.t) var =
+let get_var_type_from_sig (context : JContext.t) var =
   let program = context.program in
   let tenv = JContext.get_tenv context in
   List.find_map
@@ -472,7 +472,7 @@ let extract_array_type typ =
 
 (** translate the type of an expression, looking in the method signature for formal parameters
     this is because variables in expressions do not have accurate types *)
-let rec expr_type (context: JContext.t) expr =
+let rec expr_type (context : JContext.t) expr =
   let program = context.program in
   let tenv = JContext.get_tenv context in
   match expr with

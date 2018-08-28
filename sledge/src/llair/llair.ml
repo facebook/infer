@@ -139,7 +139,7 @@ module Inst = struct
     | Memset {dst; byt; len} ->
         pf "memset %a %a %a;" Exp.fmt dst Exp.fmt byt Exp.fmt len
     | Alloc {reg; num} ->
-        let[@warning "p"] Typ.Pointer {elt} = Var.typ reg in
+        let[@warning "p"] (Typ.Pointer {elt}) = Var.typ reg in
         pf "alloc %a [%a x %a];" Var.fmt reg Exp.fmt num Typ.fmt elt
     | Free {ptr} -> pf "free %a;" Exp.fmt ptr
     | Nondet {reg; msg} ->
@@ -337,9 +337,10 @@ module Func = struct
     let cfg = Vector.empty in
     mk ~name ~entry ~cfg
 
-  let fmt ff ({name; entry= {params; cmnd; term; sort_index}; cfg} as func) =
+  let fmt ff ({name; entry= {params; cmnd; term; sort_index}; cfg} as func)
+      =
     let fmt_if cnd str ff = if cnd then Format.fprintf ff str in
-    let[@warning "p"] Typ.Pointer {elt= Function {return}} =
+    let[@warning "p"] (Typ.Pointer {elt= Function {return}}) =
       Global.typ name
     in
     Format.fprintf ff "@[<v>@[<v>%a@[<2>%a%a@]%t@]"
@@ -359,8 +360,8 @@ module Block_id = struct
 
   (* block labels within a function are unique *)
   let compare x y =
-    [%compare : string * Global.t]
-      (x.lbl, x.parent.name) (y.lbl, y.parent.name)
+    [%compare: string * Global.t] (x.lbl, x.parent.name)
+      (y.lbl, y.parent.name)
 
   let hash b = Hashtbl.hash (b.lbl, b.parent.name)
 end
@@ -443,16 +444,16 @@ let set_derived_metadata functions =
 
 let mk ~typ_defns ~globals ~functions =
   assert (
-    not
-      (List.contains_dup typ_defns ~compare:(fun (s: Typ.t) (t: Typ.t) ->
-           match (s, t) with
-           | ( (Struct {name= n1} | Opaque {name= n1})
-             , (Struct {name= n2} | Opaque {name= n2}) ) ->
-               String.compare n1 n2
-           | _ -> Typ.compare s t ))
-    && not
-         (List.contains_dup globals ~compare:(fun g1 g2 ->
-              String.compare (Global.name g1) (Global.name g2) ))
+    (not
+       (List.contains_dup typ_defns ~compare:(fun (s : Typ.t) (t : Typ.t) ->
+            match (s, t) with
+            | ( (Struct {name= n1} | Opaque {name= n1})
+              , (Struct {name= n2} | Opaque {name= n2}) ) ->
+                String.compare n1 n2
+            | _ -> Typ.compare s t )))
+    && (not
+          (List.contains_dup globals ~compare:(fun g1 g2 ->
+               String.compare (Global.name g1) (Global.name g2) )))
     && not
          (List.contains_dup functions ~compare:(fun f1 f2 ->
               String.compare (Global.name f1.name) (Global.name f2.name) ))

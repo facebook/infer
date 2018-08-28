@@ -32,7 +32,7 @@ module Loc = struct
   type t = Var of Var.t | Allocsite of Allocsite.t | Field of t * Typ.Fieldname.t
   [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let unknown = Allocsite Allocsite.unknown
 

@@ -161,8 +161,7 @@ let declaration_has_name an name =
 
 let rec is_subclass_of decl name =
   match CAst_utils.get_superclass_curr_class_objc_from_decl decl with
-  | Some super_ref
-    -> (
+  | Some super_ref -> (
       let ndi = match super_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
       if ALVar.compare_str_with_alexp ndi.ni_name name then true
       else
@@ -347,8 +346,7 @@ let is_objc_method_exposed context an =
   if is_objc_method_overriding an then true
   else
     match an with
-    | Ctl_parser_types.Decl (ObjCMethodDecl (_, ndi, mdi))
-      -> (
+    | Ctl_parser_types.Decl (ObjCMethodDecl (_, ndi, mdi)) -> (
         let method_name = ndi.ni_name in
         let is_instance_method = mdi.omdi_is_instance_method in
         match current_objc_container context with
@@ -389,7 +387,8 @@ let get_selector an =
 
 let receiver_objc_type_name an =
   match an with
-  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, receiver :: _, _, {omei_receiver_kind= `Instance})) ->
+  | Ctl_parser_types.Stmt (ObjCMessageExpr (_, receiver :: _, _, {omei_receiver_kind= `Instance}))
+    ->
       Clang_ast_proj.get_expr_tuple receiver
       |> Option.bind ~f:(fun (_, _, expr_info) ->
              CAst_utils.name_opt_of_typedef_qual_type expr_info.Clang_ast_t.ei_qual_type )
@@ -427,7 +426,7 @@ let objc_message_receiver context an =
           None )
     | `Class qt ->
         CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr
-    | `Instance ->
+    | `Instance -> (
       match args with
       | receiver :: _ -> (
         match receiver with
@@ -442,7 +441,7 @@ let objc_message_receiver context an =
         | _ ->
             None )
       | [] ->
-          None )
+          None ) )
   | _ ->
       None
 
@@ -512,8 +511,7 @@ let decl_ref_name ?kind name st =
   match st with
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) -> (
     match drti.drti_decl_ref with
-    | Some dr
-      -> (
+    | Some dr -> (
         let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
         let has_right_name = ALVar.compare_str_with_alexp ndi.ni_name name in
         match kind with
@@ -551,8 +549,7 @@ let is_enum_constant_of_enum an name =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.DeclRefExpr (_, _, _, drti)) -> (
     match drti.drti_decl_ref with
-    | Some dr
-      -> (
+    | Some dr -> (
         let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
         let qual_name = CAst_utils.get_qualified_name ndi in
         match QualifiedCppName.extract_last qual_name with
@@ -620,8 +617,7 @@ let context_in_synchronized_block context = context.CLintersContext.in_synchroni
 (* checks if ivar is defined among a set of fields and if it is atomic *)
 let is_ivar_atomic an =
   match an with
-  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei))
-    -> (
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCIvarRefExpr (_, _, _, irei)) -> (
       let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
       let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
       match CAst_utils.get_decl ivar_pointer with
@@ -637,8 +633,7 @@ let is_ivar_atomic an =
 let is_method_property_accessor_of_ivar an context =
   let open Clang_ast_t in
   match an with
-  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, irei))
-    -> (
+  | Ctl_parser_types.Stmt (ObjCIvarRefExpr (_, _, _, irei)) -> (
       let dr_ref = irei.Clang_ast_t.ovrei_decl_ref in
       let ivar_pointer = dr_ref.Clang_ast_t.dr_decl_pointer in
       match context.CLintersContext.current_method with
@@ -907,14 +902,14 @@ let has_cast_kind an alexp_kind =
   match an with
   | Ctl_parser_types.Decl _ ->
       false
-  | Ctl_parser_types.Stmt stmt ->
+  | Ctl_parser_types.Stmt stmt -> (
       let str_kind = ALVar.alexp_to_string alexp_kind in
       match Clang_ast_proj.get_cast_kind stmt with
       | Some cast_kind ->
           let cast_kind_str = Clang_ast_proj.string_of_cast_kind cast_kind in
           String.equal cast_kind_str str_kind
       | None ->
-          false
+          false )
 
 
 let is_node an nodename =
@@ -972,11 +967,11 @@ let is_at_selector_with_name an re =
       false
 
 
-let iphoneos_target_sdk_version_by_path (cxt: CLintersContext.context) =
+let iphoneos_target_sdk_version_by_path (cxt : CLintersContext.context) =
   let source_file = cxt.translation_unit_context.source_file in
   let regex_version_opt =
-    List.find Config.iphoneos_target_sdk_version_path_regex ~f:
-      (fun (version_path_regex: Config.iphoneos_target_sdk_version_path_regex) ->
+    List.find Config.iphoneos_target_sdk_version_path_regex
+      ~f:(fun (version_path_regex : Config.iphoneos_target_sdk_version_path_regex) ->
         ALVar.str_match_forward (SourceFile.to_rel_path source_file) version_path_regex.path )
   in
   match regex_version_opt with
@@ -986,7 +981,7 @@ let iphoneos_target_sdk_version_by_path (cxt: CLintersContext.context) =
       Config.iphoneos_target_sdk_version
 
 
-let iphoneos_target_sdk_version_greater_or_equal (cxt: CLintersContext.context) version =
+let iphoneos_target_sdk_version_greater_or_equal (cxt : CLintersContext.context) version =
   match iphoneos_target_sdk_version_by_path cxt with
   | Some target_version ->
       Utils.compare_versions target_version version >= 0
@@ -994,7 +989,7 @@ let iphoneos_target_sdk_version_greater_or_equal (cxt: CLintersContext.context) 
       false
 
 
-let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
+let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
   let config_iphoneos_target_sdk_version = iphoneos_target_sdk_version_by_path cxt in
   let allowed_os_versions =
     match
@@ -1016,7 +1011,7 @@ let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
       false
 
 
-let class_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
+let class_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
   match receiver_method_call an with
   | Some decl ->
       decl_unavailable_in_supported_ios_sdk cxt (Ctl_parser_types.Decl decl)
@@ -1094,8 +1089,7 @@ let get_ivar_lifetime an =
   match get_ast_node_type_ptr an with
   | Some pt -> (
     match CAst_utils.get_type pt with
-    | Some c_type
-      -> (
+    | Some c_type -> (
         L.(debug Linters Medium) "@\nChecking type: `%s`\n" (Clang_ast_j.string_of_c_type c_type) ;
         let open Clang_ast_t in
         match c_type with
@@ -1185,7 +1179,7 @@ let has_type_subprotocol_of an prot_name_ =
       false
 
 
-let within_responds_to_selector_block (cxt: CLintersContext.context) an =
+let within_responds_to_selector_block (cxt : CLintersContext.context) an =
   let open Clang_ast_t in
   match an with
   | Ctl_parser_types.Decl (ObjCMethodDecl (_, named_decl_info, _)) -> (
@@ -1199,10 +1193,9 @@ let within_responds_to_selector_block (cxt: CLintersContext.context) an =
       false
 
 
-let within_available_class_block (cxt: CLintersContext.context) an =
+let within_available_class_block (cxt : CLintersContext.context) an =
   match (receiver_method_call an, cxt.if_context) with
-  | Some receiver, Some if_context
-    -> (
+  | Some receiver, Some if_context -> (
       let in_available_class_block = if_context.within_available_class_block in
       match declaration_name receiver with
       | Some receiver_name ->

@@ -117,8 +117,12 @@ module AccessSnapshot : sig
   include PrettyPrintable.PrintableOrderedType with type t := t
 
   val make :
-    PathDomain.Sink.t -> LocksDomain.astate -> ThreadsDomain.astate -> OwnershipPrecondition.t
-    -> Procdesc.t -> t
+       PathDomain.Sink.t
+    -> LocksDomain.astate
+    -> ThreadsDomain.astate
+    -> OwnershipPrecondition.t
+    -> Procdesc.t
+    -> t
 
   val make_from_snapshot : PathDomain.Sink.t -> t -> t
 
@@ -155,7 +159,7 @@ module OwnershipDomain : sig
 
   val is_owned : AccessPath.t -> astate -> bool
 
-  val find : [`Use_get_owned_instead]  [@@warning "-32"]
+  val find : [`Use_get_owned_instead] [@@warning "-32"]
 
   val propagate_assignment : AccessPath.t -> HilExp.t -> astate -> astate
 

@@ -46,8 +46,8 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       List.fold ~f:add_formal ~init:typestate_empty annotated_signature.AnnotatedSignature.params
     in
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
-    let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc
-        : unit =
+    let check_return find_canonical_duplicate exit_node final_typestate annotated_signature loc :
+        unit =
       let _, ret_type = annotated_signature.AnnotatedSignature.ret in
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
@@ -145,11 +145,11 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let module Initializers = struct
       type init = Typ.Procname.t * Procdesc.t
 
-      let equal_class_opt = [%compare.equal : string option]
+      let equal_class_opt = [%compare.equal: string option]
 
       let final_typestates initializers_current_class =
         (* Get the private methods, from the same class, directly called by the initializers. *)
-        let get_private_called (initializers: init list) : init list =
+        let get_private_called (initializers : init list) : init list =
           let res = ref [] in
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_attributes =
@@ -188,7 +188,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
           let initializers_base_case = initializers_current_class in
           let res = ref [] in
           let seen = ref Typ.Procname.Set.empty in
-          let mark_seen (initializers: init list) : unit =
+          let mark_seen (initializers : init list) : unit =
             List.iter ~f:(fun (pn, _) -> seen := Typ.Procname.Set.add pn !seen) initializers ;
             res := !res @ initializers
           in
@@ -278,7 +278,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let do_typestate typestate =
         let start_node = Procdesc.get_start_node curr_pdesc in
         if
-          not calls_this
+          (not calls_this)
           (* if 'this(...)' is called, no need to check initialization *)
           && checks.TypeCheck.eradicate
         then
@@ -335,7 +335,7 @@ end
 (* MkCallback *)
 
 module EmptyExtension : ExtensionT = struct
-  let update_payloads typestate_opt (payloads: Payloads.t) =
+  let update_payloads typestate_opt (payloads : Payloads.t) =
     {payloads with typestate= typestate_opt}
 end
 

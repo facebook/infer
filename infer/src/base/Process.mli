@@ -17,6 +17,9 @@ val print_error_and_exit : ?exit_code:int -> ('a, Format.formatter, unit, 'b) fo
     found in that file, and exist, with default code 1 or a given code. *)
 
 val pipeline :
-  producer_prog:string -> producer_args:string list -> consumer_prog:string
-  -> consumer_args:string list -> Unix.Exit_or_signal.t * Unix.Exit_or_signal.t
+     producer_prog:string
+  -> producer_args:string list
+  -> consumer_prog:string
+  -> consumer_args:string list
+  -> Unix.Exit_or_signal.t * Unix.Exit_or_signal.t
 (** Pipeline producer program into consumer program *)

@@ -181,7 +181,7 @@ val mkArray : t vector -> Typ.t -> t
 val mkStruct : t vector -> Typ.t -> t
 
 val mkStruct_rec :
-  (module Hashtbl.Key_plain with type t = 'id)
+     (module Hashtbl.Key_plain with type t = 'id)
   -> (id:'id -> t lazy_t vector -> Typ.t -> t) Staged.t
 (** [mkStruct_rec Id id element_thunks typ] constructs a possibly-cyclic
     [Struct] value. Cycles are detected using [Id]. The caller of

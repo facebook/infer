@@ -36,19 +36,18 @@ module LineReader = struct
         in
         lines := line :: !lines
       done ;
-      assert false
-      (* execution never reaches here *)
+      assert false (* execution never reaches here *)
     with End_of_file ->
       In_channel.close cin ;
       Array.of_list (List.rev !lines)
 
 
-  let file_data (hash: t) fname =
-    try Some (Hashtbl.find hash fname) with Caml.Not_found ->
+  let file_data (hash : t) fname =
+    try Some (Hashtbl.find hash fname) with Caml.Not_found -> (
       try
         let lines_arr = read_file (SourceFile.to_abs_path fname) in
         Hashtbl.add hash fname lines_arr ; Some lines_arr
-      with exn when SymOp.exn_not_failure exn -> None
+      with exn when SymOp.exn_not_failure exn -> None )
 
 
   let from_file_linenum_original hash fname linenum =
@@ -114,8 +113,14 @@ let pp_node_link path_to_root ?proof_cover ~description fmt node =
     when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_node :
-    int -> Location.t -> Typ.Procname.t -> Procdesc.Node.t list -> Procdesc.Node.t list
-    -> Procdesc.Node.t list -> SourceFile.t -> bool
+       int
+    -> Location.t
+    -> Typ.Procname.t
+    -> Procdesc.Node.t list
+    -> Procdesc.Node.t list
+    -> Procdesc.Node.t list
+    -> SourceFile.t
+    -> bool
 
   val finish_node : Typ.Procname.t -> int -> SourceFile.t -> unit
 end = struct
@@ -175,7 +180,7 @@ let force_delayed_prints () =
 
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-let start_session ~pp_name node (loc: Location.t) proc_name session source =
+let start_session ~pp_name node (loc : Location.t) proc_name session source =
   let node_id = Procdesc.Node.get_id node in
   if
     NodesHtml.start_node
@@ -189,7 +194,8 @@ let start_session ~pp_name node (loc: Location.t) proc_name session source =
       node Io_infer.Html.pp_end_color () ;
   F.fprintf !curr_html_formatter "%a%a %t" Io_infer.Html.pp_hline ()
     (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
-    ((node_id :> int), session, loc.Location.line) pp_name ;
+    ((node_id :> int), session, loc.Location.line)
+    pp_name ;
   F.fprintf !curr_html_formatter "<LISTING>%a" Io_infer.Html.pp_start_color Pp.Black
 
 
@@ -241,7 +247,7 @@ let write_proc_html pdesc =
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)
 let create_table_err_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
-  let add_err (key: Errlog.err_key) (err_data: Errlog.err_data) =
+  let add_err (key : Errlog.err_key) (err_data : Errlog.err_data) =
     let err_str =
       F.asprintf "%s %a" key.err_name.IssueType.unique_id Localise.pp_error_desc key.err_desc
     in
@@ -268,7 +274,8 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   in
   let proc_loc = Procdesc.get_loc proc_desc in
   let process_proc =
-    Procdesc.is_defined proc_desc && SourceFile.equal proc_loc.Location.file source
+    Procdesc.is_defined proc_desc
+    && SourceFile.equal proc_loc.Location.file source
     &&
     match Attributes.find_file_capturing_procedure proc_name with
     | None ->

@@ -10,8 +10,7 @@ open! IStd
 (** Check an implicit cast when returning an immutable collection from a method whose type is mutable. *)
 let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt loc : unit =
   match typ_found_opt with
-  | Some typ_found
-    -> (
+  | Some typ_found -> (
       let casts =
         [ ("java.util.List", "com.google.common.collect.ImmutableList")
         ; ("java.util.Map", "com.google.common.collect.ImmutableMap")

@@ -142,8 +142,7 @@ let rec normalize phi =
       Not (Or (EU (trans, Not phi2', Not (Or (phi1', phi2'))), EG (trans, phi2')))
   | EH (cl, phi1) ->
       normalize (ET (cl, None, EX (Some Super, EF (Some Super, phi1))))
-  | ET (tl, trs, phi1)
-    -> (
+  | ET (tl, trs, phi1) -> (
       let phi1' = normalize phi1 in
       match trs with
       | Some _ ->
@@ -339,7 +338,7 @@ let build_valuation an lcxt linter_map_context =
       add_formula_to_valuation (node_pointer, linter.issue_desc.id) sat_set )
   in
   List.iter
-    ~f:(fun (linter: linter) ->
+    ~f:(fun (linter : linter) ->
       if
         CIssue.should_run_check linter.issue_desc.CIssue.mode
         && check_linter_map linter_map_context linter.condition

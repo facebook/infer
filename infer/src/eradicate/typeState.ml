@@ -21,7 +21,7 @@ type range = Typ.t * TypeAnnotation.t * Location.t list [@@deriving compare]
 
 type t = range M.t [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let empty = M.empty
 
@@ -90,8 +90,8 @@ let map_join m1 m2 =
 let join t1 t2 =
   let tjoin = map_join t1 t2 in
   ( if Config.write_html then
-      let s = F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." pp t1 pp t2 pp tjoin in
-      L.d_strln s ) ;
+    let s = F.asprintf "State 1:@.%a@.State 2:@.%a@.After Join:@.%a@." pp t1 pp t2 pp tjoin in
+    L.d_strln s ) ;
   tjoin
 
 

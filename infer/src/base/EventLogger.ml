@@ -80,7 +80,8 @@ type analysis_issue =
 
 let create_analysis_issue_row base record =
   let open JsonBuilder in
-  base |> add_string ~key:"bug_kind" ~data:record.bug_kind
+  base
+  |> add_string ~key:"bug_kind" ~data:record.bug_kind
   |> add_string ~key:"bug_type" ~data:record.bug_type
   |> add_string_opt ~key:"clang_method_kind" ~data:record.clang_method_kind
   |> add_string_opt ~key:"exception_triggered_location"
@@ -109,7 +110,8 @@ type analysis_stats =
 
 let create_analysis_stats_row base record =
   let open JsonBuilder in
-  base |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
+  base
+  |> add_int ~key:"analysis_nodes_visited" ~data:record.analysis_nodes_visited
   |> add_string ~key:"analysis_status"
        ~data:
          (Option.value_map record.analysis_status ~default:"OK" ~f:(fun stats_failure ->
@@ -171,7 +173,8 @@ let create_call_trace_row base record =
        ~data:(Option.map ~f:SourceFile.to_rel_path record.callee_source_file)
   |> add_string ~key:"callee_name" ~data:record.callee_name
   |> add_string ~key:"caller_name" ~data:record.caller_name
-  |> add_string ~key:"lang" ~data:record.lang |> add_string_opt ~key:"reason" ~data:record.reason
+  |> add_string ~key:"lang" ~data:record.lang
+  |> add_string_opt ~key:"reason" ~data:record.reason
   |> add_string ~key:"dynamic_dispatch"
        ~data:(string_of_dynamic_dispatch_opt record.dynamic_dispatch)
 
@@ -186,7 +189,8 @@ type frontend_exception =
 
 let create_frontend_exception_row base record =
   let open JsonBuilder in
-  base |> add_string_opt ~key:"ast_node" ~data:record.ast_node
+  base
+  |> add_string_opt ~key:"ast_node" ~data:record.ast_node
   |> add_string ~key:"exception_triggered_location"
        ~data:(Logging.ocaml_pos_to_string record.exception_triggered_location)
   |> add_string ~key:"exception_type" ~data:record.exception_type
@@ -239,7 +243,8 @@ let create_performance_stats_row base record =
   let open JsonBuilder in
   let add_mem_perf t =
     Option.value_map ~default:t record.mem_perf ~f:(fun mem_perf ->
-        t |> add_float ~key:"minor_heap_mem" ~data:mem_perf.minor_heap_mem
+        t
+        |> add_float ~key:"minor_heap_mem" ~data:mem_perf.minor_heap_mem
         |> add_float ~key:"promoted_minor_heap_mem" ~data:mem_perf.promoted_minor_heap_mem
         |> add_float ~key:"major_heap_mem" ~data:mem_perf.major_heap_mem
         |> add_float ~key:"total_allocated_mem" ~data:mem_perf.total_allocated_mem
@@ -252,16 +257,19 @@ let create_performance_stats_row base record =
   in
   let add_time_perf t =
     Option.value_map ~default:t record.time_perf ~f:(fun time_perf ->
-        t |> add_float ~key:"real_time" ~data:time_perf.real_time
+        t
+        |> add_float ~key:"real_time" ~data:time_perf.real_time
         |> add_float ~key:"user_time" ~data:time_perf.user_time
         |> add_float ~key:"sys_time" ~data:time_perf.sys_time
         |> add_float ~key:"children_user_time" ~data:time_perf.children_user_time
         |> add_float ~key:"children_sys_time" ~data:time_perf.children_sys_time )
   in
-  base |> add_string ~key:"lang" ~data:record.lang
+  base
+  |> add_string ~key:"lang" ~data:record.lang
   |> add_string_opt ~key:"source_file"
        ~data:(Option.map ~f:SourceFile.to_rel_path record.source_file)
-  |> add_string ~key:"stats_type" ~data:record.stats_type |> add_mem_perf |> add_time_perf
+  |> add_string ~key:"stats_type" ~data:record.stats_type
+  |> add_mem_perf |> add_time_perf
 
 
 type procedures_translated =
@@ -272,7 +280,8 @@ type procedures_translated =
 
 let create_procedures_translated_row base record =
   let open JsonBuilder in
-  base |> add_string ~key:"lang" ~data:record.lang
+  base
+  |> add_string ~key:"lang" ~data:record.lang
   |> add_int ~key:"procedures_translated_failed" ~data:record.procedures_translated_failed
   |> add_int ~key:"procedures_translated_total" ~data:record.procedures_translated_total
   |> add_string ~key:"source_file" ~data:(SourceFile.to_rel_path record.source_file)
@@ -334,12 +343,14 @@ module LoggerImpl : S = struct
     incr sequence_ctr ;
     let open JsonBuilder in
     let base =
-      empty |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
+      empty
+      |> add_string ~key:"command" ~data:(InferCommand.to_string Config.command)
       |> add_string ~key:"event_tag" ~data:(string_of_event event)
       |> add_string ~key:"hostname" ~data:(Unix.gethostname ())
       |> add_string ~key:"infer_commit" ~data:Version.commit
       |> add_int ~key:"is_originator" ~data:(if CLOpt.is_originator then 1 else 0)
-      |> add_string_opt ~key:"job_id" ~data:Config.job_id |> add_int ~key:"pid" ~data:(pid ())
+      |> add_string_opt ~key:"job_id" ~data:Config.job_id
+      |> add_int ~key:"pid" ~data:(pid ())
       |> add_string ~key:"run_identifier" ~data:(get_log_identifier ())
       |> add_int ~key:"sequence" ~data:(!sequence_ctr - 1)
       |> add_string ~key:"sysname" ~data:sysname
@@ -359,7 +370,8 @@ module LoggerImpl : S = struct
     | ProceduresTranslatedSummary record ->
         create_procedures_translated_row base record
     | UncaughtException (exn, exitcode) ->
-        base |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
+        base
+        |> add_string ~key:"exception" ~data:(Caml.Printexc.exn_slot_name exn)
         |> add_string ~key:"exception_info" ~data:(Exn.to_string exn)
         |> add_int ~key:"exitcode" ~data:exitcode )
     |> JsonBuilder.to_json
@@ -383,4 +395,4 @@ module DummyLogger : S = struct
 end
 
 (* use real logger if logging is enabled, dummy logger otherwise *)
-include ( val if Config.log_events then (module LoggerImpl : S) else (module DummyLogger : S) )
+include (val if Config.log_events then (module LoggerImpl : S) else (module DummyLogger : S))

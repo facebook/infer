@@ -23,7 +23,8 @@ let select_existing_statement =
 
 let get_existing_data source_file =
   ResultsDatabase.with_registered_statement select_existing_statement ~f:(fun db stmt ->
-      SourceFile.SQLite.serialize source_file |> Sqlite3.bind stmt 1
+      SourceFile.SQLite.serialize source_file
+      |> Sqlite3.bind stmt 1
       (* :source *)
       |> SqliteUtils.check_result_code db ~log:"get_existing_data bind source file" ;
       SqliteUtils.result_option ~finalize:false db ~log:"looking for pre-existing cfgs" stmt
@@ -53,7 +54,8 @@ let add source_file cfg tenv =
      sure that all attributes were written to disk (but not necessarily flushed) *)
   Cfg.save_attributes source_file cfg ;
   ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
-      SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
+      SourceFile.SQLite.serialize source_file
+      |> Sqlite3.bind store_stmt 1
       (* :source *)
       |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
       Cfg.SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
@@ -77,8 +79,8 @@ let get_all ~filter () =
      it inside the function *)
   Sqlite3.prepare db "SELECT source_file FROM source_files"
   |> IContainer.rev_filter_map_to_list
-       ~fold:(SqliteUtils.result_fold_single_column_rows db ~log:"getting all source files") ~f:
-       (fun column ->
+       ~fold:(SqliteUtils.result_fold_single_column_rows db ~log:"getting all source files")
+       ~f:(fun column ->
          let source_file = SourceFile.SQLite.deserialize column in
          Option.some_if (filter source_file) source_file )
 
@@ -90,7 +92,8 @@ let load_proc_names_statement =
 
 let proc_names_of_source source =
   ResultsDatabase.with_registered_statement load_proc_names_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false db
         ~log:"SourceFiles.proc_names_of_source" load_stmt
@@ -103,7 +106,8 @@ let exists_source_statement =
 
 let is_captured source =
   ResultsDatabase.with_registered_statement exists_source_statement ~f:(fun db exists_stmt ->
-      SourceFile.SQLite.serialize source |> Sqlite3.bind exists_stmt 1
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind exists_stmt 1
       (* :k *)
       |> SqliteUtils.check_result_code db ~log:"load captured source file" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.is_captured" db
@@ -133,7 +137,8 @@ let deserialize_freshly_captured = function[@warning "-8"]
 
 let is_freshly_captured source =
   ResultsDatabase.with_registered_statement is_freshly_captured_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false
         ~log:"SourceFiles.is_freshly_captured" db load_stmt

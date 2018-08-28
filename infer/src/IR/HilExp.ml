@@ -57,11 +57,9 @@ let rec get_typ tenv = function
   | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _) ->
       Some (Typ.mk (Typ.Tint Typ.IBool))
   | BinaryOperator (_, e1, e2) -> (
-    match
-      (* TODO: doing this properly will require taking account of language-specific coercion
+    (* TODO: doing this properly will require taking account of language-specific coercion
           semantics. Only return a type when the operands have the same type for now *)
-      (get_typ tenv e1, get_typ tenv e2)
-    with
+    match (get_typ tenv e1, get_typ tenv e2) with
     | Some typ1, Some typ2 when Typ.equal typ1 typ2 ->
         Some typ1
     | _ ->
@@ -112,7 +110,7 @@ let get_access_exprs exp0 =
    produce the same result as evaluating the SIL expression and replacing the temporary variables
    using [f_resolve_id] *)
 let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
-  let rec of_sil_ (exp: Exp.t) typ =
+  let rec of_sil_ (exp : Exp.t) typ =
     match exp with
     | Var id ->
         let ae =
@@ -168,7 +166,8 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
             (Exp.Lfield
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
                , fld
-               , root_exp_typ )) typ )
+               , root_exp_typ ))
+            typ )
     | Lindex (Const (Cstr s), index_exp) ->
         (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
          for the string literal. if you actually need to see the value of the string literal in the
@@ -186,15 +185,16 @@ let of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
           of_sil_
             (Exp.Lindex
                ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
-               , index_exp )) typ )
-    | Lvar _ ->
+               , index_exp ))
+            typ )
+    | Lvar _ -> (
       match
         AccessExpression.of_lhs_exp ~include_array_indexes ~add_deref exp typ ~f_resolve_id
       with
       | Some access_expr ->
           AccessExpression access_expr
       | None ->
-          L.(die InternalError) "Couldn't convert var expression %a to access path" Exp.pp exp
+          L.(die InternalError) "Couldn't convert var expression %a to access path" Exp.pp exp )
   in
   of_sil_ exp typ
 

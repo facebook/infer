@@ -65,7 +65,8 @@ let can_attach_ast_exporter cmd =
   in
   (* -Eonly is -cc1 flag that gets produced by 'clang -M -### ...' *)
   let is_preprocessor_only cmd = has_flag cmd "-E" || has_flag cmd "-Eonly" in
-  (cmd.is_driver || has_flag cmd "-cc1") && is_supported_language cmd
+  (cmd.is_driver || has_flag cmd "-cc1")
+  && is_supported_language cmd
   && not (is_preprocessor_only cmd)
 
 
@@ -84,8 +85,8 @@ let include_override_regex = Option.map ~f:Str.regexp Config.clang_include_to_ov
 
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
    [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse order) [prev]. *)
-let filter_and_replace_unsupported_args ?(replace_options_arg= fun _ s -> s)
-    ?(blacklisted_flags= []) ?(blacklisted_flags_with_arg= []) ?(post_args= []) args =
+let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s)
+    ?(blacklisted_flags = []) ?(blacklisted_flags_with_arg = []) ?(post_args = []) args =
   (* [prev] is the previously seen argument, [res_rev] is the reversed result, [changed] is true if
      some change has been performed *)
   let rec aux in_argfiles (prev_is_blacklisted_with_arg, res_rev, changed) args =
@@ -98,7 +99,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg= fun _ s -> s)
         aux in_argfiles (false, res_rev, true) tl
     | at_argfile :: tl
       when String.is_prefix at_argfile ~prefix:"@" && not (String.Set.mem in_argfiles at_argfile)
-      -> (
+          -> (
         let in_argfiles' = String.Set.add in_argfiles at_argfile in
         let argfile = String.slice at_argfile 1 (String.length at_argfile) in
         match In_channel.read_lines argfile with
@@ -169,7 +170,8 @@ let clang_cc1_cmd_sanitizer cmd =
     if Config.bufferoverrun && not Config.biabduction then ["-D__INFER_BUFFEROVERRUN"] else []
   in
   let post_args_rev =
-    [] |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
+    []
+    |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
     |> List.rev_append args_defines
     |> (* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
        are appended at the end to override previous opposite settings.  How it's done: suppress
@@ -214,7 +216,8 @@ let to_unescaped_args cmd =
 let pp f cmd = to_unescaped_args cmd |> Pp.cli_args f
 
 let command_to_run cmd =
-  to_unescaped_args cmd |> List.map ~f:(ClangQuotes.quote cmd.quoting_style)
+  to_unescaped_args cmd
+  |> List.map ~f:(ClangQuotes.quote cmd.quoting_style)
   |> String.concat ~sep:" "
 
 

@@ -28,11 +28,11 @@ end
 module Make (P : Payload) : S with type t = P.t = struct
   type t = P.t
 
-  let update_summary p (summary: Summary.t) =
+  let update_summary p (summary : Summary.t) =
     {summary with payloads= P.update_payloads p summary.payloads}
 
 
-  let of_summary (summary: Summary.t) = P.of_payloads summary.payloads
+  let of_summary (summary : Summary.t) = P.of_payloads summary.payloads
 
   let read caller_pdesc callee_pname =
     Ondemand.analyze_proc_name ~caller_pdesc callee_pname |> Option.bind ~f:of_summary

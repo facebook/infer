@@ -75,7 +75,7 @@ val iter : iter_fun -> t -> unit
 
 val fold : (err_key -> err_data -> 'a -> 'a) -> t -> 'a -> 'a
 
-val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit  [@@warning "-32"]
+val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit [@@warning "-32"]
 
 val pp_loc_trace : Format.formatter -> loc_trace -> unit
 
@@ -95,6 +95,17 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-  Typ.Procname.t -> clang_method_kind:ClangMethodKind.t option -> Exceptions.severity -> t
-  -> loc:Location.t -> node:node -> session:int -> ltr:loc_trace -> linters_def_file:string option
-  -> doc_url:string option -> access:string option -> extras:Jsonbug_t.extra option -> exn -> unit
+     Typ.Procname.t
+  -> clang_method_kind:ClangMethodKind.t option
+  -> Exceptions.severity
+  -> t
+  -> loc:Location.t
+  -> node:node
+  -> session:int
+  -> ltr:loc_trace
+  -> linters_def_file:string option
+  -> doc_url:string option
+  -> access:string option
+  -> extras:Jsonbug_t.extra option
+  -> exn
+  -> unit

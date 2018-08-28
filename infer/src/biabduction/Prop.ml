@@ -33,9 +33,9 @@ type pi = Sil.atom list [@@deriving compare]
 
 type sigma = Sil.hpred list [@@deriving compare]
 
-let equal_pi = [%compare.equal : pi]
+let equal_pi = [%compare.equal: pi]
 
-let equal_sigma = [%compare.equal : sigma]
+let equal_sigma = [%compare.equal: sigma]
 
 module Core : sig
   (** the kind 'a should range over [normal] and [exposed] *)
@@ -51,7 +51,12 @@ module Core : sig
   (** Proposition [true /\ emp]. *)
 
   val set :
-    ?sub:Sil.exp_subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t
+       ?sub:Sil.exp_subst
+    -> ?pi:pi
+    -> ?sigma:sigma
+    -> ?pi_fp:pi
+    -> ?sigma_fp:sigma
+    -> 'a t
     -> exposed t
   (** Set individual fields of the prop. *)
 
@@ -79,25 +84,25 @@ end = struct
   let prop_emp : normal t = {sub= Sil.exp_sub_empty; pi= []; sigma= []; pi_fp= []; sigma_fp= []}
 
   let set ?sub ?pi ?sigma ?pi_fp ?sigma_fp p =
-    let set_ p ?(sub= p.sub) ?(pi= p.pi) ?(sigma= p.sigma) ?(pi_fp= p.pi_fp)
-        ?(sigma_fp= p.sigma_fp) () =
+    let set_ p ?(sub = p.sub) ?(pi = p.pi) ?(sigma = p.sigma) ?(pi_fp = p.pi_fp)
+        ?(sigma_fp = p.sigma_fp) () =
       {sub; pi; sigma; pi_fp; sigma_fp}
     in
     set_ p ?sub ?pi ?sigma ?pi_fp ?sigma_fp ()
 
 
-  let unsafe_cast_to_normal (p: exposed t) : normal t = (p :> normal t)
+  let unsafe_cast_to_normal (p : exposed t) : normal t = (p :> normal t)
 
-  let unsafe_cast_to_sorted (p: exposed t) : sorted t = (p :> sorted t)
+  let unsafe_cast_to_sorted (p : exposed t) : sorted t = (p :> sorted t)
 end
 
 include Core
 
 (** {2 Basic Functions for Propositions} *)
 
-let expose (p: _ t) : exposed t = Obj.magic p
+let expose (p : _ t) : exposed t = Obj.magic p
 
-let expose_sorted (p: sorted t) : exposed t = Obj.magic p
+let expose_sorted (p : sorted t) : exposed t = Obj.magic p
 
 (** {1 Functions for Comparison} *)
 
@@ -126,7 +131,7 @@ let pp_texp_simple pe =
 
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
-let pp_hpred_stackvar pe0 f (hpred: Sil.hpred) =
+let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
   let pe, changed = Sil.color_pre_wrapper pe0 f hpred in
   ( match hpred with
   | Hpointsto (Exp.Lvar pvar, se, te) ->
@@ -153,7 +158,7 @@ let pp_sub pe f = function
 
 
 (** Dump a substitution. *)
-let d_sub (sub: Sil.subst) = L.add_print_with_pe pp_sub sub
+let d_sub (sub : Sil.subst) = L.add_print_with_pe pp_sub sub
 
 let pp_sub_entry pe0 f entry =
   let pe, changed = Sil.color_pre_wrapper pe0 f entry in
@@ -175,7 +180,7 @@ let pp_pi pe =
 
 
 (** Dump a pi. *)
-let d_pi (pi: pi) = L.add_print_with_pe pp_pi pi
+let d_pi (pi : pi) = L.add_print_with_pe pp_pi pi
 
 (** Pretty print a sigma. *)
 let pp_sigma pe = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe)
@@ -185,7 +190,7 @@ let pp_sigma pe = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe)
 let sigma_get_stack_nonstack only_local_vars sigma =
   let hpred_is_stack_var = function
     | Sil.Hpointsto (Lvar pvar, _, _) ->
-        not only_local_vars || Pvar.is_local pvar
+        (not only_local_vars) || Pvar.is_local pvar
     | _ ->
         false
   in
@@ -208,7 +213,7 @@ let pp_sigma_simple pe env fmt sigma =
 
 
 (** Dump a sigma. *)
-let d_sigma (sigma: sigma) = L.add_print_with_pe pp_sigma sigma
+let d_sigma (sigma : sigma) = L.add_print_with_pe pp_sigma sigma
 
 (** Dump a pi and a sigma *)
 let d_pi_sigma pi sigma =
@@ -219,7 +224,7 @@ let d_pi_sigma pi sigma =
 let pi_of_subst sub = List.map ~f:(fun (id1, e2) -> Sil.Aeq (Var id1, e2)) (Sil.sub_to_list sub)
 
 (** Return the pure part of [prop]. *)
-let get_pure (p: 'a t) : pi = pi_of_subst p.sub @ p.pi
+let get_pure (p : 'a t) : pi = pi_of_subst p.sub @ p.pi
 
 (* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident,
 * we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
@@ -236,9 +241,11 @@ let get_pure_extended p =
           with Caml.Not_found -> (atoms, Ident.Map.add pid id primed_map)
         in
         match base_atom with
-        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id0 && not (Ident.is_primed id1) ->
+        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id0 && not (Ident.is_primed id1)
+          ->
             extend_atoms id1 id0
-        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id1 && not (Ident.is_primed id0) ->
+        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id1 && not (Ident.is_primed id0)
+          ->
             extend_atoms id0 id1
         | _ ->
             acc )
@@ -270,7 +277,7 @@ let pp_hpara_dll_simple pe_ env n f pred =
 
 
 (** Create an environment mapping (ident) expressions to the program variables containing them *)
-let create_pvar_env (sigma: sigma) : Exp.t -> Exp.t =
+let create_pvar_env (sigma : sigma) : Exp.t -> Exp.t =
   let env = ref [] in
   let filter = function
     | Sil.Hpointsto (Lvar pvar, Eexp (Var v, _), _) ->
@@ -280,8 +287,8 @@ let create_pvar_env (sigma: sigma) : Exp.t -> Exp.t =
   in
   List.iter ~f:filter sigma ;
   let find e =
-    List.find ~f:(fun (e1, _) -> Exp.equal e1 e) !env |> Option.map ~f:snd
-    |> Option.value ~default:e
+    List.find ~f:(fun (e1, _) -> Exp.equal e1 e) !env
+    |> Option.map ~f:snd |> Option.value ~default:e
   in
   find
 
@@ -345,7 +352,7 @@ let pp_prop pe0 f prop =
 let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p
 
 (** Dump a proposition. *)
-let d_prop (prop: 'a t) = L.add_print_with_pe pp_prop prop
+let d_prop (prop : 'a t) = L.add_print_with_pe pp_prop prop
 
 (** Print a list of propositions, prepending each one with the given string *)
 let pp_proplist_with_typ pe f plist =
@@ -361,7 +368,7 @@ let pp_proplist_with_typ pe f plist =
 
 
 (** dump a proplist *)
-let d_proplist_with_typ (pl: 'a t list) = L.add_print_with_pe pp_proplist_with_typ pl
+let d_proplist_with_typ (pl : 'a t list) = L.add_print_with_pe pp_proplist_with_typ pl
 
 (** {1 Functions for computing free non-program variables} *)
 
@@ -407,7 +414,7 @@ let non_pure_free_vars prop = Sequence.Generator.run (non_pure_gen_free_vars pro
 
 (** {2 Functions for Subsitition} *)
 
-let pi_sub (subst: Sil.subst) pi =
+let pi_sub (subst : Sil.subst) pi =
   let f = Sil.atom_sub subst in
   List.map ~f pi
 
@@ -418,7 +425,7 @@ let sigma_sub subst sigma =
 
 
 (** Return [true] if the atom is an inequality *)
-let atom_is_inequality (atom: Sil.atom) =
+let atom_is_inequality (atom : Sil.atom) =
   match atom with
   | Aeq (BinOp ((Le | Lt), _, _), Const (Cint i)) when IntLit.isone i ->
       true
@@ -427,7 +434,7 @@ let atom_is_inequality (atom: Sil.atom) =
 
 
 (** If the atom is [e<=n] return [e,n] *)
-let atom_exp_le_const (atom: Sil.atom) =
+let atom_exp_le_const (atom : Sil.atom) =
   match atom with
   | Aeq (BinOp (Le, e1, Const (Cint n)), Const (Cint i)) when IntLit.isone i ->
       Some (e1, n)
@@ -436,7 +443,7 @@ let atom_exp_le_const (atom: Sil.atom) =
 
 
 (** If the atom is [n<e] return [n,e] *)
-let atom_const_lt_exp (atom: Sil.atom) =
+let atom_const_lt_exp (atom : Sil.atom) =
   match atom with
   | Aeq (BinOp (Lt, Const (Cint n), e1), Const (Cint i)) when IntLit.isone i ->
       Some (n, e1)
@@ -455,7 +462,7 @@ let rec pp_path f = function
 
 
 (** create a strexp of the given type, populating the structures if [struct_init_mode] is [Fld_init] *)
-let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
+let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst : Sil.strexp =
   let init_value () =
     let create_fresh_var () =
       let fresh_id =
@@ -470,8 +477,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
   match (typ.desc, len) with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), None ->
       Eexp (init_value (), inst)
-  | Tstruct name, _
-    -> (
+  | Tstruct name, _ -> (
       if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
         L.die InternalError
           "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also \
@@ -503,11 +509,11 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
       assert false
 
 
-let create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
+let create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil.strexp =
   create_strexp_of_type ~path:[] tenv struct_init_mode (typ : Typ.t) len inst
 
 
-let replace_array_contents (hpred: Sil.hpred) esel : Sil.hpred =
+let replace_array_contents (hpred : Sil.hpred) esel : Sil.hpred =
   match hpred with
   | Hpointsto (root, Sil.Earray (len, [], inst), te) ->
       Hpointsto (root, Earray (len, esel, inst), te)
@@ -516,7 +522,7 @@ let replace_array_contents (hpred: Sil.hpred) esel : Sil.hpred =
 
 
 (** remove duplicate atoms and redundant inequalities from a sorted pi *)
-let rec pi_sorted_remove_redundant (pi: pi) =
+let rec pi_sorted_remove_redundant (pi : pi) =
   match pi with
   | (Aeq (BinOp (Le, e1, Const (Cint n1)), Const (Cint i1)) as a1)
     :: Aeq (BinOp (Le, e2, Const (Cint n2)), Const (Cint i2)) :: rest
@@ -540,7 +546,7 @@ let rec pi_sorted_remove_redundant (pi: pi) =
 (** find the unsigned expressions in sigma (immediately inside a pointsto, for now) *)
 let sigma_get_unsigned_exps sigma =
   let uexps = ref [] in
-  let do_hpred (hpred: Sil.hpred) =
+  let do_hpred (hpred : Sil.hpred) =
     match hpred with
     | Hpointsto (_, Eexp (e, _), Sizeof {typ= {desc= Tint ik}}) when Typ.ikind_is_unsigned ik ->
         uexps := e :: !uexps
@@ -553,14 +559,14 @@ let sigma_get_unsigned_exps sigma =
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-let exp_collapse_consecutive_indices_prop (typ: Typ.t) exp =
-  let typ_is_base (typ1: Typ.t) =
+let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
+  let typ_is_base (typ1 : Typ.t) =
     match typ1.desc with Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun _ -> true | _ -> false
   in
   let typ_is_one_step_from_base =
     match typ.desc with Tptr (t, _) | Tarray {elt= t} -> typ_is_base t | _ -> false
   in
-  let rec exp_remove (e0: Exp.t) =
+  let rec exp_remove (e0 : Exp.t) =
     match e0 with
     | Lindex (Lindex (base, e1), e2) ->
         let e0' : Exp.t = Lindex (base, BinOp (PlusA, e1, e2)) in
@@ -574,7 +580,7 @@ let exp_collapse_consecutive_indices_prop (typ: Typ.t) exp =
 (** {2 Compaction} *)
 
 (** Return a compact representation of the prop *)
-let prop_compact sh (prop: normal t) : normal t =
+let prop_compact sh (prop : normal t) : normal t =
   let sigma' = List.map ~f:(Sil.hpred_compact sh) prop.sigma in
   unsafe_cast_to_normal (set prop ~sigma:sigma')
 
@@ -587,12 +593,12 @@ let prop_is_emp p = match p.sigma with [] -> true | _ -> false
 (** {2 Functions for changing and generating propositions} *)
 
 (** Conjoin a heap predicate by separating conjunction. *)
-let prop_hpred_star (p: 'a t) (h: Sil.hpred) : exposed t =
+let prop_hpred_star (p : 'a t) (h : Sil.hpred) : exposed t =
   let sigma' = h :: p.sigma in
   set p ~sigma:sigma'
 
 
-let prop_sigma_star (p: 'a t) (sigma: sigma) : exposed t =
+let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
   let sigma' = sigma @ p.sigma in
   set p ~sigma:sigma'
 
@@ -608,7 +614,7 @@ module Normalize = struct
       cell iF or iB. *)
   let sigma_remove_emptylseg sigma =
     let alloc_set =
-      let rec f_alloc set (sigma1: sigma) =
+      let rec f_alloc set (sigma1 : sigma) =
         match sigma1 with
         | [] ->
             set
@@ -621,7 +627,7 @@ module Normalize = struct
       in
       f_alloc Exp.Set.empty sigma
     in
-    let rec f eqs_zero sigma_passed (sigma1: sigma) =
+    let rec f eqs_zero sigma_passed (sigma1 : sigma) =
       match sigma1 with
       | [] ->
           (List.rev eqs_zero, List.rev sigma_passed)
@@ -643,7 +649,7 @@ module Normalize = struct
 
 
   let sigma_intro_nonemptylseg e1 e2 sigma =
-    let rec f sigma_passed (sigma1: sigma) =
+    let rec f sigma_passed (sigma1 : sigma) =
       match sigma1 with
       | [] ->
           List.rev sigma_passed
@@ -655,8 +661,10 @@ module Normalize = struct
       | (Hlseg _ as hpred) :: sigma' ->
           f (hpred :: sigma_passed) sigma'
       | Hdllseg (Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
-        when (Exp.equal e1 iF && Exp.equal e2 oF) || (Exp.equal e2 iF && Exp.equal e1 oF)
-             || (Exp.equal e1 iB && Exp.equal e2 oB) || (Exp.equal e2 iB && Exp.equal e1 oB) ->
+        when (Exp.equal e1 iF && Exp.equal e2 oF)
+             || (Exp.equal e2 iF && Exp.equal e1 oF)
+             || (Exp.equal e1 iB && Exp.equal e2 oB)
+             || (Exp.equal e2 iB && Exp.equal e1 oB) ->
           f (Sil.Hdllseg (Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
       | (Hdllseg _ as hpred) :: sigma' ->
           f (hpred :: sigma_passed) sigma'
@@ -668,9 +676,9 @@ module Normalize = struct
 
   let ( ++ ) = IntLit.add
 
-  let sym_eval ?(destructive= false) tenv abs e =
+  let sym_eval ?(destructive = false) tenv abs e =
     let lookup = Tenv.lookup tenv in
-    let rec eval (e: Exp.t) : Exp.t =
+    let rec eval (e : Exp.t) : Exp.t =
       (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
       match e with
       | Var _ ->
@@ -776,8 +784,7 @@ module Normalize = struct
             Exp.one
         | e1', e2' ->
             Exp.ne e1' e2' )
-      | BinOp (LAnd, e1, e2)
-        -> (
+      | BinOp (LAnd, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -791,8 +798,7 @@ module Normalize = struct
               e1'
           | _ ->
               BinOp (LAnd, e1', e2') )
-      | BinOp (LOr, e1, e2)
-        -> (
+      | BinOp (LOr, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -815,13 +821,12 @@ module Normalize = struct
           (* progress: convert inner +I to +A *)
           let e2' : Exp.t = BinOp (PlusA, e12, e2) in
           eval (Exp.BinOp (PlusPI, e11, e2'))
-      | BinOp ((PlusA as oplus), e1, e2) | BinOp ((PlusPI as oplus), e1, e2)
-        -> (
+      | BinOp ((PlusA as oplus), e1, e2) | BinOp ((PlusPI as oplus), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           let isPlusA = Binop.equal oplus Binop.PlusA in
           let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
-          let ( +++ ) (x: Exp.t) (y: Exp.t) : Exp.t =
+          let ( +++ ) (x : Exp.t) (y : Exp.t) : Exp.t =
             match (x, y) with
             | _, Const (Cint i) when IntLit.iszero i ->
                 x
@@ -830,7 +835,7 @@ module Normalize = struct
             | _ ->
                 BinOp (oplus, x, y)
           in
-          let ( --- ) (x: Exp.t) (y: Exp.t) : Exp.t =
+          let ( --- ) (x : Exp.t) (y : Exp.t) : Exp.t =
             match (x, y) with
             | _, Const (Cint i) when IntLit.iszero i ->
                 x
@@ -884,8 +889,7 @@ module Normalize = struct
               if abs && isPlusA then Exp.get_undefined false
               else if abs && not isPlusA then e1' +++ Exp.get_undefined false
               else e1' +++ e2' )
-      | BinOp ((MinusA as ominus), e1, e2) | BinOp ((MinusPI as ominus), e1, e2)
-        -> (
+      | BinOp ((MinusA as ominus), e1, e2) | BinOp ((MinusPI as ominus), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           let isMinusA = Binop.equal ominus Binop.MinusA in
@@ -915,8 +919,7 @@ module Normalize = struct
                 if abs then Exp.get_undefined false else e1' --- e2' )
       | BinOp (MinusPP, e1, e2) ->
           if abs then Exp.get_undefined false else BinOp (MinusPP, eval e1, eval e2)
-      | BinOp (Mult, e1, e2)
-        -> (
+      | BinOp (Mult, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -942,8 +945,7 @@ module Normalize = struct
               BinOp (Mult, e1', e2')
           | _, _ ->
               if abs then Exp.get_undefined false else BinOp (Mult, e1', e2') )
-      | BinOp (Div, e1, e2)
-        -> (
+      | BinOp (Div, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -969,8 +971,7 @@ module Normalize = struct
               Const (Cint len)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (Div, e1', e2') )
-      | BinOp (Mod, e1, e2)
-        -> (
+      | BinOp (Mod, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -984,8 +985,7 @@ module Normalize = struct
               Exp.int (IntLit.rem n m)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (Mod, e1', e2') )
-      | BinOp (Shiftlt, e1, e2)
-        -> (
+      | BinOp (Shiftlt, e1, e2) -> (
           if abs then Exp.get_undefined false
           else
             match (e1, e2) with
@@ -1000,8 +1000,7 @@ module Normalize = struct
                 e1
             | _ ->
                 BinOp (Shiftlt, eval e1, eval e2) )
-      | BinOp (Shiftrt, e1, e2)
-        -> (
+      | BinOp (Shiftrt, e1, e2) -> (
           if abs then Exp.get_undefined false
           else
             match (e1, e2) with
@@ -1014,8 +1013,7 @@ module Normalize = struct
                 e1
             | _ ->
                 BinOp (Shiftrt, eval e1, eval e2) )
-      | BinOp (BAnd, e1, e2)
-        -> (
+      | BinOp (BAnd, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -1027,8 +1025,7 @@ module Normalize = struct
               Exp.int (IntLit.logand i1 i2)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (BAnd, e1', e2') )
-      | BinOp (BOr, e1, e2)
-        -> (
+      | BinOp (BOr, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -1040,8 +1037,7 @@ module Normalize = struct
               Exp.int (IntLit.logor i1 i2)
           | _ ->
               if abs then Exp.get_undefined false else BinOp (BOr, e1', e2') )
-      | BinOp (BXor, e1, e2)
-        -> (
+      | BinOp (BXor, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -1084,7 +1080,7 @@ module Normalize = struct
     sym_eval ?destructive tenv abstract_expressions exp'
 
 
-  let texp_normalize tenv sub (exp: Exp.t) : Exp.t =
+  let texp_normalize tenv sub (exp : Exp.t) : Exp.t =
     match exp with
     | Sizeof {dynamic_length= None} ->
         exp
@@ -1101,10 +1097,9 @@ module Normalize = struct
 
 
   (** Turn an inequality expression into an atom *)
-  let mk_inequality tenv (e: Exp.t) : Sil.atom =
+  let mk_inequality tenv (e : Exp.t) : Sil.atom =
     match e with
-    | BinOp (Le, base, Const (Cint n))
-      -> (
+    | BinOp (Le, base, Const (Cint n)) -> (
         (* base <= n case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
@@ -1131,8 +1126,7 @@ module Normalize = struct
             Aeq (new_e, Exp.one)
         | _ ->
             Aeq (e, Exp.one) )
-    | BinOp (Lt, Const (Cint n), base)
-      -> (
+    | BinOp (Lt, Const (Cint n), base) -> (
         (* n < base case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
@@ -1164,10 +1158,10 @@ module Normalize = struct
 
 
   (** Normalize an inequality *)
-  let inequality_normalize tenv (a: Sil.atom) =
+  let inequality_normalize tenv (a : Sil.atom) =
     (* turn an expression into a triple (pos,neg,off) of positive and negative occurrences, and
        integer offset representing inequality [sum(pos) - sum(neg) + off <= 0] *)
-    let rec exp_to_posnegoff (e: Exp.t) =
+    let rec exp_to_posnegoff (e : Exp.t) =
       match e with
       | Const (Cint n) ->
           ([], [], n)
@@ -1244,7 +1238,7 @@ module Normalize = struct
       are only of the form [e <= n] and [n < e]. *)
   let atom_normalize tenv sub a0 =
     let a = Sil.atom_sub sub a0 in
-    let rec normalize_eq (eq: Exp.t * Exp.t) =
+    let rec normalize_eq (eq : Exp.t * Exp.t) =
       match eq with
       | BinOp (PlusA, e1, Const (Cint n1)), Const (Cint n2)
       (* e1+n1==n2 ---> e1==n2-n1 *)
@@ -1274,7 +1268,7 @@ module Normalize = struct
       | _ ->
           eq
     in
-    let handle_unary_negation (e1: Exp.t) (e2: Exp.t) =
+    let handle_unary_negation (e1 : Exp.t) (e2 : Exp.t) =
       match (e1, e2) with
       | (UnOp (LNot, e1', _), Const (Cint i) | Const (Cint i), UnOp (LNot, e1', _))
         when IntLit.iszero i ->
@@ -1310,7 +1304,7 @@ module Normalize = struct
     if atom_is_inequality a' then inequality_normalize tenv a' else a'
 
 
-  let normalize_and_strengthen_atom tenv (p: normal t) (a: Sil.atom) : Sil.atom =
+  let normalize_and_strengthen_atom tenv (p : normal t) (a : Sil.atom) : Sil.atom =
     let a' = atom_normalize tenv (`Exp p.sub) a in
     match a' with
     | Aeq (BinOp (Le, Var id, Const (Cint n)), Const (Cint i)) when IntLit.isone i ->
@@ -1327,7 +1321,7 @@ module Normalize = struct
         a'
 
 
-  let rec strexp_normalize tenv sub (se: Sil.strexp) : Sil.strexp =
+  let rec strexp_normalize tenv sub (se : Sil.strexp) : Sil.strexp =
     match se with
     | Eexp (e, inst) ->
         let e' = exp_normalize tenv sub e in
@@ -1338,30 +1332,28 @@ module Normalize = struct
           se
       | _ :: _ ->
           let fld_cnts' =
-            IList.map_changed fld_cnts
-              ~equal:[%compare.equal : Typ.Fieldname.t * Sil.strexp]
+            IList.map_changed fld_cnts ~equal:[%compare.equal: Typ.Fieldname.t * Sil.strexp]
               ~f:(fun ((fld, cnt) as x) ->
                 let cnt' = strexp_normalize tenv sub cnt in
                 if phys_equal cnt cnt' then x else (fld, cnt') )
           in
           if
             phys_equal fld_cnts fld_cnts'
-            && List.is_sorted ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts
+            && List.is_sorted ~compare:[%compare: Typ.Fieldname.t * Sil.strexp] fld_cnts
           then se
           else
             let fld_cnts'' =
-              List.sort ~compare:[%compare : Typ.Fieldname.t * Sil.strexp] fld_cnts'
+              List.sort ~compare:[%compare: Typ.Fieldname.t * Sil.strexp] fld_cnts'
             in
             Estruct (fld_cnts'', inst) )
-    | Earray (len, idx_cnts, inst) ->
+    | Earray (len, idx_cnts, inst) -> (
         let len' = exp_normalize_noabs tenv sub len in
         match idx_cnts with
         | [] ->
             if Exp.equal len len' then se else Earray (len', idx_cnts, inst)
         | _ :: _ ->
             let idx_cnts' =
-              IList.map_changed idx_cnts
-                ~equal:[%compare.equal : Exp.t * Sil.strexp]
+              IList.map_changed idx_cnts ~equal:[%compare.equal: Exp.t * Sil.strexp]
                 ~f:(fun ((idx, cnt) as x) ->
                   let idx' = exp_normalize tenv sub idx in
                   let cnt' = strexp_normalize tenv sub cnt in
@@ -1369,11 +1361,11 @@ module Normalize = struct
             in
             if
               phys_equal idx_cnts idx_cnts'
-              && List.is_sorted ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts
+              && List.is_sorted ~compare:[%compare: Exp.t * Sil.strexp] idx_cnts
             then se
             else
-              let idx_cnts'' = List.sort ~compare:[%compare : Exp.t * Sil.strexp] idx_cnts' in
-              Earray (len', idx_cnts'', inst)
+              let idx_cnts'' = List.sort ~compare:[%compare: Exp.t * Sil.strexp] idx_cnts' in
+              Earray (len', idx_cnts'', inst) )
 
 
   (** Exp.Construct a pointsto. *)
@@ -1385,7 +1377,7 @@ module Normalize = struct
   (** Construct a points-to predicate for an expression using either the provided expression [name]
       as base for fresh identifiers. If [struct_init_mode] is [Fld_init], initialize the fields of
       structs with fresh variables. *)
-  let mk_ptsto_exp tenv struct_init_mode (exp, (te: Exp.t), expo) inst : Sil.hpred =
+  let mk_ptsto_exp tenv struct_init_mode (exp, (te : Exp.t), expo) inst : Sil.hpred =
     let default_strexp () : Sil.strexp =
       match te with
       | Sizeof {typ; dynamic_length} ->
@@ -1465,7 +1457,7 @@ module Normalize = struct
     List.map ~f:process_closures_in_the_heap sigma
 
 
-  let rec hpred_normalize tenv sub (hpred: Sil.hpred) : Sil.hpred =
+  let rec hpred_normalize tenv sub (hpred : Sil.hpred) : Sil.hpred =
     let replace_hpred hpred' =
       L.d_strln "found array with sizeof(..) size" ;
       L.d_str "converting original hpred: " ;
@@ -1477,8 +1469,7 @@ module Normalize = struct
       hpred'
     in
     match hpred with
-    | Hpointsto (root, cnt, te)
-      -> (
+    | Hpointsto (root, cnt, te) -> (
         let normalized_root = exp_normalize tenv sub root in
         let normalized_cnt = strexp_normalize tenv sub cnt in
         let normalized_te = texp_normalize tenv sub te in
@@ -1536,13 +1527,13 @@ module Normalize = struct
         Hdllseg (k, norm_para, norm_e1, norm_e2, norm_e3, norm_e4, norm_elist)
 
 
-  and hpara_normalize tenv (para: Sil.hpara) =
+  and hpara_normalize tenv (para : Sil.hpara) =
     let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) para.body in
     let sorted_body = List.sort ~compare:Sil.compare_hpred normalized_body in
     {para with body= sorted_body}
 
 
-  and hpara_dll_normalize tenv (para: Sil.hpara_dll) =
+  and hpara_dll_normalize tenv (para : Sil.hpara_dll) =
     let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) para.body_dll in
     let sorted_body = List.sort ~compare:Sil.compare_hpred normalized_body in
     {para with body_dll= sorted_body}
@@ -1550,7 +1541,8 @@ module Normalize = struct
 
   let sigma_normalize tenv sub sigma =
     let sigma' =
-      List.map ~f:(hpred_normalize tenv sub) sigma |> make_captured_in_closures_consistent
+      List.map ~f:(hpred_normalize tenv sub) sigma
+      |> make_captured_in_closures_consistent
       |> List.stable_sort ~compare:Sil.compare_hpred
     in
     if equal_sigma sigma sigma' then sigma else sigma'
@@ -1559,7 +1551,7 @@ module Normalize = struct
   let pi_tighten_ineq tenv pi =
     let ineq_list, nonineq_list = List.partition_tf ~f:atom_is_inequality pi in
     let diseq_list =
-      let get_disequality_info acc (a: Sil.atom) =
+      let get_disequality_info acc (a : Sil.atom) =
         match a with
         | Aneq (Const (Cint n), e) | Aneq (e, Const (Cint n)) ->
             (e, n) :: acc
@@ -1614,13 +1606,13 @@ module Normalize = struct
     in
     let nonineq_list' =
       List.filter
-        ~f:(fun (a: Sil.atom) ->
+        ~f:(fun (a : Sil.atom) ->
           match a with
           | Aneq (Const (Cint n), e) | Aneq (e, Const (Cint n)) ->
-              not
-                (List.exists
-                   ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                   le_list_tightened)
+              (not
+                 (List.exists
+                    ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
+                    le_list_tightened))
               && not
                    (List.exists
                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
@@ -1650,14 +1642,14 @@ module Normalize = struct
     let filter_useful_atom : Sil.atom -> bool =
       let unsigned_exps = lazy (sigma_get_unsigned_exps sigma) in
       function
-        | Aneq ((Var _ as e), Const (Cint n)) when IntLit.isnegative n ->
-            not (List.exists ~f:(Exp.equal e) (Lazy.force unsigned_exps))
-        | Aneq (e1, e2) ->
-            not (syntactically_different (e1, e2))
-        | Aeq (Const c1, Const c2) ->
-            not (Const.equal c1 c2)
-        | _ ->
-            true
+      | Aneq ((Var _ as e), Const (Cint n)) when IntLit.isnegative n ->
+          not (List.exists ~f:(Exp.equal e) (Lazy.force unsigned_exps))
+      | Aneq (e1, e2) ->
+          not (syntactically_different (e1, e2))
+      | Aeq (Const c1, Const c2) ->
+          not (Const.equal c1 c2)
+      | _ ->
+          true
     in
     let pi' =
       List.stable_sort ~compare:Sil.compare_atom
@@ -1676,8 +1668,10 @@ module Normalize = struct
       let fav =
         pi_free_vars npi |> Sequence.filter ~f:Ident.is_primed |> Ident.hashqueue_of_sequence
       in
-      sigma_free_vars nsigma |> Sequence.filter ~f:Ident.is_primed
-      |> Ident.hashqueue_of_sequence ~init:fav |> Ident.HashQueue.keys
+      sigma_free_vars nsigma
+      |> Sequence.filter ~f:Ident.is_primed
+      |> Ident.hashqueue_of_sequence ~init:fav
+      |> Ident.HashQueue.keys
     in
     (* only keep primed vars *)
     let npi', nsigma' =
@@ -1699,13 +1693,13 @@ module Normalize = struct
 
   (** This function assumes that if (x,Exp.Var(y)) in sub, then compare x y = 1 *)
   let sub_normalize sub =
-    let f (id, e) = not (Ident.is_primed id) && not (Exp.ident_mem e id) in
+    let f (id, e) = (not (Ident.is_primed id)) && not (Exp.ident_mem e id) in
     let sub' = Sil.sub_filter_pair ~f sub in
     if Sil.equal_exp_subst sub sub' then sub else sub'
 
 
   (** Conjoin a pure atomic predicate by normal conjunction. *)
-  let rec prop_atom_and tenv ?(footprint= false) (p: normal t) a : normal t =
+  let rec prop_atom_and tenv ?(footprint = false) (p : normal t) a : normal t =
     let a' = normalize_and_strengthen_atom tenv p a in
     if List.mem ~equal:Sil.equal_atom p.pi a' then p
     else
@@ -1754,7 +1748,7 @@ module Normalize = struct
 
 
   (** normalize a prop *)
-  let normalize tenv (eprop: 'a t) : normal t =
+  let normalize tenv (eprop : 'a t) : normal t =
     let p0 =
       unsafe_cast_to_normal (set prop_emp ~sigma:(sigma_normalize tenv Sil.sub_empty eprop.sigma))
     in
@@ -1777,7 +1771,7 @@ let lexp_normalize_prop tenv p lexp =
   let nroot = exp_normalize_prop tenv p root in
   let noffsets =
     List.map
-      ~f:(fun (n: Sil.offset) ->
+      ~f:(fun (n : Sil.offset) ->
         match n with Off_fld _ -> n | Off_index e -> Sil.Off_index (exp_normalize_prop tenv p e) )
       offsets
   in
@@ -1830,17 +1824,17 @@ let mk_dllseg tenv k para exp_iF exp_oB exp_oF exp_iB exps_shared : Sil.hpred =
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is [Fld_init], initialize the fields of structs with fresh variables. *)
-let mk_ptsto_lvar tenv expand_structs inst ((pvar: Pvar.t), texp, expo) : Sil.hpred =
+let mk_ptsto_lvar tenv expand_structs inst ((pvar : Pvar.t), texp, expo) : Sil.hpred =
   Normalize.mk_ptsto_exp tenv expand_structs (Lvar pvar, texp, expo) inst
 
 
 (** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
-let conjoin_eq tenv ?(footprint= false) exp1 exp2 prop =
+let conjoin_eq tenv ?(footprint = false) exp1 exp2 prop =
   Normalize.prop_atom_and tenv ~footprint prop (Aeq (exp1, exp2))
 
 
 (** Conjoin [exp1!=exp2] with a symbolic heap [prop]. *)
-let conjoin_neq tenv ?(footprint= false) exp1 exp2 prop =
+let conjoin_neq tenv ?(footprint = false) exp1 exp2 prop =
   Normalize.prop_atom_and tenv ~footprint prop (Aneq (exp1, exp2))
 
 
@@ -1861,7 +1855,7 @@ let prop_reset_inst inst_map prop =
 let extract_footprint p = set prop_emp ~pi:p.pi_fp ~sigma:p.sigma_fp
 
 (** Extract the (footprint,current) pair *)
-let extract_spec (p: normal t) : normal t * normal t =
+let extract_spec (p : normal t) : normal t * normal t =
   let pre = extract_footprint p in
   let post = set p ~pi_fp:[] ~sigma_fp:[] in
   (unsafe_cast_to_normal pre, unsafe_cast_to_normal post)
@@ -1909,7 +1903,7 @@ let sigma_dfs_sort tenv sigma =
     ExpStack.init start_lexps
   in
   let final () = ExpStack.final () in
-  let rec handle_strexp (se: Sil.strexp) =
+  let rec handle_strexp (se : Sil.strexp) =
     match se with
     | Eexp (e, _) ->
         ExpStack.push e
@@ -1918,14 +1912,15 @@ let sigma_dfs_sort tenv sigma =
     | Earray (_, idx_se_list, _) ->
         List.iter ~f:(fun (_, se) -> handle_strexp se) idx_se_list
   in
-  let rec handle_e visited seen e (sigma: sigma) =
+  let rec handle_e visited seen e (sigma : sigma) =
     match sigma with
     | [] ->
         (visited, List.rev seen)
-    | hpred :: cur ->
+    | hpred :: cur -> (
       match hpred with
       | Hpointsto (e', se, _) when Exp.equal e e' ->
-          handle_strexp se ; (hpred :: visited, List.rev_append cur seen)
+          handle_strexp se ;
+          (hpred :: visited, List.rev_append cur seen)
       | Hlseg (_, _, root, next, shared) when Exp.equal e root ->
           List.iter ~f:ExpStack.push (next :: shared) ;
           (hpred :: visited, List.rev_append cur seen)
@@ -1933,7 +1928,7 @@ let sigma_dfs_sort tenv sigma =
           List.iter ~f:ExpStack.push (oB :: oF :: shared) ;
           (hpred :: visited, List.rev_append cur seen)
       | _ ->
-          handle_e visited (hpred :: seen) e cur
+          handle_e visited (hpred :: seen) e cur )
   in
   let rec handle_sigma visited = function
     | [] ->
@@ -1962,7 +1957,7 @@ let dfs_sort tenv p : sorted t =
   unsafe_cast_to_sorted p'
 
 
-let rec strexp_get_array_indices acc (se: Sil.strexp) =
+let rec strexp_get_array_indices acc (se : Sil.strexp) =
   match se with
   | Eexp _ ->
       acc
@@ -1975,7 +1970,7 @@ let rec strexp_get_array_indices acc (se: Sil.strexp) =
       List.fold ~f:strexp_get_array_indices ~init:acc_new se_list
 
 
-let hpred_get_array_indices acc (hpred: Sil.hpred) =
+let hpred_get_array_indices acc (hpred : Sil.hpred) =
   match hpred with
   | Hpointsto (_, se, _) ->
       strexp_get_array_indices acc se
@@ -1989,7 +1984,7 @@ let sigma_get_array_indices sigma =
 
 
 let compute_reindexing_from_indices list =
-  let get_id_offset (e: Exp.t) =
+  let get_id_offset (e : Exp.t) =
     match e with
     | BinOp (PlusA, Var id, Const (Cint offset)) ->
         if Ident.is_primed id then Some (id, offset) else None
@@ -2025,7 +2020,7 @@ let compute_reindexing_from_indices list =
   Sil.exp_subst_of_list reindexing
 
 
-let apply_reindexing tenv (exp_subst: Sil.exp_subst) prop =
+let apply_reindexing tenv (exp_subst : Sil.exp_subst) prop =
   let subst = `Exp exp_subst in
   let nsigma = Normalize.sigma_normalize tenv subst prop.sigma in
   let npi = Normalize.pi_normalize tenv subst nsigma prop.pi in
@@ -2049,7 +2044,7 @@ let prop_rename_array_indices tenv prop =
   if !Config.footprint then prop
   else
     let indices = sigma_get_array_indices prop.sigma in
-    let not_same_base_lt_offsets (e1: Exp.t) (e2: Exp.t) =
+    let not_same_base_lt_offsets (e1 : Exp.t) (e2 : Exp.t) =
       match (e1, e2) with
       | BinOp (PlusA, e1', Const (Cint n1')), BinOp (PlusA, e2', Const (Cint n2')) ->
           not (Exp.equal e1' e2' && IntLit.lt n1' n2')
@@ -2099,7 +2094,7 @@ let ident_captured_ren ren id = try idlist_assoc id ren with Caml.Not_found -> i
 
 (* If not defined in ren, id should be mapped to itself *)
 
-let rec exp_captured_ren ren (e: Exp.t) : Exp.t =
+let rec exp_captured_ren ren (e : Exp.t) : Exp.t =
   match e with
   | Var id ->
       Var (ident_captured_ren ren id)
@@ -2132,7 +2127,7 @@ let rec exp_captured_ren ren (e: Exp.t) : Exp.t =
       Lindex (e1', e2')
 
 
-let atom_captured_ren ren (a: Sil.atom) : Sil.atom =
+let atom_captured_ren ren (a : Sil.atom) : Sil.atom =
   match a with
   | Aeq (e1, e2) ->
       Aeq (exp_captured_ren ren e1, exp_captured_ren ren e2)
@@ -2144,7 +2139,7 @@ let atom_captured_ren ren (a: Sil.atom) : Sil.atom =
       Anpred (a, List.map ~f:(fun e -> exp_captured_ren ren e) es)
 
 
-let rec strexp_captured_ren ren (se: Sil.strexp) : Sil.strexp =
+let rec strexp_captured_ren ren (se : Sil.strexp) : Sil.strexp =
   match se with
   | Eexp (e, inst) ->
       Eexp (exp_captured_ren ren e, inst)
@@ -2160,7 +2155,7 @@ let rec strexp_captured_ren ren (se: Sil.strexp) : Sil.strexp =
       Earray (len', List.map ~f idx_se_list, inst)
 
 
-and hpred_captured_ren ren (hpred: Sil.hpred) : Sil.hpred =
+and hpred_captured_ren ren (hpred : Sil.hpred) : Sil.hpred =
   match hpred with
   | Hpointsto (base, se, te) ->
       let base' = exp_captured_ren ren base in
@@ -2183,7 +2178,7 @@ and hpred_captured_ren ren (hpred: Sil.hpred) : Sil.hpred =
       Hdllseg (k, para', e1', e2', e3', e4', elist')
 
 
-and hpara_ren (para: Sil.hpara) : Sil.hpara =
+and hpara_ren (para : Sil.hpara) : Sil.hpara =
   let av =
     Sil.hpara_shallow_free_vars para |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys
   in
@@ -2196,7 +2191,7 @@ and hpara_ren (para: Sil.hpara) : Sil.hpara =
   {root; next; svars; evars; body}
 
 
-and hpara_dll_ren (para: Sil.hpara_dll) : Sil.hpara_dll =
+and hpara_dll_ren (para : Sil.hpara_dll) : Sil.hpara_dll =
   let av =
     Sil.hpara_dll_shallow_free_vars para |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys
   in
@@ -2217,7 +2212,7 @@ let sigma_captured_ren ren sigma = List.map ~f:(hpred_captured_ren ren) sigma
 let sub_captured_ren ren sub = Sil.sub_map (ident_captured_ren ren) (exp_captured_ren ren) sub
 
 (** Canonicalize the names of primed variables and footprint vars. *)
-let prop_rename_primed_footprint_vars tenv (p: normal t) : normal t =
+let prop_rename_primed_footprint_vars tenv (p : normal t) : normal t =
   let p = prop_rename_array_indices tenv p in
   let bound_vars =
     let filter id = Ident.is_footprint id || Ident.is_primed id in
@@ -2244,7 +2239,7 @@ let prop_rename_primed_footprint_vars tenv (p: normal t) : normal t =
 
 
 (** Apply subsitution to prop. *)
-let prop_sub subst (prop: 'a t) : exposed t =
+let prop_sub subst (prop : 'a t) : exposed t =
   let pi = pi_sub subst (prop.pi @ pi_of_subst prop.sub) in
   let sigma = sigma_sub subst prop.sigma in
   let pi_fp = pi_sub subst prop.pi_fp in
@@ -2253,13 +2248,13 @@ let prop_sub subst (prop: 'a t) : exposed t =
 
 
 (** Apply renaming substitution to a proposition. *)
-let prop_ren_sub tenv (ren_sub: Sil.exp_subst) (prop: normal t) : normal t =
+let prop_ren_sub tenv (ren_sub : Sil.exp_subst) (prop : normal t) : normal t =
   Normalize.normalize tenv (prop_sub (`Exp ren_sub) prop)
 
 
 (** Existentially quantify the [ids] in [prop]. [ids] should not contain any primed variables. If
    [ids_queue] is passed then the function uses it instead of [ids] for membership tests. *)
-let exist_quantify tenv ?ids_queue ids (prop: normal t) : normal t =
+let exist_quantify tenv ?ids_queue ids (prop : normal t) : normal t =
   assert (not (List.exists ~f:Ident.is_primed ids)) ;
   (* sanity check *)
   if List.is_empty ids then prop
@@ -2289,7 +2284,7 @@ let exist_quantify tenv ?ids_queue ids (prop: normal t) : normal t =
 
 
 (** Apply the substitution [fe] to all the expressions in the prop. *)
-let prop_expmap (fe: Exp.t -> Exp.t) prop =
+let prop_expmap (fe : Exp.t -> Exp.t) prop =
   let f (e, sil_opt) = (fe e, sil_opt) in
   let pi = List.map ~f:(Sil.atom_expmap fe) prop.pi in
   let sigma = List.map ~f:(Sil.hpred_expmap f) prop.sigma in
@@ -2307,10 +2302,11 @@ let prop_normal_vars_to_primed_vars tenv p =
 
 
 (** convert the primed vars to normal vars. *)
-let prop_primed_vars_to_normal_vars tenv (prop: normal t) : normal t =
+let prop_primed_vars_to_normal_vars tenv (prop : normal t) : normal t =
   let ids =
-    free_vars prop |> Sequence.filter ~f:Ident.is_primed |> Ident.hashqueue_of_sequence
-    |> Ident.HashQueue.keys
+    free_vars prop
+    |> Sequence.filter ~f:Ident.is_primed
+    |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys
   in
   let ren_sub =
     Sil.exp_subst_of_list
@@ -2431,8 +2427,8 @@ let rec prop_iter_find iter filter =
   match filter iter.pit_curr with
   | Some st ->
       Some {iter with pit_state= st}
-  | None ->
-    match prop_iter_next iter with None -> None | Some iter' -> prop_iter_find iter' filter
+  | None -> (
+    match prop_iter_next iter with None -> None | Some iter' -> prop_iter_find iter' filter )
 
 
 (** Set the state of the iterator *)
@@ -2448,7 +2444,7 @@ let prop_iter_make_id_primed tenv id iter =
   let rec split pairs_unpid pairs_pid = function
     | [] ->
         (List.rev pairs_unpid, List.rev pairs_pid)
-    | (eq :: eqs_cur: pi) ->
+    | (eq :: eqs_cur : pi) -> (
       match eq with
       | Aeq (Var id1, e1) when Exp.ident_mem e1 id1 ->
           L.internal_error "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n" ;
@@ -2461,7 +2457,7 @@ let prop_iter_make_id_primed tenv id iter =
       | Aeq (Var id1, e1) ->
           split ((id1, e1) :: pairs_unpid) pairs_pid eqs_cur
       | _ ->
-          assert false
+          assert false )
   in
   let rec get_eqs acc = function
     | [] | [_] ->
@@ -2528,7 +2524,7 @@ let prop_iter_get_footprint_sigma iter = iter.pit_sigma_fp
 (** Replace the sigma part of the footprint *)
 let prop_iter_replace_footprint_sigma iter sigma = {iter with pit_sigma_fp= sigma}
 
-let rec strexp_gc_fields (se: Sil.strexp) =
+let rec strexp_gc_fields (se : Sil.strexp) =
   match se with
   | Eexp _ ->
       Some se
@@ -2538,13 +2534,13 @@ let rec strexp_gc_fields (se: Sil.strexp) =
         let fselo' = List.filter ~f:(function _, Some _ -> true | _ -> false) fselo in
         List.map ~f:(function f, seo -> (f, unSome seo)) fselo'
       in
-      if [%compare.equal : (Typ.Fieldname.t * Sil.strexp) list] fsel fsel' then Some se
+      if [%compare.equal: (Typ.Fieldname.t * Sil.strexp) list] fsel fsel' then Some se
       else Some (Sil.Estruct (fsel', inst))
   | Earray _ ->
       Some se
 
 
-let hpred_gc_fields (hpred: Sil.hpred) : Sil.hpred =
+let hpred_gc_fields (hpred : Sil.hpred) : Sil.hpred =
   match hpred with
   | Hpointsto (e, se, te) -> (
     match strexp_gc_fields se with
@@ -2590,7 +2586,7 @@ end = struct
 
   and hpara_dll_size hpara_dll = sigma_size hpara_dll.Sil.body_dll
 
-  and hpred_size (hpred: Sil.hpred) =
+  and hpred_size (hpred : Sil.hpred) =
     match hpred with
     | Hpointsto _ ->
         ptsto_weight

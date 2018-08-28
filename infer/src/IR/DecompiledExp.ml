@@ -50,7 +50,7 @@ let rec pp fmt = function
     match builtin_functions_to_string pn with
     | Some str ->
         F.pp_print_string fmt str
-    | None ->
+    | None -> (
         let procname_str = Typ.Procname.to_simplified_string pn in
         match pn with
         | Typ.Procname.ObjC_Cpp {kind= ObjCInstanceMethod}
@@ -61,7 +61,7 @@ let rec pp fmt = function
           | None ->
               F.pp_print_string fmt procname_str )
         | _ ->
-            F.pp_print_string fmt procname_str )
+            F.pp_print_string fmt procname_str ) )
   | Dconst c ->
       (Const.pp Pp.text) fmt c
   | Dderef de ->
@@ -148,7 +148,8 @@ let pp_vpath pe fmt vpath =
 let rec has_tmp_var = function
   | Dpvar pvar | Dpvaraddr pvar ->
       Pvar.is_frontend_tmp pvar
-  | Dderef dexp | Ddot (dexp, _) | Darrow (dexp, _) | Dunop (_, dexp) | Dsizeof (_, Some dexp, _) ->
+  | Dderef dexp | Ddot (dexp, _) | Darrow (dexp, _) | Dunop (_, dexp) | Dsizeof (_, Some dexp, _)
+    ->
       has_tmp_var dexp
   | Darray (dexp1, dexp2) | Dbinop (_, dexp1, dexp2) ->
       has_tmp_var dexp1 || has_tmp_var dexp2

@@ -35,13 +35,25 @@ type check_fun = model_env -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.Conditio
 type model = {exec: exec_fun; check: check_fun}
 
 type declare_local_fun =
-  decl_local:BoUtils.Exec.decl_local -> model_env -> Loc.t -> inst_num:int -> dimension:int
-  -> Dom.Mem.astate -> Dom.Mem.astate * int
+     decl_local:BoUtils.Exec.decl_local
+  -> model_env
+  -> Loc.t
+  -> inst_num:int
+  -> dimension:int
+  -> Dom.Mem.astate
+  -> Dom.Mem.astate * int
 
 type declare_symbolic_fun =
-  decl_sym_val:BoUtils.Exec.decl_sym_val -> Itv.SymbolPath.partial -> model_env -> depth:int
-  -> Loc.t -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
-  -> Dom.Mem.astate -> Dom.Mem.astate
+     decl_sym_val:BoUtils.Exec.decl_sym_val
+  -> Itv.SymbolPath.partial
+  -> model_env
+  -> depth:int
+  -> Loc.t
+  -> inst_num:int
+  -> new_sym_num:Itv.Counter.t
+  -> new_alloc_num:Itv.Counter.t
+  -> Dom.Mem.astate
+  -> Dom.Mem.astate
 
 type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
 
@@ -57,8 +69,8 @@ let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = fun
   | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
       (typ, nbytes, length, None)
   (* In Java all arrays are dynamically allocated *)
-  | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length}
-    when Language.curr_language_is Java ->
+  | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length} when Language.curr_language_is Java
+    ->
       (typ, nbytes, arr_length, Some arr_length)
   | Exp.Sizeof {typ; nbytes; dynamic_length} ->
       (typ, nbytes, Exp.one, dynamic_length)
@@ -80,7 +92,7 @@ let check_alloc_size size_exp {location} mem cond_set =
       PO.ConditionSet.add_alloc_size location ~length traces cond_set
 
 
-let set_uninitialized location (typ: Typ.t) ploc mem =
+let set_uninitialized location (typ : Typ.t) ploc mem =
   match typ.desc with
   | Tint _ | Tfloat _ ->
       Dom.Mem.weak_update ploc Dom.Val.Itv.top mem
@@ -104,7 +116,8 @@ let malloc size_exp =
       Relation.SymExp.of_exp ~get_sym_f:(Sem.get_sym_f mem) size_exp
     in
     let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size |> Dom.Val.set_traces traces in
-    mem |> Dom.Mem.add_stack (Loc.of_id id) v
+    mem
+    |> Dom.Mem.add_stack (Loc.of_id id) v
     |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt
     |> set_uninitialized location typ (Dom.Val.get_array_locs v)
     |> BoUtils.Exec.init_array_fields tenv pname ~node_hash typ (Dom.Val.get_array_locs v)
@@ -120,7 +133,8 @@ let realloc src_exp size_exp =
     let length = Sem.eval length0 mem in
     let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
     let v =
-      Sem.eval src_exp mem |> Dom.Val.set_array_size (Dom.Val.get_itv length)
+      Sem.eval src_exp mem
+      |> Dom.Val.set_array_size (Dom.Val.get_itv length)
       |> Dom.Val.set_traces traces
     in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
@@ -198,7 +212,8 @@ let set_array_length array length_exp =
         let stride = Option.map ~f:IntLit.to_int_exn stride in
         let allocsite = Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 in
         let v = Dom.Val.of_array_alloc allocsite ~stride ~offset:Itv.zero ~size:length in
-        mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
+        mem
+        |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
         |> set_uninitialized location elt (Dom.Val.get_array_locs v)
     | _ ->
         L.(die InternalError) "Unexpected type of first argument for __set_array_length() "
@@ -383,7 +398,7 @@ module Collection = struct
     {exec; check= no_check}
 
 
-  let add_at_index (alist_id: Ident.t) index_exp =
+  let add_at_index (alist_id : Ident.t) index_exp =
     let check {location} mem cond_set =
       let array_exp = Exp.Var alist_id in
       BoUtils.Check.collection_access ~array_exp ~index_exp ~is_collection_add:true mem location
@@ -436,7 +451,8 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc
-      ; -"__new" <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
+      ; -"__new"
+        <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
         $+...$--> Collection.new_list
       ; -"__new" <>$ capt_exp $+...$--> malloc
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
@@ -445,30 +461,32 @@ module Call = struct
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"strlen" <>--> by_value Dom.Val.Itv.nat
-      ; -"boost" &:: "split" $ capt_arg_of_typ (-"std" &:: "vector") $+ any_arg $+ any_arg
-        $+? any_arg $--> Boost.Split.std_vector
-      ; -"folly" &:: "split" $ any_arg $+ any_arg $+ capt_arg_of_typ (-"std" &:: "vector")
+      ; -"boost" &:: "split"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector
+      ; -"folly" &:: "split" $ any_arg $+ any_arg
+        $+ capt_arg_of_typ (-"std" &:: "vector")
         $+? capt_exp $--> Folly.Split.std_vector
       ; std_array0 >:: "array" &--> StdArray.constructor
       ; std_array2 >:: "at" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; std_array2 >:: "operator[]" $ capt_arg $+ capt_arg $!--> StdArray.at
       ; -"std" &:: "array" &::.*--> StdArray.no_model
-      ; +PatternMatch.implements_collection &:: "get" <>$ capt_var_exn $+ capt_exp
-        $--> Collection.get_or_set_at_index
-      ; +PatternMatch.implements_collection &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg
-        $--> Collection.get_or_set_at_index
-      ; +PatternMatch.implements_collection &:: "remove" <>$ capt_var_exn $+ capt_exp
-        $--> Collection.remove_at_index
-      ; +PatternMatch.implements_collection &:: "add" <>$ capt_var_exn $+ any_arg
-        $--> Collection.add
-      ; +PatternMatch.implements_collection &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg
-        $!--> Collection.add_at_index
+      ; +PatternMatch.implements_collection
+        &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_or_set_at_index
+      ; +PatternMatch.implements_collection
+        &:: "set" <>$ capt_var_exn $+ capt_exp $+ any_arg $--> Collection.get_or_set_at_index
+      ; +PatternMatch.implements_collection
+        &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
+      ; +PatternMatch.implements_collection
+        &:: "add" <>$ capt_var_exn $+ any_arg $--> Collection.add
+      ; +PatternMatch.implements_collection
+        &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $!--> Collection.add_at_index
       ; +PatternMatch.implements_collection &:: "iterator" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.implements_iterator &:: "hasNext" <>$ capt_exp $!--> Collection.hasNext
-      ; +PatternMatch.implements_collection &:: "addAll" <>$ capt_var_exn $+ capt_exp
-        $--> Collection.addAll
-      ; +PatternMatch.implements_collection &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp
-        $!--> Collection.addAll_at_index
+      ; +PatternMatch.implements_collection
+        &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
+      ; +PatternMatch.implements_collection
+        &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $!--> Collection.addAll_at_index
       ; +PatternMatch.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size ]
 end
 

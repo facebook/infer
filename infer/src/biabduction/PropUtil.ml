@@ -6,12 +6,12 @@
  *)
 open! IStd
 
-let get_name_of_local (curr_f: Procdesc.t) (var_data: ProcAttributes.var_data) =
+let get_name_of_local (curr_f : Procdesc.t) (var_data : ProcAttributes.var_data) =
   Pvar.mk var_data.name (Procdesc.get_proc_name curr_f)
 
 
 (* returns a list of local static variables (ie local variables defined static) in a proposition *)
-let get_name_of_objc_static_locals (curr_f: Procdesc.t) p =
+let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
   let pname = Typ.Procname.to_string (Procdesc.get_proc_name curr_f) in
   let local_static e =
     match e with
@@ -74,7 +74,8 @@ let remove_abduced_retvars tenv p =
             let exps' =
               List.fold
                 ~f:(fun exps_acc exp -> Exp.Set.add exp exps_acc)
-                ~init:exps (exp1 :: exp2 :: exp3 :: exp4 :: exp_l)
+                ~init:exps
+                (exp1 :: exp2 :: exp3 :: exp4 :: exp_l)
             in
             (reach', exps')
         | _ ->
@@ -101,10 +102,10 @@ let remove_abduced_retvars tenv p =
       in
       List.filter
         ~f:(function
-            | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) ->
-                exp_contains lhs || exp_contains rhs
-            | Sil.Apred (_, es) | Sil.Anpred (_, es) ->
-                List.exists ~f:exp_contains es)
+          | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) ->
+              exp_contains lhs || exp_contains rhs
+          | Sil.Apred (_, es) | Sil.Anpred (_, es) ->
+              List.exists ~f:exp_contains es)
         pi
     in
     (Sil.HpredSet.elements reach_hpreds, reach_pi)
@@ -133,7 +134,7 @@ let remove_abduced_retvars tenv p =
   Prop.normalize tenv (Prop.set p' ~pi:pi_reach ~sigma:sigma_reach)
 
 
-let remove_locals tenv (curr_f: Procdesc.t) p =
+let remove_locals tenv (curr_f : Procdesc.t) p =
   let names_of_locals = List.map ~f:(get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
   let names_of_locals' =
     match !Language.curr_language with
@@ -149,14 +150,14 @@ let remove_locals tenv (curr_f: Procdesc.t) p =
   (removed, remove_abduced_retvars tenv p')
 
 
-let remove_formals tenv (curr_f: Procdesc.t) p =
+let remove_formals tenv (curr_f : Procdesc.t) p =
   let pname = Procdesc.get_proc_name curr_f in
   let formal_vars = List.map ~f:(fun (n, _) -> Pvar.mk n pname) (Procdesc.get_formals curr_f) in
   Attribute.deallocate_stack_vars tenv p formal_vars
 
 
 (** remove the return variable from the prop *)
-let remove_ret tenv (curr_f: Procdesc.t) (p: Prop.normal Prop.t) =
+let remove_ret tenv (curr_f : Procdesc.t) (p : Prop.normal Prop.t) =
   let pname = Procdesc.get_proc_name curr_f in
   let name_of_ret = Procdesc.get_ret_var curr_f in
   let _, p' = Attribute.deallocate_stack_vars tenv p [Pvar.to_callee pname name_of_ret] in
@@ -164,20 +165,20 @@ let remove_ret tenv (curr_f: Procdesc.t) (p: Prop.normal Prop.t) =
 
 
 (** remove locals and return variable from the prop *)
-let remove_locals_ret tenv (curr_f: Procdesc.t) p =
+let remove_locals_ret tenv (curr_f : Procdesc.t) p =
   snd (remove_locals tenv curr_f (remove_ret tenv curr_f p))
 
 
 (** Remove locals and formal parameters from the prop.
     Return the list of stack variables whose address was still present after deallocation. *)
-let remove_locals_formals tenv (curr_f: Procdesc.t) p =
+let remove_locals_formals tenv (curr_f : Procdesc.t) p =
   let pvars1, p1 = remove_locals tenv curr_f p in
   let pvars2, p2 = remove_formals tenv curr_f p1 in
   (pvars1 @ pvars2, p2)
 
 
 (** remove seed vars from a prop *)
-let remove_seed_vars tenv (prop: 'a Prop.t) : Prop.normal Prop.t =
+let remove_seed_vars tenv (prop : 'a Prop.t) : Prop.normal Prop.t =
   let hpred_not_seed = function
     | Sil.Hpointsto (Exp.Lvar pv, _, _) ->
         not (Pvar.is_seed pv)

@@ -12,7 +12,7 @@ open Javalib_pack
 open Sawja_pack
 module L = Logging
 
-let add_edges (context: JContext.t) start_node exn_node exit_nodes method_body_nodes impl
+let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_nodes impl
     super_call =
   let pc_nb = Array.length method_body_nodes in
   let last_pc = pc_nb - 1 in
@@ -177,12 +177,12 @@ let should_capture classes package_opt source_basename node =
     match Javalib.get_sourcefile node with
     | None ->
         false
-    | Some found_basename ->
+    | Some found_basename -> (
       match package_opt with
       | None ->
           String.equal found_basename source_basename
       | Some pkg ->
-          match_package pkg classname && String.equal found_basename source_basename
+          match_package pkg classname && String.equal found_basename source_basename )
   else false
 
 

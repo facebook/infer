@@ -74,7 +74,8 @@ let get_interface_supers super_opt protocols =
   super_classes
 
 
-let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super otdi_protocols =
+let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super otdi_protocols
+    =
   let super = get_super_interface_decl otdi_super in
   let protocols = get_protocols otdi_protocols in
   let supers = get_interface_supers super protocols in
@@ -101,7 +102,7 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
   in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
-  let fields, (supers: Typ.Name.t list), methods =
+  let fields, (supers : Typ.Name.t list), methods =
     match Tenv.lookup tenv interface_name with
     | Some {fields; supers; methods} ->
         ( CGeneral_utils.append_no_duplicates_fields decl_fields fields

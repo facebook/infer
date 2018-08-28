@@ -156,8 +156,13 @@ module Term : sig
   val mkISwitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
 
   val mkCall :
-    func:Exp.t -> args:Exp.t vector -> return:jump -> throw:jump option
-    -> ignore_result:bool -> loc:Loc.t -> term
+       func:Exp.t
+    -> args:Exp.t vector
+    -> return:jump
+    -> throw:jump option
+    -> ignore_result:bool
+    -> loc:Loc.t
+    -> term
 
   val mkReturn : exp:Exp.t option -> loc:Loc.t -> term
 

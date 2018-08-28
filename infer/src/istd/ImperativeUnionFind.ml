@@ -43,7 +43,7 @@ module Make (Set : Set) = struct
   end = struct
     type t = Set.elt [@@deriving compare]
 
-    let equal = [%compare.equal : t]
+    let equal = [%compare.equal: t]
 
     let of_elt e = e
 
@@ -55,9 +55,9 @@ module Make (Set : Set) = struct
 
     let create () = H.create 1
 
-    let is_a_repr (t: t) e = not (H.mem t e)
+    let is_a_repr (t : t) e = not (H.mem t e)
 
-    let rec find (t: t) e : Repr.t =
+    let rec find (t : t) e : Repr.t =
       match H.find_opt t e with
       | None ->
           Repr.of_elt e
@@ -67,7 +67,7 @@ module Make (Set : Set) = struct
           r'
 
 
-    let merge (t: t) ~(from: Repr.t) ~(to_: Repr.t) = H.replace t (from :> Set.elt) to_
+    let merge (t : t) ~(from : Repr.t) ~(to_ : Repr.t) = H.replace t (from :> Set.elt) to_
   end
 
   module Sets = struct
@@ -77,7 +77,7 @@ module Make (Set : Set) = struct
 
     let find t r = H.find_opt t r
 
-    let find_create t (r: Repr.t) =
+    let find_create t (r : Repr.t) =
       match H.find_opt t r with
       | Some set ->
           set
@@ -132,7 +132,7 @@ module Make (Set : Set) = struct
         Some (e2, e1) )
 
 
-  let is_still_a_repr t ((repr: Repr.t), _) = Reprs.is_a_repr t.reprs (repr :> Set.elt)
+  let is_still_a_repr t ((repr : Repr.t), _) = Reprs.is_a_repr t.reprs (repr :> Set.elt)
 
   let after_fold t =
     let new_nb_iterators = t.nb_iterators - 1 in

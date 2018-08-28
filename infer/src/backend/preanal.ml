@@ -144,8 +144,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
               (fun var (pvars_acc, ids_acc) ->
                 match Var.to_exp var with
                 (* we nullify all address taken variables at the end of the procedure *)
-                | Exp.Lvar pvar
-                  when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
                     (pvar :: pvars_acc, ids_acc)
                 | Exp.Var id ->
                     (pvars_acc, id :: ids_acc)

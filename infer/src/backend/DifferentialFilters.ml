@@ -13,7 +13,7 @@ module FileRenamings = struct
 
   type t = renaming list [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let empty = []
 
@@ -26,8 +26,7 @@ module FileRenamings = struct
     let renaming_of_assoc assoc : renaming =
       try
         match assoc with
-        | `Assoc l
-          -> (
+        | `Assoc l -> (
             let current_opt = List.Assoc.find ~equal:String.equal l "current" in
             let previous_opt = List.Assoc.find ~equal:String.equal l "previous" in
             match (current_opt, previous_opt) with
@@ -59,7 +58,7 @@ module FileRenamings = struct
 
   let from_json_file file : t = from_json (In_channel.read_all file)
 
-  let find_previous (t: t) current =
+  let find_previous (t : t) current =
     let r = List.find ~f:(fun r -> String.equal current r.current) t in
     Option.map ~f:(fun r -> r.previous) r
 
@@ -83,7 +82,7 @@ end
 (** Returns a triple [(l1', dups, l2')] where [dups] is the set of elements of that are in the
     intersection of [l1] and [l2] according to [cmd] and additionally satisfy [pred], and [lN'] is
     [lN] minus [dups]. [dups] contains only one witness for each removed issue, taken from [l1]. *)
-let relative_complements ~compare ?(pred= fun _ -> true) l1 l2 =
+let relative_complements ~compare ?(pred = fun _ -> true) l1 l2 =
   let rec aux ((out_l1, dups, out_l2) as out) in_l1 in_l2 =
     let is_last_seen_dup v =
       match dups with ld :: _ -> Int.equal (compare ld v) 0 | [] -> false
@@ -115,7 +114,7 @@ let relative_complements ~compare ?(pred= fun _ -> true) l1 l2 =
 
 type issue_file_with_renaming = Jsonbug_t.jsonbug * string option
 
-let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differential.t =
+let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Differential.t =
   let compare_issue_file_with_renaming (issue1, previous_file1) (issue2, previous_file2) =
     let f1, f2 =
       ( Option.value previous_file1 ~default:issue1.Jsonbug_t.file
@@ -123,8 +122,9 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     in
     String.compare f1 f2
   in
-  let compare ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2) =
-    [%compare : Caml.Digest.t * string * issue_file_with_renaming]
+  let compare ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2)
+      =
+    [%compare: Caml.Digest.t * string * issue_file_with_renaming]
       (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
       (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
   in
@@ -153,13 +153,13 @@ type file_extension = string [@@deriving compare]
 type weak_hash = string * string * string * Caml.Digest.t [@@deriving compare]
 
 (* Strip issues whose paths are not among those we're interested in *)
-let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
+let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
   match interesting_paths with
-  | Some (paths: SourceFile.t list) ->
+  | Some (paths : SourceFile.t list) ->
       let interesting_paths_set =
         paths
         |> List.filter_map ~f:(fun p ->
-               if not (SourceFile.is_invalid p) && SourceFile.is_under_project_root p then
+               if (not (SourceFile.is_invalid p)) && SourceFile.is_under_project_root p then
                  Some (SourceFile.to_string p)
                else None )
         |> String.Set.of_list
@@ -172,8 +172,8 @@ let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
       Fn.id
 
 
-let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplicated_types: bool)
-    ~(interesting_paths: SourceFile.t list option) : Differential.t =
+let do_filter (diff : Differential.t) (renamings : FileRenamings.t) ~(skip_duplicated_types : bool)
+    ~(interesting_paths : SourceFile.t list option) : Differential.t =
   let paths_filter = interesting_paths_filter interesting_paths in
   let apply_paths_filter_if_needed label issues =
     if List.exists ~f:(PolyVariantEqual.( = ) label) Config.differential_filter_set then

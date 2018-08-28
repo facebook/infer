@@ -37,8 +37,7 @@ module BuildMethodSignature = struct
     | CXXConstructorDecl (decl_info, _, _, _, _)
     | CXXConversionDecl (decl_info, _, _, _, _)
     | CXXDestructorDecl (decl_info, _, _, _, _)
-    | ObjCMethodDecl (decl_info, _, _)
-      -> (
+    | ObjCMethodDecl (decl_info, _, _) -> (
         let method_kind = CMethodProperties.get_method_kind method_decl in
         match method_kind with
         | ClangMethodKind.CPP_INSTANCE | ClangMethodKind.OBJC_INSTANCE -> (
@@ -286,7 +285,7 @@ let add_predefined_objc_types tenv =
 
 let add_predefined_types tenv = add_predefined_objc_types tenv
 
-let create_c_record_typename (tag_kind: Clang_ast_t.tag_kind) =
+let create_c_record_typename (tag_kind : Clang_ast_t.tag_kind) =
   match tag_kind with
   | `TTK_Struct | `TTK_Interface | `TTK_Enum ->
       Typ.Name.C.from_qual_name
@@ -331,7 +330,7 @@ let get_translate_as_friend_decl decl_list =
     let qual_name = CAst_utils.get_qualified_name name_info in
     QualifiedCppName.Match.match_qualifiers translate_as_type_ptr_matcher qual_name
   in
-  let get_friend_decl_opt (decl: Clang_ast_t.decl) =
+  let get_friend_decl_opt (decl : Clang_ast_t.decl) =
     match decl with
     | FriendDecl (_, `Type type_ptr) ->
         CAst_utils.get_decl_from_typ_ptr type_ptr
@@ -364,7 +363,7 @@ let get_record_definition decl =
       (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _)
   | CXXRecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _)
   | RecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr})
-    when not rdi_is_complete_definition && rdi_definition_ptr <> 0 ->
+    when (not rdi_is_complete_definition) && rdi_definition_ptr <> 0 ->
       CAst_utils.get_decl rdi_definition_ptr |> Option.value ~default:decl
   | _ ->
       decl
@@ -384,7 +383,7 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
   match method_decl_info.xmdi_overriden_methods with
   | [] ->
       function_decl_info.fdi_mangled_name
-  | base1_dr :: _ ->
+  | base1_dr :: _ -> (
       let base1 =
         match CAst_utils.get_decl base1_dr.dr_decl_pointer with Some b -> b | _ -> assert false
       in
@@ -395,7 +394,7 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
       | CXXDestructorDecl (_, _, _, fdi, mdi) ->
           get_mangled_method_name fdi mdi
       | _ ->
-          assert false
+          assert false )
 
 
 let rec get_struct_fields tenv decl =
@@ -510,7 +509,7 @@ and add_types_from_decl_to_tenv tenv decl =
       assert false
 
 
-and get_template_args tenv (tsi: Clang_ast_t.template_specialization_info) =
+and get_template_args tenv (tsi : Clang_ast_t.template_specialization_info) =
   let rec aux = function
     | `Type qual_type ->
         [Typ.TType (qual_type_to_sil_type tenv qual_type)]
@@ -532,7 +531,7 @@ and qual_type_to_sil_type tenv qual_type =
   CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qual_type
 
 
-and get_template_info tenv (fdi: Clang_ast_t.function_decl_info) =
+and get_template_info tenv (fdi : Clang_ast_t.function_decl_info) =
   match fdi.fdi_template_specialization with
   | Some spec_info ->
       Typ.Template {mangled= fdi.fdi_mangled_name; args= get_template_args tenv spec_info}
@@ -549,7 +548,8 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
       (* when we model static functions, we cannot take the file into account to
      create a mangled name because the file of the model is different to the real file,
      thus the model won't work *)
-        when not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name)) ->
+        when not (CTrans_models.is_modelled_static_function (QualifiedCppName.to_qual_string name))
+        ->
           let file_opt =
             (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file
             |> Option.map ~f:SourceFile.from_abs_path
@@ -645,7 +645,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
             meth_decl
         in
         let parameter_types =
-          List.map ~f:(fun ({typ}: CMethodSignature.param_type) -> typ) parameters
+          List.map ~f:(fun ({typ} : CMethodSignature.param_type) -> typ) parameters
         in
         let captured_vars_types =
           BuildMethodSignature.types_of_captured_vars qual_type_to_sil_type tenv meth_decl
@@ -696,8 +696,7 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
   match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
   | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
-  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info)
-    -> (
+  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info) -> (
       let sil_typename = get_record_typename ~tenv definition_decl in
       let sil_desc = Typ.Tstruct sil_typename in
       match Tenv.lookup tenv sil_typename with

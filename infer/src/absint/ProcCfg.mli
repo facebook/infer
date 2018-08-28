@@ -83,9 +83,8 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
 module InstrNode : sig
   type instr_index
 
-  include Node
-          with type t = Procdesc.Node.t * instr_index
-           and type id = Procdesc.Node.id * instr_index
+  include
+    Node with type t = Procdesc.Node.t * instr_index and type id = Procdesc.Node.id * instr_index
 end
 
 (** Forward CFG with no exceptional control-flow *)
@@ -107,10 +106,8 @@ module Backward (Base : S with type instrs_dir = Instrs.not_reversed) :
   S with type t = Base.t and module Node = Base.Node and type instrs_dir = Instrs.reversed
 
 module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
-  include S
-          with type t = Base.t
-           and module Node = InstrNode
-           and type instrs_dir = Instrs.not_reversed
+  include
+    S with type t = Base.t and module Node = InstrNode and type instrs_dir = Instrs.not_reversed
 
   val last_of_underlying_node : Procdesc.Node.t -> Node.t
 end

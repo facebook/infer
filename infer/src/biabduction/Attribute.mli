@@ -14,7 +14,12 @@ val is_pred : Sil.atom -> bool
 (** Check whether an atom is used to mark an attribute *)
 
 val add :
-  Tenv.t -> ?footprint:bool -> ?polarity:bool -> Prop.normal Prop.t -> PredSymb.t -> Exp.t list
+     Tenv.t
+  -> ?footprint:bool
+  -> ?polarity:bool
+  -> Prop.normal Prop.t
+  -> PredSymb.t
+  -> Exp.t list
   -> Prop.normal Prop.t
 (** Add an attribute associated to the argument expressions *)
 
@@ -22,7 +27,10 @@ val add_or_replace : Tenv.t -> Prop.normal Prop.t -> Sil.atom -> Prop.normal Pro
 (** Replace an attribute associated to the expression *)
 
 val add_or_replace_check_changed :
-  Tenv.t -> (PredSymb.t -> PredSymb.t -> unit) -> Prop.normal Prop.t -> Sil.atom
+     Tenv.t
+  -> (PredSymb.t -> PredSymb.t -> unit)
+  -> Prop.normal Prop.t
+  -> Sil.atom
   -> Prop.normal Prop.t
 (** Replace an attribute associated to the expression, and call the given function with new and
     old attributes if they changed. *)
@@ -62,7 +70,9 @@ val remove_resource :
 (** Remove all attributes for the given resource and kind *)
 
 val map_resource :
-  Tenv.t -> Prop.normal Prop.t -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action)
+     Tenv.t
+  -> Prop.normal Prop.t
+  -> (Exp.t -> PredSymb.res_action -> PredSymb.res_action)
   -> Prop.normal Prop.t
 (** Apply f to every resource attribute in the prop *)
 
@@ -75,8 +85,15 @@ val nullify_exp_with_objc_null : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Prop.n
     remove the attribute and conjoin an equality to zero. *)
 
 val mark_vars_as_undefined :
-  Tenv.t -> Prop.normal Prop.t -> ret_exp:Exp.t -> undefined_actuals_by_ref:Exp.t list
-  -> Typ.Procname.t -> Annot.Item.t -> Location.t -> PredSymb.path_pos -> Prop.normal Prop.t
+     Tenv.t
+  -> Prop.normal Prop.t
+  -> ret_exp:Exp.t
+  -> undefined_actuals_by_ref:Exp.t list
+  -> Typ.Procname.t
+  -> Annot.Item.t
+  -> Location.t
+  -> PredSymb.path_pos
+  -> Prop.normal Prop.t
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 
 (** type for arithmetic problems *)
@@ -87,7 +104,10 @@ type arith_problem =
   | UminusUnsigned of Exp.t * Typ.t
 
 val find_arithmetic_problem :
-  Tenv.t -> PredSymb.path_pos -> Prop.normal Prop.t -> Exp.t
+     Tenv.t
+  -> PredSymb.path_pos
+  -> Prop.normal Prop.t
+  -> Exp.t
   -> arith_problem option * Prop.normal Prop.t
 (** Look for an arithmetic problem in [exp] *)
 

@@ -20,8 +20,8 @@ let pointer_type_table = Int.Table.create ~size:256 ()
 let empty_v = Clang_ast_visit.empty_visitor
 
 (* This function is not thread-safe *)
-let visit_ast ?(visit_decl= empty_v) ?(visit_stmt= empty_v) ?(visit_type= empty_v)
-    ?(visit_src_loc= empty_v) top_decl =
+let visit_ast ?(visit_decl = empty_v) ?(visit_stmt = empty_v) ?(visit_type = empty_v)
+    ?(visit_src_loc = empty_v) top_decl =
   Clang_ast_visit.decl_visitor := visit_decl ;
   Clang_ast_visit.stmt_visitor := visit_stmt ;
   Clang_ast_visit.type_visitor := visit_type ;

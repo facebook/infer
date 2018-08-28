@@ -34,11 +34,11 @@ module Jprop = struct
   let rec sorted_gen_free_vars tenv =
     let open Sequence.Generator in
     function
-      | Prop (_, p) ->
-          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
-      | Joined (_, p, jp1, jp2) ->
-          Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
-          >>= fun () -> sorted_gen_free_vars tenv jp1 >>= fun () -> sorted_gen_free_vars tenv jp2
+    | Prop (_, p) ->
+        Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
+    | Joined (_, p, jp1, jp2) ->
+        Prop.dfs_sort tenv p |> Prop.sorted_gen_free_vars
+        >>= fun () -> sorted_gen_free_vars tenv jp1 >>= fun () -> sorted_gen_free_vars tenv jp2
 
 
   let rec normalize tenv = function
@@ -60,7 +60,7 @@ module Jprop = struct
   let pp_short pe f jp = Prop.pp_prop pe f (to_prop jp)
 
   (** Dump the toplevel prop *)
-  let d_shallow (jp: Prop.normal t) = L.add_print_with_pe pp_short jp
+  let d_shallow (jp : Prop.normal t) = L.add_print_with_pe pp_short jp
 
   (** Get identifies of the jprop *)
   let get_id = function Prop (n, _) -> n | Joined (n, _, _, _) -> n
@@ -84,17 +84,17 @@ module Jprop = struct
 
 
   (** dump a joined prop list, the boolean indicates whether to print toplevel props only *)
-  let d_list ~(shallow: bool) (jplist: Prop.normal t list) =
+  let d_list ~(shallow : bool) (jplist : Prop.normal t list) =
     L.add_print_with_pe (pp_list ~shallow) jplist
 
 
   let rec gen_free_vars =
     let open Sequence.Generator in
     function
-      | Prop (_, p) ->
-          Prop.gen_free_vars p
-      | Joined (_, p, jp1, jp2) ->
-          Prop.gen_free_vars p >>= fun () -> gen_free_vars jp1 >>= fun () -> gen_free_vars jp2
+    | Prop (_, p) ->
+        Prop.gen_free_vars p
+    | Joined (_, p, jp1, jp2) ->
+        Prop.gen_free_vars p >>= fun () -> gen_free_vars jp1 >>= fun () -> gen_free_vars jp2
 
 
   let free_vars jp = Sequence.Generator.run (gen_free_vars jp)
@@ -109,23 +109,23 @@ module Jprop = struct
         Joined (n, p', jp1', jp2')
 
 
-  let filter (f: 'a t -> 'b option) jpl =
+  let filter (f : 'a t -> 'b option) jpl =
     let rec do_filter acc = function
       | [] ->
           acc
       | (Prop _ as jp) :: jpl -> (
         match f jp with Some x -> do_filter (x :: acc) jpl | None -> do_filter acc jpl )
-      | (Joined (_, _, jp1, jp2) as jp) :: jpl ->
+      | (Joined (_, _, jp1, jp2) as jp) :: jpl -> (
         match f jp with
         | Some x ->
             do_filter (x :: acc) jpl
         | None ->
-            do_filter acc (jpl @ [jp1; jp2])
+            do_filter acc (jpl @ [jp1; jp2]) )
     in
     do_filter [] jpl
 
 
-  let rec map (f: 'a Prop.t -> 'b Prop.t) = function
+  let rec map (f : 'a Prop.t -> 'b Prop.t) = function
     | Prop (n, p) ->
         Prop (n, f p)
     | Joined (n, p, jp1, jp2) ->
@@ -178,7 +178,7 @@ end = struct
 
   let tospecs specs = specs
 
-  let gen_free_vars tenv (spec: Prop.normal spec) =
+  let gen_free_vars tenv (spec : Prop.normal spec) =
     let open Sequence.Generator in
     Jprop.sorted_gen_free_vars tenv spec.pre
     >>= fun () ->
@@ -196,13 +196,15 @@ end = struct
 
 
   (** Convert spec into normal form w.r.t. variable renaming *)
-  let normalize tenv (spec: Prop.normal spec) : Prop.normal spec =
+  let normalize tenv (spec : Prop.normal spec) : Prop.normal spec =
     let idlist = free_vars tenv spec |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let count = ref 0 in
     let sub =
       Sil.subst_of_list
         (List.map
-           ~f:(fun id -> incr count ; (id, Exp.Var (Ident.create_normal Ident.name_spec !count)))
+           ~f:(fun id ->
+             incr count ;
+             (id, Exp.Var (Ident.create_normal Ident.name_spec !count)) )
            idlist)
     in
     spec_sub tenv sub spec
@@ -229,7 +231,7 @@ let normalized_specs_to_specs = NormSpec.tospecs
 
 type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
 
-let equal_phase = [%compare.equal : phase]
+let equal_phase = [%compare.equal: phase]
 
 let string_of_phase = function FOOTPRINT -> "FOOTPRINT" | RE_EXECUTION -> "RE_EXECUTION"
 
@@ -264,7 +266,7 @@ let pp_spec pe num_opt fmt spec =
 
 
 (** Dump a spec *)
-let d_spec (spec: 'a spec) =
+let d_spec (spec : 'a spec) =
   L.add_print (pp_spec (if Config.write_html then Pp.html Blue else Pp.text) None) spec
 
 

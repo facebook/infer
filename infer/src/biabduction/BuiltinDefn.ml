@@ -15,8 +15,8 @@ module L = Logging
 type t = Builtin.registered
 
 (** model va_arg as always returning 0 *)
-let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env}
-    : Builtin.ret_typ =
+let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} :
+    Builtin.ret_typ =
   match args with
   | [_; _; (lexp3, typ3)] ->
       let instr' = Sil.Store (lexp3, typ3, Exp.zero, loc) in
@@ -97,8 +97,8 @@ let execute___require_allocated_array {Builtin.tenv; pdesc; prop_; path; args} :
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___get_array_length {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute___get_array_length {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] -> (
     match add_array_to_prop tenv pdesc prop_ lexp typ with
@@ -116,7 +116,7 @@ let execute___set_array_length {Builtin.tenv; pdesc; prop_; path; args} : Builti
     match add_array_to_prop tenv pdesc prop_ lexp typ with
     | None ->
         []
-    | Some (_, prop_a) ->
+    | Some (_, prop_a) -> (
         (* Invariant: prop_a has an array pointed to by lexp *)
         let pname = Procdesc.get_proc_name pdesc in
         let n_lexp, prop__ = check_arith_norm_exp tenv pname lexp prop_a in
@@ -133,7 +133,7 @@ let execute___set_array_length {Builtin.tenv; pdesc; prop_; path; args} : Builti
             [(Prop.normalize tenv prop', path)]
         | _ ->
             []
-        (* by construction of prop_a this case is impossible *) )
+        (* by construction of prop_a this case is impossible *) ) )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -163,7 +163,7 @@ let create_type tenv n_lexp typ prop =
     with
     | Some _ ->
         prop
-    | None ->
+    | None -> (
         let mhpred =
           match typ.Typ.desc with
           | Typ.Tptr (typ', _) ->
@@ -200,7 +200,7 @@ let create_type tenv n_lexp typ prop =
             let prop'' = Prop.normalize tenv prop'' in
             prop''
         | None ->
-            prop
+            prop )
   in
   let sil_is_null = Exp.BinOp (Binop.Eq, n_lexp, Exp.zero) in
   let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
@@ -221,7 +221,7 @@ let execute___get_type_of {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args} :
         let hpred_opt =
           List.find_map
             ~f:(function
-                | Sil.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None)
+              | Sil.Hpointsto (e, _, texp) when Exp.equal e n_lexp -> Some texp | _ -> None)
             prop.Prop.sigma
         in
         match hpred_opt with
@@ -256,8 +256,8 @@ let replace_ptsto_texp tenv prop root_e texp =
   Prop.normalize tenv prop''
 
 
-let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | [(val1_, typ1); (texp2_, _)] ->
       let pname = Procdesc.get_proc_name pdesc in
@@ -280,8 +280,7 @@ let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id_
               ~f:(function Sil.Hpointsto (e1, _, _) -> Exp.equal e1 val1 | _ -> false)
               prop.Prop.sigma
             |> Option.map ~f:(function
-                 | Sil.Hpointsto (_, _, texp1)
-                   -> (
+                 | Sil.Hpointsto (_, _, texp1) -> (
                      let pos_type_opt, neg_type_opt =
                        Prover.Subtyping_check.subtype_case_analysis tenv texp1 texp2
                      in
@@ -372,8 +371,8 @@ let execute___set_file_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} :
 
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
-let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; args; loc}
-    : Builtin.ret_typ =
+let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; args; loc} :
+    Builtin.ret_typ =
   match args with
   | [_; (lexp, _)] ->
       let pname = Procdesc.get_proc_name pdesc in
@@ -442,7 +441,7 @@ let execute_abort {Builtin.proc_name} : Builtin.ret_typ =
 
 let execute_exit {Builtin.prop_; path} : Builtin.ret_typ = SymExec.diverge prop_ path
 
-let execute_free_ tenv mk ?(mark_as_freed= true) loc acc iter =
+let execute_free_ tenv mk ?(mark_as_freed = true) loc acc iter =
   match Prop.prop_iter_current tenv iter with
   | Sil.Hpointsto (lexp, _, _), [] ->
       let prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
@@ -470,7 +469,7 @@ let execute_free_ tenv mk ?(mark_as_freed= true) loc acc iter =
 
 (* should not happen *)
 
-let execute_free_nonzero_ mk ?(mark_as_freed= true) pdesc tenv instr prop lexp typ loc =
+let execute_free_nonzero_ mk ?(mark_as_freed = true) pdesc tenv instr prop lexp typ loc =
   try
     match Prover.is_root tenv prop lexp lexp with
     | None ->
@@ -497,8 +496,8 @@ let execute_free_nonzero_ mk ?(mark_as_freed= true) pdesc tenv instr prop lexp t
       raise (Exceptions.Array_of_pointsto __POS__) )
 
 
-let execute_free mk ?(mark_as_freed= true) {Builtin.pdesc; instr; tenv; prop_; path; args; loc}
-    : Builtin.ret_typ =
+let execute_free mk ?(mark_as_freed = true) {Builtin.pdesc; instr; tenv; prop_; path; args; loc} :
+    Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
       let pname = Procdesc.get_proc_name pdesc in
@@ -533,8 +532,8 @@ let execute_free mk ?(mark_as_freed= true) {Builtin.pdesc; instr; tenv; prop_; p
  This should behave correctly most of the time. *)
 let execute_free_cf mk = execute_free mk ~mark_as_freed:false
 
-let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args; loc}
-    : Builtin.ret_typ =
+let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id_typ; args; loc} :
+    Builtin.ret_typ =
   let pname = Procdesc.get_proc_name pdesc in
   let rec evaluate_char_sizeof e =
     match e with
@@ -607,10 +606,10 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id_t
   else [(prop_alloc, path)]
 
 
-let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r) : Builtin.ret_typ =
+let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r) : Builtin.ret_typ
+    =
   match args with
-  | type_info_exp :: rest
-    -> (
+  | type_info_exp :: rest -> (
       let res = execute_alloc PredSymb.Mnew false {r with args= [type_info_exp]} in
       match rest with
       | [(field_exp, _); (lexp, typ_)] ->
@@ -635,11 +634,10 @@ let execute___cxx_typeid ({Builtin.pdesc; tenv; prop_; args; loc; exe_env} as r)
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as builtin_args)
-    : Builtin.ret_typ =
+let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as builtin_args) :
+    Builtin.ret_typ =
   match args with
-  | [_; _; start_routine; arg]
-    -> (
+  | [_; _; start_routine; arg] -> (
       let routine_name = Prop.exp_normalize_prop tenv prop_ (fst start_routine) in
       let routine_arg = Prop.exp_normalize_prop tenv prop_ (fst arg) in
       let pname =
@@ -659,7 +657,7 @@ let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as
           Sil.d_exp routine_name ;
           L.d_strln ", skipping call." ;
           [(prop_, path)]
-      | Some pname ->
+      | Some pname -> (
           L.d_strln ("pthread_create: calling function " ^ Typ.Procname.to_string pname) ;
           match Ondemand.analyze_proc_name ~caller_pdesc:pdesc pname with
           | None ->
@@ -667,15 +665,15 @@ let execute_pthread_create ({Builtin.tenv; pdesc; prop_; path; args; exe_env} as
               [(prop_, path)]
           | Some callee_summary ->
               SymExec.proc_call exe_env callee_summary
-                {builtin_args with args= [(routine_arg, snd arg)]} )
+                {builtin_args with args= [(routine_arg, snd arg)]} ) )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
 let execute_skip {Builtin.prop_; path} : Builtin.ret_typ = [(prop_, path)]
 
-let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_args)
-    : Builtin.ret_typ =
+let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_args) :
+    Builtin.ret_typ =
   match args with
   | _ when List.length args >= skip_n_arguments ->
       let varargs = ref args in
@@ -686,11 +684,10 @@ let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_a
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute__unwrap_exception {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute__unwrap_exception {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
-  | [(ret_exn, _)]
-    -> (
+  | [(ret_exn, _)] -> (
       let pname = Procdesc.get_proc_name pdesc in
       let n_ret_exn, prop = check_arith_norm_exp tenv pname ret_exn prop_ in
       match n_ret_exn with
@@ -703,8 +700,8 @@ let execute__unwrap_exception {Builtin.tenv; pdesc; prop_; path; ret_id_typ; arg
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute_return_first_argument {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args}
-    : Builtin.ret_typ =
+let execute_return_first_argument {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} :
+    Builtin.ret_typ =
   match args with
   | (arg1_, _) :: _ ->
       let pname = Procdesc.get_proc_name pdesc in
@@ -715,17 +712,16 @@ let execute_return_first_argument {Builtin.tenv; pdesc; prop_; path; ret_id_typ;
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} : Builtin.ret_typ =
+let execute___split_get_nth {Builtin.tenv; pdesc; prop_; path; ret_id_typ; args} : Builtin.ret_typ
+    =
   match args with
-  | [(lexp1, _); (lexp2, _); (lexp3, _)]
-    -> (
+  | [(lexp1, _); (lexp2, _); (lexp3, _)] -> (
       let pname = Procdesc.get_proc_name pdesc in
       let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
       let n_lexp2, prop___ = check_arith_norm_exp tenv pname lexp2 prop__ in
       let n_lexp3, prop = check_arith_norm_exp tenv pname lexp3 prop___ in
       match (n_lexp1, n_lexp2, n_lexp3) with
-      | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil)
-        -> (
+      | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil) -> (
           let n = IntLit.to_int_exn n_sil in
           try
             let parts = Str.split (Str.regexp_string str2) str1 in
@@ -771,7 +767,8 @@ let execute___infer_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} 
 
 
 (* translate builtin assertion failure *)
-let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ =
+let execute___assert_fail {Builtin.pdesc; tenv; prop_; path; args; loc; exe_env} : Builtin.ret_typ
+    =
   let error_str =
     match List.length args with
     | 4 ->

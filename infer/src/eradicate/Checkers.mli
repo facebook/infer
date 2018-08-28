@@ -11,9 +11,16 @@ open! IStd
 
 module ST : sig
   val report_error :
-    Tenv.t -> Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t
-    -> ?field_name:Typ.Fieldname.t option -> ?origin_loc:Location.t option
-    -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn) -> ?severity:Exceptions.severity
-    -> string -> unit
+       Tenv.t
+    -> Typ.Procname.t
+    -> Procdesc.t
+    -> IssueType.t
+    -> Location.t
+    -> ?field_name:Typ.Fieldname.t option
+    -> ?origin_loc:Location.t option
+    -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
+    -> ?severity:Exceptions.severity
+    -> string
+    -> unit
   (** Report an error. *)
 end

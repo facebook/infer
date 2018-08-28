@@ -10,5 +10,9 @@ open! IStd
 open Sawja_pack
 
 val create_exception_handlers :
-  JContext.t -> Procdesc.Node.t list -> (int -> Procdesc.Node.t list) -> JBir.t -> int
+     JContext.t
+  -> Procdesc.Node.t list
+  -> (int -> Procdesc.Node.t list)
+  -> JBir.t
+  -> int
   -> Procdesc.Node.t list

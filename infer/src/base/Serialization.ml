@@ -27,8 +27,8 @@ end
 (** version of the binary files, to be incremented for each change *)
 let version = 27
 
-let create_serializer (key: Key.t) : 'a serializer =
-  let read_data ((key': Key.t), (version': int), (value: 'a)) source_msg =
+let create_serializer (key : Key.t) : 'a serializer =
+  let read_data ((key' : Key.t), (version' : int), (value : 'a)) source_msg =
     if key <> key' then (
       L.user_error
         "Wrong key in when loading data from %s -- are you running infer with results coming from \
@@ -43,17 +43,17 @@ let create_serializer (key: Key.t) : 'a serializer =
       None )
     else Some value
   in
-  let read_from_string (str: string) : 'a option =
+  let read_from_string (str : string) : 'a option =
     read_data (Marshal.from_string str 0) "string"
   in
-  let read_from_file (fname: DB.filename) : 'a option =
+  let read_from_file (fname : DB.filename) : 'a option =
     (* The serialization is based on atomic file renames,
        so the deserialization cannot read a file while it is being written. *)
     let filename = DB.filename_to_string fname in
     try Utils.with_file_in filename ~f:(fun inc -> read_data (Marshal.from_channel inc) filename)
     with Sys_error _ -> None
   in
-  let write_to_file ~(data: 'a) (fname: DB.filename) =
+  let write_to_file ~(data : 'a) (fname : DB.filename) =
     let filename = DB.filename_to_string fname in
     Utils.with_intermediate_temp_file_out filename ~f:(fun outc ->
         Marshal.to_channel outc (key, version, data) [] )

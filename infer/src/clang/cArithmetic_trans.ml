@@ -49,7 +49,7 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
    calculating an expression "instructions" is not empty when the binary operator is actually a
    statement like an assignment. *)
 let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ (e2, t2) loc =
-  let binop_exp ?(change_order= false) op =
+  let binop_exp ?(change_order = false) op =
     if change_order then Exp.BinOp (op, e2, e1) else Exp.BinOp (op, e1, e2)
   in
   match boi.Clang_ast_t.boi_kind with
@@ -58,8 +58,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
      an integer offset, which is itself semantically ok though too low-level,
      but the translation of the argument expressions does not compute such
      offsets and instead passes the member pointer at type 'void'. *)
-  | `PtrMemD
-  | `PtrMemI ->
+  | `PtrMemD | `PtrMemI ->
       CFrontend_config.unimplemented __POS__ source_range
         "Pointer-to-member constructs are unsupported. Got '%a'."
         (Pp.to_string ~f:Clang_ast_j.string_of_binary_operator_info)

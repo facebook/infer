@@ -17,7 +17,7 @@ let cutoff_length = 100
 
 let crc_token = '.'
 
-let append_crc_cutoff ?(key= "") ?(crc_only= false) name =
+let append_crc_cutoff ?(key = "") ?(crc_only = false) name =
   let name_up_to_cutoff =
     if String.length name <= cutoff_length then name else String.sub name ~pos:0 ~len:cutoff_length
   in
@@ -79,7 +79,7 @@ let filename_add_suffix fn s = fn ^ s
 let file_exists path = Sys.file_exists path = `Yes
 
 (** Return the time when a file was last modified. The file must exist. *)
-let file_modified_time ?(symlink= false) fname =
+let file_modified_time ?(symlink = false) fname =
   try
     let stat = (if symlink then Unix.lstat else Unix.stat) fname in
     stat.Unix.st_mtime

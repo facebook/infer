@@ -32,11 +32,11 @@ let procedure_callbacks = ref []
 
 let cluster_callbacks = ref []
 
-let register_procedure_callback ?(dynamic_dispatch= false) language (callback: proc_callback_t) =
+let register_procedure_callback ?(dynamic_dispatch = false) language (callback : proc_callback_t) =
   procedure_callbacks := {dynamic_dispatch; language; callback} :: !procedure_callbacks
 
 
-let register_cluster_callback language (callback: cluster_callback_t) =
+let register_cluster_callback language (callback : cluster_callback_t) =
   cluster_callbacks := {language; callback} :: !cluster_callbacks
 
 
@@ -88,7 +88,7 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
       !cluster_callbacks
 
 
-let dump_duplicate_procs (exe_env: Exe_env.t) source_file procs =
+let dump_duplicate_procs (exe_env : Exe_env.t) source_file procs =
   let duplicate_procs =
     List.filter_map procs ~f:(fun pname ->
         match Exe_env.get_proc_desc exe_env pname with
@@ -96,7 +96,7 @@ let dump_duplicate_procs (exe_env: Exe_env.t) source_file procs =
           match Attributes.load pname with
           | Some {translation_unit; loc}
             when (* defined in another file *)
-                 not (SourceFile.equal source_file translation_unit)
+                 (not (SourceFile.equal source_file translation_unit))
                  && (* really defined in the current file and not in an include *)
                     SourceFile.equal source_file loc.file ->
               Some (pname, translation_unit)
@@ -122,7 +122,7 @@ let create_perf_stats_report source_file =
 
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
-let analyze_file (exe_env: Exe_env.t) source_file =
+let analyze_file (exe_env : Exe_env.t) source_file =
   let saved_language = !Language.curr_language in
   let analyze_ondemand summary proc_desc = iterate_procedure_callbacks exe_env summary proc_desc in
   (* Invoke procedure callbacks using on-demand analysis schedulling *)

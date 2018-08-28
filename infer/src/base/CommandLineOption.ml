@@ -64,7 +64,7 @@ let to_arg_speclist = List.map ~f:to_arg_spec_triple
 (* NOTE: All variants must be also added to `all_parse_modes` below *)
 type parse_mode = InferCommand | Javac | NoParse [@@deriving compare]
 
-let equal_parse_mode = [%compare.equal : parse_mode]
+let equal_parse_mode = [%compare.equal: parse_mode]
 
 let all_parse_modes = [InferCommand; Javac; NoParse]
 
@@ -218,7 +218,8 @@ let add parse_mode sections desc =
         in
         (* in the help of `infer` itself, show in which specific commands the option is used *)
         let commands =
-          List.map ~f:fst sections |> List.sort ~compare:InferCommand.compare
+          List.map ~f:fst sections
+          |> List.sort ~compare:InferCommand.compare
           |> List.remove_consecutive_duplicates ~equal:InferCommand.equal
           |> List.map ~f:(fun cmd ->
                  let exe = InferCommand.to_exe_name cmd in
@@ -264,7 +265,7 @@ let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
   ; decode_json= deprecated_decode_json }
 
 
-let mk ?(deprecated= []) ?(parse_mode= InferCommand) ?(in_help= []) ~long ?short:short0 ~default
+let mk ?(deprecated = []) ?(parse_mode = InferCommand) ?(in_help = []) ~long ?short:short0 ~default
     ~meta doc ~default_to_string ~decode_json ~mk_setter ~mk_spec =
   let variable = ref default in
   let closure = mk_setter variable in
@@ -316,8 +317,14 @@ let curr_command = ref None
 (* end parsing state *)
 
 type 'a t =
-  ?deprecated:string list -> long:Arg.key -> ?short:char -> ?parse_mode:parse_mode
-  -> ?in_help:(InferCommand.t * string) list -> ?meta:string -> Arg.doc -> 'a
+     ?deprecated:string list
+  -> long:Arg.key
+  -> ?short:char
+  -> ?parse_mode:parse_mode
+  -> ?in_help:(InferCommand.t * string) list
+  -> ?meta:string
+  -> Arg.doc
+  -> 'a
 
 let string_json_decoder ~long ~inferconfig_dir:_ json = [dashdash long; YBU.to_string json]
 
@@ -333,7 +340,7 @@ let list_json_decoder json_decoder ~inferconfig_dir json =
   List.concat (YBU.convert_each (json_decoder ~inferconfig_dir) json)
 
 
-let mk_set var value ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "") doc =
+let mk_set var value ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "") doc =
   let setter () = var := value in
   ignore
     (mk ~deprecated ~long ?short ~default:() ?parse_mode ?in_help ~meta doc
@@ -356,8 +363,8 @@ let reset_doc_opt ~long = Printf.sprintf "Cancel the effect of $(b,%s)." (dashda
 
 let reset_doc_list ~long = Printf.sprintf "Set $(b,%s) to the empty list." (dashdash long)
 
-let mk_option ?(default= None) ?(default_to_string= fun _ -> "") ~f ?(mk_reset= true)
-    ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "string") doc =
+let mk_option ?(default = None) ?(default_to_string = fun _ -> "") ~f ?(mk_reset = true)
+    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let mk () =
     mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
       ~decode_json:(string_json_decoder ~long)
@@ -370,8 +377,8 @@ let mk_option ?(default= None) ?(default_to_string= fun _ -> "") ~f ?(mk_reset= 
   else mk ()
 
 
-let mk_bool ?(deprecated_no= []) ?(default= false) ?(f= fun b -> b) ?(deprecated= []) ~long ?short
-    ?parse_mode ?in_help ?(meta= "") doc0 =
+let mk_bool ?(deprecated_no = []) ?(default = false) ?(f = fun b -> b) ?(deprecated = []) ~long
+    ?short ?parse_mode ?in_help ?(meta = "") doc0 =
   let nolong =
     let len = String.length long in
     if len > 3 && String.sub long ~pos:0 ~len:3 = "no-" then String.sub long ~pos:3 ~len:(len - 3)
@@ -413,7 +420,7 @@ let mk_bool ?(deprecated_no= []) ?(default= false) ?(f= fun b -> b) ?(deprecated
   var
 
 
-let mk_bool_group ?(deprecated_no= []) ?(default= false) ?f:(f0 = Fn.id) ?(deprecated= []) ~long
+let mk_bool_group ?(deprecated_no = []) ?(default = false) ?f:(f0 = Fn.id) ?(deprecated = []) ~long
     ?short ?parse_mode ?in_help ?meta doc children no_children =
   let f b =
     List.iter ~f:(fun child -> child := b) children ;
@@ -423,8 +430,8 @@ let mk_bool_group ?(deprecated_no= []) ?(default= false) ?f:(f0 = Fn.id) ?(depre
   mk_bool ~deprecated ~deprecated_no ~default ~long ?short ~f ?parse_mode ?in_help ?meta doc
 
 
-let mk_int ~default ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "int")
-    doc =
+let mk_int ~default ?(f = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
+    ?(meta = "int") doc =
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
     ~default_to_string:string_of_int
     ~mk_setter:(fun var str -> var := f (int_of_string str))
@@ -432,21 +439,22 @@ let mk_int ~default ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_h
     ~mk_spec:(fun set -> String set)
 
 
-let mk_int_opt ?default ?f:(f0 = Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_help
-    ?(meta= "int") doc =
+let mk_int_opt ?default ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
+    ?(meta = "int") doc =
   let default_to_string = function Some f -> string_of_int f | None -> "" in
   let f s = Some (f0 (int_of_string s)) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 
-let mk_float_opt ?default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "float") doc =
+let mk_float_opt ?default ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "float")
+    doc =
   let default_to_string = function Some f -> string_of_float f | None -> "" in
   let f s = Some (float_of_string s) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 
-let mk_string ~default ?(f= fun s -> s) ?(deprecated= []) ~long ?short ?parse_mode ?in_help
-    ?(meta= "string") doc =
+let mk_string ~default ?(f = fun s -> s) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
+    ?(meta = "string") doc =
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
     ~default_to_string:(fun s -> s)
     ~mk_setter:(fun var str -> var := f str)
@@ -454,16 +462,16 @@ let mk_string ~default ?(f= fun s -> s) ?(deprecated= []) ~long ?short ?parse_mo
     ~mk_spec:(fun set -> String set)
 
 
-let mk_string_opt ?default ?(f= fun s -> s) ?mk_reset ?(deprecated= []) ~long ?short ?parse_mode
-    ?in_help ?(meta= "string") doc =
+let mk_string_opt ?default ?(f = fun s -> s) ?mk_reset ?(deprecated = []) ~long ?short ?parse_mode
+    ?in_help ?(meta = "string") doc =
   let default_to_string = function Some s -> s | None -> "" in
   let f s = Some (f s) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?mk_reset ?parse_mode ?in_help
     ~meta doc
 
 
-let mk_string_list ?(default= []) ?(f= fun s -> s) ?(deprecated= []) ~long ?short ?parse_mode
-    ?in_help ?(meta= "string") doc =
+let mk_string_list ?(default = []) ?(f = fun s -> s) ?(deprecated = []) ~long ?short ?parse_mode
+    ?in_help ?(meta = "string") doc =
   let mk () =
     mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta:("+" ^ meta) doc
       ~default_to_string:(String.concat ~sep:",")
@@ -475,7 +483,7 @@ let mk_string_list ?(default= []) ?(f= fun s -> s) ?(deprecated= []) ~long ?shor
   mk_with_reset [] ~reset_doc ~long ?parse_mode mk
 
 
-let normalize_path_in_args_being_parsed ?(f= Fn.id) ~is_anon_arg str =
+let normalize_path_in_args_being_parsed ?(f = Fn.id) ~is_anon_arg str =
   if Filename.is_relative str then (
     (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
        that [!arg_being_parsed] points at either [str] (if [is_anon_arg]) or at the option name
@@ -498,8 +506,8 @@ let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short 
     ~mk_spec:(fun set -> String set)
 
 
-let mk_path ~default ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_help
-    ?(meta= "path") =
+let mk_path ~default ?(f = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
+    ?(meta = "path") =
   mk_path_helper
     ~setter:(fun var x -> var := f x)
     ~decode_json:(path_json_decoder ~long)
@@ -507,7 +515,8 @@ let mk_path ~default ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_
     ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta
 
 
-let mk_path_opt ?default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "path") doc =
+let mk_path_opt ?default ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "path") doc
+    =
   let mk () =
     mk_path_helper
       ~setter:(fun var x -> var := Some x)
@@ -519,8 +528,8 @@ let mk_path_opt ?default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(m
   mk_with_reset None ~reset_doc ~long ?parse_mode mk
 
 
-let mk_path_list ?(default= []) ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "path")
-    doc =
+let mk_path_list ?(default = []) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
+    ?(meta = "path") doc =
   let mk () =
     mk_path_helper
       ~setter:(fun var x -> var := x :: !var)
@@ -537,8 +546,8 @@ let mk_symbols_meta symbols =
   Printf.sprintf "{ %s }" (String.concat ~sep:" | " strings)
 
 
-let mk_symbol ~default ~symbols ~eq ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_help
-    ?meta doc =
+let mk_symbol ~default ~symbols ~eq ?(f = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode
+    ?in_help ?meta doc =
   let strings = List.map ~f:fst symbols in
   let sym_to_str = List.map ~f:(fun (x, y) -> (y, x)) symbols in
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
@@ -551,8 +560,8 @@ let mk_symbol ~default ~symbols ~eq ?(f= Fn.id) ?(deprecated= []) ~long ?short ?
     ~mk_spec:(fun set -> Symbol (strings, set))
 
 
-let mk_symbol_opt ~symbols ?(f= Fn.id) ?(mk_reset= true) ?(deprecated= []) ~long ?short ?parse_mode
-    ?in_help ?meta doc =
+let mk_symbol_opt ~symbols ?(f = Fn.id) ?(mk_reset = true) ?(deprecated = []) ~long ?short
+    ?parse_mode ?in_help ?meta doc =
   let strings = List.map ~f:fst symbols in
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
   let meta = Option.value meta ~default:(mk_symbols_meta symbols) in
@@ -569,7 +578,7 @@ let mk_symbol_opt ~symbols ?(f= Fn.id) ?(mk_reset= true) ?(deprecated= []) ~long
   else mk ()
 
 
-let mk_symbol_seq ?(default= []) ~symbols ~eq ?(deprecated= []) ~long ?short ?parse_mode ?in_help
+let mk_symbol_seq ?(default = []) ~symbols ~eq ?(deprecated = []) ~long ?short ?parse_mode ?in_help
     ?meta doc =
   let sym_to_str = List.map ~f:(fun (x, y) -> (y, x)) symbols in
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
@@ -583,7 +592,7 @@ let mk_symbol_seq ?(default= []) ~symbols ~eq ?(deprecated= []) ~long ?short ?pa
     ~mk_spec:(fun set -> String set)
 
 
-let mk_json ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "json") doc =
+let mk_json ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "json") doc =
   mk ~deprecated ~long ?short ?parse_mode ?in_help ~meta doc ~default:(`List [])
     ~default_to_string:Yojson.Basic.to_string
     ~mk_setter:(fun var json -> var := Yojson.Basic.from_string json)
@@ -603,7 +612,7 @@ let normalize_desc_list speclist =
       else s
     in
     let remove_weird_chars =
-      String.filter ~f:(function 'a'..'z' | '0'..'9' | '-' -> true | _ -> false)
+      String.filter ~f:(function 'a' .. 'z' | '0' .. '9' | '-' -> true | _ -> false)
     in
     remove_weird_chars @@ String.lowercase @@ remove_no k
   in
@@ -677,8 +686,8 @@ let set_curr_speclist_for_parse_mode ~usage parse_mode =
     List.Assoc.find_exn ~equal:equal_parse_mode parse_mode_desc_lists parse_mode
   in
   curr_speclist :=
-    normalize_desc_list !full_desc_list |> List.map ~f:xdesc |> add_or_suppress_help
-    |> to_arg_speclist ;
+    normalize_desc_list !full_desc_list
+    |> List.map ~f:xdesc |> add_or_suppress_help |> to_arg_speclist ;
   assert (check_no_duplicates !curr_speclist) ;
   curr_usage
 
@@ -694,7 +703,7 @@ let string_of_command command =
   s
 
 
-let mk_rest_actions ?(parse_mode= InferCommand) ?(in_help= []) doc ~usage decode_action =
+let mk_rest_actions ?(parse_mode = InferCommand) ?(in_help = []) doc ~usage decode_action =
   let rest = ref [] in
   let spec =
     String
@@ -814,7 +823,7 @@ let encode_argv_to_env argv =
   String.concat ~sep:(String.make 1 env_var_sep)
     (List.filter
        ~f:(fun arg ->
-         not (String.contains arg env_var_sep)
+         (not (String.contains arg env_var_sep))
          ||
          ( warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n"
              env_var_sep arg ;
@@ -973,12 +982,12 @@ let show_manual ?internal_section format default_doc command_opt =
     match command_opt with
     | None ->
         default_doc
-    | Some command ->
+    | Some command -> (
       match List.Assoc.find_exn ~equal:InferCommand.equal !subcommands command with
       | Some command_doc, _, _ ->
           command_doc
       | None, _, _ ->
-          L.(die InternalError) "No manual for internal command %s" (string_of_command command)
+          L.(die InternalError) "No manual for internal command %s" (string_of_command command) )
   in
   let pp_meta f meta =
     match meta with "" -> () | meta -> F.fprintf f " $(i,%s)" (Cmdliner.Manpage.escape meta)
@@ -1007,12 +1016,11 @@ let show_manual ?internal_section format default_doc command_opt =
     match command_doc.manual_options with
     | `Replace blocks ->
         `S Cmdliner.Manpage.s_options :: blocks
-    | `Prepend blocks ->
+    | `Prepend blocks -> (
         let hidden =
           match internal_section with
           | Some section ->
-              `S section
-              :: `P "Use at your own risk."
+              `S section :: `P "Use at your own risk."
               :: List.concat_map ~f:block_of_desc (normalize_desc_list !hidden_descs_list)
           | None ->
               []
@@ -1026,11 +1034,13 @@ let show_manual ?internal_section format default_doc command_opt =
               (fun section descs result ->
                 `S section
                 :: (if String.equal section Cmdliner.Manpage.s_options then blocks else [])
-                @ List.concat_map ~f:block_of_desc (normalize_desc_list descs) @ result )
+                @ List.concat_map ~f:block_of_desc (normalize_desc_list descs)
+                @ result )
               !sections hidden
         | None ->
-            `S Cmdliner.Manpage.s_options :: blocks
-            @ List.concat_map ~f:block_of_desc (normalize_desc_list !visible_descs_list) @ hidden
+            (`S Cmdliner.Manpage.s_options :: blocks)
+            @ List.concat_map ~f:block_of_desc (normalize_desc_list !visible_descs_list)
+            @ hidden )
   in
   let blocks =
     [ `Blocks command_doc.manual_before_options

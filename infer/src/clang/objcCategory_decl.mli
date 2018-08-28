@@ -12,11 +12,17 @@ open! IStd
 (** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
 
 val category_decl :
-  CAst_utils.qual_type_to_sil_type -> CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl
+     CAst_utils.qual_type_to_sil_type
+  -> CAst_utils.procname_from_decl
+  -> Tenv.t
+  -> Clang_ast_t.decl
   -> Typ.desc
 
 val category_impl_decl :
-  CAst_utils.qual_type_to_sil_type -> CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl
+     CAst_utils.qual_type_to_sil_type
+  -> CAst_utils.procname_from_decl
+  -> Tenv.t
+  -> Clang_ast_t.decl
   -> Typ.desc
 
 val get_base_class_name_from_category : Clang_ast_t.decl -> Typ.Name.t option

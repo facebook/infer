@@ -59,9 +59,12 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
     (* add pairs of a partial format string and its expected size *)
     let ( ++ ) (f1, l1) (f2, l2) = (f1 ^^ f2, l1 + l2) in
     let ( +++ ) (f1, l1) f2 = (f1 ^^ f2, l1 + (string_of_format f2 |> String.length)) in
-    ("%*d", bar_tasks_num_size (* finished *)) +++ "/" ++ ("%s", bar_tasks_num_size (* total *))
+    ("%*d", bar_tasks_num_size (* finished *))
+    +++ "/"
+    ++ ("%s", bar_tasks_num_size (* total *))
     +++ " [" ++ ("%a%a", 0 (* progress bar *)) +++ "] "
-    ++ ("%d%%", 3 (* "xxx%", even though sometimes it's just "x%" *)) +++ " "
+    ++ ("%d%%", 3 (* "xxx%", even though sometimes it's just "x%" *))
+    +++ " "
     ++ ( "%s"
        , max (String.length elapsed_string) 9
          (* leave some room for elapsed_string to avoid flicker. 9 characters is "XXhXXmXXs" so it
@@ -71,8 +74,8 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
   let top_bar_size = min term_width top_bar_size_default in
   let progress_bar_size = top_bar_size - size_around_progress_bar in
   ( if progress_bar_size < min_acceptable_progress_bar then
-      let s = Printf.sprintf "%d/%s %s" finished tasks_total_string elapsed_string in
-      F.fprintf fmt "%s" (String.prefix s term_width)
+    let s = Printf.sprintf "%d/%s %s" finished tasks_total_string elapsed_string in
+    F.fprintf fmt "%s" (String.prefix s term_width)
   else
     let bar_done_size = finished * progress_bar_size / total in
     F.fprintf fmt top_bar_fmt bar_tasks_num_size finished tasks_total_string (pp_n '#')
@@ -144,8 +147,8 @@ let create ~jobs =
 
 
 let update_status_multiline task_bar ~slot:job t0 status =
-  (task_bar.jobs_statuses).(job) <- status ;
-  (task_bar.jobs_start_times).(job) <- t0 ;
+  task_bar.jobs_statuses.(job) <- status ;
+  task_bar.jobs_start_times.(job) <- t0 ;
   ()
 
 

@@ -56,7 +56,11 @@ val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
 type type_quals [@@deriving compare]
 
 val mk_type_quals :
-  ?default:type_quals -> ?is_const:bool -> ?is_restrict:bool -> ?is_volatile:bool -> unit
+     ?default:type_quals
+  -> ?is_const:bool
+  -> ?is_restrict:bool
+  -> ?is_volatile:bool
+  -> unit
   -> type_quals
 
 val is_const : type_quals -> bool
@@ -643,8 +647,14 @@ module Struct : sig
   (** Pretty print a struct type. *)
 
   val internal_mk_struct :
-    ?default:t -> ?fields:fields -> ?statics:fields -> ?methods:Procname.t list
-    -> ?supers:Name.t list -> ?annots:Annot.Item.t -> unit -> t
+       ?default:t
+    -> ?fields:fields
+    -> ?statics:fields
+    -> ?methods:Procname.t list
+    -> ?supers:Name.t list
+    -> ?annots:Annot.Item.t
+    -> unit
+    -> t
   (** Construct a struct_typ, normalizing field types *)
 
   val get_extensible_array_element_typ : lookup:lookup -> typ -> typ option

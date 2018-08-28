@@ -22,7 +22,7 @@ module Boolean = struct
 
   let true_ = True
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let is_false = function False -> true | _ -> false
 
@@ -46,7 +46,8 @@ module NonNegativeBound = struct
   let of_bound b = if Bound.le b zero then zero else b
 
   let int_lb b =
-    Bound.int_lb b |> Option.bind ~f:NonNegativeInt.of_int
+    Bound.int_lb b
+    |> Option.bind ~f:NonNegativeInt.of_int
     |> Option.value ~default:NonNegativeInt.zero
 
 
@@ -57,12 +58,12 @@ module NonNegativeBound = struct
         Bounds.ValTop
     | Bound.MInf ->
         assert false
-    | b ->
+    | b -> (
       match Bound.is_const b with
       | None ->
           Bounds.Symbolic b
       | Some c ->
-          Bounds.Constant (NonNegativeInt.of_int_exn c)
+          Bounds.Constant (NonNegativeInt.of_int_exn c) )
 
 
   let subst_exn b map =
@@ -325,10 +326,10 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
       if Int.equal 0 (S.compare s last_s) then ((last_s, PositiveInt.succ last_occ), others)
       else ((s, PositiveInt.one), last :: others)
     in
-    let pp_coeff fmt (c: NonNegativeInt.t) =
+    let pp_coeff fmt (c : NonNegativeInt.t) =
       if (c :> int) > 1 then F.fprintf fmt "%a * " NonNegativeInt.pp c
     in
-    let pp_exp fmt (e: PositiveInt.t) =
+    let pp_exp fmt (e : PositiveInt.t) =
       if (e :> int) > 1 then F.fprintf fmt "^%a" PositiveInt.pp e
     in
     let pp_magic_parentheses pp fmt x =
@@ -404,7 +405,8 @@ module ItvRange = struct
 
   let of_bounds : lb:Bound.t -> ub:Bound.t -> t =
    fun ~lb ~ub ->
-    Bound.plus_u ub Bound.one |> Bound.plus_u (Bound.neg lb)
+    Bound.plus_u ub Bound.one
+    |> Bound.plus_u (Bound.neg lb)
     |> Bound.simplify_bound_ends_from_paths |> Bounds.NonNegativeBound.of_bound
 
 
@@ -459,7 +461,7 @@ module ItvPure = struct
       match Bound.xcompare ~lhs:u1 ~rhs:l2 with
       | `LeftSmallerThanRight ->
           `LeftSmallerThanRight
-      | u1l2 ->
+      | u1l2 -> (
         match (Bound.xcompare ~lhs:u2 ~rhs:l1, u1l2) with
         | `LeftSmallerThanRight, _ ->
             `RightSmallerThanLeft
@@ -468,7 +470,7 @@ module ItvPure = struct
         | _, `Equal ->
             `LeftSmallerThanRight
         | _ ->
-            `NotComparable )
+            `NotComparable ) )
     | (`LeftSmallerThanRight | `Equal), (`LeftSmallerThanRight | `Equal) ->
         `LeftSmallerThanRight
     | (`RightSmallerThanLeft | `Equal), (`RightSmallerThanLeft | `Equal) ->
@@ -500,7 +502,8 @@ module ItvPure = struct
 
   let of_int n = of_bound (Bound.of_int n)
 
-  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t =
+  let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
+      =
    fun ~unsigned pname symbol_table path new_sym_num ->
     let lb, ub = Bounds.SymLinear.make ~unsigned pname symbol_table path new_sym_num in
     (Bound.of_sym lb, Bound.of_sym ub)
@@ -622,7 +625,7 @@ module ItvPure = struct
         top
     | Some 0 ->
         x (* x % [0,0] does nothing. *)
-    | Some m ->
+    | Some m -> (
       match is_const x with
       | Some n ->
           of_int (n mod m)
@@ -630,7 +633,7 @@ module ItvPure = struct
           let abs_m = abs m in
           if is_ge_zero x then (Bound.zero, Bound.of_int (abs_m - 1))
           else if is_le_zero x then (Bound.of_int (-abs_m + 1), Bound.zero)
-          else (Bound.of_int (-abs_m + 1), Bound.of_int (abs_m - 1))
+          else (Bound.of_int (-abs_m + 1), Bound.of_int (abs_m - 1)) )
 
 
   (* x << [-1,-1] does nothing. *)
@@ -712,13 +715,17 @@ module ItvPure = struct
         (l1, u2)
     | (l1, Bound.Linear (c1, s1)), (_, Bound.Linear (c2, s2)) when Bounds.SymLinear.eq s1 s2 ->
         (l1, Bound.Linear (min c1 c2, s1))
-    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u ->
+    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
+      ->
         (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
-    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u ->
+    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
+      ->
         (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
-    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u ->
+    | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
+      ->
         (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
-    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u ->
+    | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
+      ->
         (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
     | (l1, Bound.Linear (c1, se)), (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se'))
     | (l1, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se')), (_, Bound.Linear (c1, se))
@@ -739,13 +746,17 @@ module ItvPure = struct
         (l2, u1)
     | (Bound.Linear (c1, s1), u1), (Bound.Linear (c2, s2), _) when Bounds.SymLinear.eq s1 s2 ->
         (Bound.Linear (max c1 c2, s1), u1)
-    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l ->
+    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
+      ->
         (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
-    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l ->
+    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
+      ->
         (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
-    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l ->
+    | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
+      ->
         (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
-    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l ->
+    | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
+      ->
         (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
     | (Bound.Linear (c1, se), u1), (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), _)
     | (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), u1), (Bound.Linear (c1, se), _)
@@ -941,8 +952,9 @@ let minus : t -> t -> t = lift2 ItvPure.minus
 
 let get_iterator_itv : t -> t = lift1 ItvPure.get_iterator_itv
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t =
- fun ?(unsigned= false) pname symbol_table path new_sym_num ->
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
+    =
+ fun ?(unsigned = false) pname symbol_table path new_sym_num ->
   NonBottom (ItvPure.make_sym ~unsigned pname symbol_table path new_sym_num)
 
 

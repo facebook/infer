@@ -89,7 +89,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
         ~f:(fun file ->
           let file_path = Filename.concat captured_file file in
           Sys.file_exists file_path = `Yes
-          && (not check_timestamp_of_symlinks || symlink_up_to_date file_path) )
+          && ((not check_timestamp_of_symlinks) || symlink_up_to_date file_path) )
         contents
     else true
   in

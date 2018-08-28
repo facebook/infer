@@ -28,8 +28,12 @@ val get_typ : Tenv.t -> t -> Typ.t option
 (** Get the type of the expression. Warning: not fully implemented *)
 
 val of_sil :
-  include_array_indexes:bool -> f_resolve_id:(Var.t -> AccessExpression.t option) -> add_deref:bool
-  -> Exp.t -> Typ.t -> t
+     include_array_indexes:bool
+  -> f_resolve_id:(Var.t -> AccessExpression.t option)
+  -> add_deref:bool
+  -> Exp.t
+  -> Typ.t
+  -> t
 (** Convert SIL expression to HIL expression *)
 
 val get_access_exprs : t -> AccessExpression.t list

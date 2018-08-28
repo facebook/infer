@@ -49,8 +49,11 @@ module type S = sig
     val of_exp : get_sym_f:(Exp.t -> Sym.astate) -> Exp.t -> t option
 
     val of_exps :
-      get_int_sym_f:(Exp.t -> Sym.astate) -> get_offset_sym_f:(Exp.t -> Sym.astate)
-      -> get_size_sym_f:(Exp.t -> Sym.astate) -> Exp.t -> t option * t option * t option
+         get_int_sym_f:(Exp.t -> Sym.astate)
+      -> get_offset_sym_f:(Exp.t -> Sym.astate)
+      -> get_size_sym_f:(Exp.t -> Sym.astate)
+      -> Exp.t
+      -> t option * t option * t option
 
     val of_exp_opt : get_sym_f:(Exp.t -> Sym.astate) -> Exp.t option -> t option
 
@@ -746,7 +749,8 @@ module Make (Manager : Manager_S) = struct
       Option.map (raw_size_of_exp ~get_size_sym_f e) ~f:of_raw
 
 
-    let of_exps ~get_int_sym_f ~get_offset_sym_f ~get_size_sym_f e : t option * t option * t option =
+    let of_exps ~get_int_sym_f ~get_offset_sym_f ~get_size_sym_f e : t option * t option * t option
+        =
       let int_sym = of_exp ~get_sym_f:get_int_sym_f e in
       let offset_sym = offset_of_exp ~get_int_sym_f ~get_offset_sym_f e in
       let size_sym = size_of_exp ~get_size_sym_f e in
@@ -831,8 +835,8 @@ module Make (Manager : Manager_S) = struct
           Option.map (symexp_raw_subst subst_map re) ~f:(fun re' ->
               Texpr1.Unop (uop, re', typ, round) )
       | Texpr1.Binop (bop, re1, re2, typ, round) ->
-          Option.map2 (symexp_raw_subst subst_map re1) (symexp_raw_subst subst_map re2) ~f:
-            (fun re1' re2' -> Texpr1.Binop (bop, re1', re2', typ, round) )
+          Option.map2 (symexp_raw_subst subst_map re1) (symexp_raw_subst subst_map re2)
+            ~f:(fun re1' re2' -> Texpr1.Binop (bop, re1', re2', typ, round) )
 
 
     let symexp_subst subst_map x =
@@ -865,8 +869,12 @@ module Make (Manager : Manager_S) = struct
       let x, y = (Tcons1.array_extend_environment x env, Tcons1.array_extend_environment y env) in
       let len1, len2 = (Tcons1.array_length x, Tcons1.array_length y) in
       let tcons_array = Tcons1.array_make env (len1 + len2) in
-      for i = 0 to len1 - 1 do Tcons1.array_set tcons_array i (Tcons1.array_get x i) done ;
-      for i = 0 to len2 - 1 do Tcons1.array_set tcons_array (len1 + i) (Tcons1.array_get y i) done ;
+      for i = 0 to len1 - 1 do
+        Tcons1.array_set tcons_array i (Tcons1.array_get x i)
+      done ;
+      for i = 0 to len2 - 1 do
+        Tcons1.array_set tcons_array (len1 + i) (Tcons1.array_get y i)
+      done ;
       tcons_array
 
 
@@ -1021,8 +1029,7 @@ module Make (Manager : Manager_S) = struct
             Some (Tcons1.make symexp Tcons1.DISEQ)
         | Tcons1.DISEQ ->
             Some (Tcons1.make symexp Tcons1.EQ)
-        | Tcons1.SUPEQ | Tcons1.SUP
-          -> (
+        | Tcons1.SUPEQ | Tcons1.SUP -> (
             let env = Tcons1.get_env constr in
             let neg_symexp =
               Texpr1.of_expr env (SymExp.raw_uop_make Texpr1.Neg (Texpr1.to_expr symexp))
@@ -1119,7 +1126,8 @@ module Make (Manager : Manager_S) = struct
       fun ~forget_free subst_map x ->
         let vars_in_subst_map =
           SubstMap.fold subst_map ~init:VarSet.empty ~f:(fun var sym_exp_opt acc ->
-              acc |> VarSet.add var |> VarSet.add (Var.param_of var)
+              acc |> VarSet.add var
+              |> VarSet.add (Var.param_of var)
               |> VarSet.union (SymExp.vars_set_of_opt sym_exp_opt) )
         in
         let new_env = Env.of_vars_set vars_in_subst_map in
@@ -1468,12 +1476,12 @@ module Make (Manager : Manager_S) = struct
         match size_exp_opt with
         | None ->
             Constraints.itv_of size_sym size
-        | Some size_exp ->
+        | Some size_exp -> (
           match Constraints.eq_of_sym size_sym size_exp with
           | None ->
               Constraints.itv_of size_sym size
           | Some constr ->
-              constr
+              constr )
       in
       meet_constraints (Constraints.and_ offset_constrs size_constrs) x
 
@@ -1517,16 +1525,16 @@ module Make (Manager : Manager_S) = struct
       match subst_param_caller subst_map caller with
       | Bottom ->
           Bottom
-      | NonBottom caller ->
+      | NonBottom caller -> (
         match subst_callee subst_map callee with
         | Bottom ->
             Bottom
-        | NonBottom callee ->
+        | NonBottom callee -> (
           match meet caller callee with
           | Bottom ->
               Bottom
           | NonBottom relation ->
-              NonBottom (forget_temp_param subst_map relation)
+              NonBottom (forget_temp_param subst_map relation) ) )
   end
 
   include AbstractDomain.BottomLifted (PackedVal)
@@ -1574,8 +1582,8 @@ module Make (Manager : Manager_S) = struct
    fun constrs -> lift_default ~default:Bottom (PackedVal.meet_constraints constrs)
 
 
-  let store_relation
-      : PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> astate -> astate =
+  let store_relation :
+      PowLoc.t -> SymExp.t option * SymExp.t option * SymExp.t option -> astate -> astate =
    fun locs texpr_opts -> lift_default ~default:Bottom (PackedVal.store_relation locs texpr_opts)
 
 
@@ -1583,9 +1591,9 @@ module Make (Manager : Manager_S) = struct
    fun loc -> lift_default ~default:Bottom (PackedVal.init_param loc)
 
 
-  let init_array
-      : Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> astate
-        -> astate =
+  let init_array :
+      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:SymExp.t option -> astate -> astate
+      =
    fun allocsite ~offset ~size ~size_exp_opt ->
     lift_default ~default:Bottom (PackedVal.init_array allocsite ~offset ~size ~size_exp_opt)
 
@@ -1615,8 +1623,7 @@ include ( val match Config.bo_relational_domain with
               | Some `Bo_relational_domain_oct ->
                   (module Make (ApronOctagonManager) : S)
               | Some `Bo_relational_domain_poly ->
-                  (module Make (ElinaPolyManager) : S)
-)
+                  (module Make (ElinaPolyManager) : S) )
 
 (* NOTE: Globally only one manager (of a relational domain depends on
    Apron) can set deserialization functions. *)

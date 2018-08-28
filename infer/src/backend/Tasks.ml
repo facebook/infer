@@ -10,7 +10,7 @@ module L = Logging
 
 type 'a doer = 'a -> unit
 
-let run_sequentially ~(f: 'a doer) (tasks: 'a list) : unit =
+let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =
   let task_bar = TaskBar.create ~jobs:1 in
   (ProcessPoolState.update_status :=
      fun t status ->

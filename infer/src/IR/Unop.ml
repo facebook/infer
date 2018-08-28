@@ -17,7 +17,7 @@ type t =
   | LNot  (** Logical Not (!) *)
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 (** String representation of unary operator. *)
 let to_string = function Neg -> "-" | BNot -> "~" | LNot -> "!"

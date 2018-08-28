@@ -36,7 +36,7 @@ module Stats = struct
 
   let nb_visited_re {nodes_visited_re} = IntSet.cardinal nodes_visited_re
 
-  let update ?(add_symops= 0) ?failure_kind stats =
+  let update ?(add_symops = 0) ?failure_kind stats =
     let symops = stats.symops + add_symops in
     let failure_kind = match failure_kind with None -> stats.failure_kind | some -> some in
     {stats with symops; failure_kind}
@@ -139,7 +139,7 @@ let pp_html source color fmt summary =
 
 
 (** Add the summary to the table for the given function *)
-let add (proc_name: Typ.Procname.t) (summary: t) : unit =
+let add (proc_name : Typ.Procname.t) (summary : t) : unit =
   Typ.Procname.Hash.replace cache proc_name summary
 
 
@@ -228,7 +228,7 @@ let proc_resolve_attributes proc_name =
 
 
 (** Save summary for the procedure into the spec database *)
-let store (summ: t) =
+let store (summ : t) =
   let final_summary = {summ with status= Status.Analyzed} in
   let proc_name = get_proc_name final_summary in
   (* Make sure the summary in memory is identical to the saved one *)

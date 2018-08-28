@@ -39,7 +39,8 @@ let is_modeled_attribute attr_name =
 
 
 let is_assert_log_s funct =
-  String.equal funct CFrontend_config.assert_rtn || String.equal funct CFrontend_config.assert_fail
+  String.equal funct CFrontend_config.assert_rtn
+  || String.equal funct CFrontend_config.assert_fail
   || String.equal funct CFrontend_config.fbAssertWithSignalAndLogFunctionHelper
   || String.is_substring ~substring:CFrontend_config.google_MakeCheckOpString funct
 
@@ -110,5 +111,6 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname =
 
 let get_predefined_model_method_signature class_name method_name mk_procname =
   let next_predefined f = function Some _ as x -> x | None -> f method_name mk_procname in
-  None |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
+  None
+  |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
   |> next_predefined (get_predefined_ms_is_kind_of_class class_name)

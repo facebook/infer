@@ -8,7 +8,7 @@
 
 open! IStd
 
-let get_methods (from_decl: CAst_utils.procname_from_decl) tenv decl_list =
+let get_methods (from_decl : CAst_utils.procname_from_decl) tenv decl_list =
   let get_method list_methods decl =
     match decl with
     | Clang_ast_t.ObjCMethodDecl _ ->

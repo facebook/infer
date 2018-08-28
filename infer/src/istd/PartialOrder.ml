@@ -65,5 +65,5 @@ let join_lazy t1 ~xcompare ~lhs ~rhs =
   match t1 with `NotComparable -> `NotComparable | _ -> join t1 (xcompare ~lhs ~rhs)
 
 
-let container ~(fold: ('t, 'a * 'a, t) Container.fold) cont ~xcompare_elt =
+let container ~(fold : ('t, 'a * 'a, t) Container.fold) cont ~xcompare_elt =
   fold cont ~init:`Equal ~f:(fun acc (lhs, rhs) -> join_lazy acc ~xcompare:xcompare_elt ~lhs ~rhs)

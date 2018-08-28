@@ -16,12 +16,12 @@ type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 (** Kind of printing *)
 type print_kind = TEXT | HTML [@@deriving compare]
 
-let equal_print_kind = [%compare.equal : print_kind]
+let equal_print_kind = [%compare.equal: print_kind]
 
 (** Colors supported in printing *)
 type color = Black | Blue | Green | Orange | Red [@@deriving compare]
 
-let equal_color = [%compare.equal : color]
+let equal_color = [%compare.equal: color]
 
 (** map subexpressions (as Obj.t element compared by physical equality) to colors *)
 type colormap = Obj.t -> color
@@ -37,13 +37,13 @@ type env =
   ; obj_sub: (Obj.t -> Obj.t) option  (** generic object substitution *) }
 
 (** Create a colormap of a given color *)
-let colormap_from_color color (_: Obj.t) = color
+let colormap_from_color color (_ : Obj.t) = color
 
 (** standard colormap: black *)
-let colormap_black (_: Obj.t) = Black
+let colormap_black (_ : Obj.t) = Black
 
 (** red colormap *)
-let colormap_red (_: Obj.t) = Red
+let colormap_red (_ : Obj.t) = Red
 
 (** Default text print environment *)
 let text =
@@ -66,14 +66,14 @@ let html color =
 
 
 (** Extend the normal colormap for the given object with the given color *)
-let extend_colormap pe (x: Obj.t) (c: color) =
-  let colormap (y: Obj.t) = if phys_equal x y then c else pe.cmap_norm y in
+let extend_colormap pe (x : Obj.t) (c : color) =
+  let colormap (y : Obj.t) = if phys_equal x y then c else pe.cmap_norm y in
   {pe with cmap_norm= colormap}
 
 
 (** Set the object substitution, which is supposed to preserve the type.
     Currently only used for a map from (identifier) expressions to the program var containing them *)
-let set_obj_sub pe (sub: 'a -> 'a) =
+let set_obj_sub pe (sub : 'a -> 'a) =
   let new_obj_sub x =
     let x' = Obj.repr (sub (Obj.obj x)) in
     match pe.obj_sub with None -> x' | Some sub' -> sub' x'
@@ -98,7 +98,7 @@ let color_string = function
       "color_red"
 
 
-let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) pp =
+let seq ?(print_env = text) ?sep:(sep_text = " ") ?(sep_html = sep_text) pp =
   let rec aux f = function
     | [] ->
         ()

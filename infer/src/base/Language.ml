@@ -8,7 +8,7 @@ open! IStd
 
 type t = Clang | Java | Python [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let language_to_string = [(Clang, "C/C++/ObjC"); (Java, "Java"); (Python, "python")]
 

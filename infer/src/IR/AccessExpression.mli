@@ -39,8 +39,12 @@ val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
 val of_lhs_exp :
-  include_array_indexes:bool -> add_deref:bool -> Exp.t -> Typ.t
-  -> f_resolve_id:(Var.t -> t option) -> t option
+     include_array_indexes:bool
+  -> add_deref:bool
+  -> Exp.t
+  -> Typ.t
+  -> f_resolve_id:(Var.t -> t option)
+  -> t option
 (** convert [lhs_exp] to an access expression, resolving identifiers using [f_resolve_id] *)
 
 val normalize : t -> t

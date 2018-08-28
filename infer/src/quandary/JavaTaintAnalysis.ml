@@ -38,8 +38,7 @@ include TaintAnalysis.Make (struct
           false
     in
     match pname with
-    | Typ.Procname.Java java_pname
-      -> (
+    | Typ.Procname.Java java_pname -> (
         let is_static = Typ.Procname.Java.is_static java_pname in
         match
           ( Typ.Procname.Java.get_class_name java_pname
@@ -59,7 +58,8 @@ include TaintAnalysis.Make (struct
         | classname, _, {Typ.desc= Tptr _ | Tstruct _} -> (
           match actuals with
           | receiver_exp :: _
-            when not is_static && types_match (get_receiver_typ tenv receiver_exp) classname tenv ->
+            when (not is_static) && types_match (get_receiver_typ tenv receiver_exp) classname tenv
+            ->
               (* if the receiver and return type are the same, propagate to both. we're
                          assuming the call is one of the common "builder-style" methods that both
                          updates and returns the receiver *)

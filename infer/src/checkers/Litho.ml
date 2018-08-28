@@ -12,9 +12,9 @@ module Domain = LithoDomain
 module Payload = SummaryPayload.Make (struct
   type t = Domain.astate
 
-  let update_payloads astate (payloads: Payloads.t) = {payloads with litho= Some astate}
+  let update_payloads astate (payloads : Payloads.t) = {payloads with litho= Some astate}
 
-  let of_payloads (payloads: Payloads.t) = payloads.litho
+  let of_payloads (payloads : Payloads.t) = payloads.litho
 end)
 
 module LithoFramework = struct
@@ -62,8 +62,7 @@ module GraphQLGetters = struct
     (* we skip analysis of all GraphQL procs *)
     &&
     match procname with
-    | Typ.Procname.Java java_procname
-      -> (
+    | Typ.Procname.Java java_procname -> (
         PatternMatch.is_getter java_procname
         &&
         match Typ.Procname.Java.get_package java_procname with
@@ -144,8 +143,8 @@ module RequiredProps = struct
 
   let should_report proc_desc tenv =
     let pname = Procdesc.get_proc_name proc_desc in
-    not (LithoFramework.is_function pname)
-    && not (LithoFramework.is_component_build_method pname tenv)
+    (not (LithoFramework.is_function pname))
+    && (not (LithoFramework.is_component_build_method pname tenv))
     && Procdesc.get_access proc_desc <> PredSymb.Private
 
 
@@ -154,7 +153,8 @@ module RequiredProps = struct
     (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), or myPropRes().
        Our annotation parameter parsing is too primitive to identify resType, so just assume
        that all @Prop's can be set any of these 3 ways. *)
-    || String.Set.mem prop_set (prop ^ "Attr") || String.Set.mem prop_set (prop ^ "Res")
+    || String.Set.mem prop_set (prop ^ "Attr")
+    || String.Set.mem prop_set (prop ^ "Res")
 
 
   let report astate tenv summary =
@@ -162,12 +162,10 @@ module RequiredProps = struct
       let rev_chain = List.rev call_chain in
       match rev_chain with
       | pname :: _ when LithoFramework.is_component_build_method pname tenv -> (
-        match
-          (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder
+        (* Here, we'll have a type name like MyComponent$Builder in hand. Truncate the $Builder
                part from the typename, then look at the fields of MyComponent to figure out which
                ones are annotated with @Prop *)
-          find_client_component_type call_chain
-        with
+        match find_client_component_type call_chain with
         | Some parent_typename ->
             let required_props = get_required_props parent_typename tenv in
             let prop_set = List.map ~f:Typ.Procname.get_method call_chain |> String.Set.of_list in
@@ -216,7 +214,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr astate (proc_data: extras ProcData.t) _ (instr: HilInstr.t) : Domain.astate =
+  let exec_instr astate (proc_data : extras ProcData.t) _ (instr : HilInstr.t) : Domain.astate =
     let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
     match instr with
     | Call
@@ -236,7 +234,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           || (* track GraphQL getters in order to report graphql field accesses *)
              Domain.mem receiver astate
              (* track anything called on a receiver we're already tracking *) )
-          && not (Typ.Procname.Java.is_static java_callee_procname)
+          && (not (Typ.Procname.Java.is_static java_callee_procname))
           && not
                ( LithoFramework.is_function callee_procname
                && not (LithoFramework.is_function caller_pname) )
@@ -255,8 +253,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (ret_id_typ, Direct callee_procname, actuals, _, _) ->
         let summary = Payload.read proc_data.pdesc callee_procname in
         apply_callee_summary summary caller_pname ret_id_typ actuals astate
-    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _)
-      -> (
+    | Assign (lhs_ae, HilExp.AccessExpression rhs_ae, _) -> (
         (* creating an alias for the rhs binding; assume all reads will now occur through the
            alias. this helps us keep track of chains in cases like tmp = getFoo(); x = tmp;
            tmp.getBar() *)

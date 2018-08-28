@@ -16,22 +16,22 @@ type retain_cycle_edge = Object of retain_cycle_edge_obj | Block of Typ.Procname
 
 type t = {rc_head: retain_cycle_edge; rc_elements: retain_cycle_edge list}
 
-let compare_retain_cycle_node (node1: retain_cycle_node) (node2: retain_cycle_node) =
+let compare_retain_cycle_node (node1 : retain_cycle_node) (node2 : retain_cycle_node) =
   Typ.compare node1.rc_node_typ node2.rc_node_typ
 
 
-let compare_retain_cycle_field (node1: retain_cycle_field) (node2: retain_cycle_field) =
+let compare_retain_cycle_field (node1 : retain_cycle_field) (node2 : retain_cycle_field) =
   Typ.Fieldname.compare node1.rc_field_name node2.rc_field_name
 
 
-let compare_retain_cycle_edge_obj (obj1: retain_cycle_edge_obj) (obj2: retain_cycle_edge_obj) =
+let compare_retain_cycle_edge_obj (obj1 : retain_cycle_edge_obj) (obj2 : retain_cycle_edge_obj) =
   let obj1_pair = Tuple.T2.create obj1.rc_from obj1.rc_field in
   let obj2_pair = Tuple.T2.create obj2.rc_from obj2.rc_field in
   Tuple.T2.compare ~cmp1:compare_retain_cycle_node ~cmp2:compare_retain_cycle_field obj1_pair
     obj2_pair
 
 
-let compare_retain_cycle_edge (edge1: retain_cycle_edge) (edge2: retain_cycle_edge) =
+let compare_retain_cycle_edge (edge1 : retain_cycle_edge) (edge2 : retain_cycle_edge) =
   match (edge1, edge2) with
   | Object edge_obj1, Object edge_obj2 ->
       compare_retain_cycle_edge_obj edge_obj1 edge_obj2
@@ -43,9 +43,9 @@ let compare_retain_cycle_edge (edge1: retain_cycle_edge) (edge2: retain_cycle_ed
       -1
 
 
-let equal_retain_cycle_edge = [%compare.equal : retain_cycle_edge]
+let equal_retain_cycle_edge = [%compare.equal: retain_cycle_edge]
 
-let compare (rc1: t) (rc2: t) =
+let compare (rc1 : t) (rc2 : t) =
   List.compare compare_retain_cycle_edge rc1.rc_elements rc2.rc_elements
 
 
@@ -94,17 +94,17 @@ let is_exp_null node =
   match node with Object obj -> Exp.is_null_literal obj.rc_from.rc_node_exp | Block _ -> false
 
 
-let retain_cycle_node_to_string (node: retain_cycle_node) =
+let retain_cycle_node_to_string (node : retain_cycle_node) =
   Format.sprintf "%s : %s" (Exp.to_string node.rc_node_exp) (Typ.to_string node.rc_node_typ)
 
 
-let retain_cycle_field_to_string (field: retain_cycle_field) =
+let retain_cycle_field_to_string (field : retain_cycle_field) =
   Format.sprintf "%s[%s]"
     (Typ.Fieldname.to_string field.rc_field_name)
     (Sil.inst_to_string field.rc_field_inst)
 
 
-let retain_cycle_edge_to_string (edge: retain_cycle_edge) =
+let retain_cycle_edge_to_string (edge : retain_cycle_edge) =
   match edge with
   | Object obj ->
       Format.sprintf "%s ->{%s}"

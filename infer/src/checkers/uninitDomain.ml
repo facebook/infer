@@ -39,7 +39,8 @@ struct
       ~rhs:({uninit_vars= rhs_uv; aliased_vars= rhs_av; prepost= rhs_pp} as rhs) =
     if phys_equal lhs rhs then true
     else
-      Domain1.( <= ) ~lhs:lhs_uv ~rhs:rhs_uv && Domain2.( <= ) ~lhs:lhs_av ~rhs:rhs_av
+      Domain1.( <= ) ~lhs:lhs_uv ~rhs:rhs_uv
+      && Domain2.( <= ) ~lhs:lhs_av ~rhs:rhs_av
       && Domain3.( <= ) ~lhs:(fst lhs_pp) ~rhs:(fst rhs_pp)
       && Domain3.( <= ) ~lhs:(snd lhs_pp) ~rhs:(snd rhs_pp)
 

@@ -38,7 +38,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     with Caml.Not_found -> false
 
 
-  let exec_instr astate (proc_data: Exp.t Ident.Hash.t ProcData.t) _ instr =
+  let exec_instr astate (proc_data : Exp.t Ident.Hash.t ProcData.t) _ instr =
     match instr with
     | Sil.Load (id, exp, _, _) ->
         Ident.Hash.add proc_data.extras id exp ;

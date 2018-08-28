@@ -84,7 +84,7 @@ let get_tenv exe_env proc_name =
   match proc_name with
   | Typ.Procname.Java _ ->
       Lazy.force java_global_tenv
-  | _ ->
+  | _ -> (
     match get_file_data exe_env proc_name with
     | Some file_data -> (
       match file_data_to_tenv file_data with
@@ -99,7 +99,7 @@ let get_tenv exe_env proc_name =
         let loc = State.get_loc () in
         L.(die InternalError)
           "get_tenv: file_data not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
-          SourceFile.pp loc.Location.file Location.pp loc
+          SourceFile.pp loc.Location.file Location.pp loc )
 
 
 (** return the cfg associated to the procedure *)

@@ -69,8 +69,11 @@ val echo_in : In_channel.t -> unit
 val with_process_in : string -> (In_channel.t -> 'a) -> 'a * Unix.Exit_or_signal.t
 
 val with_process_lines :
-  debug:((string -> unit, Format.formatter, unit) format -> string -> unit) -> cmd:string list
-  -> tmp_prefix:string -> f:(string list -> 'res) -> 'res
+     debug:((string -> unit, Format.formatter, unit) format -> string -> unit)
+  -> cmd:string list
+  -> tmp_prefix:string
+  -> f:(string list -> 'res)
+  -> 'res
 (** Runs the command [cmd] and calls [f] on the output lines. Uses [debug] to print debug
    information, and [tmp_prefix] as a prefix for temporary files. *)
 

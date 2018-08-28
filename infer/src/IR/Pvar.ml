@@ -51,7 +51,7 @@ let compare_modulo_this x y =
       else compare_pvar_kind x.pv_kind y.pv_kind
 
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let get_declaring_function pv =
   match pv.pv_kind with
@@ -97,7 +97,7 @@ let pp pe f pv =
 
 
 (** Dump a program variable. *)
-let d (pvar: t) = L.add_print_with_pe pp pvar
+let d (pvar : t) = L.add_print_with_pe pp pvar
 
 let get_name pv = pv.pv_name
 
@@ -198,10 +198,10 @@ let to_callee pname pvar =
       assert false
 
 
-let name_hash (name: Mangled.t) = Hashtbl.hash name
+let name_hash (name : Mangled.t) = Hashtbl.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
-let mk (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
+let mk (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name}
 
 
@@ -209,13 +209,13 @@ let get_ret_pvar pname = mk Ident.name_return pname
 
 (** [mk_callee name proc_name] creates a program var
     for a callee function with the given function name *)
-let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
+let mk_callee (name : Mangled.t) (proc_name : Typ.Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name}
 
 
 (** create a global variable with the given name *)
-let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false)
-    ?(is_static_global= false) ?translation_unit (name: Mangled.t) : t =
+let mk_global ?(is_constexpr = false) ?(is_pod = true) ?(is_static_local = false)
+    ?(is_static_global = false) ?translation_unit (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_kind= Global_var (translation_unit, is_constexpr, is_pod, is_static_local, is_static_global)
@@ -230,12 +230,12 @@ let mk_tmp name pname =
 
 
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
-let mk_abduced_ret (proc_name: Typ.Procname.t) (loc: Location.t) : t =
+let mk_abduced_ret (proc_name : Typ.Procname.t) (loc : Location.t) : t =
   let name = Mangled.from_string ("$RET_" ^ Typ.Procname.to_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
 
 
-let mk_abduced_ref_param (proc_name: Typ.Procname.t) (index: int) (loc: Location.t) : t =
+let mk_abduced_ref_param (proc_name : Typ.Procname.t) (index : int) (loc : Location.t) : t =
   let name = Mangled.from_string ("$REF_PARAM_VAL_" ^ Typ.Procname.to_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
 

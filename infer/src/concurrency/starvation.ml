@@ -31,9 +31,9 @@ let is_nonblocking tenv proc_desc =
 module Payload = SummaryPayload.Make (struct
   type t = StarvationDomain.summary
 
-  let update_payloads post (payloads: Payloads.t) = {payloads with starvation= Some post}
+  let update_payloads post (payloads : Payloads.t) = {payloads with starvation= Some post}
 
-  let of_payloads (payloads: Payloads.t) = payloads.starvation
+  let of_payloads (payloads : Payloads.t) = payloads.starvation
 end)
 
 (* using an indentifier for a class object, create an access path representing that lock;
@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t
 
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr: HilInstr.t) =
+  let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
     let open RacerDConfig in
     let is_formal base = FormalMap.is_formal base extras in
     let get_path actuals =
@@ -104,7 +104,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | NoEffect when is_on_ui_thread callee ->
           let explanation = F.asprintf "it calls %a" (MF.wrap_monospaced Typ.Procname.pp) callee in
           Domain.set_on_ui_thread astate explanation
-      | NoEffect ->
+      | NoEffect -> (
           let caller = Procdesc.get_proc_name pdesc in
           match Models.may_block tenv callee actuals with
           | Some sev ->
@@ -119,7 +119,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                        if is_call_to_superclass tenv ~caller ~callee then summary
                        else {summary with Domain.order= Domain.OrderDomain.empty}
                      in
-                     Domain.integrate_summary astate callee loc summary ) )
+                     Domain.integrate_summary astate callee loc summary ) ) )
     | _ ->
         astate
 
@@ -150,8 +150,8 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         match pname with
         | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
             (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
-            Typ.Procname.Java.get_class_type_name java_pname |> Typ.Name.name
-            |> Ident.string_to_name |> lock_of_class |> Option.some
+            Typ.Procname.Java.get_class_type_name java_pname
+            |> Typ.Name.name |> Ident.string_to_name |> lock_of_class |> Option.some
         | _ ->
             FormalMap.get_formal_base 0 formals |> Option.map ~f:(fun base -> (base, []))
       in
@@ -172,7 +172,8 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
             order }
     else Fn.id
   in
-  Analyzer.compute_post proc_data ~initial |> Option.map ~f:filter_blocks
+  Analyzer.compute_post proc_data ~initial
+  |> Option.map ~f:filter_blocks
   |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
 
 
@@ -185,8 +186,14 @@ module ReportMap : sig
   val add_deadlock : Tenv.t -> Procdesc.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
   val add_starvation :
-    Tenv.t -> StarvationDomain.Event.severity_t -> Procdesc.t -> Location.t -> Errlog.loc_trace
-    -> string -> t -> t
+       Tenv.t
+    -> StarvationDomain.Event.severity_t
+    -> Procdesc.t
+    -> Location.t
+    -> Errlog.loc_trace
+    -> string
+    -> t
+    -> t
 
   val log : t -> unit
 end = struct
@@ -203,7 +210,7 @@ end = struct
 
   let empty : t = LocMap.empty
 
-  let add_deadlock tenv pdesc loc ltr message (map: t) =
+  let add_deadlock tenv pdesc loc ltr message (map : t) =
     let pname = Procdesc.get_proc_name pdesc in
     if Reporting.is_suppressed tenv pdesc IssueType.deadlock ~field_name:None then map
     else
@@ -282,7 +289,7 @@ let should_report pdesc =
   match Procdesc.get_proc_name pdesc with
   | Typ.Procname.Java java_pname ->
       Procdesc.get_access pdesc <> PredSymb.Private
-      && not (Typ.Procname.Java.is_autogen_method java_pname)
+      && (not (Typ.Procname.Java.is_autogen_method java_pname))
       && not (Typ.Procname.Java.is_class_initializer java_pname)
   | _ ->
       L.(die InternalError "Not supposed to run on non-Java code.")
@@ -297,7 +304,8 @@ let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
     Ondemand.get_proc_desc mthd
     |> Option.value_map ~default:acc ~f:(fun other_pdesc ->
            if should_report other_pdesc then
-             Payload.read current_pdesc mthd |> Option.map ~f:(fun payload -> (mthd, payload))
+             Payload.read current_pdesc mthd
+             |> Option.map ~f:(fun payload -> (mthd, payload))
              |> Option.fold ~init:acc ~f
            else acc )
   in
@@ -370,8 +378,8 @@ let report_deadlocks env {StarvationDomain.order; ui} report_map' =
                (* get the class of the root variable of the lock in the endpoint elem
                    and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env endpoint_class ~init:report_map ~f:
-                 (fun acc (endp_pname, endpoint_summary) ->
+               fold_reportable_summaries env endpoint_class ~init:report_map
+                 ~f:(fun acc (endp_pname, endpoint_summary) ->
                    let endp_order = endpoint_summary.order in
                    let endp_ui = endpoint_summary.ui in
                    if UIThreadDomain.is_empty ui || UIThreadDomain.is_empty endp_ui then
@@ -421,8 +429,8 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
                (* get the class of the root variable of the lock in the endpoint elem
                  and retrieve all the summaries of the methods of that class *)
                (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env endpoint_class ~init:report_map ~f:
-                 (fun acc (endpoint_pname, {order; ui}) ->
+               fold_reportable_summaries env endpoint_class ~init:report_map
+                 ~f:(fun acc (endpoint_pname, {order; ui}) ->
                    (* skip methods known to run on ui thread, as they cannot run in parallel to us *)
                    if UIThreadDomain.is_empty ui then
                      OrderDomain.fold
@@ -443,8 +451,8 @@ let reporting {Callbacks.procedures; source_file} =
     if should_report proc_desc then
       Payload.read proc_desc (Procdesc.get_proc_name proc_desc)
       |> Option.iter ~f:(fun summary ->
-             report_deadlocks env summary ReportMap.empty |> report_starvation env summary
-             |> ReportMap.log )
+             report_deadlocks env summary ReportMap.empty
+             |> report_starvation env summary |> ReportMap.log )
   in
   List.iter procedures ~f:report_procedure ;
   IssueLog.store Config.starvation_issues_dir_name source_file

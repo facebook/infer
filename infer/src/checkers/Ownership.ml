@@ -190,7 +190,7 @@ module Domain = struct
 
 
   (* handle assigning directly to a base var *)
-  let handle_var_assign ?(is_operator_equal= false) lhs_base rhs_exp loc summary astate =
+  let handle_var_assign ?(is_operator_equal = false) lhs_base rhs_exp loc summary astate =
     match rhs_exp with
     | HilExp.Constant _ when not (Var.is_cpp_temporary (fst lhs_base)) ->
         add lhs_base CapabilityDomain.Owned astate
@@ -207,7 +207,7 @@ module Domain = struct
         in
         borrow_vars lhs_base vars_captured_by_ref astate
     | HilExp.AccessExpression (Base rhs_base)
-      when not is_operator_equal && Typ.is_reference (snd rhs_base) ->
+      when (not is_operator_equal) && Typ.is_reference (snd rhs_base) ->
         copy_or_borrow_var lhs_base rhs_base astate
     | HilExp.AccessExpression (AddressOf (Base rhs_base)) when not is_operator_equal ->
         borrow_vars lhs_base (VarSet.singleton rhs_base) astate
@@ -236,7 +236,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let get_assigned_base (access_expression: AccessExpression.t) =
+  let get_assigned_base (access_expression : AccessExpression.t) =
     match access_expression with
     | Base base ->
         Some base
@@ -279,10 +279,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  FN_placement_new_aliasing2_bad test) *)
               Domain.actuals_add_reads other_actuals loc summary astate
               |> Domain.add placement_base CapabilityDomain.Owned
-              |> Domain.add return_base CapabilityDomain.Owned |> Option.some
+              |> Domain.add return_base CapabilityDomain.Owned
+              |> Option.some
           | _ :: other_actuals ->
               Domain.actuals_add_reads other_actuals loc summary astate
-              |> Domain.add return_base CapabilityDomain.Owned |> Option.some
+              |> Domain.add return_base CapabilityDomain.Owned
+              |> Option.some
           | _ ->
               L.die InternalError "Placement new without placement in %a %a" Typ.Procname.pp pname
                 Location.pp loc
@@ -314,7 +316,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
+  let exec_instr (astate : Domain.astate) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
     let summary = proc_data.extras in
     match instr with
     | Assign (lhs_access_exp, rhs_exp, loc) -> (
@@ -376,14 +378,14 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (Transf
 
 let report_invalid_return post end_loc formal_map summary =
   (* look for return values that are borrowed from (now-invalid) local variables *)
-  let report_invalid_return base (capability: CapabilityDomain.astate) =
+  let report_invalid_return base (capability : CapabilityDomain.astate) =
     if Var.is_return (fst base) then
       match capability with
       | BorrowedFrom vars ->
           VarSet.iter
             (fun borrowed_base ->
               if
-                not (FormalMap.is_formal borrowed_base formal_map)
+                (not (FormalMap.is_formal borrowed_base formal_map))
                 && not (Var.is_global (fst borrowed_base))
               then Domain.report_return_stack_var borrowed_base end_loc summary )
             vars

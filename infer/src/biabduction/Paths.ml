@@ -144,7 +144,7 @@ end = struct
 
   let start node = Pstart (node, get_dummy_stats ())
 
-  let extend (node: Procdesc.Node.t) exn_opt session path =
+  let extend (node : Procdesc.Node.t) exn_opt session path =
     Pnode (node, exn_opt, session, path, get_dummy_stats (), None)
 
 
@@ -199,58 +199,59 @@ end = struct
         satisfying [f] was found.  Assumes that the invariant holds beforehand, and ensures that all
         the stats are computed afterwards.  Since this breaks the invariant, it must be followed by
         reset_stats. *)
-    let rec compute_stats do_calls (f: Procdesc.Node.t -> bool) =
+    let rec compute_stats do_calls (f : Procdesc.Node.t -> bool) =
       let nodes_found stats = stats.max_length > 0 in
       function
-        | Pstart (node, stats) ->
-            if stats_is_dummy stats then (
-              let found = f node in
-              stats.max_length <- (if found then 1 else 0) ;
-              stats.linear_num <- 1.0 )
-        | Pnode (node, _, _, path, stats, _) ->
-            if stats_is_dummy stats then (
-              compute_stats do_calls f path ;
-              let stats1 = get_stats path in
-              let found =
-                f node || nodes_found stats1
-                (* the order is important as f has side-effects *)
+      | Pstart (node, stats) ->
+          if stats_is_dummy stats then (
+            let found = f node in
+            stats.max_length <- (if found then 1 else 0) ;
+            stats.linear_num <- 1.0 )
+      | Pnode (node, _, _, path, stats, _) ->
+          if stats_is_dummy stats then (
+            compute_stats do_calls f path ;
+            let stats1 = get_stats path in
+            let found =
+              f node || nodes_found stats1
+              (* the order is important as f has side-effects *)
+            in
+            stats.max_length <- (if found then 1 + stats1.max_length else 0) ;
+            stats.linear_num <- stats1.linear_num )
+      | Pjoin (path1, path2, stats) ->
+          if stats_is_dummy stats then (
+            compute_stats do_calls f path1 ;
+            compute_stats do_calls f path2 ;
+            let stats1, stats2 = (get_stats path1, get_stats path2) in
+            stats.max_length <- max stats1.max_length stats2.max_length ;
+            stats.linear_num <- stats1.linear_num +. stats2.linear_num )
+      | Pcall (path1, _, ExecCompleted path2, stats) ->
+          if stats_is_dummy stats then (
+            let stats2 =
+              match do_calls with
+              | true ->
+                  compute_stats do_calls f path2 ; get_stats path2
+              | false ->
+                  {max_length= 0; linear_num= 0.0}
+            in
+            let stats1 =
+              let f' =
+                if nodes_found stats2 then fun _ -> true
+                  (* already found in call, no need to search before the call *)
+                else f
               in
-              stats.max_length <- (if found then 1 + stats1.max_length else 0) ;
-              stats.linear_num <- stats1.linear_num )
-        | Pjoin (path1, path2, stats) ->
-            if stats_is_dummy stats then (
-              compute_stats do_calls f path1 ;
-              compute_stats do_calls f path2 ;
-              let stats1, stats2 = (get_stats path1, get_stats path2) in
-              stats.max_length <- max stats1.max_length stats2.max_length ;
-              stats.linear_num <- stats1.linear_num +. stats2.linear_num )
-        | Pcall (path1, _, ExecCompleted path2, stats) ->
-            if stats_is_dummy stats then (
-              let stats2 =
-                match do_calls with
-                | true ->
-                    compute_stats do_calls f path2 ; get_stats path2
-                | false ->
-                    {max_length= 0; linear_num= 0.0}
-              in
-              let stats1 =
-                let f' =
-                  if nodes_found stats2 then fun _ -> true
-                    (* already found in call, no need to search before the call *)
-                  else f
-                in
-                compute_stats do_calls f' path1 ; get_stats path1
-              in
-              stats.max_length <- stats1.max_length + stats2.max_length ;
-              stats.linear_num <- stats1.linear_num )
-        | Pcall (path, _, ExecSkipped _, stats) ->
-            if stats_is_dummy stats then (
-              let stats1 = compute_stats do_calls f path ; get_stats path in
-              stats.max_length <- stats1.max_length ;
-              stats.linear_num <- stats1.linear_num )
+              compute_stats do_calls f' path1 ; get_stats path1
+            in
+            stats.max_length <- stats1.max_length + stats2.max_length ;
+            stats.linear_num <- stats1.linear_num )
+      | Pcall (path, _, ExecSkipped _, stats) ->
+          if stats_is_dummy stats then (
+            let stats1 = compute_stats do_calls f path ; get_stats path in
+            stats.max_length <- stats1.max_length ;
+            stats.linear_num <- stats1.linear_num )
   end
 
   (* End of module Invariant *)
+
   (** fold over each node in the path, excluding calls, once *)
   let fold_all_nodes_nocalls path ~init ~f =
     let acc = ref init in
@@ -284,8 +285,8 @@ end = struct
       restricting to those where [filter] holds of some element.
       If a node is reached via an exception,
       pass the exception information to [f] on the previous node *)
-  let iter_shortest_sequence_filter (f: int -> t -> int -> Typ.Name.t option -> unit)
-      (filter: Procdesc.Node.t -> bool) (path: t) : unit =
+  let iter_shortest_sequence_filter (f : int -> t -> int -> Typ.Name.t option -> unit)
+      (filter : Procdesc.Node.t -> bool) (path : t) : unit =
     let rec doit level session path prev_exn_opt =
       match path with
       | Pstart _ ->
@@ -318,8 +319,8 @@ end = struct
       Do not iterate past the last occurrence of the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path]
       and previous [session] and possible exception [exn_opt] *)
-  let iter_shortest_sequence (f: int -> t -> int -> Typ.Name.t option -> unit)
-      (pos_opt: PredSymb.path_pos option) (path: t) : unit =
+  let iter_shortest_sequence (f : int -> t -> int -> Typ.Name.t option -> unit)
+      (pos_opt : PredSymb.path_pos option) (path : t) : unit =
     let filter node =
       match pos_opt with
       | None ->
@@ -385,9 +386,12 @@ end = struct
     Invariant.compute_stats true (fun _ -> true) path ;
     let node, repetitions = repetitions path in
     let str =
-      "linear paths: " ^ string_of_float (Invariant.get_stats path).linear_num ^ " max length: "
-      ^ string_of_int (Invariant.get_stats path).max_length ^ " has repetitions: "
-      ^ string_of_int repetitions ^ " of node " ^ string_of_int (Procdesc.Node.get_id node :> int)
+      "linear paths: "
+      ^ string_of_float (Invariant.get_stats path).linear_num
+      ^ " max length: "
+      ^ string_of_int (Invariant.get_stats path).max_length
+      ^ " has repetitions: " ^ string_of_int repetitions ^ " of node "
+      ^ string_of_int (Procdesc.Node.get_id node :> int)
     in
     Invariant.reset_stats path ; str
 
@@ -431,7 +435,7 @@ end = struct
         if n > 0 then raise Caml.Not_found ;
         let num = PathMap.find path !delayed in
         F.fprintf fmt "P%d" num
-      with Caml.Not_found ->
+      with Caml.Not_found -> (
         match path with
         | Pstart (node, _) ->
             F.fprintf fmt "n%a" Procdesc.Node.pp node
@@ -442,13 +446,12 @@ end = struct
         | Pcall (path1, _, ExecCompleted path2, _) ->
             F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2
         | Pcall (path, _, ExecSkipped (reason, _), _) ->
-            F.fprintf fmt "(%a: %s)" (doit (n - 1)) path reason
+            F.fprintf fmt "(%a: %s)" (doit (n - 1)) path reason )
     in
     let print_delayed () =
       if not (PathMap.is_empty !delayed) then (
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
-        F.fprintf fmt "where@\n" ;
-        PathMap.iter f !delayed )
+        F.fprintf fmt "where@\n" ; PathMap.iter f !delayed )
     in
     add_delayed path ; doit 0 fmt path ; print_delayed ()
 
@@ -474,8 +477,7 @@ end = struct
                 in
                 trace := Errlog.make_trace_element (level + 1) loc definition_descr [] :: !trace )
             loc_opt
-      | _, Some curr_node
-        -> (
+      | _, Some curr_node -> (
           let curr_loc = Procdesc.Node.get_loc curr_node in
           match Procdesc.Node.get_kind curr_node with
           | Procdesc.Node.Join_node ->
@@ -535,8 +537,9 @@ end = struct
     in
     iter_shortest_sequence g pos_opt path ;
     let equal lt1 lt2 =
-      [%compare.equal : int * Location.t]
-        (lt1.Errlog.lt_level, lt1.Errlog.lt_loc) (lt2.Errlog.lt_level, lt2.Errlog.lt_loc)
+      [%compare.equal: int * Location.t]
+        (lt1.Errlog.lt_level, lt1.Errlog.lt_loc)
+        (lt2.Errlog.lt_level, lt2.Errlog.lt_loc)
     in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
     IList.remove_irrelevant_duplicates ~equal ~f:relevant (List.rev !trace)
@@ -635,7 +638,7 @@ end = struct
 
   (** It's the caller's responsibility to ensure that [Prop.prop_rename_primed_footprint_vars] was
      called on the prop *)
-  let add_renamed_prop (p: Prop.normal Prop.t) (path: Path.t) (ps: t) : t =
+  let add_renamed_prop (p : Prop.normal Prop.t) (path : Path.t) (ps : t) : t =
     let path_new =
       try
         let path_old = PropMap.find p ps in
@@ -645,7 +648,7 @@ end = struct
     PropMap.add p path_new ps
 
 
-  let union (ps1: t) (ps2: t) : t = PropMap.fold add_renamed_prop ps1 ps2
+  let union (ps1 : t) (ps2 : t) : t = PropMap.fold add_renamed_prop ps1 ps2
 
   (** check if the nodes in path p1 are a subset of those in p2 (not trace subset) *)
   let path_nodes_subset p1 p2 =
@@ -657,7 +660,7 @@ end = struct
 
 
   (** difference between pathsets for the differential fixpoint *)
-  let diff (ps1: t) (ps2: t) : t =
+  let diff (ps1 : t) (ps2 : t) : t =
     let res = ref ps1 in
     let rem p path =
       try
@@ -702,13 +705,13 @@ end = struct
     iter f ps
 
 
-  let d (ps: t) =
+  let d (ps : t) =
     let pp pe fmt ps = F.fprintf fmt "%a@\n" (pp pe) ps in
     L.add_print_with_pe pp ps
 
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
-  let from_renamed_list (pl: ('a Prop.t * Path.t) list) : t =
+  let from_renamed_list (pl : ('a Prop.t * Path.t) list) : t =
     List.fold ~f:(fun ps (p, pa) -> add_renamed_prop p pa ps) ~init:empty pl
 end
 

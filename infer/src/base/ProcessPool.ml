@@ -63,7 +63,7 @@ type 'a boss_message =
 let marshal_to_pipe fd x = Marshal.to_channel fd x [] ; Out_channel.flush fd
 
 (** like [Unix.read] but reads until [len] bytes have been read *)
-let rec really_read ?(pos= 0) ~len fd ~buf =
+let rec really_read ?(pos = 0) ~len fd ~buf =
   if len <= 0 then ()
   else
     let read = Unix.read ~pos ~len fd ~buf in
@@ -129,11 +129,11 @@ let process_updates pool buffer =
     | UpdateStatus (slot, t, status) ->
         TaskBar.update_status pool.task_bar ~slot t status
     | Crash slot ->
-        let {pid} = (pool.slots).(slot) in
+        let {pid} = pool.slots.(slot) in
         (* clean crash, give the child process a chance to cleanup *)
         Unix.wait (`Pid pid) |> ignore ;
         killall pool ~slot "see backtrace above"
-    | Ready slot ->
+    | Ready slot -> (
         TaskBar.tasks_done_add pool.task_bar 1 ;
         match pool.tasks with
         | [] ->
@@ -141,8 +141,8 @@ let process_updates pool buffer =
             pool.idle_children <- pool.idle_children + 1
         | x :: tasks ->
             pool.tasks <- tasks ;
-            let {down_pipe} = (pool.slots).(slot) in
-            marshal_to_pipe down_pipe (Do x) )
+            let {down_pipe} = pool.slots.(slot) in
+            marshal_to_pipe down_pipe (Do x) ) )
 
 
 (** terminate all worker processes *)
@@ -204,7 +204,7 @@ let fork_child ~child_prelude ~slot (updates_r, updates_w) ~f =
       ProcessPoolState.in_child := true ;
       child_prelude () ;
       let updates_oc = Unix.out_channel_of_descr updates_w in
-      let send_to_parent (message: worker_message) = marshal_to_pipe updates_oc message in
+      let send_to_parent (message : worker_message) = marshal_to_pipe updates_oc message in
       (* Function to send updates up the pipe to the parent instead of directly to the task
          bar. This is because only the parent knows about all the children, hence it's in charge of
          actually updating the task bar. *)
@@ -235,7 +235,7 @@ let create : jobs:int -> child_prelude:(unit -> unit) -> f:('a -> unit) -> 'a t 
   (* Pipe to communicate from children to parent. Only one pipe is needed: the messages sent by
       children include the identifier of the child sending the message (its [slot]). This way there
       is only one pipe to wait on for updates. *)
-  let (pipe_child_r, pipe_child_w) as status_pipe = Unix.pipe () in
+  let ((pipe_child_r, pipe_child_w) as status_pipe) = Unix.pipe () in
   let slots = Array.init jobs ~f:(fun slot -> fork_child ~child_prelude ~slot status_pipe ~f) in
   (* we have forked the child processes and are now in the parent *)
   let[@warning "-26"] pipe_child_w = Unix.close pipe_child_w in

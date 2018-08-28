@@ -34,4 +34,5 @@ let main ~input ~output =
     Caml.Printexc.raise_with_backtrace exn bt
 
 
-;; main ~input:Caml.Sys.argv.(1) ~output:(Some "-")
+;;
+main ~input:Caml.Sys.argv.(1) ~output:(Some "-")

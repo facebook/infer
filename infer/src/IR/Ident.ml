@@ -42,7 +42,7 @@ type name = Name.t [@@deriving compare]
 
 let name_spec = Name.Spec
 
-let equal_name = [%compare.equal : name]
+let equal_name = [%compare.equal: name]
 
 type kind =
   | KNone
@@ -59,7 +59,7 @@ let knormal = KNormal
 
 let kprimed = KPrimed
 
-let equal_kind = [%compare.equal : kind]
+let equal_kind = [%compare.equal: kind]
 
 (* timestamp for a path identifier *)
 let path_ident_stamp = -3
@@ -89,7 +89,7 @@ module Hash = Hashtbl.Make (struct
 
   let equal = equal
 
-  let hash (id: t) = Hashtbl.hash id
+  let hash (id : t) = Hashtbl.hash id
 end)
 
 let idlist_to_idset ids = List.fold ~f:(fun set id -> Set.add id set) ~init:Set.empty ids
@@ -139,9 +139,7 @@ module NameGenerator = struct
         let stamp = NameHash.find !name_map name in
         NameHash.replace !name_map name (stamp + 1) ;
         stamp + 1
-      with Caml.Not_found ->
-        NameHash.add !name_map name 0 ;
-        0
+      with Caml.Not_found -> NameHash.add !name_map name 0 ; 0
     in
     {kind; name; stamp}
 
@@ -199,15 +197,15 @@ let get_name id = id.name
 
 let has_kind id kind = equal_kind id.kind kind
 
-let is_primed (id: t) = has_kind id KPrimed
+let is_primed (id : t) = has_kind id KPrimed
 
-let is_normal (id: t) = has_kind id KNormal || has_kind id KNone
+let is_normal (id : t) = has_kind id KNormal || has_kind id KNone
 
-let is_footprint (id: t) = has_kind id KFootprint
+let is_footprint (id : t) = has_kind id KFootprint
 
-let is_none (id: t) = has_kind id KNone
+let is_none (id : t) = has_kind id KNone
 
-let is_path (id: t) = has_kind id KNormal && Int.equal id.stamp path_ident_stamp
+let is_path (id : t) = has_kind id KNormal && Int.equal id.stamp path_ident_stamp
 
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
@@ -259,4 +257,4 @@ let hashqueue_of_sequence ?init s =
   q
 
 
-let set_of_sequence ?(init= Set.empty) s = Sequence.fold s ~init ~f:(fun ids id -> Set.add id ids)
+let set_of_sequence ?(init = Set.empty) s = Sequence.fold s ~init ~f:(fun ids id -> Set.add id ids)

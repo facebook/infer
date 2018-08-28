@@ -11,7 +11,8 @@ open! IStd
   Lists with O(1) append and rev.
 *)
 
-include sig
+include
+  sig
     (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
     type +'a t

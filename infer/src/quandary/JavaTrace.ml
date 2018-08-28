@@ -117,8 +117,8 @@ module SourceKind = struct
         PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
           (Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname))
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
-      match (* accessed global will be passed to us as the only parameter *)
-            actuals with
+      (* accessed global will be passed to us as the only parameter *)
+      match actuals with
       | [HilExp.AccessExpression access_expr] -> (
         match AccessExpression.to_access_path access_expr with
         | (Var.ProgramVar pvar, _), _ ->
@@ -169,8 +169,7 @@ module SourceKind = struct
     in
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.Java java_pname as pname
-      -> (
+    | Typ.Procname.Java java_pname as pname -> (
         let method_name = Typ.Procname.Java.get_method java_pname in
         let taint_matching_supertype typename =
           match (Typ.Name.name typename, method_name) with
@@ -197,20 +196,22 @@ module SourceKind = struct
               | "refresh"
               | "update" ) ) ->
               Some
-                (taint_formals_with_types ["android.net.Uri"; "java.lang.String"] UserControlledURI
-                   formals)
+                (taint_formals_with_types
+                   ["android.net.Uri"; "java.lang.String"]
+                   UserControlledURI formals)
           | ( "android.webkit.WebChromeClient"
             , ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ) ->
               Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
           | ( "android.webkit.WebViewClient"
             , ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ) ->
               Some
-                (taint_formals_with_types ["android.webkit.WebResourceRequest"; "java.lang.String"]
+                (taint_formals_with_types
+                   ["android.webkit.WebResourceRequest"; "java.lang.String"]
                    UserControlledURI formals)
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
               Some
                 (taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals)
-          | _ ->
+          | _ -> (
             match Tenv.lookup tenv typename with
             | Some typ ->
                 if
@@ -225,7 +226,7 @@ module SourceKind = struct
                   Some (taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc)))
                 else None
             | _ ->
-                None
+                None )
         in
         match
           PatternMatch.supertype_find_map_opt tenv taint_matching_supertype
@@ -321,7 +322,7 @@ module SinkKind = struct
     | Typ.Procname.Java java_pname ->
         (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter
            only if [taint_this] is true. *)
-        let taint_all ?(taint_this= false) kind =
+        let taint_all ?(taint_this = false) kind =
           let actuals_to_taint, offset =
             if Typ.Procname.Java.is_static java_pname || taint_this then (actuals, 0)
             else (List.tl_exn actuals, 1)
@@ -530,7 +531,8 @@ include Trace.Make (struct
     | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), HTML ->
         (* untrusted data flows into HTML; XSS risk *)
         Some IssueType.cross_site_scripting
-    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript ->
+    | (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript
+      ->
         (* untrusted data flows into JS *)
         Some IssueType.javascript_injection
     | ( (Endpoint _ | Intent | IntentFromURI | UserControlledString | UserControlledURI)

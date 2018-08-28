@@ -21,7 +21,7 @@ type alexp = Const of string | Regexp of cached_regexp | Var of string | FId of 
 
 type t = alexp [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let formula_id_to_string fid = match fid with Formula_id s -> s
 

@@ -72,7 +72,8 @@ module Val = struct
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
-      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
+      Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv
+      && Relation.Sym.( <= ) ~lhs:lhs.sym ~rhs:rhs.sym
       && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
       && Relation.Sym.( <= ) ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
@@ -128,7 +129,7 @@ module Val = struct
 
   let set_traces : TraceSet.t -> t -> t = fun traces x -> {x with traces}
 
-  let of_itv ?(traces= TraceSet.empty) itv = {bot with itv; traces}
+  let of_itv ?(traces = TraceSet.empty) itv = {bot with itv; traces}
 
   let of_int n = of_itv (Itv.of_int n)
 
@@ -147,10 +148,16 @@ module Val = struct
 
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
-  let make_sym
-      : ?unsigned:bool -> Loc.t -> Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial
-        -> Itv.Counter.t -> Location.t -> t =
-   fun ?(unsigned= false) loc pname symbol_table path new_sym_num location ->
+  let make_sym :
+         ?unsigned:bool
+      -> Loc.t
+      -> Typ.Procname.t
+      -> Itv.SymbolTable.t
+      -> Itv.SymbolPath.partial
+      -> Itv.Counter.t
+      -> Location.t
+      -> t =
+   fun ?(unsigned = false) loc pname symbol_table path new_sym_num location ->
     { bot with
       itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
     ; sym= Relation.Sym.of_loc loc
@@ -210,9 +217,12 @@ module Val = struct
 
   let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
 
-  let lift_prune2
-      : (Itv.t -> Itv.t -> Itv.t) -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate) -> t
-        -> t -> t =
+  let lift_prune2 :
+         (Itv.t -> Itv.t -> Itv.t)
+      -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate)
+      -> t
+      -> t
+      -> t =
    fun f g x y ->
     { x with
       itv= f x.itv y.itv
@@ -232,7 +242,7 @@ module Val = struct
 
   let prune_ne : t -> t -> t = lift_prune2 Itv.prune_ne ArrayBlk.prune_ne
 
-  let is_pointer_to_non_array x = not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk
+  let is_pointer_to_non_array x = (not (PowLoc.is_bot x.powloc)) && ArrayBlk.is_bot x.arrayblk
 
   (* In the pointer arithmetics, it returns top, if we cannot
      precisely follow the physical memory model, e.g., (&x + 1). *)
@@ -264,9 +274,11 @@ module Val = struct
    fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
 
 
-  let subst
-      : t -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t -> Location.t
-        -> t =
+  let subst :
+         t
+      -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t
+      -> Location.t
+      -> t =
    fun x (bound_map, trace_map) location ->
     let symbols = get_symbols x in
     let traces_caller =
@@ -331,7 +343,7 @@ end
 module AliasTarget = struct
   type t = Simple of Loc.t | Empty of Loc.t [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let pp fmt = function Simple l -> Loc.pp fmt l | Empty l -> F.fprintf fmt "empty(%a)" Loc.pp l
 
@@ -709,8 +721,8 @@ module MemReach = struct
     {m with mem_pure= MemPure.add x v m.mem_pure}
 
 
-  let add_unknown_from
-      : Ident.t -> callee_pname:Typ.Procname.t option -> location:Location.t -> t -> t =
+  let add_unknown_from :
+      Ident.t -> callee_pname:Typ.Procname.t option -> location:Location.t -> t -> t =
    fun id ~callee_pname ~location m ->
     let val_unknown = Val.unknown_from ~callee_pname ~location in
     add_stack (Loc.of_id id) val_unknown m |> add_heap Loc.unknown val_unknown
@@ -819,9 +831,11 @@ module MemReach = struct
    fun constrs -> lift_relation (Relation.meet_constraints constrs)
 
 
-  let store_relation
-      : PowLoc.t -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
-        -> t -> t =
+  let store_relation :
+         PowLoc.t
+      -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
+      -> t
+      -> t =
    fun locs symexp_opts -> lift_relation (Relation.store_relation locs symexp_opts)
 
 
@@ -829,9 +843,9 @@ module MemReach = struct
 
   let init_param_relation : Loc.t -> t -> t = fun loc -> lift_relation (Relation.init_param loc)
 
-  let init_array_relation
-      : Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t
-        -> t =
+  let init_array_relation :
+      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t
+      =
    fun allocsite ~offset ~size ~size_exp_opt ->
     lift_relation (Relation.init_array allocsite ~offset ~size ~size_exp_opt)
 
@@ -956,9 +970,11 @@ module Mem = struct
 
   let is_relation_unsat m = f_lift_default ~default:true MemReach.is_relation_unsat m
 
-  let store_relation
-      : PowLoc.t -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
-        -> t -> t =
+  let store_relation :
+         PowLoc.t
+      -> Relation.SymExp.t option * Relation.SymExp.t option * Relation.SymExp.t option
+      -> t
+      -> t =
    fun locs symexp_opts -> f_lift (MemReach.store_relation locs symexp_opts)
 
 
@@ -966,9 +982,9 @@ module Mem = struct
 
   let init_param_relation : Loc.t -> t -> t = fun loc -> f_lift (MemReach.init_param_relation loc)
 
-  let init_array_relation
-      : Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t
-        -> t =
+  let init_array_relation :
+      Allocsite.t -> offset:Itv.t -> size:Itv.t -> size_exp_opt:Relation.SymExp.t option -> t -> t
+      =
    fun allocsite ~offset ~size ~size_exp_opt ->
     f_lift (MemReach.init_array_relation allocsite ~offset ~size ~size_exp_opt)
 

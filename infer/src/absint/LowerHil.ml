@@ -42,7 +42,7 @@ struct
 
   let is_java_unlock pname actuals =
     (* would check is_java, but we want to include builtins too *)
-    not (Typ.Procname.is_c_method pname)
+    (not (Typ.Procname.is_c_method pname))
     && match RacerDConfig.Models.get_lock pname actuals with Unlock -> true | _ -> false
 
 

@@ -104,5 +104,5 @@ let exn_node_table = Typ.Procname.Hash.create 100
 
 let reset_exn_node_table () = Typ.Procname.Hash.clear exn_node_table
 
-let add_exn_node procname (exn_node: Procdesc.Node.t) =
+let add_exn_node procname (exn_node : Procdesc.Node.t) =
   Typ.Procname.Hash.add exn_node_table procname exn_node

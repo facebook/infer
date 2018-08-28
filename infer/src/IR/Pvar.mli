@@ -93,8 +93,13 @@ val mk_callee : Mangled.t -> Typ.Procname.t -> t
     for a callee function with the given function name *)
 
 val mk_global :
-  ?is_constexpr:bool -> ?is_pod:bool -> ?is_static_local:bool -> ?is_static_global:bool
-  -> ?translation_unit:SourceFile.t -> Mangled.t -> t
+     ?is_constexpr:bool
+  -> ?is_pod:bool
+  -> ?is_static_local:bool
+  -> ?is_static_global:bool
+  -> ?translation_unit:SourceFile.t
+  -> Mangled.t
+  -> t
 (** create a global variable with the given name *)
 
 val mk_tmp : string -> Typ.Procname.t -> t

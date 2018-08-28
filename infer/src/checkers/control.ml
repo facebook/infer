@@ -41,8 +41,7 @@ module LoopHeads = Procdesc.NodeSet
 module ExitNodeToLoopHeads = Procdesc.NodeMap
 
 (** Map loop head -> prune nodes in the loop guard  *)
-module LoopHeadToGuardNodes =
-Procdesc.NodeMap
+module LoopHeadToGuardNodes = Procdesc.NodeMap
 
 type loop_control_maps =
   { exit_map: LoopHeads.t ExitNodeToLoopHeads.t
@@ -110,7 +109,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
      along with the loop header that CV is originating from
      - a loop exit node, remove control variables of its guard nodes
      This is correct because the CVs are only going to be temporaries. *)
-  let exec_instr astate {ProcData.extras= {exit_map; loop_head_to_guard_nodes}} (node: CFG.Node.t)
+  let exec_instr astate {ProcData.extras= {exit_map; loop_head_to_guard_nodes}} (node : CFG.Node.t)
       _ =
     let node = CFG.Node.underlying_node node in
     let astate' =

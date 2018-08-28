@@ -28,7 +28,12 @@ type hpred_pat = {hpred: Sil.hpred; flag: bool}
 type sidecondition = Prop.normal Prop.t -> Sil.exp_subst -> bool
 
 val prop_match_with_impl :
-  Tenv.t -> Prop.normal Prop.t -> sidecondition -> Ident.t list -> hpred_pat -> hpred_pat list
+     Tenv.t
+  -> Prop.normal Prop.t
+  -> sidecondition
+  -> Ident.t list
+  -> hpred_pat
+  -> hpred_pat list
   -> (Sil.exp_subst * Prop.normal Prop.t) option
 (** [prop_match_with_impl p condition vars hpat hpats]
     returns [(subst, p_leftover)] such that
@@ -37,7 +42,10 @@ val prop_match_with_impl :
     Using the flag [field], we can control the strength of |-. *)
 
 val find_partial_iso :
-  Tenv.t -> (Exp.t -> Exp.t -> bool) -> (Exp.t * Exp.t) list -> (Exp.t * Exp.t) list
+     Tenv.t
+  -> (Exp.t -> Exp.t -> bool)
+  -> (Exp.t * Exp.t) list
+  -> (Exp.t * Exp.t) list
   -> Sil.hpred list
   -> ((Exp.t * Exp.t) list * Sil.hpred list * Sil.hpred list * Sil.hpred list) option
 (** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma.
@@ -62,7 +70,12 @@ val hpara_create :
     passed as arguments to hpara. Both of them are returned as a result. *)
 
 val hpara_dll_create :
-  Tenv.t -> (Exp.t * Exp.t) list -> Sil.hpred list -> Exp.t -> Exp.t -> Exp.t
+     Tenv.t
+  -> (Exp.t * Exp.t) list
+  -> Sil.hpred list
+  -> Exp.t
+  -> Exp.t
+  -> Exp.t
   -> Sil.hpara_dll * Exp.t list
 (** [hpara_dll_create] takes a correspondence, and a sigma, a root,
     a blink and a flink for the first part of this correspondence. Then,

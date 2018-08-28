@@ -19,7 +19,7 @@ module L = Die
 type analyzer = CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters
 [@@deriving compare]
 
-let equal_analyzer = [%compare.equal : analyzer]
+let equal_analyzer = [%compare.equal: analyzer]
 
 let string_to_analyzer =
   [ ("checkers", Checkers)
@@ -90,7 +90,7 @@ type build_system =
   | BXcode
 [@@deriving compare]
 
-let equal_build_system = [%compare.equal : build_system]
+let equal_build_system = [%compare.equal: build_system]
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
@@ -134,7 +134,8 @@ let build_system_of_exe_name name =
          @[<v2>  %a@]"
         name
         (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
-        ( List.map ~f:fst build_system_exe_assoc |> List.map ~f:string_of_build_system
+        ( List.map ~f:fst build_system_exe_assoc
+        |> List.map ~f:string_of_build_system
         |> List.dedup_and_sort ~compare:String.compare )
 
 
@@ -515,7 +516,7 @@ let all_checkers = ref []
 let disable_all_checkers () = List.iter !all_checkers ~f:(fun (var, _, _, _) -> var := false)
 
 let () =
-  let on_unknown_arg_from_command (cmd: InferCommand.t) =
+  let on_unknown_arg_from_command (cmd : InferCommand.t) =
     match cmd with
     | Report ->
         `Add
@@ -555,7 +556,7 @@ and ( analysis_blacklist_files_containing_options
     , analysis_path_regex_blacklist_options
     , analysis_path_regex_whitelist_options
     , analysis_suppress_errors_options ) =
-  let mk_filtering_options ~suffix ?(deprecated_suffix= []) ~help ~meta =
+  let mk_filtering_options ~suffix ?(deprecated_suffix = []) ~help ~meta =
     (* reuse the same config var for all the forms of the analyzer name (eg infer and biabduction
        must map to the same filtering config)*)
     let config_vars = ref [] in
@@ -619,11 +620,7 @@ and analyzer =
     match Checkers with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | CaptureOnly
-    | CompileOnly
-    | Checkers
-    | Crashcontext
-    | Linters ->
+    | CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters ->
         ()
   in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
@@ -637,19 +634,19 @@ and analyzer =
 - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
 - $(b,crashcontext): experimental (see $(b,--crashcontext))|}
     ~f:(function
-        | (CaptureOnly | CompileOnly) as x ->
-            let analyzer_str =
-              List.find_map_exn string_to_analyzer ~f:(fun (s, y) ->
-                  if equal_analyzer x y then Some s else None )
-            in
-            CLOpt.warnf
-              "WARNING: The analyzer '%s' is deprecated, use the '%s' subcommand instead:@\n\
-               @\n  \
-               infer %s ..."
-              analyzer_str analyzer_str analyzer_str ;
-            x
-        | _ as x ->
-            x)
+      | (CaptureOnly | CompileOnly) as x ->
+          let analyzer_str =
+            List.find_map_exn string_to_analyzer ~f:(fun (s, y) ->
+                if equal_analyzer x y then Some s else None )
+          in
+          CLOpt.warnf
+            "WARNING: The analyzer '%s' is deprecated, use the '%s' subcommand instead:@\n\
+             @\n  \
+             infer %s ..."
+            analyzer_str analyzer_str analyzer_str ;
+          x
+      | _ as x ->
+          x)
     ~symbols:string_to_analyzer
 
 
@@ -675,7 +672,7 @@ and ( annotation_reachability
     , starvation
     , suggest_nullable
     , uninit ) =
-  let mk_checker ?(default= false) ?(deprecated= []) ~long doc =
+  let mk_checker ?(default = false) ?(deprecated = []) ~long doc =
     let var =
       CLOpt.mk_bool ~long
         ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -762,7 +759,8 @@ and ( annotation_reachability
         |> String.concat ~sep:", " ) )
       ~f:(fun b ->
         List.iter
-          ~f:(fun (var, _, _, default) -> var := if b then default || !var else not default && !var)
+          ~f:(fun (var, _, _, default) ->
+            var := if b then default || !var else (not default) && !var )
           !all_checkers ;
         b )
       [] (* do all the work in ~f *)
@@ -818,7 +816,9 @@ and array_level =
 
 
 and blacklist =
-  CLOpt.mk_string_opt ~deprecated:["-blacklist-regex"; "-blacklist"] ~long:"buck-blacklist"
+  CLOpt.mk_string_opt
+    ~deprecated:["-blacklist-regex"; "-blacklist"]
+    ~long:"buck-blacklist"
     ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
     ~meta:"regex" "Skip analysis of files matched by the specified regular expression"
 
@@ -1105,7 +1105,8 @@ and ( bo_debug
       ; reports_include_ml_loc
       ; trace_error
       ; write_html
-      ; write_dotty ] [filtering; only_cheap_debug]
+      ; write_dotty ]
+      [filtering; only_cheap_debug]
   and _ : int option ref =
     CLOpt.mk_int_opt ~long:"debug-level" ~in_help:all_generic_manuals ~meta:"level"
       ~f:(fun level -> set_debug_level level ; level)
@@ -1118,7 +1119,8 @@ and ( bo_debug
       "Generate lightweight debugging information: just print the internal exceptions during \
        analysis (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), \
        $(b,--reports-include-ml-loc))"
-      [developer_mode; print_buckets; reports_include_ml_loc] [filtering; keep_going]
+      [developer_mode; print_buckets; reports_include_ml_loc]
+      [filtering; keep_going]
   and default_linters =
     CLOpt.mk_bool ~long:"default-linters"
       ~in_help:InferCommand.[(Capture, manual_clang_linters)]
@@ -1228,7 +1230,8 @@ and () =
         By default, the following issue types are disabled: %s.\n\n \
         See also $(b,--report-issue-type).\n"
        (String.concat ~sep:", " disabled_issues_ids)) ;
-  mk true ~long:"enable-issue-type" ~deprecated:["enable_checks"; "-enable-checks"]
+  mk true ~long:"enable-issue-type"
+    ~deprecated:["enable_checks"; "-enable-checks"]
     "Show reports coming from this type of issue. By default, all issue types are enabled except \
      the ones listed in $(b,--disable-issue-type). Note that enabling issue types does not make \
      the corresponding checker run; see individual checker options to turn them on or off."
@@ -1446,7 +1449,8 @@ and issues_fields =
       ; `Issue_field_bug_type
       ; `Issue_field_bucket
       ; `Issue_field_kind
-      ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
+      ; `Issue_field_bug_trace ]
+    ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
     "Fields to emit with $(b,--issues-tests)"
 
 
@@ -1765,15 +1769,17 @@ and progress_bar =
 
 and progress_bar_style =
   CLOpt.mk_symbol ~long:"progress-bar-style"
-    ~symbols:[("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)] ~eq:Pervasives.( = )
-    ~default:`Auto ~in_help:[(Analyze, manual_generic); (Capture, manual_generic)]
+    ~symbols:[("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)]
+    ~eq:Pervasives.( = ) ~default:`Auto
+    ~in_help:[(Analyze, manual_generic); (Capture, manual_generic)]
     "Style of the progress bar. $(b,auto) selects $(b,multiline) if connected to a tty, otherwise \
      $(b,plain)."
 
 
 and project_root =
-  CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
-    ~default:CLOpt.init_work_dir
+  CLOpt.mk_path
+    ~deprecated:["project_root"; "-project_root"; "pr"]
+    ~long:"project-root" ~short:'C' ~default:CLOpt.init_work_dir
     ~in_help:
       InferCommand.
         [ (Analyze, manual_generic)
@@ -2016,7 +2022,8 @@ and specs_library =
     in
     (* Add the newline-separated directories listed in <file> to the list of directories to be
        searched for .spec files *)
-    CLOpt.mk_path ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
+    CLOpt.mk_path
+      ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
       ~long:"specs-library-index" ~default:""
       ~f:(fun file ->
         specs_library := read_specs_dir_list_file file @ !specs_library ;
@@ -2091,8 +2098,9 @@ and profiler_samples =
 
 
 and testing_mode =
-  CLOpt.mk_bool ~deprecated:["testing_mode"; "-testing_mode"; "tm"] ~deprecated_no:["ntm"]
-    ~long:"testing-mode"
+  CLOpt.mk_bool
+    ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
+    ~deprecated_no:["ntm"] ~long:"testing-mode"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
 
 
@@ -2326,7 +2334,7 @@ let post_parsing_initialization command_opt =
           error "Uncaught Internal Error: " (Exn.to_string exn)
     in
     print_exception () ;
-    if not is_infer_exit_zero && (should_print_backtrace_default || !developer_mode) then (
+    if (not is_infer_exit_zero) && (should_print_backtrace_default || !developer_mode) then (
       ANSITerminal.prerr_string L.(term_styles_of_style Error) "Error backtrace:\n" ;
       ANSITerminal.prerr_string L.(term_styles_of_style Error) backtrace ) ;
     if not is_infer_exit_zero then Out_channel.newline stderr ;
@@ -2365,13 +2373,13 @@ let post_parsing_initialization command_opt =
   if !linters_developer_mode then linters := true ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( if Option.is_none !analyzer then
-      match (command_opt : InferCommand.t option) with
-      | Some Compile ->
-          analyzer := Some CompileOnly
-      | Some Capture ->
-          analyzer := Some CaptureOnly
-      | _ ->
-          () ) ;
+    match (command_opt : InferCommand.t option) with
+    | Some Compile ->
+        analyzer := Some CompileOnly
+    | Some Capture ->
+        analyzer := Some CaptureOnly
+    | _ ->
+        () ) ;
   ( match !analyzer with
   | Some Crashcontext ->
       disable_all_checkers () ;
@@ -3014,5 +3022,5 @@ let java_package_is_external package =
   | [] ->
       false
   | _ ->
-      List.exists external_java_packages ~f:(fun (prefix: string) ->
+      List.exists external_java_packages ~f:(fun (prefix : string) ->
           String.is_prefix package ~prefix )

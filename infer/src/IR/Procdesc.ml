@@ -32,7 +32,7 @@ end
 module Node = struct
   type id = int [@@deriving compare]
 
-  let equal_id = [%compare.equal : id]
+  let equal_id = [%compare.equal: id]
 
   type stmt_nodekind =
     | AssertionFailure
@@ -84,7 +84,7 @@ module Node = struct
     | Skip_node of string
   [@@deriving compare]
 
-  let equal_nodekind = [%compare.equal : nodekind]
+  let equal_nodekind = [%compare.equal: nodekind]
 
   (** a node *)
   type t =
@@ -120,7 +120,7 @@ module Node = struct
 
   let hash node = Hashtbl.hash node.id
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   (** Get the unique id of the node *)
   let get_id node = node.id
@@ -160,7 +160,8 @@ module Node = struct
   let get_siblings node =
     get_preds node
     |> ISequence.gen_sequence_list ~f:(fun parent ->
-           get_succs parent |> Sequence.of_list |> Sequence.filter ~f:(fun n -> not (equal node n))
+           get_succs parent |> Sequence.of_list
+           |> Sequence.filter ~f:(fun n -> not (equal node n))
            |> Sequence.Generator.of_sequence )
     |> Sequence.Generator.run
 
@@ -182,8 +183,7 @@ module Node = struct
   let find_in_node_or_preds =
     let rec find ~f visited nodes =
       match nodes with
-      | node :: nodes when not (NodeSet.mem node visited)
-        -> (
+      | node :: nodes when not (NodeSet.mem node visited) -> (
           let instrs = get_instrs node in
           match Instrs.find_map ~f:(f node) instrs with
           | Some res ->
@@ -325,7 +325,7 @@ module Node = struct
 
 
   (** Dump extended instructions for the node *)
-  let d_instrs ~(sub_instrs: bool) (curr_instr: Sil.instr option) (node: t) =
+  let d_instrs ~(sub_instrs : bool) (curr_instr : Sil.instr option) (node : t) =
     L.add_print_with_pe ~color:Pp.Green (pp_instrs ~sub_instrs ~instro:curr_instr) node
 
 
@@ -374,7 +374,8 @@ module Node = struct
         in
         Some instr_key
     in
-    get_instrs node |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr
+    get_instrs node
+    |> IContainer.rev_filter_map_to_list ~fold:Instrs.fold ~f:add_instr
     |> Utils.better_hash
 
 
@@ -420,7 +421,7 @@ let compute_distance_to_exit_node pdesc =
   let exit_node = pdesc.exit_node in
   let rec mark_distance dist nodes =
     let next_nodes = ref [] in
-    let do_node (node: Node.t) =
+    let do_node (node : Node.t) =
       match node.dist_exit with
       | Some _ ->
           ()
@@ -530,13 +531,13 @@ let append_locals pdesc new_locals =
   (pdesc.attributes).locals <- pdesc.attributes.locals @ new_locals
 
 
-let set_succs_exn_only (node: Node.t) exn = node.exn <- exn
+let set_succs_exn_only (node : Node.t) exn = node.exn <- exn
 
 (** Set the successor nodes and exception nodes, and build predecessor links *)
-let set_succs_exn_base (node: Node.t) succs exn =
+let set_succs_exn_base (node : Node.t) succs exn =
   node.succs <- succs ;
   node.exn <- exn ;
-  List.iter ~f:(fun (n: Node.t) -> n.preds <- node :: n.preds) succs
+  List.iter ~f:(fun (n : Node.t) -> n.preds <- node :: n.preds) succs
 
 
 (** Create a new cfg node *)
@@ -563,7 +564,7 @@ let create_node pdesc loc kind instrs = create_node_internal pdesc loc kind (Ins
 (** Set the successor and exception nodes.
     If this is a join node right before the exit node, add an extra node in the middle,
     otherwise nullify and abstract instructions cannot be added after a conditional. *)
-let node_set_succs_exn pdesc (node: Node.t) succs exn =
+let node_set_succs_exn pdesc (node : Node.t) succs exn =
   match (node.kind, succs) with
   | Join_node, [({Node.kind= Exit_node _} as exit_node)] ->
       let kind = Node.Stmt_node BetweenJoinAndExit in
@@ -599,7 +600,7 @@ let get_loop_heads pdesc =
   lh
 
 
-let is_loop_head pdesc (node: Node.t) =
+let is_loop_head pdesc (node : Node.t) =
   let lh = match pdesc.loop_heads with Some lh -> lh | None -> get_loop_heads pdesc in
   NodeSet.mem node lh
 
@@ -611,7 +612,7 @@ let pp_var_attributes fmt attrs =
   if List.is_empty attrs then () else F.fprintf fmt "(%a)" (Pp.seq ~sep:"," pp_attribute) attrs
 
 
-let pp_local fmt (var_data: ProcAttributes.var_data) =
+let pp_local fmt (var_data : ProcAttributes.var_data) =
   Format.fprintf fmt " %a:%a%a" Mangled.pp var_data.name (Typ.pp_full Pp.text) var_data.typ
     pp_var_attributes var_data.attributes
 
@@ -665,7 +666,7 @@ let is_specialized pdesc =
 let is_captured_var procdesc pvar =
   let procname = get_proc_name procdesc in
   let pvar_name = Pvar.get_name pvar in
-  let pvar_local_matches (var_data: ProcAttributes.var_data) =
+  let pvar_local_matches (var_data : ProcAttributes.var_data) =
     Mangled.equal var_data.name pvar_name
   in
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
@@ -689,7 +690,7 @@ let is_captured_var procdesc pvar =
 
 let has_modify_in_block_attr procdesc pvar =
   let pvar_name = Pvar.get_name pvar in
-  let pvar_local_matches (var_data: ProcAttributes.var_data) =
+  let pvar_local_matches (var_data : ProcAttributes.var_data) =
     Mangled.equal var_data.name pvar_name
     && List.exists var_data.attributes ~f:(fun attr ->
            ProcAttributes.var_attribute_equal attr ProcAttributes.Modify_in_block )
@@ -769,7 +770,8 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
         Some (Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc))
-    | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc) ->
+    | Sil.Load (id, (Exp.Var origin_id as origin_exp), ({Typ.desc= Tstruct _} as origin_typ), loc)
+      ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
@@ -822,7 +824,7 @@ exception UnmatchedParameters
     (name, typ) where name is a parameter. The resulting proc desc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types *)
-let specialize_types ?(has_clang_model= false) callee_pdesc resolved_pname args =
+let specialize_types ?(has_clang_model = false) callee_pdesc resolved_pname args =
   let callee_attributes = get_attributes callee_pdesc in
   let resolved_params, substitutions =
     try
@@ -918,7 +920,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
         in
         let closure = Exp.Closure {name= block_name; captured_vars= id_exp_typs} in
         let instr = Sil.Store (assignee_exp, origin_typ, closure, loc) in
-        (remove_temps_instr :: instr :: load_instrs @ instrs, id_map)
+        ((remove_temps_instr :: instr :: load_instrs) @ instrs, id_map)
     | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
         let set_instr =
           Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
@@ -942,7 +944,7 @@ let specialize_with_block_args_instrs resolved_pdesc substitutions =
             , loc
             , call_flags )
         in
-        let instrs = remove_temps_instr :: call_instr :: load_instrs @ instrs in
+        let instrs = (remove_temps_instr :: call_instr :: load_instrs) @ instrs in
         (instrs, id_map)
       with Caml.Not_found ->
         convert_generic_call return_ids (Exp.Var id) origin_args loc call_flags )
@@ -972,10 +974,10 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
   (* Substitution from a block parameter to the block name and the new formals
   that correspond to the captured variables *)
   let substitutions : (Typ.Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t =
-    List.fold2_exn callee_attributes.formals block_args ~init:Mangled.Map.empty ~f:
-      (fun subts (param_name, _) block_arg_opt ->
+    List.fold2_exn callee_attributes.formals block_args ~init:Mangled.Map.empty
+      ~f:(fun subts (param_name, _) block_arg_opt ->
         match block_arg_opt with
-        | Some (cl: Exp.closure) ->
+        | Some (cl : Exp.closure) ->
             let formals_from_captured =
               List.map
                 ~f:(fun (_, var, typ) ->
@@ -1044,8 +1046,7 @@ let is_connected proc_desc =
   in
   let rec is_consecutive_join_nodes n visited =
     match Node.get_kind n with
-    | Node.Join_node
-      -> (
+    | Node.Join_node -> (
         if NodeSet.mem n visited then false
         else
           let succs = Node.get_succs n in
@@ -1064,7 +1065,7 @@ let is_connected proc_desc =
     | Node.Start_node _ ->
         if List.is_empty succs || not (List.is_empty preds) then Error `Other else Ok ()
     | Node.Exit_node _ ->
-        if not (List.is_empty succs) || List.is_empty preds then Error `Other else Ok ()
+        if (not (List.is_empty succs)) || List.is_empty preds then Error `Other else Ok ()
     | Node.Stmt_node _ | Node.Prune_node _ | Node.Skip_node _ ->
         if List.is_empty succs || List.is_empty preds then Error `Other else Ok ()
     | Node.Join_node ->
@@ -1075,7 +1076,7 @@ let is_connected proc_desc =
          introduce a sequence of join nodes *)
         if
           (List.is_empty preds && not (is_consecutive_join_nodes n NodeSet.empty))
-          || (not (List.is_empty preds) && List.is_empty succs)
+          || ((not (List.is_empty preds)) && List.is_empty succs)
         then Error `Join
         else Ok ()
   in

@@ -43,14 +43,14 @@ let error_desc_to_plain_string error_desc =
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
 
-let compute_key (bug_type: string) (proc_name: Typ.Procname.t) (filename: string) =
+let compute_key (bug_type : string) (proc_name : Typ.Procname.t) (filename : string) =
   let base_filename = Filename.basename filename
   and simple_procedure_name = Typ.Procname.get_method proc_name in
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
-let compute_hash (severity: string) (bug_type: string) (proc_name: Typ.Procname.t)
-    (filename: string) (qualifier: string) =
+let compute_hash (severity : string) (bug_type : string) (proc_name : Typ.Procname.t)
+    (filename : string) (qualifier : string) =
   let base_filename = Filename.basename filename in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
   let location_independent_qualifier =
@@ -161,8 +161,8 @@ module ProcsCsv = struct
     pp "%s@\n" sv.vproof_trace
 end
 
-let should_report (issue_kind: Exceptions.severity) issue_type error_desc eclass =
-  if not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters then true
+let should_report (issue_kind : Exceptions.severity) issue_type error_desc eclass =
+  if (not Config.filtering) || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
     let issue_kind_is_blacklisted =
       match issue_kind with Info -> true | Advice | Error | Like | Warning -> false
@@ -187,12 +187,13 @@ let should_report (issue_kind: Exceptions.severity) issue_type error_desc eclass
 
 (* The reason an issue should be censored (that is, not reported). The empty
    string (that is "no reason") means that the issue should be reported. *)
-let censored_reason (issue_type: IssueType.t) source_file =
+let censored_reason (issue_type : IssueType.t) source_file =
   let filename = SourceFile.to_rel_path source_file in
-  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason) =
+  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason)
+      =
     let accepted =
       (* matches issue_type_re implies matches filename_re *)
-      not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0))
+      (not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0)))
       || Bool.equal filename_polarity (Str.string_match filename_re filename 0)
     in
     Option.some_if (not accepted) reason
@@ -216,9 +217,7 @@ module MakeJsonListPrinter (P : sig
   type elt
 
   val to_string : elt -> string option
-end) :
-  Printer with type elt = P.elt =
-struct
+end) : Printer with type elt = P.elt = struct
   include P
 
   let is_first_item = ref true
@@ -249,7 +248,7 @@ type json_issue_printer_typ =
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
-  let to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data}: elt) =
+  let to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
       match proc_loc_opt with
       | Some proc_loc ->
@@ -262,10 +261,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         "Invalid source file for %a %a@.Trace: %a@." IssueType.pp err_key.err_name
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
     let should_report_source_file =
-      not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
+      (not (SourceFile.is_infer_model source_file)) || Config.debug_mode || Config.debug_exceptions
     in
     if
-      err_key.in_footprint && error_filter source_file err_key.err_name
+      err_key.in_footprint
+      && error_filter source_file err_key.err_name
       && should_report_source_file
       && should_report err_key.severity err_key.err_name err_key.err_desc err_data.err_class
     then
@@ -364,7 +364,7 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
 end)
 
 let pp_custom_of_report fmt report fields =
-  let pp_custom_of_issue fmt (issue: Jsonbug_t.jsonbug) =
+  let pp_custom_of_issue fmt (issue : Jsonbug_t.jsonbug) =
     let open Jsonbug_t in
     let comma_separator index = if index > 0 then ", " else "" in
     let pp_trace fmt trace comma =
@@ -383,7 +383,8 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_bucket ->
           let bucket =
             match
-              String.lsplit2 issue.qualifier ~on:']' |> Option.map ~f:fst
+              String.lsplit2 issue.qualifier ~on:']'
+              |> Option.map ~f:fst
               |> Option.bind ~f:(String.chop_prefix ~prefix:"[")
             with
             | Some bucket ->
@@ -428,13 +429,13 @@ let pp_custom_of_report fmt report fields =
 
 let tests_jsonbug_compare bug1 bug2 =
   let open Jsonbug_t in
-  [%compare : string * string * int * string * Caml.Digest.t]
+  [%compare: string * string * int * string * Caml.Digest.t]
     (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
     (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
 
 
 module IssuesTxt = struct
-  let pp_issue fmt error_filter proc_loc_opt (key: Errlog.err_key) (err_data: Errlog.err_data) =
+  let pp_issue fmt error_filter proc_loc_opt (key : Errlog.err_key) (err_data : Errlog.err_data) =
     let source_file =
       match proc_loc_opt with
       | Some proc_loc ->
@@ -443,8 +444,9 @@ module IssuesTxt = struct
           err_data.loc.Location.file
     in
     if
-      key.in_footprint && error_filter source_file key.err_name
-      && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
+      key.in_footprint
+      && error_filter source_file key.err_name
+      && ((not Config.filtering) || String.is_empty (censored_reason key.err_name source_file))
     then Exceptions.pp_err err_data.loc key.severity key.err_name key.err_desc None fmt ()
 
 
@@ -503,7 +505,9 @@ module Stats = struct
     let res = ref [] in
     let indent_string n =
       let s = ref "" in
-      for _ = 1 to n do s := "  " ^ !s done ;
+      for _ = 1 to n do
+        s := "  " ^ !s
+      done ;
       !s
     in
     let num = ref 0 in
@@ -525,13 +529,12 @@ module Stats = struct
       in
       res := line :: "" :: !res
     in
-    List.iter ~f:loc_to_string ltr ;
-    List.rev !res
+    List.iter ~f:loc_to_string ltr ; List.rev !res
 
 
   let process_err_log error_filter linereader err_log stats =
     let found_errors = ref false in
-    let process_row (key: Errlog.err_key) (err_data: Errlog.err_data) =
+    let process_row (key : Errlog.err_key) (err_data : Errlog.err_data) =
       let type_str = key.err_name.IssueType.unique_id in
       if key.in_footprint && error_filter key.err_name then
         match key.severity with
@@ -604,7 +607,7 @@ module Stats = struct
 end
 
 module StatsLogs = struct
-  let process _ (summary: Summary.t) _ _ =
+  let process _ (summary : Summary.t) _ _ =
     let num_preposts =
       match summary.payloads.biabduction with Some {preposts} -> List.length preposts | None -> 0
     in
@@ -681,7 +684,7 @@ module Issue = struct
   type err_data_ = Errlog.err_data
 
   (* no derived compare for err_data; just compare the locations *)
-  let compare_err_data_ (err_data1: Errlog.err_data) (err_data2: Errlog.err_data) =
+  let compare_err_data_ (err_data1 : Errlog.err_data) (err_data2 : Errlog.err_data) =
     Location.compare err_data1.loc err_data2.loc
 
 
@@ -701,15 +704,16 @@ module Issue = struct
   let sort_filter_issues issues =
     let issues' = List.dedup_and_sort ~compare issues in
     ( if Config.developer_mode then
-        let num_pruned_issues = List.length issues - List.length issues' in
-        if num_pruned_issues > 0 then
-          L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
+      let num_pruned_issues = List.length issues - List.length issues' in
+      if num_pruned_issues > 0 then
+        L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
     issues'
 end
 
 let error_filter filters proc_name file error_name =
   (Config.write_html || not (IssueType.(equal skip_function) error_name))
-  && filters.Inferconfig.path_filter file && filters.Inferconfig.error_filter error_name
+  && filters.Inferconfig.path_filter file
+  && filters.Inferconfig.error_filter error_name
   && filters.Inferconfig.proc_filter proc_name
 
 
@@ -751,7 +755,7 @@ let get_outfile outfile =
       L.(die InternalError) "An outfile is require for this format."
 
 
-let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_filter
+let pp_issue_in_format (format_kind, (outfile_opt : Utils.outfile option)) error_filter
     {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
   | Json ->
@@ -769,7 +773,7 @@ let pp_issue_in_format (format_kind, (outfile_opt: Utils.outfile option)) error_
       IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
 
 
-let pp_issues_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
+let pp_issues_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   match format_kind with
   | Json ->
       let outf = get_outfile outfile_opt in
@@ -785,7 +789,7 @@ let pp_issues_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
       IssuesTxt.pp_issues_of_error_log outf.fmt
 
 
-let pp_procs_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
+let pp_procs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   match format_kind with
   | Csv ->
       let outf = get_outfile outfile_opt in
@@ -841,7 +845,7 @@ let pp_summary summary =
     summary
 
 
-let pp_costs_in_format (format_kind, (outfile_opt: Utils.outfile option)) =
+let pp_costs_in_format (format_kind, (outfile_opt : Utils.outfile option)) =
   match format_kind with
   | Json ->
       let outf = get_outfile outfile_opt in
@@ -883,7 +887,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
   match Utils.read_file fname with
   | Ok report_lines ->
       let pp_json_issues format_list report =
-        let pp_json_issue (format_kind, (outfile_opt: Utils.outfile option)) =
+        let pp_json_issue (format_kind, (outfile_opt : Utils.outfile option)) =
           match format_kind with
           | Tests ->
               let outf = get_outfile outfile_opt in
@@ -916,7 +920,8 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
       L.(die UserError) "Error reading '%s': %s" fname error
 
 
-let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log =
+let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log
+    =
   let pp_summary_by_report_kind (report_kind, format_list) =
     match (report_kind, format_list) with
     | Issues, _ :: _ ->
@@ -955,7 +960,7 @@ let spec_files_from_cmdline () =
          files may be generated between init and report time. *)
     List.iter
       ~f:(fun arg ->
-        if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "." then
+        if (not (Filename.check_suffix arg Config.specs_files_suffix)) && arg <> "." then
           print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files") )
       Config.anon_args ;
     if Config.test_filtering then ( Inferconfig.test () ; L.exit 0 ) ;
@@ -1002,7 +1007,7 @@ let init_stats_format_list () =
 
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
-    let init_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
+    let init_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       match (format_kind, report_kind) with
       | Csv, Issues ->
           L.(die InternalError) "Printing issues in a CSV format is not implemented"
@@ -1032,9 +1037,9 @@ let init_files format_list_by_kind =
   List.iter ~f:init_files_of_report_kind format_list_by_kind
 
 
-let finalize_and_close_files format_list_by_kind (stats: Stats.t) =
+let finalize_and_close_files format_list_by_kind (stats : Stats.t) =
   let close_files_of_report_kind (report_kind, format_list) =
-    let close_files_of_format (format_kind, (outfile_opt: Utils.outfile option)) =
+    let close_files_of_format (format_kind, (outfile_opt : Utils.outfile option)) =
       ( match (format_kind, report_kind) with
       | Logs, (Issues | Procs | Summary) ->
           L.(die InternalError) "Logging these reports is not implemented"

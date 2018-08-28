@@ -45,7 +45,7 @@ module type DF = sig
 end
 
 (** Determine if the node can throw an exception. *)
-let node_throws pdesc node (proc_throws: Typ.Procname.t -> throws) : throws =
+let node_throws pdesc node (proc_throws : Typ.Procname.t -> throws) : throws =
   let instr_throws instr =
     let is_return pvar =
       let ret_pvar = Procdesc.get_ret_var pdesc in
@@ -103,7 +103,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
   let join states initial_state = List.fold ~f:St.join ~init:initial_state states
 
   (** Propagate [new_state] to all the nodes immediately reachable. *)
-  let propagate t node states_succ states_exn (throws: throws) =
+  let propagate t node states_succ states_exn (throws : throws) =
     let propagate_to_dest new_state dest_node =
       let push_state s =
         H.replace t.pre_states dest_node s ;

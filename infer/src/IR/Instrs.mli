@@ -28,7 +28,9 @@ val of_rev_list : Sil.instr list -> not_reversed_t
 val filter_map : not_reversed_t -> f:(Sil.instr -> Sil.instr option) -> not_reversed_t
 
 val map_changed :
-  equal:(Sil.instr -> Sil.instr -> bool) -> not_reversed_t -> f:(Sil.instr -> Sil.instr)
+     equal:(Sil.instr -> Sil.instr -> bool)
+  -> not_reversed_t
+  -> f:(Sil.instr -> Sil.instr)
   -> not_reversed_t
 
 val reverse_order : not_reversed_t -> reversed t

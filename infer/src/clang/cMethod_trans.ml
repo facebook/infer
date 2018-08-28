@@ -18,7 +18,7 @@ module L = Logging
     called will be determined at compile time *)
 type method_call_type = MCVirtual | MCNoVirtual | MCStatic [@@deriving compare]
 
-let equal_method_call_type = [%compare.equal : method_call_type]
+let equal_method_call_type = [%compare.equal: method_call_type]
 
 let method_signature_of_pointer tenv pointer =
   try
@@ -36,8 +36,7 @@ let get_method_name_from_clang tenv ms_opt =
   match ms_opt with
   | Some ms -> (
     match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_parent with
-    | Some decl
-      -> (
+    | Some decl -> (
         ignore (CType_decl.add_types_from_decl_to_tenv tenv decl) ;
         match ObjcCategory_decl.get_base_class_name_from_category decl with
         | Some class_typename ->
@@ -162,15 +161,15 @@ let get_const_params_indices ~shift params =
   let rec aux result = function
     | [] ->
         List.rev result
-    | ({is_pointer_to_const}: CMethodSignature.param_type) :: tl ->
+    | ({is_pointer_to_const} : CMethodSignature.param_type) :: tl ->
         incr i ;
-        if is_pointer_to_const then aux (!i - 1 :: result) tl else aux result tl
+        if is_pointer_to_const then aux ((!i - 1) :: result) tl else aux result tl
   in
   aux [] params
 
 
 let get_byval_params_indices ~shift params =
-  List.filter_mapi params ~f:(fun index ({is_value}: CMethodSignature.param_type) ->
+  List.filter_mapi params ~f:(fun index ({is_value} : CMethodSignature.param_type) ->
       let index' = index + shift in
       Option.some_if is_value index' )
 
@@ -178,12 +177,10 @@ let get_byval_params_indices ~shift params =
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
-  | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info))
-    -> (
+  | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info)) -> (
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
       match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-      | Some (ObjCIvarDecl (_, name_decl_info, _, _, _))
-        -> (
+      | Some (ObjCIvarDecl (_, name_decl_info, _, _, _)) -> (
           let class_tname =
             Typ.Name.Objc.from_qual_name
               (QualifiedCppName.from_field_qualified_name
@@ -191,8 +188,7 @@ let get_objc_property_accessor tenv ms =
           in
           let field_name = CGeneral_utils.mk_class_field_name class_tname name_decl_info.ni_name in
           match Tenv.lookup tenv class_tname with
-          | Some {fields}
-            -> (
+          | Some {fields} -> (
               let field_opt =
                 List.find ~f:(fun (name, _, _) -> Typ.Fieldname.equal name field_name) fields
               in
@@ -212,7 +208,7 @@ let get_objc_property_accessor tenv ms =
 
 
 (** Creates a procedure description. *)
-let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg tenv ms fbody
+let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg tenv ms fbody
     captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
@@ -234,13 +230,13 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
   let create_new_procdesc () =
     let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
     let params_annots =
-      List.map ~f:(fun ({annot}: CMethodSignature.param_type) -> annot) all_params
+      List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params
     in
     let return_annot = snd ms.CMethodSignature.ret_type in
     let has_added_return_param = ms.CMethodSignature.has_added_return_param in
     let method_annotation = (return_annot, params_annots) in
     let formals =
-      List.map ~f:(fun ({name; typ}: CMethodSignature.param_type) -> (name, typ)) all_params
+      List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
     in
     let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var, t)) captured in
     (* Captured variables for blocks are treated as parameters *)

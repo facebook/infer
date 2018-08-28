@@ -34,13 +34,13 @@ let printf_like_functions =
       ; vararg_pos= Some 3 } ]
 
 
-let printf_like_function (proc_name: Typ.Procname.t) : printf_signature option =
+let printf_like_function (proc_name : Typ.Procname.t) : printf_signature option =
   List.find
     ~f:(fun printf -> String.equal printf.unique_id (Typ.Procname.to_unique_id proc_name))
     !printf_like_functions
 
 
-let default_format_type_name (format_type: string) : string =
+let default_format_type_name (format_type : string) : string =
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
       "java.lang.Integer"
@@ -58,11 +58,12 @@ let default_format_type_name (format_type: string) : string =
       "unknown"
 
 
-let format_type_matches_given_type (format_type: string) (given_type: string) : bool =
+let format_type_matches_given_type (format_type : string) (given_type : string) : bool =
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
       List.mem ~equal:String.equal
-        ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"] given_type
+        ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"]
+        given_type
   | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
       List.mem ~equal:String.equal ["java.lang.Double"; "java.lang.Float"] given_type
   | "c" ->
@@ -74,8 +75,8 @@ let format_type_matches_given_type (format_type: string) (given_type: string) : 
 
 
 (* The format string and the nvar for the fixed arguments and the nvar of the varargs array *)
-let format_arguments (printf: printf_signature) (args: (Exp.t * Typ.t) list)
-    : string option * Exp.t list * Exp.t option =
+let format_arguments (printf : printf_signature) (args : (Exp.t * Typ.t) list) :
+    string option * Exp.t list * Exp.t option =
   let format_string =
     match List.nth_exn args printf.format_pos with
     | Exp.Const (Const.Cstr fmt), _ ->
@@ -91,7 +92,7 @@ let format_arguments (printf: printf_signature) (args: (Exp.t * Typ.t) list)
 
 
 (* Extract type names from format string *)
-let rec format_string_type_names (fmt_string: string) (start: int) : string list =
+let rec format_string_type_names (fmt_string : string) (start : int) : string list =
   try
     let fmt_re = Str.regexp "%[0-9]*\\.?[0-9]*[A-mo-z]" in
     (* matches '%2.1d' etc. *)
@@ -102,8 +103,8 @@ let rec format_string_type_names (fmt_string: string) (start: int) : string list
   with Caml.Not_found -> []
 
 
-let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
-    (proc_name: Typ.Procname.t) (proc_desc: Procdesc.t) summary : unit =
+let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
+    (proc_name : Typ.Procname.t) (proc_desc : Procdesc.t) summary : unit =
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
     let instr_name = Typ.Procname.to_simplified_string instr_proc_name in

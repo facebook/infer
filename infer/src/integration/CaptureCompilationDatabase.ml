@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-let create_cmd (source_file, (compilation_data: CompilationDatabase.compilation_data)) =
+let create_cmd (source_file, (compilation_data : CompilationDatabase.compilation_data)) =
   let swap_executable cmd =
     if String.is_suffix ~suffix:"++" cmd then Config.wrappers_dir ^/ "clang++"
     else Config.wrappers_dir ^/ "clang"
@@ -24,7 +24,7 @@ let create_cmd (source_file, (compilation_data: CompilationDatabase.compilation_
     ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] @ List.rev Config.clang_extra_flags } )
 
 
-let invoke_cmd (source_file, (cmd: CompilationDatabase.compilation_data)) =
+let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
   let argv = cmd.executable :: cmd.escaped_arguments in
   ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
   | pid ->
@@ -35,16 +35,15 @@ let invoke_cmd (source_file, (cmd: CompilationDatabase.compilation_data)) =
   | exception Unix.Unix_error (err, f, arg) ->
       Error (F.asprintf "%s(%s): %s@." f arg (Unix.Error.message err)) )
   |> function
-    | Ok () ->
-        ()
-    | Error error ->
-        let log_or_die fmt =
-          if Config.linters_ignore_clang_failures || Config.keep_going then
-            L.debug Capture Quiet fmt
-          else L.die ExternalError fmt
-        in
-        log_or_die "Error running compilation for '%a': %a:@\n%s@." SourceFile.pp source_file
-          Pp.cli_args argv error
+  | Ok () ->
+      ()
+  | Error error ->
+      let log_or_die fmt =
+        if Config.linters_ignore_clang_failures || Config.keep_going then L.debug Capture Quiet fmt
+        else L.die ExternalError fmt
+      in
+      log_or_die "Error running compilation for '%a': %a:@\n%s@." SourceFile.pp source_file
+        Pp.cli_args argv error
 
 
 let run_compilation_database compilation_database should_capture_file =
@@ -74,19 +73,18 @@ let get_compilation_database_files_buck ~prog ~args =
   | {command= "build" as command; rev_not_targets; targets} ->
       let targets_args = Buck.store_args_in_file targets in
       let build_args =
-        command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline)
-        @ "--config" :: "*//cxx.pch_enabled=false" :: targets_args
+        (command :: List.rev_append rev_not_targets (List.rev Config.buck_build_args_no_inline))
+        @ ("--config" :: "*//cxx.pch_enabled=false" :: targets_args)
       in
       Logging.(debug Linters Quiet)
         "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
-        prog
-        :: "targets"
+        prog :: "targets"
         :: List.rev_append
              (Buck.filter_compatible `Targets rev_not_targets)
              (List.rev Config.buck_build_args_no_inline)
-        @ "--show-output" :: targets_args
+        @ ("--show-output" :: targets_args)
       in
       let on_target_lines = function
         | [] ->

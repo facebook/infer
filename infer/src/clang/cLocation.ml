@@ -44,7 +44,8 @@ let should_do_frontend_check translation_unit (loc_start, _) =
     translate the headers that are part of the project. However, in testing mode, we don't want to
     translate the headers because the dot files in the frontend tests should contain nothing else
     than the source file to avoid conflicts between different versions of the libraries. *)
-let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used =
+let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used
+    =
   let map_file_of pred loc =
     match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
     | Some f ->
@@ -68,14 +69,17 @@ let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~t
   let file_in_models =
     map_file_of SourceFile.is_cpp_model loc_end || map_file_of SourceFile.is_cpp_model loc_start
   in
-  map_file_of equal_current_source loc_end || map_file_of equal_current_source loc_start
-  || file_in_models || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
-  || Config.cxx && decl_trans_context = `Translation && translate_on_demand
-     && not Config.testing_mode
+  map_file_of equal_current_source loc_end
+  || map_file_of equal_current_source loc_start
+  || file_in_models
+  || (Config.cxx && map_file_of equal_header_of_current_source loc_start)
+  || Config.cxx
+     && decl_trans_context = `Translation
+     && translate_on_demand && not Config.testing_mode
 
 
 let should_translate_lib translation_unit source_range decl_trans_context ~translate_when_used =
-  not Config.no_translate_libs
+  (not Config.no_translate_libs)
   || should_translate translation_unit source_range decl_trans_context ~translate_when_used
 
 
@@ -87,8 +91,9 @@ let is_file_blacklisted file =
   is_file_blacklisted
 
 
-let location_of_source_range ?(pick_location= `Start) default_source_file source_range =
-  source_range |> (match pick_location with `Start -> fst | `End -> snd)
+let location_of_source_range ?(pick_location = `Start) default_source_file source_range =
+  source_range
+  |> (match pick_location with `Start -> fst | `End -> snd)
   |> clang_to_sil_location default_source_file
 
 

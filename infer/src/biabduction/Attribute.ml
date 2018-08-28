@@ -14,7 +14,7 @@ open! IStd
 let is_pred atom = match atom with Sil.Apred _ | Anpred _ -> true | _ -> false
 
 (** Add an attribute associated to the argument expressions *)
-let add tenv ?(footprint= false) ?(polarity= true) prop attr args =
+let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
   Prop.prop_atom_and tenv ~footprint prop
     (if polarity then Sil.Apred (attr, args) else Sil.Anpred (attr, args))
 
@@ -54,15 +54,14 @@ let add_or_replace tenv prop atom =
 
 
 (** Get all the attributes of the prop *)
-let get_all (prop: 'a Prop.t) =
+let get_all (prop : 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
-  List.iter ~f:do_atom prop.pi ;
-  List.rev !res
+  List.iter ~f:do_atom prop.pi ; List.rev !res
 
 
 (** Get the attribute associated to the expression, if any *)
-let get_for_exp tenv (prop: 'a Prop.t) exp =
+let get_for_exp tenv (prop : 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
     match atom with
@@ -78,10 +77,10 @@ let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
   List.find
     ~f:(function
-        | Sil.Apred (att, _) | Anpred (att, _) ->
-            PredSymb.equal_category (PredSymb.to_category att) category
-        | _ ->
-            false)
+      | Sil.Apred (att, _) | Anpred (att, _) ->
+          PredSymb.equal_category (PredSymb.to_category att) category
+      | _ ->
+          false)
     atts
 
 
@@ -281,7 +280,7 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)
-let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
+let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   let filter = function
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
         List.exists ~f:(Pvar.equal v) pvars
@@ -296,12 +295,12 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
   let exp_replace =
     List.map
       ~f:(function
-          | Sil.Hpointsto (Exp.Lvar v, _, _) ->
-              let freshv = Ident.create_fresh Ident.kprimed in
-              fresh_address_vars := (v, freshv) :: !fresh_address_vars ;
-              (Exp.Lvar v, Exp.Var freshv)
-          | _ ->
-              assert false)
+        | Sil.Hpointsto (Exp.Lvar v, _, _) ->
+            let freshv = Ident.create_fresh Ident.kprimed in
+            fresh_address_vars := (v, freshv) :: !fresh_address_vars ;
+            (Exp.Lvar v, Exp.Var freshv)
+        | _ ->
+            assert false)
       sigma_stack
   in
   let pi1 = List.map ~f:(fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in
@@ -349,7 +348,7 @@ let find_equal_formal_path tenv e prop =
           match res with
           | Some _ ->
               res
-          | None ->
+          | None -> (
             match hpred with
             | Sil.Hpointsto (Exp.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal (_, _)), _)
               when Exp.equal exp2 e && (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
@@ -360,7 +359,7 @@ let find_equal_formal_path tenv e prop =
                     match res with
                     | Some _ ->
                         res
-                    | None ->
+                    | None -> (
                       match strexp with
                       | Sil.Eexp (exp2, _) when Exp.equal exp2 e -> (
                         match find_in_sigma exp1 seen_hpreds with
@@ -369,18 +368,18 @@ let find_equal_formal_path tenv e prop =
                         | None ->
                             None )
                       | _ ->
-                          None )
+                          None ) )
                   fields ~init:None
             | _ ->
-                None )
+                None ) )
       prop.Prop.sigma ~init:None
   in
   match find_in_sigma e [] with
   | Some vfs ->
       Some vfs
-  | None ->
+  | None -> (
     match get_objc_null tenv prop e with
     | Some (Apred (Aobjc_null, [_; vfs])) ->
         Some vfs
     | _ ->
-        None
+        None )

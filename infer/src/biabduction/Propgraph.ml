@@ -70,7 +70,8 @@ let get_edges footprint_part g =
   let hpreds = get_sigma footprint_part g in
   let atoms = get_pi footprint_part g in
   let subst_entries = get_subl footprint_part g in
-  List.map ~f:(fun hpred -> Ehpred hpred) hpreds @ List.map ~f:(fun a -> Eatom a) atoms
+  List.map ~f:(fun hpred -> Ehpred hpred) hpreds
+  @ List.map ~f:(fun a -> Eatom a) atoms
   @ List.map ~f:(fun entry -> Esub_entry entry) subst_entries
 
 
@@ -88,7 +89,7 @@ let edge_equal e1 e2 =
 
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
     searching the footprint part if [footprint_part] is true. *)
-let contains_edge (footprint_part: bool) (g: _ t) (e: edge) =
+let contains_edge (footprint_part : bool) (g : _ t) (e : edge) =
   List.exists ~f:(fun e' -> edge_equal e e') (get_edges footprint_part g)
 
 
@@ -101,12 +102,12 @@ type 'a diff =
   ; diff_cmap_foot: Pp.colormap  (** colormap for the footprint part *) }
 
 (** Compute the subobjects in [e2] which are different from those in [e1] *)
-let compute_exp_diff (e1: Exp.t) (e2: Exp.t) : Obj.t list =
+let compute_exp_diff (e1 : Exp.t) (e2 : Exp.t) : Obj.t list =
   if Exp.equal e1 e2 then [] else [Obj.repr e2]
 
 
 (** Compute the subobjects in [se2] which are different from those in [se1] *)
-let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list =
+let rec compute_sexp_diff (se1 : Sil.strexp) (se2 : Sil.strexp) : Obj.t list =
   match (se1, se2) with
   | Sil.Eexp (e1, _), Sil.Eexp (e2, _) ->
       if Exp.equal e1 e2 then [] else [Obj.repr se2]
@@ -151,7 +152,7 @@ and compute_esel_diff esel1 esel2 : Obj.t list =
 
 
 (** Compute the subobjects in [newedge] which are different from those in [oldedge] *)
-let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list =
+let compute_edge_diff (oldedge : edge) (newedge : edge) : Obj.t list =
   match (oldedge, newedge) with
   | Ehpred (Sil.Hpointsto (_, se1, e1)), Ehpred (Sil.Hpointsto (_, se2, e2)) ->
       compute_sexp_diff se1 se2 @ compute_exp_diff e1 e2
@@ -195,7 +196,7 @@ let compute_diff default_color oldgraph newgraph : _ diff =
             ()
     in
     List.iter ~f:build_changed newedges ;
-    let colormap (o: Obj.t) =
+    let colormap (o : Obj.t) =
       if List.exists ~f:(fun x -> phys_equal x o) !changed then Pp.Red else default_color
     in
     (!changed, colormap)
@@ -224,7 +225,7 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let add_base_stack prop =
     if extract_stack then Prop.set prop ~sigma:(base_stack @ prop.Prop.sigma) else Prop.expose prop
   in
-  let update_pe_diff (prop: _ Prop.t) : Pp.env =
+  let update_pe_diff (prop : _ Prop.t) : Pp.env =
     if Config.print_using_diff then
       let diff = compute_diff Blue (from_prop base_prop) (from_prop prop) in
       let cmap_norm = diff_get_colormap false diff in
@@ -235,8 +236,7 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let rec pp_seq_newline n f = function
     | [] ->
         ()
-    | [x_]
-      -> (
+    | [x_] -> (
         let pe = update_pe_diff x_ in
         let x = add_base_stack x_ in
         match pe.kind with
@@ -244,7 +244,7 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
             F.fprintf f "%s %d of %d:@\n%a" s n num (Prop.pp_prop pe) x
         | HTML ->
             F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x )
-    | _x :: l ->
+    | _x :: l -> (
         let pe = update_pe_diff _x in
         let x = add_base_stack _x in
         match pe.kind with
@@ -255,12 +255,12 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
         | HTML ->
             F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x
               (pp_seq_newline (n + 1))
-              l
+              l )
   in
   pp_seq_newline 1 f plist
 
 
 (** dump a propset *)
-let d_proplist (p: 'a Prop.t) (pl: 'b Prop.t list) =
+let d_proplist (p : 'a Prop.t) (pl : 'b Prop.t list) =
   let pp pe = pp_proplist pe "PROP" (p, false) in
   L.add_print_with_pe pp pl

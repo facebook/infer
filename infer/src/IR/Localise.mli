@@ -35,7 +35,7 @@ module BucketLevel : sig
 
   val b3 : string
 
-  val b4 : string  [@@warning "-32"]
+  val b4 : string [@@warning "-32"]
 
   val b5 : string
   (** lowest likelihood *)
@@ -113,7 +113,8 @@ val is_parameter_not_null_checked_desc : error_desc -> bool
 val is_field_not_null_checked_desc : error_desc -> bool
 
 val desc_allocation_mismatch :
-  Typ.Procname.t * Typ.Procname.t * Location.t -> Typ.Procname.t * Typ.Procname.t * Location.t
+     Typ.Procname.t * Typ.Procname.t * Location.t
+  -> Typ.Procname.t * Typ.Procname.t * Location.t
   -> error_desc
 
 val desc_class_cast_exception :
@@ -136,8 +137,13 @@ val is_empty_vector_access_desc : error_desc -> bool
 val desc_frontend_warning : string -> string option -> Location.t -> error_desc
 
 val desc_leak :
-  Exp.t option -> string option -> PredSymb.resource option -> PredSymb.res_action option
-  -> Location.t -> string option -> error_desc
+     Exp.t option
+  -> string option
+  -> PredSymb.resource option
+  -> PredSymb.res_action option
+  -> Location.t
+  -> string option
+  -> error_desc
 
 val desc_buffer_overrun : string -> error_desc
 

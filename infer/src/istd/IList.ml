@@ -117,7 +117,7 @@ let rec fold_last l ~init ~f ~f_last =
       fold_last tl ~init:(f init hd) ~f ~f_last
 
 
-let append_no_duplicates (type a) ~(cmp: a -> a -> int) =
+let append_no_duplicates (type a) ~(cmp : a -> a -> int) =
   (* roughly based on [Core.List.stable_dedup_staged] but also takes care of the append and takes
      into account the invariant that [list1] and [list2] do not contain duplicates individually *)
   let module Set = Set.Make (struct
@@ -130,7 +130,7 @@ let append_no_duplicates (type a) ~(cmp: a -> a -> int) =
 
     let sexp_of_t _ = assert false
   end) in
-  Staged.stage (fun (list1: a list) (list2: a list) ->
+  Staged.stage (fun (list1 : a list) (list2 : a list) ->
       let set1 = Set.of_list list1 in
       let res_rev =
         List.fold_left list2 ~init:(List.rev list1) ~f:(fun res_rev x ->

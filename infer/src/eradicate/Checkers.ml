@@ -10,8 +10,8 @@ open! IStd
 (** Module for user-defined checkers. *)
 
 module ST = struct
-  let report_error tenv proc_name proc_desc kind loc ?(field_name= None) ?(origin_loc= None)
-      ?(exception_kind= fun k d -> Exceptions.Checkers (k, d)) ?(severity= Exceptions.Warning)
+  let report_error tenv proc_name proc_desc kind loc ?(field_name = None) ?(origin_loc = None)
+      ?(exception_kind = fun k d -> Exceptions.Checkers (k, d)) ?(severity = Exceptions.Warning)
       description =
     let suppressed = Reporting.is_suppressed tenv proc_desc kind ~field_name in
     if not suppressed then

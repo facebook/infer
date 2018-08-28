@@ -27,7 +27,7 @@ let filter_parsed_linters_developer parsed_linters =
            important for debugging the rule. Pass the flag --linter <name> to specify the linter \
            you want to debug."
     | Some lint ->
-        List.filter ~f:(fun (rule: linter) -> String.equal rule.issue_desc.id lint) parsed_linters
+        List.filter ~f:(fun (rule : linter) -> String.equal rule.issue_desc.id lint) parsed_linters
   else parsed_linters
 
 
@@ -183,9 +183,9 @@ let string_to_issue_mode m =
       L.die InternalError "Mode %s does not exist. Please specify ON/OFF" s
 
 
-let post_process_linter_definition (linter: linter) =
+let post_process_linter_definition (linter : linter) =
   match
-    List.find Config.linters_doc_url ~f:(fun (linter_doc_url: Config.linter_doc_url) ->
+    List.find Config.linters_doc_url ~f:(fun (linter_doc_url : Config.linter_doc_url) ->
         String.equal linter.issue_desc.id linter_doc_url.linter )
   with
   | Some linter_doc_url ->
@@ -303,15 +303,14 @@ let expand_formula phi map_ error_msg_ =
     match acc with
     | True | False ->
         acc
-    | Atomic ((ALVar.Formula_id name as av), actual_param)
-      -> (
+    | Atomic ((ALVar.Formula_id name as av), actual_param) -> (
         (* it may be a macro *)
         let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^ "'@\n" in
         try
           match ALVar.FormulaIdMap.find av map with
           | true, _, _ ->
               fail_with_circular_macro_definition name error_msg'
-          | false, fparams, f1 ->
+          | false, fparams, f1 -> (
             (* in this case it should be a defined macro *)
             match List.zip fparams actual_param with
             | Some sub ->
@@ -321,6 +320,7 @@ let expand_formula phi map_ error_msg_ =
             | None ->
                 L.(die ExternalError)
                   "Formula identifier '%s' is not called with the right number of parameters" name
+            )
         with Caml.Not_found -> acc
         (* in this case it should be a predicate *) )
     | Not f1 ->
@@ -434,8 +434,8 @@ let expand_checkers macro_map path_map checkers =
 
 
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
-    (issue_desc: CIssue.issue_desc) linters_def_file =
+let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
+    (issue_desc : CIssue.issue_desc) linters_def_file =
   let procname =
     match method_decl_opt with
     | Some method_decl ->
@@ -461,7 +461,7 @@ let log_frontend_issue method_decl_opt (node: Ctl_parser_types.ast_node)
     ~ltr:trace ~node_key ~linters_def_file ~doc_url:issue_desc.doc_url
 
 
-let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc: CIssue.issue_desc)
+let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc)
     linters_def_file loc =
   let process_message message =
     remove_new_lines_and_whitespace (expand_message_string context message current_node)
@@ -478,7 +478,7 @@ let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc: CIs
 
 
 (* Calls the set of hard coded checkers (if any) *)
-let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node) =
+let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node) =
   let checkers = match an with Decl _ -> decl_checkers_list | Stmt _ -> stmt_checkers_list in
   List.iter
     ~f:(fun checker ->
@@ -493,9 +493,9 @@ let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node)
 
 
 (* Calls the set of checkers parsed from files (if any) *)
-let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_types.ast_node) =
+let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_types.ast_node) =
   List.iter
-    ~f:(fun (linter: linter) ->
+    ~f:(fun (linter : linter) ->
       if CIssue.should_run_check linter.issue_desc.CIssue.mode then
         match CTL.eval_formula linter.condition an context with
         | None ->

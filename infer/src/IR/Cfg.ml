@@ -20,7 +20,8 @@ let iter_over_sorted_procs cfg ~f =
     Typ.Procname.compare (Procdesc.get_proc_name pdesc1) (Procdesc.get_proc_name pdesc2)
   in
   Typ.Procname.Hash.fold (fun _ pdesc acc -> pdesc :: acc) cfg []
-  |> List.sort ~compare:compare_proc_desc_by_proc_name |> List.iter ~f
+  |> List.sort ~compare:compare_proc_desc_by_proc_name
+  |> List.iter ~f
 
 
 let get_all_proc_names cfg =
@@ -30,7 +31,7 @@ let get_all_proc_names cfg =
 
 
 (** Create a new procdesc *)
-let create_proc_desc cfg (proc_attributes: ProcAttributes.t) =
+let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   let pdesc = Procdesc.from_proc_attributes proc_attributes in
   Typ.Procname.Hash.add cfg proc_attributes.proc_name pdesc ;
   pdesc
@@ -38,13 +39,14 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) =
 
 (** Iterate over all the nodes in the cfg *)
 let iter_all_nodes ~sorted cfg ~f =
-  let do_proc_desc _ (pdesc: Procdesc.t) =
+  let do_proc_desc _ (pdesc : Procdesc.t) =
     List.iter ~f:(fun node -> f pdesc node) (Procdesc.get_nodes pdesc)
   in
   if not sorted then Typ.Procname.Hash.iter do_proc_desc cfg
   else
     iter_over_sorted_procs cfg ~f:(fun pdesc ->
-        Procdesc.get_nodes pdesc |> List.sort ~compare:Procdesc.Node.compare
+        Procdesc.get_nodes pdesc
+        |> List.sort ~compare:Procdesc.Node.compare
         |> List.iter ~f:(fun node -> f pdesc node) )
 
 
@@ -58,7 +60,8 @@ end)
 
 let load source =
   ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"Cfg.load" db load_stmt
       |> Option.map ~f:SQLite.deserialize )
@@ -98,7 +101,8 @@ let inline_synthetic_method ((ret_id, _) as ret) etl pdesc loc_call : Sil.instr 
     | Sil.Store (Exp.Lfield (_, fn, ft), bt, _, _), [(* setter for fields *) (e1, _); (e2, _)] ->
         let instr' = Sil.Store (Exp.Lfield (e1, fn, ft), bt, e2, loc_call) in
         found instr instr'
-    | Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _, _), [(e1, _)] when Pvar.is_global pvar ->
+    | Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, _, _), [(e1, _)] when Pvar.is_global pvar
+      ->
         (* setter for static fields *)
         let instr' = Sil.Store (Exp.Lfield (Exp.Lvar pvar, fn, ft), bt, e1, loc_call) in
         found instr instr'
@@ -129,7 +133,7 @@ let proc_inline_synthetic_methods cfg pdesc : unit =
   let instr_inline_synthetic_method instr =
     match instr with
     | Sil.Call (ret_id_typ, Exp.Const (Const.Cfun (Typ.Procname.Java java_pn as pn)), etl, loc, _)
-          -> (
+      -> (
       match Typ.Procname.Hash.find cfg pn with
       | pd ->
           let is_access = Typ.Procname.Java.is_access_method java_pn in

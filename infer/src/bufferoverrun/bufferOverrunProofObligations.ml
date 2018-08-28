@@ -67,7 +67,7 @@ module AllocSizeCondition = struct
         {report_issue_type= Some IssueType.inferbo_alloc_is_zero; propagate= false}
     | `LeftSmallerThanRight ->
         {report_issue_type= Some IssueType.inferbo_alloc_is_negative; propagate= false}
-    | _ ->
+    | _ -> (
         let is_symbolic = ItvPure.is_symbolic length in
         match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
         | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
@@ -75,7 +75,7 @@ module AllocSizeCondition = struct
         | `LeftSubsumesRight when Bound.is_not_infty (ItvPure.lb length) ->
             { report_issue_type= Some IssueType.inferbo_alloc_may_be_negative
             ; propagate= is_symbolic }
-        | cmp_mone ->
+        | cmp_mone -> (
           match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
           | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
               {report_issue_type= Some IssueType.inferbo_alloc_is_big; propagate= false}
@@ -90,7 +90,7 @@ module AllocSizeCondition = struct
                 | _ ->
                     false
               in
-              {report_issue_type= None; propagate}
+              {report_issue_type= None; propagate} ) )
 
 
   let subst bound_map length =
@@ -129,9 +129,13 @@ module ArrayAccessCondition = struct
     F.fprintf fmt "Offset: %a Size: %a" ItvPure.pp c.idx ItvPure.pp c.size
 
 
-  let make
-      : idx:ItvPure.t -> size:ItvPure.t -> idx_sym_exp:Relation.SymExp.t option
-        -> size_sym_exp:Relation.SymExp.t option -> relation:Relation.astate -> t option =
+  let make :
+         idx:ItvPure.t
+      -> size:ItvPure.t
+      -> idx_sym_exp:Relation.SymExp.t option
+      -> size_sym_exp:Relation.SymExp.t option
+      -> relation:Relation.astate
+      -> t option =
    fun ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation ->
     if ItvPure.is_invalid idx || ItvPure.is_invalid size then None
     else Some {idx; size; idx_sym_exp; size_sym_exp; relation}
@@ -191,13 +195,14 @@ module ArrayAccessCondition = struct
   let filter1 : t -> bool =
    fun c ->
     ItvPure.is_top c.idx || ItvPure.is_top c.size || ItvPure.is_lb_infty c.idx
-    || ItvPure.is_lb_infty c.size || (ItvPure.is_nat c.idx && ItvPure.is_nat c.size)
+    || ItvPure.is_lb_infty c.size
+    || (ItvPure.is_nat c.idx && ItvPure.is_nat c.size)
 
 
   let filter2 : t -> bool =
    fun c ->
     (* basically, alarms involving infinity are filtered *)
-    (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
+    ((not (ItvPure.is_finite c.idx)) || not (ItvPure.is_finite c.size))
     && (* except the following cases *)
        not
          ( Bound.is_not_infty (ItvPure.lb c.idx)
@@ -260,9 +265,12 @@ module ArrayAccessCondition = struct
       {report_issue_type; propagate= is_symbolic}
 
 
-  let subst
-      : Itv.Bound.t bottom_lifted Itv.SymbolMap.t -> Relation.SubstMap.t -> Relation.astate -> t
-        -> t option =
+  let subst :
+         Itv.Bound.t bottom_lifted Itv.SymbolMap.t
+      -> Relation.SubstMap.t
+      -> Relation.astate
+      -> t
+      -> t option =
    fun bound_map rel_map caller_relation c ->
     match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
     | NonBottom idx, NonBottom size ->
@@ -426,7 +434,7 @@ module Reported = struct
 
   let make issue_type = issue_type
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 end
 
 module ConditionWithTrace = struct
@@ -488,7 +496,7 @@ module ConditionWithTrace = struct
 
 
   let check_aux cwt =
-    let {report_issue_type; propagate} as checked = Condition.check cwt.cond in
+    let ({report_issue_type; propagate} as checked) = Condition.check cwt.cond in
     match report_issue_type with
     | None ->
         checked
@@ -555,7 +563,7 @@ module ConditionSet = struct
             L.(debug BufferOverrun Verbose)
               "[InferboPO] Adding new condition %a@." ConditionWithTrace.pp new_ ;
           if same then new_ :: condset else new_ :: acc
-      | existing :: rest as existings ->
+      | existing :: rest as existings -> (
         match try_merge ~existing ~new_ with
         | `DoNotAddAndStop ->
             if Config.bo_debug >= 3 then
@@ -570,7 +578,7 @@ module ConditionSet = struct
                 existing ConditionWithTrace.pp new_ ;
             aux ~new_ acc ~same:false rest
         | `KeepExistingAndContinue ->
-            aux ~new_ (existing :: acc) ~same rest
+            aux ~new_ (existing :: acc) ~same rest )
     in
     aux ~new_ [] ~same:true condset
 
@@ -589,7 +597,8 @@ module ConditionSet = struct
   let add_array_access location ~idx ~size ~is_collection_add ~idx_sym_exp ~size_sym_exp ~relation
       val_traces condset =
     ArrayAccessCondition.make ~idx ~size ~idx_sym_exp ~size_sym_exp ~relation
-    |> Condition.make_array_access ~is_collection_add |> add_opt location val_traces condset
+    |> Condition.make_array_access ~is_collection_add
+    |> add_opt location val_traces condset
 
 
   let add_alloc_size location ~length val_traces condset =

@@ -97,9 +97,9 @@ module Worklist = struct
     ; visit_map= Procdesc.NodeMap.empty }
 
 
-  let is_empty (wl: t) : bool = NodeVisitSet.is_empty wl.todo_set
+  let is_empty (wl : t) : bool = NodeVisitSet.is_empty wl.todo_set
 
-  let add (wl: t) (node: Procdesc.Node.t) : unit =
+  let add (wl : t) (node : Procdesc.Node.t) : unit =
     let visits =
       (* recover visit count if it was visited before *)
       try Procdesc.NodeMap.find node wl.visit_map with Caml.Not_found -> 0
@@ -108,7 +108,7 @@ module Worklist = struct
 
 
   (** remove the minimum element from the worklist, and increase its number of visits *)
-  let remove (wl: t) : Procdesc.Node.t =
+  let remove (wl : t) : Procdesc.Node.t =
     try
       let min = NodeVisitSet.min_elt wl.todo_set in
       wl.todo_set <- NodeVisitSet.remove min wl.todo_set ;
@@ -129,15 +129,15 @@ let path_set_create_worklist proc_cfg =
   Worklist.create ()
 
 
-let htable_retrieve (htable: (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key: Procdesc.Node.id)
-    : Paths.PathSet.t =
+let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t)
+    (key : Procdesc.Node.id) : Paths.PathSet.t =
   try Hashtbl.find htable key with Caml.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
     Paths.PathSet.empty
 
 
 (** Add [d] to the pathset todo at [node] returning true if changed *)
-let path_set_put_todo (wl: Worklist.t) (node: Procdesc.Node.t) (d: Paths.PathSet.t) : bool =
+let path_set_put_todo (wl : Worklist.t) (node : Procdesc.Node.t) (d : Paths.PathSet.t) : bool =
   let changed =
     if Paths.PathSet.is_empty d then false
     else
@@ -153,7 +153,7 @@ let path_set_put_todo (wl: Worklist.t) (node: Procdesc.Node.t) (d: Paths.PathSet
   changed
 
 
-let path_set_checkout_todo (wl: Worklist.t) (node: Procdesc.Node.t) : Paths.PathSet.t =
+let path_set_checkout_todo (wl : Worklist.t) (node : Procdesc.Node.t) : Paths.PathSet.t =
   try
     let node_id = Procdesc.Node.get_id node in
     let todo = Hashtbl.find wl.Worklist.path_set_todo node_id in
@@ -168,12 +168,12 @@ let path_set_checkout_todo (wl: Worklist.t) (node: Procdesc.Node.t) : Paths.Path
 
 (* =============== END of the edge_set object =============== *)
 
-let collect_do_abstract_pre pname tenv (pset: Propset.t) : Propset.t =
+let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
   if !Config.footprint then Config.run_in_re_execution_mode (Abs.lifted_abstract pname tenv) pset
   else Abs.lifted_abstract pname tenv pset
 
 
-let collect_do_abstract_post pname tenv (pathset: Paths.PathSet.t) : Paths.PathSet.t =
+let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.PathSet.t =
   let abs_option p =
     if Prover.check_inconsistency tenv p then None else Some (Abs.abstract pname tenv p)
   in
@@ -184,7 +184,7 @@ let collect_do_abstract_post pname tenv (pathset: Paths.PathSet.t) : Paths.PathS
 
 let do_join_pre plist = Dom.proplist_collapse_pre plist
 
-let do_join_post pname tenv (pset: Paths.PathSet.t) =
+let do_join_post pname tenv (pset : Paths.PathSet.t) =
   if Config.spec_abs_level <= 0 then Dom.pathset_collapse tenv pset
   else Dom.pathset_collapse tenv (Dom.pathset_collapse_impl pname tenv pset)
 
@@ -261,8 +261,8 @@ let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t 
 (* =============== START of symbolic execution =============== *)
 
 (** propagate a set of results to the given node *)
-let propagate (wl: Worklist.t) pname ~is_exception (pset: Paths.PathSet.t)
-    (curr_node: Procdesc.Node.t) =
+let propagate (wl : Worklist.t) pname ~is_exception (pset : Paths.PathSet.t)
+    (curr_node : Procdesc.Node.t) =
   let edgeset_todo =
     (* prop must be a renamed prop by the invariant preserved by PropSet *)
     let f prop path edgeset_curr =
@@ -278,8 +278,8 @@ let propagate (wl: Worklist.t) pname ~is_exception (pset: Paths.PathSet.t)
 
 
 (** propagate a set of results, including exceptions and divergence *)
-let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Paths.PathSet.t)
-    curr_node (wl: Worklist.t) =
+let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : Paths.PathSet.t)
+    curr_node (wl : Worklist.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then (
@@ -310,7 +310,7 @@ let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Pat
 (* =============== START of forward_tabulate =============== *)
 
 (** Symbolic execution for a Join node *)
-let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
+let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo : Paths.PathSet.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let curr_node_id = ProcCfg.Exceptional.Node.id curr_node in
   let new_dset = edgeset_todo in
@@ -369,7 +369,8 @@ let instrs_get_normal_vars instrs =
   let do_instr res instr =
     Sil.instr_get_exps instr
     |> List.fold_left ~init:res ~f:(fun res e ->
-           Exp.free_vars e |> Sequence.filter ~f:Ident.is_normal
+           Exp.free_vars e
+           |> Sequence.filter ~f:Ident.is_normal
            |> Ident.hashqueue_of_sequence ~init:res )
   in
   Instrs.fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys
@@ -377,7 +378,7 @@ let instrs_get_normal_vars instrs =
 
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution exe_env summary proc_cfg handle_exn tenv
-    (node: ProcCfg.Exceptional.Node.t) (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
+    (node : ProcCfg.Exceptional.Node.t) (prop : Prop.normal Prop.t) (path : Paths.Path.t) =
   State.mark_execution_start node ;
   let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
@@ -423,11 +424,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
   let exe_iter f pathset =
     let ps_size = Paths.PathSet.size pathset in
     let cnt = ref 0 in
-    let exe prop path =
-      State.set_path path None ;
-      incr cnt ;
-      f prop path !cnt ps_size
-    in
+    let exe prop path = State.set_path path None ; incr cnt ; f prop path !cnt ps_size in
     Paths.PathSet.iter exe pathset
   in
   let print_node_preamble curr_node session pathset_todo =
@@ -442,9 +439,11 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     in
     L.d_strln
       ( "**** " ^ log_string pname ^ " " ^ "Node: "
-      ^ string_of_int (Procdesc.Node.get_id curr_node :> int) ^ ", " ^ "Procedure: "
-      ^ Typ.Procname.to_string pname ^ ", " ^ "Session: " ^ string_of_int session ^ ", " ^ "Todo: "
-      ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****" ) ;
+      ^ string_of_int (Procdesc.Node.get_id curr_node :> int)
+      ^ ", " ^ "Procedure: " ^ Typ.Procname.to_string pname ^ ", " ^ "Session: "
+      ^ string_of_int session ^ ", " ^ "Todo: "
+      ^ string_of_int (Paths.PathSet.size pathset_todo)
+      ^ " ****" ) ;
     L.d_increase_indent 1 ;
     Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset_todo) ;
     L.d_strln ".... Instructions: .... " ;
@@ -452,7 +451,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     L.d_ln () ;
     L.d_ln ()
   in
-  let do_prop (curr_node: ProcCfg.Exceptional.Node.t) handle_exn prop path cnt num_paths =
+  let do_prop (curr_node : ProcCfg.Exceptional.Node.t) handle_exn prop path cnt num_paths =
     L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths) ;
     L.d_increase_indent 1 ;
     try
@@ -465,7 +464,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       L.d_ln ()
     with exn ->
       IExn.reraise_if exn ~f:(fun () ->
-          not !Config.footprint || not (Exceptions.handle_exception exn) ) ;
+          (not !Config.footprint) || not (Exceptions.handle_exception exn) ) ;
       handle_exn exn ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
@@ -622,7 +621,7 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
     List.fold ~f:add ~init:Pmap.empty pre_post_visited_list
   in
   let specs = ref [] in
-  let add_spec pre ((posts: Paths.PathSet.t), visited) =
+  let add_spec pre ((posts : Paths.PathSet.t), visited) =
     let posts' =
       List.map
         ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
@@ -692,7 +691,7 @@ let create_seed_vars sigma =
     parameters. The footprint is initialized according to the
     execution mode. The prop is not necessarily emp, so it
     should be incorporated when the footprint is constructed. *)
-let prop_init_formals_seed tenv new_formals (prop: 'a Prop.t) : Prop.exposed Prop.t =
+let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Prop.t =
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp =
@@ -720,7 +719,7 @@ let prop_init_formals_seed tenv new_formals (prop: 'a Prop.t) : Prop.exposed Pro
 
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
-let initial_prop tenv (curr_f: Procdesc.t) (prop: 'a Prop.t) add_formals : Prop.normal Prop.t =
+let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) add_formals : Prop.normal Prop.t =
   let construct_decl (x, typ) = (Pvar.mk x (Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals then List.map ~f:construct_decl (Procdesc.get_formals curr_f) else []
@@ -753,8 +752,8 @@ let initial_prop_from_pre tenv curr_f pre =
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
 let execute_filter_prop summary exe_env tenv proc_cfg
-    (precondition: Prop.normal BiabductionSummary.Jprop.t)
-    : Prop.normal BiabductionSummary.spec option =
+    (precondition : Prop.normal BiabductionSummary.Jprop.t) :
+    Prop.normal BiabductionSummary.spec option =
   let init_node = ProcCfg.Exceptional.start_node proc_cfg in
   let wl = path_set_create_worklist proc_cfg in
   let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
@@ -826,12 +825,12 @@ type exe_phase =
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.Exceptional.t)
-    : exe_phase =
+let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCfg.Exceptional.t) :
+    exe_phase =
   let pname = Summary.get_proc_name summary in
   let start_node = ProcCfg.Exceptional.start_node proc_cfg in
   let compute_footprint () : exe_phase =
-    let go (wl: Worklist.t) () =
+    let go (wl : Worklist.t) () =
       let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
       let init_prop = initial_prop_from_emp tenv pdesc in
       (* use existing pre's (in recursion some might exist) as starting points *)
@@ -860,7 +859,7 @@ let perform_analysis_phase exe_env tenv (summary: Summary.t) (proc_cfg: ProcCfg.
       ignore (path_set_put_todo wl start_node init_edgeset) ;
       forward_tabulate summary exe_env tenv proc_cfg wl
     in
-    let get_results (wl: Worklist.t) () =
+    let get_results (wl : Worklist.t) () =
       State.process_execution_failures (Reporting.log_issue_deprecated Exceptions.Warning) pname ;
       let results = collect_analysis_result tenv wl proc_cfg in
       let specs =
@@ -1054,8 +1053,8 @@ module SpecMap = Caml.Map.Make (struct
 end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec.t list)
-    : BiabductionSummary.NormSpec.t list * bool =
+let update_specs tenv prev_summary phase (new_specs : BiabductionSummary.NormSpec.t list) :
+    BiabductionSummary.NormSpec.t list * bool =
   let new_specs = BiabductionSummary.normalized_specs_to_specs new_specs in
   let old_specs = Tabulation.get_specs_from_payload prev_summary in
   let changed = ref false in
@@ -1065,7 +1064,8 @@ let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec
          ~f:(fun map spec ->
            SpecMap.add spec.BiabductionSummary.pre
              ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
-             , spec.BiabductionSummary.visited ) map )
+             , spec.BiabductionSummary.visited )
+             map )
          ~init:SpecMap.empty old_specs)
   in
   let re_exe_filter old_spec =
@@ -1102,7 +1102,8 @@ let update_specs tenv prev_summary phase (new_specs: BiabductionSummary.NormSpec
       current_specs :=
         SpecMap.add spec.BiabductionSummary.pre
           ( Paths.PathSet.from_renamed_list spec.BiabductionSummary.posts
-          , spec.BiabductionSummary.visited ) !current_specs
+          , spec.BiabductionSummary.visited )
+          !current_specs
   in
   let res = ref [] in
   let convert pre (post_set, visited) =

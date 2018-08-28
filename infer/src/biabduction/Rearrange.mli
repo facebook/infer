@@ -27,8 +27,14 @@ val check_call_to_objc_block_error :
     It's used to check that we don't call possibly null blocks *)
 
 val rearrange :
-  ?report_deref_errors:bool -> Procdesc.t -> Tenv.t -> Exp.t -> Typ.t -> Prop.normal Prop.t
-  -> Location.t -> Sil.offset list Prop.prop_iter list
+     ?report_deref_errors:bool
+  -> Procdesc.t
+  -> Tenv.t
+  -> Exp.t
+  -> Typ.t
+  -> Prop.normal Prop.t
+  -> Location.t
+  -> Sil.offset list Prop.prop_iter list
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
     It returns an iterator with [lexp |-> strexp: typ] as current predicate
     and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)

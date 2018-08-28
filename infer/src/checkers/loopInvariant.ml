@@ -22,10 +22,8 @@ let is_defined_outside loop_nodes reaching_defs var =
 let is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname params =
   List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) params
   &&
-  match
-    (* Take into account invariance behavior of modeled functions *)
-    Models.Call.dispatch tenv callee_pname params
-  with
+  (* Take into account invariance behavior of modeled functions *)
+  match Models.Call.dispatch tenv callee_pname params with
   | Some inv ->
       InvariantModels.is_invariant inv
   | None ->
@@ -33,7 +31,7 @@ let is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname
 
 
 (* check if the def of var is unique and invariant *)
-let is_def_unique_and_satisfy tenv var (loop_nodes: LoopNodes.t) ~is_inv_by_default
+let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_inv_by_default
     is_exp_invariant =
   let equals_var id = Var.equal var (Var.of_id id) in
   (* Use O(1) is_singleton check *)

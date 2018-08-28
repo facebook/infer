@@ -109,11 +109,11 @@ let volatile = "volatile"
 
 let worker_thread = "WorkerThread"
 
-let ia_has_annotation_with (ia: Annot.Item.t) (predicate: Annot.t -> bool) : bool =
+let ia_has_annotation_with (ia : Annot.Item.t) (predicate : Annot.t -> bool) : bool =
   List.exists ~f:(fun (a, _) -> predicate a) ia
 
 
-let ma_has_annotation_with ((ia, ial): Annot.Method.t) (predicate: Annot.t -> bool) : bool =
+let ma_has_annotation_with ((ia, ial) : Annot.Method.t) (predicate : Annot.t -> bool) : bool =
   let has_annot a = ia_has_annotation_with a predicate in
   has_annot ia || List.exists ~f:has_annot ial
 
@@ -128,7 +128,7 @@ let annot_ends_with annot ann_name =
       String.equal annot_class_name ann_name
 
 
-let class_name_matches s ((annot: Annot.t), _) = String.equal s annot.class_name
+let class_name_matches s ((annot : Annot.t), _) = String.equal s annot.class_name
 
 let ia_ends_with ia ann_name = List.exists ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
 
@@ -154,7 +154,7 @@ let pname_has_return_annot pname ~attrs_of_pname predicate =
       false
 
 
-let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
+let field_has_annot fieldname (struct_typ : Typ.Struct.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
     Typ.Fieldname.equal fieldname fname && predicate annot
   in
@@ -162,7 +162,7 @@ let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
 
 
-let struct_typ_has_annot (struct_typ: Typ.Struct.t) predicate = predicate struct_typ.annots
+let struct_typ_has_annot (struct_typ : Typ.Struct.t) predicate = predicate struct_typ.annots
 
 let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
 

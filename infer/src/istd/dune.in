@@ -1,7 +1,9 @@
 (* -*- tuareg -*- *)
 (* NOTE: prepend dune.common to this file! *)
-;; Format.sprintf
-     {|
+
+;;
+Format.sprintf
+  {|
 (library
  (name InferStdlib)
  (public_name InferStdlib)
@@ -16,7 +18,7 @@
  (mld_files index)
 )
 |}
-     (String.concat " " common_cflags)
-     (String.concat " " common_optflags)
-     (String.concat " " common_libraries)
-   |> Jbuild_plugin.V1.send
+  (String.concat " " common_cflags)
+  (String.concat " " common_optflags)
+  (String.concat " " common_libraries)
+|> Jbuild_plugin.V1.send

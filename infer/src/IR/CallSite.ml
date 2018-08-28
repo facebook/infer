@@ -10,7 +10,7 @@ module F = Format
 
 type t = {pname: Typ.Procname.t; loc: Location.t} [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let pname t = t.pname
 

@@ -8,6 +8,7 @@
 
 (** Main module for the analysis after the capture phase *)
 open! IStd
+
 module L = Logging
 
 let clear_caches () =
@@ -84,7 +85,7 @@ let main ~changed_files =
   let n_source_files = List.length source_files_to_analyze in
   L.progress "Found %d%s source file%s to analyze in %s@." n_source_files
     ( if Config.reactive_mode || Option.is_some changed_files then
-        " (out of " ^ string_of_int (List.length all_source_files) ^ ")"
+      " (out of " ^ string_of_int (List.length all_source_files) ^ ")"
     else "" )
     (if Int.equal n_source_files 1 then "" else "s")
     Config.results_dir ;

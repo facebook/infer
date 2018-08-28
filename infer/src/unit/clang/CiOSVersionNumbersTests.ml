@@ -9,7 +9,7 @@ open! IStd
 open OUnit2
 
 let test_correct_ios_version =
-  let create_test (version: string) (expected_version: string option) _ =
+  let create_test (version : string) (expected_version : string option) _ =
     let output = CiOSVersionNumbers.version_of version in
     let cmp s1 s2 = Option.equal String.equal s1 s2 in
     assert_equal ~pp_diff:CiOSVersionNumbers.pp_diff_of_version_opt ~cmp expected_version output

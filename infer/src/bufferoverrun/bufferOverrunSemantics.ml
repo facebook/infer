@@ -366,7 +366,8 @@ module Prune = struct
   let is_unreachable_constant : Exp.t -> Mem.astate -> bool =
    fun e m ->
     let v = eval e m in
-    Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0) && PowLoc.is_bot (Val.get_pow_loc v)
+    Itv.( <= ) ~lhs:(Val.get_itv v) ~rhs:(Itv.of_int 0)
+    && PowLoc.is_bot (Val.get_pow_loc v)
     && ArrayBlk.is_bot (Val.get_array_blk v)
 
 
@@ -390,7 +391,8 @@ module Prune = struct
     | Exp.BinOp (Binop.LAnd, e1, e2) ->
         astate |> prune_helper e1 |> prune_helper e2
     | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
-        astate |> prune_helper (Exp.UnOp (Unop.LNot, e1, t))
+        astate
+        |> prune_helper (Exp.UnOp (Unop.LNot, e1, t))
         |> prune_helper (Exp.UnOp (Unop.LNot, e2, t))
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
@@ -420,12 +422,19 @@ let get_formals : Procdesc.t -> (Pvar.t * Typ.t) list =
   Procdesc.get_formals pdesc |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
 
 
-let get_matching_pairs
-    : Tenv.t -> Itv.SymbolPath.partial -> Val.t -> Val.t -> Exp.t option -> Typ.t -> Mem.astate
-      -> Itv.SymbolTable.summary_t -> Mem.astate
-      -> (Itv.Symbol.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
-         * AliasTarget.t option
-         * (Relation.Var.t * Relation.SymExp.t option) list =
+let get_matching_pairs :
+       Tenv.t
+    -> Itv.SymbolPath.partial
+    -> Val.t
+    -> Val.t
+    -> Exp.t option
+    -> Typ.t
+    -> Mem.astate
+    -> Itv.SymbolTable.summary_t
+    -> Mem.astate
+    -> (Itv.Symbol.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
+       * AliasTarget.t option
+       * (Relation.Var.t * Relation.SymExp.t option) list =
  fun tenv formal callee_v actual actual_exp_opt typ caller_mem callee_symbol_table callee_exit_mem ->
   let open Itv in
   let callee_ret_alias = Mem.find_ret_alias callee_exit_mem in
@@ -477,12 +486,14 @@ let get_matching_pairs
   let add_pair_val path1 v1 v2 ~e2_opt (bound_pairs, rel_pairs) =
     add_ret_alias (Val.get_all_locs v1) (Val.get_all_locs v2) ;
     let bound_pairs =
-      bound_pairs |> add_pair_itv (SymbolPath.normal path1) (get_itv v2) (Val.get_traces v2)
+      bound_pairs
+      |> add_pair_itv (SymbolPath.normal path1) (get_itv v2) (Val.get_traces v2)
       |> add_pair_itv (SymbolPath.offset path1) (get_offset v2) (Val.get_traces v2)
       |> add_pair_itv (SymbolPath.length path1) (get_size v2) (Val.get_traces v2)
     in
     let rel_pairs =
-      rel_pairs |> add_pair_sym_main_value v1 v2 ~e2_opt
+      rel_pairs
+      |> add_pair_sym_main_value v1 v2 ~e2_opt
       |> add_pair_sym (get_offset_sym v1) (get_offset_sym v2)
       |> add_pair_sym (get_size_sym v1) (get_size_sym v2)
     in
@@ -514,15 +525,16 @@ let get_matching_pairs
         pairs
   in
   let bound_pairs, rel_pairs =
-    ([], []) |> add_pair_val formal callee_v actual ~e2_opt:actual_exp_opt
+    ([], [])
+    |> add_pair_val formal callee_v actual ~e2_opt:actual_exp_opt
     |> add_pair_ptr typ formal callee_v actual
   in
   (bound_pairs, !ret_alias, rel_pairs)
 
 
-let subst_map_of_bound_pairs
-    : (Itv.Symbol.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
-      -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t =
+let subst_map_of_bound_pairs :
+       (Itv.Symbol.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
+    -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t =
  fun pairs ->
   let add_pair (bound_map, trace_map) (formal, actual, traces) =
     (Itv.SymbolMap.add formal actual bound_map, Itv.SymbolMap.add formal traces trace_map)
@@ -530,16 +542,20 @@ let subst_map_of_bound_pairs
   List.fold ~f:add_pair ~init:(Itv.SymbolMap.empty, Itv.SymbolMap.empty) pairs
 
 
-let subst_map_of_rel_pairs
-    : (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t =
+let subst_map_of_rel_pairs :
+    (Relation.Var.t * Relation.SymExp.t option) list -> Relation.SubstMap.t =
  fun pairs ->
   let add_pair rel_map (x, e) = Relation.SubstMap.add x e rel_map in
   List.fold pairs ~init:Relation.SubstMap.empty ~f:add_pair
 
 
-let rec list_fold2_def
-    : default:Val.t * Exp.t option -> f:('a -> Val.t * Exp.t option -> 'b -> 'b) -> 'a list
-      -> (Val.t * Exp.t option) list -> init:'b -> 'b =
+let rec list_fold2_def :
+       default:Val.t * Exp.t option
+    -> f:('a -> Val.t * Exp.t option -> 'b -> 'b)
+    -> 'a list
+    -> (Val.t * Exp.t option) list
+    -> init:'b
+    -> 'b =
  fun ~default ~f xs ys ~init:acc ->
   match (xs, ys) with
   | [], _ ->
@@ -554,12 +570,16 @@ let rec list_fold2_def
       list_fold2_def ~default ~f xs' ys' ~init:(f x y acc)
 
 
-let get_subst_map
-    : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Itv.SymbolTable.summary_t
-      -> Mem.astate
-      -> (Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t)
-         * AliasTarget.t option
-         * Relation.SubstMap.t =
+let get_subst_map :
+       Tenv.t
+    -> Procdesc.t
+    -> (Exp.t * 'a) list
+    -> Mem.astate
+    -> Itv.SymbolTable.summary_t
+    -> Mem.astate
+    -> (Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t)
+       * AliasTarget.t option
+       * Relation.SubstMap.t =
  fun tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem ->
   let add_pair (formal, typ) (actual, actual_exp) (bound_l, ret_alias, rel_l) =
     let callee_v = Mem.find (Loc.of_pvar formal) callee_exit_mem in

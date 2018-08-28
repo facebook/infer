@@ -13,7 +13,7 @@ module LocListSet = struct
     type t = Location.t list [@@deriving compare]
   end)
 
-  let mem s xs = not (List.is_empty xs) && mem (List.sort ~compare:Location.compare xs) s
+  let mem s xs = (not (List.is_empty xs)) && mem (List.sort ~compare:Location.compare xs) s
 
   let add s xs = if List.is_empty xs then s else add (List.sort ~compare:Location.compare xs) s
 end
@@ -23,7 +23,7 @@ let is_duplicate_report end_locs reported_ends =
 
 
 let sort_by_decreasing_preference_to_report issues =
-  let compare (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
+  let compare (x : Jsonbug_t.jsonbug) (y : Jsonbug_t.jsonbug) =
     let n = Int.compare (List.length x.bug_trace) (List.length y.bug_trace) in
     if n <> 0 then n
     else
@@ -34,15 +34,15 @@ let sort_by_decreasing_preference_to_report issues =
 
 
 let sort_by_location issues =
-  let compare (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
-    [%compare : string * int * int] (x.file, x.line, x.column) (y.file, y.line, y.column)
+  let compare (x : Jsonbug_t.jsonbug) (y : Jsonbug_t.jsonbug) =
+    [%compare: string * int * int] (x.file, x.line, x.column) (y.file, y.line, y.column)
   in
   List.sort ~compare issues
 
 
-let dedup (issues: Jsonbug_t.jsonbug list) =
-  List.fold (sort_by_decreasing_preference_to_report issues) ~init:(LocListSet.empty, []) ~f:
-    (fun (reported_ends, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
+let dedup (issues : Jsonbug_t.jsonbug list) =
+  List.fold (sort_by_decreasing_preference_to_report issues) ~init:(LocListSet.empty, [])
+    ~f:(fun (reported_ends, nondup_issues) (issue : Jsonbug_t.jsonbug) ->
       match issue.access with
       | Some encoded ->
           let _, _, end_locs = IssueAuxData.decode encoded in
@@ -72,7 +72,7 @@ end = struct
 
 
   let count report =
-    let count_aux t (e: Jsonbug_t.extra) =
+    let count_aux t (e : Jsonbug_t.extra) =
       match e with
       | {cost_polynomial= Some cp} when String.equal cp zero_token_str ->
           {t with zero= t.zero + 1}
@@ -133,7 +133,7 @@ type t =
   ; costs_summary: Yojson.Basic.json }
 
 (** Set operations should keep duplicated issues with identical hashes *)
-let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.report) : t =
+let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report) : t =
   let to_map report =
     List.fold_left
       ~f:(fun map issue -> Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue)

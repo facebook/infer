@@ -23,7 +23,9 @@ module type S = sig
   val of_sink : Sink.t -> t
 
   val to_sink_loc_trace :
-    ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) -> sink_path
+       ?desc_of_sink:(Sink.t -> string)
+    -> ?sink_should_nest:(Sink.t -> bool)
+    -> sink_path
     -> Errlog.loc_trace_elem list
 end
 

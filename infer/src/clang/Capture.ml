@@ -152,7 +152,7 @@ let cc1_capture clang_cmd =
   L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path ;
   if
     Config.equal_analyzer Config.analyzer Config.CompileOnly
-    || not Config.skip_analysis_in_path_skips_compilation
+    || (not Config.skip_analysis_in_path_skips_compilation)
        && CLocation.is_file_blacklisted source_path
   then (
     L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path ;

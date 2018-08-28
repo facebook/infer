@@ -50,12 +50,17 @@ val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 
 val proc_calls :
-  (Typ.Procname.t -> ProcAttributes.t option) -> Procdesc.t
-  -> (Typ.Procname.t -> ProcAttributes.t -> bool) -> (Typ.Procname.t * ProcAttributes.t) list
+     (Typ.Procname.t -> ProcAttributes.t option)
+  -> Procdesc.t
+  -> (Typ.Procname.t -> ProcAttributes.t -> bool)
+  -> (Typ.Procname.t * ProcAttributes.t) list
 (** Return the callees that satisfy [filter]. *)
 
 val override_find :
-  ?check_current_type:bool -> (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t
+     ?check_current_type:bool
+  -> (Typ.Procname.t -> bool)
+  -> Tenv.t
+  -> Typ.Procname.t
   -> Typ.Procname.t option
 (** Return a method which overrides [procname] and satisfies [f] (including [procname] itself when [check_current_type] is true, which it is by default). *)
 

@@ -31,13 +31,29 @@ module Exec = struct
 
 
   type decl_local =
-    Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t -> inst_num:int
-    -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
+       Typ.Procname.t
+    -> node_hash:int
+    -> Location.t
+    -> Loc.t
+    -> Typ.t
+    -> inst_num:int
+    -> dimension:int
+    -> Dom.Mem.astate
+    -> Dom.Mem.astate * int
 
-  let decl_local_array
-      : decl_local:decl_local -> Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> Typ.t
-        -> length:IntLit.t option -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate
-        -> Dom.Mem.astate * int =
+  let decl_local_array :
+         decl_local:decl_local
+      -> Typ.Procname.t
+      -> node_hash:int
+      -> Location.t
+      -> Loc.t
+      -> Typ.t
+      -> length:IntLit.t option
+      -> ?stride:int
+      -> inst_num:int
+      -> dimension:int
+      -> Dom.Mem.astate
+      -> Dom.Mem.astate * int =
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
     let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
@@ -57,9 +73,15 @@ module Exec = struct
     (mem, inst_num + 1)
 
 
-  let decl_local_collection
-      : Typ.Procname.t -> node_hash:int -> Location.t -> Loc.t -> inst_num:int -> dimension:int
-        -> Dom.Mem.astate -> Dom.Mem.astate * int =
+  let decl_local_collection :
+         Typ.Procname.t
+      -> node_hash:int
+      -> Location.t
+      -> Loc.t
+      -> inst_num:int
+      -> dimension:int
+      -> Dom.Mem.astate
+      -> Dom.Mem.astate * int =
    fun pname ~node_hash location loc ~inst_num ~dimension mem ->
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
     let alloc_loc = Loc.of_allocsite allocsite in
@@ -76,14 +98,35 @@ module Exec = struct
 
 
   type decl_sym_val =
-    Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t -> node_hash:int -> Location.t -> depth:int
-    -> Loc.t -> Typ.t -> Dom.Mem.astate -> Dom.Mem.astate
+       Typ.Procname.t
+    -> Itv.SymbolPath.partial
+    -> Tenv.t
+    -> node_hash:int
+    -> Location.t
+    -> depth:int
+    -> Loc.t
+    -> Typ.t
+    -> Dom.Mem.astate
+    -> Dom.Mem.astate
 
-  let decl_sym_arr
-      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial
-        -> Tenv.t -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> ?offset:Itv.t
-        -> ?size:Itv.t -> inst_num:int -> new_sym_num:Itv.Counter.t -> new_alloc_num:Itv.Counter.t
-        -> Dom.Mem.astate -> Dom.Mem.astate =
+  let decl_sym_arr :
+         decl_sym_val:decl_sym_val
+      -> Typ.Procname.t
+      -> Itv.SymbolTable.t
+      -> Itv.SymbolPath.partial
+      -> Tenv.t
+      -> node_hash:int
+      -> Location.t
+      -> depth:int
+      -> Loc.t
+      -> Typ.t
+      -> ?offset:Itv.t
+      -> ?size:Itv.t
+      -> inst_num:int
+      -> new_sym_num:Itv.Counter.t
+      -> new_alloc_num:Itv.Counter.t
+      -> Dom.Mem.astate
+      -> Dom.Mem.astate =
    fun ~decl_sym_val pname symbol_table path tenv ~node_hash location ~depth loc typ ?offset ?size
        ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
@@ -113,10 +156,20 @@ module Exec = struct
     decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
 
 
-  let decl_sym_java_ptr
-      : decl_sym_val:decl_sym_val -> Typ.Procname.t -> Itv.SymbolPath.partial -> Tenv.t
-        -> node_hash:int -> Location.t -> depth:int -> Loc.t -> Typ.t -> inst_num:int
-        -> new_alloc_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
+  let decl_sym_java_ptr :
+         decl_sym_val:decl_sym_val
+      -> Typ.Procname.t
+      -> Itv.SymbolPath.partial
+      -> Tenv.t
+      -> node_hash:int
+      -> Location.t
+      -> depth:int
+      -> Loc.t
+      -> Typ.t
+      -> inst_num:int
+      -> new_alloc_num:Itv.Counter.t
+      -> Dom.Mem.astate
+      -> Dom.Mem.astate =
    fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
        mem ->
     let alloc_num = Itv.Counter.next new_alloc_num in
@@ -128,13 +181,20 @@ module Exec = struct
     decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
 
 
-  let decl_sym_collection
-      : Typ.Procname.t -> Itv.SymbolTable.t -> Itv.SymbolPath.partial -> Location.t -> Loc.t
-        -> new_sym_num:Itv.Counter.t -> Dom.Mem.astate -> Dom.Mem.astate =
+  let decl_sym_collection :
+         Typ.Procname.t
+      -> Itv.SymbolTable.t
+      -> Itv.SymbolPath.partial
+      -> Location.t
+      -> Loc.t
+      -> new_sym_num:Itv.Counter.t
+      -> Dom.Mem.astate
+      -> Dom.Mem.astate =
    fun pname symbol_table path location loc ~new_sym_num mem ->
     let size =
       Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
-      |> Dom.Val.of_itv |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
+      |> Dom.Val.of_itv
+      |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
     in
     Dom.Mem.add_heap loc size mem
 
@@ -180,8 +240,7 @@ module Exec = struct
     match typ.Typ.desc with
     | Tstruct typename -> (
       match Tenv.lookup tenv typename with
-      | Some {fields} when not (List.is_empty fields)
-        -> (
+      | Some {fields} when not (List.is_empty fields) -> (
           let field_name, field_typ, _ = List.last_exn fields in
           let field_loc = PowLoc.append_field locs ~fn:field_name in
           match field_typ.Typ.desc with
@@ -199,7 +258,7 @@ end
 
 module Check = struct
   let check_access ~size ~idx ~size_sym_exp ~idx_sym_exp ~relation ~arr ~idx_traces
-      ?(is_collection_add= false) location cond_set =
+      ?(is_collection_add = false) location cond_set =
     let arr_traces = Dom.Val.get_traces arr in
     match (size, idx) with
     | NonBottom length, NonBottom idx ->
@@ -230,7 +289,7 @@ module Check = struct
       location cond_set
 
 
-  let collection_access ~array_exp ~index_exp ?(is_collection_add= false) mem location cond_set =
+  let collection_access ~array_exp ~index_exp ?(is_collection_add = false) mem location cond_set =
     let idx = Sem.eval index_exp mem in
     let arr = Sem.eval array_exp mem in
     let idx_traces = Dom.Val.get_traces idx in

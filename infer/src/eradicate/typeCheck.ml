@@ -117,7 +117,7 @@ type checks = {eradicate: bool; check_ret_type: check_return_type list}
 
 (** Typecheck an expression. *)
 let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref
-    (curr_pdesc: Procdesc.t) typestate e tr_default loc : TypeState.range =
+    (curr_pdesc : Procdesc.t) typestate e tr_default loc : TypeState.range =
   match e with
   | _ when Exp.is_null_literal e ->
       let typ, ta, locs = tr_default in
@@ -147,7 +147,8 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
       let _, ta, locs' =
         typecheck_expr find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc
           typestate exp
-          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, locs) loc
+          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, locs)
+          loc
       in
       let exp_origin = TypeAnnotation.get_origin ta in
       let tr_new =
@@ -181,7 +182,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 
 
 (** Typecheck an instruction. *)
-let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pname curr_pdesc
+let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_pname curr_pdesc
     find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
   (* let print_current_state () = *)
   (*   L.stdout "Current Typestate in node %a@\n%a@." *)
@@ -234,7 +235,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
       match TypeState.lookup_pvar pvar typestate with
       | Some _ when not is_assignment ->
           typestate
-      | _ ->
+      | _ -> (
         match EradicateChecks.get_field_annotation tenv fn typ with
         | Some (t, ia) ->
             let range =
@@ -244,7 +245,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
             in
             TypeState.add pvar range typestate
         | None ->
-            typestate
+            typestate )
     in
     (* Convert a function call to a pvar. *)
     let handle_function_call call_node id =
@@ -272,8 +273,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
     match exp with
     | Exp.Var id when Errdesc.find_normal_variable_funcall node' id <> None ->
         handle_function_call node' id
-    | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar
-      -> (
+    | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
         let frontend_variable_assignment = Errdesc.find_program_variable_assignment node pvar in
         match frontend_variable_assignment with
         | Some (call_node, id) ->
@@ -323,10 +323,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
               let typestate' = update_typestate_fld pvar inner_origin fn typ in
               (Exp.Lvar pvar, typestate')
           | Exp.Lvar _ | Exp.Lfield _ -> (
-            match
-              (* treat var.field1. ... .fieldn as a constant *)
-              ComplexExpressions.exp_to_string tenv node' exp
-            with
+            (* treat var.field1. ... .fieldn as a constant *)
+            match ComplexExpressions.exp_to_string tenv node' exp with
             | Some exp_str ->
                 let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
                 let typestate' = update_typestate_fld pvar inner_origin fn typ in
@@ -405,20 +403,21 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
     match frontent_variable_assignment with
     | None ->
         typestate'
-    | Some (node', id) ->
+    | Some (node', id) -> (
         (* handle the case where pvar is a frontend-generated program variable *)
         let exp = Idenv.expand_expr idenv (Exp.Var id) in
         match convert_complex_exp_to_pvar node' false exp typestate' loc with
         | Exp.Lvar pvar', _ ->
             handle_pvar typestate' pvar'
         | _ ->
-            typestate'
+            typestate' )
   in
   (* typecheck_expr with fewer parameters, using a common template for typestate range  *)
   let typecheck_expr_simple typestate1 exp1 typ1 origin1 loc1 =
     typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
       typestate1 exp1
-      (typ1, TypeAnnotation.const AnnotatedSignature.Nullable false origin1, [loc1]) loc1
+      (typ1, TypeAnnotation.const AnnotatedSignature.Nullable false origin1, [loc1])
+      loc1
   in
   (* check if there are errors in exp1 *)
   let typecheck_expr_for_errors typestate1 exp1 loc1 : unit =
@@ -464,7 +463,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
       in
       check_field_assign () ; typestate2
   | Sil.Call ((id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
-    when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array ->
+    when Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array
+    ->
       TypeState.add_id id
         (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New, [loc])
         typestate
@@ -480,7 +480,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
       let _, ta, _ =
         typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref curr_pdesc
           typestate array_exp
-          (t, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc]) loc
+          (t, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
+          loc
       in
       if checks.eradicate then
         EradicateChecks.check_array_access tenv find_canonical_duplicate curr_pdesc node instr_ref
@@ -490,7 +491,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
       TypeState.add_id id
         ( Typ.mk (Tint Typ.IInt)
         , TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New
-        , [loc] ) typestate
+        , [loc] )
+        typestate
   | Sil.Call (_, Exp.Const (Const.Cfun pn), _, _, _) when BuiltinDecl.is_declared pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
@@ -559,15 +561,15 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
           | Some (t, ta, _) ->
               let should_report =
                 Config.eradicate_condition_redundant
-                && not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta)
+                && (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta))
                 && not (TypeAnnotation.origin_is_fun_library ta)
               in
               ( if checks.eradicate && should_report then
-                  let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
-                  EradicateChecks.report_error tenv find_canonical_duplicate
-                    (TypeErr.Condition_redundant
-                       (true, EradicateChecks.explain_expr tenv node cond, false)) (Some instr_ref)
-                    loc curr_pdesc ) ;
+                let cond = Exp.BinOp (Binop.Ne, Exp.Lvar pvar, Exp.null) in
+                EradicateChecks.report_error tenv find_canonical_duplicate
+                  (TypeErr.Condition_redundant
+                     (true, EradicateChecks.explain_expr tenv node cond, false))
+                  (Some instr_ref) loc curr_pdesc ) ;
               TypeState.add pvar
                 (t, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [loc])
                 typestate''
@@ -644,8 +646,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
               ()
         in
         match call_params with
-        | ((_, Exp.Lvar pvar), _) :: _
-          -> (
+        | ((_, Exp.Lvar pvar), _) :: _ -> (
             (* temporary variable for the value of the boolean condition *)
             let curr_node = TypeErr.InstrRef.get_node instr_ref in
             let branch = false in
@@ -680,13 +681,13 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
         let pname_get_from_pname_put pname_put =
           let object_t = Typ.Name.Java.Split.java_lang_object in
           let parameters = [object_t] in
-          pname_put |> Typ.Procname.Java.replace_method_name "get"
+          pname_put
+          |> Typ.Procname.Java.replace_method_name "get"
           |> Typ.Procname.Java.replace_return_type object_t
           |> Typ.Procname.Java.replace_parameters parameters
         in
         match call_params with
-        | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _
-          -> (
+        | ((_, Exp.Lvar pv_map), _) :: ((_, exp_key), _) :: ((_, exp_value), typ_value) :: _ -> (
             (* Convert the dexp for k to the dexp for m.get(k) *)
             let convert_dexp_key_to_dexp_get dopt =
               match (dopt, callee_pname) with
@@ -722,7 +723,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
           let _, ta2, _ =
             typecheck_expr find_canonical_duplicate calls_this checks tenv node instr_ref
               curr_pdesc typestate e2
-              (t2, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, []) loc
+              (t2, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, [])
+              loc
           in
           let formal = (s1, ta1, t1) in
           let actual = (orig_e2, ta2) in
@@ -734,7 +736,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
         in
         (* Apply a function that operates on annotations *)
         let apply_annotation_transformer resolved_ret
-            (resolved_params: EradicateChecks.resolved_param list) =
+            (resolved_params : EradicateChecks.resolved_param list) =
           let rec handle_params resolved_ret params =
             match (params : EradicateChecks.resolved_param list) with
             | param :: params' when param.propagates_nullable ->
@@ -795,9 +797,9 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
         let typestate_after_call =
           if not is_anonymous_inner_class_constructor then (
             ( if Config.eradicate_debug then
-                let unique_id = Typ.Procname.to_unique_id callee_pname in
-                let classification = EradicateChecks.classify_procedure callee_attributes in
-                L.result "  %s unique id: %s@." classification unique_id ) ;
+              let unique_id = Typ.Procname.to_unique_id callee_pname in
+              let classification = EradicateChecks.classify_procedure callee_attributes in
+              L.result "  %s unique id: %s@." classification unique_id ) ;
             if cflags.CallFlags.cf_virtual && checks.eradicate then
               EradicateChecks.check_call_receiver tenv find_canonical_duplicate curr_pdesc node
                 typestate1 call_params callee_pname instr_ref loc
@@ -864,10 +866,12 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
           let map_dexp = function
             | Some
                 (DExp.Dretcall
-                  (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
+                  (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags))
+              ->
                 let pname_java' =
                   let object_t = Typ.Name.Java.Split.java_lang_object in
-                  pname_java |> Typ.Procname.Java.replace_method_name "get"
+                  pname_java
+                  |> Typ.Procname.Java.replace_method_name "get"
                   |> Typ.Procname.Java.replace_return_type object_t
                 in
                 let fun_dexp = DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java')) in
@@ -909,8 +913,7 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
         match[@warning "-57"] c with
         | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
         | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
-          when IntLit.iszero i
-          -> (
+          when IntLit.iszero i -> (
             typecheck_expr_for_errors typestate e loc ;
             let typestate1, e1, from_call =
               match from_is_true_on_null e with
@@ -936,25 +939,24 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
                 typestate2 )
         | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
         | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
-          when IntLit.iszero i
-          -> (
+          when IntLit.iszero i -> (
             typecheck_expr_for_errors typestate e loc ;
             let typestate1, e1, from_call =
               match from_instanceof e with
               | Some e1 ->
                   (* (e1 instanceof C) implies (e1 != null) *)
                   (typestate, e1, EradicateChecks.From_instanceof)
-              | None ->
+              | None -> (
                 match from_optional_isPresent e with
                 | Some e1 ->
                     (typestate, e1, EradicateChecks.From_optional_isPresent)
-                | None ->
+                | None -> (
                   match from_is_false_on_null e with
                   | Some e1 ->
                       (typestate, e1, EradicateChecks.From_is_false_on_null)
                   | None ->
                       if Option.is_some (from_containsKey e) then handle_containsKey e
-                      else (typestate, e, EradicateChecks.From_condition)
+                      else (typestate, e, EradicateChecks.From_condition) ) )
             in
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let typ, ta, _ =
@@ -993,7 +995,8 @@ let typecheck_instr tenv calls_this checks (node: Procdesc.Node.t) idenv curr_pn
             let found = ref None in
             let do_instr i =
               match i with
-              | Sil.Store (e, _, e', _) when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
+              | Sil.Store (e, _, e', _) when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e')
+                ->
                   found := Some e
               | _ ->
                   ()
@@ -1058,7 +1061,8 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
         if has_exceptions then typestates_exn := typestate :: !typestates_exn
     | Sil.Store (Exp.Lvar pv, _, _, _)
       when Pvar.is_return pv
-           && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind ->
+           && Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.throw_kind
+      ->
         (* throw instruction *)
         typestates_exn := typestate :: !typestates_exn
     | _ ->

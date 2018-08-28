@@ -17,13 +17,13 @@ module Raw = struct
    consistent, and the variable names should already be enough to distinguish the bases. *)
   type base = Var.t * typ_ [@@deriving compare]
 
-  let equal_base = [%compare.equal : base]
+  let equal_base = [%compare.equal: base]
 
   type access = ArrayAccess of Typ.t * t list | FieldAccess of Typ.Fieldname.t
 
-  and t = (base * access list) [@@deriving compare]
+  and t = base * access list [@@deriving compare]
 
-  let equal_access = [%compare.equal : access]
+  let equal_access = [%compare.equal: access]
 
   let equal_access_list l1 l2 = Int.equal (List.compare compare_access l1 l2) 0
 
@@ -50,7 +50,7 @@ module Raw = struct
         F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
 
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let truncate ((base, accesses) as t) =
     match List.rev accesses with
@@ -96,12 +96,12 @@ module Raw = struct
           (Some base_typ, None)
       | [last_access] ->
           (Some base_typ, Some last_access)
-      | curr_access :: rest ->
+      | curr_access :: rest -> (
         match get_access_type tenv base_typ curr_access with
         | Some access_typ ->
             last_access_info_impl tenv access_typ rest
         | None ->
-            (None, None)
+            (None, None) )
     in
     last_access_info_impl tenv base_typ accesses
 
@@ -134,7 +134,7 @@ module Raw = struct
 
   let of_id id typ = (base_of_id id typ, [])
 
-  let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
+  let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id : Var.t -> t option) =
     (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
     let rec of_exp_ exp typ accesses acc =
       match exp with
@@ -177,7 +177,7 @@ module Raw = struct
     of_exp_ exp0 typ0 [] []
 
 
-  let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
+  let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id : Var.t -> t option) =
     match of_exp ~include_array_indexes lhs_exp typ ~f_resolve_id with
     | [lhs_ap] ->
         Some lhs_ap
@@ -208,7 +208,7 @@ module Abs = struct
 
   type t = Abstracted of Raw.t | Exact of Raw.t [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let extract = function Exact ap | Abstracted ap -> ap
 
@@ -296,8 +296,7 @@ let inner_class_normalize p =
                       (base, accesses) ) )
     (* this$n.f ... -> this.f . ... *)
     (* happens in ctrs only *)
-    | Some ((Var.ProgramVar pvar, typ), all_accesses)
-      when is_synthetic_this pvar ->
+    | Some ((Var.ProgramVar pvar, typ), all_accesses) when is_synthetic_this pvar ->
         let varname = Mangled.from_string "this" in
         mk_pvar_as varname pvar
         |> Option.map ~f:(fun new_pvar -> (base_of_pvar new_pvar typ, all_accesses))

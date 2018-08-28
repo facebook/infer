@@ -7,7 +7,7 @@
 open! IStd
 module MF = MarkupFormatter
 
-let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
+let desc_retain_cycle tenv (cycle : RetainCyclesType.t) =
   let open RetainCyclesType in
   Logging.d_strln "Proposition with retain cycle:" ;
   let do_edge index_ edge =
@@ -20,8 +20,7 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
         else MF.monospaced_to_string (Format.sprintf "%s*" typ_str)
       in
       match Errdesc.find_outermost_dereference tenv node edge_obj.rc_from.rc_node_exp with
-      | Some de
-        -> (
+      | Some de -> (
           let decomp = DecompiledExp.to_string de in
           match de with
           | DecompiledExp.Dretcall _ ->
@@ -59,7 +58,7 @@ let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
 let edge_is_strong tenv obj_edge =
   let open RetainCyclesType in
   (* returns items annotation for field fn in struct t *)
-  let get_item_annotation (t: Typ.t) fn =
+  let get_item_annotation (t : Typ.t) fn =
     match t.desc with
     | Tstruct name -> (
       match Tenv.lookup tenv name with
@@ -77,8 +76,8 @@ let edge_is_strong tenv obj_edge =
   let has_weak_or_unretained_or_assign params =
     List.exists
       ~f:(fun att ->
-        String.equal Config.unsafe_unret att || String.equal Config.weak att
-        || String.equal Config.assign att )
+        String.equal Config.unsafe_unret att
+        || String.equal Config.weak att || String.equal Config.assign att )
       params
   in
   let weak_edge_by_type =
@@ -92,7 +91,7 @@ let edge_is_strong tenv obj_edge =
     match get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name with
     | Some ia ->
         List.exists
-          ~f:(fun ((ann: Annot.t), _) ->
+          ~f:(fun ((ann : Annot.t), _) ->
             ( String.equal ann.class_name Config.property_attributes
             || String.equal ann.class_name Config.ivar_attributes )
             && has_weak_or_unretained_or_assign ann.parameters )
@@ -205,7 +204,8 @@ let get_cycles found_cycles root tenv prop =
         found_cycles
   in
   match root with
-  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) when Sil.is_objc_object root ->
+  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) when Sil.is_objc_object root
+    ->
       let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
       dfs ~found_cycles ~root_node:se_root ~from_node:se_root ~rev_path:[] ~fields:fl ~visited:[]

@@ -8,6 +8,7 @@
 
 (** The Smallfoot Intermediate Language: Annotations *)
 open! IStd
+
 module F = Format
 
 type parameters = string list [@@deriving compare]
@@ -33,6 +34,7 @@ let pp fmt annotation =
 module Item = struct
   (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
   (* type nonrec t = list (t, bool) [@@deriving compare]; *)
+
   (** Annotation for one item: a list of annotations with visibility. *)
   type t_ = (t * bool) list [@@deriving compare]
 
@@ -67,7 +69,7 @@ module Method = struct
   (** Annotation for a method: return value and list of parameters. *)
   type t = Item.t * Item.t list [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   (** Pretty print a method annotation. *)
   let pp s fmt (ia, ial) = F.fprintf fmt "%a %s(%a)" Item.pp ia s (Pp.seq Item.pp) ial

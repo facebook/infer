@@ -9,19 +9,25 @@ open! IStd
 module L = Logging
 
 type log_t =
-  ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> ?access:string
-  -> ?extras:Jsonbug_t.extra -> exn -> unit
+     ?ltr:Errlog.loc_trace
+  -> ?linters_def_file:string
+  -> ?doc_url:string
+  -> ?access:string
+  -> ?extras:Jsonbug_t.extra
+  -> exn
+  -> unit
 
 let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~ltr
     ~linters_def_file ~doc_url ~access ~extras exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
-  if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
+  if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let session = (State.get_session () :> int) in
     Errlog.log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
       ~linters_def_file ~doc_url ~access ~extras exn
 
 
-let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr ~linters_def_file ~doc_url exn =
+let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr ~linters_def_file ~doc_url exn
+    =
   let node = Errlog.FrontendNode {node_key} in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~ltr
     ~linters_def_file ~doc_url ~access:None ~extras:None exn
@@ -87,7 +93,7 @@ let log_issue_external procname severity ~loc ~ltr ?access issue_type error_mess
     ~linters_def_file:None ~doc_url:None ~access ~extras:None exn
 
 
-let is_suppressed ?(field_name= None) tenv proc_desc kind =
+let is_suppressed ?(field_name = None) tenv proc_desc kind =
   let lookup = Tenv.lookup tenv in
   let proc_attributes = Procdesc.get_attributes proc_desc in
   (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
@@ -95,7 +101,7 @@ let is_suppressed ?(field_name= None) tenv proc_desc kind =
          - @android.annotation.SuppressLint("checker-error-name")
          - @some.PrefixErrorName
          where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
-  let annotation_matches (a: Annot.t) =
+  let annotation_matches (a : Annot.t) =
     let normalize str = Str.global_replace (Str.regexp "[_-]") "" (String.lowercase str) in
     let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
     let normalized_equal s1 s2 = String.equal (normalize s1) (normalize s2) in

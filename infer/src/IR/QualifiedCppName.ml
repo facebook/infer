@@ -75,7 +75,7 @@ module Match = struct
 
   let matching_separator = "#"
 
-  let regexp_string_of_qualifiers ?(prefix= false) quals =
+  let regexp_string_of_qualifiers ?(prefix = false) quals =
     Str.quote (to_separated_string ~sep:matching_separator quals) ^ if prefix then "" else "$"
 
 
@@ -94,7 +94,7 @@ module Match = struct
     let colon_splits = String.split qual_name ~on:':' in
     List.iter colon_splits ~f:(fun s ->
         (* Filter out the '<' in operator< and operator<= *)
-        if not (String.is_prefix s ~prefix:"operator<") && String.contains s '<' then
+        if (not (String.is_prefix s ~prefix:"operator<")) && String.contains s '<' then
           raise (ParseError ("Unexpected template in fuzzy qualified name %s." ^ qual_name)) ) ;
     of_qual_string qual_name
 

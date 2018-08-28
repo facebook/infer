@@ -122,7 +122,7 @@ let error_desc_hash desc = Hashtbl.hash (desc_get_comparable desc)
 
 (** equality for error_desc *)
 let error_desc_equal desc1 desc2 =
-  [%compare.equal : string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
+  [%compare.equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
 
 
 let line_tag_ tags tag loc =
@@ -260,7 +260,8 @@ let deref_str_undef (proc_name, loc) =
   ; value_post= None
   ; problem_str=
       "could be assigned by a call to skip function " ^ proc_name_str
-      ^ at_line_tag tags Tags.call_line loc ^ " and is dereferenced or freed" }
+      ^ at_line_tag tags Tags.call_line loc
+      ^ " and is dereferenced or freed" }
 
 
 (** dereference strings for a freed pointer dereference *)
@@ -447,12 +448,14 @@ let dereference_string proc_name deref_str value_str access_opt loc =
             "is annotated with " ^ annotation_name ^ " and is dereferenced without a null check"
           else
             "is indirectly marked " ^ annotation_name ^ " (source: "
-            ^ MF.monospaced_to_string nullable_src ^ ") and is dereferenced without a null check"
+            ^ MF.monospaced_to_string nullable_src
+            ^ ") and is dereferenced without a null check"
       | None, Some weak_var_str ->
           if String.equal weak_var_str value_str then
             "is a weak pointer captured in the block and is dereferenced without a null check"
           else
-            "is equal to the variable " ^ MF.monospaced_to_string weak_var_str
+            "is equal to the variable "
+            ^ MF.monospaced_to_string weak_var_str
             ^ ", a weak pointer captured in the block, and is dereferenced without a null check"
       | None, None ->
           deref_str.problem_str
@@ -460,10 +463,10 @@ let dereference_string proc_name deref_str value_str access_opt loc =
     [problem_str ^ " " ^ at_line tags loc]
   in
   let access_desc = access_desc access_opt in
-  {no_desc with descriptions= value_desc :: access_desc @ problem_desc; tags= !tags}
+  {no_desc with descriptions= (value_desc :: access_desc) @ problem_desc; tags= !tags}
 
 
-let parameter_field_not_null_checked_desc (desc: error_desc) exp =
+let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let parameter_not_nullable_desc var =
     let var_s = Pvar.to_string var in
     let param_not_null_desc =
@@ -502,7 +505,7 @@ let parameter_field_not_null_checked_desc (desc: error_desc) exp =
       desc
 
 
-let has_tag (desc: error_desc) tag =
+let has_tag (desc : error_desc) tag =
   List.exists ~f:(fun (tag', _) -> String.equal tag tag') desc.tags
 
 
@@ -518,8 +521,10 @@ let desc_allocation_mismatch alloc dealloc =
       else
         " by call to " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)
     in
-    "using " ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)
-    ^ by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc
+    "using "
+    ^ MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)
+    ^ by_call ^ " "
+    ^ at_line (Tags.create ()) (* ignore the tag *) loc
   in
   let description =
     Format.sprintf "%s %s is deallocated %s" mem_dyn_allocated (using alloc) (using dealloc)
@@ -631,7 +636,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | None ->
           ("", "", "")
       | Some s ->
-          Tags.update tags Tags.value s ; (MF.monospaced_to_string s, " to ", " on ")
+          Tags.update tags Tags.value s ;
+          (MF.monospaced_to_string s, " to ", " on ")
     in
     let typ_str =
       match hpred_type_opt with
@@ -672,7 +678,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     match bucket_opt with Some bucket when Config.show_buckets -> bucket | _ -> ""
   in
   { no_desc with
-    descriptions= bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after; tags= !tags }
+    descriptions= (bucket_str :: xxx_allocated_to) @ by_call_to @ is_not_rxxx_after; tags= !tags }
 
 
 let desc_buffer_overrun desc = verbatim_desc desc
@@ -724,8 +730,8 @@ let desc_registered_observer_being_deallocated pvar loc =
   let obj_str = MF.monospaced_to_string (Pvar.to_string pvar) in
   { no_desc with
     descriptions=
-      [ registered_observer_being_deallocated_str obj_str ^ at_line tags loc
-        ^ ". Being still registered as observer of the notification "
+      [ registered_observer_being_deallocated_str obj_str
+        ^ at_line tags loc ^ ". Being still registered as observer of the notification "
         ^ "center, the deallocated object " ^ obj_str ^ " may be notified in the future." ]
   ; tags= !tags }
 

@@ -34,7 +34,7 @@ type t =
   | LOr  (** logical or. Does not always evaluate both operands. *)
 [@@deriving compare]
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 (** This function returns true if the operation is injective
     wrt. each argument: op(e,-) and op(-, e) is injective for all e.

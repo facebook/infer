@@ -19,12 +19,17 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
   val compute_post :
-    ?debug:bool -> TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate
+       ?debug:bool
+    -> TransferFunctions.extras ProcData.t
+    -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
 
   val exec_cfg :
-    TransferFunctions.CFG.t -> TransferFunctions.extras ProcData.t
-    -> initial:TransferFunctions.Domain.astate -> debug:bool -> invariant_map
+       TransferFunctions.CFG.t
+    -> TransferFunctions.extras ProcData.t
+    -> initial:TransferFunctions.Domain.astate
+    -> debug:bool
+    -> invariant_map
 
   val exec_pdesc :
     TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map
@@ -139,14 +144,14 @@ struct
           match extract_post_ pred with
           | None ->
               joined_post_opt
-          | Some post as some_post ->
+          | Some post as some_post -> (
             match joined_post_opt with
             | None ->
                 some_post
             | Some joined_post ->
                 let res = Domain.join joined_post post in
                 if debug then debug_absint_operation (`Join (joined_post, post, res)) node ;
-                Some res )
+                Some res ) )
     in
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
@@ -179,7 +184,7 @@ struct
 
 
   (* compute and return the postcondition of [pdesc] *)
-  let compute_post ?(debug= Config.write_html) ({ProcData.pdesc} as proc_data) ~initial =
+  let compute_post ?(debug = Config.write_html) ({ProcData.pdesc} as proc_data) ~initial =
     let cfg = CFG.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data ~initial ~debug in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map

@@ -30,12 +30,18 @@ module FileRenamings : sig
 end
 
 val do_filter :
-  Differential.t -> FileRenamings.t -> skip_duplicated_types:bool
-  -> interesting_paths:SourceFile.t list option -> Differential.t
+     Differential.t
+  -> FileRenamings.t
+  -> skip_duplicated_types:bool
+  -> interesting_paths:SourceFile.t list option
+  -> Differential.t
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
   val relative_complements :
-    compare:('a -> 'a -> int) -> ?pred:('a -> bool) -> 'a list -> 'a list
+       compare:('a -> 'a -> int)
+    -> ?pred:('a -> bool)
+    -> 'a list
+    -> 'a list
     -> 'a list * 'a list * 'a list
 
   val skip_duplicated_types_on_filenames : FileRenamings.t -> Differential.t -> Differential.t

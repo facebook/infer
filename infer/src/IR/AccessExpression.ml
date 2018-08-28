@@ -75,8 +75,7 @@ let rec get_typ t tenv : Typ.t option =
   match t with
   | Base (_, typ) ->
       Some typ
-  | FieldOffset (ae, fld)
-    -> (
+  | FieldOffset (ae, fld) -> (
       let base_typ_opt = get_typ ae tenv in
       match base_typ_opt with
       | Some base_typ ->
@@ -88,9 +87,9 @@ let rec get_typ t tenv : Typ.t option =
   | AddressOf ae ->
       let base_typ_opt = get_typ ae tenv in
       Option.map base_typ_opt ~f:(fun base_typ -> Typ.mk (Tptr (base_typ, Pk_pointer)))
-  | Dereference ae ->
+  | Dereference ae -> (
       let base_typ_opt = get_typ ae tenv in
-      match base_typ_opt with Some {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None
+      match base_typ_opt with Some {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None )
 
 
 let rec pp fmt = function
@@ -110,7 +109,7 @@ let rec pp fmt = function
       F.fprintf fmt "*(%a)" pp ae
 
 
-let equal = [%compare.equal : t]
+let equal = [%compare.equal: t]
 
 let base_of_id id typ = (Var.of_id id, typ)
 
@@ -144,8 +143,8 @@ let rec normalize t =
 
 
 (* Adapted from AccessPath.of_exp. *)
-let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
-  let rec of_exp_ exp typ (add_accesses: t -> t) acc : t list =
+let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id : Var.t -> t option) =
+  let rec of_exp_ exp typ (add_accesses : t -> t) acc : t list =
     match exp with
     | Exp.Var id -> (
       match f_resolve_id (Var.of_id id) with
@@ -200,14 +199,12 @@ let of_exp ~include_array_indexes ~add_deref exp0 typ0 ~(f_resolve_id: Var.t -> 
   IList.map_changed ~f:normalize ~equal (of_exp_ exp0 typ0 Fn.id [])
 
 
-let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
+let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id : Var.t -> t option) =
   match lhs_exp with
-  | Exp.Lfield _ when not add_deref
-    -> (
+  | Exp.Lfield _ when not add_deref -> (
       let res = of_exp ~include_array_indexes ~add_deref:true lhs_exp typ ~f_resolve_id in
       match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
-  | Exp.Lindex _ when not add_deref
-    -> (
+  | Exp.Lindex _ when not add_deref -> (
       let res =
         let typ' =
           match typ.Typ.desc with
@@ -220,6 +217,6 @@ let of_lhs_exp ~include_array_indexes ~add_deref lhs_exp typ ~(f_resolve_id: Var
         of_exp ~include_array_indexes ~add_deref:true lhs_exp typ' ~f_resolve_id
       in
       match res with [lhs_ae] -> Some (AddressOf lhs_ae) | _ -> None )
-  | _ ->
+  | _ -> (
       let res = of_exp ~include_array_indexes ~add_deref lhs_exp typ ~f_resolve_id in
-      match res with [lhs_ae] -> Some lhs_ae | _ -> None
+      match res with [lhs_ae] -> Some lhs_ae | _ -> None )

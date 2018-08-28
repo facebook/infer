@@ -30,8 +30,9 @@ let is_in_main_file translation_unit_context an =
         translation_unit_context.CFrontend_config.source_file
 
 
-let is_ck_context (context: CLintersContext.context) an =
-  context.is_ck_translation_unit && is_in_main_file context.translation_unit_context an
+let is_ck_context (context : CLintersContext.context) an =
+  context.is_ck_translation_unit
+  && is_in_main_file context.translation_unit_context an
   && CGeneral_utils.is_objc_extension context.translation_unit_context
 
 
@@ -89,7 +90,7 @@ and contains_ck_impl decl_list =
     ``` *)
 let mutable_local_vars_advice context an =
   try
-    let rec get_referenced_type (qual_type: Clang_ast_t.qual_type) : Clang_ast_t.decl option =
+    let rec get_referenced_type (qual_type : Clang_ast_t.qual_type) : Clang_ast_t.decl option =
       let typ_opt = CAst_utils.get_desugared_type qual_type.qt_type_ptr in
       match (typ_opt : Clang_ast_t.c_type option) with
       | Some (ObjCInterfaceType (_, decl_ptr)) | Some (RecordType (_, decl_ptr)) ->
@@ -138,10 +139,12 @@ let mutable_local_vars_advice context an =
                 false
           in
           let should_not_report_mutable_local =
-            CAst_utils.is_syntactically_global_var decl || CAst_utils.is_static_local_var decl
+            CAst_utils.is_syntactically_global_var decl
+            || CAst_utils.is_static_local_var decl
             || is_const || is_of_whitelisted_type qual_type || decl_info.di_is_implicit
             || context.CLintersContext.in_for_loop_declaration
-            || CAst_utils.is_std_vector qual_type || CAst_utils.has_block_attribute decl
+            || CAst_utils.is_std_vector qual_type
+            || CAst_utils.has_block_attribute decl
             || name_is decl "weakSelf" || name_is decl "strongSelf"
           in
           if should_not_report_mutable_local then None
@@ -152,7 +155,8 @@ let mutable_local_vars_advice context an =
               ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description=
-                  "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name
+                  "Local variable "
+                  ^ MF.monospaced_to_string named_decl_info.ni_name
                   ^ " should be const to avoid reassignment"
               ; suggestion= Some "Add a const (after the asterisk for pointer types)."
               ; doc_url= None
@@ -180,7 +184,7 @@ let component_factory_function_advice context an =
   if is_ck_context context an then
     match an with
     | Ctl_parser_types.Decl
-        (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
+        (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type : Clang_ast_t.qual_type), _)) ->
         let objc_interface = CAst_utils.qual_type_to_objc_interface qual_type in
         if is_component_if objc_interface then
           Some
@@ -228,7 +232,8 @@ let component_with_unconventional_superclass_advice context an =
                      ; "CKCompositeComponent"
                      ; "CKStatefulViewComponent"
                      ; "CKStatefulViewComponentController"
-                     ; "NTNativeTemplateComponent" ] name ->
+                     ; "NTNativeTemplateComponent" ]
+                     name ->
                 true
             | _ ->
                 false
@@ -280,7 +285,7 @@ let component_with_multiple_factory_methods_advice context an =
   let is_unavailable_attr attr =
     match attr with Clang_ast_t.UnavailableAttr _ -> true | _ -> false
   in
-  let is_available_factory_method if_decl (decl: Clang_ast_t.decl) =
+  let is_available_factory_method if_decl (decl : Clang_ast_t.decl) =
     match decl with
     | ObjCMethodDecl (decl_info, _, _) ->
         let unavailable_attrs =
@@ -314,8 +319,7 @@ let component_with_multiple_factory_methods_advice context an =
         assert false
   in
   match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info))
-    -> (
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) -> (
       let if_decl_opt =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
       in
@@ -324,13 +328,13 @@ let component_with_multiple_factory_methods_advice context an =
       []
 
 
-let in_ck_class (context: CLintersContext.context) =
+let in_ck_class (context : CLintersContext.context) =
   Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false
     context.current_objc_class
   && CGeneral_utils.is_objc_extension context.translation_unit_context
 
 
-let is_in_factory_method (context: CLintersContext.context) =
+let is_in_factory_method (context : CLintersContext.context) =
   let interface_decl_opt =
     match context.current_objc_class with
     | Some (ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
@@ -359,7 +363,7 @@ let is_in_factory_method (context: CLintersContext.context) =
     relies on other threads (dispatch_sync). Other side-effects, like reading
     of global variables, is not checked by this analyzer, although still an
     infraction of the rule. *)
-let rec component_initializer_with_side_effects_advice_ (context: CLintersContext.context)
+let rec component_initializer_with_side_effects_advice_ (context : CLintersContext.context)
     call_stmt =
   let condition =
     in_ck_class context && is_in_factory_method context
@@ -374,8 +378,7 @@ let rec component_initializer_with_side_effects_advice_ (context: CLintersContex
     match call_stmt with
     | Clang_ast_t.ImplicitCastExpr (_, stmt :: _, _, _) ->
         component_initializer_with_side_effects_advice_ context stmt
-    | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info)
-      -> (
+    | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) -> (
         let refs = [decl_ref_expr_info.drti_decl_ref; decl_ref_expr_info.drti_found_decl_ref] in
         match List.find_map ~f:CAst_utils.name_of_decl_ref_opt refs with
         | Some "dispatch_after" | Some "dispatch_async" | Some "dispatch_sync" ->
@@ -396,7 +399,7 @@ let rec component_initializer_with_side_effects_advice_ (context: CLintersContex
   else None
 
 
-let component_initializer_with_side_effects_advice (context: CLintersContext.context) an =
+let component_initializer_with_side_effects_advice (context : CLintersContext.context) an =
   match an with
   | Ctl_parser_types.Stmt (CallExpr (_, called_func_stmt :: _, _)) ->
       component_initializer_with_side_effects_advice_ context called_func_stmt
@@ -410,7 +413,7 @@ let component_initializer_with_side_effects_advice (context: CLintersContext.con
 
     This still needs to be in infer b/c only files that have a valid component
     kit class impl should be analyzed. *)
-let component_file_line_count_info (context: CLintersContext.context) dec =
+let component_file_line_count_info (context : CLintersContext.context) dec =
   let condition = Config.compute_analytics && context.is_ck_translation_unit in
   match dec with
   | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) when condition ->
@@ -436,7 +439,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
     Somewhat borrowed from
     https://github.com/oclint/oclint/blob/5889b5ec168185513ba69ce83821ea1cc8e63fbe
     /oclint-metrics/lib/CyclomaticComplexityMetric.cpp *)
-let component_file_cyclomatic_complexity_info (context: CLintersContext.context) an =
+let component_file_cyclomatic_complexity_info (context : CLintersContext.context) an =
   let is_cyclo_stmt stmt =
     match stmt with
     | Clang_ast_t.IfStmt _

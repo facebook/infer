@@ -95,7 +95,7 @@ let filename_to_absolute ~root fname =
 
 
 (** Convert an absolute filename to one relative to the given directory. *)
-let filename_to_relative ?(backtrack= 0) ~root fname =
+let filename_to_relative ?(backtrack = 0) ~root fname =
   let rec relativize_if_under prefix backtrack origin target =
     match (origin, target) with
     | x :: xs, y :: ys when String.equal x y ->
@@ -206,7 +206,11 @@ let write_json_to_file destfile json =
 
 
 let with_channel_in ~f chan_in =
-  try while true do f @@ In_channel.input_line_exn chan_in done with End_of_file -> ()
+  try
+    while true do
+      f @@ In_channel.input_line_exn chan_in
+    done
+  with End_of_file -> ()
 
 
 let consume_in chan_in = with_channel_in ~f:ignore chan_in
@@ -220,7 +224,7 @@ let with_process_in command read =
   do_finally_swallow_timeout ~f ~finally
 
 
-let with_process_lines ~(debug: ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp_prefix ~f =
+let with_process_lines ~(debug : ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp_prefix ~f =
   let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
   let verbose_err_file = Filename.temp_file tmp_prefix ".err" in
   let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_err_file in
@@ -246,19 +250,19 @@ let create_dir dir =
   try
     if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
-  with Unix.Unix_error _ ->
+  with Unix.Unix_error _ -> (
     try Unix.mkdir dir ~perm:0o700 with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
         try Polymorphic_compare.( = ) (Unix.stat dir).Unix.st_kind Unix.S_DIR
         with Unix.Unix_error _ -> false
       in
-      if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir
+      if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir )
 
 
 let realpath_cache = Hashtbl.create 1023
 
-let realpath ?(warn_on_error= true) path =
+let realpath ?(warn_on_error = true) path =
   match Hashtbl.find realpath_cache path with
   | exception Caml.Not_found -> (
     match Filename.realpath path with
@@ -298,10 +302,10 @@ let compare_versions v1 v2 =
   in
   let lv1 = int_list_of_version v1 in
   let lv2 = int_list_of_version v2 in
-  [%compare : int list] lv1 lv2
+  [%compare: int list] lv1 lv2
 
 
-let write_file_with_locking ?(delete= false) ~f:do_write fname =
+let write_file_with_locking ?(delete = false) ~f:do_write fname =
   Unix.with_file
     ~mode:Unix.[O_WRONLY; O_CREAT]
     fname

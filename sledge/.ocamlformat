@@ -1,4 +1,4 @@
-break-string-literals wrap
-margin 77
-sparse false
-wrap-comments true
+break-cases = fit
+break-string-literals = wrap
+margin = 77
+wrap-comments = true

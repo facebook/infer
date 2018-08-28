@@ -9,6 +9,7 @@
     is being done and which source files are being compiled, if any, then replace compilation
     commands by our own clang with our plugin attached for each source file. *)
 open! IStd
+
 module L = Logging
 
 type action_item =
@@ -35,11 +36,9 @@ let check_for_existing_file args =
           ()
       | option :: rest ->
           if String.equal option "-c" then
-            match
-              (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
+            (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
              Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
-              (clang_ignore_regex, List.hd rest)
-            with
+            match (clang_ignore_regex, List.hd rest) with
             | Some regexp, Some arg ->
                 if Str.string_match regexp arg 0 && Sys.file_exists arg <> `Yes then (
                   Unix.mkdir_p (Filename.dirname arg) ;
@@ -80,11 +79,11 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
   let one_line line =
     if String.is_prefix ~prefix:" \"" line then
       CanonicalCommand
-        ( match
-            (* massage line to remove edge-cases for splitting *)
-            "\"" ^ line ^ " \"" |> (* split by whitespace *)
-                                   Str.split (Str.regexp_string "\" \"")
-          with
+        ( (* massage line to remove edge-cases for splitting *)
+        match
+          "\"" ^ line ^ " \"" |> (* split by whitespace *)
+                                 Str.split (Str.regexp_string "\" \"")
+        with
         | prog :: args ->
             ClangCommand.mk ~is_driver:false ClangQuotes.EscapedDoubleQuotes ~prog ~args
         | [] ->
@@ -183,5 +182,5 @@ let exe ~prog ~args =
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will \
          run the original command directly:@\n  \
          %s@\n"
-        (String.concat ~sep:" " @@ prog :: args) ;
+        (String.concat ~sep:" " @@ (prog :: args)) ;
     Process.create_process_and_wait ~prog ~args )

@@ -36,7 +36,7 @@ module Domain = struct
         else (AnnotReachabilityDomain.add annot sink_map' annot_map, previous_vstate)
 
 
-  let stop_tracking ((annot_map, _): astate) = (annot_map, Bottom)
+  let stop_tracking ((annot_map, _) : astate) = (annot_map, Bottom)
 
   let add_tracking_var var ((annot_map, previous_vstate) as astate) =
     match previous_vstate with
@@ -61,14 +61,14 @@ end
 module Payload = SummaryPayload.Make (struct
   type t = AnnotReachabilityDomain.astate
 
-  let update_payloads annot_map (payloads: Payloads.t) = {payloads with annot_map= Some annot_map}
+  let update_payloads annot_map (payloads : Payloads.t) = {payloads with annot_map= Some annot_map}
 
-  let of_payloads (payloads: Payloads.t) = payloads.annot_map
+  let of_payloads (payloads : Payloads.t) = payloads.annot_map
 end)
 
 let is_modeled_expensive tenv = function
   | Typ.Procname.Java proc_name_java as proc_name ->
-      not (BuiltinDecl.is_declared proc_name)
+      (not (BuiltinDecl.is_declared proc_name))
       &&
       let is_subclass =
         let classname =
@@ -88,7 +88,8 @@ let is_allocator tenv pname =
         let class_name = Typ.Name.Java.from_string (Typ.Procname.Java.get_class_name pname_java) in
         PatternMatch.is_throwable tenv class_name
       in
-      Typ.Procname.is_constructor pname && not (BuiltinDecl.is_declared pname)
+      Typ.Procname.is_constructor pname
+      && (not (BuiltinDecl.is_declared pname))
       && not (is_throwable ())
   | _ ->
       false
@@ -146,7 +147,8 @@ let report_allocation_stack src_annot summary fst_call_loc trace stack_str const
   Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace exn
 
 
-let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc =
+let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc
+    =
   let src_pname = Summary.get_proc_name src_summary in
   if String.equal snk_annot dummy_constructor_annot then
     report_allocation_stack src_annot src_summary loc trace stack_str snk_pname call_loc
@@ -343,8 +345,7 @@ let annot_specs =
           (List.map ~f:annotation_of_str src_annots)
           (annotation_of_str snk_annot) )
   in
-  ExpensiveAnnotationSpec.spec
-  :: NoAllocationAnnotationSpec.spec
+  ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
   :: StandardAnnotationSpec.from_annotations
        [annotation_of_str Annotations.any_thread; annotation_of_str Annotations.for_non_ui_thread]
        (annotation_of_str Annotations.ui_thread)
@@ -391,7 +392,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let check_call tenv callee_pname caller_pname call_site astate =
     List.fold ~init:astate
-      ~f:(fun astate (spec: AnnotationSpec.t) ->
+      ~f:(fun astate (spec : AnnotationSpec.t) ->
         if
           spec.sink_predicate tenv callee_pname && not (spec.sanitizer_predicate tenv caller_pname)
         then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
@@ -444,7 +445,7 @@ let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Summary.t =
   let proc_data = ProcData.make_default proc_desc tenv in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _) ->
-      List.iter annot_specs ~f:(fun (spec: AnnotationSpec.t) -> spec.report callback annot_map) ;
+      List.iter annot_specs ~f:(fun (spec : AnnotationSpec.t) -> spec.report callback annot_map) ;
       Payload.update_summary annot_map summary
   | None ->
       summary

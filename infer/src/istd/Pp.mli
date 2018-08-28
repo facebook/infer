@@ -69,8 +69,13 @@ val cli_args : F.formatter -> string list -> unit
 (** pretty print command line arguments, expanding argument files to print their contents *)
 
 val seq :
-  ?print_env:env -> ?sep:string -> ?sep_html:string -> (F.formatter -> 'a -> unit) -> F.formatter
-  -> 'a list -> unit
+     ?print_env:env
+  -> ?sep:string
+  -> ?sep_html:string
+  -> (F.formatter -> 'a -> unit)
+  -> F.formatter
+  -> 'a list
+  -> unit
 (** Pretty print a sequence with [sep] followed by a space between each element. By default,
     [print_env] is [text], [sep] is "", and [sep_html] set to [sep]. *)
 
@@ -90,9 +95,15 @@ val elapsed_time : F.formatter -> unit -> unit
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 
 val pair :
-  fst:(F.formatter -> 'a -> unit) -> snd:(F.formatter -> 'b -> unit) -> F.formatter -> 'a * 'b
+     fst:(F.formatter -> 'a -> unit)
+  -> snd:(F.formatter -> 'b -> unit)
+  -> F.formatter
+  -> 'a * 'b
   -> unit
 
 val hashtbl :
-  key:(F.formatter -> 'a -> unit) -> value:(F.formatter -> 'b -> unit) -> F.formatter
-  -> ('a, 'b) Caml.Hashtbl.t -> unit
+     key:(F.formatter -> 'a -> unit)
+  -> value:(F.formatter -> 'b -> unit)
+  -> F.formatter
+  -> ('a, 'b) Caml.Hashtbl.t
+  -> unit

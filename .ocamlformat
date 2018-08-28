@@ -1,3 +1,3 @@
-margin 100
-sparse true
-version 0.5
+break-cases = nested
+margin = 100
+version = 0.7

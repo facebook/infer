@@ -24,16 +24,22 @@ type exception_details =
 exception Unimplemented of exception_details
 
 val unimplemented :
-  Logging.ocaml_pos -> Clang_ast_t.source_range -> ?ast_node:string
-  -> ('a, Format.formatter, unit, _) format4 -> 'a
+     Logging.ocaml_pos
+  -> Clang_ast_t.source_range
+  -> ?ast_node:string
+  -> ('a, Format.formatter, unit, _) format4
+  -> 'a
 (** Raise Unimplemented. This is caught at the level of translating a method and makes the frontend
     give up on that method. *)
 
 exception IncorrectAssumption of exception_details
 
 val incorrect_assumption :
-  Logging.ocaml_pos -> Clang_ast_t.source_range -> ?ast_node:string
-  -> ('a, Format.formatter, unit, _) format4 -> 'a
+     Logging.ocaml_pos
+  -> Clang_ast_t.source_range
+  -> ?ast_node:string
+  -> ('a, Format.formatter, unit, _) format4
+  -> 'a
 (** Used to mark places in the frontend that incorrectly assume something to be
     impossible. TODO(t21762295) get rid of all instances of this. *)
 

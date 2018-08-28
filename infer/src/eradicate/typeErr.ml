@@ -37,7 +37,7 @@ end
 module InstrRef : InstrRefT = struct
   type t = Procdesc.Node.t * int [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   type generator = Procdesc.Node.t * int ref
 
@@ -94,7 +94,7 @@ type err_instance =
 module H = Hashtbl.Make (struct
   type t = err_instance * InstrRef.t option [@@deriving compare]
 
-  let equal = [%compare.equal : t]
+  let equal = [%compare.equal: t]
 
   let err_instance_hash x =
     let string_hash s = Hashtbl.hash s in
@@ -217,7 +217,7 @@ module Severity = struct
     else None
 
 
-  let this_type_get_severity tenv (signature: AnnotatedSignature.t) =
+  let this_type_get_severity tenv (signature : AnnotatedSignature.t) =
     match signature.params with
     | (p, _, this_type) :: _ when String.equal (Mangled.to_string p) "this" ->
         Option.bind ~f:get_severity (PatternMatch.type_get_annotation tenv this_type)
@@ -245,12 +245,19 @@ end
 (* Severity *)
 
 type st_report_error =
-  Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?field_name:Typ.Fieldname.t option
-  -> ?origin_loc:Location.t option -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
-  -> ?severity:Exceptions.severity -> string -> unit
+     Typ.Procname.t
+  -> Procdesc.t
+  -> IssueType.t
+  -> Location.t
+  -> ?field_name:Typ.Fieldname.t option
+  -> ?origin_loc:Location.t option
+  -> ?exception_kind:(IssueType.t -> Localise.error_desc -> exn)
+  -> ?severity:Exceptions.severity
+  -> string
+  -> unit
 
 (** Report an error right now. *)
-let report_error_now tenv (st_report_error: st_report_error) err_instance loc pdesc : unit =
+let report_error_now tenv (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
   let nullable_annotation = "@Nullable" in
   let mutable_annotation = "@Mutable" in
@@ -334,7 +341,8 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
             origin_description
         , None
         , origin_loc )
-    | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _)) ->
+    | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _))
+      ->
         let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable ->
@@ -435,7 +443,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
 
 (** Report an error unless is has been reported already, or unless it's a forall error
     since it requires waiting until the end of the analysis and be printed by flush. *)
-let report_error tenv (st_report_error: st_report_error) find_canonical_duplicate err_instance
+let report_error tenv (st_report_error : st_report_error) find_canonical_duplicate err_instance
     instr_ref_opt loc pdesc =
   let should_report_now = add_err find_canonical_duplicate err_instance instr_ref_opt loc in
   if should_report_now then report_error_now tenv st_report_error err_instance loc pdesc

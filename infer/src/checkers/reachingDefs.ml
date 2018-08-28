@@ -27,7 +27,7 @@ module TransferFunctionsReachingDefs (CFG : ProcCfg.S) = struct
   type extras = ProcData.no_extras
 
   (* for each  x := e at node n, remove x's definitions and introduce x -> n *)
-  let exec_instr astate _ (node: CFG.Node.t) instr =
+  let exec_instr astate _ (node : CFG.Node.t) instr =
     let node = CFG.Node.underlying_node node in
     let strong_update_def astate var = Domain.add var (Defs.singleton node) astate in
     let weak_update_def astate var =

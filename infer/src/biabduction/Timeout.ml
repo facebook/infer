@@ -39,7 +39,7 @@ let set_alarm nsecs =
         (Unix.setitimer Unix.ITIMER_REAL
            { Unix.it_interval= 3.0
            ; (* try again after 3 seconds if the signal is lost *)
-           Unix.it_value= nsecs })
+             Unix.it_value= nsecs })
   | Config.Win32 ->
       SymOp.set_wallclock_alarm nsecs
 

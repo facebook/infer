@@ -100,7 +100,8 @@ let tests =
   let y_subtree = Domain.AccessMap.singleton f yF_subtree |> Domain.make_node y_trace in
   let z_subtree = Domain.make_starred_leaf z_trace in
   let tree =
-    Domain.BaseMap.singleton x_base x_subtree |> Domain.BaseMap.add y_base y_subtree
+    Domain.BaseMap.singleton x_base x_subtree
+    |> Domain.BaseMap.add y_base y_subtree
     |> Domain.BaseMap.add z_base z_subtree
   in
   let x_base_tree = Domain.BaseMap.singleton x_base Domain.empty_node in
@@ -187,13 +188,15 @@ let tests =
         |> Domain.BaseMap.add y_base Domain.empty_node
       in
       let mk_xFG_node leaf_trace =
-        Domain.make_access_node MockTraceDomain.empty g leaf_trace |> Domain.AccessMap.singleton f
+        Domain.make_access_node MockTraceDomain.empty g leaf_trace
+        |> Domain.AccessMap.singleton f
         |> Domain.make_node MockTraceDomain.empty
       in
       let mk_xFG_tree leaf_trace = mk_xFG_node leaf_trace |> Domain.BaseMap.singleton x_base in
       let mk_xArrF_tree leaf_trace =
         Domain.make_access_node MockTraceDomain.empty f leaf_trace
-        |> Domain.AccessMap.singleton array |> Domain.make_node MockTraceDomain.empty
+        |> Domain.AccessMap.singleton array
+        |> Domain.make_node MockTraceDomain.empty
         |> Domain.BaseMap.singleton x_base
       in
       (* normal tests *)
@@ -220,8 +223,10 @@ let tests =
         xFG_tree_added_trace ;
       (* add starred path when base absent *)
       let xF_star_tree_added_trace =
-        Domain.make_starred_leaf added_trace |> Domain.AccessMap.singleton f
-        |> Domain.make_node MockTraceDomain.empty |> Domain.BaseMap.singleton x_base
+        Domain.make_starred_leaf added_trace
+        |> Domain.AccessMap.singleton f
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base
       in
       Domain.assert_trees_equal
         (Domain.add_trace xF_star added_trace Domain.empty)
@@ -241,8 +246,9 @@ let tests =
       (* starred tests *)
       (* we should do a strong update when updating x.f* with x.f *)
       let yF_tree_added_trace =
-        Domain.make_normal_leaf added_trace |> Domain.AccessMap.singleton f
-        |> Domain.make_node y_trace |> Domain.BaseMap.singleton y_base
+        Domain.make_normal_leaf added_trace
+        |> Domain.AccessMap.singleton f |> Domain.make_node y_trace
+        |> Domain.BaseMap.singleton y_base
       in
       Domain.assert_trees_equal (Domain.add_trace yF added_trace yF_star_tree) yF_tree_added_trace ;
       (* but not when updating x* with x.f *)
@@ -259,8 +265,9 @@ let tests =
         let joined_trace =
           MockTraceDomain.join added_trace xFG_trace |> MockTraceDomain.join xF_trace
         in
-        Domain.make_starred_leaf joined_trace |> Domain.AccessMap.singleton f
-        |> Domain.make_node x_trace |> Domain.BaseMap.singleton x_base
+        Domain.make_starred_leaf joined_trace
+        |> Domain.AccessMap.singleton f |> Domain.make_node x_trace
+        |> Domain.BaseMap.singleton x_base
       in
       Domain.assert_trees_equal
         (Domain.add_trace xF_star added_trace xFG_tree)
@@ -278,7 +285,8 @@ let tests =
           |> Domain.AccessMap.add g (Domain.make_normal_leaf xFG_trace)
         in
         Domain.AccessMap.singleton array (Domain.make_node xF_trace arr_subtree)
-        |> Domain.make_node MockTraceDomain.empty |> Domain.BaseMap.singleton x_base
+        |> Domain.make_node MockTraceDomain.empty
+        |> Domain.BaseMap.singleton x_base
       in
       Domain.assert_trees_equal (Domain.add_node xArr g_subtree aArrF_tree) arr_tree
     in
@@ -374,7 +382,8 @@ let tests =
       *)
       let xF_star_tree =
         Domain.AccessMap.singleton f (Domain.make_starred_leaf MockTraceDomain.top)
-        |> Domain.make_node MockTraceDomain.top |> Domain.BaseMap.singleton x_base
+        |> Domain.make_node MockTraceDomain.top
+        |> Domain.BaseMap.singleton x_base
       in
       Domain.assert_trees_equal (widen x_tree_y_trace xFG_tree) xF_star_tree ;
       (* widening is not commutative, and is it not join:
@@ -453,7 +462,8 @@ let tests =
         |> Max2.make_node MockTraceDomain.empty
       in
       let fG_node =
-        Max2.make_access_node MockTraceDomain.empty g x_trace |> Max2.AccessMap.singleton f
+        Max2.make_access_node MockTraceDomain.empty g x_trace
+        |> Max2.AccessMap.singleton f
         |> Max2.make_node MockTraceDomain.empty
       in
       let f_star_node =

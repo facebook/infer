@@ -12,8 +12,11 @@ open! IStd
 val clang_to_sil_location : SourceFile.t -> Clang_ast_t.source_location -> Location.t
 
 val should_translate_lib :
-  SourceFile.t -> Clang_ast_t.source_range -> CModule_type.decl_trans_context
-  -> translate_when_used:bool -> bool
+     SourceFile.t
+  -> Clang_ast_t.source_range
+  -> CModule_type.decl_trans_context
+  -> translate_when_used:bool
+  -> bool
 
 val should_do_frontend_check : SourceFile.t -> Clang_ast_t.source_range -> bool
 

@@ -152,7 +152,7 @@ type trans_result =
 
 let empty_control = {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []}
 
-let mk_trans_result ?method_name ?(is_cpp_call_virtual= false) return control =
+let mk_trans_result ?method_name ?(is_cpp_call_virtual = false) return control =
   {control; return; method_name; is_cpp_call_virtual}
 
 
@@ -177,8 +177,8 @@ let collect_controls pdesc l =
 
 
 let collect_trans_results pdesc ~return trans_results =
-  List.map trans_results ~f:(fun {control} -> control) |> collect_controls pdesc
-  |> mk_trans_result return
+  List.map trans_results ~f:(fun {control} -> control)
+  |> collect_controls pdesc |> mk_trans_result return
 
 
 module PriorityNode = struct
@@ -232,7 +232,8 @@ module PriorityNode = struct
 
   let compute_results_to_parent trans_state loc ~node_name stmt_info ~return trans_results =
     List.map trans_results ~f:(fun trans_result -> trans_result.control)
-    |> compute_controls_to_parent trans_state loc ~node_name stmt_info |> mk_trans_result return
+    |> compute_controls_to_parent trans_state loc ~node_name stmt_info
+    |> mk_trans_result return
 
 
   let compute_control_to_parent trans_state loc ~node_name stmt_info control =
@@ -445,7 +446,7 @@ let dereference_var_sil (exp, typ) sil_loc =
   ([sil_instr], Exp.Var id)
 
 
-let dereference_value_from_result ?(strip_pointer= false) source_range sil_loc trans_result =
+let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc trans_result =
   let obj_sil, class_typ = trans_result.return in
   let typ_no_ptr =
     match class_typ.Typ.desc with
@@ -498,7 +499,7 @@ let cast_operation cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
       ([], (exp, cast_typ))
 
 
-let trans_assertion_failure sil_loc (context: CContext.t) =
+let trans_assertion_failure sil_loc (context : CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
   let args = [(Exp.Const (Const.Cstr Config.default_failure_name), Typ.mk Tvoid)] in
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -515,7 +516,7 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
   mk_trans_result (Exp.Var ret_id, ret_typ) {empty_control with root_nodes= [failure_node]}
 
 
-let trans_assume_false sil_loc (context: CContext.t) succ_nodes =
+let trans_assume_false sil_loc (context : CContext.t) succ_nodes =
   let if_kind = Sil.Ik_land_lor in
   let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, if_kind)] in
   let prune_node =
@@ -523,7 +524,8 @@ let trans_assume_false sil_loc (context: CContext.t) succ_nodes =
       instrs_cond
   in
   Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [] ;
-  mk_trans_result (Exp.zero, Typ.(mk (Tint IInt)))
+  mk_trans_result
+    (Exp.zero, Typ.(mk (Tint IInt)))
     {empty_control with root_nodes= [prune_node]; leaf_nodes= [prune_node]}
 
 
@@ -630,12 +632,12 @@ let rec contains_opaque_value_expr s =
   match s with
   | Clang_ast_t.OpaqueValueExpr _ ->
       true
-  | _ ->
+  | _ -> (
     match snd (Clang_ast_proj.get_stmt_tuple s) with
     | [] ->
         false
     | s'' :: _ ->
-        contains_opaque_value_expr s''
+        contains_opaque_value_expr s'' )
 
 
 (* checks if a unary operator is a logic negation applied to integers*)

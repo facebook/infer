@@ -175,7 +175,7 @@ let rec get_ios_available_version stmt =
       None
 
 
-let compute_if_context (context: CLintersContext.context) stmt =
+let compute_if_context (context : CLintersContext.context) stmt =
   let selector = get_responds_to_selector stmt in
   let receiver_class_method_call =
     match
@@ -205,7 +205,7 @@ let compute_if_context (context: CLintersContext.context) stmt =
   in
   Some
     ( {within_responds_to_selector_block; within_available_class_block; ios_version_guard}
-    : CLintersContext.if_context )
+      : CLintersContext.if_context )
 
 
 let get_method_body_opt decl =
@@ -230,8 +230,8 @@ let call_tableaux cxt an map_active =
   if CFrontend_config.tableaux_evaluation then Tableaux.build_valuation an cxt map_active
 
 
-let rec do_frontend_checks_stmt (context: CLintersContext.context)
-    (map_act: Tableaux.context_linter_map) stmt =
+let rec do_frontend_checks_stmt (context : CLintersContext.context)
+    (map_act : Tableaux.context_linter_map) stmt =
   let open Clang_ast_t in
   let an = Ctl_parser_types.Stmt stmt in
   (*L.(debug Linters Medium)
@@ -304,8 +304,8 @@ and do_frontend_checks_via_transition context map_active an trans =
     succs
 
 
-and do_frontend_checks_decl (context: CLintersContext.context)
-    (map_act: Tableaux.context_linter_map) decl =
+and do_frontend_checks_decl (context : CLintersContext.context)
+    (map_act : Tableaux.context_linter_map) decl =
   let open Clang_ast_t in
   if CAst_utils.is_implicit_decl decl then () (* do not analyze implicit declarations *)
   else
@@ -373,7 +373,7 @@ let linters_files =
   List.dedup_and_sort ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
 
 
-let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_context) ast =
+let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_context) ast =
   L.(debug Capture Quiet)
     "Loading the following linters files: %a@\n"
     (Pp.comma_seq Format.pp_print_string)
