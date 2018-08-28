@@ -69,8 +69,6 @@ exception Deallocate_static_memory of Localise.error_desc
 
 exception Deallocation_mismatch of Localise.error_desc * Logging.ocaml_pos
 
-exception Double_lock of Localise.error_desc * Logging.ocaml_pos
-
 exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 
 exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos
@@ -143,7 +141,6 @@ exception Unsafe_guarded_by_access of Localise.error_desc * Logging.ocaml_pos
 exception Use_after_free of Localise.error_desc * Logging.ocaml_pos
 
 exception Wrong_argument_number of Logging.ocaml_pos
-
 
 val severity_string : severity -> string
 (** string describing an error kind *)

@@ -16,11 +16,6 @@ module DExp = DecompiledExp
 
 let vector_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::vector"]
 
-let mutex_matcher =
-  QualifiedCppName.Match.of_fuzzy_qual_names
-    ["std::__infer_mutex_model"; "std::mutex"; "std::timed_mutex"]
-
-
 let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 
 let is_method_of_objc_cpp_class pname matcher =
@@ -31,8 +26,6 @@ let is_method_of_objc_cpp_class pname matcher =
   | _ ->
       false
 
-
-let is_mutex_method pname = is_method_of_objc_cpp_class pname mutex_matcher
 
 let is_vector_method pname = is_method_of_objc_cpp_class pname vector_matcher
 
@@ -901,15 +894,11 @@ let create_dereference_desc proc_name tenv ?(use_buckets= false) ?(outermost_arr
         | _ ->
             desc )
       | Some (DExp.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _)) ->
-          if is_mutex_method pname then
-            Localise.desc_double_lock (Some pname) (DExp.to_string this_dexp) loc
-          else if is_vector_method pname then
+          if is_vector_method pname then
             Localise.desc_empty_vector_access (Some pname) (DExp.to_string this_dexp) loc
           else desc
       | Some (DExp.Darrow (dexp, fieldname)) | Some (DExp.Ddot (dexp, fieldname)) ->
-          if is_special_field mutex_matcher (Some "null_if_locked") fieldname then
-            Localise.desc_double_lock None (DExp.to_string dexp) loc
-          else if
+          if
             is_special_field vector_matcher (Some "beginPtr") fieldname
             || is_special_field vector_matcher (Some "endPtr") fieldname
           then Localise.desc_empty_vector_access None (DExp.to_string dexp) loc

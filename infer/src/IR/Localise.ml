@@ -40,8 +40,6 @@ module Tags = struct
   (** Weak variable captured in a block that causes a warning *)
   let weak_captured_var_src = "weak_captured_var_src"
 
-  let double_lock = "double_lock"
-
   let empty_vector_access = "empty_vector_access"
 
   let create () = ref []
@@ -354,16 +352,6 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
       ; "whenever " ^ pre_str ] }
 
 
-let desc_double_lock pname_opt object_str loc =
-  let mutex_str = Format.sprintf "Mutex %s" object_str in
-  let tags = Tags.create () in
-  let msg = "could be locked and is locked again" in
-  let msg = add_by_call_to_opt msg pname_opt in
-  Tags.update tags Tags.double_lock object_str ;
-  let descriptions = [mutex_str; msg; at_line tags loc] in
-  {no_desc with descriptions; tags= !tags}
-
-
 let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
   let accessed_fld_str = Typ.Fieldname.to_string accessed_fld in
@@ -521,8 +509,6 @@ let has_tag (desc: error_desc) tag =
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
 let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_checked
-
-let is_double_lock_desc desc = has_tag desc Tags.double_lock
 
 let desc_allocation_mismatch alloc dealloc =
   let tags = Tags.create () in

@@ -46,13 +46,13 @@ void good_usage() {
   lp_lock(&m);
 }
 
-void bad_usage1() {
+void bad_usage1_FN() {
   std::mutex m;
   lp_lock(&m);
   lp_lock(&m);
 }
 
-void bad_usage2() {
+void bad_usage2_FN() {
   std::mutex m;
   m.lock();
   lp_lock(&m);
@@ -71,7 +71,7 @@ struct LockMapBucket {
  public:
   void good_usage2() { LpLockGuard<std::mutex> lock(bucketLock); }
 
-  void bad_usage3() {
+  void bad_usage3_FN() {
     LpLockGuard<std::mutex> lock(bucketLock);
     this->good_usage2();
   }

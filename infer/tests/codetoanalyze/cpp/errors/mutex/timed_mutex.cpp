@@ -7,12 +7,12 @@
 #include <chrono>
 #include <mutex>
 
-void alarm1(std::timed_mutex& m) {
+void alarm1_FN(std::timed_mutex& m) {
   m.lock();
   m.lock();
 }
 
-void try_lock_bad(std::timed_mutex& m) {
+void try_lock_bad_FN(std::timed_mutex& m) {
   m.try_lock();
   m.lock();
 }

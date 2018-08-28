@@ -104,8 +104,6 @@ val deallocation_mismatch : t
 
 val divide_by_zero : t
 
-val double_lock : t
-
 val do_not_report : t
 (** an issue type that should never be reported *)
 

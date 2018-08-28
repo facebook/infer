@@ -72,8 +72,6 @@ exception Deallocation_mismatch of Localise.error_desc * L.ocaml_pos
 
 exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 
-exception Double_lock of Localise.error_desc * L.ocaml_pos
-
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
 
 exception Eradicate of IssueType.t * Localise.error_desc
@@ -301,13 +299,6 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= Some Error
       ; category= Checker }
-  | Double_lock (desc, ocaml_pos) ->
-      { name= IssueType.double_lock
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
-      ; severity= Some Error
-      ; category= Prover }
   | Eradicate (kind, desc) ->
       { name= kind
       ; description= desc
@@ -606,6 +597,7 @@ let severity_string = function
       "LIKE"
   | Warning ->
       "WARNING"
+
 
 (** pretty print an error  *)
 let pp_err loc severity ex_name desc ocaml_pos_opt fmt () =

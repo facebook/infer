@@ -6,12 +6,12 @@
  */
 #include <mutex>
 
-void alarm1(std::mutex& m) {
+void alarm1_FN(std::mutex& m) {
   m.lock();
   m.lock();
 }
 
-void alarm2(std::mutex& m) {
+void alarm2_FN(std::mutex& m) {
   m.try_lock();
   m.lock();
 }
@@ -43,7 +43,7 @@ void starts_with_lock(std::mutex& m) {
   }
 }
 
-void alarm3() {
+void alarm3_FN() {
   std::mutex m;
   ends_locked(m);
   starts_with_lock(m);

@@ -1347,8 +1347,6 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
                   raise (Exceptions.Parameter_not_null_checked (desc, __POS__))
                 else if Localise.is_field_not_null_checked_desc desc then
                   raise (Exceptions.Field_not_null_checked (desc, __POS__))
-                else if Localise.is_double_lock_desc desc then
-                  raise (Exceptions.Double_lock (desc, __POS__))
                 else if Localise.is_empty_vector_access_desc desc then
                   raise (Exceptions.Empty_vector_access (desc, __POS__))
                 else raise (Exceptions.Null_dereference (desc, __POS__))
