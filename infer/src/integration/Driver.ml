@@ -105,8 +105,11 @@ let clean_results_dir () =
     in
     let suffixes_to_delete = [".txt"; ".csv"; ".json"] in
     fun name ->
-      (* Keep the JSON report *)
-      (not (String.equal (Filename.basename name) Config.report_json))
+      (* Keep the JSON report and the JSON costs report *)
+      (not
+         (List.exists
+            ~f:(String.equal (Filename.basename name))
+            [Config.report_json; Config.costs_report_json]))
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in

@@ -30,6 +30,9 @@ DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                  config.JSON_REPORT_FILENAME)
 
+INFER_JSON_COSTS_REPORT = os.path.join(config.BUCK_INFER_OUT,
+                                       config.JSON_COSTS_REPORT_FILENAME)
+
 INFER_SCRIPT = """\
 #!/usr/bin/env {python_executable}
 import subprocess
@@ -109,9 +112,9 @@ class NotFoundInJar(Exception):
     pass
 
 
-def load_json_report(opened_jar):
+def load_json_report(opened_jar, path):
     try:
-        return json.loads(opened_jar.read(INFER_JSON_REPORT).decode())
+        return json.loads(opened_jar.read(path).decode())
     except KeyError:
         raise NotFoundInJar
 
@@ -163,14 +166,18 @@ def collect_results(buck_args, infer_args, start_time, targets):
     and stores them in in args.infer_out/results.json.
     """
     collected_reports = {}
+    collected_costs_reports = []
 
     for path in get_output_jars(buck_args, targets):
         try:
             with zipfile.ZipFile(path) as jar:
-                report = load_json_report(jar)
+                report = load_json_report(jar, INFER_JSON_REPORT)
+                costs_report = load_json_report(jar, INFER_JSON_COSTS_REPORT)
                 if not infer_args.no_filtering:
                     report = remove_eradicate_conflicts(report)
                 merge_reports(report, collected_reports)
+                # No need to de-duplicate elements in costs-report, merge all
+                collected_costs_reports += costs_report
         except NotFoundInJar:
             pass
         except zipfile.BadZipfile:
@@ -178,9 +185,13 @@ def collect_results(buck_args, infer_args, start_time, targets):
 
     json_report = os.path.join(infer_args.infer_out,
                                config.JSON_REPORT_FILENAME)
+    json_costs_report = os.path.join(infer_args.infer_out,
+                                     config.JSON_COSTS_REPORT_FILENAME)
 
-    with open(json_report, 'w') as file_out:
-        json.dump(collected_reports.values(), file_out)
+    with open(json_report, 'w') as report_out, \
+            open(json_costs_report, 'w') as costs_report_out:
+        json.dump(collected_reports.values(), report_out)
+        json.dump(collected_costs_reports, costs_report_out)
 
     bugs_out = os.path.join(infer_args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(infer_args.infer_out, infer_args.project_root,
