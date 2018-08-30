@@ -12,9 +12,6 @@ module DExp = DecompiledExp
 
 (** Module for type checking. *)
 
-(** remove temp ids from typestates *)
-let remove_temps = true
-
 (** Module to treat selected complex expressions as constants. *)
 module ComplexExpressions = struct
   let procname_optional_isPresent = Models.is_optional_isPresent
@@ -425,8 +422,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
   in
   match instr with
   | Sil.Remove_temps (idl, _) ->
-      if remove_temps then List.fold_right ~f:TypeState.remove_id idl ~init:typestate
-      else typestate
+      List.fold_right ~f:TypeState.remove_id idl ~init:typestate
   | Sil.Abstract _ | Sil.Nullify _ ->
       typestate
   | Sil.Load (id, e, typ, loc) ->
