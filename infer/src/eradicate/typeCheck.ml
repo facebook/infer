@@ -180,7 +180,7 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 
 (** Typecheck an instruction. *)
 let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_pname curr_pdesc
-    find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
+    find_canonical_duplicate curr_annotated_signature instr_ref linereader typestate instr =
   (* Handle the case where a field access X.f happens via a temporary variable $Txxx.
      This has been observed in assignments this.f = exp when exp contains an ifthenelse.
      Reconstuct the original expression knowing: the origin of $Txxx is 'this'. *)
@@ -292,7 +292,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           (* parameter.field *)
           let name = Pvar.get_name pvar in
           let filter (s, _, _) = Mangled.equal s name in
-          List.exists ~f:filter annotated_signature.AnnotatedSignature.params
+          List.exists ~f:filter curr_annotated_signature.AnnotatedSignature.params
         in
         let is_static_field pvar =
           (* static field *)
@@ -531,9 +531,9 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         in
         List.fold_right ~f:handle_et etl ~init:([], typestate)
       in
-      let annotated_signature = Models.get_modelled_annotated_signature callee_attributes in
+      let callee_annotated_signature = Models.get_modelled_annotated_signature callee_attributes in
       let signature_params =
-        drop_unchecked_signature_params callee_attributes annotated_signature
+        drop_unchecked_signature_params callee_attributes callee_annotated_signature
       in
       let is_anonymous_inner_class_constructor =
         Typ.Procname.Java.is_anonymous_inner_class_constructor callee_pname_java
@@ -755,10 +755,14 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           handle_params resolved_ret resolved_params
         in
         let resolved_ret_ =
-          let ret_ia, ret_typ = annotated_signature.AnnotatedSignature.ret in
+          let ret_ia, ret_typ = callee_annotated_signature.AnnotatedSignature.ret in
           let is_library = Summary.proc_is_library callee_attributes in
           let origin =
-            TypeOrigin.Proc {TypeOrigin.pname= callee_pname; loc; annotated_signature; is_library}
+            TypeOrigin.Proc
+              { TypeOrigin.pname= callee_pname
+              ; loc
+              ; annotated_signature= callee_annotated_signature
+              ; is_library }
           in
           let ret_ta = TypeAnnotation.from_item_annotation ret_ia origin in
           (ret_ta, ret_typ)
