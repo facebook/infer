@@ -181,11 +181,6 @@ let rec typecheck_expr find_canonical_duplicate visited checks tenv node instr_r
 (** Typecheck an instruction. *)
 let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_pname curr_pdesc
     find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
-  (* let print_current_state () = *)
-  (*   L.stdout "Current Typestate in node %a@\n%a@." *)
-  (*     Procdesc.Node.pp (TypeErr.InstrRef.get_node instr_ref) *)
-  (*     (TypeState.pp ext) typestate; *)
-  (*   L.stdout "  %a@." (Sil.pp_instr pe_text) instr in *)
   (* Handle the case where a field access X.f happens via a temporary variable $Txxx.
      This has been observed in assignments this.f = exp when exp contains an ifthenelse.
      Reconstuct the original expression knowing: the origin of $Txxx is 'this'. *)
