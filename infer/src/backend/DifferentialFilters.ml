@@ -148,10 +148,6 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
   {introduced; fixed; preexisting; costs_summary= diff.costs_summary}
 
 
-type file_extension = string [@@deriving compare]
-
-type weak_hash = string * string * string * Caml.Digest.t [@@deriving compare]
-
 (* Strip issues whose paths are not among those we're interested in *)
 let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
   match interesting_paths with
