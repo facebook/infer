@@ -4,6 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+import java.util.ArrayList;
+
 class Hoist {
 
   int foo(int x, int y) {
@@ -33,9 +36,8 @@ class Hoist {
     }
   }
 
-
   // it is ok to move fun call to a temp. var
-   void reassigned_temp_hoist(int size) {
+  void reassigned_temp_hoist(int size) {
     int x = 10;
     int y = 5;
     int d = 0;
@@ -46,7 +48,7 @@ class Hoist {
   }
 
   // it is ok to just hoist function call into a temp var.
-   void used_in_loop_body_before_def_temp_hoist(int size, int[] M) {
+  void used_in_loop_body_before_def_temp_hoist(int size, int[] M) {
     int x = 10;
     int y = 5;
     int d = 20;
@@ -116,7 +118,6 @@ class Hoist {
     }
   }
 
-
   // y = ... can be taken out of the inner loop
   void nested_loop_hoist(int size, int x, int y) {
     int i = 0;
@@ -139,5 +140,35 @@ class Hoist {
       }
       i++;
     }
+  }
+
+  void new_dont_hoist(ArrayList list) {
+
+    for (int i = 0; i < 10; i++) {
+      list = new ArrayList();
+    }
+  }
+
+  // Tests for built-in declarations
+
+  void get_array_length_dont_hoist(int[] array) {
+    int k = 0;
+    for (int i = 0; i < 10; i++) {
+      k = k + array.length;
+    }
+  }
+
+  interface Nothing {}
+
+  class Foo {}
+
+  class EmptyFoo extends Foo implements Nothing {}
+
+  boolean instanceof_dont_hoist(EmptyFoo empty) {
+    boolean k = false;;
+     for (int i = 0; i < 10; i++) {
+      k = empty instanceof Nothing;
+    }
+     return k;
   }
 }

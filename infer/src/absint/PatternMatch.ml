@@ -58,6 +58,22 @@ let implements_iterator = implements "java.util.Iterator"
 
 let implements_collection = implements "java.util.Collection"
 
+let implements_pseudo_collection t s =
+  implements "android.util.SparseArray" t s
+  || implements "android.util.SparseIntArray" t s
+  || implements "com.moblica.common.xmob.utils.IntArrayList" t s
+
+
+let implements_enumeration = implements "java.util.Enumeration"
+
+let implements_io class_name = implements ("java.io." ^ class_name)
+
+let implements_map = implements "java.util.Map"
+
+let implements_queue = implements "java.util.Queue"
+
+let implements_lang class_name = implements ("java.lang." ^ class_name)
+
 (** The type the method is invoked on *)
 let get_this_type proc_attributes =
   match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
