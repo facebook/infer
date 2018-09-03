@@ -41,7 +41,8 @@ let string_of_var_attribute = function Modify_in_block -> "<Modify_in_block>"
 
 let var_attribute_equal = [%compare.equal: var_attribute]
 
-type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
+type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list; is_constexpr: bool}
+[@@deriving compare]
 
 let pp_var_data fmt {name; typ; attributes} =
   F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a" Mangled.pp name (Typ.pp_full Pp.text) typ ;

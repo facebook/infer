@@ -23,7 +23,7 @@ type var_attribute = Modify_in_block
 val var_attribute_equal : var_attribute -> var_attribute -> bool
 (** Equality for var_attribute *)
 
-type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list}
+type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list; is_constexpr: bool}
 
 type t =
   { access: PredSymb.access  (** visibility access *)

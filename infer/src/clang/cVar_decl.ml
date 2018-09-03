@@ -69,7 +69,13 @@ let add_var_to_locals procdesc var_decl typ pvar =
   | VarDecl (decl_info, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
         let attributes = get_var_attribute decl_info in
-        let var_data : ProcAttributes.var_data = {name= Pvar.get_name pvar; typ; attributes} in
+        let is_constexpr =
+          vdi.Clang_ast_t.vdi_is_const_expr
+          || (Typ.is_const typ.Typ.quals && vdi.Clang_ast_t.vdi_is_init_expr_cxx11_constant)
+        in
+        let var_data : ProcAttributes.var_data =
+          {name= Pvar.get_name pvar; typ; attributes; is_constexpr}
+        in
         Procdesc.append_locals procdesc [var_data]
   | _ ->
       assert false

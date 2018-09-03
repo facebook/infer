@@ -170,11 +170,17 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     | _ ->
         false
   in
+  let locals = Procdesc.get_locals proc_desc in
+  let is_constexpr pvar =
+    List.find locals ~f:(fun local_data ->
+        Mangled.equal (Pvar.get_name pvar) local_data.ProcAttributes.name )
+    |> Option.exists ~f:(fun local -> local.ProcAttributes.is_constexpr)
+  in
   let should_report pvar typ live_vars captured_by_ref_vars =
     (* T32000971: a temporay fix for dead store false positives until we support __unused__ attribute *)
     let is_unused_tmp_var pvar = String.equal "__tmp" (Pvar.to_string pvar) in
     not
-      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar || is_constexpr pvar
       || is_unused_tmp_var pvar
       || VarSet.mem (Var.of_pvar pvar) captured_by_ref_vars
       || Domain.mem (Var.of_pvar pvar) live_vars

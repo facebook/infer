@@ -20,3 +20,9 @@ int instanciateTemplateBad() {
   int unused = 1;
   return 0;
 }
+
+void instanciateTemplateConstOk() {
+  const int foo = 7;
+  X<foo> x;
+  x.isZeroBad();
+}

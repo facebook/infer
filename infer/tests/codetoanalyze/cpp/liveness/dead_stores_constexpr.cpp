@@ -41,7 +41,7 @@ void FN_init_capture_reassign_bad() {
 }
 
 // expected DEAD_STORE
-void capture_constexpr_bad() {
+void FN_capture_constexpr_bad() {
   constexpr int x = 1;
   foo(2);
 }
