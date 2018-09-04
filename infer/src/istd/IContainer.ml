@@ -64,3 +64,6 @@ let pp_collection ~fold ~pp_item fmt c =
 
 let filter ~fold ~filter t ~init ~f =
   fold t ~init ~f:(fun acc item -> if filter item then f acc item else acc)
+
+
+let map ~f:g fold t ~init ~f = fold t ~init ~f:(fun acc item -> f acc (g item))

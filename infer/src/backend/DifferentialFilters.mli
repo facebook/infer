@@ -8,24 +8,24 @@
 open! IStd
 
 module FileRenamings : sig
-  type renaming = {current: string; previous: string}
-
   type t
 
   val empty : t
 
-  val from_json : string -> t
-
   val from_json_file : string -> t
 
-  val find_previous : t -> string -> string option
-
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
-    val from_renamings : renaming list -> t
+    type renaming = {current: string; previous: string}
+
+    val of_list : renaming list -> t
 
     val equal : t -> t -> bool
 
     val pp : Format.formatter -> t -> unit
+
+    val find_previous : t -> string -> string option
+
+    val from_json : string -> t
   end
 end
 

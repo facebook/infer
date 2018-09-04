@@ -42,3 +42,5 @@ val pp_collection :
 
 val filter :
   fold:('t, 'a, 'accum) Container.fold -> filter:('a -> bool) -> ('t, 'a, 'accum) Container.fold
+
+val map : f:('a -> 'b) -> ('t, 'a, 'accum) Container.fold -> ('t, 'b, 'accum) Container.fold

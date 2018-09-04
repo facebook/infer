@@ -9,15 +9,18 @@ open! IStd
 module L = Logging
 
 module FileRenamings = struct
-  type renaming = {current: string; previous: string} [@@deriving compare]
+  type renaming = {current: string; previous: string}
 
-  type t = renaming list [@@deriving compare]
+  module CurrentToPreviousMap = Caml.Map.Make (String)
 
-  let equal = [%compare.equal: t]
+  type t = string CurrentToPreviousMap.t [@@deriving compare]
 
-  let empty = []
+  let empty = CurrentToPreviousMap.empty
 
-  let from_renamings rl : t = rl
+  let of_renamings ~fold container =
+    fold container ~init:empty ~f:(fun acc {current; previous} ->
+        CurrentToPreviousMap.add current previous acc )
+
 
   (* A json renaming assoc list looks like:
      [{"current": "aaa.java", "previous": "BBB.java"}, ...] *)
@@ -51,31 +54,32 @@ module FileRenamings = struct
     in
     match j with
     | `List json_renamings ->
-        List.map ~f:renaming_of_assoc json_renamings
+        of_renamings json_renamings ~fold:(IContainer.map ~f:renaming_of_assoc List.fold)
     | _ ->
         L.(die UserError) "Expected JSON list but got '%s'" input
 
 
   let from_json_file file : t = from_json (In_channel.read_all file)
 
-  let find_previous (t : t) current =
-    let r = List.find ~f:(fun r -> String.equal current r.current) t in
-    Option.map ~f:(fun r -> r.previous) r
-
-
-  let pp fmt t =
-    let pp_tuple fmt {current; previous} =
-      Format.fprintf fmt "{\"current\": \"%s\", \"previous\": \"%s\"}" current previous
-    in
-    Format.fprintf fmt "[%a]" (Pp.comma_seq pp_tuple) t
-
+  let find_previous (t : t) current = CurrentToPreviousMap.find_opt current t
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
-    let from_renamings = from_renamings
+    type nonrec renaming = renaming = {current: string; previous: string}
 
-    let equal = equal
+    let of_list = of_renamings ~fold:List.fold
 
-    let pp = pp
+    let equal = [%compare.equal: t]
+
+    let pp fmt t =
+      let pp_tuple fmt (current, previous) =
+        Format.fprintf fmt "{\"current\": \"%s\", \"previous\": \"%s\"}" current previous
+      in
+      Format.fprintf fmt "[%a]" (Pp.comma_seq pp_tuple) (CurrentToPreviousMap.bindings t)
+
+
+    let find_previous = find_previous
+
+    let from_json = from_json
   end
 end
 

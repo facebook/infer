@@ -13,7 +13,9 @@ type 'a outcome = Return of 'a | Raise of exn
 
 let test_file_renamings_from_json =
   let create_test test_input expected_output _ =
-    let test_output input = DifferentialFilters.FileRenamings.from_json input in
+    let test_output input =
+      DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_json input
+    in
     let pp_diff fmt (expected, actual) =
       let pp = DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.pp in
       Format.fprintf fmt "Expected %a but got %a" pp expected pp actual
@@ -31,15 +33,15 @@ let test_file_renamings_from_json =
       ^ "{\"current\": \"ccc.java\", \"previous\": \"DDD.java\"},"
       ^ "{\"current\": \"eee.java\", \"previous\": \"FFF.java\"}" ^ "]"
     , Return
-        (DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
-           [ {DifferentialFilters.FileRenamings.current= "aaa.java"; previous= "BBB.java"}
-           ; {DifferentialFilters.FileRenamings.current= "ccc.java"; previous= "DDD.java"}
-           ; {DifferentialFilters.FileRenamings.current= "eee.java"; previous= "FFF.java"} ]) )
+        DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.(
+          of_list
+            [ {current= "aaa.java"; previous= "BBB.java"}
+            ; {current= "ccc.java"; previous= "DDD.java"}
+            ; {current= "eee.java"; previous= "FFF.java"} ]) )
   ; ( "test_file_renamings_from_json_with_good_empty_input"
     , "[]"
-    , Return
-        (DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
-           []) )
+    , Return (DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.of_list [])
+    )
   ; ( "test_file_renamings_from_json_with_well_formed_but_unexpected_input"
     , "{}"
     , Raise (Logging.InferUserError "Expected JSON list but got '{}'") )
@@ -60,13 +62,16 @@ let test_file_renamings_from_json =
 
 let test_file_renamings_find_previous =
   let renamings =
-    DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
-      [ {DifferentialFilters.FileRenamings.current= "aaa.java"; previous= "BBB.java"}
-      ; {DifferentialFilters.FileRenamings.current= "ccc.java"; previous= "DDD.java"}
-      ; {DifferentialFilters.FileRenamings.current= "eee.java"; previous= "FFF.java"} ]
+    DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.(
+      of_list
+        [ {current= "aaa.java"; previous= "BBB.java"}
+        ; {current= "ccc.java"; previous= "DDD.java"}
+        ; {current= "eee.java"; previous= "FFF.java"} ])
   in
   let cmp s1 s2 = [%compare.equal: string option] s1 s2 in
-  let find_previous = DifferentialFilters.FileRenamings.find_previous in
+  let find_previous =
+    DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.find_previous
+  in
   let pp_diff fmt (expected, actual) =
     let pp_str_opt fmt str_opt =
       let out = match str_opt with Some str -> "Some " ^ str | None -> "None" in
@@ -162,9 +167,10 @@ let test_skip_duplicated_types_on_filenames =
     ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2.java" ~hash:"2" () ]
   in
   let renamings =
-    DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
-      [ {DifferentialFilters.FileRenamings.current= "file_2'.java"; previous= "file_2.java"}
-      ; {DifferentialFilters.FileRenamings.current= "file_1'.java"; previous= "file_1.java"} ]
+    DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.(
+      of_list
+        [ {current= "file_2'.java"; previous= "file_2.java"}
+        ; {current= "file_1'.java"; previous= "file_1.java"} ])
   in
   let diff = Differential.of_reports ~current_report ~previous_report in
   let diff' =
