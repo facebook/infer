@@ -43,7 +43,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_unannotated_call_access pname actuals (call_flags : CallFlags.t) loc tenv ~locks ~threads
       attribute_map (proc_data : extras ProcData.t) =
-    let open RacerDConfig in
+    let open RacerDModels in
     let thread_safe_or_thread_confined annot =
       Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
     in
@@ -60,11 +60,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     if
       call_flags.cf_interface && Typ.Procname.is_java pname
-      && (not (Models.is_java_library pname || Models.is_builder_function pname))
+      && (not (is_java_library pname || is_builder_function pname))
       (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
           thread-safe (would be unreasonable to ask everyone to annotate them) *)
       && (not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname))
-      && (not (Models.has_return_annot thread_safe_or_thread_confined pname))
+      && (not (has_return_annot thread_safe_or_thread_confined pname))
       && not (is_receiver_safe actuals)
     then
       let open Domain in
@@ -115,8 +115,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) tenv =
-    let open RacerDConfig in
-    if Models.is_threadsafe_collection callee_pname tenv then true
+    let open RacerDModels in
+    if is_threadsafe_collection callee_pname tenv then true
     else
       let is_annotated_synchronized base_typename container_field tenv =
         match Tenv.lookup tenv base_typename with
@@ -178,7 +178,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv (astate : Domain.astate) =
-    let open RacerDConfig in
+    let open RacerDModels in
     let get_receiver_ap actuals =
       match List.hd actuals with
       | Some (HilExp.AccessExpression receiver_expr) ->
@@ -188,7 +188,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
             callee_pname
     in
-    match (Models.get_container_access callee_pname tenv, callee_pname) with
+    match (get_container_access callee_pname tenv, callee_pname) with
     | Some ContainerWrite, _ ->
         make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
           caller_pdesc astate
@@ -315,7 +315,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let call_without_summary callee_pname ret_access_path call_flags actuals astate =
-    let open RacerDConfig in
+    let open RacerDModels in
     let open RacerDDomain in
     let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
       (not call_flags.cf_interface) && List.is_empty actuals
@@ -331,7 +331,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              | _ ->
                  false )
     in
-    if Models.is_box callee_pname then
+    if is_box callee_pname then
       match actuals with
       | HilExp.AccessExpression actual_access_expr :: _ ->
           let actual_ap = AccessExpression.to_access_path actual_access_expr in
@@ -365,10 +365,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate : Domain.astate) ({ProcData.tenv; pdesc} as proc_data) _
       (instr : HilInstr.t) =
     let open Domain in
-    let open RacerDConfig in
+    let open RacerDModels in
+    let open ConcurrencyModels in
     match instr with
-    | Call (ret_base, Direct procname, actuals, _, loc)
-      when Models.acquires_ownership procname tenv ->
+    | Call (ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
         let ret_access_path = (ret_base, []) in
         let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
@@ -392,7 +392,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let wobbly_paths = StabilityDomain.add_path ret_access_path astate.wobbly_paths in
         let astate = {astate with accesses; wobbly_paths} in
         let astate =
-          match Models.get_thread callee_pname with
+          match get_thread callee_pname with
           | BackgroundThread ->
               {astate with threads= ThreadsDomain.AnyThread}
           | MainThread ->
@@ -408,7 +408,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
-          if Models.is_thread_utils_method "assertMainThread" callee_pname then
+          if is_thread_utils_method "assertMainThread" callee_pname then
             {astate with threads= ThreadsDomain.AnyThreadButSelf}
           else
             (* if we don't have any evidence about whether the current function can run in parallel
@@ -420,7 +420,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | _ ->
                   ThreadsDomain.AnyThread
             in
-            match Models.get_lock callee_pname actuals with
+            match get_lock callee_pname actuals with
             | Lock ->
                 { astate with
                   locks= LocksDomain.acquire_lock astate.locks
@@ -486,12 +486,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else attribute_map
         in
         let attribute_map =
-          add_if_annotated Models.is_functional Functional astate_callee.attribute_map
+          add_if_annotated is_functional Functional astate_callee.attribute_map
         in
         let ownership =
           if
             PatternMatch.override_exists
-              (Models.has_return_annot Annotations.ia_is_returns_ownership)
+              (has_return_annot Annotations.ia_is_returns_ownership)
               tenv callee_pname
           then
             OwnershipDomain.add ret_access_path OwnershipAbstractValue.owned
@@ -630,23 +630,23 @@ let empty_post : RacerDDomain.summary =
 
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
-  let open RacerDConfig in
+  let open RacerDModels in
+  let open ConcurrencyModels in
   let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open RacerDDomain in
-  if Models.should_analyze_proc proc_desc tenv then
+  if should_analyze_proc proc_desc tenv then
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make proc_desc tenv ProcData.empty_extras in
     let initial =
       let threads =
         if
-          Models.runs_on_ui_thread tenv proc_desc |> Option.is_some
-          || Models.is_thread_confined_method tenv proc_desc
+          runs_on_ui_thread tenv proc_desc |> Option.is_some
+          || is_thread_confined_method tenv proc_desc
         then ThreadsDomain.AnyThreadButSelf
-        else if
-          Procdesc.is_java_synchronized proc_desc || Models.is_marked_thread_safe proc_desc tenv
+        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_desc tenv
         then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
@@ -737,11 +737,11 @@ type report_kind =
 
 (** Explain why we are reporting this access, in Java *)
 let get_reporting_explanation_java report_kind tenv pname thread =
-  let open RacerDConfig in
+  let open RacerDModels in
   (* best explanation is always that the current class or method is annotated thread-safe. try for
      that first. *)
   let annotation_explanation_opt =
-    if Models.is_thread_safe_method pname tenv then
+    if is_thread_safe_method pname tenv then
       Some
         (F.asprintf
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
@@ -751,7 +751,7 @@ let get_reporting_explanation_java report_kind tenv pname thread =
       | Some (qual, annot) ->
           Some (FbThreadSafety.message_fbthreadsafe_class qual annot)
       | None -> (
-        match Models.get_current_class_and_threadsafe_superclasses tenv pname with
+        match get_current_class_and_threadsafe_superclasses tenv pname with
         | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
             Some
               ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
@@ -1046,7 +1046,7 @@ let empty_reported =
 *)
 let report_unsafe_accesses (aggregated_access_map : reported_access list AccessListMap.t) =
   let open RacerDDomain in
-  let open RacerDConfig in
+  let open RacerDModels in
   let is_duplicate_report access pname
       {reported_sites; reported_writes; reported_reads; reported_unannotated_calls} =
     if Config.filtering then
@@ -1088,7 +1088,7 @@ let report_unsafe_accesses (aggregated_access_map : reported_access list AccessL
           if
             AccessSnapshot.is_unprotected snapshot
             && ThreadsDomain.is_any threads
-            && Models.is_marked_thread_safe procdesc tenv
+            && is_marked_thread_safe procdesc tenv
           then (
             (* un-annotated interface call + no lock in method marked thread-safe. warn *)
             report_unannotated_interface_violation tenv procdesc snapshot.access threads
@@ -1208,7 +1208,7 @@ let report_unsafe_accesses (aggregated_access_map : reported_access list AccessL
             List.exists
               ~f:(fun ({threads} : reported_access) -> ThreadsDomain.is_any threads)
               grouped_accesses
-            && Models.should_report_on_proc pdesc tenv
+            && should_report_on_proc pdesc tenv
         | ObjC_Cpp objc_cpp ->
             (* do not report if a procedure is private  *)
             Procdesc.get_access pdesc <> PredSymb.Private

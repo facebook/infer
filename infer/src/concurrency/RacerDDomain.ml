@@ -13,7 +13,7 @@ module F = Format
     appear in source code (eg, temporary variables and frontend introduced variables).
     This is because currently reports on these variables would not be easily actionable.
 
-    This is here and not in RacerDConfig to avoid dependency cycles. *)
+    This is here and not in RacerDModels to avoid dependency cycles. *)
 let should_skip_var v =
   (not (Var.appears_in_source_code v))
   || match v with Var.ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false

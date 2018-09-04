@@ -12,7 +12,7 @@ module MF = MarkupFormatter
 let debug fmt = L.(debug Analysis Verbose fmt)
 
 let is_on_ui_thread pn =
-  RacerDConfig.(match Models.get_thread pn with Models.MainThread -> true | _ -> false)
+  ConcurrencyModels.(match get_thread pn with MainThread -> true | _ -> false)
 
 
 let is_nonblocking tenv proc_desc =
@@ -63,7 +63,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type extras = FormalMap.t
 
   let exec_instr (astate : Domain.astate) {ProcData.pdesc; tenv; extras} _ (instr : HilInstr.t) =
-    let open RacerDConfig in
+    let open ConcurrencyModels in
+    let open StarvationModels in
     let is_formal base = FormalMap.is_formal base extras in
     let get_path actuals =
       match actuals with
@@ -89,16 +90,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match instr with
     | Call (_, Direct callee, actuals, _, loc) -> (
-      match Models.get_lock callee actuals with
+      match get_lock callee actuals with
       | Lock ->
           do_lock actuals loc astate
       | Unlock ->
           do_unlock actuals astate
       | LockedIfTrue ->
           astate
-      | NoEffect when Models.should_skip_analysis tenv callee actuals ->
+      | NoEffect when should_skip_analysis tenv callee actuals ->
           astate
-      | NoEffect when Models.is_synchronized_library_call tenv callee ->
+      | NoEffect when is_synchronized_library_call tenv callee ->
           (* model a synchronized call without visible internal behaviour *)
           do_lock actuals loc astate |> do_unlock actuals
       | NoEffect when is_on_ui_thread callee ->
@@ -106,7 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Domain.set_on_ui_thread astate explanation
       | NoEffect -> (
           let caller = Procdesc.get_proc_name pdesc in
-          match Models.may_block tenv callee actuals with
+          match may_block tenv callee actuals with
           | Some sev ->
               Domain.blocking_call ~caller ~callee sev loc astate
           | None ->
@@ -159,7 +160,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         ~f:(StarvationDomain.acquire StarvationDomain.empty loc)
   in
   let initial =
-    RacerDConfig.Models.runs_on_ui_thread tenv proc_desc
+    ConcurrencyModels.runs_on_ui_thread tenv proc_desc
     |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial)
   in
   let filter_blocks =
