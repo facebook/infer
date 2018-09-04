@@ -23,7 +23,7 @@ module FileRenamings : sig
 
     val pp : Format.formatter -> t -> unit
 
-    val find_previous : t -> string -> string option
+    val find_previous : t -> string -> string
 
     val from_json : string -> t
   end

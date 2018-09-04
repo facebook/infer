@@ -68,22 +68,17 @@ let test_file_renamings_find_previous =
         ; {current= "ccc.java"; previous= "DDD.java"}
         ; {current= "eee.java"; previous= "FFF.java"} ])
   in
-  let cmp s1 s2 = [%compare.equal: string option] s1 s2 in
   let find_previous =
     DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.find_previous
   in
   let pp_diff fmt (expected, actual) =
-    let pp_str_opt fmt str_opt =
-      let out = match str_opt with Some str -> "Some " ^ str | None -> "None" in
-      Format.pp_print_string fmt out
-    in
-    Format.fprintf fmt "Expected '%a' but got '%a'" pp_str_opt expected pp_str_opt actual
+    Format.fprintf fmt "Expected '%s' but got '%s'" expected actual
   in
   let create_test input expected_previous _ =
-    assert_equal ~cmp ~pp_diff expected_previous (find_previous renamings input)
+    assert_equal ~cmp:String.equal ~pp_diff expected_previous (find_previous renamings input)
   in
-  [ ("test_file_renamings_find_previous_with_existing_value", "ccc.java", Some "DDD.java")
-  ; ("test_file_renamings_find_previous_with_existing_value", "abc.java", None) ]
+  [ ("test_file_renamings_find_previous_with_existing_value", "ccc.java", "DDD.java")
+  ; ("test_file_renamings_find_previous_with_existing_value", "abc.java", "abc.java") ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )
 

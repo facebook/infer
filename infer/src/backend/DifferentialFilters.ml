@@ -61,7 +61,9 @@ module FileRenamings = struct
 
   let from_json_file file : t = from_json (In_channel.read_all file)
 
-  let find_previous (t : t) current = CurrentToPreviousMap.find_opt current t
+  let find_previous (t : t) current =
+    try CurrentToPreviousMap.find current t with Caml.Not_found -> current
+
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
     type nonrec renaming = renaming = {current: string; previous: string}
@@ -116,21 +118,11 @@ let relative_complements ~compare ?(pred = fun _ -> true) l1 l2 =
   aux ([], [], []) l1_sorted l2_sorted
 
 
-type issue_file_with_renaming = Jsonbug_t.jsonbug * string option
-
 let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Differential.t =
-  let compare_issue_file_with_renaming (issue1, previous_file1) (issue2, previous_file2) =
-    let f1, f2 =
-      ( Option.value previous_file1 ~default:issue1.Jsonbug_t.file
-      , Option.value previous_file2 ~default:issue2.Jsonbug_t.file )
-    in
-    String.compare f1 f2
-  in
-  let compare ((issue1, _) as issue_with_previous_file1) ((issue2, _) as issue_with_previous_file2)
-      =
-    [%compare: Caml.Digest.t * string * issue_file_with_renaming]
-      (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
-      (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
+  let compare (issue1, previous_file1) (issue2, previous_file2) =
+    [%compare: Caml.Digest.t * string * string]
+      (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, previous_file1)
+      (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, previous_file2)
   in
   let introduced, preexisting, fixed =
     (* All comparisons will be made against filenames *before* renamings.
@@ -140,7 +132,7 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
       List.map diff.introduced ~f:(fun i ->
           (i, FileRenamings.find_previous renamings i.Jsonbug_t.file) )
     in
-    let fixed_normalized = List.map diff.fixed ~f:(fun f -> (f, None)) in
+    let fixed_normalized = List.map diff.fixed ~f:(fun f -> (f, f.Jsonbug_t.file)) in
     let introduced_normalized', preexisting', fixed_normalized' =
       relative_complements ~compare introduced_normalized fixed_normalized
     in
