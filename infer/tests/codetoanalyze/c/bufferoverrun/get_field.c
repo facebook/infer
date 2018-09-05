@@ -13,7 +13,7 @@ struct st {
 
 int get_field(t* x) { return x->field; }
 
-void FN_call_get_field_cond_Bad() {
+void call_get_field_cond_Bad() {
   int a[5];
   t x = {0};
   if (get_field_wrapper(&x)) {
@@ -23,13 +23,13 @@ void FN_call_get_field_cond_Bad() {
   }
 }
 
-void call_get_field_Good() {
+void FP_call_get_field_Good() {
   int a[5];
   t x = {0};
   a[get_field_wrapper(&x)] = 0;
 }
 
-void FN_call_get_field_Bad() {
+void call_get_field_Bad() {
   int a[5];
   t x = {10};
   a[get_field_wrapper(&x)] = 0;

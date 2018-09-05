@@ -83,18 +83,14 @@ module Symbol = struct
   let is_unsigned : t -> bool = fun x -> x.unsigned
 
   let path {path} = path
+
+  let bound_end {bound_end} = bound_end
 end
 
 module SymbolTable = struct
   module M = PrettyPrintable.MakePPMap (SymbolPath)
 
-  type summary_t = (Symbol.t * Symbol.t) M.t
-
-  let find_opt = M.find_opt
-
-  let pp = M.pp ~pp_value:(fun fmt (lb, ub) -> F.fprintf fmt "[%a, %a]" Symbol.pp lb Symbol.pp ub)
-
-  type t = summary_t ref
+  type t = (Symbol.t * Symbol.t) M.t ref
 
   let empty () = ref M.empty
 
@@ -109,9 +105,6 @@ module SymbolTable = struct
         in
         symbol_table := M.add path s !symbol_table ;
         s
-
-
-  let summary_of x = !x
 end
 
 module SymbolMap = struct

@@ -42,7 +42,7 @@ module TransferFunctionsNodesBasicCost = struct
 
   let cost_atomic_instruction = BasicCost.one
 
-  let instantiate_cost ~tenv ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
+  let instantiate_cost ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
     match Ondemand.get_proc_desc callee_pname with
     | None ->
         L.(die InternalError)
@@ -54,20 +54,16 @@ module TransferFunctionsNodesBasicCost = struct
           L.(die InternalError)
             "Can't instantiate symbolic cost %a from call to %a (can't get summary)" BasicCost.pp
             callee_cost Typ.Procname.pp callee_pname
-      | Some inferbo_summary ->
+      | Some _ ->
           let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
-          let callee_symbol_table = BufferOverrunDomain.Summary.get_symbol_table inferbo_summary in
-          let callee_exit_mem = BufferOverrunDomain.Summary.get_output inferbo_summary in
-          let (subst_map, _), _, _ =
-            BufferOverrunSemantics.get_subst_map tenv callee_pdesc params inferbo_caller_mem
-              callee_symbol_table callee_exit_mem
+          let eval_sym =
+            BufferOverrunSemantics.mk_eval_sym callee_pdesc params inferbo_caller_mem
           in
-          BasicCost.subst callee_cost subst_map )
+          BasicCost.subst callee_cost eval_sym )
 
 
   let exec_instr_cost inferbo_mem (astate : CostDomain.NodeInstructionToCostMap.astate)
-      {ProcData.pdesc; tenv} (node : CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate
-      =
+      {ProcData.pdesc} (node : CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate =
     let key = CFG.Node.id node in
     let astate' =
       match instr with
@@ -76,7 +72,7 @@ module TransferFunctionsNodesBasicCost = struct
             match Payload.read pdesc callee_pname with
             | Some {post= callee_cost} ->
                 if BasicCost.is_symbolic callee_cost then
-                  instantiate_cost ~tenv ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem
+                  instantiate_cost ~caller_pdesc:pdesc ~inferbo_caller_mem:inferbo_mem
                     ~callee_pname ~params ~callee_cost
                 else callee_cost
             | None ->

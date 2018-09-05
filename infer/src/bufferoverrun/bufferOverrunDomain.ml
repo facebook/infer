@@ -276,24 +276,21 @@ module Val = struct
 
   let subst :
          t
-      -> Itv.Bound.t bottom_lifted Itv.SymbolMap.t * TraceSet.t Itv.SymbolMap.t
+      -> (Symb.Symbol.t -> Bounds.Bound.t bottom_lifted) * (Symb.Symbol.t -> TraceSet.t)
       -> Location.t
       -> t =
-   fun x (bound_map, trace_map) location ->
+   fun x (eval_sym, trace_of_sym) location ->
     let symbols = get_symbols x in
     let traces_caller =
       List.fold symbols
-        ~f:(fun traces symbol ->
-          try TraceSet.join (Itv.SymbolMap.find symbol trace_map) traces with Caml.Not_found ->
-            traces )
+        ~f:(fun traces symbol -> TraceSet.join (trace_of_sym symbol) traces)
         ~init:TraceSet.empty
     in
     let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
-    {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
+    {x with itv= Itv.subst x.itv eval_sym; arrayblk= ArrayBlk.subst x.arrayblk eval_sym; traces}
+    (* normalize bottom *)
     |> normalize
 
-
-  (* normalize bottom *)
 
   let add_trace_elem : Trace.elem -> t -> t =
    fun elem x ->
@@ -999,16 +996,13 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = Itv.SymbolTable.summary_t * Mem.t * PO.ConditionSet.summary_t
+  type t = Mem.t * PO.ConditionSet.summary_t
 
-  let get_symbol_table : t -> Itv.SymbolTable.summary_t = fst3
+  let get_output : t -> Mem.t = fst
 
-  let get_output : t -> Mem.t = snd3
-
-  let get_cond_set : t -> PO.ConditionSet.summary_t = trd3
+  let get_cond_set : t -> PO.ConditionSet.summary_t = snd
 
   let pp : F.formatter -> t -> unit =
-   fun fmt (symbol_table, exit_mem, condition_set) ->
-    F.fprintf fmt "%a@;%a@;%a" Itv.SymbolTable.pp symbol_table Mem.pp exit_mem
-      PO.ConditionSet.pp_summary condition_set
+   fun fmt (exit_mem, condition_set) ->
+    F.fprintf fmt "%a@;%a" Mem.pp exit_mem PO.ConditionSet.pp_summary condition_set
 end

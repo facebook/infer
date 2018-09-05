@@ -8,8 +8,6 @@
 open! IStd
 module F = Format
 
-exception Symbol_not_found of Symb.Symbol.t
-
 exception Not_One_Symbol
 
 module SymLinear : sig
@@ -119,14 +117,14 @@ module Bound : sig
 
   val is_not_infty : t -> bool
 
-  val subst_lb_exn :
+  val subst_lb :
        t
-    -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
+    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
     -> t AbstractDomain.Types.bottom_lifted
 
-  val subst_ub_exn :
+  val subst_ub :
        t
-    -> t AbstractDomain.Types.bottom_lifted Symb.SymbolMap.t
+    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
     -> t AbstractDomain.Types.bottom_lifted
 
   val simplify_bound_ends_from_paths : t -> t

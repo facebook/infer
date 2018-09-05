@@ -52,7 +52,7 @@ module ConditionSet : sig
 
   val subst :
        summary_t
-    -> Bounds.Bound.t bottom_lifted Symb.SymbolMap.t * ValTraceSet.t Symb.SymbolMap.t
+    -> (Symb.Symbol.t -> Bounds.Bound.t bottom_lifted) * (Symb.Symbol.t -> ValTraceSet.t)
     -> Relation.SubstMap.t
     -> Relation.astate
     -> Typ.Procname.t

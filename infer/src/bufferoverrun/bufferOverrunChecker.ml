@@ -34,12 +34,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Itv.SymbolTable.t
 
-  let instantiate_ret ret callee_pname ~callee_exit_mem subst_map mem ret_alias location =
+  let instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace mem ret_alias location =
     let copy_reachable_new_locs_from locs mem =
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let v =
-              Dom.Val.subst v subst_map location |> Dom.Val.add_trace_elem (Trace.Return location)
+              Dom.Val.subst v eval_sym_trace location
+              |> Dom.Val.add_trace_elem (Trace.Return location)
             in
             Dom.Mem.add_heap loc v acc )
       in
@@ -52,13 +53,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ret_var = Loc.of_var (Var.of_id id) in
     let add_ret_alias l = Dom.Mem.load_alias id l mem in
     let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
-    Dom.Val.subst ret_val subst_map location
+    Dom.Val.subst ret_val eval_sym_trace location
     |> Dom.Val.add_trace_elem (Trace.Return location)
     |> Fn.flip (Dom.Mem.add_stack ret_var) mem
     |> copy_reachable_new_locs_from (Dom.Val.get_all_locs ret_val)
 
 
-  let instantiate_param tenv pdesc params callee_exit_mem subst_map location mem =
+  let instantiate_param tenv pdesc params callee_exit_mem eval_sym_trace location mem =
     let formals = Sem.get_formals pdesc in
     let actuals = List.map ~f:(fun (a, _) -> Sem.eval a mem) params in
     let f mem formal actual =
@@ -76,7 +77,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 let formal_fields = PowLoc.append_field formal_locs ~fn in
                 let v = Dom.Mem.find_set formal_fields callee_exit_mem in
                 let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) ~fn in
-                Dom.Val.subst v subst_map location
+                Dom.Val.subst v eval_sym_trace location
                 |> Fn.flip (Dom.Mem.strong_update actual_fields) mem
               in
               List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
@@ -89,7 +90,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             let v = Dom.Mem.find_set formal_locs callee_exit_mem in
             let actual_locs = Dom.Val.get_all_locs actual in
-            Dom.Val.subst v subst_map location |> Fn.flip (Dom.Mem.strong_update actual_locs) mem )
+            Dom.Val.subst v eval_sym_trace location
+            |> Fn.flip (Dom.Mem.strong_update actual_locs) mem )
       | _ ->
           mem
     in
@@ -113,15 +115,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> Location.t
       -> Dom.Mem.astate =
    fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
-    let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
-    let bound_subst_map, ret_alias, rel_subst_map =
-      Sem.get_subst_map tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem
+    let ret_alias, rel_subst_map =
+      Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem
     in
+    let eval_sym_trace = Sem.mk_eval_sym_trace callee_pdesc params caller_mem in
     let caller_mem =
-      instantiate_ret ret callee_pname ~callee_exit_mem bound_subst_map caller_mem ret_alias
+      instantiate_ret ret callee_pname ~callee_exit_mem eval_sym_trace caller_mem ret_alias
         location
-      |> instantiate_param tenv callee_pdesc params callee_exit_mem bound_subst_map location
+      |> instantiate_param tenv callee_pdesc params callee_exit_mem eval_sym_trace location
       |> forget_ret_relation ret callee_pname
     in
     Dom.Mem.instantiate_relation rel_subst_map ~caller:caller_mem ~callee:callee_exit_mem
@@ -492,15 +494,13 @@ module Report = struct
       -> Location.t
       -> PO.ConditionSet.t =
    fun tenv callee_pdesc params caller_mem summary location ->
-    let callee_symbol_table = Dom.Summary.get_symbol_table summary in
     let callee_exit_mem = Dom.Summary.get_output summary in
     let callee_cond = Dom.Summary.get_cond_set summary in
-    let bound_subst_map, _, rel_subst_map =
-      Sem.get_subst_map tenv callee_pdesc params caller_mem callee_symbol_table callee_exit_mem
-    in
+    let _, rel_subst_map = Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem in
     let pname = Procdesc.get_proc_name callee_pdesc in
     let caller_rel = Dom.Mem.get_relation caller_mem in
-    PO.ConditionSet.subst callee_cond bound_subst_map rel_subst_map caller_rel pname location
+    let eval_sym_trace = Sem.mk_eval_sym_trace callee_pdesc params caller_mem in
+    PO.ConditionSet.subst callee_cond eval_sym_trace rel_subst_map caller_rel pname location
 
 
   let check_instr :
@@ -709,7 +709,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   let summary =
     match exit_mem with
     | Some exit_mem ->
-        let post = (Itv.SymbolTable.summary_of symbol_table, exit_mem, cond_set) in
+        let post = (exit_mem, cond_set) in
         ( if Config.bo_debug >= 1 then
           let proc_name = Procdesc.get_proc_name proc_desc in
           print_summary proc_name post ) ;

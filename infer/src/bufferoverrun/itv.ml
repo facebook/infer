@@ -30,7 +30,6 @@ module Boolean = struct
 end
 
 open Ints
-module SymbolMap = Symb.SymbolMap
 module Symbol = Symb.Symbol
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
@@ -66,8 +65,8 @@ module NonNegativeBound = struct
           Bounds.Constant (NonNegativeInt.of_int_exn c) )
 
 
-  let subst_exn b map =
-    match Bound.subst_ub_exn b map with
+  let subst b map =
+    match Bound.subst_ub b map with
     | Bottom ->
         Bounds.Constant NonNegativeInt.zero
     | NonBottom b ->
@@ -81,8 +80,10 @@ module type NonNegativeSymbol = sig
 
   val int_ub : t -> NonNegativeInt.t option
 
-  val subst_exn : t -> Bound.t bottom_lifted SymbolMap.t -> (NonNegativeInt.t, t) Bounds.valclass
-  (** may throw Symbol_not_found *)
+  val subst :
+       t
+    -> (Symb.Symbol.t -> t AbstractDomain.Types.bottom_lifted)
+    -> (NonNegativeInt.t, t) Bounds.valclass
 
   val pp : F.formatter -> t -> unit
 end
@@ -295,28 +296,26 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
   let subst =
     let exception ReturnTop in
     (* avoids top-lifting everything *)
-    let rec subst {const; terms} map =
+    let rec subst {const; terms} eval_sym =
       M.fold
         (fun s p acc ->
-          match S.subst_exn s map with
+          match S.subst s eval_sym with
           | Constant c -> (
             match PositiveInt.of_int (c :> int) with
             | None ->
                 acc
             | Some c ->
-                let p = subst p map in
+                let p = subst p eval_sym in
                 mult_const_positive p c |> plus acc )
           | ValTop ->
-              let p = subst p map in
+              let p = subst p eval_sym in
               if is_zero p then acc else raise ReturnTop
           | Symbolic s ->
-              let p = subst p map in
-              mult_symb p s |> plus acc
-          | exception Bounds.Symbol_not_found _ ->
-              raise ReturnTop )
+              let p = subst p eval_sym in
+              mult_symb p s |> plus acc )
         terms (of_non_negative_int const)
     in
-    fun p map -> match subst p map with p -> NonTop p | exception ReturnTop -> Top
+    fun p eval_sym -> match subst p eval_sym with p -> NonTop p | exception ReturnTop -> Top
 
 
   let rec degree {terms} : int = M.fold (fun _ p acc -> max acc (degree p + 1)) terms 0
@@ -389,7 +388,9 @@ module NonNegativePolynomial = struct
 
   let widen ~prev ~next ~num_iters:_ = if ( <= ) ~lhs:next ~rhs:prev then prev else Top
 
-  let subst p map = match p with Top -> Top | NonTop p -> NonNegativeNonTopPolynomial.subst p map
+  let subst p eval_sym =
+    match p with Top -> Top | NonTop p -> NonNegativeNonTopPolynomial.subst p eval_sym
+
 
   let degree p =
     match p with Top -> None | NonTop p -> Some (NonNegativeNonTopPolynomial.degree p)
@@ -435,15 +436,12 @@ module ItvPure = struct
 
   let has_infty = function Bound.MInf, _ | _, Bound.PInf -> true | _, _ -> false
 
-  let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t bottom_lifted =
-   fun (l, u) map ->
-    match (Bound.subst_lb_exn l map, Bound.subst_ub_exn u map) with
+  let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted =
+   fun (l, u) eval_sym ->
+    match (Bound.subst_lb l eval_sym, Bound.subst_ub u eval_sym) with
     | NonBottom l, NonBottom u ->
         NonBottom (l, u)
     | _ ->
-        Bottom
-    | exception Bounds.Symbol_not_found _ ->
-        (* For now, let's be VERY aggressive. Under-approximate unknown symbols with Bottom. *)
         Bottom
 
 
@@ -1000,8 +998,8 @@ let prune_eq : t -> t -> t = bind2 ItvPure.prune_eq
 
 let prune_ne : t -> t -> t = bind2 ItvPure.prune_ne
 
-let subst : t -> Bound.t bottom_lifted SymbolMap.t -> t =
- fun x map -> match x with NonBottom x' -> ItvPure.subst x' map | _ -> x
+let subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t =
+ fun x eval_sym -> match x with NonBottom x' -> ItvPure.subst x' eval_sym | _ -> x
 
 
 let get_symbols : t -> Symbol.t list = function

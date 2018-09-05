@@ -25,7 +25,6 @@ module Boolean : sig
   val is_true : t -> bool
 end
 
-module SymbolMap = Symb.SymbolMap
 module Symbol = Symb.Symbol
 module SymbolPath = Symb.SymbolPath
 module SymbolTable = Symb.SymbolTable
@@ -51,7 +50,7 @@ module NonNegativePolynomial : sig
 
   val min_default_left : astate -> astate -> astate
 
-  val subst : astate -> Bound.t bottom_lifted SymbolMap.t -> astate
+  val subst : astate -> (Symb.Symbol.t -> Bound.t AbstractDomain.Types.bottom_lifted) -> astate
 
   val degree : astate -> int option
 
@@ -121,7 +120,7 @@ module ItvPure : sig
 
   val get_symbols : t -> Symbol.t list
 
-  val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t bottom_lifted
+  val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)
@@ -224,4 +223,4 @@ val prune_eq : t -> t -> t
 
 val prune_ne : t -> t -> t
 
-val subst : t -> Bound.t bottom_lifted SymbolMap.t -> t
+val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t

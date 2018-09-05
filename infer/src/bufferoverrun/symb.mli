@@ -16,9 +16,9 @@ module BoundEnd : sig
 end
 
 module SymbolPath : sig
-  type partial
+  type partial = private Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
 
-  type t
+  type t = private Normal of partial | Offset of partial | Length of partial
 
   val pp : F.formatter -> t -> unit
 
@@ -49,6 +49,8 @@ module Symbol : sig
   val paths_equal : t -> t -> bool
 
   val path : t -> SymbolPath.t
+
+  val bound_end : t -> BoundEnd.t
 end
 
 module SymbolMap : sig
@@ -60,20 +62,10 @@ module SymbolMap : sig
 end
 
 module SymbolTable : sig
-  module M : PrettyPrintable.PPMap with type key = SymbolPath.t
-
-  type summary_t
-
-  val pp : F.formatter -> summary_t -> unit
-
-  val find_opt : SymbolPath.t -> summary_t -> (Symbol.t * Symbol.t) option
-
   type t
 
   val empty : unit -> t
 
-  val summary_of : t -> summary_t
-
   val lookup :
-    unsigned:bool -> Typ.Procname.t -> M.key -> t -> Counter.t -> SymbolMap.key * SymbolMap.key
+    unsigned:bool -> Typ.Procname.t -> SymbolPath.t -> t -> Counter.t -> Symbol.t * Symbol.t
 end

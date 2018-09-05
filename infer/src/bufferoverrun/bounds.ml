@@ -10,8 +10,6 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 
-exception Symbol_not_found of Symb.Symbol.t
-
 exception Not_One_Symbol
 
 open Ints
@@ -708,35 +706,32 @@ module Bound = struct
         NonBottom (f x y)
 
 
-  (** Substitutes ALL symbols in [x] with respect to [map]. Throws [Symbol_not_found] if a symbol in [x] can't be found in [map]. Under/over-Approximate as good as possible according to [subst_pos]. *)
-  let subst_exn :
-      subst_pos:Symb.BoundEnd.t -> t -> t bottom_lifted Symb.SymbolMap.t -> t bottom_lifted =
-   fun ~subst_pos x map ->
-    let get_exn s =
-      match Symb.SymbolMap.find s map with
+  (** Substitutes ALL symbols in [x] with respect to [eval_sym]. Under/over-Approximate as good as possible according to [subst_pos]. *)
+  let subst :
+      subst_pos:Symb.BoundEnd.t -> t -> (Symb.Symbol.t -> t bottom_lifted) -> t bottom_lifted =
+   fun ~subst_pos x eval_sym ->
+    let get s =
+      match eval_sym s with
       | NonBottom x when Symb.Symbol.is_unsigned s ->
           NonBottom (ub ~default:x zero x)
       | x ->
           x
     in
     let get_mult_const s coeff =
-      try
-        if NonZeroInt.is_one coeff then get_exn s
-        else if NonZeroInt.is_minus_one coeff then get_exn s |> lift1 neg
-        else
-          match Symb.SymbolMap.find s map with
-          | Bottom ->
-              Bottom
-          | NonBottom x ->
-              let x = mult_const subst_pos coeff x in
-              if Symb.Symbol.is_unsigned s then NonBottom (ub ~default:x zero x) else NonBottom x
-      with Caml.Not_found -> (
-        (* For unsigned symbols, we can over/under-approximate with zero depending on [subst_pos] and the sign of the coefficient. *)
-        match (Symb.Symbol.is_unsigned s, subst_pos, NonZeroInt.is_positive coeff) with
-        | true, Symb.BoundEnd.LowerBound, true | true, Symb.BoundEnd.UpperBound, false ->
-            NonBottom zero
-        | _ ->
-            raise (Symbol_not_found s) )
+      if NonZeroInt.is_one coeff then get s
+      else if NonZeroInt.is_minus_one coeff then get s |> lift1 neg
+      else
+        match eval_sym s with
+        | Bottom -> (
+          (* For unsigned symbols, we can over/under-approximate with zero depending on [subst_pos] and the sign of the coefficient. *)
+          match (Symb.Symbol.is_unsigned s, subst_pos, NonZeroInt.is_positive coeff) with
+          | true, Symb.BoundEnd.LowerBound, true | true, Symb.BoundEnd.UpperBound, false ->
+              NonBottom zero
+          | _ ->
+              Bottom )
+        | NonBottom x ->
+            let x = mult_const subst_pos coeff x in
+            if Symb.Symbol.is_unsigned s then NonBottom (ub ~default:x zero x) else NonBottom x
     in
     match x with
     | MInf | PInf ->
@@ -746,15 +741,10 @@ module Bound = struct
           ~init:(NonBottom (of_int c))
           ~f:(fun acc s coeff -> lift2 (plus subst_pos) acc (get_mult_const s coeff))
     | MinMax (c, sign, min_max, d, s) -> (
-      match get_exn s with
+      match get s with
       | Bottom ->
-          Bottom
-      | exception Caml.Not_found -> (
-        match int_of_minmax subst_pos x with
-        | Some i ->
-            NonBottom (of_int i)
-        | None ->
-            raise (Symbol_not_found s) )
+          Option.value_map (int_of_minmax subst_pos x) ~default:Bottom ~f:(fun i ->
+              NonBottom (of_int i) )
       | NonBottom x' ->
           let res =
             match (sign, min_max, x') with
@@ -805,9 +795,9 @@ module Bound = struct
           NonBottom res )
 
 
-  let subst_lb_exn x map = subst_exn ~subst_pos:Symb.BoundEnd.LowerBound x map
+  let subst_lb x eval_sym = subst ~subst_pos:Symb.BoundEnd.LowerBound x eval_sym
 
-  let subst_ub_exn x map = subst_exn ~subst_pos:Symb.BoundEnd.UpperBound x map
+  let subst_ub x eval_sym = subst ~subst_pos:Symb.BoundEnd.UpperBound x eval_sym
 
   let simplify_bound_ends_from_paths x =
     match x with

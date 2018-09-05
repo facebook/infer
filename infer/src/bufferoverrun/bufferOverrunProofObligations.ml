@@ -93,8 +93,8 @@ module AllocSizeCondition = struct
               {report_issue_type= None; propagate} ) )
 
 
-  let subst bound_map length =
-    match ItvPure.subst length bound_map with NonBottom length -> Some length | Bottom -> None
+  let subst eval_sym length =
+    match ItvPure.subst length eval_sym with NonBottom length -> Some length | Bottom -> None
 end
 
 module ArrayAccessCondition = struct
@@ -266,13 +266,13 @@ module ArrayAccessCondition = struct
 
 
   let subst :
-         Itv.Bound.t bottom_lifted Itv.SymbolMap.t
+         (Symb.Symbol.t -> Bound.t bottom_lifted)
       -> Relation.SubstMap.t
       -> Relation.astate
       -> t
       -> t option =
-   fun bound_map rel_map caller_relation c ->
-    match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
+   fun eval_sym rel_map caller_relation c ->
+    match (ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym) with
     | NonBottom idx, NonBottom size ->
         let idx_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.idx_sym_exp in
         let size_sym_exp = Relation.SubstMap.symexp_subst_opt rel_map c.size_sym_exp in
@@ -304,11 +304,11 @@ module Condition = struct
         ArrayAccessCondition.get_symbols c
 
 
-  let subst bound_map rel_map caller_relation = function
+  let subst eval_sym rel_map caller_relation = function
     | AllocSize c ->
-        AllocSizeCondition.subst bound_map c |> make_alloc_size
+        AllocSizeCondition.subst eval_sym c |> make_alloc_size
     | ArrayAccess {is_collection_add; c} ->
-        ArrayAccessCondition.subst bound_map rel_map caller_relation c
+        ArrayAccessCondition.subst eval_sym rel_map caller_relation c
         |> make_array_access ~is_collection_add
 
 
@@ -460,24 +460,20 @@ module ConditionWithTrace = struct
         cmp
 
 
-  let subst (bound_map, trace_map) rel_map caller_relation callee_pname call_site cwt =
+  let subst (eval_sym, trace_of_sym) rel_map caller_relation callee_pname call_site cwt =
     let symbols = Condition.get_symbols cwt.cond in
     if List.is_empty symbols then
       L.(die InternalError)
         "Trying to substitute a non-symbolic condition %a from %a at %a. Why was it propagated in \
          the first place?"
         pp_summary cwt Typ.Procname.pp callee_pname Location.pp call_site ;
-    match Condition.subst bound_map rel_map caller_relation cwt.cond with
+    match Condition.subst eval_sym rel_map caller_relation cwt.cond with
     | None ->
         None
     | Some cond ->
         let traces_caller =
           List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
-              match Itv.SymbolMap.find symbol trace_map with
-              | symbol_trace ->
-                  ValTraceSet.join symbol_trace val_traces
-              | exception Caml.Not_found ->
-                  val_traces )
+              ValTraceSet.join (trace_of_sym symbol) val_traces )
         in
         let trace =
           ConditionTrace.make_call_and_subst ~traces_caller ~callee_pname call_site cwt.trace
@@ -606,10 +602,10 @@ module ConditionSet = struct
     |> add_opt location val_traces condset
 
 
-  let subst condset bound_map_trace_map rel_subst_map caller_relation callee_pname call_site =
+  let subst condset eval_sym_trace rel_subst_map caller_relation callee_pname call_site =
     let subst_add_cwt condset cwt =
       match
-        ConditionWithTrace.subst bound_map_trace_map rel_subst_map caller_relation callee_pname
+        ConditionWithTrace.subst eval_sym_trace rel_subst_map caller_relation callee_pname
           call_site cwt
       with
       | None ->
