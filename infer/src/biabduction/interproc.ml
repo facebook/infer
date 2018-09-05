@@ -418,7 +418,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
     L.d_strln "SIL INSTR:" ;
     Procdesc.Node.d_instrs ~sub_instrs:true (State.get_instr ()) curr_node ;
     L.d_ln () ;
-    Reporting.log_issue_deprecated Exceptions.Error pname exn ;
+    Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
     State.mark_instr_fail exn
   in
   let exe_iter f pathset =
@@ -524,7 +524,7 @@ let remove_locals_formals_and_check tenv proc_cfg p =
       let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
       let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
       let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-      Reporting.log_issue_deprecated Exceptions.Warning pname exn
+      Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
   in
   List.iter ~f:check_pvar pvars ; p'
 
@@ -860,7 +860,9 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
       forward_tabulate summary exe_env tenv proc_cfg wl
     in
     let get_results (wl : Worklist.t) () =
-      State.process_execution_failures (Reporting.log_issue_deprecated Exceptions.Warning) pname ;
+      State.process_execution_failures
+        (Reporting.log_issue_deprecated_using_state Exceptions.Warning)
+        pname ;
       let results = collect_analysis_result tenv wl proc_cfg in
       let specs =
         try extract_specs tenv (ProcCfg.Exceptional.proc_desc proc_cfg) results
@@ -869,7 +871,7 @@ let perform_analysis_phase exe_env tenv (summary : Summary.t) (proc_cfg : ProcCf
             Exceptions.Internal_error
               (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint")
           in
-          Reporting.log_issue_deprecated Exceptions.Error pname exn ;
+          Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn ;
           (* retuning no specs *) []
       in
       (specs, BiabductionSummary.FOOTPRINT)
@@ -1028,7 +1030,7 @@ let report_runtime_exceptions tenv pdesc summary =
       in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
-      Reporting.log_issue_deprecated Exceptions.Error pname exn
+      Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn
   in
   List.iter ~f:report exn_preconditions
 
@@ -1041,7 +1043,7 @@ let report_custom_errors tenv summary =
       let loc = Summary.get_loc summary in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
-      Reporting.log_issue_deprecated Exceptions.Error pname exn
+      Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn
   in
   List.iter ~f:report error_preconditions
 
@@ -1258,6 +1260,5 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv; exe_env} : Summary.t 
   BuiltinDefn.init () ;
   try analyze_procedure_aux summary exe_env tenv proc_desc with exn ->
     IExn.reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
-    let loc = State.get_loc () in
-    Reporting.log_error summary ~loc exn ;
+    Reporting.log_error_using_state summary exn ;
     summary

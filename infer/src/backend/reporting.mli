@@ -18,9 +18,9 @@ type log_t =
   -> exn
   -> unit
 
-val log_issue_deprecated :
+val log_issue_deprecated_using_state :
   Exceptions.severity -> Typ.Procname.t -> ?node:Procdesc.Node.t -> ?loc:Location.t -> log_t
-(** Report an issue in the given procedure.
+(** Report an issue in the given procedure using biabduction state (DO NOT USE ELSEWHERE).
     DEPRECATED as it can create race conditions between checkers.
     Use log_error/warning instead *)
 
@@ -42,6 +42,9 @@ val log_error : Summary.t -> loc:Location.t -> log_t
 
 val log_warning : Summary.t -> loc:Location.t -> log_t
 (** Add an warning to the given summary. *)
+
+val log_error_using_state : Summary.t -> exn -> unit
+(** Add an error to the given summary using biabduction state (DO NOT USE ELSEWHERE). *)
 
 val log_issue_external :
      Typ.Procname.t

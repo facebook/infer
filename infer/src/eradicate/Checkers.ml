@@ -27,5 +27,5 @@ module ST = struct
         in
         origin_elements @ [Errlog.make_trace_element 0 loc description []]
       in
-      Reporting.log_issue_deprecated severity proc_name ~loc ~ltr:trace exn
+      Reporting.log_issue_deprecated_using_state severity proc_name ~loc ~ltr:trace exn
 end
