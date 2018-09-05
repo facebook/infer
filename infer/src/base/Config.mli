@@ -375,6 +375,8 @@ val gen_previous_build_command_script : string option
 
 val generated_classes : string option
 
+val get_linter_doc_url : linter_id:string -> string option
+
 val html : bool
 
 val icfg_dotty_outfile : string option
@@ -439,10 +441,6 @@ val linters : bool
 val linters_def_file : string list
 
 val linters_def_folder : string list
-
-type linter_doc_url = {linter: string; doc_url: string}
-
-val linters_doc_url : linter_doc_url list
 
 val linters_developer_mode : bool
 

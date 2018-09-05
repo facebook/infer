@@ -184,12 +184,9 @@ let string_to_issue_mode m =
 
 
 let post_process_linter_definition (linter : linter) =
-  match
-    List.find Config.linters_doc_url ~f:(fun (linter_doc_url : Config.linter_doc_url) ->
-        String.equal linter.issue_desc.id linter_doc_url.linter )
-  with
-  | Some linter_doc_url ->
-      let issue_desc = {linter.issue_desc with doc_url= Some linter_doc_url.doc_url} in
+  match Config.get_linter_doc_url ~linter_id:linter.issue_desc.id with
+  | Some doc_url ->
+      let issue_desc = {linter.issue_desc with doc_url= Some doc_url} in
       {linter with issue_desc}
   | None ->
       linter
