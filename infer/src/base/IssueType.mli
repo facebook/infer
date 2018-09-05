@@ -255,11 +255,15 @@ val use_after_free : t
 
 val use_after_lifetime : t
 
+val untrusted_buffer_access : t
+
 val untrusted_deserialization : t
 
 val untrusted_file : t
 
 val untrusted_file_risk : t
+
+val untrusted_heap_allocation : t
 
 val untrusted_intent_creation : t
 

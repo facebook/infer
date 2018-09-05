@@ -486,15 +486,15 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible ~typ Sanitizer.EscapeShell sanitizers)
           IssueType.shell_injection_risk
-    | UserControlledEndpoint _, BufferAccess ->
-        (* untrusted data from an endpoint flowing into a buffer *)
-        Some IssueType.quandary_taint_error
-    | Endpoint _, (BufferAccess | HeapAllocation | StackAllocation) ->
-        (* may want to report this in the future, but don't care for now *)
-        None
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile | Other), BufferAccess ->
-        (* untrusted flag, environment var, or file data flowing to buffer *)
-        Some IssueType.quandary_taint_error
+    | ( ( UserControlledEndpoint _
+        | Endpoint _
+        | CommandLineFlag _
+        | EnvironmentVariable
+        | ReadFile
+        | Other )
+      , BufferAccess ) ->
+        (* untrusted data of any kind flowing to buffer *)
+        Some IssueType.untrusted_buffer_access
     | (EnvironmentVariable | ReadFile | Other), ShellExec ->
         (* environment var, or file data flowing to shell *)
         Option.some_if
@@ -510,11 +510,21 @@ include Trace.Make (struct
         Option.some_if
           (is_injection_possible Sanitizer.EscapeURL sanitizers)
           IssueType.untrusted_url_risk
-    | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | ReadFile | Other)
+    | ( ( CommandLineFlag _
+        | Endpoint _
+        | UserControlledEndpoint _
+        | EnvironmentVariable
+        | ReadFile
+        | Other )
       , HeapAllocation ) ->
         (* untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS. *)
-        Some IssueType.quandary_taint_error
-    | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | ReadFile | Other)
+        Some IssueType.untrusted_heap_allocation
+    | ( ( CommandLineFlag _
+        | Endpoint _
+        | UserControlledEndpoint _
+        | EnvironmentVariable
+        | ReadFile
+        | Other )
       , StackAllocation ) ->
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)

@@ -344,11 +344,15 @@ let use_after_lifetime = from_string "USE_AFTER_LIFETIME"
 
 let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
 
+let untrusted_buffer_access = from_string "UNTRUSTED_BUFFER_ACCESS"
+
 let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
 
 let untrusted_file = from_string "UNTRUSTED_FILE"
 
 let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
+
+let untrusted_heap_allocation = from_string "UNTRUSTED_HEAP_ALLOCATION"
 
 let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
 
