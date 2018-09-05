@@ -39,7 +39,7 @@ val do_filter :
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
   val relative_complements :
        compare:('a -> 'a -> int)
-    -> ?pred:('a -> bool)
+    -> pred:('a -> bool)
     -> 'a list
     -> 'a list
     -> 'a list * 'a list * 'a list

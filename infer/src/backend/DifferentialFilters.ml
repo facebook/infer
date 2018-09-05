@@ -88,7 +88,7 @@ end
 (** Returns a triple [(l1', dups, l2')] where [dups] is the set of elements of that are in the
     intersection of [l1] and [l2] according to [cmd] and additionally satisfy [pred], and [lN'] is
     [lN] minus [dups]. [dups] contains only one witness for each removed issue, taken from [l1]. *)
-let relative_complements ~compare ?(pred = fun _ -> true) l1 l2 =
+let relative_complements ~compare ~pred l1 l2 =
   let rec aux ((out_l1, dups, out_l2) as out) in_l1 in_l2 =
     let is_last_seen_dup v =
       match dups with ld :: _ -> Int.equal (compare ld v) 0 | [] -> false
@@ -98,19 +98,17 @@ let relative_complements ~compare ?(pred = fun _ -> true) l1 l2 =
         (* i = f *)
         if pred i then aux (out_l1, i :: dups, out_l2) is fs
         else aux (i :: out_l1, dups, f :: out_l2) is fs
+    | i :: is, _ when is_last_seen_dup i ->
+        aux out is in_l2
+    | _, f :: fs when is_last_seen_dup f ->
+        aux out in_l1 fs
     | i :: is, f :: _ when compare i f < 0 ->
         (* i < f *)
-        let out_l1' = if is_last_seen_dup i then out_l1 else i :: out_l1 in
-        aux (out_l1', dups, out_l2) is in_l2
+        aux (i :: out_l1, dups, out_l2) is in_l2
     | _ :: _, f :: fs ->
         (* i > f *)
-        let out_l2' = if is_last_seen_dup f then out_l2 else f :: out_l2 in
-        aux (out_l1, dups, out_l2') in_l1 fs
-    | i :: is, [] when is_last_seen_dup i ->
-        aux out is in_l2
-    | [], f :: fs when is_last_seen_dup f ->
-        aux out in_l1 fs
-    | _, _ ->
+        aux (out_l1, dups, f :: out_l2) in_l1 fs
+    | [], _ | _, [] ->
         (List.rev_append in_l1 out_l1, dups, List.rev_append in_l2 out_l2)
   in
   let l1_sorted = List.sort ~compare l1 in
@@ -134,7 +132,7 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
     in
     let fixed_normalized = List.map diff.fixed ~f:(fun f -> (f, f.Jsonbug_t.file)) in
     let introduced_normalized', preexisting', fixed_normalized' =
-      relative_complements ~compare introduced_normalized fixed_normalized
+      relative_complements ~compare ~pred:(fun _ -> true) introduced_normalized fixed_normalized
     in
     let list_map_fst = List.map ~f:fst in
     ( list_map_fst introduced_normalized'
