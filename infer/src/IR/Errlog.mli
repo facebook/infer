@@ -49,7 +49,7 @@ type err_key = private
 (** Data associated to a specific error *)
 type err_data = private
   { node_id: int
-  ; node_key: Procdesc.NodeKey.t
+  ; node_key: Procdesc.NodeKey.t option
   ; session: int
   ; loc: Location.t
   ; loc_in_ml_source: Logging.ocaml_pos option

@@ -118,7 +118,7 @@ let relative_complements ~compare ~pred l1 l2 =
 
 let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Differential.t =
   let compare (issue1, previous_file1) (issue2, previous_file2) =
-    [%compare: Caml.Digest.t * string * string]
+    [%compare: Caml.Digest.t option * string * string]
       (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, previous_file1)
       (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, previous_file2)
   in
@@ -132,7 +132,8 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
     in
     let fixed_normalized = List.map diff.fixed ~f:(fun f -> (f, f.Jsonbug_t.file)) in
     let introduced_normalized', preexisting', fixed_normalized' =
-      relative_complements ~compare ~pred:(fun _ -> true) introduced_normalized fixed_normalized
+      let has_node_key ({Jsonbug_t.node_key}, _) = Option.is_some node_key in
+      relative_complements ~compare ~pred:has_node_key introduced_normalized fixed_normalized
     in
     let list_map_fst = List.map ~f:fst in
     ( list_map_fst introduced_normalized'

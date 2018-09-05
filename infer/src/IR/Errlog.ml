@@ -75,7 +75,7 @@ type err_key =
 (** Data associated to a specific error *)
 type err_data =
   { node_id: int
-  ; node_key: Procdesc.NodeKey.t
+  ; node_key: Procdesc.NodeKey.t option
   ; session: int
   ; loc: Location.t
   ; loc_in_ml_source: L.ocaml_pos option
@@ -266,11 +266,11 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
       let node_id, node_key =
         match node with
         | UnknownNode ->
-            (0, Procdesc.NodeKey.dummy)
+            (0, Some Procdesc.NodeKey.dummy)
         | FrontendNode {node_key} ->
-            (0, node_key)
+            (0, Some node_key)
         | BackendNode {node} ->
-            ((Procdesc.Node.get_id node :> int), Procdesc.Node.compute_key node)
+            ((Procdesc.Node.get_id node :> int), Some (Procdesc.Node.compute_key node))
       in
       let err_data =
         { node_id

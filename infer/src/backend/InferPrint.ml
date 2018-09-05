@@ -313,7 +313,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
-        ; node_key= Procdesc.NodeKey.to_string err_data.node_key
+        ; node_key= Option.map ~f:Procdesc.NodeKey.to_string err_data.node_key
         ; key= compute_key bug_type proc_name file
         ; hash= compute_hash severity bug_type proc_name file qualifier
         ; dotty= error_desc_to_dotty_string err_key.err_desc
