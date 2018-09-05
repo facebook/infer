@@ -84,6 +84,12 @@ let compile compiler build_prog build_args =
 
 
 let capture compiler ~prog ~args =
-  let verbose_out_file = compile compiler prog args in
-  if Config.analyzer <> Config.CompileOnly then JMain.from_verbose_out verbose_out_file ;
-  if not Config.debug_mode then Unix.unlink verbose_out_file
+  match (compiler, Config.capture_blacklist) with
+  | Javac, Some blacklist
+    when let re = Str.regexp blacklist in
+         List.exists ~f:(fun arg -> Str.string_match re arg 0) args ->
+      ()
+  | _ ->
+      let verbose_out_file = compile compiler prog args in
+      if Config.analyzer <> Config.CompileOnly then JMain.from_verbose_out verbose_out_file ;
+      if not Config.debug_mode then Unix.unlink verbose_out_file

@@ -225,7 +225,7 @@ let capture ~changed_files = function
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args
-          ( ( match Config.blacklist with
+          ( ( match Config.buck_blacklist with
             | Some s when in_buck_mode ->
                 ["--blacklist-regex"; s]
             | _ ->

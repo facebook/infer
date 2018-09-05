@@ -815,14 +815,6 @@ and array_level =
 |}
 
 
-and blacklist =
-  CLOpt.mk_string_opt
-    ~deprecated:["-blacklist-regex"; "-blacklist"]
-    ~long:"buck-blacklist"
-    ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
-    ~meta:"regex" "Skip analysis of files matched by the specified regular expression"
-
-
 and bo_relational_domain =
   CLOpt.mk_symbol_opt ~long:"bo-relational-domain"
     ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
@@ -838,6 +830,16 @@ and bootclasspath =
 
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
+
+and buck_blacklist =
+  CLOpt.mk_string_opt
+    ~deprecated:["-blacklist-regex"; "-blacklist"]
+    ~long:"buck-blacklist"
+    ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
+    ~meta:"regex"
+    "Skip capture of files matched by the specified regular expression (only the \"flavors \
+     (C++)\" Buck integration is supported, not Java)."
+
 
 and buck_build_args =
   CLOpt.mk_string_list ~long:"Xbuck"
@@ -876,6 +878,14 @@ and buck_out =
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
+
+
+and capture_blacklist =
+  CLOpt.mk_string_opt ~long:"capture-blacklist"
+    ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
+    ~meta:"regex"
+    "Skip capture of files matched by the specified OCaml regular expression (only supported by \
+     the javac integration for now)."
 
 
 and changed_files_index =
@@ -2472,8 +2482,6 @@ and array_level = !array_level
 
 and biabduction = !biabduction
 
-and blacklist = !blacklist
-
 and bootclasspath = !bootclasspath
 
 and bo_debug = !bo_debug
@@ -2481,6 +2489,8 @@ and bo_debug = !bo_debug
 and bo_relational_domain = !bo_relational_domain
 
 and buck = !buck
+
+and buck_blacklist = !buck_blacklist
 
 and buck_build_args = !buck_build_args
 
@@ -2512,6 +2522,8 @@ and capture =
   | None ->
       !capture
 
+
+and capture_blacklist = !capture_blacklist
 
 and changed_files_index = !changed_files_index
 

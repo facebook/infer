@@ -236,8 +236,6 @@ val array_level : int
 
 val biabduction : bool
 
-val blacklist : string option
-
 val bootclasspath : string option
 
 val bo_debug : int
@@ -245,6 +243,8 @@ val bo_debug : int
 val bo_relational_domain : [`Bo_relational_domain_oct | `Bo_relational_domain_poly] option
 
 val buck : bool
+
+val buck_blacklist : string option
 
 val buck_build_args : string list
 
@@ -259,6 +259,8 @@ val buck_out : string option
 val bufferoverrun : bool
 
 val capture : bool
+
+val capture_blacklist : string option
 
 val captured_dir : string
 (** directory where the results of the capture phase are stored *)
