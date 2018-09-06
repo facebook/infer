@@ -9,19 +9,24 @@ open! IStd
 (* Make sure we cannot create new issue types other than by calling [from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
 module Unsafe : sig
-  type t = private {unique_id: string; mutable enabled: bool; mutable hum: string}
+  type t = private
+    {unique_id: string; mutable enabled: bool; mutable hum: string; mutable doc_url: string option}
   [@@deriving compare]
 
   val equal : t -> t -> bool
 
-  val from_string : ?enabled:bool -> ?hum:string -> string -> t
+  val from_string : ?enabled:bool -> ?hum:string -> ?doc_url:string -> string -> t
 
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
 end = struct
   module T = struct
-    type t = {unique_id: string; mutable enabled: bool; mutable hum: string}
+    type t =
+      { unique_id: string
+      ; mutable enabled: bool
+      ; mutable hum: string
+      ; mutable doc_url: string option }
 
     let compare {unique_id= id1} {unique_id= id2} = String.compare id1 id2
 
@@ -51,14 +56,15 @@ end = struct
         2., but issues of type 2. have not yet been defined. Thus, we record only there [enabled]
         status definitely. The [hum]an-readable description can be updated when we encounter the
         definition of the issue type, eg in AL. *)
-  let from_string ?(enabled = true) ?hum:hum0 unique_id =
+  let from_string ?(enabled = true) ?hum:hum0 ?doc_url unique_id =
     let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
-    let issue = {unique_id; enabled; hum} in
+    let issue = {unique_id; enabled; hum; doc_url} in
     try
       let old = IssueSet.find issue !all_issues in
       (* update human-readable string in case it was supplied this time, but keep the previous
            value of enabled (see doc comment) *)
       if Option.is_some hum0 then old.hum <- hum ;
+      if Option.is_some doc_url then old.doc_url <- doc_url ;
       old
     with Caml.Not_found ->
       all_issues := IssueSet.add issue !all_issues ;

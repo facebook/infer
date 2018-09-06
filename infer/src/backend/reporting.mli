@@ -12,7 +12,6 @@ open! IStd
 type log_t =
      ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string
-  -> ?doc_url:string
   -> ?access:string
   -> ?extras:Jsonbug_t.extra
   -> exn
@@ -38,7 +37,6 @@ val log_frontend_issue :
   -> node_key:Procdesc.NodeKey.t
   -> ltr:Errlog.loc_trace
   -> linters_def_file:string option
-  -> doc_url:string option
   -> exn
   -> unit
 (** Report a frontend issue of a given kind in the given error log. *)

@@ -79,7 +79,9 @@ exception Eradicate of IssueType.t * Localise.error_desc
 
 exception Checkers of IssueType.t * Localise.error_desc
 
-exception Frontend_warning of (string * string option) * Localise.error_desc * Logging.ocaml_pos
+exception
+  Frontend_warning of
+    (string * string option * string option) * Localise.error_desc * Logging.ocaml_pos
 
 exception Inherently_dangerous_function of Localise.error_desc
 

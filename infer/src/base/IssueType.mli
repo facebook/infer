@@ -8,7 +8,8 @@
 open! IStd
 
 (** type of string used for localisation *)
-type t = private {unique_id: string; mutable enabled: bool; mutable hum: string}
+type t = private
+  {unique_id: string; mutable enabled: bool; mutable hum: string; mutable doc_url: string option}
 [@@deriving compare]
 
 val equal : t -> t -> bool
@@ -19,7 +20,7 @@ val all_issues : unit -> t list
 val pp : Format.formatter -> t -> unit
 (** pretty print a localised string *)
 
-val from_string : ?enabled:bool -> ?hum:string -> string -> t
+val from_string : ?enabled:bool -> ?hum:string -> ?doc_url:string -> string -> t
 (** create from an ordinary string *)
 
 val set_enabled : t -> bool -> unit

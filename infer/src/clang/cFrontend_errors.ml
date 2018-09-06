@@ -444,7 +444,10 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in
-  let exn = Exceptions.Frontend_warning ((issue_desc.id, issue_desc.name), err_desc, __POS__) in
+  let exn =
+    Exceptions.Frontend_warning
+      ((issue_desc.id, issue_desc.name, issue_desc.doc_url), err_desc, __POS__)
+  in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
   let key_str =
     match node with
@@ -455,7 +458,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
   in
   let node_key = Procdesc.NodeKey.of_frontend_node_key key_str in
   Reporting.log_frontend_issue procname issue_desc.severity errlog exn ~loc:issue_desc.loc
-    ~ltr:trace ~node_key ~linters_def_file ~doc_url:issue_desc.doc_url
+    ~ltr:trace ~node_key ~linters_def_file
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc)
