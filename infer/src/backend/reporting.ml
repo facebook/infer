@@ -53,11 +53,11 @@ let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
   match Summary.get proc_name with
   | Some summary ->
       let node =
-        let node = match node with None -> State.get_node () | Some node -> node in
+        let node = match node with None -> State.get_node_exn () | Some node -> node in
         Errlog.BackendNode {node}
       in
       let session = State.get_session () in
-      let loc = match loc with None -> State.get_loc () | Some loc -> loc in
+      let loc = match loc with None -> State.get_loc_exn () | Some loc -> loc in
       let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
       log_issue_from_summary severity summary ~node ~session ~loc ~ltr exn
   | None ->
@@ -85,9 +85,9 @@ let log_issue_external procname severity ~loc ~ltr ?access issue_type error_mess
 
 
 let log_error_using_state summary exn =
-  let node = Errlog.BackendNode {node= State.get_node ()} in
+  let node = Errlog.BackendNode {node= State.get_node_exn ()} in
   let session = State.get_session () in
-  let loc = State.get_loc () in
+  let loc = State.get_loc_exn () in
   let ltr = State.get_loc_trace () in
   log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr ?access:None exn
 

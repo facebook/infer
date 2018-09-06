@@ -883,7 +883,7 @@ let check_atom tenv prop a0 =
   if Config.smt_output then (
     let key = get_smt_key a prop_no_fp in
     let key_filename =
-      let source = (State.get_loc ()).file in
+      let source = (State.get_loc_exn ()).file in
       DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) [key ^ ".cns"]
     in
     let outc = Out_channel.create (DB.filename_to_string key_filename) in

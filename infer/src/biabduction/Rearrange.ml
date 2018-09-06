@@ -140,7 +140,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         | [] ->
             ([], Sil.Earray (len, [], inst), t)
         | Sil.Off_index e :: off' ->
-            bounds_check tenv pname orig_prop len e (State.get_loc ()) ;
+            bounds_check tenv pname orig_prop len e (State.get_loc_exn ()) ;
             let atoms', se', res_t' =
               create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
             in
@@ -269,7 +269,7 @@ let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp
   | ( Off_index e :: off'
     , Sil.Earray (len, esel, inst_arr)
     , Tarray {elt= typ'; length= len_for_typ'; stride} ) -> (
-      bounds_check tenv pname orig_prop len e (State.get_loc ()) ;
+      bounds_check tenv pname orig_prop len e (State.get_loc_exn ()) ;
       match List.find ~f:(fun (e', _) -> Exp.equal e e') esel with
       | Some (_, se') ->
           let atoms_se_typ_list' =
@@ -452,7 +452,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
       let deref_str = Localise.deref_str_dangling None in
       let err_desc =
-        Errdesc.explain_dereference pname tenv deref_str orig_prop (State.get_loc ())
+        Errdesc.explain_dereference pname tenv deref_str orig_prop (State.get_loc_exn ())
       in
       raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
@@ -892,7 +892,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           false
     in
     let warn accessed_fld guarded_by_str =
-      let loc = State.get_loc () in
+      let loc = State.get_loc_exn () in
       let err_desc = Localise.desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc in
       let exn = Exceptions.Unsafe_guarded_by_access (err_desc, __POS__) in
       Reporting.log_issue_deprecated_using_state Exceptions.Error pname exn
@@ -1336,7 +1336,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
         && not (Prover.check_type_size_leq typ_from_instr typ_of_object)
       then
         let deref_str = Localise.deref_str_pointer_size_mismatch typ_from_instr typ_of_object in
-        let loc = State.get_loc () in
+        let loc = State.get_loc_exn () in
         let exn =
           Exceptions.Pointer_size_mismatch
             (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
@@ -1630,7 +1630,9 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   match attribute_opt with
   | Some (Apred (Adangling dk, _)) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in
-      let err_desc = Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc ()) in
+      let err_desc =
+        Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc_exn ())
+      in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
   | Some (Apred (Aundef _, _)) ->
       ()
@@ -1670,7 +1672,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     (* when e is a temp var, try to find the pvar defining e*)
     match e with
     | Exp.Var id -> (
-      match Errdesc.find_ident_assignment (State.get_node ()) id with
+      match Errdesc.find_ident_assignment (State.get_node_exn ()) id with
       | Some (_, e') ->
           e'
       | None ->
@@ -1682,7 +1684,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     (* Exp called in the block's function call*)
     match State.get_instr () with
     | Some (Sil.Call (_, Exp.Var id, _, _, _)) ->
-        Errdesc.find_ident_assignment (State.get_node ()) id
+        Errdesc.find_ident_assignment (State.get_node_exn ()) id
     | _ ->
         None
   in
@@ -1761,7 +1763,7 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   Prop.d_prop prop ;
   L.d_ln () ;
   L.d_ln () ;
-  if report_deref_errors then check_dereference_error tenv pdesc prop nlexp (State.get_loc ()) ;
+  if report_deref_errors then check_dereference_error tenv pdesc prop nlexp (State.get_loc_exn ()) ;
   let pname = Procdesc.get_proc_name pdesc in
   let prop' =
     match pname with

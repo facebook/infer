@@ -462,8 +462,8 @@ let find_typ_without_ptr prop pvar =
     If there is an alloc attribute, print the function call and line number. *)
 let explain_leak tenv hpred prop alloc_att_opt bucket =
   let instro = State.get_instr () in
-  let loc = State.get_loc () in
-  let node = State.get_node () in
+  let loc = State.get_loc_exn () in
+  let node = State.get_node_exn () in
   let node_instrs = Procdesc.Node.get_instrs node in
   let hpred_typ_opt = find_hpred_typ hpred in
   let value_str_from_pvars_vpath pvars vpath =
@@ -513,7 +513,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
           L.d_str "explain_leak: current instruction is Nullify for pvar " ;
           Pvar.d pvar ;
           L.d_ln () ) ;
-        match exp_lv_dexp tenv (State.get_node ()) (Exp.Lvar pvar) with
+        match exp_lv_dexp tenv (State.get_node_exn ()) (Exp.Lvar pvar) with
         | Some de when not (DExp.has_tmp_var de) ->
             Some (DExp.to_string de)
         | _ ->
@@ -989,7 +989,7 @@ let explain_access_ proc_name tenv ?(use_buckets = false) ?(outermost_array = fa
     | _ ->
         None
   in
-  let node = State.get_node () in
+  let node = State.get_node_exn () in
   match find_exp_dereferenced () with
   | None ->
       if verbose then L.d_strln "_explain_access: find_exp_dereferenced returned None" ;
@@ -1041,8 +1041,8 @@ let dexp_apply_pvar_off dexp pvar_off =
 (** Produce a description of the nth parameter of the function call, if the current instruction
     is a function call with that parameter *)
 let explain_nth_function_parameter proc_name tenv use_buckets deref_str prop n pvar_off =
-  let node = State.get_node () in
-  let loc = State.get_loc () in
+  let node = State.get_node_exn () in
+  let loc = State.get_loc_exn () in
   match State.get_instr () with
   | Some (Sil.Call (_, _, args, _, _)) -> (
     try

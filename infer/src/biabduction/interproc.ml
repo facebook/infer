@@ -283,7 +283,7 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then (
-    Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@." ;
+    Errdesc.warning_err (State.get_loc_exn ()) "Propagating Divergence@." ;
     let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
     let diverging_states = State.get_diverging_states_node () in
     let prop_incons =

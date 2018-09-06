@@ -91,12 +91,12 @@ let get_tenv exe_env proc_name =
       | Some tenv ->
           tenv
       | None ->
-          let loc = State.get_loc () in
+          let loc = State.get_loc_exn () in
           L.(die InternalError)
             "get_tenv: tenv not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
             SourceFile.pp loc.Location.file Location.pp loc )
     | None ->
-        let loc = State.get_loc () in
+        let loc = State.get_loc_exn () in
         L.(die InternalError)
           "get_tenv: file_data not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
           SourceFile.pp loc.Location.file Location.pp loc )

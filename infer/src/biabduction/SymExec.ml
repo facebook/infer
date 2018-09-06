@@ -416,14 +416,16 @@ let check_constant_string_dereference lexp =
 let check_arith_norm_exp tenv pname exp prop =
   match Attribute.find_arithmetic_problem tenv (State.get_path_pos ()) prop exp with
   | Some (Attribute.Div0 div), prop' ->
-      let desc = Errdesc.explain_divide_by_zero tenv div (State.get_node ()) (State.get_loc ()) in
+      let desc =
+        Errdesc.explain_divide_by_zero tenv div (State.get_node_exn ()) (State.get_loc_exn ())
+      in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn ;
       (Prop.exp_normalize_prop tenv prop exp, prop')
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
-        Errdesc.explain_unary_minus_applied_to_unsigned_expression tenv e typ (State.get_node ())
-          (State.get_loc ())
+        Errdesc.explain_unary_minus_applied_to_unsigned_expression tenv e typ
+          (State.get_node_exn ()) (State.get_loc_exn ())
       in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
       Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn ;
@@ -480,8 +482,8 @@ let check_already_dereferenced tenv pname cond prop =
   match dereferenced_line with
   | Some (id, (n, _)) ->
       let desc =
-        Errdesc.explain_null_test_after_dereference tenv (Exp.Var id) (State.get_node ()) n
-          (State.get_loc ())
+        Errdesc.explain_null_test_after_dereference tenv (Exp.Var id) (State.get_node_exn ()) n
+          (State.get_loc_exn ())
       in
       let exn = Exceptions.Null_test_after_dereference (desc, __POS__) in
       Reporting.log_issue_deprecated_using_state Exceptions.Warning pname exn
@@ -1299,7 +1301,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
           in
           match Prop.exp_normalize_prop tenv Prop.prop_emp cond with
           | Exp.Const (Const.Cint i) when report_condition_always_true_false i ->
-              let node = State.get_node () in
+              let node = State.get_node_exn () in
               let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
               let exn =
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__)
@@ -1870,7 +1872,7 @@ and proc_call ?dynamic_dispatch exe_env callee_summary
     | (e, t_e) :: etl', _ :: tl' ->
         (e, t_e) :: comb etl' tl'
     | _, [] ->
-        Errdesc.warning_err (State.get_loc ())
+        Errdesc.warning_err (State.get_loc_exn ())
           "likely use of variable-arguments function, or function prototype missing@." ;
         L.d_warning "likely use of variable-arguments function, or function prototype missing" ;
         L.d_ln () ;
@@ -1961,7 +1963,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
         let instr_is_abstraction = function Sil.Abstract _ -> true | _ -> false in
         Instrs.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
       in
-      let curr_node = State.get_node () in
+      let curr_node = State.get_node_exn () in
       match ProcCfg.Exceptional.Node.kind curr_node with
       | Procdesc.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
           (* don't check for leaks in prune nodes, unless there is abstraction anyway,*)

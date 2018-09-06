@@ -31,7 +31,7 @@ type t =
   ; mutable diverging_states_proc: Paths.PathSet.t
         (** Diverging states since the last reset for the procedure *)
   ; mutable last_instr: Sil.instr option  (** Last instruction seen *)
-  ; mutable last_node: Procdesc.Node.t  (** Last node seen *)
+  ; mutable last_node: Procdesc.Node.t option  (** Last node seen *)
   ; mutable last_path: (Paths.Path.t * PredSymb.path_pos option) option  (** Last path seen *)
   ; mutable last_prop_tenv_pdesc: (Prop.normal Prop.t * Tenv.t * Procdesc.t) option
         (** Last prop,tenv,pdesc seen *)
@@ -42,7 +42,7 @@ let initial () =
   { diverging_states_node= Paths.PathSet.empty
   ; diverging_states_proc= Paths.PathSet.empty
   ; last_instr= None
-  ; last_node= Procdesc.Node.dummy None
+  ; last_node= None
   ; last_path= None
   ; last_prop_tenv_pdesc= None
   ; last_session= 0
@@ -84,15 +84,15 @@ let get_diverging_states_proc () = !gs.diverging_states_proc
 
 let get_instr () = !gs.last_instr
 
-let get_loc () =
+let get_node_exn () = Option.value_exn !gs.last_node
+
+let get_loc_exn () =
   match !gs.last_instr with
   | Some instr ->
       Sil.instr_get_loc instr
   | None ->
-      Procdesc.Node.get_loc !gs.last_node
+      get_node_exn () |> Procdesc.Node.get_loc
 
-
-let get_node () = !gs.last_node
 
 (** normalize the list of instructions by renaming let-bound ids *)
 let instrs_normalize instrs =
@@ -159,17 +159,15 @@ let mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
     find_duplicate_nodes
 
 
-let get_node_id () = Procdesc.Node.get_id !gs.last_node
-
 let get_inst_update pos =
-  let loc = get_loc () in
+  let loc = get_loc_exn () in
   Sil.inst_update loc pos
 
 
 let get_path () =
   match !gs.last_path with
   | None ->
-      (Paths.Path.start !gs.last_node, None)
+      (Paths.Path.start (get_node_exn ()), None)
   | Some (path, pos_opt) ->
       (path, pos_opt)
 
@@ -220,7 +218,7 @@ let get_path_pos () =
     | None ->
         Typ.Procname.from_string_c_fun "unknown_procedure"
   in
-  let nid = get_node_id () in
+  let nid = Procdesc.Node.get_id (get_node_exn ()) in
   (pname, (nid :> int))
 
 
@@ -239,13 +237,13 @@ let mark_execution_end node =
 
 
 let mark_instr_ok () =
-  let fs = get_failure_stats (get_node ()) in
+  let fs = get_failure_stats (get_node_exn ()) in
   fs.instr_ok <- fs.instr_ok + 1
 
 
 let mark_instr_fail exn =
-  let loc = get_loc () in
-  let node = get_node () in
+  let loc = get_loc_exn () in
+  let node = get_node_exn () in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats node in
@@ -285,7 +283,7 @@ let set_prop_tenv_pdesc prop tenv pdesc = !gs.last_prop_tenv_pdesc <- Some (prop
 
 let set_node (node : Procdesc.Node.t) =
   !gs.last_instr <- None ;
-  !gs.last_node <- node
+  !gs.last_node <- Some node
 
 
 let set_session (session : int) = !gs.last_session <- session

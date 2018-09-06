@@ -31,7 +31,7 @@ let mk_empty_array len = Sil.Earray (len, [], Sil.inst_none)
    it requires that the function is called with the array allocated. If not infer
    return a null pointer deref *)
 let mk_empty_array_rearranged len =
-  Sil.Earray (len, [], Sil.inst_rearrange true (State.get_loc ()) (State.get_path_pos ()))
+  Sil.Earray (len, [], Sil.inst_rearrange true (State.get_loc_exn ()) (State.get_path_pos ()))
 
 
 let extract_array_type typ =

@@ -28,13 +28,13 @@ val get_inst_update : PredSymb.path_pos -> Sil.inst
 val get_instr : unit -> Sil.instr option
 (** Get last instruction seen in symbolic execution *)
 
-val get_loc : unit -> Location.t
+val get_loc_exn : unit -> Location.t
 (** Get last location seen in symbolic execution *)
 
 val get_loc_trace : unit -> Errlog.loc_trace
 (** Get the location trace of the last path seen in symbolic execution *)
 
-val get_node : unit -> Procdesc.Node.t
+val get_node_exn : unit -> Procdesc.Node.t
 (** Get last node seen in symbolic execution *)
 
 val get_normalized_pre :

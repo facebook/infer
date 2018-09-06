@@ -12,7 +12,7 @@ let desc_retain_cycle tenv (cycle : RetainCyclesType.t) =
   Logging.d_strln "Proposition with retain cycle:" ;
   let do_edge index_ edge =
     let index = index_ + 1 in
-    let node = State.get_node () in
+    let node = State.get_node_exn () in
     let from_exp_str edge_obj =
       let type_str =
         let typ_str = Typ.to_string edge_obj.rc_from.rc_node_typ in
@@ -229,7 +229,7 @@ let exn_retain_cycle tenv cycle =
     Utils.create_dir rc_dotty_dir ;
     let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
     RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
-  let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) (Some cycle_dotty) in
+  let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc_exn ()) (Some cycle_dotty) in
   Exceptions.Retain_cycle (desc, __POS__)
 
 
