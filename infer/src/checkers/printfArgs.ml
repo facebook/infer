@@ -182,8 +182,13 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
             check_type_names cl (printf.format_pos + 1) pn (format_string_type_names fmt 0)
               (fixed_nvar_type_names @ vararg_ivar_type_names)
         | None ->
-            Checkers.ST.report_error tenv proc_name proc_desc IssueType.checkers_printf_args cl
-              "Format string must be string literal"
+            if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
+              let exn =
+                Exceptions.Checkers
+                  ( IssueType.checkers_printf_args
+                  , Localise.verbatim_desc "Format string must be string literal" )
+              in
+              Reporting.log_warning summary ~loc:cl exn
       with e ->
         L.internal_error "%s Exception when analyzing %s: %s@."
           IssueType.checkers_printf_args.unique_id

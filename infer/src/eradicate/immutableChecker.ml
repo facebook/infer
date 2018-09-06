@@ -34,8 +34,8 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
                 (Typ.Procname.to_simplified_string curr_pname)
                 Typ.Name.pp name_given Typ.Name.pp name_expected
             in
-            Checkers.ST.report_error tenv curr_pname curr_pdesc IssueType.checkers_immutable_cast
-              loc description
+            EradicateCheckers.report_error tenv curr_pname curr_pdesc
+              IssueType.checkers_immutable_cast loc description
       | _ ->
           () )
   | None ->

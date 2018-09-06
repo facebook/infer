@@ -29,7 +29,7 @@ let get_field_annotation tenv fn typ =
       Some (t, ia')
 
 
-let report_error tenv = TypeErr.report_error tenv (Checkers.ST.report_error tenv)
+let report_error tenv = TypeErr.report_error tenv (EradicateCheckers.report_error tenv)
 
 let explain_expr tenv node e =
   match Errdesc.exp_rv_dexp tenv node e with
