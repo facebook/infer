@@ -259,10 +259,6 @@ type log_issue =
   -> ?node:Procdesc.Node.t
   -> ?loc:Location.t
   -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string
-  -> ?doc_url:string
-  -> ?access:string
-  -> ?extras:Jsonbug_t.extra
   -> exn
   -> unit
 

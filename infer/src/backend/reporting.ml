@@ -56,8 +56,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?linters_de
       ~linters_def_file ~doc_url ~access ~extras exn
 
 
-let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr ?linters_def_file ?doc_url
-    ?access ?extras:_ exn =
+let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
   match Summary.get proc_name with
   | Some summary ->
       let node =
@@ -67,8 +66,7 @@ let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr ?linters
       let session = State.get_session () in
       let loc = match loc with None -> State.get_loc () | Some loc -> loc in
       let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-      log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?linters_def_file ?doc_url
-        ?access exn
+      log_issue_from_summary severity summary ~node ~session ~loc ~ltr exn
   | None ->
       L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this \
