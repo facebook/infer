@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-type log_t = ?ltr:Errlog.loc_trace -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
+type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
     ~access ~extras exn =
@@ -26,7 +26,7 @@ let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr exn =
     ~access:None ~extras:None exn
 
 
-let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?access ?extras exn =
+let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn =
   let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
   let is_java_generated_method =
@@ -46,7 +46,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?access ?ex
     let err_log = Summary.get_err_log summary in
     let clang_method_kind = Some attrs.clang_method_kind in
     log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-      ~access ~extras exn
+      ~access:None ~extras exn
 
 
 let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
@@ -67,9 +67,8 @@ let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?access ?extras exn =
-  log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr ?access
-    ?extras exn
+let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?extras exn =
+  log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr ?extras exn
 
 
 let log_error = log_issue_from_summary_simplified Exceptions.Error
@@ -89,7 +88,7 @@ let log_error_using_state summary exn =
   let session = State.get_session () in
   let loc = State.get_loc_exn () in
   let ltr = State.get_loc_trace () in
-  log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr ?access:None exn
+  log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr exn
 
 
 let is_suppressed ?(field_name = None) tenv proc_desc kind =
