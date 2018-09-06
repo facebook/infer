@@ -97,10 +97,6 @@ let stmt_single_checkers_list =
 
 let stmt_checkers_list = List.map ~f:single_to_multi stmt_single_checkers_list
 
-(* List of checkers that will be filled after parsing them from
-   input the linter def files *)
-let parsed_linters = ref []
-
 let evaluate_place_holder context ph an =
   match ph with
   | "%ivar_name%" ->
@@ -508,7 +504,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_typ
 
 
 (* We decouple the hardcoded checkers from the parsed ones *)
-let invoke_set_of_checkers_on_node context an =
+let invoke_set_of_checkers_on_node parsed_linters context an =
   ( match an with
   | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) ->
       (* Don't run parsed linters on TranslationUnitDecl node.
@@ -516,5 +512,5 @@ let invoke_set_of_checkers_on_node context an =
       ()
   | _ ->
       if not CFrontend_config.tableaux_evaluation then
-        invoke_set_of_parsed_checkers_an !parsed_linters context an ) ;
+        invoke_set_of_parsed_checkers_an parsed_linters context an ) ;
   if Config.default_linters then invoke_set_of_hard_coded_checkers_an context an

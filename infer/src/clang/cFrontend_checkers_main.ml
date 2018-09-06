@@ -226,11 +226,11 @@ let get_method_body_opt decl =
         (Clang_ast_proj.get_decl_kind_string decl)
 
 
-let call_tableaux cxt an map_active =
-  if CFrontend_config.tableaux_evaluation then Tableaux.build_valuation an cxt map_active
+let call_tableaux linters cxt an map_active =
+  if CFrontend_config.tableaux_evaluation then Tableaux.build_valuation linters an cxt map_active
 
 
-let rec do_frontend_checks_stmt (context : CLintersContext.context)
+let rec do_frontend_checks_stmt linters (context : CLintersContext.context)
     (map_act : Tableaux.context_linter_map) stmt =
   let open Clang_ast_t in
   let an = Ctl_parser_types.Stmt stmt in
@@ -239,16 +239,16 @@ let rec do_frontend_checks_stmt (context : CLintersContext.context)
   let do_all_checks_on_stmts context map_active stmt =
     ( match stmt with
     | DeclStmt (_, _, decl_list) ->
-        List.iter ~f:(do_frontend_checks_decl context map_active) decl_list
+        List.iter ~f:(do_frontend_checks_decl linters context map_active) decl_list
     | BlockExpr (_, _, _, decl) ->
-        List.iter ~f:(do_frontend_checks_decl context map_active) [decl]
+        List.iter ~f:(do_frontend_checks_decl linters context map_active) [decl]
     | _ ->
         () ) ;
-    do_frontend_checks_stmt context map_active stmt
+    do_frontend_checks_stmt linters context map_active stmt
   in
-  CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+  CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
   (* The map should be visited when we enter the node before visiting children *)
-  let map_active = Tableaux.update_linter_context_map an map_act in
+  let map_active = Tableaux.update_linter_context_map linters an map_act in
   let stmt_context_list =
     match stmt with
     | ObjCAtSynchronizedStmt (_, stmt_list) ->
@@ -279,16 +279,16 @@ let rec do_frontend_checks_stmt (context : CLintersContext.context)
        PointerToDecl are not visited
        during the evaluation of the formula. So we need to visit
        them diring the general visit of the tree. *)
-    do_frontend_checks_via_transition context map_active an CTL.PointerToDecl ;
+    do_frontend_checks_via_transition linters context map_active an CTL.PointerToDecl ;
   List.iter
     ~f:(fun (cxt, stmts) ->
       List.iter ~f:(do_all_checks_on_stmts cxt map_active) stmts ;
-      call_tableaux cxt an map_active )
+      call_tableaux linters cxt an map_active )
     stmt_context_list
 
 
 (* Visit nodes via a transition *)
-and do_frontend_checks_via_transition context map_active an trans =
+and do_frontend_checks_via_transition linters context map_active an trans =
   let succs = CTL.next_state_via_transition an trans in
   List.iter
     ~f:(fun an' ->
@@ -298,20 +298,20 @@ and do_frontend_checks_via_transition context map_active an trans =
         CTL.Debug.pp_transition (Some trans) ;*)
       match an' with
       | Ctl_parser_types.Decl d ->
-          do_frontend_checks_decl context map_active d
+          do_frontend_checks_decl linters context map_active d
       | Ctl_parser_types.Stmt st ->
-          do_frontend_checks_stmt context map_active st )
+          do_frontend_checks_stmt linters context map_active st )
     succs
 
 
-and do_frontend_checks_decl (context : CLintersContext.context)
+and do_frontend_checks_decl linters (context : CLintersContext.context)
     (map_act : Tableaux.context_linter_map) decl =
   let open Clang_ast_t in
   if CAst_utils.is_implicit_decl decl then () (* do not analyze implicit declarations *)
   else
     let an = Ctl_parser_types.Decl decl in
     (* The map should be visited when we enter the node before visiting children *)
-    let map_active = Tableaux.update_linter_context_map an map_act in
+    let map_active = Tableaux.update_linter_context_map linters an map_act in
     match decl with
     | FunctionDecl _
     | CXXMethodDecl _
@@ -321,39 +321,39 @@ and do_frontend_checks_decl (context : CLintersContext.context)
     | BlockDecl _
     | ObjCMethodDecl _ ->
         let context' = CLintersContext.update_current_method context decl in
-        CFrontend_errors.invoke_set_of_checkers_on_node context' an ;
+        CFrontend_errors.invoke_set_of_checkers_on_node linters context' an ;
         (* We need to visit explicitly nodes reachable via Parameters transitions
       because they won't be visited during the evaluation of the formula *)
-        do_frontend_checks_via_transition context' map_active an CTL.Parameters ;
+        do_frontend_checks_via_transition linters context' map_active an CTL.Parameters ;
         ( match get_method_body_opt decl with
         | Some stmt ->
-            do_frontend_checks_stmt context' map_active stmt
+            do_frontend_checks_stmt linters context' map_active stmt
         | None ->
             () ) ;
-        call_tableaux context' an map_active
+        call_tableaux linters context' an map_active
     | ObjCImplementationDecl (_, _, decls, _, _) | ObjCInterfaceDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_class= Some decl} in
-        List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
-        call_tableaux context' an map_active
+        List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
+        call_tableaux linters context' an map_active
     | ObjCCategoryImplDecl (_, _, decls, _, _) | ObjCCategoryDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_category= Some decl} in
-        List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
-        call_tableaux context' an map_active
+        List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
+        call_tableaux linters context' an map_active
     | ObjCProtocolDecl (_, _, decls, _, _) ->
-        CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
         let context' = {context with current_objc_protocol= Some decl} in
-        List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
-        call_tableaux context' an map_active
+        List.iter ~f:(do_frontend_checks_decl linters context' map_active) decls ;
+        call_tableaux linters context' an map_active
     | _ ->
-        CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        CFrontend_errors.invoke_set_of_checkers_on_node linters context an ;
         ( match Clang_ast_proj.get_decl_context_tuple decl with
         | Some (decls, _) ->
-            List.iter ~f:(do_frontend_checks_decl context map_active) decls
+            List.iter ~f:(do_frontend_checks_decl linters context map_active) decls
         | None ->
             () ) ;
-        call_tableaux context an map_active
+        call_tableaux linters context an map_active
 
 
 let context_with_ck_set context decl_list =
@@ -379,27 +379,27 @@ let do_frontend_checks (trans_unit_ctx : CFrontend_config.translation_unit_conte
     (Pp.comma_seq Format.pp_print_string)
     linters_files ;
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file ;
-  let parsed_linters = parse_ctl_files linters_files in
-  let filtered_parsed_linters =
+  let parsed_linters =
+    let parsed_linters = parse_ctl_files linters_files in
     CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
   in
-  CFrontend_errors.parsed_linters := filtered_parsed_linters ;
   let source_file = trans_unit_ctx.CFrontend_config.source_file in
   L.(debug Linters Medium)
     "Start linting file %a with rules: @\n%a@\n" SourceFile.pp source_file
-    CFrontend_errors.pp_linters filtered_parsed_linters ;
+    CFrontend_errors.pp_linters parsed_linters ;
   if Config.print_active_checkers then
     L.progress "Linting file %a, active linters: @\n%a@\n" SourceFile.pp source_file
-      CFrontend_errors.pp_linters filtered_parsed_linters ;
+      CFrontend_errors.pp_linters parsed_linters ;
   Tableaux.init_global_nodes_valuation () ;
   match ast with
   | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _) ->
       let context = context_with_ck_set (CLintersContext.empty trans_unit_ctx) decl_list in
       let allowed_decls = List.filter ~f:(Tableaux.is_decl_allowed context) decl_list in
       (* We analyze the top level and then all the allowed declarations *)
-      let active_map : Tableaux.context_linter_map = Tableaux.init_active_map () in
-      CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast) ;
-      List.iter ~f:(do_frontend_checks_decl context active_map) allowed_decls ;
+      let active_map : Tableaux.context_linter_map = Tableaux.init_active_map parsed_linters in
+      CFrontend_errors.invoke_set_of_checkers_on_node parsed_linters context
+        (Ctl_parser_types.Decl ast) ;
+      List.iter ~f:(do_frontend_checks_decl parsed_linters context active_map) allowed_decls ;
       IssueLog.store Config.lint_issues_dir_name source_file ;
       L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
       CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file

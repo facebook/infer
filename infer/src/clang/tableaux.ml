@@ -61,12 +61,12 @@ let is_decl_allowed lcxt decl =
 let is_in_formula phi = match phi with CTL.InNode _ -> true | _ -> false
 
 (* Map initialized with false for InNode formula and true for others  *)
-let init_active_map () =
+let init_active_map parsed_linters =
   List.fold
     ~f:(fun acc_map linter ->
       let not_inf = not (is_in_formula linter.CFrontend_errors.condition) in
       ClosureHashtbl.add linter.CFrontend_errors.condition not_inf acc_map )
-    ~init:ClosureHashtbl.empty !CFrontend_errors.parsed_linters
+    ~init:ClosureHashtbl.empty parsed_linters
 
 
 (* update the context map for formulae of type InNode(tl, phi). When we
@@ -74,7 +74,7 @@ let init_active_map () =
    when we are in a node that is a discendant of a node in tl so that is make
    sense to keep evaluation phi. Otherwise we can skip the evaluation of phi and
    its subformulae *)
-let update_linter_context_map an linter_context_map =
+let update_linter_context_map parsed_linters an linter_context_map =
   let do_one_linter acc_map linter =
     let phi = linter.CFrontend_errors.condition in
     match phi with
@@ -91,7 +91,7 @@ let update_linter_context_map an linter_context_map =
     | _ ->
         acc_map
   in
-  List.fold ~f:do_one_linter ~init:linter_context_map !CFrontend_errors.parsed_linters
+  List.fold ~f:do_one_linter ~init:linter_context_map parsed_linters
 
 
 (* Takes phi and transform it by an equivalent formula containing
@@ -314,7 +314,7 @@ let skip_evaluation_InNode_formula an phi =
 
 
 (* Build valuation, i.e. set of valid subformula for a pair (node, checker) *)
-let build_valuation an lcxt linter_map_context =
+let build_valuation parsed_linters an lcxt linter_map_context =
   let open CFrontend_errors in
   let node_pointer = Ctl_parser_types.ast_node_pointer an in
   (*L.(debug Linters Medium)
@@ -343,4 +343,4 @@ let build_valuation an lcxt linter_map_context =
         CIssue.should_run_check linter.issue_desc.CIssue.mode
         && check_linter_map linter_map_context linter.condition
       then do_one_check linter )
-    !parsed_linters
+    parsed_linters

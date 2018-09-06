@@ -25,18 +25,14 @@ val pp_linters : Format.formatter -> linter list -> unit
 
 type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
 
-(* Map a path name to a list of paths.  *)
-
+(** Map a path name to a list of paths.  *)
 type paths_map = ALVar.t list ALVar.VarMap.t
 
-(* List of checkers that will be filled after parsing them from a file *)
-
-val parsed_linters : linter list ref
-
 (* Module for warnings detected at translation time by the frontend *)
-(* Run frontend checkers on an AST node *)
 
-val invoke_set_of_checkers_on_node : CLintersContext.context -> Ctl_parser_types.ast_node -> unit
+val invoke_set_of_checkers_on_node :
+  linter list -> CLintersContext.context -> Ctl_parser_types.ast_node -> unit
+(** Run frontend checkers on an AST node *)
 
 val build_macros_map : CTL.clause list -> macros_map
 
