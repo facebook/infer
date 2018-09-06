@@ -266,7 +266,7 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
       let node_id, node_key =
         match node with
         | UnknownNode ->
-            (0, Some Procdesc.NodeKey.dummy)
+            (0, None)
         | FrontendNode {node_key} ->
             (0, Some node_key)
         | BackendNode {node} ->
