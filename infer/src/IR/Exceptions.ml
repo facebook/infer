@@ -79,7 +79,8 @@ exception Eradicate of IssueType.t * Localise.error_desc
 exception Field_not_null_checked of Localise.error_desc * L.ocaml_pos
 
 exception
-  Frontend_warning of (string * string option * string option) * Localise.error_desc * L.ocaml_pos
+  Frontend_warning of
+    (string * string option * string option * string option) * Localise.error_desc * L.ocaml_pos
 
 exception Checkers of IssueType.t * Localise.error_desc
 
@@ -321,8 +322,8 @@ let recognize_exception exn =
       ; visibility= Exn_user
       ; severity= Some Warning
       ; category= Nocat }
-  | Frontend_warning ((name, hum, doc_url), desc, ocaml_pos) ->
-      { name= IssueType.from_string name ?hum ?doc_url
+  | Frontend_warning ((name, hum, doc_url, linters_def_file), desc, ocaml_pos) ->
+      { name= IssueType.from_string name ?hum ?doc_url ?linters_def_file
       ; description= desc
       ; ocaml_pos= Some ocaml_pos
       ; visibility= Exn_user

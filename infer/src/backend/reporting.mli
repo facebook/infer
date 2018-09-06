@@ -9,13 +9,7 @@ open! IStd
 
 (** Type of functions to report issues to the error_log in a spec. *)
 
-type log_t =
-     ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string
-  -> ?access:string
-  -> ?extras:Jsonbug_t.extra
-  -> exn
-  -> unit
+type log_t = ?ltr:Errlog.loc_trace -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 val log_issue_deprecated_using_state :
      Exceptions.severity
@@ -36,7 +30,6 @@ val log_frontend_issue :
   -> loc:Location.t
   -> node_key:Procdesc.NodeKey.t
   -> ltr:Errlog.loc_trace
-  -> linters_def_file:string option
   -> exn
   -> unit
 (** Report a frontend issue of a given kind in the given error log. *)

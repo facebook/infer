@@ -8,31 +8,25 @@
 open! IStd
 module L = Logging
 
-type log_t =
-     ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string
-  -> ?access:string
-  -> ?extras:Jsonbug_t.extra
-  -> exn
-  -> unit
+type log_t = ?ltr:Errlog.loc_trace -> ?access:string -> ?extras:Jsonbug_t.extra -> exn -> unit
 
 let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-    ~linters_def_file ~access ~extras exn =
+    ~access ~extras exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let doc_url = issue_type.doc_url in
+    let linters_def_file = issue_type.linters_def_file in
     Errlog.log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
       ~linters_def_file ~doc_url ~access ~extras exn
 
 
-let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr ~linters_def_file exn =
+let log_frontend_issue procname severity errlog ~loc ~node_key ~ltr exn =
   let node = Errlog.FrontendNode {node_key} in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~session:0 ~ltr
-    ~linters_def_file ~access:None ~extras:None exn
+    ~access:None ~extras:None exn
 
 
-let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?linters_def_file ?access
-    ?extras exn =
+let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?access ?extras exn =
   let attrs = Summary.get_attributes summary in
   let procname = attrs.proc_name in
   let is_java_generated_method =
@@ -52,7 +46,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?linters_de
     let err_log = Summary.get_err_log summary in
     let clang_method_kind = Some attrs.clang_method_kind in
     log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
-      ~linters_def_file ~access ~extras exn
+      ~access ~extras exn
 
 
 let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
@@ -73,10 +67,9 @@ let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?linters_def_file ?access
-    ?extras exn =
-  log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr
-    ?linters_def_file ?access ?extras exn
+let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?access ?extras exn =
+  log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr ?access
+    ?extras exn
 
 
 let log_error = log_issue_from_summary_simplified Exceptions.Error
@@ -88,7 +81,7 @@ let log_issue_external procname severity ~loc ~ltr ?access issue_type error_mess
   let errlog = IssueLog.get_errlog procname in
   let node = Errlog.UnknownNode in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~session:0 ~ltr
-    ~linters_def_file:None ~access ~extras:None exn
+    ~access ~extras:None exn
 
 
 let log_error_using_state summary exn =
@@ -96,8 +89,7 @@ let log_error_using_state summary exn =
   let session = State.get_session () in
   let loc = State.get_loc () in
   let ltr = State.get_loc_trace () in
-  log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr ?linters_def_file:None
-    ?access:None exn
+  log_issue_from_summary Exceptions.Error summary ~node ~session ~loc ~ltr ?access:None exn
 
 
 let is_suppressed ?(field_name = None) tenv proc_desc kind =
