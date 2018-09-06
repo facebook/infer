@@ -48,8 +48,7 @@ let ml_bucket_symbols =
 
 
 let issues_fields_symbols =
-  [ ("kind", `Issue_field_kind)
-  ; ("bug_type", `Issue_field_bug_type)
+  [ ("bug_type", `Issue_field_bug_type)
   ; ("bucket", `Issue_field_bucket)
   ; ("qualifier", `Issue_field_qualifier)
   ; ("severity", `Issue_field_severity)
@@ -1458,7 +1457,7 @@ and issues_fields =
       ; `Issue_field_line_offset
       ; `Issue_field_bug_type
       ; `Issue_field_bucket
-      ; `Issue_field_kind
+      ; `Issue_field_severity
       ; `Issue_field_bug_trace ]
     ~symbols:issues_fields_symbols ~eq:PolyVariantEqual.( = )
     "Fields to emit with $(b,--issues-tests)"

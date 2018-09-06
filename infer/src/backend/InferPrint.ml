@@ -302,8 +302,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
             Typ.Procname.to_string proc_name
       in
       let bug =
-        { Jsonbug_j.kind= severity
-        ; bug_type
+        { Jsonbug_j.bug_type
         ; qualifier
         ; severity
         ; visibility
@@ -376,8 +375,6 @@ let pp_custom_of_report fmt report fields =
     in
     let pp_field index field =
       match field with
-      | `Issue_field_kind ->
-          Format.fprintf fmt "%s%s" (comma_separator index) issue.kind
       | `Issue_field_bug_type ->
           Format.fprintf fmt "%s%s" (comma_separator index) issue.bug_type
       | `Issue_field_bucket ->
@@ -458,7 +455,7 @@ end
 let pp_text_of_report fmt report =
   let pp_row jsonbug =
     let open Jsonbug_t in
-    F.fprintf fmt "%s:%d: %s: %s %s@\n" jsonbug.file jsonbug.line jsonbug.kind jsonbug.bug_type
+    F.fprintf fmt "%s:%d: %s: %s %s@\n" jsonbug.file jsonbug.line jsonbug.severity jsonbug.bug_type
       jsonbug.qualifier
   in
   List.iter ~f:pp_row report ; F.fprintf fmt "@?"

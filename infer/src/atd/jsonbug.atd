@@ -19,7 +19,6 @@ type extra = {
 }
 
 type jsonbug = {
-  kind : string;
   bug_type : string;
   ?doc_url : string option;
   qualifier : string;

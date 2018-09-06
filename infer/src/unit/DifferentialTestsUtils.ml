@@ -7,14 +7,13 @@
 
 open! IStd
 
-let create_fake_jsonbug ?(kind = "kind") ?(bug_type = "bug_type") ?(qualifier = "qualifier")
+let create_fake_jsonbug ?(bug_type = "bug_type") ?(qualifier = "qualifier")
     ?(severity = "severity") ?(visibility = "visibility") ?(line = 1) ?(column = 1)
     ?(procedure = "procedure") ?(procedure_start_line = 1) ?(file = "file/at/a/certain/path.java")
     ?(bug_trace = []) ?(key = "File|method|TYPE") ?(node_key = Some "1234") ?(hash = "1")
     ?(dotty = None) ?(infer_source_loc = None) ?(linters_def_file = Some "file/at/certain/path.al")
     ?doc_url () : Jsonbug_t.jsonbug =
-  { kind
-  ; bug_type
+  { bug_type
   ; qualifier
   ; severity
   ; visibility
@@ -29,7 +28,7 @@ let create_fake_jsonbug ?(kind = "kind") ?(bug_type = "bug_type") ?(qualifier = 
   ; hash
   ; dotty
   ; infer_source_loc
-  ; bug_type_hum= kind
+  ; bug_type_hum= bug_type
   ; linters_def_file
   ; doc_url
   ; traceview_id= None
