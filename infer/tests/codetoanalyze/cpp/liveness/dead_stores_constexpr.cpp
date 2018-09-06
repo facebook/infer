@@ -17,13 +17,21 @@ void capture_constexpr_good() {
 
 void call_it(void (*f)(void)) { f(); }
 
-void FP_capture_constexpr_good() {
+void capture_constexpr2_good() {
   constexpr int x = 1;
   auto lambda = []() {
     foo(x);
     return;
   };
   call_it(lambda);
+}
+
+void capture_const_bad(const int y) {
+  const int x = y;
+  []() {
+    foo(0);
+    return;
+  }();
 }
 
 // we always assume const exprs are captured in lambdas
