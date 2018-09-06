@@ -94,7 +94,7 @@ module Node : sig
   val d_instrs : sub_instrs:bool -> Sil.instr option -> t -> unit
   (** Dump extended instructions for the node *)
 
-  val dummy : Typ.Procname.t option -> t
+  val dummy : Typ.Procname.t -> t
   (** Create a dummy node *)
 
   val equal : t -> t -> bool

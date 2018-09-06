@@ -65,7 +65,7 @@ module NullifyTransferFunctions = struct
         astate
 
 
-  let cache_node = ref (Procdesc.Node.dummy None)
+  let cache_node = ref (Procdesc.Node.dummy Typ.Procname.Linters_dummy_method)
 
   let cache_instr = ref Sil.skip_instr
 

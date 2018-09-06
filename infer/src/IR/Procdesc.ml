@@ -93,7 +93,7 @@ module Node = struct
     ; kind: nodekind  (** kind of node *)
     ; loc: Location.t  (** location in the source code *)
     ; mutable preds: t list  (** predecessor nodes in the cfg *)
-    ; pname_opt: Typ.Procname.t option  (** name of the procedure the node belongs to *)
+    ; pname: Typ.Procname.t  (** name of the procedure the node belongs to *)
     ; mutable succs: t list  (** successor nodes in the cfg *) }
 
   let exn_handler_kind = Stmt_node ExceptionHandler
@@ -102,13 +102,13 @@ module Node = struct
 
   let throw_kind = Stmt_node Throw
 
-  let dummy pname_opt =
+  let dummy pname =
     { id= 0
     ; dist_exit= None
     ; instrs= Instrs.empty
     ; kind= Skip_node "dummy"
     ; loc= Location.dummy
-    ; pname_opt
+    ; pname
     ; succs= []
     ; preds= []
     ; exn= [] }
@@ -142,14 +142,7 @@ module Node = struct
   let get_exn node = node.exn
 
   (** Get the name of the procedure the node belongs to *)
-  let get_proc_name node =
-    match node.pname_opt with
-    | None ->
-        L.internal_error "get_proc_name: at node %d@\n" node.id ;
-        assert false
-    | Some pname ->
-        pname
-
+  let get_proc_name node = node.pname
 
   (** Get the predecessors of the node *)
   let get_preds node = node.preds
@@ -408,9 +401,9 @@ type t =
   ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
 
 let from_proc_attributes attributes =
-  let pname_opt = Some attributes.ProcAttributes.proc_name in
-  let start_node = Node.dummy pname_opt in
-  let exit_node = Node.dummy pname_opt in
+  let pname = attributes.ProcAttributes.proc_name in
+  let start_node = Node.dummy pname in
+  let exit_node = Node.dummy pname in
   {attributes; nodes= []; nodes_num= 0; start_node; exit_node; loop_heads= None}
 
 
@@ -549,7 +542,7 @@ let create_node_internal pdesc loc kind instrs =
     ; kind
     ; loc
     ; preds= []
-    ; pname_opt= Some pdesc.attributes.proc_name
+    ; pname= pdesc.attributes.proc_name
     ; succs= []
     ; exn= [] }
   in
