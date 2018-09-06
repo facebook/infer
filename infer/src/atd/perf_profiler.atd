@@ -2,6 +2,8 @@ type perf_profiler_item = {
     function_name : string;
     avg_inclusive_cpu_time_ms : float;
     avg_exclusive_cpu_time_ms : float;
+    p90_inclusive_cpu_time_ms : float;
+    p90_exclusive_cpu_time_ms : float;
 }
 
 type perf_profiler = perf_profiler_item list
