@@ -251,7 +251,7 @@ let recognize_exception exn =
       ; severity= None
       ; category= Checker }
   | Dummy_exception desc ->
-      { name= IssueType.from_string "Analysis stops"
+      { name= IssueType.analysis_stops
       ; description= desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
