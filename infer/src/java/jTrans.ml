@@ -313,11 +313,10 @@ let create_callee_attributes tenv program cn ms procname =
   Option.bind ~f (JClasspath.lookup_node cn program)
 
 
-let create_empty_cfg proc_name source_file procdesc =
-  let start_kind = Procdesc.Node.Start_node proc_name in
-  let start_node = Procdesc.create_node procdesc (Location.none source_file) start_kind [] in
-  let exit_kind = Procdesc.Node.Exit_node proc_name in
-  let exit_node = Procdesc.create_node procdesc (Location.none source_file) exit_kind [] in
+let create_empty_cfg source_file procdesc =
+  let location = Location.none source_file in
+  let start_node = Procdesc.create_node procdesc location Procdesc.Node.Start_node [] in
+  let exit_node = Procdesc.create_node procdesc location Procdesc.Node.Exit_node [] in
   Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exit_node] ;
   Procdesc.set_start_node procdesc start_node ;
   Procdesc.set_exit_node procdesc exit_node ;
@@ -346,7 +345,7 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
     in
     Cfg.create_proc_desc icfg.JContext.cfg proc_attributes
   in
-  create_empty_cfg proc_name source_file procdesc
+  create_empty_cfg source_file procdesc
 
 
 let create_native_procdesc source_file program icfg cm proc_name =
@@ -370,7 +369,7 @@ let create_native_procdesc source_file program icfg cm proc_name =
     in
     Cfg.create_proc_desc icfg.JContext.cfg proc_attributes
   in
-  create_empty_cfg proc_name source_file procdesc
+  create_empty_cfg source_file procdesc
 
 
 let create_empty_procdesc source_file program linereader icfg cm proc_name =
@@ -397,7 +396,7 @@ let create_empty_procdesc source_file program linereader icfg cm proc_name =
     ; ret_type= JTransType.return_type program tenv ms }
   in
   let proc_desc = Cfg.create_proc_desc icfg.JContext.cfg proc_attributes in
-  create_empty_cfg proc_name source_file proc_desc
+  create_empty_cfg source_file proc_desc
 
 
 (** Creates a procedure description. *)
@@ -436,10 +435,8 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
       ; ret_type= JTransType.return_type program tenv ms }
     in
     let procdesc = Cfg.create_proc_desc cfg proc_attributes in
-    let start_kind = Procdesc.Node.Start_node proc_name in
-    let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
-    let exit_kind = Procdesc.Node.Exit_node proc_name in
-    let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
+    let start_node = Procdesc.create_node procdesc loc_start Procdesc.Node.Start_node [] in
+    let exit_node = Procdesc.create_node procdesc loc_exit Procdesc.Node.Exit_node [] in
     let exn_kind = Procdesc.Node.exn_sink_kind in
     let exn_node = Procdesc.create_node procdesc loc_exit exn_kind [] in
     JContext.add_exn_node proc_name exn_node ;

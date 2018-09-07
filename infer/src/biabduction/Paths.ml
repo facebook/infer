@@ -481,7 +481,8 @@ end = struct
           match Procdesc.Node.get_kind curr_node with
           | Procdesc.Node.Join_node ->
               () (* omit join nodes from error traces *)
-          | Procdesc.Node.Start_node pname ->
+          | Procdesc.Node.Start_node ->
+              let pname = Procdesc.Node.get_proc_name curr_node in
               let descr = "start of procedure " ^ Typ.Procname.to_simplified_string pname in
               let node_tags = [Errlog.Procedure_start pname] in
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
@@ -507,7 +508,8 @@ end = struct
               in
               let node_tags = [Errlog.Condition is_true_branch] in
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
-          | Procdesc.Node.Exit_node pname ->
+          | Procdesc.Node.Exit_node ->
+              let pname = Procdesc.Node.get_proc_name curr_node in
               let descr = "return from a call to " ^ Typ.Procname.to_string pname in
               let node_tags = [Errlog.Procedure_end pname] in
               trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace

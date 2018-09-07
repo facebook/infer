@@ -136,7 +136,7 @@ module BoundMap = struct
     let compute_node_upper_bound bound_map node =
       let node_id = NodeCFG.Node.id node in
       match Procdesc.Node.get_kind node with
-      | Procdesc.Node.Exit_node _ ->
+      | Procdesc.Node.Exit_node ->
           Node.IdMap.add node_id BasicCost.one bound_map
       | _ -> (
           let exit_state_opt =

@@ -69,8 +69,8 @@ module Node : sig
 
   (** kind of cfg node *)
   type nodekind =
-    | Start_node of Typ.Procname.t
-    | Exit_node of Typ.Procname.t
+    | Start_node
+    | Exit_node
     | Stmt_node of stmt_nodekind
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)

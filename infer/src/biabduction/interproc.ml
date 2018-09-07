@@ -477,9 +477,9 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
         do_symexec_join proc_cfg tenv wl curr_node pathset_todo
     | Procdesc.Node.Stmt_node _
     | Procdesc.Node.Prune_node _
-    | Procdesc.Node.Exit_node _
+    | Procdesc.Node.Exit_node
     | Procdesc.Node.Skip_node _
-    | Procdesc.Node.Start_node _ ->
+    | Procdesc.Node.Start_node ->
         exe_iter (do_prop curr_node handle_exn) pathset_todo
   in
   let do_node_and_handle curr_node session =

@@ -1092,7 +1092,8 @@ let pp_local_list fmt etl = List.iter ~f:(Procdesc.pp_local fmt) etl
 let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
   let pp_label fmt n =
     match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Start_node pname ->
+    | Procdesc.Node.Start_node ->
+        let pname = Procdesc.Node.get_proc_name n in
         let pname_string = Escape.escape_dotty (Typ.Procname.to_string pname) in
         let attributes = Procdesc.get_attributes pdesc in
         let byvals = attributes.ProcAttributes.by_vals in
@@ -1103,7 +1104,8 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
         let method_annotation = attributes.ProcAttributes.method_annotation in
         if not (Annot.Method.is_empty method_annotation) then
           Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation
-    | Procdesc.Node.Exit_node pname ->
+    | Procdesc.Node.Exit_node ->
+        let pname = Procdesc.Node.get_proc_name n in
         Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
     | Procdesc.Node.Join_node ->
         Format.pp_print_char fmt '+'
@@ -1128,7 +1130,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
 
 let pp_cfgnodeshape fmt (n : Procdesc.Node.t) =
   match Procdesc.Node.get_kind n with
-  | Procdesc.Node.Start_node _ | Procdesc.Node.Exit_node _ ->
+  | Procdesc.Node.Start_node | Procdesc.Node.Exit_node ->
       F.pp_print_string fmt "color=yellow style=filled"
   | Procdesc.Node.Prune_node _ ->
       F.fprintf fmt "shape=\"invhouse\""
@@ -1147,7 +1149,7 @@ let pp_cfgnode pdesc fmt (n : Procdesc.Node.t) =
   let print_edge n1 n2 is_exn =
     let color = if is_exn then "[color=\"red\" ]" else "" in
     match Procdesc.Node.get_kind n2 with
-    | Procdesc.Node.Exit_node _ when is_exn ->
+    | Procdesc.Node.Exit_node when is_exn ->
         (* don't print exception edges to the exit node *)
         ()
     | _ ->

@@ -286,10 +286,8 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
       Cfg.create_proc_desc cfg proc_attributes
     in
     if defined then (
-      let start_kind = Procdesc.Node.Start_node proc_name in
-      let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
-      let exit_kind = Procdesc.Node.Exit_node proc_name in
-      let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
+      let start_node = Procdesc.create_node procdesc loc_start Procdesc.Node.Start_node [] in
+      let exit_node = Procdesc.create_node procdesc loc_exit Procdesc.Node.Exit_node [] in
       Procdesc.set_start_node procdesc start_node ;
       Procdesc.set_exit_node procdesc exit_node )
   in

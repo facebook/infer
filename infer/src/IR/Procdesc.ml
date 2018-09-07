@@ -74,8 +74,8 @@ module Node = struct
   [@@deriving compare]
 
   type nodekind =
-    | Start_node of Typ.Procname.t
-    | Exit_node of Typ.Procname.t
+    | Start_node
+    | Exit_node
     | Stmt_node of stmt_nodekind
     | Join_node
     | Prune_node of bool * Sil.if_kind * string  (** (true/false branch, if_kind, comment) *)
@@ -303,11 +303,11 @@ module Node = struct
             F.fprintf fmt "statements (%a)" pp_stmt s
         | Prune_node (_, _, descr) ->
             F.fprintf fmt "assume %s" descr
-        | Exit_node _ ->
+        | Exit_node ->
             F.pp_print_string fmt "exit"
         | Skip_node s ->
             F.fprintf fmt "skip (%s)" s
-        | Start_node _ ->
+        | Start_node ->
             F.pp_print_string fmt "start"
         | Join_node ->
             F.pp_print_string fmt "join"
@@ -328,11 +328,11 @@ module Node = struct
           "Instructions"
       | Prune_node (_, _, descr) ->
           "Conditional" ^ " " ^ descr
-      | Exit_node _ ->
+      | Exit_node ->
           "Exit"
       | Skip_node _ ->
           "Skip"
-      | Start_node _ ->
+      | Start_node ->
           "Start"
       | Join_node ->
           "Join"
@@ -557,7 +557,7 @@ let create_node pdesc loc kind instrs = create_node_internal pdesc loc kind (Ins
     otherwise nullify and abstract instructions cannot be added after a conditional. *)
 let node_set_succs_exn pdesc (node : Node.t) succs exn =
   match (node.kind, succs) with
-  | Join_node, [({Node.kind= Exit_node _} as exit_node)] ->
+  | Join_node, [({Node.kind= Exit_node} as exit_node)] ->
       let kind = Node.Stmt_node BetweenJoinAndExit in
       let node' = create_node_internal pdesc node.loc kind node.instrs in
       set_succs_exn_base node [node'] exn ;
@@ -691,21 +691,12 @@ let has_modify_in_block_attr procdesc pvar =
 
 (** Applies f_instr_list to all the instructions in all the nodes of the cfg *)
 let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
-  let resolved_pname = get_proc_name resolved_pdesc
-  and callee_start_node = get_start_node callee_pdesc
+  let callee_start_node = get_start_node callee_pdesc
   and callee_exit_node = get_exit_node callee_pdesc in
-  let convert_node_kind = function
-    | Node.Start_node _ ->
-        Node.Start_node resolved_pname
-    | Node.Exit_node _ ->
-        Node.Exit_node resolved_pname
-    | node_kind ->
-        node_kind
-  in
   let node_map = ref NodeMap.empty in
   let rec convert_node node =
     let loc = Node.get_loc node
-    and kind = convert_node_kind (Node.get_kind node)
+    and kind = Node.get_kind node
     and instrs = f_instr_list (Node.get_instrs node) in
     create_node_internal resolved_pdesc loc kind instrs
   and loop callee_nodes =
@@ -1027,7 +1018,7 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
 
 
 let is_connected proc_desc =
-  let is_exit_node n = match Node.get_kind n with Node.Exit_node _ -> true | _ -> false in
+  let is_exit_node n = match Node.get_kind n with Node.Exit_node -> true | _ -> false in
   let is_between_join_and_exit_node n =
     match Node.get_kind n with
     | Node.Stmt_node BetweenJoinAndExit | Node.Stmt_node Destruction -> (
@@ -1053,9 +1044,9 @@ let is_connected proc_desc =
     let succs = Node.get_succs n in
     let preds = Node.get_preds n in
     match Node.get_kind n with
-    | Node.Start_node _ ->
+    | Node.Start_node ->
         if List.is_empty succs || not (List.is_empty preds) then Error `Other else Ok ()
-    | Node.Exit_node _ ->
+    | Node.Exit_node ->
         if (not (List.is_empty succs)) || List.is_empty preds then Error `Other else Ok ()
     | Node.Stmt_node _ | Node.Prune_node _ | Node.Skip_node _ ->
         if List.is_empty succs || List.is_empty preds then Error `Other else Ok ()

@@ -158,7 +158,6 @@ struct
     let pdesc =
       Cfg.create_proc_desc cfg (ProcAttributes.default (SourceFile.invalid __FILE__) test_pname)
     in
-    let pname = Procdesc.get_proc_name pdesc in
     let create_node kind cmds = Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers =
       Procdesc.node_set_succs_exn pdesc cur_node succs exn_handlers
@@ -228,13 +227,13 @@ struct
         ~f:(fun acc instr -> structured_instr_to_node acc exn_handlers instr)
         ~init:(last_node, assert_map) instrs
     in
-    let start_node = create_node (Procdesc.Node.Start_node pname) [] in
+    let start_node = create_node Procdesc.Node.Start_node [] in
     Procdesc.set_start_node pdesc start_node ;
     let no_exn_handlers = [] in
     let last_node, assert_map =
       structured_instrs_to_node start_node M.empty no_exn_handlers program
     in
-    let exit_node = create_node (Procdesc.Node.Exit_node pname) [] in
+    let exit_node = create_node Procdesc.Node.Exit_node [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
     (pdesc, assert_map)

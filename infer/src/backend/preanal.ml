@@ -14,7 +14,7 @@ let add_abstraction_instructions pdesc =
   let open Procdesc in
   (* true if there is a succ node s.t.: it is an exit node, or the succ of >1 nodes *)
   let converging_node node =
-    let is_exit node = match Node.get_kind node with Node.Exit_node _ -> true | _ -> false in
+    let is_exit node = match Node.get_kind node with Node.Exit_node -> true | _ -> false in
     let succ_nodes = Node.get_succs node in
     if List.exists ~f:is_exit succ_nodes then true
     else
@@ -22,9 +22,9 @@ let add_abstraction_instructions pdesc =
   in
   let node_requires_abstraction node =
     match Node.get_kind node with
-    | Node.Start_node _ | Node.Join_node ->
+    | Node.Start_node | Node.Join_node ->
         false
-    | Node.Exit_node _ | Node.Stmt_node _ | Node.Prune_node _ | Node.Skip_node _ ->
+    | Node.Exit_node | Node.Stmt_node _ | Node.Prune_node _ | Node.Skip_node _ ->
         converging_node node
   in
   let do_node node =

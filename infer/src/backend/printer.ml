@@ -332,7 +332,8 @@ let write_html_file linereader filename procs =
     List.iter
       ~f:(fun n ->
         match Procdesc.Node.get_kind n with
-        | Procdesc.Node.Start_node proc_name ->
+        | Procdesc.Node.Start_node ->
+            let proc_name = Procdesc.Node.get_proc_name n in
             let num_specs =
               match Summary.get proc_name with
               | None ->
