@@ -60,8 +60,6 @@ let no_desc : error_desc = {descriptions= []; tags= []; dotty= None}
 (** verbatim desc from a string, not to be used for user-visible descs *)
 let verbatim_desc s = {no_desc with descriptions= [s]}
 
-let custom_desc description tags = {no_desc with descriptions= [description]; tags}
-
 (** pretty print an error description *)
 let pp_error_desc fmt err_desc = Pp.seq F.pp_print_string fmt err_desc.descriptions
 

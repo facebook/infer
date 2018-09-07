@@ -24,9 +24,6 @@ val no_desc : error_desc
 val verbatim_desc : string -> error_desc
 (** verbatim desc from a string, not to be used for user-visible descs *)
 
-val custom_desc : string -> (string * string) list -> error_desc
-(** verbatim desc with custom tags *)
-
 module BucketLevel : sig
   val b1 : string
   (** highest likelihood *)
