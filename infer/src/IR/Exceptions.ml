@@ -29,7 +29,7 @@ type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
 let equal_err_class = [%compare.equal: err_class]
 
 (** severity of the report *)
-type severity = Advice | Error | Info | Like | Warning [@@deriving compare]
+type severity = Like | Info | Advice | Warning | Error [@@deriving compare]
 
 let equal_severity = [%compare.equal: severity]
 
