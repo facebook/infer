@@ -234,7 +234,7 @@ let eradicate_value_not_present =
   from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
 
 
-let expensive_execution_time_call = from_string "EXPENSIVE_EXECUTION_TIME_CALL"
+let expensive_execution_time_call = from_string ~enabled:false "EXPENSIVE_EXECUTION_TIME_CALL"
 
 let failure_exe = from_string "Failure_exe"
 
