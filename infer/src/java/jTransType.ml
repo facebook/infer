@@ -216,14 +216,14 @@ let get_method_kind m =
   if Javalib.is_static_method m then Typ.Procname.Java.Static else Typ.Procname.Java.Non_Static
 
 
-let fieldname_create cn fs =
+let create_fieldname cn fs =
   let fieldname = JBasics.fs_name fs in
   let classname = JBasics.cn_name cn in
   Typ.Fieldname.Java.from_string (classname ^ "." ^ fieldname)
 
 
 let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
-  let field_name = fieldname_create cn cf_signature
+  let field_name = create_fieldname cn cf_signature
   and field_type = get_named_type (JBasics.fs_type cf_signature)
   and annotation =
     let real_annotations = JAnnotation.translate_item cf_annotations in
@@ -250,7 +250,7 @@ let collect_class_field cn cf (statics, nonstatics) =
 let collect_interface_field cn inf l =
   let fs = inf.Javalib.if_signature in
   let field_type = get_named_type (JBasics.fs_type fs) in
-  let field_name = fieldname_create cn fs in
+  let field_name = create_fieldname cn fs in
   let annotation = JAnnotation.translate_item inf.Javalib.if_annotations in
   (field_name, field_type, annotation) :: l
 

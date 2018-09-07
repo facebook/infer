@@ -10,6 +10,9 @@ open! IStd
 open Javalib_pack
 open Sawja_pack
 
+val create_fieldname : JBasics.class_name -> JBasics.field_signature -> Typ.Fieldname.t
+(** translate the name of the field *)
+
 val get_method_kind : JCode.jcode Javalib.jmethod -> Typ.Procname.Java.kind
 
 val get_method_procname :
@@ -19,7 +22,7 @@ val get_method_procname :
   -> JBasics.method_signature
   -> Typ.Procname.Java.kind
   -> Typ.Procname.t
-(** returns a procedure name based on the class name and the method's signature. *)
+(** returns a procedure name based on the class name and the method's signature *)
 
 val translate_method_name :
   JClasspath.program -> Tenv.t -> JCode.jcode Javalib.jmethod -> Typ.Procname.t

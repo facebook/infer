@@ -87,9 +87,8 @@ let get_field_name program static tenv cn fs =
   | Some (fieldname, _, _) ->
       fieldname
   | None ->
-      (* TODO: understand why fields cannot be found here *)
-      L.internal_error "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs) ;
-      raise (Frontend_error "Cannot find fieldname")
+      (* TODO (T28155039): understand why fields cannot be found here *)
+      JTransType.create_fieldname cn fs
 
 
 let formals_from_signature program tenv cn ms kind =
