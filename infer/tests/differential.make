@@ -17,6 +17,8 @@ CURRENT_DIR = infer-out-current
 PREVIOUS_DIR = infer-out-previous
 CURRENT_REPORT = $(CURRENT_DIR)/report.json
 PREVIOUS_REPORT = $(PREVIOUS_DIR)/report.json
+CURRENT_COSTS = $(CURRENT_DIR)/costs-report.json
+PREVIOUS_COSTS = $(PREVIOUS_DIR)/costs-report.json
 
 default: analyze
 
@@ -35,6 +37,7 @@ $(EXPECTED_TEST_OUTPUT): $(CURRENT_REPORT) $(PREVIOUS_REPORT) $(MODIFIED_FILES_F
 	$(QUIET)$(call silent_on_success,Computing results difference in $(TEST_REL_DIR),\
 	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) reportdiff \
 		--report-current $(CURRENT_REPORT) --report-previous $(PREVIOUS_REPORT) \
+		--costs-current $(CURRENT_COSTS) --costs-previous $(PREVIOUS_COSTS) \
 		$(DIFFERENTIAL_ARGS))
 	$(QUIET)$(INFER_BIN) report -o $(INFER_OUT) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
@@ -48,6 +51,8 @@ $(EXPECTED_TEST_OUTPUT): $(CURRENT_REPORT) $(PREVIOUS_REPORT) $(MODIFIED_FILES_F
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/preexisting.json \
 		--issues-tests preexisting.exp.test
+	$(QUIET)$(COPY) $(INFER_OUT)/differential/costs_summary.json \
+		costs_summary.json.exp.test
 
 .PHONY: print
 print: $(EXPECTED_TEST_OUTPUT)
@@ -57,12 +62,14 @@ test: print
 	$(QUIET)$(call check_no_diff,introduced.exp,introduced.exp.test)
 	$(QUIET)$(call check_no_diff,fixed.exp,fixed.exp.test)
 	$(QUIET)$(call check_no_diff,preexisting.exp,preexisting.exp.test)
+	$(QUIET)$(call check_no_diff,costs_summary.json.exp,costs_summary.json.exp.test)
 
 .PHONY: replace
 replace: $(EXPECTED_TEST_OUTPUT)
 	cp introduced.exp.test introduced.exp
 	cp fixed.exp.test fixed.exp
 	cp preexisting.exp.test preexisting.exp
+	cp costs_summary.json.exp.test costs_summary.json.exp
 
 .PHONY: clean
 clean:

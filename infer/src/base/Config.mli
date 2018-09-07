@@ -291,6 +291,10 @@ val cost : bool
 
 val cost_invariant_by_default : bool
 
+val costs_current : string option
+
+val costs_previous : string option
+
 val crashcontext : bool
 
 val current_to_previous_script : string option

@@ -53,40 +53,30 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
-module CostsSummary : sig
-  val to_json :
-    current_report:Jsonbug_t.report -> previous_report:Jsonbug_t.report -> Yojson.Basic.json
-end = struct
+module CostsSummary = struct
   type 'a count = {top: 'a; zero: 'a; degrees: 'a Int.Map.t}
 
   let init = {top= 0; zero= 0; degrees= Int.Map.empty}
 
   type previous_current = {previous: int; current: int}
 
-  let zero_token_str =
-    Format.asprintf "%a" Itv.NonNegativePolynomial.pp Itv.NonNegativePolynomial.zero
-
-
-  let top_token_str =
-    Format.asprintf "%a" Itv.NonNegativePolynomial.pp Itv.NonNegativePolynomial.top
-
-
-  let count report =
-    let count_aux t (e : Jsonbug_t.extra) =
-      match e with
-      | {cost_polynomial= Some cp} when String.equal cp zero_token_str ->
-          {t with zero= t.zero + 1}
-      | {cost_polynomial= Some cp; cost_degree= None} when String.equal cp top_token_str ->
+  let count costs =
+    let count_aux t (e : Itv.NonNegativePolynomial.astate) =
+      match Itv.NonNegativePolynomial.degree e with
+      | None ->
+          assert (Itv.NonNegativePolynomial.is_top e) ;
           {t with top= t.top + 1}
-      | {cost_degree= Some v} ->
-          let degrees = Int.Map.update t.degrees v ~f:(function None -> 1 | Some x -> x + 1) in
+      | Some d when Itv.NonNegativePolynomial.is_zero e ->
+          assert (Int.equal d 0) ;
+          {t with zero= t.zero + 1}
+      | Some d ->
+          let degrees = Int.Map.update t.degrees d ~f:(function None -> 1 | Some x -> x + 1) in
           {t with degrees}
-      | {cost_degree= None} ->
-          t
     in
     List.fold ~init
-      ~f:(fun acc v -> match v.Jsonbug_t.extras with None -> acc | Some v -> count_aux acc v)
-      report
+      ~f:(fun acc (v : Jsonbug_t.cost_item) ->
+        count_aux acc (Itv.NonNegativePolynomial.decode v.polynomial) )
+      costs
 
 
   let pair_counts ~current_counts ~previous_counts =
@@ -107,9 +97,9 @@ end = struct
     ; degrees= compute_degrees current_counts.degrees previous_counts.degrees }
 
 
-  let to_json ~current_report ~previous_report =
-    let current_counts = count current_report in
-    let previous_counts = count previous_report in
+  let to_json ~current_costs ~previous_costs =
+    let current_counts = count current_costs in
+    let previous_counts = count previous_costs in
     let paired_counts = pair_counts ~current_counts ~previous_counts in
     let json_degrees =
       Int.Map.to_alist ~key_order:`Increasing paired_counts.degrees
@@ -133,7 +123,8 @@ type t =
   ; costs_summary: Yojson.Basic.json }
 
 (** Set operations should keep duplicated issues with identical hashes *)
-let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report) : t =
+let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
+    ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) : t =
   let to_map report =
     List.fold_left
       ~f:(fun map issue -> Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue)
@@ -151,7 +142,7 @@ let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_
   let introduced, preexisting, fixed =
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
   in
-  let costs_summary = CostsSummary.to_json ~current_report ~previous_report in
+  let costs_summary = CostsSummary.to_json ~current_costs ~previous_costs in
   {introduced= dedup introduced; fixed= dedup fixed; preexisting= dedup preexisting; costs_summary}
 
 

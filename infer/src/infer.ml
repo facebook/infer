@@ -133,14 +133,16 @@ let () =
         InferPrint.main ~report_json:None
     | ReportDiff ->
         (* at least one report must be passed in input to compute differential *)
-        ( match (Config.report_current, Config.report_previous) with
-        | None, None ->
+        ( match Config.(report_current, report_previous, costs_current, costs_previous) with
+        | None, None, None, None ->
             L.(die UserError)
-              "Expected at least one argument among '--report-current' and '--report-previous'"
+              "Expected at least one argument among '--report-current', '--report-previous', \
+               '--costs-current', and '--costs-previous'"
         | _ ->
             () ) ;
         ReportDiff.reportdiff ~current_report:Config.report_current
-          ~previous_report:Config.report_previous
+          ~previous_report:Config.report_previous ~current_costs:Config.costs_current
+          ~previous_costs:Config.costs_previous
     | Diff ->
         Diff.diff (Lazy.force Driver.mode_from_command_line)
     | Explore when Config.procedures ->

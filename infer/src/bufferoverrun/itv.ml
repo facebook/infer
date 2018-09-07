@@ -397,6 +397,8 @@ module NonNegativePolynomial = struct
 
 
   let encode astate = Marshal.to_string astate [] |> B64.encode
+
+  let decode enc_str = Marshal.from_string (B64.decode enc_str) 0
 end
 
 module ItvRange = struct

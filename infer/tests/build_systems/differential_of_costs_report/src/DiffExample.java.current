@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2015-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// This class has the following costs:
+// 1 top, 1 bottom, 2 constant (incl. constructor), 1 linear
+public class DiffExample {
+
+    // cost: top
+    private static void top() {
+        int i = 0;
+        while (i >=0) {
+            i++;
+        }
+    }
+
+    // cost: bottom (0)
+    private static void bottom() {}
+
+    // cost: constant (5)
+    private static int constant() {
+        int i, j;
+        i = 17;
+        j = 31;
+
+        return i + j + 3 + 7;
+    }
+
+    // cost: linear
+    private static int linear(int k) {
+        for (int i = 0; i < k; i++) {
+        }
+        return 0;
+    }
+}

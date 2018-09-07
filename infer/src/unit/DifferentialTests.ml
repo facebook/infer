@@ -23,7 +23,11 @@ let previous_report =
   ; create_fake_jsonbug ~hash:"1" () ]
 
 
-let diff = Differential.of_reports ~current_report ~previous_report
+let current_costs = []
+
+let previous_costs = []
+
+let diff = Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
 
 (* Sets operations should keep duplicated issues with identical hashes *)
 let test_diff_keeps_duplicated_hashes =

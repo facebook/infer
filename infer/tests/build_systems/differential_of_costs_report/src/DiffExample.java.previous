@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2015-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// This class has the following costs:
+// 1 constant (constructor), 1 linear, 1 quadratic
+public class DiffExample {
+    // cost: linear
+    private static int linear(int k) {
+        for (int i = 0; i < k; i++) {
+        }
+        return 0;
+    }
+
+    // cost: quadratic
+    private static void quadratic(int k) {
+        for (int i = 0; i < k; i++) {
+            linear(k);
+        }
+    }
+}

@@ -973,6 +973,18 @@ and cost_invariant_by_default =
     "[Cost]Consider functions to be invariant by default"
 
 
+and costs_current =
+  CLOpt.mk_path_opt ~long:"costs-current"
+    ~in_help:InferCommand.[(ReportDiff, manual_generic)]
+    "Costs report of the latest revision"
+
+
+and costs_previous =
+  CLOpt.mk_path_opt ~long:"costs-previous"
+    ~in_help:InferCommand.[(ReportDiff, manual_generic)]
+    "Costs report of the base revision to use for comparison"
+
+
 and current_to_previous_script =
   CLOpt.mk_string_opt ~long:"current-to-previous-script"
     ~in_help:InferCommand.[(Diff, manual_generic)]
@@ -2547,6 +2559,10 @@ and continue_capture = !continue
 and cost = !cost
 
 and cost_invariant_by_default = !cost_invariant_by_default
+
+and costs_current = !costs_current
+
+and costs_previous = !costs_previous
 
 and current_to_previous_script = !current_to_previous_script
 

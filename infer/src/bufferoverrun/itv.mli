@@ -55,6 +55,8 @@ module NonNegativePolynomial : sig
   val degree : astate -> int option
 
   val encode : astate -> string
+
+  val decode : string -> astate
 end
 
 module ItvRange : sig

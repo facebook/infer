@@ -7,4 +7,9 @@
 
 open! IStd
 
-val reportdiff : current_report:string option -> previous_report:string option -> unit
+val reportdiff :
+     current_report:string option
+  -> previous_report:string option
+  -> current_costs:string option
+  -> previous_costs:string option
+  -> unit

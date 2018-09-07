@@ -13,6 +13,11 @@ type t =
   ; preexisting: Jsonbug_t.report
   ; costs_summary: Yojson.Basic.json }
 
-val of_reports : current_report:Jsonbug_t.report -> previous_report:Jsonbug_t.report -> t
+val of_reports :
+     current_report:Jsonbug_t.report
+  -> previous_report:Jsonbug_t.report
+  -> current_costs:Jsonbug_t.costs_report
+  -> previous_costs:Jsonbug_t.costs_report
+  -> t
 
 val to_files : t -> string -> unit

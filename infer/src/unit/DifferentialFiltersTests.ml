@@ -167,7 +167,11 @@ let test_skip_duplicated_types_on_filenames =
         [ {current= "file_2'.java"; previous= "file_2.java"}
         ; {current= "file_1'.java"; previous= "file_1.java"} ])
   in
-  let diff = Differential.of_reports ~current_report ~previous_report in
+  let current_costs = [] in
+  let previous_costs = [] in
+  let diff =
+    Differential.of_reports ~current_report ~previous_report ~current_costs ~previous_costs
+  in
   let diff' =
     DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.skip_duplicated_types_on_filenames
       renamings diff
