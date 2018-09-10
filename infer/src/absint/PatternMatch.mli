@@ -43,6 +43,9 @@ val implements_pseudo_collection : Tenv.t -> string -> bool
 val implements_enumeration : Tenv.t -> string -> bool
 (** Check whether class implements a Java's Enumeration *)
 
+val implements_inject : string -> Tenv.t -> string -> bool
+(** Check whether class implements a Javax Inject *)
+
 val implements_io : string -> Tenv.t -> string -> bool
 (** Check whether class implements a Java IO *)
 

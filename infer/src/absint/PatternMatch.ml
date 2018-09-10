@@ -66,6 +66,8 @@ let implements_pseudo_collection t s =
 
 let implements_enumeration = implements "java.util.Enumeration"
 
+let implements_inject class_name = implements ("javax.inject." ^ class_name)
+
 let implements_io class_name = implements ("java.io." ^ class_name)
 
 let implements_map = implements "java.util.Map"

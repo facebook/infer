@@ -55,7 +55,7 @@ let get_hoist_inv_map tenv reaching_defs_invariant_map loop_head_to_source_nodes
       let loop_nodes = Loop_control.get_all_nodes_upwards_until loop_head source_nodes in
       let inv_vars_in_loop =
         LoopInvariant.get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
-          ~is_inv_by_default:true
+          ~is_inv_by_default:Config.cost_invariant_by_default
       in
       let hoist_instrs = get_hoistable_calls inv_vars_in_loop loop_nodes source_nodes idom in
       LoopHeadToHoistInstrs.add loop_head hoist_instrs inv_map )

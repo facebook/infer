@@ -7,12 +7,19 @@
 
 open! IStd
 
-type model = Variant | VariantForHoisting
+type model = Invariant | Variant | VariantForHoisting
 
 (* Even though functions marked with VariantForHoisting are pure, we
    don't want to report them in hoisting. Hence, we model them as
    Variant. *)
-let is_invariant = function VariantForHoisting -> not Config.loop_hoisting | Variant -> false
+let is_invariant = function
+  | Invariant ->
+      true
+  | VariantForHoisting ->
+      not Config.loop_hoisting
+  | Variant ->
+      false
+
 
 module Call = struct
   let dispatch : (Tenv.t, model) ProcnameDispatcher.Call.dispatcher =
@@ -55,6 +62,7 @@ module Call = struct
       ; +PatternMatch.implements_io "PrintStream" &:: "println" <>--> Variant
       ; +PatternMatch.implements_io "Reader" &:: "read" <>--> Variant
       ; +PatternMatch.implements_io "BufferedReader" &:: "readLine" <>--> Variant
+      ; +PatternMatch.implements_inject "Provider" &:: "get" <>--> Invariant
       ; -"__new" <>--> Variant
       ; +(fun _ name -> BuiltinDecl.is_declared (Typ.Procname.from_string_c_fun name))
         <>--> VariantForHoisting ]
