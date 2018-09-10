@@ -17,5 +17,8 @@ codetoanalyze/cpp/ownership/use_after_delete.cpp, reassign_field_of_deleted_bad,
 codetoanalyze/cpp/ownership/use_after_delete.cpp, return_deleted_bad, 3, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, use_in_branch_bad, 4, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_delete.cpp, use_in_loop_bad, 4, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
+codetoanalyze/cpp/ownership/use_after_destructor.cpp, FP_destructor_order_empty_destructor_ok, 4, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
+codetoanalyze/cpp/ownership/use_after_destructor.cpp, destructor_order_bad, 4, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_destructor.cpp, double_destructor_bad, 5, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
 codetoanalyze/cpp/ownership/use_after_destructor.cpp, use_after_destructor_bad, 3, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]
+codetoanalyze/cpp/ownership/use_after_destructor.cpp, use_after_scope4_bad, 6, USE_AFTER_LIFETIME, no_bucket, ERROR, [End of variable lifetime,Use of invalid variable]

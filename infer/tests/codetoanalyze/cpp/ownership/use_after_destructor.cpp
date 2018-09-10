@@ -162,3 +162,54 @@ void destructor_in_loop_ok() {
     S s(1);
   }
 }
+
+int FN_use_after_scope3_bad() {
+  int* p;
+  {
+    int value = 3;
+    p = &value;
+  } // we do not know in the plugin that value is out of scope
+  return *p;
+}
+
+struct C {
+  C(int v) : f(v){};
+  ~C();
+  int f;
+};
+
+int use_after_scope4_bad() {
+  C* pc;
+  {
+    C c(3);
+    pc = &c;
+  }
+  return pc->f;
+}
+
+struct B {
+  ~B();
+};
+
+struct A {
+  ~A() { (void)*f; }
+  const B* f;
+};
+
+void destructor_order_bad() {
+  A a;
+  B b;
+  a.f = &b;
+}
+
+struct A2 {
+  ~A2() {}
+  const B* f;
+};
+
+// need interprocedural analysis to fix this
+void FP_destructor_order_empty_destructor_ok() {
+  A2 a;
+  B b;
+  a.f = &b;
+}
