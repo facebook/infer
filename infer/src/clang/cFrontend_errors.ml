@@ -27,7 +27,10 @@ let filter_parsed_linters_developer parsed_linters =
            important for debugging the rule. Pass the flag --linter <name> to specify the linter \
            you want to debug."
     | Some lint ->
-        List.filter ~f:(fun (rule : linter) -> String.equal rule.issue_desc.id lint) parsed_linters
+        List.filter
+          ~f:(fun (rule : linter) ->
+            String.equal rule.issue_desc.issue_type.IssueType.unique_id lint )
+          parsed_linters
   else parsed_linters
 
 
@@ -57,7 +60,9 @@ let filter_parsed_linters parsed_linters source_file =
 
 
 let pp_linters fmt linters =
-  let pp_linter fmt {issue_desc= {id}} = F.fprintf fmt "%s@\n" id in
+  let pp_linter fmt {issue_desc= {issue_type= {IssueType.unique_id}}} =
+    F.fprintf fmt "%s@\n" unique_id
+  in
   List.iter ~f:(pp_linter fmt) linters
 
 
@@ -179,14 +184,10 @@ let string_to_issue_mode m =
       L.die InternalError "Mode %s does not exist. Please specify ON/OFF" s
 
 
-let post_process_linter_definition (linter : linter) =
-  match Config.get_linter_doc_url ~linter_id:linter.issue_desc.id with
-  | Some doc_url ->
-      let issue_desc = {linter.issue_desc with doc_url= Some doc_url} in
-      {linter with issue_desc}
-  | None ->
-      linter
-
+type parsed_issue_type =
+  { name: string option
+        (** issue name, if no name is given name will be a readable version of id, by removing underscores and capitalizing first letters of words *)
+  ; doc_url: string option }
 
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
@@ -195,13 +196,11 @@ let create_parsed_linters linters_def_file checkers : linter list =
   L.(debug Linters Medium) "@\nConverting checkers in (condition, issue) pairs@\n" ;
   let do_one_checker checker : linter =
     let dummy_issue =
-      { id= checker.id
-      ; name= None
+      { issue_type= {name= None; doc_url= None}
       ; description= ""
       ; suggestion= None
       ; loc= Location.dummy
       ; severity= Exceptions.Warning
-      ; doc_url= None
       ; mode= CIssue.On }
     in
     let issue_desc, condition, whitelist_paths, blacklist_paths =
@@ -218,9 +217,15 @@ let create_parsed_linters linters_def_file checkers : linter list =
         | CDesc (av, m) when ALVar.is_mode_keyword av ->
             ({issue with mode= string_to_issue_mode m}, cond, wl_paths, bl_paths)
         | CDesc (av, doc) when ALVar.is_doc_url_keyword av ->
-            ({issue with doc_url= Some doc}, cond, wl_paths, bl_paths)
+            ( {issue with issue_type= {issue.issue_type with doc_url= Some doc}}
+            , cond
+            , wl_paths
+            , bl_paths )
         | CDesc (av, name) when ALVar.is_name_keyword av ->
-            ({issue with name= Some name}, cond, wl_paths, bl_paths)
+            ( {issue with issue_type= {issue.issue_type with name= Some name}}
+            , cond
+            , wl_paths
+            , bl_paths )
         | CPath (`WhitelistPath, paths) ->
             (issue, cond, paths, bl_paths)
         | CPath (`BlacklistPath, paths) ->
@@ -233,11 +238,17 @@ let create_parsed_linters linters_def_file checkers : linter list =
     in
     L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.id ;
     L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition ;
-    L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;
-    let linter =
-      {condition; issue_desc; def_file= Some linters_def_file; whitelist_paths; blacklist_paths}
+    let issue_type =
+      let doc_url =
+        Option.first_some
+          (Config.get_linter_doc_url ~linter_id:checker.id)
+          issue_desc.issue_type.doc_url
+      in
+      IssueType.from_string checker.id ?hum:issue_desc.issue_type.name ?doc_url ~linters_def_file
     in
-    post_process_linter_definition linter
+    let issue_desc = {issue_desc with issue_type} in
+    L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;
+    {condition; issue_desc; def_file= Some linters_def_file; whitelist_paths; blacklist_paths}
   in
   List.map ~f:do_one_checker checkers
 
@@ -428,7 +439,7 @@ let expand_checkers macro_map path_map checkers =
 
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
-    (issue_desc : CIssue.issue_desc) linters_def_file =
+    (issue_desc : CIssue.issue_desc) =
   let procname =
     match method_decl_opt with
     | Some method_decl ->
@@ -440,10 +451,7 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
   in
-  let exn =
-    Exceptions.Frontend_warning
-      ((issue_desc.id, issue_desc.name, issue_desc.doc_url, linters_def_file), err_desc, __POS__)
-  in
+  let exn = Exceptions.Frontend_warning (issue_desc.issue_type, err_desc, __POS__) in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
   let key_str =
     match node with
@@ -458,15 +466,14 @@ let log_frontend_issue method_decl_opt (node : Ctl_parser_types.ast_node)
 
 
 let fill_issue_desc_info_and_log context ~witness ~current_node (issue_desc : CIssue.issue_desc)
-    linters_def_file loc =
+    loc =
   let process_message message =
     remove_new_lines_and_whitespace (expand_message_string context message current_node)
   in
   let description = process_message issue_desc.description in
   let suggestion = Option.map ~f:process_message issue_desc.suggestion in
   let issue_desc' = {issue_desc with description; loc; suggestion} in
-  try
-    log_frontend_issue context.CLintersContext.current_method witness issue_desc' linters_def_file
+  try log_frontend_issue context.CLintersContext.current_method witness issue_desc'
   with CFrontend_config.IncorrectAssumption e ->
     let trans_unit_ctx = context.CLintersContext.translation_unit_context in
     ClangLogging.log_caught_exception trans_unit_ctx "IncorrectAssumption" e.position
@@ -482,7 +489,7 @@ let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node
       List.iter
         ~f:(fun issue_desc ->
           if CIssue.should_run_check issue_desc.CIssue.mode then
-            fill_issue_desc_info_and_log context ~witness:an ~current_node:an issue_desc None
+            fill_issue_desc_info_and_log context ~witness:an ~current_node:an issue_desc
               issue_desc.CIssue.loc )
         issue_desc_list )
     checkers
@@ -498,8 +505,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_typ
             ()
         | Some witness ->
             let loc = CFrontend_checkers.location_from_an context witness in
-            fill_issue_desc_info_and_log context ~witness ~current_node:an linter.issue_desc
-              linter.def_file loc )
+            fill_issue_desc_info_and_log context ~witness ~current_node:an linter.issue_desc loc )
     parsed_linters
 
 

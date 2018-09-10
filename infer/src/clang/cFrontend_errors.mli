@@ -49,6 +49,5 @@ val fill_issue_desc_info_and_log :
   -> witness:Ctl_parser_types.ast_node
   -> current_node:Ctl_parser_types.ast_node
   -> CIssue.issue_desc
-  -> string option
   -> Location.t
   -> unit

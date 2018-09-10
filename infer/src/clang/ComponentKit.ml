@@ -150,8 +150,7 @@ let mutable_local_vars_advice context an =
           if should_not_report_mutable_local then None
           else
             Some
-              { CIssue.id= "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
-              ; name= None
+              { CIssue.issue_type= IssueType.mutable_local_variable_in_component_file
               ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description=
@@ -159,7 +158,6 @@ let mutable_local_vars_advice context an =
                   ^ MF.monospaced_to_string named_decl_info.ni_name
                   ^ " should be const to avoid reassignment"
               ; suggestion= Some "Add a const (after the asterisk for pointer types)."
-              ; doc_url= None
               ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
       | _ ->
           None
@@ -188,8 +186,7 @@ let component_factory_function_advice context an =
         let objc_interface = CAst_utils.qual_type_to_objc_interface qual_type in
         if is_component_if objc_interface then
           Some
-            { CIssue.id= "COMPONENT_FACTORY_FUNCTION"
-            ; name= None
+            { CIssue.issue_type= IssueType.component_factory_function
             ; severity= Exceptions.Advice
             ; mode= CIssue.Off
             ; description= "Break out composite components"
@@ -197,7 +194,6 @@ let component_factory_function_advice context an =
                 Some
                   "Prefer subclassing CKCompositeComponent to static helper functions that return \
                    a CKComponent subclass."
-            ; doc_url= None
             ; loc= CFrontend_checkers.location_from_dinfo context decl_info }
         else None
     | _ ->
@@ -243,13 +239,11 @@ let component_with_unconventional_superclass_advice context an =
           in
           if condition then
             Some
-              { CIssue.id= "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"
-              ; name= None
+              { CIssue.issue_type= IssueType.component_with_unconventional_superclass
               ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description= "Never Subclass Components"
               ; suggestion= Some "Instead, create a new subclass of CKCompositeComponent."
-              ; doc_url= None
               ; loc= CFrontend_checkers.location_from_decl context if_decl }
           else None
         else None
@@ -303,8 +297,7 @@ let component_with_multiple_factory_methods_advice context an =
         let factory_methods = List.filter ~f:(is_available_factory_method (Some if_decl)) decls in
         List.map
           ~f:(fun meth_decl ->
-            { CIssue.id= "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
-            ; name= None
+            { CIssue.issue_type= IssueType.component_with_multiple_factory_methods
             ; severity= Exceptions.Advice
             ; mode= CIssue.On
             ; description= "Avoid Overrides"
@@ -312,7 +305,6 @@ let component_with_multiple_factory_methods_advice context an =
                 Some
                   "Instead, always expose all parameters in a single designated initializer and \
                    document which are optional."
-            ; doc_url= None
             ; loc= CFrontend_checkers.location_from_decl context meth_decl } )
           (IList.drop factory_methods 1)
     | _ ->
@@ -383,14 +375,12 @@ let rec component_initializer_with_side_effects_advice_ (context : CLintersConte
         match List.find_map ~f:CAst_utils.name_of_decl_ref_opt refs with
         | Some "dispatch_after" | Some "dispatch_async" | Some "dispatch_sync" ->
             Some
-              { CIssue.id= "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
-              ; name= None
+              { CIssue.issue_type= IssueType.component_initializer_with_side_effects
               ; severity= Exceptions.Advice
               ; mode= CIssue.On
               ; description= "No Side-effects"
               ; suggestion=
                   Some "Your +new method should not modify any global variables or global state."
-              ; doc_url= None
               ; loc= CFrontend_checkers.location_from_stmt context call_stmt }
         | _ ->
             None )
@@ -421,13 +411,11 @@ let component_file_line_count_info (context : CLintersContext.context) dec =
       let line_count = SourceFile.line_count source_file in
       List.map
         ~f:(fun i ->
-          { CIssue.id= "COMPONENT_FILE_LINE_COUNT"
-          ; name= None
+          { CIssue.issue_type= IssueType.component_file_line_count
           ; severity= Exceptions.Info
           ; mode= CIssue.Off
           ; description= "Line count analytics"
           ; suggestion= None
-          ; doc_url= None
           ; loc= {Location.line= i; Location.col= 0; Location.file= source_file} } )
         (List.range 1 line_count ~start:`inclusive ~stop:`inclusive)
   | _ ->
@@ -472,13 +460,11 @@ let component_file_cyclomatic_complexity_info (context : CLintersContext.context
   match cyclo_loc_opt an with
   | Some loc ->
       Some
-        { CIssue.id= "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
-        ; name= None
+        { CIssue.issue_type= IssueType.component_file_cyclomatic_complexity
         ; severity= Exceptions.Info
         ; mode= CIssue.Off
         ; description= "Cyclomatic Complexity Incremental Marker"
         ; suggestion= None
-        ; doc_url= None
         ; loc }
   | _ ->
       None

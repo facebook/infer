@@ -9,21 +9,19 @@ open! IStd
 
 type mode = On | Off
 
-type issue_desc =
-  { id: string
-  ; (* issue id *)
+type 'issue_type issue_desc0 =
+  { issue_type: 'issue_type
+  ; (* issue type *)
     description: string
   ; (* Description in the error message *)
-    doc_url: string option
-  ; mode: mode
-  ; name: string option
-  ; (* issue name, if no name is given name will be a readable version of id,
-                           by removing underscores and capitalizing first letters of words *)
-    loc: Location.t
+    mode: mode
+  ; loc: Location.t
   ; (* location in the code *)
     severity: Exceptions.severity
   ; suggestion: string option
   (* an optional suggestion or correction *) }
+
+type issue_desc = IssueType.t issue_desc0
 
 val pp_issue : Format.formatter -> issue_desc -> unit
 

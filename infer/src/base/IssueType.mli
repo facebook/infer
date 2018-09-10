@@ -88,6 +88,18 @@ val codequery : t
 
 val comparing_floats_for_equality : t
 
+val component_factory_function : t
+
+val component_file_cyclomatic_complexity : t
+
+val component_file_line_count : t
+
+val component_initializer_with_side_effects : t
+
+val component_with_multiple_factory_methods : t
+
+val component_with_unconventional_superclass : t
+
 val condition_always_false : t
 
 val condition_always_true : t
@@ -194,6 +206,8 @@ val memory_leak : t
 val missing_fld : t
 
 val missing_required_prop : t
+
+val mutable_local_variable_in_component_file : t
 
 val null_dereference : t
 

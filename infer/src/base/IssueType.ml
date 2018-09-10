@@ -140,6 +140,20 @@ let codequery = from_string "Codequery"
 
 let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"
 
+let component_factory_function = from_string "COMPONENT_FACTORY_FUNCTION"
+
+let component_file_cyclomatic_complexity = from_string "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY"
+
+let component_file_line_count = from_string "COMPONENT_FILE_LINE_COUNT"
+
+let component_initializer_with_side_effects = from_string "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS"
+
+let component_with_multiple_factory_methods = from_string "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
+
+let component_with_unconventional_superclass =
+  from_string "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS"
+
+
 let condition_always_false = from_string ~enabled:false "CONDITION_ALWAYS_FALSE"
 
 let condition_always_true = from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
@@ -284,6 +298,10 @@ let memory_leak = from_string "MEMORY_LEAK"
 let missing_fld = from_string "Missing_fld" ~hum:"Missing Field"
 
 let missing_required_prop = from_string "MISSING_REQUIRED_PROP"
+
+let mutable_local_variable_in_component_file =
+  from_string "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE"
+
 
 let null_dereference = from_string "NULL_DEREFERENCE"
 

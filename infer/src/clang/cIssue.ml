@@ -9,32 +9,31 @@ open! IStd
 
 type mode = On | Off
 
-type issue_desc =
-  { id: string
-  ; (* issue id *)
+type 'issue_type issue_desc0 =
+  { issue_type: 'issue_type
+  ; (* issue type *)
     description: string
   ; (* Description in the error message *)
-    doc_url: string option
-  ; mode: mode
-  ; name: string option
-  ; (* issue name, if no name is given name will be a readable version of id,
-                           by removing underscores and capitalizing first letters of words *)
-    loc: Location.t
+    mode: mode
+  ; loc: Location.t
   ; (* location in the code *)
     severity: Exceptions.severity
   ; suggestion: string option
   (* an optional suggestion or correction *) }
 
+type issue_desc = IssueType.t issue_desc0
+
 let string_of_mode m = match m with On -> "On" | Off -> "Off"
 
 let pp_issue fmt issue =
-  Format.fprintf fmt "{@\n   Id = %s@\n" issue.id ;
-  Format.fprintf fmt "{  Name = %s@\n" (Option.value ~default:"" issue.name) ;
+  Format.fprintf fmt "{@\n   Id = %s@\n" issue.issue_type.IssueType.unique_id ;
+  Format.fprintf fmt "{  Name = %s@\n" issue.issue_type.IssueType.hum ;
   Format.fprintf fmt "   Severity = %s@\n" (Exceptions.severity_string issue.severity) ;
   Format.fprintf fmt "   Mode = %s@\n" (string_of_mode issue.mode) ;
   Format.fprintf fmt "   Description = %s@\n" issue.description ;
   Format.fprintf fmt "   Suggestion = %s@\n" (Option.value ~default:"" issue.suggestion) ;
-  Format.fprintf fmt "   Docs URL = %s@\n" (Option.value ~default:"" issue.doc_url) ;
+  Format.fprintf fmt "   Docs URL = %s@\n"
+    (Option.value ~default:"" issue.issue_type.IssueType.doc_url) ;
   Format.fprintf fmt "   Loc = %s@\n" (Location.to_string issue.loc) ;
   Format.fprintf fmt "}@\n"
 
