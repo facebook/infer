@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 ANALYZER = linters
-CLANG_OPTIONS = -fobjc-arc -c
+CLANG_OPTIONS = -fobjc-arc -c $(IOS_CLANG_OPTIONS)
 INFER_OPTIONS = --cxx --linters-def-file al_definitions/linters_example.al --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
@@ -17,3 +17,4 @@ SOURCES = \
 	$(wildcard *.c) \
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
-@interface ViewControllerError : NSViewController
+@interface ViewControllerError : NSObject
 @end
 @implementation ViewControllerError
 

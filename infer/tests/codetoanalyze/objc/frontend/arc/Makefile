@@ -5,15 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-IPHONESIMULATOR_ISYSROOT_SUFFIX = \
-  /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
-
-XCODEROOT = $(shell $(XCODE_SELECT) -p)
-
-CLANG_OPTIONS = -x objective-c \
-  -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
-  -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
-  -fobjc-arc
+CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
 
 SOURCES = \
   ../predefined_expr/PredefinedExprExample.m \
@@ -28,3 +20,4 @@ SOURCES = \
   ../shared/npe/Nonnull_attribute_example.m \
 
 include $(TESTS_DIR)/clang-frontend.make
+include $(TESTS_DIR)/objc.make

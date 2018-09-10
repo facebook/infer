@@ -118,7 +118,17 @@ AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
 
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
+AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
 
+AS_IF(
+  [test "x$XCODE_BASE" != "x"],
+        [AC_CHECK_FILE($XCODE_BASE,[HAS_OBJC=yes],[HAS_OBJC=no])],
+  [test "x$XCODE_SELECT" != "xno"],
+        [XCODE_BASE=$XCODE_SELECT_OUT HAS_OBJC=yes],
+  [HAS_OBJC=no])
+
+AC_SUBST([XCODE_BASE])
+AC_SUBST([HAS_OBJC])
 
 # prefer clang over gcc because the plugins makes use of
 # clang-specific #pragma's

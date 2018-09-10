@@ -6,12 +6,13 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-CLANG_OPTIONS = -x objective-c++ -std=c++11 -fobjc-arc -c
+CLANG_OPTIONS = -fobjc-arc -c $(OBJCPP_CLANG_OPTIONS)
 INFER_OPTIONS = --liveness-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.mm)
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make
 
 infer-out/report.json: $(MAKEFILE_LIST)

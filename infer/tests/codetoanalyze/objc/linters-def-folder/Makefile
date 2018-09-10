@@ -6,10 +6,11 @@
 TESTS_DIR = ../../..
 
 ANALYZER = linters
-CLANG_OPTIONS = -c -fobjc-arc
+CLANG_OPTIONS = -c -fobjc-arc $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --linters-def-folder checks --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = file.m
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make

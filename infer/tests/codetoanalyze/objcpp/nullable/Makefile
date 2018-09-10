@@ -6,12 +6,13 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-CLANG_OPTIONS = -c
+CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS)
 INFER_OPTIONS =  --debug-exceptions --no-default-checkers --suggest-nullable --check-nullable --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.mm)
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make
 
 infer-out/report.json: $(MAKEFILE_LIST)

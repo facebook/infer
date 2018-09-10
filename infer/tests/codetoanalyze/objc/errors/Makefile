@@ -5,14 +5,8 @@
 
 TESTS_DIR = ../../..
 
-IPHONESIMULATOR_ISYSROOT_SUFFIX = /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
-
-XCODEROOT = $(shell $(XCODE_SELECT) -p)
-
 ANALYZER = checkers
-CLANG_OPTIONS = -x objective-c \
-  -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
-  -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
+CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
               issues.exp.test.all issues.exp.test.arc issues.exp.test.default
@@ -116,6 +110,7 @@ SOURCES_ARC = \
   variadic_methods/premature_nil_termination.m \
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make
 
 OBJECTS_ARC = $(foreach source,$(SOURCES_ARC),$(basename $(source)).o)
 OBJECTS_BUCKET_ALL = $(foreach source,$(SOURCES_BUCKET_ALL),$(basename $(source)).o)

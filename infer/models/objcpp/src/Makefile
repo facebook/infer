@@ -12,9 +12,11 @@ C_SOURCES=$(shell find -L . -name "*.c")
 OBJECTS=$(patsubst %.m,%_cxx.o, $(M_SOURCES)) $(patsubst %.c,%_cxx.o, $(C_SOURCES)) $(patsubst %.mm,%.o, $(MM_SOURCES))
 # let infer override CC by letting the shell resolve its location according to PATH
 CXX=clang++
-XCODE_PATH=$(shell $(XCODE_SELECT) -p)
-IPHONE_SIMULATOR_PATH=$(XCODE_PATH)/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
-CXXFLAGS += -Wno-deprecated-objc-isa-usage --target=x86_64-apple-darwin14 -x objective-c++ -c -mios-simulator-version-min=8.2 -isysroot $(IPHONE_SIMULATOR_PATH)
+
+IPHONESIMULATOR_ISYSROOT = $(XCODE_BASE)/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
+OBJC_TARGET = x86_64-apple-darwin14
+
+CXXFLAGS += -Wno-deprecated-objc-isa-usage --target=$(OBJC_TARGET) -x objective-c++ -c -mios-simulator-version-min=8.2 -isysroot $(IPHONESIMULATOR_ISYSROOT)
 
 all: $(OBJECTS)
 

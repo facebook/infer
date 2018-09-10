@@ -7,12 +7,13 @@ TESTS_DIR = ../../..
 
 ANALYZER = checkers
 # see explanations in cpp/errors/Makefile for the custom isystem
-CLANG_OPTIONS = -x objective-c -c
+CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --uninit-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.m)
 
 include $(TESTS_DIR)/clang.make
+include $(TESTS_DIR)/objc.make
 
 infer-out/report.json: $(MAKEFILE_LIST)
