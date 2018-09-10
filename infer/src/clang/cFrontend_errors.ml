@@ -13,7 +13,6 @@ module MF = MarkupFormatter
 type linter =
   { condition: CTL.t
   ; issue_desc: CIssue.issue_desc
-  ; def_file: string option
   ; whitelist_paths: ALVar.t list
   ; blacklist_paths: ALVar.t list }
 
@@ -248,7 +247,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
     in
     let issue_desc = {issue_desc with issue_type} in
     L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;
-    {condition; issue_desc; def_file= Some linters_def_file; whitelist_paths; blacklist_paths}
+    {condition; issue_desc; whitelist_paths; blacklist_paths}
   in
   List.map ~f:do_one_checker checkers
 
