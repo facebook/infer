@@ -49,10 +49,16 @@ type json_trace = {
   trace : json_trace_item list;
 }
 
+type hum_info = {
+  hum_polynomial : string;
+  hum_degree : string;
+}
+
 type cost_item = {
   loc : loc;
   procedure_id : string;
   polynomial : string;
+  ?hum : hum_info option;
 }
 
 type costs_report = cost_item list
