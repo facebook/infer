@@ -893,7 +893,7 @@ let abstract_pure_part tenv p ~(from_abstract_footprint : bool) =
   let new_pure = do_pure (Prop.get_pure p) in
   let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.exp_sub_empty in
   let eprop'' =
-    if !Config.footprint && not from_abstract_footprint then
+    if !BiabductionConfig.footprint && not from_abstract_footprint then
       let new_pi_footprint = do_pure p.Prop.pi_fp in
       Prop.set eprop' ~pi_fp:new_pi_footprint
     else eprop'
@@ -1117,9 +1117,12 @@ let check_junk pname tenv prop =
                  List.mem ~equal:attr_opt_equal !leaks_reported alloc_attribute
             in
             let ignore_leak =
-              !Config.allow_leak || ignore_resource || is_undefined || already_reported ()
+              !BiabductionConfig.allow_leak || ignore_resource || is_undefined
+              || already_reported ()
             in
-            let report_and_continue = Language.curr_language_is Java || !Config.footprint in
+            let report_and_continue =
+              Language.curr_language_is Java || !BiabductionConfig.footprint
+            in
             let report_leak () =
               if not report_and_continue then raise exn
               else (
@@ -1256,7 +1259,7 @@ let abstract_footprint pname (tenv : Tenv.t) (prop : Prop.normal Prop.t) : Prop.
 let abstract_ pname pay tenv p =
   if pay then SymOp.pay () ;
   (* pay one symop *)
-  let p' = if !Config.footprint then abstract_footprint pname tenv p else p in
+  let p' = if !BiabductionConfig.footprint then abstract_footprint pname tenv p else p in
   abstract_prop pname tenv ~rename_primed:true ~from_abstract_footprint:false p'
 
 

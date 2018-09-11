@@ -448,7 +448,8 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
   let init_value () =
     let create_fresh_var () =
       let fresh_id =
-        Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)
+        Ident.create_fresh
+          (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed)
       in
       Exp.Var fresh_id
     in
@@ -1058,7 +1059,7 @@ module Normalize = struct
 
   let exp_normalize ?destructive tenv sub exp =
     let exp' = Sil.exp_sub sub exp in
-    let abstract_expressions = !Config.abs_val >= 1 in
+    let abstract_expressions = !BiabductionConfig.abs_val >= 1 in
     sym_eval ?destructive tenv abstract_expressions exp'
 
 
@@ -1075,7 +1076,7 @@ module Normalize = struct
 
 
   let exp_normalize_noabs tenv sub exp =
-    Config.run_with_abs_val_equal_zero (exp_normalize tenv sub) exp
+    BiabductionConfig.run_with_abs_val_equal_zero (exp_normalize tenv sub) exp
 
 
   (** Turn an inequality expression into an atom *)
@@ -1742,7 +1743,7 @@ end
 (* End of module Normalize *)
 
 let exp_normalize_prop ?destructive tenv prop exp =
-  Config.run_with_abs_val_equal_zero
+  BiabductionConfig.run_with_abs_val_equal_zero
     (Normalize.exp_normalize ?destructive tenv (`Exp prop.sub))
     exp
 
@@ -1761,11 +1762,15 @@ let lexp_normalize_prop tenv p lexp =
 
 
 let atom_normalize_prop tenv prop atom =
-  Config.run_with_abs_val_equal_zero (Normalize.atom_normalize tenv (`Exp prop.sub)) atom
+  BiabductionConfig.run_with_abs_val_equal_zero
+    (Normalize.atom_normalize tenv (`Exp prop.sub))
+    atom
 
 
 let sigma_normalize_prop tenv prop sigma =
-  Config.run_with_abs_val_equal_zero (Normalize.sigma_normalize tenv (`Exp prop.sub)) sigma
+  BiabductionConfig.run_with_abs_val_equal_zero
+    (Normalize.sigma_normalize tenv (`Exp prop.sub))
+    sigma
 
 
 let sigma_replace_exp tenv epairs sigma =
@@ -1775,7 +1780,7 @@ let sigma_replace_exp tenv epairs sigma =
 
 (** Construct an atom. *)
 let mk_atom tenv atom =
-  Config.run_with_abs_val_equal_zero
+  BiabductionConfig.run_with_abs_val_equal_zero
     (fun () -> Normalize.atom_normalize tenv Sil.sub_empty atom)
     ()
 
@@ -2023,7 +2028,7 @@ let apply_reindexing tenv (exp_subst : Sil.exp_subst) prop =
 
 
 let prop_rename_array_indices tenv prop =
-  if !Config.footprint then prop
+  if !BiabductionConfig.footprint then prop
   else
     let indices = sigma_get_array_indices prop.sigma in
     let not_same_base_lt_offsets (e1 : Exp.t) (e2 : Exp.t) =
@@ -2308,7 +2313,7 @@ type 'a prop_iter =
   { pit_sub: Sil.exp_subst  (** substitution for equalities *)
   ; pit_pi: pi  (** pure part *)
   ; pit_newpi: (bool * Sil.atom) list  (** newly added atoms. *)
-  ; (* The first records !Config.footprint. *)
+  ; (* The first records !BiabductionConfig.footprint. *)
     pit_old: sigma  (** sigma already visited *)
   ; pit_curr: Sil.hpred  (** current element *)
   ; pit_state: 'a  (** state of current element *)

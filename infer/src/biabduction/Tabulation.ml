@@ -82,7 +82,7 @@ let print_results tenv actual_pre results =
 
 
 let log_call_trace ~caller_name ~callee_name ?callee_attributes ?reason ?dynamic_dispatch loc res =
-  if !Config.footprint then
+  if !BiabductionConfig.footprint then
     let get_valid_source_file loc =
       let file = loc.Location.file in
       if SourceFile.is_invalid file then None else Some file
@@ -850,7 +850,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let instantiated_post =
     let posts' =
-      if !Config.footprint && List.is_empty posts then
+      if !BiabductionConfig.footprint && List.is_empty posts then
         (* in case of divergence, produce a prop *)
         (* with updated footprint and inconsistent current *)
         [(Prop.set Prop.prop_emp ~pi:[Sil.Aneq (Exp.zero, Exp.zero)], path_pre)]
@@ -959,7 +959,7 @@ let combine tenv ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre pat
                 assert false ) )
     in
     let post_p4 =
-      if !Config.footprint then
+      if !BiabductionConfig.footprint then
         prop_footprint_add_pi_sigma_starfld_sigma tenv post_p3 split.missing_pi split.missing_sigma
           split.missing_fld split.missing_typ
       else Some post_p3
@@ -1247,10 +1247,10 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
           Invalid_res (Dereference_error (deref_error, desc, pjoin))
       | None ->
           let split = do_split () in
-          if (not !Config.footprint) && split.missing_sigma <> [] then (
+          if (not !BiabductionConfig.footprint) && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )
-          else if (not !Config.footprint) && missing_fld_not_objc_class <> [] then (
+          else if (not !BiabductionConfig.footprint) && missing_fld_not_objc_class <> [] then (
             L.d_strln "Implication error: missing_fld not empty in re-execution" ;
             Invalid_res Missing_fld_not_empty )
           else report_valid_res split )
@@ -1319,7 +1319,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let print_pi pi = L.d_str "pi: " ; Prop.d_pi pi ; L.d_ln () in
   let call_desc kind_opt = Localise.desc_precondition_not_met kind_opt callee_pname loc in
   let res_with_path_idents =
-    if !Config.footprint then
+    if !BiabductionConfig.footprint then
       if List.is_empty valid_res_cons_pre_missing then (
         (* no valid results where actual pre and missing are consistent *)
         match deref_errors with

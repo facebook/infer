@@ -206,7 +206,7 @@ let create_type tenv n_lexp typ prop =
   let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_nonnull prop_type) in
-  if List.length non_null_case > 0 && !Config.footprint then non_null_case
+  if List.length non_null_case > 0 && !BiabductionConfig.footprint then non_null_case
   else if List.length non_null_case > 0 && is_undefined_opt tenv prop n_lexp then non_null_case
   else null_case @ non_null_case
 
@@ -306,14 +306,14 @@ let execute___instanceof_cast ~instof {Builtin.pdesc; tenv; prop_; path; ret_id_
                        let pos_res = mk_res pos_type_opt val1 in
                        let neg_res = mk_res neg_type_opt Exp.zero in
                        pos_res @ neg_res
-                     else if !Config.footprint then
+                     else if !BiabductionConfig.footprint then
                        match pos_type_opt with
                        | None ->
                            deal_with_failed_cast val1 texp1 texp2
                        | Some _ ->
                            mk_res pos_type_opt val1
                      else
-                       (* !Config.footprint is false *)
+                       (* !BiabductionConfig.footprint is false *)
                        match neg_type_opt with
                        | Some _ ->
                            if is_undefined_opt tenv prop val1 then mk_res pos_type_opt val1

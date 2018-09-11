@@ -247,7 +247,7 @@ let prune_ne tenv ~positive e1 e2 prop =
   if is_inconsistent then Propset.empty
   else
     let conjoin = if positive then Prop.conjoin_neq else Prop.conjoin_eq in
-    let new_prop = conjoin tenv ~footprint:!Config.footprint e1 e2 prop in
+    let new_prop = conjoin tenv ~footprint:!BiabductionConfig.footprint e1 e2 prop in
     if Prover.check_inconsistency tenv new_prop then Propset.empty
     else Propset.singleton tenv new_prop
 
@@ -277,7 +277,7 @@ let prune_ineq tenv ~is_strict ~positive prop e1 e2 =
     let is_inconsistent = Prover.check_atom tenv prop (Prop.mk_inequality tenv not_prune_cond) in
     if is_inconsistent then Propset.empty
     else
-      let footprint = !Config.footprint in
+      let footprint = !BiabductionConfig.footprint in
       let prop_with_ineq = Prop.conjoin_eq tenv ~footprint prune_cond Exp.one prop in
       Propset.singleton tenv prop_with_ineq
 
@@ -796,7 +796,7 @@ let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver 
   let current_pname = Procdesc.get_proc_name pdesc in
   if
     Typ.Procname.is_constructor callee_pname
-    && receiver_self receiver pre && !Config.footprint
+    && receiver_self receiver pre && !BiabductionConfig.footprint
     && Typ.Procname.is_constructor current_pname
   then
     let propset = prune_ne tenv ~positive:false (Exp.Var ret_id) Exp.zero pre in
@@ -859,7 +859,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
     match force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver with
     | [] ->
         if
-          !Config.footprint
+          !BiabductionConfig.footprint
           && Option.is_none (Attribute.get_undef tenv pre receiver)
           && not (Rearrange.is_only_pt_by_fld_or_param_nonnull pdesc tenv pre receiver)
         then
@@ -970,7 +970,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ cal
           let loc = if Typ.Procname.is_java callee_pname then Location.dummy else callee_loc in
           Pvar.mk_abduced_ret callee_pname loc
         in
-        if !Config.footprint then
+        if !BiabductionConfig.footprint then
           match lookup_abduced_expression prop abduced_ret_pv with
           | None ->
               let p, fp_var = add_to_footprint tenv abduced_ret_pv typ prop in
@@ -1044,7 +1044,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
       with Exceptions.Symexec_memory_error _ ->
         (* This should normally be a real alarm and should not be caught but currently happens
            when the normalization drops hpreds of the form ident |-> footprint var. *)
-        let undef = Exp.get_undefined !Config.footprint in
+        let undef = Exp.get_undefined !BiabductionConfig.footprint in
         [Prop.conjoin_eq tenv (Exp.Var id) undef prop] )
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
@@ -1195,8 +1195,9 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
       in
       sigma_ret :: sigma_locals
     in
-    Config.run_in_re_execution_mode (* no footprint vars for locals *)
-                                    sigma_locals_and_ret ()
+    BiabductionConfig.run_in_re_execution_mode
+      (* no footprint vars for locals *)
+      sigma_locals_and_ret ()
   in
   let sigma' = prop_.Prop.sigma @ sigma_locals_and_ret in
   let prop' = Prop.normalize tenv (Prop.set prop_ ~sigma:sigma') in
@@ -1583,7 +1584,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
     in
     (* prevent introducing multiple abduced retvals for a single call site in a loop *)
     if already_has_abduced_retval prop || is_rec_call callee_pname caller_pdesc then prop
-    else if !Config.footprint then
+    else if !BiabductionConfig.footprint then
       let prop', abduced_strexp =
         match actual_typ.Typ.desc with
         | Typ.Tptr (({desc= Tstruct _} as typ), _) ->
@@ -1955,7 +1956,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
       State.set_path path None ;
       (* Check for retain cycles after assignments and method calls *)
       ( match instr with
-      | (Sil.Store _ | Sil.Call _) when !Config.footprint ->
+      | (Sil.Store _ | Sil.Call _) when !BiabductionConfig.footprint ->
           RetainCycles.report_cycle tenv summary p
       | _ ->
           () ) ;
@@ -1977,7 +1978,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
     L.d_ln () ;
     let prop', fav_normal = pre_process_prop prop in
     let res_list =
-      Config.run_with_abs_val_equal_zero
+      BiabductionConfig.run_with_abs_val_equal_zero
         (* no exp abstraction during sym exe *)
           (fun () ->
           sym_exec exe_env tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path )
@@ -1998,7 +1999,7 @@ and sym_exec_wrapper exe_env handle_exn tenv summary proc_cfg instr
     Paths.PathSet.from_renamed_list results
   with exn ->
     IExn.reraise_if exn ~f:(fun () ->
-        (not !Config.footprint) || not (Exceptions.handle_exception exn) ) ;
+        (not !BiabductionConfig.footprint) || not (Exceptions.handle_exception exn) ) ;
     handle_exn exn ;
     (* calls State.mark_instr_fail *)
     Paths.PathSet.empty

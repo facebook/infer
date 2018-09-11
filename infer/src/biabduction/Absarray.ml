@@ -7,10 +7,27 @@
  *)
 
 open! IStd
+module L = Logging
+
+(** This function should be used before adding a new index to Earray. The [exp] is the newly created
+   index. This function "cleans" [exp] according to whether it is the footprint or current part of
+   the prop.  The function faults in the re - execution mode, as an internal check of the tool. *)
+let array_clean_new_index footprint_part new_idx =
+  assert (not (footprint_part && not !BiabductionConfig.footprint)) ;
+  if
+    footprint_part
+    && Exp.free_vars new_idx |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
+  then (
+    L.d_warning
+      ( "Array index " ^ Exp.to_string new_idx
+      ^ " has non-footprint vars: replaced by fresh footprint var" ) ;
+    L.d_ln () ;
+    let id = Ident.create_fresh Ident.kfootprint in
+    Exp.Var id )
+  else new_idx
+
 
 (** Abstraction for Arrays *)
-
-module L = Logging
 
 type sigma = Sil.hpred list
 
@@ -243,7 +260,7 @@ end = struct
           let orig_indices = List.map ~f:fst esel in
           let index_is_not_new idx = List.exists ~f:(Exp.equal idx) orig_indices in
           let process_index idx =
-            if index_is_not_new idx then idx else Sil.array_clean_new_index footprint_part idx
+            if index_is_not_new idx then idx else array_clean_new_index footprint_part idx
           in
           let esel_in' = List.map ~f:(fun (idx, se) -> (process_index idx, se)) esel_in in
           Sil.Earray (len, esel_in', inst2)
@@ -318,7 +335,7 @@ let prop_update_sigma_and_fp_sigma tenv (p : Prop.normal Prop.t)
   let sigma', changed = update false p.Prop.sigma in
   let ep1 = Prop.set p ~sigma:sigma' in
   let ep2, changed2 =
-    if !Config.footprint then
+    if !BiabductionConfig.footprint then
       let sigma_fp', changed' = update true ep1.Prop.sigma_fp in
       (Prop.set ep1 ~sigma_fp:sigma_fp', changed')
     else (ep1, false)
@@ -411,11 +428,13 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
     Prop.normal Prop.t =
   try
     let fresh_index =
-      Exp.Var (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed))
+      Exp.Var
+        (Ident.create_fresh
+           (if !BiabductionConfig.footprint then Ident.kfootprint else Ident.kprimed))
     in
     let p2 =
       try
-        if !Config.footprint then
+        if !BiabductionConfig.footprint then
           let sigma_fp = p.Prop.sigma_fp in
           let matched_fp = StrexpMatch.find_path sigma_fp path in
           let sigma_fp' = StrexpMatch.replace_index tenv true matched_fp index fresh_index in
@@ -563,7 +582,7 @@ let strexp_do_abstract tenv footprint_part p ((path, se_in, _) : StrexpMatch.str
   let do_reexecution () =
     match se_in with Sil.Earray (_, esel, _) -> do_array_reexecution esel | _ -> assert false
   in
-  if !Config.footprint then do_footprint () else do_reexecution ()
+  if !BiabductionConfig.footprint then do_footprint () else do_reexecution ()
 
 
 let strexp_abstract tenv (p : Prop.normal Prop.t) : Prop.normal Prop.t =
@@ -581,7 +600,7 @@ let report_error prop =
 let check_after_array_abstraction tenv prop =
   let lookup = Tenv.lookup tenv in
   let check_index root offs (ind, _) =
-    if !Config.footprint then
+    if !BiabductionConfig.footprint then
       let path = StrexpMatch.path_from_exp_offsets root offs in
       index_is_pointed_to tenv prop path ind
     else not (Exp.free_vars ind |> Sequence.exists ~f:Ident.is_primed)

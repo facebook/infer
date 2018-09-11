@@ -50,7 +50,7 @@ module NodeVisitSet = Caml.Set.Make (struct
 
 
   let compare x1 x2 =
-    if !Config.footprint then
+    if !BiabductionConfig.footprint then
       match Config.worklist_mode with
       | 0 ->
           compare_ids x1.node x2.node
@@ -169,7 +169,8 @@ let path_set_checkout_todo (wl : Worklist.t) (node : Procdesc.Node.t) : Paths.Pa
 (* =============== END of the edge_set object =============== *)
 
 let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
-  if !Config.footprint then Config.run_in_re_execution_mode (Abs.lifted_abstract pname tenv) pset
+  if !BiabductionConfig.footprint then
+    BiabductionConfig.run_in_re_execution_mode (Abs.lifted_abstract pname tenv) pset
   else Abs.lifted_abstract pname tenv pset
 
 
@@ -177,8 +178,8 @@ let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.Path
   let abs_option p =
     if Prover.check_inconsistency tenv p then None else Some (Abs.abstract pname tenv p)
   in
-  if !Config.footprint then
-    Config.run_in_re_execution_mode (Paths.PathSet.map_option abs_option) pathset
+  if !BiabductionConfig.footprint then
+    BiabductionConfig.run_in_re_execution_mode (Paths.PathSet.map_option abs_option) pathset
   else Paths.PathSet.map_option abs_option pathset
 
 
@@ -199,7 +200,8 @@ let do_meet_pre tenv pset =
 let collect_preconditions tenv summary : Prop.normal BiabductionSummary.Jprop.t list =
   let proc_name = Summary.get_proc_name summary in
   let collect_do_abstract_one tenv prop =
-    if !Config.footprint then Config.run_in_re_execution_mode (Abs.abstract_no_symop tenv) prop
+    if !BiabductionConfig.footprint then
+      BiabductionConfig.run_in_re_execution_mode (Abs.abstract_no_symop tenv) prop
     else Abs.abstract_no_symop tenv prop
   in
   let pres =
@@ -282,7 +284,10 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
     curr_node (wl : Worklist.t) =
   let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
-  if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then (
+  if
+    !BiabductionConfig.footprint
+    && not (Paths.PathSet.is_empty (State.get_diverging_states_node ()))
+  then (
     Errdesc.warning_err (State.get_loc_exn ()) "Propagating Divergence@." ;
     let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
     let diverging_states = State.get_diverging_states_node () in
@@ -398,7 +403,7 @@ let do_symbolic_execution exe_env summary proc_cfg handle_exn tenv
 let mark_visited summary node =
   let node_id = (Procdesc.Node.get_id node :> int) in
   let stats = summary.Summary.stats in
-  if !Config.footprint then Summary.Stats.add_visited_fp stats node_id
+  if !BiabductionConfig.footprint then Summary.Stats.add_visited_fp stats node_id
   else Summary.Stats.add_visited_re stats node_id
 
 
@@ -464,7 +469,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       L.d_ln ()
     with exn ->
       IExn.reraise_if exn ~f:(fun () ->
-          (not !Config.footprint) || not (Exceptions.handle_exception exn) ) ;
+          (not !BiabductionConfig.footprint) || not (Exceptions.handle_exception exn) ) ;
       handle_exn exn ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
@@ -498,7 +503,7 @@ let forward_tabulate summary exe_env tenv proc_cfg wl =
       handle_exn_node curr_node exn ;
       Printer.force_delayed_prints () ;
       do_after_node curr_node ;
-      if not !Config.footprint then raise RE_EXE_ERROR
+      if not !BiabductionConfig.footprint then raise RE_EXE_ERROR
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
@@ -738,7 +743,7 @@ let initial_prop_from_emp tenv curr_f = initial_prop tenv curr_f Prop.prop_emp t
 
 (** Construct an initial prop from an existing pre with formals *)
 let initial_prop_from_pre tenv curr_f pre =
-  if !Config.footprint then
+  if !BiabductionConfig.footprint then
     let vars = Prop.free_vars pre |> Ident.hashqueue_of_sequence |> Ident.HashQueue.keys in
     let sub_list =
       List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.kfootprint))) vars
@@ -922,7 +927,7 @@ let set_current_language proc_desc =
 
 (** reset global values before analysing a procedure *)
 let reset_global_values proc_desc =
-  Config.reset_abs_val () ;
+  BiabductionConfig.reset_abs_val () ;
   Ident.NameGenerator.reset () ;
   SymOp.reset_total () ;
   reset_prop_metrics () ;
@@ -1196,7 +1201,7 @@ let perform_transition proc_cfg tenv proc_name summary =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
-      let allow_leak = !Config.allow_leak in
+      let allow_leak = !BiabductionConfig.allow_leak in
       (* apply the start node to f, and do nothing in case of exception *)
       let apply_start_node f =
         try f (ProcCfg.Exceptional.start_node proc_cfg)
@@ -1204,14 +1209,14 @@ let perform_transition proc_cfg tenv proc_name summary =
       in
       apply_start_node (do_before_node 0) ;
       try
-        Config.allow_leak := true ;
+        BiabductionConfig.allow_leak := true ;
         let res = collect_preconditions tenv summary in
-        Config.allow_leak := allow_leak ;
+        BiabductionConfig.allow_leak := allow_leak ;
         apply_start_node do_after_node ;
         res
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node ;
-        Config.allow_leak := allow_leak ;
+        BiabductionConfig.allow_leak := allow_leak ;
         L.(debug Analysis Medium)
           "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name ;
         let error = Exceptions.recognize_exception exn in
@@ -1233,10 +1238,12 @@ let analyze_procedure_aux summary exe_env tenv proc_desc : Summary.t =
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   Preanal.do_preanalysis proc_desc tenv ;
   let summaryfp =
-    Config.run_in_footprint_mode (analyze_proc summary exe_env tenv) proc_cfg
+    BiabductionConfig.run_in_footprint_mode (analyze_proc summary exe_env tenv) proc_cfg
     |> perform_transition proc_cfg tenv proc_name
   in
-  let summaryre = Config.run_in_re_execution_mode (analyze_proc summaryfp exe_env tenv) proc_cfg in
+  let summaryre =
+    BiabductionConfig.run_in_re_execution_mode (analyze_proc summaryfp exe_env tenv) proc_cfg
+  in
   let summary_compact =
     match summaryre.Summary.payloads.biabduction with
     | Some BiabductionSummary.({preposts} as biabduction) when Config.save_compact_summaries ->

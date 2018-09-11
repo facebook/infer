@@ -1037,24 +1037,6 @@ let hpred_gen_free_vars =
 
 let hpred_free_vars h = Sequence.Generator.run (hpred_gen_free_vars h)
 
-(** This function should be used before adding a new index to Earray. The [exp] is the newly created
-   index. This function "cleans" [exp] according to whether it is the footprint or current part of
-   the prop.  The function faults in the re - execution mode, as an internal check of the tool. *)
-let array_clean_new_index footprint_part new_idx =
-  assert (not (footprint_part && not !Config.footprint)) ;
-  if
-    footprint_part
-    && Exp.free_vars new_idx |> Sequence.exists ~f:(fun id -> not (Ident.is_footprint id))
-  then (
-    L.d_warning
-      ( "Array index " ^ Exp.to_string new_idx
-      ^ " has non-footprint vars: replaced by fresh footprint var" ) ;
-    L.d_ln () ;
-    let id = Ident.create_fresh Ident.kfootprint in
-    Exp.Var id )
-  else new_idx
-
-
 (** {2 Functions for computing all free or bound non-program variables} *)
 
 (** Variables in hpara, excluding bound vars in the body *)

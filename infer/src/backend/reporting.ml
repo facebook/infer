@@ -50,7 +50,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
 
 
 let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
-  if !Config.footprint then
+  if !BiabductionConfig.footprint then
     match Summary.get proc_name with
     | Some summary ->
         let node =
@@ -85,7 +85,7 @@ let log_issue_external procname severity ~loc ~ltr ?access issue_type error_mess
 
 
 let log_error_using_state summary exn =
-  if !Config.footprint then
+  if !BiabductionConfig.footprint then
     let node = Errlog.BackendNode {node= State.get_node_exn ()} in
     let session = State.get_session () in
     let loc = State.get_loc_exn () in

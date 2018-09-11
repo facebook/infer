@@ -1473,7 +1473,7 @@ let path_to_id path =
         assert false
     (* None *)
   in
-  if !Config.footprint then Ident.create_fresh Ident.kfootprint
+  if !BiabductionConfig.footprint then Ident.create_fresh Ident.kfootprint
   else
     match f path with None -> Ident.create_fresh Ident.kfootprint | Some s -> Ident.create_path s
 
@@ -1533,7 +1533,7 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
         if index_frame <> [] then Some (Sil.Earray (len1, index_frame, inst1)) else None
       in
       let index_missing_opt =
-        if index_missing <> [] && !Config.footprint then
+        if index_missing <> [] && !BiabductionConfig.footprint then
           Some (Sil.Earray (len1, index_missing, inst1))
         else None
       in
@@ -2053,7 +2053,7 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
     | _ ->
         ()
   in
-  if is_callee && !Config.footprint then add_subtype ()
+  if is_callee && !BiabductionConfig.footprint then add_subtype ()
 
 
 let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 :
@@ -2664,7 +2664,7 @@ let check_implication pname tenv p1 p2 =
   in
   check p1 p2
   &&
-  if !Config.footprint then
+  if !BiabductionConfig.footprint then
     check (Prop.normalize tenv (Prop.extract_footprint p1)) (Prop.extract_footprint p2)
   else true
 

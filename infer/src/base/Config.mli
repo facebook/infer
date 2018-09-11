@@ -216,6 +216,10 @@ val rest : string list
 
 val abs_struct : int
 
+val abs_val : int
+
+val allow_leak : bool
+
 val analysis_path_regex_whitelist : analyzer -> string list
 
 val analysis_path_regex_blacklist : analyzer -> string list
@@ -668,29 +672,7 @@ val xcode_developer_dir : string option
 
 val xcpretty : bool
 
-(** {2 Global variables} *)
-
-val footprint : bool ref
-
-val run_in_footprint_mode : ('a -> 'b) -> 'a -> 'b
-(** Call f x with footprint set to true.
-    Restore the initial value of footprint also in case of exception. *)
-
-val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
-(** Call f x with footprint set to false.
-    Restore the initial value of footprint also in case of exception. *)
-
 (** {2 Global variables with initial values specified by command-line options} *)
-
-val abs_val : int ref
-
-val reset_abs_val : unit -> unit
-
-val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
-(** Call f x with abs_val set to zero.
-    Restore the initial value also in case of exception. *)
-
-val allow_leak : bool ref
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
 

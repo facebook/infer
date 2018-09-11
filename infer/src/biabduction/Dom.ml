@@ -925,7 +925,8 @@ let const_partial_join c1 c2 =
   if Const.equal c1 c2 then Exp.Const c1
   else if Const.kind_equal c1 c2 && not (is_int c1) then (
     L.d_strln "failure reason 18" ; raise Sil.JoinFail )
-  else if !Config.abs_val >= 2 then FreshVarExp.get_fresh_exp (Exp.Const c1) (Exp.Const c2)
+  else if !BiabductionConfig.abs_val >= 2 then
+    FreshVarExp.get_fresh_exp (Exp.Const c1) (Exp.Const c2)
   else ( L.d_strln "failure reason 19" ; raise Sil.JoinFail )
 
 
@@ -1906,7 +1907,7 @@ let eprop_partial_join' tenv mode (ep1 : Prop.exposed Prop.t) (ep2 : Prop.expose
 
 let footprint_partial_join' tenv (p1 : Prop.normal Prop.t) (p2 : Prop.normal Prop.t) :
     Prop.normal Prop.t * Prop.normal Prop.t =
-  if not !Config.footprint then (p1, p2)
+  if not !BiabductionConfig.footprint then (p1, p2)
   else
     let fp1 = Prop.extract_footprint p1 in
     let fp2 = Prop.extract_footprint p2 in
@@ -1931,14 +1932,14 @@ let footprint_partial_join' tenv (p1 : Prop.normal Prop.t) (p2 : Prop.normal Pro
 
 let prop_partial_join pname tenv mode p1 p2 =
   let res_by_implication_only =
-    if !Config.footprint then None
+    if !BiabductionConfig.footprint then None
     else if Prover.check_implication pname tenv p1 (Prop.expose p2) then Some p2
     else if Prover.check_implication pname tenv p2 (Prop.expose p1) then Some p1
     else None
   in
   match res_by_implication_only with
   | None -> (
-      if !Config.footprint then JoinState.set_footprint true ;
+      if !BiabductionConfig.footprint then JoinState.set_footprint true ;
       Rename.init () ;
       FreshVarExp.init () ;
       Todo.init () ;
@@ -1949,7 +1950,7 @@ let prop_partial_join pname tenv mode p1 p2 =
             let rename_footprint = Rename.reset () in
             Todo.reset rename_footprint ;
             let res = eprop_partial_join' tenv mode (Prop.expose p1') (Prop.expose p2') in
-            if !Config.footprint then JoinState.set_footprint false ;
+            if !BiabductionConfig.footprint then JoinState.set_footprint false ;
             Some res )
           ~finally:(fun () -> Rename.final () ; FreshVarExp.final () ; Todo.final ())
       with Sil.JoinFail -> None )

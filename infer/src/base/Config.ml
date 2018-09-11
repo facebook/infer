@@ -2463,7 +2463,9 @@ and rest = !rest
 
 and abs_struct = !abs_struct
 
-and abs_val_orig = !abs_val
+and abs_val = !abs_val
+
+and allow_leak = !allow_leak
 
 and analysis_path_regex_whitelist_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
@@ -3009,29 +3011,6 @@ let dynamic_dispatch =
 let dynamic_dispatch = !dynamic_dispatch
 
 let specs_library = !specs_library
-
-(** Global variables *)
-
-let set_reference_and_call_function reference value f x =
-  let saved = !reference in
-  let restore () = reference := saved in
-  Utils.try_finally_swallow_timeout
-    ~f:(fun () ->
-      reference := value ;
-      f x )
-    ~finally:restore
-
-
-(** Flag for footprint discovery mode *)
-let footprint = ref true
-
-let run_in_footprint_mode f x = set_reference_and_call_function footprint true f x
-
-let run_in_re_execution_mode f x = set_reference_and_call_function footprint false f x
-
-let reset_abs_val () = abs_val := abs_val_orig
-
-let run_with_abs_val_equal_zero f x = set_reference_and_call_function abs_val 0 f x
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =

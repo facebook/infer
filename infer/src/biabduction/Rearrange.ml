@@ -127,7 +127,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let atoms', se', res_t' =
           create_struct_values pname tenv orig_prop footprint_part kind max_stamp t off' inst
         in
-        let e' = Sil.array_clean_new_index footprint_part e in
+        let e' = Absarray.array_clean_new_index footprint_part e in
         let len = Exp.Var (new_id ()) in
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = Typ.mk_array res_t' in
@@ -144,7 +144,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
             let atoms', se', res_t' =
               create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
             in
-            let e' = Sil.array_clean_new_index footprint_part e in
+            let e' = Absarray.array_clean_new_index footprint_part e in
             let se = Sil.Earray (len, [(e', se')], inst) in
             let res_t = Typ.mk_array ~default:t res_t' ?length ?stride in
             (Sil.Aeq (e, e') :: atoms', se, res_t)
@@ -166,7 +166,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let atoms', se', res_t' =
           create_struct_values pname tenv orig_prop footprint_part kind max_stamp t' off' inst
         in
-        let e' = Sil.array_clean_new_index footprint_part e in
+        let e' = Absarray.array_clean_new_index footprint_part e in
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = mk_typ_f (Tarray {elt= res_t'; length= None; stride= None}) in
         (Sil.Aeq (e, e') :: atoms', se, res_t)
@@ -314,7 +314,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
     let array_default = Sil.Earray (array_len, array_cont, inst_arr) in
     let typ_default = Typ.mk_array ~default:typ_array typ_cont ?length:typ_array_len in
     [([], array_default, typ_default)]
-  else if !Config.footprint then (
+  else if !BiabductionConfig.footprint then (
     let atoms, elem_se, elem_typ =
       create_struct_values pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst
     in
@@ -447,7 +447,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
     if
       (* in angelic mode, purposely ignore dangling pointer warnings during the footprint phase -- we
      * will fix them during the re - execution phase *)
-      not !Config.footprint
+      not !BiabductionConfig.footprint
     then (
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
       let deref_str = Localise.deref_str_dangling None in
@@ -576,7 +576,9 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
         assert false
   in
   let atoms_se_te_to_iter e (atoms, se, te) =
-    let iter' = List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms in
+    let iter' =
+      List.fold ~f:(Prop.prop_iter_add_atom !BiabductionConfig.footprint) ~init:iter atoms
+    in
     Prop.prop_iter_update_current iter' (Sil.Hpointsto (e, se, te))
   in
   let do_extend e se te =
@@ -646,7 +648,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
         List.map
           ~f:(fun (iter, (atoms, fp_sigma)) ->
             let iter' =
-              List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms
+              List.fold ~f:(Prop.prop_iter_add_atom !BiabductionConfig.footprint) ~init:iter atoms
             in
             Prop.prop_iter_replace_footprint_sigma iter' fp_sigma )
           iter_atoms_fp_sigma_list
@@ -694,7 +696,9 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let nsigma_fp = Prop.sigma_normalize_prop tenv Prop.prop_emp sigma_fp in
   let prop' = Prop.normalize tenv (Prop.set eprop ~sigma_fp:nsigma_fp) in
   let prop_new =
-    List.fold ~f:(Prop.prop_atom_and tenv ~footprint:!Config.footprint) ~init:prop' atoms
+    List.fold
+      ~f:(Prop.prop_atom_and tenv ~footprint:!BiabductionConfig.footprint)
+      ~init:prop' atoms
   in
   let iter =
     match Prop.prop_iter_create prop_new with
@@ -1061,7 +1065,7 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   let sigma_fp = ptsto_foot :: Prop.prop_iter_get_footprint_sigma iter in
   let iter_foot = Prop.prop_iter_prev_then_insert iter ptsto in
   let iter_foot_atoms =
-    List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter_foot atoms
+    List.fold ~f:(Prop.prop_iter_add_atom !BiabductionConfig.footprint) ~init:iter_foot atoms
   in
   let iter' = Prop.prop_iter_replace_footprint_sigma iter_foot_atoms sigma_fp in
   let offsets_default = Sil.exp_get_offsets lexp in
@@ -1124,7 +1128,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
         raise (Exceptions.Missing_fld (fld, __POS__))
   in
   let res =
-    if !Config.footprint then prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst
+    if !BiabductionConfig.footprint then prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst
     else (
       check_field_splitting () ;
       match Prop.prop_iter_current tenv iter with
@@ -1136,7 +1140,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
           in
           let handle_case (atoms', se', te') =
             let iter' =
-              List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms'
+              List.fold ~f:(Prop.prop_iter_add_atom !BiabductionConfig.footprint) ~init:iter atoms'
             in
             Prop.prop_iter_update_current iter' (Sil.Hpointsto (e, se', te'))
           in
@@ -1195,7 +1199,7 @@ let iter_rearrange_ne_dllseg_first tenv recurse_on_iters iter para_dll e1 e2 e3 
     let _, para_dll_inst = Sil.hpara_dll_instantiate para_dll e1 e2 e3 elist in
     let iter' = Prop.prop_iter_update_current_by_list iter para_dll_inst in
     let prop' = Prop.prop_iter_to_prop tenv iter' in
-    let prop'' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e1 e4 prop' in
+    let prop'' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e1 e4 prop' in
     match Prop.prop_iter_create prop'' with None -> assert false | Some iter' -> iter'
   in
   recurse_on_iters [iter_inductive_case; iter_base_case]
@@ -1215,7 +1219,7 @@ let iter_rearrange_ne_dllseg_last tenv recurse_on_iters iter para_dll e1 e2 e3 e
     let _, para_dll_inst = Sil.hpara_dll_instantiate para_dll e4 e2 e3 elist in
     let iter' = Prop.prop_iter_update_current_by_list iter para_dll_inst in
     let prop' = Prop.prop_iter_to_prop tenv iter' in
-    let prop'' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e1 e4 prop' in
+    let prop'' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e1 e4 prop' in
     match Prop.prop_iter_create prop'' with None -> assert false | Some iter' -> iter'
   in
   recurse_on_iters [iter_inductive_case; iter_base_case]
@@ -1231,7 +1235,7 @@ let iter_rearrange_pe_lseg tenv recurse_on_iters default_case_iter iter para e1 
   in
   let iter_subcases =
     let removed_prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
-    let prop' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e1 e2 removed_prop in
+    let prop' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e1 e2 removed_prop in
     match Prop.prop_iter_create prop' with
     | None ->
         let iter' = default_case_iter (Prop.prop_iter_set_state iter ()) in
@@ -1255,8 +1259,8 @@ let iter_rearrange_pe_dllseg_first tenv recurse_on_iters default_case_iter iter 
   in
   let iter_subcases =
     let removed_prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
-    let prop' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e1 e3 removed_prop in
-    let prop'' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e2 e4 prop' in
+    let prop' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e1 e3 removed_prop in
+    let prop'' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e2 e4 prop' in
     match Prop.prop_iter_create prop'' with
     | None ->
         let iter' = default_case_iter (Prop.prop_iter_set_state iter ()) in
@@ -1280,8 +1284,8 @@ let iter_rearrange_pe_dllseg_last tenv recurse_on_iters default_case_iter iter p
   in
   let iter_subcases =
     let removed_prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
-    let prop' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e1 e3 removed_prop in
-    let prop'' = Prop.conjoin_eq tenv ~footprint:!Config.footprint e2 e4 prop' in
+    let prop' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e1 e3 removed_prop in
+    let prop'' = Prop.conjoin_eq tenv ~footprint:!BiabductionConfig.footprint e2 e4 prop' in
     match Prop.prop_iter_create prop'' with
     | None ->
         let iter' = default_case_iter (Prop.prop_iter_set_state iter ()) in
@@ -1401,12 +1405,13 @@ let rec iter_rearrange pname tenv lexp typ_from_instr prop iter inst :
     L.d_ln () ) ;
   let default_case_iter (iter' : unit Prop.prop_iter) =
     if Config.trace_rearrange then L.d_strln "entering default_case_iter" ;
-    if !Config.footprint then prop_iter_add_hpred_footprint pname tenv prop iter' (lexp, typ) inst
-    else if Config.array_level >= 1 && (not !Config.footprint) && Exp.pointer_arith lexp then
-      rearrange_arith tenv lexp prop
+    if !BiabductionConfig.footprint then
+      prop_iter_add_hpred_footprint pname tenv prop iter' (lexp, typ) inst
+    else if Config.array_level >= 1 && (not !BiabductionConfig.footprint) && Exp.pointer_arith lexp
+    then rearrange_arith tenv lexp prop
     else (
       pp_rearrangement_error "cannot find predicate with root" prop lexp ;
-      if not !Config.footprint then Printer.force_delayed_prints () ;
+      if not !BiabductionConfig.footprint then Printer.force_delayed_prints () ;
       raise (Exceptions.Symexec_memory_error __POS__) )
   in
   let recurse_on_iters iters =
@@ -1768,7 +1773,7 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   let prop' =
     match pname with
     | Typ.Procname.Java java_pname
-      when Config.csl_analysis && !Config.footprint
+      when Config.csl_analysis && !BiabductionConfig.footprint
            && not
                 ( Typ.Procname.is_constructor pname
                 || Typ.Procname.Java.is_class_initializer java_pname ) ->
@@ -1778,7 +1783,7 @@ let rearrange ?(report_deref_errors = true) pdesc tenv lexp typ prop loc :
   in
   match Prop.prop_iter_create prop' with
   | None ->
-      if !Config.footprint then
+      if !BiabductionConfig.footprint then
         [prop_iter_add_hpred_footprint_to_prop pname tenv prop' (nlexp, typ) inst]
       else (
         pp_rearrangement_error "sigma is empty" prop nlexp ;

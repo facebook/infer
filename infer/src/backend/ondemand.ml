@@ -92,10 +92,10 @@ type global_state =
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
   (* use a new global counter for the callee *)
-  { abs_val= !Config.abs_val
+  { abs_val= !BiabductionConfig.abs_val
   ; abstraction_rules= Abs.get_current_rules ()
   ; delayed_prints= L.get_delayed_prints ()
-  ; footprint_mode= !Config.footprint
+  ; footprint_mode= !BiabductionConfig.footprint
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()
   ; proc_analysis_time=
@@ -105,10 +105,10 @@ let save_global_state () =
 
 
 let restore_global_state st =
-  Config.abs_val := st.abs_val ;
+  BiabductionConfig.abs_val := st.abs_val ;
   Abs.set_current_rules st.abstraction_rules ;
   L.set_delayed_prints st.delayed_prints ;
-  Config.footprint := st.footprint_mode ;
+  BiabductionConfig.footprint := st.footprint_mode ;
   Printer.curr_html_formatter := st.html_formatter ;
   Ident.NameGenerator.set_current st.name_generator ;
   State.restore_state st.symexec_state ;
