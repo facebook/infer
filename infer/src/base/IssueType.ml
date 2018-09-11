@@ -108,13 +108,13 @@ let buffer_overrun_l2 = from_string "BUFFER_OVERRUN_L2"
 
 let buffer_overrun_l3 = from_string "BUFFER_OVERRUN_L3"
 
-let buffer_overrun_l4 = from_string ~enabled:false "BUFFER_OVERRUN_L4"
+let buffer_overrun_l4 = from_string "BUFFER_OVERRUN_L4"
 
-let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
+let buffer_overrun_l5 = from_string "BUFFER_OVERRUN_L5"
 
 let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
-let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
+let buffer_overrun_u5 = from_string "BUFFER_OVERRUN_U5"
 
 let cannot_star = from_string "Cannot_star"
 
@@ -269,9 +269,9 @@ let inferbo_alloc_is_negative = from_string "INFERBO_ALLOC_IS_NEGATIVE"
 
 let inferbo_alloc_is_zero = from_string "INFERBO_ALLOC_IS_ZERO"
 
-let inferbo_alloc_may_be_big = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_BIG"
+let inferbo_alloc_may_be_big = from_string "INFERBO_ALLOC_MAY_BE_BIG"
 
-let inferbo_alloc_may_be_negative = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_NEGATIVE"
+let inferbo_alloc_may_be_negative = from_string "INFERBO_ALLOC_MAY_BE_NEGATIVE"
 
 let infinite_execution_time_call = from_string ~enabled:false "INFINITE_EXECUTION_TIME_CALL"
 
