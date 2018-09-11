@@ -49,9 +49,9 @@ let compute_key (bug_type : string) (proc_name : Typ.Procname.t) (filename : str
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
-let compute_hash (severity : string) (bug_type : string) (proc_name : Typ.Procname.t)
-    (filename : string) (qualifier : string) =
-  let base_filename = Filename.basename filename in
+let compute_hash ~(severity : string) ~(bug_type : string) ~(proc_name : Typ.Procname.t)
+    ~(file : string) ~(qualifier : string) =
+  let base_filename = Filename.basename file in
   let hashable_procedure_name = Typ.Procname.hashable_name proc_name in
   let location_independent_qualifier =
     (* Removing the line,column, and infer temporary variable (e.g., n$67) information from the
@@ -309,7 +309,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
         ; node_key= Option.map ~f:Procdesc.NodeKey.to_string err_data.node_key
         ; key= compute_key bug_type proc_name file
-        ; hash= compute_hash severity bug_type proc_name file qualifier
+        ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
         ; dotty= error_desc_to_dotty_string err_key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= err_key.err_name.IssueType.hum
@@ -353,11 +353,9 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           else None
         in
         let cost_item =
-          { Jsonbug_t.loc=
-              { Jsonbug_t.file= SourceFile.to_string loc.Location.file
-              ; lnum= loc.Location.line
-              ; cnum= loc.Location.col
-              ; enum= -1 }
+          let file = SourceFile.to_string loc.Location.file in
+          { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
+          ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_id= Typ.Procname.to_string proc_name
           ; polynomial= CostDomain.BasicCost.encode post
           ; hum }
@@ -429,7 +427,7 @@ let pp_custom_of_report fmt report fields =
   List.iter ~f:(pp_custom_of_issue fmt) report
 
 
-let tests_jsonbug_compare bug1 bug2 =
+let tests_jsonbug_compare (bug1 : Jsonbug_t.jsonbug) (bug2 : Jsonbug_t.jsonbug) =
   let open Jsonbug_t in
   [%compare: string * string * int * string * Caml.Digest.t]
     (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)

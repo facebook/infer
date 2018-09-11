@@ -55,6 +55,7 @@ type hum_info = {
 }
 
 type cost_item = {
+  hash : string;
   loc : loc;
   procedure_id : string;
   polynomial : string;

@@ -127,7 +127,8 @@ let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_
     ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) : t =
   let to_map report =
     List.fold_left
-      ~f:(fun map issue -> Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue)
+      ~f:(fun map (issue : Jsonbug_t.jsonbug) ->
+        Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue )
       ~init:String.Map.empty report
   in
   let fold_aux ~key:_ ~data (left, both, right) =
