@@ -919,14 +919,11 @@ let process_summary filters formats_by_report_kind linereader stats summary issu
   let file = (Summary.get_loc summary).Location.file in
   let proc_name = Summary.get_proc_name summary in
   let error_filter = error_filter filters proc_name in
-  let pp_simple_saved = !Config.pp_simple in
-  Config.pp_simple := true ;
   let issues_acc' =
     pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
       issues_acc
   in
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary ;
-  Config.pp_simple := pp_simple_saved ;
   issues_acc'
 
 

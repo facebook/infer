@@ -66,18 +66,14 @@ let pp_translation_unit fmt = function None -> () | Some fname -> SourceFile.pp 
 let pp_ f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
-  | Local_var n ->
-      if !Config.pp_simple then Mangled.pp f name
-      else F.fprintf f "%a$%a" Typ.Procname.pp n Mangled.pp name
-  | Callee_var n ->
-      if !Config.pp_simple then F.fprintf f "%a|callee" Mangled.pp name
-      else F.fprintf f "%a$%a|callee" Typ.Procname.pp n Mangled.pp name
-  | Abduced_retvar (n, l) ->
-      if !Config.pp_simple then F.fprintf f "%a|abducedRetvar" Mangled.pp name
-      else F.fprintf f "%a$[%a]%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Abduced_ref_param (n, index, l) ->
-      if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
-      else F.fprintf f "%a$[%a]%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
+  | Local_var _ ->
+      Mangled.pp f name
+  | Callee_var _ ->
+      F.fprintf f "%a|callee" Mangled.pp name
+  | Abduced_retvar _ ->
+      F.fprintf f "%a|abducedRetvar" Mangled.pp name
+  | Abduced_ref_param (_, index, _) ->
+      F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
   | Global_var (translation_unit, is_const, is_pod, _, _) ->
       F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
         (if is_const then "|const" else "")

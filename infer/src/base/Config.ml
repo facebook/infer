@@ -3029,9 +3029,6 @@ let run_in_footprint_mode f x = set_reference_and_call_function footprint true f
 
 let run_in_re_execution_mode f x = set_reference_and_call_function footprint false f x
 
-(** if true, user simple pretty printing *)
-let pp_simple = ref true
-
 let reset_abs_val () = abs_val := abs_val_orig
 
 let run_with_abs_val_equal_zero f x = set_reference_and_call_function abs_val 0 f x

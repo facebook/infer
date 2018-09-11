@@ -1207,8 +1207,6 @@ let print_icfg_dotty source cfg =
 
 (** Dotty printing for specs *)
 let pp_speclist_dotty f (splist : Prop.normal BiabductionSummary.spec list) =
-  let pp_simple_saved = !Config.pp_simple in
-  Config.pp_simple := true ;
   reset_proposition_counter () ;
   reset_dotty_spec_counter () ;
   F.fprintf f "@\n@\n@\ndigraph main { @\nnode [shape=box]; @\n" ;
@@ -1220,18 +1218,14 @@ let pp_speclist_dotty f (splist : Prop.normal BiabductionSummary.spec list) =
         (BiabductionSummary.Jprop.to_prop s.BiabductionSummary.pre)
         s.BiabductionSummary.posts )
     splist ;
-  F.fprintf f "@\n}" ;
-  Config.pp_simple := pp_simple_saved
+  F.fprintf f "@\n}"
 
 
 let pp_speclist_to_file (filename : DB.filename) spec_list =
-  let pp_simple_saved = !Config.pp_simple in
-  Config.pp_simple := true ;
   let outc = Out_channel.create (DB.filename_to_string (DB.filename_add_suffix filename ".dot")) in
   let fmt = F.formatter_of_out_channel outc in
   let () = F.fprintf fmt "#### Dotty version:  ####@\n%a@\n@\n" pp_speclist_dotty spec_list in
-  Out_channel.close outc ;
-  Config.pp_simple := pp_simple_saved
+  Out_channel.close outc
 
 
 let pp_speclist_dotty_file (filename : DB.filename) spec_list =

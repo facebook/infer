@@ -111,21 +111,6 @@ let compare_prop p1 p2 = compare (fun _ _ -> 0) p1 p2
 
 (** {1 Functions for Pretty Printing} *)
 
-(** Pretty print a footprint. *)
-let pp_footprint pe_ f fp =
-  let pe = {pe_ with Pp.cmap_norm= pe_.Pp.cmap_foot} in
-  let pp_pi f () =
-    if fp.pi_fp <> [] then
-      F.fprintf f "%a ;@\n"
-        (Pp.semicolon_seq ~print_env:{pe with break_lines= false} (Sil.pp_atom pe))
-        fp.pi_fp
-  in
-  if fp.pi_fp <> [] || fp.sigma_fp <> [] then
-    F.fprintf f "@\n[footprint@\n  @[%a%a@]  ]" pp_pi ()
-      (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe))
-      fp.sigma_fp
-
-
 let pp_texp_simple pe =
   match pe.Pp.opt with SIM_DEFAULT -> Sil.pp_texp pe | SIM_WITH_TYP -> Sil.pp_texp_full pe
 
@@ -294,9 +279,7 @@ let create_pvar_env (sigma : sigma) : Exp.t -> Exp.t =
 
 
 (** Update the object substitution given the stack variables in the prop *)
-let prop_update_obj_sub pe prop =
-  if !Config.pp_simple then Pp.set_obj_sub pe (create_pvar_env prop.sigma) else pe
-
+let prop_update_obj_sub pe prop = Pp.set_obj_sub pe (create_pvar_env prop.sigma)
 
 (** Pretty print a footprint in simple mode. *)
 let pp_footprint_simple pe_ env f fp =
@@ -326,21 +309,19 @@ let pp_prop pe0 f prop =
       if subl <> [] then F.fprintf f "%a ;@\n" (pp_subl pe) subl ;
       if pi <> [] then F.fprintf f "%a ;@\n" (pp_pi pe) pi
     in
-    if !Config.pp_simple then
-      let env = prop_pred_env prop in
-      let iter_f n hpara = F.fprintf f "@,@[<h>%a@]" (pp_hpara_simple pe env n) hpara in
-      let iter_f_dll n hpara_dll =
-        F.fprintf f "@,@[<h>%a@]" (pp_hpara_dll_simple pe env n) hpara_dll
-      in
-      let pp_predicates _ () =
-        if Sil.Predicates.is_empty env then ()
-        else (
-          F.fprintf f "@,where" ;
-          Sil.Predicates.iter env iter_f iter_f_dll )
-      in
-      F.fprintf f "%a%a%a%a" pp_pure () (pp_sigma_simple pe env) prop.sigma
-        (pp_footprint_simple pe env) prop pp_predicates ()
-    else F.fprintf f "%a%a%a" pp_pure () (pp_sigma pe) prop.sigma (pp_footprint pe) prop
+    let env = prop_pred_env prop in
+    let iter_f n hpara = F.fprintf f "@,@[<h>%a@]" (pp_hpara_simple pe env n) hpara in
+    let iter_f_dll n hpara_dll =
+      F.fprintf f "@,@[<h>%a@]" (pp_hpara_dll_simple pe env n) hpara_dll
+    in
+    let pp_predicates _ () =
+      if Sil.Predicates.is_empty env then ()
+      else (
+        F.fprintf f "@,where" ;
+        Sil.Predicates.iter env iter_f iter_f_dll )
+    in
+    F.fprintf f "%a%a%a%a" pp_pure () (pp_sigma_simple pe env) prop.sigma
+      (pp_footprint_simple pe env) prop pp_predicates ()
   in
   match pe0.Pp.kind with
   | Pp.HTML ->
