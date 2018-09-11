@@ -126,6 +126,15 @@ let malloc size_exp =
   {exec; check}
 
 
+let memcpy dest_exp src_exp size_exp =
+  let exec _ ~ret:_ mem = mem
+  and check {location} mem cond_set =
+    BoUtils.Check.lindex_byte ~array_exp:dest_exp ~byte_index_exp:size_exp mem location cond_set
+    |> BoUtils.Check.lindex_byte ~array_exp:src_exp ~byte_index_exp:size_exp mem location
+  in
+  {exec; check}
+
+
 let realloc src_exp size_exp =
   let exec {location; tenv} ~ret:(id, _) mem =
     let size_exp = Prop.exp_normalize_noabs tenv Sil.sub_empty size_exp in
@@ -461,6 +470,7 @@ module Call = struct
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"strlen" <>--> by_value Dom.Val.Itv.nat
+      ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector

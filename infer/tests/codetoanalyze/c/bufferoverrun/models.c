@@ -47,3 +47,52 @@ void fgetc_257_good(FILE* f) {
   int c = fgetc(f);
   arr[c + 1] = 42;
 }
+
+void memcpy_bad1() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr1, arr2, 44);
+}
+
+void memcpy_bad2() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr2, arr1, 44);
+}
+
+void memcpy_bad3() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr1, arr2, -1);
+}
+
+void memcpy_bad4() {
+  int src[1];
+  int buff[1];
+  int* dst = &buff[0];
+  memcpy(dst, src, sizeof(dst));
+}
+
+void memcpy_good1() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr2, arr1, 40);
+}
+
+void memcpy_good2() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr2, arr1, 0);
+}
+
+void memcpy_good3() {
+  int arr1[10];
+  int arr2[20];
+  memcpy(arr2, arr1, 20);
+}
+
+void memcpy_good4() {
+  int src[3];
+  int dst[3];
+  memcpy(dst, src, sizeof(dst));
+}

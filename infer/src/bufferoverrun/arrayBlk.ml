@@ -112,6 +112,10 @@ let offsetof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInf
 
 let sizeof : astate -> Itv.t = fun a -> fold (fun _ arr -> Itv.join arr.ArrInfo.size) a Itv.bot
 
+let sizeof_byte : astate -> Itv.t =
+ fun a -> fold (fun _ arr -> Itv.join (Itv.mult arr.ArrInfo.size arr.ArrInfo.stride)) a Itv.bot
+
+
 let plus_offset : astate -> Itv.t -> astate =
  fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 

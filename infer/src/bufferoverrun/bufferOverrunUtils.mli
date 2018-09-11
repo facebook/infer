@@ -139,6 +139,14 @@ module Check : sig
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t
 
+  val lindex_byte :
+       array_exp:Exp.t
+    -> byte_index_exp:Exp.t
+    -> Dom.Mem.astate
+    -> Location.t
+    -> PO.ConditionSet.t
+    -> PO.ConditionSet.t
+
   val collection_access :
        array_exp:Exp.t
     -> index_exp:Exp.t
