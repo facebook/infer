@@ -21,3 +21,4 @@ codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::use_then_dead_bad, 3, D
 codetoanalyze/cpp/liveness/dead_stores_constexpr.cpp, capture_const_bad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/non_type_template_param.cpp, X<3>_isZeroBad, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
 codetoanalyze/cpp/liveness/non_type_template_param.cpp, instanciateTemplateBad, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/cpp/liveness/non_type_template_param.cpp, instanciateTemplateConstOk_FP, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]

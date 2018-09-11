@@ -21,8 +21,14 @@ int instanciateTemplateBad() {
   return 0;
 }
 
-void instanciateTemplateConstOk() {
+void instanciateTemplateConstOk_FP() {
   const int foo = 7;
+  X<foo> x;
+  x.isZeroBad();
+}
+
+void instanciateTemplateConstExprOk() {
+  constexpr int foo = 7;
   X<foo> x;
   x.isZeroBad();
 }
