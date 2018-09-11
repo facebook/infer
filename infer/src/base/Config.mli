@@ -670,8 +670,6 @@ val xcpretty : bool
 
 (** {2 Global variables} *)
 
-val arc_mode : bool ref
-
 val footprint : bool ref
 
 val run_in_footprint_mode : ('a -> 'b) -> 'a -> 'b

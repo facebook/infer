@@ -60,7 +60,6 @@ let run_clang_frontend ast_source =
   let trans_unit_ctx =
     match ast_decl with
     | Clang_ast_t.TranslationUnitDecl (_, _, _, info) ->
-        Config.arc_mode := info.Clang_ast_t.tudi_arc_enabled ;
         let source_file = SourceFile.from_abs_path info.Clang_ast_t.tudi_input_path in
         init_global_state_for_capture_and_linters source_file ;
         let lang =

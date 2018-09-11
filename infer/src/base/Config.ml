@@ -3022,9 +3022,6 @@ let set_reference_and_call_function reference value f x =
     ~finally:restore
 
 
-(** Current Objective-C Automatic Reference Counting (ARC) mode *)
-let arc_mode = ref false
-
 (** Flag for footprint discovery mode *)
 let footprint = ref true
 
