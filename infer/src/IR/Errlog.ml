@@ -65,11 +65,7 @@ type node =
   | FrontendNode of {node_key: Procdesc.NodeKey.t}
   | BackendNode of {node: Procdesc.Node.t}
 
-type err_key =
-  { severity: Exceptions.severity
-  ; in_footprint: bool
-  ; err_name: IssueType.t
-  ; err_desc: Localise.error_desc }
+type err_key = {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -103,15 +99,11 @@ module ErrLogHash = struct
     type t = err_key
 
     (* NOTE: changing the hash function can change the order in which issues are reported. *)
-    let hash key =
-      Hashtbl.hash
-        (key.severity, key.in_footprint, key.err_name, Localise.error_desc_hash key.err_desc)
-
+    let hash key = Hashtbl.hash (key.severity, key.err_name, Localise.error_desc_hash key.err_desc)
 
     let equal key1 key2 =
-      [%compare.equal: Exceptions.severity * bool * IssueType.t]
-        (key1.severity, key1.in_footprint, key1.err_name)
-        (key2.severity, key2.in_footprint, key2.err_name)
+      [%compare.equal: Exceptions.severity * IssueType.t] (key1.severity, key1.err_name)
+        (key2.severity, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
   end
 
@@ -147,8 +139,7 @@ let size filter (err_log : t) =
   let count = ref 0 in
   ErrLogHash.iter
     (fun key err_datas ->
-      if filter key.severity key.in_footprint then count := !count + ErrDataSet.cardinal err_datas
-      )
+      if filter key.severity then count := !count + ErrDataSet.cardinal err_datas )
     err_log ;
   !count
 
@@ -180,20 +171,17 @@ let pp_html source path_to_root fmt (errlog : t) =
     in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) err_datas
   in
-  let pp_err_log do_fp ek key err_datas =
-    if Exceptions.equal_severity key.severity ek && Bool.equal do_fp key.in_footprint then
+  let pp_err_log ek key err_datas =
+    if Exceptions.equal_severity key.severity ek then
       F.fprintf fmt "<br>%a %a %a" IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
-  let pp severity is_footprint phase =
-    F.fprintf fmt "%a%s DURING %s@\n" Io_infer.Html.pp_hline ()
-      (Exceptions.severity_string severity)
-      phase ;
-    ErrLogHash.iter (pp_err_log is_footprint severity) errlog
+  let pp severity =
+    F.fprintf fmt "%a%s DURING FOOTPRINT@\n" Io_infer.Html.pp_hline ()
+      (Exceptions.severity_string severity) ;
+    ErrLogHash.iter (pp_err_log severity) errlog
   in
-  List.iter
-    Exceptions.[Advice; Error; Info; Like; Warning]
-    ~f:(fun severity -> pp severity true "FOOTPRINT" ; pp severity false "RE-EXECUTION")
+  List.iter Exceptions.[Advice; Error; Info; Like; Warning] ~f:pp
 
 
 (** Add an error description to the error log unless there is
@@ -286,12 +274,7 @@ let log_issue procname ~clang_method_kind severity err_log ~loc ~node ~session ~
         ; access
         ; extras }
       in
-      let err_key =
-        { severity
-        ; in_footprint= !Config.footprint
-        ; err_name= error.name
-        ; err_desc= error.description }
-      in
+      let err_key = {severity; err_name= error.name; err_desc= error.description} in
       add_issue err_log err_key (ErrDataSet.singleton err_data)
     in
     let should_print_now = match exn with Exceptions.Internal_error _ -> true | _ -> added in

@@ -40,10 +40,7 @@ type node =
   | BackendNode of {node: Procdesc.Node.t}
 
 type err_key = private
-  { severity: Exceptions.severity
-  ; in_footprint: bool
-  ; err_name: IssueType.t
-  ; err_desc: Localise.error_desc }
+  {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
 (** Data associated to a specific error *)
@@ -88,7 +85,7 @@ val pp_warnings : Format.formatter -> t -> unit
 val pp_html : SourceFile.t -> DB.Results_dir.path -> Format.formatter -> t -> unit
 (** Print an error log in html format *)
 
-val size : (Exceptions.severity -> bool -> bool) -> t -> int
+val size : (Exceptions.severity -> bool) -> t -> int
 (** Return the number of elements in the error log which satisfy the filter.  *)
 
 val update : t -> t -> unit

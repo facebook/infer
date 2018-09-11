@@ -74,10 +74,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     if not Config.filtering then false
     else
       Errlog.fold
-        (fun {Errlog.err_name; err_desc; in_footprint} {Errlog.loc} found_confict ->
+        (fun {Errlog.err_name; err_desc} {Errlog.loc} found_confict ->
           found_confict
-          || in_footprint
-             && IssueType.equal err_name IssueType.null_dereference
+          || IssueType.equal err_name IssueType.null_dereference
              && Location.equal loc report_location
              && Localise.error_desc_is_reportable_bucket err_desc )
         (Summary.get_err_log summary) false

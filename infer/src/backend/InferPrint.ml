@@ -122,11 +122,7 @@ let summary_values summary =
   ; vspecs= List.length specs
   ; vto= Summary.Stats.failure_kind_to_string stats
   ; vsymop= Summary.Stats.symops stats
-  ; verr=
-      Errlog.size
-        (fun severity in_footprint ->
-          Exceptions.equal_severity severity Exceptions.Error && in_footprint )
-        err_log
+  ; verr= Errlog.size (Exceptions.equal_severity Exceptions.Error) err_log
   ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
   ; vline= attributes.ProcAttributes.loc.Location.line
@@ -264,8 +260,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       (not (SourceFile.is_infer_model source_file)) || Config.debug_mode || Config.debug_exceptions
     in
     if
-      err_key.in_footprint
-      && error_filter source_file err_key.err_name
+      error_filter source_file err_key.err_name
       && should_report_source_file
       && should_report err_key.severity err_key.err_name err_key.err_desc err_data.err_class
     then
@@ -451,8 +446,7 @@ module IssuesTxt = struct
           err_data.loc.Location.file
     in
     if
-      key.in_footprint
-      && error_filter source_file key.err_name
+      error_filter source_file key.err_name
       && ((not Config.filtering) || String.is_empty (censored_reason key.err_name source_file))
     then Exceptions.pp_err err_data.loc key.severity key.err_name key.err_desc None fmt ()
 
@@ -543,7 +537,7 @@ module Stats = struct
     let found_errors = ref false in
     let process_row (key : Errlog.err_key) (err_data : Errlog.err_data) =
       let type_str = key.err_name.IssueType.unique_id in
-      if key.in_footprint && error_filter key.err_name then
+      if error_filter key.err_name then
         match key.severity with
         | Exceptions.Error ->
             found_errors := true ;
