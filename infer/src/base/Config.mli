@@ -680,8 +680,6 @@ val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 (** Call f x with footprint set to false.
     Restore the initial value of footprint also in case of exception. *)
 
-val forcing_delayed_prints : bool ref
-
 val pp_simple : bool ref
 
 (** {2 Global variables with initial values specified by command-line options} *)

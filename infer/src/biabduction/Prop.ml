@@ -318,7 +318,7 @@ let prop_pred_env prop =
 (** Pretty print a proposition. *)
 let pp_prop pe0 f prop =
   let pe = prop_update_obj_sub pe0 prop in
-  let do_print f () =
+  let do_print f =
     let subl = Sil.sub_to_list prop.sub in
     (* since prop diff is based on physical equality, we need to extract the sub verbatim *)
     let pi = prop.pi in
@@ -342,11 +342,12 @@ let pp_prop pe0 f prop =
         (pp_footprint_simple pe env) prop pp_predicates ()
     else F.fprintf f "%a%a%a" pp_pure () (pp_sigma pe) prop.sigma (pp_footprint pe) prop
   in
-  if !Config.forcing_delayed_prints then
-    (* print in html mode *)
-    F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Pp.Blue do_print ()
-      Io_infer.Html.pp_end_color ()
-  else (* print in text mode *) do_print f ()
+  match pe0.Pp.kind with
+  | Pp.HTML ->
+      F.fprintf f "%a%t%a" Io_infer.Html.pp_start_color Pp.Blue do_print Io_infer.Html.pp_end_color
+        ()
+  | TEXT ->
+      do_print f
 
 
 let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p

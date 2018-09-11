@@ -3029,9 +3029,6 @@ let run_in_footprint_mode f x = set_reference_and_call_function footprint true f
 
 let run_in_re_execution_mode f x = set_reference_and_call_function footprint false f x
 
-(** Set in the middle of forcing delayed prints *)
-let forcing_delayed_prints = ref false
-
 (** if true, user simple pretty printing *)
 let pp_simple = ref true
 

@@ -170,13 +170,11 @@ end
 
 (** Execute the delayed print actions *)
 let force_delayed_prints () =
-  Config.forcing_delayed_prints := true ;
   F.fprintf !curr_html_formatter "@?" ;
   (* flush html stream *)
   L.force_delayed_prints !curr_html_formatter (L.get_delayed_prints ()) ;
   F.fprintf !curr_html_formatter "@?" ;
-  L.reset_delayed_prints () ;
-  Config.forcing_delayed_prints := false
+  L.reset_delayed_prints ()
 
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
