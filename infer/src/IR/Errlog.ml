@@ -68,6 +68,15 @@ type node =
 type err_key = {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
+let merge_err_key err_key1 err_key2 ~merge_issues ~merge_descriptions =
+  let max_sev sev1 sev2 = if Exceptions.compare_severity sev1 sev2 >= 0 then sev1 else sev2 in
+  { severity= max_sev err_key1.severity err_key2.severity
+  ; err_name= merge_issues err_key1.err_name err_key2.err_name
+  ; err_desc=
+      Localise.verbatim_desc
+        (merge_descriptions err_key1.err_desc.descriptions err_key2.err_desc.descriptions) }
+
+
 (** Data associated to a specific error *)
 type err_data =
   { node_id: int
@@ -85,6 +94,21 @@ type err_data =
   (* NOTE: Please consider adding new fields as part of extras *) }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
+
+let merge_err_data err_data1 _ =
+  { node_id= 0
+  ; node_key= None
+  ; session= 0
+  ; loc= {err_data1.loc with col= -1}
+  ; loc_in_ml_source= None
+  ; loc_trace= []
+  ; err_class= Exceptions.Checker
+  ; visibility= Exceptions.Exn_user
+  ; linters_def_file= None
+  ; doc_url= None
+  ; access= None
+  ; extras= None }
+
 
 module ErrDataSet = (* set err_data with no repeated loc *)
 Caml.Set.Make (struct

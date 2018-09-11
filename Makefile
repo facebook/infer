@@ -47,7 +47,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend c_performance c_uninit \
-  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_ownership cpp_quandary \
+  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_ownership cpp_quandary cpp_quandaryBO \
   cpp_racerd cpp_siof cpp_uninit cpp_nullable cpp_conflicts cpp_linters-for-test-only \
 
 ifneq ($(BUCK),no)

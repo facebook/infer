@@ -538,6 +538,8 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val quandary : bool
 
+val quandaryBO : bool
+
 val quandary_endpoints : Yojson.Basic.json
 
 val quandary_sanitizers : Yojson.Basic.json

@@ -43,6 +43,13 @@ type err_key = private
   {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
+val merge_err_key :
+     err_key
+  -> err_key
+  -> merge_issues:(IssueType.t -> IssueType.t -> IssueType.t)
+  -> merge_descriptions:(string list -> string list -> string)
+  -> err_key
+
 (** Data associated to a specific error *)
 type err_data = private
   { node_id: int
@@ -57,6 +64,8 @@ type err_data = private
   ; doc_url: string option  (** url to documentation of the issue type *)
   ; access: string option
   ; extras: Jsonbug_t.extra option }
+
+val merge_err_data : err_data -> err_data -> err_data
 
 (** Type of the error log *)
 type t

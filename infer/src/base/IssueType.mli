@@ -259,6 +259,10 @@ val static_initialization_order_fiasco : t
 
 val symexec_memory_error : t
 
+val tainted_buffer_access : t
+
+val tainted_memory_allocation : t
+
 val thread_safety_violation : t
 
 val unary_minus_applied_to_unsigned_expression : t

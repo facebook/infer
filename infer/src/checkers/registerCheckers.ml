@@ -44,7 +44,9 @@ let all_checkers =
         [ (DynamicDispatch Interproc.analyze_procedure, Language.Clang)
         ; (DynamicDispatch Interproc.analyze_procedure, Language.Java) ] }
   ; { name= "buffer overrun"
-    ; active= Config.bufferoverrun && not Config.cost (* Cost analysis already triggers Inferbo *)
+    ; active=
+        (Config.bufferoverrun || Config.quandaryBO) && not Config.cost
+        (* Cost analysis already triggers Inferbo *)
     ; callbacks=
         [ (Procedure BufferOverrunChecker.checker, Language.Clang)
         ; (Procedure BufferOverrunChecker.checker, Language.Java) ] }
@@ -76,7 +78,7 @@ let all_checkers =
     ; active= Config.ownership
     ; callbacks= [(Procedure Ownership.checker, Language.Clang)] }
   ; { name= "quandary"
-    ; active= Config.quandary
+    ; active= Config.quandary || Config.quandaryBO
     ; callbacks=
         [ (Procedure JavaTaintAnalysis.checker, Language.Java)
         ; (Procedure ClangTaintAnalysis.checker, Language.Clang) ] }
