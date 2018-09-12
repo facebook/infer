@@ -286,10 +286,20 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
             < 0
 
 
+let public_package_prefixes = ["java"; "android"]
+
 let should_report pdesc =
   match Procdesc.get_proc_name pdesc with
   | Typ.Procname.Java java_pname ->
-      Procdesc.get_access pdesc <> PredSymb.Private
+      ( if Config.dev_android_strict_mode then
+        match Typ.Procname.Java.get_package java_pname with
+        | None ->
+            false
+        | Some package ->
+            (* the proc must be package-public, but we can't check for that *)
+            List.exists public_package_prefixes ~f:(fun prefix -> String.is_prefix package ~prefix)
+      else true )
+      && Procdesc.get_access pdesc <> PredSymb.Private
       && (not (Typ.Procname.Java.is_autogen_method java_pname))
       && not (Typ.Procname.Java.is_class_initializer java_pname)
   | _ ->
@@ -321,73 +331,75 @@ let fold_reportable_summaries (tenv, current_pdesc) clazz ~init ~f =
          The net effect of the above issues is that we will only see these locks in conflicting pairs
          once, as opposed to twice with all other deadlock pairs. *)
 let report_deadlocks env {StarvationDomain.order; ui} report_map' =
-  let open StarvationDomain in
-  let tenv, current_pdesc = env in
-  let current_pname = Procdesc.get_proc_name current_pdesc in
-  let pp_acquire fmt (lock, loc, pname) =
-    F.fprintf fmt "%a (%a in %a)" Lock.pp lock Location.pp loc
-      (MF.wrap_monospaced Typ.Procname.pp)
-      pname
-  in
-  let pp_thread fmt
-      ( pname
-      , { Order.loc= loc1
-        ; trace= trace1
-        ; elem= {first= lock1; eventually= {elem= event; loc= loc2; trace= trace2}} } ) =
-    match event with
-    | LockAcquire lock2 ->
-        let pname1 = List.last trace1 |> Option.value_map ~default:pname ~f:CallSite.pname in
-        let pname2 = List.last trace2 |> Option.value_map ~default:pname1 ~f:CallSite.pname in
-        F.fprintf fmt "first %a and then %a" pp_acquire (lock1, loc1, pname1) pp_acquire
-          (lock2, loc2, pname2)
-    | _ ->
-        L.die InternalError "Trying to report a deadlock without two lock events."
-  in
-  let report_endpoint_elem current_elem endpoint_pname elem report_map =
-    if
-      not
-        ( Order.may_deadlock current_elem elem
-        && should_report_deadlock_on_current_proc current_elem elem )
-    then report_map
-    else
-      let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
-      match (current_elem.Order.elem.eventually.elem, elem.Order.elem.eventually.elem) with
-      | LockAcquire _, LockAcquire _ ->
-          let error_message =
-            Format.asprintf
-              "Potential deadlock.@.Trace 1 (starts at %a) %a.@.Trace 2 (starts at %a), %a."
-              (MF.wrap_monospaced Typ.Procname.pp)
-              current_pname pp_thread (current_pname, current_elem)
-              (MF.wrap_monospaced Typ.Procname.pp)
-              endpoint_pname pp_thread (endpoint_pname, elem)
-          in
-          let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
-          let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
-          let ltr = first_trace @ second_trace in
-          let loc = Order.get_loc current_elem in
-          ReportMap.add_deadlock tenv current_pdesc loc ltr error_message report_map
-      | _, _ ->
+  if Config.dev_android_strict_mode then ReportMap.empty
+  else
+    let open StarvationDomain in
+    let tenv, current_pdesc = env in
+    let current_pname = Procdesc.get_proc_name current_pdesc in
+    let pp_acquire fmt (lock, loc, pname) =
+      F.fprintf fmt "%a (%a in %a)" Lock.pp lock Location.pp loc
+        (MF.wrap_monospaced Typ.Procname.pp)
+        pname
+    in
+    let pp_thread fmt
+        ( pname
+        , { Order.loc= loc1
+          ; trace= trace1
+          ; elem= {first= lock1; eventually= {elem= event; loc= loc2; trace= trace2}} } ) =
+      match event with
+      | LockAcquire lock2 ->
+          let pname1 = List.last trace1 |> Option.value_map ~default:pname ~f:CallSite.pname in
+          let pname2 = List.last trace2 |> Option.value_map ~default:pname1 ~f:CallSite.pname in
+          F.fprintf fmt "first %a and then %a" pp_acquire (lock1, loc1, pname1) pp_acquire
+            (lock2, loc2, pname2)
+      | _ ->
+          L.die InternalError "Trying to report a deadlock without two lock events."
+    in
+    let report_endpoint_elem current_elem endpoint_pname elem report_map =
+      if
+        not
+          ( Order.may_deadlock current_elem elem
+          && should_report_deadlock_on_current_proc current_elem elem )
+      then report_map
+      else
+        let () = debug "Possible deadlock:@.%a@.%a@." Order.pp current_elem Order.pp elem in
+        match (current_elem.Order.elem.eventually.elem, elem.Order.elem.eventually.elem) with
+        | LockAcquire _, LockAcquire _ ->
+            let error_message =
+              Format.asprintf
+                "Potential deadlock.@.Trace 1 (starts at %a) %a.@.Trace 2 (starts at %a), %a."
+                (MF.wrap_monospaced Typ.Procname.pp)
+                current_pname pp_thread (current_pname, current_elem)
+                (MF.wrap_monospaced Typ.Procname.pp)
+                endpoint_pname pp_thread (endpoint_pname, elem)
+            in
+            let first_trace = Order.make_trace ~header:"[Trace 1] " current_pname current_elem in
+            let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname elem in
+            let ltr = first_trace @ second_trace in
+            let loc = Order.get_loc current_elem in
+            ReportMap.add_deadlock tenv current_pdesc loc ltr error_message report_map
+        | _, _ ->
+            report_map
+    in
+    let report_on_current_elem elem report_map =
+      match elem.Order.elem.eventually.elem with
+      | MayBlock _ ->
           report_map
-  in
-  let report_on_current_elem elem report_map =
-    match elem.Order.elem.eventually.elem with
-    | MayBlock _ ->
-        report_map
-    | LockAcquire endpoint_lock ->
-        Lock.owner_class endpoint_lock
-        |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
-               (* get the class of the root variable of the lock in the endpoint elem
+      | LockAcquire endpoint_lock ->
+          Lock.owner_class endpoint_lock
+          |> Option.value_map ~default:report_map ~f:(fun endpoint_class ->
+                 (* get the class of the root variable of the lock in the endpoint elem
                    and retrieve all the summaries of the methods of that class *)
-               (* for each summary related to the endpoint, analyse and report on its pairs *)
-               fold_reportable_summaries env endpoint_class ~init:report_map
-                 ~f:(fun acc (endp_pname, endpoint_summary) ->
-                   let endp_order = endpoint_summary.order in
-                   let endp_ui = endpoint_summary.ui in
-                   if UIThreadDomain.is_empty ui || UIThreadDomain.is_empty endp_ui then
-                     OrderDomain.fold (report_endpoint_elem elem endp_pname) endp_order acc
-                   else acc ) )
-  in
-  OrderDomain.fold report_on_current_elem order report_map'
+                 (* for each summary related to the endpoint, analyse and report on its pairs *)
+                 fold_reportable_summaries env endpoint_class ~init:report_map
+                   ~f:(fun acc (endp_pname, endpoint_summary) ->
+                     let endp_order = endpoint_summary.order in
+                     let endp_ui = endpoint_summary.ui in
+                     if UIThreadDomain.is_empty ui || UIThreadDomain.is_empty endp_ui then
+                       OrderDomain.fold (report_endpoint_elem elem endp_pname) endp_order acc
+                     else acc ) )
+    in
+    OrderDomain.fold report_on_current_elem order report_map'
 
 
 let report_starvation env {StarvationDomain.events; ui} report_map' =
@@ -439,11 +451,27 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
                        order acc
                    else acc ) )
   in
-  match ui with
-  | AbstractDomain.Types.Bottom ->
-      report_map'
-  | AbstractDomain.Types.NonBottom ui_explain ->
-      EventDomain.fold (report_on_current_elem ui_explain) events report_map'
+  let report_strict_mode event rmap =
+    match event.Event.elem with
+    | MayBlock (_, sev) ->
+        let error_message =
+          Format.asprintf "Method %a commits a strict mode violation; %a."
+            (MF.wrap_monospaced Typ.Procname.pp)
+            current_pname Event.pp event
+        in
+        let loc = Event.get_loc event in
+        let ltr = Event.make_trace current_pname event in
+        ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message rmap
+    | _ ->
+        rmap
+  in
+  if Config.dev_android_strict_mode then EventDomain.fold report_strict_mode events report_map'
+  else
+    match ui with
+    | AbstractDomain.Types.Bottom ->
+        report_map'
+    | AbstractDomain.Types.NonBottom ui_explain ->
+        EventDomain.fold (report_on_current_elem ui_explain) events report_map'
 
 
 let reporting {Callbacks.procedures; source_file} =

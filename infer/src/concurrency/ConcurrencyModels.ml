@@ -220,23 +220,32 @@ let runs_on_ui_thread tenv proc_desc =
 
 
 let is_call_of_class ?(search_superclasses = true) ?(method_prefix = false)
-    ?(actuals_pred = fun _ -> true) class_names method_name =
-  let is_target_class =
-    let target_set = List.map class_names ~f:Typ.Name.Java.from_string |> Typ.Name.Set.of_list in
-    fun tname -> Typ.Name.Set.mem tname target_set
+    ?(actuals_pred = fun _ -> true) clazz methods =
+  let method_matcher =
+    if method_prefix then fun current_method target_method ->
+      String.is_prefix current_method ~prefix:target_method
+    else fun current_method target_method -> String.equal current_method target_method
   in
-  let is_target_struct tname _ = is_target_class tname in
-  Staged.stage (fun tenv pn actuals ->
-      actuals_pred actuals
-      &&
-      match pn with
-      | Typ.Procname.Java java_pname ->
-          let classname = Typ.Procname.Java.get_class_type_name java_pname in
-          let mthd = Typ.Procname.Java.get_method java_pname in
-          ( if method_prefix then String.is_prefix mthd ~prefix:method_name
-          else String.equal mthd method_name )
-          &&
-          if search_superclasses then PatternMatch.supertype_exists tenv is_target_struct classname
-          else is_target_class classname
-      | _ ->
-          false )
+  let class_matcher =
+    let is_target_class =
+      let target = Typ.Name.Java.from_string clazz in
+      fun tname -> Typ.Name.equal tname target
+    in
+    if search_superclasses then fun tenv classname ->
+      let is_target_struct tname _ = is_target_class tname in
+      PatternMatch.supertype_exists tenv is_target_struct classname
+    else fun _ classname -> is_target_class classname
+  in
+  (fun tenv pn actuals ->
+    actuals_pred actuals
+    &&
+    match pn with
+    | Typ.Procname.Java java_pname ->
+        let mthd = Typ.Procname.Java.get_method java_pname in
+        List.exists methods ~f:(method_matcher mthd)
+        &&
+        let classname = Typ.Procname.Java.get_class_type_name java_pname in
+        class_matcher tenv classname
+    | _ ->
+        false )
+  |> Staged.stage

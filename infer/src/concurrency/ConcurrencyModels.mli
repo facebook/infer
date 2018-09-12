@@ -38,7 +38,7 @@ val find_annotated_or_overriden_annotated_method :
 val is_call_of_class :
      ?search_superclasses:bool
   -> ?method_prefix:bool
-  -> ?actuals_pred:('a -> bool)
-  -> string sexp_list
+  -> ?actuals_pred:(HilExp.t list -> bool)
   -> string
-  -> (Tenv.t -> BuiltinDecl.t -> 'a -> bool) Staged.t
+  -> string list
+  -> (Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool) Staged.t

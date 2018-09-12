@@ -2096,6 +2096,12 @@ and stats_report =
     "Write a report of the analysis results to a file"
 
 
+and dev_android_strict_mode =
+  CLOpt.mk_bool ~long:"dev-android-strict-mode" ~default:false
+    "Developer mode for starvation analysis, only for use on android implementation sources; \
+     detects methods in the Android library core which throw strict mode violation exceptions"
+
+
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
     "Use the multirange subtyping domain"
@@ -2596,6 +2602,8 @@ and debug_mode = !debug
 and default_linters = !default_linters
 
 and dependency_mode = !dependencies
+
+and dev_android_strict_mode = !dev_android_strict_mode
 
 and developer_mode = !developer_mode
 

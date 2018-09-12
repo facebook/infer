@@ -92,7 +92,8 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   java_checkers java_eradicate java_infer java_lab java_tracing java_quandary \
-  java_racerd java_stability java_crashcontext java_hoisting java_starvation java_performance
+  java_racerd java_stability java_crashcontext java_hoisting java_starvation java_performance \
+  java_strictmode
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
