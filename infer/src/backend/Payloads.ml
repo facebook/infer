@@ -11,7 +11,7 @@ module F = Format
 type t =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; buffer_overrun: BufferOverrunSummary.t option
   ; crashcontext_frame: Stacktree_t.stacktree option
   ; litho: LithoDomain.astate option
   ; quandary: QuandarySummary.t option
@@ -53,7 +53,7 @@ let pp pe fmt
     siof
     (pp_opt "RacerD" RacerDDomain.pp_summary)
     racerd (pp_opt "Litho" LithoDomain.pp) litho
-    (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp)
+    (pp_opt "BufferOverrun" BufferOverrunSummary.pp)
     buffer_overrun
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
     annot_map

@@ -21,7 +21,7 @@ module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
 module Payload = SummaryPayload.Make (struct
-  type t = Dom.Summary.t
+  type t = BufferOverrunSummary.t
 
   let update_payloads astate (payloads : Payloads.t) = {payloads with buffer_overrun= Some astate}
 
@@ -124,11 +124,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> Typ.Procname.t
       -> (Exp.t * Typ.t) list
       -> Dom.Mem.astate
-      -> Dom.Summary.t
+      -> BufferOverrunSummary.t
       -> Location.t
       -> Dom.Mem.astate =
    fun tenv ret callee_pdesc callee_pname params caller_mem summary location ->
-    let callee_exit_mem = Dom.Summary.get_output summary in
+    let callee_exit_mem = BufferOverrunSummary.get_output summary in
     let rel_subst_map = Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem in
     let eval_sym_trace, eval_locpath = Sem.mk_eval_sym_trace callee_pdesc params caller_mem in
     let caller_mem =
@@ -505,8 +505,8 @@ module Report = struct
       -> Location.t
       -> PO.ConditionSet.t =
    fun tenv callee_pdesc params caller_mem summary location ->
-    let callee_exit_mem = Dom.Summary.get_output summary in
-    let callee_cond = Dom.Summary.get_cond_set summary in
+    let callee_exit_mem = BufferOverrunSummary.get_output summary in
+    let callee_cond = BufferOverrunSummary.get_cond_set summary in
     let rel_subst_map = Sem.get_subst_map tenv callee_pdesc params caller_mem callee_exit_mem in
     let pname = Procdesc.get_proc_name callee_pdesc in
     let caller_rel = Dom.Mem.get_relation caller_mem in
@@ -684,10 +684,10 @@ let extract_pre = Analyzer.extract_pre
 
 let extract_post = Analyzer.extract_post
 
-let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
+let print_summary : Typ.Procname.t -> BufferOverrunSummary.t -> unit =
  fun proc_name s ->
   L.(debug BufferOverrun Medium)
-    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp s
+    "@\n@[<v 2>Summary of %a:@,%a@]@." Typ.Procname.pp proc_name BufferOverrunSummary.pp s
 
 
 let get_local_decls proc_desc =

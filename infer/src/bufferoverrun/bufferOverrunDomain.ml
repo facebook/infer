@@ -14,7 +14,6 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Relation = BufferOverrunDomainRelation
-module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
@@ -998,16 +997,4 @@ module Mem = struct
         caller
     | NonBottom callee ->
         f_lift (fun caller -> MemReach.instantiate_relation subst_map ~caller ~callee) caller
-end
-
-module Summary = struct
-  type t = Mem.t * PO.ConditionSet.summary_t
-
-  let get_output : t -> Mem.t = fst
-
-  let get_cond_set : t -> PO.ConditionSet.summary_t = snd
-
-  let pp : F.formatter -> t -> unit =
-   fun fmt (exit_mem, condition_set) ->
-    F.fprintf fmt "%a@;%a" Mem.pp exit_mem PO.ConditionSet.pp_summary condition_set
 end

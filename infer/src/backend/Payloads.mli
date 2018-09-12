@@ -11,7 +11,7 @@ open! IStd
 type t =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; buffer_overrun: BufferOverrunSummary.t option
   ; crashcontext_frame: Stacktree_t.stacktree option
   ; litho: LithoDomain.astate option
   ; quandary: QuandarySummary.t option
