@@ -20,8 +20,8 @@ type rule =
   ; r_sigma: Match.hpred_pat list
   ; (* sigma should be in a specific order *)
     r_new_sigma: Sil.hpred list
-  ; r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Sil.exp_subst -> Sil.atom list
-  ; r_condition: Prop.normal Prop.t -> Sil.exp_subst -> bool }
+  ; r_new_pi: Prop.normal Prop.t -> Prop.normal Prop.t -> Sil.subst -> Sil.atom list
+  ; r_condition: Prop.normal Prop.t -> Sil.subst -> bool }
 
 let sigma_rewrite tenv p r : Prop.normal Prop.t option =
   match Match.prop_match_with_impl tenv p r.r_condition r.r_vars r.r_root r.r_sigma with
@@ -31,7 +31,7 @@ let sigma_rewrite tenv p r : Prop.normal Prop.t option =
       if not (r.r_condition p_leftover sub) then None
       else
         let res_pi = r.r_new_pi p p_leftover sub in
-        let res_sigma = Prop.sigma_sub (`Exp sub) r.r_new_sigma in
+        let res_sigma = Prop.sigma_sub sub r.r_new_sigma in
         let p_with_res_pi = List.fold ~f:(Prop.prop_atom_and tenv) ~init:p_leftover res_pi in
         let p_new = Prop.prop_sigma_star p_with_res_pi res_sigma in
         Some (Prop.normalize tenv p_new)
@@ -56,7 +56,7 @@ let create_fresh_primeds_ls para =
   (ids_tuple, exps_tuple)
 
 
-let create_condition_ls ids_private id_base p_leftover (inst : Sil.exp_subst) =
+let create_condition_ls ids_private id_base p_leftover (inst : Sil.subst) =
   let insts_of_private_ids, insts_of_public_ids, inst_of_base =
     let f id' = List.exists ~f:(fun id'' -> Ident.equal id' id'') ids_private in
     let inst_private, inst_public = Sil.sub_domain_partition f inst in
@@ -117,7 +117,7 @@ let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para : Sil.hpara) =
     (ids, para_body_hpats)
   in
   let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: (ids_exist_fst @ ids_exist_snd) in
     create_condition_ls ids_private id_base
@@ -148,7 +148,7 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
     {Match.hpred= Prop.mk_lseg tenv k2 para exp_next exp_end exps_shared; Match.flag= impl_ok2}
   in
   let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
@@ -175,7 +175,7 @@ let mk_rule_lspts_ls tenv k1 impl_ok1 impl_ok2 para =
     (ids, para_body_pat)
   in
   let lseg_res = Prop.mk_lseg tenv Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base
@@ -208,7 +208,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_lseg tenv k_res para exp_base exp_end exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) =
+  let gen_pi_res _ _ (_ : Sil.subst) =
     []
     (*
   let inst_base, inst_next, inst_end =
@@ -295,7 +295,7 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
     (ids, para_body_hpats)
   in
   let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     (* for the case of ptspts since iF'=iB therefore iF' cannot be private*)
     let ids_private = ids_exist_fst @ ids_exist_snd in
@@ -346,7 +346,7 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
     ; Match.flag= impl_ok2 }
   in
   let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = id_iF' :: ids_exist in
     create_condition_dll ids_private id_iF
@@ -386,7 +386,7 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
     ; Match.flag= impl_ok1 }
   in
   let dllseg_res = Prop.mk_dllseg tenv Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = id_oB' :: ids_exist in
     create_condition_dll ids_private id_iF
@@ -428,7 +428,7 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_dllseg tenv k_res para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res _ _ (_ : Sil.exp_subst) = [] in
+  let gen_pi_res _ _ (_ : Sil.subst) = [] in
   let condition =
     let ids_private = [id_iF'; id_oB'] in
     create_condition_dll ids_private id_iF
@@ -677,11 +677,11 @@ let set_current_rules rules = Global.current_rules := rules
 let reset_current_rules () = Global.current_rules := []
 
 let eqs_sub subst eqs =
-  List.map ~f:(fun (e1, e2) -> (Sil.exp_sub (`Exp subst) e1, Sil.exp_sub (`Exp subst) e2)) eqs
+  List.map ~f:(fun (e1, e2) -> (Sil.exp_sub subst e1, Sil.exp_sub subst e2)) eqs
 
 
 let eqs_solve ids_in eqs_in =
-  let rec solve (sub : Sil.exp_subst) (eqs : (Exp.t * Exp.t) list) : Sil.exp_subst option =
+  let rec solve (sub : Sil.subst) (eqs : (Exp.t * Exp.t) list) : Sil.subst option =
     let do_default id e eqs_rest =
       if not (List.exists ~f:(fun id' -> Ident.equal id id') ids_in) then None
       else
@@ -719,7 +719,7 @@ let eqs_solve ids_in eqs_in =
     let filter id = not (List.exists ~f:(fun id' -> Ident.equal id id') sub_dom) in
     List.filter ~f:filter ids_in
   in
-  match solve Sil.exp_sub_empty eqs_in with None -> None | Some sub -> Some (compute_ids sub, sub)
+  match solve Sil.sub_empty eqs_in with None -> None | Some sub -> Some (compute_ids sub, sub)
 
 
 let sigma_special_cases_eqs sigma =
@@ -757,7 +757,7 @@ let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
       | None ->
           acc
       | Some (ids_res, sub) ->
-          (ids_res, List.map ~f:(Sil.hpred_sub (`Exp sub)) sigma_cur) :: acc
+          (ids_res, List.map ~f:(Sil.hpred_sub sub) sigma_cur) :: acc
     in
     List.fold ~f ~init:[] special_cases_eqs
   in
@@ -891,7 +891,7 @@ let abstract_pure_part tenv p ~(from_abstract_footprint : bool) =
     List.rev new_pure
   in
   let new_pure = do_pure (Prop.get_pure p) in
-  let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.exp_sub_empty in
+  let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.sub_empty in
   let eprop'' =
     if !BiabductionConfig.footprint && not from_abstract_footprint then
       let new_pi_footprint = do_pure p.Prop.pi_fp in
@@ -1142,7 +1142,7 @@ let check_junk pname tenv prop =
     else remove_junk fp_part fav_root sigma'
   in
   let sigma_new =
-    let fav_sub = Sil.exp_subst_free_vars prop.Prop.sub |> Ident.set_of_sequence in
+    let fav_sub = Sil.subst_free_vars prop.Prop.sub |> Ident.set_of_sequence in
     let fav_sub_sigmafp =
       Prop.sigma_free_vars prop.Prop.sigma_fp |> Ident.set_of_sequence ~init:fav_sub
     in

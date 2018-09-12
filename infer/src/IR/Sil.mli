@@ -385,87 +385,79 @@ val hpara_dll_shallow_free_vars : hpara_dll -> Ident.t Sequence.t
 
 (** {2 Substitution} *)
 
-type exp_subst = private (Ident.t * Exp.t) list [@@deriving compare]
+type subst = private (Ident.t * Exp.t) list [@@deriving compare]
 
-type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
-
-val equal_exp_subst : exp_subst -> exp_subst -> bool
+val equal_subst : subst -> subst -> bool
 (** Equality for substitutions. *)
 
-val exp_subst_of_list : (Ident.t * Exp.t) list -> exp_subst
+val subst_of_list : (Ident.t * Exp.t) list -> subst
 (** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. *)
 
-val subst_of_list : (Ident.t * Exp.t) list -> subst
+val subst_of_list_duplicates : (Ident.t * Exp.t) list -> subst
+(** like subst_of_list, but allow duplicate ids and only keep the first occurrence *)
 
-val exp_subst_of_list_duplicates : (Ident.t * Exp.t) list -> exp_subst
-(** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence *)
-
-val sub_to_list : exp_subst -> (Ident.t * Exp.t) list
+val sub_to_list : subst -> (Ident.t * Exp.t) list
 (** Convert a subst to a list of pairs. *)
 
 val sub_empty : subst
 (** The empty substitution. *)
 
-val exp_sub_empty : exp_subst
-
 val is_sub_empty : subst -> bool
 
-(* let to_exp_subst : [< `Exp exp_subst] => exp_subst; *)
-
-val sub_join : exp_subst -> exp_subst -> exp_subst
+val sub_join : subst -> subst -> subst
 (** Compute the common id-exp part of two inputs [subst1] and [subst2].
     The first component of the output is this common part.
     The second and third components are the remainder of [subst1]
     and [subst2], respectively. *)
 
-val sub_symmetric_difference : exp_subst -> exp_subst -> exp_subst * exp_subst * exp_subst
+val sub_symmetric_difference : subst -> subst -> subst * subst * subst
 (** Compute the common id-exp part of two inputs [subst1] and [subst2].
     The first component of the output is this common part.
     The second and third components are the remainder of [subst1]
     and [subst2], respectively. *)
 
-val sub_find : (Ident.t -> bool) -> exp_subst -> Exp.t
+val sub_find : (Ident.t -> bool) -> subst -> Exp.t
 (** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter].
     Raise [Not_found] if there isn't one. *)
 
-val sub_filter : (Ident.t -> bool) -> exp_subst -> exp_subst
+val sub_filter : (Ident.t -> bool) -> subst -> subst
 (** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. *)
 
-val sub_filter_pair : exp_subst -> f:(Ident.t * Exp.t -> bool) -> exp_subst
+val sub_filter_pair : subst -> f:(Ident.t * Exp.t -> bool) -> subst
 (** [sub_filter_exp filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. *)
 
-val sub_range_partition : (Exp.t -> bool) -> exp_subst -> exp_subst * exp_subst
+val sub_range_partition : (Exp.t -> bool) -> subst -> subst * subst
 (** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. *)
 
-val sub_domain_partition : (Ident.t -> bool) -> exp_subst -> exp_subst * exp_subst
+val sub_domain_partition : (Ident.t -> bool) -> subst -> subst * subst
 (** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. *)
 
-val sub_domain : exp_subst -> Ident.t list
+val sub_domain : subst -> Ident.t list
 (** Return the list of identifiers in the domain of the substitution. *)
 
-val sub_range : exp_subst -> Exp.t list
+val sub_range : subst -> Exp.t list
 (** Return the list of expressions in the range of the substitution. *)
 
-val sub_range_map : (Exp.t -> Exp.t) -> exp_subst -> exp_subst
+val sub_range_map : (Exp.t -> Exp.t) -> subst -> subst
 (** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. *)
 
-val sub_map : (Ident.t -> Ident.t) -> (Exp.t -> Exp.t) -> exp_subst -> exp_subst
+val sub_map : (Ident.t -> Ident.t) -> (Exp.t -> Exp.t) -> subst -> subst
 (** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
 
-val extend_sub : exp_subst -> Ident.t -> Exp.t -> exp_subst option
+val extend_sub : subst -> Ident.t -> Exp.t -> subst option
 (** Extend substitution and return [None] if not possible. *)
 
-val exp_subst_free_vars : exp_subst -> Ident.t Sequence.t
+val subst_free_vars : subst -> Ident.t Sequence.t
 
-val exp_subst_gen_free_vars : exp_subst -> (unit, Ident.t) Sequence.Generator.t
+val subst_gen_free_vars : subst -> (unit, Ident.t) Sequence.Generator.t
 
 (** substitution functions
     WARNING: these functions do not ensure that the results are normalized. *)

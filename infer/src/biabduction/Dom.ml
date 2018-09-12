@@ -524,9 +524,9 @@ module Rename : sig
 
   val lookup_list_todo : side -> Exp.t list -> Exp.t list
 
-  val to_subst_proj : side -> unit Ident.HashQueue.t -> Sil.exp_subst
+  val to_subst_proj : side -> unit Ident.HashQueue.t -> Sil.subst
 
-  val to_subst_emb : side -> Sil.exp_subst
+  val to_subst_emb : side -> Sil.subst
   (*
   val get : Exp.t -> Exp.t -> Exp.t option
   val pp : printenv -> Format.formatter -> (Exp.t * Exp.t * Exp.t) list -> unit
@@ -652,7 +652,7 @@ end = struct
     in
     if find_duplicates sub_list_side_sorted then (
       L.d_strln "failure reason 11" ; raise Sil.JoinFail )
-    else Sil.exp_subst_of_list sub_list_side
+    else Sil.subst_of_list sub_list_side
 
 
   let to_subst_emb (side : side) =
@@ -679,7 +679,7 @@ end = struct
           false
     in
     if find_duplicates sub_list_sorted then ( L.d_strln "failure reason 12" ; raise Sil.JoinFail )
-    else Sil.exp_subst_of_list sub_list_sorted
+    else Sil.subst_of_list sub_list_sorted
 
 
   let get_others' f_lookup side e =
@@ -1376,7 +1376,7 @@ let sigma_renaming_check (lhs : side) (sigma : Prop.sigma) (sigma_new : Prop.sig
    * and check that the renaming of primed vars is injective *)
   let fav_sigma = Prop.sigma_free_vars sigma_new |> Ident.hashqueue_of_sequence in
   let sub = Rename.to_subst_proj lhs fav_sigma in
-  let sigma' = Prop.sigma_sub (`Exp sub) sigma_new in
+  let sigma' = Prop.sigma_sub sub sigma_new in
   equal_sigma sigma sigma'
 
 
@@ -1785,7 +1785,7 @@ let pi_partial_meet tenv (p : Prop.normal Prop.t) (ep1 : 'a Prop.t) (ep2 : 'b Pr
   let dom2 = Ident.idlist_to_idset (Sil.sub_domain sub2) in
   let handle_atom sub dom atom =
     if Sil.atom_free_vars atom |> Sequence.for_all ~f:(fun id -> Ident.Set.mem id dom) then
-      Sil.atom_sub (`Exp sub) atom
+      Sil.atom_sub sub atom
     else ( L.d_str "handle_atom failed on " ; Sil.d_atom atom ; L.d_ln () ; raise Sil.JoinFail )
   in
   let f1 p' atom = Prop.prop_atom_and tenv p' (handle_atom sub1 dom1 atom) in
@@ -1815,7 +1815,7 @@ let eprop_partial_meet tenv (ep1 : 'a Prop.t) (ep2 : 'b Prop.t) : 'c Prop.t =
     let sub2 = ep2.Prop.sub in
     let range1 = Sil.sub_range sub1 in
     let f e = Exp.free_vars e |> Sequence.for_all ~f:Ident.is_normal in
-    Sil.equal_exp_subst sub1 sub2 && List.for_all ~f range1
+    Sil.equal_subst sub1 sub2 && List.for_all ~f range1
   in
   if not (sub_check ()) then ( L.d_strln "sub_check() failed" ; raise Sil.JoinFail )
   else

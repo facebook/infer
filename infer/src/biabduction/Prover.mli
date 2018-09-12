@@ -70,8 +70,8 @@ val d_typings : (Exp.t * Exp.t) list -> unit
 type implication_result =
   | ImplOK of
       ( check list
-      * Sil.exp_subst
-      * Sil.exp_subst
+      * Sil.subst
+      * Sil.subst
       * Sil.hpred list
       * Sil.atom list
       * Sil.hpred list

@@ -650,8 +650,7 @@ let remove_redundant_elements tenv prop =
   let occurs_at_most_once : Ident.t -> bool =
     let fav_curr =
       let ( @@@ ) = Sequence.append in
-      Sil.exp_subst_free_vars prop.Prop.sub
-      @@@ Prop.pi_free_vars prop.Prop.pi
+      Sil.subst_free_vars prop.Prop.sub @@@ Prop.pi_free_vars prop.Prop.pi
       @@@ Prop.sigma_free_vars prop.Prop.sigma
     in
     let fav_foot =

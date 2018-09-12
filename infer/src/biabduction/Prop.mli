@@ -30,7 +30,7 @@ type sigma = Sil.hpred list
 (** the kind 'a should range over [normal] and [exposed] *)
 type 'a t = private
   { sigma: sigma  (** spatial part *)
-  ; sub: Sil.exp_subst  (** substitution *)
+  ; sub: Sil.subst  (** substitution *)
   ; pi: pi  (** pure part *)
   ; sigma_fp: sigma  (** abduced spatial part *)
   ; pi_fp: pi  (** abduced pure part *) }
@@ -260,7 +260,7 @@ val from_sigma : sigma -> exposed t
 (** Build an exposed prop from sigma *)
 
 val set :
-  ?sub:Sil.exp_subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t -> exposed t
+  ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma -> 'a t -> exposed t
 (** Set individual fields of the prop. *)
 
 (** {2 Prop iterators} *)

@@ -32,16 +32,6 @@ type result = No | Unknown | Yes [@@deriving compare]
 
 let equal_result = [%compare.equal: result]
 
-let sub_type tname_subst st_pair =
-  let st, kind = st_pair in
-  match st with
-  | Subtypes tnames ->
-      let tnames' = IList.map_changed ~equal:Typ.Name.equal ~f:tname_subst tnames in
-      if phys_equal tnames tnames' then st_pair else (Subtypes tnames', kind)
-  | Exact ->
-      st_pair
-
-
 let max_result res1 res2 = if compare_result res1 res2 <= 0 then res2 else res1
 
 let is_interface tenv (class_name : Typ.Name.t) =

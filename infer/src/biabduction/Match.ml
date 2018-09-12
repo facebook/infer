@@ -21,9 +21,9 @@ type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
 (** Checks e1 = e2[sub ++ sub'] for some sub' with dom(sub') subseteq vars.
     Returns (sub ++ sub', vars - dom(sub')). *)
-let rec exp_match e1 sub vars e2 : (Sil.exp_subst * Ident.t list) option =
+let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
   let check_equal sub vars e1 e2 =
-    let e2_inst = Sil.exp_sub (`Exp sub) e2 in
+    let e2_inst = Sil.exp_sub sub e2 in
     if Exp.equal e1 e2_inst then Some (sub, vars) else None
   in
   match (e1, e2) with
@@ -97,7 +97,7 @@ let exp_list_match es1 sub vars es2 =
     dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')).
     WARNING: This function does not consider the fact that the analyzer
     sometimes forgets fields of hpred. It can possibly cause a problem. *)
-let rec strexp_match sexp1 sub vars sexp2 : (Sil.exp_subst * Ident.t list) option =
+let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
   match (sexp1, sexp2) with
   | Sil.Eexp (exp1, _), Sil.Eexp (exp2, _) ->
       exp_match exp1 sub vars exp2
@@ -148,7 +148,7 @@ and isel_match isel1 sub vars isel2 =
   | [], _ | _, [] ->
       None
   | (idx1, se1') :: isel1', (idx2, se2') :: isel2' ->
-      let idx2 = Sil.exp_sub (`Exp sub) idx2 in
+      let idx2 = Sil.exp_sub sub idx2 in
       let sanity_check = not (List.exists ~f:(fun id -> Exp.ident_mem idx2 id) vars) in
       if not sanity_check then (
         let pe = Pp.text in
@@ -168,13 +168,13 @@ and isel_match isel1 sub vars isel2 =
 
 
 (* extends substitution sub by creating a new substitution for vars *)
-let sub_extend_with_ren (sub : Sil.exp_subst) vars =
+let sub_extend_with_ren (sub : Sil.subst) vars =
   let f id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
-  let renaming_for_vars = Sil.exp_subst_of_list (List.map ~f vars) in
+  let renaming_for_vars = Sil.subst_of_list (List.map ~f vars) in
   Sil.sub_join sub renaming_for_vars
 
 
-type sidecondition = Prop.normal Prop.t -> Sil.exp_subst -> bool
+type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
 
 let rec execute_with_backtracking = function
   | [] ->
@@ -186,7 +186,7 @@ let rec execute_with_backtracking = function
       match res_f with None -> execute_with_backtracking fs | Some _ -> res_f )
 
 
-let rec instantiate_to_emp p condition (sub : Sil.exp_subst) vars = function
+let rec instantiate_to_emp p condition (sub : Sil.subst) vars = function
   | [] ->
       if condition p sub then Some (sub, p) else None
   | hpat :: hpats -> (
@@ -201,7 +201,7 @@ let rec instantiate_to_emp p condition (sub : Sil.exp_subst) vars = function
             let fully_instantiated = not (List.exists ~f:(fun id -> Exp.ident_mem e1 id) vars) in
             if not fully_instantiated then None
             else
-              let e1' = Sil.exp_sub (`Exp sub) e1 in
+              let e1' = Sil.exp_sub sub e1 in
               match exp_match e1' sub vars e2 with
               | None ->
                   None
@@ -213,8 +213,8 @@ let rec instantiate_to_emp p condition (sub : Sil.exp_subst) vars = function
             in
             if not fully_instantiated then None
             else
-              let iF' = Sil.exp_sub (`Exp sub) iF in
-              let oB' = Sil.exp_sub (`Exp sub) oB in
+              let iF' = Sil.exp_sub sub iF in
+              let oB' = Sil.exp_sub sub oB in
               match exp_list_match [iF'; oB'] sub vars [oF; iB] with
               | None ->
                   None
@@ -333,7 +333,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
         in
         if not fully_instantiated_start2 then None
         else
-          let e_start2' = Sil.exp_sub (`Exp sub) e_start2 in
+          let e_start2' = Sil.exp_sub sub e_start2 in
           match (exp_match e_start2' sub vars e_end2, hpats) with
           | None, _ ->
               (*
@@ -402,8 +402,8 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
         in
         if not fully_instantiated_iFoB2 then None
         else
-          let iF2' = Sil.exp_sub (`Exp sub) iF2 in
-          let oB2' = Sil.exp_sub (`Exp sub) oB2 in
+          let iF2' = Sil.exp_sub sub iF2 in
+          let oB2' = Sil.exp_sub sub oB2 in
           match (exp_list_match [iF2'; oB2'] sub vars [oF2; iB2], hpats) with
           | None, _ ->
               None
@@ -419,7 +419,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
         let fully_instantiated_iF2 = not (List.exists ~f:(fun id -> Exp.ident_mem iF2 id) vars) in
         if not fully_instantiated_iF2 then None
         else
-          let iF2' = Sil.exp_sub (`Exp sub) iF2 in
+          let iF2' = Sil.exp_sub sub iF2 in
           match exp_match iF2' sub vars iB2 with
           | None ->
               None
@@ -495,23 +495,19 @@ and hpara_common_match_with_impl tenv impl_ok ids1 sigma1 eids2 ids2 sigma2 =
       let sub_eids = List.map ~f:(fun (id2, id1) -> (id2, Exp.Var id1)) ren_eids in
       (sub_eids, eids_fresh)
     in
-    let sub = Sil.exp_subst_of_list (sub_ids @ sub_eids) in
+    let sub = Sil.subst_of_list (sub_ids @ sub_eids) in
     match sigma2 with
     | [] ->
         if List.is_empty sigma1 then true else false
     | hpred2 :: sigma2 -> (
         let hpat2, hpats2 =
-          let hpred2_ren, sigma2_ren =
-            (Sil.hpred_sub (`Exp sub) hpred2, Prop.sigma_sub (`Exp sub) sigma2)
-          in
+          let hpred2_ren, sigma2_ren = (Sil.hpred_sub sub hpred2, Prop.sigma_sub sub sigma2) in
           let allow_impl hpred = {hpred; flag= impl_ok} in
           (allow_impl hpred2_ren, List.map ~f:allow_impl sigma2_ren)
         in
         let condition _ _ = true in
         let p1 = Prop.normalize tenv (Prop.from_sigma sigma1) in
-        match
-          prop_match_with_impl_sub tenv p1 condition Sil.exp_sub_empty eids_fresh hpat2 hpats2
-        with
+        match prop_match_with_impl_sub tenv p1 condition Sil.sub_empty eids_fresh hpat2 hpats2 with
         | None ->
             false
         | Some (_, p1') when Prop.prop_is_emp p1' ->
@@ -551,7 +547,7 @@ and hpara_dll_match_with_impl tenv impl_ok para1 para2 : bool =
     2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
     Using the flag [field], we can control the strength of |-. *)
 let prop_match_with_impl tenv p condition vars hpat hpats =
-  prop_match_with_impl_sub tenv p condition Sil.exp_sub_empty vars hpat hpats
+  prop_match_with_impl_sub tenv p condition Sil.sub_empty vars hpat hpats
 
 
 let sigma_remove_hpred eq sigma e =

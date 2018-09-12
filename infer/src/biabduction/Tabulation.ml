@@ -198,7 +198,7 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
     let sub1_inverse_list =
       List.map ~f:(function id, Exp.Var id' -> (id', Exp.Var id) | _ -> assert false) sub1_list'
     in
-    Sil.exp_subst_of_list_duplicates sub1_inverse_list
+    Sil.subst_of_list_duplicates sub1_inverse_list
   in
   let fav_actual_pre =
     let fav_pre = Prop.free_vars actual_pre |> Ident.hashqueue_of_sequence in
@@ -211,19 +211,18 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
   let fav_missing_primed =
     let filter id = Ident.is_primed id && not (Ident.HashQueue.mem fav_actual_pre id) in
     let fav =
-      Prop.sigma_sub (`Exp sub) missing_sigma
-      |> Prop.sigma_free_vars |> Sequence.filter ~f:filter |> Ident.hashqueue_of_sequence
+      Prop.sigma_sub sub missing_sigma |> Prop.sigma_free_vars |> Sequence.filter ~f:filter
+      |> Ident.hashqueue_of_sequence
     in
-    Prop.pi_sub (`Exp sub) missing_pi
-    |> Prop.pi_free_vars |> Sequence.filter ~f:filter
+    Prop.pi_sub sub missing_pi |> Prop.pi_free_vars |> Sequence.filter ~f:filter
     |> Ident.hashqueue_of_sequence ~init:fav
     |> Ident.HashQueue.keys
   in
   let fav_missing_fld =
-    Prop.sigma_sub (`Exp sub) missing_fld |> Prop.sigma_free_vars |> Ident.hashqueue_of_sequence
+    Prop.sigma_sub sub missing_fld |> Prop.sigma_free_vars |> Ident.hashqueue_of_sequence
   in
   let map_var_to_pre_var_or_fresh id =
-    match Sil.exp_sub (`Exp sub1_inverse) (Exp.Var id) with
+    match Sil.exp_sub sub1_inverse (Exp.Var id) with
     | Exp.Var id' ->
         if
           Ident.HashQueue.mem fav_actual_pre id' || Ident.is_path id'
@@ -1227,10 +1226,9 @@ let exe_spec exe_env tenv ret_id (n, nspecs) caller_pdesc callee_pname loc prop 
               ; vr_incons_res= inconsistent_results }
       in
       List.iter ~f:log_check_exn checks ;
-      let subbed_pre = Prop.prop_sub (`Exp sub1) actual_pre in
+      let subbed_pre = Prop.prop_sub sub1 actual_pre in
       match
-        check_dereferences caller_pname tenv callee_pname subbed_pre (`Exp sub2) spec_pre
-          formal_params
+        check_dereferences caller_pname tenv callee_pname subbed_pre sub2 spec_pre formal_params
       with
       | Some (Deref_undef _, _) ->
           let split = do_split () in

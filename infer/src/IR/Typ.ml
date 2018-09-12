@@ -150,8 +150,6 @@ module T = struct
 
   let equal_quals = [%compare.equal: type_quals]
 
-  let equal_template_arg = [%compare.equal: template_arg]
-
   let equal = [%compare.equal: t]
 end
 
@@ -185,12 +183,6 @@ let mk_array ?default ?quals ?length ?stride elt : t =
 let void = mk Tvoid
 
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
-
-let merge_quals quals1 quals2 =
-  { is_const= quals1.is_const || quals2.is_const
-  ; is_restrict= quals1.is_restrict || quals2.is_restrict
-  ; is_volatile= quals1.is_volatile || quals2.is_volatile }
-
 
 let escape pe = if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Escape.escape_xml else ident
 
@@ -267,51 +259,6 @@ let pp pe f te = if Config.print_types then pp_full pe f te else ()
 let to_string typ =
   let pp fmt = pp_full Pp.text fmt typ in
   F.asprintf "%t" pp
-
-
-type type_subst_t = (string * t) list [@@deriving compare]
-
-let is_type_subst_empty = List.is_empty
-
-(** Given the template type mapping and the type, substitute tvars within the type. *)
-let rec sub_type subst generic_typ : t =
-  match generic_typ.desc with
-  | TVar tname -> (
-    match List.Assoc.find subst ~equal:String.equal tname with
-    | Some t ->
-        (* Type qualifiers may come from original type or be part of substitution. Merge them *)
-        mk ~quals:(merge_quals t.quals generic_typ.quals) t.desc
-    | None ->
-        generic_typ )
-  | Tarray {elt= typ; length; stride} ->
-      let typ' = sub_type subst typ in
-      if phys_equal typ typ' then generic_typ
-      else mk_array ~default:generic_typ typ' ?length ?stride
-  | Tptr (typ, arg) ->
-      let typ' = sub_type subst typ in
-      if phys_equal typ typ' then generic_typ else mk ~default:generic_typ (Tptr (typ', arg))
-  | Tstruct tname ->
-      let tname' = sub_tname subst tname in
-      if phys_equal tname tname' then generic_typ else mk ~default:generic_typ (Tstruct tname')
-  | _ ->
-      generic_typ
-
-
-and sub_tname subst tname =
-  match tname with
-  | CppClass (name, Template {mangled; args}) ->
-      let sub_typ_opt typ_opt =
-        match typ_opt with
-        | TType typ ->
-            let typ' = sub_type subst typ in
-            if phys_equal typ typ' then typ_opt else TType typ'
-        | TInt _ | TNull | TNullPtr | TOpaque ->
-            typ_opt
-      in
-      let args' = IList.map_changed ~equal:equal_template_arg ~f:sub_typ_opt args in
-      if phys_equal args args' then tname else CppClass (name, Template {mangled; args= args'})
-  | _ ->
-      tname
 
 
 module Name = struct
@@ -1347,16 +1294,6 @@ module Fieldname = struct
 
 
   let pp f = function Java field_name | Clang {field_name} -> Format.pp_print_string f field_name
-
-  let class_name_replace fname ~f =
-    match fname with
-    | Clang {class_name; field_name} ->
-        let class_name' = f class_name in
-        if phys_equal class_name class_name' then fname
-        else Clang {class_name= class_name'; field_name}
-    | _ ->
-        fname
-
 
   let clang_get_qual_class = function
     | Clang {class_name} ->

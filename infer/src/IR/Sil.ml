@@ -1078,46 +1078,33 @@ type ident_exp = Ident.t * Exp.t [@@deriving compare]
 
 let compare_ident_exp_ids (id1, _) (id2, _) = Ident.compare id1 id2
 
-type exp_subst = ident_exp list [@@deriving compare]
+type subst = ident_exp list [@@deriving compare]
 
-type subst = [`Exp of exp_subst | `Typ of Typ.type_subst_t] [@@deriving compare]
+type subst_fun = Ident.t -> Exp.t
 
-type subst_fun = [`Exp of Ident.t -> Exp.t | `Typ of (Typ.t -> Typ.t) * (Typ.Name.t -> Typ.Name.t)]
-
-let equal_exp_subst = [%compare.equal: exp_subst]
+let equal_subst = [%compare.equal: subst]
 
 let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
 
 (** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. *)
-let exp_subst_of_list sub =
+let subst_of_list sub =
   let sub' = List.dedup_and_sort ~compare:compare_ident_exp sub in
   assert (sub_no_duplicated_ids sub') ;
   sub'
 
 
-let subst_of_list sub = `Exp (exp_subst_of_list sub)
-
-(** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence *)
-let exp_subst_of_list_duplicates sub = List.dedup_and_sort ~compare:compare_ident_exp_ids sub
+(** like subst_of_list, but allow duplicate ids and only keep the first occurrence *)
+let subst_of_list_duplicates sub = List.dedup_and_sort ~compare:compare_ident_exp_ids sub
 
 (** Convert a subst to a list of pairs. *)
 let sub_to_list sub = sub
 
 (** The empty substitution. *)
-let exp_sub_empty = exp_subst_of_list []
+let sub_empty = subst_of_list []
 
-let sub_empty = `Exp exp_sub_empty
-
-let is_sub_empty = function
-  | `Exp [] ->
-      true
-  | `Exp _ ->
-      false
-  | `Typ sub ->
-      Typ.is_type_subst_empty sub
-
+let is_sub_empty = List.is_empty
 
 (** Join two substitutions into one.
     For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
@@ -1150,11 +1137,11 @@ let sub_symmetric_difference sub1_in sub2_in =
 
 (** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter]. Raise [Not_found] if there isn't one. *)
-let sub_find filter (sub : exp_subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
+let sub_find filter (sub : subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. *)
-let sub_filter filter (sub : exp_subst) = List.filter ~f:(fun (i, _) -> filter i) sub
+let sub_filter filter (sub : subst) = List.filter ~f:(fun (i, _) -> filter i) sub
 
 (** [sub_filter_pair filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. *)
@@ -1162,15 +1149,11 @@ let sub_filter_pair = List.filter
 
 (** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. *)
-let sub_range_partition filter (sub : exp_subst) =
-  List.partition_tf ~f:(fun (_, e) -> filter e) sub
-
+let sub_range_partition filter (sub : subst) = List.partition_tf ~f:(fun (_, e) -> filter e) sub
 
 (** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. *)
-let sub_domain_partition filter (sub : exp_subst) =
-  List.partition_tf ~f:(fun (i, _) -> filter i) sub
-
+let sub_domain_partition filter (sub : subst) = List.partition_tf ~f:(fun (i, _) -> filter i) sub
 
 (** Return the list of identifiers in the domain of the substitution. *)
 let sub_domain sub = List.map ~f:fst sub
@@ -1179,42 +1162,36 @@ let sub_domain sub = List.map ~f:fst sub
 let sub_range sub = List.map ~f:snd sub
 
 (** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. *)
-let sub_range_map f sub = exp_subst_of_list (List.map ~f:(fun (i, e) -> (i, f e)) sub)
+let sub_range_map f sub = subst_of_list (List.map ~f:(fun (i, e) -> (i, f e)) sub)
 
 (** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
-let sub_map f g sub = exp_subst_of_list (List.map ~f:(fun (i, e) -> (f i, g e)) sub)
+let sub_map f g sub = subst_of_list (List.map ~f:(fun (i, e) -> (f i, g e)) sub)
 
 let mem_sub id sub = List.exists ~f:(fun (id1, _) -> Ident.equal id id1) sub
 
 (** Extend substitution and return [None] if not possible. *)
-let extend_sub sub id exp : exp_subst option =
+let extend_sub sub id exp : subst option =
   let compare (id1, _) (id2, _) = Ident.compare id1 id2 in
   if mem_sub id sub then None else Some (List.merge ~compare sub [(id, exp)])
 
 
 (** Free auxilary variables in the domain and range of the substitution. *)
-let exp_subst_gen_free_vars sub =
+let subst_gen_free_vars sub =
   let open Sequence.Generator in
   ISequence.gen_sequence_list sub ~f:(fun (id, e) -> yield id >>= fun () -> Exp.gen_free_vars e)
 
 
-let exp_subst_free_vars sub = Sequence.Generator.run (exp_subst_gen_free_vars sub)
+let subst_free_vars sub = Sequence.Generator.run (subst_gen_free_vars sub)
 
 let rec exp_sub_ids (f : subst_fun) exp =
-  let f_typ x = match f with `Exp _ -> x | `Typ (f, _) -> f x in
-  let f_tname x = match f with `Exp _ -> x | `Typ (_, f) -> f x in
   match (exp : Exp.t) with
   | Var id -> (
-    match f with
-    | `Exp f_exp -> (
-      match f_exp id with
-      | Exp.Var id' when Ident.equal id id' ->
-          exp (* it will preserve physical equality when needed *)
-      | exp' ->
-          exp' )
-    | _ ->
-        exp )
+    match f id with
+    | Exp.Var id' when Ident.equal id id' ->
+        exp (* it will preserve physical equality when needed *)
+    | exp' ->
+        exp' )
   | Lvar _ ->
       exp
   | Exn e ->
@@ -1225,8 +1202,7 @@ let rec exp_sub_ids (f : subst_fun) exp =
         IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t]
           ~f:(fun ((e, pvar, typ) as captured) ->
             let e' = exp_sub_ids f e in
-            let typ' = f_typ typ in
-            if phys_equal e' e && phys_equal typ typ' then captured else (e', pvar, typ') )
+            if phys_equal e' e then captured else (e', pvar, typ) )
           c.captured_vars
       in
       if phys_equal captured_vars c.captured_vars then exp else Exp.Closure {c with captured_vars}
@@ -1234,54 +1210,31 @@ let rec exp_sub_ids (f : subst_fun) exp =
       exp
   | Cast (t, e) ->
       let e' = exp_sub_ids f e in
-      let t' = f_typ t in
-      if phys_equal e' e && phys_equal t' t then exp else Exp.Cast (t', e')
+      if phys_equal e' e then exp else Exp.Cast (t, e')
   | UnOp (op, e, typ_opt) ->
       let e' = exp_sub_ids f e in
-      let typ_opt' =
-        match typ_opt with
-        | Some t ->
-            let t' = f_typ t in
-            if phys_equal t t' then typ_opt else Some t'
-        | None ->
-            typ_opt
-      in
-      if phys_equal e' e && phys_equal typ_opt typ_opt' then exp else Exp.UnOp (op, e', typ_opt')
+      if phys_equal e' e then exp else Exp.UnOp (op, e', typ_opt)
   | BinOp (op, e1, e2) ->
       let e1' = exp_sub_ids f e1 in
       let e2' = exp_sub_ids f e2 in
       if phys_equal e1' e1 && phys_equal e2' e2 then exp else Exp.BinOp (op, e1', e2')
   | Lfield (e, fld, typ) ->
       let e' = exp_sub_ids f e in
-      let typ' = f_typ typ in
-      let fld' = Typ.Fieldname.class_name_replace ~f:f_tname fld in
-      if phys_equal e' e && phys_equal typ typ' && phys_equal fld fld' then exp
-      else Exp.Lfield (e', fld', typ')
+      if phys_equal e' e then exp else Exp.Lfield (e', fld, typ)
   | Lindex (e1, e2) ->
       let e1' = exp_sub_ids f e1 in
       let e2' = exp_sub_ids f e2 in
       if phys_equal e1' e1 && phys_equal e2' e2 then exp else Exp.Lindex (e1', e2')
-  | Sizeof ({typ; dynamic_length= Some l; subtype} as sizeof_data) ->
+  | Sizeof ({dynamic_length= Some l} as sizeof_data) ->
       let l' = exp_sub_ids f l in
-      let typ' = f_typ typ in
-      let subtype' = Subtype.sub_type f_tname subtype in
-      if phys_equal l' l && phys_equal typ typ' && phys_equal subtype subtype' then exp
-      else Exp.Sizeof {sizeof_data with typ= typ'; dynamic_length= Some l'; subtype= subtype'}
-  | Sizeof ({typ; dynamic_length= None; subtype} as sizeof_data) ->
-      let typ' = f_typ typ in
-      let subtype' = Subtype.sub_type f_tname subtype in
-      if phys_equal typ typ' then exp
-      else Exp.Sizeof {sizeof_data with typ= typ'; subtype= subtype'}
+      if phys_equal l' l then exp else Exp.Sizeof {sizeof_data with dynamic_length= Some l'}
+  | Sizeof {dynamic_length= None} ->
+      exp
 
 
 let apply_sub subst : subst_fun =
-  match subst with
-  | `Exp l ->
-      `Exp
-        (fun id ->
-          match List.Assoc.find l ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id )
-  | `Typ typ_subst ->
-      `Typ (Typ.sub_type typ_subst, Typ.sub_tname typ_subst)
+ fun id ->
+  match List.Assoc.find subst ~equal:Ident.equal id with Some x -> x | None -> Exp.Var id
 
 
 let exp_sub (subst : subst) e = exp_sub_ids (apply_sub subst) e
@@ -1291,27 +1244,22 @@ let instr_sub_ids ~sub_id_binders f instr =
   let sub_id id =
     match exp_sub_ids f (Var id) with Var id' when not (Ident.equal id id') -> id' | _ -> id
   in
-  let sub_typ x = match f with `Exp _ -> x | `Typ (f, _) -> f x in
   match instr with
   | Load (id, rhs_exp, typ, loc) ->
       let id' = if sub_id_binders then sub_id id else id in
       let rhs_exp' = exp_sub_ids f rhs_exp in
-      let typ' = sub_typ typ in
-      if phys_equal id' id && phys_equal rhs_exp' rhs_exp && phys_equal typ typ' then instr
-      else Load (id', rhs_exp', typ', loc)
+      if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
+      else Load (id', rhs_exp', typ, loc)
   | Store (lhs_exp, typ, rhs_exp, loc) ->
       let lhs_exp' = exp_sub_ids f lhs_exp in
-      let typ' = sub_typ typ in
       let rhs_exp' = exp_sub_ids f rhs_exp in
-      if phys_equal lhs_exp' lhs_exp && phys_equal typ typ' && phys_equal rhs_exp' rhs_exp then
-        instr
-      else Store (lhs_exp', typ', rhs_exp', loc)
+      if phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp then instr
+      else Store (lhs_exp', typ, rhs_exp', loc)
   | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
       let ret_id' =
         if sub_id_binders then
           let id' = sub_id id in
-          let typ' = sub_typ typ in
-          if Ident.equal id id' && phys_equal typ typ' then ret_id_typ else (id', typ')
+          if Ident.equal id id' then ret_id_typ else (id', typ)
         else ret_id_typ
       in
       let fun_exp' = exp_sub_ids f fun_exp in
@@ -1319,9 +1267,7 @@ let instr_sub_ids ~sub_id_binders f instr =
         IList.map_changed ~equal:[%compare.equal: Exp.t * Typ.t]
           ~f:(fun ((actual, typ) as actual_pair) ->
             let actual' = exp_sub_ids f actual in
-            let typ' = sub_typ typ in
-            if phys_equal actual' actual && phys_equal typ typ' then actual_pair
-            else (actual', typ') )
+            if phys_equal actual' actual then actual_pair else (actual', typ) )
           actuals
       in
       if
@@ -1549,8 +1495,7 @@ let hpara_instantiate para e1 e2 elist =
     try List.map2_exn ~f:g para.evars ids_evars with Invalid_argument _ -> assert false
   in
   let subst =
-    `Exp
-      (exp_subst_of_list (((para.root, e1) :: (para.next, e2) :: subst_for_svars) @ subst_for_evars))
+    subst_of_list (((para.root, e1) :: (para.next, e2) :: subst_for_svars) @ subst_for_evars)
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body)
 
@@ -1574,10 +1519,9 @@ let hpara_dll_instantiate (para : hpara_dll) cell blink flink elist =
     try List.map2_exn ~f:g para.evars_dll ids_evars with Invalid_argument _ -> assert false
   in
   let subst =
-    `Exp
-      (exp_subst_of_list
-         ( ((para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars)
-         @ subst_for_evars ))
+    subst_of_list
+      ( ((para.cell, cell) :: (para.blink, blink) :: (para.flink, flink) :: subst_for_svars)
+      @ subst_for_evars )
   in
   (ids_evars, List.map ~f:(hpred_sub subst) para.body_dll)
 

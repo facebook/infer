@@ -294,7 +294,7 @@ let propagate_nodes_divergence tenv (proc_cfg : ProcCfg.Exceptional.t) (pset : P
     let prop_incons =
       let mk_incons prop =
         let p_abs = Abs.abstract pname tenv prop in
-        let p_zero = Prop.set p_abs ~sub:Sil.exp_sub_empty ~sigma:[] in
+        let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
         Prop.normalize tenv (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)])
       in
       Paths.PathSet.map mk_incons diverging_states
@@ -586,7 +586,7 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
       |> Ident.HashQueue.keys
     in
     let sub_list = List.map ~f:(fun id -> (id, Exp.Var (Ident.create_fresh Ident.knormal))) fav in
-    Sil.exp_subst_of_list sub_list
+    Sil.subst_of_list sub_list
   in
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
@@ -594,10 +594,10 @@ let extract_specs tenv pdesc pathset : Prop.normal BiabductionSummary.spec list 
       let _, prop' = PropUtil.remove_locals_formals tenv pdesc prop in
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
-      let pre' = Prop.normalize tenv (Prop.prop_sub (`Exp sub) pre) in
+      let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
       let post' =
         if Prover.check_inconsistency_base tenv prop then None
-        else Some (Prop.normalize tenv (Prop.prop_sub (`Exp sub) post), path)
+        else Some (Prop.normalize tenv (Prop.prop_sub sub post), path)
       in
       let visited =
         let vset = vset_add_path Procdesc.NodeSet.empty path in

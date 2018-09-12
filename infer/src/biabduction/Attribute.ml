@@ -307,8 +307,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
   let pi = List.map ~f:(Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' =
     Prop.normalize tenv
-      (Prop.set p ~sub:Sil.exp_sub_empty
-         ~sigma:(Prop.sigma_replace_exp tenv exp_replace sigma_other))
+      (Prop.set p ~sub:Sil.sub_empty ~sigma:(Prop.sigma_replace_exp tenv exp_replace sigma_other))
   in
   let p'' =
     let res = ref p' in

@@ -25,7 +25,7 @@ val hpara_dll_match_with_impl : Tenv.t -> bool -> Sil.hpara_dll -> Sil.hpara_dll
     considered during pattern matching. *)
 type hpred_pat = {hpred: Sil.hpred; flag: bool}
 
-type sidecondition = Prop.normal Prop.t -> Sil.exp_subst -> bool
+type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
 
 val prop_match_with_impl :
      Tenv.t
@@ -34,7 +34,7 @@ val prop_match_with_impl :
   -> Ident.t list
   -> hpred_pat
   -> hpred_pat list
-  -> (Sil.exp_subst * Prop.normal Prop.t) option
+  -> (Sil.subst * Prop.normal Prop.t) option
 (** [prop_match_with_impl p condition vars hpat hpats]
     returns [(subst, p_leftover)] such that
     1) [dom(subst) = vars]

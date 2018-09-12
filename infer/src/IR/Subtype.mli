@@ -15,8 +15,6 @@ type t [@@deriving compare]
 
 val pp : F.formatter -> t -> unit
 
-val sub_type : (Typ.Name.t -> Typ.Name.t) -> t -> t
-
 val exact : t
 
 val subtypes : t

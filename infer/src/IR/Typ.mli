@@ -120,9 +120,6 @@ val void : t
 val void_star : t
 (** void* type *)
 
-(** Stores information about type substitution *)
-type type_subst_t [@@deriving compare]
-
 module Name : sig
   (** Named types. *)
   type t = name [@@deriving compare]
@@ -227,12 +224,6 @@ val equal : t -> t -> bool
 val equal_desc : desc -> desc -> bool
 
 val equal_quals : type_quals -> type_quals -> bool
-
-val sub_type : type_subst_t -> t -> t
-
-val sub_tname : type_subst_t -> Name.t -> Name.t
-
-val is_type_subst_empty : type_subst_t -> bool
 
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)
@@ -610,8 +601,6 @@ module Fieldname : sig
   (** Convert a field name to a string. *)
 
   val to_full_string : t -> string
-
-  val class_name_replace : t -> f:(Name.t -> Name.t) -> t
 
   val to_simplified_string : t -> string
   (** Convert a fieldname to a simplified string with at most one-level path. *)
