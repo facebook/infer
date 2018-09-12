@@ -161,4 +161,4 @@ let db_canonicalize () =
   SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
 
 
-let () = Config.register_late_epilogue db_close
+let () = Epilogues.register_late ~f:db_close ~description:"closing database connection"

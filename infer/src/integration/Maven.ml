@@ -146,12 +146,12 @@ let add_profile_to_pom_in_directory dir =
   Unix.rename ~src:maven_pom_path ~dst:saved_pom_path ;
   Epilogues.register
     ~f:(fun () -> Unix.rename ~src:saved_pom_path ~dst:maven_pom_path)
-    "restoring Maven's pom.xml to its original state" ;
+    ~description:"restoring Maven's pom.xml to its original state" ;
   Unix.rename ~src:infer_pom_path ~dst:maven_pom_path ;
   if Config.debug_mode then
     Epilogues.register
       ~f:(fun () -> Unix.rename ~src:maven_pom_path ~dst:infer_pom_path)
-      "saving infer's pom.xml"
+      ~description:"saving infer's pom.xml"
 
 
 let capture ~prog ~args =

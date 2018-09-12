@@ -26,6 +26,7 @@ let run_sequentially ~(f : 'a doer) (tasks : 'a list) : unit =
 
 let fork_protect ~f x =
   (* this is needed whenever a new process is started *)
+  Epilogues.reset () ;
   EventLogger.prepare () ;
   L.reset_formatters () ;
   ResultsDatabase.new_database_connection () ;

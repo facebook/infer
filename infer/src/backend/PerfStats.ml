@@ -356,4 +356,5 @@ let get_reporter stats_type =
 let register_report_at_exit stats_type =
   let relative_path = relative_path_of_stats_type stats_type in
   register_report TimeAndMemory stats_type ;
-  Epilogues.register ~f:(get_reporter stats_type) ("stats reporting in " ^ relative_path)
+  Epilogues.register ~f:(get_reporter stats_type)
+    ~description:("stats reporting in " ^ relative_path)

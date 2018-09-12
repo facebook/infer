@@ -47,7 +47,7 @@ module IO = struct
     List.iter log_files ~f:dump_file_to_stdout
 
 
-  let () = Config.register_late_epilogue close
+  let () = Epilogues.register_late ~f:close ~description:"closing EventLogger file"
 end
 
 module Random_id : sig

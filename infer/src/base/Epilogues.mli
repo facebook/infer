@@ -7,10 +7,15 @@
 
 open! IStd
 
-val register : f:(unit -> unit) -> string -> unit
+val register : f:(unit -> unit) -> description:string -> unit
 (** Register a function to run when the program exits or is interrupted. Registered functions are
     run in the reverse order in which they were registered. *)
 
-val register_late : (unit -> unit) -> unit
+val register_late : f:(unit -> unit) -> description:string -> unit
+(** Register a function to run when the program exits or is interrupted. Registered functions are
+   run in the reverse order in which they were registered, but *after* the ones registered with
+   {!register}. *)
 
-val late : unit -> unit
+val run : unit -> unit
+
+val reset : unit -> unit

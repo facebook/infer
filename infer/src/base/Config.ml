@@ -2287,8 +2287,6 @@ let inferconfig_file =
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
-let register_late_epilogue = Epilogues.register_late
-
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
@@ -2381,7 +2379,7 @@ let post_parsing_initialization command_opt =
         "Run the command again with `--keep-going` to try and ignore this error.\n" ;
     let exitcode = L.exit_code_of_exception exn in
     L.log_uncaught_exception exn ~exitcode ;
-    Epilogues.late () ;
+    Epilogues.run () ;
     Pervasives.exit exitcode
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;

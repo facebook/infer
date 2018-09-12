@@ -349,8 +349,8 @@ let rec rmtree name =
 let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.string
 
 let unlink_file_on_exit temp_file =
-  "Cleaning temporary file " ^ temp_file
-  |> Epilogues.register ~f:(fun () -> try Unix.unlink temp_file with _ -> ())
+  let description = "Cleaning temporary file " ^ temp_file in
+  Epilogues.register ~description ~f:(fun () -> try Unix.unlink temp_file with _ -> ())
 
 
 (** drop at most one layer of well-balanced first and last characters satisfying [drop] from the

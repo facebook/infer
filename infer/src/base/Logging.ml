@@ -166,7 +166,7 @@ let close_logs () =
       F.pp_print_flush file_fmt () ; Out_channel.close chan )
 
 
-let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
+let () = Epilogues.register ~f:close_logs ~description:"flushing logs and closing log file"
 
 let log ~to_console ?(to_file = true) (lazy formatters) =
   match (to_console, to_file) with

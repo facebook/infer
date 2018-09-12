@@ -223,6 +223,7 @@ let fork_child ~child_prelude ~slot (updates_r, updates_w) ~f =
       child_loop ~slot send_to_parent receive_from_parent ~f ;
       Out_channel.close updates_oc ;
       In_channel.close orders_ic ;
+      Epilogues.run () ;
       Pervasives.exit 0
   | `In_the_parent pid ->
       let[@warning "-26"] to_child_r = Unix.close to_child_r in
