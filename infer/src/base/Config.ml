@@ -2129,6 +2129,11 @@ and profiler_samples =
      $(b,--test-determinator)."
 
 
+and starvation_strict_mode =
+  CLOpt.mk_bool ~long:"starvation-strict-mode" ~default:false
+    "During starvation analysis, report strict mode violations (Android only)"
+
+
 and testing_mode =
   CLOpt.mk_bool
     ~deprecated:["testing_mode"; "-testing_mode"; "tm"]
@@ -2932,6 +2937,8 @@ and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 
 and starvation = !starvation
+
+and starvation_strict_mode = !starvation_strict_mode
 
 and stats_report = !stats_report
 

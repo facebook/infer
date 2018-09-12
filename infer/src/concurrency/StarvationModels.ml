@@ -214,20 +214,23 @@ let strict_mode_matchers =
   (StrictModeModels.is_strict_mode_violation, High) :: strict_mode_common_matchers
 
 
-(* at most one function is allowed to be true, sort from High to Low *)
-let may_block =
+let standard_matchers =
   let open StarvationDomain.Event in
+  [ (is_accountManager_setUserData, High)
+  ; (is_two_way_binder_transact, High)
+  ; (is_countdownlatch_await, High)
+  ; (is_thread_sleep, High)
+  ; (is_object_wait, High)
+  ; (is_asyncTask_get, Low)
+  ; (is_future_get, Low) ]
+
+
+(* sort from High to Low *)
+let may_block =
   let matchers =
     if Config.dev_android_strict_mode then strict_mode_seed_matchers
-    else
-      strict_mode_matchers
-      @ [ (is_accountManager_setUserData, High)
-        ; (is_two_way_binder_transact, High)
-        ; (is_countdownlatch_await, High)
-        ; (is_thread_sleep, High)
-        ; (is_object_wait, High)
-        ; (is_asyncTask_get, Low)
-        ; (is_future_get, Low) ]
+    else if Config.starvation_strict_mode then strict_mode_matchers @ standard_matchers
+    else standard_matchers
   in
   fun tenv pn actuals ->
     List.find_map matchers ~f:(fun (matcher, sev) -> Option.some_if (matcher tenv pn actuals) sev)
