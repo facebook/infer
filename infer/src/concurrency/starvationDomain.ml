@@ -216,18 +216,39 @@ module LockState = struct
 end
 
 module UIThreadExplanationDomain = struct
-  type astate = string
+  include MakeTraceElem (struct
+    type t = string [@@deriving compare]
 
-  let pp = String.pp
+    let pp = String.pp
+  end)
+
+  type astate = t
 
   let join lhs _ = lhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let ( <= ) ~lhs:_ ~rhs:_ = true
+
+  let make_trace ?(header = "") pname elem =
+    let trace = make_loc_trace elem in
+    let trace_descr = Format.asprintf "%s%a" header (MF.wrap_monospaced Typ.Procname.pp) pname in
+    let start_loc = get_loc elem in
+    let header_step = Errlog.make_trace_element 0 start_loc trace_descr [] in
+    header_step :: trace
 end
 
-module UIThreadDomain = AbstractDomain.BottomLifted (UIThreadExplanationDomain)
+module UIThreadDomain = struct
+  include AbstractDomain.BottomLifted (UIThreadExplanationDomain)
+
+  let with_callsite astate callsite =
+    match astate with
+    | AbstractDomain.Types.Bottom ->
+        astate
+    | AbstractDomain.Types.NonBottom ui_explain ->
+        AbstractDomain.Types.NonBottom
+          (UIThreadExplanationDomain.with_callsite ui_explain callsite)
+end
 
 type astate =
   { lock_state: LockState.astate
@@ -305,6 +326,7 @@ let release ({lock_state} as astate) lock =
 let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname loc callee_summary =
   let callsite = CallSite.make callee_pname loc in
   let callee_order = OrderDomain.with_callsite callee_summary.order callsite in
+  let callee_ui = UIThreadDomain.with_callsite callee_summary.ui callsite in
   let filtered_order =
     OrderDomain.filter
       (fun {elem= {eventually}} -> LockState.is_taken eventually lock_state |> not)
@@ -318,11 +340,15 @@ let integrate_summary ({lock_state; events; order; ui} as astate) callee_pname l
   { astate with
     events= EventDomain.join events filtered_events
   ; order= OrderDomain.join order order'
-  ; ui= UIThreadDomain.join ui callee_summary.ui }
+  ; ui= UIThreadDomain.join ui callee_ui }
 
 
-let set_on_ui_thread ({ui} as astate) explain =
-  {astate with ui= UIThreadDomain.join ui (AbstractDomain.Types.NonBottom explain)}
+let set_on_ui_thread ({ui} as astate) loc explain =
+  let ui =
+    UIThreadDomain.join ui
+      (AbstractDomain.Types.NonBottom (UIThreadExplanationDomain.make explain loc))
+  in
+  {astate with ui}
 
 
 type summary = astate

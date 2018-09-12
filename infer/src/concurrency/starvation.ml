@@ -104,7 +104,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           do_lock actuals loc astate |> do_unlock actuals
       | NoEffect when is_on_ui_thread callee ->
           let explanation = F.asprintf "it calls %a" (MF.wrap_monospaced Typ.Procname.pp) callee in
-          Domain.set_on_ui_thread astate explanation
+          Domain.set_on_ui_thread astate loc explanation
       | NoEffect -> (
           let caller = Procdesc.get_proc_name pdesc in
           match may_block tenv callee actuals with
@@ -143,10 +143,10 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let pname = Procdesc.get_proc_name proc_desc in
   let formals = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv formals in
+  let loc = Procdesc.get_loc proc_desc in
   let initial =
     if not (Procdesc.is_java_synchronized proc_desc) then StarvationDomain.empty
     else
-      let loc = Procdesc.get_loc proc_desc in
       let lock =
         match pname with
         | Typ.Procname.Java java_pname when Typ.Procname.Java.is_static java_pname ->
@@ -161,7 +161,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   in
   let initial =
     ConcurrencyModels.runs_on_ui_thread tenv proc_desc
-    |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial)
+    |> Option.value_map ~default:initial ~f:(StarvationDomain.set_on_ui_thread initial loc)
   in
   let filter_blocks =
     if is_nonblocking tenv proc_desc then fun ({events; order} as astate) ->
@@ -412,14 +412,18 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     | MayBlock (block_descr, sev) when Lock.equal current_lock lock ->
         let error_message =
           Format.asprintf
-            "Method %a runs on UI thread (because %s) and %a, which may be held by another thread \
+            "Method %a runs on UI thread (because %a) and %a, which may be held by another thread \
              which %s."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain Lock.pp lock block_descr
+            current_pname UIThreadExplanationDomain.pp ui_explain Lock.pp lock block_descr
         in
         let first_trace = Event.make_trace ~header:"[Trace 1] " current_pname event in
         let second_trace = Order.make_trace ~header:"[Trace 2] " endpoint_pname endpoint_elem in
-        let ltr = first_trace @ second_trace in
+        let ui_trace =
+          UIThreadExplanationDomain.make_trace ~header:"[Trace 1 on UI thread] " current_pname
+            ui_explain
+        in
+        let ltr = first_trace @ second_trace @ ui_trace in
         let loc = Event.get_loc event in
         ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message report_map
     | _ ->
@@ -429,12 +433,17 @@ let report_starvation env {StarvationDomain.events; ui} report_map' =
     match event.Event.elem with
     | MayBlock (_, sev) ->
         let error_message =
-          Format.asprintf "Method %a runs on UI thread (because %s), and may block; %a."
+          Format.asprintf "Method %a runs on UI thread (because %a), and may block; %a."
             (MF.wrap_monospaced Typ.Procname.pp)
-            current_pname ui_explain Event.pp event
+            current_pname UIThreadExplanationDomain.pp ui_explain Event.pp event
         in
         let loc = Event.get_loc event in
-        let ltr = Event.make_trace current_pname event in
+        let trace = Event.make_trace current_pname event in
+        let ui_trace =
+          UIThreadExplanationDomain.make_trace ~header:"[Trace on UI thread] " current_pname
+            ui_explain
+        in
+        let ltr = trace @ ui_trace in
         ReportMap.add_starvation tenv sev current_pdesc loc ltr error_message report_map
     | LockAcquire endpoint_lock ->
         Lock.owner_class endpoint_lock

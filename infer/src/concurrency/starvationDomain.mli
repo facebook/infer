@@ -78,8 +78,15 @@ end
 
 module LockState : AbstractDomain.WithBottom
 
+module UIThreadExplanationDomain : sig
+  include TraceElem with type elem_t = string
+
+  val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
+end
+
 module UIThreadDomain :
-  AbstractDomain.WithBottom with type astate = string AbstractDomain.Types.bottom_lifted
+  AbstractDomain.WithBottom
+  with type astate = UIThreadExplanationDomain.t AbstractDomain.Types.bottom_lifted
 
 type astate =
   { lock_state: LockState.astate
@@ -101,7 +108,7 @@ val blocking_call :
   -> astate
   -> astate
 
-val set_on_ui_thread : astate -> string -> astate
+val set_on_ui_thread : astate -> Location.t -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to
     why this method is thought to do so *)
 
