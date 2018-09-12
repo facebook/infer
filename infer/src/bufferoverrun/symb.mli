@@ -17,6 +17,7 @@ end
 
 module SymbolPath : sig
   type partial = private Pvar of Pvar.t | Index of partial | Field of Typ.Fieldname.t * partial
+  [@@deriving compare]
 
   type t = private Normal of partial | Offset of partial | Length of partial
 

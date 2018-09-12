@@ -110,6 +110,7 @@ module Exec : sig
   val init_array_fields :
        Tenv.t
     -> Typ.Procname.t
+    -> Itv.SymbolPath.partial option
     -> node_hash:int
     -> Typ.t
     -> PowLoc.t

@@ -347,11 +347,12 @@ let mk_eval_sym_trace callee_pdesc actual_exps caller_mem =
   in
   let eval_sym s = fst (eval_sym_traced s) in
   let trace_of_sym s = snd (eval_sym_traced s) in
-  (eval_sym, trace_of_sym)
+  let eval_locpath partial = eval_locpath params partial caller_mem in
+  ((eval_sym, trace_of_sym), eval_locpath)
 
 
 let mk_eval_sym callee_pdesc actual_exps caller_mem =
-  fst (mk_eval_sym_trace callee_pdesc actual_exps caller_mem)
+  fst (fst (mk_eval_sym_trace callee_pdesc actual_exps caller_mem))
 
 
 let get_sym_f mem e = Val.get_sym (eval e mem)
@@ -510,9 +511,8 @@ let get_matching_pairs :
     -> Typ.t
     -> Mem.astate
     -> Mem.astate
-    -> AliasTarget.t option * (Relation.Var.t * Relation.SymExp.t option) list =
+    -> (Relation.Var.t * Relation.SymExp.t option) list =
  fun tenv callee_v actual actual_exp_opt typ caller_mem callee_exit_mem ->
-  let callee_ret_alias = Mem.find_ret_alias callee_exit_mem in
   let get_offset_sym v = Val.get_offset_sym v in
   let get_size_sym v = Val.get_size_sym v in
   let get_field_name (fn, _, _) = fn in
@@ -522,17 +522,6 @@ let get_matching_pairs :
     let array_locs = Val.get_array_locs v in
     let locs = if PowLoc.is_empty array_locs then Val.get_pow_loc v else array_locs in
     Mem.find_set locs mem
-  in
-  let ret_alias = ref None in
-  let add_ret_alias v1 v2 =
-    match callee_ret_alias with
-    | Some ret_loc ->
-        if
-          PowLoc.is_singleton v1 && PowLoc.is_singleton v2
-          && AliasTarget.use (PowLoc.min_elt v1) ret_loc
-        then ret_alias := Some (AliasTarget.replace (PowLoc.min_elt v2) ret_loc)
-    | None ->
-        ()
   in
   let add_pair_sym_main_value v1 v2 ~e2_opt l =
     Option.value_map (Val.get_sym_var v1) ~default:l ~f:(fun var ->
@@ -548,20 +537,17 @@ let get_matching_pairs :
         (var, Relation.SymExp.of_sym s2) :: l )
   in
   let add_pair_val v1 v2 ~e2_opt rel_pairs =
-    add_ret_alias (Val.get_all_locs v1) (Val.get_all_locs v2) ;
     rel_pairs
     |> add_pair_sym_main_value v1 v2 ~e2_opt
     |> add_pair_sym (get_offset_sym v1) (get_offset_sym v2)
     |> add_pair_sym (get_size_sym v1) (get_size_sym v2)
   in
   let add_pair_field v1 v2 pairs fn =
-    add_ret_alias (append_field v1 fn) (append_field v2 fn) ;
     let v1' = deref_field v1 fn callee_exit_mem in
     let v2' = deref_field v2 fn caller_mem in
     add_pair_val v1' v2' ~e2_opt:None pairs
   in
   let add_pair_ptr typ v1 v2 pairs =
-    add_ret_alias (Val.get_all_locs v1) (Val.get_all_locs v2) ;
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct typename}, _) -> (
       match Tenv.lookup tenv typename with
@@ -577,10 +563,7 @@ let get_matching_pairs :
     | _ ->
         pairs
   in
-  let rel_pairs =
-    [] |> add_pair_val callee_v actual ~e2_opt:actual_exp_opt |> add_pair_ptr typ callee_v actual
-  in
-  (!ret_alias, rel_pairs)
+  [] |> add_pair_val callee_v actual ~e2_opt:actual_exp_opt |> add_pair_ptr typ callee_v actual
 
 
 let subst_map_of_rel_pairs :
@@ -612,23 +595,18 @@ let rec list_fold2_def :
 
 
 let get_subst_map :
-       Tenv.t
-    -> Procdesc.t
-    -> (Exp.t * 'a) list
-    -> Mem.astate
-    -> Mem.astate
-    -> AliasTarget.t option * Relation.SubstMap.t =
+    Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate -> Relation.SubstMap.t =
  fun tenv callee_pdesc params caller_mem callee_exit_mem ->
-  let add_pair (formal, typ) (actual, actual_exp) (ret_alias, rel_l) =
+  let add_pair (formal, typ) (actual, actual_exp) rel_l =
     let callee_v = Mem.find (Loc.of_pvar formal) callee_exit_mem in
-    let ret_alias', new_rel_matching =
+    let new_rel_matching =
       get_matching_pairs tenv callee_v actual actual_exp typ caller_mem callee_exit_mem
     in
-    (Option.first_some ret_alias ret_alias', List.rev_append new_rel_matching rel_l)
+    List.rev_append new_rel_matching rel_l
   in
   let formals = get_formals callee_pdesc in
   let actuals = List.map ~f:(fun (a, _) -> (eval a caller_mem, Some a)) params in
-  let ret_alias, rel_pairs =
-    list_fold2_def ~default:(Val.Itv.top, None) ~f:add_pair formals actuals ~init:(None, [])
+  let rel_pairs =
+    list_fold2_def ~default:(Val.Itv.top, None) ~f:add_pair formals actuals ~init:[]
   in
-  (ret_alias, subst_map_of_rel_pairs rel_pairs)
+  subst_map_of_rel_pairs rel_pairs

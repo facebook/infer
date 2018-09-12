@@ -12,7 +12,14 @@ open! IStd
 module F = Format
 
 module Allocsite = struct
-  type t = Unknown | Known of {proc_name: string; node_hash: int; inst_num: int; dimension: int}
+  type t =
+    | Unknown
+    | Known of
+        { proc_name: string
+        ; node_hash: int
+        ; inst_num: int
+        ; dimension: int
+        ; path: Symb.SymbolPath.partial option }
   [@@deriving compare]
 
   let pp fmt = function
@@ -24,12 +31,20 @@ module Allocsite = struct
 
   let to_string x = F.asprintf "%a" pp x
 
-  let make : Typ.Procname.t -> node_hash:int -> inst_num:int -> dimension:int -> t =
-   fun proc_name ~node_hash ~inst_num ~dimension ->
-    Known {proc_name= Typ.Procname.to_string proc_name; node_hash; inst_num; dimension}
+  let make :
+         Typ.Procname.t
+      -> node_hash:int
+      -> inst_num:int
+      -> dimension:int
+      -> path:Symb.SymbolPath.partial option
+      -> t =
+   fun proc_name ~node_hash ~inst_num ~dimension ~path ->
+    Known {proc_name= Typ.Procname.to_string proc_name; node_hash; inst_num; dimension; path}
 
 
   let unknown = Unknown
+
+  let get_path = function Unknown -> None | Known {path} -> path
 end
 
 module Loc = struct
@@ -84,6 +99,16 @@ module Loc = struct
 
 
   let is_field_of ~loc ~field_loc = match field_loc with Field (l, _) -> equal loc l | _ -> false
+
+  let rec get_path = function
+    | Var (LogicalVar _) ->
+        None
+    | Var (ProgramVar pvar) ->
+        Some (Symb.SymbolPath.of_pvar pvar)
+    | Allocsite allocsite ->
+        Allocsite.get_path allocsite
+    | Field (l, fn) ->
+        Option.map (get_path l) ~f:(fun p -> Symb.SymbolPath.field p fn)
 end
 
 module PowLoc = struct

@@ -57,7 +57,8 @@ module Exec = struct
    fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
     let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
+    let path = Loc.get_path loc in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let arr =
       Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
       |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
@@ -83,7 +84,8 @@ module Exec = struct
       -> Dom.Mem.astate
       -> Dom.Mem.astate * int =
    fun pname ~node_hash location loc ~inst_num ~dimension mem ->
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
+    let path = Loc.get_path loc in
+    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let alloc_loc = Loc.of_allocsite allocsite in
     let alist =
       Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
@@ -141,7 +143,9 @@ module Exec = struct
     in
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num in
+    let allocsite =
+      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
+    in
     let arr =
       Dom.Val.of_array_alloc allocsite ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
     in
@@ -149,9 +153,7 @@ module Exec = struct
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
-    let deref_loc =
-      Loc.of_allocsite (Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num)
-    in
+    let deref_loc = Loc.of_allocsite allocsite in
     let path = Itv.SymbolPath.index path in
     decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
 
@@ -174,7 +176,9 @@ module Exec = struct
        mem ->
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
-    let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num in
+    let allocsite =
+      Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
+    in
     let alloc_loc = Loc.of_allocsite allocsite in
     let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.add_trace_elem elem in
     let mem = Dom.Mem.add_heap loc v mem in
@@ -199,8 +203,9 @@ module Exec = struct
     Dom.Mem.add_heap loc size mem
 
 
-  let init_array_fields tenv pname ~node_hash typ locs ?dyn_length mem =
-    let rec init_field locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
+  let init_array_fields tenv pname path ~node_hash typ locs ?dyn_length mem =
+    let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
+      let field_path = Option.map path ~f:(fun path -> Symb.SymbolPath.field path field_name) in
       let field_loc = PowLoc.append_field locs ~fn:field_name in
       let mem =
         match field_typ.Typ.desc with
@@ -212,28 +217,30 @@ module Exec = struct
                   Itv.plus i length )
             in
             let stride = Option.map stride ~f:IntLit.to_int_exn in
-            let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension in
+            let allocsite =
+              Allocsite.make pname ~node_hash ~inst_num ~dimension ~path:field_path
+            in
             let offset, size = (Itv.zero, length) in
             let v = Dom.Val.of_array_alloc allocsite ~stride ~offset ~size in
             mem |> Dom.Mem.strong_update field_loc v
             |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
         | _ ->
-            init_fields field_typ field_loc dimension ?dyn_length mem
+            init_fields field_path field_typ field_loc dimension ?dyn_length mem
       in
       (mem, inst_num + 1)
-    and init_fields typ locs dimension ?dyn_length mem =
+    and init_fields path typ locs dimension ?dyn_length mem =
       match typ.Typ.desc with
       | Tstruct typename -> (
         match Tenv.lookup tenv typename with
         | Some str ->
-            let f = init_field locs (dimension + 1) in
+            let f = init_field path locs (dimension + 1) in
             IList.fold_last ~f ~f_last:(f ?dyn_length) ~init:(mem, 1) str.Typ.Struct.fields |> fst
         | None ->
             mem )
       | _ ->
           mem
     in
-    init_fields typ locs 1 ?dyn_length mem
+    init_fields path typ locs 1 ?dyn_length mem
 
 
   let rec set_dyn_length tenv typ locs dyn_length mem =

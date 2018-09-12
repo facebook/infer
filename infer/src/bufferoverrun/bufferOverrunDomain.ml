@@ -348,7 +348,12 @@ module AliasTarget = struct
 
   let use l = function Simple l' | Empty l' -> Loc.equal l l'
 
-  let replace l = function Simple _ -> Simple l | Empty _ -> Empty l
+  let loc_map x ~f =
+    match x with
+    | Simple l ->
+        Option.map (f l) ~f:(fun l -> Simple l)
+    | Empty l ->
+        Option.map (f l) ~f:(fun l -> Empty l)
 end
 
 (* Relations between values of logical variables(registers) and
