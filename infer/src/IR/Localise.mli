@@ -140,13 +140,9 @@ val desc_leak :
   -> string option
   -> error_desc
 
-val desc_buffer_overrun : string -> error_desc
-
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 
 val java_unchecked_exn_desc : Typ.Procname.t -> Typ.Name.t -> string -> error_desc
-
-val desc_fragment_retains_view : Typ.t -> Typ.Fieldname.t -> Typ.t -> Typ.Procname.t -> error_desc
 
 val desc_custom_error : Location.t -> error_desc
 (** Create human-readable error description for assertion failures *)

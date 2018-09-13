@@ -238,11 +238,7 @@ let report_siof summary trace pdesc gname loc =
             gname GlobalVar.pp (SiofTrace.Sink.kind final_sink)
     in
     let ltr = SiofTrace.trace_of_error loc gname trace in
-    let exn =
-      Exceptions.Checkers
-        (IssueType.static_initialization_order_fiasco, Localise.verbatim_desc description)
-    in
-    Reporting.log_error summary ~loc ~ltr exn
+    Reporting.log_error summary ~loc ~ltr IssueType.static_initialization_order_fiasco description
   in
   let reportable_paths = SiofTrace.get_reportable_sink_paths trace ~trace_of_pname in
   if Config.filtering then List.hd reportable_paths |> Option.iter ~f:report_one_path

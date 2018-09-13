@@ -117,10 +117,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
               "%s at line %s: parameter %d is expected to be of type %s but %s was given."
               instr_name instr_line n_arg (default_format_type_name ft) gt
           in
-          let exn =
-            Exceptions.Checkers (IssueType.checkers_printf_args, Localise.verbatim_desc description)
-          in
-          Reporting.log_error summary ~loc:instr_loc exn
+          Reporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
         else check_type_names instr_loc (n_arg + 1) instr_proc_name fs gs
     | [], [] ->
         ()
@@ -129,10 +126,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
           Printf.sprintf "format string arguments don't mach provided arguments in %s at line %s"
             instr_name instr_line
         in
-        let exn =
-          Exceptions.Checkers (IssueType.checkers_printf_args, Localise.verbatim_desc description)
-        in
-        Reporting.log_error summary ~loc:instr_loc exn
+        Reporting.log_error summary ~loc:instr_loc IssueType.checkers_printf_args description
   in
   (* Get the array ivar for a given nvar *)
   let array_ivar instrs nvar =
@@ -183,12 +177,8 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
               (fixed_nvar_type_names @ vararg_ivar_type_names)
         | None ->
             if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
-              let exn =
-                Exceptions.Checkers
-                  ( IssueType.checkers_printf_args
-                  , Localise.verbatim_desc "Format string must be string literal" )
-              in
-              Reporting.log_warning summary ~loc:cl exn
+              Reporting.log_warning summary ~loc:cl IssueType.checkers_printf_args
+                "Format string must be string literal"
       with e ->
         L.internal_error "%s Exception when analyzing %s: %s@."
           IssueType.checkers_printf_args.unique_id

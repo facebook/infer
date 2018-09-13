@@ -106,8 +106,7 @@ let checker {Callbacks.summary; proc_desc; tenv} : Summary.t =
     if leak_count > 0 (* 2(a) *) then
       let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
       let message = F.asprintf "Leaked %d resource(s)" leak_count in
-      let exn = Exceptions.Checkers (IssueType.resource_leak, Localise.verbatim_desc message) in
-      Reporting.log_error summary ~loc:last_loc exn
+      Reporting.log_error summary ~loc:last_loc IssueType.resource_leak message
   in
   (* Convert the abstract state to a summary. for now, just the identity function *)
   let convert_to_summary (post : Domain.astate) : Domain.summary =

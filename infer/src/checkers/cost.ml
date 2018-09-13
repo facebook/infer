@@ -644,16 +644,14 @@ module TransferFunctionsWCET = struct
       let cost_desc = F.asprintf "with estimated cost %a%s" BasicCost.pp cost degree_str in
       [Errlog.make_trace_element 0 loc cost_desc []]
     in
-    let exn =
-      let message =
-        F.asprintf
-          "The execution time from the beginning of the function up to this program point is \
-           likely above the acceptable threshold of %a (estimated cost %a%s)"
-          BasicCost.pp expensive_threshold BasicCost.pp cost degree_str
-      in
-      Exceptions.Checkers (IssueType.expensive_execution_time_call, Localise.verbatim_desc message)
+    let message =
+      F.asprintf
+        "The execution time from the beginning of the function up to this program point is likely \
+         above the acceptable threshold of %a (estimated cost %a%s)"
+        BasicCost.pp expensive_threshold BasicCost.pp cost degree_str
     in
-    Reporting.log_error summary ~loc ~ltr ~extras:(compute_errlog_extras cost) exn
+    Reporting.log_error summary ~loc ~ltr ~extras:(compute_errlog_extras cost)
+      IssueType.expensive_execution_time_call message
 
 
   (* get a list of nodes and check if we have already reported for at
@@ -723,23 +721,17 @@ end
 module AnalyzerWCET = AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsWCET)
 
 let check_and_report_top_and_bottom cost proc_desc summary =
-  let message =
-    F.asprintf "The execution time of the function %a %s" Typ.Procname.pp
-      (Procdesc.get_proc_name proc_desc)
+  let report issue suffix =
+    let message =
+      F.asprintf "The execution time of the function %a %s" Typ.Procname.pp
+        (Procdesc.get_proc_name proc_desc)
+        suffix
+    in
+    let loc = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
+    Reporting.log_error ~loc ~extras:(compute_errlog_extras cost) summary issue message
   in
-  let exn_opt =
-    if BasicCost.is_top cost then
-      let msg = message "cannot be computed" in
-      Some
-        (Exceptions.Checkers (IssueType.infinite_execution_time_call, Localise.verbatim_desc msg))
-    else if BasicCost.is_zero cost then
-      let msg = message "is zero" in
-      Some (Exceptions.Checkers (IssueType.zero_execution_time_call, Localise.verbatim_desc msg))
-    else None
-  in
-  let loc () = Procdesc.get_start_node proc_desc |> Procdesc.Node.get_loc in
-  Option.iter exn_opt
-    ~f:(Reporting.log_error ~loc:(loc ()) ~extras:(compute_errlog_extras cost) summary)
+  if BasicCost.is_top cost then report IssueType.infinite_execution_time_call "cannot be computed"
+  else if BasicCost.is_zero cost then report IssueType.zero_execution_time_call "is zero"
 
 
 let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =

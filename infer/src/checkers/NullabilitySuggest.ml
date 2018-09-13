@@ -184,21 +184,20 @@ let checker {Callbacks.summary; proc_desc; tenv} =
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name ->
           (* Skip reporting when field comes from generated code *)
           ()
-      | Some (field_name, _) -> (
+      | Some (field_name, _) ->
           let message =
             F.asprintf "Field %a should be annotated with %a" MF.pp_monospaced
               (pretty_field_name proc_data field_name)
               MF.pp_monospaced annotation
           in
-          let exn =
-            Exceptions.Checkers (IssueType.field_should_be_nullable, Localise.verbatim_desc message)
+          let loc, ltr =
+            match make_error_trace astate ap udchain with
+            | Some (loc, ltr) ->
+                (loc, Some ltr)
+            | None ->
+                (Procdesc.get_loc proc_desc, None)
           in
-          match make_error_trace astate ap udchain with
-          | Some (loc, ltr) ->
-              Reporting.log_warning summary ~loc ~ltr exn
-          | None ->
-              let loc = Procdesc.get_loc proc_desc in
-              Reporting.log_warning summary ~loc exn )
+          Reporting.log_warning summary ~loc ?ltr IssueType.field_should_be_nullable message
       | _ ->
           ()
     in

@@ -22,7 +22,7 @@ module HoistCalls = AbstractDomain.FiniteSet (Call)
 module LoopHeadToHoistInstrs = Procdesc.NodeMap
 
 (* A loop-invariant function call C(args) at node N can be hoisted out of the loop if
- *     
+ *
  *     1. C is guaranteed to execute, i.e. N dominates all loop sources
  *     2. args are loop invariant *)
 
@@ -67,13 +67,10 @@ let do_report summary Call.({pname; loc}) loop_head_loc =
     F.asprintf "Loop-invariant call to %a at %a" Typ.Procname.pp pname Location.pp loc
   in
   let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-  let exn =
-    let message =
-      F.asprintf "%s can be moved out of the loop at %a." exp_desc Location.pp loop_head_loc
-    in
-    Exceptions.Checkers (IssueType.invariant_call, Localise.verbatim_desc message)
+  let message =
+    F.asprintf "%s can be moved out of the loop at %a." exp_desc Location.pp loop_head_loc
   in
-  Reporting.log_error summary ~loc ~ltr exn
+  Reporting.log_error summary ~loc ~ltr IssueType.invariant_call message
 
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =

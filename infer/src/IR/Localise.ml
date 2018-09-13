@@ -160,29 +160,6 @@ let add_by_call_to_opt problem_str proc_name_opt =
       problem_str
 
 
-let rec format_typ typ =
-  match typ.Typ.desc with
-  | Typ.Tptr (t, _) when Language.curr_language_is Java ->
-      format_typ t
-  | Typ.Tstruct name ->
-      Typ.Name.name name
-  | _ ->
-      Typ.to_string typ
-
-
-let format_field f =
-  if Language.curr_language_is Java then Typ.Fieldname.Java.get_field f
-  else Typ.Fieldname.to_string f
-
-
-let format_method pname =
-  match pname with
-  | Typ.Procname.Java pname_java ->
-      Typ.Procname.Java.get_method pname_java
-  | _ ->
-      Typ.Procname.to_string pname
-
-
 let mem_dyn_allocated = "memory dynamically allocated"
 
 let lock_acquired = "lock acquired"
@@ -368,23 +345,6 @@ let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
       line_info syncronized_str
   in
   {no_desc with descriptions= [msg]}
-
-
-let desc_fragment_retains_view fragment_typ fieldname fld_typ pname : error_desc =
-  (* TODO: try advice *)
-  let problem =
-    Printf.sprintf "Fragment %s does not nullify View field %s (type %s) in %s."
-      (format_typ fragment_typ) (format_field fieldname) (format_typ fld_typ) (format_method pname)
-  in
-  let consequences =
-    "If this Fragment is placed on the back stack, a reference to this (probably dead) View will \
-     be retained."
-  in
-  let advice =
-    "In general, it is a good idea to initialize View's in onCreateView, then nullify them in \
-     onDestroyView."
-  in
-  {no_desc with descriptions= [problem; consequences; advice]}
 
 
 let desc_custom_error loc : error_desc =
@@ -672,8 +632,6 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
   { no_desc with
     descriptions= (bucket_str :: xxx_allocated_to) @ by_call_to @ is_not_rxxx_after; tags= !tags }
 
-
-let desc_buffer_overrun desc = verbatim_desc desc
 
 (** kind of precondition not met *)
 type pnm_kind = Pnm_bounds | Pnm_dangling

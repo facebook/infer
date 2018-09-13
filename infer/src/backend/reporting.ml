@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> exn -> unit
+type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> string -> unit
 
 let log_issue_from_errlog procname ~clang_method_kind severity err_log ~loc ~node ~session ~ltr
     ~access ~extras exn =
@@ -68,7 +68,13 @@ let log_issue_deprecated_using_state severity proc_name ?node ?loc ?ltr exn =
           Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 
 
-let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?extras exn =
+let checker_exception issue_type error_message =
+  Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message)
+
+
+let log_issue_from_summary_simplified severity summary ~loc ?(ltr = []) ?extras issue_type
+    error_message =
+  let exn = checker_exception issue_type error_message in
   log_issue_from_summary severity summary ~node:Errlog.UnknownNode ~session:0 ~loc ~ltr ?extras exn
 
 
@@ -77,7 +83,7 @@ let log_error = log_issue_from_summary_simplified Exceptions.Error
 let log_warning = log_issue_from_summary_simplified Exceptions.Warning
 
 let log_issue_external procname severity ~loc ~ltr ?access issue_type error_message =
-  let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc error_message) in
+  let exn = checker_exception issue_type error_message in
   let errlog = IssueLog.get_errlog procname in
   let node = Errlog.UnknownNode in
   log_issue_from_errlog procname ~clang_method_kind:None severity errlog ~loc ~node ~session:0 ~ltr

@@ -93,8 +93,7 @@ module Domain = struct
   include AbstractDomain.Map (Base) (CapabilityDomain)
 
   let report message loc ltr summary =
-    let exn = Exceptions.Checkers (IssueType.use_after_lifetime, Localise.verbatim_desc message) in
-    Reporting.log_error summary ~loc ~ltr exn
+    Reporting.log_error summary ~loc ~ltr IssueType.use_after_lifetime message
 
 
   let report_return_stack_var (var, _) loc summary =

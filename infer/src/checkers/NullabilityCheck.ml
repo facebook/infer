@@ -134,9 +134,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp
             loc
       in
-      let exn =
-        Exceptions.Checkers (IssueType.nullable_dereference, Localise.verbatim_desc message)
-      in
       let trace =
         let with_origin_site =
           let callee_pname = CallSite.pname call_site in
@@ -171,7 +168,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         dereference_site :: with_assignment_site
       in
-      Reporting.log_error summary ~loc ~ltr:trace exn
+      Reporting.log_error summary ~loc ~ltr:trace IssueType.nullable_dereference message
 
 
   let add_nullable_ap ap call_sites (aps, pnames) = (NullableAP.add ap call_sites aps, pnames)

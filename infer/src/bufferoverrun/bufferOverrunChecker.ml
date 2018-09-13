@@ -423,8 +423,7 @@ module Report = struct
         let issue_type =
           if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
         in
-        let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc desc) in
-        Reporting.log_warning summary ~loc:location exn
+        Reporting.log_warning summary ~loc:location issue_type desc
     (* special case for `exit` when we're at the end of a block / procedure *)
     | Sil.Call (_, Const (Cfun pname), _, _, _)
       when String.equal (Typ.Procname.get_method pname) "exit"
@@ -432,12 +431,8 @@ module Report = struct
         ()
     | _ ->
         let location = Sil.instr_get_loc instr in
-        let exn =
-          Exceptions.Checkers
-            ( IssueType.unreachable_code_after
-            , Localise.verbatim_desc "Unreachable code after statement" )
-        in
-        Reporting.log_error summary ~loc:location exn
+        Reporting.log_error summary ~loc:location IssueType.unreachable_code_after
+          "Unreachable code after statement"
 
 
   let check_binop_array_access :
@@ -670,8 +665,6 @@ module Report = struct
     let report cond trace issue_type =
       let location = PO.ConditionTrace.get_report_location trace in
       let description = PO.description cond trace in
-      let error_desc = Localise.desc_buffer_overrun description in
-      let exn = Exceptions.Checkers (issue_type, error_desc) in
       let trace =
         match TraceSet.choose_shortest (PO.ConditionTrace.get_val_traces trace) with
         | trace ->
@@ -679,7 +672,7 @@ module Report = struct
         | exception _ ->
             [Errlog.make_trace_element 0 location description []]
       in
-      Reporting.log_error summary ~loc:location ~ltr:trace exn
+      Reporting.log_error summary ~loc:location ~ltr:trace issue_type description
     in
     PO.ConditionSet.check_all ~report cond_set
 

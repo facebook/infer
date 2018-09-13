@@ -9,7 +9,7 @@ open! IStd
 
 (** Type of functions to report issues to the error_log in a spec. *)
 
-type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> exn -> unit
+type log_t = ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> IssueType.t -> string -> unit
 
 val log_issue_deprecated_using_state :
      Exceptions.severity

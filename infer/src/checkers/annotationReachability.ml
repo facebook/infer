@@ -141,10 +141,8 @@ let report_allocation_stack src_annot summary fst_call_loc trace stack_str const
       MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
       (stack_str ^ "new " ^ constr_str)
   in
-  let exn =
-    Exceptions.Checkers (IssueType.checkers_allocates_memory, Localise.verbatim_desc description)
-  in
-  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace exn
+  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace
+    IssueType.checkers_allocates_memory description
 
 
 let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc
@@ -162,13 +160,12 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
         MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced (stack_str ^ exp_pname_str)
         MF.pp_monospaced exp_pname_str MF.pp_monospaced ("@" ^ snk_annot)
     in
-    let msg =
+    let issue_type =
       if String.equal src_annot Annotations.performance_critical then
         IssueType.checkers_calls_expensive_method
       else IssueType.checkers_annotation_reachability_error
     in
-    let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error src_summary ~loc ~ltr:final_trace exn
+    Reporting.log_error src_summary ~loc ~ltr:final_trace issue_type description
 
 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
@@ -299,11 +296,8 @@ module ExpensiveAnnotationSpec = struct
           (Typ.Procname.to_string overridden_pname)
           MF.pp_monospaced ("@" ^ Annotations.expensive)
       in
-      let exn =
-        Exceptions.Checkers
-          (IssueType.checkers_expensive_overrides_unexpensive, Localise.verbatim_desc description)
-      in
-      Reporting.log_error summary ~loc exn
+      Reporting.log_error summary ~loc IssueType.checkers_expensive_overrides_unexpensive
+        description
 
 
   let spec =

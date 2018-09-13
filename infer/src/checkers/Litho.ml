@@ -85,12 +85,9 @@ module GraphQLGetters = struct
       in
       let call_string = String.concat ~sep:"." call_strings in
       let message = F.asprintf "%a.%s" AccessPath.pp access_path call_string in
-      let exn =
-        Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message)
-      in
       let loc = Summary.get_loc summary in
       let ltr = [Errlog.make_trace_element 0 loc message []] in
-      Reporting.log_error summary ~loc ~ltr exn
+      Reporting.log_error summary ~loc ~ltr IssueType.graphql_field_access message
     in
     Domain.iter_call_chains ~f:report_graphql_getter astate
 end
@@ -121,11 +118,8 @@ module RequiredProps = struct
       F.asprintf "@Prop %s is required for component %s, but is not set before the call to build()"
         prop_string (Typ.Name.name parent_typename)
     in
-    let exn =
-      Exceptions.Checkers (IssueType.missing_required_prop, Localise.verbatim_desc message)
-    in
     let ltr = [Errlog.make_trace_element 0 loc message []] in
-    Reporting.log_error summary ~loc ~ltr exn
+    Reporting.log_error summary ~loc ~ltr IssueType.missing_required_prop message
 
 
   (* walk backward through [call_chain] and return the first type T <: Component that is not part of
