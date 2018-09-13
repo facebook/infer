@@ -21,9 +21,7 @@ let get_field_annotation tenv fn typ =
       let ia' =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
-        if
-          (Models.Inference.enabled || not Config.eradicate) && Models.Inference.field_is_marked fn
-        then AnnotatedSignature.mk_ia AnnotatedSignature.Nullable ia
+        if not Config.eradicate then AnnotatedSignature.mk_ia AnnotatedSignature.Nullable ia
         else ia
       in
       Some (t, ia')
@@ -211,11 +209,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
            true )
     && not (field_is_mutable ())
   in
-  if should_report_nullable || should_report_absent then (
+  ( if should_report_nullable || should_report_absent then
     let ann =
       if should_report_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
     in
-    if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fname ;
     let origin_descr = TypeAnnotation.descr_origin ta_rhs in
     report_error tenv find_canonical_duplicate
       (TypeErr.Field_annotation_inconsistent (ann, fname, origin_descr))
@@ -283,7 +280,6 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
               && not (Typ.Fieldname.Java.is_outer_instance fn)
             in
             if should_check_field_initialization then (
-              if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn ;
               (* Check if field is missing annotation. *)
               if
                 (not (nullable_annotated || nonnull_annotated))
@@ -344,8 +340,6 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
       let return_over_annotated =
         (not final_nullable) && ret_annotated_nullable && Config.eradicate_return_over_annotated
       in
-      if return_not_nullable && Models.Inference.enabled then
-        Models.Inference.proc_mark_return_nullable curr_pname ;
       ( if return_not_nullable || return_value_not_present then
         let ann =
           if return_not_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
@@ -399,7 +393,6 @@ type resolved_param =
 let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes
     resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
-  let tot_param_num = List.length resolved_params in
   let check {num= param_num; formal= s1, ta1, t1; actual= orig_e2, ta2} =
     let report ann =
       let description =
@@ -421,9 +414,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
       let b2 = TypeAnnotation.get_value ann ta2 in
       match (ann, b1, b2) with
       | AnnotatedSignature.Nullable, false, true ->
-          report ann ;
-          if Models.Inference.enabled then
-            Models.Inference.proc_add_parameter_nullable callee_pname param_num tot_param_num
+          report ann
       | AnnotatedSignature.Present, true, false ->
           report ann
       | _ ->

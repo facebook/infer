@@ -78,15 +78,6 @@ val source_dir_get_internal_file : source_dir -> string -> filename
 val source_dir_from_source_file : SourceFile.t -> source_dir
 (** get the source directory corresponding to a source file *)
 
-val read_file_with_lock : string -> string -> string option
-(** Read a file using a lock to allow write attempts in parallel. *)
-
-val update_file_with_lock : string -> string -> (string -> string) -> unit
-(** Update the file contents with the update function provided.
-    If the directory does not exist, it is created.
-    If the file does not exist, it is created, and update is given the empty string.
-    A lock is used to allow write attempts in parallel. *)
-
 val is_source_file : string -> bool
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
 

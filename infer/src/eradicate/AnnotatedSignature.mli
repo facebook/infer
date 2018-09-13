@@ -22,9 +22,6 @@ val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
 val mark : Typ.Procname.t -> annotation -> t -> bool * bool list -> t
 (** Mark the annotated signature with the given annotation map. *)
 
-val mark_return : annotation -> t -> t
-(** Mark the return of the annotated signature with the given annotation. *)
-
 val get : ProcAttributes.t -> t
 (** Get a method signature with annotations from a proc_attributes. *)
 

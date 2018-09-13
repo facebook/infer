@@ -86,50 +86,6 @@ let file_modified_time ?(symlink = false) fname =
   with Unix.Unix_error _ -> L.(die InternalError) "File %s does not exist." fname
 
 
-let read_whole_file fd = In_channel.input_all (Unix.in_channel_of_descr fd)
-
-(** Update the file contents with the update function provided.
-    If the directory does not exist, it is created.
-    If the file does not exist, it is created, and update is given the empty string.
-    A lock is used to allow write attempts in parallel. *)
-let update_file_with_lock dir fname update =
-  let reset_file fd =
-    let n = Unix.lseek fd 0L ~mode:Unix.SEEK_SET in
-    if n <> 0L then (
-      L.internal_error "reset_file: lseek fail@." ;
-      assert false )
-  in
-  Utils.create_dir dir ;
-  let path = Filename.concat dir fname in
-  let fd = Unix.openfile path ~mode:Unix.[O_CREAT; O_SYNC; O_RDWR] ~perm:0o640 in
-  Unix.lockf fd ~mode:Unix.F_LOCK ~len:0L ;
-  let buf = read_whole_file fd in
-  reset_file fd ;
-  let str = update buf in
-  let i = Unix.write fd ~buf:(Bytes.of_string str) ~pos:0 ~len:(String.length str) in
-  if Int.equal i (String.length str) then (
-    Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L ;
-    Unix.close fd )
-  else (
-    L.internal_error "@\nsave_with_lock: fail on path: %s@." path ;
-    assert false )
-
-
-(** Read a file using a lock to allow write attempts in parallel. *)
-let read_file_with_lock dir fname =
-  let path = Filename.concat dir fname in
-  try
-    let fd = Unix.openfile path ~mode:Unix.[O_RSYNC; O_RDONLY] ~perm:0o646 in
-    try
-      Unix.lockf fd ~mode:Unix.F_RLOCK ~len:0L ;
-      let buf = read_whole_file fd in
-      Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L ;
-      Unix.close fd ;
-      Some buf
-    with Unix.Unix_error _ -> L.(die ExternalError) "read_file_with_lock: Unix error"
-  with Unix.Unix_error _ -> None
-
-
 (** {2 Results Directory} *)
 
 module Results_dir = struct

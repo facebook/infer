@@ -105,9 +105,3 @@ let mark proc_name ann asig (b, bs) =
     combine asig.params bs
   in
   {ret= ret'; params= params'}
-
-
-let mark_return ann asig =
-  let ia, t = asig.ret in
-  let ret' = (mark_ia ann ia true, t) in
-  {asig with ret= ret'}
