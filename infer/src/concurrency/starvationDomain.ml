@@ -224,7 +224,7 @@ module UIThreadExplanationDomain = struct
 
   type astate = t
 
-  let join lhs _ = lhs
+  let join lhs rhs = if List.length lhs.trace <= List.length rhs.trace then lhs else rhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
