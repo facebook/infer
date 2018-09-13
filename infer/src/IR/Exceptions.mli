@@ -134,8 +134,6 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Lo
 
 exception Unknown_proc
 
-exception Unreachable_code_after of Localise.error_desc * Logging.ocaml_pos
-
 exception Unsafe_guarded_by_access of Localise.error_desc * Logging.ocaml_pos
 
 exception Use_after_free of Localise.error_desc * Logging.ocaml_pos

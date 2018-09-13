@@ -95,8 +95,6 @@ val explain_condition_always_true_false :
   Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a condition which is always true or false *)
 
-val explain_unreachable_code_after : Location.t -> Localise.error_desc
-
 val explain_stack_variable_address_escape :
   Location.t -> Pvar.t -> DecompiledExp.t option -> Localise.error_desc
 (** explain the escape of a stack variable address from its scope *)

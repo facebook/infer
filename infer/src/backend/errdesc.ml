@@ -1164,8 +1164,6 @@ let explain_condition_always_true_false tenv i cond node loc =
   Localise.desc_condition_always_true_false i cond_str_opt loc
 
 
-let explain_unreachable_code_after loc = Localise.desc_unreachable_code_after loc
-
 (** explain the escape of a stack variable address from its scope *)
 let explain_stack_variable_address_escape loc pvar addr_dexp_opt =
   let addr_dexp_str =

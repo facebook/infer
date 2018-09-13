@@ -119,8 +119,6 @@ val desc_class_cast_exception :
 
 val desc_condition_always_true_false : IntLit.t -> string option -> Location.t -> error_desc
 
-val desc_unreachable_code_after : Location.t -> error_desc
-
 val desc_deallocate_stack_variable : string -> Typ.Procname.t -> Location.t -> error_desc
 
 val desc_deallocate_static_memory : string -> Typ.Procname.t -> Location.t -> error_desc

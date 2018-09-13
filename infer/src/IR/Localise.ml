@@ -543,12 +543,6 @@ let desc_condition_always_true_false i cond_str_opt loc =
   {no_desc with descriptions= [description]; tags= !tags}
 
 
-let desc_unreachable_code_after loc =
-  let tags = Tags.create () in
-  let description = "Unreachable code after statement " ^ at_line tags loc in
-  {no_desc with descriptions= [description]}
-
-
 let desc_deallocate_stack_variable var_str proc_name loc =
   let tags = Tags.create () in
   Tags.update tags Tags.value var_str ;

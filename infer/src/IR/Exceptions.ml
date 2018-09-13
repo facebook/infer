@@ -130,8 +130,6 @@ exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.
 
 exception Unknown_proc
 
-exception Unreachable_code_after of Localise.error_desc * L.ocaml_pos
-
 exception Unsafe_guarded_by_access of Localise.error_desc * L.ocaml_pos
 
 exception Use_after_free of Localise.error_desc * L.ocaml_pos
@@ -530,13 +528,6 @@ let recognize_exception exn =
       ; description= Localise.no_desc
       ; ocaml_pos= None
       ; visibility= Exn_developer
-      ; severity= None
-      ; category= Nocat }
-  | Unreachable_code_after (desc, ocaml_pos) ->
-      { name= IssueType.unreachable_code_after
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos
-      ; visibility= Exn_user
       ; severity= None
       ; category= Nocat }
   | Unsafe_guarded_by_access (desc, ocaml_pos) ->

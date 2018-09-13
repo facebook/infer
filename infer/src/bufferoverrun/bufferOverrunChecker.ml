@@ -432,8 +432,11 @@ module Report = struct
         ()
     | _ ->
         let location = Sil.instr_get_loc instr in
-        let desc = Errdesc.explain_unreachable_code_after location in
-        let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
+        let exn =
+          Exceptions.Checkers
+            ( IssueType.unreachable_code_after
+            , Localise.verbatim_desc "Unreachable code after statement" )
+        in
         Reporting.log_error summary ~loc:location exn
 
 
