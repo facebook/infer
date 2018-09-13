@@ -83,8 +83,25 @@ let compile compiler build_prog build_args =
   verbose_out_file
 
 
+let no_source_file args =
+  let not_source_file arg =
+    let stripped_arg = String.strip ~drop:(fun char -> Char.equal char '\"') arg in
+    not (String.is_suffix ~suffix:".java" stripped_arg)
+  in
+  List.for_all args ~f:(fun arg ->
+      (* expand arg files *)
+      match String.chop_prefix ~prefix:"@" arg with
+      | None ->
+          not_source_file arg
+      | Some arg_file ->
+          List.for_all ~f:not_source_file (In_channel.read_lines arg_file) )
+
+
 let capture compiler ~prog ~args =
   match (compiler, Config.capture_blacklist) with
+  (* Simulates Buck support for compilation commands with no source file *)
+  | _ when Config.buck_cache_mode && no_source_file args ->
+      ()
   | Javac, Some blacklist
     when let re = Str.regexp blacklist in
          List.exists ~f:(fun arg -> Str.string_match re arg 0) args ->
