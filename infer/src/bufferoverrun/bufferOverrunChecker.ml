@@ -412,12 +412,18 @@ module Report = struct
     | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
         ()
     | Sil.Prune (cond, location, true_branch, _) ->
-        let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
         let desc =
-          Errdesc.explain_condition_always_true_false tenv i cond (CFG.Node.underlying_node node)
-            location
+          let err_desc =
+            let i = match cond with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
+            Errdesc.explain_condition_always_true_false tenv i cond (CFG.Node.underlying_node node)
+              location
+          in
+          F.asprintf "%a" Localise.pp_error_desc err_desc
         in
-        let exn = Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
+        let issue_type =
+          if true_branch then IssueType.condition_always_false else IssueType.condition_always_true
+        in
+        let exn = Exceptions.Checkers (issue_type, Localise.verbatim_desc desc) in
         Reporting.log_warning summary ~loc:location exn
     (* special case for `exit` when we're at the end of a block / procedure *)
     | Sil.Call (_, Const (Cfun pname), _, _, _)
