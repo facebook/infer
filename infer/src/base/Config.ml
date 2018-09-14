@@ -2195,6 +2195,11 @@ and unsafe_malloc =
     "Assume that malloc(3) never returns null."
 
 
+and use_cost_threshold =
+  CLOpt.mk_bool ~long:"use-cost-threshold" ~default:false
+    "Emit costs issues by comparing costs with a set threshold"
+
+
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
@@ -2979,6 +2984,8 @@ and uninit = !uninit
 and uninit_interproc = !uninit_interproc
 
 and unsafe_malloc = !unsafe_malloc
+
+and use_cost_threshold = !use_cost_threshold
 
 and worklist_mode = !worklist_mode
 

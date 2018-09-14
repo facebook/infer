@@ -629,7 +629,9 @@ module TransferFunctionsWCET = struct
   (* We don't report when the cost is Top as it corresponds to subsequent 'don't know's.
    Instead, we report Top cost only at the top level per function when `report_infinity` is set to true *)
   let should_report_cost cost =
-    (not (BasicCost.is_top cost)) && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
+    Config.use_cost_threshold
+    && (not (BasicCost.is_top cost))
+    && not (BasicCost.( <= ) ~lhs:cost ~rhs:expensive_threshold)
 
 
   let do_report summary loc cost =

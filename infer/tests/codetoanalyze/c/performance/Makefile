@@ -8,7 +8,7 @@ TESTS_DIR = ../../..
 ANALYZER = checkers
 # see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --cost-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --cost-only --debug-exceptions --project-root $(TESTS_DIR) --use-cost-threshold
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)

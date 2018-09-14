@@ -200,6 +200,8 @@ val undo_join : bool
 
 val unsafe_unret : string
 
+val use_cost_threshold : bool
+
 val weak : string
 
 val whitelisted_cpp_methods : string list
