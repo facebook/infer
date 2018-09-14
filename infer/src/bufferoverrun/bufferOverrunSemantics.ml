@@ -294,8 +294,11 @@ end
 
 let rec eval_sympath_partial params p mem =
   match p with
-  | Symb.SymbolPath.Pvar x ->
-      ParamBindings.find x params
+  | Symb.SymbolPath.Pvar x -> (
+    try ParamBindings.find x params with Caml.Not_found ->
+      L.(debug BufferOverrun Verbose)
+        "Symbol %a is not found in parameters.@\n" (Pvar.pp Pp.text) x ;
+      Val.Itv.top )
   | Symb.SymbolPath.Index _ | Symb.SymbolPath.Field _ ->
       let locs = eval_locpath params p mem in
       Mem.find_set locs mem
