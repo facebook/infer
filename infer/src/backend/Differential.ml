@@ -129,7 +129,8 @@ let to_map key_func report =
 
 
 let issue_of_cost (cost_info, cost_polynomial) ~delta ~prev_cost ~curr_cost =
-  let source_file = SourceFile.create ~warn_on_error:false cost_info.Jsonbug_t.loc.file in
+  let file = cost_info.Jsonbug_t.loc.file in
+  let source_file = SourceFile.create ~warn_on_error:false file in
   let issue_type =
     if CostDomain.BasicCost.is_top cost_polynomial then IssueType.infinite_execution_time_call
     else if CostDomain.BasicCost.is_zero cost_polynomial then IssueType.zero_execution_time_call
@@ -147,16 +148,22 @@ let issue_of_cost (cost_info, cost_polynomial) ~delta ~prev_cost ~curr_cost =
       CostDomain.BasicCost.pp_degree prev_cost CostDomain.BasicCost.pp_degree curr_cost
       CostDomain.BasicCost.pp cost_polynomial CostDomain.BasicCost.pp_degree cost_polynomial
   in
+  let line = cost_info.Jsonbug_t.loc.lnum in
+  let column = cost_info.Jsonbug_t.loc.cnum in
+  let trace =
+    [Errlog.make_trace_element 0 {Location.line; col= column; file= source_file} "" []]
+  in
+  let severity = Exceptions.Warning in
   { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
   ; qualifier
-  ; severity= Exceptions.severity_string Exceptions.Warning
+  ; severity= Exceptions.severity_string severity
   ; visibility= Exceptions.string_of_visibility Exceptions.Exn_user
-  ; line= cost_info.Jsonbug_t.loc.lnum
-  ; column= cost_info.Jsonbug_t.loc.cnum
+  ; line
+  ; column
   ; procedure= cost_info.Jsonbug_t.procedure_id
   ; procedure_start_line= 0
-  ; file= cost_info.Jsonbug_t.loc.file
-  ; bug_trace= []
+  ; file
+  ; bug_trace= InferPrint.loc_trace_to_jsonbug_record trace severity
   ; key= ""
   ; node_key= None
   ; hash= cost_info.Jsonbug_t.hash
