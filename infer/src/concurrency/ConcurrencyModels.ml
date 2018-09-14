@@ -158,67 +158,6 @@ let find_annotated_or_overriden_annotated_method is_annot pname tenv =
     tenv pname
 
 
-(* we don't want to warn on methods that run on the UI thread because they should always be
-      single-threaded *)
-let runs_on_ui_thread tenv proc_desc =
-  (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
-        @OnUnmount always run on the UI thread *)
-  let is_annot annot =
-    Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
-    || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
-    || Annotations.ia_is_on_unbind annot
-    || Annotations.ia_is_on_unmount annot
-  in
-  let pname = Procdesc.get_proc_name proc_desc in
-  if
-    Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
-    || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
-       |> Option.is_some
-    || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
-       |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
-  then None
-  else if Annotations.pdesc_has_return_annot proc_desc is_annot then
-    Some
-      (F.asprintf "%a is annotated %s"
-         (MF.wrap_monospaced Typ.Procname.pp)
-         pname
-         (MF.monospaced_to_string Annotations.ui_thread))
-  else
-    match find_annotated_or_overriden_annotated_method is_annot pname tenv with
-    | Some override_pname ->
-        Some
-          (F.asprintf "class %a overrides %a, which is annotated %s"
-             (MF.wrap_monospaced Typ.Procname.pp)
-             pname
-             (MF.wrap_monospaced Typ.Procname.pp)
-             override_pname
-             (MF.monospaced_to_string Annotations.ui_thread))
-    | None -> (
-      match
-        get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname
-      with
-      | Some (current_class, _)
-        when let open PatternMatch in
-             is_subtype_of_str tenv current_class "android.app.Service"
-             && not (is_subtype_of_str tenv current_class "android.app.IntentService") ->
-          Some
-            (F.asprintf "class %s extends %s"
-               (MF.monospaced_to_string (Typ.Name.name current_class))
-               (MF.monospaced_to_string "android.app.Service"))
-      | Some (current_class, (super_class :: _ as super_classes)) ->
-          let middle =
-            if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
-            else F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) super_class
-          in
-          Some
-            (F.asprintf "class %s%s is annotated %s"
-               (MF.monospaced_to_string (Typ.Name.name current_class))
-               middle
-               (MF.monospaced_to_string Annotations.ui_thread))
-      | _ ->
-          None )
-
-
 let is_call_of_class ?(search_superclasses = true) ?(method_prefix = false)
     ?(actuals_pred = fun _ -> true) clazz methods =
   let method_matcher =
@@ -249,3 +188,120 @@ let is_call_of_class ?(search_superclasses = true) ?(method_prefix = false)
     | _ ->
         false )
   |> Staged.stage
+
+
+let is_ui_method =
+  let is_activity_ui_method =
+    (* lifecycle methods of Activity *)
+    is_call_of_class ~search_superclasses:true "android.app.Activity"
+      (* sort police: this is in lifecycle order *)
+      ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
+    |> Staged.unstage
+  in
+  let is_fragment_ui_method =
+    (* lifecycle methods of Fragment *)
+    let fragment_methods =
+      (* sort police: this is in lifecycle order *)
+      [ "onAttach"
+      ; "onCreate"
+      ; "onCreateView"
+      ; "onActivityCreated"
+      ; "onStart"
+      ; "onResume"
+      ; "onPause"
+      ; "onStop"
+      ; "onDestroyView"
+      ; "onDestroy"
+      ; "onDetach" ]
+    in
+    let fragment_v4_matcher =
+      is_call_of_class ~search_superclasses:true "android.support.v4.app.Fragment" fragment_methods
+      |> Staged.unstage
+    in
+    let fragment_matcher =
+      is_call_of_class ~search_superclasses:true "android.app.Fragment" fragment_methods
+      |> Staged.unstage
+    in
+    fun tenv pname actuals ->
+      fragment_v4_matcher tenv pname actuals || fragment_matcher tenv pname actuals
+  in
+  let is_service_ui_method =
+    (* lifecycle methods of Service *)
+    is_call_of_class ~search_superclasses:true "android.app.Service"
+      ["onBind"; "onCreate"; "onDestroy"; "onStartCommand"]
+    |> Staged.unstage
+  in
+  let is_content_provider_ui_method =
+    is_call_of_class ~search_superclasses:true "android.content.ContentProvider" ["onCreate"]
+    |> Staged.unstage
+  in
+  let is_broadcast_receiver_ui_method =
+    is_call_of_class ~search_superclasses:true "android.content.BroadcastReceiver" ["onReceive"]
+    |> Staged.unstage
+  in
+  let is_view_ui_method =
+    (* according to Android documentation, *all* methods of the View class run on UI thread, but
+     let's be a bit conservative and catch all methods that start with "on".
+     https://developer.android.com/reference/android/view/View.html *)
+    is_call_of_class ~search_superclasses:true ~method_prefix:true "android.view.View" ["on"]
+    |> Staged.unstage
+  in
+  let matchers =
+    [ is_activity_ui_method
+    ; is_fragment_ui_method
+    ; is_service_ui_method
+    ; is_content_provider_ui_method
+    ; is_broadcast_receiver_ui_method
+    ; is_view_ui_method ]
+  in
+  (* we pass an empty actuals list because all matching is done on class and method name here *)
+  fun tenv pname -> List.exists matchers ~f:(fun m -> m tenv pname [])
+
+
+let runs_on_ui_thread tenv proc_desc =
+  (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
+          @OnUnmount always run on the UI thread *)
+  let is_annot annot =
+    Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
+    || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
+    || Annotations.ia_is_on_unbind annot
+    || Annotations.ia_is_on_unmount annot
+  in
+  let pname = Procdesc.get_proc_name proc_desc in
+  let mono_pname = MF.wrap_monospaced Typ.Procname.pp in
+  if
+    Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
+    || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
+       |> Option.is_some
+    || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
+       |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
+  then None
+  else if is_ui_method tenv pname then
+    Some (F.asprintf "%a is a standard UI-thread method" mono_pname pname)
+  else if Annotations.pdesc_has_return_annot proc_desc is_annot then
+    Some
+      (F.asprintf "%a is annotated %s" mono_pname pname
+         (MF.monospaced_to_string Annotations.ui_thread))
+  else
+    match find_annotated_or_overriden_annotated_method is_annot pname tenv with
+    | Some override_pname ->
+        Some
+          (F.asprintf "class %a overrides %a, which is annotated %s" mono_pname pname mono_pname
+             override_pname
+             (MF.monospaced_to_string Annotations.ui_thread))
+    | None -> (
+      match
+        get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname
+      with
+      | Some (current_class, (super_class :: _ as super_classes)) ->
+          let middle =
+            if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
+            else F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) super_class
+          in
+          Some
+            (F.asprintf "class %s%s is annotated %s"
+               (MF.monospaced_to_string (Typ.Name.name current_class))
+               middle
+               (MF.monospaced_to_string Annotations.ui_thread))
+      | _ ->
+          None )
