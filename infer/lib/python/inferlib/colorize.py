@@ -34,18 +34,20 @@ MAGENTA = terminal_only('\033[35m')
 MAGENTA_BG = terminal_only('\033[45m')
 BRIGHT = terminal_only('\033[1m')
 DIM = terminal_only('\033[2m')
+GREEN = terminal_only('\033[32m')
 RED = terminal_only('\033[31m')
 RESET = terminal_only('\033[0m')
 WHITE = terminal_only('\033[37m')
 WHITE_BG = terminal_only('\033[47m')
-YELLOW = terminal_only('\033[35m')
+YELLOW = terminal_only('\033[33m')
 
-ERROR = RED
 HEADER = BRIGHT
 SUCCESS = BLUE_BG + WHITE + BRIGHT
-WARNING = ''
-ADVICE = ''
-LIKE = ''
+
+ERROR = RED
+WARNING = YELLOW
+ADVICE = BLUE
+LIKE = GREEN
 
 
 class Invalid_mode(Exception):
