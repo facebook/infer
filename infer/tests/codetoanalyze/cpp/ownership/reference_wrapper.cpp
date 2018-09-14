@@ -16,18 +16,33 @@ struct A {
   ~A() { delete b; }
 };
 
-struct ReferenceWrapper {
-  ReferenceWrapper(A& a) : b(a.getb()){};
+struct ReferenceWrapperHeap {
+  ReferenceWrapperHeap(A& a) : b(a.getb()){};
   B* b;
 };
 
-ReferenceWrapper getwrapper() {
+ReferenceWrapperHeap getwrapperHeap() {
   A a(1);
   return a; // We store a.b in ReferenceWrapper, but we delete a.b in the
             // destructor of A
 }
 
-int FN_reference_wrapper_bad() {
-  ReferenceWrapper rw = getwrapper();
+int FN_reference_wrapper_heap_bad() {
+  ReferenceWrapperHeap rw = getwrapperHeap();
+  return rw.b->f; // we want to report use after lifetime bug here
+}
+
+struct ReferenceWrapperStack {
+  ReferenceWrapperStack(B& bref) : b(&bref){};
+  B* b;
+};
+
+ReferenceWrapperStack getwrapperStack() {
+  B b(1);
+  return b;
+}
+
+int FN_reference_wrapper_stack_bad() {
+  ReferenceWrapperStack rw = getwrapperStack();
   return rw.b->f; // we want to report use after lifetime bug here
 }
