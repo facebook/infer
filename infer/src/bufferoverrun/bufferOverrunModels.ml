@@ -476,6 +476,7 @@ module Call = struct
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; -"strlen" <>--> by_value Dom.Val.Itv.nat
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
+      ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector

@@ -96,3 +96,52 @@ void memcpy_good4() {
   int dst[3];
   memcpy(dst, src, sizeof(dst));
 }
+
+void memmove_bad1() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr1, arr2, 44);
+}
+
+void memmove_bad2() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr2, arr1, 44);
+}
+
+void memmove_bad3() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr1, arr2, -1);
+}
+
+void memmove_bad4() {
+  int src[1];
+  int buff[1];
+  int* dst = &buff[0];
+  memmove(dst, src, sizeof(dst));
+}
+
+void memmove_good1() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr2, arr1, 40);
+}
+
+void memmove_good2() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr2, arr1, 0);
+}
+
+void memmove_good3() {
+  int arr1[10];
+  int arr2[20];
+  memmove(arr2, arr1, 20);
+}
+
+void memmove_good4() {
+  int src[3];
+  int dst[3];
+  memmove(dst, src, sizeof(dst));
+}
