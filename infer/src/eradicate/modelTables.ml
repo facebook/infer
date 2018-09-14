@@ -51,7 +51,7 @@ let ca = if strict_containers then (o, [o]) else (o, [n])
 let cg = if strict_containers then (n, [o]) else (n, [n])
 
 (* container put *)
-let cp = if strict_containers then (n, [o; o]) else (n, [n; n])
+let cp = (n, [o; o])
 
 (* container remove *)
 let cr = if strict_containers then (n, [o]) else (n, [n])
