@@ -347,13 +347,11 @@ module JsonCostsPrinter = MakeJsonListPrinter (struct
           if Config.developer_mode then
             Some
               { Jsonbug_t.hum_polynomial= Format.asprintf "%a" CostDomain.BasicCost.pp post
-              ; hum_degree=
-                  Option.value_map ~default:"Top" ~f:string_of_int
-                    (CostDomain.BasicCost.degree post) }
+              ; hum_degree= Format.asprintf "%a" CostDomain.BasicCost.pp_degree post }
           else None
         in
         let cost_item =
-          let file = SourceFile.to_string loc.Location.file in
+          let file = SourceFile.to_rel_path loc.Location.file in
           { Jsonbug_t.hash= compute_hash ~severity:"" ~bug_type:"" ~proc_name ~file ~qualifier:""
           ; loc= {file; lnum= loc.Location.line; cnum= loc.Location.col; enum= -1}
           ; procedure_id= Typ.Procname.to_string proc_name

@@ -1,0 +1,2 @@
+PERFORMANCE_VARIATION, no_bucket, src/DiffExample.java, int DiffExample.f4(int), 39
+INFINITE_EXECUTION_TIME_CALL, no_bucket, src/DiffExample.java, void DiffExample.f1(int), 19

@@ -122,15 +122,110 @@ type t =
   ; preexisting: Jsonbug_t.report
   ; costs_summary: Yojson.Basic.json }
 
+let to_map key_func report =
+  List.fold_left
+    ~f:(fun map elt -> Map.add_multi map ~key:(key_func elt) ~data:elt)
+    ~init:String.Map.empty report
+
+
+let issue_of_cost (cost_info, cost_polynomial) ~delta ~prev_cost ~curr_cost =
+  let source_file = SourceFile.create ~warn_on_error:false cost_info.Jsonbug_t.loc.file in
+  let issue_type =
+    if CostDomain.BasicCost.is_top cost_polynomial then IssueType.infinite_execution_time_call
+    else if CostDomain.BasicCost.is_zero cost_polynomial then IssueType.zero_execution_time_call
+    else IssueType.performance_variation
+  in
+  let qualifier =
+    let pp_delta fmt delta =
+      match delta with
+      | `Decreased ->
+          Format.fprintf fmt "decreased"
+      | `Increased ->
+          Format.fprintf fmt "increased"
+    in
+    Format.asprintf "Max degree %a from %a to %a. Cost is %a (degree is %a)" pp_delta delta
+      CostDomain.BasicCost.pp_degree prev_cost CostDomain.BasicCost.pp_degree curr_cost
+      CostDomain.BasicCost.pp cost_polynomial CostDomain.BasicCost.pp_degree cost_polynomial
+  in
+  { Jsonbug_j.bug_type= issue_type.IssueType.unique_id
+  ; qualifier
+  ; severity= Exceptions.severity_string Exceptions.Warning
+  ; visibility= Exceptions.string_of_visibility Exceptions.Exn_user
+  ; line= cost_info.Jsonbug_t.loc.lnum
+  ; column= cost_info.Jsonbug_t.loc.cnum
+  ; procedure= cost_info.Jsonbug_t.procedure_id
+  ; procedure_start_line= 0
+  ; file= cost_info.Jsonbug_t.loc.file
+  ; bug_trace= []
+  ; key= ""
+  ; node_key= None
+  ; hash= cost_info.Jsonbug_t.hash
+  ; dotty= None
+  ; infer_source_loc= None
+  ; bug_type_hum= issue_type.IssueType.hum
+  ; linters_def_file= None
+  ; doc_url= None
+  ; traceview_id= None
+  ; censored_reason= InferPrint.censored_reason issue_type source_file
+  ; access= None
+  ; extras= None }
+
+
+(** Differential of cost reports, based on degree variations.
+    Compare degree_before (DB), and degree_after (DA):
+      DB > DA => fixed
+      DB < DA => introduced
+ *)
+let of_costs ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) =
+  let fold_aux ~key:_ ~data (left, both, right) =
+    match data with
+    | `Both (current, previous) ->
+        let max_degree_polynomial l =
+          let max =
+            List.max_elt l ~compare:(fun (_, c1) (_, c2) ->
+                CostDomain.BasicCost.compare_by_degree c1 c2 )
+          in
+          Option.value_exn max |> snd
+        in
+        let curr_cost = max_degree_polynomial current in
+        let prev_cost = max_degree_polynomial previous in
+        let cmp = CostDomain.BasicCost.compare_by_degree curr_cost prev_cost in
+        if cmp > 0 then
+          (* introduced *)
+          let left' =
+            List.rev_map_append
+              ~f:(fun c -> issue_of_cost c ~delta:`Increased ~prev_cost ~curr_cost)
+              current left
+          in
+          (left', both, right)
+        else if cmp < 0 then
+          (* fixed *)
+          let right' =
+            List.rev_map_append
+              ~f:(fun c -> issue_of_cost c ~delta:`Decreased ~prev_cost ~curr_cost)
+              current right
+          in
+          (left, both, right')
+        else
+          (* preexisting costs are not issues, since their values have not changed *)
+          (left, both, right)
+    | `Left _ | `Right _ ->
+        (* costs available only on one of the two reports are discarded, since no comparison can be made *)
+        (left, both, right)
+  in
+  let key_func (cost_info, _) = cost_info.Jsonbug_t.hash in
+  let to_map = to_map key_func in
+  let decoded_costs costs =
+    List.map costs ~f:(fun c -> (c, CostDomain.BasicCost.decode c.Jsonbug_t.polynomial))
+  in
+  let current_costs' = decoded_costs current_costs in
+  let previous_costs' = decoded_costs previous_costs in
+  Map.fold2 (to_map current_costs') (to_map previous_costs') ~f:fold_aux ~init:([], [], [])
+
+
 (** Set operations should keep duplicated issues with identical hashes *)
 let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_t.report)
     ~(current_costs : Jsonbug_t.costs_report) ~(previous_costs : Jsonbug_t.costs_report) : t =
-  let to_map report =
-    List.fold_left
-      ~f:(fun map (issue : Jsonbug_t.jsonbug) ->
-        Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue )
-      ~init:String.Map.empty report
-  in
   let fold_aux ~key:_ ~data (left, both, right) =
     match data with
     | `Left left' ->
@@ -141,10 +236,16 @@ let of_reports ~(current_report : Jsonbug_t.report) ~(previous_report : Jsonbug_
         (left, both, List.rev_append right' right)
   in
   let introduced, preexisting, fixed =
+    let key_func (issue : Jsonbug_t.jsonbug) = issue.hash in
+    let to_map = to_map key_func in
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
   in
   let costs_summary = CostsSummary.to_json ~current_costs ~previous_costs in
-  {introduced= dedup introduced; fixed= dedup fixed; preexisting= dedup preexisting; costs_summary}
+  let introduced_costs, preexisting_costs, fixed_costs = of_costs ~current_costs ~previous_costs in
+  { introduced= List.rev_append introduced_costs (dedup introduced)
+  ; fixed= List.rev_append fixed_costs (dedup fixed)
+  ; preexisting= List.rev_append preexisting_costs (dedup preexisting)
+  ; costs_summary }
 
 
 let to_files {introduced; fixed; preexisting; costs_summary} destdir =

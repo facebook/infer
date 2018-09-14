@@ -217,6 +217,8 @@ val nullable_dereference : t
 
 val parameter_not_null_checked : t
 
+val performance_variation : t
+
 val pointer_size_mismatch : t
 
 val precondition_not_found : t

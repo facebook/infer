@@ -6,11 +6,17 @@
  */
 
 // This class has the following costs:
-// 1 top, 1 bottom, 2 constant (incl. constructor), 1 linear
+// 1 bottom (zero), 2 constant, 1 linear, 1 top
+// constructor: constant
+// f1: top
+// f2: bottom (zero)
+// f3: constant
+// f4: linear
+
 public class DiffExample {
 
     // cost: top
-    private static void top() {
+    private static void f1(int k) {
         int i = 0;
         while (i >=0) {
             i++;
@@ -18,10 +24,10 @@ public class DiffExample {
     }
 
     // cost: bottom (0)
-    private static void bottom() {}
+    private static void f2(int k) {}
 
     // cost: constant (5)
-    private static int constant() {
+    private static int f3() {
         int i, j;
         i = 17;
         j = 31;
@@ -30,7 +36,7 @@ public class DiffExample {
     }
 
     // cost: linear
-    private static int linear(int k) {
+    private static int f4(int k) {
         for (int i = 0; i < k; i++) {
         }
         return 0;

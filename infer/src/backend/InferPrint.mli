@@ -7,4 +7,6 @@
 
 open! IStd
 
+val censored_reason : IssueType.t -> SourceFile.t -> string
+
 val main : report_json:string option -> unit

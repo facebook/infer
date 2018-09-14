@@ -396,6 +396,26 @@ module NonNegativePolynomial = struct
     match p with Top -> None | NonTop p -> Some (NonNegativeNonTopPolynomial.degree p)
 
 
+  let compare_by_degree p1 p2 =
+    match (p1, p2) with
+    | Top, Top ->
+        0
+    | Top, NonTop _ ->
+        1
+    | NonTop _, Top ->
+        -1
+    | NonTop p1, NonTop p2 ->
+        NonNegativeNonTopPolynomial.degree p1 - NonNegativeNonTopPolynomial.degree p2
+
+
+  let pp_degree fmt p =
+    match p with
+    | Top ->
+        Format.pp_print_string fmt "Top"
+    | NonTop p ->
+        Format.pp_print_int fmt (NonNegativeNonTopPolynomial.degree p)
+
+
   let encode astate = Marshal.to_string astate [] |> B64.encode
 
   let decode enc_str = Marshal.from_string (B64.decode enc_str) 0

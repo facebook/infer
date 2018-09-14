@@ -311,6 +311,8 @@ let nullable_dereference = from_string "NULLABLE_DEREFERENCE"
 
 let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
 
+let performance_variation = from_string "PERFORMANCE_VARIATION"
+
 let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
 
 let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"

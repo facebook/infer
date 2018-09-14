@@ -54,6 +54,10 @@ module NonNegativePolynomial : sig
 
   val degree : astate -> int option
 
+  val compare_by_degree : astate -> astate -> int
+
+  val pp_degree : Format.formatter -> astate -> unit
+
   val encode : astate -> string
 
   val decode : string -> astate
