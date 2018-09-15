@@ -32,4 +32,10 @@ public abstract class Class1 {
   public Object unannotatedReturnNull() {
     return null;
   }
+
+  public static class Sub {
+    public Object subtypingInconsistency(@Nullable Object object) {
+      return new Object();
+    }
+  }
 }

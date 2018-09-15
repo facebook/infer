@@ -60,4 +60,11 @@ public class Class2 {
   void dereferenceUnannotatedMethodReturningNullBad(Class1 class1) {
     class1.unannotatedReturnNull().toString();
   }
+
+  static class Sub extends Class1.Sub {
+    @Override
+    public @Nullable Object subtypingInconsistency(Object object) {
+      return null;
+    }
+  }
 }

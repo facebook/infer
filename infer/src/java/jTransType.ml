@@ -308,7 +308,9 @@ let rec get_method_procname program tenv cn ms method_kind =
 (* create a mangled procname from an abstract or concrete method *)
 and translate_method_name program tenv m =
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
-  get_method_procname program tenv cn ms (get_method_kind m)
+  let proc_name = get_method_procname program tenv cn ms (get_method_kind m) in
+  JClasspath.add_missing_callee program proc_name cn ms ;
+  proc_name
 
 
 and get_all_fields program tenv cn =

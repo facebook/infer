@@ -646,7 +646,6 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
     then proc
     else JTransType.get_method_procname program tenv cn' ms method_kind
   in
-  JClasspath.add_missing_callee program callee_procname cn' ms ;
   let call_instrs =
     let callee_fun = Exp.Const (Const.Cfun callee_procname) in
     let return_type =
