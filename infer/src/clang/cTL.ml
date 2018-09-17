@@ -998,6 +998,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_class an cname
   | "is_const_var", [], an ->
       CPredicates.is_const_expr_var an
+  | "is_const", [], an ->
+      CPredicates.is_const an
   | "is_decl", [], an ->
       CPredicates.is_decl an
   | "is_enum_constant", [cname], an ->

@@ -47,11 +47,17 @@ DEFINE-CHECKER ITERATOR = {
 
 };
 
+
 DEFINE-CHECKER CXX11_CONSTANT_EXPR = {
+
+  LET eventually_const_sub_expr = HOLDS-NEXT WITH-TRANSITION InitExpr
+     (is_const HOLDS-EVENTUALLY);
+
+ LET not_static_and_not_global = NOT (is_global_var OR is_static_local_var);
 
   SET report_when =
     WHEN
-       is_init_expr_cxx11_constant()
+        not_static_and_not_global AND  (is_init_expr_cxx11_constant() OR eventually_const_sub_expr)
     HOLDS-IN-NODE VarDecl;
 
   SET message = "Found cxx11 constant expression";

@@ -507,6 +507,18 @@ let is_const_expr_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
 
 
+let is_const an =
+  match an with
+  | Ctl_parser_types.Stmt s -> (
+    match Clang_ast_proj.get_expr_tuple s with
+    | Some (_, _, ei) ->
+        ei.Clang_ast_t.ei_qual_type.qt_is_const
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let decl_ref_name ?kind name st =
   match st with
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) -> (
