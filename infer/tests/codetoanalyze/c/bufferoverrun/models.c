@@ -145,3 +145,39 @@ void memmove_good4() {
   int dst[3];
   memmove(dst, src, sizeof(dst));
 }
+
+void memset_bad1() {
+  int arr[10];
+  memset(arr, 0, 44);
+}
+
+void memset_bad2() {
+  int arr[10];
+  memset(arr, 0, -1);
+}
+
+void memset_bad3() {
+  int arr[1];
+  int* dst = &arr[0];
+  memset(dst, 0, sizeof(dst));
+}
+
+void memset_good1() {
+  int arr[10];
+  memset(arr, 0, 40);
+}
+
+void memset_good2() {
+  int arr[10];
+  memset(arr, 0, 0);
+}
+
+void memset_good3() {
+  int arr[10];
+  memset(arr, 0, 20);
+}
+
+void memset_good4() {
+  int arr[10];
+  memset(arr, 0, sizeof(arr));
+}
