@@ -19,7 +19,7 @@ module ComplexExpressions = struct
   let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
 
   let procname_is_false_on_null pn =
-    match Summary.proc_resolve_attributes pn with
+    match Attributes.load pn with
     | Some proc_attributes ->
         let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
         let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
@@ -30,7 +30,7 @@ module ComplexExpressions = struct
 
   let procname_is_true_on_null pn =
     let annotated_true_on_null () =
-      match Summary.proc_resolve_attributes pn with
+      match Attributes.load pn with
       | Some proc_attributes ->
           let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
           let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
@@ -492,15 +492,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       , etl_
       , loc
       , cflags ) ->
-      let callee_summary_opt = Ondemand.analyze_proc_name ~caller_pdesc:curr_pdesc callee_pname in
       let callee_attributes =
-        let proc_attriutes_opt =
-          Option.value_map
-            ~default:(Summary.proc_resolve_attributes callee_pname)
-            ~f:(fun summary -> Some (Summary.get_attributes summary))
-            callee_summary_opt
-        in
-        match proc_attriutes_opt with
+        match Attributes.load callee_pname with
         | Some proc_attributes ->
             proc_attributes
         | None ->
@@ -1044,7 +1037,7 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
       when Models.is_noreturn callee_pname ->
         noreturn := true
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
-        let callee_attributes_opt = Summary.proc_resolve_attributes callee_pname in
+        let callee_attributes_opt = Attributes.load callee_pname in
         (* check if the call might throw an exception *)
         let has_exceptions =
           match callee_attributes_opt with

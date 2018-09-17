@@ -168,9 +168,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
               in
               is_private && same_class
             in
-            let private_called =
-              PatternMatch.proc_calls Summary.proc_resolve_attributes init_pd filter
-            in
+            let private_called = PatternMatch.proc_calls Attributes.load init_pd filter in
             let do_called (callee_pn, _) =
               match Ondemand.get_proc_desc callee_pn with
               | Some callee_pd ->
@@ -218,7 +216,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
       let pname_and_pdescs_with f =
         let res = ref [] in
         let filter pname =
-          match Summary.proc_resolve_attributes pname with
+          match Attributes.load pname with
           | Some proc_attributes ->
               f (pname, proc_attributes)
           | None ->
