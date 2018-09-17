@@ -308,6 +308,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         ( match proc_name with
         | Typ.Procname.Java java_pname ->
             Typ.Procname.Java.is_access_method java_pname
+            || Typ.Procname.Java.is_external java_pname
         | _ ->
             false )
         || (Procdesc.get_attributes proc_desc).ProcAttributes.is_bridge_method
