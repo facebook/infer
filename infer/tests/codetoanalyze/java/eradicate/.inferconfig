@@ -1,0 +1,5 @@
+{
+  "external-java-packages": [
+    "external."
+  ]
+}

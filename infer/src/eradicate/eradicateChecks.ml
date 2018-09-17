@@ -478,10 +478,15 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
   in
   let check overriden_proc_name =
     match Summary.proc_resolve_attributes overriden_proc_name with
-    | Some attributes ->
+    | Some attributes -> (
         let overridden_signature = Models.get_modelled_annotated_signature attributes in
-        check_return overriden_proc_name overridden_signature ;
-        check_params overriden_proc_name overridden_signature
+        check_params overriden_proc_name overridden_signature ;
+        (* the analysis should not report return type inconsistencies with external code *)
+        match overriden_proc_name with
+        | Typ.Procname.Java java_pname when not (Typ.Procname.Java.is_external java_pname) ->
+            check_return overriden_proc_name overridden_signature
+        | _ ->
+            () )
     | None ->
         ()
   in

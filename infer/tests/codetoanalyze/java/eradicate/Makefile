@@ -13,6 +13,6 @@ INFER_OPTIONS = \
 	--eradicate-condition-redundant \
 	--debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
-SOURCES = $(wildcard *.java)
+SOURCES = $(wildcard *.java) $(wildcard $(TESTS_DIR)/external/library/*.java)
 
 include $(TESTS_DIR)/javac.make

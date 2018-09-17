@@ -7,6 +7,7 @@
 
 package codetoanalyze.java.eradicate;
 
+import external.library.SomeExternalClass;
 import javax.annotation.Nullable;
 
 class SubclassExample {
@@ -91,6 +92,21 @@ class ConstructorsAreExcluded {
     Derived (String s) { // OK: there's no sub-typing between constructors
       super(s);
     }
+  }
+}
+
+class ExtendsExternalLibrary extends SomeExternalClass {
+
+  @Override
+  public @Nullable Object externalMethod1() {
+    // subtyping error on the return type not reported as we cannot
+    // rely on the external libraries to be correctly annotated
+    return null;
+  }
+
+  @Override
+  public void externalMethod2(Object object) {
+    // subtyping error on the parameter type are reported
   }
 }
 

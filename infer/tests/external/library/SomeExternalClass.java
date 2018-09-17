@@ -7,7 +7,14 @@
 
 package external.library;
 
+import javax.annotation.Nullable;
 
-public class SomeClass {
+public class SomeExternalClass {
   public Object field;
+
+  public Object externalMethod1() {
+    return null;
+  }
+
+  public void externalMethod2(@Nullable Object object) {}
 }
