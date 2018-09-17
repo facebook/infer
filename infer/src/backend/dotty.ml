@@ -1071,13 +1071,9 @@ let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
     (Procdesc.Node.get_id n :> int)
 
 
-let pp_etlist byvals fmt etl =
-  List.iteri
-    ~f:(fun index (id, typ) ->
-      let byval_mark =
-        if Typ.is_pointer typ && List.mem byvals index ~equal:Int.equal then "(byval)" else ""
-      in
-      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) typ byval_mark )
+let pp_etlist fmt etl =
+  List.iter
+    ~f:(fun (id, typ) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) typ)
     etl
 
 
@@ -1096,8 +1092,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
         let pname = Procdesc.Node.get_proc_name n in
         let pname_string = Escape.escape_dotty (Typ.Procname.to_string pname) in
         let attributes = Procdesc.get_attributes pdesc in
-        let byvals = attributes.ProcAttributes.by_vals in
-        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string (pp_etlist byvals)
+        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string pp_etlist
           (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
         if not (List.is_empty (Procdesc.get_captured pdesc)) then
           Format.fprintf fmt "\\nCaptured: %a" pp_var_list (Procdesc.get_captured pdesc) ;

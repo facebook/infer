@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_3" -> "decltype_by_ref#pass_by_val#7827598625585178144.8fa35b5b24f764bae803ce1f6e468516_2" ;
-"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_1" [label="1: Start pass_by_val::decltype_by_val\nFormals:  p:pass_by_val::PlainStruct&(byval)\nLocals:  \n  " color=yellow style=filled]
+"decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_1" [label="1: Start pass_by_val::decltype_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_1" -> "decltype_by_val#pass_by_val#14279156289723785232.72f90cb8cd80d6281316dd4fe0c3453c_3" ;
@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_3" -> "dependent_by_ref#pass_by_val#15143379324942623593.5ccf1ab5c879a0bcfec55b566c6a60db_2" ;
-"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_1" [label="1: Start pass_by_val::dependent_by_val\nFormals:  p:pass_by_val::PlainStruct&(byval)\nLocals:  \n  " color=yellow style=filled]
+"dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_1" [label="1: Start pass_by_val::dependent_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_1" -> "dependent_by_val#pass_by_val#16173371529174507122.c006229ea6b255a1298dc7d547bac014_3" ;
@@ -118,7 +118,7 @@ digraph cfg {
 	
 
 	 "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_3" -> "plain_struct_by_ref#pass_by_val(class pass_by_val::PlainStruct)#2657428317109106311.ebb1ec27d296c7f7c7c76440cd2435a6_2" ;
-"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_1" [label="1: Start pass_by_val::plain_struct_by_val\nFormals:  p:pass_by_val::PlainStruct&(byval)\nLocals:  \n  " color=yellow style=filled]
+"plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_1" [label="1: Start pass_by_val::plain_struct_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_1" -> "plain_struct_by_val#pass_by_val#7415219466606029544.eb0e0bdde375e8d1716470ec792b2450_3" ;
@@ -162,7 +162,7 @@ digraph cfg {
 	
 
 	 "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_3" -> "type_alias_by_ref#pass_by_val(class pass_by_val::PlainStruct,class pass_by_val::PlainStruct)#1261506.a3dda6b37896a0f836342db8df5fffd2_2" ;
-"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_1" [label="1: Start pass_by_val::type_alias_by_val\nFormals:  p1:pass_by_val::PlainStruct&(byval) p2:pass_by_val::PlainStruct&(byval)\nLocals:  0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct 0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct \n  " color=yellow style=filled]
+"type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_1" [label="1: Start pass_by_val::type_alias_by_val\nFormals:  p1:pass_by_val::PlainStruct& p2:pass_by_val::PlainStruct&\nLocals:  0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct 0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct \n  " color=yellow style=filled]
 	
 
 	 "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_1" -> "type_alias_by_val#pass_by_val#9273827923998572097.425db1bd7e6b48116fa99ed40b0b6415_3" ;

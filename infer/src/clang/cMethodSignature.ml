@@ -12,12 +12,10 @@ open! IStd
 
 module F = Format
 
-type param_type =
-  {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; is_value: bool; annot: Annot.Item.t}
+type param_type = {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; annot: Annot.Item.t}
 
-let mk_param_type ?(is_value = false) ?(is_pointer_to_const = false) ?(annot = Annot.Item.empty)
-    name typ =
-  {name; typ; is_value; is_pointer_to_const; annot}
+let mk_param_type ?(is_pointer_to_const = false) ?(annot = Annot.Item.empty) name typ =
+  {name; typ; is_pointer_to_const; annot}
 
 
 type t =

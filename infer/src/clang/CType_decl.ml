@@ -22,10 +22,9 @@ module BuildMethodSignature = struct
 
   let param_type_of_qual_type qual_type_to_sil_type tenv name qual_type =
     let typ = qual_type_to_sil_type tenv qual_type in
-    let is_value = CType.is_value qual_type in
     let is_pointer_to_const = CType.is_pointer_to_const qual_type in
     let annot = CAst_utils.sil_annot_of_type qual_type in
-    Some (CMethodSignature.mk_param_type ~is_value ~is_pointer_to_const ~annot name typ)
+    Some (CMethodSignature.mk_param_type ~is_pointer_to_const ~annot name typ)
 
 
   let get_class_param qual_type_to_sil_type tenv method_decl =
@@ -96,9 +95,8 @@ module BuildMethodSignature = struct
             |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
-          let is_value = CType.is_value qt in
           let annot = CAst_utils.sil_annot_of_type qt in
-          CMethodSignature.mk_param_type name typ ~is_value ~is_pointer_to_const ~annot
+          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~annot
       | _ ->
           raise CFrontend_config.Invalid_declaration
     in

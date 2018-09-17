@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_1" [label="1: Start X_X\nFormals:  this:X* list:std::initializer_list<int>&(byval)\nLocals:  i:int const * \n  " color=yellow style=filled]
+"X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_1" [label="1: Start X_X\nFormals:  this:X* list:std::initializer_list<int>&\nLocals:  i:int const * \n  " color=yellow style=filled]
 	
 
 	 "X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_1" -> "X#X#{15236476731743367432}.ce83f097b510e48ce3d42aa5df1bb3be_4" ;

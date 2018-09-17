@@ -168,12 +168,6 @@ let get_const_params_indices ~shift params =
   aux [] params
 
 
-let get_byval_params_indices ~shift params =
-  List.filter_mapi params ~f:(fun index ({is_value} : CMethodSignature.param_type) ->
-      let index' = index + shift in
-      Option.some_if is_value index' )
-
-
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
@@ -244,13 +238,9 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
     let const_formals =
       get_const_params_indices ~shift:(List.length captured_mangled) all_params
     in
-    let by_vals = get_byval_params_indices ~shift:(List.length captured_mangled) all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname ;
     L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
-    L.(debug Capture Verbose)
-      "@\nbyvals = [ %s ]@\n@."
-      (String.concat ~sep:", " (List.map by_vals ~f:string_of_int)) ;
     let loc_start =
       CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
     in
@@ -269,7 +259,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
           ProcAttributes.captured= captured_mangled
         ; formals
         ; const_formals
-        ; by_vals
         ; has_added_return_param
         ; access
         ; func_attributes= attributes

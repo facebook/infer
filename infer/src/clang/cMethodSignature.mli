@@ -10,8 +10,7 @@ open! IStd
 (** Define the signature of a method consisting of its name, its arguments, return type, location
    and whether its an instance method. *)
 
-type param_type =
-  {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; is_value: bool; annot: Annot.Item.t}
+type param_type = {name: Mangled.t; typ: Typ.t; is_pointer_to_const: bool; annot: Annot.Item.t}
 
 type t =
   { name: Typ.Procname.t
@@ -56,9 +55,4 @@ val mk :
 val pp : Format.formatter -> t -> unit
 
 val mk_param_type :
-     ?is_value:bool
-  -> ?is_pointer_to_const:bool
-  -> ?annot:Annot.Item.t
-  -> Mangled.t
-  -> Typ.t
-  -> param_type
+  ?is_pointer_to_const:bool -> ?annot:Annot.Item.t -> Mangled.t -> Typ.t -> param_type

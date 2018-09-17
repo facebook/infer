@@ -54,7 +54,6 @@ type t =
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
-  ; by_vals: int list  (** list of indices of formals that are passed by-value *)
   ; func_attributes: PredSymb.func_attribute list
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
@@ -82,7 +81,6 @@ let default translation_unit proc_name =
   ; exceptions= []
   ; formals= []
   ; const_formals= []
-  ; by_vals= []
   ; func_attributes= []
   ; is_abstract= false
   ; is_bridge_method= false
@@ -115,7 +113,6 @@ let pp f
      ; exceptions
      ; formals
      ; const_formals
-     ; by_vals
      ; func_attributes
      ; is_abstract
      ; is_bridge_method
@@ -156,10 +153,6 @@ let pp f
     F.fprintf f "; const_formals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       const_formals ;
-  if not ([%compare.equal: int list] default.by_vals by_vals) then
-    F.fprintf f "; by_vals= [@[%a@]]@,"
-      (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
-      by_vals ;
   if not ([%compare.equal: PredSymb.func_attribute list] default.func_attributes func_attributes)
   then
     F.fprintf f "; func_attributes= [@[%a@]]@,"
