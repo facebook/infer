@@ -8,29 +8,24 @@
 open! IStd
 module L = Logging
 
-type printf_signature =
-  {unique_id: string; format_pos: int; fixed_pos: int list; vararg_pos: int option}
+type printf_signature = {unique_id: string; format_pos: int; vararg_pos: int option}
 
 let printf_like_functions =
   ref
     [ { unique_id=
           "java.io.PrintStream.printf(java.lang.String,java.lang.Object[]):java.io.PrintStream"
       ; format_pos= 1
-      ; fixed_pos= []
       ; vararg_pos= Some 2 }
     ; { unique_id=
           "java.io.PrintStream.printf(java.lang.Locale,java.lang.String,java.lang.Object[]):java.io.PrintStream"
       ; format_pos= 2
-      ; fixed_pos= []
       ; vararg_pos= Some 3 }
     ; { unique_id= "java.lang.String(java.lang.String,java.lang.Object[]):java.lang.String"
       ; format_pos= 1
-      ; fixed_pos= []
       ; vararg_pos= Some 2 }
     ; { unique_id=
           "java.lang.String(java.lang.Locale,java.lang.String,java.lang.Object[]):java.lang.String"
       ; format_pos= 2
-      ; fixed_pos= []
       ; vararg_pos= Some 3 } ]
 
 
@@ -74,9 +69,9 @@ let format_type_matches_given_type (format_type : string) (given_type : string) 
       false
 
 
-(* The format string and the nvar for the fixed arguments and the nvar of the varargs array *)
+(* The format string and the nvar of the varargs array *)
 let format_arguments (printf : printf_signature) (args : (Exp.t * Typ.t) list) :
-    string option * Exp.t list * Exp.t option =
+    string option * Exp.t option =
   let format_string =
     match List.nth_exn args printf.format_pos with
     | Exp.Const (Const.Cstr fmt), _ ->
@@ -84,11 +79,10 @@ let format_arguments (printf : printf_signature) (args : (Exp.t * Typ.t) list) :
     | _ ->
         None
   in
-  let fixed_nvars = List.map ~f:(fun i -> fst (List.nth_exn args i)) printf.fixed_pos in
   let varargs_nvar =
     match printf.vararg_pos with Some pos -> Some (fst (List.nth_exn args pos)) | None -> None
   in
-  (format_string, fixed_nvars, varargs_nvar)
+  (format_string, varargs_nvar)
 
 
 (* Extract type names from format string *)
@@ -141,28 +135,13 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
     | _ ->
         raise Caml.Not_found
   in
-  let fixed_nvar_type_name instrs nvar =
-    match nvar with
-    | Exp.Var nid ->
-        Instrs.find_map instrs ~f:(function
-          | Sil.Load (id, Exp.Lvar _, t, _) when Ident.equal id nid ->
-              Some (PatternMatch.get_type_name t)
-          | _ ->
-              None )
-        |> IOption.find_value_exn
-    | Exp.Const c ->
-        PatternMatch.java_get_const_type_name c
-    | _ ->
-        L.(die InternalError) "Could not resolve fixed type name"
-  in
   match instr with
   | Sil.Call (_, Exp.Const (Const.Cfun pn), args, cl, _) -> (
     match printf_like_function pn with
     | Some printf -> (
       try
-        let fmt, fixed_nvars, array_nvar = format_arguments printf args in
+        let fmt, array_nvar = format_arguments printf args in
         let instrs = Procdesc.Node.get_instrs node in
-        let fixed_nvar_type_names = List.map ~f:(fixed_nvar_type_name instrs) fixed_nvars in
         let vararg_ivar_type_names =
           match array_nvar with
           | Some nvar ->
@@ -174,7 +153,7 @@ let check_printf_args_ok tenv (node : Procdesc.Node.t) (instr : Sil.instr)
         match fmt with
         | Some fmt ->
             check_type_names cl (printf.format_pos + 1) pn (format_string_type_names fmt 0)
-              (fixed_nvar_type_names @ vararg_ivar_type_names)
+              vararg_ivar_type_names
         | None ->
             if not (Reporting.is_suppressed tenv proc_desc IssueType.checkers_printf_args) then
               Reporting.log_warning summary ~loc:cl IssueType.checkers_printf_args

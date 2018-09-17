@@ -65,9 +65,6 @@ val supertype_find_map_opt : Tenv.t -> (Typ.Name.t -> 'a option) -> Typ.Name.t -
 (** Return the first non-None result found when applying the given function to supertypes of the
     named type, including the type itself *)
 
-val java_get_const_type_name : Const.t -> string
-(** Get the name of the type of a constant *)
-
 val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 
