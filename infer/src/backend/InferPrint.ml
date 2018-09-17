@@ -87,7 +87,6 @@ type summary_val =
   ; vsymop: int
   ; verr: int
   ; vfile: string
-  ; vflags: ProcAttributes.proc_flags
   ; vline: int
   ; vsignature: string
   ; vproof_trace: string }
@@ -123,7 +122,6 @@ let summary_values summary =
   ; vto= Summary.Stats.failure_kind_to_string stats
   ; vsymop= Summary.Stats.symops stats
   ; verr= Errlog.size (Exceptions.equal_severity Exceptions.Error) err_log
-  ; vflags= attributes.ProcAttributes.proc_flags
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
   ; vline= attributes.ProcAttributes.loc.Location.line
   ; vsignature

@@ -9,9 +9,6 @@ open! IStd
 
 (** Attributes of a procedure. *)
 
-(** flags for a procedure *)
-type proc_flags = (string, string) Caml.Hashtbl.t
-
 type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
@@ -49,7 +46,6 @@ type t =
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
-  ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }

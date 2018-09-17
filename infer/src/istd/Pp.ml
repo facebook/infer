@@ -171,6 +171,3 @@ let cli_args fmt args =
 
 
 let pair ~fst ~snd fmt (a, b) = F.fprintf fmt "(%a,@,%a)" fst a snd b
-
-let hashtbl ~key ~value fmt h =
-  Caml.Hashtbl.iter (fun k v -> F.fprintf fmt "%a@ ->@ %a" key k value v) h

@@ -8,13 +8,7 @@
 (** Attributes of a procedure. *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
 module F = Format
-
-(** flags for a procedure *)
-type proc_flags = (string, string) Hashtbl.t
-
-let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
 (** Type for ObjC accessors *)
 type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.Struct.field
@@ -77,7 +71,6 @@ type t =
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
-  ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
@@ -107,7 +100,6 @@ let default translation_unit proc_name =
   ; has_added_return_param= false
   ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
-  ; proc_flags= proc_flags_empty ()
   ; proc_name
   ; ret_type= Typ.mk Typ.Tvoid }
 
@@ -141,7 +133,6 @@ let pp f
      ; has_added_return_param
      ; method_annotation
      ; objc_accessor
-     ; proc_flags
      ; proc_name
      ; ret_type }[@warning "+9"]) =
   let default = default translation_unit proc_name in
@@ -202,14 +193,6 @@ let pp f
     F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
   if not ([%compare.equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
-  if
-    (* HACK: this hardcodes the default instead of comparing to [default.proc_flags], and tests
-       emptiness in linear time too *)
-    not (Int.equal (Hashtbl.length proc_flags) 0)
-  then
-    F.fprintf f "; proc_flags= [@[%a@]]@,"
-      (Pp.hashtbl ~key:F.pp_print_string ~value:F.pp_print_string)
-      proc_flags ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
   F.fprintf f "; proc_id= %s }@]" (Typ.Procname.to_unique_id proc_name)
