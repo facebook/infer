@@ -287,7 +287,7 @@ module Init = struct
             BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
               symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
               ~new_alloc_num mem
-        | Typ.Tarray {elt; length} ->
+        | Typ.Tarray {elt; length; stride} ->
             let size =
               match length with
               | Some length when may_last_field && (IntLit.iszero length || IntLit.isone length) ->
@@ -296,9 +296,10 @@ module Init = struct
                   Option.map ~f:Itv.of_int_lit length
             in
             let offset = Itv.zero in
+            let stride = Option.map ~f:IntLit.to_int_exn stride in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size
+              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size ?stride
               ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch tenv typename with

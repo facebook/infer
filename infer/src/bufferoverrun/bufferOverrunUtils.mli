@@ -76,6 +76,7 @@ module Exec : sig
     -> Typ.t
     -> ?offset:Itv.t
     -> ?size:Itv.t
+    -> ?stride:int
     -> inst_num:int
     -> new_sym_num:Itv.Counter.t
     -> new_alloc_num:Itv.Counter.t

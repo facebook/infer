@@ -124,13 +124,14 @@ module Exec = struct
       -> Typ.t
       -> ?offset:Itv.t
       -> ?size:Itv.t
+      -> ?stride:int
       -> inst_num:int
       -> new_sym_num:Itv.Counter.t
       -> new_alloc_num:Itv.Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
    fun ~decl_sym_val pname symbol_table path tenv ~node_hash location ~depth loc typ ?offset ?size
-       ~inst_num ~new_sym_num ~new_alloc_num mem ->
+       ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
       option_value offset (fun () ->
@@ -147,7 +148,7 @@ module Exec = struct
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
     in
     let arr =
-      Dom.Val.of_array_alloc allocsite ~stride:None ~offset ~size |> Dom.Val.add_trace_elem elem
+      Dom.Val.of_array_alloc allocsite ~stride ~offset ~size |> Dom.Val.add_trace_elem elem
     in
     let mem =
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
