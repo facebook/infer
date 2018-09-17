@@ -13,14 +13,12 @@ type objc_accessor_type = Objc_getter of Typ.Struct.field | Objc_setter of Typ.S
 
 val kind_of_objc_accessor_type : objc_accessor_type -> string
 
-type var_attribute = Modify_in_block
-
-(* __block attribute of Objective-C variables, means that it will be modified inside a block *)
-
-val var_attribute_equal : var_attribute -> var_attribute -> bool
-(** Equality for var_attribute *)
-
-type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list; is_constexpr: bool}
+type var_data =
+  { name: Mangled.t
+  ; typ: Typ.t
+  ; modify_in_block: bool
+        (** __block attribute of Objective-C variables, means that it will be modified inside a block *)
+  ; is_constexpr: bool }
 
 type t =
   { access: PredSymb.access  (** visibility access *)

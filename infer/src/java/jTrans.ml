@@ -415,7 +415,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
     let locals_ = translate_locals program tenv formals bytecode jbir_code in
     let locals =
       List.map locals_ ~f:(fun (name, typ) ->
-          ({name; typ; attributes= []; is_constexpr= false} : ProcAttributes.var_data) )
+          ({name; typ; modify_in_block= false; is_constexpr= false} : ProcAttributes.var_data) )
     in
     let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
     let proc_attributes =

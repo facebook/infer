@@ -54,13 +54,10 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
               decl_ref )
 
 
-let get_var_attribute decl_info =
+let has_block_attribute decl_info =
   let open Clang_ast_t in
-  let has_block_attribute =
-    List.exists decl_info.Clang_ast_t.di_attributes ~f:(fun attr ->
-        match attr with BlocksAttr _ -> true | _ -> false )
-  in
-  if has_block_attribute then [ProcAttributes.Modify_in_block] else []
+  List.exists decl_info.di_attributes ~f:(fun attr ->
+      match attr with BlocksAttr _ -> true | _ -> false )
 
 
 let add_var_to_locals procdesc var_decl typ pvar =
@@ -68,13 +65,13 @@ let add_var_to_locals procdesc var_decl typ pvar =
   match var_decl with
   | VarDecl (decl_info, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
-        let attributes = get_var_attribute decl_info in
+        let modify_in_block = has_block_attribute decl_info in
         let is_constexpr =
           vdi.Clang_ast_t.vdi_is_const_expr
           || (Typ.is_const typ.Typ.quals && vdi.Clang_ast_t.vdi_is_init_expr_cxx11_constant)
         in
         let var_data : ProcAttributes.var_data =
-          {name= Pvar.get_name pvar; typ; attributes; is_constexpr}
+          {name= Pvar.get_name pvar; typ; modify_in_block; is_constexpr}
         in
         Procdesc.append_locals procdesc [var_data]
   | _ ->

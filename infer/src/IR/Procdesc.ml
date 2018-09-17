@@ -596,16 +596,13 @@ let is_loop_head pdesc (node : Node.t) =
   NodeSet.mem node lh
 
 
-let pp_var_attributes fmt attrs =
-  let pp_attribute fmt attr =
-    match attr with ProcAttributes.Modify_in_block -> Format.pp_print_string fmt "__block"
-  in
-  if List.is_empty attrs then () else F.fprintf fmt "(%a)" (Pp.seq ~sep:"," pp_attribute) attrs
+let pp_modify_in_block fmt modify_in_block =
+  if modify_in_block then Format.pp_print_string fmt "(__block)" else ()
 
 
 let pp_local fmt (var_data : ProcAttributes.var_data) =
   Format.fprintf fmt " %a:%a%a" Mangled.pp var_data.name (Typ.pp_full Pp.text) var_data.typ
-    pp_var_attributes var_data.attributes
+    pp_modify_in_block var_data.modify_in_block
 
 
 let pp_locals_list fmt etl =
@@ -682,9 +679,7 @@ let is_captured_var procdesc pvar =
 let has_modify_in_block_attr procdesc pvar =
   let pvar_name = Pvar.get_name pvar in
   let pvar_local_matches (var_data : ProcAttributes.var_data) =
-    Mangled.equal var_data.name pvar_name
-    && List.exists var_data.attributes ~f:(fun attr ->
-           ProcAttributes.var_attribute_equal attr ProcAttributes.Modify_in_block )
+    var_data.modify_in_block && Mangled.equal var_data.name pvar_name
   in
   List.exists ~f:pvar_local_matches (get_locals procdesc)
 

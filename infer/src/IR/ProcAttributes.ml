@@ -29,22 +29,12 @@ let pp_objc_accessor_type fmt objc_accessor_type =
     annots
 
 
-type var_attribute = Modify_in_block [@@deriving compare]
-
-let string_of_var_attribute = function Modify_in_block -> "<Modify_in_block>"
-
-let var_attribute_equal = [%compare.equal: var_attribute]
-
-type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list; is_constexpr: bool}
+type var_data = {name: Mangled.t; typ: Typ.t; modify_in_block: bool; is_constexpr: bool}
 [@@deriving compare]
 
-let pp_var_data fmt {name; typ; attributes} =
-  F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a" Mangled.pp name (Typ.pp_full Pp.text) typ ;
-  if not (List.is_empty attributes) then
-    F.fprintf fmt ";@ attributes=@ [@[%a@]]"
-      (Pp.semicolon_seq ~print_env:Pp.text_break (Pp.to_string ~f:string_of_var_attribute))
-      attributes ;
-  F.fprintf fmt " }@]"
+let pp_var_data fmt {name; typ; modify_in_block} =
+  F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a;@ modify_in_block=@ %b@ }@]" Mangled.pp name
+    (Typ.pp_full Pp.text) typ modify_in_block
 
 
 type t =
