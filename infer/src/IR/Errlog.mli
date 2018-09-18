@@ -43,6 +43,11 @@ type err_key = private
   {severity: Exceptions.severity; err_name: IssueType.t; err_desc: Localise.error_desc}
 [@@deriving compare]
 
+(* Merges two error keys, setting the result's severity to the maximum
+   of that of the two arguments and giving the user the opportunity
+   to pass a function to merge the IssueTypes and descriptions
+   of the two. *)
+
 val merge_err_key :
      err_key
   -> err_key
@@ -64,6 +69,10 @@ type err_data = private
   ; doc_url: string option  (** url to documentation of the issue type *)
   ; access: string option
   ; extras: Jsonbug_t.extra option }
+
+(* Merges two err_datas, throwing out most information and setting the trace of the
+   result to the concatenation of the traces of the two arguments with a
+   separator in between. Used specifically for QuandaryBO. *)
 
 val merge_err_data : err_data -> err_data -> err_data
 

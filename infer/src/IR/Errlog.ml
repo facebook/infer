@@ -95,13 +95,21 @@ type err_data =
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
-let merge_err_data err_data1 _ =
+let merge_err_data err_data1 err_data2 =
   { node_id= 0
   ; node_key= None
   ; session= 0
   ; loc= {err_data1.loc with col= -1}
   ; loc_in_ml_source= None
-  ; loc_trace= []
+  ; loc_trace=
+      ( match (err_data1.loc_trace, err_data2.loc_trace) with
+      | [], _ ->
+          err_data2.loc_trace
+      | _, [] ->
+          err_data1.loc_trace
+      | te :: _, _ ->
+          err_data1.loc_trace
+          @ (make_trace_element 0 te.lt_loc "-----------" [] :: err_data2.loc_trace) )
   ; err_class= Exceptions.Checker
   ; visibility= Exceptions.Exn_user
   ; linters_def_file= None
