@@ -642,15 +642,27 @@ int fputc(int c, FILE* stream) {
 char* getcwd(char* buffer, size_t size) {
   int n;
   int size_buf;
-  n = __infer_nondet_int();
+  char *result;
 
-  if (n > 0) {
-    __require_allocated_array(buffer);
-    size_buf = __get_array_length(buffer);
-    INFER_EXCLUDE_CONDITION(size > size_buf);
-    return buffer;
-  } else
-    return NULL;
+  if (NULL == buffer) {
+    n = __infer_nondet_int();
+
+    if (n > 0) {
+      __require_allocated_array(buffer);
+      size_buf = __get_array_length(buffer);
+      INFER_EXCLUDE_CONDITION(size > size_buf);
+      result = buffer;
+    } else
+        result = NULL;
+  } else {
+      if (size == 0) {
+          n = __infer_nondet_int();
+      } else {
+          n = size;
+      }
+      result = malloc(n);
+  }
+  return result;
 }
 
 // return nonteterministically 0 or -1
