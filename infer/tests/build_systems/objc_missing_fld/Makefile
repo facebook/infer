@@ -11,7 +11,7 @@ ANALYZER = checkers
 SOURCES = $(CODETOANALYZE_DIR)/A.m $(CODETOANALYZE_DIR)/B.m
 OBJECTS = $(CODETOANALYZE_DIR)/A.o $(CODETOANALYZE_DIR)/B.o
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = -j 1 --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 
 include $(TESTS_DIR)/infer.make
