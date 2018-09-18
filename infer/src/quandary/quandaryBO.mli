@@ -7,4 +7,4 @@
 
 open! IStd
 
-val get_issues : Issue.t list -> Issue.t list
+val update_issues : Issue.t list -> Issue.t list

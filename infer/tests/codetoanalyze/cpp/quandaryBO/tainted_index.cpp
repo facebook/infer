@@ -24,3 +24,12 @@ void multi_level_bad() {
   int i = multi_level_source_bad();
   multi_level_sink_bad(i);
 }
+
+void memory_alloc_bad1_FN() { int arr[__infer_taint_source()]; }
+
+void memory_alloc_bad2() {
+  int s = __infer_taint_source();
+  if (s <= 2147483647) {
+    int arr[s];
+  }
+}

@@ -1037,9 +1037,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
       all_issues :=
         process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
-  ( if Config.quandaryBO then
-    let quandaryBO_issues = QuandaryBO.get_issues !all_issues in
-    all_issues := List.rev_append !all_issues quandaryBO_issues ) ;
+  if Config.quandaryBO then all_issues := QuandaryBO.update_issues !all_issues ;
   List.iter
     ~f:(fun ({Issue.proc_name} as issue) ->
       let error_filter = error_filter filters proc_name in

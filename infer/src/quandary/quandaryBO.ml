@@ -7,7 +7,7 @@
 
 open! IStd
 
-let get_issues all_issues =
+let update_issues all_issues =
   let quandary_bug_names =
     IssueType.[untrusted_buffer_access; untrusted_heap_allocation; untrusted_variable_length_array]
   in
@@ -68,4 +68,30 @@ let get_issues all_issues =
   in
   (* Can merge List.map, List.concat_map and List.filter_map into a single fold. *)
   let quandaryBO_issues = List.map ~f:merge_issues paired_issues in
-  quandaryBO_issues
+  let quandary_issuetypes =
+    IssueType.
+      [ quandary_taint_error
+      ; shell_injection
+      ; shell_injection_risk
+      ; sql_injection
+      ; sql_injection_risk
+      ; untrusted_buffer_access
+      ; untrusted_file_risk
+      ; untrusted_heap_allocation
+      ; untrusted_url_risk
+      ; untrusted_variable_length_array
+      ; user_controlled_sql_risk ]
+  in
+  let inferBO_issuetypes = inferbo_bug_names in
+  let all_issues_filtered =
+    List.filter
+      ~f:(fun issue ->
+        ( Config.quandary
+        || not (List.mem quandary_issuetypes issue.Issue.err_key.err_name ~equal:IssueType.equal)
+        )
+        && ( Config.bufferoverrun
+           || not (List.mem inferBO_issuetypes issue.Issue.err_key.err_name ~equal:IssueType.equal)
+           ) )
+      all_issues
+  in
+  List.rev_append all_issues_filtered quandaryBO_issues
