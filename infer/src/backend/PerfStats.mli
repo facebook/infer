@@ -18,7 +18,6 @@ type stats_type =
   | ClangFrontend of SourceFile.t
   | ClangFrontendLinters of SourceFile.t
   | JavaFrontend of SourceFile.t
-  | PythonFrontend of SourceFile.t
   | TotalFrontend
   | Backend of SourceFile.t
   | TotalBackend

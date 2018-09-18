@@ -22,7 +22,6 @@ type mode =
   | ClangCompilationDB of [`Escaped of string | `Raw of string] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
-  | Python of string list
   | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
 [@@deriving compare]
@@ -39,8 +38,6 @@ let pp_mode fmt = function
         args
   | ClangCompilationDB _ ->
       F.fprintf fmt "ClangCompilationDB driver mode"
-  | Python args ->
-      F.fprintf fmt "Python driver mode:@\nargs = %a" Pp.cli_args args
   | PythonCapture (bs, args) ->
       F.fprintf fmt "PythonCapture driver mode:@\nbuild system = '%s'@\nargs = %a"
         (Config.string_of_build_system bs)
@@ -215,9 +212,6 @@ let capture ~changed_files = function
   | Maven (prog, args) ->
       L.progress "Capturing in maven mode...@." ;
       Maven.capture ~prog ~args
-  | Python args ->
-      (* pretend prog is the root directory of the project *)
-      PythonMain.go args
   | PythonCapture (build_system, build_cmd) ->
       register_perf_stats_report PerfStats.TotalFrontend ;
       L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
@@ -412,8 +406,6 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.clang_enabled
     | `Java ->
         Version.java_enabled
-    | `Python ->
-        Version.python_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -424,8 +416,6 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "clang"
       | `Java ->
           "java"
-      | `Python ->
-          "python"
       | `Xcode ->
           "clang and xcode"
     in
@@ -441,8 +431,6 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk ->
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
-  | BPython ->
-      Config.string_of_build_system build_system |> assert_supported_mode `Python
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck ->
@@ -489,8 +477,6 @@ let mode_of_build_command build_cmd =
           Javac (Javac.Javac, prog, args)
       | BMvn ->
           Maven (prog, args)
-      | BPython ->
-          Python args
       | BXcode when Config.xcpretty ->
           XcodeXcpretty (prog, args)
       | BBuck when (not Config.flavors) && Config.reactive_mode ->

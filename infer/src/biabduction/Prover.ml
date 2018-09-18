@@ -2326,8 +2326,6 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; "java.lang.String.value" ]
           in
           Sil.Estruct (List.map ~f:mk_fld_sexp fields, Sil.inst_none)
-      | Python ->
-          L.die InternalError "mk_constant_string_hpred not implemented for Python"
     in
     let const_string_texp =
       match !Language.curr_language with
@@ -2344,8 +2342,6 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             ; nbytes= None
             ; dynamic_length= None
             ; subtype= Subtype.exact }
-      | Python ->
-          L.die InternalError "const_string_texp not implemented for Python"
     in
     Sil.Hpointsto (root, sexp, const_string_texp)
   in

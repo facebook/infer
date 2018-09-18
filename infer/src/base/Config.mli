@@ -40,7 +40,6 @@ type build_system =
   | BMake
   | BMvn
   | BNdk
-  | BPython
   | BXcode
 [@@deriving compare]
 

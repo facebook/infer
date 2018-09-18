@@ -69,9 +69,6 @@ val source_file_encoding : SourceFile.t -> string
 (** source directory: the directory inside the results dir corresponding to a source file *)
 type source_dir [@@deriving compare]
 
-val source_dir_to_string : source_dir -> string
-(** expose the source dir as a string *)
-
 val source_dir_get_internal_file : source_dir -> string -> filename
 (** get the path to an internal file with the given extention (.tenv, ...) *)
 

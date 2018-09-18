@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t = Clang | Java | Python [@@deriving compare]
+type t = Clang | Java [@@deriving compare]
 
 val equal : t -> t -> bool
 

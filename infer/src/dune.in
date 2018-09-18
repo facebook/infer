@@ -7,7 +7,6 @@ let source_dirs =
   (if facebook then "facebook" else "opensource")
   :: ( (if clang then ["clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
      @ [ (if java then "java" else "java_stubs")
-       ; (if python && facebook then "python" else "python_stubs")
        ; "absint"
        ; "backend"
        ; "biabduction"
@@ -45,8 +44,6 @@ let infer_cflags =
 let stanzas =
   ( if clang then ["(ocamllex types_lexer ctl_lexer)"; "(menhir (modules types_parser ctl_parser))"]
   else [] )
-  @ ( if python && facebook then ["(ocamllex pythonLexer)"; "(menhir (modules pythonParser))"]
-    else [] )
   @ [ Format.sprintf
         {|
 (library
