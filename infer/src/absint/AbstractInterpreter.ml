@@ -94,7 +94,11 @@ struct
             ~pp_name:(TransferFunctions.pp_session_name node)
             (Node.underlying_node node) ;
         let astate_post =
-          let compute_post pre instr = TransferFunctions.exec_instr pre proc_data node instr in
+          let compute_post pre instr =
+            try TransferFunctions.exec_instr pre proc_data node instr with exn ->
+              IExn.reraise_after exn ~f:(fun () ->
+                  L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr )
+          in
           Instrs.fold ~f:compute_post ~init:pre instrs
         in
         if debug then (

@@ -164,8 +164,8 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   in
   let old_state = save_global_state () in
   let initial_summary = preprocess () in
+  let attributes = Procdesc.get_attributes callee_pdesc in
   try
-    let attributes = Procdesc.get_attributes callee_pdesc in
     let summary =
       if attributes.ProcAttributes.is_defined then analyze_proc initial_summary callee_pdesc
       else initial_summary
@@ -173,7 +173,13 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
     let final_summary = postprocess summary in
     restore_global_state old_state ; final_summary
   with exn -> (
-    IExn.reraise_if exn ~f:(fun () -> restore_global_state old_state ; not Config.keep_going) ;
+    IExn.reraise_if exn ~f:(fun () ->
+        let source_file = attributes.ProcAttributes.translation_unit in
+        let location = attributes.ProcAttributes.loc in
+        L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
+          Typ.Procname.pp callee_pname Location.pp_file_pos location ;
+        restore_global_state old_state ;
+        not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
       callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
     match exn with
