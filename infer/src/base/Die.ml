@@ -17,14 +17,21 @@ exception InferUserError of string
 
 exception InferExit of int
 
-let raise_error error ~msg =
+let raise_error ?backtrace error ~msg =
+  let do_raise exn =
+    match backtrace with
+    | None ->
+        raise exn
+    | Some backtrace ->
+        Caml.Printexc.raise_with_backtrace exn backtrace
+  in
   match error with
   | ExternalError ->
-      raise (InferExternalError msg)
+      do_raise (InferExternalError msg)
   | InternalError ->
-      raise (InferInternalError msg)
+      do_raise (InferInternalError msg)
   | UserError ->
-      raise (InferUserError msg)
+      do_raise (InferUserError msg)
 
 
 let log_uncaught_exception_callback_ref = ref (fun _ ~exitcode:_ -> ())

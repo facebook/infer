@@ -304,7 +304,12 @@ let log_of_kind error fmt =
 
 
 let die error msg =
-  F.kasprintf (fun msg -> log_of_kind error "%s@\n" msg ; raise_error error ~msg) msg
+  let backtrace = Caml.Printexc.get_raw_backtrace () in
+  F.kasprintf
+    (fun msg ->
+      log_of_kind error "%s@\n%s@." msg (Caml.Printexc.raw_backtrace_to_string backtrace) ;
+      raise_error ~backtrace error ~msg )
+    msg
 
 
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)

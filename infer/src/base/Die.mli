@@ -32,7 +32,7 @@ val log_uncaught_exception : exn -> exitcode:int -> unit
 val die : error -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise the corresponding exception. *)
 
-val raise_error : error -> msg:string -> 'a
+val raise_error : ?backtrace:Caml.Printexc.raw_backtrace -> error -> msg:string -> 'a
 
 type style = Error | Fatal | Normal | Warning
 
