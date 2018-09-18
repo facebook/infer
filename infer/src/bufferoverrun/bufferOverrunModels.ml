@@ -127,6 +127,11 @@ let malloc size_exp =
   {exec; check}
 
 
+let calloc size_exp stride_exp =
+  let byte_size_exp = Exp.BinOp (Binop.Mult, size_exp, stride_exp) in
+  malloc byte_size_exp
+
+
 let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem = mem
   and check {location} mem cond_set =
@@ -473,6 +478,7 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc
+      ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc
       ; -"__new"
         <>$ capt_exp_of_typ (+PatternMatch.implements_collection)
         $+...$--> Collection.new_list

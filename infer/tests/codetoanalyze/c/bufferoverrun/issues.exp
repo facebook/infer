@@ -9,6 +9,8 @@ codetoanalyze/c/bufferoverrun/array_field.c, decreasing_pointer_Bad, 4, BUFFER_O
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 13, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 16, BUFFER_OVERRUN_L2, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, 10] Size: 10]
+codetoanalyze/c/bufferoverrun/calloc.c, calloc_bad1, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: -1 Size: 10]
+codetoanalyze/c/bufferoverrun/calloc.c, calloc_bad1, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Assignment,ArrayAccess: Offset: 10 Size: 10]
 codetoanalyze/c/bufferoverrun/cast.c, cast2_Good_FP, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,ArrayAccess: Offset: 4 Size: 4]
 codetoanalyze/c/bufferoverrun/do_while.c, do_while, 2, BUFFER_OVERRUN_L4, no_bucket, ERROR, [ArrayDeclaration,Assignment,Call,Parameter: a,Assignment,ArrayAccess: Offset: [0, +oo] Size: 10 by call to `do_while_sub` ]
 codetoanalyze/c/bufferoverrun/duplicates.c, one_alarm_is_enough, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [ArrayDeclaration,Call,Parameter: arr,ArrayAccess: Offset: 1 Size: 1 by call to `two_accesses` ]
