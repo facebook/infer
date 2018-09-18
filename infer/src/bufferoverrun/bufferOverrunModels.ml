@@ -492,6 +492,7 @@ module Call = struct
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
+      ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"boost" &:: "split"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ any_arg $+ any_arg $+? any_arg $--> Boost.Split.std_vector

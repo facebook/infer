@@ -181,3 +181,58 @@ void memset_good4() {
   int arr[10];
   memset(arr, 0, sizeof(arr));
 }
+
+void strncpy_bad1() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr1, arr2, 44);
+}
+
+void strncpy_bad2() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr2, arr1, 44);
+}
+
+void strncpy_bad3() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr1, arr2, -1);
+}
+
+void strncpy_bad4() {
+  int src[1];
+  int buff[1];
+  int* dst = &buff[0];
+  strncpy(dst, src, sizeof(dst));
+}
+
+void strncpy_good1() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr2, arr1, 40);
+}
+
+void strncpy_good2() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr2, arr1, 0);
+}
+
+void strncpy_good3() {
+  int arr1[10];
+  int arr2[20];
+  strncpy(arr2, arr1, 20);
+}
+
+void strncpy_good4() {
+  int src[3];
+  int dst[3];
+  strncpy(dst, src, sizeof(dst));
+}
+
+void strncpy_good5_FP() {
+  char src[5] = "test";
+  char dst[5];
+  strncpy(dst, src, 10);
+}
