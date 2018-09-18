@@ -30,6 +30,7 @@ SOURCES_DEFAULT = \
   npe/ivar_blocks.m \
   npe/skip_method_with_nil_object.m \
   npe/Nsstring_length_no_npe.m \
+  npe/Nsstring_nil_args.m \
   npe/No_null_from_array.m \
   procdescs/MethodCall.m \
   property/main.c \

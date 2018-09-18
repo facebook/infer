@@ -82,6 +82,11 @@ typedef NSUInteger NSStringEncoding;
   }
 }
 
+- (instancetype)stringByAppendingString:(NSString*)aString {
+  const char* v = aString->value;
+  return self;
+}
+
 - (void)dealloc {
   if (self != nil && self->value != 0) {
     free((void*)self->value);
