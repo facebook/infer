@@ -181,6 +181,8 @@ let duplicates_filename = "duplicates.txt"
 
 let events_dir_name = "events"
 
+let trace_events_file = "perf_events.json"
+
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
 
@@ -2145,6 +2147,11 @@ and threadsafe_aliases =
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
 
 
+and trace_events =
+  CLOpt.mk_bool ~long:"trace-events"
+    (Printf.sprintf "Emit Chrome performance trace events in infer-out/%s" trace_events_file)
+
+
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
     "Detailed tracing information during prop join operations"
@@ -2960,6 +2967,8 @@ and testing_mode = !testing_mode
 and threadsafe_aliases = !threadsafe_aliases
 
 and trace_error = !trace_error
+
+and trace_events = !trace_events
 
 and trace_ondemand = !trace_ondemand
 

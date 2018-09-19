@@ -2648,6 +2648,6 @@ let mk_ptsto_exp = Normalize.mk_ptsto_exp
 
 let mk_ptsto = Normalize.mk_ptsto
 
-let normalize = Normalize.normalize
+let normalize tenv prop = Normalize.normalize tenv prop
 
-let prop_atom_and = Normalize.prop_atom_and
+let prop_atom_and tenv ?footprint prop atom = Normalize.prop_atom_and tenv ?footprint prop atom

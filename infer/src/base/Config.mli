@@ -195,6 +195,8 @@ val starvation_issues_dir_name : string
 
 val trace_absarray : bool
 
+val trace_events_file : string
+
 val undo_join : bool
 
 val unsafe_unret : string
@@ -646,6 +648,8 @@ val racerd : bool
 val threadsafe_aliases : Yojson.Basic.json
 
 val trace_error : bool
+
+val trace_events : bool
 
 val trace_ondemand : bool
 

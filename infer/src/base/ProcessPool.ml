@@ -202,6 +202,7 @@ let fork_child ~child_prelude ~slot (updates_r, updates_w) ~f =
       (* Pin to a core. [setcore] does the modulo <number of cores> for us. *)
       Setcore.setcore slot ;
       ProcessPoolState.in_child := true ;
+      ProcessPoolState.reset_pid () ;
       child_prelude () ;
       let updates_oc = Unix.out_channel_of_descr updates_w in
       let send_to_parent (message : worker_message) = marshal_to_pipe updates_oc message in
@@ -261,3 +262,9 @@ let run pool tasks =
   done ;
   wait_all pool ;
   TaskBar.finish pool.task_bar
+
+
+let run pool tasks =
+  PerfEvent.(log (fun logger -> log_instant_event logger ~name:"start process pool" Global)) ;
+  run pool tasks ;
+  PerfEvent.(log (fun logger -> log_instant_event logger ~name:"end process pool" Global))

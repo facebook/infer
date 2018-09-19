@@ -40,10 +40,16 @@ module Runner = struct
   type 'a t = 'a ProcessPool.t
 
   let create ~jobs ~f =
-    ProcessPool.create ~jobs ~f
-      ~child_prelude:
-        ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
-         fork_protect ~f:(fun () -> () ))
+    PerfEvent.(
+      log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
+    let pool =
+      ProcessPool.create ~jobs ~f
+        ~child_prelude:
+          ((* hack: run post-fork bookkeeping stuff by passing a dummy function to [fork_protect] *)
+           fork_protect ~f:(fun () -> () ))
+    in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    pool
 
 
   let run runner ~tasks =

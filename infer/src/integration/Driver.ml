@@ -298,10 +298,24 @@ let capture ~changed_files = function
       capture_with_compilation_database ~changed_files json_cdb
 
 
+(* shadowed for tracing *)
+let capture ~changed_files mode =
+  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"capture" ())) ;
+  capture ~changed_files mode ;
+  PerfEvent.(log (fun logger -> log_end_event logger ()))
+
+
 let execute_analyze ~changed_files =
   register_perf_stats_report PerfStats.TotalBackend ;
   InferAnalyze.main ~changed_files ;
   PerfStats.get_reporter PerfStats.TotalBackend ()
+
+
+(* shadowed for tracing *)
+let execute_analyze ~changed_files =
+  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
+  execute_analyze ~changed_files ;
+  PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
 let report ?(suppress_console = false) () =
@@ -334,6 +348,13 @@ let report ?(suppress_console = false) () =
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
           (String.concat ~sep:" " args)
+
+
+(* shadowed for tracing *)
+let report ?suppress_console () =
+  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"report" ())) ;
+  report ?suppress_console () ;
+  PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
 let error_nothing_to_analyze mode =

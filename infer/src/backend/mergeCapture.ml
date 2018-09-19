@@ -153,3 +153,10 @@ let merge_captured_targets () =
   MergeResults.merge_buck_flavors_results infer_deps_file ;
   process_merge_file infer_deps_file ;
   L.progress "Merging captured Buck targets took %a@\n%!" Mtime.Span.pp (Mtime_clock.count time0)
+
+
+(* shadowed for tracing *)
+let merge_captured_targets () =
+  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"merge buck targets" ())) ;
+  merge_captured_targets () ;
+  PerfEvent.(log (fun logger -> log_end_event logger ()))

@@ -23,7 +23,11 @@ let check_result_code ?(fatal = false) db ~log rc =
 
 let exec db ~log ~stmt =
   (* Call [check_result_code] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
-  try check_result_code ~fatal:true db ~log (Sqlite3.exec db stmt) with Error err ->
+  PerfEvent.log (fun logger ->
+      PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
+  let rc = Sqlite3.exec db stmt in
+  PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+  try check_result_code ~fatal:true db ~log rc with Error err ->
     error ~fatal:true "exec: %s (%s)" err (Sqlite3.errmsg db)
 
 

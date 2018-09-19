@@ -27,6 +27,9 @@ val escape_url : string -> string
 val escape_filename : string -> string
 (** escape a string to be used as a file name *)
 
+val escape_json : string -> string
+(** escape characters in the string so it becomes a valid JSON string *)
+
 val escape_double_quotes : string -> string
 (** replaces double-quote with backslash double-quote *)
 

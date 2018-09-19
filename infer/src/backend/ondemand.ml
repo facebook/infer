@@ -192,6 +192,19 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
         log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn)) )
 
 
+(* shadowed for tracing *)
+let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
+  PerfEvent.(
+    log (fun logger ->
+        let callee_pname = Procdesc.get_proc_name callee_pdesc in
+        log_begin_event logger ~name:"ondemand" ~categories:["backend"]
+          ~arguments:[("proc", `String (Typ.Procname.to_string callee_pname))]
+          () )) ;
+  let summary = run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc in
+  PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+  summary
+
+
 let analyze_proc ?caller_pdesc callee_pdesc =
   let callbacks = Option.value_exn !callbacks_ref in
   (* wrap [callbacks.analyze_ondemand] to update the status bar *)
