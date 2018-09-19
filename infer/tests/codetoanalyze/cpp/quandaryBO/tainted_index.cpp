@@ -4,6 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <stdlib.h>
+
 extern int __infer_taint_source();
 
 void basic_bad() {
@@ -32,4 +34,22 @@ void memory_alloc_bad2() {
   if (s <= 2147483647) {
     int arr[s];
   }
+}
+
+struct st {
+  int size;
+  int ind;
+};
+
+st overlapping_issues_source_good() {
+  return {.size = __infer_taint_source(), .ind = 10};
+}
+
+void overlapping_issues_sink_good(st info) {
+  int arr[info.size];
+  arr[info.ind] = 0;
+}
+
+void overlapping_issues_good() {
+  overlapping_issues_sink_good(overlapping_issues_source_good());
 }
