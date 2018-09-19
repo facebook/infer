@@ -24,20 +24,22 @@ type cluster_callback_args =
 
 type cluster_callback_t = cluster_callback_args -> unit
 
-type procedure_callback = {dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
+type procedure_callback =
+  {name: string; dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
 
-type cluster_callback = {language: Language.t; callback: cluster_callback_t}
+type cluster_callback = {name: string; language: Language.t; callback: cluster_callback_t}
 
 let procedure_callbacks = ref []
 
 let cluster_callbacks = ref []
 
-let register_procedure_callback ?(dynamic_dispatch = false) language (callback : proc_callback_t) =
-  procedure_callbacks := {dynamic_dispatch; language; callback} :: !procedure_callbacks
+let register_procedure_callback ~name ?(dynamic_dispatch = false) language
+    (callback : proc_callback_t) =
+  procedure_callbacks := {name; dynamic_dispatch; language; callback} :: !procedure_callbacks
 
 
-let register_cluster_callback language (callback : cluster_callback_t) =
-  cluster_callbacks := {language; callback} :: !cluster_callbacks
+let register_cluster_callback ~name language (callback : cluster_callback_t) =
+  cluster_callbacks := {name; language; callback} :: !cluster_callbacks
 
 
 (** Collect what we need to know about a procedure for the analysis. *)
@@ -64,9 +66,17 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
-    ~f:(fun summary {dynamic_dispatch; language; callback} ->
+    ~f:(fun summary {name; dynamic_dispatch; language; callback} ->
       if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized)
-      then callback {get_procs_in_file; tenv; summary; proc_desc; exe_env}
+      then (
+        PerfEvent.(
+          log (fun logger ->
+              log_begin_event logger ~name ~categories:["backend"]
+                ~arguments:[("proc", `String (Typ.Procname.to_string proc_name))]
+                () )) ;
+        let summary = callback {get_procs_in_file; tenv; summary; proc_desc; exe_env} in
+        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+        summary )
       else summary )
     !procedure_callbacks
 
