@@ -90,7 +90,7 @@ let rec merge_sorted_nodup ~cmp ~res xs1 xs2 =
 
 
 let inter ~cmp xs ys =
-  let rev_sort xs = List.sort ~compare:(fun x y -> cmp y x) xs in
+  let rev_sort xs = List.dedup_and_sort ~compare:(fun x y -> cmp y x) xs in
   let rev_xs = rev_sort xs in
   let rev_ys = rev_sort ys in
   let rec inter_ is rev_xxs rev_yys =
@@ -100,7 +100,7 @@ let inter ~cmp xs ys =
     | x :: rev_xs, y :: rev_ys ->
         let c = cmp x y in
         if Int.equal c 0 then inter_ (x :: is) rev_xs rev_ys
-        else if c < 0 then inter_ is rev_xs rev_yys
+        else if c > 0 then inter_ is rev_xs rev_yys
         else inter_ is rev_xxs rev_ys
   in
   inter_ [] rev_xs rev_ys

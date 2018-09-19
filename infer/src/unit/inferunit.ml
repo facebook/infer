@@ -34,6 +34,7 @@ let () =
         ; DifferentialTests.tests
         ; DifferentialFiltersTests.tests
         ; FileDiffTests.tests
+        ; IListTests.tests
         ; JavaProfilerSamplesTest.tests
         ; PerfProfilerATDParserTest.tests
         ; ProcCfgTests.tests
