@@ -33,6 +33,7 @@ INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
 INFER_JSON_COSTS_REPORT = os.path.join(config.BUCK_INFER_OUT,
                                        config.JSON_COSTS_REPORT_FILENAME)
 
+INFER_SCRIPT_NAME = 'infer_wrapper.py'
 INFER_SCRIPT = """\
 #!/usr/bin/env {python_executable}
 import subprocess
@@ -65,22 +66,21 @@ def prepare_build(args):
         raise e
 
     # Create a script to be called by buck
-    infer_script = None
-    with tempfile.NamedTemporaryFile(delete=False,
-                                     prefix='infer_',
-                                     suffix='.py',
-                                     dir='.') as infer_script:
-        logging.info('Creating %s' % infer_script.name)
-        infer_script.file.write(
+    infer_script_path = os.path.join(os.getcwd(), INFER_SCRIPT_NAME)
+    if os.path.exists(infer_script_path):
+        raise Exception('{} already exists. Exiting'.format(infer_script_path))
+    with open(infer_script_path, 'w') as infer_script:
+        logging.info('Creating %s' % infer_script_path)
+        infer_script.write(
             utils.encode(INFER_SCRIPT.format(
                 python_executable=sys.executable,
                 infer_command=infer_command)))
 
-    st = os.stat(infer_script.name)
-    os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
+    st = os.stat(infer_script_path)
+    os.chmod(infer_script_path, st.st_mode | stat.S_IEXEC)
 
-    temp_files += [infer_script.name]
-    return temp_files, infer_script.name
+    temp_files += [infer_script_path]
+    return temp_files, infer_script_path
 
 
 def get_normalized_targets(buck_args):
