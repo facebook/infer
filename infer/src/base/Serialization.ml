@@ -16,30 +16,36 @@ type 'a serializer =
   ; write_to_file: data:'a -> DB.filename -> unit }
 
 module Key = struct
-  (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
-  type t = int
+  type t =
+    { name: string  (** for logging purposes *)
+    ; key: int
+          (** Serialization key, used to distinguish versions of serializers and avoid assert faults *)
+    }
 
   (** Current keys for various serializable objects. The keys are computed using the [generate_keys]
      function below *)
-  let tenv, summary, issues = (425184201, 160179325, 852343110)
+  let tenv, summary, issues =
+    ( {name= "tenv"; key= 425184201}
+    , {name= "summary"; key= 160179325}
+    , {name= "issues"; key= 852343110} )
 end
 
 (** version of the binary files, to be incremented for each change *)
 let version = 27
 
 let create_serializer (key : Key.t) : 'a serializer =
-  let read_data ((key' : Key.t), (version' : int), (value : 'a)) source_msg =
-    if key <> key' then (
+  let read_data ((key' : int), (version' : int), (value : 'a)) source_msg =
+    if key.key <> key' then (
       L.user_error
-        "Wrong key in when loading data from %s -- are you running infer with results coming from \
-         a previous version of infer?@\n"
-        source_msg ;
+        "Wrong key in when loading data of type %s from %s -- are you running infer with results \
+         coming from a previous version of infer?@\n"
+        key.name source_msg ;
       None )
     else if version <> version' then (
       L.user_error
-        "Wrong version in when loading data from %s -- are you running infer with results coming \
-         from a previous version of infer?@\n"
-        source_msg ;
+        "Wrong version in when loading data of type %s from %s -- are you running infer with \
+         results coming from a previous version of infer?@\n"
+        key.name source_msg ;
       None )
     else Some value
   in
@@ -50,13 +56,22 @@ let create_serializer (key : Key.t) : 'a serializer =
     (* The serialization is based on atomic file renames,
        so the deserialization cannot read a file while it is being written. *)
     let filename = DB.filename_to_string fname in
-    try Utils.with_file_in filename ~f:(fun inc -> read_data (Marshal.from_channel inc) filename)
-    with Sys_error _ -> None
+    PerfEvent.(
+      log (fun logger -> log_begin_event logger ~name:("reading " ^ key.name) ~categories:["io"] ())) ;
+    let result =
+      try Utils.with_file_in filename ~f:(fun inc -> read_data (Marshal.from_channel inc) filename)
+      with Sys_error _ -> None
+    in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    result
   in
   let write_to_file ~(data : 'a) (fname : DB.filename) =
     let filename = DB.filename_to_string fname in
+    PerfEvent.(
+      log (fun logger -> log_begin_event logger ~name:("writing " ^ key.name) ~categories:["io"] ())) ;
     Utils.with_intermediate_temp_file_out filename ~f:(fun outc ->
-        Marshal.to_channel outc (key, version, data) [] )
+        Marshal.to_channel outc (key.key, version, data) [] ) ;
+    PerfEvent.(log (fun logger -> log_end_event logger ()))
   in
   {read_from_string; read_from_file; write_to_file}
 
