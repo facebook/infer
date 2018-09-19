@@ -384,8 +384,10 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
   (* try for a bit to reach a fixed point before widening aggressively *)
   let joins_before_widen = 3
 
+  let max_iter = 10
+
   let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
+    if phys_equal prev next || num_iters >= max_iter then prev
     else if Int.( <= ) num_iters joins_before_widen then join prev next
     else
       let trace_widen prev next = TraceDomain.widen ~prev ~next ~num_iters in
