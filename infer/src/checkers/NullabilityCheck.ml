@@ -62,7 +62,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let container_method_regex =
     Str.regexp @@ "^\\(NS.*_\\(arrayByAddingObject\\|arrayWithObjects\\|"
     ^ "dictionaryWithObjects\\|dictionaryWithObjectsAndKeys\\|initWithObjectsAndKeys\\|"
-    ^ "addObject\\|insertObject\\|setObject\\):\\|" ^ "std::basic_string\\).*"
+    ^ "addObject\\|insertObject\\|setObject\\|"
+    ^ "stringWithUTF8String\\|stringWithString\\|initWithFormat\\|stringByAppendingString\\):\\|"
+    ^ "std::basic_string\\).*"
 
 
   let is_objc_container_add_method proc_name =
