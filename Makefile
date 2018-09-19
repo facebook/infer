@@ -51,7 +51,7 @@ DIRECT_TESTS += \
   cpp_racerd cpp_siof cpp_uninit cpp_nullable cpp_conflicts cpp_linters-for-test-only \
 
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
+BUILD_SYSTEMS_TESTS += buck_blacklist buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
 endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig

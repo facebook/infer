@@ -249,7 +249,7 @@ val bo_relational_domain : [`Bo_relational_domain_oct | `Bo_relational_domain_po
 
 val buck : bool
 
-val buck_blacklist : string option
+val buck_blacklist : string list
 
 val buck_build_args : string list
 

@@ -1,0 +1,17 @@
+cxx_library(
+  name = 'hello',
+  srcs = [
+    'hello.c', 'hello2.c',
+  ],
+  deps = [
+    "//src/subtarget1:subtarget1",
+    "//src/subtarget2:subtarget2",
+  ]
+)
+
+cxx_library(
+  name = 'hello3',
+  srcs = [
+    'hello3.c',
+  ],
+)

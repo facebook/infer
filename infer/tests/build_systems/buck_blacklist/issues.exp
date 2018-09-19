@@ -1,0 +1,3 @@
+src/hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
+src/hello3.c, test3, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test3()]
+src/subtarget1/z_filename_greater_than_subhello1.c, foo_defined_in_subtarget1, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure foo_defined_in_subtarget1()]

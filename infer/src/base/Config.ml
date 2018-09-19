@@ -834,7 +834,7 @@ and bootclasspath =
 and buck = CLOpt.mk_bool ~long:"buck" ""
 
 and buck_blacklist =
-  CLOpt.mk_string_opt
+  CLOpt.mk_string_list
     ~deprecated:["-blacklist-regex"; "-blacklist"]
     ~long:"buck-blacklist"
     ~in_help:InferCommand.[(Run, manual_buck_flavors); (Capture, manual_buck_flavors)]
