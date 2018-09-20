@@ -103,14 +103,14 @@ let update_issues all_issues =
   let inferbo_issues =
     inferbo_alloc_issues @ inferbo_access_issues @ [IssueType.unreachable_code_after]
   in
+  let filtered_issues = Config.quandaryBO_filtered_issues in
   let all_issues_filtered =
     List.filter
       ~f:(fun issue ->
-        ( Config.quandary
-        || not (List.mem quandary_issues issue.Issue.err_key.err_name ~equal:IssueType.equal) )
-        && ( Config.bufferoverrun
-           || not (List.mem inferbo_issues issue.Issue.err_key.err_name ~equal:IssueType.equal) )
-        )
+        let issue_in ls = List.mem ls issue.Issue.err_key.err_name ~equal:IssueType.equal in
+        (Config.quandary || not (issue_in quandary_issues))
+        && (Config.bufferoverrun || not (issue_in inferbo_issues))
+        && not (issue_in filtered_issues) )
       all_issues
   in
   List.rev_append all_issues_filtered quandaryBO_issues

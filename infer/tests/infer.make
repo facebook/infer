@@ -28,11 +28,11 @@ print: issues.exp.test$(TEST_SUFFIX)
 .PHONY: test
 test: issues.exp.test$(TEST_SUFFIX)
 	$(QUIET)cd $(TESTS_DIR) && \
-	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp,$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
+	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
 .PHONY: print
 replace: issues.exp.test$(TEST_SUFFIX)
-	cp $< issues.exp
+	cp $< issues.exp$(TEST_RESULT_SUFFIX)
 
 .PHONY: clean
 clean:

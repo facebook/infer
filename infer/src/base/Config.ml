@@ -2297,6 +2297,16 @@ let inferconfig_file =
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
+let quandaryBO_filtered_issues =
+  ref
+    IssueType.
+      [ buffer_overrun_u5
+      ; buffer_overrun_l5
+      ; buffer_overrun_l4
+      ; untrusted_buffer_access
+      ; untrusted_heap_allocation ]
+
+
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
@@ -2435,6 +2445,11 @@ let post_parsing_initialization command_opt =
       linters := true
   | Some (CaptureOnly | Checkers | CompileOnly) | None ->
       () ) ;
+  if !quandaryBO then
+    quandaryBO_filtered_issues :=
+      List.filter !quandaryBO_filtered_issues ~f:(fun issue ->
+          let enabled = issue.IssueType.enabled in
+          IssueType.set_enabled issue true ; not enabled ) ;
   Option.value ~default:InferCommand.Run command_opt
 
 
@@ -2857,6 +2872,8 @@ and project_root = !project_root
 and quandary = !quandary
 
 and quandaryBO = !quandaryBO
+
+and quandaryBO_filtered_issues = !quandaryBO_filtered_issues
 
 and quandary_endpoints = !quandary_endpoints
 

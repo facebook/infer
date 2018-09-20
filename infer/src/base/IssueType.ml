@@ -108,13 +108,13 @@ let buffer_overrun_l2 = from_string "BUFFER_OVERRUN_L2"
 
 let buffer_overrun_l3 = from_string "BUFFER_OVERRUN_L3"
 
-let buffer_overrun_l4 = from_string "BUFFER_OVERRUN_L4"
+let buffer_overrun_l4 = from_string ~enabled:false "BUFFER_OVERRUN_L4"
 
-let buffer_overrun_l5 = from_string "BUFFER_OVERRUN_L5"
+let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
 
 let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
-let buffer_overrun_u5 = from_string "BUFFER_OVERRUN_U5"
+let buffer_overrun_u5 = from_string ~enabled:false "BUFFER_OVERRUN_U5"
 
 let cannot_star = from_string "Cannot_star"
 
@@ -381,7 +381,7 @@ let use_after_lifetime = from_string "USE_AFTER_LIFETIME"
 
 let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
 
-let untrusted_buffer_access = from_string "UNTRUSTED_BUFFER_ACCESS"
+let untrusted_buffer_access = from_string ~enabled:false "UNTRUSTED_BUFFER_ACCESS"
 
 let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
 
@@ -389,7 +389,7 @@ let untrusted_file = from_string "UNTRUSTED_FILE"
 
 let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
 
-let untrusted_heap_allocation = from_string "UNTRUSTED_HEAP_ALLOCATION"
+let untrusted_heap_allocation = from_string ~enabled:false "UNTRUSTED_HEAP_ALLOCATION"
 
 let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
 
