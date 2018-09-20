@@ -42,8 +42,11 @@ val is_static_local_var : Ctl_parser_types.ast_node -> bool
 val is_const_expr_var : Ctl_parser_types.ast_node -> bool
 (** 'is_const_expr_var an' is true iff an is a 'const' variable declaration *)
 
-val is_const : Ctl_parser_types.ast_node -> bool
-(** 'is_const an' is true iff an is a 'const' expression *)
+val is_qual_type_const : Ctl_parser_types.ast_node -> bool
+(** 'is_qual_type_const an' is true iff an is a qual_type 'const' expression *)
+
+val has_init_list_const_expr : Ctl_parser_types.ast_node -> bool
+(** 'has_init_list_const_expr' is true iff for an InitListExpr where all subexpressions are const expression *)
 
 val call_function : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_function an name' is true iff an is a call to a function whose name contains 'name' *)

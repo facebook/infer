@@ -507,7 +507,7 @@ let is_const_expr_var an =
   match an with Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d | _ -> false
 
 
-let is_const an =
+let is_qual_type_const an =
   match an with
   | Ctl_parser_types.Stmt s -> (
     match Clang_ast_proj.get_expr_tuple s with
@@ -515,6 +515,42 @@ let is_const an =
         ei.Clang_ast_t.ei_qual_type.qt_is_const
     | _ ->
         false )
+  | _ ->
+      false
+
+
+let has_init_list_const_expr an =
+  let rec fold lexp = List.fold ~f:(fun acc e -> is_const_expr' e && acc) ~init:true lexp
+  and is_const_expr' exp =
+    let open Clang_ast_t in
+    let res =
+      match exp with
+      | IntegerLiteral _ | StringLiteral _ ->
+          true
+      | DeclRefExpr (_, _, _, drei) -> (
+        match drei.drti_decl_ref with
+        | Some dr -> (
+          match dr.dr_kind with `EnumConstant -> true | _ -> false )
+        | _ ->
+            false )
+      | CallExpr (_, _ :: params, _) ->
+          fold params
+      | _ -> (
+        match Clang_ast_proj.get_expr_tuple exp with
+        | Some (_, sub_exps, _) ->
+            fold sub_exps
+        | _ ->
+            false )
+    in
+    L.(debug Analysis Verbose)
+      "@\n\n[has_init_list_const_expr]  EVALUATE EXP '%a'  result = '%b'@\n"
+      (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string)
+      exp res ;
+    res
+  in
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.InitListExpr (_, sub_exps, _)) ->
+      fold sub_exps
   | _ ->
       false
 
