@@ -21,7 +21,7 @@ NS_CLASS_AVAILABLE(10_12, 10_0)
 
 @implementation Unavailable_api_in_supported_ios_sdk
 
-// bug
+// no bug (in xcode10)
 - (void)test:(int)n and:(NSData*)data {
   NSDictionary* cacheData =
       [NSKeyedUnarchiver unarchiveTopLevelObjectWithData:data error:nil];
