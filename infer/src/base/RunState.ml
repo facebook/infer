@@ -14,7 +14,8 @@ let state0 =
   { run_sequence= []
   ; results_dir_format=
       Printf.sprintf "db_filename: %s\ndb_schema: %s" ResultsDatabase.database_filename
-        ResultsDatabase.schema_hum }
+        ResultsDatabase.schema_hum
+  ; should_merge_capture= false }
 
 
 let state : Runstate_t.t ref = ref state0
@@ -66,3 +67,7 @@ let load_and_validate () =
 
 
 let reset () = state := state0
+
+let set_merge_capture onoff = Runstate_t.(state := {!state with should_merge_capture= onoff})
+
+let get_merge_capture () = !state.Runstate_t.should_merge_capture

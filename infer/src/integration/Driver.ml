@@ -279,6 +279,7 @@ let capture ~changed_files = function
               updated_buck_cmd )
             else build_cmd ) )
       in
+      if in_buck_mode && Config.flavors then ( RunState.set_merge_capture true ; RunState.store () ) ;
       run_command ~prog:infer_py ~args
         ~cleanup:(function
           | Error (`Exit_non_zero exit_code)
@@ -394,10 +395,15 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | PythonCapture (BBuck, _) when Config.flavors && InferCommand.equal Run Config.command ->
         (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
+    | Analyze ->
+        RunState.get_merge_capture ()
     | _ ->
         (* else rely on the command line value *) Config.merge
   in
-  if should_merge then MergeCapture.merge_captured_targets () ;
+  if should_merge then (
+    MergeCapture.merge_captured_targets () ;
+    RunState.set_merge_capture false ;
+    RunState.store () ) ;
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else execute_analyze ~changed_files ;

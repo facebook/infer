@@ -10,6 +10,12 @@ open! IStd
 val add_run_to_sequence : unit -> unit
 (** add an entry with the current run date *)
 
+val set_merge_capture : bool -> unit
+(** update the 'merge after capture' smart option *)
+
+val get_merge_capture : unit -> bool
+(** fetch the value of the 'merge after capture' smart option *)
+
 val store : unit -> unit
 (** save the current state to disk *)
 

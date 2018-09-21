@@ -20,4 +20,5 @@ type run_info = {
 type t = {
   run_sequence: run_info list; (** successive runs that re-used the same results directory *)
   results_dir_format: string; (** to check if the versions of the results dir are compatible *)
+  should_merge_capture: bool; (** add --merge to 'infer analyze' if last command was a capture that needs --merge *)
 }
