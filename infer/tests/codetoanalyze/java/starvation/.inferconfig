@@ -1,0 +1,4 @@
+{
+  "force-delete-results-dir": true,
+  "starvation-skip-analysis" : [ { "classname": "SkipAnalysis", "methods": ["doTransact"] } ]
+}

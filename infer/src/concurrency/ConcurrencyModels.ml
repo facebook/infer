@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module MF = MarkupFormatter
 
 type lock = Lock | Unlock | LockedIfTrue | NoEffect
@@ -190,70 +191,96 @@ let is_call_of_class ?(search_superclasses = true) ?(method_prefix = false)
   |> Staged.stage
 
 
-let is_ui_method =
-  let is_activity_ui_method =
-    (* lifecycle methods of Activity *)
-    is_call_of_class ~search_superclasses:true "android.app.Activity"
-      (* sort police: this is in lifecycle order *)
-      ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
-    |> Staged.unstage
+type matcher = Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
+type java_matcher_record =
+  { search_superclasses: bool option
+  ; method_prefix: bool option
+  ; actuals_pred: (HilExp.t list -> bool) option
+  ; classname: string
+  ; methods: string list }
+
+let make_matcher_from_record {search_superclasses; method_prefix; actuals_pred; classname; methods}
+    =
+  is_call_of_class ?search_superclasses ?method_prefix ?actuals_pred classname methods
+  |> Staged.unstage
+
+
+let empty_matcher =
+  {search_superclasses= None; method_prefix= None; actuals_pred= None; classname= ""; methods= []}
+
+
+let matcher_of_json top_json =
+  let error json =
+    L.(die UserError "Could not parse json matcher(s): %s" (Yojson.Basic.to_string json))
   in
-  let is_fragment_ui_method =
-    (* lifecycle methods of Fragment *)
-    let fragment_methods =
-      (* sort police: this is in lifecycle order *)
-      [ "onAttach"
-      ; "onCreate"
-      ; "onCreateView"
-      ; "onActivityCreated"
-      ; "onStart"
-      ; "onResume"
-      ; "onPause"
-      ; "onStop"
-      ; "onDestroyView"
-      ; "onDestroy"
-      ; "onDetach" ]
+  let make_matcher_from_json json =
+    let parse_method_name = function `String methodname -> methodname | _ -> error json in
+    let rec parse_fields assoclist acc =
+      match assoclist with
+      | ("search_superclasses", `Bool b) :: rest ->
+          {acc with search_superclasses= Some b} |> parse_fields rest
+      | ("method_prefix", `Bool b) :: rest ->
+          {acc with method_prefix= Some b} |> parse_fields rest
+      | ("classname", `String classname) :: rest ->
+          {acc with classname} |> parse_fields rest
+      | ("methods", `List methodnames) :: rest ->
+          let methods = List.map methodnames ~f:parse_method_name in
+          {acc with methods} |> parse_fields rest
+      | [] ->
+          if String.equal acc.classname "" || List.is_empty acc.methods then error json else acc
+      | _ ->
+          error json
     in
-    let fragment_v4_matcher =
-      is_call_of_class ~search_superclasses:true "android.support.v4.app.Fragment" fragment_methods
-      |> Staged.unstage
-    in
-    let fragment_matcher =
-      is_call_of_class ~search_superclasses:true "android.app.Fragment" fragment_methods
-      |> Staged.unstage
-    in
-    fun tenv pname actuals ->
-      fragment_v4_matcher tenv pname actuals || fragment_matcher tenv pname actuals
+    (match json with `Assoc fields -> parse_fields fields empty_matcher | _ -> error json)
+    |> make_matcher_from_record
   in
-  let is_service_ui_method =
-    (* lifecycle methods of Service *)
-    is_call_of_class ~search_superclasses:true "android.app.Service"
-      ["onBind"; "onCreate"; "onDestroy"; "onStartCommand"]
-    |> Staged.unstage
+  match top_json with
+  | `List matchers_json ->
+      let matchers = List.map matchers_json ~f:make_matcher_from_json in
+      fun tenv pn actuals -> List.exists matchers ~f:(fun m -> m tenv pn actuals)
+  | _ ->
+      error top_json
+
+
+let ui_matcher_records =
+  let superclasses = {empty_matcher with search_superclasses= Some true} in
+  let fragment_methods =
+    (* sort police: this is in lifecycle order *)
+    [ "onAttach"
+    ; "onCreate"
+    ; "onCreateView"
+    ; "onActivityCreated"
+    ; "onStart"
+    ; "onResume"
+    ; "onPause"
+    ; "onStop"
+    ; "onDestroyView"
+    ; "onDestroy"
+    ; "onDetach" ]
   in
-  let is_content_provider_ui_method =
-    is_call_of_class ~search_superclasses:true "android.content.ContentProvider" ["onCreate"]
-    |> Staged.unstage
-  in
-  let is_broadcast_receiver_ui_method =
-    is_call_of_class ~search_superclasses:true "android.content.BroadcastReceiver" ["onReceive"]
-    |> Staged.unstage
-  in
-  let is_view_ui_method =
-    (* according to Android documentation, *all* methods of the View class run on UI thread, but
+  [ {superclasses with classname= "android.support.v4.app.Fragment"; methods= fragment_methods}
+  ; {superclasses with classname= "android.app.Fragment"; methods= fragment_methods}
+  ; {superclasses with classname= "android.content.ContentProvider"; methods= ["onCreate"]}
+  ; {superclasses with classname= "android.content.BroadcastReceiver"; methods= ["onReceive"]}
+  ; { superclasses with
+      classname= "android.app.Service"
+    ; methods= ["onBind"; "onCreate"; "onDestroy"; "onStartCommand"] }
+  ; { superclasses with
+      classname= "android.app.Activity"
+    ; methods= ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
+    }
+  ; { superclasses with
+      (* according to Android documentation, *all* methods of the View class run on UI thread, but
      let's be a bit conservative and catch all methods that start with "on".
      https://developer.android.com/reference/android/view/View.html *)
-    is_call_of_class ~search_superclasses:true ~method_prefix:true "android.view.View" ["on"]
-    |> Staged.unstage
-  in
-  let matchers =
-    [ is_activity_ui_method
-    ; is_fragment_ui_method
-    ; is_service_ui_method
-    ; is_content_provider_ui_method
-    ; is_broadcast_receiver_ui_method
-    ; is_view_ui_method ]
-  in
+      method_prefix= Some true
+    ; classname= "android.view.View"
+    ; methods= ["on"] } ]
+
+
+let is_ui_method =
+  let matchers = List.map ui_matcher_records ~f:make_matcher_from_record in
   (* we pass an empty actuals list because all matching is done on class and method name here *)
   fun tenv pname -> List.exists matchers ~f:(fun m -> m tenv pname [])
 

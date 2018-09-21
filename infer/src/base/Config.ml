@@ -2023,6 +2023,11 @@ and sources = CLOpt.mk_string_list ~long:"sources" "Specify the list of source f
 
 and sourcepath = CLOpt.mk_string_opt ~long:"sourcepath" "Specify the sourcepath"
 
+and starvation_skip_analysis =
+  CLOpt.mk_json ~long:"starvation-skip-analysis"
+    "Specify combinations of class/method list that should be skipped during starvation analysis"
+
+
 and spec_abs_level =
   CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1 ~meta:"int"
     {|Set the level of abstracting the postconditions of discovered specs:
@@ -2962,6 +2967,8 @@ and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 
 and starvation = !starvation
+
+and starvation_skip_analysis = !starvation_skip_analysis
 
 and starvation_strict_mode = !starvation_strict_mode
 

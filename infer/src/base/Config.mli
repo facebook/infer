@@ -625,6 +625,8 @@ val stacktraces_dir : string option
 
 val starvation : bool
 
+val starvation_skip_analysis : Yojson.Basic.json
+
 val starvation_strict_mode : bool
 
 val stats_report : string option
