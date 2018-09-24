@@ -1,0 +1,268 @@
+NAME
+       infer-capture - capture source files for later analysis
+
+SYNOPSIS
+       infer capture [options] -- buck ...
+       infer capture --flavors [options] -- buck ...
+       infer capture --buck-compilation-database [no-]deps [options] -- buck ...
+       infer capture [options] --compilation-database file
+       infer capture [options] --compilation-database-escaped file
+       infer capture [options] -- gradle/gradlew ...
+       infer capture [options] -- javac ...
+       infer capture [options] -- make/clang/gcc ...
+       infer capture [options] -- mvn/mvnw ...
+       infer capture [options] -- ndk-build ...
+       infer capture [--no-xcpretty] [options] -- xcodebuild ...
+
+
+DESCRIPTION
+       Capture the build command or compilation database specified on the
+       command line: infer intercepts calls to the compiler to read source
+       files, translate them into infer's intermediate representation, and
+       store the result of the translation in the results directory.
+
+
+
+OPTIONS
+       --debug,-g
+           Activates: Debug mode (also sets --debug-level 2,
+           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
+           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+
+       --debug-level level
+           Debug level (sets --bo-debug level, --debug-level-analysis level,
+           --debug-level-capture level, --debug-level-linters level):       
+      - 0: only basic debugging enabled
+             - 1: verbose debugging enabled
+             - 2: very verbose debugging enabled
+
+       --debug-level-analysis int
+           Debug level for the analysis. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-capture int
+           Debug level for the capture. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --force-delete-results-dir
+           Activates: Do not refuse to delete the results directory if it
+           doesn't look like an infer results directory. (Conversely:
+           --no-force-delete-results-dir)
+
+       --force-integration command
+           Proceed as if the first argument after -- was command. Possible
+           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
+           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           ndk-build, xcodebuild.
+
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --load-average,-l float
+           Do not start new parallel jobs if the load average is greater than
+           that specified (Buck and make only)
+
+       --print-logs
+           Activates: Also log messages to stdout and stderr (Conversely:
+           --no-print-logs)
+
+       --progress-bar-style { auto | plain | multiline }
+           Style of the progress bar. auto selects multiline if connected to
+           a tty, otherwise plain. (default: auto)
+
+       --project-root,-C dir
+           Specify the root directory of the project (default: .)
+
+       --results-dir,-o dir
+           Write results and internal files in the specified directory
+           (default: ./infer-out)
+
+       --skip-analysis-in-path +path_prefix_OCaml_regex
+           Ignore files whose path matches the given prefix (can be specified
+           multiple times)
+
+       --  Stop argument processing, use remaining arguments as a build
+           command
+BUCK COMPILATION DATABASE OPTIONS
+       --buck-compilation-database { no-deps | deps }
+           Buck integration using the compilation database, with or without
+           dependencies.
+
+       --buck-compilation-database-depth int
+           Depth of dependencies used by the --buck-compilation-database deps
+           option. By default, all recursive dependencies are captured.
+BUCK FLAVORS OPTIONS
+       --append-buck-flavors +string
+           Additional Buck flavors to append to targets discovered by the
+           --buck-compilation-database option.
+
+       --buck-blacklist +regex
+           Skip capture of files matched by the specified regular expression
+           (only the "flavors (C++)" Buck integration is supported, not
+           Java).
+
+       --capture-blacklist regex
+           Skip capture of files matched by the specified OCaml regular
+           expression (only supported by the javac integration for now).
+
+       --flavors
+           Activates: Buck integration using Buck flavors (clang only), eg
+           `infer --flavors -- buck build //foo:bar#infer` (Conversely:
+           --no-flavors)
+
+       --Xbuck +string
+           Pass values as command-line arguments to invocations of `buck
+           build`
+
+       --Xbuck-no-inline +string
+           Pass values as command-line arguments to invocations of `buck
+           build`, don't inline any args starting with '@'
+
+       --xcode-developer-dir XCODE_DEVELOPER_DIR
+           Specify the path to Xcode developer directory
+BUCK FOR JAVA OPTIONS
+       --buck-out dir
+           Specify the root directory of buck-out
+CLANG LINTERS OPTIONS
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --no-default-linters
+           Deactivates: Use the default linters for the analysis.
+           (Conversely: --default-linters)
+
+       --iphoneos-target-sdk-version string
+           Specify the target SDK version to use for iphoneos
+
+       --iphoneos-target-sdk-version-path-regex +string
+           To pass a specific target SDK version to use for iphoneos in a
+           particular path, with the format path:version (can be specified
+           multiple times)
+
+       --linter string
+           From the linters available, only run this one linter. (Useful
+           together with --linters-developer-mode)
+
+       --linters-def-file +file
+           Specify the file containing linters definition (e.g. 'linters.al')
+
+       --linters-def-folder +dir
+           Specify the folder containing linters files with extension .al
+
+       --linters-developer-mode
+           Activates: Debug mode for developing new linters. (Sets the
+           analyzer to linters; also sets --debug, --debug-level-linters 2,
+           --developer-mode, and unsets --allowed-failures and
+           --default-linters. (Conversely: --no-linters-developer-mode)
+
+       --linters-doc-url +string
+           Specify custom documentation URL for some linter that overrides
+           the default one. Useful if your project has specific ways of
+           fixing a lint error that is not true in general or public info.
+           Format: linter_name:doc_url.
+
+       --linters-ignore-clang-failures
+           Activates: Continue linting files even if some compilation fails.
+           (Conversely: --no-linters-ignore-clang-failures)
+
+       --linters-validate-syntax-only
+           Activates: Validate syntax of AL files, then emit possible errors
+           in JSON format to stdout (Conversely:
+           --no-linters-validate-syntax-only)
+CLANG OPTIONS
+       --clang-biniou-file file
+           Specify a file containing the AST of the program, in biniou format
+
+       --compilation-database +path
+           File that contain compilation commands (can be specified multiple
+           times)
+
+       --compilation-database-escaped +path
+           File that contain compilation commands where all entries are
+           escaped for the shell, eg coming from Xcode (can be specified
+           multiple times)
+
+       --compute-analytics
+           Activates: Emit analytics as info-level issues, like component kit
+           line count and component kit file cyclomatic complexity
+           (Conversely: --no-compute-analytics)
+
+       --no-cxx
+           Deactivates: Analyze C++ methods (Conversely: --cxx)
+
+       --cxx-infer-headers
+           Activates: Include C++ header models during compilation. Infer
+           swaps some C++ headers for its own in order to get a better model
+           of, eg, the standard library. This can sometimes cause compilation
+           failures. (Conversely: --no-cxx-infer-headers)
+
+       --dump-duplicate-symbols
+           Activates: Dump all symbols with the same name that are defined in
+           more than one file. (Conversely: --no-dump-duplicate-symbols)
+
+       --frontend-tests
+           Activates: Save filename.ext.test.dot with the cfg in dotty format
+           for frontend tests (also sets --print-types) (Conversely:
+           --no-frontend-tests)
+
+       --headers
+           Activates: Analyze code in header files (Conversely: --no-headers)
+
+       --skip-translation-headers +path_prefix
+           Ignore headers whose path matches the given prefix
+
+       --Xclang +string
+           Pass values as command-line arguments to invocations of clang
+
+       --xcpretty
+           Activates: Infer will use xcpretty together with xcodebuild to
+           analyze an iOS app. xcpretty just needs to be in the path, infer
+           command is still just `infer -- <xcodebuild command>`.
+           (Conversely: --no-xcpretty)
+JAVA OPTIONS
+       --bootclasspath string
+           Specify the Java bootclasspath
+
+       --dependencies
+           Activates: Translate all the dependencies during the capture. The
+           classes in the given jar file will be translated. No sources
+           needed. (Conversely: --no-dependencies)
+
+       --generated-classes path
+           Specify where to load the generated class files
+
+       --java-jar-compiler path
+           Specify the Java compiler jar used to generate the bytecode
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+SEE ALSO
+       infer-analyze(1), infer-compile(1), infer-run(1)
+
+
+

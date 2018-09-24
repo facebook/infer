@@ -458,54 +458,49 @@ let mk_bool_group ?(deprecated_no = []) ?(default = false) ?f:(f0 = Fn.id) ?(dep
   mk_bool ~deprecated ~deprecated_no ~default ~long ?short ~f ?parse_mode ?in_help ?meta doc
 
 
-let mk_int ~default ?(f = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
-    ?(meta = "int") doc =
+let mk_int ~default ?(default_to_string = string_of_int) ?(f = Fn.id) ?(deprecated = []) ~long
+    ?short ?parse_mode ?in_help ?(meta = "int") doc =
   let flag = mk_flag ~deprecated ?short ~long in
-  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
-    ~default_to_string:string_of_int
+  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
     ~mk_setter:(fun var str -> var := f (int_of_string str))
     ~decode_json:(string_json_decoder ~flag)
     ~mk_spec:(fun set -> String set)
 
 
-let mk_int_opt ?default ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
-    ?(meta = "int") doc =
-  let default_to_string = function Some f -> string_of_int f | None -> "" in
+let mk_int_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_int)
+    ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "int") doc =
   let f s = Some (f0 (int_of_string s)) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 
-let mk_float_opt ?default ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "float")
-    doc =
-  let default_to_string = function Some f -> string_of_float f | None -> "" in
+let mk_float_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_float)
+    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "float") doc =
   let f s = Some (float_of_string s) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 
-let mk_string ~default ?(f = fun s -> s) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
-    ?(meta = "string") doc =
+let mk_string ~default ?(default_to_string = Fn.id) ?(f = fun s -> s) ?(deprecated = []) ~long
+    ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let flag = mk_flag ~deprecated ?short ~long in
-  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
-    ~default_to_string:(fun s -> s)
+  mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc ~default_to_string
     ~mk_setter:(fun var str -> var := f str)
     ~decode_json:(string_json_decoder ~flag)
     ~mk_spec:(fun set -> String set)
 
 
-let mk_string_opt ?default ?(f = fun s -> s) ?mk_reset ?(deprecated = []) ~long ?short ?parse_mode
-    ?in_help ?(meta = "string") doc =
-  let default_to_string = function Some s -> s | None -> "" in
+let mk_string_opt ?default ?(default_to_string = Option.value ~default:"") ?(f = fun s -> s)
+    ?mk_reset ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let f s = Some (f s) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?mk_reset ?parse_mode ?in_help
     ~meta doc
 
 
-let mk_string_list ?(default = []) ?(f = fun s -> s) ?(deprecated = []) ~long ?short ?parse_mode
-    ?in_help ?(meta = "string") doc =
+let mk_string_list ?(default = []) ?(default_to_string = String.concat ~sep:",") ?(f = fun s -> s)
+    ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "string") doc =
   let flag = mk_flag ~deprecated ?short ~long in
   let mk () =
     mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta:("+" ^ meta) doc
-      ~default_to_string:(String.concat ~sep:",")
+      ~default_to_string
       ~mk_setter:(fun var str -> var := f str :: !var)
       ~decode_json:(list_json_decoder (string_json_decoder ~flag))
       ~mk_spec:(fun set -> String set)
@@ -537,39 +532,37 @@ let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short 
     ~mk_spec:(fun set -> String set)
 
 
-let mk_path ~default ?(f = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
-    ?(meta = "path") =
+let mk_path ~default ?(default_to_string = Fn.id) ?(f = Fn.id) ?(deprecated = []) ~long ?short
+    ?parse_mode ?in_help ?(meta = "path") =
   let flag = mk_flag ~deprecated ?short ~long in
   mk_path_helper
     ~setter:(fun var x -> var := f x)
-    ~decode_json:(path_json_decoder ~flag)
-    ~default_to_string:(fun s -> s)
-    ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta
+    ~decode_json:(path_json_decoder ~flag) ~default_to_string ~default ~deprecated ~long ~short
+    ~parse_mode ~in_help ~meta
 
 
-let mk_path_opt ?default ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "path") doc
-    =
+let mk_path_opt ?default ?(default_to_string = Option.value ~default:"") ?(deprecated = []) ~long
+    ?short ?parse_mode ?in_help ?(meta = "path") doc =
   let mk () =
     let flag = mk_flag ~deprecated ?short ~long in
     mk_path_helper
       ~setter:(fun var x -> var := Some x)
-      ~decode_json:(path_json_decoder ~flag)
-      ~default_to_string:(function Some s -> s | None -> "")
-      ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta doc
+      ~decode_json:(path_json_decoder ~flag) ~default_to_string ~default ~deprecated ~long ~short
+      ~parse_mode ~in_help ~meta doc
   in
   let reset_doc = reset_doc_opt ~long in
   mk_with_reset None ~reset_doc ~long ?parse_mode mk
 
 
-let mk_path_list ?(default = []) ?(deprecated = []) ~long ?short ?parse_mode ?in_help
-    ?(meta = "path") doc =
+let mk_path_list ?(default = []) ?(default_to_string = String.concat ~sep:", ") ?(deprecated = [])
+    ~long ?short ?parse_mode ?in_help ?(meta = "path") doc =
   let flag = mk_flag ~deprecated ?short ~long in
   let mk () =
     mk_path_helper
       ~setter:(fun var x -> var := x :: !var)
       ~decode_json:(list_json_decoder (path_json_decoder ~flag))
-      ~default_to_string:(String.concat ~sep:", ") ~default ~deprecated ~long ~short ~parse_mode
-      ~in_help ~meta:("+" ^ meta) doc
+      ~default_to_string ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta:("+" ^ meta)
+      doc
   in
   let reset_doc = reset_doc_list ~long in
   mk_with_reset [] ~reset_doc ~long ?parse_mode mk

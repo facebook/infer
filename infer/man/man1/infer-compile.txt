@@ -1,0 +1,99 @@
+NAME
+       infer-compile - compile project from within the infer environment
+
+SYNOPSIS
+       infer compile -- [compile command]
+
+
+DESCRIPTION
+       Intercepts compilation commands similarly to infer-capture, but simply
+       execute these compilation commands and do not perform any translation
+       of the source files. This can be useful to configure build systems or
+       for debugging purposes.
+
+
+
+OPTIONS
+       --debug,-g
+           Activates: Debug mode (also sets --debug-level 2,
+           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
+           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+
+       --debug-level level
+           Debug level (sets --bo-debug level, --debug-level-analysis level,
+           --debug-level-capture level, --debug-level-linters level):       
+      - 0: only basic debugging enabled
+             - 1: verbose debugging enabled
+             - 2: very verbose debugging enabled
+
+       --debug-level-analysis int
+           Debug level for the analysis. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-capture int
+           Debug level for the capture. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --force-delete-results-dir
+           Activates: Do not refuse to delete the results directory if it
+           doesn't look like an infer results directory. (Conversely:
+           --no-force-delete-results-dir)
+
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+EXAMPLES
+       cmake(1) hardcodes the absolute paths to the compiler inside the
+       Makefiles it generates, which defeats the later capture of compilation
+       commands by infer. Thus, to capture a CMake project, one should
+       configure the project from within the infer build environment, for
+       instance:
+
+         mkdir build && cd build
+         infer compile -- cmake ..
+         infer capture -- make
+
+       The same solution can be used for projects whose "./configure" script
+       hardcodes the paths to the compilers, for instance:
+
+         infer compile -- ./configure
+         infer capture -- make
+
+       Another solution for CMake projects is to use CMake's compilation
+       databases, for instance:
+
+         mkdir build && cd build
+         cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+         infer capture --compilation-database compile_commands.json
+
+
+SEE ALSO
+       infer-capture(1)
+
+
+

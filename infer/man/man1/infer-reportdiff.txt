@@ -1,0 +1,97 @@
+NAME
+       infer-reportdiff - compute the differences between two infer reports
+
+SYNOPSIS
+       infer reportdiff --report-current file --report-previous file [options]
+
+
+DESCRIPTION
+       Given two infer reports previous and current, compute the following
+       three reports and store them inside the "differential/" subdirectory
+       of the results directory:
+       - introduced.json contains the issues found in current but not
+       previous;
+       - fixed.json contains the issues found in previous but not current;
+       - preexisting.json contains the issues found in both previous and
+       current.
+
+       All three files follow the same format as normal infer reports.
+
+
+
+OPTIONS
+       --costs-current path
+           Costs report of the latest revision
+
+       --costs-previous path
+           Costs report of the base revision to use for comparison
+
+       --debug,-g
+           Activates: Debug mode (also sets --debug-level 2,
+           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
+           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+
+       --debug-level level
+           Debug level (sets --bo-debug level, --debug-level-analysis level,
+           --debug-level-capture level, --debug-level-linters level):       
+      - 0: only basic debugging enabled
+             - 1: verbose debugging enabled
+             - 2: very verbose debugging enabled
+
+       --debug-level-analysis int
+           Debug level for the analysis. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-capture int
+           Debug level for the capture. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --file-renamings path
+           JSON with a list of file renamings to use while computing
+           differential reports
+
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --report-current path
+           report of the latest revision
+
+       --report-previous path
+           Report of the base revision to use for comparison
+
+       --no-skip-duplicated-types
+           Deactivates: Skip fixed-then-introduced duplicated types while
+           computing differential reports (Conversely:
+           --skip-duplicated-types)
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+SEE ALSO
+       infer-report(1)
+
+
+

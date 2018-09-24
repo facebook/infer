@@ -1,0 +1,181 @@
+NAME
+       infer-report - compute and manipulate infer results
+
+SYNOPSIS
+       infer report [options] [file.specs...]
+
+
+DESCRIPTION
+       Read, convert, and print .specs files in the results directory. Each
+       spec is printed to standard output unless option -q is used.
+
+       If no specs file are passed on the command line, process all the
+       .specs in the results directory.
+
+
+
+OPTIONS
+       --<analyzer>-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)
+
+       --<analyzer>-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)
+
+       --<analyzer>-suppress-errors +error_name
+           do not report a type of errors
+
+       --debug,-g
+           Activates: Debug mode (also sets --debug-level 2,
+           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
+           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+
+       --debug-level level
+           Debug level (sets --bo-debug level, --debug-level-analysis level,
+           --debug-level-capture level, --debug-level-linters level):       
+      - 0: only basic debugging enabled
+             - 1: verbose debugging enabled
+             - 2: very verbose debugging enabled
+
+       --debug-level-analysis int
+           Debug level for the analysis. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-capture int
+           Debug level for the capture. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --differential-filter-files string
+           Specify the file containing the list of source files for which a
+           differential report is desired. Source files should be specified
+           relative to project root or be absolute
+
+       --disable-issue-type +issue_type
+           Do not show reports coming from this type of issue. Each checker
+           can report a range of issue types. This option provides
+           fine-grained filtering over which types of issue should be
+           reported once the checkers have run. In particular, note that
+           disabling issue types does not make the corresponding checker not
+           run.            By default, the following issue types are disabled:
+           ANALYSIS_STOPS, ARRAY_OUT_OF_BOUNDS_L1, ARRAY_OUT_OF_BOUNDS_L2,
+           ARRAY_OUT_OF_BOUNDS_L3, BUFFER_OVERRUN_L4, BUFFER_OVERRUN_L5,
+           BUFFER_OVERRUN_U5, CLASS_CAST_EXCEPTION, CONDITION_ALWAYS_FALSE,
+           CONDITION_ALWAYS_TRUE, DANGLING_POINTER_DEREFERENCE,
+           DIVIDE_BY_ZERO, EXPENSIVE_EXECUTION_TIME_CALL,
+           GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,
+           INFINITE_EXECUTION_TIME_CALL, NULL_TEST_AFTER_DEREFERENCE,
+           RETURN_VALUE_IGNORED, STACK_VARIABLE_ADDRESS_ESCAPE,
+           UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION,
+           UNTRUSTED_BUFFER_ACCESS, UNTRUSTED_HEAP_ALLOCATION,
+           ZERO_EXECUTION_TIME_CALL.
+           
+            See also --report-issue-type.
+           (default:
+           ANALYSIS_STOPS,ARRAY_OUT_OF_BOUNDS_L1,ARRAY_OUT_OF_BOUNDS_L2,ARRAY_OUT_OF_BOUNDS_L3,BUFFER_OVERRUN_L4,BUFFER_OVERRUN_L5,BUFFER_OVERRUN_U5,CLASS_CAST_EXCEPTION,CONDITION_ALWAYS_FALSE,CONDITION_ALWAYS_TRUE,DANGLING_POINTER_DEREFERENCE,DIVIDE_BY_ZERO,EXPENSIVE_EXECUTION_TIME_CALL,GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,INFINITE_EXECUTION_TIME_CALL,NULL_TEST_AFTER_DEREFERENCE,RETURN_VALUE_IGNORED,STACK_VARIABLE_ADDRESS_ESCAPE,UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION,UNTRUSTED_BUFFER_ACCESS,UNTRUSTED_HEAP_ALLOCATION,ZERO_EXECUTION_TIME_CALL)
+
+       --enable-issue-type +issue_type
+           Show reports coming from this type of issue. By default, all issue
+           types are enabled except the ones listed in --disable-issue-type.
+           Note that enabling issue types does not make the corresponding
+           checker run; see individual checker options to turn them on or
+           off.
+
+       --filter-report +string
+           Specify a filter for issues to report. If multiple filters are
+           specified, they are applied in the order in which they are
+           specified. Each filter is applied to each issue detected, and only
+           issues which are accepted by all filters are reported. Each filter
+           is of the form:
+           `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
+           two components are OCaml Str regular expressions, with an optional
+           `!` character prefix. If a regex has a `!` prefix, the polarity is
+           inverted, and the filter becomes a "blacklist" instead of a
+           "whitelist". Each filter is interpreted as an implication: an
+           issue matches if it does not match the `issue_type_regex` or if it
+           does match the `filename_regex`. The filenames that are tested by
+           the regex are relative to the `--project-root` directory. The
+           `<reason_string>` is a non-empty string used to explain why the
+           issue was filtered.
+
+       --no-filtering,-F
+           Deactivates: Do not show the experimental and blacklisted issue
+           types (Conversely: --filtering | -f)
+
+       --from-json-report report.json
+           Load analysis results from a report file (default is to load the
+           results from the specs files generated by the analysis).
+
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --issues-fields ,-separated sequence of { bug_type | bucket |
+       qualifier | severity | visibility | line | column | procedure |
+       procedure_start_line | file | bug_trace | key | hash | line_offset |
+       qualifier_contains_potential_exception_note }
+           Fields to emit with --issues-tests (default: file procedure
+           line_offset bug_type bucket severity bug_trace)
+
+       --issues-tests file
+           Write a list of issues in a format suitable for tests to file
+
+       --issues-txt file
+           Write a list of issues in text format to file (default:
+           infer-out/bugs.txt)
+
+       --print-logs
+           Activates: Also log messages to stdout and stderr (Conversely:
+           --no-print-logs)
+
+       --project-root,-C dir
+           Specify the root directory of the project (default: .)
+
+       --quiet,-q
+           Activates: Do not print specs on standard output (default: only
+           print for the report command) (Conversely: --no-quiet | -Q)
+
+       --report-formatter { none | phabricator }
+           Which formatter to use when emitting the report (default:
+           phabricator)
+
+       --results-dir,-o dir
+           Write results and internal files in the specified directory
+           (default: ./infer-out)
+
+       --skip-analysis-in-path-skips-compilation
+           Activates: Whether paths in --skip-analysis-in-path should be
+           compiled or not (Conversely:
+           --no-skip-analysis-in-path-skips-compilation)
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+SEE ALSO
+       infer-reportdiff(1), infer-run(1)
+
+
+

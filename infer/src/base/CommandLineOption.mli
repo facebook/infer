@@ -69,20 +69,31 @@ val mk_bool_group :
     [children] are also set and the [no_children] are unset. A child can be unset by including
     "--no-child" later in the arguments. *)
 
-val mk_int : default:int -> ?f:(int -> int) -> int ref t
+val mk_int : default:int -> ?default_to_string:(int -> string) -> ?f:(int -> int) -> int ref t
 
-val mk_int_opt : ?default:int -> ?f:(int -> int) -> int option ref t
+val mk_int_opt :
+  ?default:int -> ?default_to_string:(int option -> string) -> ?f:(int -> int) -> int option ref t
 
-val mk_float_opt : ?default:float -> float option ref t
+val mk_float_opt :
+  ?default:float -> ?default_to_string:(float option -> string) -> float option ref t
 
-val mk_string : default:string -> ?f:(string -> string) -> string ref t
+val mk_string :
+  default:string -> ?default_to_string:(string -> string) -> ?f:(string -> string) -> string ref t
 
 val mk_string_opt :
-  ?default:string -> ?f:(string -> string) -> ?mk_reset:bool -> string option ref t
+     ?default:string
+  -> ?default_to_string:(string option -> string)
+  -> ?f:(string -> string)
+  -> ?mk_reset:bool
+  -> string option ref t
 (** An option "--[long]-reset" is automatically created that resets the reference to None when found
     on the command line, unless [mk_reset] is false.  *)
 
-val mk_string_list : ?default:string list -> ?f:(string -> string) -> string list ref t
+val mk_string_list :
+     ?default:string list
+  -> ?default_to_string:(string list -> string)
+  -> ?f:(string -> string)
+  -> string list ref t
 (** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
     [~default].  Each argument of an occurrence of the option will be prepended to the list, so the
     final value will be in the reverse order they appeared on the command line.
@@ -90,14 +101,17 @@ val mk_string_list : ?default:string list -> ?f:(string -> string) -> string lis
     An option "--[long]-reset" is automatically created that resets the list to [] when found on the
     command line.  *)
 
-val mk_path : default:string -> ?f:(string -> string) -> string ref t
+val mk_path :
+  default:string -> ?default_to_string:(string -> string) -> ?f:(string -> string) -> string ref t
 (** like [mk_string] but will resolve the string into an absolute path so that children processes
     agree on the absolute path that the option represents *)
 
-val mk_path_opt : ?default:string -> string option ref t
+val mk_path_opt :
+  ?default:string -> ?default_to_string:(string option -> string) -> string option ref t
 (** analogous of [mk_string_opt] with the extra feature of [mk_path] *)
 
-val mk_path_list : ?default:string list -> string list ref t
+val mk_path_list :
+  ?default:string list -> ?default_to_string:(string list -> string) -> string list ref t
 (** analogous of [mk_string_list] with the extra feature of [mk_path] *)
 
 val mk_symbol :

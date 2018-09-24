@@ -1,0 +1,131 @@
+NAME
+       infer-explore - explore the error traces in infer reports
+
+SYNOPSIS
+       infer explore [options]
+       infer explore --procedures [options]
+
+
+DESCRIPTION
+       Show the list of bugs on the console and explore symbolic program
+       traces emitted by infer to explain a report. Can also generate an HTML
+       report from a JSON report.
+
+       If --procedures is passed, print information about each procedure
+       captured by infer.
+
+
+
+OPTIONS
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --html
+           Activates: Generate html report. (Conversely: --no-html)
+
+       --max-nesting int
+           Level of nested procedure calls to show. Trace elements beyond the
+           maximum nesting level are skipped. If omitted, all levels are
+           shown.
+
+       --only-show
+           Activates: Show the list of reports and exit (Conversely:
+           --no-only-show)
+
+       --procedures
+           Activates: Print functions and methods discovered by infer
+           (Conversely: --no-procedures)
+
+       --procedures-attributes
+           Activates: Print the attributes of each procedure in the output of
+           --procedures (Conversely: --no-procedures-attributes)
+
+       --no-procedures-definedness
+           Deactivates: Include procedures definedness in the output of
+           --procedures, i.e. whether the procedure definition was found, or
+           only the procedure declaration, or the procedure is an
+           auto-generated Objective-C accessor (Conversely:
+           --procedures-definedness)
+
+       --procedures-filter filter
+           With --procedures, only print functions and methods (procedures)
+           matching the specified filter. A procedure filter is of the form
+           path_pattern:procedure_name. Patterns are interpreted as OCaml Str
+           regular expressions. For instance, to keep only methods named
+           "foo", one can use the filter ".*:foo", or "foo" for short.
+
+       --procedures-name
+           Activates: Include procedures names in the output of --procedures
+           (Conversely: --no-procedures-name)
+
+       --no-procedures-source-file
+           Deactivates: Include the source file in which the procedure
+           definition or declaration was found in the output of --procedures
+           (Conversely: --procedures-source-file)
+
+       --results-dir,-o dir
+           Write results and internal files in the specified directory
+           (default: ./infer-out)
+
+       --select N
+           Select bug number N. If omitted, prompt for input.
+
+       --source-files
+           Activates: Print source files discovered by infer (Conversely:
+           --no-source-files)
+
+       --source-files-cfgs
+           Activates: Print the Cfgs of each source file in the output of
+           --source-files (Conversely: --no-source-files-cfgs)
+
+       --source-files-filter filter
+           With --source-files, only print source files matching the
+           specified filter. The filter is a pattern that should match the
+           file path. Patterns are interpreted as OCaml Str regular
+           expressions.
+
+       --source-files-freshly-captured
+           Activates: Print whether the source file has been captured in the
+           most recent capture phase in the output of --source-files.
+           (Conversely: --no-source-files-freshly-captured)
+
+       --source-files-procedure-names
+           Activates: Print the names of procedure of each source file in the
+           output of --source-files (Conversely:
+           --no-source-files-procedure-names)
+
+       --source-files-type-environment
+           Activates: Print the type environment of each source file in the
+           output of --source-files (Conversely:
+           --no-source-files-type-environment)
+
+       --no-source-preview
+           Deactivates: print code excerpts around trace elements
+           (Conversely: --source-preview)
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+SEE ALSO
+       infer-report(1), infer-run(1)
+
+
+

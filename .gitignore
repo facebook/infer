@@ -107,7 +107,8 @@ buck-out/
 /infer/bin/InferUnit
 /infer/bin/infertop.bc
 /infer/bin/llvm_sil
-/infer/man
+/infer/man/man1/*.1
+/infer/man/man1/*.1.gz
 
 /infer/src/base/Version.ml
 /infer/models/java/models/

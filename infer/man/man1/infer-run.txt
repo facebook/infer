@@ -1,0 +1,195 @@
+NAME
+       infer-run - capture source files, analyze, and report
+
+SYNOPSIS
+       infer run [options]
+       infer [options] -- compile command
+
+
+DESCRIPTION
+       Calling "infer run [options]" is equivalent to performing the
+       following sequence of commands:
+
+       infer capture [options]
+       infer analyze [options]
+
+
+
+OPTIONS
+       --analyzer,-a { checkers | infer | capture | compile | crashcontext |
+       linters }
+           Specify which analyzer to run (only one at a time is supported):       
+    - biabduction: run the bi-abduction based checker only, in
+           particular to check for memory errors
+           - checkers: run the default checkers, including the bi-abduction
+           based checker for memory errors (default)
+           - infer: alias for biabduction
+           - linters: run linters based on the ast only (clang only,
+           activated by default)
+           - capture: similar to specifying the capture subcommand
+           (DEPRECATED)
+           - compile: similar to specifying the compile subcommand
+           (DEPRECATED)
+           - crashcontext: experimental (see --crashcontext)
+
+       --<analyzer>-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)
+
+       --<analyzer>-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)
+
+       --<analyzer>-suppress-errors +error_name
+           do not report a type of errors
+
+       --debug,-g
+           Activates: Debug mode (also sets --debug-level 2,
+           --developer-mode, --no-filtering, --print-buckets, --print-types,
+           --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
+           --write-dotty, --write-html) (Conversely: --no-debug | -G)
+
+       --debug-level level
+           Debug level (sets --bo-debug level, --debug-level-analysis level,
+           --debug-level-capture level, --debug-level-linters level):       
+      - 0: only basic debugging enabled
+             - 1: verbose debugging enabled
+             - 2: very verbose debugging enabled
+
+       --debug-level-analysis int
+           Debug level for the analysis. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-capture int
+           Debug level for the capture. See --debug-level for accepted
+           values. (default: 0)
+
+       --debug-level-linters int
+           Debug level for the linters. See --debug-level for accepted
+           values. (default: 0)
+
+       --fail-on-issue
+           Activates: Exit with error code 2 if Infer found something to
+           report (Conversely: --no-fail-on-issue)
+
+       --filter-report +string
+           Specify a filter for issues to report. If multiple filters are
+           specified, they are applied in the order in which they are
+           specified. Each filter is applied to each issue detected, and only
+           issues which are accepted by all filters are reported. Each filter
+           is of the form:
+           `<issue_type_regex>:<filename_regex>:<reason_string>`. The first
+           two components are OCaml Str regular expressions, with an optional
+           `!` character prefix. If a regex has a `!` prefix, the polarity is
+           inverted, and the filter becomes a "blacklist" instead of a
+           "whitelist". Each filter is interpreted as an implication: an
+           issue matches if it does not match the `issue_type_regex` or if it
+           does match the `filename_regex`. The filenames that are tested by
+           the regex are relative to the `--project-root` directory. The
+           `<reason_string>` is a non-empty string used to explain why the
+           issue was filtered.
+
+       --force-delete-results-dir
+           Activates: Do not refuse to delete the results directory if it
+           doesn't look like an infer results directory. (Conversely:
+           --no-force-delete-results-dir)
+
+       --force-integration command
+           Proceed as if the first argument after -- was command. Possible
+           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
+           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           ndk-build, xcodebuild.
+
+       --help
+           Show this manual
+
+       --help-format { auto | groff | pager | plain }
+           Show this help in the specified format. auto sets the format to
+           plain if the environment variable TERM is "dumb" or undefined, and
+           to pager otherwise. (default: auto)
+
+       --help-full
+           Show this manual with all internal options in the INTERNAL OPTIONS
+           section
+
+       --log-events
+           Activates: Turn on the feature that logs events in a
+           machine-readable format (Conversely: --no-log-events)
+
+       --pmd-xml
+           Activates: Output issues in (PMD) XML format (Conversely:
+           --no-pmd-xml)
+
+       --print-log-identifier
+           Activates: Print the unique identifier that is common to all
+           logged events (Conversely: --no-print-log-identifier)
+
+       --print-logs
+           Activates: Also log messages to stdout and stderr (Conversely:
+           --no-print-logs)
+
+       --no-progress-bar,-P
+           Deactivates: Show a progress bar (Conversely: --progress-bar | -p)
+
+       --project-root,-C dir
+           Specify the root directory of the project (default: .)
+
+       --no-report
+           Deactivates: Run the reporting phase once the analysis has
+           completed (Conversely: --report)
+
+       --report-hook script
+           Specify a script to be executed after the analysis results are
+           written. This script will be passed, --issues-json, --issues-txt,
+           --issues-xml, --project-root, and --results-dir. (default: <infer
+           installation directory>/lib/python/report.py)
+
+       --results-dir,-o dir
+           Write results and internal files in the specified directory
+           (default: ./infer-out)
+
+       --skip-analysis-in-path +path_prefix_OCaml_regex
+           Ignore files whose path matches the given prefix (can be specified
+           multiple times)
+
+       --version
+           Print version information and exit
+
+       --version-json
+           Print version information in json format and exit
+
+       --  Stop argument processing, use remaining arguments as a build
+           command
+BUCK FLAVORS OPTIONS
+       --buck-blacklist +regex
+           Skip capture of files matched by the specified regular expression
+           (only the "flavors (C++)" Buck integration is supported, not
+           Java).
+
+       --capture-blacklist regex
+           Skip capture of files matched by the specified OCaml regular
+           expression (only supported by the javac integration for now).
+CLANG OPTIONS
+       --compute-analytics
+           Activates: Emit analytics as info-level issues, like component kit
+           line count and component kit file cyclomatic complexity
+           (Conversely: --no-compute-analytics)
+
+
+ENVIRONMENT
+       INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
+           See the ENVIRONMENT section in the manual of infer(1).
+
+FILES
+       .inferconfig
+           See the FILES section in the manual of infer(1).
+
+
+
+
+SEE ALSO
+       infer-analyze(1), infer-capture(1), infer-report(1)
+
+
+

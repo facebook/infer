@@ -233,11 +233,23 @@ $(INFER_COMMAND_MANUALS): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
 	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help --help-format=groff > $@
 
+$(INFER_COMMAND_TEXT_MANUALS): src_build $(MAKEFILE_LIST)
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)$(INFER_BIN) $(patsubst infer-%.txt,%,$(@F)) --help --help-format=plain > $@
+
 $(INFER_MANUAL): src_build $(MAKEFILE_LIST)
 	$(QUIET)$(MKDIR_P) $(@D)
 	$(QUIET)$(INFER_BIN) --help --help-format=groff > $@
 
-$(INFER_MANUALS_GZIPPED): %.gz: %
+$(INFER_TEXT_MANUAL): src_build $(MAKEFILE_LIST)
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)$(INFER_BIN) --help --help-format=plain > $@
+
+$(INFER_FULL_TEXT_MANUAL): src_build $(MAKEFILE_LIST)
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)$(INFER_BIN) --help-full --help-format=plain > $@
+
+$(INFER_GROFF_MANUALS_GZIPPED): %.gz: %
 	$(QUIET)$(REMOVE) $@
 	gzip $<
 
@@ -250,7 +262,9 @@ endif
 .PHONY: infer byte_infer
 infer byte_infer:
 	$(QUIET)$(call silent_on_success,Building Infer models,\
-	$(MAKE) infer_models $(INFER_MANUALS))
+	$(MAKE) infer_models)
+	$(QUIET)$(call silent_on_success,Building Infer manuals,\
+	$(MAKE) $(INFER_MANUALS))
 infer: src_build
 byte_infer: byte
 
@@ -444,7 +458,7 @@ uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
 	$(REMOVE) $(DESTDIR)$(bindir)/infer
 	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
-	$(REMOVE) $(foreach manual,$(INFER_MANUALS_GZIPPED),\
+	$(REMOVE) $(foreach manual,$(INFER_GROFF_MANUALS_GZIPPED),\
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook uninstall
@@ -454,7 +468,7 @@ endif
 test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 
 .PHONY: install
-install: infer $(INFER_MANUALS_GZIPPED)
+install: infer $(INFER_GROFF_MANUALS_GZIPPED)
 # create directory structure
 	test -d      '$(DESTDIR)$(bindir)' || \
 	  $(MKDIR_P) '$(DESTDIR)$(bindir)'
@@ -551,7 +565,7 @@ endif
 	  (cd '$(DESTDIR)$(libdir)'/infer/infer/bin && \
 	   $(REMOVE) "$$alias" && \
 	   $(LN_S) infer "$$alias"); done
-	$(foreach man,$(INFER_MANUALS_GZIPPED), \
+	$(foreach man,$(INFER_GROFF_MANUALS_GZIPPED), \
 	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))';)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 ifdef DESTDIR
@@ -737,7 +751,7 @@ ifeq ($(filter doc-publish,${MAKECMDGOALS}),)
 endif
 
 .PHONY: doc-publish
-doc-publish: doc $(INFER_MANUALS)
+doc-publish: doc $(INFER_GROFF_MANUALS)
 ifeq ($(GHPAGES),no)
 	$(QUIET)echo "$(TERM_ERROR)Please set GHPAGES to a checkout of the gh-pages branch of the GitHub repo of infer$(TERM_RESET)" >&2
 	$(QUIET)exit 1
@@ -751,7 +765,7 @@ endif
 	fi
 	$(QUIET)$(call silent_on_success,Copying man pages,\
 	$(REMOVE_DIR) "$(GHPAGES)"/static/man/*; \
-	for man in $(INFER_MANUALS); do \
+	for man in $(INFER_GROFF_MANUALS); do \
 	  groff -Thtml "$$man" > "$(GHPAGES)"/static/man/$$(basename "$$man").html; \
 	done)
 ifeq ($(IS_FACEBOOK_TREE),no)

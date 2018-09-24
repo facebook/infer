@@ -1508,6 +1508,7 @@ and job_id = CLOpt.mk_string_opt ~long:"job-id" "Specify the job ID of this Infe
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
+    ~default_to_string:(fun _ -> "<number of cores>")
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"int" "Run the specified number of analysis jobs simultaneously"
 
@@ -1806,6 +1807,7 @@ and project_root =
   CLOpt.mk_path
     ~deprecated:["project_root"; "-project_root"; "pr"]
     ~long:"project-root" ~short:'C' ~default:CLOpt.init_work_dir
+    ~default_to_string:(fun _ -> ".")
     ~in_help:
       InferCommand.
         [ (Analyze, manual_generic)
@@ -1897,6 +1899,7 @@ and report_hook =
   CLOpt.mk_string_opt ~long:"report-hook"
     ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
     ~default:(lib_dir ^/ "python" ^/ "report.py")
+    ~default_to_string:(fun _ -> "<infer installation directory>/lib/python/report.py")
     ~meta:"script"
     "Specify a script to be executed after the analysis results are written.  This script will be \
      passed, $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and \
@@ -1921,6 +1924,7 @@ and rest =
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:'o'
     ~default:(CLOpt.init_work_dir ^/ "infer-out")
+    ~default_to_string:(fun _ -> "./infer-out")
     ~in_help:
       InferCommand.
         [ (Analyze, manual_generic)
@@ -2259,6 +2263,7 @@ let javac_classes_out =
       (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
        needed but the tests break without this for now. See discussion in D4397716. *)
     ~default:CLOpt.init_work_dir
+    ~default_to_string:(fun _ -> ".")
     ~f:(fun classes_out ->
       if !buck then (
         let classes_out_infer = resolve classes_out ^/ buck_results_dir_name in
