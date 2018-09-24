@@ -297,23 +297,20 @@ let get_tag ast_item =
 
 
 (* Generates a key for a statement based on its sub-statements and the statement tag. *)
-let rec generate_key_stmt stmt =
-  let tag_str = string_of_int (get_tag stmt) in
-  let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
-  let tags = List.map ~f:generate_key_stmt stmts in
+let generate_key_stmt stmt =
   let buffer = Buffer.create 16 in
-  let tags = tag_str :: tags in
-  List.iter ~f:(fun tag -> Buffer.add_string buffer tag) tags ;
-  Buffer.contents buffer
+  let rec add_stmt stmt =
+    Buffer.add_string buffer (string_of_int (get_tag stmt)) ;
+    let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+    List.iter ~f:add_stmt stmts
+  in
+  add_stmt stmt ; Buffer.contents buffer
 
 
 (* Generates a key for a declaration based on its name and the declaration tag. *)
 let generate_key_decl decl =
-  let buffer = Buffer.create 16 in
   let name = full_name_of_decl_opt (Some decl) in
-  Buffer.add_string buffer (string_of_int (get_tag decl)) ;
-  Buffer.add_string buffer (QualifiedCppName.to_qual_string name) ;
-  Buffer.contents buffer
+  Format.sprintf "%d%s" (get_tag decl) (QualifiedCppName.to_qual_string name)
 
 
 let rec get_super_if decl =
