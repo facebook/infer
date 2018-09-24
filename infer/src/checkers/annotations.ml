@@ -67,6 +67,8 @@ let on_unbind = "OnUnbind"
 
 let on_unmount = "OnUnmount"
 
+let mainthread = "MainThread"
+
 let nonblocking = "NonBlocking"
 
 let notnull = "NotNull"
@@ -242,6 +244,8 @@ let ia_is_on_unbind ia = ia_ends_with ia on_unbind
 let ia_is_on_unmount ia = ia_ends_with ia on_unmount
 
 let ia_is_ui_thread ia = ia_ends_with ia ui_thread
+
+let ia_is_mainthread ia = ia_ends_with ia mainthread
 
 let ia_is_thread_confined ia = ia_ends_with ia thread_confined
 

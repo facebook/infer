@@ -102,6 +102,8 @@ val ia_is_on_unbind : Annot.Item.t -> bool
 
 val ia_is_on_unmount : Annot.Item.t -> bool
 
+val ia_is_mainthread : Annot.Item.t -> bool
+
 val ia_is_not_thread_safe : Annot.Item.t -> bool
 
 val ia_is_nonblocking : Annot.Item.t -> bool

@@ -285,50 +285,53 @@ let is_ui_method =
   fun tenv pname -> List.exists matchers ~f:(fun m -> m tenv pname [])
 
 
-let runs_on_ui_thread tenv proc_desc =
+let runs_on_ui_thread =
   (* assume that methods annotated with @UiThread, @OnEvent, @OnBind, @OnMount, @OnUnbind,
-          @OnUnmount always run on the UI thread *)
-  let is_annot annot =
-    Annotations.ia_is_ui_thread annot || Annotations.ia_is_on_bind annot
-    || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
-    || Annotations.ia_is_on_unbind annot
-    || Annotations.ia_is_on_unmount annot
+     @OnUnmount always run on the UI thread *)
+  let annotation_matchers =
+    [ Annotations.ia_is_mainthread
+    ; Annotations.ia_is_ui_thread
+    ; Annotations.ia_is_on_bind
+    ; Annotations.ia_is_on_event
+    ; Annotations.ia_is_on_mount
+    ; Annotations.ia_is_on_unbind
+    ; Annotations.ia_is_on_unmount ]
   in
-  let pname = Procdesc.get_proc_name proc_desc in
+  let is_annot annot = List.exists annotation_matchers ~f:(fun m -> m annot) in
   let mono_pname = MF.wrap_monospaced Typ.Procname.pp in
-  if
-    Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
-    || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
-       |> Option.is_some
-    || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
-       |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
-  then None
-  else if is_ui_method tenv pname then
-    Some (F.asprintf "%a is a standard UI-thread method" mono_pname pname)
-  else if Annotations.pdesc_has_return_annot proc_desc is_annot then
-    Some
-      (F.asprintf "%a is annotated %s" mono_pname pname
-         (MF.monospaced_to_string Annotations.ui_thread))
-  else
-    match find_annotated_or_overriden_annotated_method is_annot pname tenv with
-    | Some override_pname ->
-        Some
-          (F.asprintf "class %a overrides %a, which is annotated %s" mono_pname pname mono_pname
-             override_pname
-             (MF.monospaced_to_string Annotations.ui_thread))
-    | None -> (
-      match
-        get_current_class_and_annotated_superclasses Annotations.ia_is_ui_thread tenv pname
-      with
-      | Some (current_class, (super_class :: _ as super_classes)) ->
-          let middle =
-            if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
-            else F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) super_class
-          in
+  fun tenv proc_desc ->
+    let pname = Procdesc.get_proc_name proc_desc in
+    if
+      Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_worker_thread
+      || find_annotated_or_overriden_annotated_method Annotations.ia_is_worker_thread pname tenv
+         |> Option.is_some
+      || get_current_class_and_annotated_superclasses Annotations.ia_is_worker_thread tenv pname
+         |> Option.value_map ~default:false ~f:(function _, [] -> false | _ -> true)
+    then None
+    else if is_ui_method tenv pname then
+      Some (F.asprintf "%a is a standard UI-thread method" mono_pname pname)
+    else if Annotations.pdesc_has_return_annot proc_desc is_annot then
+      Some
+        (F.asprintf "%a is annotated %s" mono_pname pname
+           (MF.monospaced_to_string Annotations.ui_thread))
+    else
+      match find_annotated_or_overriden_annotated_method is_annot pname tenv with
+      | Some override_pname ->
           Some
-            (F.asprintf "class %s%s is annotated %s"
-               (MF.monospaced_to_string (Typ.Name.name current_class))
-               middle
+            (F.asprintf "class %a overrides %a, which is annotated %s" mono_pname pname mono_pname
+               override_pname
                (MF.monospaced_to_string Annotations.ui_thread))
-      | _ ->
-          None )
+      | None -> (
+        match get_current_class_and_annotated_superclasses is_annot tenv pname with
+        | Some (current_class, (super_class :: _ as super_classes)) ->
+            let middle =
+              if List.exists super_classes ~f:(Typ.Name.equal current_class) then ""
+              else F.asprintf " extends %a, which" (MF.wrap_monospaced Typ.Name.pp) super_class
+            in
+            Some
+              (F.asprintf "class %s%s is annotated %s"
+                 (MF.monospaced_to_string (Typ.Name.name current_class))
+                 middle
+                 (MF.monospaced_to_string Annotations.ui_thread))
+        | _ ->
+            None )
