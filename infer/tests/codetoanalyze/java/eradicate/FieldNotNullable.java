@@ -7,14 +7,16 @@
 
 package codetoanalyze.java.eradicate;
 
+import android.app.Activity;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.View;
+
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Initializer;
 import com.facebook.infer.annotation.SuppressFieldNotInitialized;
 
 import javax.annotation.Nullable;
-
-import android.app.Activity;
-import android.os.Bundle;
 
 abstract class A {
   final String fld;
@@ -26,6 +28,16 @@ abstract class A {
 
 // for butterknife
 @interface InjectView {}
+
+class FragmentExample extends Fragment {
+
+  View view;
+
+  @Override
+  public void onDestroyView() {
+    view = null;
+  }
+}
 
 public class FieldNotNullable extends A {
   @Nullable

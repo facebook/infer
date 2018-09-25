@@ -184,7 +184,8 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
       | _ ->
           false
     in
-    (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs))
+    (not (AndroidFramework.is_destroy_method curr_pname))
+    && (not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs))
     && TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs
     && PatternMatch.type_is_class t_lhs
     && (not (Typ.Fieldname.Java.is_outer_instance fname))
