@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-open ConcurrencyModels
 
 let is_synchronized_library_call =
   let targets = ["java.lang.StringBuffer"; "java.util.Hashtable"; "java.util.Vector"] in
@@ -21,7 +20,7 @@ let is_synchronized_library_call =
         false
 
 
-let should_skip_analysis = ConcurrencyModels.matcher_of_json Config.starvation_skip_analysis
+let should_skip_analysis = MethodMatcher.of_json Config.starvation_skip_analysis
 
 (** magical value from https://developer.android.com/topic/performance/vitals/anr *)
 let android_anr_time_limit = 5.0
@@ -90,125 +89,107 @@ let empty_or_excessive_timeout actuals =
       false
 
 
-(* matchers used for normal analysis as well as in --dev-android-strict-mode *)
 (* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
 (* some, like [file], need manual addition due to our lack of handling dynamic dispatch *)
-let strict_mode_common_matchers =
-  let is_system_gc =
-    is_call_of_class "java.lang.System" ["gc"; "runFinalization"] |> Staged.unstage
-  in
-  let is_runtime_gc = is_call_of_class "java.lang.Runtime" ["gc"] |> Staged.unstage in
-  let is_file_io =
-    is_call_of_class "java.io.File"
-      [ "canRead"
-      ; "canWrite"
-      ; "createNewFile"
-      ; "createTempFile"
-      ; "delete"
-      ; "getCanonicalPath"
-      ; "getFreeSpace"
-      ; "getTotalSpace"
-      ; "getUsableSpace"
-      ; "isDirectory"
-      ; "isFile"
-      ; "isHidden"
-      ; "lastModified"
-      ; "length"
-      ; "list"
-      ; "listFiles"
-      ; "mkdir"
-      ; "renameTo"
-      ; "setExecutable"
-      ; "setLastModified"
-      ; "setReadable"
-      ; "setReadOnly"
-      ; "setWritable" ]
-    |> Staged.unstage
-  in
-  let is_socket_connect = is_call_of_class "java.net.Socket" ["connect"] |> Staged.unstage in
-  let is_connected_socket_constructor =
-    (* all public constructors of Socket with two or more arguments call connect *)
-    let actuals_pred = function [] | [_] -> false | _ -> true in
-    is_call_of_class ~actuals_pred "java.net.Socket" [Typ.Procname.Java.constructor_method_name]
-    |> Staged.unstage
-  in
-  let is_datagram_socket_connect =
-    is_call_of_class "java.net.DatagramSocket" ["connect"] |> Staged.unstage
-  in
+let strict_mode_matcher =
+  let open MethodMatcher in
   let open StarvationDomain.Event in
-  [ (is_connected_socket_constructor, High)
-  ; (is_datagram_socket_connect, High)
-  ; (is_file_io, High)
-  ; (is_runtime_gc, High)
-  ; (is_socket_connect, High)
-  ; (is_system_gc, High) ]
-
-
-let strict_mode_seed_matchers =
-  (* matcher for strict mode throws in Android libcore implementation,
-     used with --dev-android strict mode *)
-  let is_blockguard_on =
-    is_call_of_class ~method_prefix:true "dalvik.system.BlockGuard$Policy" ["on"] |> Staged.unstage
+  (* NB [empty] searches superclasses too.  Most of the classes below are final and we don't
+     really want to search superclasses for those that aren't, so for performance, disable that *)
+  let empty = {empty with search_superclasses= Some false} in
+  let matcher_records =
+    [ { empty with
+        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= Some true }
+    ; {empty with classname= "java.lang.System"; methods= ["gc"; "runFinalization"]}
+    ; {empty with classname= "java.lang.Runtime"; methods= ["gc"]}
+    ; {empty with classname= "java.net.Socket"; methods= ["connect"]}
+      (* all public constructors of Socket with two or more arguments call connect *)
+    ; { empty with
+        classname= "java.net.Socket"
+      ; methods= [Typ.Procname.Java.constructor_method_name]
+      ; actuals_pred= Some (function [] | [_] -> false | _ -> true) }
+    ; {empty with classname= "java.net.DatagramSocket"; methods= ["connect"]}
+    ; { empty with
+        classname= "java.io.File"
+      ; methods=
+          [ "canRead"
+          ; "canWrite"
+          ; "createNewFile"
+          ; "createTempFile"
+          ; "delete"
+          ; "getCanonicalPath"
+          ; "getFreeSpace"
+          ; "getTotalSpace"
+          ; "getUsableSpace"
+          ; "isDirectory"
+          ; "isFile"
+          ; "isHidden"
+          ; "lastModified"
+          ; "length"
+          ; "list"
+          ; "listFiles"
+          ; "mkdir"
+          ; "renameTo"
+          ; "setExecutable"
+          ; "setLastModified"
+          ; "setReadable"
+          ; "setReadOnly"
+          ; "setWritable" ] } ]
   in
-  (is_blockguard_on, StarvationDomain.Event.High) :: strict_mode_common_matchers
-
-
-let strict_mode_matchers =
-  let open StarvationDomain.Event in
-  (StrictModeModels.is_strict_mode_violation, High) :: strict_mode_common_matchers
+  let matcher =
+    of_list (StrictModeModels.is_strict_mode_violation :: List.map matcher_records ~f:of_record)
+  in
+  (matcher, High)
 
 
 let standard_matchers =
-  (* is the method called Object.wait or on subclass, without timeout or with excessive timeout ? *)
-  let is_object_wait =
-    is_call_of_class ~actuals_pred:empty_or_excessive_timeout "java.lang.Object" ["wait"]
-    |> Staged.unstage
-  in
-  (* is the method called CountDownLath.await or on subclass? *)
-  let is_countdownlatch_await =
-    is_call_of_class ~actuals_pred:empty_or_excessive_timeout "java.util.concurrent.CountDownLatch"
-      ["await"]
-    |> Staged.unstage
-  in
-  (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
-   is int-zero then a reply is expected and returned from the remote process, thus potentially
-   blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
-  let is_two_way_binder_transact =
-    let actuals_pred actuals =
-      List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero
-    in
-    is_call_of_class ~actuals_pred "android.os.IBinder" ["transact"] |> Staged.unstage
-  in
-  let is_future_get =
-    is_call_of_class ~search_superclasses:false ~actuals_pred:empty_or_excessive_timeout
-      "java.util.concurrent.Future" ["get"]
-    |> Staged.unstage
-  in
-  let is_accountManager_setUserData =
-    is_call_of_class ~search_superclasses:false "android.accounts.AccountManager" ["setUserData"]
-    |> Staged.unstage
-  in
-  let is_asyncTask_get =
-    is_call_of_class ~actuals_pred:empty_or_excessive_timeout "android.os.AsyncTask" ["get"]
-    |> Staged.unstage
-  in
-  (* consider any call to sleep as bad, even with timeouts lower than the anr limit *)
-  let is_thread_sleep = is_call_of_class "java.lang.Thread" ["sleep"] |> Staged.unstage in
+  let open MethodMatcher in
   let open StarvationDomain.Event in
-  [ (is_accountManager_setUserData, High)
-  ; (is_two_way_binder_transact, High)
-  ; (is_countdownlatch_await, High)
-  ; (is_thread_sleep, High)
-  ; (is_object_wait, High)
-  ; (is_asyncTask_get, Low)
-  ; (is_future_get, Low) ]
+  let high_sev =
+    [ {empty with classname= "java.lang.Thread"; methods= ["sleep"]}
+    ; { empty with
+        classname= "java.lang.Object"
+      ; methods= ["wait"]
+      ; actuals_pred= Some empty_or_excessive_timeout }
+    ; { empty with
+        classname= "java.util.concurrent.CountDownLatch"
+      ; methods= ["await"]
+      ; actuals_pred= Some empty_or_excessive_timeout }
+      (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
+         is int-zero then a reply is expected and returned from the remote process, thus potentially
+         blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
+    ; { empty with
+        classname= "android.os.IBinder"
+      ; methods= ["transact"]
+      ; actuals_pred=
+          Some
+            (fun actuals ->
+              List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) }
+    ; { empty with
+        classname= "android.accounts.AccountManager"
+      ; methods= ["setUserData"]
+      ; search_superclasses= Some false } ]
+  in
+  let low_sev =
+    [ { empty with
+        classname= "java.util.concurrent.Future"
+      ; methods= ["get"]
+      ; actuals_pred= Some empty_or_excessive_timeout
+      ; search_superclasses= Some false }
+    ; { empty with
+        classname= "android.os.AsyncTask"
+      ; methods= ["get"]
+      ; actuals_pred= Some empty_or_excessive_timeout } ]
+  in
+  let high_sev_matcher = List.map high_sev ~f:of_record |> of_list in
+  let low_sev_matcher = List.map low_sev ~f:of_record |> of_list in
+  [(high_sev_matcher, High); (low_sev_matcher, Low)]
 
 
 (* sort from High to Low *)
 let may_block =
   let matchers =
-    if Config.dev_android_strict_mode then strict_mode_seed_matchers
-    else if Config.starvation_strict_mode then strict_mode_matchers @ standard_matchers
+    if Config.starvation_strict_mode then strict_mode_matcher :: standard_matchers
     else standard_matchers
   in
   fun tenv pn actuals ->

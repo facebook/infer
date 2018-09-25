@@ -328,8 +328,6 @@ val default_linters : bool
 
 val dependency_mode : bool
 
-val dev_android_strict_mode : bool
-
 val developer_mode : bool
 
 val differential_filter_files : string option

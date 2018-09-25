@@ -6,11 +6,11 @@
  *)
 
 open! IStd
-open ConcurrencyModels
+open MethodMatcher
 
 (* frameworks/base/core/java/android/app/backup/BackupAgent.java *)
 let is_BackupAgent_method =
-  is_call_of_class "android.app.backup.BackupAgent"
+  call_matches "android.app.backup.BackupAgent"
     ["onRestoreFile" (* onRestoreFile(ParcelFileDescriptor,long,int,String,String,long,long) *)
     ]
   |> Staged.unstage
@@ -18,14 +18,14 @@ let is_BackupAgent_method =
 
 (* frameworks/base/core/java/android/app/DownloadManager.java *)
 let is_DownloadManager_method =
-  is_call_of_class "android.app.DownloadManager" ["rename" (* rename(Context,long,String) *)
-                                                 ]
+  call_matches "android.app.DownloadManager" ["rename" (* rename(Context,long,String) *)
+                                             ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/app/NotificationManager.java *)
 let is_NotificationManager_method =
-  is_call_of_class "android.app.NotificationManager"
+  call_matches "android.app.NotificationManager"
     ["notifyAsUser" (* notifyAsUser(String,int,Notification,UserHandle) *)
     ]
   |> Staged.unstage
@@ -33,14 +33,14 @@ let is_NotificationManager_method =
 
 (* frameworks/base/core/java/android/content/pm/ActivityInfo.java *)
 let is_ActivityInfo_method =
-  is_call_of_class "android.content.pm.ActivityInfo" ["dump" (* dump(Printer,String,int) *)
-                                                     ]
+  call_matches "android.content.pm.ActivityInfo" ["dump" (* dump(Printer,String,int) *)
+                                                 ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/content/pm/ApplicationInfo.java *)
 let is_ApplicationInfo_method =
-  is_call_of_class "android.content.pm.ApplicationInfo"
+  call_matches "android.content.pm.ApplicationInfo"
     [ "dump"
     ; (* dump(Printer,String,int) *)
       "getHiddenApiEnforcementPolicy"
@@ -53,28 +53,28 @@ let is_ApplicationInfo_method =
 
 (* frameworks/base/core/java/android/content/pm/ProviderInfo.java *)
 let is_ProviderInfo_method =
-  is_call_of_class "android.content.pm.ProviderInfo" ["dump" (* dump(Printer,String,int) *)
-                                                     ]
+  call_matches "android.content.pm.ProviderInfo" ["dump" (* dump(Printer,String,int) *)
+                                                 ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/content/pm/ResolveInfo.java *)
 let is_ResolveInfo_method =
-  is_call_of_class "android.content.pm.ResolveInfo" ["dump" (* dump(Printer,String,int) *)
-                                                    ]
+  call_matches "android.content.pm.ResolveInfo" ["dump" (* dump(Printer,String,int) *)
+                                                ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/content/pm/ServiceInfo.java *)
 let is_ServiceInfo_method =
-  is_call_of_class "android.content.pm.ServiceInfo" ["dump" (* dump(Printer,String,int) *)
-                                                    ]
+  call_matches "android.content.pm.ServiceInfo" ["dump" (* dump(Printer,String,int) *)
+                                                ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/database/sqlite/SQLiteDatabase.java *)
 let is_SQLiteDatabase_method =
-  is_call_of_class "android.database.sqlite.SQLiteDatabase"
+  call_matches "android.database.sqlite.SQLiteDatabase"
     [ "addCustomFunction"
     ; (* addCustomFunction(String,int,SQLiteDatabase$CustomFunction) *)
       "reopenReadWrite"
@@ -85,20 +85,20 @@ let is_SQLiteDatabase_method =
 
 (* frameworks/base/core/java/android/ddm/DdmHandleHeap.java *)
 let is_DdmHandleHeap_method =
-  is_call_of_class "android.ddm.DdmHandleHeap" ["handleChunk" (* handleChunk(Chunk) *)
-                                               ]
+  call_matches "android.ddm.DdmHandleHeap" ["handleChunk" (* handleChunk(Chunk) *)
+                                           ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/net/Uri.java *)
 let is_Uri_method =
-  is_call_of_class "android.net.Uri" ["getCanonicalUri" (* getCanonicalUri() *)
-                                     ] |> Staged.unstage
+  call_matches "android.net.Uri" ["getCanonicalUri" (* getCanonicalUri() *)
+                                 ] |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/os/Environment.java *)
 let is_Environment_method =
-  is_call_of_class "android.os.Environment"
+  call_matches "android.os.Environment"
     ["classifyExternalStorageDirectory" (* classifyExternalStorageDirectory(File) *)
     ]
   |> Staged.unstage
@@ -106,14 +106,14 @@ let is_Environment_method =
 
 (* frameworks/base/core/java/android/os/Parcel.java *)
 let is_Parcel_method =
-  is_call_of_class "android.os.Parcel" ["readExceptionCode" (* readExceptionCode() *)
-                                       ]
+  call_matches "android.os.Parcel" ["readExceptionCode" (* readExceptionCode() *)
+                                   ]
   |> Staged.unstage
 
 
 (* frameworks/base/core/java/android/os/RecoverySystem.java *)
 let is_RecoverySystem_method =
-  is_call_of_class "android.os.RecoverySystem"
+  call_matches "android.os.RecoverySystem"
     [ "handleAftermath"
     ; (* handleAftermath(Context) *)
       "rebootPromptAndWipeUserData"
@@ -134,7 +134,7 @@ let is_RecoverySystem_method =
 
 (* frameworks/base/core/java/android/os/storage/StorageManager.java *)
 let is_StorageManager_method =
-  is_call_of_class "android.os.storage.StorageManager"
+  call_matches "android.os.storage.StorageManager"
     [ "getPrimaryStoragePathAndSize"
     ; (* getPrimaryStoragePathAndSize() *)
       "getPrimaryStorageSize"
@@ -151,7 +151,7 @@ let is_StorageManager_method =
 
 (* frameworks/base/core/java/android/os/StrictMode.java *)
 let is_StrictMode_method =
-  is_call_of_class "android.os.StrictMode"
+  call_matches "android.os.StrictMode"
     [ "conditionallyCheckInstanceCounts"
     ; (* conditionallyCheckInstanceCounts() *)
       "decrementExpectedActivityCount"
@@ -172,7 +172,7 @@ let is_StrictMode_method =
 
 (* frameworks/base/core/java/android/util/AtomicFile.java *)
 let is_AtomicFile_method =
-  is_call_of_class "android.util.AtomicFile"
+  call_matches "android.util.AtomicFile"
     ["getLastModifiedTime"; (* getLastModifiedTime() *) "startWrite" (* startWrite(long) *)
     ]
   |> Staged.unstage
@@ -180,7 +180,7 @@ let is_AtomicFile_method =
 
 (* frameworks/base/core/java/android/webkit/WebViewFactory.java *)
 let is_WebViewFactory_method =
-  is_call_of_class "android.webkit.WebViewFactory"
+  call_matches "android.webkit.WebViewFactory"
     ["onWebViewProviderChanged" (* onWebViewProviderChanged(PackageInfo) *)
     ]
   |> Staged.unstage
@@ -188,7 +188,7 @@ let is_WebViewFactory_method =
 
 (* frameworks/base/core/java/android/webkit/WebViewLibraryLoader.java *)
 let is_WebViewLibraryLoader_method =
-  is_call_of_class "android.webkit.WebViewLibraryLoader"
+  call_matches "android.webkit.WebViewLibraryLoader"
     ["getWebViewNativeLibrary" (* getWebViewNativeLibrary(PackageInfo,boolean) *)
     ]
   |> Staged.unstage
@@ -196,7 +196,7 @@ let is_WebViewLibraryLoader_method =
 
 (* frameworks/base/media/java/android/media/MiniThumbFile.java *)
 let is_MiniThumbFile_method =
-  is_call_of_class "android.media.MiniThumbFile"
+  call_matches "android.media.MiniThumbFile"
     [ "eraseMiniThumb"
     ; (* eraseMiniThumb(long) *)
       "getMagic"
@@ -211,7 +211,7 @@ let is_MiniThumbFile_method =
 
 (* frameworks/base/media/java/android/media/RingtoneManager.java *)
 let is_RingtoneManager_method =
-  is_call_of_class "android.media.RingtoneManager"
+  call_matches "android.media.RingtoneManager"
     ["deleteExternalRingtone" (* deleteExternalRingtone(Uri) *)
     ]
   |> Staged.unstage
@@ -219,7 +219,7 @@ let is_RingtoneManager_method =
 
 (* frameworks/multidex/library/src/androidx/multidex/MultiDex.java *)
 let is_MultiDex_method =
-  is_call_of_class "androidx.multidex.MultiDex"
+  call_matches "androidx.multidex.MultiDex"
     [ "install"
     ; (* install(Context) *)
       "installInstrumentation"
@@ -230,8 +230,8 @@ let is_MultiDex_method =
 
 (* libcore/ojluni/src/main/java/java/util/logging/FileHandler.java *)
 let is_FileHandler_method =
-  is_call_of_class "java.util.logging.FileHandler" ["run" (* run() *)
-                                                   ] |> Staged.unstage
+  call_matches "java.util.logging.FileHandler" ["run" (* run() *)
+                                               ] |> Staged.unstage
 
 
 let is_strict_mode_violation =
