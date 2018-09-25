@@ -1095,12 +1095,6 @@ INTERNAL OPTIONS
            Debug level for the test determinator. See --debug-level for
            accepted values. (default: 0)
 
-       --dev-android-strict-mode
-           Activates: Developer mode for starvation analysis, only for use on
-           android implementation sources; detects methods in the Android
-           library core which throw strict mode violation exceptions
-           (Conversely: --no-dev-android-strict-mode)
-
        --developer-mode
            Activates: Show internal exceptions (Conversely:
            --no-developer-mode)
