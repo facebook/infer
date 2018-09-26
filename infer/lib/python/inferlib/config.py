@@ -57,21 +57,3 @@ TRASH = '.trash'
 BUCK_OUT_TRASH = os.path.join(BUCK_OUT, TRASH)
 
 BUCK_OUT_GEN = os.path.join(BUCK_OUT, 'gen')
-
-
-# list of possible analyzers
-ANALYZER_INFER = 'infer'
-ANALYZER_CHECKERS = 'checkers'
-ANALYZER_CAPTURE = 'capture'
-ANALYZER_COMPILE = 'compile'
-ANALYZER_CRASHCONTEXT = 'crashcontext'
-ANALYZER_LINTERS = 'linters'
-
-ANALYZERS = [
-    ANALYZER_CAPTURE,
-    ANALYZER_CHECKERS,
-    ANALYZER_COMPILE,
-    ANALYZER_CRASHCONTEXT,
-    ANALYZER_INFER,
-    ANALYZER_LINTERS,
-]
