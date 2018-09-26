@@ -54,35 +54,6 @@ OPTIONS
        supported options. The following is a list of all the supported
        options (see also --help-full for options reserved for internal use).
 
-       --analyzer,-a { checkers | infer | capture | compile | crashcontext |
-       linters }
-           Specify which analyzer to run (only one at a time is supported):       
-    - biabduction: run the bi-abduction based checker only, in
-           particular to check for memory errors
-           - checkers: run the default checkers, including the bi-abduction
-           based checker for memory errors (default)
-           - infer: alias for biabduction
-           - linters: run linters based on the ast only (clang only,
-           activated by default)
-           - capture: similar to specifying the capture subcommand
-           (DEPRECATED)
-           - compile: similar to specifying the compile subcommand
-           (DEPRECATED)
-           - crashcontext: experimental (see --crashcontext)
-           See also infer-analyze(1) and infer-run(1).
-
-       --<analyzer>-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)           See also infer-report(1) and infer-run(1).
-
-       --<analyzer>-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)           See also infer-report(1) and infer-run(1).
-
-       --<analyzer>-suppress-errors +error_name
-           do not report a type of errors           See also infer-report(1) and infer-run(1).
-
        --no-annotation-reachability
            Deactivates: the annotation reachability checker. Given a pair of
            source and sink annotation, e.g. @PerformanceCritical and
@@ -726,6 +697,15 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)           See also infer-analyze(1) and infer-run(1).
 
+       --report-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)           See also infer-report(1) and infer-run(1).
+
+       --report-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)           See also infer-report(1) and infer-run(1).
+
        --report-current path
            report of the latest revision           See also infer-reportdiff(1).
 
@@ -741,6 +721,9 @@ OPTIONS
 
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
+
+       --report-suppress-errors +error_name
+           do not report a type of errors           See also infer-report(1) and infer-run(1).
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
@@ -921,21 +904,6 @@ INTERNAL OPTIONS
            Activates: Issue a warning when the analysis stops (Conversely:
            --no-analysis-stops)
 
-       --<analyzer>-blacklist-files-containing-reset
-           Set --<analyzer>-blacklist-files-containing to the empty list.
-
-       --<analyzer>-blacklist-path-regex-reset
-           Set --<analyzer>-blacklist-path-regex to the empty list.
-
-       --analyzer-reset
-           Cancel the effect of --analyzer.
-
-       --<analyzer>-suppress-errors-reset
-           Set --<analyzer>-suppress-errors to the empty list.
-
-       --<analyzer>-whitelist-path-regex-reset
-           Set --<analyzer>-whitelist-path-regex to the empty list.
-
        --append-buck-flavors-reset
            Set --append-buck-flavors to the empty list.
 
@@ -976,20 +944,8 @@ INTERNAL OPTIONS
            Deactivates: capture and translate source files into infer's
            intermediate language for analysis (Conversely: --capture)
 
-       --capture-blacklist-files-containing-reset
-           Set --capture-blacklist-files-containing to the empty list.
-
-       --capture-blacklist-path-regex-reset
-           Set --capture-blacklist-path-regex to the empty list.
-
        --capture-blacklist-reset
            Cancel the effect of --capture-blacklist.
-
-       --capture-suppress-errors-reset
-           Set --capture-suppress-errors to the empty list.
-
-       --capture-whitelist-path-regex-reset
-           Set --capture-whitelist-path-regex to the empty list.
 
        --changed-files-index-reset
            Cancel the effect of --changed-files-index.
@@ -999,18 +955,6 @@ INTERNAL OPTIONS
 
        --check-version-reset
            Cancel the effect of --check-version.
-
-       --checkers-blacklist-files-containing-reset
-           Set --checkers-blacklist-files-containing to the empty list.
-
-       --checkers-blacklist-path-regex-reset
-           Set --checkers-blacklist-path-regex to the empty list.
-
-       --checkers-suppress-errors-reset
-           Set --checkers-suppress-errors to the empty list.
-
-       --checkers-whitelist-path-regex-reset
-           Set --checkers-whitelist-path-regex to the empty list.
 
        --clang-biniou-file-reset
            Cancel the effect of --clang-biniou-file.
@@ -1046,18 +990,6 @@ INTERNAL OPTIONS
        --compilation-database-reset
            Set --compilation-database to the empty list.
 
-       --compile-blacklist-files-containing-reset
-           Set --compile-blacklist-files-containing to the empty list.
-
-       --compile-blacklist-path-regex-reset
-           Set --compile-blacklist-path-regex to the empty list.
-
-       --compile-suppress-errors-reset
-           Set --compile-suppress-errors to the empty list.
-
-       --compile-whitelist-path-regex-reset
-           Set --compile-whitelist-path-regex to the empty list.
-
        --costs-current-reset
            Cancel the effect of --costs-current.
 
@@ -1066,18 +998,6 @@ INTERNAL OPTIONS
 
        --coverage
            analysis mode to maximize coverage (can take longer)
-
-       --crashcontext-blacklist-files-containing-reset
-           Set --crashcontext-blacklist-files-containing to the empty list.
-
-       --crashcontext-blacklist-path-regex-reset
-           Set --crashcontext-blacklist-path-regex to the empty list.
-
-       --crashcontext-suppress-errors-reset
-           Set --crashcontext-suppress-errors to the empty list.
-
-       --crashcontext-whitelist-path-regex-reset
-           Set --crashcontext-whitelist-path-regex to the empty list.
 
        --current-to-previous-script-reset
            Cancel the effect of --current-to-previous-script.
@@ -1205,18 +1125,6 @@ INTERNAL OPTIONS
            Deactivates: Ignore traces whose length is at most 1 (Conversely:
            --ignore-trivial-traces)
 
-       --infer-blacklist-files-containing-reset
-           Set --infer-blacklist-files-containing to the empty list.
-
-       --infer-blacklist-path-regex-reset
-           Set --infer-blacklist-path-regex to the empty list.
-
-       --infer-suppress-errors-reset
-           Set --infer-suppress-errors to the empty list.
-
-       --infer-whitelist-path-regex-reset
-           Set --infer-whitelist-path-regex to the empty list.
-
        --invariant-by-default
            Activates: [Cost]Consider functions to be invariant by default
            (Conversely: --no-invariant-by-default)
@@ -1256,12 +1164,6 @@ INTERNAL OPTIONS
        --linter-reset
            Cancel the effect of --linter.
 
-       --linters-blacklist-files-containing-reset
-           Set --linters-blacklist-files-containing to the empty list.
-
-       --linters-blacklist-path-regex-reset
-           Set --linters-blacklist-path-regex to the empty list.
-
        --linters-def-file-reset
            Set --linters-def-file to the empty list.
 
@@ -1270,12 +1172,6 @@ INTERNAL OPTIONS
 
        --linters-doc-url-reset
            Set --linters-doc-url to the empty list.
-
-       --linters-suppress-errors-reset
-           Set --linters-suppress-errors to the empty list.
-
-       --linters-whitelist-path-regex-reset
-           Set --linters-whitelist-path-regex to the empty list.
 
        --load-average-reset
            Cancel the effect of --load-average.
@@ -1404,6 +1300,12 @@ INTERNAL OPTIONS
        --reanalyze
            Activates: Rerun the analysis (Conversely: --no-reanalyze)
 
+       --report-blacklist-files-containing-reset
+           Set --report-blacklist-files-containing to the empty list.
+
+       --report-blacklist-path-regex-reset
+           Set --report-blacklist-path-regex to the empty list.
+
        --report-current-reset
            Cancel the effect of --report-current.
 
@@ -1412,6 +1314,12 @@ INTERNAL OPTIONS
 
        --report-previous-reset
            Cancel the effect of --report-previous.
+
+       --report-suppress-errors-reset
+           Set --report-suppress-errors to the empty list.
+
+       --report-whitelist-path-regex-reset
+           Set --report-whitelist-path-regex to the empty list.
 
        --reports-include-ml-loc
            Activates: Include the location in the Infer source code from

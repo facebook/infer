@@ -11,13 +11,6 @@ open! IStd
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
 
-type analyzer = CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters
-
-val string_to_analyzer : (string * analyzer) list
-(** Association list of analyzers and their names *)
-
-val string_of_analyzer : analyzer -> string
-
 type os_type = Unix | Win32 | Cygwin
 
 type compilation_database_dependencies =
@@ -220,17 +213,15 @@ val abs_val : int
 
 val allow_leak : bool
 
-val analysis_path_regex_whitelist : analyzer -> string list
+val analysis_path_regex_whitelist : string list
 
-val analysis_path_regex_blacklist : analyzer -> string list
+val analysis_path_regex_blacklist : string list
 
-val analysis_blacklist_files_containing : analyzer -> string list
+val analysis_blacklist_files_containing : string list
 
 val analysis_stops : bool
 
-val analysis_suppress_errors : analyzer -> string list
-
-val analyzer : analyzer
+val analysis_suppress_errors : string list
 
 val annotation_reachability : bool
 

@@ -18,7 +18,7 @@ type proc_filter = Typ.Procname.t -> bool
 
 type filters = {path_filter: path_filter; error_filter: error_filter; proc_filter: proc_filter}
 
-val create_filters : Config.analyzer -> filters
+val create_filters : unit -> filters
 (** Create filters based on the config file *)
 
 val never_return_null_matcher : SourceFile.t -> Typ.Procname.t -> bool

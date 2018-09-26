@@ -15,18 +15,6 @@ DESCRIPTION
 
 
 OPTIONS
-       --<analyzer>-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)
-
-       --<analyzer>-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)
-
-       --<analyzer>-suppress-errors +error_name
-           do not report a type of errors
-
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --no-filtering, --print-buckets, --print-types,
@@ -149,9 +137,21 @@ OPTIONS
            Activates: Do not print specs on standard output (default: only
            print for the report command) (Conversely: --no-quiet | -Q)
 
+       --report-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)
+
+       --report-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)
+
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report (default:
            phabricator)
+
+       --report-suppress-errors +error_name
+           do not report a type of errors
 
        --results-dir,-o dir
            Write results and internal files in the specified directory

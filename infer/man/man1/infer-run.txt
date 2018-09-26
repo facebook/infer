@@ -16,34 +16,6 @@ DESCRIPTION
 
 
 OPTIONS
-       --analyzer,-a { checkers | infer | capture | compile | crashcontext |
-       linters }
-           Specify which analyzer to run (only one at a time is supported):       
-    - biabduction: run the bi-abduction based checker only, in
-           particular to check for memory errors
-           - checkers: run the default checkers, including the bi-abduction
-           based checker for memory errors (default)
-           - infer: alias for biabduction
-           - linters: run linters based on the ast only (clang only,
-           activated by default)
-           - capture: similar to specifying the capture subcommand
-           (DEPRECATED)
-           - compile: similar to specifying the compile subcommand
-           (DEPRECATED)
-           - crashcontext: experimental (see --crashcontext)
-
-       --<analyzer>-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)
-
-       --<analyzer>-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)
-
-       --<analyzer>-suppress-errors +error_name
-           do not report a type of errors
-
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --no-filtering, --print-buckets, --print-types,
@@ -139,11 +111,23 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)
 
+       --report-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)
+
+       --report-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)
+
        --report-hook script
            Specify a script to be executed after the analysis results are
            written. This script will be passed, --issues-json, --issues-txt,
            --issues-xml, --project-root, and --results-dir. (default: <infer
            installation directory>/lib/python/report.py)
+
+       --report-suppress-errors +error_name
+           do not report a type of errors
 
        --results-dir,-o dir
            Write results and internal files in the specified directory

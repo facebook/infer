@@ -16,22 +16,12 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters
-[@@deriving compare]
+type analyzer = Checkers | Crashcontext | Linters [@@deriving compare]
 
 let equal_analyzer = [%compare.equal: analyzer]
 
 let string_to_analyzer =
-  [ ("checkers", Checkers)
-  ; ("infer", Checkers)
-  ; ("capture", CaptureOnly)
-  ; ("compile", CompileOnly)
-  ; ("crashcontext", Crashcontext)
-  ; ("linters", Linters) ]
-
-
-let string_of_analyzer a =
-  List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
+  [("checkers", Checkers); ("crashcontext", Crashcontext); ("linters", Linters)]
 
 
 let clang_frontend_action_symbols =
@@ -551,62 +541,32 @@ and allow_leak =
   CLOpt.mk_bool ~deprecated:["leak"] ~long:"allow-leak" "Forget leaked memory during abstraction"
 
 
-and ( analysis_blacklist_files_containing_options
-    , analysis_path_regex_blacklist_options
-    , analysis_path_regex_whitelist_options
-    , analysis_suppress_errors_options ) =
-  let mk_filtering_options ~suffix ?(deprecated_suffix = []) ~help ~meta =
-    (* reuse the same config var for all the forms of the analyzer name (eg infer and biabduction
-       must map to the same filtering config)*)
-    let config_vars = ref [] in
-    let mk_option analyzer analyzer_name =
-      let long = Printf.sprintf "%s-%s" analyzer_name suffix in
-      let deprecated = List.map ~f:(Printf.sprintf "%s_%s" analyzer_name) deprecated_suffix in
-      let source_of_truth =
-        List.find_map !config_vars ~f:(fun (a, v) ->
-            if equal_analyzer a analyzer then Some v else None )
-      in
-      (* if the analyzer already has a variable associated to it, make the new name update the same
-         variable *)
-      let mirror opt =
-        Option.iter source_of_truth ~f:(fun var -> var := opt :: !var) ;
-        opt
-      in
-      (* empty doc to hide the options from --help since there are many redundant ones *)
-      let var = CLOpt.mk_string_list ~deprecated ~long ~meta ~f:mirror "" in
-      match source_of_truth with
-      | Some var ->
-          (* if the analyzer already has a variable associated to it, use it *)
-          var
-      | None ->
-          (* record the variable associated to the analyzer if this is the first time we see this
-             analyzer *)
-          config_vars := (analyzer, var) :: !config_vars ;
-          var
+and ( analysis_blacklist_files_containing
+    , analysis_path_regex_blacklist
+    , analysis_path_regex_whitelist
+    , analysis_suppress_errors ) =
+  let mk_filtering_option ~suffix ~help ~meta =
+    let deprecated =
+      List.map ["checkers"; "infer"] ~f:(fun name -> Printf.sprintf "%s-%s" name suffix)
     in
-    ignore
-      (let long = "<analyzer>-" ^ suffix in
-       CLOpt.mk_string_list ~long ~meta
-         ~f:(fun _ -> raise (Arg.Bad "invalid option"))
-         ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
-         help) ;
-    List.map ~f:(fun (name, analyzer) -> (analyzer, mk_option analyzer name)) string_to_analyzer
+    let long = Printf.sprintf "report-%s" suffix in
+    CLOpt.mk_string_list ~deprecated ~long ~meta
+      ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+      help
   in
-  ( mk_filtering_options ~suffix:"blacklist-files-containing"
-      ~deprecated_suffix:["blacklist_files_containing"]
+  ( mk_filtering_option ~suffix:"blacklist-files-containing"
       ~help:
         "blacklist files containing the specified string for the given analyzer (see \
          $(b,--analyzer) for valid values)"
       ~meta:"string"
-  , mk_filtering_options ~suffix:"blacklist-path-regex" ~deprecated_suffix:["blacklist"]
+  , mk_filtering_option ~suffix:"blacklist-path-regex"
       ~help:
         "blacklist the analysis of files whose relative path matches the specified OCaml-style \
          regex (to whitelist: $(b,--<analyzer>-whitelist-path-regex))"
       ~meta:"path_regex"
-  , mk_filtering_options ~suffix:"whitelist-path-regex" ~deprecated_suffix:["whitelist"] ~help:""
-      ~meta:"path_regex"
-  , mk_filtering_options ~suffix:"suppress-errors" ~deprecated_suffix:["suppress_errors"]
-      ~help:"do not report a type of errors" ~meta:"error_name" )
+  , mk_filtering_option ~suffix:"whitelist-path-regex" ~help:"" ~meta:"path_regex"
+  , mk_filtering_option ~suffix:"suppress-errors" ~help:"do not report a type of errors"
+      ~meta:"error_name" )
 
 
 and analysis_stops =
@@ -615,38 +575,10 @@ and analysis_stops =
 
 
 and analyzer =
-  let () =
-    match Checkers with
-    (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
-       documentation of this option *)
-    | CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters ->
-        ()
-  in
-  CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
-    ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
-    {|Specify which analyzer to run (only one at a time is supported):
-- $(b,biabduction): run the bi-abduction based checker only, in particular to check for memory errors
-- $(b,checkers): run the default checkers, including the bi-abduction based checker for memory errors (default)
-- $(b,infer): alias for $(b,biabduction)
-- $(b,linters): run linters based on the ast only (clang only, activated by default)
-- $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)
-- $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
-- $(b,crashcontext): experimental (see $(b,--crashcontext))|}
-    ~f:(function
-      | (CaptureOnly | CompileOnly) as x ->
-          let analyzer_str =
-            List.find_map_exn string_to_analyzer ~f:(fun (s, y) ->
-                if equal_analyzer x y then Some s else None )
-          in
-          CLOpt.warnf
-            "WARNING: The analyzer '%s' is deprecated, use the '%s' subcommand instead:@\n\
-             @\n  \
-             infer %s ..."
-            analyzer_str analyzer_str analyzer_str ;
-          x
-      | _ as x ->
-          x)
-    ~symbols:string_to_analyzer
+  CLOpt.mk_symbol ~deprecated:["analyzer"; "-analyzer"; "a"] ~long:"" ~default:Checkers
+    ~eq:equal_analyzer ~symbols:string_to_analyzer
+    "DEPRECATED: To enable and disable individual analyses, use the various checkers options. For \
+     instance, to enable only the biabduction analysis, run with $(b,--biabduction-only)."
 
 
 and ( annotation_reachability
@@ -2320,11 +2252,6 @@ let post_parsing_initialization command_opt =
       print_endline version_string ; prerr_endline version_string
   | `Javac when !buck ->
       (* print buck key *)
-      let analyzer_name =
-        List.Assoc.find_exn ~equal:equal_analyzer
-          (List.map ~f:(fun (n, a) -> (a, n)) string_to_analyzer)
-          (match !analyzer with Some a -> a | None -> Checkers)
-      in
       let infer_version =
         match inferconfig_file with
         | Some inferconfig ->
@@ -2333,8 +2260,8 @@ let post_parsing_initialization command_opt =
         | None ->
             Version.commit
       in
-      F.printf "%s/%s@." analyzer_name infer_version ;
-      F.eprintf "%s/%s@." analyzer_name infer_version
+      F.printf "infer/%s@." infer_version ;
+      F.eprintf "infer/%s@." infer_version
   | `Full ->
       print_endline version_string
   | `Javac ->
@@ -2421,23 +2348,15 @@ let post_parsing_initialization command_opt =
   (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then linters := true ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
-  ( if Option.is_none !analyzer then
-    match (command_opt : InferCommand.t option) with
-    | Some Compile ->
-        analyzer := Some CompileOnly
-    | Some Capture ->
-        analyzer := Some CaptureOnly
-    | _ ->
-        () ) ;
   ( match !analyzer with
-  | Some Crashcontext ->
+  | Crashcontext ->
       disable_all_checkers () ;
       crashcontext := true
-  | Some Linters ->
+  | Linters ->
       disable_all_checkers () ;
       capture := false ;
       linters := true
-  | Some (CaptureOnly | Checkers | CompileOnly) | None ->
+  | Checkers ->
       () ) ;
   Option.value ~default:InferCommand.Run command_opt
 
@@ -2495,21 +2414,13 @@ and abs_val = !abs_val
 
 and allow_leak = !allow_leak
 
-and analysis_path_regex_whitelist_options =
-  List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
+and analysis_path_regex_whitelist = !analysis_path_regex_whitelist
 
+and analysis_path_regex_blacklist = !analysis_path_regex_blacklist
 
-and analysis_path_regex_blacklist_options =
-  List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_blacklist_options
+and analysis_blacklist_files_containing = !analysis_blacklist_files_containing
 
-
-and analysis_blacklist_files_containing_options =
-  List.map ~f:(fun (a, b) -> (a, !b)) analysis_blacklist_files_containing_options
-
-
-and analysis_suppress_errors_options =
-  List.map ~f:(fun (a, b) -> (a, !b)) analysis_suppress_errors_options
-
+and analysis_suppress_errors = !analysis_suppress_errors
 
 and analysis_stops = !analysis_stops
 
@@ -3012,25 +2923,7 @@ and xcpretty = !xcpretty
 
 (** Configuration values derived from command-line options *)
 
-let analysis_path_regex_whitelist analyzer =
-  List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_whitelist_options analyzer
-
-
-and analysis_path_regex_blacklist analyzer =
-  List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_blacklist_options analyzer
-
-
-and analysis_blacklist_files_containing analyzer =
-  List.Assoc.find_exn ~equal:equal_analyzer analysis_blacklist_files_containing_options analyzer
-
-
-and analysis_suppress_errors analyzer =
-  List.Assoc.find_exn ~equal:equal_analyzer analysis_suppress_errors_options analyzer
-
-
 let captured_dir = results_dir ^/ captured_dir_name
-
-let analyzer = match !analyzer with Some a -> a | None -> Checkers
 
 let clang_frontend_action_string =
   String.concat ~sep:" and "

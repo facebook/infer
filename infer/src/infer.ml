@@ -57,9 +57,6 @@ let setup () =
 
 let print_active_checkers () =
   (if Config.print_active_checkers && CLOpt.is_originator then L.result else L.environment_info)
-    "Analyzer: %s@."
-    Config.(string_of_analyzer analyzer) ;
-  (if Config.print_active_checkers && CLOpt.is_originator then L.result else L.environment_info)
     "Active checkers: %a@."
     (Pp.seq ~sep:", " RegisterCheckers.pp_checker)
     (RegisterCheckers.get_active_checkers ())

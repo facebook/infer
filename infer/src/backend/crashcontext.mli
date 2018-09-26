@@ -35,7 +35,7 @@ val crashcontext_epilogue : in_buck_mode:bool -> unit
    Runs crashcontext epilogue code, which takes the per-method summaries
    produced by crashcontext related analysis (future: analyses) and stitches
    them together into a final crashcontext.json output file.
-   This code should run after all checkers when running with '-a crashcontext'.
+   This code should run after all checkers when running with '--crashcontext'.
    When running with buck, summaries are stitched across multiple buck targets,
    so this runs at the end of the parent buck infer process only.
    TODO: Similar integration with build systems other than buck.

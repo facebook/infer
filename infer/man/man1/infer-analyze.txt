@@ -13,22 +13,6 @@ DESCRIPTION
 
 
 OPTIONS
-       --analyzer,-a { checkers | infer | capture | compile | crashcontext |
-       linters }
-           Specify which analyzer to run (only one at a time is supported):       
-    - biabduction: run the bi-abduction based checker only, in
-           particular to check for memory errors
-           - checkers: run the default checkers, including the bi-abduction
-           based checker for memory errors (default)
-           - infer: alias for biabduction
-           - linters: run linters based on the ast only (clang only,
-           activated by default)
-           - capture: similar to specifying the capture subcommand
-           (DEPRECATED)
-           - compile: similar to specifying the compile subcommand
-           (DEPRECATED)
-           - crashcontext: experimental (see --crashcontext)
-
        --no-annotation-reachability
            Deactivates: the annotation reachability checker. Given a pair of
            source and sink annotation, e.g. @PerformanceCritical and

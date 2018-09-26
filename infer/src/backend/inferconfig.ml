@@ -288,11 +288,11 @@ let skip_implementation_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_implementation)
 
 
-let load_filters analyzer =
-  { whitelist= Config.analysis_path_regex_whitelist analyzer
-  ; blacklist= Config.analysis_path_regex_blacklist analyzer
-  ; blacklist_files_containing= Config.analysis_blacklist_files_containing analyzer
-  ; suppress_errors= Config.analysis_suppress_errors analyzer }
+let load_filters () =
+  { whitelist= Config.analysis_path_regex_whitelist
+  ; blacklist= Config.analysis_path_regex_blacklist
+  ; blacklist_files_containing= Config.analysis_blacklist_files_containing
+  ; suppress_errors= Config.analysis_suppress_errors }
 
 
 let filters_from_inferconfig inferconfig : filters =
@@ -321,32 +321,20 @@ let filters_from_inferconfig inferconfig : filters =
   {path_filter; error_filter; proc_filter= default_proc_filter}
 
 
-(* Create filters based on .inferconfig *)
-let create_filters analyzer =
-  if not Config.filter_paths then do_not_filter
-  else filters_from_inferconfig (load_filters analyzer)
+(* Create filters based on configuration options *)
+let create_filters () =
+  if not Config.filter_paths then do_not_filter else filters_from_inferconfig (load_filters ())
 
 
-(* This function loads and list the path that are being filtered by the analyzer. The results *)
-(* are of the form: path/to/file.java -> {infer, checkers} meaning that analysis results will *)
-(* be reported on path/to/file.java both for infer and for the checkers *)
+(** This function loads and list the path that are being filtered by the analyzer. The results are
+   of the form: path/to/file.java -> true/false meaning that analysis results will be reported on
+   path/to/file.java or not *)
 let test () =
-  let filters =
-    List.map
-      ~f:(fun (name, analyzer) -> (name, analyzer, create_filters analyzer))
-      Config.string_to_analyzer
-  in
-  let matching_analyzers path =
-    List.fold
-      ~f:(fun l (n, a, f) -> if f.path_filter path then (n, a) :: l else l)
-      ~init:[] filters
-  in
-  Utils.directory_iter
-    (fun path ->
-      if DB.is_source_file path then
-        let source_file = SourceFile.from_abs_path path in
-        let matching = matching_analyzers source_file in
-        if matching <> [] then
-          let matching_s = String.concat ~sep:", " (List.map ~f:fst matching) in
-          L.result "%s -> {%s}@." (SourceFile.to_rel_path source_file) matching_s )
-    (Sys.getcwd ())
+  let filters = create_filters () in
+  let matches path = filters.path_filter path in
+  Sys.getcwd ()
+  |> Utils.directory_iter (fun path ->
+         if DB.is_source_file path then
+           let source_file = SourceFile.from_abs_path path in
+           let matching = matches source_file in
+           L.result "%s -> %b@." (SourceFile.to_rel_path source_file) matching )

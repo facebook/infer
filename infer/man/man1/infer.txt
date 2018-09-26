@@ -54,35 +54,6 @@ OPTIONS
        supported options. The following is a list of all the supported
        options (see also --help-full for options reserved for internal use).
 
-       --analyzer,-a { checkers | infer | capture | compile | crashcontext |
-       linters }
-           Specify which analyzer to run (only one at a time is supported):       
-    - biabduction: run the bi-abduction based checker only, in
-           particular to check for memory errors
-           - checkers: run the default checkers, including the bi-abduction
-           based checker for memory errors (default)
-           - infer: alias for biabduction
-           - linters: run linters based on the ast only (clang only,
-           activated by default)
-           - capture: similar to specifying the capture subcommand
-           (DEPRECATED)
-           - compile: similar to specifying the compile subcommand
-           (DEPRECATED)
-           - crashcontext: experimental (see --crashcontext)
-           See also infer-analyze(1) and infer-run(1).
-
-       --<analyzer>-blacklist-files-containing +string
-           blacklist files containing the specified string for the given
-           analyzer (see --analyzer for valid values)           See also infer-report(1) and infer-run(1).
-
-       --<analyzer>-blacklist-path-regex +path_regex
-           blacklist the analysis of files whose relative path matches the
-           specified OCaml-style regex (to whitelist:
-           --<analyzer>-whitelist-path-regex)           See also infer-report(1) and infer-run(1).
-
-       --<analyzer>-suppress-errors +error_name
-           do not report a type of errors           See also infer-report(1) and infer-run(1).
-
        --no-annotation-reachability
            Deactivates: the annotation reachability checker. Given a pair of
            source and sink annotation, e.g. @PerformanceCritical and
@@ -726,6 +697,15 @@ OPTIONS
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)           See also infer-analyze(1) and infer-run(1).
 
+       --report-blacklist-files-containing +string
+           blacklist files containing the specified string for the given
+           analyzer (see --analyzer for valid values)           See also infer-report(1) and infer-run(1).
+
+       --report-blacklist-path-regex +path_regex
+           blacklist the analysis of files whose relative path matches the
+           specified OCaml-style regex (to whitelist:
+           --<analyzer>-whitelist-path-regex)           See also infer-report(1) and infer-run(1).
+
        --report-current path
            report of the latest revision           See also infer-reportdiff(1).
 
@@ -741,6 +721,9 @@ OPTIONS
 
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
+
+       --report-suppress-errors +error_name
+           do not report a type of errors           See also infer-report(1) and infer-run(1).
 
        --results-dir,-o dir
            Write results and internal files in the specified directory

@@ -1030,7 +1030,7 @@ let finalize_and_close_files format_list_by_kind (stats : Stats.t) =
 let pp_summary_and_issues formats_by_report_kind issue_formats =
   let stats = Stats.create () in
   let linereader = Printer.LineReader.create () in
-  let filters = Inferconfig.create_filters Config.analyzer in
+  let filters = Inferconfig.create_filters () in
   let iterate_summaries = get_summary_iterator () in
   let all_issues = ref [] in
   iterate_summaries (fun summary ->

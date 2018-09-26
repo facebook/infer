@@ -11,7 +11,7 @@
       "method": "get"
     }
   ],
-  "checkers-blacklist-files-containing": [
+  "report-blacklist-files-containing": [
     "@generated"
   ],
   "skip-translation": [
