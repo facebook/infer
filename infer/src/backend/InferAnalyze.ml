@@ -60,11 +60,7 @@ let source_file_should_be_analyzed ~changed_files source_file =
 
 
 let register_active_checkers () =
-  match Config.analyzer with
-  | Checkers | Crashcontext ->
-      RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
-  | CaptureOnly | CompileOnly | Linters ->
-      ()
+  RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
 
 
 let main ~changed_files =
