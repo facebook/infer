@@ -100,4 +100,14 @@ public class ParameterNotNullable {
       this(3, null); // NPE
     }
   }
+
+  void indirectSignatureLookup_FP(SomeClass c) {
+    c.acceptsNullableParameter(null);
+  }
 }
+
+interface SomeInterface {
+  void acceptsNullableParameter(@Nullable Object object);
+}
+
+abstract class SomeClass implements SomeInterface {}
