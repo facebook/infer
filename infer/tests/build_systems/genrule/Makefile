@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = infer
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 INFER_TARGET = $(BUCK_TARGET)_infer
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
@@ -41,5 +40,5 @@ report.json: $(JSON_REPORT) $(MAKEFILE_LIST)
 	$(QUIET)sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@
 
 issues.exp.test$(TEST_SUFFIX): report.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) \
+	$(QUIET)$(INFER_BIN) report -q \
 	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<

@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 CLANG_OPTIONS = -c
 INFER_OPTIONS = \
   --biabduction-only --report-custom-error --developer-mode --no-filtering --debug-exceptions \

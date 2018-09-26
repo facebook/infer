@@ -7,8 +7,6 @@ TESTS_DIR = ../..
 
 include $(TESTS_DIR)/base.make
 
-ANALYZER = checkers
-
 CODETOANALYZE_DIR = ../codetoanalyze
 
 CLANG_OPTIONS = -c

@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/lib__module2__output/module2.jar
@@ -28,5 +27,5 @@ infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java integration,\
 	INFER_BIN=$(INFER_BIN) \
-	$(INFER_BIN) $(INFER_OPTIONS) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --deep --no-cache $(BUCK_TARGET))

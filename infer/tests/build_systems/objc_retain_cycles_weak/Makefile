@@ -7,7 +7,6 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles_weak
 
-ANALYZER = checkers
 SOURCES = $(CODETOANALYZE_DIR)/TimeSpent.m $(CODETOANALYZE_DIR)/AnalyticsTimeSpent.m $(CODETOANALYZE_DIR)/ListAdapter.m
 OBJECTS = $(CODETOANALYZE_DIR)/TimeSpent.o $(CODETOANALYZE_DIR)/AnalyticsTimeSpent.o $(CODETOANALYZE_DIR)/ListAdapter.o
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc

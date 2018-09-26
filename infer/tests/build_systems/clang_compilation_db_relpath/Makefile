@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
 INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = \
   ../codetoanalyze/hello.c ../codetoanalyze/hello2.c ../codetoanalyze/hello3.c \
@@ -31,5 +30,5 @@ compile_commands.json: compile_commands.json.in
 infer-out/report.json: compile_commands.json $(SOURCES) Makefile \
                        ../codetoanalyze/path\ with\ spaces/hel\ lo.c $(CLANG_DEPS)
 	$(QUIET)$(call silent_on_success,Clang compilation database with relative paths integration,\
-	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
+	  $(INFER_BIN) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
 	  --compilation-database $<)

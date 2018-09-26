@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 CLANG_OPTIONS = -c
 INFER_OPTIONS = -F --project-root $(TESTS_DIR) --uninit-only
 INFERPRINT_OPTIONS = --issues-tests

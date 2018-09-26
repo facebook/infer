@@ -5,10 +5,10 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = linters
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
-	--linters-doc-url "ASSIGN_POINTER_WARNING:www.example.com"
+INFER_OPTIONS = \
+  --no-capture --linters-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
+  --linters-doc-url "ASSIGN_POINTER_WARNING:www.example.com"
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

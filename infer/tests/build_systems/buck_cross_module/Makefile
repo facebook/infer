@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/buck_cross_module/module2:module2
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out
@@ -25,5 +24,5 @@ infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing Buck Java cross module integration,\
 	INFER_BIN=$(INFER_BIN) \
-	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
+	$(INFER_BIN) --results-dir $(CURDIR)/infer-out -- \
 	  $(BUCK) build --no-cache $(BUCK_TARGET))

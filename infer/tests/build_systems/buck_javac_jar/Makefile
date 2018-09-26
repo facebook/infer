@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 TARGET = //src:target
 SOURCES = src/UsingJavacJar.java
 OBJECTS = buck-out/gen/src/lib__target__output/target.jar

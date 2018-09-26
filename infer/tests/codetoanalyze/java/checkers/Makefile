@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 INFER_OPTIONS = \
   --debug-exceptions --no-default-checkers \
   --annotation-reachability --fragment-retains-view --immutable-cast --printf-args --quandary \

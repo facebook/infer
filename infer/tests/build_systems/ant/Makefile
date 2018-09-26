@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
 SOURCES = $(wildcard src/infer/*.java)
 OBJECTS = $(patsubst %.java,ant_out/%.class,$(SOURCES))
 INFERPRINT_OPTIONS = --issues-tests
@@ -18,7 +17,7 @@ $(OBJECTS): $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing ant integration,\
-	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) -- $(ANT))
+	  $(INFER_BIN) --project-root $(TESTS_DIR) -- $(ANT))
 
 clean:
 	$(ANT) clean

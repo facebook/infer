@@ -5,8 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --project-root src --liveness
 INFERPRINT_OPTIONS = --issues-tests

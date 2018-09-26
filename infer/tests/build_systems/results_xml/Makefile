@@ -5,8 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 CODETOANALYZE_DIR = ../codetoanalyze
 
 CLANG_OPTIONS = -c

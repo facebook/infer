@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 BUCK_TARGET = //src:hello
 SOURCES = src/hello.c src/hello2.c
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o

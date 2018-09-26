@@ -7,8 +7,7 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 
-ANALYZER = quandary
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --iphoneos-target-sdk-version 8.0
+INFER_OPTIONS = --quandary-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --iphoneos-target-sdk-version 8.0
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

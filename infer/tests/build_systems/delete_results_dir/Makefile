@@ -8,8 +8,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 CODETOANALYZE_DIR = ../codetoanalyze
 
 CLANG_OPTIONS = -c
@@ -22,8 +20,8 @@ include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing that infer deletes the results directory: part 1/2,\
-	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello.c)
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello.c)
 	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)
 	$(QUIET)$(call silent_on_success,Testing that infer deletes the results directory: part 2/2,\
-	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello2.c)
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello2.c)
 	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)

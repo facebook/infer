@@ -31,7 +31,6 @@ MAKE_DIR = $(UTF8_DIR)/make
 MAKE_SOURCES_DIR = ../codetoanalyze/make
 MAKE_SOURCES = $(wildcard $(MAKE_SOURCES_DIR)/*.c $(MAKE_SOURCES_DIR)/*.java)
 
-ANALYZER = checkers
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR) infer-out-cmake
 INFERPRINT_OPTIONS = --issues-tests
 
@@ -67,7 +66,7 @@ infer-out-cmake/report.json: $(CMAKE_DIR) $(CMAKE_SOURCES_DIR)/CMakeLists.txt $(
 	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
 	$(call silent_on_success,Testing\
 	  Infer/CMake is immune to UTF-8 in PWD: Makefile execution,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- make)
+	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- make)
 	$(QUIET)sed -i -e 's#$(abspath $(CMAKE_DIR))/##g' $@
 
 infer-out-gradle/report.json: $(JAVA_DEPS) $(GRADLE_DIR)
@@ -75,22 +74,22 @@ infer-out-gradle/report.json: $(JAVA_DEPS) $(GRADLE_DIR)
 	$(QUIET)PATH=$(CURDIR)/../mock:"$$PATH"; \
 	cd $(GRADLE_DIR) && \
 	$(call silent_on_success,Testing Infer/gradle is immune to UTF-8 in PWD,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- gradle build)
+	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- gradle build)
 
 infer-out-javac/report.json: $(JAVA_DEPS) $(JAVAC_DIR)
 	$(QUIET)cd $(JAVAC_DIR) && \
 	$(call silent_on_success,Testing Infer/javac is immune to UTF-8 in PWD,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
+	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- \
 	    $(JAVAC) -cp $(CLASSPATH) $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
 
 infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	$(QUIET)cd $(MAKE_DIR) && \
 	$(call silent_on_success,Testing Infer/make is immune to UTF-8 in PWD,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
+	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- \
 	    make clean all)
 
 issues-%.exp.test: infer-out-%/report.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ \
+	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@ \
 	  -o $(<D) --from-json-report $<
 
 issues.exp.test: issues-cmake.exp.test issues-gradle.exp.test issues-javac.exp.test \

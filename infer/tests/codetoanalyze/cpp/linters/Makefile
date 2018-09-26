@@ -5,14 +5,11 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = linters
 CLANG_OPTIONS = -std=c++11 -c
-INFER_OPTIONS =  -a linters --linters-def-file extracopy.al --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
+INFER_OPTIONS = --no-capture --linters-only --linters-def-file extracopy.al --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
 --enable-issue-type GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = \
-  $(wildcard *.cpp) \
- 
+SOURCES = $(wildcard *.cpp)
 
 include $(TESTS_DIR)/clang.make

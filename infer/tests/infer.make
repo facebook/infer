@@ -7,13 +7,10 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
-# useful to print non-default analyzer
-ANALYZER_STRING=$(shell if [ -n $(ANALYZER) ]; then printf ' ($(ANALYZER))'; fi)
-
 default: compile
 
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN)
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) --results-dir $(<D) \
+	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
 	   $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
 .PHONY: compile

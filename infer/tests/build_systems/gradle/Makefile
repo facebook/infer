@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 SOURCES_DIR = $(ROOT_DIR)/examples/java_hello
 SOURCES = $(wildcard $(SOURCES_DIR)/*.java)
 # no objects since we only run a mock gradle that cannot compile Java sources
@@ -21,4 +20,4 @@ infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)PATH=$(CURDIR)/../mock:"$$PATH"; \
 	cd $(SOURCES_DIR) && \
 	$(call silent_on_success,Testing gradle Java integration,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- gradle build)
+	  $(INFER_BIN) --results-dir $(CURDIR)/infer-out -- gradle build)

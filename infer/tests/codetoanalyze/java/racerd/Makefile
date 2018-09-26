@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 INFER_OPTIONS = --racerd-only --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)

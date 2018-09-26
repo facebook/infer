@@ -5,8 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --project-root ../codetoanalyze
 INFERPRINT_OPTIONS = --issues-tests
@@ -29,5 +27,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	  $(INFER_BIN) $(INFER_OPTIONS) capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES3))
 	$(QUIET)$(call silent_on_success,Testing reactive mode: analysis,\
-	  $(INFER_BIN) analyze --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER))
+	  $(INFER_BIN) analyze --dump-duplicate-symbols $(INFER_OPTIONS))
 	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)

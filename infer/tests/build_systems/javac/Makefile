@@ -6,7 +6,6 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = checkers
 INFER_OPTIONS =
 INFERPRINT_OPTIONS = --issues-tests
 

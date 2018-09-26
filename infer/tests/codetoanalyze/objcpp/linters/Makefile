@@ -5,10 +5,10 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = linters
 CLANG_OPTIONS = -c -fobjc-arc $(OBJCPP_CLANG_OPTIONS)
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
-	--enable-issue-type GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
+INFER_OPTIONS = \
+  --no-capture --linters-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
+  --enable-issue-type GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

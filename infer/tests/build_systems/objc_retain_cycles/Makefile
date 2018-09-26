@@ -7,7 +7,6 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles
 
-ANALYZER = checkers
 SOURCES = $(CODETOANALYZE_DIR)/View.m $(CODETOANALYZE_DIR)/ViewController.m $(CODETOANALYZE_DIR)/Caller.m
 OBJECTS = $(CODETOANALYZE_DIR)/View.o $(CODETOANALYZE_DIR)/ViewController.o $(CODETOANALYZE_DIR)/Caller.o
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)

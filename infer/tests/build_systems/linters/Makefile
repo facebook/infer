@@ -6,9 +6,8 @@
 SYM_ROOT = ../codetoanalyze/linters/tsrc_symlink
 
 TESTS_DIR = ../..
-ANALYZER = linters
 CLANG_OPTIONS = -x objective-c++ -std=c++11 -fblocks -c
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(SYM_ROOT)
+INFER_OPTIONS = --no-capture --linters-only --no-filtering --debug-exceptions --project-root $(SYM_ROOT)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(SYM_ROOT)/main.mm

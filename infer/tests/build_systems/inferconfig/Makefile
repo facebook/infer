@@ -8,7 +8,6 @@ TESTS_DIR = ../..
 CMAKE_DIR = $(CURDIR)/../codetoanalyze/clang_compilation_database
 CMAKE_BUILD_DIR = $(CURDIR)/_build_infer
 
-ANALYZER = checkers
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
 SOURCES = $(CMAKE_DIR)/hello.cpp
@@ -29,5 +28,5 @@ infer-out/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json $(CLANG_DEPS) $(
 #	test that config/infer.conf is read and paths inside it are interpreted relative to its
 #	location
 	$(QUIET)$(call silent_on_success,Testing Clang compilation database with index integration,\
-	  INFERCONFIG=config/infer.conf $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -o $(@D) \
+	  INFERCONFIG=config/infer.conf $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) \
 	    --compilation-database $<)

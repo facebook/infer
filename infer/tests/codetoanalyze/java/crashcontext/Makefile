@@ -7,8 +7,6 @@ TESTS_DIR = ../../..
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
-ANALYZER = crashcontext
-
 SOURCES = $(wildcard *.java)
 OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
 EXP_TESTs = $(sort $(patsubst %.java,issues-%.exp.test,$(SOURCES)))
@@ -20,7 +18,7 @@ $(OBJECTS): $(SOURCES)
 # analyze a single source file and generate the test results for it
 issues-%.exp.test: $(JAVA_DEPS) %.stacktrace.json %.java
 	$(QUIET)$(call silent_on_success,Testing crashcontext: $*,\
-	  $(INFER_BIN) -a $(ANALYZER) -o infer-out-$* --stacktrace $*.stacktrace.json \
+	  $(INFER_BIN) --crashcontext-only -o infer-out-$* --stacktrace $*.stacktrace.json \
 	  -- $(JAVAC) -cp $(CLASSPATH) $*.java)
 #	add a newline at the end of the json when creating the exp.test
 	$(QUIET)$(COPY) infer-out-$*/crashcontext/crashcontext.json $@ && echo >> $@

@@ -5,9 +5,8 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = linters
 CLANG_OPTIONS = -c -fobjc-arc $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS = --linters-def-folder checks --project-root $(TESTS_DIR)
+INFER_OPTIONS = --no-capture --linters-only --linters-def-folder checks --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = file.m

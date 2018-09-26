@@ -9,7 +9,6 @@ CMAKE_DIR = ../codetoanalyze/cmake
 CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 CMAKE_ANALYZE_DIR = $(CMAKE_DIR)/_build_infer
 
-ANALYZER = checkers
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR)
 INFER_OPTIONS = --project-root $(TESTS_DIR)
 SOURCES = $(CMAKE_DIR)/hello.c
@@ -35,6 +34,6 @@ infer-out/report.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt $(CLANG_DEPS)
 	$(call silent_on_success,Testing CMake integration: Generate Makefiles,\
 	  $(INFER_BIN) compile $(INFER_OPTIONS) -- cmake ..)
 	$(QUIET)$(call silent_on_success,Testing CMake integration: Run Makefiles,\
-	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -- $(MAKE) -C $(CMAKE_ANALYZE_DIR))
+	  $(INFER_BIN) $(INFER_OPTIONS) -- $(MAKE) -C $(CMAKE_ANALYZE_DIR))
 #	cmake makes all paths absolute
 	$(QUIET)sed -i -e 's#$(abspath $(TESTS_DIR))/##g' $@

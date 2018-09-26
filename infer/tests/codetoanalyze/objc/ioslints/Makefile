@@ -7,8 +7,7 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
 
-ANALYZER = linters
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
+INFER_OPTIONS = --no-capture --linters-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
 --iphoneos-target-sdk-version 8.0 \
 --iphoneos-target-sdk-version-path-regex "codetoanalyze/objc/ioslints/filter_out_unavailable_api\.m:10.0" \
 --iphoneos-target-sdk-version-path-regex "codetoanalyze/objc/ioslints/RemoveObserverInGivenSDKTest\.m:9.0" \

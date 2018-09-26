@@ -5,5 +5,4 @@
 
 include ../xcodebuild/Makefile
 
-ANALYZER = linters
-INFER_OPTIONS = --no-xcpretty
+INFER_OPTIONS = --no-capture --linters-only --no-xcpretty

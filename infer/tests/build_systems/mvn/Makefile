@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
 INFERPRINT_OPTIONS = --issues-tests
 
 MVN_DIRS = app_with_submodules  simple_app  app_with_infer_profile  app_with_profiles
@@ -26,7 +25,7 @@ infer-out/report.json:
 infer-out-%/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)cd ../codetoanalyze/mvn/$* && \
 	$(call silent_on_success,Testing mvn Java integration: $*,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) \
+	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) \
 	    --project-root $(CURDIR)/$(TESTS_DIR) -- \
 	    $(MVN) clean compile)
 
@@ -37,7 +36,7 @@ infer-out-simple_app/report.json: infer-out-app_with_infer_profile/report.json
 infer-out-app_with_infer_profile/report.json: infer-out-app_with_profiles/report.json
 
 issues-%.exp.test: infer-out-%/report.json
-	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ \
+	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@ \
 	  -o $(<D) --from-json-report $<
 
 issues.exp.test: $(foreach mvndir,$(MVN_DIRS),issues-$(mvndir).exp.test)

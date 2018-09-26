@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS) -fobjc-arc
 INFER_OPTIONS = --biabduction-only --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests

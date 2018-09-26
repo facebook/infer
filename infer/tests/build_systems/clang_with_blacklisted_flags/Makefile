@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
 # The "-index-store-path <folder>" argument does not exist in Clang and it gets
 # discarded without any error message. The problem is that its argument,
 # a folder, is not discarded, and Clang considers it as a source file. This

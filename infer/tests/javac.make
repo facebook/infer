@@ -6,9 +6,8 @@
 # Makefiles that include this one must define TESTS_DIR and then include
 # $(TESTS_DIR)/javac.make.
 #
-# Makefiles that include this one must define the ANALYZER and SOURCES
-# variables, and may optionally define INFER_OPTIONS, INFERPRINT_OPTIONS,
-# CLEAN_EXTRA.
+# Makefiles that include this one must define the SOURCES variable, and may optionally define
+# INFER_OPTIONS, INFERPRINT_OPTIONS, CLEAN_EXTRA.
 
 OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
 
@@ -21,7 +20,7 @@ $(OBJECTS): $(SOURCES)
 	$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
-	$(QUIET)$(call silent_on_success,Testing infer/java$(ANALYZER_STRING) in $(TEST_REL_DIR),\
-	  $(INFER_BIN) -a $(ANALYZER) --project-root $(PROJECT_ROOT) \
+	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\
+	  $(INFER_BIN) --project-root $(PROJECT_ROOT) \
 	    $(INFER_OPTIONS) -- \
 	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))

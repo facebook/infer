@@ -5,8 +5,6 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 INFER_OPTIONS = --project-root src --no-keep-going --racerd-only --filtering
 INFERPRINT_OPTIONS = --issues-tests
 

@@ -132,7 +132,7 @@ void closeInCatchBad() {
 ```
 
 (b) Try running on real code! The instructions [here](http://fm.csl.sri.com/SSFT17/infer-instr.html) have several suggestions for open-source Android apps to point your analysis at. Try `./gradlew assembleDebug -x test` first to make sure everything builds correctly without Infer (if not, you are probably missing some dependencies--the error messages should guide you). Once that's working, try
-`./gradlew clean; infer -a checkers --resource-leak-only -- ./gradlew assembleDebug -x test`.
+`./gradlew clean; infer run --resource-leak-only -- ./gradlew assembleDebug -x test`.
 - Found a real bug? Bonus points! Send a pull request to fix it! Very frequently, the best fix is to use try-with-resources.
 - Found a false positive in your analysis? Try re-running Infer with `--debug` and see if you can narrow down the root cause/fix it.
 - How does your analysis compare to Infer's production resource leak analysis? Run with `infer -- <gradle command>` to see if your analysis finds bugs that Infer misses, or vice versa.

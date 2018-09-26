@@ -6,8 +6,6 @@
 CUR_DIR = $(shell pwd)
 TESTS_DIR = ../..
 
-ANALYZER = checkers
-
 CLANG_OPTIONS = -c
 INFERPRINT_OPTIONS = --issues-tests
 
@@ -19,5 +17,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)$(MAKE) -C ../codetoanalyze/make clean
 	$(QUIET)cd ../codetoanalyze/make && \
 	$(call silent_on_success,Testing Waf clang integration,\
-	  $(INFER_BIN) --dump-duplicate-symbols --results-dir $(CUR_DIR)/$(@D) -a $(ANALYZER) -- \
+	  $(INFER_BIN) --dump-duplicate-symbols --results-dir $(CUR_DIR)/$(@D) -- \
 	    ./waf)

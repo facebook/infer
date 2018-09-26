@@ -5,7 +5,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 CLANG_OPTIONS = -fobjc-arc -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --liveness-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests

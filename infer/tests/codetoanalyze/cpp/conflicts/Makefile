@@ -6,7 +6,6 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = checkers
 CLANG_OPTIONS = -c -x c++ -std=c++14
 INFER_OPTIONS = --no-default-checkers --biabduction --check-nullable --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests

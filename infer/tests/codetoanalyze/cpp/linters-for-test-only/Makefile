@@ -5,12 +5,11 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = linters
 CLANG_OPTIONS = -std=c++11 -c  
-INFER_OPTIONS = --cxx --linters-def-file linters_example.al --project-root $(TESTS_DIR)
+INFER_OPTIONS = --no-capture --linters-only --cxx --linters-def-file linters_example.al --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
   $(wildcard *.cpp)
-  
+
 include $(TESTS_DIR)/clang.make
