@@ -219,6 +219,14 @@ OPTIONS
        --project-root,-C dir
            Specify the root directory of the project (default: .)
 
+       --purity
+           Activates: [EXPERIMENTAL] Purity analysis (Conversely:
+           --no-purity)
+
+       --purity-only
+           Activates: Enable --purity and disable all other checkers
+           (Conversely: --no-purity-only)
+
        --quandary
            Activates: the quandary taint analysis (Conversely: --no-quandary)
 

@@ -527,6 +527,8 @@ val project_root : string
 
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
+val purity : bool
+
 val quandary : bool
 
 val quandaryBO : bool

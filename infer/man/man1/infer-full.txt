@@ -645,6 +645,14 @@ OPTIONS
     See also infer-analyze(1), infer-capture(1), infer-report(1), and
            infer-run(1).
 
+       --purity
+           Activates: [EXPERIMENTAL] Purity analysis (Conversely:
+           --no-purity)           See also infer-analyze(1).
+
+       --purity-only
+           Activates: Enable --purity and disable all other checkers
+           (Conversely: --no-purity-only)           See also infer-analyze(1).
+
        --quandary
            Activates: the quandary taint analysis (Conversely: --no-quandary)       
     See also infer-analyze(1).

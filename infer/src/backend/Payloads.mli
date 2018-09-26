@@ -21,7 +21,8 @@ type t =
   ; typestate: TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
-  ; starvation: StarvationDomain.summary option }
+  ; starvation: StarvationDomain.summary option
+  ; purity: PurityDomain.summary option }
 
 val pp : Pp.env -> Format.formatter -> t -> unit
 

@@ -21,7 +21,8 @@ type t =
   ; typestate: TypeState.t option
   ; uninit: UninitDomain.summary option
   ; cost: CostDomain.summary option
-  ; starvation: StarvationDomain.summary option }
+  ; starvation: StarvationDomain.summary option
+  ; purity: PurityDomain.summary option }
 
 let pp pe fmt
     { biabduction
@@ -35,14 +36,15 @@ let pp pe fmt
     ; annot_map
     ; uninit
     ; cost
-    ; starvation } =
+    ; starvation
+    ; purity } =
   let pp_opt prefix pp fmt = function
     | Some x ->
         F.fprintf fmt "%s: %a@\n" prefix pp x
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
     biabduction (pp_opt "TypeState" TypeState.pp) typestate
     (pp_opt "CrashContext" Crashcontext.pp_stacktree)
@@ -63,6 +65,8 @@ let pp pe fmt
     cost
     (pp_opt "Starvation" StarvationDomain.pp_summary)
     starvation
+    (pp_opt "Purity" PurityDomain.pp_summary)
+    purity
 
 
 let empty =
@@ -78,4 +82,5 @@ let empty =
   ; buffer_overrun= None
   ; uninit= None
   ; cost= None
-  ; starvation= None }
+  ; starvation= None
+  ; purity= None }

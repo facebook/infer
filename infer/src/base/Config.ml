@@ -596,6 +596,7 @@ and ( annotation_reachability
     , loop_hoisting
     , ownership
     , printf_args
+    , purity
     , quandary
     , quandaryBO
     , racerd
@@ -651,6 +652,7 @@ and ( annotation_reachability
        For, example, this checker will warn about the type error in `printf(\"Hello %d\", \
        \"world\")`"
   and quandary = mk_checker ~long:"quandary" ~default:false "the quandary taint analysis"
+  and purity = mk_checker ~long:"purity" ~default:false "[EXPERIMENTAL] Purity analysis"
   and quandaryBO =
     mk_checker ~long:"quandaryBO" ~default:false
       "[EXPERIMENTAL] The quandaryBO tainted buffer access analysis"
@@ -717,6 +719,7 @@ and ( annotation_reachability
   , loop_hoisting
   , ownership
   , printf_args
+  , purity
   , quandary
   , quandaryBO
   , racerd
@@ -2766,6 +2769,8 @@ and progress_bar =
 and procs_csv = !procs_csv
 
 and project_root = !project_root
+
+and purity = !purity
 
 and quandary = !quandary
 

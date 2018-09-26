@@ -115,7 +115,12 @@ let all_checkers =
     ; active= Config.starvation
     ; callbacks=
         [ (Procedure Starvation.analyze_procedure, Language.Java)
-        ; (Cluster Starvation.reporting, Language.Java) ] } ]
+        ; (Cluster Starvation.reporting, Language.Java) ] }
+  ; { name= "purity"
+    ; active= Config.purity
+    ; callbacks=
+        [(Procedure Purity.checker, Language.Clang); (Procedure Purity.checker, Language.Java)] }
+  ]
 
 
 let get_active_checkers () =

@@ -227,6 +227,8 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
+val pure_function : t
+
 val quandary_taint_error : t
 
 val registered_observer_being_deallocated : t

@@ -321,6 +321,8 @@ let precondition_not_met = from_string "PRECONDITION_NOT_MET"
 
 let premature_nil_termination = from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
 
+let pure_function = from_string "PURE_FUNCTION"
+
 let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
 
 let registered_observer_being_deallocated = from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
