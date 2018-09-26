@@ -150,7 +150,7 @@ let cc1_capture clang_cmd =
   in
   L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path ;
   if
-    Config.equal_analyzer Config.analyzer Config.CompileOnly
+    InferCommand.equal Config.command Compile
     || (not Config.skip_analysis_in_path_skips_compilation)
        && CLocation.is_file_blacklisted source_path
   then (

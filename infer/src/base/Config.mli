@@ -12,9 +12,6 @@ open! IStd
     time by system calls, environment variables, or command line options *)
 
 type analyzer = CaptureOnly | CompileOnly | Checkers | Crashcontext | Linters
-[@@deriving compare]
-
-val equal_analyzer : analyzer -> analyzer -> bool
 
 val string_to_analyzer : (string * analyzer) list
 (** Association list of analyzers and their names *)

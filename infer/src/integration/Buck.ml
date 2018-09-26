@@ -34,17 +34,13 @@ module Target = struct
 
   let add_flavor ~extra_flavors target =
     let target = List.fold_left ~f:add_flavor_internal ~init:target extra_flavors in
-    match (Config.buck_compilation_database, Config.analyzer) with
+    match (Config.buck_compilation_database, Config.command) with
     | Some _, _ ->
         add_flavor_internal target "compilation-database"
-    | None, CompileOnly ->
+    | None, Compile ->
         target
-    | None, (CaptureOnly | Checkers | Linters) ->
+    | None, _ ->
         add_flavor_internal target "infer-capture-all"
-    | None, Crashcontext ->
-        L.(die UserError)
-          "Analyzer %s is Java-only; not supported with Buck flavors"
-          (Config.string_of_analyzer Config.analyzer)
 end
 
 let parse_target_string =

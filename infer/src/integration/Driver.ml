@@ -376,18 +376,16 @@ let error_nothing_to_analyze mode =
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =
   let should_analyze, should_report =
-    match (Config.command, mode, Config.analyzer) with
-    | _, PythonCapture (BBuck, _), _ when not Config.flavors ->
+    match (Config.command, mode) with
+    | _, PythonCapture (BBuck, _) when not Config.flavors ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
         (false, false)
-    | _, _, Linters ->
-        (false, true)
-    | (Capture | Compile), _, _ | _, _, (CaptureOnly | CompileOnly) ->
+    | (Capture | Compile | Events | Explore | Report | ReportDiff), _ ->
         (false, false)
-    | _, _, (Checkers | Crashcontext) ->
+    | (Analyze | Diff | Run), _ ->
         (true, true)
   in
   let should_merge =
@@ -556,8 +554,7 @@ let run_epilogue mode =
   if CLOpt.is_originator then (
     let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
     if Config.developer_mode then StatsAggregator.generate_files () ;
-    if Config.equal_analyzer Config.analyzer Config.Crashcontext then
-      Crashcontext.crashcontext_epilogue ~in_buck_mode ;
+    if Config.crashcontext then Crashcontext.crashcontext_epilogue ~in_buck_mode ;
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
