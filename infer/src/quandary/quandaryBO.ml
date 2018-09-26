@@ -55,8 +55,20 @@ let update_issues all_issues =
         else (q_issues, iBO_issues) )
   in
   let matching_issues quandary_issue inferbo_issue =
+    let trace_end_match () =
+      let quandary_trace_end = List.last quandary_issue.Issue.err_data.loc_trace in
+      let inferbo_trace_end = List.last inferbo_issue.Issue.err_data.loc_trace in
+      match (quandary_trace_end, inferbo_trace_end) with
+      | Some quandary_trace_elem, Some inferbo_trace_elem ->
+          let q_loc = quandary_trace_elem.lt_loc in
+          let i_loc = inferbo_trace_elem.lt_loc in
+          SourceFile.equal q_loc.file i_loc.file && Int.equal q_loc.line i_loc.line
+      | _ ->
+          false
+    in
     SourceFile.equal quandary_issue.Issue.proc_location.file inferbo_issue.Issue.proc_location.file
     && Int.equal quandary_issue.Issue.proc_location.line inferbo_issue.Issue.proc_location.line
+    && trace_end_match ()
     && ( (is_quandary_alloc_issue quandary_issue && is_inferbo_alloc_issue inferbo_issue)
        || (is_quandary_access_issue quandary_issue && is_inferbo_access_issue inferbo_issue) )
   in

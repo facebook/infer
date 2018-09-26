@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 extern int __infer_taint_source();
+extern void __infer_taint_sink(int i);
 
 void basic_bad() {
   int arr[10];
@@ -22,10 +23,27 @@ void multi_level_sink_bad(int i) {
     arr[i] = 2;
 }
 
+struct arg {
+  int taint;
+  int bo;
+};
+
+arg multi_level_source_ok() {
+  return {.taint = __infer_taint_source(), .bo = 12};
+}
+
+void multi_level_sink_ok(int taint, int bo) {
+  __infer_taint_sink(taint);
+  int arr[10];
+  arr[bo] = 0;
+}
+
 void multi_level_bad() {
   int i = multi_level_source_bad();
   multi_level_sink_bad(i);
 }
+
+void multi_level_good() { int i = multi_level_source_bad(); }
 
 void memory_alloc_bad1_FN() { int arr[__infer_taint_source()]; }
 
