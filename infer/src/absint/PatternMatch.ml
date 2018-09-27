@@ -353,6 +353,20 @@ let override_iter f tenv proc_name =
   ignore (override_exists (fun pname -> f pname ; false) tenv proc_name)
 
 
+let lookup_attributes tenv proc_name =
+  let found_attributes = ref None in
+  let f pname =
+    match Attributes.load pname with
+    | None ->
+        false
+    | Some _ as attributes ->
+        found_attributes := attributes ;
+        true
+  in
+  ignore (override_find ~check_current_type:true f tenv proc_name) ;
+  !found_attributes
+
+
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)

@@ -96,7 +96,7 @@ public class ParameterNotNullable {
     }
   }
 
-  void indirectSignatureLookup_FP(SomeClass c) {
+  void indirectSignatureLookupOk(SomeClass c) {
     c.acceptsNullableParameter(null);
   }
 }

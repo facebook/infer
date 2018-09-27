@@ -18,8 +18,8 @@ module ComplexExpressions = struct
 
   let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
 
-  let procname_is_false_on_null pn =
-    match Attributes.load pn with
+  let procname_is_false_on_null tenv pn =
+    match PatternMatch.lookup_attributes tenv pn with
     | Some proc_attributes ->
         let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
         let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
@@ -28,9 +28,9 @@ module ComplexExpressions = struct
         false
 
 
-  let procname_is_true_on_null pn =
+  let procname_is_true_on_null tenv pn =
     let annotated_true_on_null () =
-      match Attributes.load pn with
+      match PatternMatch.lookup_attributes tenv pn with
       | Some proc_attributes ->
           let annotated_signature = Models.get_modelled_annotated_signature proc_attributes in
           let ret_ann, _ = annotated_signature.AnnotatedSignature.ret in
@@ -493,7 +493,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
       , loc
       , cflags ) ->
       let callee_attributes =
-        match Attributes.load callee_pname with
+        match PatternMatch.lookup_attributes tenv callee_pname with
         | Some proc_attributes ->
             proc_attributes
         | None ->
@@ -838,11 +838,11 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
         in
         (* check if the expression is coming from a procedure returning false on null *)
         let from_is_false_on_null e : Exp.t option =
-          from_call ComplexExpressions.procname_is_false_on_null e
+          from_call (ComplexExpressions.procname_is_false_on_null tenv) e
         in
         (* check if the expression is coming from a procedure returning true on null *)
         let from_is_true_on_null e : Exp.t option =
-          from_call ComplexExpressions.procname_is_true_on_null e
+          from_call (ComplexExpressions.procname_is_true_on_null tenv) e
         in
         (* check if the expression is coming from Map.containsKey *)
         let from_containsKey e : Exp.t option =
@@ -1037,7 +1037,7 @@ let typecheck_node tenv calls_this checks idenv curr_pname curr_pdesc find_canon
       when Models.is_noreturn callee_pname ->
         noreturn := true
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) ->
-        let callee_attributes_opt = Attributes.load callee_pname in
+        let callee_attributes_opt = PatternMatch.lookup_attributes tenv callee_pname in
         (* check if the call might throw an exception *)
         let has_exceptions =
           match callee_attributes_opt with

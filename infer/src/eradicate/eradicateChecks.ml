@@ -478,7 +478,7 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
       ignore (List.fold2_exn ~f:compare ~init:initial_pos current_params overridden_params)
   in
   let check overriden_proc_name =
-    match Attributes.load overriden_proc_name with
+    match PatternMatch.lookup_attributes tenv overriden_proc_name with
     | Some attributes -> (
         let overridden_signature = Models.get_modelled_annotated_signature attributes in
         check_params overriden_proc_name overridden_signature ;

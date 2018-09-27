@@ -91,6 +91,8 @@ val override_iter : (Typ.Procname.t -> unit) -> Tenv.t -> Typ.Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
     works for Java *)
 
+val lookup_attributes : Tenv.t -> Typ.Procname.t -> ProcAttributes.t option
+
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
 
 val type_get_class_name : Typ.t -> Typ.Name.t option
