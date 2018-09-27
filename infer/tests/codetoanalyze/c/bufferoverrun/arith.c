@@ -110,3 +110,33 @@ void plus_linear_min3_Good_FP() {
   int a[20];
   a[plus_linear_min(15)] = 1;
 }
+
+void integer_overflow_by_addition_Bad_FN() {
+  char arr[10];
+  int32_t x = 2000000000;
+  int32_t y = 2000000000;
+  int32_t z = x + y; // z is a negative number.
+  if (z < 10) {
+    arr[z] = 0;
+  }
+}
+
+void integer_overflow_by_subtraction_Bad_FN() {
+  char arr[10];
+  int32_t x = -2000000000;
+  int32_t y = 2000000000;
+  int32_t z = x - y; // z is a big positive number.
+  if (z >= 0) {
+    arr[z] = 0;
+  }
+}
+
+void integer_overflow_by_multiplication_Bad_FN() {
+  char arr[10];
+  int32_t x = 300000;
+  int32_t y = 300000;
+  int32_t z = x * y; // z is a negative number.
+  if (z < 10) {
+    arr[z] = 0;
+  }
+}

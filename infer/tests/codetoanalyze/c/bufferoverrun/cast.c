@@ -21,3 +21,57 @@ void cast2_Good_FP() {
   int32_t arr[4];
   *(((char*)arr) + 4) = 123;
 }
+
+void cast_unsigned_to_signed_Good() {
+  char arr[10];
+  uint32_t x = 15;
+  int32_t y = (int32_t)x;
+  if (y < 10) {
+    arr[y] = 0;
+  }
+}
+
+void cast_unsigned_to_signed_Bad_FN() {
+  char arr[10];
+  uint32_t x = 4294967295;
+  int32_t y = (int32_t)x; // y is -1.
+  if (y < 10) {
+    arr[y] = 0;
+  }
+}
+
+void cast_signed_to_unsigned_Good() {
+  char arr[10];
+  int32_t x = 15;
+  uint32_t y = (uint32_t)x;
+  if (y < 10) {
+    arr[y] = 0;
+  }
+}
+
+void cast_signed_to_unsigned_Bad_FN() {
+  char arr[10];
+  int32_t x = -1;
+  uint32_t y = (uint32_t)x;
+  if (y > 0) {
+    arr[y] = 0;
+  }
+}
+
+void cast_float_to_int_Good() {
+  char arr[10];
+  float x = 15.0;
+  int32_t y = (int32_t)x;
+  if (y < 10) {
+    arr[y] = 0;
+  }
+}
+
+void cast_float_to_int_Bad_FN() {
+  char arr[10];
+  float x = 15000000000.0;
+  int32_t y = (int32_t)x; // y is -2147483648.
+  if (y < 10) {
+    arr[y] = 0;
+  }
+}
