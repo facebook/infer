@@ -112,4 +112,12 @@ public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnot
   public String implementInAnotherFile(String s) {
     return "";
   }
+
+  public @Nullable Object overloadedMethod() {
+    return null;
+  }
+
+  public  Object overloadedMethod(Object object) {
+    return object;
+  }
 }

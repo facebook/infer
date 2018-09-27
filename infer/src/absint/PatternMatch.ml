@@ -312,23 +312,24 @@ let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttribute
 
 let override_find ?(check_current_type = true) f tenv proc_name =
   let method_name = Typ.Procname.get_method proc_name in
+  let parameter_length = List.length (Typ.Procname.get_parameters proc_name) in
   let is_override pname =
-    (* Note: very coarse! TODO: match parameter names/types to get an exact match *)
-    String.equal (Typ.Procname.get_method pname) method_name
-    && not (Typ.Procname.is_constructor pname)
+    (not (Typ.Procname.is_constructor pname))
+    && String.equal (Typ.Procname.get_method pname) method_name
+    (* TODO (T32979782): match parameter types, taking subtyping and type erasure into account *)
+    && Int.equal (List.length (Typ.Procname.get_parameters pname)) parameter_length
   in
-  let rec find_super_type_ super_class_name =
+  let rec find_super_type super_class_name =
     Tenv.lookup tenv super_class_name
     |> Option.bind ~f:(fun {Typ.Struct.methods; supers} ->
            match List.find ~f:(fun pname -> is_override pname && f pname) methods with
            | None ->
-               List.find_map ~f:find_super_type_ supers
+               List.find_map ~f:find_super_type supers
            | pname_opt ->
                pname_opt )
   in
   let find_super_type type_name =
-    List.find_map ~f:find_super_type_
-      (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
+    List.find_map ~f:find_super_type (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
   in
   if check_current_type && f proc_name then Some proc_name
   else
