@@ -815,6 +815,10 @@ OPTIONS
            Deactivates: print code excerpts around trace elements
            (Conversely: --source-preview)           See also infer-explore(1).
 
+       --sqlite-lock-timeout int
+           Timeout for SQLite results database operations, in milliseconds.
+           (default: 10000)           See also infer-analyze(1), infer-capture(1), and infer-run(1).
+
        --stacktrace file
            File path containing a json-encoded Java crash stacktrace. Used to
            guide the analysis (only with '-a crashcontext'). See

@@ -137,6 +137,10 @@ OPTIONS
            Ignore files whose path matches the given prefix (can be specified
            multiple times)
 
+       --sqlite-lock-timeout int
+           Timeout for SQLite results database operations, in milliseconds.
+           (default: 10000)
+
        --version
            Print version information and exit
 

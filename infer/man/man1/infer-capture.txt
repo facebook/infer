@@ -95,6 +95,10 @@ OPTIONS
            Ignore files whose path matches the given prefix (can be specified
            multiple times)
 
+       --sqlite-lock-timeout int
+           Timeout for SQLite results database operations, in milliseconds.
+           (default: 10000)
+
        --  Stop argument processing, use remaining arguments as a build
            command
 BUCK COMPILATION DATABASE OPTIONS

@@ -142,7 +142,7 @@ end = struct
       Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
         database_fullpath
     in
-    Sqlite3.busy_timeout db 10_000 ;
+    Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
     database := Some db ;
     List.iter ~f:(fun callback -> callback db) !new_db_callbacks

@@ -605,6 +605,8 @@ val spec_abs_level : int
 
 val specs_library : string list
 
+val sqlite_lock_timeout : int
+
 val sqlite_vfs : string option
 
 val stacktrace : string option

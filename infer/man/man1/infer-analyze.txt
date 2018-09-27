@@ -281,6 +281,10 @@ OPTIONS
            Activates: Enable --siof and disable all other checkers
            (Conversely: --no-siof-only)
 
+       --sqlite-lock-timeout int
+           Timeout for SQLite results database operations, in milliseconds.
+           (default: 10000)
+
        --starvation
            Activates: starvation analysis (Conversely: --no-starvation)
 

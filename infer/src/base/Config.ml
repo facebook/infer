@@ -2004,6 +2004,13 @@ and specs_library =
   specs_library
 
 
+and sqlite_lock_timeout =
+  CLOpt.mk_int ~long:"sqlite-lock-timeout" ~default:10_000
+    ~in_help:
+      InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+    "Timeout for SQLite results database operations, in milliseconds."
+
+
 and sqlite_vfs =
   let default =
     match Utils.read_file "/proc/version" with
@@ -2855,6 +2862,8 @@ and sources = !sources
 and sourcepath = !sourcepath
 
 and spec_abs_level = !spec_abs_level
+
+and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_vfs = !sqlite_vfs
 
