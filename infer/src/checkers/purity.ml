@@ -68,7 +68,8 @@ let should_report pure pdesc =
   | Typ.Procname.Java java_pname as proc_name ->
       pure
       && (not (Typ.Procname.is_constructor proc_name))
-      && not (Typ.Procname.Java.is_class_initializer java_pname)
+      && (not (Typ.Procname.Java.is_class_initializer java_pname))
+      && not (Typ.Procname.Java.is_access_method java_pname)
   | _ ->
       L.(die InternalError "Not supposed to run on non-Java code.")
 
