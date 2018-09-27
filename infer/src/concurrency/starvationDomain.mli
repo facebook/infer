@@ -19,25 +19,6 @@ module Lock : sig
   val equal : t -> t -> bool
 end
 
-module type TraceElem = sig
-  type elem_t
-
-  (** An [elem] which occured [loc], after the chain of procedure calls in [trace] *)
-  type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
-
-  include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val make : elem_t -> Location.t -> t
-
-  val get_loc : t -> Location.t
-  (** Starting location of the trace: this is either [loc] if [trace] is empty, or the head of [trace]. *)
-
-  val make_loc_trace : ?nesting:int -> t -> Errlog.loc_trace
-
-  val with_callsite : t -> CallSite.t -> t
-  (** Push given callsite onto [trace], extending the call chain by one. *)
-end
-
 (** Represents the existence of a program path from the current method to the eventual acquisition
     of a lock or a blocking call.  Equality/comparison disregards the call trace but includes
     location. *)
@@ -46,12 +27,12 @@ module Event : sig
 
   type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
 
-  include TraceElem with type elem_t = event_t
+  include ExplicitTrace.TraceElem with type elem_t = event_t
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
-module EventDomain : module type of AbstractDomain.FiniteSet (Event)
+module EventDomain : ExplicitTrace.FiniteSet with type elt = Event.t
 
 (** Represents the existence of a program path to the [first] lock being taken in the current
   method or, transitively, a callee *in the same class*, and, which continues (to potentially
@@ -61,7 +42,7 @@ module EventDomain : module type of AbstractDomain.FiniteSet (Event)
 module Order : sig
   type order_t = private {first: Lock.t; eventually: Event.t}
 
-  include TraceElem with type elem_t = order_t
+  include ExplicitTrace.TraceElem with type elem_t = order_t
 
   val may_deadlock : t -> t -> bool
   (** check if two pairs are symmetric in terms of locks, where locks are compared modulo the
@@ -70,16 +51,12 @@ module Order : sig
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end
 
-module OrderDomain : sig
-  include PrettyPrintable.PPSet with type elt = Order.t
-
-  include AbstractDomain.WithBottom with type astate = t
-end
+module OrderDomain : ExplicitTrace.FiniteSet with type elt = Order.t
 
 module LockState : AbstractDomain.WithBottom
 
 module UIThreadExplanationDomain : sig
-  include TraceElem with type elem_t = string
+  include ExplicitTrace.TraceElem with type elem_t = string
 
   val make_trace : ?header:string -> Typ.Procname.t -> t -> Errlog.loc_trace
 end

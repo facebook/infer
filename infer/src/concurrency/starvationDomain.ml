@@ -49,60 +49,12 @@ module Lock = struct
   let owner_class ((_, typ), _) = Typ.inner_name typ
 end
 
-module type TraceElem = sig
-  type elem_t
-
-  type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
-
-  include PrettyPrintable.PrintableOrderedType with type t := t
-
-  val make : elem_t -> Location.t -> t
-
-  val get_loc : t -> Location.t
-
-  val make_loc_trace : ?nesting:int -> t -> Errlog.loc_trace
-
-  val with_callsite : t -> CallSite.t -> t
-end
-
-module MakeTraceElem (Elem : PrettyPrintable.PrintableOrderedType) :
-  TraceElem with type elem_t = Elem.t = struct
-  type elem_t = Elem.t
-
-  type t = {elem: Elem.t; loc: Location.t; trace: CallSite.t list [@compare.ignore]}
-  [@@deriving compare]
-
-  let pp fmt {elem; loc} = F.fprintf fmt "%a at %a" Elem.pp elem Location.pp loc
-
-  let make elem loc = {elem; loc; trace= []}
-
-  let get_loc {loc; trace} = List.hd trace |> Option.value_map ~default:loc ~f:CallSite.loc
-
-  let make_loc_trace ?(nesting = 0) e =
-    let call_trace, nesting =
-      List.fold e.trace ~init:([], nesting) ~f:(fun (tr, ns) callsite ->
-          let elem_descr =
-            F.asprintf "Method call: %a"
-              (MF.wrap_monospaced Typ.Procname.pp)
-              (CallSite.pname callsite)
-          in
-          let elem = Errlog.make_trace_element ns (CallSite.loc callsite) elem_descr [] in
-          (elem :: tr, ns + 1) )
-    in
-    let endpoint_descr = F.asprintf "%a" Elem.pp e.elem in
-    let endpoint = Errlog.make_trace_element nesting e.loc endpoint_descr [] in
-    List.rev (endpoint :: call_trace)
-
-
-  let with_callsite elem callsite = {elem with trace= callsite :: elem.trace}
-end
-
 module Event = struct
   type severity_t = Low | Medium | High [@@deriving compare]
 
   type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
 
-  include MakeTraceElem (struct
+  include ExplicitTrace.MakeTraceElem (struct
     type t = event_t [@@deriving compare]
 
     let pp fmt = function
@@ -133,12 +85,7 @@ module Event = struct
     header_step :: trace
 end
 
-module EventDomain = struct
-  include AbstractDomain.FiniteSet (Event)
-
-  let with_callsite astate callsite =
-    fold (fun e acc -> add (Event.with_callsite e callsite) acc) astate empty
-end
+module EventDomain = Event.FiniteSet
 
 module Order = struct
   type order_t = {first: Lock.t; eventually: Event.t} [@@deriving compare]
@@ -151,7 +98,7 @@ module Order = struct
     let pp fmt {first} = Lock.pp fmt first
   end
 
-  include MakeTraceElem (E)
+  include ExplicitTrace.MakeTraceElem (E)
 
   let may_deadlock {elem= {first; eventually}} {elem= {first= first'; eventually= eventually'}} =
     match (eventually.elem, eventually'.elem) with
@@ -176,13 +123,7 @@ module Order = struct
     header_step :: trace
 end
 
-module OrderDomain = struct
-  include AbstractDomain.FiniteSet (Order)
-
-  let with_callsite lo callsite =
-    fold (fun o acc -> add (Order.with_callsite o callsite) acc) lo empty
-end
-
+module OrderDomain = Order.FiniteSet
 module LockStack = AbstractDomain.StackDomain (Event)
 
 module LockState = struct
@@ -216,7 +157,7 @@ module LockState = struct
 end
 
 module UIThreadExplanationDomain = struct
-  include MakeTraceElem (struct
+  include ExplicitTrace.MakeTraceElem (struct
     type t = string [@@deriving compare]
 
     let pp = String.pp
