@@ -117,7 +117,7 @@ public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnot
     return null;
   }
 
-  public  Object overloadedMethod(Object object) {
+  public Object overloadedMethod(Object object) {
     return object;
   }
 }
