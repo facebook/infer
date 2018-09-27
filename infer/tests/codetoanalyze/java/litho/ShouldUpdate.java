@@ -11,7 +11,9 @@ import java.util.List;
 
 abstract class A {
   abstract A getA();
+
   abstract B getB();
+
   abstract C getC();
 }
 
@@ -28,26 +30,24 @@ class D {}
 abstract class GraphQLStory {
 
   public abstract List getActors();
-
 }
 
 class LithoTest {
 
-  void /*basic chain*/onCreateLayout(A a) {
+  void /*basic chain*/ onCreateLayout(A a) {
     a.getB().getC().getD();
   }
 
-  void /*sibling chain*/onCreateLayout(A a, int i) {
+  void /*sibling chain*/ onCreateLayout(A a, int i) {
     a.getB().getC().getD();
     a.getC().getD();
   }
 
-  void /*split chain*/onCreateLayout(A a, int i1, int i2) {
-    B b =  a.getB();
+  void /*split chain*/ onCreateLayout(A a, int i1, int i2) {
+    B b = a.getB();
     C c = b.getC();
     c.getD();
   }
-
 
   void chainFromActual1(B b) {
     b.getC().getD();
@@ -57,11 +57,11 @@ class LithoTest {
     c.getD();
   }
 
-  void /*chain rooted in actual*/onCreateLayout(A a, boolean b) {
+  void /*chain rooted in actual*/ onCreateLayout(A a, boolean b) {
     chainFromActual1(a.getB());
   }
 
-  void /*local chain + interproc chain*/onCreateLayout(A a, char ch) {
+  void /*local chain + interproc chain*/ onCreateLayout(A a, char ch) {
     C c = a.getB().getC();
     chainFromActual2(c);
   }
@@ -72,18 +72,18 @@ class LithoTest {
     return actors != null && actors.size() > 0 ? (GraphQLStory) actors.get(0) : null;
   }
 
-  void /*conditional getters on formal*/onCreateLayout(GraphQLStory story) {
+  void /*conditional getters on formal*/ onCreateLayout(GraphQLStory story) {
     getPrimaryActor(story).toString();
   }
 
-  native static GraphQLStory getStory();
+  static native GraphQLStory getStory();
 
-  void /*conditional getters on local*/onCreateLayout() {
+  void /*conditional getters on local*/ onCreateLayout() {
     GraphQLStory story = getStory();
     getPrimaryActor(story).toString();
   }
 
-  void /*cycle*/onCreateLayout(A a, float f) {
+  void /*cycle*/ onCreateLayout(A a, float f) {
     a = a.getA();
   }
 
@@ -91,8 +91,7 @@ class LithoTest {
     a = a.getA();
   }
 
-  void /*interprocedural cycle*/onCreateLayout(A a, double d) {
+  void /*interprocedural cycle*/ onCreateLayout(A a, double d) {
     cycle(a);
   }
-
 }

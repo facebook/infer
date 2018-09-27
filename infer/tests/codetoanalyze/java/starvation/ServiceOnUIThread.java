@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import android.os.IBinder;
-import android.content.Intent;
-import android.app.Service;
 import android.app.IntentService;
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
 import android.os.RemoteException;
 
 class ServiceOnUIThread extends Service {
@@ -23,7 +23,8 @@ class ServiceOnUIThread extends Service {
   void transactBad() {
     try {
       mBinder.transact(0, null, null, 0);
-    } catch (RemoteException e) {}
+    } catch (RemoteException e) {
+    }
   }
 }
 
@@ -42,6 +43,7 @@ class IntentServiceNotOnUIThread extends IntentService {
   void transactOk() {
     try {
       mBinder.transact(0, null, null, 0);
-    } catch (RemoteException e) {}
+    } catch (RemoteException e) {
+    }
   }
 }

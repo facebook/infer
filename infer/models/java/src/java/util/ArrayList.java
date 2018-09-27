@@ -7,7 +7,6 @@
 
 package java.util;
 
-import java.io.Serializable;
 
 // abstract so we don't have to implement every method of List
 public abstract class ArrayList<T> extends AbstractList<T> {
@@ -36,5 +35,4 @@ public abstract class ArrayList<T> extends AbstractList<T> {
   public void clear() {
     super.clear();
   }
-
 }

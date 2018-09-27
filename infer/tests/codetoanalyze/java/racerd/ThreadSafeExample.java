@@ -7,14 +7,12 @@
 
 package codetoanalyze.java.checkers;
 
+import com.facebook.infer.annotation.ThreadSafe;
+import com.google.common.annotations.VisibleForTesting;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.facebook.infer.annotation.ThreadSafe;
-
-import com.google.common.annotations.VisibleForTesting;
-
 @ThreadSafe
-public class ThreadSafeExample{
+public class ThreadSafeExample {
 
   /*Included to make sure infer does not report on class initializers*/
   static Class<?> A = ThreadSafeExample.class;
@@ -131,48 +129,44 @@ public class ThreadSafeExample{
     }
     return sStaticField; // we'll warn here, although this is fine
   }
-
 }
 
-class ExtendsThreadSafeExample extends ThreadSafeExample{
+class ExtendsThreadSafeExample extends ThreadSafeExample {
 
   Integer field;
 
   /* Presently,we will warn not just on overwridden methods from
   @ThreadSafe class, but potentially on other methods in subclass */
   public void newmethodBad() {
-     field = 22;
+    field = 22;
   }
 
   /* Bad now that it's overridden */
   public void tsOK() {
-     field = 44;
+    field = 44;
   }
-
 }
 
 @NotThreadSafe
-class NotThreadSafeExtendsThreadSafeExample extends ThreadSafeExample{
+class NotThreadSafeExtendsThreadSafeExample extends ThreadSafeExample {
 
   Integer field;
 
-/* We don't want to warn on this */
+  /* We don't want to warn on this */
   public void newmethodBad() {
-     field = 22;
+    field = 22;
   }
-
 }
 
 @ThreadSafe
-class YesThreadSafeExtendsNotThreadSafeExample extends NotThreadSafeExtendsThreadSafeExample{
+class YesThreadSafeExtendsNotThreadSafeExample extends NotThreadSafeExtendsThreadSafeExample {
 
   Integer subsubfield;
 
-/* We do want to warn on this */
+  /* We do want to warn on this */
   public void subsubmethodBad() {
-     subsubfield = 22;
+    subsubfield = 22;
   }
-
 }
 
 class Unannotated {

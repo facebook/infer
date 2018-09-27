@@ -12,9 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Annotation for a boolean function returning false when the argument is null.
- */
+/** Annotation for a boolean function returning false when the argument is null. */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.METHOD})
 public @interface FalseOnNull {}

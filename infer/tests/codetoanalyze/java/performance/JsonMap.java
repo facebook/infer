@@ -13,7 +13,7 @@ public class JsonMap implements JsonType {
 
   public void addEntry(String key, JsonType value) {
     if (!JsonUtils.isValidInputType(value)) {
-      //throw new IllegalStateException("illegal input type " + value);
+      // throw new IllegalStateException("illegal input type " + value);
     }
 
     addKeyToMap(key);
@@ -44,7 +44,6 @@ public class JsonMap implements JsonType {
     addKeyToMap(key);
     JsonUtils.serialize(map, value);
   }
-
 
   private void addKeyToMap(String key) {
     if (map.length() != 1) {

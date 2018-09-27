@@ -7,11 +7,9 @@
 
 package codetoanalyze.java.checkers;
 
-import com.google.common.collect.ImmutableList;
-
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
-
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 public class TwoCheckersExample {
@@ -25,5 +23,4 @@ public class TwoCheckersExample {
   static List shouldRaisePerformanceCriticalError() {
     return shouldRaiseImmutableCastError();
   }
-
 }

@@ -11,7 +11,7 @@ import com.facebook.infer.builtins.InferTaint;
 
 class Exceptions {
 
-  native static void mayExcept() throws Exception;
+  static native void mayExcept() throws Exception;
 
   public static void sinkInCatchBad1() {
     Object source = InferTaint.inferSecretSource();
@@ -53,7 +53,7 @@ class Exceptions {
     InferTaint.inferSensitiveSink(source);
   }
 
-  public static void sinkInFinallyBad1() throws Exception{
+  public static void sinkInFinallyBad1() throws Exception {
     Object source = InferTaint.inferSecretSource();
     try {
       mayExcept();
@@ -127,5 +127,4 @@ class Exceptions {
       InferTaint.inferSensitiveSink(e);
     }
   }
-
 }

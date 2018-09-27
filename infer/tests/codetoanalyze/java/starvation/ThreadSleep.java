@@ -6,7 +6,6 @@
  */
 
 import android.support.annotation.UiThread;
-import java.lang.Thread;
 
 class ThreadSleep {
   void sleepOnAnyThreadOk() throws InterruptedException {
@@ -22,13 +21,13 @@ class ThreadSleep {
 
   @UiThread
   void indirectSleepOnUIThreadBad() {
-    synchronized(lock) {}
-  }
-
-  void lockAndSleepOnNonUIThread() throws InterruptedException {
-    synchronized(lock) {
-      sleepOnAnyThreadOk();
+    synchronized (lock) {
     }
   }
 
+  void lockAndSleepOnNonUIThread() throws InterruptedException {
+    synchronized (lock) {
+      sleepOnAnyThreadOk();
+    }
+  }
 }

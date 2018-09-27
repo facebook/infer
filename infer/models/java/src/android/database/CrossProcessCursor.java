@@ -7,5 +7,4 @@
 
 package android.database;
 
-public interface CrossProcessCursor extends Cursor {
-}
+public interface CrossProcessCursor extends Cursor {}

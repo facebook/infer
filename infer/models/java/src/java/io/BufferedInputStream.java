@@ -34,5 +34,4 @@ public class BufferedInputStream {
   public long skip(long n) throws IOException {
     return InferUndefined.can_throw_ioexception_long();
   }
-
 }

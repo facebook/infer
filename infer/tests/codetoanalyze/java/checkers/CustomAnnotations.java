@@ -14,18 +14,15 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface UserDefinedSource1 {
-}
+@interface UserDefinedSource1 {}
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface UserDefinedSource2 {
-}
+@interface UserDefinedSource2 {}
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface UserDefinedSink {
-}
+@interface UserDefinedSink {}
 
 class CustomAnnotations {
 
@@ -40,8 +37,7 @@ class CustomAnnotations {
   }
 
   @UserDefinedSink
-  void sink() {
-  }
+  void sink() {}
 
   @UserDefinedSource1
   void source1Ok() {
@@ -53,6 +49,5 @@ class CustomAnnotations {
     safeMethod();
   }
 
-  void safeMethod() {
-  }
+  void safeMethod() {}
 }

@@ -11,20 +11,19 @@ import com.facebook.infer.builtins.InferBuiltins;
 
 public class Assert {
 
-    public static void assertTrue(boolean condition) {
-        InferBuiltins.assume(condition);
-    }
+  public static void assertTrue(boolean condition) {
+    InferBuiltins.assume(condition);
+  }
 
-    public static void assertTrue(String message, boolean condition) {
-        InferBuiltins.assume(condition);
-    }
+  public static void assertTrue(String message, boolean condition) {
+    InferBuiltins.assume(condition);
+  }
 
-    public static void assertFalse(boolean condition) {
-        InferBuiltins.assume(!condition);
-    }
+  public static void assertFalse(boolean condition) {
+    InferBuiltins.assume(!condition);
+  }
 
-    public static void assertFalse(String message, boolean condition) {
-        InferBuiltins.assume(!condition);
-    }
-
+  public static void assertFalse(String message, boolean condition) {
+    InferBuiltins.assume(!condition);
+  }
 }

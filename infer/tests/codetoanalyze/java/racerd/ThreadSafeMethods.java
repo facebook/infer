@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.checkers;
 
-
 import com.facebook.infer.annotation.ThreadSafe;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -41,8 +40,7 @@ class ThreadSafeMethods {
   }
 
   @ThreadSafe
-  public void safeMethodOverride() {
-  }
+  public void safeMethodOverride() {}
 
   // if a method annotated with @ThreadSafe in class C writes field f, then all other accesses to f
   // in C must also be thread-safe
@@ -98,7 +96,6 @@ class ThreadSafeMethods {
   public Object readSameFieldAsThreadSafeMethodOk() {
     return this.field5;
   }
-
 }
 
 class ThreadSafeMethodsSubclass extends ThreadSafeMethods {
@@ -125,5 +122,4 @@ class ThreadSafeMethodsSubclass extends ThreadSafeMethods {
   public Object readThreadSafeFieldOfOverrideBad() {
     return this.subclassField;
   }
-
 }

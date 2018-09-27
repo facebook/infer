@@ -8,7 +8,6 @@
 package codetoanalyze.java.checkers;
 
 import android.support.annotation.UiThread;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -16,18 +15,15 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface AnyThread {
-}
+@interface AnyThread {}
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface ForUiThread {
-}
+@interface ForUiThread {}
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface ForNonUiThread {
-}
+@interface ForNonUiThread {}
 
 public class UiThreads {
 
@@ -92,5 +88,4 @@ public class UiThreads {
   void callForNonUiThreadOk() {
     forNonUiThread();
   }
-
 }

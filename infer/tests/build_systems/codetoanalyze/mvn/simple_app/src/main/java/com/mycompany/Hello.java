@@ -49,9 +49,12 @@ class Hello {
       fos = new FileOutputStream(new File("everwhat.txt"));
       fos.write(fis.read());
     } finally {
-      if (fis != null) { fis.close(); } // Resource leak
-      if (fos != null) { fos.close(); }
+      if (fis != null) {
+        fis.close();
+      } // Resource leak
+      if (fos != null) {
+        fos.close();
+      }
     }
   }
-
 }

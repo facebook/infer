@@ -7,50 +7,39 @@
 
 package codetoanalyze.java.quandary;
 
-import java.io.InputStream;
+import android.content.ContentValues;
+import android.content.SharedPreferences;
+import com.facebook.infer.annotation.IntegritySink;
+import com.facebook.infer.annotation.IntegritySource;
+import com.facebook.infer.annotation.PrivacySink;
+import com.facebook.infer.annotation.PrivacySource;
+import com.facebook.infer.builtins.InferTaint;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
 import java.net.Socket;
-import java.net.URL;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import android.content.ContentValues;
-import android.content.SharedPreferences;
-
-import com.facebook.infer.builtins.InferTaint;
-import com.facebook.infer.annotation.IntegritySource;
-import com.facebook.infer.annotation.IntegritySink;
-import com.facebook.infer.annotation.PrivacySource;
-import com.facebook.infer.annotation.PrivacySink;
-
 public class TaintExample {
 
-  public InputStream socketNotVerifiedSimple_FN(SSLSocketFactory f)
-    throws IOException {
+  public InputStream socketNotVerifiedSimple_FN(SSLSocketFactory f) throws IOException {
     Socket socket = f.createSocket();
     return socket.getInputStream();
   }
 
   public InputStream socketVerifiedForgotToCheckRetval_FN(
-      SSLSocketFactory f,
-      HostnameVerifier v,
-      SSLSession session)
-    throws IOException {
+      SSLSocketFactory f, HostnameVerifier v, SSLSession session) throws IOException {
 
     Socket socket = f.createSocket();
     v.verify("hostname", session);
     return socket.getInputStream();
   }
 
-  public InputStream socketVerifiedOk1(SSLSocketFactory f,
-                                       HostnameVerifier v,
-                                       SSLSession session)
-    throws IOException {
+  public InputStream socketVerifiedOk1(SSLSocketFactory f, HostnameVerifier v, SSLSession session)
+      throws IOException {
 
     Socket socket = f.createSocket();
     if (v.verify("hostname", session)) {
@@ -62,8 +51,7 @@ public class TaintExample {
 
   HostnameVerifier mHostnameVerifier;
 
-  public void throwExceptionIfNoVerify(SSLSocket sslSocket, String host)
-    throws IOException {
+  public void throwExceptionIfNoVerify(SSLSocket sslSocket, String host) throws IOException {
 
     if (!mHostnameVerifier.verify(host, sslSocket.getSession())) {
       throw new SSLException("Couldn't verify!");
@@ -76,8 +64,7 @@ public class TaintExample {
     return s.getInputStream();
   }
 
-  public InputStream socketIgnoreExceptionNoVerify_FN(SSLSocketFactory f)
-    throws IOException {
+  public InputStream socketIgnoreExceptionNoVerify_FN(SSLSocketFactory f) throws IOException {
 
     SSLSocket s = (SSLSocket) f.createSocket();
     try {
@@ -100,8 +87,7 @@ public class TaintExample {
   }
 
   // if we're not careful, postcondition inference will fail for this function
-  Socket callReadInputStreamCauseTaintError_FN(SSLSocketFactory f)
-    throws IOException {
+  Socket callReadInputStreamCauseTaintError_FN(SSLSocketFactory f) throws IOException {
     Socket socket = f.createSocket();
     InputStream s = readInputStream(socket);
     s.toString(); // to avoid RETURN_VALUE_IGNORED warning
@@ -182,11 +168,9 @@ public class TaintExample {
     InferTaint.inferSensitiveSinkUndefined(privacySource()); // should report
   }
 
-  public void instancePrivacySink(@PrivacySink String s1, String s2) {
-  }
+  public void instancePrivacySink(@PrivacySink String s1, String s2) {}
 
-  public static void staticPrivacySink(@PrivacySink String s1, String s2) {
-  }
+  public static void staticPrivacySink(@PrivacySink String s1, String s2) {}
 
   public void testPrivacySinkAnnot1_FN() {
     String source = privacySource();
@@ -252,8 +236,7 @@ public class TaintExample {
     InferTaint.inferSensitiveSinkUndefined(source); // should report
   }
 
-  public void integritySink(@IntegritySink String s1, String s2) {
-  }
+  public void integritySink(@IntegritySink String s1, String s2) {}
 
   void testIntegritySinkAnnotReport_FN(String s) {
     integritySink(integritySource(), s); // should report
@@ -262,5 +245,4 @@ public class TaintExample {
   void testIntegritySinkAnnotNoReport(String s) {
     integritySink(s, integritySource()); // should not report
   }
-
 }

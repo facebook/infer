@@ -17,12 +17,13 @@ import java.lang.annotation.Target;
  * class/field/method are confined to the given thread name. For the thread name, you can either use
  * the default constants UI/ANY or add your own.
  */
-
-@Target({ ElementType.TYPE, ElementType.FIELD, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
 public @interface ThreadConfined {
-  String value(); /** the thread that the mutations should be confined to */
-  public static String UI = "UI"; /** confined to the UI thread */
-  public static String ANY = "ANY"; /** confined to any thread (but only that thread!) */
-
+  String value();
+  /** the thread that the mutations should be confined to */
+  public static String UI = "UI";
+  /** confined to the UI thread */
+  public static String ANY = "ANY";
+  /** confined to any thread (but only that thread!) */
 }

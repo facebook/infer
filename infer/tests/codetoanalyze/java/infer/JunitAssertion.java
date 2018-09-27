@@ -12,8 +12,7 @@ import static junit.framework.Assert.assertTrue;
 
 public class JunitAssertion {
   class A {
-    public void f() {
-    }
+    public void f() {}
   }
 
   public void consistentAssertion(A a) {

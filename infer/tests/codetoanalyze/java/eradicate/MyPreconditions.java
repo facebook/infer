@@ -11,5 +11,4 @@ import javax.annotation.Nullable;
 public class MyPreconditions {
 
   public static native <T> T checkNotNull(@Nullable T t);
-
 }

@@ -8,14 +8,9 @@
 package java.util.zip;
 
 import com.facebook.infer.builtins.InferUndefined;
-
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-
 
 public class DeflaterInputStream {
-
 
   public int available() throws IOException {
     return InferUndefined.can_throw_ioexception_int();
@@ -40,5 +35,4 @@ public class DeflaterInputStream {
   public long skip(long n) throws IOException {
     return InferUndefined.can_throw_ioexception_long();
   }
-
 }

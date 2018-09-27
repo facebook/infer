@@ -10,6 +10,5 @@ package codetoanalyze.java.infer;
 public class T {
   int x;
 
-  void f() {
-  }
+  void f() {}
 }

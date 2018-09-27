@@ -12,5 +12,4 @@ public class Branch {
   public static boolean unlikely(boolean value) {
     return value;
   }
-
 }

@@ -13,8 +13,7 @@ import javax.annotation.Nullable;
 class SubclassExample {
 
   class T {
-    public void f() {
-    }
+    public void f() {}
   }
 
   class A {
@@ -23,9 +22,7 @@ class SubclassExample {
       return new T();
     }
 
-    public
-    @Nullable
-    T bar() {
+    public @Nullable T bar() {
       return null;
     }
 
@@ -35,23 +32,18 @@ class SubclassExample {
       }
     }
 
-    public void noDeref(T t) {
-    }
-
+    public void noDeref(T t) {}
   }
 
   class B extends A {
 
-    public
-    @Nullable
-    T foo() {
+    public @Nullable T foo() {
       return null;
     }
 
     public T bar() {
       return new T();
     }
-
   }
 
   interface I {
@@ -60,9 +52,7 @@ class SubclassExample {
 
   class C implements I {
 
-    public
-    @Nullable
-    T baz() {
+    public @Nullable T baz() {
       return null;
     }
   }
@@ -78,18 +68,16 @@ class SubclassExample {
         t.f();
       }
     }
-
   }
 }
 
 class ConstructorsAreExcluded {
   class Base {
-    Base (@Nullable String s) {
-    }
+    Base(@Nullable String s) {}
   }
 
   class Derived extends Base {
-    Derived (String s) { // OK: there's no sub-typing between constructors
+    Derived(String s) { // OK: there's no sub-typing between constructors
       super(s);
     }
   }
@@ -124,5 +112,4 @@ public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnot
   public String implementInAnotherFile(String s) {
     return "";
   }
-
 }

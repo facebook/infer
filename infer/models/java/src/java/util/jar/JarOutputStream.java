@@ -9,12 +9,9 @@ package java.util.jar;
 
 import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 
 public class JarOutputStream {
 
@@ -31,5 +28,4 @@ public class JarOutputStream {
   public void putNextEntry(ZipEntry ze) throws IOException {
     InferUndefined.can_throw_ioexception_void();
   }
-
 }

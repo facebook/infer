@@ -9,7 +9,6 @@ package java.util.zip;
 
 import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
@@ -53,12 +52,9 @@ public class ZipFile {
       }
 
       public ZipEntry nextElement() throws NoSuchElementException {
-        if (hasEls)
-          return new ZipEntry("");
-        else
-          throw new NoSuchElementException();
+        if (hasEls) return new ZipEntry("");
+        else throw new NoSuchElementException();
       }
     };
   }
-
 }

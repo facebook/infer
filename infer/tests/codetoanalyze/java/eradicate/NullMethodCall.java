@@ -7,17 +7,14 @@
 
 package codetoanalyze.java.eradicate;
 
-import com.google.common.base.Preconditions;
-
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import com.facebook.infer.annotation.Assertions;
-import java.lang.System;
-import java.util.Map;
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
-
 
 public class NullMethodCall {
 
@@ -58,16 +55,11 @@ public class NullMethodCall {
   }
 
   private static class S {
-    private static
-    @Nullable
-    String sfld;
+    private static @Nullable String sfld;
   }
 
-  @Nullable
-  String fld;
-  private
-  @Nullable
-  String pfld;
+  @Nullable String fld;
+  private @Nullable String pfld;
 
   public class Inner {
     int outerField() {
@@ -221,8 +213,7 @@ public class NullMethodCall {
   }
 
   class CheckNotNullVararg {
-    void checkNotNull(String msg, Object ... objects) {
-    }
+    void checkNotNull(String msg, Object... objects) {}
 
     void testCheckNotNullVaratg(@Nullable String s1, @Nullable String s2) {
       checkNotNull("hello", s1, s2);
@@ -254,30 +245,25 @@ public class NullMethodCall {
       String s = null;
       if (whoknows()) {
         s = "a";
-      }
-      else {
+      } else {
         System.exit(1);
       }
       int n = s.length();
     }
   }
 
-  public void testMapGetBad
-      (Map<String, String> m,
-       HashMap<String, String> hm,
-       ConcurrentHashMap<String, String> chm) {
-      m.get("foo").toString();
-      hm.get("foo").toString();
-      chm.get("foo").toString();
+  public void testMapGetBad(
+      Map<String, String> m, HashMap<String, String> hm, ConcurrentHashMap<String, String> chm) {
+    m.get("foo").toString();
+    hm.get("foo").toString();
+    chm.get("foo").toString();
   }
 
-  public void testMapRemoveBad
-      (Map<String, String> m,
-       HashMap<String, String> hm,
-       ConcurrentHashMap<String, String> chm) {
-      m.remove("foo").toString();
-      hm.remove("foo").toString();
-      chm.remove("foo").toString();
+  public void testMapRemoveBad(
+      Map<String, String> m, HashMap<String, String> hm, ConcurrentHashMap<String, String> chm) {
+    m.remove("foo").toString();
+    hm.remove("foo").toString();
+    chm.remove("foo").toString();
   }
 
   @Nullable Object nullableField;
@@ -300,8 +286,7 @@ public class NullMethodCall {
     return nullableField.toString();
   }
 
-  void nullMethodCallWithAlarmManager(
-      AlarmManager manager, @Nullable PendingIntent intent) {
+  void nullMethodCallWithAlarmManager(AlarmManager manager, @Nullable PendingIntent intent) {
     manager.cancel(intent);
   }
 

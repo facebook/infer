@@ -8,8 +8,6 @@
 package java.lang;
 
 import com.facebook.infer.builtins.InferBuiltins;
-import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.FileDescriptor;
 
 public class Process {
@@ -26,5 +24,4 @@ public class Process {
     destroy();
     return this;
   }
-
 }

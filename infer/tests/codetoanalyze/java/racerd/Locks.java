@@ -7,12 +7,11 @@
 
 package codetoanalyze.java.checkers;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.annotation.concurrent.ThreadSafe;
 
 @ThreadSafe
 public class Locks {
@@ -212,7 +211,6 @@ public class Locks {
     f = 32;
   }
 
-
   void useLock() {
     synchronized (this) {
     }
@@ -243,7 +241,7 @@ public class Locks {
   void lockInLoopLexicalBad(int i) {
     while (i > 0) {
       i++;
-      synchronized(this) {
+      synchronized (this) {
       }
     }
     f = 32;
@@ -252,14 +250,14 @@ public class Locks {
   void lockInLoopLexicalOk(int i) {
     while (i > 0) {
       i++;
-      synchronized(this) {
+      synchronized (this) {
         f = 32;
       }
     }
   }
 
   void loopInLockLexicalBad(int i) {
-    synchronized(this) {
+    synchronized (this) {
       while (i > 0) {
         i++;
       }
@@ -363,6 +361,4 @@ public class Locks {
   public Object unownedReadBad() {
     return this.mField3;
   }
-
-
 }

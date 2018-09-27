@@ -8,15 +8,13 @@
 package java.net;
 
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.IOException;
 
 public class ServerSocket {
 
-    public Socket accept() throws IOException {
-        if (InferUndefined.boolean_undefined()) {
-            return new Socket();
-        } else throw new IOException();
-    }
-
+  public Socket accept() throws IOException {
+    if (InferUndefined.boolean_undefined()) {
+      return new Socket();
+    } else throw new IOException();
+  }
 }

@@ -21,7 +21,8 @@ interface AnnotatedInterface {
 
 interface AnnotatedInterfaceMethod {
 
-  @ThreadSafe public void foo();
+  @ThreadSafe
+  public void foo();
 }
 
 class NotThreadSafe {
@@ -34,7 +35,6 @@ class NotThreadSafe {
 interface ThreadConfinedInterface {
   void foo();
 }
-
 
 interface ThreadConfinedMethod {
 
@@ -74,11 +74,10 @@ public class Dispatch {
   }
 
   public void callUnderLock(AnnotatedInterface i) {
-    synchronized(this) {
+    synchronized (this) {
       i.foo();
     }
   }
-
 }
 
 class Some {
@@ -90,14 +89,16 @@ class Some {
 
 @ThreadSafe
 class ThreadConfinedField {
-    @ThreadConfined(ThreadConfined.ANY) UnannotatedInterface mThreadConfined;
-    UnannotatedInterface mNormal;
+  @ThreadConfined(ThreadConfined.ANY)
+  UnannotatedInterface mThreadConfined;
 
-    void interfaceCallOnThreadConfinedFieldOk() {
-        mThreadConfined.foo();
-    }
+  UnannotatedInterface mNormal;
 
-    void interfaceCallOnNormalFieldBad() {
-        mNormal.foo();
-    }
+  void interfaceCallOnThreadConfinedFieldOk() {
+    mThreadConfined.foo();
+  }
+
+  void interfaceCallOnNormalFieldBad() {
+    mNormal.foo();
+  }
 }

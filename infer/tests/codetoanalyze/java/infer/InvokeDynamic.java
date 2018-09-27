@@ -14,26 +14,31 @@ public class InvokeDynamic {
 
   void invokeDynamicThenNpeBad(List<String> list) {
     Object o = null;
-    Collections.sort(list, (String a, String b) -> {
-        return b.compareTo(a);
-      });
+    Collections.sort(
+        list,
+        (String a, String b) -> {
+          return b.compareTo(a);
+        });
     o.toString();
   }
 
   void npeInLambdaBad(List<String> list) {
-    Collections.sort(list, (String a, String b) -> {
-        Object o = null;
-        o.toString();
-        return b.compareTo(a);
-      });
+    Collections.sort(
+        list,
+        (String a, String b) -> {
+          Object o = null;
+          o.toString();
+          return b.compareTo(a);
+        });
   }
 
   // we won't get this one because we don't actually translate the invocation of the lambda
   void FN_npeViaCaptureBad(List<String> list) {
     String s = null;
-    Collections.sort(list, (String a, String b) -> {
-        return s.compareTo(a);
-      });
+    Collections.sort(
+        list,
+        (String a, String b) -> {
+          return s.compareTo(a);
+        });
   }
-
 }

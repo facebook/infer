@@ -13,11 +13,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target({
-        ElementType.CONSTRUCTOR,
-        ElementType.METHOD,
-        ElementType.TYPE
-})
+@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE})
 
 // Signal to the starvation checker that the method (or all the methods of the class,
 // if at class level) does not perform any potentially blocking operations.  Can be used to

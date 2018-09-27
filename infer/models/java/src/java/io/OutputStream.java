@@ -31,5 +31,4 @@ public class OutputStream {
   public void close() throws IOException {
     InferBuiltins.__set_mem_attribute(this);
   }
-
 }

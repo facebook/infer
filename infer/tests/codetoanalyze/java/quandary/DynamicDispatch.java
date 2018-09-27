@@ -13,7 +13,9 @@ public class DynamicDispatch {
 
   static interface Interface {
     public Object returnSource();
+
     public void callSink(Object o);
+
     public Object propagate(Object o);
   }
 
@@ -58,8 +60,7 @@ public class DynamicDispatch {
     }
 
     @Override
-    public void callSink(Object o) {
-    }
+    public void callSink(Object o) {}
 
     @Override
     public Object propagate(Object o) {
@@ -67,9 +68,10 @@ public class DynamicDispatch {
     }
   }
 
-  /** interface tests. for all of these, we should see a warning for both BadInterfaceImpl1 and
-   BadInterfaceImpl2, but not OkInterfaceImpl */
-
+  /**
+   * interface tests. for all of these, we should see a warning for both BadInterfaceImpl1 and
+   * BadInterfaceImpl2, but not OkInterfaceImpl
+   */
   static void FN_returnSourceViaInterfaceBad(Interface i) {
     Object source = i.returnSource();
     InferTaint.inferSensitiveSink(source);
@@ -103,8 +105,7 @@ public class DynamicDispatch {
       return null;
     }
 
-    public void callSink(Object o) {
-    }
+    public void callSink(Object o) {}
 
     public Object propagate(Object o) {
       return null;
@@ -157,5 +158,4 @@ public class DynamicDispatch {
     Object launderedSource = s.propagate(source2);
     InferTaint.inferSensitiveSink(launderedSource);
   }
-
 }

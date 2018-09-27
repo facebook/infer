@@ -20,5 +20,4 @@ public class SkipImplementationClass1 {
   public Object notAnnotatedNullable() {
     return null;
   }
-
 }

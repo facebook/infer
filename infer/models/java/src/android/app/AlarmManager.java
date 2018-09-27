@@ -7,7 +7,6 @@
 
 package android.app;
 
-import android.app.PendingIntent;
 
 public abstract class AlarmManager {
 

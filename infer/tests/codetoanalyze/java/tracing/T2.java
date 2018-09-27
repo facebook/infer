@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
 package codetoanalyze.java.tracing;
 
 public class T2 {
   int x;
-  void f() {
-  }
+
+  void f() {}
 }

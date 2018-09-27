@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.CountDownLatch;
 import android.support.annotation.UiThread;
-import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 class Dedup {
   CountDownLatch latch;
@@ -33,14 +32,16 @@ class Dedup {
 
   // deadlock should be reported between oneWayBad and anotherWayBad only
   void oneWayBad() {
-    synchronized(lockA) {
-      synchronized(lockB) {}
+    synchronized (lockA) {
+      synchronized (lockB) {
+      }
     }
   }
 
   void anotherWayBad() {
-    synchronized(lockB) {
-      synchronized(lockA) {}
+    synchronized (lockB) {
+      synchronized (lockA) {
+      }
     }
   }
 

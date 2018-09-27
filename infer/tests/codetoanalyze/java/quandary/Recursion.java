@@ -40,5 +40,4 @@ public class Recursion {
     InferTaint.inferSensitiveSink(param);
     FN_recursionBad(i - 1, InferTaint.inferSecretSource());
   }
-
 }

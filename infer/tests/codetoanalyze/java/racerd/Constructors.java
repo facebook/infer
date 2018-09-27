@@ -65,5 +65,4 @@ public class Constructors {
     }
     return sSingleton2;
   }
-
 }

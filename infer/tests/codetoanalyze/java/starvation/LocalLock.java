@@ -13,8 +13,9 @@ class LocalLock {
   }
 
   void localLockOuterOk() {
-    synchronized(getLock1()) {
-      synchronized(this) {}
+    synchronized (getLock1()) {
+      synchronized (this) {
+      }
     }
   }
 
@@ -23,8 +24,9 @@ class LocalLock {
   }
 
   void localLockInnerOk() {
-    synchronized(this) {
-      synchronized(getLock2()) {}
+    synchronized (this) {
+      synchronized (getLock2()) {
+      }
     }
   }
 }

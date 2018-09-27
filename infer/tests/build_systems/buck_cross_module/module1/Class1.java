@@ -16,5 +16,4 @@ public class Class1 {
   }
 
   @Nullable public Object nullableField;
-
 }

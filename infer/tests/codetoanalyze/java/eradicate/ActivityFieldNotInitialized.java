@@ -16,9 +16,6 @@ public class ActivityFieldNotInitialized {
 
     private String field;
 
-    protected void onCreate(Bundle bundle) {
-    }
-
+    protected void onCreate(Bundle bundle) {}
   }
-
 }

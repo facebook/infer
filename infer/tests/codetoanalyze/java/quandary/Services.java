@@ -10,26 +10,28 @@ package codetoanalyze.java.quandary;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.Runtime;
-import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
-class Services {
-
-}
+class Services {}
 
 @Retention(RetentionPolicy.CLASS)
-@interface ThriftService {
-}
+@interface ThriftService {}
 
 @ThriftService
 interface GeneratedServiceInterface {
   public void serviceMethodBad(String s) throws IOException;
+
   public void paramToSql1Bad(String s) throws SQLException;
+
   public void paramToSql2Bad(String s) throws SQLException;
+
   public void paramToSql3Bad(String s) throws SQLException;
+
   public void paramToSql4Bad(String s) throws SQLException;
+
   public void paramToSql5Bad(String s) throws SQLException;
+
   void packageProtectedServiceMethodBad(String s) throws IOException;
 }
 
@@ -91,5 +93,4 @@ class Service1 implements GeneratedServiceInterface {
   private void privateMethodNotEndpointOk(String s) throws IOException {
     Runtime.getRuntime().exec(s);
   }
-
 }

@@ -16,7 +16,6 @@ class A implements I {
   public T2 get() {
     return new T2();
   }
-
 }
 
 class B extends A {
@@ -24,7 +23,6 @@ class B extends A {
   public T2 get() {
     return null;
   }
-
 }
 
 public class LazyDynamicDispatchExample {
@@ -51,5 +49,4 @@ public class LazyDynamicDispatchExample {
     B b = new B();
     fromInterface(b).f();
   }
-
 }

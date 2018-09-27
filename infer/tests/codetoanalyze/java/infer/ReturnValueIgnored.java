@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-
 public class ReturnValueIgnored {
 
   private int m() {
@@ -17,5 +16,4 @@ public class ReturnValueIgnored {
   public void returnValueIgnored() {
     m();
   }
-
 }

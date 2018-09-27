@@ -11,14 +11,11 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-class SuperClass {
-}
+class SuperClass {}
 
-class SubClassA extends SuperClass {
-}
+class SubClassA extends SuperClass {}
 
-class SubClassB extends SuperClass {
-}
+class SubClassB extends SuperClass {}
 
 interface MyInterface {
   public int getInt();
@@ -36,7 +33,6 @@ class AnotherImplementationOfInterface implements MyInterface {
     return 1;
   }
 }
-
 
 public class ClassCastExceptions {
 
@@ -67,5 +63,4 @@ public class ClassCastExceptions {
   public void castingArrayOfPrimitiveTypeOK(int[] a) {
     int[] b = (int[]) a;
   }
-
 }

@@ -13,33 +13,27 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
-
 import com.facebook.infer.annotation.Assertions;
-
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.lang.System;
-import java.util.concurrent.locks.Lock;
 import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class NullPointerExceptions {
 
   class A {
     int x;
 
-    public void method() {
-    }
+    public void method() {}
   }
 
   // npe local with field
@@ -50,10 +44,8 @@ public class NullPointerExceptions {
 
   public A canReturnNullObject(boolean ok) {
     A a = new A();
-    if (ok)
-      return a;
-    else
-      return null;
+    if (ok) return a;
+    else return null;
   }
 
   public static void expectNotNullObjectParameter(A a) {
@@ -83,13 +75,11 @@ public class NullPointerExceptions {
   class B {
     A a;
 
-    void test() {
-    }
+    void test() {}
   }
 
-
   public static int nullPointerExceptionWithArray() {
-    A[] array = new A[]{null};
+    A[] array = new A[] {null};
     A t = array[0];
     return t.x;
   }
@@ -138,8 +128,7 @@ public class NullPointerExceptions {
   int x;
 
   public void nullPointerExceptionFromNotKnowingThatThisIsNotNull() {
-    if (this == null) {
-    }
+    if (this == null) {}
     this.x = 4;
   }
 
@@ -170,8 +159,7 @@ public class NullPointerExceptions {
   }
 
   public void genericMethodSomewhereCheckingForNull(String s) {
-    if (s == null) {
-    }
+    if (s == null) {}
   }
 
   public void FP_noNullPointerExceptionAfterSkipFunction() {
@@ -192,11 +180,11 @@ public class NullPointerExceptions {
     return "aa";
   }
 
-  int NPEvalueOfFromHashmapBad(HashMap<Integer,Integer> h, int position) {
+  int NPEvalueOfFromHashmapBad(HashMap<Integer, Integer> h, int position) {
     return h.get(position);
   }
 
-  Integer NPEvalueOfFromHashmapGood(HashMap<Integer,Integer> h, int position) {
+  Integer NPEvalueOfFromHashmapGood(HashMap<Integer, Integer> h, int position) {
     return h.get(position);
   }
 
@@ -213,23 +201,18 @@ public class NullPointerExceptions {
   public void cursorFromContentResolverNPE(String customClause) {
     String[] projection = {"COUNT(*)"};
     String selectionClause = selectionClause = customClause;
-    Cursor cursor = mContext.getContentResolver().query(
-                      null,
-                      projection,
-                      selectionClause,
-                      null,
-                      null);
+    Cursor cursor =
+        mContext.getContentResolver().query(null, projection, selectionClause, null, null);
     cursor.close();
   }
 
   public int cursorQueryShouldNotReturnNull(SQLiteDatabase sqLiteDatabase) {
-    Cursor cursor = sqLiteDatabase.query(
-              "events", null, null, null, null, null, null);
-      try {
-        return cursor.getCount();
-      } finally {
-        cursor.close();
-      }
+    Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
+    try {
+      return cursor.getCount();
+    } finally {
+      cursor.close();
+    }
   }
 
   Object[] arr = new Object[1];
@@ -527,7 +510,8 @@ public class NullPointerExceptions {
     o.toString();
   }
 
-  @Nullable Object wrapUnknownFuncWithNullable() {
+  @Nullable
+  Object wrapUnknownFuncWithNullable() {
     return unknownFunc();
   }
 
@@ -574,7 +558,7 @@ public class NullPointerExceptions {
   }
 
   void dereferenceAfterUnlock2(Lock l) {
-    synchronized(l){
+    synchronized (l) {
       String b = null;
     }
     String s = l.toString();
@@ -590,12 +574,12 @@ public class NullPointerExceptions {
     final String c1 = "Test string!";
     final String c2 = "Test string!";
     String s = null;
-    if(c1.equals(c1)) {
+    if (c1.equals(c1)) {
       s = "safe";
     }
     s.toString(); // No NPE
     s = null;
-    if(c1.equals(c2)) {
+    if (c1.equals(c2)) {
       s = "safe";
     }
     s.toString(); // No NPE
@@ -608,7 +592,7 @@ public class NullPointerExceptions {
     final String c1 = "Test string 1";
     final String c2 = "Test string 2";
     String s = null;
-    if(!c1.equals(c2)) {
+    if (!c1.equals(c2)) {
       s = "safe";
     }
     s.toString(); // No NPE
@@ -622,7 +606,7 @@ public class NullPointerExceptions {
     final String c1 = "Test string 1";
     String c2 = "Test " + getString2();
     String s = null;
-    if(!c1.equals(c2)) {
+    if (!c1.equals(c2)) {
       s.toString(); // NPE
     }
   }
@@ -640,7 +624,6 @@ public class NullPointerExceptions {
     void dereferenceNullableInterfaceFieldBad() {
       mObject.toString();
     }
-
   }
 
   Object getObject() {

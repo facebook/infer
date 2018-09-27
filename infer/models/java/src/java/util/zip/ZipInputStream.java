@@ -8,11 +8,7 @@
 package java.util.zip;
 
 import com.facebook.infer.builtins.InferUndefined;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class ZipInputStream {
 
@@ -20,12 +16,10 @@ public class ZipInputStream {
     boolean undef = InferUndefined.boolean_undefined();
     if (undef) {
       return new ZipEntry("");
-    } else
-      throw new IOException();
+    } else throw new IOException();
   }
 
   public void closeEntry() throws IOException {
     InferUndefined.can_throw_ioexception_void();
   }
-
 }

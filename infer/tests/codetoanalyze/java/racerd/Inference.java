@@ -40,8 +40,7 @@ public class Inference {
   int mField3;
 
   // empty call that uses a lock
-  synchronized private void useLock() {
-  }
+  private synchronized void useLock() {}
 
   int useLockInCalleeThenReadBad() {
     useLock();
@@ -69,5 +68,4 @@ public class Inference {
   void write5OutsideSyncOk() {
     mField5 = 5; // don't report
   }
-
 }

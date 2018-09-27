@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-class OurThreadUtils{
-  native static boolean isMainThread();
-  static void assertMainThread(){}
-  static void assertHoldsLock(Object lock){}
+class OurThreadUtils {
+  static native boolean isMainThread();
+
+  static void assertMainThread() {}
+
+  static void assertHoldsLock(Object lock) {}
 }

@@ -13,7 +13,9 @@ import javax.annotation.concurrent.ThreadSafe;
 public class Locals {
   int f;
 
-  static Locals id(Locals o) { return o; }
+  static Locals id(Locals o) {
+    return o;
+  }
 
   static void FN_raceOnTemporary_bad(Locals o) {
     id(o).f = 5;

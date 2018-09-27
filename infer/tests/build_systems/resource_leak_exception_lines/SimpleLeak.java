@@ -9,16 +9,16 @@ import java.io.*;
 
 public class SimpleLeak {
   public void method(boolean v) {
-        try {
-            FileInputStream a = new FileInputStream("aaa");
-            FileInputStream z = null;
-            if (v) {
-              z = new FileInputStream("bbb");
-              z.read();
-            }
-            z.close();
-        } catch (IOException e) {
-            // do nothing
-        }
+    try {
+      FileInputStream a = new FileInputStream("aaa");
+      FileInputStream z = null;
+      if (v) {
+        z = new FileInputStream("bbb");
+        z.read();
+      }
+      z.close();
+    } catch (IOException e) {
+      // do nothing
     }
+  }
 }

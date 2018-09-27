@@ -267,5 +267,4 @@ public class AnalysisStops {
     accessPathInCalleeMayCauseFalsePositive();
     int i = 1 / 0;
   }
-
 }

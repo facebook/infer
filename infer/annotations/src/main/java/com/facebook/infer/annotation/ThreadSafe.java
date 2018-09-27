@@ -17,8 +17,7 @@ import java.lang.annotation.Target;
  * applied to methods. In addition, you can ask Infer to assume thread-safety rather than checking
  * it by using {@literal @ThreadSafe(enableChecks = false)}.
  */
-
-@Target({ ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE })
+@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 public @interface ThreadSafe {
   boolean enableChecks() default true;

@@ -15,7 +15,6 @@ public class MethodNameClashExample {
       String s = null;
       s.toString();
     }
-
   }
 
   public static class B {
@@ -23,11 +22,9 @@ public class MethodNameClashExample {
     public static void foo() {
       A.foo();
     }
-
   }
 
   public static void main(String[] args) {
     B.foo();
   }
-
 }

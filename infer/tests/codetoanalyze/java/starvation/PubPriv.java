@@ -32,14 +32,16 @@ class PubPriv {
   Object lockA, lockB;
 
   private void oneWayOk() {
-    synchronized(lockA) {
-      synchronized(lockB) {}
+    synchronized (lockA) {
+      synchronized (lockB) {
+      }
     }
   }
 
   private void anotherWayOk() {
-    synchronized(lockB) {
-      synchronized(lockA) {}
+    synchronized (lockB) {
+      synchronized (lockA) {
+      }
     }
   }
 

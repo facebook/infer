@@ -7,9 +7,9 @@
 
 package com.facebook.infer.annotation;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 public class Assertions {
 
@@ -53,11 +53,9 @@ public class Assertions {
     return assertNotNull(map.get(key));
   }
 
-  public static void assumeCondition(boolean condition) {
-  }
+  public static void assumeCondition(boolean condition) {}
 
-  public static void assumeCondition(boolean condition, String explanation) {
-  }
+  public static void assumeCondition(boolean condition, String explanation) {}
 
   public static void assertCondition(boolean condition) {
     if (!condition) {

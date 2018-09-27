@@ -16,5 +16,4 @@ public class SkippedClass {
   public static SkippedClass returnOwned() {
     return new SkippedClass();
   }
-
 }

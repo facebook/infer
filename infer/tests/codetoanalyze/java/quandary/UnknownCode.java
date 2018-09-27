@@ -7,16 +7,14 @@
 
 package codetoanalyze.java.quandary;
 
-import com.facebook.infer.builtins.InferTaint;
-
 import android.content.Intent;
 import android.os.Parcel;
+import com.facebook.infer.builtins.InferTaint;
 
 /** testing how the analysis handles missing/unknown code */
-
 public abstract class UnknownCode {
 
-  native static Object nativeMethod(Object o);
+  static native Object nativeMethod(Object o);
 
   abstract Object abstractMethod(Object o);
 
@@ -88,5 +86,4 @@ public abstract class UnknownCode {
     Object launderedSource = nativeMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);
   }
-
 }

@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-
 public class ArrayOutOfBounds {
 
   public int arrayOutOfBounds() {
@@ -90,5 +89,4 @@ public class ArrayOutOfBounds {
   public void nestedInBounds() {
     safeNestedLoop(new int[11], new int[10]);
   }
-
 }

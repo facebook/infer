@@ -15,5 +15,4 @@ public class ExpensiveSubtypingExample extends ExpensiveInterfaceExample.C {
   public void m3() {}
 
   public void m4() {}
-
 }

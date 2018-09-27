@@ -17,12 +17,13 @@ class Interclass {
   }
 
   void interclass2Ok(InterclassB b) {
-    synchronized(b) {}
+    synchronized (b) {
+    }
   }
 
   void reentrantOk(InterclassB b) {
-    synchronized(this) {
-      synchronized(b) {
+    synchronized (this) {
+      synchronized (b) {
         b.interclass1Ok();
       }
     }
@@ -41,7 +42,7 @@ class InterclassB {
   synchronized void interclass1Ok() {}
 
   void interclass2_ok(Interclass c) {
-    synchronized(c) {
+    synchronized (c) {
       c.interclass2Ok(this);
     }
   }

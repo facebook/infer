@@ -7,10 +7,9 @@
 
 package dalvik.system;
 
-
 public class CloseGuard {
 
-    public static interface Reporter {
-        public void report(String message, Throwable allocationSite);
-    }
+  public static interface Reporter {
+    public void report(String message, Throwable allocationSite);
+  }
 }

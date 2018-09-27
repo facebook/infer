@@ -32,8 +32,7 @@ public abstract class PrintWriter {
     return this;
   }
 
-  public PrintWriter append(CharSequence csq, int start, int end)
-      throws IOException {
+  public PrintWriter append(CharSequence csq, int start, int end) throws IOException {
     InferUndefined.can_throw_ioexception_void();
     return this;
   }
@@ -68,5 +67,4 @@ public abstract class PrintWriter {
       mOutputStream.close();
     }
   }
-
 }

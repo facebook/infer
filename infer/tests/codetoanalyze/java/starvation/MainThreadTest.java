@@ -6,7 +6,6 @@
  */
 
 import android.os.Binder;
-import android.os.RemoteException;
 import android.support.annotation.MainThread;
 
 class MainThreadTest {
@@ -15,7 +14,8 @@ class MainThreadTest {
   void doTransact() {
     try {
       b.transact(0, null, null, 0);
-    } catch (Exception e) {}
+    } catch (Exception e) {
+    }
   }
 
   @MainThread

@@ -8,7 +8,6 @@
 package codetoanalyze.java.checkers;
 
 import com.facebook.infer.annotation.ThreadSafe;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
@@ -90,7 +89,6 @@ public class Builders {
     input.g = "";
     return output;
   }
-
 }
 
 @ThreadSafe
@@ -100,7 +98,6 @@ class TopLevelBuilder {
   public void setG(String g) {
     this.g = g; // still want to warn if the builder is annotated ThreadSafe
   }
-
 }
 
 class MyBuilder {
@@ -119,5 +116,4 @@ class MyBuilder {
   static void setNestedPathOk(int i) {
     MyBuilder.create().setNestedPath(1);
   }
-
 }

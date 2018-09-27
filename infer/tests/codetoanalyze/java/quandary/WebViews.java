@@ -7,9 +7,6 @@
 
 package codetoanalyze.java.quandary;
 
-import java.io.File;
-import java.net.URISyntaxException;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -17,15 +14,14 @@ import android.net.Uri;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebMessage;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
 import com.facebook.infer.builtins.InferTaint;
+import java.io.File;
+import java.net.URISyntaxException;
 
 public class WebViews {
 
@@ -142,5 +138,4 @@ public class WebViews {
     // should warn here
     webview.addJavascriptInterface(new JsObject(), "injectedObject");
   }
-
 }

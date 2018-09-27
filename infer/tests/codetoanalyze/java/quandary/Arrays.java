@@ -17,7 +17,6 @@ public class Arrays {
   }
 
   /** should report on these tests */
-
   void viaArrayBad() {
     Object[] arr = new Object[1];
     arr[0] = InferTaint.inferSecretSource();
@@ -43,7 +42,6 @@ public class Arrays {
   }
 
   /** should not report on these tests */
-
   void viaArrayOk() {
     Object[] arr = new Object[1];
     arr[0] = new Object();
@@ -66,5 +64,4 @@ public class Arrays {
     arr[0] = null;
     InferTaint.inferSensitiveSink(arr[0]);
   }
-
 }

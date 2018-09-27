@@ -19,5 +19,4 @@ public class JunitExample extends TestCase {
   public void testSomething() {
     mField.toString();
   }
-
 }

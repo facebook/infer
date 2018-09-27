@@ -37,5 +37,4 @@ public class NullPointerExceptionExample {
       callDeref(null, true);
     }
   }
-
 }

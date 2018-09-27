@@ -8,19 +8,18 @@
 package java.lang;
 
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-
-
 
 abstract class ProcessManager {
 
-  public Process exec(String[] taintedCommand, String[] taintedEnvironment, File workingDirectory,
-                      boolean redirectErrorStream) throws IOException {
+  public Process exec(
+      String[] taintedCommand,
+      String[] taintedEnvironment,
+      File workingDirectory,
+      boolean redirectErrorStream)
+      throws IOException {
 
     FileDescriptor in = new FileDescriptor();
     FileDescriptor out = new FileDescriptor();
@@ -30,5 +29,4 @@ abstract class ProcessManager {
   }
 
   public static native ProcessManager getInstance();
-
 }

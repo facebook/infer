@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
 package codetoanalyze.java.tracing;
 
 import com.facebook.infer.annotation.Verify;
@@ -15,7 +14,6 @@ class LocallyDefinedException extends RuntimeException {
   public LocallyDefinedException(String message) {
     super(message);
   }
-
 }
 
 public class LocallyDefinedExceptionExample {
@@ -41,5 +39,4 @@ public class LocallyDefinedExceptionExample {
       }
     }
   }
-
 }

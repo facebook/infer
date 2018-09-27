@@ -8,13 +8,11 @@
 package codetoanalyze.java.eradicate;
 
 import android.text.TextUtils;
-
-import javax.annotation.Nullable;
-import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.FalseOnNull;
 import com.facebook.infer.annotation.PropagatesNullable;
 import com.facebook.infer.annotation.TrueOnNull;
 import com.google.common.base.Strings;
+import javax.annotation.Nullable;
 
 public class CustomAnnotations {
 
@@ -55,6 +53,7 @@ public class CustomAnnotations {
         s.toString(); // BAD
       }
     }
+
     void myTextUtilsIsNotEmpty(@Nullable CharSequence s) {
       if (MyTextUtils.isNotEmpty(s)) {
         s.toString(); // OK

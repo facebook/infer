@@ -8,11 +8,9 @@
 package codetoanalyze.java.infer;
 
 import com.facebook.infer.annotation.SuppressLint;
-
-import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
-
+import java.io.IOException;
 
 // @SuppressLint("Suppressing all the warnings in a class is not supported yet")
 class SuppressAllWarnigsInTheClass {
@@ -25,9 +23,9 @@ class SuppressAllWarnigsInTheClass {
   void shouldNotReportResourceLeak() {
     try {
       FileInputStream fis = new FileInputStream(new File("whatever.txt"));
-    } catch (IOException e) {}
+    } catch (IOException e) {
+    }
   }
-
 }
 
 public class SuppressLintExample {
@@ -48,5 +46,4 @@ public class SuppressLintExample {
     Object object = null;
     object.toString();
   }
-
 }

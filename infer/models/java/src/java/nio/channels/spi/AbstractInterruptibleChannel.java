@@ -12,10 +12,9 @@ import java.nio.FileChannelImpl;
 
 public class AbstractInterruptibleChannel {
 
-    public final void close() throws IOException {
-        if (this instanceof FileChannelImpl) {
-            ((FileChannelImpl) this).implCloseChannel();
-        }
+  public final void close() throws IOException {
+    if (this instanceof FileChannelImpl) {
+      ((FileChannelImpl) this).implCloseChannel();
     }
-
+  }
 }

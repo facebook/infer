@@ -13,11 +13,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(value={
-    ElementType.METHOD, // method returns something private
-    ElementType.PARAMETER, // parameter is private
-    ElementType.FIELD, // field is private
-  })
-
-public @interface PrivacySource {
-}
+@Target(
+    value = {
+      ElementType.METHOD, // method returns something private
+      ElementType.PARAMETER, // parameter is private
+      ElementType.FIELD, // field is private
+    })
+public @interface PrivacySource {}

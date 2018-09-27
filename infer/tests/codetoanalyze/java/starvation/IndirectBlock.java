@@ -5,25 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import android.support.annotation.UiThread;
 import android.os.Binder;
 import android.os.RemoteException;
+import android.support.annotation.UiThread;
 
 class IndirectBlock {
   Object expensiveLock;
   Binder binder;
 
   void takeExpensiveLockOk() {
-    synchronized(expensiveLock) {}
+    synchronized (expensiveLock) {
+    }
   }
 
   @UiThread
   void takeExpensiveLockOnUiThreadBad() {
-    synchronized(expensiveLock) {}
+    synchronized (expensiveLock) {
+    }
   }
 
   void doTransactUnderLock() throws RemoteException {
-    synchronized(expensiveLock) {
+    synchronized (expensiveLock) {
       binder.transact(0, null, null, 0);
     }
   }
@@ -35,9 +37,9 @@ class IndirectBlock {
 }
 
 class IndirectInterproc {
-  synchronized public void takeLock() {}
+  public synchronized void takeLock() {}
 
-  synchronized public void doTransactUnderLock(Binder binder) throws RemoteException {
+  public synchronized void doTransactUnderLock(Binder binder) throws RemoteException {
     binder.transact(0, null, null, 0);
   }
 }

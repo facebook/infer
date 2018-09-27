@@ -7,30 +7,24 @@
 
 package codetoanalyze.java.quandary;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-
 import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-
 import com.facebook.infer.builtins.InferTaint;
-
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
 import org.xmlpull.v1.XmlPullParserException;
 
-class IntentSubclass extends Intent {
-}
+class IntentSubclass extends Intent {}
 
-abstract class ContextSubclass extends Context {
-}
+abstract class ContextSubclass extends Context {}
 
 class MyActivity extends Activity {
 
@@ -51,16 +45,16 @@ class MyActivity extends Activity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    mReceiver = new BroadcastReceiver() {
-        @Override
-        // intent is modeled as tainted
-        public void onReceive(Context context, Intent intent) {
-          mUri = intent.getData();
-        }
-      };
+    mReceiver =
+        new BroadcastReceiver() {
+          @Override
+          // intent is modeled as tainted
+          public void onReceive(Context context, Intent intent) {
+            mUri = intent.getData();
+          }
+        };
     registerReceiver(mReceiver, null);
   }
-
 
   @Override
   public void onResume() {
@@ -82,7 +76,6 @@ class MyBroadcastReceiver extends BroadcastReceiver {
   public void onReceive(Context context, Intent intent) {
     mActivity.startService(intent);
   }
-
 }
 
 class MyService extends Service {
@@ -127,15 +120,14 @@ class MyService extends Service {
     mActivity.startService(intent);
     return false;
   }
-
 }
 
 public class Intents {
 
   private native int rand();
 
-  public void callAllActivitySinksBad(Activity activity, String uri) throws
-    SendIntentException, IOException, URISyntaxException, XmlPullParserException {
+  public void callAllActivitySinksBad(Activity activity, String uri)
+      throws SendIntentException, IOException, URISyntaxException, XmlPullParserException {
     Intent intent = (Intent) InferTaint.inferSecretSource();
 
     activity.bindService(intent, null, 0);
@@ -147,7 +139,7 @@ public class Intents {
     activity.sendStickyBroadcastAsUser(intent, null);
     activity.sendStickyOrderedBroadcast(intent, null, null, 0, null, null);
     activity.sendStickyOrderedBroadcastAsUser(intent, null, null, null, 0, null, null);
-    activity.startActivities(new Intent[] { intent });
+    activity.startActivities(new Intent[] {intent});
     activity.startActivity(intent);
     activity.startActivityForResult(intent, 0);
     activity.startActivityIfNeeded(intent, 0);
@@ -236,5 +228,4 @@ public class Intents {
   void startWithUri2Bad(Uri uri) {
     mActivity.startActivity(new Intent("action", uri, mActivity, MyActivity.class));
   }
-
 }

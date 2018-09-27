@@ -11,11 +11,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.View;
-
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Initializer;
-import com.facebook.infer.annotation.SuppressFieldNotInitialized;
-
 import javax.annotation.Nullable;
 
 abstract class A {
@@ -40,8 +37,7 @@ class FragmentExample extends Fragment {
 }
 
 public class FieldNotNullable extends A {
-  @Nullable
-  String x;
+  @Nullable String x;
   String y;
   String fld; // Shadow the field defined in A
   String static_s = null; // Static initializer error
@@ -89,9 +85,7 @@ class MixedInitializers extends Activity {
   protected void onCreate(Bundle bundle) {
     field3 = "3";
   }
-
 }
-
 
 class TestInitializerBuilder {
   String required1;
@@ -99,17 +93,18 @@ class TestInitializerBuilder {
   @Nullable String optional;
 
   // No FIELD_NOT_INITIALIZED error should be reported, because of the @Initializer annotations.
-  TestInitializerBuilder() {
-  }
+  TestInitializerBuilder() {}
 
   // This is an initializer and must always be called before build().
-  @Initializer TestInitializerBuilder setRequired1(String required1) {
+  @Initializer
+  TestInitializerBuilder setRequired1(String required1) {
     this.required1 = required1;
     return this;
   }
 
   // This is an initializer and must always be called before build().
-  @Initializer TestInitializerBuilder setRequired2(String required2) {
+  @Initializer
+  TestInitializerBuilder setRequired2(String required2) {
     this.required2 = required2;
     return this;
   }
@@ -132,7 +127,7 @@ class TestInitializer {
   String required2; // should always be set
   @Nullable String optional; // optionally set
 
-  TestInitializer (TestInitializerBuilder b) {
+  TestInitializer(TestInitializerBuilder b) {
     required1 = b.required1;
     required2 = b.required2;
     optional = b.optional;
@@ -154,28 +149,22 @@ class TestInitializer {
   }
 }
 
-
 class NestedFieldAccess {
 
   class C {
-    @Nullable
-    String s;
+    @Nullable String s;
   }
 
   class CC {
-    @Nullable
-    C c;
+    @Nullable C c;
   }
 
   class CCC {
-    @Nullable
-    CC cc;
+    @Nullable CC cc;
   }
 
-
   public class Test {
-    @Nullable
-    String s;
+    @Nullable String s;
     C myc;
 
     Test() {
@@ -220,8 +209,7 @@ class NestedFieldAccess {
     }
 
     void test5(@Nullable CCC ccc) {
-      if (ccc == null || ccc.cc == null ||
-          ccc.cc.c == null || ccc.cc.c.s == null) {
+      if (ccc == null || ccc.cc == null || ccc.cc.c == null || ccc.cc.c.s == null) {
       } else {
         int n = ccc.cc.c.s.length();
       }
@@ -236,7 +224,8 @@ class NestedFieldAccess {
       dontAssignNull = "";
     }
 
-    @Nullable String getS(int n) {
+    @Nullable
+    String getS(int n) {
       return s;
     }
 
@@ -245,68 +234,68 @@ class NestedFieldAccess {
     }
 
     void FlatOK1(TestFunctionsIdempotent x) {
-      if(getS(3) != null) {
+      if (getS(3) != null) {
         dontAssignNull = getS(3);
       }
     }
 
     void FlatOK2(TestFunctionsIdempotent x) {
-      if(x.getS(3) != null) {
+      if (x.getS(3) != null) {
         dontAssignNull = x.getS(3);
       }
     }
 
     void FlatBAD1(TestFunctionsIdempotent x) {
-      if(x.getS(3) != null) {
+      if (x.getS(3) != null) {
         dontAssignNull = getS(3);
       }
     }
 
     void FlatBAD2(TestFunctionsIdempotent x) {
-      if(x.getS(3) != null) {
+      if (x.getS(3) != null) {
         dontAssignNull = x.getS(4);
       }
     }
 
     void NestedOK1() {
-      if(getSelf().getS(3) != null) {
+      if (getSelf().getS(3) != null) {
         dontAssignNull = getSelf().getS(3);
       }
     }
 
     void NestedOK2() {
-      if(getSelf().getSelf().getS(3) != null) {
+      if (getSelf().getSelf().getS(3) != null) {
         dontAssignNull = getSelf().getSelf().getS(3);
       }
     }
 
     void NestedBAD1() {
-      if(getSelf().getS(3) != null) {
+      if (getSelf().getS(3) != null) {
         dontAssignNull = getSelf().getS(4);
       }
     }
 
     void NestedBAD2() {
-      if(getS(3) != null) {
+      if (getS(3) != null) {
         dontAssignNull = getSelf().getS(3);
       }
     }
 
     void NestedBAD3() {
-      if(getSelf().getSelf().getS(3) != null) {
+      if (getSelf().getSelf().getS(3) != null) {
         dontAssignNull = getSelf().getS(3);
       }
     }
   }
 
   class TestContainsKey {
-    void testMapContainsKey (java.util.Map<Integer, String> m) {
+    void testMapContainsKey(java.util.Map<Integer, String> m) {
       if (m.containsKey(3)) {
         m.get(3).isEmpty();
       }
     }
 
-    void testMapContainsKeyInsideWhileLoop (java.util.Map<Integer, String> m) {
+    void testMapContainsKeyInsideWhileLoop(java.util.Map<Integer, String> m) {
       while (true) {
         if (m.containsKey(3)) {
           m.get(3).isEmpty();
@@ -314,7 +303,7 @@ class NestedFieldAccess {
       }
     }
 
-    void testImmutableMapContainsKey (com.google.common.collect.ImmutableMap<Integer, String> m) {
+    void testImmutableMapContainsKey(com.google.common.collect.ImmutableMap<Integer, String> m) {
       if (m.containsKey(3)) {
         m.get(3).isEmpty();
       }
@@ -340,32 +329,31 @@ class NestedFieldAccess {
       if (!map.containsKey(key)) {
         map.put(key, "abc");
       }
-      dontAssignNull= map.get(key);
+      dontAssignNull = map.get(key);
     }
   }
 
   // support assignments of null to @InjectView fields, generated by butterknife
   class SupportButterKnife {
-     @InjectView String s;
+    @InjectView String s;
 
-     SupportButterKnife() {
-     }
+    SupportButterKnife() {}
 
-     void dereferencingIsOK() {
-       int n = s.length();
-     }
+    void dereferencingIsOK() {
+      int n = s.length();
+    }
 
-     void assignNullIsOK() {
-       s = null;
-     }
+    void assignNullIsOK() {
+      s = null;
+    }
   }
 
   void methodWithNullableCapturedParameterBad_FN(@Nullable Object parameter) {
-    Object object = new Object() {
-      void foo() {
-        parameter.toString();
-      }
-    };
+    Object object =
+        new Object() {
+          void foo() {
+            parameter.toString();
+          }
+        };
   }
-
 }

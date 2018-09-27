@@ -22,7 +22,6 @@ public class FragmentRetainsViewExample extends Fragment {
     public CustomView(Context c) {
       super(c);
     }
-
   }
 
   View mView;
@@ -41,5 +40,4 @@ public class FragmentRetainsViewExample extends Fragment {
   public void onDestroyView() {
     // not nulling out anything
   }
-
 }

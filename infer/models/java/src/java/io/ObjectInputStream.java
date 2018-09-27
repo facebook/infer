@@ -7,9 +7,7 @@
 
 package java.io;
 
-import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
-
 
 public class ObjectInputStream {
 
@@ -26,8 +24,7 @@ public class ObjectInputStream {
     }
   }
 
-  protected ObjectInputStream() throws IOException, SecurityException {
-  }
+  protected ObjectInputStream() throws IOException, SecurityException {}
 
   public int available() throws IOException {
     return InferUndefined.can_throw_ioexception_int();
@@ -117,7 +114,5 @@ public class ObjectInputStream {
     return InferUndefined.can_throw_ioexception_int();
   }
 
-  public static abstract class GetField {
-  }
-
+  public abstract static class GetField {}
 }

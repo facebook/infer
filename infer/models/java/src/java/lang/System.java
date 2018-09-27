@@ -9,41 +9,35 @@ package java.lang;
 
 import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 
-
 public final class System {
 
-    private System() {
+  private System() {}
+
+  public static final InputStream in;
+
+  static {
+    byte[] arr = {0};
+    in = new ByteArrayInputStream(arr);
+  }
+
+  public static final PrintStream out = new PrintStream(new ByteArrayOutputStream());
+
+  public static final PrintStream err = new PrintStream(new ByteArrayOutputStream());
+
+  public static void exit(int status) {
+    InferBuiltins._exit();
+  }
+
+  public static String getProperty(String key) {
+    int n = key.length(); // key must not be null
+    if (InferUndefined.boolean_undefined()) {
+      return null;
     }
-
-    public final static InputStream in;
-
-    static {
-        byte[] arr = {0};
-        in = new ByteArrayInputStream(arr);
-    }
-
-    public final static PrintStream out = new PrintStream(
-            new ByteArrayOutputStream());
-
-    public final static PrintStream err = new PrintStream(
-            new ByteArrayOutputStream());
-
-    public static void exit(int status) {
-        InferBuiltins._exit();
-    }
-
-    public static String getProperty(String key) {
-      int n = key.length(); // key must not be null
-      if (InferUndefined.boolean_undefined()) {
-        return null;
-      }
-      return (String)InferUndefined.object_undefined();
-    }
-
+    return (String) InferUndefined.object_undefined();
+  }
 }

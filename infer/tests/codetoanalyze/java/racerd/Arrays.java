@@ -32,7 +32,7 @@ class Arrays {
   }
 
   int arrayParameterLiteralReadOk() {
-    return (new int[] { 2, 3})[1];
+    return (new int[] {2, 3})[1];
   }
 
   public void writeWriteRaceBad(String s) {
@@ -57,7 +57,7 @@ class Arrays {
 
   // arrays are compatible types and can alias
   public Child FN_readWriteAliasRaceBad() {
-    synchronized(this) {
+    synchronized (this) {
       parentArr[3] = null;
     }
     return childArr[3];
@@ -68,11 +68,10 @@ class Arrays {
 
   // arrays are different types and thus cannot alias
   public Parent noRaceOk() {
-    synchronized(this) {
+    synchronized (this) {
       type1Arr[3] = null;
     }
 
     return type2Arr[3];
   }
-
 }

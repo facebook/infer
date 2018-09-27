@@ -8,7 +8,6 @@
 package codetoanalyze.java.checkers;
 
 import android.annotation.SuppressLint;
-
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 
@@ -23,7 +22,6 @@ class A implements I {
   // in the interface. This report is legit but is not relevant for the current test.
   @Expensive
   public void foo() {}
-
 }
 
 class B extends A implements I {
@@ -70,5 +68,4 @@ public class ExpensiveInheritanceExample {
       a.foo();
     }
   }
-
 }

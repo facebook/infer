@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import android.app.Activity;
 import android.accounts.AccountManager;
+import android.app.Activity;
 import android.os.Bundle;
 
 // test is for recognizing Activity lifecycle methods
 class MyActivity extends Activity {
   AccountManager am;
+
   private void bad() {
     am.setUserData(null, null, null);
   }
@@ -19,7 +20,7 @@ class MyActivity extends Activity {
   // overrides so no Bad suffixes
 
   @Override
-  protected void onCreate (Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
     bad();
   }
 

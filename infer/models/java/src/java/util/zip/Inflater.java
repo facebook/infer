@@ -22,5 +22,4 @@ public class Inflater {
   public void end() {
     InferBuiltins.__set_mem_attribute(this);
   }
-
 }

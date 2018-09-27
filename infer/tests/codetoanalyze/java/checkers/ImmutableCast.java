@@ -8,7 +8,6 @@
 package codetoanalyze.java.checkers;
 
 import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,5 +26,4 @@ public class ImmutableCast {
   List<String> goodCast(ImmutableList<String> list) {
     return new ArrayList<String>(list);
   }
-
 }

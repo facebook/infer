@@ -42,9 +42,8 @@ class Hello {
   }
 
   /**
-   * This method should be rewritten with nested try { ... } finally {
-   * ... } statements, or the possible exception raised by fis.close()
-   * should be swallowed.
+   * This method should be rewritten with nested try { ... } finally { ... } statements, or the
+   * possible exception raised by fis.close() should be swallowed.
    */
   void twoResources() throws IOException {
     FileInputStream fis = null;
@@ -54,9 +53,12 @@ class Hello {
       fos = new FileOutputStream(new File("everwhat.txt"));
       fos.write(fis.read());
     } finally {
-      if (fis != null) { fis.close(); }
-      if (fos != null) { fos.close(); }
+      if (fis != null) {
+        fis.close();
+      }
+      if (fos != null) {
+        fos.close();
+      }
     }
   }
-
 }

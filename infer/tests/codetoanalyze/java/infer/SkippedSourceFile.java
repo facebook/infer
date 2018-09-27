@@ -9,11 +9,9 @@
 
 package codetoanalyze.java.infer;
 
-
 public class SkippedSourceFile {
 
   static Object createdBySkippedFile() {
     return null;
   }
-
 }

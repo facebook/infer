@@ -12,8 +12,7 @@ import java.io.Closeable;
 
 public final class InferCloseables {
 
-  private InferCloseables() {
-  }
+  private InferCloseables() {}
 
   public static void close(Closeable closeable) {
     if (closeable != null) {
@@ -24,5 +23,4 @@ public final class InferCloseables {
   public static void closeQuietly(Closeable closeable) {
     close(closeable);
   }
-
 }

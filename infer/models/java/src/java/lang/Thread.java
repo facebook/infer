@@ -7,8 +7,8 @@
 
 package java.lang;
 
-import com.facebook.infer.builtins.InferUndefined;
 import com.facebook.infer.builtins.InferBuiltins;
+import com.facebook.infer.builtins.InferUndefined;
 
 class Thread implements Runnable {
 
@@ -25,12 +25,10 @@ class Thread implements Runnable {
 
   public static boolean holdsLock(Object obj) {
     if (InferUndefined.boolean_undefined()) {
-          InferBuiltins.__set_locked_attribute(obj);
-          return true;
+      InferBuiltins.__set_locked_attribute(obj);
+      return true;
     } else {
-          return false;
-   }
-
+      return false;
+    }
   }
-
 }

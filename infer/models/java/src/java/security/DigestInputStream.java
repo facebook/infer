@@ -8,11 +8,7 @@
 package java.security;
 
 import com.facebook.infer.builtins.InferUndefined;
-
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-
 
 public class DigestInputStream {
 
@@ -27,5 +23,4 @@ public class DigestInputStream {
   public int read(byte b[], int off, int len) throws IOException {
     return InferUndefined.can_throw_ioexception_int();
   }
-
 }

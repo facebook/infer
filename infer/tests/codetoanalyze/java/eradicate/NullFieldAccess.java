@@ -15,17 +15,12 @@ public class NullFieldAccess {
   }
 
   interface I {
-    @Nullable
-    C c = null;
+    @Nullable C c = null;
   }
 
-
-  @Nullable
-  C x;
+  @Nullable C x;
   C y;
-  static final
-  @Nullable
-  C z = null;
+  static final @Nullable C z = null;
 
   NullFieldAccess() {
     y = new C();

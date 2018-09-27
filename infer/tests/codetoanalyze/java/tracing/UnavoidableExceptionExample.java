@@ -27,5 +27,4 @@ public class UnavoidableExceptionExample {
     T2 t = create();
     t.f();
   }
-
 }

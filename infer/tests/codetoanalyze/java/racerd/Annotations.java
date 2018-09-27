@@ -7,6 +7,12 @@
 
 package codetoanalyze.java.checkers;
 
+import android.support.annotation.UiThread;
+import com.facebook.infer.annotation.Functional;
+import com.facebook.infer.annotation.ReturnsOwnership;
+import com.facebook.infer.annotation.SynchronizedCollection;
+import com.facebook.infer.annotation.ThreadConfined;
+import com.facebook.infer.annotation.ThreadSafe;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,60 +21,46 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.support.annotation.UiThread;
-
-import com.facebook.infer.annotation.Functional;
-import com.facebook.infer.annotation.ReturnsOwnership;
-import com.facebook.infer.annotation.SynchronizedCollection;
-import com.facebook.infer.annotation.ThreadConfined;
-import com.facebook.infer.annotation.ThreadSafe;
-
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface OnBind {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface OnBind {
-}
+@interface OnEvent {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface OnEvent {
-}
+@interface OnMount {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface OnMount {
-}
+@interface OnUnbind {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface OnUnbind {
-}
+@interface OnUnmount {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface OnUnmount {
-}
+@interface MyThreadSafeAlias1 {}
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.CLASS)
-@interface MyThreadSafeAlias1 {
-}
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.CLASS)
-@interface MyThreadSafeAlias2 {
-}
+@interface MyThreadSafeAlias2 {}
 
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.CLASS)
-@interface InjectProp {
-}
+@interface InjectProp {}
 
 interface Interface {
 
-  @Functional Object functionalMethod();
-  @ReturnsOwnership Obj returnsOwnershipMethod();
+  @Functional
+  Object functionalMethod();
+
+  @ReturnsOwnership
+  Obj returnsOwnershipMethod();
 }
 
 @ThreadSafe(enableChecks = false)
@@ -122,7 +114,7 @@ class Annotations implements Interface {
 
   Confined con;
 
-  public void confinedCallerOk(){
+  public void confinedCallerOk() {
     con.foo();
   }
 
@@ -134,12 +126,13 @@ class Annotations implements Interface {
   class Confined {
     Integer x;
 
-    void foo(){
+    void foo() {
       x = 22;
     }
   }
 
-  @ThreadConfined(ThreadConfined.ANY) Obj encapsulatedField;
+  @ThreadConfined(ThreadConfined.ANY)
+  Obj encapsulatedField;
 
   public void mutateConfinedFieldDirectlyOk() {
     this.encapsulatedField = new Obj();
@@ -161,41 +154,39 @@ class Annotations implements Interface {
     zz = 22;
   }
 
-  public void read_from_non_confined_method_Bad(){
+  public void read_from_non_confined_method_Bad() {
     Integer i;
     i = zz;
   }
 
   /* Like in RaceWithMainThread.java with assertMainThread() */
-  void conditional1_ok(boolean b){
-   if (b) {
-     write_on_main_thread_ok();
-   }
+  void conditional1_ok(boolean b) {
+    if (b) {
+      write_on_main_thread_ok();
+    }
   }
 
   Integer ii;
 
   @ThreadConfined(ThreadConfined.UI)
-  void write_on_main_thread_ok(){
-     ii = 22;
+  void write_on_main_thread_ok() {
+    ii = 22;
   }
 
- void conditional2_bad(boolean b){
-   if (b)
-   {
-     write_on_main_thread_ok();
-   } else {
-     ii = 99; // this might or might not run on the main thread; warn
-   }
- }
-
+  void conditional2_bad(boolean b) {
+    if (b) {
+      write_on_main_thread_ok();
+    } else {
+      ii = 99; // this might or might not run on the main thread; warn
+    }
+  }
 
   @OnBind
   public void onBindMethodOk() {
     this.f = new Object();
   }
 
-  public void read_off_UI_thread_Bad(){
+  public void read_off_UI_thread_Bad() {
     Object o = f;
   }
 
@@ -219,10 +210,18 @@ class Annotations implements Interface {
     this.f = new Object();
   }
 
-  @Functional native Object returnFunctional1();
-  @Functional Object returnFunctional2() { return null; }
+  @Functional
+  native Object returnFunctional1();
+
+  @Functional
+  Object returnFunctional2() {
+    return null;
+  }
   // marked @Functional in interface
-  @Override public Object functionalMethod() { return null; }
+  @Override
+  public Object functionalMethod() {
+    return null;
+  }
 
   Object mAssignToFunctional;
 
@@ -247,8 +246,11 @@ class Annotations implements Interface {
     return mAssignToFunctional;
   }
 
-  @Functional native double returnDouble();
-  @Functional native long returnLong();
+  @Functional
+  native double returnDouble();
+
+  @Functional
+  native long returnLong();
 
   double mDouble;
   long mLong;
@@ -288,7 +290,8 @@ class Annotations implements Interface {
 
   Boolean mBoxedBool;
 
-  @Functional native boolean returnBool();
+  @Functional
+  native boolean returnBool();
 
   public boolean functionalAcrossBoxingOk() {
     if (b) {
@@ -299,7 +302,8 @@ class Annotations implements Interface {
 
   boolean mBool;
 
-  @Functional native Boolean returnBoxedBool();
+  @Functional
+  native Boolean returnBoxedBool();
 
   boolean mBool2;
 
@@ -312,7 +316,8 @@ class Annotations implements Interface {
 
   Long mBoxedLong;
 
-  @Functional native Long returnBoxedLong();
+  @Functional
+  native Long returnBoxedLong();
 
   public int functionalBoxedLongOk() {
     if (b) {
@@ -349,7 +354,9 @@ class Annotations implements Interface {
     mBool = returnedFunctional;
   }
 
-  @Functional native int returnInt();
+  @Functional
+  native int returnInt();
+
   int mInt;
 
   public void functionalAcrossLogicalOpsOk() {
@@ -371,7 +378,8 @@ class Annotations implements Interface {
     mInt = returnNonFunctionalInt() + returnInt();
   }
 
-  @ReturnsOwnership native Obj returnsOwned();
+  @ReturnsOwnership
+  native Obj returnsOwned();
 
   @Override
   public native Obj returnsOwnershipMethod(); // marked @ReturnsOwnership in interface
@@ -391,7 +399,7 @@ class Annotations implements Interface {
   }
 
   @SynchronizedCollection
-  private final Map<Object,Object> mSynchronizedMap = Collections.synchronizedMap(new HashMap());
+  private final Map<Object, Object> mSynchronizedMap = Collections.synchronizedMap(new HashMap());
 
   public void synchronizedMapOk1() {
     mSynchronizedMap.put(new Object(), new Object());
@@ -404,9 +412,7 @@ class Annotations implements Interface {
   public void injectPropOk(@InjectProp Obj o) {
     o.f = 7;
   }
-
 }
-
 
 @UiThread
 @ThreadSafe

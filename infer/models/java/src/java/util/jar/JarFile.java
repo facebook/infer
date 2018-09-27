@@ -11,36 +11,33 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.ZipFile;
 
-
 public class JarFile extends ZipFile {
 
+  public JarFile(String name) throws IOException {
+    super(name);
+  }
 
-    public JarFile(String name) throws IOException {
-        super(name);
-    }
+  public JarFile(String name, boolean verify) throws IOException {
+    super(name);
+  }
 
-    public JarFile(String name, boolean verify) throws IOException {
-        super(name);
-    }
+  public JarFile(File file) throws IOException {
+    super("");
+  }
 
-    public JarFile(File file) throws IOException {
-        super("");
-    }
+  public JarFile(File file, boolean verify) throws IOException {
+    this(file, verify, 0);
+  }
 
-    public JarFile(File file, boolean verify) throws IOException {
-        this(file, verify, 0);
-    }
+  public JarFile(File file, boolean verify, int mode) throws IOException {
+    super("");
+  }
 
-    public JarFile(File file, boolean verify, int mode) throws IOException {
-        super("");
-    }
+  public Manifest getManifest() throws IOException {
+    throw new IOException();
+  }
 
-    public Manifest getManifest() throws IOException {
-        throw new IOException();
-    }
-
-    public void close() throws IOException {
-        super.close();
-    }
-
+  public void close() throws IOException {
+    super.close();
+  }
 }

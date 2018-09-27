@@ -29,27 +29,27 @@ class ReadWriteRaces {
   Integer safe_read;
   Integer racy;
 
-  void m0_OK(){
-   Integer local;
-   local = safe_read;
-   }
-
-  void m0_OK2(){ //parallel reads are OK
-   Integer local;
-   local = safe_read;
+  void m0_OK() {
+    Integer local;
+    local = safe_read;
   }
 
-  void m1(){ // A read where there are other writes
-   Integer local;
-   local = racy;
+  void m0_OK2() { // parallel reads are OK
+    Integer local;
+    local = safe_read;
   }
 
-  public void m2(){
-   racy = 88;
+  void m1() { // A read where there are other writes
+    Integer local;
+    local = racy;
   }
 
-  public void m3(){
-   racy = 99;
+  public void m2() {
+    racy = 88;
+  }
+
+  public void m3() {
+    racy = 99;
   }
 
   // write inside sync, read outside of sync races
@@ -75,7 +75,7 @@ class ReadWriteRaces {
   }
 
   public void syncWrite2() {
-    synchronized(this) {
+    synchronized (this) {
       field2 = new Object();
     }
   }
@@ -106,5 +106,4 @@ class ReadWriteRaces {
       lock.unlock();
     }
   }
-
 }

@@ -10,7 +10,6 @@ package codetoanalyze.java.quandary;
 import com.facebook.infer.builtins.InferTaint;
 
 /** making sure the traces we report respect control-flow */
-
 class FlowSensitivity {
 
   static class Obj {
@@ -63,5 +62,4 @@ class FlowSensitivity {
     o.f = InferTaint.inferSecretSource();
     sourceAndSink(o);
   }
-
 }

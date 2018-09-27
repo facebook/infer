@@ -9,12 +9,13 @@ package codetoanalyze.java.infer;
 
 public class DynamicDispatch {
 
-   static interface Interface {
+  static interface Interface {
     public Object foo();
   }
 
   static class Impl implements Interface {
-    @Override public Object foo() {
+    @Override
+    public Object foo() {
       return null;
     }
   }
@@ -44,11 +45,13 @@ public class DynamicDispatch {
   }
 
   static class Subtype extends Supertype {
-    @Override Object foo() {
+    @Override
+    Object foo() {
       return null;
     }
 
-    @Override Object bar() {
+    @Override
+    Object bar() {
       return new Object();
     }
   }
@@ -128,7 +131,6 @@ public class DynamicDispatch {
       WithField object = new WithField(subtype);
       object.mField.foo().toString();
     }
-
   }
 
   private Object callFoo(Supertype o) {
@@ -152,5 +154,4 @@ public class DynamicDispatch {
     Supertype subtype = new Subtype();
     variadicMethod(subtype, null, null).toString();
   }
-
 }

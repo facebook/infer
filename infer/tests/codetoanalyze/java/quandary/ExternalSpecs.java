@@ -10,11 +10,9 @@ package codetoanalyze.java.quandary;
 import android.app.Activity;
 import android.content.Intent;
 import android.util.Log;
-
 import com.facebook.infer.builtins.InferTaint;
 
 /** Testing that sources and sinks specified in external JSON work correctly */
-
 public class ExternalSpecs {
 
   // we specify this as a source with kind PrivateData in .inferconfig
@@ -130,7 +128,7 @@ public class ExternalSpecs {
   public static void loggingSink1() {}
 
   // we shouldn't fail when calling this either
-  public static void loggingSink1(Object notASink) { }
+  public static void loggingSink1(Object notASink) {}
 
   void callLoggingSink1sOk(Object o) {
     loggingSink1();
@@ -146,7 +144,6 @@ public class ExternalSpecs {
     Object sourceAgain = sinkThatPropagates(source); // should report
     loggingSink1(null, sourceAgain); // should report here too
   }
-
 }
 
 interface InterfaceSpec {
@@ -171,14 +168,12 @@ class InterfaceSpecImpl implements InterfaceSpec {
   public void externalSpecBad() {
     sink(source());
   }
-
 }
 
 class ConstructorSink {
 
   // specified as a source in .inferconfig
-  public ConstructorSink(Object o) {
-  }
+  public ConstructorSink(Object o) {}
 
   public static ConstructorSink constructorSinkBad() {
     Object source = InferTaint.inferSecretSource();

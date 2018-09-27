@@ -30,5 +30,4 @@ public class JsonString implements JsonType {
   public String toString() {
     return array;
   }
-
 }

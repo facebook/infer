@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 package codetoanalyze.java.performance;
+
 public class Array {
 
   public void array_access_good() {

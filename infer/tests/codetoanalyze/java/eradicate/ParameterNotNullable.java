@@ -7,11 +7,9 @@
 
 package codetoanalyze.java.eradicate;
 
-import java.lang.System;
+import android.annotation.SuppressLint;
 import java.net.URL;
 import javax.annotation.Nullable;
-
-import android.annotation.SuppressLint;
 
 public class ParameterNotNullable {
 
@@ -21,8 +19,7 @@ public class ParameterNotNullable {
     testPrimitive(field);
   }
 
-  void testPrimitive(boolean f) {
-  }
+  void testPrimitive(boolean f) {}
 
   void test(String s) {
     int n = s.length();
@@ -56,8 +53,7 @@ public class ParameterNotNullable {
     testN(s);
   }
 
-  private ParameterNotNullable(@Nullable String s) {
-  }
+  private ParameterNotNullable(@Nullable String s) {}
 
   class Builder {
     ParameterNotNullable getEradicateParameterNotNullable() {
@@ -70,7 +66,8 @@ public class ParameterNotNullable {
     return s;
   }
 
-  @Nullable String testSystemGetenvBad() {
+  @Nullable
+  String testSystemGetenvBad() {
     return System.getenv(null);
   }
 
@@ -78,8 +75,7 @@ public class ParameterNotNullable {
     return cls.getResource(null);
   }
 
-  void threeParameters(String s1, String s2, String s3) {
-  }
+  void threeParameters(String s1, String s2, String s3) {}
 
   void testThreeParameters() {
     String s = "";
@@ -89,8 +85,7 @@ public class ParameterNotNullable {
   }
 
   class ConstructorCall {
-    ConstructorCall(int x, String s) {
-    }
+    ConstructorCall(int x, String s) {}
 
     ConstructorCall() {
       this(3, ""); // OK

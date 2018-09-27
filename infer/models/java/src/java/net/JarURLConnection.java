@@ -9,7 +9,7 @@ package java.net;
 
 public class JarURLConnection extends URLConnection {
 
-    protected JarURLConnection(URL url) throws MalformedURLException {
-        super(url);
-    }
+  protected JarURLConnection(URL url) throws MalformedURLException {
+    super(url);
+  }
 }

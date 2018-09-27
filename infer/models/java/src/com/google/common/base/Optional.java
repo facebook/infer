@@ -9,9 +9,8 @@ package com.google.common.base;
 
 import javax.annotation.Nullable;
 
-public abstract class Optional<T>  {
+public abstract class Optional<T> {
 
   @Nullable
   public abstract T orNull();
-
 }

@@ -14,11 +14,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target({
-        ElementType.CONSTRUCTOR,
-        ElementType.METHOD,
-        ElementType.PACKAGE,
-        ElementType.TYPE,
+  ElementType.CONSTRUCTOR,
+  ElementType.METHOD,
+  ElementType.PACKAGE,
+  ElementType.TYPE,
 })
-
-public @interface Verify {
-}
+public @interface Verify {}

@@ -29,5 +29,4 @@ class Traces {
   void callMySink(Obj o) {
     InferTaint.inferSensitiveSink(o);
   }
-
 }

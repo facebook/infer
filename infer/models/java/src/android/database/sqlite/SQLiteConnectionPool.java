@@ -7,6 +7,4 @@
 
 package android.database.sqlite;
 
-public final class SQLiteConnectionPool {
-
-}
+public final class SQLiteConnectionPool {}

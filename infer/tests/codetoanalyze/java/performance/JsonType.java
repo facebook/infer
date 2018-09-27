@@ -7,6 +7,4 @@
 
 package libraries.marauder.analytics.utils.json;
 
-public interface JsonType {
-
-}
+public interface JsonType {}

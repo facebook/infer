@@ -6,39 +6,34 @@
  */
 package codetoanalyze.java.performance;
 
-public class Break{
-/* t is also in control variables but once we have invariant analysis, it shouldn't be */
-private static int break_loop(int p, int t){
-for (int i = 0; i < p; i++) {
-  // do something
-  if (t < 0)
-    break;
-  // do something
-}
- return 0;
-}
+public class Break {
+  /* t is also in control variables but once we have invariant analysis, it shouldn't be */
+  private static int break_loop(int p, int t) {
+    for (int i = 0; i < p; i++) {
+      // do something
+      if (t < 0) break;
+      // do something
+    }
+    return 0;
+  }
 
+  /* calling break_loop with a negative t should give constant
+  cost. Currently, this doesn't work because parameters are removed
+  when computing the env size :( */
+  private static int break_constant(int p) {
+    return break_loop(p, -1);
+  }
 
-/* calling break_loop with a negative t should give constant
-   cost. Currently, this doesn't work because parameters are removed
-   when computing the env size :( */
-private static int break_constant(int p)
-{
-  return break_loop(p, -1);
-}
-
-
-private static void break_outer_loop_FN (int maxI, int maxJ){
-    int i = 0 ;
+  private static void break_outer_loop_FN(int maxI, int maxJ) {
+    int i = 0;
     outerloop:
     while (i < maxI) {
-      int j = 0 ;
+      int j = 0;
       while (j < maxJ) {
-        if (i+j > 10)
-          break outerloop ;
-        j++ ;
+        if (i + j > 10) break outerloop;
+        j++;
       }
-      i++ ;
-    }}
-
+      i++;
+    }
+  }
 }

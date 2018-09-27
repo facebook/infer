@@ -16,5 +16,4 @@ public class SomeLibrary {
   T get() {
     return t == null ? null : t;
   }
-
 }

@@ -11,28 +11,27 @@ import com.facebook.infer.builtins.InferBuiltins;
 
 public class TypedArray {
 
-    private Resources mResources;
-    int[] mData;
-    int[] mIndices;
-    int mLength;
+  private Resources mResources;
+  int[] mData;
+  int[] mIndices;
+  int mLength;
 
-    public void recycle() {
-        // Release resource
-        if (mLength > 0) {
-            InferBuiltins.__set_mem_attribute(this);
-        }
+  public void recycle() {
+    // Release resource
+    if (mLength > 0) {
+      InferBuiltins.__set_mem_attribute(this);
     }
+  }
 
-    public TypedArray(Resources resources, int[] data, int[] indices, int len) {
-        mResources = resources;
-        mData = data;
-        mIndices = indices;
-        mLength = len;
+  public TypedArray(Resources resources, int[] data, int[] indices, int len) {
+    mResources = resources;
+    mData = data;
+    mIndices = indices;
+    mLength = len;
 
-        // Acquire resource
-        if (mLength > 0) {
-            InferBuiltins.__set_file_attribute(this);
-        }
+    // Acquire resource
+    if (mLength > 0) {
+      InferBuiltins.__set_file_attribute(this);
     }
-
+  }
 }

@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 class Lists {
@@ -73,5 +72,4 @@ class Lists {
       }
     }
   }
-
 }

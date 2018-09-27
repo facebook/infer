@@ -11,36 +11,33 @@ import com.facebook.infer.builtins.InferUndefined;
 
 public class FilterOutputStream {
 
-    protected OutputStream out;
+  protected OutputStream out;
 
-    public FilterOutputStream() {
+  public FilterOutputStream() {}
+
+  public FilterOutputStream(OutputStream out) {
+    this.out = out;
+  }
+
+  public void close() throws IOException {
+    if (out != null) {
+      out.close();
     }
+  }
 
-    public FilterOutputStream(OutputStream out) {
-      this.out = out;
-    }
+  public void flush() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void close() throws IOException {
-        if (out != null) {
-          out.close();
-        }
-    }
+  public void write(int b) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void flush() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void write(byte b[]) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(int b) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(byte b[]) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(byte b[], int off, int len) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-
+  public void write(byte b[], int off, int len) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 }

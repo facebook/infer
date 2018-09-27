@@ -22,11 +22,12 @@ class AccMgr {
 
   @UiThread
   void lockOnUiThreadBad() throws InterruptedException {
-    synchronized(lock) {}
+    synchronized (lock) {
+    }
   }
 
   void setUserDataUnderLock() {
-    synchronized(lock) {
+    synchronized (lock) {
       am.setUserData(account, key, data);
     }
   }

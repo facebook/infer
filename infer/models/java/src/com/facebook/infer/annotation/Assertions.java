@@ -8,7 +8,6 @@
 package com.facebook.infer.annotation;
 
 import com.facebook.infer.builtins.InferBuiltins;
-
 import javax.annotation.Nullable;
 
 public class Assertions {

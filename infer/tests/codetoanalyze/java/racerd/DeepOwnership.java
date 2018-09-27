@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
 import com.facebook.infer.annotation.ThreadSafe;
 
 @ThreadSafe
@@ -17,7 +16,7 @@ class DeepOwnership {
     global.next = null;
   }
 
-  void reassignBaseToGlobalBad(){
+  void reassignBaseToGlobalBad() {
     DeepOwnership x = new DeepOwnership();
     x = global;
     x.next = null;
@@ -29,31 +28,29 @@ class DeepOwnership {
     x.next.next = null;
   }
 
-
-
-  void deepIntraOk(){
+  void deepIntraOk() {
     DeepOwnership x = new DeepOwnership();
     x.next.next = null; // doesn't warn here
   }
 
-  void deepInterOk(){
+  void deepInterOk() {
     DeepOwnership x = new DeepOwnership();
     deepPrivate(x.next);
   }
 
-  private void deepPrivate(DeepOwnership y){
+  private void deepPrivate(DeepOwnership y) {
     y.next = null;
   }
 
-  DeepOwnership deepFromOwnedThisOk(){
+  DeepOwnership deepFromOwnedThisOk() {
     return new DeepOwnership();
   }
 
   DeepOwnership arr[];
 
-  DeepOwnership(){
-   next.next = null;
-   arr[0] = null;
+  DeepOwnership() {
+    next.next = null;
+    arr[0] = null;
   }
 
   private void loseOwnershipOfNext() {
@@ -68,5 +65,4 @@ class DeepOwnership {
     loseOwnershipOfNext();
     x.next.next = null; // doesn't warn here
   }
-
 }

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.util.concurrent.CountDownLatch;
 import android.support.annotation.UiThread;
+import java.util.concurrent.CountDownLatch;
 
 class Countdwn {
   CountDownLatch latch;

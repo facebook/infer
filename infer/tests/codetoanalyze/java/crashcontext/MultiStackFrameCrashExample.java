@@ -21,5 +21,4 @@ public class MultiStackFrameCrashExample {
   public static void main(String[] args) {
     foo();
   }
-
 }

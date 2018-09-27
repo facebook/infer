@@ -7,10 +7,8 @@
 
 package com.google.common.collect;
 
-import java.util.NoSuchElementException;
-
 import com.facebook.infer.builtins.InferBuiltins;
-
+import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
 
 public class Iterators {
@@ -35,5 +33,4 @@ public class Iterators {
       }
     };
   }
-
 }

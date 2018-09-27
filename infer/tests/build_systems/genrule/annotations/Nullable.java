@@ -6,5 +6,4 @@
  */
 package genrule.annotations;
 
-public @interface Nullable {
-}
+public @interface Nullable {}

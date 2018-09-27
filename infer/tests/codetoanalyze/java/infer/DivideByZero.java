@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-
 public class DivideByZero {
 
   public int divByZeroLocal(String s) {
@@ -21,12 +20,12 @@ public class DivideByZero {
     return 10 / denominator;
   }
 
-  //DO NOT MOVE, test relies on line number
+  // DO NOT MOVE, test relies on line number
   public int callDivideByZeroInterProc() {
     return divideByZeroInterProc(0);
   }
 
-  //divide by zero with static fields
+  // divide by zero with static fields
   private static int x;
 
   public void setXToZero() {
@@ -37,5 +36,4 @@ public class DivideByZero {
     setXToZero();
     return divideByZeroInterProc(x);
   }
-
 }

@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.io.IOException;
 import android.support.annotation.UiThread;
 import com.facebook.infer.annotation.NonBlocking;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 class NonBlk {
   Future future;
@@ -32,13 +31,15 @@ class NonBlk {
 
   @NonBlocking
   synchronized void deadlockABBad() {
-    synchronized(future) {}
+    synchronized (future) {
+    }
   }
 
   @NonBlocking
   void deadlockBABad() {
-    synchronized(future) {
-      synchronized(this) {}
+    synchronized (future) {
+      synchronized (this) {
+      }
     }
   }
 }

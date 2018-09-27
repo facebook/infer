@@ -34,5 +34,4 @@ public class LibraryCalls {
   String badAtomicReferenceDereference(AtomicReference ref) {
     return ref.get().toString();
   }
-
 }

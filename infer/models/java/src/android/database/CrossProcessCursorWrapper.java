@@ -7,5 +7,4 @@
 
 package android.database;
 
-public abstract class CrossProcessCursorWrapper implements CrossProcessCursor {
-}
+public abstract class CrossProcessCursorWrapper implements CrossProcessCursor {}

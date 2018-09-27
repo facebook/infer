@@ -21,5 +21,4 @@ public class Resources {
       return null;
     }
   }
-
 }

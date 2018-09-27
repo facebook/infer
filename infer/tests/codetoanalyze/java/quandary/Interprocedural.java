@@ -24,7 +24,6 @@ class Interprocedural {
   }
 
   /** source tests */
-
   public static Object returnSourceDirect() {
     return InferTaint.inferSecretSource();
   }
@@ -97,7 +96,6 @@ class Interprocedural {
   }
 
   /** sink tests */
-
   public static void callSinkParam1(Object param1, Object param2) {
     InferTaint.inferSensitiveSink(param1);
   }
@@ -201,7 +199,6 @@ class Interprocedural {
   }
 
   /** passthrough tests */
-
   public static void singlePassthroughBad() {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = id(source);
@@ -216,7 +213,6 @@ class Interprocedural {
   }
 
   /** false positives: an ideal analysis would not report these, but we will */
-
   public static Object returnSourceConditional(boolean b) {
     if (b) return InferTaint.inferSecretSource();
     return null;
@@ -226,8 +222,8 @@ class Interprocedural {
     InferTaint.inferSensitiveSink(returnSourceConditional(false));
   }
 
-   public static void reassignInCallee(Obj o) {
-     o.f = null;
+  public static void reassignInCallee(Obj o) {
+    o.f = null;
   }
 
   public static void FP_reassignInCallee() {
@@ -303,7 +299,7 @@ class Interprocedural {
   }
 
   void diverge() {
-    for (;;);
+    for (; ; ) ;
   }
 
   // we don't propagate divergence in callees to callers
@@ -315,7 +311,7 @@ class Interprocedural {
 
   public static void callSinkThenDiverge(Object param) {
     InferTaint.inferSensitiveSink(param);
-    for (;;);
+    for (; ; ) ;
   }
 
   public void callSinkThenDivergeBad() {
@@ -423,5 +419,4 @@ class Interprocedural {
     assignSourceToParam(o);
     InferTaint.inferSensitiveSink(o);
   }
-
 }

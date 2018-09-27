@@ -11,35 +11,32 @@ import com.facebook.infer.builtins.InferUndefined;
 
 public abstract class Vector<E> {
 
-    protected E[] elementData;
+  protected E[] elementData;
 
-    E elementData(int index) {
-        return (E) elementData[index];
-    }
+  E elementData(int index) {
+    return (E) elementData[index];
+  }
 
-    public Enumeration<E> elements() {
-        return new Enumeration<E>() {
-            int count;
+  public Enumeration<E> elements() {
+    return new Enumeration<E>() {
+      int count;
 
-            public boolean hasMoreElements() {
-                return count > 0;
-            }
+      public boolean hasMoreElements() {
+        return count > 0;
+      }
 
-            public E nextElement() {
-                if (count > 0)
-                    return (E) InferUndefined.object_undefined();
-                else
-                    throw new NoSuchElementException();
-            }
-        };
-    }
+      public E nextElement() {
+        if (count > 0) return (E) InferUndefined.object_undefined();
+        else throw new NoSuchElementException();
+      }
+    };
+  }
 
-    public E get(int index) {
-        return elementData(index);
-    }
+  public E get(int index) {
+    return elementData(index);
+  }
 
-    public int size() {
-        return InferUndefined.nonneg_int();
-    }
-
+  public int size() {
+    return InferUndefined.nonneg_int();
+  }
 }

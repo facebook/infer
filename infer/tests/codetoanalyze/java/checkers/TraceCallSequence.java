@@ -7,13 +7,10 @@
 
 package codetoanalyze.java.checkers;
 
-
 class TraceCallSequence {
-  static void begin() {
-  }
+  static void begin() {}
 
-  static void end() {
-  }
+  static void end() {}
 
   static void beginWrapper() {
     begin();

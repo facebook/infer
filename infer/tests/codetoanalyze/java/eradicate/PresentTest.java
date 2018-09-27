@@ -11,17 +11,15 @@ import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Present;
 import com.google.common.base.Optional;
 
-
 public class PresentTest {
 
-  void argPresent(@Present Optional<String> present, Optional<String> absent) {
-  }
+  void argPresent(@Present Optional<String> present, Optional<String> absent) {}
 
   void testPresent(@Present Optional<String> present, Optional<String> absent) {
-      argPresent(present, absent); // OK
-      argPresent(present, present); // OK
-      argPresent(present, absent); // OK
-      argPresent(absent, absent); // Bad
+    argPresent(present, absent); // OK
+    argPresent(present, present); // OK
+    argPresent(present, absent); // OK
+    argPresent(absent, absent); // Bad
   }
 
   class TestPresentAnnotationBasic {
@@ -34,20 +32,20 @@ public class PresentTest {
     Optional<String> absent = Optional.absent();
     @Present Optional<String> present = Optional.of("abc");
 
-    @Present Optional<String> returnPresent() {
+    @Present
+    Optional<String> returnPresent() {
       if (absent.isPresent()) {
         return absent;
-      }
-      else return Optional.of("abc");
+      } else return Optional.of("abc");
     }
 
-    @Present Optional<String> returnPresentBad() {
+    @Present
+    Optional<String> returnPresentBad() {
       absent.get(); // Bad: get is unsafe
       return absent; // Bad: should return present
     }
 
-    void expectPresent(@Present Optional<String> x) {
-    }
+    void expectPresent(@Present Optional<String> x) {}
 
     void bar() {
       expectPresent(present);

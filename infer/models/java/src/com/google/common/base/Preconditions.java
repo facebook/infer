@@ -7,9 +7,9 @@
 
 package com.google.common.base;
 
-import javax.annotation.Nullable;
 import static com.facebook.infer.builtins.InferBuiltins.assume;
 
+import javax.annotation.Nullable;
 
 public final class Preconditions {
 
@@ -22,9 +22,8 @@ public final class Preconditions {
     return checkNotNull(reference);
   }
 
-  public static <T> T checkNotNull(T reference,
-                                   @Nullable String errorMessageTemplate,
-                                   @Nullable Object... errorMessageArgs) {
+  public static <T> T checkNotNull(
+      T reference, @Nullable String errorMessageTemplate, @Nullable Object... errorMessageArgs) {
     return checkNotNull(reference);
   }
 
@@ -32,14 +31,14 @@ public final class Preconditions {
     assume(expression);
   }
 
-  public static void checkState(boolean expression,
-                                @Nullable Object errorMessage) {
+  public static void checkState(boolean expression, @Nullable Object errorMessage) {
     assume(expression);
   }
 
-  public static void checkState(boolean expression,
-                                @Nullable String errorMessageTemplate,
-                                @Nullable Object... errorMessageArgs) {
+  public static void checkState(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object... errorMessageArgs) {
     assume(expression);
   }
 
@@ -57,5 +56,4 @@ public final class Preconditions {
       @Nullable Object... errorMessageArgs) {
     assume(expression);
   }
-
 }

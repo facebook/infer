@@ -11,15 +11,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-class LocalException extends IOException {
-}
+class LocalException extends IOException {}
 
 class SomeResource implements Closeable {
 
@@ -32,21 +31,23 @@ class SomeResource implements Closeable {
   public void close() {}
 
   native void foo(int i);
-  native static void bar(SomeResource r);
 
+  static native void bar(SomeResource r);
 }
 
 class Resource implements Closeable {
-  public Resource() {
-  }
+  public Resource() {}
+
   public void close() {}
 }
 
 class Wrapper implements Closeable {
   Resource mR;
+
   public Wrapper(Resource r) {
     mR = r;
   }
+
   public void close() {
     mR.close();
   }
@@ -67,8 +68,7 @@ class ResourceWithException implements Closeable {
   }
 }
 
-class ByteArrayOutputStreamWrapper extends ByteArrayOutputStream {
-}
+class ByteArrayOutputStreamWrapper extends ByteArrayOutputStream {}
 
 class ByteArrayInputStreamWrapper extends ByteArrayInputStream {
 
@@ -79,7 +79,7 @@ class ByteArrayInputStreamWrapper extends ByteArrayInputStream {
 
 public class CloseableAsResourceExample {
 
-  native static boolean star();
+  static native boolean star();
 
   void closingCloseable() {
     SomeResource res = new SomeResource();
@@ -88,7 +88,7 @@ public class CloseableAsResourceExample {
 
   void notClosingCloseable() {
     SomeResource res = new SomeResource();
-  }  // should report a resource leak
+  } // should report a resource leak
 
   void tryWithResource() {
     try (SomeResource res = new SomeResource()) {
@@ -106,7 +106,6 @@ public class CloseableAsResourceExample {
     res.close();
   } // should report a resource leak
 
-
   void closingWrapper() {
     Resource r = new Resource();
     Sub s = new Sub(r);
@@ -116,7 +115,7 @@ public class CloseableAsResourceExample {
   void notClosingWrapper() {
     Sub s = new Sub(new Resource());
     s.mR.close();
-  }  // should report a resource leak
+  } // should report a resource leak
 
   void noNeedToCloseStringReader() {
     StringReader stringReader = new StringReader("paf!");
@@ -227,7 +226,8 @@ public class CloseableAsResourceExample {
       if (closeable != null) {
         closeable.close();
       }
-    } catch (Exception ex) {}
+    } catch (Exception ex) {
+    }
   }
 
   public void finallyCloseOk(File file, String fileContent) {
@@ -245,5 +245,4 @@ public class CloseableAsResourceExample {
       }
     }
   }
-
 }

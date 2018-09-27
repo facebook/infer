@@ -24,5 +24,4 @@ public class ReportOnMainExample {
     ReportOnMainExample example = new ReportOnMainExample();
     example.foo();
   }
-
 }

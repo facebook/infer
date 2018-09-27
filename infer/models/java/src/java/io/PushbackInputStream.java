@@ -9,7 +9,6 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-
 public class PushbackInputStream {
 
   public int available() throws IOException {
@@ -47,5 +46,4 @@ public class PushbackInputStream {
   public void unread(int b) throws IOException {
     InferUndefined.can_throw_ioexception_void();
   }
-
 }

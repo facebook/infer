@@ -9,10 +9,7 @@ package java.lang;
 
 public class NullPointerException extends RuntimeException {
 
-    public NullPointerException() {
-    }
+  public NullPointerException() {}
 
-    public NullPointerException(String s) {
-    }
-
+  public NullPointerException(String s) {}
 }

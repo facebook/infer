@@ -9,35 +9,33 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-
 public abstract class BufferedWriter extends Writer {
 
-    public void flush() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void flush() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void newLine() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void newLine() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(char cbuf[]) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void write(char cbuf[]) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(char cbuf[], int off, int len) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void write(char cbuf[], int off, int len) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(int c) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void write(int c) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(String str) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void write(String str) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void write(String str, int off, int len) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
+  public void write(String str, int off, int len) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 }

@@ -18,5 +18,4 @@ public class Class2 {
   void crossModuleNPE2(Class1 c) {
     c.nullableField.toString();
   }
-
 }

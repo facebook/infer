@@ -39,5 +39,4 @@ public class Leaks {
     stream1.close();
     stream2.close();
   }
-
 }

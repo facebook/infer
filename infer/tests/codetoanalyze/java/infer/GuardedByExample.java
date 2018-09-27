@@ -7,25 +7,20 @@
 
 package codetoanalyze.java.infer;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import com.google.common.annotations.VisibleForTesting;
 import android.annotation.SuppressLint;
-import javax.annotation.concurrent.GuardedBy;
+import com.google.common.annotations.VisibleForTesting;
+import java.io.Closeable;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import java.io.Closeable;
+import javax.annotation.concurrent.GuardedBy;
 
 public class GuardedByExample {
 
   static class AutoCloseableReadWriteUpdateLock implements Closeable {
-    @Override public void close() {}
+    @Override
+    public void close() {}
   }
 
   private Object mLock = new Object();
@@ -149,7 +144,7 @@ public class GuardedByExample {
 
   void reassignCopyOk() {
     synchronized (this) {
-      mCopyOfG = g;  // these are ok: access of g guarded by this
+      mCopyOfG = g; // these are ok: access of g guarded by this
     }
     mCopyOfG = new Object(); // ok; this doesn't change the value of g
   }
@@ -195,12 +190,12 @@ public class GuardedByExample {
     }
   }
 
-  synchronized static void staticSynchronizedOk() {
+  static synchronized void staticSynchronizedOk() {
     sGuardedByClass.toString();
   }
 
   static void synchronizeOnClassOk1() {
-    synchronized(GuardedByExample.class) {
+    synchronized (GuardedByExample.class) {
       sGuardedByClass.toString(); // should not warn here
       sGuardedByClass = new Object(); // or here
     }
@@ -266,10 +261,10 @@ public class GuardedByExample {
   // "by reference" GuardedBy semantics
   void readGFromCopyOk() {
     synchronized (this) {
-      mCopyOfG = g;  // these are ok: access of g guarded by this
+      mCopyOfG = g; // these are ok: access of g guarded by this
       g.toString();
     }
-    mCopyOfG.toString();  // should be an error; unprotected access to pt(g)
+    mCopyOfG.toString(); // should be an error; unprotected access to pt(g)
   }
 
   // another "by reference" vs "by value" test. buggy in "by value", but safe in "by reference"
@@ -280,7 +275,7 @@ public class GuardedByExample {
 
   Object byRefTrickyBad() {
     Object local = null;
-    synchronized(this) {
+    synchronized (this) {
       local = g; // we have a local pointer... to pt(G)
     }
     g.toString(); // ...but unsafe access is through g!
@@ -289,17 +284,18 @@ public class GuardedByExample {
 
   void byRefTrickyOk() {
     Object local = null;
-    synchronized(this) {
+    synchronized (this) {
       local = g; // we have a local pointer... to pt(G)
     }
     local.toString(); // ...but unsafe access is through g!
   }
 
-
   @GuardedBy("ui_thread")
   Object uiThread1;
+
   @GuardedBy("ui-thread")
   Object uiThread2;
+
   @GuardedBy("uithread")
   Object uiThread3;
 
@@ -330,17 +326,21 @@ public class GuardedByExample {
   private class Inner {
     @GuardedBy("this")
     Object guardedByInnerThis1;
+
     @GuardedBy("Inner.this")
     Object guardedByInnerThis2;
+
     @GuardedBy("GuardedByExample$Inner.this")
     Object guardedByInnerThis3;
+
     @GuardedBy("Inner.class")
     Object guardedByInnerClass1;
+
     @GuardedBy("GuardedByExample.Inner.class")
     Object guardedByInnerClass2;
+
     @GuardedBy("GuardedByExample$Inner.class")
     Object guardedByInnerClass3;
-
 
     synchronized void okAccess1() {
       guardedByInnerThis1 = null;
@@ -369,7 +369,6 @@ public class GuardedByExample {
         guardedByInnerClass3 = new Object();
       }
     }
-
   }
 
   // TODO: report on these cases
@@ -391,7 +390,7 @@ public class GuardedByExample {
 
   public void withloop2() {
     synchronized (mLock) {
-      for (int i = 0; i<=n; i++) {
+      for (int i = 0; i <= n; i++) {
         f = 42;
       }
     }
@@ -403,38 +402,37 @@ public class GuardedByExample {
     }
   }
 
- @GuardedBy("self_reference")
- Object self_reference;
+  @GuardedBy("self_reference")
+  Object self_reference;
 
- void guardedBySelfReferenceOK() {
-    synchronized(self_reference){
-       this.self_reference.toString();
+  void guardedBySelfReferenceOK() {
+    synchronized (self_reference) {
+      this.self_reference.toString();
     }
   }
 
   // TODO: report on this case, or at least a version which writes
   /*
- void guardedBySelfReferenceBad() {
-    this.self_reference.toString();
-  }
-  */
+  void guardedBySelfReferenceBad() {
+     this.self_reference.toString();
+   }
+   */
 
   @GuardedBy("itself")
   Object itself_fld;
 
- void itselfOK() {
-    synchronized(itself_fld){
-     this.itself_fld.toString();
+  void itselfOK() {
+    synchronized (itself_fld) {
+      this.itself_fld.toString();
     }
   }
 
   // TODO: report on this case, or at least a version which writes
   /*
- void itselfBad() {
-    this.itself_fld.toString();
-  }
-  */
-
+  void itselfBad() {
+     this.itself_fld.toString();
+   }
+   */
 
   ReadWriteLock mRWL;
 
@@ -477,10 +475,10 @@ public class GuardedByExample {
   @GuardedBy("this")
   Integer xForSub;
 
-  static class Sub extends GuardedByExample{
+  static class Sub extends GuardedByExample {
 
     void goodSub1() {
-      synchronized (this){
+      synchronized (this) {
         xForSub = 22;
       }
     }
@@ -492,7 +490,6 @@ public class GuardedByExample {
     void badSub() {
       xForSub = 22;
     }
-
   }
 
   Lock normallock;
@@ -504,7 +501,6 @@ public class GuardedByExample {
 
   @GuardedBy("reentrantlock")
   Integer guardedbyrel;
-
 
   void goodGuardedByNormalLock() {
     normallock.lock();
@@ -526,11 +522,11 @@ public class GuardedByExample {
     }
   }
 
-  void badGuardedByNormalLock(){
+  void badGuardedByNormalLock() {
     guardedbynl = 22;
   }
 
-  void badGuardedByReentrantLock(){
+  void badGuardedByReentrantLock() {
     guardedbyrel = 44;
   }
 
@@ -577,5 +573,4 @@ public class GuardedByExample {
     guardedByLock1 = true;
     guardedByLock2 = true;
   }
-
 }

@@ -14,5 +14,4 @@ public class Class2 {
   public static void method() {
     Class1.method();
   }
-
 }

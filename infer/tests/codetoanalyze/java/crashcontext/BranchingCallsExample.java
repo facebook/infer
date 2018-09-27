@@ -31,5 +31,4 @@ public class BranchingCallsExample {
   public static void main(String[] args) {
     foo();
   }
-
 }

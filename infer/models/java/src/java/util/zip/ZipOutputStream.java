@@ -7,22 +7,16 @@
 
 package java.util.zip;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-
 import com.facebook.infer.builtins.InferUndefined;
-
+import java.io.IOException;
 
 public class ZipOutputStream {
 
-    public void putNextEntry(ZipEntry e) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public void putNextEntry(ZipEntry e) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public void closeEntry() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
+  public void closeEntry() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 }

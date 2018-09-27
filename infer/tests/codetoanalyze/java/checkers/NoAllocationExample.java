@@ -7,8 +7,8 @@
 
 package codetoanalyze.java.checkers;
 
-import com.facebook.infer.annotation.NoAllocation;
 import com.facebook.infer.annotation.IgnoreAllocations;
+import com.facebook.infer.annotation.NoAllocation;
 
 public class NoAllocationExample {
 
@@ -83,5 +83,4 @@ public class NoAllocationExample {
       }
     }
   }
-
 }

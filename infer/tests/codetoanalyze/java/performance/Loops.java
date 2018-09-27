@@ -6,33 +6,33 @@
  */
 package codetoanalyze.java.performance;
 
-public class Loops{
+public class Loops {
 
-  static int do_while_independent_of_p (int p) {
-   int a = 0;
-   do {
-         if( p == 15) {
-            p = p + 1;
-         }
-         a++;
-   } while( a < 25 );
+  static int do_while_independent_of_p(int p) {
+    int a = 0;
+    do {
+      if (p == 15) {
+        p = p + 1;
+      }
+      a++;
+    } while (a < 25);
 
-   return 0;
+    return 0;
   }
 
   /* can't handle nested loops yet, but control vars of both loops must
-     be {a, b} */
-  static void nested_do_while_FP (int p) {
+  be {a, b} */
+  static void nested_do_while_FP(int p) {
     int a = 10;
     int b = 0;
     do {
-      do{
-        if( p == 15) {
-            p = p + 1;
-         }
+      do {
+        if (p == 15) {
+          p = p + 1;
+        }
         b++;
-      }while ( b < 10);
+      } while (b < 10);
       a++;
-    } while( a < 20 );
+    } while (a < 20);
   }
 }

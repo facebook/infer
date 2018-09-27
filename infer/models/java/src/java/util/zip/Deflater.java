@@ -26,5 +26,4 @@ public class Deflater {
   public void end() {
     InferBuiltins.__set_mem_attribute(this);
   }
-
 }

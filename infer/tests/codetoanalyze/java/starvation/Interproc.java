@@ -11,7 +11,8 @@ class Interproc {
   }
 
   void interproc2Bad(InterprocA b) {
-    synchronized(b) {}
+    synchronized (b) {
+    }
   }
 
   synchronized void interproc1Ok(InterprocB a) {
@@ -19,12 +20,13 @@ class Interproc {
   }
 
   void interproc2Ok(InterprocB b) {
-    synchronized(b) {}
+    synchronized (b) {
+    }
   }
 
   void reentrant1Ok(InterprocB b) {
-    synchronized(this) {
-      synchronized(b) {
+    synchronized (this) {
+      synchronized (b) {
         reentrant2Ok();
       }
     }
@@ -39,13 +41,14 @@ class InterprocA {
   }
 
   void interproc2Bad(Interproc d) {
-    synchronized(d) {}
+    synchronized (d) {
+    }
   }
 }
 
 class InterprocB {
   void interproc1Ok(Interproc c) {
-    synchronized(c) {
+    synchronized (c) {
       interproc2Ok(c);
     }
   }

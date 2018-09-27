@@ -12,7 +12,6 @@ import com.facebook.infer.annotation.PerformanceCritical;
 
 public class AnnotationReachabilityDuplicatesExample {
 
-
   @Expensive
   native void expensive();
 
@@ -31,7 +30,7 @@ public class AnnotationReachabilityDuplicatesExample {
 
   @PerformanceCritical
   void perfCriticalBad2() {
-      callsExpensiveTwice();  // should report here only once
+    callsExpensiveTwice(); // should report here only once
   }
 
   native boolean star();
@@ -46,7 +45,6 @@ public class AnnotationReachabilityDuplicatesExample {
 
   @PerformanceCritical
   void perfCriticalBad1() {
-    callsEitherExpensive();  // should report here only once
+    callsEitherExpensive(); // should report here only once
   }
-
 }

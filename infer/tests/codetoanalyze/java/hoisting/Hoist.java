@@ -165,10 +165,11 @@ class Hoist {
   class EmptyFoo extends Foo implements Nothing {}
 
   boolean instanceof_dont_hoist(EmptyFoo empty) {
-    boolean k = false;;
-     for (int i = 0; i < 10; i++) {
+    boolean k = false;
+    ;
+    for (int i = 0; i < 10; i++) {
       k = empty instanceof Nothing;
     }
-     return k;
+    return k;
   }
 }

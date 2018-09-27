@@ -15,29 +15,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-
 public class URLConnection {
 
-    protected URL url;
+  protected URL url;
 
-    public URLConnection(URL url) {
-        this.url = url;
-    }
+  public URLConnection(URL url) {
+    this.url = url;
+  }
 
-    public URL getURL() {
-        return url;
-    }
+  public URL getURL() {
+    return url;
+  }
 
-    public InputStream getInputStream() throws IOException {
-        if (this instanceof HttpURLConnection) {
-            byte[] arr = {1};
-            return new ByteArrayInputStream(arr);
-        } else return new FileInputStream("");
-    }
+  public InputStream getInputStream() throws IOException {
+    if (this instanceof HttpURLConnection) {
+      byte[] arr = {1};
+      return new ByteArrayInputStream(arr);
+    } else return new FileInputStream("");
+  }
 
-    public OutputStream getOutputStream() throws IOException {
-        if (this instanceof HttpURLConnection) {
-            return new ByteArrayOutputStream();
-        } else return new FileOutputStream("");
-    }
+  public OutputStream getOutputStream() throws IOException {
+    if (this instanceof HttpURLConnection) {
+      return new ByteArrayOutputStream();
+    } else return new FileOutputStream("");
+  }
 }

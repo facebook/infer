@@ -20,7 +20,6 @@ public class Fields {
   static Object sFld;
 
   /** should report on these tests */
-
   void instanceFieldBad() {
     this.mFld = InferTaint.inferSecretSource();
     InferTaint.inferSensitiveSink(this.mFld);
@@ -62,7 +61,6 @@ public class Fields {
   }
 
   /** should not report on these tests */
-
   void viaFieldOk() {
     Obj obj = new Obj();
     obj.f = InferTaint.inferSecretSource();
@@ -119,5 +117,4 @@ public class Fields {
     }
     InferTaint.inferSensitiveSink(obj.g.g.f);
   }
-
 }

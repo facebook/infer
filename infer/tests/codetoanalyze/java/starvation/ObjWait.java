@@ -11,7 +11,7 @@ class ObjWait {
   Object z;
 
   void waitOnAnyWithoutTimeoutOk() throws InterruptedException {
-    synchronized(z) {
+    synchronized (z) {
       z.wait();
     }
   }
@@ -20,21 +20,21 @@ class ObjWait {
 
   @UiThread
   void waitOnMainWithoutTimeoutBad() throws InterruptedException {
-    synchronized(o) {
+    synchronized (o) {
       o.wait();
     }
   }
 
   @UiThread
   void waitOnMainWithExcessiveTimeout1Bad() throws InterruptedException {
-    synchronized(o) {
+    synchronized (o) {
       o.wait(5001);
     }
   }
 
   @UiThread
   void waitOnMainWithExcessiveTimeout2Bad() throws InterruptedException {
-    synchronized(o) {
+    synchronized (o) {
       o.wait(4000, 2000000000);
     }
   }
@@ -43,12 +43,13 @@ class ObjWait {
 
   @UiThread
   void indirectWaitOnMainWithoutTimeoutBad() throws InterruptedException {
-    synchronized(lock) {}
+    synchronized (lock) {
+    }
   }
 
   void lockAndWaitOnAnyWithoutTimeoutBad() throws InterruptedException {
-    synchronized(lock) {
-      synchronized(x) {
+    synchronized (lock) {
+      synchronized (x) {
         x.wait();
       }
     }

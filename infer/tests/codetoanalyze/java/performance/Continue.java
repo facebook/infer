@@ -6,16 +6,14 @@
  */
 package codetoanalyze.java.performance;
 
-public class Continue{
-  int continue_outer_loop_FN ()
-{
-  outer:
-  for (int i = 2; i < 1000; i++) {
+public class Continue {
+  int continue_outer_loop_FN() {
+    outer:
+    for (int i = 2; i < 1000; i++) {
       for (int j = 2; j < i; j++) {
-          if (i % j == 0)
-          continue outer;
-     }
+        if (i % j == 0) continue outer;
+      }
+    }
+    return 0;
   }
-  return 0;
-}
 }

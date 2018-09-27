@@ -6,7 +6,6 @@
  */
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class CollectionTest {
@@ -19,8 +18,7 @@ public class CollectionTest {
 
   void iterate_over_some_java_collection(
       ConcurrentLinkedQueue<MyCollection<Integer>> mSubscribers) {
-    for (MyCollection<Integer> list : mSubscribers) {
-    }
+    for (MyCollection<Integer> list : mSubscribers) {}
   }
 
   // Expected |mSubscribers| * |list| but we get T

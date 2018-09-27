@@ -8,5 +8,5 @@
 // This example tests that anonymous class renaming does not affect the
 // computation of the pre-existing warnings
 public interface SimpleInterfaceExample {
-    public String getString();
+  public String getString();
 }

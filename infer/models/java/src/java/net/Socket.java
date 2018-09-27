@@ -7,11 +7,10 @@
 
 package java.net;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import com.facebook.infer.builtins.InferBuiltins;
 
 public class Socket {
 
@@ -38,5 +37,4 @@ public class Socket {
     InferBuiltins.__set_mem_attribute(inputStream);
     InferBuiltins.__set_mem_attribute(outputStream);
   }
-
 }

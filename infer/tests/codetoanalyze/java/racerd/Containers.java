@@ -7,23 +7,21 @@
 
 package codetoanalyze.java.checkers;
 
+import android.support.v4.util.Pools;
+import android.support.v4.util.Pools.SimplePool;
+import android.support.v4.util.Pools.SynchronizedPool;
+import android.support.v4.util.SimpleArrayMap;
+import android.support.v4.util.SparseArrayCompat;
+import android.util.SparseArray;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import javax.annotation.concurrent.ThreadSafe;
-
-import android.support.v4.util.Pools.SynchronizedPool;
-import android.support.v4.util.SparseArrayCompat;
-import android.util.SparseArray;
-import android.support.v4.util.SimpleArrayMap;
-import android.support.v4.util.Pools;
-import android.support.v4.util.Pools.SimplePool;
 
 class ContainerWrapper {
   private final List<Object> children = new ArrayList<Object>();
@@ -32,19 +30,17 @@ class ContainerWrapper {
     return _write(v);
   }
 
-  private Object _write(Object node)
-  {
+  private Object _write(Object node) {
     children.add(node);
     return this;
   }
-
 }
 
 @ThreadSafe
 class Containers {
 
   List<String> mList;
-  Map<String,String> mMap;
+  Map<String, String> mMap;
 
   // lists
   void listAddBad1(String s) {
@@ -113,11 +109,11 @@ class Containers {
     mMap.clear();
   }
 
-  void mapPutAllBad(Map<String,String> otherMap) {
+  void mapPutAllBad(Map<String, String> otherMap) {
     mMap.putAll(otherMap);
   }
 
-  Map<String,String> mMapNobodyWrites;
+  Map<String, String> mMapNobodyWrites;
 
   void mapReadsOk(String s) {
     mMapNobodyWrites.containsKey(s);
@@ -131,7 +127,7 @@ class Containers {
   }
 
   // make sure we still warn on subtypes of Map
-  void mapSubclassWriteBad(HashMap<String,String> m, String key) {
+  void mapSubclassWriteBad(HashMap<String, String> m, String key) {
     m.remove(key);
   }
 
@@ -146,9 +142,9 @@ class Containers {
   }
 
   void accessToSychronizedMapsOk(
-    String key,
-    ConcurrentMap<String,String> concurrentMap,
-    ConcurrentHashMap<String,String> concurrentHashMap) {
+      String key,
+      ConcurrentMap<String, String> concurrentMap,
+      ConcurrentHashMap<String, String> concurrentHashMap) {
 
     concurrentMap.remove(key);
     concurrentHashMap.remove(key);
@@ -269,12 +265,12 @@ class Containers {
 
   SimpleArrayMap<Integer, Integer> si_map = new SimpleArrayMap<Integer, Integer>();
 
-  synchronized public void addToSimpleArrayMapOk() {
-    si_map.put(1,1);
+  public synchronized void addToSimpleArrayMapOk() {
+    si_map.put(1, 1);
   }
 
   public void addToSimpleArrayMapBad(SimpleArrayMap<Integer, Integer> map) {
-    map.put(1,1);
+    map.put(1, 1);
   }
 
   // this should be a read/write race with addToSimpleArrayMapOk
@@ -283,27 +279,27 @@ class Containers {
   }
 
   SimplePool<Integer> simplePool = new SimplePool<Integer>(10);
-  synchronized public Integer getFromPoolOK() {
+
+  public synchronized Integer getFromPoolOK() {
     return simplePool.acquire();
   }
 
   public void poolBad() {
     Integer a;
-    synchronized(this) {
+    synchronized (this) {
       a = simplePool.acquire();
     }
     simplePool.release(a);
   }
 
-  Map<String,String> mAliasedMap;
+  Map<String, String> mAliasedMap;
 
   // won't report here because the read happens through an alias
   public String FN_AliasedMapBad() {
     synchronized (this) {
       mAliasedMap.put("a", "b");
     }
-    Map<String,String> alias = mAliasedMap;
+    Map<String, String> alias = mAliasedMap;
     return alias.get("a");
   }
-
 }

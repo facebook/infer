@@ -7,5 +7,4 @@
 
 package android.content;
 
-public interface IContentService {
-}
+public interface IContentService {}

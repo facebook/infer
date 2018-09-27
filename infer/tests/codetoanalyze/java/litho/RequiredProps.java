@@ -19,16 +19,16 @@ enum ResType {
   NONE
 }
 
-@Target({ ElementType.PARAMETER, ElementType.FIELD })
+@Target({ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.CLASS)
 @interface Prop {
   ResType resType() default ResType.NONE;
+
   boolean optional() default false;
 }
 
 class MyComponent extends Component {
-  @Prop
-  Object prop1; // implicitly non-optional
+  @Prop Object prop1; // implicitly non-optional
 
   @Prop(optional = true)
   Object prop2; // explicitly optional
@@ -63,13 +63,12 @@ class MyComponent extends Component {
     public MyComponent build() {
       return mMyComponent;
     }
-
   }
-
 }
 
-/** using @Prop(resType = ..) allows you to set the Prop with any of .propname,
- *  .propnameRes, or .propnameAttr
+/**
+ * using @Prop(resType = ..) allows you to set the Prop with any of .propname, .propnameRes, or
+ * .propnameAttr
  */
 class ResPropComponent extends Component {
 
@@ -102,9 +101,7 @@ class ResPropComponent extends Component {
     public ResPropComponent build() {
       return mResPropComponent;
     }
-
   }
-
 }
 
 public class RequiredProps {
@@ -113,8 +110,7 @@ public class RequiredProps {
   public ResPropComponent mResPropComponent;
 
   public MyComponent buildWithAllOk() {
-    return
-      mMyComponent
+    return mMyComponent
         .create()
         .prop1(new Object())
         .prop2(new Object())
@@ -124,32 +120,17 @@ public class RequiredProps {
 
   // prop 2 is optional
   public MyComponent buildWithout2Ok() {
-    return
-      mMyComponent
-        .create()
-        .prop1(new Object())
-        .prop3(new Object())
-        .build();
+    return mMyComponent.create().prop1(new Object()).prop3(new Object()).build();
   }
 
   // prop 1 is required
   public MyComponent buildWithout1Bad() {
-    return
-      mMyComponent
-        .create()
-        .prop2(new Object())
-        .prop3(new Object())
-        .build();
+    return mMyComponent.create().prop2(new Object()).prop3(new Object()).build();
   }
 
   // prop3 is required
   public MyComponent buildWithout3Bad() {
-    return
-      mMyComponent
-        .create()
-        .prop1(new Object())
-        .prop2(new Object())
-        .build();
+    return mMyComponent.create().prop1(new Object()).prop2(new Object()).build();
   }
 
   private static MyComponent.Builder setProp1(MyComponent.Builder builder) {
@@ -161,30 +142,15 @@ public class RequiredProps {
   }
 
   public MyComponent setProp1InCalleeOk() {
-    return
-      setProp1(
-        mMyComponent
-          .create()
-          .prop2(new Object()))
-      .prop3(new Object())
-      .build();
+    return setProp1(mMyComponent.create().prop2(new Object())).prop3(new Object()).build();
   }
 
   public MyComponent setProp3InCalleeOk() {
-    return
-      setProp3(
-        mMyComponent
-          .create()
-          .prop1(new Object())
-          .prop2(new Object()))
-      .build();
+    return setProp3(mMyComponent.create().prop1(new Object()).prop2(new Object())).build();
   }
 
   public MyComponent setProp3InCalleeButForgetProp1Bad() {
-    return
-      setProp3(mMyComponent.create())
-      .prop2(new Object())
-      .build();
+    return setProp3(mMyComponent.create()).prop2(new Object()).build();
   }
 
   public MyComponent setRequiredOnOneBranchBad(boolean b) {
@@ -230,37 +196,24 @@ public class RequiredProps {
 
   public void buildWithColumnChildBad() {
     Column.Builder builder = Column.create();
-    MyComponent.Builder childBuilder =
-      mMyComponent.create().prop1(new Object());
+    MyComponent.Builder childBuilder = mMyComponent.create().prop1(new Object());
     // forgot prop 3, and builder.child() will invoke build() on childBuilder
     builder.child(childBuilder);
   }
 
   public void buildPropResWithNormalOk() {
-    mResPropComponent
-      .create()
-      .prop(new Object())
-      .build();
+    mResPropComponent.create().prop(new Object()).build();
   }
 
   public void buildPropResWithResOk() {
-    mResPropComponent
-      .create()
-      .propRes(new Object())
-      .build();
+    mResPropComponent.create().propRes(new Object()).build();
   }
 
   public void buildPropResWithAttrOk() {
-    mResPropComponent
-      .create()
-      .propAttr(new Object())
-      .build();
+    mResPropComponent.create().propAttr(new Object()).build();
   }
 
   public void buildPropResMissingBad() {
-    mResPropComponent
-      .create()
-      .build();
+    mResPropComponent.create().build();
   }
-
 }

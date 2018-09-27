@@ -11,84 +11,81 @@ import com.facebook.infer.annotation.ThreadSafe;
 
 class Interprocedural {
 
-static class A {
-  B f = new B();
-  int h = 0;
-}
-
-static class B {
-  int g = 0;
-}
-
-@ThreadSafe
-static class Field {
-  private A a = new A();
-
-  private void destabilize() {
-    B b = a.f;
+  static class A {
+    B f = new B();
+    int h = 0;
   }
 
-  public void unstable_ok() {
-    int x = 42;
-    destabilize();
-    synchronized (this){
-      a.f.g = 101;
+  static class B {
+    int g = 0;
+  }
+
+  @ThreadSafe
+  static class Field {
+    private A a = new A();
+
+    private void destabilize() {
+      B b = a.f;
     }
-    x = a.f.g;
-  }
 
-  public void stable_bad() {
-    int x = 42;
-    synchronized (this){
-      a.f.g = 101;
+    public void unstable_ok() {
+      int x = 42;
+      destabilize();
+      synchronized (this) {
+        a.f.g = 101;
+      }
+      x = a.f.g;
     }
-    x = a.f.g;
-  }
 
-}
-
-@ThreadSafe
-static class Param {
-
-  private void destabilize(A z) {
-    B b1 = z.f;
-    System.out.println(b1);
-  }
-
-  public void unstable_ok(A a) {
-    int x = 42;
-    destabilize(a);
-    synchronized (this) {
-      a.f.g = 101;
+    public void stable_bad() {
+      int x = 42;
+      synchronized (this) {
+        a.f.g = 101;
+      }
+      x = a.f.g;
     }
-    x = a.f.g;
   }
 
-  public void stable_bad(A a) {
-    int x = 42;
-    synchronized (this) {
-      a.f.g = 101;
+  @ThreadSafe
+  static class Param {
+
+    private void destabilize(A z) {
+      B b1 = z.f;
+      System.out.println(b1);
     }
-    x = a.f.g;
-  }
 
-}
-
-@ThreadSafe
-static class Param2 {
-
-  private void destabilize(A z)   {
-    // Do nothing
-  }
-
-  public void stable_bad(A a) {
-    int x = 42;
-    destabilize(a); // a leaks, but shouldn't be de-stabilized because callee does nothing
-    synchronized (this) {
-      a.f.g = 101;
+    public void unstable_ok(A a) {
+      int x = 42;
+      destabilize(a);
+      synchronized (this) {
+        a.f.g = 101;
+      }
+      x = a.f.g;
     }
-    x = a.f.g;
-  }
-}
 
+    public void stable_bad(A a) {
+      int x = 42;
+      synchronized (this) {
+        a.f.g = 101;
+      }
+      x = a.f.g;
+    }
+  }
+
+  @ThreadSafe
+  static class Param2 {
+
+    private void destabilize(A z) {
+      // Do nothing
+    }
+
+    public void stable_bad(A a) {
+      int x = 42;
+      destabilize(a); // a leaks, but shouldn't be de-stabilized because callee does nothing
+      synchronized (this) {
+        a.f.g = 101;
+      }
+      x = a.f.g;
+    }
+  }
 }

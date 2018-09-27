@@ -7,7 +7,6 @@
 
 package codetoanalyze.java.infer;
 
-
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -18,13 +17,11 @@ import java.util.zip.CheckedOutputStream;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterOutputStream;
-
 import javax.crypto.CipherOutputStream;
 
 public class FilterOutputStreamLeaks {
 
-
-  //FilterOutputStream  tests
+  // FilterOutputStream  tests
 
   public void filterOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -48,12 +45,11 @@ public class FilterOutputStreamLeaks {
       fos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (fos != null)
-        fos.close();
+      if (fos != null) fos.close();
     }
   }
 
-  //DataOutputStream  tests
+  // DataOutputStream  tests
 
   public void dataOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -77,12 +73,11 @@ public class FilterOutputStreamLeaks {
       dos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (dos != null)
-        dos.close();
+      if (dos != null) dos.close();
     }
   }
 
-  //BufferedOutputStream  tests
+  // BufferedOutputStream  tests
 
   public void bufferedOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -106,13 +101,11 @@ public class FilterOutputStreamLeaks {
       bos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (bos != null)
-        bos.close();
+      if (bos != null) bos.close();
     }
   }
 
-
-  //CheckedOutputStream  tests
+  // CheckedOutputStream  tests
 
   public void checkedOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -136,12 +129,11 @@ public class FilterOutputStreamLeaks {
       chos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (chos != null)
-        chos.close();
+      if (chos != null) chos.close();
     }
   }
 
-  //CipherOutputStream  tests
+  // CipherOutputStream  tests
 
   public void cipherOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -165,12 +157,11 @@ public class FilterOutputStreamLeaks {
       cos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (cos != null)
-        cos.close();
+      if (cos != null) cos.close();
     }
   }
 
-  //DeflaterOutputStream  tests
+  // DeflaterOutputStream  tests
 
   public void deflaterOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -194,13 +185,11 @@ public class FilterOutputStreamLeaks {
       dos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (dos != null)
-        dos.close();
+      if (dos != null) dos.close();
     }
   }
 
-
-  //DigestOutputStream  tests
+  // DigestOutputStream  tests
 
   public void digestOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -224,12 +213,11 @@ public class FilterOutputStreamLeaks {
       dos.write(arr);
     } catch (IOException e) {
     } finally {
-      if (dos != null)
-        dos.close();
+      if (dos != null) dos.close();
     }
   }
 
-  //InflaterOutputStream  tests
+  // InflaterOutputStream  tests
 
   public void inflaterOutputStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -253,12 +241,11 @@ public class FilterOutputStreamLeaks {
       ios.write(arr);
     } catch (IOException e) {
     } finally {
-      if (ios != null)
-        ios.close();
+      if (ios != null) ios.close();
     }
   }
 
-  //GZipOutputStream  tests
+  // GZipOutputStream  tests
 
   public void gzipOutputStreamNotClosedAfterFlush() {
     FileOutputStream fos;
@@ -281,14 +268,12 @@ public class FilterOutputStreamLeaks {
       gzipOutputStream.write(arr);
     } catch (IOException e) {
     } finally {
-      if (gzipOutputStream != null)
-        gzipOutputStream.close();
-      else if (fos != null)
-        fos.close();
+      if (gzipOutputStream != null) gzipOutputStream.close();
+      else if (fos != null) fos.close();
     }
   }
 
-  //PrintStream  tests
+  // PrintStream  tests
 
   public void printStreamNotClosedAfterWrite() {
     byte[] arr = {1, 2, 3};
@@ -311,9 +296,7 @@ public class FilterOutputStreamLeaks {
       printer.write(arr);
     } catch (IOException e) {
     } finally {
-      if (printer != null)
-        printer.close();
+      if (printer != null) printer.close();
     }
   }
-
 }

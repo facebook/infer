@@ -14,7 +14,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import javax.annotation.Nullable;
 
 public class FragmentDoesNotRetainViewExample extends Fragment {
 
@@ -23,7 +22,6 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
     public CustomView(Context c) {
       super(c);
     }
-
   }
 
   View mView1;
@@ -53,5 +51,4 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
     mCustomView = null;
     mViewSubclass = null;
   }
-
 }

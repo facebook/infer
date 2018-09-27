@@ -24,12 +24,11 @@ public final class Integer {
 
   public boolean equals(Object anObject) {
     return anObject != null
-      && anObject instanceof Integer
-      && this.value == ((Integer) anObject).value;
+        && anObject instanceof Integer
+        && this.value == ((Integer) anObject).value;
   }
 
   public int intValue() {
     return this.value;
   }
-
 }

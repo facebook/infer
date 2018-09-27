@@ -7,12 +7,9 @@
 
 package codetoanalyze.java.eradicate;
 
-
 import android.support.annotation.NonNull;
 import android.widget.EditText;
-
 import com.facebook.infer.annotation.SuppressViewNullability;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -43,7 +40,6 @@ public class FieldNotInitialized {
     f = null; // OK  the framework could write null into the field
     g = null; // OK  the framework could write null into the field
   }
-
 
   class OnlyRead {
     Object o;
@@ -81,7 +77,6 @@ public class FieldNotInitialized {
     }
   }
 
-
   class OnlyReadIndirect {
     Object o1;
     Object o2;
@@ -99,10 +94,11 @@ public class FieldNotInitialized {
   class ConditionalFieldInit {
     Object o1;
     @Nullable Object o2 = null;
+
     public ConditionalFieldInit() {
-        if (o2 != null) {
-            o1 = new Object(); // Not always initialized
-        }
+      if (o2 != null) {
+        o1 = new Object(); // Not always initialized
+      }
     }
   }
 
@@ -110,8 +106,7 @@ public class FieldNotInitialized {
     Object o;
 
     public InitIfNull() {
-      if (o == null)
-        o = new Object();
+      if (o == null) o = new Object();
     }
   }
 
@@ -119,8 +114,7 @@ public class FieldNotInitialized {
     Object o;
 
     public InitIfNull2(Object x) {
-      if (o == null)
-        o = x;
+      if (o == null) o = x;
     }
   }
 
@@ -132,8 +126,7 @@ public class FieldNotInitialized {
     }
 
     public InitIfNull3() {
-      if (o == null)
-        o = getNotNull();
+      if (o == null) o = getNotNull();
     }
   }
 
@@ -166,5 +159,4 @@ public class FieldNotInitialized {
       s = x.s;
     }
   }
-
 }

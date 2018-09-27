@@ -27,7 +27,7 @@ public class Escape {
 
   public void FN_fieldEscapeBad() {
     Obj o = new Obj();
-    synchronized(this) {
+    synchronized (this) {
       mField = o;
     }
     o.f = new Object(); // not safe
@@ -119,7 +119,6 @@ public class Escape {
     twoParamsOneEscapes(o1, o2);
     o2.f = null; // ok
   }
-
 }
 
 @ThreadSafe
@@ -140,5 +139,4 @@ class Leaky {
     }
     l.mField = 1; // bad
   }
-
 }

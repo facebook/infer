@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.lang.Object;
 
 class InnerClass {
   synchronized void outerInnerOk(InnerClassA a) {
@@ -20,11 +19,12 @@ class InnerClass {
 
   class InnerClassA {
     void foo() {
-      synchronized(InnerClass.this) {}
+      synchronized (InnerClass.this) {
+      }
     }
 
     void outerInnerOk() {
-      synchronized(InnerClass.this) {
+      synchronized (InnerClass.this) {
         InnerClass.this.bar();
       }
     }
@@ -38,14 +38,14 @@ class InnerClass {
     // ctrs generate different access paths so test these too
     // following should not be flagged
     InnerClassA() {
-      synchronized(InnerClass.this) {
+      synchronized (InnerClass.this) {
         InnerClass.this.bar();
       }
     }
 
     // following should be flagged with outer_inner_bad()
     InnerClassA(Object o) {
-      synchronized(this) {
+      synchronized (this) {
         InnerClass.this.bar();
       }
     }

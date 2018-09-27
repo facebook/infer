@@ -9,24 +9,20 @@ package android.database.sqlite;
 
 import android.database.Cursor;
 import com.facebook.infer.builtins.InferBuiltins;
-import com.facebook.infer.builtins.InferUndefined;
-
 
 public class SQLiteCursor implements Cursor {
 
-    @Deprecated
-    public SQLiteCursor(SQLiteDatabase db, SQLiteCursorDriver driver,
-                        String editTable, SQLiteQuery query) {
-        this(driver, editTable, query);
-    }
+  @Deprecated
+  public SQLiteCursor(
+      SQLiteDatabase db, SQLiteCursorDriver driver, String editTable, SQLiteQuery query) {
+    this(driver, editTable, query);
+  }
 
+  public SQLiteCursor(SQLiteCursorDriver driver, String editTable, SQLiteQuery query) {
+    InferBuiltins.__set_file_attribute(this);
+  }
 
-    public SQLiteCursor(SQLiteCursorDriver driver, String editTable, SQLiteQuery query) {
-        InferBuiltins.__set_file_attribute(this);
-    }
-
-    public void close() {
-        InferBuiltins.__set_mem_attribute(this);
-    }
-
+  public void close() {
+    InferBuiltins.__set_mem_attribute(this);
+  }
 }

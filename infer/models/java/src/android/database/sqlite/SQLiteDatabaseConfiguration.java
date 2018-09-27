@@ -7,5 +7,4 @@
 
 package android.database.sqlite;
 
-public final class SQLiteDatabaseConfiguration {
-}
+public final class SQLiteDatabaseConfiguration {}

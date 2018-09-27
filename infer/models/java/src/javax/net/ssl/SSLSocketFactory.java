@@ -10,10 +10,7 @@ package javax.net.ssl;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-
 import javax.net.SocketFactory;
-
-import com.facebook.infer.builtins.InferBuiltins;
 
 public class SSLSocketFactory extends SocketFactory {
 
@@ -22,7 +19,8 @@ public class SSLSocketFactory extends SocketFactory {
   }
 
   @Override
-  public Socket createSocket(InetAddress addr1, int i, InetAddress addr2, int j) throws IOException {
+  public Socket createSocket(InetAddress addr1, int i, InetAddress addr2, int j)
+      throws IOException {
     return super.createSocket();
   }
 
@@ -41,5 +39,4 @@ public class SSLSocketFactory extends SocketFactory {
   public Socket createSocket(Socket s, String host, int i, boolean b) throws IOException {
     return super.createSocket();
   }
-
 }

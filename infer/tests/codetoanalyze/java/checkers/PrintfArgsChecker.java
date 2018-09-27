@@ -7,11 +7,8 @@
 
 package codetoanalyze.java.checkers;
 
-
-import java.io.PrintStream;
-
 import android.annotation.SuppressLint;
-
+import java.io.PrintStream;
 
 public class PrintfArgsChecker {
 
@@ -56,7 +53,6 @@ public class PrintfArgsChecker {
     String format = "%s %s";
     out.printf(format, "hello", "world");
   }
-
 }
 
 @SuppressLint("checkers-printf-args")
@@ -65,5 +61,4 @@ class SuppressedPrintfArgsChecker {
   void classSuppressed(PrintStream out) {
     out.printf("Hello %d", "world");
   }
-
 }

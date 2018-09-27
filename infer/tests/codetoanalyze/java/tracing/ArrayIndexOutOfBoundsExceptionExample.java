@@ -40,5 +40,4 @@ public class ArrayIndexOutOfBoundsExceptionExample {
     T2[] array = new T2[8];
     withFixedIndex(array);
   }
-
 }

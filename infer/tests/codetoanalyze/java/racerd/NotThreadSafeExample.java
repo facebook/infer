@@ -10,12 +10,12 @@ package codetoanalyze.java.checkers;
 import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
-public class NotThreadSafeExample{
+public class NotThreadSafeExample {
 
   Integer f;
 
-  public void tsBad() { /*Shouldn't report*/
+  public void tsBad() {
+    /*Shouldn't report*/
     f = 24;
   }
-
 }

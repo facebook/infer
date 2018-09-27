@@ -14,5 +14,4 @@ public class Generated {
   static Object returnsNull() {
     return null;
   }
-
 }

@@ -12,8 +12,8 @@ public class JsonUtils {
   private static void escape(StringBuilder builder, String input) {
     for (Character c : input.toCharArray()) {
       if (Character.getType(c) == Character.CONTROL) {
-        builder.append(String.format("\\u%04x", (int)c));
-      } else if (c == '\\' || c== '\"') {
+        builder.append(String.format("\\u%04x", (int) c));
+      } else if (c == '\\' || c == '\"') {
         builder.append('\\').append(c);
       } else {
         builder.append(c);
@@ -47,9 +47,9 @@ public class JsonUtils {
         || input instanceof Boolean
         || input instanceof Byte
         || input instanceof Short) {
-        return "";//String.valueOf(input);
+      return ""; // String.valueOf(input);
     } else {
-        return "";// serialize(String.valueOf(input)).toString();
+      return ""; // serialize(String.valueOf(input)).toString();
     }
   }
 
@@ -80,9 +80,7 @@ public class JsonUtils {
   }
 
   public static boolean isValidInputType(Object value) {
-    if (value instanceof JsonString ||
-        value instanceof JsonArray ||
-        value instanceof JsonMap) {
+    if (value instanceof JsonString || value instanceof JsonArray || value instanceof JsonMap) {
       return true;
     }
     return false;

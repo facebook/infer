@@ -22,10 +22,9 @@ public class NativeMethodExample {
       // in the stack (from the implementation of reflection) between this
       // method and the target of the reflective invocation.
       Method method = NativeMethodExample.class.getDeclaredMethod("foo");
-      Object o = method.invoke(new Object[] {} );
+      Object o = method.invoke(new Object[] {});
     } catch (ReflectiveOperationException e) {
       throw new Error(e);
     }
   }
-
 }

@@ -34,5 +34,4 @@ public class Builtins {
     InferBuiltins.assume(x == null);
     x.toString();
   }
-
 }

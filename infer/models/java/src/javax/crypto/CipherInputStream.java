@@ -8,10 +8,7 @@
 package javax.crypto;
 
 import com.facebook.infer.builtins.InferUndefined;
-
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class CipherInputStream {
 
@@ -34,5 +31,4 @@ public class CipherInputStream {
   public long skip(long n) throws IOException {
     return InferUndefined.can_throw_ioexception_long();
   }
-
 }

@@ -10,8 +10,7 @@ package hello;
 public class Pointers {
 
   public static class A {
-    public void method() {
-    }
+    public void method() {}
   }
 
   public static A mayReturnNull(int i) {
@@ -20,5 +19,4 @@ public class Pointers {
     }
     return null;
   }
-
 }

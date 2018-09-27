@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.io.FileReader;
-import java.io.DataInputStream;
-import java.io.FileWriter;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import android.support.annotation.UiThread;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 class JavaIO {
   FileReader reader;

@@ -54,5 +54,4 @@ public abstract class AbstractList<T> {
   public void clear() {
     mIsEmpty = 1;
   }
-
 }

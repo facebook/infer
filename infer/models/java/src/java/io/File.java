@@ -12,12 +12,11 @@ import javax.annotation.Nullable;
 
 public class File {
 
-    public @Nullable File[] listFiles() {
-        if (InferUndefined.boolean_undefined()) {
-            return null;
-        } else {
-            return (File[])InferUndefined.object_undefined();
-        }
+  public @Nullable File[] listFiles() {
+    if (InferUndefined.boolean_undefined()) {
+      return null;
+    } else {
+      return (File[]) InferUndefined.object_undefined();
     }
-
+  }
 }

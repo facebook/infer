@@ -5,15 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//package codetoanalyze.java.quandary;
-
-import java.util.Formatter;
+// package codetoanalyze.java.quandary;
 
 import com.facebook.infer.builtins.InferTaint;
+import java.util.Formatter;
 
-/** a lot of tainted values are strings, so propagation through StringBuilder's and the like is very
-  * important. */
-
+/**
+ * a lot of tainted values are strings, so propagation through StringBuilder's and the like is very
+ * important.
+ */
 public class Strings {
 
   void viaStringBuilderSugarBad() {
@@ -75,5 +75,4 @@ public class Strings {
   void viaStringFormatVarArgsIndirectBad() {
     viaStringFormatVarArgsIndirect(InferTaint.inferSecretSource());
   }
-
 }

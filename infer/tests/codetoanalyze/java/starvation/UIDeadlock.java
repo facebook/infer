@@ -12,24 +12,28 @@ class UIDeadlock {
 
   @UiThread
   public synchronized void onUIThreadAOk() {
-    synchronized(lockA) {}
+    synchronized (lockA) {
+    }
   }
 
   @UiThread
   public void onUIThreadBOk() {
-    synchronized(lockA) {
-      synchronized(this) {}
+    synchronized (lockA) {
+      synchronized (this) {
+      }
     }
   }
 
   @UiThread
   public synchronized void onUIThreadBad() {
-    synchronized(lockB) {}
+    synchronized (lockB) {
+    }
   }
 
   public void notOnUIThreadBad() {
-    synchronized(lockB) {
-      synchronized(this) {}
+    synchronized (lockB) {
+      synchronized (this) {
+      }
     }
   }
 }

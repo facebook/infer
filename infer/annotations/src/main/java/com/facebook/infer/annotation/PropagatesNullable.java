@@ -12,10 +12,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Annotation to indicate that when the parameter is null, the result is also null.
- */
+/** Annotation to indicate that when the parameter is null, the result is also null. */
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.PARAMETER})
-public @interface PropagatesNullable {
-}
+public @interface PropagatesNullable {}

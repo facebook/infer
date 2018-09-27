@@ -41,5 +41,4 @@ public class Files {
     String taintedString = (String) InferTaint.inferSecretSource();
     return Paths.get("", taintedString);
   }
-
 }

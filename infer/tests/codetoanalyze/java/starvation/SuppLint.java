@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.io.IOException;
-import android.support.annotation.UiThread;
 import android.annotation.SuppressLint;
+import android.support.annotation.UiThread;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 class SuppLint {
   Future future;
@@ -30,6 +29,7 @@ class SuppLint {
 @SuppressLint("STARVATION")
 class SuppLintClass {
   Future future;
+
   @UiThread
   void onUiThreadSuppressed() throws InterruptedException, ExecutionException {
     future.get();

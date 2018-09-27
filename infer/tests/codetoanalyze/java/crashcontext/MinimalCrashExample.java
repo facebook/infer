@@ -13,5 +13,4 @@ public class MinimalCrashExample {
     String s = null;
     s.toString();
   }
-
 }

@@ -7,43 +7,44 @@
 
 package android.content;
 
-import com.facebook.infer.builtins.InferBuiltins;
-import com.facebook.infer.builtins.InferUndefined;
-
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCursor;
 import android.net.Uri;
 import android.os.CancellationSignal;
 import android.os.RemoteException;
-
+import com.facebook.infer.builtins.InferUndefined;
 
 public class ContentProviderClient {
 
-    private ContentResolver mContentResolver;
-    private IContentProvider mContentProvider;
-    private String mPackageName;
-    private boolean mStable;
+  private ContentResolver mContentResolver;
+  private IContentProvider mContentProvider;
+  private String mPackageName;
+  private boolean mStable;
 
-    ContentProviderClient(
-            ContentResolver contentResolver, IContentProvider contentProvider, boolean stable) {
-        mContentResolver = contentResolver;
-        mContentProvider = contentProvider;
-        mPackageName = (String)InferUndefined.object_undefined();
-        mStable = stable;
-    }
+  ContentProviderClient(
+      ContentResolver contentResolver, IContentProvider contentProvider, boolean stable) {
+    mContentResolver = contentResolver;
+    mContentProvider = contentProvider;
+    mPackageName = (String) InferUndefined.object_undefined();
+    mStable = stable;
+  }
 
-    public Cursor query(Uri url, String[] projection, String selection,
-                        String[] selectionArgs, String sortOrder) throws RemoteException {
-        return query(url, projection, selection, selectionArgs, sortOrder, null);
-    }
+  public Cursor query(
+      Uri url, String[] projection, String selection, String[] selectionArgs, String sortOrder)
+      throws RemoteException {
+    return query(url, projection, selection, selectionArgs, sortOrder, null);
+  }
 
-    public Cursor query(Uri url, String[] projection, String selection, String[] selectionArgs,
-                        String sortOrder, CancellationSignal cancellationSignal) throws RemoteException {
-        return new SQLiteCursor(null, null, null);
-    }
+  public Cursor query(
+      Uri url,
+      String[] projection,
+      String selection,
+      String[] selectionArgs,
+      String sortOrder,
+      CancellationSignal cancellationSignal)
+      throws RemoteException {
+    return new SQLiteCursor(null, null, null);
+  }
 
-    private class NotRespondingRunnable {
-    }
-
-
+  private class NotRespondingRunnable {}
 }

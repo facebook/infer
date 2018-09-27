@@ -8,9 +8,8 @@
 package codetoanalyze.java.checkers;
 
 import android.support.v4.app.FragmentActivity;
-import android.widget.ImageView;
 import android.view.View;
-
+import android.widget.ImageView;
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 import javax.annotation.Nullable;
@@ -19,31 +18,24 @@ interface AnnotatedInterface {
 
   @PerformanceCritical
   void annotatedPerformanceCriticalInInterface();
-
 }
-
 
 class Other {
 
   @Expensive
-  void expensive() {
-  }
+  void expensive() {}
 
   void callsExpensive1() {
     expensive();
   }
 
-  void inexpensiveMethod() {
-  }
-
+  void inexpensiveMethod() {}
 }
 
 @Expensive
 class ExpensiveClass {
 
-  void anExpensiveMethod() {
-  }
-
+  void anExpensiveMethod() {}
 }
 
 @PerformanceCritical
@@ -64,15 +56,11 @@ class PerformanceCriticalClass {
   void performanceCriticalMethod4(Other o) {
     o.inexpensiveMethod(); // should not report
   }
-
-
 }
 
 class ExpensiveSubclass extends ExpensiveClass {
 
-  void anotherExpensiveMethod() {
-  }
-
+  void anotherExpensiveMethod() {}
 }
 
 class PerformanceCriticalSubclass extends PerformanceCriticalClass {
@@ -92,9 +80,7 @@ class PerformanceCriticalSubclass extends PerformanceCriticalClass {
   void subclassPerformanceCriticalMethod4(Other o) {
     o.inexpensiveMethod(); // should not report;
   }
-
 }
-
 
 public class ExpensiveCallExample implements AnnotatedInterface {
 
@@ -179,7 +165,7 @@ public class ExpensiveCallExample implements AnnotatedInterface {
   void callsExpensiveInTheUnlikelyElseBranch() {
     if (Branch.unlikely(mOther != null)) {
       // Do nothing
-    } else  {
+    } else {
       expensiveMethod();
     }
   }
@@ -216,5 +202,4 @@ public class ExpensiveCallExample implements AnnotatedInterface {
       expensiveMethod();
     }
   }
-
 }

@@ -51,12 +51,10 @@ class Test {
     return list.size();
   }
 
-
   void parameter_field_write_bad(Test test, boolean b) {
     int c = b ? 0 : 1;
     test.a = c;
   }
-
 
   int parameter_field_access_ok(Test test) {
     return test.a;
@@ -72,7 +70,5 @@ class Test {
     int tmp = array[i];
     array[i] = array[j];
     array[j] = tmp;
-   }
-
-
+  }
 }

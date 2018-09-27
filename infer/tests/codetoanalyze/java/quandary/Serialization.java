@@ -7,14 +7,12 @@
 
 package codetoanalyze.java.quandary;
 
+import com.facebook.infer.builtins.InferTaint;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
-import com.facebook.infer.builtins.InferTaint;
-
 public class Serialization {
-
 
   // we could warn on only particular calls to the tainted ObjectInputStream (e.g., readObject,
   // readUnshared, but nothing good can come from creating a tainted ObjectInputStream

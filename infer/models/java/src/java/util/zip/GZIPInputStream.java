@@ -9,10 +9,8 @@ package java.util.zip;
 
 import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
-
 import java.io.IOException;
 import java.io.InputStream;
-
 
 public class GZIPInputStream {
 
@@ -25,5 +23,4 @@ public class GZIPInputStream {
   public GZIPInputStream(InputStream in, int size) throws IOException {
     this(in);
   }
-
 }

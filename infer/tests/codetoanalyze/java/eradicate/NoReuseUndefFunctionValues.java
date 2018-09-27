@@ -28,5 +28,4 @@ public class NoReuseUndefFunctionValues {
       this.mObject2 = this.create();
     }
   }
-
 }
