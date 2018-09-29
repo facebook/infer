@@ -172,4 +172,15 @@ class Hoist {
     }
     return k;
   }
+
+  void dumb_foo() {
+    int k = 0;
+    k++;
+  }
+
+  void void_hoist(int size) {
+    for (int i = 0; i < size; i++) {
+      dumb_foo();
+    }
+  }
 }

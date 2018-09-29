@@ -7,6 +7,7 @@
 open! IStd
 module L = Logging
 module InvariantVars = AbstractDomain.FiniteSet (Var)
+module VarsInLoop = AbstractDomain.FiniteSet (Var)
 module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
 module Models = InvariantModels
 
@@ -72,17 +73,23 @@ let get_vars_in_loop loop_nodes =
              | Sil.Load (id, exp_rhs, _, _) ->
                  Var.get_all_vars_in_exp exp_rhs
                  |> Sequence.fold
-                      ~init:(InvariantVars.add (Var.of_id id) acc)
-                      ~f:(fun acc var -> InvariantVars.add var acc)
+                      ~init:(VarsInLoop.add (Var.of_id id) acc)
+                      ~f:(fun acc var -> VarsInLoop.add var acc)
              | Sil.Store (exp_lhs, _, exp_rhs, _) ->
                  Var.get_all_vars_in_exp exp_rhs
                  |> Sequence.append (Var.get_all_vars_in_exp exp_lhs)
-                 |> Sequence.fold ~init:acc ~f:(fun acc var -> InvariantVars.add var acc)
-             (* function calls are ignored at the moment  *)
+                 |> Sequence.fold ~init:acc ~f:(fun acc var -> VarsInLoop.add var acc)
+             | Sil.Call ((ret_id, _), _, args, _, _) ->
+                 List.fold
+                   ~init:(VarsInLoop.add (Var.of_id ret_id) acc)
+                   ~f:(fun acc (arg_exp, _) ->
+                     Var.get_all_vars_in_exp arg_exp
+                     |> Sequence.fold ~init:acc ~f:(fun acc var -> VarsInLoop.add var acc) )
+                   args
              | _ ->
                  acc )
            ~init:acc )
-    loop_nodes InvariantVars.empty
+    loop_nodes VarsInLoop.empty
 
 
 (* A variable is invariant if
