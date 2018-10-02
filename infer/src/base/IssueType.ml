@@ -355,6 +355,8 @@ let starvation = from_string "STARVATION" ~hum:"UI Thread Starvation"
 
 let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
 
+let strict_mode_violation = from_string "STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation"
+
 let symexec_memory_error =
   from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error"
 

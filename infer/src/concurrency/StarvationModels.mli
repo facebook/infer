@@ -11,9 +11,11 @@ val may_block :
   Tenv.t -> Typ.Procname.t -> HilExp.t list -> StarvationDomain.Event.severity_t option
 (** is the method call potentially blocking, given the actuals passed? *)
 
+val is_strict_mode_violation : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
+
 val is_synchronized_library_call : Tenv.t -> Typ.Procname.t -> bool
 (** does the method call lock-then-unlock the underlying object?
     legacy Java containers like Vector do this, and can interact with explicit locking *)
 
 val should_skip_analysis : Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
-(** should we go avoid analyzing a library method (eg in guava) to avoid FPs? *)
+(** should we treat a method call as skip (eg library methods in guava) to avoid FPs? *)

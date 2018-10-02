@@ -8,6 +8,8 @@ open! IStd
 module F = Format
 module MF = MarkupFormatter
 
+let pname_pp = MF.wrap_monospaced Typ.Procname.pp
+
 module Lock = struct
   type t = AccessPath.t
 
@@ -52,7 +54,11 @@ end
 module Event = struct
   type severity_t = Low | Medium | High [@@deriving compare]
 
-  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
+  type event_t =
+    | LockAcquire of Lock.t
+    | MayBlock of (string * severity_t)
+    | StrictModeCall of string
+  [@@deriving compare]
 
   include ExplicitTrace.MakeTraceElem (struct
     type t = event_t [@@deriving compare]
@@ -62,19 +68,20 @@ module Event = struct
           Lock.pp fmt lock
       | MayBlock (msg, _) ->
           F.pp_print_string fmt msg
+      | StrictModeCall msg ->
+          F.pp_print_string fmt msg
   end)
 
   let make_acquire lock loc = make (LockAcquire lock) loc
 
   let make_blocking_call ~caller ~callee sev loc =
-    let descr =
-      F.asprintf "calls %a from %a"
-        (MF.wrap_monospaced Typ.Procname.pp)
-        callee
-        (MF.wrap_monospaced Typ.Procname.pp)
-        caller
-    in
+    let descr = F.asprintf "calls %a from %a" pname_pp callee pname_pp caller in
     make (MayBlock (descr, sev)) loc
+
+
+  let make_strict_mode_call ~caller ~callee loc =
+    let descr = F.asprintf "calls %a from %a" pname_pp callee pname_pp caller in
+    make (StrictModeCall descr) loc
 
 
   let make_trace ?(header = "") pname elem =
@@ -256,6 +263,12 @@ let acquire ({lock_state; events; order} as astate) loc lock =
 
 let blocking_call ~caller ~callee sev loc ({lock_state; events; order} as astate) =
   let new_event = Event.make_blocking_call ~caller ~callee sev loc in
+  { astate with
+    events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
+
+
+let strict_mode_call ~caller ~callee loc ({lock_state; events; order} as astate) =
+  let new_event = Event.make_strict_mode_call ~caller ~callee loc in
   { astate with
     events= EventDomain.add new_event events; order= add_order_pairs lock_state new_event order }
 

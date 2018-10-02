@@ -64,6 +64,8 @@ let default =
 
 let of_list matchers tenv pn actuals = List.exists matchers ~f:(fun m -> m tenv pn actuals)
 
+let of_records records = List.map ~f:of_record records |> of_list
+
 let of_json top_json =
   let error json =
     L.(die UserError "Could not parse json matcher(s): %s" (Yojson.Basic.to_string json))
@@ -86,10 +88,10 @@ let of_json top_json =
       | _ ->
           error json
     in
-    (match json with `Assoc fields -> parse_fields fields default | _ -> error json) |> of_record
+    match json with `Assoc fields -> parse_fields fields default | _ -> error json
   in
   match top_json with
   | `List matchers_json ->
-      List.map matchers_json ~f:make_matcher_from_json |> of_list
+      List.map matchers_json ~f:make_matcher_from_json |> of_records
   | _ ->
       error top_json

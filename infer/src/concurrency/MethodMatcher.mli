@@ -50,3 +50,6 @@ val of_json : Yojson.Basic.json -> t
 
 val of_list : t list -> t
 (** Or combinator *)
+
+val of_records : record list -> t
+(** shorthand for [of_list (List.map ~f:of_record r)] *)

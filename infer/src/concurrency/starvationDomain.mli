@@ -25,7 +25,11 @@ end
 module Event : sig
   type severity_t = Low | Medium | High [@@deriving compare]
 
-  type event_t = LockAcquire of Lock.t | MayBlock of (string * severity_t) [@@deriving compare]
+  type event_t =
+    | LockAcquire of Lock.t
+    | MayBlock of (string * severity_t)
+    | StrictModeCall of string
+  [@@deriving compare]
 
   include ExplicitTrace.TraceElem with type elem_t = event_t
 
@@ -84,6 +88,9 @@ val blocking_call :
   -> Location.t
   -> astate
   -> astate
+
+val strict_mode_call :
+  caller:Typ.Procname.t -> callee:Typ.Procname.t -> Location.t -> astate -> astate
 
 val set_on_ui_thread : astate -> Location.t -> string -> astate
 (** set the property "runs on UI thread" to true by attaching the given explanation string as to

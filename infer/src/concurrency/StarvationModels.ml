@@ -89,58 +89,6 @@ let empty_or_excessive_timeout actuals =
       false
 
 
-(* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
-(* some, like [file], need manual addition due to our lack of handling dynamic dispatch *)
-let strict_mode_matcher =
-  let open MethodMatcher in
-  let open StarvationDomain.Event in
-  (* NB [default] searches superclasses too.  Most of the classes below are final and we don't
-     really want to search superclasses for those that aren't, so for performance, disable that *)
-  let dont_search_superclasses = {default with search_superclasses= false} in
-  let matcher_records =
-    [ { dont_search_superclasses with
-        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= true }
-    ; { dont_search_superclasses with
-        classname= "java.lang.System"; methods= ["gc"; "runFinalization"] }
-    ; {dont_search_superclasses with classname= "java.lang.Runtime"; methods= ["gc"]}
-    ; {dont_search_superclasses with classname= "java.net.Socket"; methods= ["connect"]}
-      (* all public constructors of Socket with two or more arguments call connect *)
-    ; { dont_search_superclasses with
-        classname= "java.net.Socket"
-      ; methods= [Typ.Procname.Java.constructor_method_name]
-      ; actuals_pred= (function [] | [_] -> false | _ -> true) }
-    ; {dont_search_superclasses with classname= "java.net.DatagramSocket"; methods= ["connect"]}
-    ; { dont_search_superclasses with
-        classname= "java.io.File"
-      ; methods=
-          [ "canRead"
-          ; "canWrite"
-          ; "createNewFile"
-          ; "createTempFile"
-          ; "delete"
-          ; "getCanonicalPath"
-          ; "getFreeSpace"
-          ; "getTotalSpace"
-          ; "getUsableSpace"
-          ; "isDirectory"
-          ; "isFile"
-          ; "isHidden"
-          ; "lastModified"
-          ; "length"
-          ; "list"
-          ; "listFiles"
-          ; "mkdir"
-          ; "renameTo"
-          ; "setExecutable"
-          ; "setLastModified"
-          ; "setReadable"
-          ; "setReadOnly"
-          ; "setWritable" ] } ]
-  in
-  let matcher = of_list (List.map matcher_records ~f:of_record) in
-  (matcher, High)
-
-
 let standard_matchers =
   let open MethodMatcher in
   let open StarvationDomain.Event in
@@ -184,10 +132,60 @@ let standard_matchers =
 
 
 (* sort from High to Low *)
-let may_block =
-  let matchers =
-    if Config.starvation_strict_mode then strict_mode_matcher :: standard_matchers
-    else standard_matchers
+let may_block tenv pn actuals =
+  List.find_map standard_matchers ~f:(fun (matcher, sev) ->
+      Option.some_if (matcher tenv pn actuals) sev )
+
+
+(* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
+(* some, like [file], need manual addition due to our lack of handling dynamic dispatch *)
+let strict_mode_matcher =
+  let open MethodMatcher in
+  (* NB [default] searches superclasses too.  Most of the classes below are final and we don't
+     really want to search superclasses for those that aren't, so for performance, disable that *)
+  let dont_search_superclasses = {default with search_superclasses= false} in
+  let matcher_records =
+    [ { dont_search_superclasses with
+        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= true }
+    ; { dont_search_superclasses with
+        classname= "java.lang.System"; methods= ["gc"; "runFinalization"] }
+    ; {dont_search_superclasses with classname= "java.lang.Runtime"; methods= ["gc"]}
+    ; {dont_search_superclasses with classname= "java.net.Socket"; methods= ["connect"]}
+      (* all public constructors of Socket with two or more arguments call connect *)
+    ; { dont_search_superclasses with
+        classname= "java.net.Socket"
+      ; methods= [Typ.Procname.Java.constructor_method_name]
+      ; actuals_pred= (function [] | [_] -> false | _ -> true) }
+    ; {dont_search_superclasses with classname= "java.net.DatagramSocket"; methods= ["connect"]}
+    ; { dont_search_superclasses with
+        classname= "java.io.File"
+      ; methods=
+          [ "canRead"
+          ; "canWrite"
+          ; "createNewFile"
+          ; "createTempFile"
+          ; "delete"
+          ; "getCanonicalPath"
+          ; "getFreeSpace"
+          ; "getTotalSpace"
+          ; "getUsableSpace"
+          ; "isDirectory"
+          ; "isFile"
+          ; "isHidden"
+          ; "lastModified"
+          ; "length"
+          ; "list"
+          ; "listFiles"
+          ; "mkdir"
+          ; "renameTo"
+          ; "setExecutable"
+          ; "setLastModified"
+          ; "setReadable"
+          ; "setReadOnly"
+          ; "setWritable" ] } ]
   in
-  fun tenv pn actuals ->
-    List.find_map matchers ~f:(fun (matcher, sev) -> Option.some_if (matcher tenv pn actuals) sev)
+  of_records matcher_records
+
+
+let is_strict_mode_violation tenv pn actuals =
+  Config.starvation_strict_mode && strict_mode_matcher tenv pn actuals

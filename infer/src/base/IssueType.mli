@@ -261,6 +261,8 @@ val starvation : t
 
 val static_initialization_order_fiasco : t
 
+val strict_mode_violation : t
+
 val symexec_memory_error : t
 
 val tainted_buffer_access : t
