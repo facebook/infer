@@ -94,22 +94,23 @@ let empty_or_excessive_timeout actuals =
 let strict_mode_matcher =
   let open MethodMatcher in
   let open StarvationDomain.Event in
-  (* NB [empty] searches superclasses too.  Most of the classes below are final and we don't
+  (* NB [default] searches superclasses too.  Most of the classes below are final and we don't
      really want to search superclasses for those that aren't, so for performance, disable that *)
-  let empty = {empty with search_superclasses= Some false} in
+  let dont_search_superclasses = {default with search_superclasses= Some false} in
   let matcher_records =
-    [ { empty with
+    [ { dont_search_superclasses with
         classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= Some true }
-    ; {empty with classname= "java.lang.System"; methods= ["gc"; "runFinalization"]}
-    ; {empty with classname= "java.lang.Runtime"; methods= ["gc"]}
-    ; {empty with classname= "java.net.Socket"; methods= ["connect"]}
+    ; { dont_search_superclasses with
+        classname= "java.lang.System"; methods= ["gc"; "runFinalization"] }
+    ; {dont_search_superclasses with classname= "java.lang.Runtime"; methods= ["gc"]}
+    ; {dont_search_superclasses with classname= "java.net.Socket"; methods= ["connect"]}
       (* all public constructors of Socket with two or more arguments call connect *)
-    ; { empty with
+    ; { dont_search_superclasses with
         classname= "java.net.Socket"
       ; methods= [Typ.Procname.Java.constructor_method_name]
       ; actuals_pred= Some (function [] | [_] -> false | _ -> true) }
-    ; {empty with classname= "java.net.DatagramSocket"; methods= ["connect"]}
-    ; { empty with
+    ; {dont_search_superclasses with classname= "java.net.DatagramSocket"; methods= ["connect"]}
+    ; { dont_search_superclasses with
         classname= "java.io.File"
       ; methods=
           [ "canRead"
@@ -136,9 +137,7 @@ let strict_mode_matcher =
           ; "setReadOnly"
           ; "setWritable" ] } ]
   in
-  let matcher =
-    of_list (StrictModeModels.is_strict_mode_violation :: List.map matcher_records ~f:of_record)
-  in
+  let matcher = of_list (List.map matcher_records ~f:of_record) in
   (matcher, High)
 
 
@@ -146,37 +145,37 @@ let standard_matchers =
   let open MethodMatcher in
   let open StarvationDomain.Event in
   let high_sev =
-    [ {empty with classname= "java.lang.Thread"; methods= ["sleep"]}
-    ; { empty with
+    [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
+    ; { default with
         classname= "java.lang.Object"
       ; methods= ["wait"]
       ; actuals_pred= Some empty_or_excessive_timeout }
-    ; { empty with
+    ; { default with
         classname= "java.util.concurrent.CountDownLatch"
       ; methods= ["await"]
       ; actuals_pred= Some empty_or_excessive_timeout }
       (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
          is int-zero then a reply is expected and returned from the remote process, thus potentially
          blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
-    ; { empty with
+    ; { default with
         classname= "android.os.IBinder"
       ; methods= ["transact"]
       ; actuals_pred=
           Some
             (fun actuals ->
               List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) }
-    ; { empty with
+    ; { default with
         classname= "android.accounts.AccountManager"
       ; methods= ["setUserData"]
       ; search_superclasses= Some false } ]
   in
   let low_sev =
-    [ { empty with
+    [ { default with
         classname= "java.util.concurrent.Future"
       ; methods= ["get"]
       ; actuals_pred= Some empty_or_excessive_timeout
       ; search_superclasses= Some false }
-    ; { empty with
+    ; { default with
         classname= "android.os.AsyncTask"
       ; methods= ["get"]
       ; actuals_pred= Some empty_or_excessive_timeout } ]

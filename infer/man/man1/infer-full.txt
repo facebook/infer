@@ -1412,10 +1412,9 @@ INTERNAL OPTIONS
            Specify combinations of class/method list that should be skipped
            during starvation analysis (default: [])
 
-       --starvation-strict-mode
-           Activates: During starvation analysis, report strict mode
-           violations (Android only) (Conversely:
-           --no-starvation-strict-mode)
+       --no-starvation-strict-mode
+           Deactivates: During starvation analysis, report strict mode
+           violations (Android only) (Conversely: --starvation-strict-mode)
 
        --stats-report file
            Write a report of the analysis results to a file

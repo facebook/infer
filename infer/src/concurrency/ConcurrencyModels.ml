@@ -160,7 +160,6 @@ let find_annotated_or_overriden_annotated_method is_annot pname tenv =
 
 let ui_matcher_records =
   let open MethodMatcher in
-  let superclasses = {empty with search_superclasses= Some true} in
   let fragment_methods =
     (* sort police: this is in lifecycle order *)
     [ "onAttach"
@@ -175,21 +174,22 @@ let ui_matcher_records =
     ; "onDestroy"
     ; "onDetach" ]
   in
-  [ {superclasses with classname= "android.support.v4.app.Fragment"; methods= fragment_methods}
-  ; {superclasses with classname= "android.app.Fragment"; methods= fragment_methods}
-  ; {superclasses with classname= "android.content.ContentProvider"; methods= ["onCreate"]}
-  ; {superclasses with classname= "android.content.BroadcastReceiver"; methods= ["onReceive"]}
-  ; { superclasses with
+  (* search_superclasses is true by default in how [default] is treated *)
+  [ {default with classname= "android.support.v4.app.Fragment"; methods= fragment_methods}
+  ; {default with classname= "android.app.Fragment"; methods= fragment_methods}
+  ; {default with classname= "android.content.ContentProvider"; methods= ["onCreate"]}
+  ; {default with classname= "android.content.BroadcastReceiver"; methods= ["onReceive"]}
+  ; { default with
       classname= "android.app.Service"
     ; methods= ["onBind"; "onCreate"; "onDestroy"; "onStartCommand"] }
-  ; { superclasses with
+  ; { default with
       classname= "android.app.Activity"
     ; methods= ["onCreate"; "onStart"; "onRestart"; "onResume"; "onPause"; "onStop"; "onDestroy"]
     }
-  ; { superclasses with
+  ; { default with
       (* according to Android documentation, *all* methods of the View class run on UI thread, but
-     let's be a bit conservative and catch all methods that start with "on".
-     https://developer.android.com/reference/android/view/View.html *)
+       let's be a bit conservative and catch all methods that start with "on".
+       https://developer.android.com/reference/android/view/View.html *)
       method_prefix= Some true
     ; classname= "android.view.View"
     ; methods= ["on"] } ]

@@ -2075,7 +2075,7 @@ and profiler_samples =
 
 
 and starvation_strict_mode =
-  CLOpt.mk_bool ~long:"starvation-strict-mode" ~default:false
+  CLOpt.mk_bool ~long:"starvation-strict-mode" ~default:true
     "During starvation analysis, report strict mode violations (Android only)"
 
 

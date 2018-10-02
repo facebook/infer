@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) 2018-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -54,8 +54,12 @@ let of_record {search_superclasses; method_prefix; actuals_pred; classname; meth
   |> Staged.unstage
 
 
-let empty =
-  {search_superclasses= None; method_prefix= None; actuals_pred= None; classname= ""; methods= []}
+let default =
+  { search_superclasses= Some true
+  ; method_prefix= Some false
+  ; actuals_pred= Some (fun _ -> true)
+  ; classname= ""
+  ; methods= [] }
 
 
 let of_list matchers tenv pn actuals = List.exists matchers ~f:(fun m -> m tenv pn actuals)
@@ -82,7 +86,7 @@ let of_json top_json =
       | _ ->
           error json
     in
-    (match json with `Assoc fields -> parse_fields fields empty | _ -> error json) |> of_record
+    (match json with `Assoc fields -> parse_fields fields default | _ -> error json) |> of_record
   in
   match top_json with
   | `List matchers_json ->

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) 2018-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -34,8 +34,9 @@ type record =
   ; classname: string
   ; methods: string list }
 
-val empty : record
-(** record with empty strings, lists and None where appropriate. Useful for [with] expressions *)
+val default : record
+(** record encapsulating the default arguments of [call_matches].  [classname=""] and [methods=[]].
+    Useful for [with] expressions *)
 
 val of_record : record -> t
 (** make a matcher out of a record; optional values use defaults *)
