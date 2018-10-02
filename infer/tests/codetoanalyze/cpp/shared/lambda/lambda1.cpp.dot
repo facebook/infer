@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a20241f1b78082005_4" -> "bar#13629960763458822780.27859d4aca4c920a20241f1b78082005_3" ;
-"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_1" [label="1: Start capture_by_ref\nFormals: \nLocals:  x:int \n  " color=yellow style=filled]
+"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_1" [label="1: Start capture_by_ref\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$3:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3 x:int \n  " color=yellow style=filled]
 	
 
 	 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_1" -> "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_5" ;
@@ -26,7 +26,7 @@ digraph cfg {
 	
 
 	 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" -> "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_2" ;
-"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" [label="4:  Call _fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator() \n   n$3=_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator()((_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator(),&x):capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3) [line 36, column 3]\n " shape="box"]
+"capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" [label="4:  Call _fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator() \n   *&0$?%__sil_tmpSIL_materialize_temp__n$3:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3=(_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator(),&x) [line 36, column 3]\n  n$4=_fun_capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3_operator()(&0$?%__sil_tmpSIL_materialize_temp__n$3:capture_by_ref::lambda_shared_lambda_lambda1.cpp:36:3&) [line 36, column 3]\n " shape="box"]
 	
 
 	 "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_4" -> "capture_by_ref#4375601249296069049.1d794578c048d96b25fb1e90dbaa8225_3" ;
@@ -68,7 +68,7 @@ digraph cfg {
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd50972817d895666852a_4" -> "fooOK#5521302935427608539.9c36ec052efdd50972817d895666852a_3" ;
-"init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_1" [label="1: Start init_capture1\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_1" [label="1: Start init_capture1\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture1::lambda_shared_lambda_lambda1.cpp:41:10 \n  " color=yellow style=filled]
 	
 
 	 "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_1" -> "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_3" ;
@@ -79,11 +79,11 @@ digraph cfg {
 	
 
 	 "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_3" -> "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_4" ;
-"init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_4" [label="4:  Return Stmt \n   n$1=_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:41:10_operator()((_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:41:10_operator(),&i):init_capture1::lambda_shared_lambda_lambda1.cpp:41:10) [line 41, column 10]\n  *&return:int=n$1 [line 41, column 3]\n " shape="box"]
+"init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_4" [label="4:  Return Stmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture1::lambda_shared_lambda_lambda1.cpp:41:10=(_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:41:10_operator(),&i) [line 41, column 10]\n  n$2=_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:41:10_operator()(&0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture1::lambda_shared_lambda_lambda1.cpp:41:10&) [line 41, column 10]\n  *&return:int=n$2 [line 41, column 3]\n " shape="box"]
 	
 
 	 "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_4" -> "init_capture1#11582985675627962568.58b9ce334267f411dc5e1c70bd53eb81_2" ;
-"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_1" [label="1: Start init_capture2\nFormals: \nLocals:  i:int \n  " color=yellow style=filled]
+"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_1" [label="1: Start init_capture2\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture2::lambda_shared_lambda_lambda1.cpp:46:10 i:int \n  " color=yellow style=filled]
 	
 
 	 "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_1" -> "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_7" ;
@@ -98,11 +98,11 @@ digraph cfg {
 	
 
 	 "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_4" -> "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_3" ;
-"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_5" [label="5:  DeclStmt \n   n$1=*&i:int [line 46, column 15]\n  *&a:int=n$1 [line 46, column 10]\n " shape="box"]
+"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_5" [label="5:  DeclStmt \n   n$2=*&i:int [line 46, column 15]\n  *&a:int=n$2 [line 46, column 10]\n " shape="box"]
 	
 
 	 "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_5" -> "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_4" ;
-"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_6" [label="6:  Return Stmt \n   n$2=_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:46:10_operator()((_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:46:10_operator(),&a,&b,&c):init_capture2::lambda_shared_lambda_lambda1.cpp:46:10) [line 46, column 10]\n  *&return:int=n$2 [line 46, column 3]\n " shape="box"]
+"init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_6" [label="6:  Return Stmt \n   *&0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture2::lambda_shared_lambda_lambda1.cpp:46:10=(_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:46:10_operator(),&a,&b,&c) [line 46, column 10]\n  n$3=_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:46:10_operator()(&0$?%__sil_tmpSIL_materialize_temp__n$1:init_capture2::lambda_shared_lambda_lambda1.cpp:46:10&) [line 46, column 10]\n  *&return:int=n$3 [line 46, column 3]\n " shape="box"]
 	
 
 	 "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_6" -> "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_2" ;
@@ -110,14 +110,14 @@ digraph cfg {
 	
 
 	 "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_7" -> "init_capture2#11582143449720942167.039b5039af3b7807e4b00950523a9f3a_5" ;
-"normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_1" [label="1: Start normal_capture\nFormals: \nLocals:  y:int x:int \n  " color=yellow style=filled]
+"normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_1" [label="1: Start normal_capture\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:normal_capture::lambda_shared_lambda_lambda1.cpp:31:10 y:int x:int \n  " color=yellow style=filled]
 	
 
 	 "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_1" -> "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_5" ;
 "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_2" [label="2: Exit normal_capture \n  " color=yellow style=filled]
 	
 
-"normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_3" [label="3:  Return Stmt \n   n$2=*&x:int [line 31, column 10]\n  n$1=*&y:int [line 31, column 10]\n  n$3=_fun_normal_capture::lambda_shared_lambda_lambda1.cpp:31:10_operator()((_fun_normal_capture::lambda_shared_lambda_lambda1.cpp:31:10_operator(),(n$2 &x:int),(n$1 &y:int)):normal_capture::lambda_shared_lambda_lambda1.cpp:31:10) [line 31, column 10]\n  *&return:int=n$3 [line 31, column 3]\n " shape="box"]
+"normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_3" [label="3:  Return Stmt \n   n$3=*&x:int [line 31, column 10]\n  n$2=*&y:int [line 31, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:normal_capture::lambda_shared_lambda_lambda1.cpp:31:10=(_fun_normal_capture::lambda_shared_lambda_lambda1.cpp:31:10_operator(),(n$3 &x:int),(n$2 &y:int)) [line 31, column 10]\n  n$4=_fun_normal_capture::lambda_shared_lambda_lambda1.cpp:31:10_operator()(&0$?%__sil_tmpSIL_materialize_temp__n$1:normal_capture::lambda_shared_lambda_lambda1.cpp:31:10&) [line 31, column 10]\n  *&return:int=n$4 [line 31, column 3]\n " shape="box"]
 	
 
 	 "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_3" -> "normal_capture#5533029764254319855.11493b249dddd657790695e287170b84_2" ;

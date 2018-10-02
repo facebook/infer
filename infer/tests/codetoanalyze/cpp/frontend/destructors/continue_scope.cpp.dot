@@ -139,7 +139,7 @@ digraph cfg {
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_17" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_6" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" [label="1: Start continue_scope::test_for_range\nFormals:  b:_Bool\nLocals:  __end:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator __begin:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator x2:continue_scope::X x:continue_scope::X 0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const  __range:continue_scope::vec& x1:continue_scope::X vector:continue_scope::vec \n  " color=yellow style=filled]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" [label="1: Start continue_scope::test_for_range\nFormals:  b:_Bool\nLocals:  __end1:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator __begin1:continue_scope::iterator 0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator 0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator x2:continue_scope::X x:continue_scope::X 0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const  __range1:continue_scope::vec& x1:continue_scope::X vector:continue_scope::vec \n  " color=yellow style=filled]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_1" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_20" ;
@@ -154,19 +154,19 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" [label="5:  DeclStmt \n   n$8=*&__range:continue_scope::vec& [line 47, column 12]\n  _=*n$8:continue_scope::vec [line 47, column 12]\n  n$11=_fun_continue_scope::vec_end(n$8:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator*) [line 47, column 12]\n  n$12=_fun_continue_scope::iterator_iterator(&__end:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" [label="5:  DeclStmt \n   n$8=*&__range1:continue_scope::vec& [line 47, column 12]\n  _=*n$8:continue_scope::vec [line 47, column 12]\n  n$11=_fun_continue_scope::vec_end(n$8:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator*) [line 47, column 12]\n  n$12=_fun_continue_scope::iterator_iterator(&__end1:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$7:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" [label="6:  DeclStmt \n   n$14=*&__range:continue_scope::vec& [line 47, column 12]\n  _=*n$14:continue_scope::vec [line 47, column 12]\n  n$17=_fun_continue_scope::vec_begin(n$14:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator*) [line 47, column 12]\n  n$18=_fun_continue_scope::iterator_iterator(&__begin:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" [label="6:  DeclStmt \n   n$14=*&__range1:continue_scope::vec& [line 47, column 12]\n  _=*n$14:continue_scope::vec [line 47, column 12]\n  n$17=_fun_continue_scope::vec_begin(n$14:continue_scope::vec&,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator*) [line 47, column 12]\n  n$18=_fun_continue_scope::iterator_iterator(&__begin1:continue_scope::iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$13:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_5" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$22=_fun_continue_scope::iterator_operator++(&__begin:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator*) [line 47, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" [label="7:  Call _fun_continue_scope::iterator_operator++ \n   n$22=_fun_continue_scope::iterator_operator++(&__begin1:continue_scope::iterator&,&0$?%__sil_tmp__temp_return_n$21:continue_scope::iterator*) [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_7" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_4" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   n$24=_fun_continue_scope::iterator_operator!=(&__begin:continue_scope::iterator&,&__end:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" [label="8:  Call _fun_continue_scope::iterator_operator!= \n   n$24=_fun_continue_scope::iterator_operator!=(&__begin1:continue_scope::iterator&,&__end1:continue_scope::iterator&) [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_8" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_9" ;
@@ -203,12 +203,12 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17:  DeclStmt \n   n$40=_fun_continue_scope::iterator_operator*(&__begin:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X*) [line 47, column 12]\n  n$41=_fun_continue_scope::X_X(&x:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const &) [line 47, column 12]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17:  DeclStmt \n   n$40=_fun_continue_scope::iterator_operator*(&__begin1:continue_scope::iterator&,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X*) [line 47, column 12]\n  n$41=_fun_continue_scope::X_X(&x:continue_scope::X*,&0$?%__sil_tmpSIL_materialize_temp__n$37:continue_scope::X const &) [line 47, column 12]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_12" ;
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_13" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_18" [label="18:  DeclStmt \n   *&__range:continue_scope::vec&=&vector [line 47, column 14]\n " shape="box"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_18" [label="18:  DeclStmt \n   *&__range1:continue_scope::vec&=&vector [line 47, column 14]\n " shape="box"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_18" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_6" ;

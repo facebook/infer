@@ -220,9 +220,16 @@ void FN_capture_by_ref_reuseBad() {
   }(); // We don't report here as we only do intraprocedural analysis for now
 }
 
-int capture_by_ref_init_ok() {
+int capture_by_ref_init_FP() {
   int x;
   [&x]() { x = 1; }();
+  return x;
+}
+
+int capture_by_ref_init2_FP() {
+  int x;
+  auto lambda = [&x]() { x = 1; };
+  lambda();
   return x;
 }
 

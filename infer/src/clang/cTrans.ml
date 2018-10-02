@@ -3343,6 +3343,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CharacterLiteral (_, _, expr_info, n)
     | CXXBoolLiteralExpr (_, _, expr_info, n) ->
         characterLiteral_trans trans_state expr_info n
+    | FixedPointLiteral (_, _, expr_info, float_string)
     | FloatingLiteral (_, _, expr_info, float_string) ->
         floatingLiteral_trans trans_state expr_info float_string
     | CXXScalarValueInitExpr (_, _, expr_info) ->

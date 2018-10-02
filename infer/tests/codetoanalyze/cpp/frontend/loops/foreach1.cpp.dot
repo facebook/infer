@@ -36,7 +36,7 @@ digraph cfg {
 	
 
 	 "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_9" -> "operator!=#4715710375716659667.eb4126b3edd381f3092a9e38275754d4_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end:iterator 0$?%__sil_tmpSIL_materialize_temp__n$3:iterator __begin:iterator 0$?%__sil_tmpSIL_materialize_temp__n$9:iterator 0$?%__sil_tmp__temp_return_n$17:iterator 0$?%__sil_tmp__temp_construct_n$19:iterator 0$?%__sil_tmp__temp_construct_n$21:iterator temp:int value:int __range:vec& vector:vec \n  " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  __end1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$3:iterator __begin1:iterator 0$?%__sil_tmpSIL_materialize_temp__n$9:iterator 0$?%__sil_tmp__temp_return_n$17:iterator 0$?%__sil_tmp__temp_construct_n$19:iterator 0$?%__sil_tmp__temp_construct_n$21:iterator temp:int value:int __range1:vec& vector:vec \n  " color=yellow style=filled]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_13" ;
@@ -47,19 +47,19 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=*&__range:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec_end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) [line 35, column 18]\n  n$8=_fun_iterator_iterator(&__end:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   n$4=*&__range1:vec& [line 35, column 18]\n  _=*n$4:vec [line 35, column 18]\n  n$7=_fun_vec_end(n$4:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator*) [line 35, column 18]\n  n$8=_fun_iterator_iterator(&__end1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$3:iterator&) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$10=*&__range:vec& [line 35, column 18]\n  _=*n$10:vec [line 35, column 18]\n  n$13=_fun_vec_begin(n$10:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator*) [line 35, column 18]\n  n$14=_fun_iterator_iterator(&__begin:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator&) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   n$10=*&__range1:vec& [line 35, column 18]\n  _=*n$10:vec [line 35, column 18]\n  n$13=_fun_vec_begin(n$10:vec&,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator*) [line 35, column 18]\n  n$14=_fun_iterator_iterator(&__begin1:iterator*,&0$?%__sil_tmpSIL_materialize_temp__n$9:iterator&) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator_operator++ \n   n$18=_fun_iterator_operator++(&__begin:iterator&,&0$?%__sil_tmp__temp_return_n$17:iterator*) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" [label="6:  Call _fun_iterator_operator++ \n   n$18=_fun_iterator_operator++(&__begin1:iterator&,&0$?%__sil_tmp__temp_return_n$17:iterator*) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$20=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$19:iterator*,&__begin:iterator&) [line 35, column 18]\n  n$22=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$21:iterator*,&__end:iterator&) [line 35, column 18]\n  n$23=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$19:iterator,&0$?%__sil_tmp__temp_construct_n$21:iterator) [line 35, column 18]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" [label="7:  Call _fun_operator!= \n   n$20=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$19:iterator*,&__begin1:iterator&) [line 35, column 18]\n  n$22=_fun_iterator_iterator(&0$?%__sil_tmp__temp_construct_n$21:iterator*,&__end1:iterator&) [line 35, column 18]\n  n$23=_fun_operator!=(&0$?%__sil_tmp__temp_construct_n$19:iterator,&0$?%__sil_tmp__temp_construct_n$21:iterator) [line 35, column 18]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_7" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_8" ;
@@ -76,11 +76,11 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_6" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$29=_fun_iterator_operator*(&__begin:iterator&) [line 35, column 18]\n  *&value:int=n$29 [line 35, column 8]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" [label="11:  DeclStmt \n   n$29=_fun_iterator_operator*(&__begin1:iterator&) [line 35, column 18]\n  *&value:int=n$29 [line 35, column 8]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_11" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_10" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   *&__range:vec&=&vector [line 35, column 20]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" [label="12:  DeclStmt \n   *&__range1:vec&=&vector [line 35, column 20]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_12" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;

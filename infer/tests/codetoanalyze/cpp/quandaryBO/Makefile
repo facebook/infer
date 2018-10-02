@@ -39,16 +39,16 @@ test4:
 replace: replace1 replace2 replace3 replace4
 
 replace1:
-	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t1 TEST_RESULT_SUFFIX=-t1
+	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t1 TEST_RESULT_SUFFIX=-t1 INFER_OPTIONS="$(OPTIONS_1)"
 
 replace2:
-	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t2 TEST_RESULT_SUFFIX=-t2
+	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t2 TEST_RESULT_SUFFIX=-t2 INFER_OPTIONS="$(OPTIONS_2)"
 
 replace3:
-	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t3 TEST_RESULT_SUFFIX=-t3
+	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t3 TEST_RESULT_SUFFIX=-t3 INFER_OPTIONS="$(OPTIONS_3)"
 
 replace4:
-	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t4 TEST_RESULT_SUFFIX=-t4
+	$(MAKE) -f multitest.make replace TEST_SUFFIX=-t4 TEST_RESULT_SUFFIX=-t4 INFER_OPTIONS="$(OPTIONS_4)"
 
 clean:
 	$(MAKE) -f multitest.make clean TEST_SUFFIX=-t1
