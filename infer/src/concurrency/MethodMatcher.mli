@@ -28,9 +28,9 @@ val call_matches :
       which must return [true] for the matcher to return [true]. The default returns [true]. *)
 
 type record =
-  { search_superclasses: bool option
-  ; method_prefix: bool option
-  ; actuals_pred: (HilExp.t list -> bool) option
+  { search_superclasses: bool
+  ; method_prefix: bool
+  ; actuals_pred: HilExp.t list -> bool
   ; classname: string
   ; methods: string list }
 

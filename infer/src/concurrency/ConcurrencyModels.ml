@@ -190,7 +190,7 @@ let ui_matcher_records =
       (* according to Android documentation, *all* methods of the View class run on UI thread, but
        let's be a bit conservative and catch all methods that start with "on".
        https://developer.android.com/reference/android/view/View.html *)
-      method_prefix= Some true
+      method_prefix= true
     ; classname= "android.view.View"
     ; methods= ["on"] } ]
 

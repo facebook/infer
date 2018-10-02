@@ -96,10 +96,10 @@ let strict_mode_matcher =
   let open StarvationDomain.Event in
   (* NB [default] searches superclasses too.  Most of the classes below are final and we don't
      really want to search superclasses for those that aren't, so for performance, disable that *)
-  let dont_search_superclasses = {default with search_superclasses= Some false} in
+  let dont_search_superclasses = {default with search_superclasses= false} in
   let matcher_records =
     [ { dont_search_superclasses with
-        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= Some true }
+        classname= "dalvik.system.BlockGuard$Policy"; methods= ["on"]; method_prefix= true }
     ; { dont_search_superclasses with
         classname= "java.lang.System"; methods= ["gc"; "runFinalization"] }
     ; {dont_search_superclasses with classname= "java.lang.Runtime"; methods= ["gc"]}
@@ -108,7 +108,7 @@ let strict_mode_matcher =
     ; { dont_search_superclasses with
         classname= "java.net.Socket"
       ; methods= [Typ.Procname.Java.constructor_method_name]
-      ; actuals_pred= Some (function [] | [_] -> false | _ -> true) }
+      ; actuals_pred= (function [] | [_] -> false | _ -> true) }
     ; {dont_search_superclasses with classname= "java.net.DatagramSocket"; methods= ["connect"]}
     ; { dont_search_superclasses with
         classname= "java.io.File"
@@ -147,13 +147,12 @@ let standard_matchers =
   let high_sev =
     [ {default with classname= "java.lang.Thread"; methods= ["sleep"]}
     ; { default with
-        classname= "java.lang.Object"
-      ; methods= ["wait"]
-      ; actuals_pred= Some empty_or_excessive_timeout }
+        classname= "java.lang.Object"; methods= ["wait"]; actuals_pred= empty_or_excessive_timeout
+      }
     ; { default with
         classname= "java.util.concurrent.CountDownLatch"
       ; methods= ["await"]
-      ; actuals_pred= Some empty_or_excessive_timeout }
+      ; actuals_pred= empty_or_excessive_timeout }
       (* an IBinder.transact call is an RPC.  If the 4th argument (5th counting `this` as the first)
          is int-zero then a reply is expected and returned from the remote process, thus potentially
          blocking.  If the 4th argument is anything else, we assume a one-way call which doesn't block. *)
@@ -161,24 +160,23 @@ let standard_matchers =
         classname= "android.os.IBinder"
       ; methods= ["transact"]
       ; actuals_pred=
-          Some
-            (fun actuals ->
-              List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) }
+          (fun actuals ->
+            List.nth actuals 4 |> Option.value_map ~default:false ~f:HilExp.is_int_zero ) }
     ; { default with
         classname= "android.accounts.AccountManager"
       ; methods= ["setUserData"]
-      ; search_superclasses= Some false } ]
+      ; search_superclasses= false } ]
   in
   let low_sev =
     [ { default with
         classname= "java.util.concurrent.Future"
       ; methods= ["get"]
-      ; actuals_pred= Some empty_or_excessive_timeout
-      ; search_superclasses= Some false }
+      ; actuals_pred= empty_or_excessive_timeout
+      ; search_superclasses= false }
     ; { default with
         classname= "android.os.AsyncTask"
       ; methods= ["get"]
-      ; actuals_pred= Some empty_or_excessive_timeout } ]
+      ; actuals_pred= empty_or_excessive_timeout } ]
   in
   let high_sev_matcher = List.map high_sev ~f:of_record |> of_list in
   let low_sev_matcher = List.map low_sev ~f:of_record |> of_list in

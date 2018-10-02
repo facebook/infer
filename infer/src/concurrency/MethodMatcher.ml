@@ -43,21 +43,21 @@ let call_matches ?(search_superclasses = true) ?(method_prefix = false)
 type t = Tenv.t -> Typ.Procname.t -> HilExp.t list -> bool
 
 type record =
-  { search_superclasses: bool option
-  ; method_prefix: bool option
-  ; actuals_pred: (HilExp.t list -> bool) option
+  { search_superclasses: bool
+  ; method_prefix: bool
+  ; actuals_pred: HilExp.t list -> bool
   ; classname: string
   ; methods: string list }
 
 let of_record {search_superclasses; method_prefix; actuals_pred; classname; methods} =
-  call_matches ?search_superclasses ?method_prefix ?actuals_pred classname methods
+  call_matches ~search_superclasses ~method_prefix ~actuals_pred classname methods
   |> Staged.unstage
 
 
 let default =
-  { search_superclasses= Some true
-  ; method_prefix= Some false
-  ; actuals_pred= Some (fun _ -> true)
+  { search_superclasses= true
+  ; method_prefix= false
+  ; actuals_pred= (fun _ -> true)
   ; classname= ""
   ; methods= [] }
 
@@ -73,9 +73,9 @@ let of_json top_json =
     let rec parse_fields assoclist acc =
       match assoclist with
       | ("search_superclasses", `Bool b) :: rest ->
-          {acc with search_superclasses= Some b} |> parse_fields rest
+          {acc with search_superclasses= b} |> parse_fields rest
       | ("method_prefix", `Bool b) :: rest ->
-          {acc with method_prefix= Some b} |> parse_fields rest
+          {acc with method_prefix= b} |> parse_fields rest
       | ("classname", `String classname) :: rest ->
           {acc with classname} |> parse_fields rest
       | ("methods", `List methodnames) :: rest ->
