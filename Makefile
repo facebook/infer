@@ -301,8 +301,35 @@ clang_plugin: clang_setup
 
 .PHONY: clang_plugin_test
 clang_plugin_test: clang_setup
-		$(QUIET)$(call silent_on_success,Running clang plugin tests,\
+		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ tests,\
 		$(MAKE) -C $(FCP_DIR)/libtooling test \
+		  CC=$(CC) CXX=$(CXX) \
+		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+		  CLANG_PREFIX=$(CLANG_PREFIX) \
+		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ tests,\
+		$(MAKE) -C $(FCP_DIR)/clang-ocaml test \
+		  CC=$(CC) CXX=$(CXX) \
+		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+		  CLANG_PREFIX=$(CLANG_PREFIX) \
+		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+
+.PHONY: clang_plugin_test
+clang_plugin_test_replace: clang_setup
+		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ record tests,\
+		$(MAKE) -C $(FCP_DIR)/libtooling record-test-outputs \
+		  CC=$(CC) CXX=$(CXX) \
+		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
+		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
+		  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
+		  CLANG_PREFIX=$(CLANG_PREFIX) \
+		  CLANG_INCLUDES=$(CLANG_INCLUDES))
+		$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ record tests,\
+		$(MAKE) -C $(FCP_DIR)/clang-ocaml record-test-outputs \
 		  CC=$(CC) CXX=$(CXX) \
 		  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 		  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
@@ -450,7 +477,8 @@ endif
 quick-test: test_build ocaml_unit_test
 
 .PHONY: test-replace
-test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace)
+test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace) \
+              clang_plugin_test_replace
 
 .PHONY: uninstall
 uninstall:
