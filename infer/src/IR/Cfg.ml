@@ -75,7 +75,8 @@ let save_attributes source_file cfg =
       let loc' = if Location.equal loc Location.dummy then {loc with file= source_file} else loc in
       {attributes with loc= loc'; translation_unit= source_file}
     in
-    Attributes.store attributes'
+    Attributes.store attributes' ;
+    Procdesc.set_attributes pdesc attributes'
   in
   Typ.Procname.Hash.iter save_proc cfg
 

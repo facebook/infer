@@ -202,6 +202,8 @@ val get_access : t -> PredSymb.access
 val get_attributes : t -> ProcAttributes.t
 (** Get the attributes of the procedure. *)
 
+val set_attributes : t -> ProcAttributes.t -> unit
+
 val get_captured : t -> (Mangled.t * Typ.t) list
 (** Return name and type of block's captured variables *)
 

@@ -393,7 +393,7 @@ module IdMap = Node.IdMap
 
 (** procedure description *)
 type t =
-  { attributes: ProcAttributes.t  (** attributes of the procedure *)
+  { mutable attributes: ProcAttributes.t  (** attributes of the procedure *)
   ; mutable nodes: Node.t list  (** list of nodes of this procedure *)
   ; mutable nodes_num: int  (** number of nodes *)
   ; mutable start_node: Node.t  (** start node of this procedure *)
@@ -432,6 +432,8 @@ let did_preanalysis pdesc = pdesc.attributes.did_preanalysis
 let signal_did_preanalysis pdesc = (pdesc.attributes).did_preanalysis <- true
 
 let get_attributes pdesc = pdesc.attributes
+
+let set_attributes pdesc attributes = pdesc.attributes <- attributes
 
 let get_exit_node pdesc = pdesc.exit_node
 
