@@ -1,7 +1,7 @@
 This directory contains small examples to play with Infer. They each exhibit
 one simple programming error that is caught by Infer.
 
-Contents
+Contents :v:
 --------
 
 - `Hello.java`: try this example by running
@@ -32,10 +32,11 @@ Contents
 - `java_hello/`: a sample Java project. Try this example by running
   ```infer -- javac Pointers.java Resources.java Hello.java```
 
-Note
+Note:sparkles:
 ----
 
 The infer toplevel command must be in your PATH for the commands above to
 succeed. Otherwise, modify the commands to use the correct path to infer, eg
   ```../infer/bin/infer -- javac Hello.java```
-
+##Facebook help us to make new friends and connect new people in our life 
+we love Facebook :heartpulse:
