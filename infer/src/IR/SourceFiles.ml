@@ -52,7 +52,8 @@ let add source_file cfg tenv =
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
-  Cfg.save_attributes source_file cfg ;
+  SqliteUtils.with_transaction (ResultsDatabase.get_database ()) ~f:(fun () ->
+      Cfg.save_attributes source_file cfg ) ;
   ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
       SourceFile.SQLite.serialize source_file
       |> Sqlite3.bind store_stmt 1
