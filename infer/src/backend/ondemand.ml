@@ -44,26 +44,19 @@ let is_active, add_active, remove_active =
   (is_active, add_active, remove_active)
 
 
-let should_create_summary proc_name proc_attributes =
-  match proc_name with
-  | Typ.Procname.Java _ ->
-      true
-  | _ ->
-      proc_attributes.ProcAttributes.is_defined
+let already_analyzed proc_name =
+  match Summary.get proc_name with
+  | Some summary ->
+      Summary.(Status.is_analyzed (get_status summary))
+  | None ->
+      false
 
 
-let should_be_analyzed proc_name proc_attributes =
-  let already_analyzed proc_name =
-    match Summary.get proc_name with
-    | Some summary ->
-        Summary.(Status.is_analyzed (get_status summary))
-    | None ->
-        false
-  in
-  should_create_summary proc_name proc_attributes
-  && (not (is_active proc_name))
-  && (* avoid infinite loops *)
-     not (already_analyzed proc_name)
+let should_be_analyzed proc_attributes =
+  proc_attributes.ProcAttributes.is_defined
+  &&
+  let proc_name = proc_attributes.ProcAttributes.proc_name in
+  (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
 
 
 let procedure_should_be_analyzed proc_name =
@@ -71,9 +64,9 @@ let procedure_should_be_analyzed proc_name =
   | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
-      Option.value_map ~f:(should_be_analyzed proc_name) ~default:false defined_proc_attributes
+      Option.value_map ~f:should_be_analyzed ~default:false defined_proc_attributes
   | Some proc_attributes ->
-      should_be_analyzed proc_name proc_attributes
+      should_be_analyzed proc_attributes
   | None ->
       false
 
@@ -234,8 +227,7 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
     try Typ.Procname.Hash.find cache callee_pname with Caml.Not_found ->
       let summary_option =
         let proc_attributes = Procdesc.get_attributes callee_pdesc in
-        if should_be_analyzed callee_pname proc_attributes then
-          analyze_proc ~caller_pdesc callee_pdesc
+        if should_be_analyzed proc_attributes then analyze_proc ~caller_pdesc callee_pdesc
         else Summary.get callee_pname
       in
       Typ.Procname.Hash.add cache callee_pname summary_option ;
