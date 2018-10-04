@@ -52,15 +52,17 @@ let get_lock =
         ; "folly::RWSpinLock::lock_shared"
         ; "folly::SharedMutexImpl::lockExclusiveImpl"
         ; "folly::SharedMutexImpl::lockSharedImpl"
+        ; "folly::SpinLock::lock"
+        ; "std::lock"
         ; "std::mutex::lock"
-        ; "std::unique_lock::lock"
-        ; "std::lock" ]
+        ; "std::unique_lock::lock" ]
     in
     let matcher_lock_constructor =
       QualifiedCppName.Match.of_fuzzy_qual_names
-        [ "std::lock_guard::lock_guard"
-        ; "std::unique_lock::unique_lock"
-        ; "folly::LockedPtr::LockedPtr" ]
+        [ "folly::LockedPtr::LockedPtr"
+        ; "folly::SpinLockGuard::SpinLockGuard"
+        ; "std::lock_guard::lock_guard"
+        ; "std::unique_lock::unique_lock" ]
     in
     fun pname actuals ->
       QualifiedCppName.Match.match_qualifiers matcher_lock (Typ.Procname.get_qualifiers pname)
@@ -72,23 +74,25 @@ let get_lock =
     let matcher =
       QualifiedCppName.Match.of_fuzzy_qual_names
         [ "apache::thrift::concurrency::ReadWriteMutex::release"
+        ; "folly::LockedPtr::~LockedPtr"
         ; "folly::MicroSpinLock::unlock"
         ; "folly::RWSpinLock::unlock"
         ; "folly::RWSpinLock::unlock_shared"
         ; "folly::SharedMutexImpl::unlock"
         ; "folly::SharedMutexImpl::unlock_shared"
+        ; "folly::SpinLock::unlock"
+        ; "folly::SpinLockGuard::~SpinLockGuard"
         ; "std::lock_guard::~lock_guard"
         ; "std::mutex::unlock"
         ; "std::unique_lock::unlock"
-        ; "std::unique_lock::~unique_lock"
-        ; "folly::LockedPtr::~LockedPtr" ]
+        ; "std::unique_lock::~unique_lock" ]
     in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
   and is_cpp_trylock =
     let matcher =
       QualifiedCppName.Match.of_fuzzy_qual_names
-        ["std::unique_lock::owns_lock"; "std::unique_lock::try_lock"]
+        ["folly::SpinLock::try_lock"; "std::unique_lock::owns_lock"; "std::unique_lock::try_lock"]
     in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
