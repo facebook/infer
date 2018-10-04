@@ -63,6 +63,8 @@ let to_int (_, i, _) = Int64.to_int i
 
 let to_int_exn (_, i, _) = Int64.to_int_exn i
 
+let to_big_int (_, i, _) = Z.of_int64 i
+
 let to_float (_, i, _) = Int64.to_float i
 
 let null = (false, 0L, true)

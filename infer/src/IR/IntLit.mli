@@ -91,6 +91,8 @@ val to_int : t -> int option
 
 val to_int_exn : t -> int
 
+val to_big_int : t -> Z.t
+
 val to_float : t -> float
 
 val to_signed : t -> t option

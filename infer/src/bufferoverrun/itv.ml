@@ -45,12 +45,12 @@ module NonNegativeBound = struct
   let of_bound b = if Bound.le b zero then zero else b
 
   let int_lb b =
-    Bound.int_lb b
-    |> Option.bind ~f:NonNegativeInt.of_int
+    Bound.big_int_lb b
+    |> Option.bind ~f:NonNegativeInt.of_big_int
     |> Option.value ~default:NonNegativeInt.zero
 
 
-  let int_ub b = Bound.int_ub b |> Option.map ~f:NonNegativeInt.of_int_exn
+  let int_ub b = Bound.big_int_ub b |> Option.map ~f:NonNegativeInt.of_big_int_exn
 
   let classify = function
     | Bound.PInf ->
@@ -62,7 +62,7 @@ module NonNegativeBound = struct
       | None ->
           Bounds.Symbolic b
       | Some c ->
-          Bounds.Constant (NonNegativeInt.of_int_exn c) )
+          Bounds.Constant (NonNegativeInt.of_big_int_exn c) )
 
 
   let subst b map =
@@ -198,7 +198,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
 
   let mult_const : t -> NonNegativeInt.t -> t =
    fun p c ->
-    match PositiveInt.of_int (c :> int) with None -> zero | Some c -> mult_const_positive p c
+    match PositiveInt.of_big_int (c :> Z.t) with None -> zero | Some c -> mult_const_positive p c
 
 
   (* (c + r * R + s * S + t * T) x s
@@ -301,7 +301,7 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
         (fun s p acc ->
           match S.subst s eval_sym with
           | Constant c -> (
-            match PositiveInt.of_int (c :> int) with
+            match PositiveInt.of_big_int (c :> Z.t) with
             | None ->
                 acc
             | Some c ->
@@ -326,10 +326,10 @@ module MakePolynomial (S : NonNegativeSymbol) = struct
       else ((s, PositiveInt.one), last :: others)
     in
     let pp_coeff fmt (c : NonNegativeInt.t) =
-      if (c :> int) > 1 then F.fprintf fmt "%a * " NonNegativeInt.pp c
+      if Z.((c :> Z.t) > one) then F.fprintf fmt "%a * " NonNegativeInt.pp c
     in
     let pp_exp fmt (e : PositiveInt.t) =
-      if (e :> int) > 1 then F.fprintf fmt "^%a" PositiveInt.pp e
+      if Z.((e :> Z.t) > one) then F.fprintf fmt "^%a" PositiveInt.pp e
     in
     let pp_magic_parentheses pp fmt x =
       let s = F.asprintf "%a" pp x in
@@ -522,6 +522,8 @@ module ItvPure = struct
 
   let of_int n = of_bound (Bound.of_int n)
 
+  let of_big_int n = of_bound (Bound.of_big_int n)
+
   let make_sym : unsigned:bool -> Typ.Procname.t -> SymbolTable.t -> SymbolPath.t -> Counter.t -> t
       =
    fun ~unsigned pname symbol_table path new_sym_num ->
@@ -555,10 +557,10 @@ module ItvPure = struct
 
   let is_nat : t -> bool = function l, Bound.PInf -> Bound.is_zero l | _ -> false
 
-  let is_const : t -> int option =
+  let is_const : t -> Z.t option =
    fun (l, u) ->
     match (Bound.is_const l, Bound.is_const u) with
-    | Some n, Some m when Int.equal n m ->
+    | Some n, Some m when Z.equal n m ->
         Some n
     | _, _ ->
         None
@@ -593,9 +595,9 @@ module ItvPure = struct
 
   let minus : t -> t -> t = fun i1 i2 -> plus i1 (neg i2)
 
-  let mult_const : int -> t -> t =
+  let mult_const : Z.t -> t -> t =
    fun n ((l, u) as itv) ->
-    match NonZeroInt.of_int n with
+    match NonZeroInt.of_big_int n with
     | None ->
         zero
     | Some n ->
@@ -607,9 +609,9 @@ module ItvPure = struct
 
   (* Returns a precise value only when all coefficients are divided by
      n without remainder. *)
-  let div_const : t -> int -> t =
+  let div_const : t -> Z.t -> t =
    fun ((l, u) as itv) n ->
-    match NonZeroInt.of_int n with
+    match NonZeroInt.of_big_int n with
     | None ->
         top
     | Some n ->
@@ -643,34 +645,40 @@ module ItvPure = struct
     match is_const y with
     | None ->
         top
-    | Some 0 ->
+    | Some n when Z.(equal n zero) ->
         x (* x % [0,0] does nothing. *)
     | Some m -> (
       match is_const x with
       | Some n ->
-          of_int (n mod m)
+          of_big_int Z.(n mod m)
       | None ->
-          let abs_m = abs m in
-          if is_ge_zero x then (Bound.zero, Bound.of_int (abs_m - 1))
-          else if is_le_zero x then (Bound.of_int (-abs_m + 1), Bound.zero)
-          else (Bound.of_int (-abs_m + 1), Bound.of_int (abs_m - 1)) )
+          let abs_m = Z.abs m in
+          if is_ge_zero x then (Bound.zero, Bound.of_big_int Z.(abs_m - one))
+          else if is_le_zero x then (Bound.of_big_int Z.(one - abs_m), Bound.zero)
+          else (Bound.of_big_int Z.(one - abs_m), Bound.of_big_int Z.(abs_m - one)) )
 
 
   (* x << [-1,-1] does nothing. *)
   let shiftlt : t -> t -> t =
-   fun x y -> match is_const y with Some n -> mult_const (1 lsl n) x | None -> top
+   fun x y ->
+    Option.value_map (is_const y) ~default:top ~f:(fun n ->
+        match Z.to_int n with
+        | n ->
+            if n < 0 then x else mult_const Z.(one lsl n) x
+        | exception Z.Overflow ->
+            top )
 
 
   (* x >> [-1,-1] does nothing. *)
   let shiftrt : t -> t -> t =
    fun x y ->
     match is_const y with
-    | Some n when Int.( <= ) n 0 ->
+    | Some n when Z.(leq n zero) ->
         x
-    | Some n when n >= 64 ->
+    | Some n when Z.(n >= of_int 64) ->
         zero
-    | Some n ->
-        div_const x (1 lsl n)
+    | Some n -> (
+      match Z.to_int n with n -> div_const x Z.(one lsl n) | exception Z.Overflow -> top )
     | None ->
         top
 
@@ -734,27 +742,27 @@ module ItvPure = struct
     | (l1, Bound.PInf), (_, u2) ->
         (l1, u2)
     | (l1, Bound.Linear (c1, s1)), (_, Bound.Linear (c2, s2)) when Bounds.SymLinear.eq s1 s2 ->
-        (l1, Bound.Linear (min c1 c2, s1))
+        (l1, Bound.Linear (Z.(min c1 c2), s1))
     | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
       ->
-        (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
+        (l1, Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
     | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol u
       ->
-        (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
+        (l1, Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
     | (l1, Bound.Linear (c, se)), (_, u) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
       ->
-        (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
+        (l1, Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Max, Z.neg c, Bound.get_mone_symbol u))
     | (l1, u), (_, Bound.Linear (c, se)) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol u
       ->
-        (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
+        (l1, Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Max, Z.neg c, Bound.get_mone_symbol u))
     | (l1, Bound.Linear (c1, se)), (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se'))
     | (l1, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se')), (_, Bound.Linear (c1, se))
       when Bounds.SymLinear.is_zero se ->
-        (l1, Bound.mk_MinMax (c2, Bound.Plus, Bound.Min, min (c1 - c2) d2, se'))
+        (l1, Bound.mk_MinMax (c2, Bound.Plus, Bound.Min, Z.(min (c1 - c2) d2), se'))
     | ( (l1, Bound.MinMax (c1, Bound.Plus, Bound.Min, d1, se1))
       , (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se2)) )
-      when Int.equal c1 c2 && Symbol.equal se1 se2 ->
-        (l1, Bound.mk_MinMax (c1, Bound.Plus, Bound.Min, min d1 d2, se1))
+      when Z.equal c1 c2 && Symbol.equal se1 se2 ->
+        (l1, Bound.mk_MinMax (c1, Bound.Plus, Bound.Min, Z.min d1 d2, se1))
     | _ ->
         x
 
@@ -765,27 +773,27 @@ module ItvPure = struct
     | (Bound.MInf, u1), (l2, _) ->
         (l2, u1)
     | (Bound.Linear (c1, s1), u1), (Bound.Linear (c2, s2), _) when Bounds.SymLinear.eq s1 s2 ->
-        (Bound.Linear (max c1 c2, s1), u1)
+        (Bound.Linear (Z.max c1 c2, s1), u1)
     | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
       ->
-        (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
+        (Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
     | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_one_symbol l
       ->
-        (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
+        (Bound.mk_MinMax (Z.zero, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
     | (Bound.Linear (c, se), u1), (l, _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
       ->
-        (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
+        (Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
     | (l, u1), (Bound.Linear (c, se), _) when Bounds.SymLinear.is_zero se && Bound.is_mone_symbol l
       ->
-        (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
+        (Bound.mk_MinMax (Z.zero, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
     | (Bound.Linear (c1, se), u1), (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), _)
     | (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), u1), (Bound.Linear (c1, se), _)
       when Bounds.SymLinear.is_zero se ->
-        (Bound.mk_MinMax (c2, Bound.Plus, Bound.Max, max (c1 - c2) d2, se'), u1)
+        (Bound.mk_MinMax (c2, Bound.Plus, Bound.Max, Z.(max (c1 - c2) d2), se'), u1)
     | ( (Bound.MinMax (c1, Bound.Plus, Bound.Max, d1, se1), u1)
       , (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se2), _) )
-      when Int.equal c1 c2 && Symbol.equal se1 se2 ->
-        (Bound.mk_MinMax (c1, Bound.Plus, Bound.Max, max d1 d2, se1), u1)
+      when Z.equal c1 c2 && Symbol.equal se1 se2 ->
+        (Bound.mk_MinMax (c1, Bound.Plus, Bound.Max, Z.max d1 d2, se1), u1)
     | _ ->
         x
 
@@ -915,11 +923,11 @@ let of_bool = function
 
 let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
 
-let of_int_lit n = Option.value_map ~default:top ~f:of_int (IntLit.to_int n)
+let of_big_int : Z.t -> astate = fun n -> NonBottom (ItvPure.of_big_int n)
 
-let of_int64 : Int64.t -> astate =
- fun n -> Int64.to_int n |> Option.value_map ~f:of_int ~default:top
+let of_int_lit : IntLit.t -> astate = fun n -> of_big_int (IntLit.to_big_int n)
 
+let of_int64 : Int64.t -> astate = fun n -> of_big_int (Z.of_int64 n)
 
 let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
 

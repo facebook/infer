@@ -759,11 +759,13 @@ module Make (Manager : Manager_S) = struct
 
     let of_exp_opt ~get_sym_f opt_e : t option = Option.find_map opt_e ~f:(of_exp ~get_sym_f)
 
-    let of_int i = Texpr1.cst Env.empty (Coeff.s_of_int i)
+    let of_big_int i =
+      Texpr1.cst Env.empty (Coeff.s_of_mpq (Mpq.of_mpz (Mpz.of_string (Z.to_string i))))
 
-    let zero = of_int 0
 
-    let one = of_int 1
+    let zero = of_big_int Z.zero
+
+    let one = of_big_int Z.one
 
     let of_sym s = match s with Sym.V x -> Some (of_raw (Texpr1.Var x)) | _ -> None
 
@@ -897,12 +899,12 @@ module Make (Manager : Manager_S) = struct
         Option.value_map (SymExp.of_sym sym) ~default:empty ~f:(fun sym_exp ->
             let tcons_lb =
               Option.map (Itv.Bound.is_const lb) ~f:(fun lb ->
-                  let sym_minus_lb = SymExp.minus sym_exp (SymExp.of_int lb) in
+                  let sym_minus_lb = SymExp.minus sym_exp (SymExp.of_big_int lb) in
                   Tcons1.make sym_minus_lb Tcons1.SUPEQ )
             in
             let tcons_ub =
               Option.map (Itv.Bound.is_const ub) ~f:(fun ub ->
-                  let ub_minus_sym = SymExp.minus (SymExp.of_int ub) sym_exp in
+                  let ub_minus_sym = SymExp.minus (SymExp.of_big_int ub) sym_exp in
                   Tcons1.make ub_minus_sym Tcons1.SUPEQ )
             in
             match (tcons_lb, tcons_ub) with

@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module NonZeroInt : sig
-  type t = private int [@@deriving compare]
+  type t = private Z.t [@@deriving compare]
 
   exception DivisionNotExact
 
@@ -17,15 +17,15 @@ module NonZeroInt : sig
 
   val minus_one : t
 
-  val of_int : int -> t option
+  val of_big_int : Z.t -> t option
 
-  val opt_to_int : t option -> int
+  val opt_to_big_int : t option -> Z.t
 
   val is_one : t -> bool
 
   val is_minus_one : t -> bool
 
-  val is_multiple : int -> t -> bool
+  val is_multiple : Z.t -> t -> bool
 
   val is_negative : t -> bool
 
@@ -45,15 +45,17 @@ module NonZeroInt : sig
 end
 
 module NonNegativeInt : sig
-  type t = private int [@@deriving compare]
+  type t = private Z.t [@@deriving compare]
 
   val zero : t
 
   val one : t
 
-  val of_int : int -> t option
+  val of_big_int : Z.t -> t option
 
   val of_int_exn : int -> t
+
+  val of_big_int_exn : Z.t -> t
 
   val is_zero : t -> bool
 
@@ -75,7 +77,7 @@ module PositiveInt : sig
 
   val one : t
 
-  val of_int : int -> t option
+  val of_big_int : Z.t -> t option
 
   val succ : t -> t
 

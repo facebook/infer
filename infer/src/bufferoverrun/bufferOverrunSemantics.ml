@@ -15,7 +15,7 @@ open BufferOverrunDomain
 
 let eval_const : Const.t -> Val.t = function
   | Const.Cint intlit ->
-      Option.value_map ~default:Val.Itv.top ~f:Val.of_int (IntLit.to_int intlit)
+      Val.of_big_int (IntLit.to_big_int intlit)
   | Const.Cfloat f ->
       f |> int_of_float |> Val.of_int
   | _ ->

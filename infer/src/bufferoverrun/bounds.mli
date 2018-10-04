@@ -35,8 +35,8 @@ module Bound : sig
 
   type t =
     | MInf
-    | Linear of int * SymLinear.t
-    | MinMax of int * sign * min_max * int * Symb.Symbol.t
+    | Linear of Z.t * SymLinear.t
+    | MinMax of Z.t * sign * min_max * Z.t * Symb.Symbol.t
     | PInf
 
   val compare : t -> t -> int
@@ -46,6 +46,8 @@ module Bound : sig
   val pp : F.formatter -> t -> unit
 
   val of_int : int -> t
+
+  val of_big_int : Z.t -> t
 
   val minus_one : t
 
@@ -63,11 +65,11 @@ module Bound : sig
 
   val is_mone_symbol : t -> bool
 
-  val mk_MinMax : int * sign * min_max * int * Symb.Symbol.t -> t
+  val mk_MinMax : Z.t * sign * min_max * Z.t * Symb.Symbol.t -> t
 
-  val int_lb : t -> int sexp_option
+  val big_int_lb : t -> Z.t sexp_option
 
-  val int_ub : t -> int sexp_option
+  val big_int_ub : t -> Z.t sexp_option
 
   val le : t -> t -> bool
 
@@ -97,7 +99,7 @@ module Bound : sig
 
   val is_zero : t -> bool
 
-  val is_const : t -> int sexp_option
+  val is_const : t -> Z.t sexp_option
 
   val plus_l : t -> t -> t
 

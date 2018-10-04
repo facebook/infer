@@ -50,6 +50,7 @@ depends: [
   "sawja" {>="1.5.4"}
   "sqlite3"
   "xmlm" {>="1.2.0"}
+  "zarith" {>="1.7"}
 ]
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]

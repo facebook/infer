@@ -132,6 +132,8 @@ module Val = struct
 
   let of_int n = of_itv (Itv.of_int n)
 
+  let of_big_int n = of_itv (Itv.of_big_int n)
+
   let of_loc : Loc.t -> t = fun x -> {bot with powloc= PowLoc.singleton x}
 
   let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}

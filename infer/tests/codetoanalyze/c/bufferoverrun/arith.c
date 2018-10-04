@@ -140,3 +140,31 @@ void integer_overflow_by_multiplication_Bad_FN() {
     arr[z] = 0;
   }
 }
+
+void use_int64_max_Good() {
+  char arr[10];
+  int64_t x = INT64_MAX;
+  int64_t y = INT64_MAX - 5;
+  arr[x - y] = 0;
+}
+
+void use_int64_max_Bad() {
+  char arr[10];
+  int64_t x = INT64_MAX;
+  int64_t y = INT64_MAX - 15;
+  arr[x - y] = 0;
+}
+
+void use_uint64_max_Good() {
+  char arr[10];
+  uint64_t x = UINT64_MAX;
+  uint64_t y = UINT64_MAX - 5;
+  arr[x - y] = 0;
+}
+
+void use_uint64_max_Bad_FN() {
+  char arr[10];
+  uint64_t x = UINT64_MAX;
+  uint64_t y = UINT64_MAX - 15;
+  arr[x - y] = 0;
+}
