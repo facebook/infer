@@ -48,16 +48,6 @@ let lock_of_class class_id =
   AccessPath.of_id ident typ'
 
 
-let is_call_to_superclass tenv ~caller ~callee =
-  match (caller, callee) with
-  | Typ.Procname.Java caller_method, Typ.Procname.Java callee_method ->
-      let caller_type = Typ.Procname.Java.get_class_type_name caller_method in
-      let callee_type = Typ.Procname.Java.get_class_type_name callee_method in
-      PatternMatch.is_subtype tenv caller_type callee_type
-  | _ ->
-      L.(die InternalError "Not supposed to run on non-Java code.")
-
-
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = StarvationDomain
@@ -116,15 +106,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Domain.blocking_call ~caller ~callee sev loc astate
           | None ->
               Payload.read pdesc callee
-              |> Option.value_map ~default:astate ~f:(fun summary ->
-                     (* if not calling a method in a superclass then set order to empty
-                        to avoid blaming a caller in one class for deadlock/starvation
-                        happening in the callee class *)
-                     let summary =
-                       if is_call_to_superclass tenv ~caller ~callee then summary
-                       else {summary with Domain.order= Domain.OrderDomain.empty}
-                     in
-                     Domain.integrate_summary astate callee loc summary ) ) )
+              |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc) )
+        )
     | _ ->
         astate
 
