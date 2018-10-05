@@ -236,8 +236,7 @@ let analyze_proc_desc ~caller_pdesc callee_pdesc =
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
-  let callbacks = Option.value_exn !callbacks_ref in
-  match Exe_env.get_proc_desc callbacks.exe_env callee_pname with
+  match Procdesc.load callee_pname with
   | Some _ as pdesc_opt ->
       pdesc_opt
   | None ->

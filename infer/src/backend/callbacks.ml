@@ -44,11 +44,10 @@ let register_cluster_callback ~name language (callback : cluster_callback_t) =
 
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
-  Option.map
-    ~f:(fun proc_desc ->
-      let tenv = Exe_env.get_tenv exe_env proc_name in
-      (tenv, proc_desc) )
-    (Exe_env.get_proc_desc exe_env proc_name)
+  Procdesc.load proc_name
+  |> Option.map ~f:(fun proc_desc ->
+         let tenv = Exe_env.get_tenv exe_env proc_name in
+         (tenv, proc_desc) )
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
@@ -57,11 +56,14 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
   let procedure_language = Typ.Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let get_procs_in_file proc_name =
-    match Exe_env.get_cfg exe_env proc_name with
-    | Some cfg ->
-        Cfg.get_all_defined_proc_names cfg
-    | None ->
-        []
+    let source_file =
+      match Attributes.load proc_name with
+      | Some {ProcAttributes.translation_unit} ->
+          Some translation_unit
+      | None ->
+          None
+    in
+    Option.value_map source_file ~default:[] ~f:SourceFiles.proc_names_of_source
   in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let is_specialized = Procdesc.is_specialized proc_desc in

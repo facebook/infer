@@ -14,15 +14,13 @@ open! IStd
 module L = Logging
 
 (** per-file data: type environment and cfg *)
-type file_data = {source: SourceFile.t; mutable tenv: Tenv.t option; mutable cfg: Cfg.t option}
+type file_data = {source: SourceFile.t; mutable tenv: Tenv.t option}
 
 (** create a new file_data *)
 let new_file_data source =
   (* Do not fill in tenv and cfg as they can be quite large. This makes calls to fork() cheaper
      until we start filling out these fields. *)
-  { source
-  ; tenv= None (* Sil.load_tenv_from_file tenv_file *)
-  ; cfg= None (* Cfg.load_cfg_from_file cfg_file *) }
+  {source; tenv= None (* Sil.load_tenv_from_file tenv_file *)}
 
 
 let create_file_data table source =
@@ -65,11 +63,6 @@ let file_data_to_tenv file_data =
   file_data.tenv
 
 
-let file_data_to_cfg file_data =
-  if is_none file_data.cfg then file_data.cfg <- Cfg.load file_data.source ;
-  file_data.cfg
-
-
 let java_global_tenv =
   lazy
     ( match Tenv.load_global () with
@@ -100,24 +93,6 @@ let get_tenv exe_env proc_name =
         L.(die InternalError)
           "get_tenv: file_data not found for %a in file '%a' at %a" Typ.Procname.pp proc_name
           SourceFile.pp loc.Location.file Location.pp loc )
-
-
-(** return the cfg associated to the procedure *)
-let get_cfg exe_env pname =
-  match get_file_data exe_env pname with
-  | None ->
-      None
-  | Some file_data ->
-      file_data_to_cfg file_data
-
-
-(** return the proc desc associated to the procedure *)
-let get_proc_desc exe_env pname =
-  match get_cfg exe_env pname with
-  | Some cfg ->
-      Typ.Procname.Hash.find_opt cfg pname
-  | None ->
-      None
 
 
 let mk () = {proc_map= Typ.Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}

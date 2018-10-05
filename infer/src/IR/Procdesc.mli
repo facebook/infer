@@ -291,3 +291,5 @@ val is_connected : t -> (unit, [`Join | `Other]) Result.t
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
    CFG *)
 module SQLite : SqliteUtils.Data with type t = t option
+
+val load : Typ.Procname.t -> t option

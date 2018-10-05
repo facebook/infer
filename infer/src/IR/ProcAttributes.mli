@@ -47,6 +47,9 @@ type t =
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
 
+val equal : t -> t -> bool [@@warning "-32"]
+(** can be useful for debugging *)
+
 val default : SourceFile.t -> Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)
 

@@ -63,6 +63,9 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
+[@@deriving compare]
+
+let equal = [%compare.equal: t]
 
 let default translation_unit proc_name =
   { access= PredSymb.Default
@@ -165,7 +168,7 @@ let pp f
     F.fprintf f "; clang_method_kind= %a@,"
       (Pp.to_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
-  if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp loc ;
+  if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp_file_pos loc ;
   if not ([%compare.equal: var_data list] default.locals locals) then
     F.fprintf f "; locals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)

@@ -61,7 +61,7 @@ FROM (
     FROM procedures
     WHERE proc_name = :pname )
   WHERE attr_kind < :akind
-        OR (attr_kind = :akind AND source_file < :sfile) )|}
+        OR (attr_kind = :akind AND source_file <= :sfile) )|}
 
 
 let replace pname pname_blob akind loc_file attr_blob proc_desc =

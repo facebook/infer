@@ -8,7 +8,7 @@
 
 open! IStd
 
-(** Execution environments: basically a cache of where procedures are and what is their CFG and type
+(** Execution environments: basically a cache of where procedures are and what is their type
    environment *)
 
 type file_data
@@ -22,9 +22,3 @@ val mk : unit -> t
 
 val get_tenv : t -> Typ.Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
-
-val get_cfg : t -> Typ.Procname.t -> Cfg.t option
-(** return the cfg associated with the procedure *)
-
-val get_proc_desc : t -> Typ.Procname.t -> Procdesc.t option
-(** return the proc desc associated with the procedure *)
