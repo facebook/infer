@@ -185,6 +185,9 @@ val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 (** Create a new cfg node with the given location, kind, list of instructions,
     and add it to the procdesc. *)
 
+val create_node_from_not_reversed :
+  t -> Location.t -> Node.nodekind -> Instrs.not_reversed_t -> Node.t
+
 val did_preanalysis : t -> bool
 (** true if we ran the preanalysis on the CFG associated with [t] *)
 
@@ -279,21 +282,6 @@ val is_captured_var : t -> Pvar.t -> bool
 (** true if pvar is a captured variable of a cpp lambda or obcj block *)
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
-
-exception UnmatchedParameters
-
-val specialize_types : ?has_clang_model:bool -> t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> t
-(** Creates a copy of a procedure description and a list of type substitutions of the form
-    (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
-    all the type of the parameters are replaced in the instructions according to the list.
-    The virtual calls are also replaced to match the parameter types *)
-
-val specialize_with_block_args : t -> Typ.Procname.t -> Exp.closure option list -> t
-(** Creates a copy of a procedure description given a list of possible closures
-  that are passed as arguments to the method. The resulting procdesc is isomorphic but
-  a) the block parameters are replaces with the closures
-  b) the parameters of the method are extended with parameters for the captured variables
-  in the closures *)
 
 val is_connected : t -> (unit, [`Join | `Other]) Result.t
 (** checks whether a cfg for the given procdesc is connected or not *)

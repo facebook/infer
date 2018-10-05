@@ -80,7 +80,7 @@ let resolve_method_with_block_args_and_analyze ~caller_pdesc pname act_params =
       (* new procdesc cloned from the original one, where the block parameters have been
        replaced by the block arguments. The formals have also been expanded with the captured variables  *)
       let specialized_pdesc =
-        Procdesc.specialize_with_block_args pdesc pname_with_block_args block_args
+        SpecializeProcdesc.with_block_args pdesc pname_with_block_args block_args
       in
       Logging.(debug Analysis Verbose) "Instructions of specialized method:@." ;
       Procdesc.iter_instrs

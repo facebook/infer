@@ -648,7 +648,7 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Typ.Procname.t
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Typ.Procname.pp pname (List.length resolved_parameters) (List.length args) SourceFile.pp
           file Location.pp loc ;
-        raise Procdesc.UnmatchedParameters
+        raise SpecializeProcdesc.UnmatchedParameters
     in
     Typ.Procname.replace_parameters resolved_params resolved_pname
   in
@@ -680,7 +680,7 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Typ.Procname.t
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Typ.Procname.pp pname (List.length parameters) (List.length args) SourceFile.pp file
           Location.pp loc ;
-        raise Procdesc.UnmatchedParameters
+        raise SpecializeProcdesc.UnmatchedParameters
   in
   resolve_from_args resolved_pname other_args
 
@@ -731,8 +731,8 @@ let resolve_and_analyze tenv ~caller_pdesc ?(has_clang_model = false) prop args 
                 (* It is possible that the types of the arguments are not as precise as the type of
                    the objects in the heap, so we should update them to get the best results. *)
                 let resolved_args = resolve_args prop args in
-                Procdesc.specialize_types ~has_clang_model callee_proc_desc resolved_pname
-                  resolved_args )
+                SpecializeProcdesc.with_formals_types ~has_clang_model callee_proc_desc
+                  resolved_pname resolved_args )
       in
       (resolved_proc_desc_option, Option.bind resolved_proc_desc_option ~f:analyze)
   in
@@ -1160,7 +1160,7 @@ let resolve_and_analyze_clang current_pdesc tenv prop_r n_actual_params callee_p
           dynamic_dispatch_status= Some EventLogger.Dynamic_dispatch_model_specialization_failure
         }
       else resolve_and_analyze_result
-    with Procdesc.UnmatchedParameters ->
+    with SpecializeProcdesc.UnmatchedParameters ->
       let result =
         resolve_and_analyze_no_dynamic_dispatch current_pdesc tenv prop_r n_actual_params
           callee_pname call_flags
