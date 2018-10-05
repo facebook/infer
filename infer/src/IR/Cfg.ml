@@ -50,22 +50,9 @@ let iter_all_nodes ~sorted cfg ~f =
         |> List.iter ~f:(fun node -> f pdesc node) )
 
 
-let load_statement =
-  ResultsDatabase.register_statement "SELECT cfgs FROM source_files WHERE source_file = :k"
-
-
 module SQLite = SqliteUtils.MarshalledData (struct
   type nonrec t = t
 end)
-
-let load source =
-  ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source
-      |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Cfg.load" db load_stmt
-      |> Option.map ~f:SQLite.deserialize )
-
 
 let store source_file cfg =
   let save_proc _ proc_desc =

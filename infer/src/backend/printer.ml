@@ -370,8 +370,8 @@ let write_html_file linereader filename procs =
     Io_infer.Html.close (fd, fmt)
 
 
-(** Create filename.ext.html for each file in the cluster. *)
-let write_all_html_files cluster =
+(** Create the HTML debug file for the source file. *)
+let write_all_html_files source_file =
   let opt_whitelist_regex =
     match Config.write_html_whitelist_regex with
     | [] ->
@@ -385,20 +385,22 @@ let write_all_html_files cluster =
         Str.string_match regex fname 0 )
   in
   let linereader = LineReader.create () in
-  let cfg = Cfg.load cluster in
-  Option.iter cfg ~f:(fun cfg ->
-      let source_files_in_cfg, pdescs_in_cfg =
-        Typ.Procname.Hash.fold
-          (fun _ proc_desc (files, pdescs) ->
+  let procs_in_source = SourceFiles.proc_names_of_source source_file in
+  let source_files_in_cfg, pdescs_in_cfg =
+    List.fold procs_in_source ~init:(SourceFile.Set.empty, [])
+      ~f:(fun ((files, pdescs) as acc) proc_name ->
+        match Procdesc.load proc_name with
+        | Some proc_desc ->
             let updated_files =
               if Procdesc.is_defined proc_desc then
                 let file = (Procdesc.get_loc proc_desc).Location.file in
                 if is_whitelisted file then SourceFile.Set.add file files else files
               else files
             in
-            (updated_files, proc_desc :: pdescs) )
-          cfg (SourceFile.Set.empty, [])
-      in
-      SourceFile.Set.iter
-        (fun file -> write_html_file linereader file pdescs_in_cfg)
-        source_files_in_cfg )
+            (updated_files, proc_desc :: pdescs)
+        | None ->
+            acc )
+  in
+  SourceFile.Set.iter
+    (fun file -> write_html_file linereader file pdescs_in_cfg)
+    source_files_in_cfg

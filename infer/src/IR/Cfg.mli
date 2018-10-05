@@ -13,9 +13,6 @@ open! IStd
 (** A control-flow graph is a collection of all the CFGs for the procedure names in a file *)
 type t = Procdesc.t Typ.Procname.Hash.t
 
-val load : SourceFile.t -> t option
-(** Load the cfgs of the procedures of a source file *)
-
 val get_all_defined_proc_names : t -> Typ.Procname.t list
 (** get all the procedure names that are defined in the current file *)
 
