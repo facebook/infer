@@ -228,7 +228,8 @@ end = struct
         | StrictModeViolation _ ->
             IssueType.strict_mode_violation
       in
-      Reporting.log_issue_external pname Exceptions.Error ~loc ~ltr issue_type message
+      if Reporting.is_suppressed tenv pdesc issue_type then ()
+      else Reporting.log_issue_external pname Exceptions.Error ~loc ~ltr issue_type message
     in
     let mk_deduped_report reports ({message} as report) =
       { report with
@@ -239,40 +240,28 @@ end = struct
     let log_reports compare loc = function
       | [] ->
           ()
-      | [(_, report, _)] ->
+      | [(_, report)] ->
           log_report loc report
       | reports ->
           List.max_elt ~compare reports
-          |> Option.iter ~f:(fun (_, rep, _) -> mk_deduped_report reports rep |> log_report loc)
+          |> Option.iter ~f:(fun (_, rep) -> mk_deduped_report reports rep |> log_report loc)
     in
-    let filter_map_deadlock report =
-      if Reporting.is_suppressed tenv pdesc IssueType.deadlock then None
-      else
-        match report with
-        | {problem= Deadlock len} ->
-            Some (len, report, IssueType.deadlock)
-        | _ ->
-            None
+    let filter_map_deadlock = function {problem= Deadlock l} as r -> Some (l, r) | _ -> None in
+    let filter_map_starvation = function
+      | {problem= Starvation s} as r ->
+          Some (s, r)
+      | _ ->
+          None
     in
-    let filter_map_starvation report =
-      if Reporting.is_suppressed tenv pdesc IssueType.starvation then None
-      else
-        match report with
-        | {problem= Starvation sev} ->
-            Some (sev, report, IssueType.starvation)
-        | _ ->
-            None
+    let filter_map_strict_mode_violation = function
+      | {problem= StrictModeViolation l} as r ->
+          Some (l, r)
+      | _ ->
+          None
     in
-    let filter_map_strict_mode_violation report =
-      if Reporting.is_suppressed tenv pdesc IssueType.deadlock then None
-      else
-        match report with
-        | {problem= StrictModeViolation len} ->
-            Some (len, report, IssueType.strict_mode_violation)
-        | _ ->
-            None
+    let compare_reports weight_compare (w, r) (w', r') =
+      match weight_compare w w' with 0 -> String.compare r.message r'.message | result -> result
     in
-    let compare_reports weight_compare (w, _, _) (w', _, _) = weight_compare w w' in
     let log_location loc problems =
       let deadlocks = List.filter_map problems ~f:filter_map_deadlock in
       log_reports (compare_reports Int.compare) loc deadlocks ;
