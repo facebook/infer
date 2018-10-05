@@ -59,7 +59,7 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
   let get_procs_in_file proc_name =
     match Exe_env.get_cfg exe_env proc_name with
     | Some cfg ->
-        Cfg.get_all_proc_names cfg
+        Cfg.get_all_defined_proc_names cfg
     | None ->
         []
   in

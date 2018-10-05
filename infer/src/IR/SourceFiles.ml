@@ -65,7 +65,8 @@ let add source_file cfg tenv =
       Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 3
       (* :tenv *)
       |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-      Cfg.get_all_proc_names cfg |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 4
+      Cfg.get_all_defined_proc_names cfg
+      |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 4
       (* :proc_names *)
       |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
       Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)

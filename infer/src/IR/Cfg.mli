@@ -16,8 +16,8 @@ type t = Procdesc.t Typ.Procname.Hash.t
 val load : SourceFile.t -> t option
 (** Load the cfgs of the procedures of a source file *)
 
-val get_all_proc_names : t -> Typ.Procname.t list
-(** get all the keys from the hashtable *)
+val get_all_defined_proc_names : t -> Typ.Procname.t list
+(** get all the procedure names that are defined in the current file *)
 
 (** {2 Functions for manipulating an interprocedural CFG} *)
 
