@@ -12,12 +12,12 @@ let store_statement =
   ResultsDatabase.register_statement
     {|
   INSERT OR REPLACE INTO source_files
-  VALUES (:source, :cfgs, :tenv, :proc_names, :freshly_captured) |}
+  VALUES (:source, :tenv, :proc_names, :freshly_captured) |}
 
 
 let select_existing_statement =
   ResultsDatabase.register_statement
-    "SELECT cfgs, type_environment FROM source_files WHERE source_file = :source AND \
+    "SELECT type_environment, procedure_names FROM source_files WHERE source_file = :source AND \
      freshly_captured = 1"
 
 
@@ -27,27 +27,38 @@ let get_existing_data source_file =
       |> Sqlite3.bind stmt 1
       (* :source *)
       |> SqliteUtils.check_result_code db ~log:"get_existing_data bind source file" ;
-      SqliteUtils.result_option ~finalize:false db ~log:"looking for pre-existing cfgs" stmt
-        ~read_row:(fun stmt ->
-          let cfgs = Sqlite3.column stmt 0 |> Cfg.SQLite.deserialize
-          and tenv = Sqlite3.column stmt 1 |> Tenv.SQLite.deserialize in
-          (cfgs, tenv) ) )
+      SqliteUtils.result_option ~finalize:false db ~log:"looking for pre-existing source file data"
+        stmt ~read_row:(fun stmt ->
+          let tenv = Sqlite3.column stmt 0 |> Tenv.SQLite.deserialize
+          and proc_names = Sqlite3.column stmt 1 |> Typ.Procname.SQLiteList.deserialize in
+          (tenv, proc_names) ) )
 
 
 let add source_file cfg tenv =
   Cfg.inline_java_synthetic_methods cfg ;
-  let cfg, tenv =
+  let tenv, proc_names =
     (* The same source file may get captured several times in a single capture event, for instance
        because it is compiled with different options, or from different symbolic links. This may
        generate different procedures in each phase, so make an attempt to merge them into the same
-       CFG. *)
+       tenv. *)
+    let new_proc_names = Cfg.get_all_defined_proc_names cfg in
     match get_existing_data source_file with
-    | Some (old_cfg, old_tenv) ->
+    | Some (old_tenv, old_proc_names) ->
         L.debug Capture Quiet "Merging capture data for already-captured '%a'@\n" SourceFile.pp
           source_file ;
-        (Cfg.merge ~dst:old_cfg ~src:cfg, Tenv.merge ~dst:old_tenv ~src:tenv)
+        (* merge the proc names defined in the source file using a hashtbl so that order is
+           preserved but merging is still linear time *)
+        let existing_proc_names = Caml.Hashtbl.create (List.length old_proc_names) in
+        List.iter old_proc_names ~f:(fun proc_name ->
+            Caml.Hashtbl.add existing_proc_names proc_name () ) ;
+        let proc_names =
+          List.fold new_proc_names ~init:old_proc_names ~f:(fun proc_names proc_name ->
+              if not (Caml.Hashtbl.mem existing_proc_names proc_name) then proc_name :: proc_names
+              else proc_names )
+        in
+        (Tenv.merge ~dst:old_tenv ~src:tenv, proc_names)
     | None ->
-        (cfg, tenv)
+        (tenv, new_proc_names)
   in
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
@@ -59,17 +70,14 @@ let add source_file cfg tenv =
       |> Sqlite3.bind store_stmt 1
       (* :source *)
       |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
-      Cfg.SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
-      (* :cfg *)
-      |> SqliteUtils.check_result_code db ~log:"store bind cfg" ;
-      Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 3
+      Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 2
       (* :tenv *)
       |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-      Cfg.get_all_defined_proc_names cfg
-      |> Typ.Procname.SQLiteList.serialize |> Sqlite3.bind store_stmt 4
+      Typ.Procname.SQLiteList.serialize proc_names
+      |> Sqlite3.bind store_stmt 3
       (* :proc_names *)
       |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
-      Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
+      Sqlite3.bind store_stmt 4 (Sqlite3.Data.INT Int64.one)
       (* :freshly_captured *)
       |> SqliteUtils.check_result_code db ~log:"store freshness" ;
       SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
@@ -160,7 +168,7 @@ let select_all_source_files_statement =
   ResultsDatabase.register_statement "SELECT * FROM source_files"
 
 
-let pp_all ~filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fmt () =
+let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
   let pp_procnames fmt procs =
     F.fprintf fmt "@[<v>" ;
     List.iter ~f:(F.fprintf fmt "%a@," Typ.Procname.pp) procs ;
@@ -171,17 +179,15 @@ let pp_all ~filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fm
       F.fprintf fmt "  @[<v2>%s@,%a@]@;" title pp (Sqlite3.column stmt column |> deserialize)
   in
   let pp_row stmt fmt source_file =
-    F.fprintf fmt "%a@,%a%a%a%a" SourceFile.pp source_file
-      (pp_if stmt "cfgs" cfgs Cfg.SQLite.deserialize Cfg.pp_proc_signatures)
-      1
+    F.fprintf fmt "%a@,%a%a%a" SourceFile.pp source_file
       (pp_if stmt "type_environment" type_environment Tenv.SQLite.deserialize Tenv.pp_per_file)
-      2
+      1
       (pp_if stmt "procedure_names" procedure_names Typ.Procname.SQLiteList.deserialize
          pp_procnames)
-      3
+      2
       (pp_if stmt "freshly_captured" freshly_captured deserialize_freshly_captured
          Format.pp_print_bool)
-      4
+      3
   in
   ResultsDatabase.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
       let pp fmt column =

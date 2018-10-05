@@ -50,10 +50,6 @@ let iter_all_nodes ~sorted cfg ~f =
         |> List.iter ~f:(fun node -> f pdesc node) )
 
 
-module SQLite = SqliteUtils.MarshalledData (struct
-  type nonrec t = t
-end)
-
 let store source_file cfg =
   let save_proc _ proc_desc =
     let attributes = Procdesc.get_attributes proc_desc in
@@ -148,8 +144,3 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "@[<v>METHOD SIGNATURES@;" ;
   iter_over_sorted_procs ~f:(Procdesc.pp_signature fmt) cfg ;
   F.fprintf fmt "@]"
-
-
-let merge ~src ~dst =
-  Typ.Procname.Hash.iter (fun pname cfg -> Typ.Procname.Hash.replace dst pname cfg) src ;
-  dst

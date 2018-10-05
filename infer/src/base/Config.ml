@@ -1933,12 +1933,6 @@ and source_files_filter =
      regular expressions."
 
 
-and source_files_cfgs =
-  CLOpt.mk_bool ~long:"source-files-cfgs"
-    ~in_help:InferCommand.[(Explore, manual_generic)]
-    "Print the Cfgs of each source file in the output of $(b,--source-files)"
-
-
 and source_files_type_environment =
   CLOpt.mk_bool ~long:"source-files-type-environment"
     ~in_help:InferCommand.[(Explore, manual_generic)]
@@ -2848,8 +2842,6 @@ and source_preview = !source_preview
 and source_files = !source_files
 
 and source_files_filter = !source_files_filter
-
-and source_files_cfgs = !source_files_cfgs
 
 and source_files_type_environment = !source_files_type_environment
 

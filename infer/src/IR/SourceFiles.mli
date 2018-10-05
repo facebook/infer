@@ -30,7 +30,6 @@ val mark_all_stale : unit -> unit
 
 val pp_all :
      filter:Filtering.source_files_filter
-  -> cfgs:bool
   -> type_environment:bool
   -> procedure_names:bool
   -> freshly_captured:bool

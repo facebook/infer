@@ -785,11 +785,6 @@ OPTIONS
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)           See also infer-explore(1).
 
-       --source-files-cfgs
-           Activates: Print the Cfgs of each source file in the output of
-           --source-files (Conversely: --no-source-files-cfgs)       
-    See also infer-explore(1).
-
        --source-files-filter filter
            With --source-files, only print source files matching the
            specified filter. The filter is a pattern that should match the

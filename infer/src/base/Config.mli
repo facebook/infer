@@ -591,8 +591,6 @@ val source_files : bool
 
 val source_files_filter : string option
 
-val source_files_cfgs : bool
-
 val source_files_type_environment : bool
 
 val source_files_procedure_names : bool

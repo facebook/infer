@@ -35,7 +35,7 @@ let merge_source_files_table ~db_file =
   Sqlite3.exec db
     {|
     INSERT OR REPLACE INTO source_files
-    SELECT source_file, cfgs, type_environment, procedure_names, 1
+    SELECT source_file, type_environment, procedure_names, 1
     FROM attached.source_files
 |}
   |> SqliteUtils.check_result_code db

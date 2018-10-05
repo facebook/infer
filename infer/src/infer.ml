@@ -154,7 +154,7 @@ let () =
         L.result "%a"
           (SourceFiles.pp_all
              ~filter:(Lazy.force Filtering.source_files_filter)
-             ~cfgs:Config.source_files_cfgs ~type_environment:Config.source_files_type_environment
+             ~type_environment:Config.source_files_type_environment
              ~procedure_names:Config.source_files_procedure_names
              ~freshly_captured:Config.source_files_freshly_captured)
           ()
