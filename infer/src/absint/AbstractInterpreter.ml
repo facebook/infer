@@ -104,8 +104,7 @@ struct
         if debug then (
           L.d_strln
             ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
-                (Instrs.pp Pp.(html Green))
-                instrs Domain.pp astate_post
+                (Instrs.pp Pp.text) instrs Domain.pp astate_post
             |> Escape.escape_xml ) ;
           NodePrinter.finish_session (Node.underlying_node node) ) ;
         let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
