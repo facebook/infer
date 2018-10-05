@@ -19,6 +19,10 @@ val load : SourceFile.t -> t option
 val get_all_defined_proc_names : t -> Typ.Procname.t list
 (** get all the procedure names that are defined in the current file *)
 
+val store : SourceFile.t -> t -> unit
+(** Save the individual [Procdesc.t] and [ProcAttributes.t] to the database for the procedures in
+   the cfg. *)
+
 (** {2 Functions for manipulating an interprocedural CFG} *)
 
 val create : unit -> t
@@ -29,9 +33,6 @@ val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 
 val iter_all_nodes : sorted:bool -> t -> f:(Procdesc.t -> Procdesc.Node.t -> unit) -> unit
 (** Iterate over all the nodes in the cfg *)
-
-val save_attributes : SourceFile.t -> t -> unit
-(** Save the .attr files for the procedures in the cfg. *)
 
 val inline_java_synthetic_methods : t -> unit
 (** Inline the java synthetic methods in the cfg (in-place) *)

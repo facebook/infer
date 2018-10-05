@@ -750,3 +750,8 @@ let is_connected proc_desc =
       Ok ()
   | Error _ as error ->
       error
+
+
+module SQLite = SqliteUtils.MarshalledNullableData (struct
+  type nonrec t = t
+end)

@@ -8,6 +8,8 @@
 
 open! IStd
 
+(** {1 Per-procedure CFG} *)
+
 module NodeKey : sig
   type t
 
@@ -285,3 +287,7 @@ val has_modify_in_block_attr : t -> Pvar.t -> bool
 
 val is_connected : t -> (unit, [`Join | `Other]) Result.t
 (** checks whether a cfg for the given procdesc is connected or not *)
+
+(** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
+   CFG *)
+module SQLite : SqliteUtils.Data with type t = t option

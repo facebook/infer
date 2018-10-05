@@ -76,3 +76,8 @@ end
 module MarshalledData (D : sig
   type t
 end) : Data with type t = D.t
+
+(** A default implementation of the Data API that encodes None as a NULL SQLite value *)
+module MarshalledNullableData (D : sig
+  type t
+end) : Data with type t = D.t option

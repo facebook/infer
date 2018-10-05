@@ -67,16 +67,16 @@ let load source =
       |> Option.map ~f:SQLite.deserialize )
 
 
-let save_attributes source_file cfg =
-  let save_proc _ pdesc =
-    let attributes = Procdesc.get_attributes pdesc in
+let store source_file cfg =
+  let save_proc _ proc_desc =
+    let attributes = Procdesc.get_attributes proc_desc in
     let loc = attributes.loc in
     let attributes' =
       let loc' = if Location.equal loc Location.dummy then {loc with file= source_file} else loc in
       {attributes with loc= loc'; translation_unit= source_file}
     in
-    Attributes.store attributes' ;
-    Procdesc.set_attributes pdesc attributes'
+    Procdesc.set_attributes proc_desc attributes' ;
+    Attributes.store ~proc_desc:(Some proc_desc) attributes'
   in
   Typ.Procname.Hash.iter save_proc cfg
 

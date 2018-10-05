@@ -18,7 +18,9 @@ let procedures_schema =
   , proc_name_hum TEXT
   , attr_kind INTEGER NOT NULL
   , source_file TEXT NOT NULL
-  , proc_attributes BLOB NOT NULL )|}
+  , proc_attributes BLOB NOT NULL
+  , cfg BLOB
+  )|}
 
 
 let source_files_schema =

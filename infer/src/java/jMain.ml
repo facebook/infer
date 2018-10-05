@@ -73,7 +73,9 @@ let save_tenv tenv =
 
 let store_callee_attributes tenv program =
   let f proc_name cn ms =
-    Option.iter ~f:Attributes.store (JTrans.create_callee_attributes tenv program cn ms proc_name)
+    Option.iter
+      ~f:(Attributes.store ~proc_desc:None)
+      (JTrans.create_callee_attributes tenv program cn ms proc_name)
   in
   JClasspath.iter_missing_callees program ~f
 

@@ -119,3 +119,23 @@ struct
 
   let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [])
 end
+
+module MarshalledNullableData (D : sig
+  type t
+end) =
+struct
+  type t = D.t option
+
+  let deserialize = function[@warning "-8"]
+    | Sqlite3.Data.BLOB b ->
+        Some (Marshal.from_string b 0)
+    | Sqlite3.Data.NULL ->
+        None
+
+
+  let serialize = function
+    | None ->
+        Sqlite3.Data.NULL
+    | Some x ->
+        Sqlite3.Data.BLOB (Marshal.to_string x [])
+end

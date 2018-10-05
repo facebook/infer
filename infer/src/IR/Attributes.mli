@@ -13,7 +13,7 @@ type attributes_kind
 
 val deserialize_attributes_kind : Sqlite3.Data.t -> attributes_kind
 
-val store : ProcAttributes.t -> unit
+val store : proc_desc:Procdesc.t option -> ProcAttributes.t -> unit
 (** Save .attr file for the procedure into the attributes database. *)
 
 val load : Typ.Procname.t -> ProcAttributes.t option

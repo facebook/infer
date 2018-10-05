@@ -52,7 +52,7 @@ let replace_statement =
   ResultsDatabase.register_statement
     {|
 INSERT OR REPLACE INTO procedures
-SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr
+SELECT :pname, :proc_name_hum, :akind, :sfile, :pattr, :cfg
 FROM (
   SELECT NULL
   FROM (
@@ -64,7 +64,7 @@ FROM (
         OR (attr_kind = :akind AND source_file < :sfile) )|}
 
 
-let replace pname pname_blob akind loc_file attr_blob =
+let replace pname pname_blob akind loc_file attr_blob proc_desc =
   ResultsDatabase.with_registered_statement replace_statement ~f:(fun db replace_stmt ->
       Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
       |> SqliteUtils.check_result_code db ~log:"replace bind pname" ;
@@ -77,6 +77,8 @@ let replace pname pname_blob akind loc_file attr_blob =
       |> SqliteUtils.check_result_code db ~log:"replace bind source file" ;
       Sqlite3.bind replace_stmt 5 (* :pattr *) attr_blob
       |> SqliteUtils.check_result_code db ~log:"replace bind proc attributes" ;
+      Sqlite3.bind replace_stmt 6 (* :cfg *) (Procdesc.SQLite.serialize proc_desc)
+      |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
       SqliteUtils.result_unit db ~finalize:false ~log:"Attributes.replace" replace_stmt )
 
 
@@ -124,13 +126,14 @@ let find ~defined pname_blob =
 
 let load pname = Typ.Procname.SQLite.serialize pname |> find ~defined:false
 
-let store (attr : ProcAttributes.t) =
+let store ~proc_desc (attr : ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
   let key = Typ.Procname.SQLite.serialize attr.proc_name in
   if should_try_to_update key pkind then
     replace attr.proc_name key pkind
       (SourceFile.SQLite.serialize attr.loc.Location.file)
       (ProcAttributes.SQLite.serialize attr)
+      proc_desc
 
 
 let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:true
