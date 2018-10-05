@@ -17,4 +17,3 @@ infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS) $(TESTS
 	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES))
-	$(QUIET)$(call check_no_duplicates,infer-out$(TEST_SUFFIX)/duplicates.txt)

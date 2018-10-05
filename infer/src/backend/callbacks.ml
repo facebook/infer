@@ -98,20 +98,22 @@ let iterate_cluster_callbacks all_procs exe_env source_file =
       !cluster_callbacks
 
 
-let dump_duplicate_procs (exe_env : Exe_env.t) source_file procs =
+let dump_duplicate_procs source_file procs =
   let duplicate_procs =
     List.filter_map procs ~f:(fun pname ->
-        match Exe_env.get_proc_desc exe_env pname with
-        | Some pdesc when (* defined in the current file *) Procdesc.is_defined pdesc -> (
-          match Attributes.load pname with
-          | Some {translation_unit; loc}
-            when (* defined in another file *)
-                 (not (SourceFile.equal source_file translation_unit))
-                 && (* really defined in the current file and not in an include *)
-                    SourceFile.equal source_file loc.file ->
-              Some (pname, translation_unit)
-          | _ ->
-              None )
+        match Attributes.load pname with
+        | Some
+            { is_defined=
+                true
+                (* likely not needed: if [pname] is part of [procs] then it *is* defined, so we
+                   expect the attribute to be defined too *)
+            ; translation_unit
+            ; loc }
+          when (* defined in another file *)
+               (not (SourceFile.equal source_file translation_unit))
+               && (* really defined in that file and not in an include *)
+                  SourceFile.equal translation_unit loc.file ->
+            Some (pname, translation_unit)
         | _ ->
             None )
   in
@@ -120,8 +122,9 @@ let dump_duplicate_procs (exe_env : Exe_env.t) source_file procs =
       ~append:true ~perm:0o666 ~f:(fun outc ->
         let fmt = F.formatter_of_out_channel outc in
         List.iter duplicate_procs ~f:(fun (pname, source_captured) ->
-            F.fprintf fmt "@.DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@."
-              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) )
+            F.fprintf fmt "DUPLICATE_SYMBOLS source:%a source_captured:%a pname:%a@\n"
+              SourceFile.pp source_file SourceFile.pp source_captured Typ.Procname.pp pname ) ;
+        F.pp_print_flush fmt () )
   in
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
@@ -141,7 +144,7 @@ let analyze_file (exe_env : Exe_env.t) source_file =
     (* analyze all the currently defined procedures *)
     SourceFiles.proc_names_of_source source_file
   in
-  if Config.dump_duplicate_symbols then dump_duplicate_procs exe_env source_file procs_to_analyze ;
+  if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ;
   let analyze_proc_name pname = ignore (Ondemand.analyze_proc_name pname : Summary.t option) in
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)

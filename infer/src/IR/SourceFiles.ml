@@ -190,6 +190,8 @@ let pp_all ~filter ~cfgs ~type_environment ~procedure_names ~freshly_captured fm
       in
       let pp_result fmt stmt =
         Container.iter stmt ~f:(pp fmt)
-          ~fold:(SqliteUtils.result_fold_single_column_rows db ~log:"printing all source files")
+          ~fold:
+            (SqliteUtils.result_fold_single_column_rows ~finalize:false db
+               ~log:"printing all source files")
       in
       F.fprintf fmt "@[<v>%a@]" pp_result stmt )

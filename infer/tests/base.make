@@ -13,8 +13,13 @@ TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
 
 define check_no_duplicates
   if grep -q "DUPLICATE_SYMBOLS" $(1); then \
-    printf '$(TERM_ERROR)Duplicate symbols found in $(CURDIR).$(TERM_RESET)\n' >&2; \
-    printf '$(TERM_ERROR)Please make sure all the function names in all the source test files are different.$(TERM_RESET)' >&2; \
+    printf '$(TERM_ERROR)Duplicate symbols found in $(CURDIR):$(TERM_RESET)\n' >&2; \
+    printf '$(TERM_ERROR)========$(TERM_RESET)\n' >&2; \
+    while read line; do \
+      printf '$(TERM_ERROR)%s$(TERM_RESET)\n' "$$line" >&2; \
+    done <$(1); \
+    printf '$(TERM_ERROR)========$(TERM_RESET)\n' >&2; \
+    printf '$(TERM_ERROR)Please make sure all the function names in all the source test files are different.$(TERM_RESET)\n' >&2; \
     exit 1; \
   fi
 endef

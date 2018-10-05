@@ -9,50 +9,50 @@
 #include <string>
 #include <vector>
 
-struct S {
+struct Simple {
   int f;
 };
 
 void deref_deleted_bad() {
-  auto s = new S{1};
+  auto s = new Simple{1};
   delete s;
-  S tmp = *s;
+  Simple tmp = *s;
 }
 
-S* return_deleted_bad() {
-  auto s = new S{1};
+Simple* return_deleted_bad() {
+  auto s = new Simple{1};
   delete s;
   return s;
 }
 
-S* reassign_deleted_ok() {
-  auto s = new S{1};
+Simple* reassign_deleted_ok() {
+  auto s = new Simple{1};
   delete s;
-  s = new S{2};
+  s = new Simple{2};
   return s;
 }
 
 void reassign_field_of_deleted_bad() {
-  auto s = new S{1};
+  auto s = new Simple{1};
   delete s;
   s->f = 7;
 }
 
-void reassign_field_of_reinitialized_ok(S* tmp) {
-  auto s = new S{1};
+void reassign_field_of_reinitialized_ok(Simple* tmp) {
+  auto s = new Simple{1};
   delete s;
   s = tmp;
   s->f = 7;
 }
 
 void double_delete_bad() {
-  auto s = new S{1};
+  auto s = new Simple{1};
   delete s;
   delete s;
 }
 
-S* delete_in_branch_bad(bool b) {
-  auto s = new S{1};
+Simple* delete_in_branch_bad(bool b) {
+  auto s = new Simple{1};
   if (b) {
     delete s;
   }
@@ -60,7 +60,7 @@ S* delete_in_branch_bad(bool b) {
 }
 
 void delete_in_branch_ok(bool b) {
-  auto s = new S{1};
+  auto s = new Simple{1};
   if (b) {
     delete s;
   } else {
@@ -69,7 +69,7 @@ void delete_in_branch_ok(bool b) {
 }
 
 void use_in_branch_bad(bool b) {
-  auto s = new S{1};
+  auto s = new Simple{1};
   delete s;
   if (b) {
     auto tmp = *s;
@@ -77,7 +77,7 @@ void use_in_branch_bad(bool b) {
 }
 
 void delete_in_loop_bad() {
-  auto s = new S{1};
+  auto s = new Simple{1};
   for (int i = 0; i < 10; i++) {
     delete s;
   }
@@ -85,7 +85,7 @@ void delete_in_loop_bad() {
 
 void delete_in_loop_ok() {
   for (int i = 0; i < 10; i++) {
-    auto s = new S{1};
+    auto s = new Simple{1};
     delete s;
   }
 }
@@ -99,15 +99,15 @@ void delete_ref_in_loop_ok(int j, std::vector<std::string> v) {
 }
 
 void use_in_loop_bad() {
-  auto s = new S{1};
+  auto s = new Simple{1};
   delete s;
   for (int i = 0; i < 10; i++) {
     s->f = i;
   }
 }
 
-S* gated_delete_abort_ok(bool b) {
-  auto s = new S{1};
+Simple* gated_delete_abort_ok(bool b) {
+  auto s = new Simple{1};
   if (b) {
     delete s;
     std::abort();
@@ -115,8 +115,8 @@ S* gated_delete_abort_ok(bool b) {
   return s;
 }
 
-S* gated_exit_abort_ok(bool b) {
-  auto s = new S{1};
+Simple* gated_exit_abort_ok(bool b) {
+  auto s = new Simple{1};
   if (b) {
     delete s;
     exit(1);
@@ -124,8 +124,8 @@ S* gated_exit_abort_ok(bool b) {
   return s;
 }
 
-S* gated_delete_throw_ok(bool b) {
-  auto s = new S{1};
+Simple* gated_delete_throw_ok(bool b) {
+  auto s = new Simple{1};
   if (b) {
     delete s;
     throw 5;

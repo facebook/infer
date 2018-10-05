@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void nop() { int x = 0; }
+void no_op() { int x = 0; }
 
 // Expected: Theta(n)
 void do_n_times(int n) {
   for (int i = 0; i < n; i++) {
-    nop();
+    no_op();
   }
 }
 

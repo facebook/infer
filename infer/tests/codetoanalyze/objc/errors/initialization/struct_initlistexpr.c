@@ -10,9 +10,9 @@ typedef struct Point {
   int y;
 } Point;
 
-int foo() { return 5; }
+int return_5() { return 5; }
 
-int main() { struct Point p = {1, foo() + 3}; }
+void init_Point() { struct Point p = {1, return_5() + 3}; }
 
 int point_coords_set_correctly(Point* p) {
   *p = (Point){4, 5};

@@ -26,6 +26,7 @@ print: issues.exp.test$(TEST_SUFFIX)
 test: issues.exp.test$(TEST_SUFFIX)
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
+	$(QUIET)$(call check_no_duplicates,$(INFER_OUT)/duplicates.txt)
 
 .PHONY: print
 replace: issues.exp.test$(TEST_SUFFIX)

@@ -35,6 +35,7 @@ BUILD_SYSTEMS_TESTS += \
   delete_results_dir \
   diff \
   diff_gen_build_script \
+  duplicate_symbols \
   fail_on_issue \
   j1 \
   linters \

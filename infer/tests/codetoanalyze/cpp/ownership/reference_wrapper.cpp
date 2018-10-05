@@ -9,22 +9,22 @@ struct B {
   int f;
 };
 
-struct A {
-  A(int f) { b = new B(f); }
+struct WrapsB {
+  WrapsB(int f) { b = new B(f); }
   B* b;
   B* getb() { return b; };
-  ~A() { delete b; }
+  ~WrapsB() { delete b; }
 };
 
 struct ReferenceWrapperHeap {
-  ReferenceWrapperHeap(A& a) : b(a.getb()){};
+  ReferenceWrapperHeap(WrapsB& a) : b(a.getb()){};
   B* b;
 };
 
 ReferenceWrapperHeap getwrapperHeap() {
-  A a(1);
+  WrapsB a(1);
   return a; // We store a.b in ReferenceWrapper, but we delete a.b in the
-            // destructor of A
+            // destructor of WrapsB
 }
 
 int FN_reference_wrapper_heap_bad() {

@@ -37,14 +37,14 @@ void for_loop() {
   }
 }
 
-void nop() { int k = 0; }
+void no_op() { int k = 0; }
 
 int two_loops(int m) {
   for (int i = 0; i < m; i++) {
-    nop();
+    no_op();
   }
   for (int j = 0; j < m; j++) {
-    nop();
+    no_op();
   }
   return m;
 }
