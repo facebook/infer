@@ -249,9 +249,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         && ( (not (is_pointer_assignment tenv access_expr rhs))
            || not (AccessExpression.is_base access_expr) )
       then
-        let pre' = D.add access_expr (fst astate.prepost) in
-        let post = snd astate.prepost in
-        (pre', post)
+        let pre = D.add access_expr astate.prepost.UninitDomain.pre in
+        {astate.prepost with pre}
       else astate.prepost
     in
     match instr with
@@ -362,7 +361,7 @@ end
 module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (CFG) (TransferFunctions)
 
-let get_locals cfg tenv pdesc =
+let get_locals tenv pdesc =
   List.fold
     ~f:(fun acc (var_data : ProcAttributes.var_data) ->
       let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
@@ -390,25 +389,22 @@ let get_locals cfg tenv pdesc =
           base_access_expr :: AccessExpression.Dereference base_access_expr :: acc
       | _ ->
           base_access_expr :: acc )
-    ~init:[] (Procdesc.get_locals cfg)
+    ~init:[] (Procdesc.get_locals pdesc)
 
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
-  let cfg = CFG.from_pdesc proc_desc in
-  (* start with empty set of uninit local vars and  empty set of init formal params *)
+  (* start with empty set of uninit local vars and empty set of init formal params *)
   let formal_map = FormalMap.make proc_desc in
-  let uninit_vars = get_locals cfg tenv proc_desc in
+  let uninit_vars = get_locals tenv proc_desc in
   let initial =
     { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
-    ; RecordDomain.aliased_vars= AliasedVars.empty
-    ; RecordDomain.prepost= (D.empty, D.empty) }
+    ; aliased_vars= AliasedVars.empty
+    ; prepost= {UninitDomain.pre= D.empty; post= D.empty} }
   in
   let proc_data = ProcData.make proc_desc tenv (formal_map, summary) in
   match Analyzer.compute_post proc_data ~initial with
-  | Some
-      {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
-    ->
-      Payload.update_summary {pre; post} summary
+  | Some {RecordDomain.prepost} ->
+      Payload.update_summary prepost summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp
