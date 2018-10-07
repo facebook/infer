@@ -359,7 +359,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
-module CFG = ProcCfg.NormalOneInstrPerNode
+module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (CFG) (TransferFunctions)
 
 let get_locals cfg tenv pdesc =
