@@ -360,8 +360,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode
-module Analyzer =
-  AbstractInterpreter.Make (CFG) (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
+module Analyzer = LowerHil.MakeAbstractInterpreter (CFG) (TransferFunctions)
 
 let get_locals cfg tenv pdesc =
   List.fold
@@ -399,21 +398,16 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   (* start with empty set of uninit local vars and  empty set of init formal params *)
   let formal_map = FormalMap.make proc_desc in
   let uninit_vars = get_locals cfg tenv proc_desc in
-  let init =
-    ( { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
-      ; RecordDomain.aliased_vars= AliasedVars.empty
-      ; RecordDomain.prepost= (D.empty, D.empty) }
-    , IdAccessPathMapDomain.empty )
+  let initial =
+    { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
+    ; RecordDomain.aliased_vars= AliasedVars.empty
+    ; RecordDomain.prepost= (D.empty, D.empty) }
   in
-  let invariant_map =
-    Analyzer.exec_cfg cfg
-      (ProcData.make proc_desc tenv (formal_map, summary))
-      ~initial:init ~debug:false
-  in
-  match Analyzer.extract_post (CFG.Node.id (CFG.exit_node cfg)) invariant_map with
+  let proc_data = ProcData.make proc_desc tenv (formal_map, summary) in
+  match Analyzer.compute_post proc_data ~initial with
   | Some
-      ( {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
-      , _ ) ->
+      {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
+    ->
       Payload.update_summary {pre; post} summary
   | None ->
       if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
