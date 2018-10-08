@@ -119,8 +119,7 @@ let standard_matchers =
     [ { default with
         classname= "java.util.concurrent.Future"
       ; methods= ["get"]
-      ; actuals_pred= empty_or_excessive_timeout
-      ; search_superclasses= false }
+      ; actuals_pred= empty_or_excessive_timeout }
     ; { default with
         classname= "android.os.AsyncTask"
       ; methods= ["get"]
