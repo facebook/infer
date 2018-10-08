@@ -2798,7 +2798,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(fun i -> CAst_utils.get_stmt i source_range)
         cxx_new_expr_info.Clang_ast_t.xnei_placement_args
     in
-    let trans_state_placement = {trans_state_pri with succ_nodes= []} in
+    let trans_state_placement = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let res_trans_placement_control, res_trans_placement_exps =
       instructions trans_state_placement placement_args
     in

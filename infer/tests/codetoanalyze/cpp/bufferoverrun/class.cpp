@@ -119,13 +119,13 @@ struct DummyStruct {};
 inline void* operator new(std::size_t, DummyStruct, void* p) { return p; }
 inline void* operator new(std::size_t, void* p, DummyStruct) { return p; }
 
-void placement_new_overload3_Good_FP() {
+void placement_new_overload3_Good() {
   char* mem = (char*)malloc(sizeof(my_class2));
   my_class2* x = new (DummyStruct{}, mem) my_class2();
   x->a[0] = 0;
 }
 
-void placement_new_overload4_Good_FP() {
+void placement_new_overload4_Good() {
   char* mem = (char*)malloc(sizeof(my_class2));
   my_class2* x = new (mem, DummyStruct{}) my_class2();
   x->a[0] = 0;
