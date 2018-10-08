@@ -168,12 +168,28 @@ let realloc src_exp size_exp =
   {exec; check}
 
 
-let placement_new allocated_mem_exp =
-  let exec _ ~ret:(id, _) mem =
-    let v = Sem.eval allocated_mem_exp mem in
-    Dom.Mem.add_stack (Loc.of_id id) v mem
-  in
-  {exec; check= no_check}
+let placement_new size_exp (src_exp1, t1) src_arg2_opt =
+  match (t1.Typ.desc, src_arg2_opt) with
+  | Tint _, None | Tint _, Some (_, {Typ.desc= Tint _}) ->
+      malloc (Exp.BinOp (Binop.PlusA, size_exp, src_exp1))
+  | Tstruct (CppClass (name, _)), None
+    when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
+      malloc size_exp
+  | _, _ ->
+      let exec _ ~ret:(id, _) mem =
+        let src_exp =
+          if Typ.is_pointer_to_void t1 then src_exp1
+          else
+            match src_arg2_opt with
+            | Some (src_exp2, t2) when Typ.is_pointer_to_void t2 ->
+                src_exp2
+            | _ ->
+                L.(die InternalError) "Unexpected types of arguments for __placement_new"
+        in
+        let v = Sem.eval src_exp mem in
+        Dom.Mem.add_stack (Loc.of_id id) v mem
+      in
+      {exec; check= no_check}
 
 
 let inferbo_min e1 e2 =
@@ -484,7 +500,7 @@ module Call = struct
         $+...$--> Collection.new_list
       ; -"__new" <>$ capt_exp $+...$--> malloc
       ; -"__new_array" <>$ capt_exp $+...$--> malloc
-      ; -"__placement_new" <>$ any_arg $+ capt_exp $!--> placement_new
+      ; -"__placement_new" <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
       ; -"__get_array_length" <>$ capt_exp $!--> get_array_length
       ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length

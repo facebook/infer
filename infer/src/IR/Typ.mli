@@ -258,6 +258,8 @@ val is_cpp_class : t -> bool
 
 val is_pointer_to_cpp_class : t -> bool
 
+val is_pointer_to_void : t -> bool
+
 val is_pointer : t -> bool
 
 val is_reference : t -> bool

@@ -65,6 +65,16 @@ void array_member_malloc2_Bad() {
 
 #include <new>
 
+void new_nothrow_Good() {
+  my_class2* x = new (std::nothrow) my_class2();
+  x->a[0] = 0;
+}
+
+void new_nothrow_Bad() {
+  my_class2* x = new (std::nothrow) my_class2();
+  x->a[10] = 0;
+}
+
 void placement_new_Good() {
   char* mem = (char*)malloc(sizeof(my_class2));
   my_class2* x = new (mem) my_class2();
@@ -75,6 +85,50 @@ void placement_new_Bad() {
   char* mem = (char*)malloc(sizeof(my_class2));
   my_class2* x = new (mem) my_class2();
   x->a[10] = 0;
+}
+
+enum class DummyClass {};
+inline void* operator new(std::size_t, DummyClass, void* p) { return p; }
+inline void* operator new(std::size_t, void* p, DummyClass) { return p; }
+
+void placement_new_overload1_Good() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (DummyClass{}, mem) my_class2();
+  x->a[0] = 0;
+}
+
+void placement_new_overload1_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (DummyClass{}, mem) my_class2();
+  x->a[10] = 0;
+}
+
+void placement_new_overload2_Good() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (mem, DummyClass{}) my_class2();
+  x->a[0] = 0;
+}
+
+void placement_new_overload2_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (mem, DummyClass{}) my_class2();
+  x->a[10] = 0;
+}
+
+struct DummyStruct {};
+inline void* operator new(std::size_t, DummyStruct, void* p) { return p; }
+inline void* operator new(std::size_t, void* p, DummyStruct) { return p; }
+
+void placement_new_overload3_Good_FP() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (DummyStruct{}, mem) my_class2();
+  x->a[0] = 0;
+}
+
+void placement_new_overload4_Good_FP() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (mem, DummyStruct{}) my_class2();
+  x->a[0] = 0;
 }
 
 class my_class4 {
@@ -106,6 +160,31 @@ void flexible_array3_Bad_FN() {
   char* mem = (char*)malloc(sizeof(my_class4) + sizeof(int) * 4);
   my_class4* x = new (mem) my_class4();
   x->b[5] = 0;
+}
+
+void* operator new(std::size_t s1, std::size_t s2) { return malloc(s1 + s2); }
+void* operator new(std::size_t s1, std::size_t s2, bool) {
+  return malloc(s1 + s2);
+}
+
+void flexible_array_new_overload1_Good() {
+  my_class4* x = new (5 * sizeof(int)) my_class4();
+  x->b[5] = 0;
+}
+
+void flexible_array_new_overload1_Bad() {
+  my_class4* x = new (5 * sizeof(int)) my_class4();
+  x->b[10] = 0;
+}
+
+void flexible_array_new_overload2_Good() {
+  my_class4* x = new (5 * sizeof(int), true) my_class4();
+  x->b[5] = 0;
+}
+
+void flexible_array_new_overload2_Bad() {
+  my_class4* x = new (5 * sizeof(int), true) my_class4();
+  x->b[10] = 0;
 }
 
 class my_class5 {
