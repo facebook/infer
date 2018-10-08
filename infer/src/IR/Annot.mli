@@ -47,15 +47,13 @@ end
 
 module Method : sig
   (** Annotation for a method: return value and list of parameters. *)
-  type t = Item.t * Item.t list [@@deriving compare]
-
-  val equal : t -> t -> bool
+  type t = {return: Item.t; params: Item.t list}
 
   val empty : t
   (** Empty method annotation. *)
 
   val is_empty : t -> bool
-  (** Check if the method annodation is empty. *)
+  (** Check if the method annotation is empty. *)
 
   val pp : string -> F.formatter -> t -> unit
   (** Pretty print a method annotation. *)

@@ -299,7 +299,7 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
   let new_formals_blocks_captured_vars, extended_formals_annots =
     let new_formals_blocks_captured_vars_with_annots =
       let formals_annots =
-        List.zip_exn callee_attributes.formals (snd callee_attributes.method_annotation)
+        List.zip_exn callee_attributes.formals callee_attributes.method_annotation.params
       in
       List.fold formals_annots ~init:[] ~f:(fun acc ((param_name, typ), annot) ->
           try
@@ -327,7 +327,8 @@ let with_block_args callee_pdesc pname_with_block_args block_args =
       proc_name= pname_with_block_args
     ; is_defined= true
     ; formals= new_formals_blocks_captured_vars
-    ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots)
+    ; method_annotation=
+        {return= callee_attributes.method_annotation.return; params= extended_formals_annots}
     ; translation_unit }
   in
   let resolved_pdesc = Procdesc.from_proc_attributes resolved_attributes in

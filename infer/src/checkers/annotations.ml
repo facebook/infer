@@ -115,9 +115,10 @@ let ia_has_annotation_with (ia : Annot.Item.t) (predicate : Annot.t -> bool) : b
   List.exists ~f:(fun (a, _) -> predicate a) ia
 
 
-let ma_has_annotation_with ((ia, ial) : Annot.Method.t) (predicate : Annot.t -> bool) : bool =
+let ma_has_annotation_with ({return; params} : Annot.Method.t) (predicate : Annot.t -> bool) : bool
+    =
   let has_annot a = ia_has_annotation_with a predicate in
-  has_annot ia || List.exists ~f:has_annot ial
+  has_annot return || List.exists ~f:has_annot params
 
 
 (** [annot_ends_with annot ann_name] returns true if the class name of [annot], without the package,
@@ -137,7 +138,7 @@ let ia_ends_with ia ann_name = List.exists ~f:(fun (a, _) -> annot_ends_with a a
 let ia_contains ia ann_name = List.exists ~f:(class_name_matches ann_name) ia
 
 let pdesc_get_return_annot pdesc =
-  fst (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation
+  (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation.return
 
 
 let pdesc_has_return_annot pdesc predicate = predicate (pdesc_get_return_annot pdesc)
@@ -151,7 +152,7 @@ let pdesc_return_annot_ends_with pdesc annot =
 let pname_has_return_annot pname ~attrs_of_pname predicate =
   match attrs_of_pname pname with
   | Some attributes ->
-      predicate (fst attributes.ProcAttributes.method_annotation)
+      predicate attributes.ProcAttributes.method_annotation.return
   | None ->
       false
 

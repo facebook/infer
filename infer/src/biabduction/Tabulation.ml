@@ -1430,7 +1430,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
       ~f:(fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
       res_with_path_idents
   in
-  let ret_annot, _ = callee_attrs.ProcAttributes.method_annotation in
+  let ret_annot = callee_attrs.ProcAttributes.method_annotation.return in
   let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
   let should_add_ret_attr _ =
     let is_likely_getter = function

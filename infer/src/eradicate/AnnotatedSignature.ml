@@ -25,7 +25,7 @@ let get proc_attributes : t =
   let method_annotation = proc_attributes.ProcAttributes.method_annotation in
   let formals = proc_attributes.ProcAttributes.formals in
   let ret_type = proc_attributes.ProcAttributes.ret_type in
-  let ia, ial0 = method_annotation in
+  let Annot.Method.({return; params}) = method_annotation in
   let natl =
     let rec extract ial parl =
       match (ial, parl) with
@@ -38,9 +38,9 @@ let get proc_attributes : t =
       | _ :: _, [] ->
           assert false
     in
-    List.rev (extract (List.rev ial0) (List.rev formals))
+    List.rev (extract (List.rev params) (List.rev formals))
   in
-  let annotated_signature = {ret= (ia, ret_type); params= natl} in
+  let annotated_signature = {ret= (return, ret_type); params= natl} in
   annotated_signature
 
 

@@ -49,7 +49,7 @@ module Item = struct
   (** Empty item annotation. *)
   let empty = []
 
-  (** Check if the item annodation is empty. *)
+  (** Check if the item annotation is empty. *)
   let is_empty ia = List.is_empty ia
 end
 
@@ -66,17 +66,16 @@ module Class = struct
 end
 
 module Method = struct
-  (** Annotation for a method: return value and list of parameters. *)
-  type t = Item.t * Item.t list [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = {return: Item.t; params: Item.t list}
 
   (** Pretty print a method annotation. *)
-  let pp s fmt (ia, ial) = F.fprintf fmt "%a %s(%a)" Item.pp ia s (Pp.seq Item.pp) ial
+  let pp s fmt {return; params} =
+    F.fprintf fmt "%a %s(%a)" Item.pp return s (Pp.seq Item.pp) params
+
 
   (** Empty method annotation. *)
-  let empty = ([], [])
+  let empty = {return= []; params= []}
 
-  (** Check if the method annodation is empty. *)
-  let is_empty (ia, ial) = List.for_all ~f:Item.is_empty (ia :: ial)
+  (** Check if the method annotation is empty. *)
+  let is_empty {return; params} = Item.is_empty return && List.for_all ~f:Item.is_empty params
 end

@@ -1056,8 +1056,7 @@ let execute_load ?(report_deref_errors = true) pname pdesc tenv id rhs_exp typ l
 let load_ret_annots pname =
   match Attributes.load pname with
   | Some attrs ->
-      let ret_annots, _ = attrs.ProcAttributes.method_annotation in
-      ret_annots
+      attrs.ProcAttributes.method_annotation.return
   | None ->
       Annot.Item.empty
 
@@ -1346,7 +1345,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
                   (call_args prop_ callee_pname norm_args ret_id_typ loc)
             | Some reason ->
                 let proc_attrs = Summary.get_attributes resolved_summary in
-                let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
             ) )
       | Java callee_pname_java ->
@@ -1372,7 +1371,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
                   proc_call exe_env callee_summary handled_args
               | Some reason ->
                   let proc_attrs = Summary.get_attributes callee_summary in
-                  let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                  let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
                   exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
@@ -1427,10 +1426,7 @@ let rec sym_exec exe_env tenv current_pdesc instr_ (prop_ : Prop.normal Prop.t) 
                     let ret_annots =
                       match resolved_summary_opt with
                       | Some summ ->
-                          let ret_annots, _ =
-                            (Summary.get_attributes summ).ProcAttributes.method_annotation
-                          in
-                          ret_annots
+                          (Summary.get_attributes summ).ProcAttributes.method_annotation.return
                       | None ->
                           load_ret_annots resolved_pname
                     in

@@ -223,12 +223,12 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) trans_unit_ctx cfg t
   in
   let create_new_procdesc () =
     let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
-    let params_annots =
-      List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params
-    in
-    let return_annot = snd ms.CMethodSignature.ret_type in
     let has_added_return_param = ms.CMethodSignature.has_added_return_param in
-    let method_annotation = (return_annot, params_annots) in
+    let method_annotation =
+      let return = snd ms.CMethodSignature.ret_type in
+      let params = List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params in
+      Annot.Method.{return; params}
+    in
     let formals =
       List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
     in

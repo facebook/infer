@@ -39,7 +39,7 @@ let log_issue_from_summary severity summary ~node ~session ~loc ~ltr ?extras exn
   let should_suppress_lint =
     Language.curr_language_is Java
     && Annotations.ia_is_suppress_lint
-         (fst (Summary.get_attributes summary).ProcAttributes.method_annotation)
+         (Summary.get_attributes summary).ProcAttributes.method_annotation.return
   in
   if should_suppress_lint || is_java_generated_method then () (* Skip the reporting *)
   else

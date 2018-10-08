@@ -63,9 +63,6 @@ type t =
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *) }
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
 
 let default translation_unit proc_name =
   { access= PredSymb.Default
@@ -175,7 +172,7 @@ let pp f
       locals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;
-  if not (Annot.Method.equal default.method_annotation method_annotation) then
+  if not (Annot.Method.is_empty method_annotation) then
     F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
   if not ([%compare.equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
