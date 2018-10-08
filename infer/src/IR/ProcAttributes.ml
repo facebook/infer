@@ -132,7 +132,6 @@ let pp f
     F.fprintf f "; access= %a@," (Pp.to_string ~f:PredSymb.string_of_access) access ;
   if not ([%compare.equal: (Mangled.t * Typ.t) list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_parameters captured ;
-  pp_bool_default ~default:default.did_preanalysis "did_preanalysis" did_preanalysis f () ;
   if not ([%compare.equal: string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)
@@ -166,10 +165,7 @@ let pp f
       (Pp.to_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp_file_pos loc ;
-  if not ([%compare.equal: var_data list] default.locals locals) then
-    F.fprintf f "; locals= [@[%a@]]@,"
-      (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data)
-      locals ;
+  F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;
   if not (Annot.Method.is_empty method_annotation) then

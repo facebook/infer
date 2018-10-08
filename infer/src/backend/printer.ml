@@ -217,8 +217,7 @@ let node_finish_session node =
       source )
 
 
-(** Write html file for the procedure.
-    The boolean indicates whether to print whole seconds only *)
+(** Write html file for the procedure. *)
 let write_proc_html pdesc =
   if Config.write_html then (
     let pname = Procdesc.get_proc_name pdesc in
@@ -234,12 +233,14 @@ let write_proc_html pdesc =
          [])
       linenum ;
     Pp.seq (pp_node_link [] ~description:true) fmt nodes ;
-    match Summary.get pname with
+    ( match Summary.get pname with
     | None ->
         ()
     | Some summary ->
-        Summary.pp_html source Black fmt summary ;
-        Io_infer.Html.close (fd, fmt) )
+        F.pp_print_string fmt "<br />@\n" ;
+        Summary.pp_html source Black fmt summary ) ;
+    F.fprintf fmt "<hr />@\n<pre>@\n%a</pre>@\n" ProcAttributes.pp (Procdesc.get_attributes pdesc) ;
+    Io_infer.Html.close (fd, fmt) )
 
 
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)

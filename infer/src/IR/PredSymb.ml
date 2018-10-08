@@ -24,13 +24,13 @@ let equal_access = [%compare.equal: access]
 
 let string_of_access = function
   | Default ->
-      "<Default>"
+      "Default"
   | Public ->
-      "<Public>"
+      "Public"
   | Private ->
-      "<Private>"
+      "Private"
   | Protected ->
-      "<Protected>"
+      "Protected"
 
 
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
