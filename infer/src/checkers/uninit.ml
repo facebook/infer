@@ -41,9 +41,13 @@ let should_report_on_type t =
       false
 
 
+type extras = {formals: FormalMap.t; summary: Summary.t}
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
+
+  type nonrec extras = extras
 
   let report_intra access_expr loc summary =
     let message =
@@ -52,8 +56,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
     Reporting.log_error summary ~loc ~ltr IssueType.uninitialized_value message
 
-
-  type extras = FormalMap.t * Summary.t
 
   let is_struct t = match t.Typ.desc with Typ.Tstruct _ -> true | _ -> false
 
@@ -104,7 +106,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     || is_array_element_passed_by_ref call t access_expr idx
 
 
-  let report_on_function_params pdesc tenv uninit_vars actuals loc extras call =
+  let report_on_function_params pdesc tenv uninit_vars actuals loc summary call =
     List.iteri
       ~f:(fun idx e ->
         match e with
@@ -114,7 +116,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               should_report_var pdesc tenv uninit_vars access_expr
               && (not (Typ.is_pointer t))
               && not (is_struct_field_passed_by_ref call t access_expr idx)
-            then report_intra access_expr loc (snd extras)
+            then report_intra access_expr loc summary
             else ()
         | _ ->
             () )
@@ -240,12 +242,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
+  let exec_instr (astate : Domain.astate) {ProcData.pdesc; extras= {formals; summary}; tenv} _
       (instr : HilInstr.t) =
     let update_prepost access_expr rhs =
       let lhs_base = AccessExpression.get_base access_expr in
       if
-        FormalMap.is_formal lhs_base (fst extras)
+        FormalMap.is_formal lhs_base formals
         && Typ.is_pointer (snd lhs_base)
         && ( (not (is_pointer_assignment tenv access_expr rhs))
            || not (AccessExpression.is_base access_expr) )
@@ -276,7 +278,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         ( match rhs_expr with
         | AccessExpression rhs_access_expr ->
             if should_report_var pdesc tenv uninit_vars rhs_access_expr && is_lhs_not_a_pointer
-            then report_intra rhs_access_expr loc (snd extras)
+            then report_intra rhs_access_expr loc summary
         | _ ->
             () ) ;
         {astate with uninit_vars; prepost}
@@ -343,14 +345,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   acc )
         in
         Option.value_map ~default:()
-          ~f:(report_on_function_params pdesc tenv uninit_vars actuals loc extras)
+          ~f:(report_on_function_params pdesc tenv uninit_vars actuals loc summary)
           pname_opt ;
         {astate with uninit_vars}
     | Assume (expr, _, _, loc) ->
         ( match expr with
         | AccessExpression rhs_access_expr ->
             if should_report_var pdesc tenv astate.uninit_vars rhs_access_expr then
-              report_intra rhs_access_expr loc (snd extras)
+              report_intra rhs_access_expr loc summary
         | _ ->
             () ) ;
         astate
@@ -395,14 +397,16 @@ end
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   (* start with empty set of uninit local vars and empty set of init formal params *)
-  let formal_map = FormalMap.make proc_desc in
   let uninit_vars = Initial.get_locals tenv proc_desc in
   let initial =
     { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
     ; aliased_vars= AliasedVars.empty
     ; prepost= {UninitDomain.pre= D.empty; post= D.empty} }
   in
-  let proc_data = ProcData.make proc_desc tenv (formal_map, summary) in
+  let proc_data =
+    let formals = FormalMap.make proc_desc in
+    ProcData.make proc_desc tenv {formals; summary}
+  in
   match Analyzer.compute_post proc_data ~initial with
   | Some {RecordDomain.prepost} ->
       Payload.update_summary prepost summary
