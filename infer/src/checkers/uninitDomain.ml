@@ -9,7 +9,65 @@ open! IStd
 module F = Format
 
 (** Forward analysis to compute uninitialized variables at each program point *)
-module Domain = AbstractDomain.InvertedSet (AccessExpression)
+module Domain = struct
+  include AbstractDomain.InvertedSet (AccessExpression)
+
+  let remove_init_fields base formal_var uninit_vars init_fields =
+    let subst_formal_actual_fields actual_base_var initialized_fields =
+      map
+        (fun access_expr ->
+          let v, t = AccessExpression.get_base access_expr in
+          let v' = if Var.equal v formal_var then actual_base_var else v in
+          let t' =
+            match t.desc with
+            | Typ.Tptr ({Typ.desc= Tstruct _ as desc}, _) ->
+                (* a pointer to struct needs to be changed into struct
+                 as the actual is just type struct and it would make it
+                 equality fail. Not sure why the actual are type struct when
+                 passed by reference *)
+                {t with Typ.desc}
+            | _ ->
+                t
+          in
+          AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
+        initialized_fields
+    in
+    match base with
+    | actual_base_var, {Typ.desc= Tptr ({Typ.desc= Tstruct _}, _) | Tstruct _} ->
+        diff uninit_vars (subst_formal_actual_fields actual_base_var init_fields)
+    | _ ->
+        uninit_vars
+
+
+  let remove_all_fields tenv base uninit_vars =
+    match base with
+    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} | _, {Typ.desc= Tstruct name_struct}
+      -> (
+      match Tenv.lookup tenv name_struct with
+      | Some {fields} ->
+          List.fold fields ~init:uninit_vars ~f:(fun acc (fn, _, _) ->
+              remove (AccessExpression.FieldOffset (Base base, fn)) acc )
+      | _ ->
+          uninit_vars )
+    | _ ->
+        uninit_vars
+
+
+  let remove_dereference_access base uninit_vars =
+    match base with
+    | _, {Typ.desc= Tptr _} ->
+        remove (AccessExpression.Dereference (Base base)) uninit_vars
+    | _ ->
+        uninit_vars
+
+
+  let remove_all_array_elements base uninit_vars =
+    match base with
+    | _, {Typ.desc= Tptr (elt, _)} ->
+        remove (AccessExpression.ArrayOffset (Base base, elt, [])) uninit_vars
+    | _ ->
+        uninit_vars
+end
 
 type 'a prepost = {pre: 'a; post: 'a}
 

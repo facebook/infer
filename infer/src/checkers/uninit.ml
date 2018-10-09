@@ -118,64 +118,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       actuals
 
 
-  let remove_all_fields tenv base uninit_vars =
-    match base with
-    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} | _, {Typ.desc= Tstruct name_struct}
-      -> (
-      match Tenv.lookup tenv name_struct with
-      | Some {fields} ->
-          List.fold
-            ~f:(fun acc (fn, _, _) -> D.remove (AccessExpression.FieldOffset (Base base, fn)) acc)
-            fields ~init:uninit_vars
-      | _ ->
-          uninit_vars )
-    | _ ->
-        uninit_vars
-
-
-  let remove_dereference_access base uninit_vars =
-    match base with
-    | _, {Typ.desc= Tptr _} ->
-        D.remove (AccessExpression.Dereference (Base base)) uninit_vars
-    | _ ->
-        uninit_vars
-
-
-  let remove_all_array_elements base uninit_vars =
-    match base with
-    | _, {Typ.desc= Tptr (elt, _)} ->
-        D.remove (AccessExpression.ArrayOffset (Base base, elt, [])) uninit_vars
-    | _ ->
-        uninit_vars
-
-
-  let remove_init_fields base formal_var uninit_vars init_fields =
-    let subst_formal_actual_fields initialized_fields =
-      D.map
-        (fun access_expr ->
-          let v, t = AccessExpression.get_base access_expr in
-          let v' = if Var.equal v formal_var then fst base else v in
-          let t' =
-            match t.desc with
-            | Typ.Tptr ({Typ.desc= Tstruct n}, _) ->
-                (* a pointer to struct needs to be changed into struct
-                       as the actual is just type struct and it would make it
-                       equality fail. Not sure why the actual are type struct when
-                      passed by reference *)
-                {t with Typ.desc= Tstruct n}
-            | _ ->
-                t
-          in
-          AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
-        initialized_fields
-    in
-    match base with
-    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct _}, _)} | _, {Typ.desc= Tstruct _} ->
-        D.diff uninit_vars (subst_formal_actual_fields init_fields)
-    | _ ->
-        uninit_vars
-
-
   let is_dummy_constructor_of_a_struct call =
     let is_dummy_constructor_of_struct =
       match get_formals call with
@@ -220,7 +162,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Some nth_formal ->
           let acc' = D.remove access_expr acc in
           let base = AccessExpression.get_base access_expr in
-          if remove_fields then remove_init_fields base nth_formal acc' initialized_formal_params
+          if remove_fields then D.remove_init_fields base nth_formal acc' initialized_formal_params
           else acc'
       | _ ->
           acc )
@@ -258,7 +200,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           if AccessExpression.is_base lhs_access_expr then
             (* if we assign to the root of a struct then we need to remove all the fields *)
             let lhs_base = AccessExpression.get_base lhs_access_expr in
-            remove_all_fields tenv lhs_base uninit_vars' |> remove_dereference_access lhs_base
+            D.remove_all_fields tenv lhs_base uninit_vars' |> D.remove_dereference_access lhs_base
           else uninit_vars'
         in
         let prepost = update_prepost lhs_access_expr rhs_expr in
@@ -288,7 +230,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if function_initializes_some_formal_params pdesc call then
           let uninit_vars' =
             (* in HIL/SIL the default constructor has only one param: the struct *)
-            remove_all_fields tenv base astate.uninit_vars
+            D.remove_all_fields tenv base astate.uninit_vars
           in
           {astate with uninit_vars= uninit_vars'}
         else astate
@@ -321,15 +263,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   | base
                     when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt
                     ->
-                      remove_all_fields tenv base (D.remove access_expr_to_remove acc)
+                      D.remove_all_fields tenv base (D.remove access_expr_to_remove acc)
                   | (_, {Typ.desc= Tptr _}) as base -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove true
                     | _ ->
                         D.remove access_expr_to_remove acc
-                        |> remove_all_fields tenv base |> remove_all_array_elements base
-                        |> remove_dereference_access base )
+                        |> D.remove_all_fields tenv base |> D.remove_all_array_elements base
+                        |> D.remove_dereference_access base )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
