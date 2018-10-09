@@ -27,3 +27,4 @@ codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonCompo
 codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonComponent, 33, TITLE_NOT_INITIALIZED, no_bucket, WARNING, []
 codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonComponent, 37, TITLE_NOT_INITIALIZED, no_bucket, WARNING, []
 codetoanalyze/objcpp/linters-for-test-only/hash_test.mm, std::hash_NSObject_*__operator(), 12, DISCOURAGED_HASH_METHOD_INVOCATION, no_bucket, WARNING, []
+codetoanalyze/objcpp/linters-for-test-only/static.m, objc_block_1, 18, OBJC_BLOCK_CAPTURING_VALUES, no_bucket, WARNING, []

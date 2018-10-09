@@ -14,6 +14,9 @@ type t = ALVar.formula_id * ALVar.alexp list [@@deriving compare]
 val captured_variables_cxx_ref : Ctl_parser_types.ast_node -> Clang_ast_t.named_decl_info list
 (** list of cxx references captured by an ObjC Block *)
 
+val objc_block_is_capturing_values : Ctl_parser_types.ast_node -> bool
+(** true if the ObjC Block captures any variables *)
+
 val call_method : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** 'call_method an m an' is true iff node an is a call to an ObjC method with name containing string m *)
 

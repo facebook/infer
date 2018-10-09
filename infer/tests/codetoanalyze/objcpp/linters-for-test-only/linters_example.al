@@ -198,3 +198,14 @@ DEFINE-CHECKER FIELD_STRUCT_STRING = {
 	SET severity = "WARNING";
 	SET mode = "ON";
 };
+
+DEFINE-CHECKER OBJC_BLOCK_CAPTURING_VALUES = {
+
+			 SET report_when =
+				 		 WHEN
+				 			 objc_block_is_capturing_values()
+				 		 HOLDS-IN-NODE BlockDecl;
+
+      SET message = "ObjC Block capturing values";
+      SET mode = "ON";
+};

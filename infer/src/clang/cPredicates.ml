@@ -138,6 +138,14 @@ let captured_variables_cxx_ref an =
       []
 
 
+let objc_block_is_capturing_values an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.BlockDecl (_, bdi)) ->
+      not (List.is_empty bdi.bdi_captured_variables)
+  | _ ->
+      false
+
+
 type t = ALVar.formula_id * (* (name, [param1,...,paramK]) *) ALVar.alexp list [@@deriving compare]
 
 let pp_predicate fmt (name_, arglist_) =

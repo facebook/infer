@@ -972,6 +972,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.call_method an m
   | "captures_cxx_references", [], _ ->
       CPredicates.captures_cxx_references an
+  | "objc_block_is_capturing_values", [], _ ->
+      CPredicates.objc_block_is_capturing_values an
   | "context_in_synchronized_block", [], _ ->
       CPredicates.context_in_synchronized_block lcxt
   | "declaration_has_name", [decl_name], an ->
