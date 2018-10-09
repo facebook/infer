@@ -24,7 +24,12 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.uninit
 end)
 
-let blacklisted_functions = [BuiltinDecl.__set_array_length]
+module Models = struct
+  let initializing_all_args = [BuiltinDecl.__set_array_length]
+
+  let is_initializing_all_args pname =
+    List.exists initializing_all_args ~f:(fun fname -> Typ.Procname.equal pname fname)
+end
 
 let should_report_on_type t =
   match t.Typ.desc with
@@ -34,10 +39,6 @@ let should_report_on_type t =
       true
   | _ ->
       false
-
-
-let is_blacklisted_function pname =
-  List.exists ~f:(fun fname -> Typ.Procname.equal pname fname) blacklisted_functions
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -307,7 +308,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   in
                   match AccessExpression.get_base access_expr with
                   | _, {Typ.desc= Tarray _}
-                    when Option.value_map ~default:false ~f:is_blacklisted_function pname_opt ->
+                    when Option.exists pname_opt ~f:Models.is_initializing_all_args ->
                       D.remove access_expr acc
                   | _, t
                   (* Access to a field of a struct or an element of an array by reference *)
@@ -361,41 +362,41 @@ end
 module CFG = ProcCfg.Normal
 module Analyzer = LowerHil.MakeAbstractInterpreter (CFG) (TransferFunctions)
 
-let get_locals tenv pdesc =
-  List.fold
-    ~f:(fun acc (var_data : ProcAttributes.var_data) ->
-      let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
-      let base_access_expr = AccessExpression.Base (Var.of_pvar pvar, var_data.typ) in
-      match var_data.typ.Typ.desc with
-      | Typ.Tstruct qual_name
-      (* T30105165 remove filtering after we improve union translation *)
-        when not (Typ.Name.is_union qual_name) -> (
-        match Tenv.lookup tenv qual_name with
-        | Some {fields} ->
-            let flist =
-              List.fold
-                ~f:(fun acc' (fn, _, _) ->
-                  AccessExpression.FieldOffset (base_access_expr, fn) :: acc' )
-                ~init:acc fields
-            in
-            base_access_expr :: flist
-            (* for struct we take the struct address, and the access_path
+module Initial = struct
+  let get_locals tenv pdesc =
+    List.fold (Procdesc.get_locals pdesc) ~init:[]
+      ~f:(fun acc (var_data : ProcAttributes.var_data) ->
+        let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
+        let base_access_expr = AccessExpression.Base (Var.of_pvar pvar, var_data.typ) in
+        match var_data.typ.Typ.desc with
+        | Typ.Tstruct qual_name
+        (* T30105165 remove filtering after we improve union translation *)
+          when not (Typ.Name.is_union qual_name) -> (
+          match Tenv.lookup tenv qual_name with
+          | Some {fields} ->
+              let flist =
+                List.fold
+                  ~f:(fun acc' (fn, _, _) ->
+                    AccessExpression.FieldOffset (base_access_expr, fn) :: acc' )
+                  ~init:acc fields
+              in
+              base_access_expr :: flist
+              (* for struct we take the struct address, and the access_path
                                     to the fields one level down *)
+          | _ ->
+              acc )
+        | Typ.Tarray {elt} ->
+            AccessExpression.ArrayOffset (base_access_expr, elt, []) :: acc
+        | Typ.Tptr _ ->
+            base_access_expr :: AccessExpression.Dereference base_access_expr :: acc
         | _ ->
-            acc )
-      | Typ.Tarray {elt} ->
-          AccessExpression.ArrayOffset (base_access_expr, elt, []) :: acc
-      | Typ.Tptr _ ->
-          base_access_expr :: AccessExpression.Dereference base_access_expr :: acc
-      | _ ->
-          base_access_expr :: acc )
-    ~init:[] (Procdesc.get_locals pdesc)
-
+            base_access_expr :: acc )
+end
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   (* start with empty set of uninit local vars and empty set of init formal params *)
   let formal_map = FormalMap.make proc_desc in
-  let uninit_vars = get_locals tenv proc_desc in
+  let uninit_vars = Initial.get_locals tenv proc_desc in
   let initial =
     { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
     ; aliased_vars= AliasedVars.empty
