@@ -12,9 +12,9 @@ module L = Logging
 (** Forward analysis to compute uninitialized variables at each program point *)
 module D = UninitDomain.Domain
 
-module UninitVars = AbstractDomain.FiniteSet (AccessExpression)
+module MaybeUninitVars = UninitDomain.MaybeUninitVars
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
-module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
+module RecordDomain = UninitDomain.Record (MaybeUninitVars) (AliasedVars) (D)
 
 module Payload = SummaryPayload.Make (struct
   type t = UninitDomain.Summary.t
@@ -63,13 +63,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_formals pname = Ondemand.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
 
-  let should_report_var pdesc tenv uninit_vars access_expr =
+  let should_report_var pdesc tenv maybe_uninit_vars access_expr =
     let base = AccessExpression.get_base access_expr in
     match (AccessExpression.get_typ access_expr tenv, base) with
     | Some typ, (Var.ProgramVar pv, _) ->
         (not (Pvar.is_frontend_tmp pv))
         && (not (Procdesc.is_captured_var pdesc pv))
-        && D.mem access_expr uninit_vars && should_report_on_type typ
+        && MaybeUninitVars.mem access_expr maybe_uninit_vars
+        && should_report_on_type typ
     | _, _ ->
         false
 
@@ -99,14 +100,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     || is_array_element_passed_by_ref callee_formals t access_expr idx
 
 
-  let report_on_function_params pdesc tenv uninit_vars actuals loc summary callee_formals_opt =
+  let report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary callee_formals_opt
+      =
     List.iteri
       ~f:(fun idx e ->
         match e with
         | HilExp.AccessExpression access_expr ->
             let _, t = AccessExpression.get_base access_expr in
             if
-              should_report_var pdesc tenv uninit_vars access_expr
+              should_report_var pdesc tenv maybe_uninit_vars access_expr
               && (not (Typ.is_pointer t))
               && not
                    (Option.exists callee_formals_opt ~f:(fun callee_formals ->
@@ -160,9 +162,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some {pre= initialized_formal_params; post= _} -> (
       match init_nth_actual_param call idx initialized_formal_params with
       | Some nth_formal ->
-          let acc' = D.remove access_expr acc in
+          let acc' = MaybeUninitVars.remove access_expr acc in
           let base = AccessExpression.get_base access_expr in
-          if remove_fields then D.remove_init_fields base nth_formal acc' initialized_formal_params
+          if remove_fields then
+            MaybeUninitVars.remove_init_fields base nth_formal acc' initialized_formal_params
           else acc'
       | _ ->
           acc )
@@ -195,13 +198,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match instr with
     | Assign (lhs_access_expr, rhs_expr, loc) ->
-        let uninit_vars' = D.remove lhs_access_expr astate.uninit_vars in
-        let uninit_vars =
+        let maybe_uninit_vars' = MaybeUninitVars.remove lhs_access_expr astate.maybe_uninit_vars in
+        let maybe_uninit_vars =
           if AccessExpression.is_base lhs_access_expr then
             (* if we assign to the root of a struct then we need to remove all the fields *)
             let lhs_base = AccessExpression.get_base lhs_access_expr in
-            D.remove_all_fields tenv lhs_base uninit_vars' |> D.remove_dereference_access lhs_base
-          else uninit_vars'
+            MaybeUninitVars.remove_all_fields tenv lhs_base maybe_uninit_vars'
+            |> MaybeUninitVars.remove_dereference_access lhs_base
+          else maybe_uninit_vars'
         in
         let prepost = update_prepost lhs_access_expr rhs_expr in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
@@ -214,33 +218,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         ( match rhs_expr with
         | AccessExpression rhs_access_expr ->
-            if should_report_var pdesc tenv uninit_vars rhs_access_expr && is_lhs_not_a_pointer
+            if
+              should_report_var pdesc tenv maybe_uninit_vars rhs_access_expr
+              && is_lhs_not_a_pointer
             then report_intra rhs_access_expr loc summary
         | _ ->
             () ) ;
-        {astate with uninit_vars; prepost}
+        {astate with maybe_uninit_vars; prepost}
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
-        {astate with uninit_vars= D.empty}
+        {astate with maybe_uninit_vars= MaybeUninitVars.empty}
     | Call (_, HilInstr.Direct call, [HilExp.AccessExpression (AddressOf (Base base))], _, _)
       when is_dummy_constructor_of_a_struct call ->
         (* if it's a default constructor, we use the following heuristic: we assume that it initializes
     correctly all fields when there is an implementation of the constructor that initilizes at least one
     field. If there is no explicit implementation we cannot assume fields are initialized *)
         if function_initializes_some_formal_params pdesc call then
-          let uninit_vars' =
+          let maybe_uninit_vars' =
             (* in HIL/SIL the default constructor has only one param: the struct *)
-            D.remove_all_fields tenv base astate.uninit_vars
+            MaybeUninitVars.remove_all_fields tenv base astate.maybe_uninit_vars
           in
-          {astate with uninit_vars= uninit_vars'}
+          {astate with maybe_uninit_vars= maybe_uninit_vars'}
         else astate
     | Call (_, call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
         let callee_formals_opt = Option.bind pname_opt ~f:get_formals in
-        let uninit_vars =
-          List.foldi ~init:astate.uninit_vars actuals ~f:(fun idx acc actual_exp ->
+        let maybe_uninit_vars =
+          List.foldi ~init:astate.maybe_uninit_vars actuals ~f:(fun idx acc actual_exp ->
               match actual_exp with
               | HilExp.AccessExpression access_expr -> (
                   let access_expr_to_remove =
@@ -249,7 +255,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   match AccessExpression.get_base access_expr with
                   | _, {Typ.desc= Tarray _}
                     when Option.exists pname_opt ~f:Models.is_initializing_all_args ->
-                      D.remove access_expr acc
+                      MaybeUninitVars.remove access_expr acc
                   | _, t
                   (* Access to a field of a struct or an element of an array by reference *)
                     when Option.exists
@@ -259,39 +265,43 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove false
                     | _ ->
-                        D.remove access_expr_to_remove acc )
+                        MaybeUninitVars.remove access_expr_to_remove acc )
                   | base
                     when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt
                     ->
-                      D.remove_all_fields tenv base (D.remove access_expr_to_remove acc)
+                      MaybeUninitVars.remove_all_fields tenv base
+                        (MaybeUninitVars.remove access_expr_to_remove acc)
                   | (_, {Typ.desc= Tptr _}) as base -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove true
                     | _ ->
-                        D.remove access_expr_to_remove acc
-                        |> D.remove_all_fields tenv base |> D.remove_all_array_elements base
-                        |> D.remove_dereference_access base )
+                        MaybeUninitVars.remove access_expr_to_remove acc
+                        |> MaybeUninitVars.remove_all_fields tenv base
+                        |> MaybeUninitVars.remove_all_array_elements base
+                        |> MaybeUninitVars.remove_dereference_access base )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold
-                    ~f:(fun acc' (base, _) -> D.remove (AccessExpression.Base base) acc')
+                    ~f:(fun acc' (base, _) ->
+                      MaybeUninitVars.remove (AccessExpression.Base base) acc' )
                     ~init:acc apl
               | _ ->
                   acc )
         in
         ( match call with
         | Direct _ ->
-            report_on_function_params pdesc tenv uninit_vars actuals loc summary callee_formals_opt
+            report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary
+              callee_formals_opt
         | Indirect _ ->
             () ) ;
-        {astate with uninit_vars}
+        {astate with maybe_uninit_vars}
     | Assume (expr, _, _, loc) ->
         ( match expr with
         | AccessExpression rhs_access_expr ->
-            if should_report_var pdesc tenv astate.uninit_vars rhs_access_expr then
+            if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then
               report_intra rhs_access_expr loc summary
         | _ ->
             () ) ;
@@ -337,9 +347,9 @@ end
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   (* start with empty set of uninit local vars and empty set of init formal params *)
-  let uninit_vars = Initial.get_locals tenv proc_desc in
+  let maybe_uninit_vars = Initial.get_locals tenv proc_desc in
   let initial =
-    { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
+    { RecordDomain.maybe_uninit_vars= MaybeUninitVars.of_list maybe_uninit_vars
     ; aliased_vars= AliasedVars.empty
     ; prepost= {UninitDomain.pre= D.empty; post= D.empty} }
   in
