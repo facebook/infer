@@ -17,14 +17,43 @@ type debug =
           When using LowerHil-AI, we're not interested in the underlying SIL instructions,
           it's the only case where want to disable it. *)
 
-type 'a state = {pre: 'a; post: 'a; visit_count: int}
+type exec_node_schedule_result = ReachedFixPoint | DidNotReachFixPoint
+
+module VisitCount : sig
+  type t = private int
+
+  val first_time : t
+
+  val succ : pdesc:Procdesc.t -> t -> t
+end = struct
+  type t = int
+
+  let first_time = 1
+
+  let succ ~pdesc visit_count =
+    let visit_count' = visit_count + 1 in
+    if visit_count' > Config.max_widens then
+      L.(die InternalError)
+        "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
+         operator or increase the threshold"
+        Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
+    visit_count'
+end
+
+module State = struct
+  type 'a t = {pre: 'a; post: 'a; visit_count: VisitCount.t}
+
+  let pre {pre} = pre
+
+  let post {post} = post
+end
 
 module type S = sig
   module TransferFunctions : TransferFunctions.SIL
 
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
-  type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
+  type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
 
   val compute_post :
        ?debug:debug
@@ -41,37 +70,30 @@ module type S = sig
   val exec_pdesc :
     TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map
 
-  val extract_post : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
 
-  val extract_pre : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_pre : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
 
   val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
 end
 
-module MakeNoCFG
-    (Scheduler : Scheduler.S)
-    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
-struct
-  module CFG = Scheduler.CFG
+module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = struct
+  module CFG = TransferFunctions.CFG
   module Node = CFG.Node
   module TransferFunctions = TransferFunctions
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
   module Domain = TransferFunctions.Domain
 
-  type invariant_map = Domain.astate state InvariantMap.t
+  type invariant_map = Domain.astate State.t InvariantMap.t
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map = InvariantMap.find_opt node_id inv_map
 
   (** extract the postcondition of node [n] from [inv_map] *)
-  let extract_post node_id inv_map =
-    match extract_state node_id inv_map with Some state -> Some state.post | None -> None
-
+  let extract_post node_id inv_map = extract_state node_id inv_map |> Option.map ~f:State.post
 
   (** extract the precondition of node [n] from [inv_map] *)
-  let extract_pre node_id inv_map =
-    match extract_state node_id inv_map with Some state -> Some state.pre | None -> None
-
+  let extract_pre node_id inv_map = extract_state node_id inv_map |> Option.map ~f:State.pre
 
   let debug_absint_operation op node =
     let pp_name fmt =
@@ -92,44 +114,49 @@ struct
     NodePrinter.finish_session underlying_node
 
 
-  let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
+  let exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map =
+    let on_instrs instrs =
+      if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+      then
+        NodePrinter.start_session
+          ~pp_name:(TransferFunctions.pp_session_name node)
+          (Node.underlying_node node) ;
+      let astate_post =
+        let compute_post pre instr =
+          try TransferFunctions.exec_instr pre proc_data node instr with exn ->
+            IExn.reraise_after exn ~f:(fun () ->
+                L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr )
+        in
+        Instrs.fold ~f:compute_post ~init:pre instrs
+      in
+      if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+      then (
+        L.d_strln
+          ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
+              (Instrs.pp Pp.text) instrs Domain.pp astate_post
+          |> Escape.escape_xml ) ;
+        NodePrinter.finish_session (Node.underlying_node node) ) ;
+      InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
+    in
+    let instrs = CFG.instrs node in
+    if Instrs.is_empty instrs then
+      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
+      on_instrs (Instrs.singleton Sil.skip_instr)
+    else on_instrs instrs
+
+
+  let exec_node ~debug ({ProcData.pdesc} as proc_data) node ~is_loop_head astate_pre inv_map =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
-      let exec_instrs instrs =
-        if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-        then
-          NodePrinter.start_session
-            ~pp_name:(TransferFunctions.pp_session_name node)
-            (Node.underlying_node node) ;
-        let astate_post =
-          let compute_post pre instr =
-            try TransferFunctions.exec_instr pre proc_data node instr with exn ->
-              IExn.reraise_after exn ~f:(fun () ->
-                  L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr )
-          in
-          Instrs.fold ~f:compute_post ~init:pre instrs
-        in
-        if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
-        then (
-          L.d_strln
-            ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
-                (Instrs.pp Pp.text) instrs Domain.pp astate_post
-            |> Escape.escape_xml ) ;
-          NodePrinter.finish_session (Node.underlying_node node) ) ;
-        let inv_map' = InvariantMap.add node_id {pre; post= astate_post; visit_count} inv_map in
-        (inv_map', Scheduler.schedule_succs work_queue node)
-      in
-      (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
-      let instrs = CFG.instrs node in
-      if Instrs.is_empty instrs then exec_instrs (Instrs.singleton Sil.skip_instr)
-      else exec_instrs instrs
+      let inv_map' = exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map in
+      (inv_map', DidNotReachFixPoint)
     in
-    if InvariantMap.mem node_id inv_map then (
+    if InvariantMap.mem node_id inv_map then
       let old_state = InvariantMap.find node_id inv_map in
       let widened_pre =
-        if CFG.is_loop_head pdesc node then (
-          let num_iters = old_state.visit_count in
-          let prev = old_state.pre in
+        if is_loop_head then (
+          let num_iters = (old_state.State.visit_count :> int) in
+          let prev = old_state.State.pre in
           let next = astate_pre in
           let res = Domain.widen ~prev ~next ~num_iters in
           if Config.write_html then
@@ -137,48 +164,69 @@ struct
           res )
         else astate_pre
       in
-      if Domain.( <= ) ~lhs:widened_pre ~rhs:old_state.pre then (inv_map, work_queue)
+      if Domain.( <= ) ~lhs:widened_pre ~rhs:old_state.State.pre then (inv_map, ReachedFixPoint)
       else
-        let visit_count' = old_state.visit_count + 1 in
-        if visit_count' > Config.max_widens then
-          L.(die InternalError)
-            "Exceeded max widening threshold %d while analyzing %a. Please check your widening \
-             operator or increase the threshold"
-            Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
-        update_inv_map widened_pre ~visit_count:visit_count' )
-    else (* first time visiting this node *)
-      update_inv_map astate_pre ~visit_count:1
+        let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
+        update_inv_map widened_pre ~visit_count:visit_count'
+    else
+      (* first time visiting this node *)
+      update_inv_map astate_pre ~visit_count:VisitCount.first_time
 
 
-  let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
-    let compute_pre node inv_map =
-      let extract_post_ pred = extract_post (Node.id pred) inv_map in
-      CFG.fold_preds cfg node ~init:None ~f:(fun joined_post_opt pred ->
-          match extract_post_ pred with
+  let compute_pre cfg node inv_map =
+    let extract_post_ pred = extract_post (Node.id pred) inv_map in
+    CFG.fold_preds cfg node ~init:None ~f:(fun joined_post_opt pred ->
+        match extract_post_ pred with
+        | None ->
+            joined_post_opt
+        | Some post as some_post -> (
+          match joined_post_opt with
           | None ->
-              joined_post_opt
-          | Some post as some_post -> (
-            match joined_post_opt with
-            | None ->
-                some_post
-            | Some joined_post ->
-                let res = Domain.join joined_post post in
-                if Config.write_html then
-                  debug_absint_operation (`Join (joined_post, post, res)) node ;
-                Some res ) )
-    in
+              some_post
+          | Some joined_post ->
+              let res = Domain.join joined_post post in
+              if Config.write_html then
+                debug_absint_operation (`Join (joined_post, post, res)) node ;
+              Some res ) )
+
+
+  (** compute and return an invariant map for [pdesc] *)
+  let make_exec_pdesc ~exec_cfg_internal ({ProcData.pdesc} as proc_data) ~initial =
+    exec_cfg_internal ~debug:Default (CFG.from_pdesc pdesc) proc_data ~initial
+
+
+  (** compute and return the postcondition of [pdesc] *)
+  let make_compute_post ~exec_cfg_internal ?(debug = Default) ({ProcData.pdesc} as proc_data)
+      ~initial =
+    let cfg = CFG.from_pdesc pdesc in
+    let inv_map = exec_cfg_internal ~debug cfg proc_data ~initial in
+    extract_post (Node.id (CFG.exit_node cfg)) inv_map
+end
+
+module MakeWithScheduler
+    (Scheduler : Scheduler.S)
+    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
+struct
+  include AbstractInterpreterCommon (TransferFunctions)
+
+  let rec exec_worklist ~debug cfg ({ProcData.pdesc} as proc_data) work_queue inv_map =
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist cfg work_queue' inv_map proc_data ~debug
+        exec_worklist ~debug cfg proc_data work_queue' inv_map
     | Some (node, _, work_queue') ->
         let inv_map_post, work_queue_post =
-          match compute_pre node inv_map with
-          | Some astate_pre ->
-              exec_node node astate_pre work_queue' inv_map proc_data ~debug
+          match compute_pre cfg node inv_map with
+          | Some astate_pre -> (
+              let is_loop_head = CFG.is_loop_head pdesc node in
+              match exec_node ~debug proc_data node ~is_loop_head astate_pre inv_map with
+              | inv_map, ReachedFixPoint ->
+                  (inv_map, work_queue')
+              | inv_map, DidNotReachFixPoint ->
+                  (inv_map, Scheduler.schedule_succs work_queue' node) )
           | None ->
               (inv_map, work_queue')
         in
-        exec_worklist cfg work_queue_post inv_map_post proc_data ~debug
+        exec_worklist ~debug cfg proc_data work_queue_post inv_map_post
     | None ->
         inv_map
 
@@ -186,25 +234,22 @@ struct
   (* compute and return an invariant map for [cfg] *)
   let exec_cfg_internal ~debug cfg proc_data ~initial =
     let start_node = CFG.start_node cfg in
-    let inv_map', work_queue' =
-      exec_node start_node initial (Scheduler.empty cfg) InvariantMap.empty proc_data ~debug
+    let inv_map, _did_not_reach_fix_point =
+      exec_node ~debug proc_data start_node ~is_loop_head:false initial InvariantMap.empty
     in
-    exec_worklist cfg work_queue' inv_map' proc_data ~debug
+    let work_queue = Scheduler.schedule_succs (Scheduler.empty cfg) start_node in
+    exec_worklist ~debug cfg proc_data work_queue inv_map
 
 
   let exec_cfg = exec_cfg_internal ~debug:Default
 
-  (* compute and return an invariant map for [pdesc] *)
-  let exec_pdesc ({ProcData.pdesc} as proc_data) = exec_cfg (CFG.from_pdesc pdesc) proc_data
+  let exec_pdesc = make_exec_pdesc ~exec_cfg_internal
 
-  (* compute and return the postcondition of [pdesc] *)
-  let compute_post ?(debug = Default) ({ProcData.pdesc} as proc_data) ~initial =
-    let cfg = CFG.from_pdesc pdesc in
-    let inv_map = exec_cfg_internal cfg proc_data ~initial ~debug in
-    extract_post (Node.id (CFG.exit_node cfg)) inv_map
+  let compute_post = make_compute_post ~exec_cfg_internal
 end
 
-module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =
-  MakeNoCFG (S (C)) (T (C))
-module Make (C : ProcCfg.S) (T : TransferFunctions.MakeSIL) =
-  MakeWithScheduler (C) (Scheduler.ReversePostorder) (T)
+module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
+                                                                          with module TransferFunctions = TransferFunctions
+
+module MakeRPO (T : TransferFunctions.SIL) =
+  MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)

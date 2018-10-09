@@ -139,7 +139,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "crashcontext"
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))
 
 let loaded_stacktraces =
   (* Load all stacktraces defined in either Config.stacktrace or

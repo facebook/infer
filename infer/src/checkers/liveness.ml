@@ -75,7 +75,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
-module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
 
 (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
    are only read in their destructors, and this is expected/ok.
@@ -118,7 +118,7 @@ module CapturedByRefTransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CapturedByRefAnalyzer =
-  AbstractInterpreter.Make (ProcCfg.Exceptional) (CapturedByRefTransferFunctions)
+  AbstractInterpreter.MakeRPO (CapturedByRefTransferFunctions (ProcCfg.Exceptional))
 
 let get_captured_by_ref_invariant_map proc_desc proc_data =
   let cfg = ProcCfg.Exceptional.from_pdesc proc_desc in

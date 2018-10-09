@@ -64,4 +64,4 @@ let init_reaching_defs_with_formals pdesc =
          ReachingDefsMap.add (Var.of_pvar pvar) start_node_defs acc )
 
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctionsReachingDefs)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (ProcCfg.Normal))

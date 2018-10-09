@@ -62,7 +62,7 @@ end
 
 (* Tracks when block variables of ObjC classes have been assigned to in constructors *)
 module FieldsAssignedInConstructorsChecker =
-  AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
+  AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Normal))
 
 let add_annot annot annot_name = ({Annot.class_name= annot_name; parameters= []}, true) :: annot
 

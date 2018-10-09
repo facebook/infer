@@ -147,10 +147,13 @@ module StructuredSil = struct
     make_call ?return args
 end
 
-module Make (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
+module MakeMake
+    (MakeAbstractInterpreter : AbstractInterpreter.Make)
+    (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t)
+    (T : TransferFunctions.MakeSIL) =
 struct
   open StructuredSil
-  module I = AbstractInterpreter.Make (CFG) (T)
+  module I = MakeAbstractInterpreter (T (CFG))
   module M = I.InvariantMap
 
   let structured_program_to_cfg program test_pname =
@@ -239,15 +242,15 @@ struct
     (pdesc, assert_map)
 
 
-  let create_test test_program extras pp_opt ~initial test_pname _ =
+  let create_test test_program extras ~initial pp_opt test_pname _ =
     let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
     let pdesc, assert_map = structured_program_to_cfg test_program test_pname in
     let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) ~initial in
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =
         try
-          let state = M.find node_id inv_map in
-          F.asprintf "%a" pp_state state.post
+          let {AbstractInterpreter.State.post} = M.find node_id inv_map in
+          F.asprintf "%a" pp_state post
         with Caml.Not_found -> "_|_"
       in
       if inv_str <> post_str then
@@ -273,12 +276,20 @@ struct
           |> F.flush_str_formatter
         in
         OUnit2.assert_failure assert_fail_message
+end
 
+module Make (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
+struct
+  module AI_RPO = MakeMake (AbstractInterpreter.MakeRPO) (CFG) (T)
+
+  let ai_list = [("ai_rpo", AI_RPO.create_test)]
 
   let create_tests ?(test_pname = Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
-    List.map
+    List.concat_map
       ~f:(fun (name, test_program) ->
-        name >:: create_test test_program extras ~initial pp_opt test_pname )
+        List.map ai_list ~f:(fun (ai_name, create_test) ->
+            name ^ "_" ^ ai_name >:: create_test test_program extras ~initial pp_opt test_pname )
+        )
       tests
 end

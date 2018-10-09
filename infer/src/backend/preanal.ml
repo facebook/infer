@@ -35,7 +35,7 @@ let add_abstraction_instructions pdesc =
 
 
 module BackwardCfg = ProcCfg.Backward (ProcCfg.Exceptional)
-module LivenessAnalysis = AbstractInterpreter.Make (BackwardCfg) (Liveness.TransferFunctions)
+module LivenessAnalysis = AbstractInterpreter.MakeRPO (Liveness.TransferFunctions (BackwardCfg))
 module VarDomain = Liveness.Domain
 
 (** computes the non-nullified reaching definitions at the end of each node by building on the
@@ -57,7 +57,7 @@ module NullifyTransferFunctions = struct
     let node_id = Procdesc.Node.get_id (CFG.Node.underlying_node node) in
     match LivenessAnalysis.extract_state node_id extras with
     (* note: because the analysis is backward, post and pre are reversed *)
-    | Some {AbstractInterpreter.post= live_before; pre= live_after} ->
+    | Some {AbstractInterpreter.State.post= live_before; pre= live_after} ->
         let to_nullify = VarDomain.diff (VarDomain.union live_before reaching_defs) live_after in
         let reaching_defs' = VarDomain.diff reaching_defs to_nullify in
         (reaching_defs', to_nullify)
@@ -105,9 +105,7 @@ module NullifyTransferFunctions = struct
   let pp_session_name _node fmt = Format.pp_print_string fmt "nullify"
 end
 
-module NullifyAnalysis =
-  AbstractInterpreter.MakeNoCFG
-    (Scheduler.ReversePostorder (ProcCfg.Exceptional)) (NullifyTransferFunctions)
+module NullifyAnalysis = AbstractInterpreter.MakeRPO (NullifyTransferFunctions)
 
 let add_nullify_instrs pdesc tenv liveness_inv_map =
   let address_taken_vars =

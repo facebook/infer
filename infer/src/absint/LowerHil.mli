@@ -39,7 +39,7 @@ module MakeAbstractInterpreterWithConfig
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
   module Interpreter :
-      module type of AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (HilConfig))
+      module type of AbstractInterpreter.MakeRPO (Make (MakeTransferFunctions) (HilConfig) (CFG))
 
   val compute_post :
        Interpreter.TransferFunctions.extras ProcData.t

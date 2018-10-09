@@ -31,19 +31,19 @@ let () =
         ; AccessTreeTests.tests
         ; AddressTakenTests.tests
         ; BoundedCallTreeTests.tests
-        ; DifferentialTests.tests
         ; DifferentialFiltersTests.tests
+        ; DifferentialTests.tests
         ; FileDiffTests.tests
         ; IListTests.tests
         ; JavaProfilerSamplesTest.tests
+        ; LivenessTests.tests
         ; PerfProfilerATDParserTest.tests
         ; ProcCfgTests.tests
-        ; LivenessTests.tests
         ; SchedulerTests.tests
+        ; SeverityTests.tests
         ; StacktraceTests.tests
         ; TaintTests.tests
-        ; TraceTests.tests
-        ; SeverityTests.tests ]
+        ; TraceTests.tests ]
       @ ClangTests.tests )
   in
   let test_suite = "all" >::: tests in

@@ -432,7 +432,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "annotation reachability"
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))
 
 let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Summary.t =
   let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in

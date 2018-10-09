@@ -84,8 +84,7 @@ module MockProcCfg = struct
 
   let from_adjacency_list t = t
 
-  (* not called by the scheduler *)
-  let start_node _ = assert false
+  let start_node _ = 1
 
   let exit_node _ = assert false
 
@@ -117,21 +116,24 @@ let create_test test_graph expected_result _ =
   OUnit2.assert_equal ~pp_diff result expected_result
 
 
+let inputs =
+  [ ("straightline", [(1, [2]); (2, [3]); (3, [4])], [1; 2; 3; 4])
+  ; ("if_then_else", [(1, [2; 3]); (2, [4]); (3, [4]); (4, [5])], [1; 2; 3; 4; 5])
+  ; ("if_then", [(1, [2; 4]); (2, [3]); (3, [4]); (4, [5])], [1; 2; 3; 4; 5])
+  ; ( "diamond"
+    , [(1, [2; 3]); (2, [4]); (3, [4]); (4, [5; 6]); (5, [7]); (6, [7]); (7, [8])]
+    , [1; 2; 3; 4; 5; 6; 7; 8] )
+  ; ( "switch"
+    , [(1, [2; 3; 4; 5]); (2, [6]); (3, [6]); (4, [6]); (5, [6]); (6, [7])]
+    , [1; 2; 3; 4; 5; 6; 7] )
+  ; ( "nums_order_irrelevant"
+    , [(11, [10]); (1, [7; 2]); (2, [3; 11]); (7, [11]); (3, [7])]
+    , [1; 2; 3; 7; 11; 10] ) ]
+
+
 let tests =
   let open OUnit2 in
   let test_list =
-    [ ("straightline", [(1, [2]); (2, [3]); (3, [4])], [1; 2; 3; 4])
-    ; ("if_then_else", [(1, [2; 3]); (2, [4]); (3, [4]); (4, [5])], [1; 2; 3; 4; 5])
-    ; ("if_then", [(1, [2; 4]); (2, [3]); (3, [4]); (4, [5])], [1; 2; 3; 4; 5])
-    ; ( "diamond"
-      , [(1, [2; 3]); (2, [4]); (3, [4]); (4, [5; 6]); (5, [7]); (6, [7]); (7, [8])]
-      , [1; 2; 3; 4; 5; 6; 7; 8] )
-    ; ( "switch"
-      , [(1, [2; 3; 4; 5]); (2, [6]); (3, [6]); (4, [6]); (5, [6]); (6, [7])]
-      , [1; 2; 3; 4; 5; 6; 7] )
-    ; ( "nums_order_irrelevant"
-      , [(11, [10]); (1, [7; 2]); (2, [3; 11]); (7, [11]); (3, [7])]
-      , [1; 2; 3; 7; 11; 10] ) ]
-    |> List.map ~f:(fun (name, test, expected) -> name >:: create_test test expected)
+    inputs |> List.map ~f:(fun (name, test, expected) -> name >:: create_test test expected)
   in
   "scheduler_suite" >::: test_list

@@ -209,7 +209,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "siof"
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Normal))
 
 let is_foreign current_tu v =
   match Pvar.get_translation_unit v with

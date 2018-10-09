@@ -53,4 +53,4 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = Format.pp_print_string fmt "address taken"
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Exceptional))

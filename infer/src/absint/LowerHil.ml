@@ -90,7 +90,7 @@ module MakeAbstractInterpreterWithConfig
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) =
 struct
-  module Interpreter = AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (HilConfig))
+  module Interpreter = AbstractInterpreter.MakeRPO (Make (MakeTransferFunctions) (HilConfig) (CFG))
 
   let debug = AbstractInterpreter.DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
 

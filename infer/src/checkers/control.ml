@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 (* forward dependency analysis for computing set of variables that
-   affect the looping behavior of the program 
+   affect the looping behavior of the program
 
    1. perform a control flow dependency analysis by getting all the
    variables that appear in the guards of the loops.
@@ -17,7 +17,7 @@ module L = Logging
    2. for each control dependency per node, find its respective data
    dependency
 
-   3. remove invariant vars in the loop from control vars 
+   3. remove invariant vars in the loop from control vars
  *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
@@ -147,7 +147,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
     F.fprintf fmt "control dependency analysis %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
-module ControlDepAnalyzer = AbstractInterpreter.Make (CFG) (TransferFunctionsControlDeps)
+module ControlDepAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctionsControlDeps (CFG))
 
 (* Filter CVs which are invariant in the loop where the CV originated from *)
 let remove_invariant_vars control_vars loop_inv_map =

@@ -9,7 +9,13 @@ open! IStd
 
 type debug = Default | DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
 
-type 'a state = {pre: 'a; post: 'a; visit_count: int}
+module VisitCount : sig
+  type t
+end
+
+module State : sig
+  type 'a t = {pre: 'a; post: 'a; visit_count: VisitCount.t}
+end
 
 (** type of an intraprocedural abstract interpreter *)
 module type S = sig
@@ -18,7 +24,7 @@ module type S = sig
   module InvariantMap = TransferFunctions.CFG.Node.IdMap
 
   (** invariant map from node id -> state representing postcondition for node id *)
-  type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
+  type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
 
   val compute_post :
        ?debug:debug
@@ -38,23 +44,18 @@ module type S = sig
     TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map
   (** compute and return invariant map for the given procedure starting from [initial] *)
 
-  val extract_post : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
   (** extract the postcondition for a node id from the given invariant map *)
 
-  val extract_pre : InvariantMap.key -> 'a state InvariantMap.t -> 'a option
+  val extract_pre : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
   (** extract the precondition for a node id from the given invariant map *)
 
   val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
   (** extract the state for a node id from the given invariant map *)
 end
 
-(** create an intraprocedural abstract interpreter from a scheduler and transfer functions *)
-module MakeNoCFG
-    (Scheduler : Scheduler.S)
-    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) :
-  S with module TransferFunctions = TransferFunctions
+module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
+                                                                          with module TransferFunctions = TransferFunctions
 
-(** create an intraprocedural abstract interpreter from a CFG and functors for creating a scheduler/
-    transfer functions from a CFG *)
-module Make (CFG : ProcCfg.S) (MakeTransferFunctions : TransferFunctions.MakeSIL) :
-  S with module TransferFunctions = MakeTransferFunctions(CFG)
+(** create an intraprocedural abstract interpreter from transfer functions using the reverse post-order scheduler *)
+module MakeRPO : Make

@@ -26,7 +26,6 @@ let expensive_threshold = BasicCost.of_int_exn 200
 (* CFG modules used in several other modules  *)
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module NodeCFG = ProcCfg.Normal
-module InstrCFGScheduler = Scheduler.ReversePostorder (InstrCFG)
 module Node = ProcCfg.DefaultNode
 
 (* Compute a map (node,instruction) -> basic_cost, where basic_cost is the
@@ -99,8 +98,7 @@ module TransferFunctionsNodesBasicCost = struct
   let pp_session_name node fmt = F.fprintf fmt "cost(basic) %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
-module AnalyzerNodesBasicCost =
-  AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsNodesBasicCost)
+module AnalyzerNodesBasicCost = AbstractInterpreter.MakeRPO (TransferFunctionsNodesBasicCost)
 
 (* Map associating to each node a bound on the number of times it can be executed.
    This bound is computed using environments (map: val -> values), using the following
@@ -720,7 +718,7 @@ module TransferFunctionsWCET = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "cost(wcet)"
 end
 
-module AnalyzerWCET = AbstractInterpreter.MakeNoCFG (InstrCFGScheduler) (TransferFunctionsWCET)
+module AnalyzerWCET = AbstractInterpreter.MakeRPO (TransferFunctionsWCET)
 
 let check_and_report_top_and_bottom cost proc_desc summary =
   let report issue suffix =

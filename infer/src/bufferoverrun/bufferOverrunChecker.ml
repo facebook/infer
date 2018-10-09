@@ -239,7 +239,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode
-module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
 
 type invariant_map = Analyzer.invariant_map
 
@@ -572,16 +572,16 @@ module Report = struct
       -> CFG.t
       -> CFG.Node.t
       -> Instrs.not_reversed_t
-      -> Dom.Mem.astate AbstractInterpreter.state
+      -> Dom.Mem.astate AbstractInterpreter.State.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
    fun summary pdesc tenv symbol_table cfg node instrs state cond_set ->
     match state with
     | _ when Instrs.is_empty instrs ->
         cond_set
-    | {AbstractInterpreter.pre= Bottom} ->
+    | {AbstractInterpreter.State.pre= Bottom} ->
         cond_set
-    | {AbstractInterpreter.pre= NonBottom _ as pre; post} ->
+    | {AbstractInterpreter.State.pre= NonBottom _ as pre; post} ->
         if Instrs.nth_exists instrs 1 then
           L.(die InternalError) "Did not expect several instructions" ;
         let instr = Instrs.nth_exn instrs 0 in
