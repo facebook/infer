@@ -61,13 +61,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_array t = match t.Typ.desc with Typ.Tarray _ -> true | _ -> false
 
-  let get_formals call =
-    match Ondemand.get_proc_desc call with
-    | Some proc_desc ->
-        Procdesc.get_formals proc_desc
-    | _ ->
-        []
-
+  let get_formals pname = Ondemand.get_proc_desc pname |> Option.map ~f:Procdesc.get_formals
 
   let should_report_var pdesc tenv uninit_vars access_expr =
     let base = AccessExpression.get_base access_expr in
@@ -81,32 +75,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let nth_formal_param callee_pname idx =
-    let formals = get_formals callee_pname in
-    List.nth formals idx
+    get_formals callee_pname |> Option.bind ~f:(fun formals -> List.nth formals idx)
 
 
-  let function_expects_a_pointer_as_nth_param callee_pname idx =
-    match nth_formal_param callee_pname idx with Some (_, typ) -> Typ.is_pointer typ | _ -> false
+  let function_expects_a_pointer_as_nth_param callee_formals idx =
+    match List.nth callee_formals idx with Some (_, typ) -> Typ.is_pointer typ | _ -> false
 
 
-  let is_struct_field_passed_by_ref call t access_expr idx =
+  let is_struct_field_passed_by_ref callee_formals t access_expr idx =
     is_struct t
     && (not (AccessExpression.is_base access_expr))
-    && function_expects_a_pointer_as_nth_param call idx
+    && function_expects_a_pointer_as_nth_param callee_formals idx
 
 
-  let is_array_element_passed_by_ref call t access_expr idx =
+  let is_array_element_passed_by_ref callee_formals t access_expr idx =
     is_array t
     && (not (AccessExpression.is_base access_expr))
-    && function_expects_a_pointer_as_nth_param call idx
+    && function_expects_a_pointer_as_nth_param callee_formals idx
 
 
-  let is_fld_or_array_elem_passed_by_ref t access_expr idx call =
-    is_struct_field_passed_by_ref call t access_expr idx
-    || is_array_element_passed_by_ref call t access_expr idx
+  let is_fld_or_array_elem_passed_by_ref t access_expr idx callee_formals =
+    is_struct_field_passed_by_ref callee_formals t access_expr idx
+    || is_array_element_passed_by_ref callee_formals t access_expr idx
 
 
-  let report_on_function_params pdesc tenv uninit_vars actuals loc summary call =
+  let report_on_function_params pdesc tenv uninit_vars actuals loc summary callee_formals_opt =
     List.iteri
       ~f:(fun idx e ->
         match e with
@@ -115,7 +108,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if
               should_report_var pdesc tenv uninit_vars access_expr
               && (not (Typ.is_pointer t))
-              && not (is_struct_field_passed_by_ref call t access_expr idx)
+              && not
+                   (Option.exists callee_formals_opt ~f:(fun callee_formals ->
+                        is_struct_field_passed_by_ref callee_formals t access_expr idx ))
             then report_intra access_expr loc summary
             else ()
         | _ ->
@@ -184,7 +179,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_dummy_constructor_of_a_struct call =
     let is_dummy_constructor_of_struct =
       match get_formals call with
-      | [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)})] ->
+      | Some [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)})] ->
           true
       | _ ->
           false
@@ -301,6 +296,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
+        let callee_formals_opt = Option.bind pname_opt ~f:get_formals in
         let uninit_vars =
           List.foldi ~init:astate.uninit_vars actuals ~f:(fun idx acc actual_exp ->
               match actual_exp with
@@ -314,9 +310,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       D.remove access_expr acc
                   | _, t
                   (* Access to a field of a struct or an element of an array by reference *)
-                    when Option.value_map ~default:false
+                    when Option.exists
                            ~f:(is_fld_or_array_elem_passed_by_ref t access_expr idx)
-                           pname_opt -> (
+                           callee_formals_opt -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove false
@@ -344,9 +340,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | _ ->
                   acc )
         in
-        Option.value_map ~default:()
-          ~f:(report_on_function_params pdesc tenv uninit_vars actuals loc summary)
-          pname_opt ;
+        ( match call with
+        | Direct _ ->
+            report_on_function_params pdesc tenv uninit_vars actuals loc summary callee_formals_opt
+        | Indirect _ ->
+            () ) ;
         {astate with uninit_vars}
     | Assume (expr, _, _, loc) ->
         ( match expr with
