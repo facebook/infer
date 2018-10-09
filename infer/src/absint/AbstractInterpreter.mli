@@ -7,6 +7,8 @@
 
 open! IStd
 
+type debug = Default | DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+
 type 'a state = {pre: 'a; post: 'a; visit_count: int}
 
 (** type of an intraprocedural abstract interpreter *)
@@ -19,21 +21,18 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
   val compute_post :
-       ?debug:bool
+       ?debug:debug
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
-  (** compute and return the postcondition for the given procedure starting from [initial]. If
-      [debug] is true, print html debugging output. *)
+  (** compute and return the postcondition for the given procedure starting from [initial]. *)
 
   val exec_cfg :
        TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
-    -> debug:bool
     -> invariant_map
-  (** compute and return invariant map for the given CFG/procedure starting from [initial]. if
-      [debug] is true, print html debugging output. *)
+  (** compute and return invariant map for the given CFG/procedure starting from [initial]. *)
 
   val exec_pdesc :
     TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map

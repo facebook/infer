@@ -746,7 +746,6 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let reaching_defs_invariant_map =
     ReachingDefs.Analyzer.exec_cfg node_cfg proc_data
       ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
-      ~debug:false
   in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
   let control_maps, loop_head_to_loop_nodes = Loop_control.get_control_maps node_cfg in
@@ -754,14 +753,12 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   let control_dep_invariant_map =
     let proc_data = ProcData.make proc_desc tenv control_maps in
     Control.ControlDepAnalyzer.exec_cfg node_cfg proc_data ~initial:Control.ControlDepSet.empty
-      ~debug:false
   in
   let instr_cfg = InstrCFG.from_pdesc proc_desc in
   let invariant_map_NodesBasicCost =
     let proc_data = ProcData.make proc_desc tenv inferbo_invariant_map in
     (*compute_WCET cfg invariant_map min_trees in *)
     AnalyzerNodesBasicCost.exec_cfg instr_cfg proc_data ~initial:NodesBasicCostDomain.empty
-      ~debug:false
   in
   (* compute loop invariant map for control var analysis *)
   let loop_inv_map =
@@ -779,10 +776,9 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
   match
-    AnalyzerWCET.compute_post
+    AnalyzerWCET.compute_post ~initial:initWCET
       (ProcData.make proc_desc tenv
          {basic_cost_map= invariant_map_NodesBasicCost; get_node_nb_exec; summary})
-      ~debug:false ~initial:initWCET
   with
   | Some (exit_cost, _) ->
       L.internal_error "@\n[COST ANALYSIS] PROCEDURE '%a' |CFG| = %i FINAL COST = %a @\n"

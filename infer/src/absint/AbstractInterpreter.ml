@@ -9,6 +9,14 @@ open! IStd
 module F = Format
 module L = Logging
 
+type debug =
+  | Default
+  | DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+      (** If Default is used from LowerHil, debug html files will be opened twice and closed twice (boom!),
+          because both LowerHil-AI and SIL-AI want to print instructions and pre/post states.
+          When using LowerHil-AI, we're not interested in the underlying SIL instructions,
+          it's the only case where want to disable it. *)
+
 type 'a state = {pre: 'a; post: 'a; visit_count: int}
 
 module type S = sig
@@ -19,7 +27,7 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
   val compute_post :
-       ?debug:bool
+       ?debug:debug
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
@@ -28,7 +36,6 @@ module type S = sig
        TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
-    -> debug:bool
     -> invariant_map
 
   val exec_pdesc :
@@ -89,7 +96,8 @@ struct
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
       let exec_instrs instrs =
-        if debug then
+        if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+        then
           NodePrinter.start_session
             ~pp_name:(TransferFunctions.pp_session_name node)
             (Node.underlying_node node) ;
@@ -101,7 +109,8 @@ struct
           in
           Instrs.fold ~f:compute_post ~init:pre instrs
         in
-        if debug then (
+        if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
+        then (
           L.d_strln
             ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
                 (Instrs.pp Pp.text) instrs Domain.pp astate_post
@@ -123,7 +132,8 @@ struct
           let prev = old_state.pre in
           let next = astate_pre in
           let res = Domain.widen ~prev ~next ~num_iters in
-          if debug then debug_absint_operation (`Widen (num_iters, (prev, next, res))) node ;
+          if Config.write_html then
+            debug_absint_operation (`Widen (num_iters, (prev, next, res))) node ;
           res )
         else astate_pre
       in
@@ -153,7 +163,8 @@ struct
                 some_post
             | Some joined_post ->
                 let res = Domain.join joined_post post in
-                if debug then debug_absint_operation (`Join (joined_post, post, res)) node ;
+                if Config.write_html then
+                  debug_absint_operation (`Join (joined_post, post, res)) node ;
                 Some res ) )
     in
     match Scheduler.pop work_queue with
@@ -173,7 +184,7 @@ struct
 
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg cfg proc_data ~initial ~debug =
+  let exec_cfg_internal ~debug cfg proc_data ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map', work_queue' =
       exec_node start_node initial (Scheduler.empty cfg) InvariantMap.empty proc_data ~debug
@@ -181,15 +192,15 @@ struct
     exec_worklist cfg work_queue' inv_map' proc_data ~debug
 
 
-  (* compute and return an invariant map for [pdesc] *)
-  let exec_pdesc ({ProcData.pdesc} as proc_data) =
-    exec_cfg (CFG.from_pdesc pdesc) proc_data ~debug:Config.write_html
+  let exec_cfg = exec_cfg_internal ~debug:Default
 
+  (* compute and return an invariant map for [pdesc] *)
+  let exec_pdesc ({ProcData.pdesc} as proc_data) = exec_cfg (CFG.from_pdesc pdesc) proc_data
 
   (* compute and return the postcondition of [pdesc] *)
-  let compute_post ?(debug = Config.write_html) ({ProcData.pdesc} as proc_data) ~initial =
+  let compute_post ?(debug = Default) ({ProcData.pdesc} as proc_data) ~initial =
     let cfg = CFG.from_pdesc pdesc in
-    let inv_map = exec_cfg cfg proc_data ~initial ~debug in
+    let inv_map = exec_cfg_internal cfg proc_data ~initial ~debug in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
 

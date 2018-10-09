@@ -80,7 +80,6 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   let reaching_defs_invariant_map =
     ReachingDefs.Analyzer.exec_cfg cfg proc_data
       ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
-      ~debug:false
   in
   (* get dominators *)
   let idom = Dominators.get_idoms proc_desc in

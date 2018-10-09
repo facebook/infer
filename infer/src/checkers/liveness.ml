@@ -122,14 +122,14 @@ module CapturedByRefAnalyzer =
 
 let get_captured_by_ref_invariant_map proc_desc proc_data =
   let cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
-  CapturedByRefAnalyzer.exec_cfg cfg proc_data ~initial:VarSet.empty ~debug:false
+  CapturedByRefAnalyzer.exec_cfg cfg proc_data ~initial:VarSet.empty
 
 
 let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   let proc_data = ProcData.make_default proc_desc tenv in
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc proc_data in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map = Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty ~debug:false in
+  let invariant_map = Analyzer.exec_cfg cfg proc_data ~initial:Domain.empty in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)

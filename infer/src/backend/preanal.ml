@@ -124,9 +124,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc pdesc in
   let nullify_proc_data = ProcData.make pdesc tenv liveness_inv_map in
   let initial = (VarDomain.empty, VarDomain.empty) in
-  let nullify_inv_map =
-    NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial ~debug:false
-  in
+  let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data ~initial in
   (* only nullify pvars that are local; don't nullify those that can escape *)
   let is_local pvar = not (Pvar.is_return pvar || Pvar.is_global pvar) in
   let node_nullify_instructions loc pvars =
@@ -172,9 +170,7 @@ let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   let initial = Liveness.Domain.empty in
   let liveness_inv_map =
-    LivenessAnalysis.exec_cfg liveness_proc_cfg
-      (ProcData.make_default pdesc tenv)
-      ~initial ~debug:false
+    LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial
   in
   add_nullify_instrs pdesc tenv liveness_inv_map ;
   Procdesc.signal_did_preanalysis pdesc
