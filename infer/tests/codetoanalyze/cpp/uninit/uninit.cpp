@@ -293,3 +293,40 @@ int condition_no_init_bad() {
   }
   return 0;
 }
+
+void call_to_fn_ptr_with_init_arg_good(void (*f)(int)) {
+  int a = 42;
+  f(a);
+}
+
+void FN_call_to_fn_ptr_with_uninit_arg_bad(void (*f)(int)) {
+  int a;
+  f(a);
+}
+
+void call_to_init_fn_ptr_good() {
+  void (*f)();
+  f = use_square_ok1;
+  f();
+}
+
+void call_to_init_fn_ptr2_good(bool nondet) {
+  void (*f)();
+  if (nondet)
+    f = use_square_ok1;
+  else
+    f = deref_magic_addr_ok;
+  f();
+}
+
+void FN_call_to_uninit_fn_ptr_bad() {
+  void (*f)();
+  f();
+}
+
+void FN_call_to_maybe_uninit_fn_ptr_bad(bool nondet) {
+  void (*f)();
+  if (nondet)
+    f = use_square_ok1;
+  f();
+}

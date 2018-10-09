@@ -149,3 +149,13 @@ int foo() {
   struct s t = not_a_constructor_but_returning_T();
   return t.n;
 }
+
+short struct_partial_init_bad() {
+  struct {
+    int* a;
+    short* b;
+  } s;
+  s.a = 0;
+  short* p = s.b;
+  return *p;
+}

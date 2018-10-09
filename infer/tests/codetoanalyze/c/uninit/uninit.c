@@ -20,3 +20,8 @@ int dereference_bad() {
   int* p;
   return *p;
 }
+
+void FN_self_assign() {
+  int x;
+  x = x;
+}
