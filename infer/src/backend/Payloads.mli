@@ -19,7 +19,7 @@ type t =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
   ; typestate: TypeState.t option
-  ; uninit: UninitDomain.summary option
+  ; uninit: UninitDomain.Summary.t option
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option
   ; purity: PurityDomain.summary option }

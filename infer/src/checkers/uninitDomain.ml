@@ -13,19 +13,11 @@ module Domain = AbstractDomain.InvertedSet (AccessExpression)
 
 type 'a prepost = {pre: 'a; post: 'a}
 
-(* pre = set of parameters initialized inside the procedure;
-   post = set of uninit local variables of the procedure *)
-type summary = Domain.t prepost
-
 module VarPair = struct
   type t = Var.t * Var.t [@@deriving compare]
 
   let pp fmt pair = F.fprintf fmt " (%a, %a)" Var.pp (fst pair) Var.pp (snd pair)
 end
-
-let pp_summary fmt {pre; post} =
-  F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
-
 
 module Record
     (Domain1 : AbstractDomain.S)
@@ -81,4 +73,12 @@ struct
   let pp fmt {uninit_vars= uv; aliased_vars= av; prepost= {pre; post}} =
     F.fprintf fmt "@\n uninit_vars: %a @\n aliased_vars: %a @\n prepost: (%a, %a)" Domain1.pp uv
       Domain2.pp av Domain3.pp pre Domain3.pp post
+end
+
+module Summary = struct
+  (* pre = set of parameters initialized inside the procedure;
+    post = set of uninit local variables of the procedure *)
+  type t = Domain.t prepost
+
+  let pp fmt {pre; post} = F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
 end

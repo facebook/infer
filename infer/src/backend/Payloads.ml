@@ -19,7 +19,7 @@ type t =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
   ; typestate: TypeState.t option
-  ; uninit: UninitDomain.summary option
+  ; uninit: UninitDomain.Summary.t option
   ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option
   ; purity: PurityDomain.summary option }
@@ -59,7 +59,7 @@ let pp pe fmt
     buffer_overrun
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
     annot_map
-    (pp_opt "Uninitialised" UninitDomain.pp_summary)
+    (pp_opt "Uninitialised" UninitDomain.Summary.pp)
     uninit
     (pp_opt "Cost" CostDomain.pp_summary)
     cost
