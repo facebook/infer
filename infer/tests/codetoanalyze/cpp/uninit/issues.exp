@@ -1,5 +1,6 @@
 codetoanalyze/cpp/uninit/default_constr.cpp, init_bad, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/default_constr.cpp, init_bad, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/cpp/uninit/inter_proc_uninit.cpp, interproc::i_no_init_return_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad2, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/members.cpp, access_members_bad3, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+namespace interproc {
+
 struct is {
   int n;
   int b;
@@ -17,7 +19,7 @@ void i_no_init(int* i) { i = 0; }
 // error is detected before call if x was not init
 int i_inc(int x) { return x++; }
 
-int no_init_in_callee_bad() {
+int no_init_in_callee_bad_FN() {
   int a;
   int b = 0;
 
@@ -27,7 +29,7 @@ int no_init_in_callee_bad() {
   return b;
 }
 
-int init_in_calee_ok() {
+int init_in_callee_ok() {
   int a;
   int b = 0;
 
@@ -36,7 +38,7 @@ int init_in_calee_ok() {
   return b;
 }
 
-int no_init_field_in_calee_bad() {
+int no_init_field_in_callee_bad_FN() {
   struct is t;
   int b = 0;
 
@@ -46,7 +48,7 @@ int no_init_field_in_calee_bad() {
   return b;
 }
 
-int init_field_in_calee_ok() {
+int init_field_in_callee_ok() {
   struct is t;
   int b = 0;
 
@@ -56,7 +58,7 @@ int init_field_in_calee_ok() {
   return b;
 }
 
-int no_init_in_calee_bad2() {
+int no_init_in_callee_bad2_FN() {
   int a;
   int c = 0;
 
@@ -66,7 +68,7 @@ int no_init_in_calee_bad2() {
   return c;
 }
 
-int init_in_calee_ok2() {
+int init_in_callee_ok2() {
   int a;
   int c = 0;
 
@@ -87,7 +89,7 @@ int blame_on_callee() {
   int c = i_no_init_return_bad();
 
   a = c; // we don't flag the error here as it is flagged in no_init_return
-         // definition
+  // definition
 
   return 0;
 }
@@ -108,7 +110,7 @@ void i_must_init_ok(int y, int* formal) {
   };
 }
 
-int i_call_maybe_init_bad(int y) {
+int i_call_maybe_init_bad_FN(int y) {
   int x;
   i_maybe_init(y, &x);
   return x;
@@ -191,3 +193,4 @@ int call_init_full_struct_ok() {
 
   return 0;
 }
+} // namespace interproc

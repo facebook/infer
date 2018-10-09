@@ -1,7 +1,0 @@
-build_systems/uninit/inter_proc_uninit.cpp, FP_use_init_x_OK, 5, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, call_init_some_field_of_struct_bad, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, i_call_maybe_init_bad, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, i_no_init_return_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, no_init_field_in_calee_bad, 6, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, no_init_in_calee_bad2, 6, UNINITIALIZED_VALUE, no_bucket, ERROR, []
-build_systems/uninit/inter_proc_uninit.cpp, no_init_in_callee_bad, 6, UNINITIALIZED_VALUE, no_bucket, ERROR, []
