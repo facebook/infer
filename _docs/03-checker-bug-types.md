@@ -22,6 +22,7 @@ Here is an overview of the types of bugs currently reported by Infer checkers.
   - [Resource leak](/docs/checkers-bug-types.html#RESOURCE_LEAK)
   - [Retain cycle](/docs/checkers-bug-types.html#RETAIN_CYCLE)
   - [Static initialization order fiasco](/docs/checkers-bug-types.html#STATIC_INITIALIZATION_ORDER_FIASCO)
+  - [Strict mode violation](/docs/checkers-bug-types.html#STRICT_MODE_VIOLATION)
   - [Thread-safety violation](/docs/checkers-bug-types.html#THREAD_SAFETY_VIOLATION)
   - [UI Thread Starvation](/docs/checkers-bug-types.html#STARVATION)
   - [Unsafe_GuardedBy_Access](/docs/checkers-bug-types.html#UNSAFE_GUARDEDBY_ACCESS)
@@ -719,7 +720,11 @@ To signal to Infer that a method does not perform any blocking calls, despite ap
 
 This instructs Infer to filter out any potentially blocking calls in `m()` (also, transitively), and thus any other method can expect no starvation reports due to a call to `m()`.  You will need to set up your class path appropriately to include the JAR files in `infer/annotations` for this annotation to work.
 
+<a name="STRICT_MODE_VIOLATION"></a>
 
+## Strict mode violation
+
+Android has a feature called [strict mode](https://developer.android.com/reference/android/os/StrictMode), which if enabled, will flag the occasions where the main thread makes a call that results in disk I/O, waiting on a network socket, etc. The analysis catching starvation errors and deadlocks (the `--starvation` analysis) has the ability to statically detect such violations.
 
 <a name="UNSAFE_GUARDEDBY_ACCESS"></a>
 
