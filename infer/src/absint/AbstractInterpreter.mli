@@ -59,3 +59,6 @@ module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
 
 (** create an intraprocedural abstract interpreter from transfer functions using the reverse post-order scheduler *)
 module MakeRPO : Make
+
+(** create an intraprocedural abstract interpreter from transfer functions using Bourdoncle's strongly connected component weak topological order *)
+module MakeWTO : Make

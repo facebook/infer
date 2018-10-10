@@ -1,0 +1,80 @@
+/* @generated */
+digraph cfg {
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_1" [label="1: Start jjb1\nFormals: \nLocals:  y:int x:int \n  " color=yellow style=filled]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_1" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_19" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_2" [label="2: Exit jjb1 \n  " color=yellow style=filled]
+	
+
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 29, column 3]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_3" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_2" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" [label="4: Skip GotoLabel_L3 \n  " color="gray"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_3" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_5" [label="5: + \n  " ]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_5" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" [label="6:  BinaryOperatorStmt: Div \n   n$1=*&x:int [line 14, column 7]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" ;
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" [label="7: Prune (true branch, if) \n   PRUNE((n$1 / 2), true); [line 14, column 7]\n " shape="invhouse"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_16" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$1 / 2), false); [line 14, column 7]\n " shape="invhouse"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_9" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_9" [label="9: Skip GotoLabel_L1 \n  " color="gray"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_9" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_18" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_10" [label="10:  Call _fun_print_int \n   n$3=*&x:int [line 19, column 15]\n  n$4=_fun_print_int(n$3:int) [line 19, column 5]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_10" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_9" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_11" [label="11:  UnaryOperator \n   n$5=*&x:int [line 18, column 5]\n  *&x:int=(n$5 - 1) [line 18, column 5]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_11" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_10" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" [label="12: + \n  " ]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_11" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" [label="13:  BinaryOperatorStmt: LE \n   n$6=*&x:int [line 16, column 9]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" ;
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" [label="14: Prune (true branch, if) \n   PRUNE((n$6 <= 0), true); [line 16, column 9]\n " shape="invhouse"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$6 <= 0), false); [line 16, column 9]\n " shape="invhouse"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_16" [label="16: Skip GotoLabel_L0 \n  " color="gray"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_16" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_17" [label="17:  Call _fun_print_int \n   n$12=*&y:int [line 24, column 15]\n  n$13=_fun_print_int(n$12:int) [line 24, column 5]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_17" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_16" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_18" [label="18:  UnaryOperator \n   n$14=*&y:int [line 23, column 5]\n  *&y:int=(n$14 + 1) [line 23, column 5]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_18" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_17" ;
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_19" [label="19:  UnaryOperator \n   n$17=*&x:int [line 13, column 3]\n  *&x:int=(n$17 + 1) [line 13, column 3]\n " shape="box"]
+	
+
+	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_19" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" ;
+}

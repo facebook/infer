@@ -248,8 +248,81 @@ struct
   let compute_post = make_compute_post ~exec_cfg_internal
 end
 
+module MakeWithWTO
+    (WTO : WeakTopologicalOrder.S)
+    (TransferFunctions : TransferFunctions.SIL with module CFG = WTO.CFG) =
+struct
+  include AbstractInterpreterCommon (TransferFunctions)
+
+  let debug_wto wto node =
+    let pp_name fmt =
+      TransferFunctions.pp_session_name node fmt ;
+      F.pp_print_string fmt " WEAK TOPOLOGICAL ORDER"
+    in
+    let underlying_node = Node.underlying_node node in
+    NodePrinter.start_session ~pp_name underlying_node ;
+    let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
+    L.d_strln (Format.asprintf "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto) ;
+    NodePrinter.finish_session underlying_node
+
+
+  let exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head =
+    match compute_pre cfg node inv_map with
+    | Some astate_pre ->
+        exec_node ~debug proc_data node ~is_loop_head astate_pre inv_map
+    | None ->
+        L.(die InternalError) "Could not compute the pre of a node"
+
+
+  let rec exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head rest =
+    match exec_wto_node ~debug cfg proc_data inv_map head ~is_loop_head with
+    | inv_map, ReachedFixPoint ->
+        inv_map
+    | inv_map, DidNotReachFixPoint ->
+        let inv_map = exec_wto_partition ~debug cfg proc_data inv_map rest in
+        exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:true rest
+
+
+  and exec_wto_partition ~debug cfg proc_data inv_map
+      (partition : CFG.Node.t WeakTopologicalOrder.Partition.t) =
+    match partition with
+    | Empty ->
+        inv_map
+    | Node {node; next} ->
+        let inv_map = exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head:false |> fst in
+        exec_wto_partition ~debug cfg proc_data inv_map next
+    | Component {head; rest; next} ->
+        let inv_map =
+          exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:false rest
+        in
+        exec_wto_partition ~debug cfg proc_data inv_map next
+
+
+  let exec_cfg_internal ~debug cfg proc_data ~initial =
+    match WTO.make cfg with
+    | Empty ->
+        InvariantMap.empty (* empty cfg *)
+    | Node {node= start_node; next} as wto ->
+        if Config.write_html then debug_wto wto start_node ;
+        let inv_map, _did_not_reach_fix_point =
+          exec_node ~debug proc_data start_node ~is_loop_head:false initial InvariantMap.empty
+        in
+        exec_wto_partition ~debug cfg proc_data inv_map next
+    | Component _ ->
+        L.(die InternalError) "Did not expect the start node to be part of a loop"
+
+
+  let exec_cfg = exec_cfg_internal ~debug:Default
+
+  let exec_pdesc = make_exec_pdesc ~exec_cfg_internal
+
+  let compute_post = make_compute_post ~exec_cfg_internal
+end
+
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
                                                                           with module TransferFunctions = TransferFunctions
 
 module MakeRPO (T : TransferFunctions.SIL) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
+module MakeWTO (T : TransferFunctions.SIL) =
+  MakeWithWTO (WeakTopologicalOrder.Bourdoncle_SCC (T.CFG)) (T)

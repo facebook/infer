@@ -43,7 +43,8 @@ let () =
         ; SeverityTests.tests
         ; StacktraceTests.tests
         ; TaintTests.tests
-        ; TraceTests.tests ]
+        ; TraceTests.tests
+        ; WeakTopologicalOrderTests.tests ]
       @ ClangTests.tests )
   in
   let test_suite = "all" >::: tests in

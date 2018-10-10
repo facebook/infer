@@ -281,8 +281,9 @@ end
 module Make (CFG : ProcCfg.S with type Node.t = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) =
 struct
   module AI_RPO = MakeMake (AbstractInterpreter.MakeRPO) (CFG) (T)
+  module AI_WTO = MakeMake (AbstractInterpreter.MakeWTO) (CFG) (T)
 
-  let ai_list = [("ai_rpo", AI_RPO.create_test)]
+  let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
   let create_tests ?(test_pname = Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
