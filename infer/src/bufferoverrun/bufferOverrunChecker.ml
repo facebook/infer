@@ -173,7 +173,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           in
           let mem = Dom.Mem.update_mem locs v mem in
           let mem =
-            if PowLoc.is_singleton locs then
+            if PowLoc.is_singleton locs && not v.represents_multiple_values then
               let loc_v = PowLoc.min_elt locs in
               let pname = Procdesc.get_proc_name pdesc in
               match Typ.Procname.get_method pname with
@@ -251,42 +251,53 @@ module Init = struct
       -> Tenv.t
       -> node_hash:int
       -> Location.t
+      -> represents_multiple_values:bool
       -> Loc.t
       -> Typ.typ
       -> inst_num:int
       -> new_sym_num:Itv.Counter.t
       -> Dom.Mem.t
       -> Dom.Mem.t =
-   fun pname symbol_table path tenv ~node_hash location loc typ ~inst_num ~new_sym_num mem ->
+   fun pname symbol_table path tenv ~node_hash location ~represents_multiple_values loc typ
+       ~inst_num ~new_sym_num mem ->
     let max_depth = 2 in
     let new_alloc_num = Itv.Counter.make 1 in
-    let rec decl_sym_val pname path tenv ~node_hash location ~depth ~may_last_field loc typ mem =
+    let rec decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth
+        ~may_last_field loc typ mem =
       if depth > max_depth then mem
       else
         let depth = depth + 1 in
         match typ.Typ.desc with
         | Typ.Tint ikind ->
             let unsigned = Typ.ikind_is_unsigned ikind in
-            let v = Dom.Val.make_sym ~unsigned loc pname symbol_table path new_sym_num location in
+            let v =
+              Dom.Val.make_sym ~represents_multiple_values ~unsigned loc pname symbol_table path
+                new_sym_num location
+            in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tfloat _ ->
-            let v = Dom.Val.make_sym loc pname symbol_table path new_sym_num location in
+            let v =
+              Dom.Val.make_sym ~represents_multiple_values loc pname symbol_table path new_sym_num
+                location
+            in
             mem |> Dom.Mem.add_heap loc v |> Dom.Mem.init_param_relation loc
         | Typ.Tptr (typ, _) when Language.curr_language_is Java -> (
           match typ with
           | {desc= Typ.Tarray {elt}} ->
               BoUtils.Exec.decl_sym_arr
                 ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-                pname symbol_table path tenv ~node_hash location ~depth loc elt ~inst_num
-                ~new_sym_num ~new_alloc_num mem
+                BoUtils.Exec.CSymArray_Array pname symbol_table path tenv ~node_hash location
+                ~represents_multiple_values ~depth loc elt ~inst_num ~new_sym_num ~new_alloc_num
+                mem
           | _ ->
               BoUtils.Exec.decl_sym_java_ptr
                 ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-                pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num mem )
+                pname path tenv ~node_hash location ~represents_multiple_values ~depth loc typ
+                ~inst_num ~new_alloc_num mem )
         | Typ.Tptr (typ, _) ->
-            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field) pname
-              symbol_table path tenv ~node_hash location ~depth loc typ ~inst_num ~new_sym_num
-              ~new_alloc_num mem
+            BoUtils.Exec.decl_sym_arr ~decl_sym_val:(decl_sym_val ~may_last_field)
+              BoUtils.Exec.CSymArray_Pointer pname symbol_table path tenv ~node_hash location
+              ~represents_multiple_values ~depth loc typ ~inst_num ~new_sym_num ~new_alloc_num mem
         | Typ.Tarray {elt; length; stride} ->
             let size =
               match length with
@@ -299,20 +310,21 @@ module Init = struct
             let stride = Option.map ~f:IntLit.to_int_exn stride in
             BoUtils.Exec.decl_sym_arr
               ~decl_sym_val:(decl_sym_val ~may_last_field:false)
-              pname symbol_table path tenv ~node_hash location ~depth loc elt ~offset ?size ?stride
-              ~inst_num ~new_sym_num ~new_alloc_num mem
+              BoUtils.Exec.CSymArray_Array pname symbol_table path tenv ~node_hash location
+              ~represents_multiple_values ~depth loc elt ~offset ?size ?stride ~inst_num
+              ~new_sym_num ~new_alloc_num mem
         | Typ.Tstruct typename -> (
           match Models.TypName.dispatch tenv typename with
           | Some {Models.declare_symbolic} ->
               let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
-              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env ~depth
-                loc ~inst_num ~new_sym_num ~new_alloc_num mem
+              declare_symbolic ~decl_sym_val:(decl_sym_val ~may_last_field) path model_env
+                ~represents_multiple_values ~depth loc ~inst_num ~new_sym_num ~new_alloc_num mem
           | None ->
               let decl_fld ~may_last_field mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc ~fn in
                 let path = Itv.SymbolPath.field path fn in
-                decl_sym_val pname path tenv ~node_hash location ~depth loc_fld typ ~may_last_field
-                  mem
+                decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth
+                  loc_fld typ ~may_last_field mem
               in
               let decl_flds str =
                 IList.fold_last ~f:(decl_fld ~may_last_field:false)
@@ -327,7 +339,8 @@ module Init = struct
                 location ;
             mem
     in
-    decl_sym_val pname path tenv ~node_hash location ~depth:0 ~may_last_field:true loc typ mem
+    decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth:0
+      ~may_last_field:true loc typ mem
 
 
   let declare_symbolic_parameters :
@@ -336,18 +349,20 @@ module Init = struct
       -> node_hash:int
       -> Location.t
       -> Itv.SymbolTable.t
+      -> represents_multiple_values:bool
       -> inst_num:int
       -> (Pvar.t * Typ.t) list
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun pname tenv ~node_hash location symbol_table ~inst_num formals mem ->
+   fun pname tenv ~node_hash location symbol_table ~represents_multiple_values ~inst_num formals
+       mem ->
     let new_sym_num = Itv.Counter.make 0 in
     let add_formal (mem, inst_num) (pvar, typ) =
       let loc = Loc.of_pvar pvar in
       let path = Itv.SymbolPath.of_pvar pvar in
       let mem =
-        declare_symbolic_val pname symbol_table path tenv ~node_hash location loc typ ~inst_num
-          ~new_sym_num mem
+        declare_symbolic_val pname symbol_table path tenv ~node_hash location
+          ~represents_multiple_values loc typ ~inst_num ~new_sym_num mem
       in
       (mem, inst_num + 1)
     in
@@ -355,21 +370,22 @@ module Init = struct
 
 
   let initial_state {ProcData.pdesc; tenv; extras= symbol_table} start_node =
-    let locals = Procdesc.get_locals pdesc in
     let node_hash = CFG.Node.hash start_node in
     let location = CFG.Node.loc start_node in
     let pname = Procdesc.get_proc_name pdesc in
-    let rec decl_local pname ~node_hash location loc typ ~inst_num ~dimension mem =
+    let rec decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values
+        ~dimension mem =
       match typ.Typ.desc with
       | Typ.Tarray {elt= typ; length; stride} ->
           let stride = Option.map ~f:IntLit.to_int_exn stride in
           BoUtils.Exec.decl_local_array ~decl_local pname ~node_hash location loc typ ~length
-            ?stride ~inst_num ~dimension mem
+            ?stride ~inst_num ~represents_multiple_values ~dimension mem
       | Typ.Tstruct typname -> (
         match Models.TypName.dispatch tenv typname with
         | Some {Models.declare_local} ->
             let model_env = Models.mk_model_env pname node_hash location tenv symbol_table in
-            declare_local ~decl_local model_env loc ~inst_num ~dimension mem
+            declare_local ~decl_local model_env loc ~inst_num ~represents_multiple_values
+              ~dimension mem
         | None ->
             (mem, inst_num) )
       | _ ->
@@ -378,12 +394,14 @@ module Init = struct
     let try_decl_local (mem, inst_num) {ProcAttributes.name; typ} =
       let pvar = Pvar.mk name pname in
       let loc = Loc.of_pvar pvar in
-      decl_local pname ~node_hash location loc typ ~inst_num ~dimension:1 mem
+      decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:false
+        ~dimension:1 mem
     in
     let mem = Dom.Mem.init in
-    let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) locals in
+    let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) (Procdesc.get_locals pdesc) in
     let formals = Sem.get_formals pdesc in
-    declare_symbolic_parameters pname tenv ~node_hash location symbol_table ~inst_num formals mem
+    declare_symbolic_parameters pname tenv ~node_hash location symbol_table
+      ~represents_multiple_values:false ~inst_num formals mem
 end
 
 module Report = struct

@@ -35,4 +35,29 @@ public class Loops {
       a++;
     } while (a < 20);
   }
+
+  static void dumb0(long[] a, int length) {
+    for (int i = 1; i < length; i++) {
+      if (a[i] < a[i - 1]) {
+        a[i - 1] = 0;
+      } else {
+        a[i] = 1;
+      }
+    }
+  }
+
+  static void dumbSort(long[] a, long[] b, int length) {
+    for (int i = length - 1; i >= 0; --i) {
+      for (int j = 0; j < i; ++j) {
+        if (a[j] * b[j + 1] > a[j + 1] * b[j]) {
+          long temp = a[j + 1];
+          a[j + 1] = a[j];
+          a[j] = temp;
+          temp = b[j + 1];
+          b[j + 1] = b[j];
+          b[j] = temp;
+        }
+      }
+    }
+  }
 }

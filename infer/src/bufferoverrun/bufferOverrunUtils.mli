@@ -23,6 +23,7 @@ module Exec : sig
     -> Loc.t
     -> Typ.t
     -> inst_num:int
+    -> represents_multiple_values:bool
     -> dimension:int
     -> Dom.Mem.astate
     -> Dom.Mem.astate * int
@@ -37,6 +38,7 @@ module Exec : sig
     -> length:IntLit.t option
     -> ?stride:int
     -> inst_num:int
+    -> represents_multiple_values:bool
     -> dimension:int
     -> Dom.Mem.astate
     -> Dom.Mem.astate * int
@@ -47,6 +49,7 @@ module Exec : sig
     -> Location.t
     -> Loc.t
     -> inst_num:int
+    -> represents_multiple_values:bool
     -> dimension:int
     -> Dom.Mem.astate
     -> Dom.Mem.astate * int
@@ -57,20 +60,25 @@ module Exec : sig
     -> Tenv.t
     -> node_hash:int
     -> Location.t
+    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
     -> Dom.Mem.astate
     -> Dom.Mem.astate
 
+  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer
+
   val decl_sym_arr :
        decl_sym_val:decl_sym_val
+    -> c_sym_array_kind
     -> Typ.Procname.t
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial
     -> Tenv.t
     -> node_hash:int
     -> Location.t
+    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -90,6 +98,7 @@ module Exec : sig
     -> Tenv.t
     -> node_hash:int
     -> Location.t
+    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -103,6 +112,7 @@ module Exec : sig
     -> Itv.SymbolTable.t
     -> Itv.SymbolPath.partial
     -> Location.t
+    -> represents_multiple_values:bool
     -> Loc.t
     -> new_sym_num:Itv.Counter.t
     -> Dom.Mem.astate

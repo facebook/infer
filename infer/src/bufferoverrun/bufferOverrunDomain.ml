@@ -25,7 +25,8 @@ module Val = struct
     ; arrayblk: ArrayBlk.astate
     ; offset_sym: Relation.Sym.astate
     ; size_sym: Relation.Sym.astate
-    ; traces: TraceSet.t }
+    ; traces: TraceSet.t
+    ; represents_multiple_values: bool }
 
   type t = astate
 
@@ -36,7 +37,8 @@ module Val = struct
     ; arrayblk= ArrayBlk.bot
     ; offset_sym= Relation.Sym.bot
     ; size_sym= Relation.Sym.bot
-    ; traces= TraceSet.empty }
+    ; traces= TraceSet.empty
+    ; represents_multiple_values= false }
 
 
   let pp fmt x =
@@ -46,26 +48,27 @@ module Val = struct
     let trace_pp fmt traces =
       if Config.bo_debug >= 1 then F.fprintf fmt ", %a" TraceSet.pp traces
     in
-    F.fprintf fmt "(%a%a, %a, %a%a%a%a)" Itv.pp x.itv relation_sym_pp x.sym PowLoc.pp x.powloc
-      ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym relation_sym_pp x.size_sym trace_pp
-      x.traces
+    let represents_multiple_values_str = if x.represents_multiple_values then "M" else "" in
+    F.fprintf fmt "%s(%a%a, %a, %a%a%a%a)" represents_multiple_values_str Itv.pp x.itv
+      relation_sym_pp x.sym PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk relation_sym_pp x.offset_sym
+      relation_sym_pp x.size_sym trace_pp x.traces
 
 
-  let unknown : traces:TraceSet.t -> t =
-   fun ~traces ->
+  let sets_represents_multiple_values : represents_multiple_values:bool -> t -> t =
+   fun ~represents_multiple_values x -> {x with represents_multiple_values}
+
+
+  let unknown_from : callee_pname:_ -> location:_ -> t =
+   fun ~callee_pname ~location ->
+    let traces = TraceSet.singleton (Trace.UnknownFrom (callee_pname, location)) in
     { itv= Itv.top
     ; sym= Relation.Sym.top
     ; powloc= PowLoc.unknown
     ; arrayblk= ArrayBlk.unknown
     ; offset_sym= Relation.Sym.top
     ; size_sym= Relation.Sym.top
-    ; traces }
-
-
-  let unknown_from : callee_pname:_ -> location:_ -> t =
-   fun ~callee_pname ~location ->
-    let traces = TraceSet.singleton (Trace.UnknownFrom (callee_pname, location)) in
-    unknown ~traces
+    ; traces
+    ; represents_multiple_values= false }
 
 
   let ( <= ) ~lhs ~rhs =
@@ -77,6 +80,7 @@ module Val = struct
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
       && Relation.Sym.( <= ) ~lhs:lhs.offset_sym ~rhs:rhs.offset_sym
       && Relation.Sym.( <= ) ~lhs:lhs.size_sym ~rhs:rhs.size_sym
+      && Bool.( <= ) lhs.represents_multiple_values rhs.represents_multiple_values
 
 
   let equal x y = phys_equal x y || (( <= ) ~lhs:x ~rhs:y && ( <= ) ~lhs:y ~rhs:x)
@@ -90,7 +94,9 @@ module Val = struct
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
       ; offset_sym= Relation.Sym.widen ~prev:prev.offset_sym ~next:next.offset_sym ~num_iters
       ; size_sym= Relation.Sym.widen ~prev:prev.size_sym ~next:next.size_sym ~num_iters
-      ; traces= TraceSet.join prev.traces next.traces }
+      ; traces= TraceSet.join prev.traces next.traces
+      ; represents_multiple_values=
+          prev.represents_multiple_values || next.represents_multiple_values }
 
 
   let join : t -> t -> t =
@@ -103,7 +109,8 @@ module Val = struct
       ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
       ; offset_sym= Relation.Sym.join x.offset_sym y.offset_sym
       ; size_sym= Relation.Sym.join x.size_sym y.size_sym
-      ; traces= TraceSet.join x.traces y.traces }
+      ; traces= TraceSet.join x.traces y.traces
+      ; represents_multiple_values= x.represents_multiple_values || y.represents_multiple_values }
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
@@ -150,7 +157,8 @@ module Val = struct
   let modify_itv : Itv.t -> t -> t = fun i x -> {x with itv= i}
 
   let make_sym :
-         ?unsigned:bool
+         represents_multiple_values:bool
+      -> ?unsigned:bool
       -> Loc.t
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
@@ -158,11 +166,13 @@ module Val = struct
       -> Itv.Counter.t
       -> Location.t
       -> t =
-   fun ?(unsigned = false) loc pname symbol_table path new_sym_num location ->
+   fun ~represents_multiple_values ?(unsigned = false) loc pname symbol_table path new_sym_num
+       location ->
     { bot with
       itv= Itv.make_sym ~unsigned pname symbol_table (Itv.SymbolPath.normal path) new_sym_num
     ; sym= Relation.Sym.of_loc loc
-    ; traces= TraceSet.singleton (Trace.SymAssign (loc, location)) }
+    ; traces= TraceSet.singleton (Trace.SymAssign (loc, location))
+    ; represents_multiple_values }
 
 
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top; sym= Relation.Sym.top}
@@ -216,7 +226,17 @@ module Val = struct
 
   let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem
 
-  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
+  (* TODO: get rid of those cases *)
+  let warn_against_pruning_multiple_values : t -> t =
+   fun x ->
+    if x.represents_multiple_values && Config.write_html then
+      L.d_str_color Pp.Red (F.asprintf "Pruned %a that represents multiple values\n" pp x) ;
+    x
+
+
+  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t =
+   fun f x -> warn_against_pruning_multiple_values {x with itv= f x.itv}
+
 
   let lift_prune2 :
          (Itv.t -> Itv.t -> Itv.t)
@@ -225,10 +245,11 @@ module Val = struct
       -> t
       -> t =
    fun f g x y ->
-    { x with
-      itv= f x.itv y.itv
-    ; arrayblk= g x.arrayblk y.arrayblk
-    ; traces= TraceSet.join x.traces y.traces }
+    warn_against_pruning_multiple_values
+      { x with
+        itv= f x.itv y.itv
+      ; arrayblk= g x.arrayblk y.arrayblk
+      ; traces= TraceSet.join x.traces y.traces }
 
 
   let prune_eq_zero : t -> t = lift_prune1 Itv.prune_eq_zero

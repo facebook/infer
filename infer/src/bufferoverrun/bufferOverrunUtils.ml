@@ -26,7 +26,8 @@ module Exec = struct
     let locs = val_ |> Dom.Val.get_all_locs in
     let v = Dom.Mem.find_set locs mem in
     let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
-    if PowLoc.is_singleton locs then Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
+    if PowLoc.is_singleton locs && not v.represents_multiple_values then
+      Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
     else mem
 
 
@@ -37,6 +38,7 @@ module Exec = struct
     -> Loc.t
     -> Typ.t
     -> inst_num:int
+    -> represents_multiple_values:bool
     -> dimension:int
     -> Dom.Mem.astate
     -> Dom.Mem.astate * int
@@ -51,25 +53,29 @@ module Exec = struct
       -> length:IntLit.t option
       -> ?stride:int
       -> inst_num:int
+      -> represents_multiple_values:bool
       -> dimension:int
       -> Dom.Mem.astate
       -> Dom.Mem.astate * int =
-   fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num ~dimension mem ->
+   fun ~decl_local pname ~node_hash location loc typ ~length ?stride ~inst_num
+       ~represents_multiple_values ~dimension mem ->
     let offset = Itv.zero in
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
-    let arr =
-      Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
-      |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
-    in
     let mem =
+      let arr =
+        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
+        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
+      in
       if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem else Dom.Mem.add_heap loc arr mem
     in
     let mem = Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None mem in
     let loc = Loc.of_allocsite allocsite in
     let mem, _ =
-      decl_local pname ~node_hash location loc typ ~inst_num ~dimension:(dimension + 1) mem
+      decl_local pname ~node_hash location loc typ ~inst_num ~represents_multiple_values:true
+        ~dimension:(dimension + 1) mem
     in
     (mem, inst_num + 1)
 
@@ -80,24 +86,29 @@ module Exec = struct
       -> Location.t
       -> Loc.t
       -> inst_num:int
+      -> represents_multiple_values:bool
       -> dimension:int
       -> Dom.Mem.astate
       -> Dom.Mem.astate * int =
-   fun pname ~node_hash location loc ~inst_num ~dimension mem ->
+   fun pname ~node_hash location loc ~inst_num ~represents_multiple_values ~dimension mem ->
     let path = Loc.get_path loc in
     let allocsite = Allocsite.make pname ~node_hash ~inst_num ~dimension ~path in
     let alloc_loc = Loc.of_allocsite allocsite in
-    let alist =
-      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
-      |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
-    in
-    let size = Dom.Val.of_int 0 in
     let mem =
+      let alist =
+        Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
+        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
+        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
+      in
       if Int.equal dimension 1 then Dom.Mem.add_stack loc alist mem
-      else Dom.Mem.add_heap loc alist mem |> Dom.Mem.add_heap alloc_loc size
+      else
+        let size = Dom.Val.Itv.zero in
+        Dom.Mem.add_heap loc alist mem |> Dom.Mem.add_heap alloc_loc size
     in
     (mem, inst_num + 1)
 
+
+  type c_sym_array_kind = CSymArray_Array | CSymArray_Pointer
 
   type decl_sym_val =
        Typ.Procname.t
@@ -105,6 +116,7 @@ module Exec = struct
     -> Tenv.t
     -> node_hash:int
     -> Location.t
+    -> represents_multiple_values:bool
     -> depth:int
     -> Loc.t
     -> Typ.t
@@ -113,12 +125,14 @@ module Exec = struct
 
   let decl_sym_arr :
          decl_sym_val:decl_sym_val
+      -> c_sym_array_kind
       -> Typ.Procname.t
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Tenv.t
       -> node_hash:int
       -> Location.t
+      -> represents_multiple_values:bool
       -> depth:int
       -> Loc.t
       -> Typ.t
@@ -130,8 +144,9 @@ module Exec = struct
       -> new_alloc_num:Itv.Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun ~decl_sym_val pname symbol_table path tenv ~node_hash location ~depth loc typ ?offset ?size
-       ?stride ~inst_num ~new_sym_num ~new_alloc_num mem ->
+   fun ~decl_sym_val array_kind pname symbol_table path tenv ~node_hash location
+       ~represents_multiple_values ~depth loc typ ?offset ?size ?stride ~inst_num ~new_sym_num
+       ~new_alloc_num mem ->
     let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
     let offset =
       option_value offset (fun () ->
@@ -142,21 +157,28 @@ module Exec = struct
           Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       )
     in
-    let alloc_num = Itv.Counter.next new_alloc_num in
-    let elem = Trace.SymAssign (loc, location) in
     let allocsite =
+      let alloc_num = Itv.Counter.next new_alloc_num in
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
     in
-    let arr =
-      Dom.Val.of_array_alloc allocsite ~stride ~offset ~size |> Dom.Val.add_trace_elem elem
-    in
     let mem =
+      let arr =
+        let elem = Trace.SymAssign (loc, location) in
+        Dom.Val.of_array_alloc allocsite ~stride ~offset ~size
+        |> Dom.Val.add_trace_elem elem
+        |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
+      in
       mem |> Dom.Mem.add_heap loc arr |> Dom.Mem.init_param_relation loc
       |> Dom.Mem.init_array_relation allocsite ~offset ~size ~size_exp_opt:None
     in
     let deref_loc = Loc.of_allocsite allocsite in
     let path = Itv.SymbolPath.index path in
-    decl_sym_val pname path tenv ~node_hash location ~depth deref_loc typ mem
+    let represents_multiple_values =
+      match array_kind with CSymArray_Array -> true | CSymArray_Pointer -> false
+      (* unsound but avoids many FPs for non-array pointers *)
+    in
+    decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth deref_loc
+      typ mem
 
 
   let decl_sym_java_ptr :
@@ -166,6 +188,7 @@ module Exec = struct
       -> Tenv.t
       -> node_hash:int
       -> Location.t
+      -> represents_multiple_values:bool
       -> depth:int
       -> Loc.t
       -> Typ.t
@@ -173,17 +196,22 @@ module Exec = struct
       -> new_alloc_num:Itv.Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun ~decl_sym_val pname path tenv ~node_hash location ~depth loc typ ~inst_num ~new_alloc_num
-       mem ->
+   fun ~decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth loc typ
+       ~inst_num ~new_alloc_num mem ->
     let alloc_num = Itv.Counter.next new_alloc_num in
     let elem = Trace.SymAssign (loc, location) in
     let allocsite =
       Allocsite.make pname ~node_hash ~inst_num ~dimension:alloc_num ~path:(Some path)
     in
     let alloc_loc = Loc.of_allocsite allocsite in
-    let v = Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc) |> Dom.Val.add_trace_elem elem in
+    let v =
+      Dom.Val.of_pow_loc (PowLoc.singleton alloc_loc)
+      |> Dom.Val.add_trace_elem elem
+      |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
+    in
     let mem = Dom.Mem.add_heap loc v mem in
-    decl_sym_val pname path tenv ~node_hash location ~depth alloc_loc typ mem
+    decl_sym_val pname path tenv ~node_hash location ~represents_multiple_values ~depth alloc_loc
+      typ mem
 
 
   let decl_sym_collection :
@@ -191,15 +219,17 @@ module Exec = struct
       -> Itv.SymbolTable.t
       -> Itv.SymbolPath.partial
       -> Location.t
+      -> represents_multiple_values:bool
       -> Loc.t
       -> new_sym_num:Itv.Counter.t
       -> Dom.Mem.astate
       -> Dom.Mem.astate =
-   fun pname symbol_table path location loc ~new_sym_num mem ->
+   fun pname symbol_table path location ~represents_multiple_values loc ~new_sym_num mem ->
     let size =
       Itv.make_sym ~unsigned:true pname symbol_table (Itv.SymbolPath.length path) new_sym_num
       |> Dom.Val.of_itv
       |> Dom.Val.add_trace_elem (Trace.SymAssign (loc, location))
+      |> Dom.Val.sets_represents_multiple_values ~represents_multiple_values
     in
     Dom.Mem.add_heap loc size mem
 
