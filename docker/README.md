@@ -20,9 +20,9 @@ This docker file will use the latest
 [released](https://github.com/facebook/infer/releases) version of
 Infer. 
 
-1. Get docker running, e.g. using Docker Quickstart Terminal.
-2. cd to the directory `docker/`,
-3. Build Infer in docker container and try on an example:
+1] Get docker running, e.g. using Docker Quickstart Terminal.
+2] cd to the directory `docker/`,
+3] Build Infer in docker container and try on an example:
 
 ```sh
 # Build Infer; 20min or so; to be executed from docker/ in the Infer repo
