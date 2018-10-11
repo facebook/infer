@@ -88,8 +88,14 @@ class Containers {
     mListNobodyWrites.size();
   }
 
+  List mListSyncWrites;
+
+  synchronized void listSyncAddBad(String s) {
+    mListSyncWrites.add(s);
+  }
+
   boolean listReadBad(String s) {
-    return mList.contains(s);
+    return mListSyncWrites.contains(s);
   }
 
   void accessSafeListOk(CopyOnWriteArrayList list, int index) {

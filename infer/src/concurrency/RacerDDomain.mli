@@ -24,8 +24,6 @@ module Access : sig
       between the formals and actuals *)
 
   val get_access_path : t -> AccessPath.t option
-
-  val equal : t -> t -> bool
 end
 
 module TraceElem : sig

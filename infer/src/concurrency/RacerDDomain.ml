@@ -28,8 +28,6 @@ module Access = struct
     | InterfaceCall of Typ.Procname.t
   [@@deriving compare]
 
-  let equal = [%compare.equal: t]
-
   let suffix_matches (_, accesses1) (_, accesses2) =
     match (List.rev accesses1, List.rev accesses2) with
     | access1 :: _, access2 :: _ ->

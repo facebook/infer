@@ -164,15 +164,3 @@ let store_global tenv =
      frontend and backend run in the same process *)
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
-
-
-exception Found of Typ.Name.t
-
-let language_is tenv lang =
-  match TypenameHash.iter (fun n -> raise (Found n)) tenv with
-  | () ->
-      false
-  | exception Found (JavaClass _) ->
-      Language.equal lang Java
-  | exception Found _ ->
-      Language.equal lang Clang

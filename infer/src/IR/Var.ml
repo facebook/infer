@@ -15,11 +15,13 @@ type t = LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare]
 let equal = [%compare.equal: t]
 
 let compare_modulo_this x y =
-  match (x, y) with
-  | ProgramVar i, ProgramVar j ->
-      Pvar.compare_modulo_this i j
-  | _, _ ->
-      compare x y
+  if phys_equal x y then 0
+  else
+    match (x, y) with
+    | ProgramVar i, ProgramVar j ->
+        Pvar.compare_modulo_this i j
+    | _, _ ->
+        compare x y
 
 
 let of_id id = LogicalVar id
