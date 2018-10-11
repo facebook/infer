@@ -209,3 +209,27 @@ DEFINE-CHECKER OBJC_BLOCK_CAPTURING_VALUES = {
       SET message = "ObjC Block capturing values";
       SET mode = "ON";
 };
+
+DEFINE-CHECKER ADHERE_TO_PROTOCOL = {
+
+  SET report_when =
+  WHEN
+    adhere_to_protocol()
+  HOLDS-IN-NODE ObjCInterfaceDecl;
+
+  SET message = "Found class adhering to protocol";
+  SET mode = "ON";
+
+};
+
+DEFINE-CHECKER ONLY_ONE_CLASS_METHOD = {
+
+  SET report_when =
+       WHEN
+          objc_class_has_only_one_constructor_method_named(REGEXP("newWith.+"))
+       HOLDS-IN-NODE ObjCImplementationDecl;
+
+  SET message = "Found class with only one class method";
+  SET mode = "ON";
+
+};

@@ -196,6 +196,9 @@ val is_objc_category_implementation_on_subclass_of :
  *    inherits from a class whose name matches the provided REGEXP
  *)
 
+val adhere_to_protocol : Ctl_parser_types.ast_node -> bool
+(** true if an objC  class adhere to a protocol *)
+
 val is_objc_protocol_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (**
  *  Checks if the current node is an ObjCProtocolDecl node
@@ -222,6 +225,11 @@ val is_objc_method_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_objc_constructor : CLintersContext.context -> bool
 (** 'is_in_objc_constructor context' is true if the curent node is within an ObjC constructor *)
+
+val objc_class_has_only_one_constructor_method_named :
+  Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** true if an ObjC class has only one class method and is a constructor 
+whose name matches the provided REGEXP *)
 
 val is_objc_dealloc : CLintersContext.context -> bool
 (** 'is_in_objc_dealloc context' is true if the curent node is within an ObjC dealloc method *)
@@ -445,10 +453,19 @@ val is_receiver_super : Ctl_parser_types.ast_node -> bool
  *  Matches on [super myMethod];
  *)
 
+val is_receiver_self : Ctl_parser_types.ast_node -> bool
+(**
+ *  Checks if the current node is an ObjCMessageExpr node and has a
+ *    receiver which is equal to 'self'.
+ *)
+
 val is_at_selector_with_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 (** an is an expression @selector with whose name in the language of re *)
 
 val has_visibility_attribute : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
+val cxx_construct_expr_has_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** true if the node is a CXXConstruct with name matching the provided REGEXP *)
 
 val has_used_attribute : Ctl_parser_types.ast_node -> bool
 
@@ -472,3 +489,6 @@ val is_cxx_copy_constructor : Ctl_parser_types.ast_node -> bool
 
 val is_init_expr_cxx11_constant : Ctl_parser_types.ast_node -> bool
 (** true if the current node is classified as C++11 constant expression by the AST. It works only for VarDecl init expr *)
+
+val cxx_construct_expr_has_no_parameters : Ctl_parser_types.ast_node -> bool
+(** true if a construct expr has no subexpressions *)

@@ -499,6 +499,14 @@ let call_instance_method an mname =
       false
 
 
+let adhere_to_protocol an =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, idi)) ->
+      not (List.is_empty idi.otdi_protocols)
+  | _ ->
+      false
+
+
 let is_objc_extension lcxt =
   CGeneral_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 
@@ -521,6 +529,26 @@ let is_qual_type_const an =
     match Clang_ast_proj.get_expr_tuple s with
     | Some (_, _, ei) ->
         ei.Clang_ast_t.ei_qual_type.qt_is_const
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
+let objc_class_has_only_one_constructor_method_named an re =
+  let open Clang_ast_t in
+  let is_class_method d =
+    match d with
+    | Clang_ast_t.ObjCMethodDecl (_, _, omdi) ->
+        not omdi.omdi_is_instance_method
+    | _ ->
+        false
+  in
+  match an with
+  | Ctl_parser_types.Decl (ObjCImplementationDecl (_, _, decls, _, _)) -> (
+    match List.filter decls ~f:(fun d -> is_class_method d) with
+    | [n] ->
+        is_objc_class_method_named (Ctl_parser_types.Decl n) re
     | _ ->
         false )
   | _ ->
@@ -789,6 +817,26 @@ let is_in_cxx_destructor context name =
       false
 
 
+let cxx_construct_expr_has_no_parameters an =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.CXXConstructExpr (_, [], _, _)) ->
+      true
+  | _ ->
+      false
+
+
+let cxx_construct_expr_has_name an name =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.CXXConstructExpr (_, _, _, xcei)) -> (
+    match xcei.xcei_decl_ref.dr_name with
+    | Some ni ->
+        ALVar.compare_str_with_alexp ni.ni_name name
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let is_in_block context =
   match context.CLintersContext.current_method with Some (BlockDecl _) -> true | _ -> false
 
@@ -926,6 +974,16 @@ let is_receiver_super an =
   | Ctl_parser_types.Stmt
       (ObjCMessageExpr (_, _, _, {omei_receiver_kind= `SuperClass | `SuperInstance})) ->
       true
+  | _ ->
+      false
+
+
+let is_receiver_self an =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, fst_param :: _, _, _)) ->
+      CAst_utils.exists_eventually_st
+        (decl_ref_name ~kind:`ImplicitParam)
+        (ALVar.Const "self") fst_param
   | _ ->
       false
 

@@ -1014,6 +1014,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_global_var an
   | "is_static_local_var", [], an ->
       CPredicates.is_static_local_var an
+  | "adhere_to_protocol", [], an ->
+      CPredicates.adhere_to_protocol an
   | "is_in_block", [], _ ->
       CPredicates.is_in_block lcxt
   | "is_in_cxx_constructor", [name], _ ->
@@ -1066,6 +1068,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_node an nodename
   | "is_objc_constructor", [], _ ->
       CPredicates.is_objc_constructor lcxt
+  | "objc_class_has_only_one_constructor_method_named", [name], an ->
+      CPredicates.objc_class_has_only_one_constructor_method_named an name
   | "is_objc_dealloc", [], _ ->
       CPredicates.is_objc_dealloc lcxt
   | "is_objc_extension", [], _ ->
@@ -1126,6 +1130,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_receiver_class_named lcxt an name
   | "is_receiver_super", [], an ->
       CPredicates.is_receiver_super an
+  | "is_receiver_self", [], an ->
+      CPredicates.is_receiver_self an
   | "iphoneos_target_sdk_version_greater_or_equal", [version], _ ->
       CPredicates.iphoneos_target_sdk_version_greater_or_equal lcxt (ALVar.alexp_to_string version)
   | "method_return_type", [typ], an ->
@@ -1136,6 +1142,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.using_namespace an namespace
   | "is_at_selector_with_name", [name], an ->
       CPredicates.is_at_selector_with_name an name
+  | "cxx_construct_expr_has_name", [name], an ->
+      CPredicates.cxx_construct_expr_has_name an name
   | "has_type_const_ptr_to_objc_class", [], an ->
       CPredicates.has_type_const_ptr_to_objc_class an
   | "has_type_subprotocol_of", [protname], an ->
@@ -1152,6 +1160,8 @@ let rec eval_Atomic pred_name_ args an lcxt =
       CPredicates.is_cxx_copy_constructor an
   | "is_init_expr_cxx11_constant", [], an ->
       CPredicates.is_init_expr_cxx11_constant an
+  | "cxx_construct_expr_has_no_parameters", [], an ->
+      CPredicates.cxx_construct_expr_has_no_parameters an
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
