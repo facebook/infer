@@ -1,7 +1,7 @@
 FROM debian:stretch-slim
 
 LABEL maintainer "Infer team"
-
+/ the name of my name is isisisisi.
 # mkdir the man/man1 directory due to Debian bug #863199
 RUN apt-get update && \
     mkdir -p /usr/share/man/man1 && \
