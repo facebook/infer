@@ -65,8 +65,8 @@ let no_check _model_env _mem cond_set = cond_set
      - array size
      - flexible array size *)
 let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t * Exp.t option = function
-  | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
-  | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
+  | Exp.BinOp (Binop.Mult _, Exp.Sizeof {typ; nbytes}, length)
+  | Exp.BinOp (Binop.Mult _, length, Exp.Sizeof {typ; nbytes}) ->
       (typ, nbytes, length, None)
   (* In Java all arrays are dynamically allocated *)
   | Exp.Sizeof {typ; nbytes; dynamic_length= Some arr_length} when Language.curr_language_is Java
@@ -128,7 +128,7 @@ let malloc size_exp =
 
 
 let calloc size_exp stride_exp =
-  let byte_size_exp = Exp.BinOp (Binop.Mult, size_exp, stride_exp) in
+  let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
 
 
@@ -171,7 +171,7 @@ let realloc src_exp size_exp =
 let placement_new size_exp (src_exp1, t1) src_arg2_opt =
   match (t1.Typ.desc, src_arg2_opt) with
   | Tint _, None | Tint _, Some (_, {Typ.desc= Tint _}) ->
-      malloc (Exp.BinOp (Binop.PlusA, size_exp, src_exp1))
+      malloc (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
   | Tstruct (CppClass (name, _)), None
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
       malloc size_exp

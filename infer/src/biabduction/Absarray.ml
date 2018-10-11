@@ -405,7 +405,7 @@ let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal
 let index_is_pointed_to tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (index : Exp.t) :
     bool =
   let indices =
-    let index_plus_one = Exp.BinOp (Binop.PlusA, index, Exp.one) in
+    let index_plus_one = Exp.BinOp (Binop.PlusA None, index, Exp.one) in
     [index; index_plus_one]
   in
   let add_index_to_paths =
@@ -448,8 +448,8 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
       Prop.set p2 ~sigma:sigma'
     in
     let p4 =
-      let index_next = Exp.BinOp (Binop.PlusA, index, Exp.one) in
-      let fresh_index_next = Exp.BinOp (Binop.PlusA, fresh_index, Exp.one) in
+      let index_next = Exp.BinOp (Binop.PlusA None, index, Exp.one) in
+      let fresh_index_next = Exp.BinOp (Binop.PlusA None, fresh_index, Exp.one) in
       let map = [(index, fresh_index); (index_next, fresh_index_next)] in
       prop_replace_path_index tenv p3 path map
     in

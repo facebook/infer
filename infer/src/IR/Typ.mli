@@ -120,6 +120,12 @@ val void : t
 val void_star : t
 (** void* type *)
 
+val get_ikind_opt : t -> ikind option
+(** Get ikind if the type is integer. *)
+
+val size_t : ikind
+(** ikind of size_t *)
+
 module Name : sig
   (** Named types. *)
   type t = name [@@deriving compare]

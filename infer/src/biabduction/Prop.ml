@@ -543,7 +543,7 @@ let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let rec exp_remove (e0 : Exp.t) =
     match e0 with
     | Lindex (Lindex (base, e1), e2) ->
-        let e0' : Exp.t = Lindex (base, BinOp (PlusA, e1, e2)) in
+        let e0' : Exp.t = Lindex (base, BinOp (PlusA None, e1, e2)) in
         exp_remove e0'
     | _ ->
         e0
@@ -712,7 +712,7 @@ module Normalize = struct
             Exp.bool (IntLit.leq n m)
         | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (v <= w)
-        | BinOp (PlusA, e3, Const (Cint n)), Const (Cint m) ->
+        | BinOp (PlusA _, e3, Const (Cint n)), Const (Cint m) ->
             BinOp (Le, e3, Exp.int (m -- n))
         | e1', e2' ->
             Exp.le e1' e2' )
@@ -722,11 +722,11 @@ module Normalize = struct
             Exp.bool (IntLit.lt n m)
         | Const (Cfloat v), Const (Cfloat w) ->
             Exp.bool (v < w)
-        | Const (Cint n), BinOp (MinusA, f1, f2) ->
-            BinOp (Le, BinOp (MinusA, f2, f1), Exp.int (IntLit.minus_one -- n))
-        | BinOp (MinusA, f1, f2), Const (Cint n) ->
-            Exp.le (BinOp (MinusA, f1, f2)) (Exp.int (n -- IntLit.one))
-        | BinOp (PlusA, e3, Const (Cint n)), Const (Cint m) ->
+        | Const (Cint n), BinOp ((MinusA _ as ominus), f1, f2) ->
+            BinOp (Le, BinOp (ominus, f2, f1), Exp.int (IntLit.minus_one -- n))
+        | BinOp ((MinusA _ as ominus), f1, f2), Const (Cint n) ->
+            Exp.le (BinOp (ominus, f1, f2)) (Exp.int (n -- IntLit.one))
+        | BinOp (PlusA _, e3, Const (Cint n)), Const (Cint m) ->
             BinOp (Lt, e3, Exp.int (m -- n))
         | e1', e2' ->
             Exp.lt e1' e2' )
@@ -788,18 +788,23 @@ module Normalize = struct
               BinOp (LOr, e1', e2') )
       | BinOp (PlusPI, Lindex (ep, e1), e2) ->
           (* array access with pointer arithmetic *)
-          let e' : Exp.t = BinOp (PlusA, e1, e2) in
+          let e' : Exp.t = BinOp (PlusA None, e1, e2) in
           eval (Exp.Lindex (ep, e'))
       | BinOp (PlusPI, BinOp (PlusPI, e11, e12), e2) ->
           (* take care of pattern ((ptr + off1) + off2) *)
           (* progress: convert inner +I to +A *)
-          let e2' : Exp.t = BinOp (PlusA, e12, e2) in
+          let e2' : Exp.t = BinOp (PlusA None, e12, e2) in
           eval (Exp.BinOp (PlusPI, e11, e2'))
-      | BinOp ((PlusA as oplus), e1, e2) | BinOp ((PlusPI as oplus), e1, e2) -> (
+      | BinOp ((PlusA _ as oplus), e1, e2) | BinOp ((PlusPI as oplus), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
-          let isPlusA = Binop.equal oplus Binop.PlusA in
-          let ominus = if isPlusA then Binop.MinusA else Binop.MinusPI in
+          let isPlusA, ominus =
+            match oplus with
+            | Binop.PlusA topt ->
+                (true, Binop.MinusA topt)
+            | _ ->
+                (false, Binop.MinusPI)
+          in
           let ( +++ ) (x : Exp.t) (y : Exp.t) : Exp.t =
             match (x, y) with
             | _, Const (Cint i) when IntLit.iszero i ->
@@ -827,7 +832,7 @@ module Normalize = struct
           (* pattern for arrays and extensible structs:
                sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
           | ( Sizeof ({typ; dynamic_length= len1_opt} as sizeof_data)
-            , BinOp (Mult, len2, Sizeof {typ= elt; dynamic_length= None}) )
+            , BinOp (Mult _, len2, Sizeof {typ= elt; dynamic_length= None}) )
             when isPlusA && extensible_array_element_typ_equal elt typ ->
               let len = match len1_opt with Some len1 -> len1 +++ len2 | None -> len2 in
               Sizeof {sizeof_data with dynamic_length= Some len}
@@ -841,15 +846,15 @@ module Normalize = struct
               Exp.float (v +. w)
           | UnOp (Neg, f1, _), f2 | f2, UnOp (Neg, f1, _) ->
               BinOp (ominus, f2, f1)
-          | BinOp (PlusA, e, Const (Cint n1)), Const (Cint n2)
+          | BinOp (PlusA _, e, Const (Cint n1)), Const (Cint n2)
           | BinOp (PlusPI, e, Const (Cint n1)), Const (Cint n2)
-          | Const (Cint n2), BinOp (PlusA, e, Const (Cint n1))
+          | Const (Cint n2), BinOp (PlusA _, e, Const (Cint n1))
           | Const (Cint n2), BinOp (PlusPI, e, Const (Cint n1)) ->
               e +++ Exp.int (n1 ++ n2)
-          | BinOp (MinusA, Const (Cint n1), e), Const (Cint n2)
-          | Const (Cint n2), BinOp (MinusA, Const (Cint n1), e) ->
+          | BinOp (MinusA _, Const (Cint n1), e), Const (Cint n2)
+          | Const (Cint n2), BinOp (MinusA _, Const (Cint n1), e) ->
               Exp.int (n1 ++ n2) --- e
-          | BinOp (MinusA, e1, e2), e3 ->
+          | BinOp (MinusA _, e1, e2), e3 ->
               (* (e1-e2)+e3 --> e1 + (e3-e2) *)
               (* progress: brings + to the outside *)
               eval (e1 +++ (e3 --- e2))
@@ -863,11 +868,12 @@ module Normalize = struct
               if abs && isPlusA then Exp.get_undefined false
               else if abs && not isPlusA then e1' +++ Exp.get_undefined false
               else e1' +++ e2' )
-      | BinOp ((MinusA as ominus), e1, e2) | BinOp ((MinusPI as ominus), e1, e2) -> (
+      | BinOp ((MinusA _ as ominus), e1, e2) | BinOp ((MinusPI as ominus), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
-          let isMinusA = Binop.equal ominus Binop.MinusA in
-          let oplus = if isMinusA then Binop.PlusA else Binop.PlusPI in
+          let oplus =
+            match ominus with Binop.MinusA topt -> Binop.PlusA topt | _ -> Binop.PlusPI
+          in
           let ( +++ ) x y : Exp.t = BinOp (oplus, x, y) in
           let ( --- ) x y : Exp.t = BinOp (ominus, x, y) in
           if Exp.equal e1' e2' then Exp.zero
@@ -893,7 +899,7 @@ module Normalize = struct
                 if abs then Exp.get_undefined false else e1' --- e2' )
       | BinOp (MinusPP, e1, e2) ->
           if abs then Exp.get_undefined false else BinOp (MinusPP, eval e1, eval e2)
-      | BinOp (Mult, e1, e2) -> (
+      | BinOp ((Mult _ as omult), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -914,11 +920,11 @@ module Normalize = struct
           | Const (Cfloat v), Const (Cfloat w) ->
               Exp.float (v *. w)
           | Var _, Var _ ->
-              BinOp (Mult, e1', e2')
+              BinOp (omult, e1', e2')
           | _, Sizeof _ | Sizeof _, _ ->
-              BinOp (Mult, e1', e2')
+              BinOp (omult, e1', e2')
           | _, _ ->
-              if abs then Exp.get_undefined false else BinOp (Mult, e1', e2') )
+              if abs then Exp.get_undefined false else BinOp (omult, e1', e2') )
       | BinOp (Div, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
@@ -969,7 +975,7 @@ module Normalize = struct
             | _, Const (Cint m) when IntLit.iszero m ->
                 eval e1
             | _, Const (Cint m) when IntLit.isone m ->
-                eval (Exp.BinOp (PlusA, e1, e1))
+                eval (Exp.BinOp (PlusA None, e1, e1))
             | Const (Cint m), _ when IntLit.iszero m ->
                 e1
             | _ ->
@@ -1036,7 +1042,7 @@ module Normalize = struct
           eval (Exp.BinOp (PlusPI, Lvar pv, e2))
       | Lindex (BinOp (PlusPI, ep, e1), e2) ->
           (* array access with pointer arithmetic *)
-          let e' : Exp.t = BinOp (PlusA, e1, e2) in
+          let e' : Exp.t = BinOp (PlusA None, e1, e2) in
           eval (Exp.Lindex (ep, e'))
       | Lindex (e1, e2) ->
           let e1' = eval e1 in
@@ -1077,19 +1083,19 @@ module Normalize = struct
         (* base <= n case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
-        | BinOp (PlusA, base', Const (Cint n')) ->
+        | BinOp (PlusA _, base', Const (Cint n')) ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (PlusA, Const (Cint n'), base') ->
+        | BinOp (PlusA _, Const (Cint n'), base') ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, base', Const (Cint n')) ->
+        | BinOp (MinusA _, base', Const (Cint n')) ->
             let new_offset = Exp.int (n ++ n') in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, Const (Cint n'), base') ->
+        | BinOp (MinusA _, Const (Cint n'), base') ->
             let new_offset = Exp.int (n' -- n -- IntLit.one) in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
@@ -1104,19 +1110,19 @@ module Normalize = struct
         (* n < base case *)
         let nbase = exp_normalize_noabs tenv Sil.sub_empty base in
         match nbase with
-        | BinOp (PlusA, base', Const (Cint n')) ->
+        | BinOp (PlusA _, base', Const (Cint n')) ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (PlusA, Const (Const.Cint n'), base') ->
+        | BinOp (PlusA _, Const (Const.Cint n'), base') ->
             let new_offset = Exp.int (n -- n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, base', Const (Cint n')) ->
+        | BinOp (MinusA _, base', Const (Cint n')) ->
             let new_offset = Exp.int (n ++ n') in
             let new_e : Exp.t = BinOp (Lt, new_offset, base') in
             Aeq (new_e, Exp.one)
-        | BinOp (MinusA, Const (Cint n'), base') ->
+        | BinOp (MinusA _, Const (Cint n'), base') ->
             let new_offset = Exp.int (n' -- n -- IntLit.one) in
             let new_e : Exp.t = BinOp (Le, base', new_offset) in
             Aeq (new_e, Exp.one)
@@ -1139,11 +1145,11 @@ module Normalize = struct
       match e with
       | Const (Cint n) ->
           ([], [], n)
-      | BinOp (PlusA, e1, e2) | BinOp (PlusPI, e1, e2) ->
+      | BinOp (PlusA _, e1, e2) | BinOp (PlusPI, e1, e2) ->
           let pos1, neg1, n1 = exp_to_posnegoff e1 in
           let pos2, neg2, n2 = exp_to_posnegoff e2 in
           (pos1 @ pos2, neg1 @ neg2, n1 ++ n2)
-      | BinOp (MinusA, e1, e2) | BinOp (MinusPI, e1, e2) | BinOp (MinusPP, e1, e2) ->
+      | BinOp (MinusA _, e1, e2) | BinOp (MinusPI, e1, e2) | BinOp (MinusPP, e1, e2) ->
           let pos1, neg1, n1 = exp_to_posnegoff e1 in
           let pos2, neg2, n2 = exp_to_posnegoff e2 in
           (pos1 @ neg2, neg1 @ pos2, n1 -- n2)
@@ -1179,7 +1185,7 @@ module Normalize = struct
       | [e] ->
           e
       | e :: el ->
-          BinOp (PlusA, e, exp_list_to_sum el)
+          BinOp (PlusA None, e, exp_list_to_sum el)
     in
     let norm_from_exp e : Exp.t =
       match normalize_posnegoff (exp_to_posnegoff e) with
@@ -1190,7 +1196,7 @@ module Normalize = struct
       | pos, [], n ->
           BinOp (Le, exp_list_to_sum pos, Exp.int (IntLit.zero -- n))
       | pos, neg, n ->
-          let lhs_e : Exp.t = BinOp (MinusA, exp_list_to_sum pos, exp_list_to_sum neg) in
+          let lhs_e : Exp.t = BinOp (MinusA None, exp_list_to_sum pos, exp_list_to_sum neg) in
           BinOp (Le, lhs_e, Exp.int (IntLit.zero -- n))
     in
     let ineq =
@@ -1198,10 +1204,10 @@ module Normalize = struct
     in
     match ineq with
     | BinOp (Le, e1, e2) ->
-        let e : Exp.t = BinOp (MinusA, e1, e2) in
+        let e : Exp.t = BinOp (MinusA None, e1, e2) in
         mk_inequality tenv (norm_from_exp e)
     | BinOp (Lt, e1, e2) ->
-        let e : Exp.t = BinOp (MinusA, BinOp (MinusA, e1, e2), Exp.minus_one) in
+        let e : Exp.t = BinOp (MinusA None, BinOp (MinusA None, e1, e2), Exp.minus_one) in
         mk_inequality tenv (norm_from_exp e)
     | _ ->
         a
@@ -1214,15 +1220,15 @@ module Normalize = struct
     let a = Sil.atom_sub sub a0 in
     let rec normalize_eq (eq : Exp.t * Exp.t) =
       match eq with
-      | BinOp (PlusA, e1, Const (Cint n1)), Const (Cint n2)
+      | BinOp (PlusA _, e1, Const (Cint n1)), Const (Cint n2)
       (* e1+n1==n2 ---> e1==n2-n1 *)
       | BinOp (PlusPI, e1, Const (Cint n1)), Const (Cint n2) ->
           (e1, Exp.int (n2 -- n1))
-      | BinOp (MinusA, e1, Const (Cint n1)), Const (Cint n2)
+      | BinOp (MinusA _, e1, Const (Cint n1)), Const (Cint n2)
       (* e1-n1==n2 ---> e1==n1+n2 *)
       | BinOp (MinusPI, e1, Const (Cint n1)), Const (Cint n2) ->
           (e1, Exp.int (n1 ++ n2))
-      | BinOp (MinusA, Const (Cint n1), e1), Const (Cint n2) ->
+      | BinOp (MinusA _, Const (Cint n1), e1), Const (Cint n2) ->
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
       | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
@@ -1231,13 +1237,13 @@ module Normalize = struct
           if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
           else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
           else eq
-      | BinOp ((PlusA | PlusPI | MinusA | MinusPI), e1, e2), e1' when Exp.equal e1 e1' ->
+      | BinOp ((PlusA _ | PlusPI | MinusA _ | MinusPI), e1, e2), e1' when Exp.equal e1 e1' ->
           (e2, Exp.int IntLit.zero)
-      | BinOp ((PlusA | PlusPI), e2, e1), e1' when Exp.equal e1 e1' ->
+      | BinOp ((PlusA _ | PlusPI), e2, e1), e1' when Exp.equal e1 e1' ->
           (e2, Exp.int IntLit.zero)
-      | e1', BinOp ((PlusA | PlusPI | MinusA | MinusPI), e1, e2) when Exp.equal e1 e1' ->
+      | e1', BinOp ((PlusA _ | PlusPI | MinusA _ | MinusPI), e1, e2) when Exp.equal e1 e1' ->
           (e2, Exp.int IntLit.zero)
-      | e1', BinOp ((PlusA | PlusPI), e2, e1) when Exp.equal e1 e1' ->
+      | e1', BinOp ((PlusA _ | PlusPI), e2, e1) when Exp.equal e1 e1' ->
           (e2, Exp.int IntLit.zero)
       | _ ->
           eq
@@ -1454,32 +1460,44 @@ module Normalize = struct
             let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
             replace_hpred hpred'
         | ( Earray
-              (BinOp (Mult, Sizeof {typ= t; dynamic_length= None; subtype= st1}, x), esel, inst)
+              (BinOp (Mult _, Sizeof {typ= t; dynamic_length= None; subtype= st1}, x), esel, inst)
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal t elt ->
             let dynamic_length = Some x in
             let sizeof_data = {Exp.typ= arr; nbytes= None; dynamic_length; subtype= st1} in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
-        | ( Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length= None; subtype}), esel, inst)
+        | ( Earray (BinOp (Mult _, x, Sizeof {typ; dynamic_length= None; subtype}), esel, inst)
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data = {Exp.typ= arr; nbytes= None; dynamic_length= Some x; subtype} in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
-        | ( Earray (BinOp (Mult, Sizeof {typ; dynamic_length= Some len; subtype}, x), esel, inst)
+        | ( Earray
+              ( BinOp ((Mult _ as omult), Sizeof {typ; dynamic_length= Some len; subtype}, x)
+              , esel
+              , inst )
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (Mult, x, len)); subtype}
+              { Exp.typ= arr
+              ; nbytes= None
+              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
+              ; subtype }
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
-        | ( Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length= Some len; subtype}), esel, inst)
+        | ( Earray
+              ( BinOp ((Mult _ as omult), x, Sizeof {typ; dynamic_length= Some len; subtype})
+              , esel
+              , inst )
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (Mult, x, len)); subtype}
+              { Exp.typ= arr
+              ; nbytes= None
+              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
+              ; subtype }
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
@@ -1957,7 +1975,7 @@ let sigma_get_array_indices sigma =
 let compute_reindexing_from_indices list =
   let get_id_offset (e : Exp.t) =
     match e with
-    | BinOp (PlusA, Var id, Const (Cint offset)) ->
+    | BinOp (PlusA _, Var id, Const (Cint offset)) ->
         if Ident.is_primed id then Some (id, offset) else None
     | _ ->
         None
@@ -1984,7 +2002,7 @@ let compute_reindexing_from_indices list =
     let id, offset = match get_id_offset x with None -> assert false | Some io -> io in
     let base_new : Exp.t = Var (Ident.create_fresh Ident.kprimed) in
     let offset_new = Exp.int (IntLit.neg offset) in
-    let exp_new : Exp.t = BinOp (PlusA, base_new, offset_new) in
+    let exp_new : Exp.t = BinOp (PlusA None, base_new, offset_new) in
     (id, exp_new)
   in
   let reindexing = List.map ~f:transform list_passed in
@@ -2016,7 +2034,7 @@ let prop_rename_array_indices tenv prop =
     let indices = sigma_get_array_indices prop.sigma in
     let not_same_base_lt_offsets (e1 : Exp.t) (e2 : Exp.t) =
       match (e1, e2) with
-      | BinOp (PlusA, e1', Const (Cint n1')), BinOp (PlusA, e2', Const (Cint n2')) ->
+      | BinOp (PlusA _, e1', Const (Cint n1')), BinOp (PlusA _, e2', Const (Cint n2')) ->
           not (Exp.equal e1' e2' && IntLit.lt n1' n2')
       | _ ->
           true

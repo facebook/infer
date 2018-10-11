@@ -215,13 +215,13 @@ and eval = function
       Some c
   | BinaryOperator (Binop.Div, e1, e2) -> (
     try eval_arithmetic_binop IntLit.div e1 e2 with Division_by_zero -> None )
-  | BinaryOperator (Binop.MinusA, e1, e2) ->
+  | BinaryOperator (Binop.MinusA _, e1, e2) ->
       eval_arithmetic_binop IntLit.sub e1 e2
   | BinaryOperator (Binop.Mod, e1, e2) ->
       eval_arithmetic_binop IntLit.rem e1 e2
-  | BinaryOperator (Binop.Mult, e1, e2) ->
+  | BinaryOperator (Binop.Mult _, e1, e2) ->
       eval_arithmetic_binop IntLit.mul e1 e2
-  | BinaryOperator (Binop.PlusA, e1, e2) ->
+  | BinaryOperator (Binop.PlusA _, e1, e2) ->
       eval_arithmetic_binop IntLit.add e1 e2
   | _ ->
       (* TODO: handle bitshifting cases, port eval_binop from RacerD.ml *)

@@ -177,14 +177,14 @@ let get_constant (c : JBir.const) =
       Const.Cstr (JBasics.jstr_pp jstr)
 
 
-let get_binop binop =
+let get_binop typ binop =
   match binop with
   | JBir.Add _ ->
-      Binop.PlusA
+      Binop.PlusA (Typ.get_ikind_opt typ)
   | JBir.Sub _ ->
-      Binop.MinusA
+      Binop.MinusA (Typ.get_ikind_opt typ)
   | JBir.Mult _ ->
-      Binop.Mult
+      Binop.Mult (Typ.get_ikind_opt typ)
   | JBir.Div _ ->
       Binop.Div
   | JBir.Rem _ ->
@@ -543,7 +543,7 @@ let rec expression (context : JContext.t) pc expr =
           let instrs = (instrs1 @ (deref_array_instr :: instrs2)) @ [load_instr] in
           (instrs, Exp.Var id, type_of_expr)
       | other_binop ->
-          let sil_binop = get_binop other_binop in
+          let sil_binop = get_binop type_of_expr other_binop in
           let sil_expr = Exp.BinOp (sil_binop, sil_ex1, sil_ex2) in
           (instrs1 @ instrs2, sil_expr, type_of_expr) )
   | JBir.Field (ex, cn, fs) ->

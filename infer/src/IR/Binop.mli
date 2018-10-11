@@ -11,12 +11,12 @@ open! IStd
 
 (** Binary operations *)
 type t =
-  | PlusA  (** arithmetic + *)
+  | PlusA of Typ.ikind option  (** arithmetic + *)
   | PlusPI  (** pointer + integer *)
-  | MinusA  (** arithmetic - *)
+  | MinusA of Typ.ikind option  (** arithmetic - *)
   | MinusPI  (** pointer - integer *)
   | MinusPP  (** pointer - pointer *)
-  | Mult  (** * *)
+  | Mult of Typ.ikind option  (** * *)
   | Div  (** / *)
   | Mod  (** % *)
   | Shiftlt  (** shift left *)

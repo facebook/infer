@@ -677,11 +677,11 @@ module Make (Manager : Manager_S) = struct
           match (raw_of_exp' e1, raw_of_exp' e2) with
           | Some re1, Some re2 -> (
             match bop with
-            | Binop.PlusA ->
+            | Binop.PlusA _ ->
                 Some (raw_bop_make Texpr1.Add re1 re2)
-            | Binop.MinusA ->
+            | Binop.MinusA _ ->
                 Some (raw_bop_make Texpr1.Sub re1 re2)
-            | Binop.Mult ->
+            | Binop.Mult _ ->
                 Some (raw_bop_make Texpr1.Mul re1 re2)
             | _ ->
                 try_get_sym_f e )

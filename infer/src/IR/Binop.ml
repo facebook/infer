@@ -9,14 +9,18 @@
 (** The Smallfoot Intermediate Language: Binary Operators *)
 open! IStd
 
+type ikind_option_for_binop = Typ.ikind option
+
+let compare_ikind_option_for_binop _ _ = 0
+
 (** Binary operations *)
 type t =
-  | PlusA  (** arithmetic + *)
+  | PlusA of ikind_option_for_binop  (** arithmetic + *)
   | PlusPI  (** pointer + integer *)
-  | MinusA  (** arithmetic - *)
+  | MinusA of ikind_option_for_binop  (** arithmetic - *)
   | MinusPI  (** pointer - integer *)
   | MinusPP  (** pointer - pointer *)
-  | Mult  (** * *)
+  | Mult of ikind_option_for_binop  (** * *)
   | Div  (** / *)
   | Mod  (** % *)
   | Shiftlt  (** shift left *)
@@ -39,22 +43,22 @@ let equal = [%compare.equal: t]
 (** This function returns true if the operation is injective
     wrt. each argument: op(e,-) and op(-, e) is injective for all e.
     The return value false means "don't know". *)
-let injective = function PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true | _ -> false
+let injective = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
 (** This function returns true if 0 is the right unit of [binop].
     The return value false means "don't know". *)
-let is_zero_runit = function PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true | _ -> false
+let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
 
 let text = function
-  | PlusA ->
+  | PlusA _ ->
       "+"
   | PlusPI ->
       "+"
-  | MinusA | MinusPP ->
+  | MinusA _ | MinusPP ->
       "-"
   | MinusPI ->
       "-"
-  | Mult ->
+  | Mult _ ->
       "*"
   | Div ->
       "/"

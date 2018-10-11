@@ -198,17 +198,17 @@ and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
   let v1 = eval e1 mem in
   let v2 = eval e2 mem in
   match binop with
-  | Binop.PlusA ->
+  | Binop.PlusA _ ->
       Val.plus_a v1 v2
   | Binop.PlusPI ->
       Val.plus_pi v1 v2
-  | Binop.MinusA ->
+  | Binop.MinusA _ ->
       Val.minus_a v1 v2
   | Binop.MinusPI ->
       Val.minus_pi v1 v2
   | Binop.MinusPP ->
       Val.minus_pp v1 v2
-  | Binop.Mult ->
+  | Binop.Mult _ ->
       Val.mult v1 v2
   | Binop.Div ->
       Val.div v1 v2

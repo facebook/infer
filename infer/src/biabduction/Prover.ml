@@ -87,17 +87,17 @@ end = struct
 
   let equal = [%compare.equal: t]
 
-  let to_leq (e1, e2, n) = (Exp.BinOp (Binop.MinusA, e1, e2), Exp.int n)
+  let to_leq (e1, e2, n) = (Exp.BinOp (Binop.MinusA None, e1, e2), Exp.int n)
 
   let to_lt (e1, e2, n) =
-    (Exp.int (IntLit.zero -- n -- IntLit.one), Exp.BinOp (Binop.MinusA, e2, e1))
+    (Exp.int (IntLit.zero -- n -- IntLit.one), Exp.BinOp (Binop.MinusA None, e2, e1))
 
 
   let to_triple entry = entry
 
   let from_leq acc (e1, e2) =
     match (e1, e2) with
-    | ( Exp.BinOp (Binop.MinusA, (Exp.Var id11 as e11), (Exp.Var id12 as e12))
+    | ( Exp.BinOp (Binop.MinusA _, (Exp.Var id11 as e11), (Exp.Var id12 as e12))
       , Exp.Const (Const.Cint n) )
       when not (Ident.equal id11 id12) -> (
       match IntLit.to_signed n with
@@ -112,7 +112,7 @@ end = struct
   let from_lt acc (e1, e2) =
     match (e1, e2) with
     | ( Exp.Const (Const.Cint n)
-      , Exp.BinOp (Binop.MinusA, (Exp.Var id21 as e21), (Exp.Var id22 as e22)) )
+      , Exp.BinOp (Binop.MinusA _, (Exp.Var id21 as e21), (Exp.Var id22 as e22)) )
       when not (Ident.equal id21 id22) -> (
       match IntLit.to_signed n with
       | None ->
@@ -496,11 +496,11 @@ end = struct
     match (e1, e2) with
     | Exp.Const (Const.Cint n1), Exp.Const (Const.Cint n2) ->
         IntLit.leq n1 n2
-    | ( Exp.BinOp (Binop.MinusA, Exp.Sizeof {nbytes= Some nb1}, Exp.Sizeof {nbytes= Some nb2})
+    | ( Exp.BinOp (Binop.MinusA _, Exp.Sizeof {nbytes= Some nb1}, Exp.Sizeof {nbytes= Some nb2})
       , Exp.Const (Const.Cint n2) ) ->
         (* [ sizeof(t1) - sizeof(t2) <= n2 ] *)
         IntLit.(leq (sub (of_int nb1) (of_int nb2)) n2)
-    | ( Exp.BinOp (Binop.MinusA, Exp.Sizeof {typ= t1}, Exp.Sizeof {typ= t2})
+    | ( Exp.BinOp (Binop.MinusA _, Exp.Sizeof {typ= t1}, Exp.Sizeof {typ= t2})
       , Exp.Const (Const.Cint n2) )
       when IntLit.isminusone n2 && type_size_comparable t1 t2 ->
         (* [ sizeof(t1) - sizeof(t2) <= -1 ] *)
@@ -639,8 +639,8 @@ let check_equal tenv prop e1_0 e2_0 =
   let check_equal () = Exp.equal n_e1 n_e2 in
   let check_equal_const () =
     match (n_e1, n_e2) with
-    | Exp.BinOp (Binop.PlusA, e1, Exp.Const (Const.Cint d)), e2
-    | e2, Exp.BinOp (Binop.PlusA, e1, Exp.Const (Const.Cint d)) ->
+    | Exp.BinOp (Binop.PlusA _, e1, Exp.Const (Const.Cint d)), e2
+    | e2, Exp.BinOp (Binop.PlusA _, e1, Exp.Const (Const.Cint d)) ->
         if Exp.equal e1 e2 then IntLit.iszero d else false
     | Exp.Const c1, Exp.Lindex (Exp.Const c2, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
         Const.equal c1 c2
@@ -693,9 +693,9 @@ let get_bounds tenv prop e0 =
   let e_norm = Prop.exp_normalize_prop ~destructive:true tenv prop e0 in
   let e_root, off =
     match e_norm with
-    | Exp.BinOp (Binop.PlusA, e, Exp.Const (Const.Cint n1)) ->
+    | Exp.BinOp (Binop.PlusA _, e, Exp.Const (Const.Cint n1)) ->
         (e, IntLit.neg n1)
-    | Exp.BinOp (Binop.MinusA, e, Exp.Const (Const.Cint n1)) ->
+    | Exp.BinOp (Binop.MinusA _, e, Exp.Const (Const.Cint n1)) ->
         (e, n1)
     | _ ->
         (e_norm, IntLit.zero)
@@ -719,20 +719,20 @@ let check_disequal tenv prop e1 e2 =
     | Exp.Const c1, Exp.Lindex (Exp.Const c2, Exp.Const (Const.Cint d)) ->
         if IntLit.iszero d then not (Const.equal c1 c2) (* offset=0 is no offset *)
         else Const.equal c1 c2 (* same base, different offsets *)
-    | ( Exp.BinOp (Binop.PlusA, e1, Exp.Const (Const.Cint d1))
-      , Exp.BinOp (Binop.PlusA, e2, Exp.Const (Const.Cint d2)) ) ->
+    | ( Exp.BinOp (Binop.PlusA _, e1, Exp.Const (Const.Cint d1))
+      , Exp.BinOp (Binop.PlusA _, e2, Exp.Const (Const.Cint d2)) ) ->
         if Exp.equal e1 e2 then IntLit.neq d1 d2 else false
-    | Exp.BinOp (Binop.PlusA, e1, Exp.Const (Const.Cint d)), e2
-    | e2, Exp.BinOp (Binop.PlusA, e1, Exp.Const (Const.Cint d)) ->
+    | Exp.BinOp (Binop.PlusA _, e1, Exp.Const (Const.Cint d)), e2
+    | e2, Exp.BinOp (Binop.PlusA _, e1, Exp.Const (Const.Cint d)) ->
         if Exp.equal e1 e2 then not (IntLit.iszero d) else false
     | Exp.Lindex (Exp.Const c1, Exp.Const (Const.Cint d)), Exp.Const c2 ->
         if IntLit.iszero d then not (Const.equal c1 c2) else Const.equal c1 c2
     | Exp.Lindex (Exp.Const c1, Exp.Const d1), Exp.Lindex (Exp.Const c2, Exp.Const d2) ->
         Const.equal c1 c2 && not (Const.equal d1 d2)
-    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult, Exp.Sizeof _, e21)
-    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult, e21, Sizeof _)
-    | Exp.BinOp (Binop.Mult, Exp.Sizeof _, e21), Exp.Const (Const.Cint n)
-    | Exp.BinOp (Binop.Mult, e21, Exp.Sizeof _), Exp.Const (Const.Cint n) ->
+    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult _, Exp.Sizeof _, e21)
+    | Exp.Const (Const.Cint n), Exp.BinOp (Binop.Mult _, e21, Sizeof _)
+    | Exp.BinOp (Binop.Mult _, Exp.Sizeof _, e21), Exp.Const (Const.Cint n)
+    | Exp.BinOp (Binop.Mult _, e21, Exp.Sizeof _), Exp.Const (Const.Cint n) ->
         IntLit.iszero n && not (Exp.is_zero e21)
     | Exp.Lvar pv0, Exp.Lvar pv1 ->
         (* Addresses of any two local vars must be different *)
@@ -831,7 +831,7 @@ let check_le_normalized tenv prop e1 e2 =
   (* L.d_str "check_le_normalized "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)
   let eL, eR, off =
     match (e1, e2) with
-    | Exp.BinOp (Binop.MinusA, f1, f2), Exp.Const (Const.Cint n) ->
+    | Exp.BinOp (Binop.MinusA _, f1, f2), Exp.Const (Const.Cint n) ->
         if Exp.equal f1 f2 then (Exp.zero, Exp.zero, n) else (f1, f2, n)
     | _ ->
         (e1, e2, IntLit.zero)
@@ -1354,10 +1354,10 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
     match (e1, e2) with
     | Exp.Var v1, Exp.Var v2 ->
         var_imply subs v1 v2
-    | Exp.BinOp ((PlusA | PlusPI | MinusA | MinusPI), Exp.Var v1, e2), Exp.Var v2
+    | Exp.BinOp ((PlusA _ | PlusPI | MinusA _ | MinusPI), Exp.Var v1, e2), Exp.Var v2
       when Ident.equal v1 v2 ->
         do_imply subs e2 Exp.zero
-    | Exp.BinOp ((PlusA | PlusPI), e2, Exp.Var v1), Exp.Var v2 when Ident.equal v1 v2 ->
+    | Exp.BinOp ((PlusA _ | PlusPI), e2, Exp.Var v1), Exp.Var v2 when Ident.equal v1 v2 ->
         do_imply subs e2 Exp.zero
     | e1, Exp.Var v2 ->
         let occurs_check v e =
@@ -1372,16 +1372,16 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
           let sub2' = extend_sub (snd subs) v2 e1 in
           (fst subs, sub2')
         else raise (IMPL_EXC ("expressions not equal", subs, EXC_FALSE_EXPS (e1, e2)))
-    | e1, Exp.BinOp (Binop.PlusA, (Exp.Var v2 as e2), e2')
+    | e1, Exp.BinOp (Binop.PlusA _, (Exp.Var v2 as e2), e2')
       when Ident.is_primed v2 || Ident.is_footprint v2 ->
         (* here e2' could also be a variable that we could try to substitute (as in the next match
            case), but we ignore that to avoid backtracking *)
-        let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
+        let e' = Exp.BinOp (Binop.MinusA None, e1, e2') in
         do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
-    | e1, Exp.BinOp (Binop.PlusA, e2, (Exp.Var v2 as e2'))
+    | e1, Exp.BinOp (Binop.PlusA _, e2, (Exp.Var v2 as e2'))
       when Ident.is_primed v2 || Ident.is_footprint v2 ->
         (* symmetric of above case *)
-        let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
+        let e' = Exp.BinOp (Binop.MinusA None, e1, e2') in
         do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
     | Exp.Var id, Exp.Lvar pv when Ident.is_footprint id && Pvar.is_local pv ->
         (* Footprint var could never be the same as local address *)
@@ -1405,14 +1405,14 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
     | Exp.Const (Const.Cint _), Exp.BinOp (Binop.PlusPI, _, _) ->
         raise
           (IMPL_EXC ("pointer+index cannot evaluate to a constant", subs, EXC_FALSE_EXPS (e1, e2)))
-    | Exp.Const (Const.Cint n1), Exp.BinOp (Binop.PlusA, f1, Exp.Const (Const.Cint n2)) ->
+    | Exp.Const (Const.Cint n1), Exp.BinOp (Binop.PlusA _, f1, Exp.Const (Const.Cint n2)) ->
         do_imply subs (Exp.int (n1 -- n2)) f1
     | Exp.BinOp (op1, e1, f1), Exp.BinOp (op2, e2, f2) when Binop.equal op1 op2 ->
         do_imply (do_imply subs e1 e2) f1 f2
-    | Exp.BinOp (Binop.PlusA, Exp.Var v1, e1), e2 ->
-        do_imply subs (Exp.Var v1) (Exp.BinOp (Binop.MinusA, e2, e1))
+    | Exp.BinOp (Binop.PlusA _, Exp.Var v1, e1), e2 ->
+        do_imply subs (Exp.Var v1) (Exp.BinOp (Binop.MinusA None, e2, e1))
     | Exp.BinOp (Binop.PlusPI, Exp.Lvar pv1, e1), e2 ->
-        do_imply subs (Exp.Lvar pv1) (Exp.BinOp (Binop.MinusA, e2, e1))
+        do_imply subs (Exp.Lvar pv1) (Exp.BinOp (Binop.MinusA None, e2, e1))
     | ( Exp.Sizeof {typ= t1; dynamic_length= None; subtype= st1}
       , Exp.Sizeof {typ= t2; dynamic_length= None; subtype= st2} )
       when Typ.equal t1 t2 && Subtype.equal_modulo_flag st1 st2 ->
@@ -1479,9 +1479,9 @@ let path_to_id path =
 let array_len_imply tenv calc_missing subs len1 len2 indices2 =
   match (len1, len2) with
   | _, Exp.Var _
-  | _, Exp.BinOp (Binop.PlusA, Exp.Var _, _)
-  | _, Exp.BinOp (Binop.PlusA, _, Exp.Var _)
-  | Exp.BinOp (Binop.Mult, _, _), _ -> (
+  | _, Exp.BinOp (Binop.PlusA _, Exp.Var _, _)
+  | _, Exp.BinOp (Binop.PlusA _, _, Exp.Var _)
+  | Exp.BinOp (Binop.Mult _, _, _), _ -> (
     try exp_imply tenv calc_missing subs len1 len2 with IMPL_EXC (s, subs', x) ->
       raise (IMPL_EXC ("array len:" ^ s, subs', x)) )
   | _ ->
@@ -1806,7 +1806,7 @@ let expand_hpred_pointer =
           let hpred' = Sil.Hpointsto (e, Sil.Earray (len, [(ind, se)], Sil.inst_none), t') in
           expand true true hpred'
       | Sil.Hpointsto (Exp.BinOp (Binop.PlusPI, e1, e2), Sil.Earray (len, esel, inst), t) ->
-          let shift_exp e = Exp.BinOp (Binop.PlusA, e, e2) in
+          let shift_exp e = Exp.BinOp (Binop.PlusA None, e, e2) in
           let len' = shift_exp len in
           let esel' = List.map ~f:(fun (e, se) -> (shift_exp e, se)) esel in
           let hpred' = Sil.Hpointsto (e1, Sil.Earray (len', esel', inst), t) in
@@ -2520,7 +2520,7 @@ let check_array_bounds tenv (sub1, sub2) prop =
         (* L.d_strln_color Orange "check_bound ";
            Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
         let indices_to_check =
-          [Exp.BinOp (Binop.PlusA, len2, Exp.minus_one)]
+          [Exp.BinOp (Binop.PlusA None, len2, Exp.minus_one)]
           (* only check len *)
         in
         List.iter ~f:(fail_if_le len1) indices_to_check

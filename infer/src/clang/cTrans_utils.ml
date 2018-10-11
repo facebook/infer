@@ -345,7 +345,7 @@ let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc fu
     let sizeof_exp =
       match size_exp with
       | Some exp ->
-          Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
+          Exp.BinOp (Binop.Mult (Some Typ.size_t), sizeof_exp_, exp)
       | None ->
           sizeof_exp_
     in

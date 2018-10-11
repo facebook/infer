@@ -37,7 +37,7 @@ let check_bad_index tenv pname p len index loc =
     Prover.check_atom tenv p index_too_large || Prover.check_atom tenv p index_negative
   in
   let index_provably_in_bound () =
-    let len_minus_one = Exp.BinOp (Binop.PlusA, len, Exp.minus_one) in
+    let len_minus_one = Exp.BinOp (Binop.PlusA None, len, Exp.minus_one) in
     let index_not_too_large =
       Prop.mk_inequality tenv (Exp.BinOp (Binop.Le, index, len_minus_one))
     in
@@ -457,11 +457,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst :
       raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let subtype =
-    match !Language.curr_language with
-    | Clang ->
-        Subtype.exact
-    | Java ->
-        Subtype.subtypes
+    match !Language.curr_language with Clang -> Subtype.exact | Java -> Subtype.subtypes
   in
   let create_ptsto footprint_part off0 =
     match (root, off0, typ.Typ.desc) with
@@ -1600,7 +1596,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
         (* try to remove an offset if any, and find the attribute there *)
         let root_no_offset =
           match root with
-          | Exp.BinOp ((Binop.PlusPI | Binop.PlusA | Binop.MinusPI | Binop.MinusA), base, _) ->
+          | Exp.BinOp ((Binop.PlusPI | Binop.PlusA _ | Binop.MinusPI | Binop.MinusA _), base, _) ->
               base
           | _ ->
               root

@@ -184,6 +184,11 @@ let void = mk Tvoid
 
 let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
 
+let get_ikind_opt {desc} = match desc with Tint ikind -> Some ikind | _ -> None
+
+(* TODO: size_t should be implementation-dependent. *)
+let size_t = IULong
+
 let escape pe = if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Escape.escape_xml else ident
 
 (** Pretty print a type with all the details, using the C syntax. *)

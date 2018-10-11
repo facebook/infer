@@ -455,7 +455,7 @@ end = struct
           false
     in
     let add_and_gen_eq e e' n =
-      let e_plus_n = Exp.BinOp (Binop.PlusA, e, Exp.int n) in
+      let e_plus_n = Exp.BinOp (Binop.PlusA None, e, Exp.int n) in
       Prop.mk_eq tenv e_plus_n e'
     in
     let rec f_eqs_entry ((e1, e2, e) as entry) eqs_acc t_seen = function
@@ -562,7 +562,7 @@ end = struct
         match e with
         | Exp.Const _ ->
             []
-        | Exp.Lvar _ | Exp.Var _ | Exp.BinOp (Binop.PlusA, Exp.Var _, _) ->
+        | Exp.Lvar _ | Exp.Var _ | Exp.BinOp (Binop.PlusA _, Exp.Var _, _) ->
             let is_same_e (e1, e2, _) = Exp.equal e (select side e1 e2) in
             let assoc = List.filter ~f:is_same_e !tbl in
             List.map ~f:(fun (e1, e2, _) -> select side_op e1 e2) assoc
@@ -588,15 +588,19 @@ end = struct
     let res = ref [] in
     let f v =
       match (v, side) with
-      | (Exp.BinOp (Binop.PlusA, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs when Exp.equal e e1'
-        ->
+      | (Exp.BinOp (Binop.PlusA _, e1', Exp.Const (Const.Cint i)), e2, e'), Lhs
+        when Exp.equal e e1' ->
           let c' = Exp.int (IntLit.neg i) in
-          let v' = (e1', Exp.BinOp (Binop.PlusA, e2, c'), Exp.BinOp (Binop.PlusA, e', c')) in
+          let v' =
+            (e1', Exp.BinOp (Binop.PlusA None, e2, c'), Exp.BinOp (Binop.PlusA None, e', c'))
+          in
           res := v' :: !res
-      | (e1, Exp.BinOp (Binop.PlusA, e2', Exp.Const (Const.Cint i)), e'), Rhs when Exp.equal e e2'
-        ->
+      | (e1, Exp.BinOp (Binop.PlusA _, e2', Exp.Const (Const.Cint i)), e'), Rhs
+        when Exp.equal e e2' ->
           let c' = Exp.int (IntLit.neg i) in
-          let v' = (Exp.BinOp (Binop.PlusA, e1, c'), e2', Exp.BinOp (Binop.PlusA, e', c')) in
+          let v' =
+            (Exp.BinOp (Binop.PlusA None, e1, c'), e2', Exp.BinOp (Binop.PlusA None, e', c'))
+          in
           res := v' :: !res
       | _ ->
           ()
@@ -943,20 +947,20 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
   | Exp.Var id, Exp.Lvar _ | Exp.Lvar _, Exp.Var id ->
       if Ident.is_normal id then ( L.d_strln "failure reason 21" ; raise Sil.JoinFail )
       else Rename.extend e1 e2 Rename.ExtFresh
-  | Exp.BinOp (Binop.PlusA, Exp.Var id1, Exp.Const _), Exp.Var id2
-  | Exp.Var id1, Exp.BinOp (Binop.PlusA, Exp.Var id2, Exp.Const _)
+  | Exp.BinOp (Binop.PlusA _, Exp.Var id1, Exp.Const _), Exp.Var id2
+  | Exp.Var id1, Exp.BinOp (Binop.PlusA _, Exp.Var id2, Exp.Const _)
     when ident_same_kind_primed_footprint id1 id2 ->
       Rename.extend e1 e2 Rename.ExtFresh
-  | Exp.BinOp (Binop.PlusA, Exp.Var id1, Exp.Const (Const.Cint c1)), Exp.Const (Const.Cint c2)
+  | Exp.BinOp (Binop.PlusA _, Exp.Var id1, Exp.Const (Const.Cint c1)), Exp.Const (Const.Cint c2)
     when can_rename id1 ->
       let c2' = c2 -- c1 in
       let e_res = Rename.extend (Exp.Var id1) (Exp.int c2') Rename.ExtFresh in
-      Exp.BinOp (Binop.PlusA, e_res, Exp.int c1)
-  | Exp.Const (Const.Cint c1), Exp.BinOp (Binop.PlusA, Exp.Var id2, Exp.Const (Const.Cint c2))
+      Exp.BinOp (Binop.PlusA None, e_res, Exp.int c1)
+  | Exp.Const (Const.Cint c1), Exp.BinOp (Binop.PlusA _, Exp.Var id2, Exp.Const (Const.Cint c2))
     when can_rename id2 ->
       let c1' = c1 -- c2 in
       let e_res = Rename.extend (Exp.int c1') (Exp.Var id2) Rename.ExtFresh in
-      Exp.BinOp (Binop.PlusA, e_res, Exp.int c2)
+      Exp.BinOp (Binop.PlusA None, e_res, Exp.int c2)
   | Exp.Cast (t1, e1), Exp.Cast (t2, e2) ->
       if not (Typ.equal t1 t2) then ( L.d_strln "failure reason 22" ; raise Sil.JoinFail )
       else
@@ -1011,11 +1015,11 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
 
 and length_partial_join len1 len2 =
   match (len1, len2) with
-  | Exp.BinOp (Binop.PlusA, e1, Exp.Const c1), Exp.BinOp (Binop.PlusA, e2, Exp.Const c2) ->
+  | Exp.BinOp (Binop.PlusA _, e1, Exp.Const c1), Exp.BinOp (Binop.PlusA _, e2, Exp.Const c2) ->
       let e' = exp_partial_join e1 e2 in
       let c' = exp_partial_join (Exp.Const c1) (Exp.Const c2) in
-      Exp.BinOp (Binop.PlusA, e', c')
-  | Exp.BinOp (Binop.PlusA, _, _), Exp.BinOp (Binop.PlusA, _, _) ->
+      Exp.BinOp (Binop.PlusA None, e', c')
+  | Exp.BinOp (Binop.PlusA _, _, _), Exp.BinOp (Binop.PlusA _, _, _) ->
       Rename.extend len1 len2 Rename.ExtFresh
   | Exp.Var id1, Exp.Var id2 when Ident.equal id1 id2 ->
       len1

@@ -19,11 +19,11 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
     let bop =
       match boi_kind with
       | `AddAssign ->
-          if Typ.is_pointer t1 then Binop.PlusPI else Binop.PlusA
+          if Typ.is_pointer t1 then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ)
       | `SubAssign ->
-          if Typ.is_pointer t1 then Binop.MinusPI else Binop.MinusA
+          if Typ.is_pointer t1 then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ)
       | `MulAssign ->
-          Binop.Mult
+          Binop.Mult (Typ.get_ikind_opt typ)
       | `DivAssign ->
           Binop.Div
       | `ShlAssign ->
@@ -66,9 +66,9 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `Add ->
       if Typ.is_pointer t1 then (binop_exp Binop.PlusPI, [])
       else if Typ.is_pointer t2 then (binop_exp ~change_order:true Binop.PlusPI, [])
-      else (binop_exp Binop.PlusA, [])
+      else (binop_exp (Binop.PlusA (Typ.get_ikind_opt typ)), [])
   | `Mul ->
-      (binop_exp Binop.Mult, [])
+      (binop_exp (Binop.Mult (Typ.get_ikind_opt typ)), [])
   | `Div ->
       (binop_exp Binop.Div, [])
   | `Rem ->
@@ -76,7 +76,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `Sub ->
       if Typ.is_pointer t1 then
         if Typ.is_pointer t2 then (binop_exp Binop.MinusPP, []) else (binop_exp Binop.MinusPI, [])
-      else (binop_exp Binop.MinusA, [])
+      else (binop_exp (Binop.MinusA (Typ.get_ikind_opt typ)), [])
   | `Shl ->
       (binop_exp Binop.Shiftlt, [])
   | `Shr ->
@@ -129,13 +129,13 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `PostInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA in
+      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ) in
       let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       (Exp.Var id, [instr1; Sil.Store (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA in
+      let bop = if Typ.is_pointer typ then Binop.PlusPI else Binop.PlusA (Typ.get_ikind_opt typ) in
       let e_plus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_plus_1
@@ -144,13 +144,17 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let bop = if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA in
+      let bop =
+        if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ)
+      in
       let e_minus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       (Exp.Var id, [instr1; Sil.Store (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Load (id, e, typ, loc) in
-      let bop = if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA in
+      let bop =
+        if Typ.is_pointer typ then Binop.MinusPI else Binop.MinusA (Typ.get_ikind_opt typ)
+      in
       let e_minus_1 = Exp.BinOp (bop, Exp.Var id, Exp.Const (Const.Cint IntLit.one)) in
       let exp =
         if CGeneral_utils.is_cpp_translation translation_unit_context then e else e_minus_1
@@ -254,4 +258,4 @@ let sil_const_plus_one const =
   | Exp.Const (Const.Cint n) ->
       Exp.Const (Const.Cint (IntLit.add n IntLit.one))
   | _ ->
-      Exp.BinOp (Binop.PlusA, const, Exp.Const (Const.Cint IntLit.one))
+      Exp.BinOp (Binop.PlusA None, const, Exp.Const (Const.Cint IntLit.one))

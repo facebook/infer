@@ -192,7 +192,7 @@ let rec pp_ pe pp_t f e =
   let pp_exp = pp_ pe pp_t in
   let print_binop_stm_output e1 op e2 =
     match (op : Binop.t) with
-    | Eq | Ne | PlusA | Mult ->
+    | Eq | Ne | PlusA _ | Mult _ ->
         F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe op) pp_exp e1
     | Lt ->
         F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Gt) pp_exp e1
