@@ -54,6 +54,7 @@ let rec get_fun_name pat =
             (Selected_ast.To_ocaml.copy_pattern p) )
         pat
 
+
 let vb_stack_with, vb_stack_top =
   let stack = ref [] in
   let with_ x ~f =
@@ -64,6 +65,7 @@ let vb_stack_with, vb_stack_top =
   in
   let top () = List.hd_exn !stack in
   (with_, top)
+
 
 let mapper =
   let value_binding (m : Ast_mapper.mapper) vb =
@@ -112,6 +114,7 @@ let mapper =
     | _ -> Ast_mapper.default_mapper.expr m exp
   in
   {Ast_mapper.default_mapper with expr; value_binding}
+
 
 let impl = Selected_ast.Ast.map_structure mapper
 

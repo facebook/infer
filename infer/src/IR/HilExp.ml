@@ -210,6 +210,7 @@ let rec eval_arithmetic_binop op e1 e2 =
   | _ ->
       None
 
+
 and eval = function
   | Constant c ->
       Some c

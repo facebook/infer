@@ -148,5 +148,6 @@ module Summary = struct
     post = set of uninit local variables of the procedure *)
   type t = Domain.t prepost
 
-  let pp fmt {pre; post} = F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
+  let pp fmt {pre; post} =
+    F.fprintf fmt "@\n Pre: %a @\nPost: %a @\n" Domain.pp pre Domain.pp post
 end

@@ -1187,9 +1187,9 @@ and () =
        "Do not show reports coming from this type of issue. Each checker can report a range of \
         issue types. This option provides fine-grained filtering over which types of issue should \
         be reported once the checkers have run. In particular, note that disabling issue types \
-        does not make the corresponding checker not run.\n \
-        By default, the following issue types are disabled: %s.\n\n \
-        See also $(b,--report-issue-type).\n"
+        does not make the corresponding checker not run.\n\
+       \ By default, the following issue types are disabled: %s.\n\n\
+       \ See also $(b,--report-issue-type).\n"
        (String.concat ~sep:", " disabled_issues_ids)) ;
   mk true ~long:"enable-issue-type"
     ~deprecated:["enable_checks"; "-enable-checks"]

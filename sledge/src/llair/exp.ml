@@ -70,6 +70,7 @@ let uncurry exp =
   in
   uncurry_ [] exp
 
+
 let rec fmt ff exp =
   let pf fmt =
     Format.pp_open_box ff 2 ;
@@ -125,6 +126,7 @@ let rec fmt ff exp =
   | Rem, [x; y] -> pf "(%a@ %% %a)" fmt x fmt y
   | URem, [x; y] -> pf "(%a@ u%% %a)" fmt x fmt y
 
+
 (** Queries *)
 
 let rec typ_of : t -> Typ.t = function[@warning "p"]
@@ -171,6 +173,7 @@ let rec typ_of : t -> Typ.t = function[@warning "p"]
    |App {op= App {op= App {op= Select}}; arg} ->
       typ_of arg
   | AppN {op} -> typ_of op
+
 
 let valid_fld fld elts = 0 <= fld && fld < Vector.length elts
 
@@ -220,6 +223,7 @@ module Global = struct
       (option_fmt " =@ @[%a@]" fmt)
       init
 
+
   let fmt = fmt
 
   let mk ?init ?(loc = Loc.none) name typ =
@@ -227,6 +231,7 @@ module Global = struct
       Option.for_all init ~f:(fun exp ->
           Typ.equal typ (Typ.mkPointer ~elt:(typ_of exp)) ) ) ;
     Global {name; init; typ; loc}
+
 
   let of_exp e = match e with Global _ -> Some e | _ -> None
 
@@ -249,6 +254,7 @@ let locate loc exp =
   | AppN {op; args} -> AppN {op; args; loc}
   | _ -> exp
 
+
 let mkApp1 op arg = App {op; arg; loc= Loc.none}
 
 let mkApp2 op x y = mkApp1 (mkApp1 op x) y
@@ -265,11 +271,13 @@ let mkNondet (typ : Typ.t) msg =
   assert (match typ with Function _ -> false | _ -> true) ;
   Nondet {typ; loc= Loc.none; msg}
 
+
 let mkLabel ~parent ~name = Label {parent; name; loc= Loc.none}
 
 let mkNull (typ : Typ.t) =
   assert (match typ with Opaque _ | Function _ -> false | _ -> true) ;
   Null {typ}
+
 
 let mkPtrFld ~ptr ~fld =
   assert (
@@ -278,12 +286,14 @@ let mkPtrFld ~ptr ~fld =
     | _ -> false ) ;
   mkApp1 (PtrFld {fld}) ptr
 
+
 let mkPtrIdx ~ptr ~idx =
   assert (
     match (typ_of ptr, typ_of idx) with
     | Pointer {elt= Array _}, Integer _ -> true
     | _ -> false ) ;
   mkApp2 PtrIdx ptr idx
+
 
 let mkPrjFld ~agg ~fld =
   assert (
@@ -292,12 +302,14 @@ let mkPrjFld ~agg ~fld =
     | _ -> false ) ;
   mkApp1 (PrjFld {fld}) agg
 
+
 let mkPrjIdx ~arr ~idx =
   assert (
     match (typ_of arr, typ_of idx) with
     | Array _, Integer _ -> true
     | _ -> false ) ;
   mkApp2 PrjIdx arr idx
+
 
 let mkUpdFld ~agg ~elt ~fld =
   assert (
@@ -307,12 +319,14 @@ let mkUpdFld ~agg ~elt ~fld =
     | _ -> false ) ;
   mkApp2 (UpdFld {fld}) agg elt
 
+
 let mkUpdIdx ~arr ~elt ~idx =
   assert (
     match (typ_of arr, typ_of idx) with
     | Array {elt= typ}, Integer _ -> Typ.equal typ (typ_of elt)
     | _ -> false ) ;
   mkApp3 UpdIdx arr elt idx
+
 
 let mkInteger data (typ : Typ.t) =
   assert (
@@ -324,11 +338,13 @@ let mkInteger data (typ : Typ.t) =
     match typ with Integer {bits} -> in_range data bits | _ -> false ) ;
   Integer {data; typ}
 
+
 let mkBool b = mkInteger (Z.of_int (Bool.to_int b)) Typ.i1
 
 let mkFloat data (typ : Typ.t) =
   assert (match typ with Float _ -> true | _ -> false) ;
   Float {data; typ}
+
 
 let mkArray elts (typ : Typ.t) =
   assert (
@@ -339,6 +355,7 @@ let mkArray elts (typ : Typ.t) =
     | _ -> false ) ;
   mkAppN (Array {typ}) elts
 
+
 let mkStruct elts (typ : Typ.t) =
   assert (
     match typ with
@@ -347,6 +364,7 @@ let mkStruct elts (typ : Typ.t) =
             Typ.equal (typ_of elt) elt_typ )
     | _ -> false ) ;
   mkAppN (Struct {typ}) elts
+
 
 let mkStruct_rec key =
   let memo_id = Hashtbl.create key () in
@@ -373,13 +391,16 @@ let mkStruct_rec key =
   in
   Staged.stage mkStruct_
 
+
 let mkCast exp typ =
   assert (Typ.compatible (typ_of exp) typ) ;
   mkApp1 (Cast {typ}) exp
 
+
 let mkConv exp ?(signed = false) typ =
   assert (Typ.compatible (typ_of exp) typ) ;
   mkApp1 (Conv {signed; typ}) exp
+
 
 let mkSelect ~cnd ~thn ~els =
   assert (
@@ -389,6 +410,7 @@ let mkSelect ~cnd ~thn ~els =
         m = n && Typ.equal s t
     | _ -> false ) ;
   mkApp3 Select cnd thn els
+
 
 let binop op x y =
   assertf
@@ -403,6 +425,7 @@ let binop op x y =
      | _ -> false)
     "ill-typed: %a" fmt (mkApp2 op x y) () ;
   mkApp2 op x y
+
 
 let mkEq = binop Eq
 

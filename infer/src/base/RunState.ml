@@ -45,8 +45,8 @@ let load_and_validate () =
         Error
           (Printf.sprintf
              "'%s' already exists but it is not an empty directory and it does not look like an \
-              infer results directory:\n  \
-              %s\n\
+              infer results directory:\n\
+             \  %s\n\
               Was it created using an older version of infer?"
              Config.results_dir err_msg) )
       msg

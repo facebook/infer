@@ -66,8 +66,10 @@ let rec dummy_block =
   ; parent= dummy_func
   ; sort_index= 0 }
 
+
 and dummy_func =
   {name= Global.mk "dummy" Typ.i8p; entry= dummy_block; cfg= Vector.empty}
+
 
 module Inst = struct
   type t = inst
@@ -79,12 +81,14 @@ module Inst = struct
       | _ -> false ) ;
     Load {reg; ptr; loc}
 
+
   let mkStore ~ptr ~exp ~loc =
     assert (
       match Exp.typ ptr with
       | Pointer {elt} -> Typ.equal elt (Exp.typ exp) && Typ.is_sized elt
       | _ -> false ) ;
     Store {ptr; exp; loc}
+
 
   let mkMemcpy ~dst ~src ~len ~loc =
     assert (
@@ -94,6 +98,7 @@ module Inst = struct
       | _ -> false ) ;
     Memcpy {dst; src; len; loc}
 
+
   let mkMemmov ~dst ~src ~len ~loc =
     assert (
       match (Exp.typ dst, Exp.typ src, Exp.typ len) with
@@ -102,12 +107,14 @@ module Inst = struct
       | _ -> false ) ;
     Memmov {dst; src; len; loc}
 
+
   let mkMemset ~dst ~byt ~len ~loc =
     assert (
       match (Exp.typ dst, Exp.typ byt, Exp.typ len) with
       | Pointer {elt}, Integer {bits= 8}, Integer _ -> Typ.is_sized elt
       | _ -> false ) ;
     Memset {dst; byt; len; loc}
+
 
   let mkAlloc ~reg ~num ~loc =
     assert (
@@ -116,6 +123,7 @@ module Inst = struct
       | _ -> false ) ;
     Alloc {reg; num; loc}
 
+
   let mkFree ~ptr ~loc =
     assert (
       match Exp.typ ptr with
@@ -123,9 +131,11 @@ module Inst = struct
       | _ -> false ) ;
     Free {ptr; loc}
 
+
   let mkNondet ~reg ~msg ~loc =
     assert (Option.for_all ~f:(Var.typ >> Typ.is_sized) reg) ;
     Nondet {reg; msg; loc}
+
 
   let fmt ff inst =
     let pf fmt = Format.fprintf ff fmt in
@@ -151,8 +161,10 @@ let fmt_cmnd = vector_fmt "@ " Inst.fmt
 let fmt_args fmt_arg ff args =
   Format.fprintf ff "@ (@[%a@])" (vector_fmt ",@ " fmt_arg) args
 
+
 let fmt_param ff var =
   Format.fprintf ff "%a %a" Typ.fmt (Var.typ var) Var.fmt var
+
 
 module Jump = struct
   type t = jump
@@ -172,12 +184,14 @@ module Term = struct
     assert (match Exp.typ key with Integer _ -> true | _ -> false) ;
     Switch {key; tbl; els; loc}
 
+
   let mkISwitch ~ptr ~tbl ~loc =
     assert (
       match Exp.typ ptr with
       | Pointer {elt= Integer {bits= 8}} -> true
       | _ -> false ) ;
     ISwitch {ptr; tbl; loc}
+
 
   let mkCall ~func ~args ~return ~throw ~ignore_result ~loc =
     assert (
@@ -192,6 +206,7 @@ module Term = struct
       ; throw
       ; ignore_result
       ; loc }
+
 
   let mkReturn ~exp ~loc = Return {exp; loc}
 
@@ -239,6 +254,7 @@ module Block = struct
     ) ;
     {dummy_block with lbl; params; cmnd; term}
 
+
   (* blocks in a [t] are uniquely identified by [sort_index] *)
   let compare x y = Int.compare x.sort_index y.sort_index
 
@@ -257,14 +273,17 @@ module Func = struct
   let find functions func =
     Vector.find functions ~f:(fun {name} -> Global.equal func name)
 
+
   let is_undefined = function
     | {entry= {cmnd; term= Unreachable}} -> Vector.is_empty cmnd
     | _ -> false
+
 
   let fold_term {entry; cfg} ~init ~f =
     let fold_block {term} ~init ~f = f init term in
     Vector.fold cfg ~init:(fold_block entry ~init ~f) ~f:(fun z k ->
         fold_block k ~init:z ~f )
+
 
   let mk ~name ~entry ~cfg =
     let func = {name; entry; cfg} in
@@ -330,12 +349,14 @@ module Func = struct
       true ) ;
     func
 
+
   let mk_undefined ~name ~params =
     let entry =
       Block.mk ~lbl:"" ~params ~cmnd:Vector.empty ~term:Term.mkUnreachable
     in
     let cfg = Vector.empty in
     mk ~name ~entry ~cfg
+
 
   let fmt ff ({name; entry= {params; cmnd; term; sort_index}; cfg} as func)
       =
@@ -362,6 +383,7 @@ module Block_id = struct
   let compare x y =
     [%compare: string * Global.t] (x.lbl, x.parent.name)
       (y.lbl, y.parent.name)
+
 
   let hash b = Hashtbl.hash (b.lbl, b.parent.name)
 end
@@ -442,6 +464,7 @@ let set_derived_metadata functions =
   sort_functions functions ;
   Vector.of_array functions
 
+
 let mk ~typ_defns ~globals ~functions =
   assert (
     (not
@@ -461,6 +484,7 @@ let mk ~typ_defns ~globals ~functions =
   { typ_defns
   ; globals= Vector.of_list_rev globals
   ; functions= set_derived_metadata functions }
+
 
 let fmt ff {typ_defns; globals; functions} =
   Format.fprintf ff "@[<v>@[%a@]@ @ @ @[%a@]@ @ @ @[%a@]@]"

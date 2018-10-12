@@ -742,7 +742,8 @@ let get_reporting_explanation_java report_kind tenv pname thread =
     if is_thread_safe_method pname tenv then
       Some
         (F.asprintf
-           "@\n Reporting because current method is annotated %a or overrides an annotated method."
+           "@\n\
+           \ Reporting because current method is annotated %a or overrides an annotated method."
            MF.pp_monospaced "@ThreadSafe")
     else
       match FbThreadSafety.get_fbthreadsafe_class_annot pname tenv with
@@ -788,8 +789,8 @@ let get_reporting_explanation_java report_kind tenv pname thread =
       else
         ( IssueType.thread_safety_violation
         , F.asprintf
-            "@\n \
-             Reporting because another access to the same memory occurs on a background thread, \
+            "@\n\
+            \ Reporting because another access to the same memory occurs on a background thread, \
              although this access may not." )
 
 

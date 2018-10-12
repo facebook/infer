@@ -698,8 +698,8 @@ let pp_summary fmt {threads; locks; accesses; return_ownership; return_attribute
 let pp fmt {threads; locks; accesses; ownership; attribute_map; wobbly_paths} =
   F.fprintf fmt
     "Threads: %a, Locks: %a @\n\
-     Accesses %a @\n \
-     Ownership: %a @\n\
+     Accesses %a @\n\
+    \ Ownership: %a @\n\
      Attributes: %a @\n\
      Non-stable Paths: %a@\n"
     ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp

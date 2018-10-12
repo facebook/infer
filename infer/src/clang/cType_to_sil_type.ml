@@ -98,6 +98,7 @@ let rec build_array_type translate_decl tenv (qual_type : Clang_ast_t.qual_type)
   let stride = Option.map ~f:IntLit.of_int stride_opt in
   Typ.Tarray {elt= array_type; length; stride}
 
+
 and type_desc_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
   | Some type_ptr -> (
@@ -109,6 +110,7 @@ and type_desc_of_attr_type translate_decl tenv type_info attr_info =
         type_ptr_to_type_desc translate_decl tenv type_ptr )
   | None ->
       Typ.Tvoid
+
 
 and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
   let open Clang_ast_t in
@@ -167,6 +169,7 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
       | None ->
           Typ.Tvoid )
 
+
 and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
   let open Clang_ast_t in
   let typ = Clang_ast_extend.DeclPtr decl_ptr in
@@ -194,6 +197,7 @@ and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
           (Clang_ast_j.string_of_pointer decl_ptr) ;
         Typ.Tvoid )
 
+
 and clang_type_ptr_to_type_desc translate_decl tenv type_ptr =
   try Clang_ast_extend.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Caml.Not_found -> (
@@ -204,6 +208,7 @@ and clang_type_ptr_to_type_desc translate_decl tenv type_ptr =
         type_desc
     | _ ->
         Typ.Tvoid )
+
 
 and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
   match type_ptr with
@@ -225,6 +230,7 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
       Typ.Tvoid
   | _ ->
       L.(die InternalError) "unknown variant for type_ptr"
+
 
 and qual_type_to_sil_type translate_decl tenv qual_type =
   let desc = type_ptr_to_type_desc translate_decl tenv qual_type.Clang_ast_t.qt_type_ptr in

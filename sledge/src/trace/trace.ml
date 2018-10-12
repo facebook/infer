@@ -26,6 +26,7 @@ let init ~trace_all:ta =
   Caml.at_exit flush ;
   trace_all := ta
 
+
 (* selective tracing not yet implemented *)
 let enabled _ = !trace_all
 
@@ -35,17 +36,20 @@ let info mod_name fun_name fmt =
     Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
   else Format.ifprintf ff fmt
 
+
 let incf rev_prefix name fmt =
   if enabled (name :: rev_prefix) then (
     Format.fprintf ff "@\n@[<2>@[( %s: " name ;
     Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
   else Format.ifprintf ff fmt
 
+
 let decf rev_prefix name fmt =
   if enabled (name :: rev_prefix) then (
     Format.fprintf ff "@]@\n@[<2>) %s:@ " name ;
     Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
   else Format.ifprintf ff fmt
+
 
 let call mod_name fun_name k = k (incf [mod_name] fun_name)
 

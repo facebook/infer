@@ -137,9 +137,9 @@ let tests =
         ; read_field_to_id "read_id" "base_id" "f"
         ; var_assign_id "var" "read_id"
         ; invariant
-            "{ base_id$0.f* => (SOURCE -> ?),\n  \
-             ret_id$0* => (SOURCE -> ?),\n  \
-             var* => (SOURCE -> ?) }" ] )
+            "{ base_id$0.f* => (SOURCE -> ?),\n\
+            \  ret_id$0* => (SOURCE -> ?),\n\
+            \  var* => (SOURCE -> ?) }" ] )
     ; ( "source flows to var then cleared"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"

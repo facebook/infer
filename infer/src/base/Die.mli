@@ -7,9 +7,10 @@
 
 open! IStd
 
-(* WARNING: ONLY USE IF Logging IS NOT AVAILABLE TO YOU FOR SOME REASON (e.g., inside Config). *)
-
-exception InferExternalError of string
+exception
+  (* WARNING: ONLY USE IF Logging IS NOT AVAILABLE TO YOU FOR SOME REASON (e.g., inside Config). *)
+    InferExternalError of
+    string
 
 exception InferInternalError of string
 

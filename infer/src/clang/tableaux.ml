@@ -254,10 +254,10 @@ let add_valid_formulae an checker lcxt cl =
         add_in_set phi acc_set
     | AG _ | AX _ | AF _ | AU _ | EH _ | ET _ | Implies _ ->
         Logging.die InternalError
-          "@\n \
-           We should not have operators AG, AX, AF, AU, EH, ET.\n  \
-           Failing with formula @\n   \
-           %a@\n"
+          "@\n\
+          \ We should not have operators AG, AX, AF, AU, EH, ET.\n\
+          \  Failing with formula @\n\
+          \   %a@\n"
           CTL.Debug.pp_formula phi
     | _ ->
         acc_set

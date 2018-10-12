@@ -1165,6 +1165,7 @@ let rec eval_Atomic pred_name_ args an lcxt =
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
+
 and eval_AND an lcxt f1 f2 =
   match eval_formula f1 an lcxt with
   | Some witness1 -> (
@@ -1176,12 +1177,14 @@ and eval_AND an lcxt f1 f2 =
   | None (* we short-circuit the AND evaluation *) ->
       None
 
+
 and eval_OR an lcxt f1 f2 = choose_witness_opt (eval_formula f1 an lcxt) (eval_formula f2 an lcxt)
 
 and eval_Implies an lcxt f1 f2 =
   let witness1 = if Option.is_some (eval_formula f1 an lcxt) then None else Some an in
   let witness2 = eval_formula f2 an lcxt in
   choose_witness_opt witness1 witness2
+
 
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi
@@ -1202,6 +1205,7 @@ and eval_EF phi an lcxt trans =
       else
         List.fold_left (Ctl_parser_types.get_direct_successor_nodes an) ~init:witness_opt
           ~f:(fun acc node -> choose_witness_opt (eval_EF phi node lcxt trans) acc )
+
 
 (* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
 
@@ -1227,6 +1231,7 @@ and eval_EX phi an lcxt trans =
   | _ ->
       witness_opt
 
+
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
 
@@ -1237,6 +1242,7 @@ and eval_EU phi1 phi2 an lcxt trans =
   let f = Or (phi2, And (phi1, EX (trans, EU (trans, phi1, phi2)))) in
   eval_formula f an lcxt
 
+
 (* an |= A(phi1 U phi2) evaluated using the equivalence
    an |= A(phi1 U phi2) <=> an |= phi2 or (phi1 and AX(A(phi1 U phi2)))
 
@@ -1245,6 +1251,7 @@ and eval_EU phi1 phi2 an lcxt trans =
 and eval_AU phi1 phi2 an lcxt trans =
   let f = Or (phi2, And (phi1, AX (trans, AU (trans, phi1, phi2)))) in
   eval_formula f an lcxt
+
 
 (* an, lcxt |= InNode[node_type_list] phi <=>
    an is a node of type in node_type_list and an satifies phi
@@ -1263,6 +1270,7 @@ and in_node node_type_list phi an lctx =
   List.fold_left node_type_list ~init:None ~f:(fun acc node ->
       choose_witness_opt (holds_for_one_node node) acc )
 
+
 (* Intuitive meaning: (an,lcxt) satifies EH[Classes] phi
    if the node an is among the declaration specified by the list Classes and
    there exists a super class in its hierarchy whose declaration satisfy phi.
@@ -1274,6 +1282,7 @@ and eval_EH classes phi an lcxt =
   (* Define EH[Classes] phi = ET[Classes](EF[->Super] phi) *)
   let f = ET (classes, None, EX (Some Super, EF (Some Super, phi))) in
   eval_formula f an lcxt
+
 
 (* an, lcxt |= ET[T][->l]phi <=>
    eventually we reach a node an' such that an' is among the types defined in T
@@ -1294,6 +1303,7 @@ and eval_ET tl trs phi an lcxt =
         EF (None, InNode (tl, phi))
   in
   eval_formula f an lcxt
+
 
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
 and eval_formula f an lcxt : Ctl_parser_types.ast_node option =

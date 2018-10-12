@@ -10,9 +10,8 @@ open! IStd
 
 (** Re-arrangement and extension of structures with fresh variables *)
 
-(* TODO: this description is not clear *)
-
-exception ARRAY_ACCESS
+exception (* TODO: this description is not clear *)
+            ARRAY_ACCESS
 
 val is_only_pt_by_fld_or_param_nonnull :
   Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Exp.t -> bool

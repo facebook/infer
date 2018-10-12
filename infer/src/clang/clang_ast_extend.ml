@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+
 (* This module adds more variants to some types in AST The implementation extends default one from
    the facebook-clang-plugins repository *)
 
@@ -87,6 +88,7 @@ module TypePointerOrd = struct
     | t1, t2 ->
         L.(die InternalError)
           "unexpected type_ptr variants: %s, %s" (type_ptr_to_string t1) (type_ptr_to_string t2)
+
 
   and compare_qual_type (qt1 : Clang_ast_t.qual_type) (qt2 : Clang_ast_t.qual_type) =
     if phys_equal qt1 qt2 then 0

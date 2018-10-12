@@ -39,6 +39,7 @@ end = struct
     let (Arg (trm, set)) = List.fold_right ~f:pair args ~init in
     Term.app (Term.const set) trm
 
+
   let args : arg list ref = ref []
 
   let mk ~default arg =
@@ -46,6 +47,7 @@ end = struct
     let set x = var := x in
     args := Arg (arg, set) :: !args ;
     var
+
 
   let parse info validate =
     match Term.eval (Term.(ret (const validate $ tuple !args)), info) with
@@ -60,13 +62,16 @@ let input =
   mk ~default:""
     Arg.(required & pos ~rev:true 0 (some string) None & info [])
 
+
 let output =
   let default = None in
   mk ~default Arg.(value & opt (some string) default & info ["o"; "output"])
 
+
 let trace_all =
   let default = false in
   mk ~default Arg.(value & flag & info ["t"; "trace-all"])
+
 
 let info = Term.info "sledge" ~version:Version.version
 

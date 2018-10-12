@@ -8,6 +8,7 @@ open! IStd
 open Graph
 module L = Logging
 module CFG = ProcCfg.Normal
+
 (* Use ocamlgraph's dominators functor to get the dominators *)
 module GDoms = Dominator.Make (ProcCfg.MakeOcamlGraph (CFG))
 

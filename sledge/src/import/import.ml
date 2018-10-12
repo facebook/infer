@@ -43,10 +43,12 @@ let option_fmt fmt pp ff = function
   | Some x -> Format.fprintf ff fmt pp x
   | None -> ()
 
+
 let rec list_fmt sep pp ff = function
   | [] -> ()
   | [x] -> pp ff x
   | x :: xs -> Format.fprintf ff "%a%( %)%a" pp x sep (list_fmt sep pp) xs
+
 
 let vector_fmt sep pp ff v = list_fmt sep pp ff (Vector.to_list v)
 
@@ -60,6 +62,7 @@ let warn fmt =
       Format.pp_force_newline ff () )
     ff fmt
 
+
 let raisef exn fmt =
   let bt = Caml.Printexc.get_raw_backtrace () in
   let ff = Format.str_formatter in
@@ -72,6 +75,7 @@ let raisef exn fmt =
       Caml.Printexc.raise_with_backtrace exn bt )
     ff fmt
 
+
 exception Unimplemented of string
 
 let todo fmt = raisef (fun msg -> Unimplemented msg) fmt
@@ -82,9 +86,11 @@ let assertf cnd fmt =
   if not cnd then fail fmt
   else Format.ikfprintf (fun _ () -> ()) Format.str_formatter fmt
 
+
 let checkf cnd fmt =
   if not cnd then fail fmt
   else Format.ikfprintf (fun _ () -> true) Format.str_formatter fmt
+
 
 type 'a or_error = ('a, exn * Caml.Printexc.raw_backtrace) Result.t
 

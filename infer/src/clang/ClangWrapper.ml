@@ -180,7 +180,7 @@ let exe ~prog ~args =
            files. *)
       L.(debug Capture Quiet)
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will \
-         run the original command directly:@\n  \
-         %s@\n"
+         run the original command directly:@\n\
+        \  %s@\n"
         (String.concat ~sep:" " @@ (prog :: args)) ;
     Process.create_process_and_wait ~prog ~args )
