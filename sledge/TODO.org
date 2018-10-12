@@ -25,6 +25,36 @@ rather than nearest enclosing
 ** check/ensure that generated names do not clash
 - name ^ ".ti" xlate_instr LandingPad
 ** ? expose the roots computed by Llair.mk
+** ? types
+- could add types to Exp constructors, indicating the types at which the operation interprets its arguments
+  + pros
+    * could enforce well-typedness modulo castability
+      - quite weak constraint, but might catch some bugs
+      - not castable:
+        + Bytes <-> (Function | Opaque | Memory)
+        + between (Int | Float | Array) when prim_bit_size different
+        + Pointer <-> (Function | Tuple | Struct | Opaque | Memory)
+        + between (Function | Tuple | Struct | Opaque | Memory)
+    * perhaps helpful when debugging
+    * needed for correct semantics
+      - where size of integer and floating point numbers matters (overflow behavior and interpretation of conversions)
+  + cons
+    - perf: increases size of representation of Exp, perhaps a lot
+    - code complexity: need to plumb through target-specific data in order to e.g. be able to create equalities at intptr type
+- instructions and globals could use accurate types to replace len fields with static sizeof type
+- load instructions would need accurate types on reg to create equalities between it and its value in Exec
+- memcpy and memmov would need types to create equality between src and dst in Exec
+- formals would need types, to create equalities between formals and actuals in Domain
+- types could be useful for approximate human-readable printing for general expressions
+  + to print p+o as p.f, will likely need to consult what p is equal to, to find some meaningful type, and it could easily take much more work than this to produce reliably readable results
+- target-specific types and layout
+  + change Typ.target into a separate module
+  + construct an instance in frontend as first step
+  + use it during translation
+  + return it as part of program
+  + pass it from Control to Domain, etc.
+- function types could include the types of throw continuation args
+but they are currently the same for all functions: i8*
 ** ? change blocks to take all free variables as args
 + currently the scope of an identifier bound by e.g. Load is the continuation of the inst as well as all the conts that it dominates, this is somewhat messy
 + build a table from blocks to conts
@@ -50,8 +80,6 @@ rather than nearest enclosing
     * else recurse over the destination blocks except the current block
 + after entry block (and recursively everything reachable from it) is xlated, map over the function block list looking up from the table to get order of conts to match order of blocks
 ** ? format #line directives in programs
-** ? function types could include the types of throw continuation args
-but they are currently the same for all functions: i8*
 * frontend
 ** kill the frontend memo tables when translate returns
 ** translate %malloc to alloc
@@ -136,7 +164,6 @@ so that xlate_type can preserve sizedness, e.g. add a post-condition that Typ.is
 ** scalarizer does not work on functions with [optnone] attribute
 - repro: llvm/Transforms/FunctionAttrs/optnone-simple.ll
 - one solution: pre-process llvm to remove [optnone] attributes before running scalarizer pass
-** ? move is_zero to Exp
 ** ? remove Exp.Nondet, replace with free variables
 it is not obvious whether it will be simpler to use free variables instead of Nondet in the frontend, or to treat Nondet as a single-occurrence existential variable in the analyzer
 ** llvm bugs?

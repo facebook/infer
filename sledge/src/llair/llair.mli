@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Programs / translation units
+(** Translation units
 
-    LLAIR (Low-Level Analysis Internal Representation) is an IR optimized
-    for static analysis using a low-level model of memory. Compared to a
+    LLAIR (Low-Level Analysis Internal Representation) is an IR tailored for
+    static analysis using a low-level model of memory. Compared to a
     compiler IR such as LLVM, an analyzer does not need to perform register
     allocation, instruction selection, code generation, etc. or even much
     code transformation, so the constraints on the IR are very different.
@@ -17,14 +17,12 @@
     instead of using ϕ-nodes. An analyzer will need good support for
     parameter passing anyhow, and ϕ-nodes make it hard to express program
     properties as predicates on states, since some execution history is
-    needed to evaluate ϕ instructions. SSA form is beneficial for analysis
-    as it means that all "modified variables" side-conditions on program
-    logic rules trivially hold. An alternative view is that the scope of
-    variables [reg] assigned in instructions such as [Load] is the successor
-    block as well as all blocks the instruction dominates in the
+    needed to evaluate ϕ instructions. An alternative view is that the
+    scope of variables [reg] assigned in instructions such as [Load] is the
+    successor block as well as all blocks the instruction dominates in the
     control-flow graph. This language is first-order, and a term structure
     for the code constituting the scope of variables is not needed, so SSA
-    and not CPS suffices.
+    rather than full CPS suffices.
 
     Additionally, the focus on memory analysis leads to a design where the
     arithmetic and logic operations are not "instructions" but instead are
@@ -32,10 +30,11 @@
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
-  | Load of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
-      (** Read the contents of memory at address [ptr] into [reg]. *)
-  | Store of {ptr: Exp.t; exp: Exp.t; loc: Loc.t}
-      (** Write [exp] into memory at address [ptr]. *)
+  | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
+      (** Read a [len]-byte value from the contents of memory at address
+          [ptr] into [reg]. *)
+  | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+      (** Write [len]-byte value [exp] into memory at address [ptr]. *)
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
       (** Copy [len] bytes starting from address [src] to [dst], undefined
           if ranges overlap. *)
@@ -43,14 +42,17 @@ type inst = private
       (** Copy [len] bytes starting from address [src] to [dst]. *)
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
       (** Store byte [byt] into [len] memory addresses starting from [dst]. *)
-  | Alloc of {reg: Var.t; num: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
-          type [t] where [reg : t*] and bind [reg] to the first address. *)
+          [len] bytes each and bind [reg] to the first address. *)
   | Free of {ptr: Exp.t; loc: Loc.t}
       (** Deallocate the previously allocated block at address [ptr]. *)
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
-      (** Bind [reg] to an arbitrary value of its type, representing
-          non-deterministic approximation of behavior described by [msg]. *)
+      (** Bind [reg] to an arbitrary value, representing non-deterministic
+          approximation of behavior described by [msg]. *)
+  | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
+      (** Bind [reg] to the length of the null-terminated string in memory
+          starting from [ptr]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst vector
@@ -61,7 +63,7 @@ type label = string
 (** A jump with arguments. *)
 type 'a control_transfer =
   { mutable dst: 'a
-  ; args: Exp.t vector
+  ; args: Exp.t list  (** Stack of arguments, first-arg-last *)
   ; mutable retreating: bool
         (** Holds if [dst] is an ancestor in a depth-first traversal. *) }
 
@@ -73,10 +75,11 @@ and term = private
   | Switch of {key: Exp.t; tbl: (Z.t * jump) vector; els: jump; loc: Loc.t}
       (** Invoke the [jump] in [tbl] associated with the integer [z] which
           is equal to [key], if any, otherwise invoke [els]. *)
-  | ISwitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
+  | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
   | Call of
-      { call: Exp.t control_transfer  (** [Global] for non-virtual call. *)
+      { call: Exp.t control_transfer  (** A [global] for non-virtual call. *)
+      ; typ: Typ.t  (** Type of the callee. *)
       ; return: jump  (** Return destination or trampoline. *)
       ; throw: jump option  (** Handler destination or trampoline. *)
       ; ignore_result: bool  (** Drop return value when invoking return. *)
@@ -93,7 +96,8 @@ and term = private
 (** A block is a destination of a jump with arguments, contains code. *)
 and block = private
   { lbl: label
-  ; params: Var.t vector
+  ; params: Var.t list  (** Formal parameters, first-param-last stack *)
+  ; locals: Var.Set.t  (** Local variables, including [params]. *)
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
@@ -104,104 +108,93 @@ and block = private
 and cfg
 
 (** A function is a control-flow graph with distinguished entry block, whose
-    arguments are the function arguments. *)
+    parameters are the function parameters. *)
 and func = private {name: Global.t; entry: block; cfg: cfg}
 
 type t = private
-  { typ_defns: Typ.t list  (** Type definitions. *)
-  ; globals: Global.t vector  (** Global variable definitions. *)
+  { globals: Global.t vector  (** Global variable definitions. *)
   ; functions: func vector  (** (Global) function definitions. *) }
 
-val mk :
-  typ_defns:Typ.t list -> globals:Global.t list -> functions:func list -> t
+val pp : t pp
 
-val fmt : t fmt
+include Invariant.S with type t := t
+
+val mk : globals:Global.t list -> functions:func list -> t
 
 module Inst : sig
   type t = inst
 
-  val mkLoad : reg:Var.t -> ptr:Exp.t -> loc:Loc.t -> inst
-
-  val mkStore : ptr:Exp.t -> exp:Exp.t -> loc:Loc.t -> inst
-
-  val mkMemcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-
-  val mkMemmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-
-  val mkMemset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
-
-  val mkAlloc : reg:Var.t -> num:Exp.t -> loc:Loc.t -> inst
-
-  val mkFree : ptr:Exp.t -> loc:Loc.t -> inst
-
-  val mkNondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
-
-  val fmt : t fmt
+  val pp : t pp
+  val load : reg:Var.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val memcpy : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val free : ptr:Exp.t -> loc:Loc.t -> inst
+  val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
+  val strlen : reg:Var.t -> ptr:Exp.t -> loc:Loc.t -> inst
+  val loc : inst -> Loc.t
+  val locals : inst -> Var.Set.t
 end
 
 module Jump : sig
-  type t = jump
+  type t = jump [@@deriving compare, sexp_of]
 
-  val mk : string -> Exp.t vector -> jump
-
-  val fmt : jump fmt
+  val pp : jump pp
+  val mk : string -> Exp.t list -> jump
 end
 
 module Term : sig
   type t = term
 
-  val mkSwitch :
+  val pp : t pp
+
+  val switch :
     key:Exp.t -> tbl:(Z.t * jump) vector -> els:jump -> loc:Loc.t -> term
 
-  val mkISwitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
+  val iswitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
 
-  val mkCall :
+  val call :
        func:Exp.t
-    -> args:Exp.t vector
+    -> typ:Typ.t
+    -> args:Exp.t list
     -> return:jump
     -> throw:jump option
     -> ignore_result:bool
     -> loc:Loc.t
     -> term
 
-  val mkReturn : exp:Exp.t option -> loc:Loc.t -> term
-
-  val mkThrow : exc:Exp.t -> loc:Loc.t -> term
-
-  val mkUnreachable : term
-
-  val fmt : t fmt
+  val return : exp:Exp.t option -> loc:Loc.t -> term
+  val throw : exc:Exp.t -> loc:Loc.t -> term
+  val unreachable : term
 end
 
 module Block : sig
-  type t = block
+  type t = block [@@deriving compare, sexp_of]
 
-  val mk :
-    lbl:label -> params:Var.t vector -> cmnd:cmnd -> term:term -> block
+  include Comparator.S with type t := t
 
-  val fmt : t fmt
+  val pp : t pp
 
-  val compare : t -> t -> int
+  include Invariant.S with type t := t
 
-  val hash : t -> int
-
-  val sexp_of_t : t -> Sexp.t
-
-  val t_of_sexp : Sexp.t -> t
+  val mk : lbl:label -> params:Var.t list -> cmnd:cmnd -> term:term -> block
 end
 
 module Func : sig
   type t = func
 
+  val pp : t pp
+
+  include Invariant.S with type t := t
+
   val mk : name:Global.t -> entry:block -> cfg:block vector -> func
+  val mk_undefined : name:Global.t -> params:Var.t list -> t
 
-  val mk_undefined : name:Global.t -> params:Var.t vector -> t
-
-  val find : func vector -> Global.t -> func option
+  val find : func vector -> Var.t -> func option
   (** Look up a function of the given name in the given functions. *)
 
   val is_undefined : func -> bool
   (** Holds of functions that are declared but not defined. *)
-
-  val fmt : t fmt
 end

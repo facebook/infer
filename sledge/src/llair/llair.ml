@@ -5,34 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Programs / translation units *)
+(** Translation units *)
 
 type inst =
-  | Load of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
-  | Store of {ptr: Exp.t; exp: Exp.t; loc: Loc.t}
+  | Load of {reg: Var.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
+  | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
   | Memcpy of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
-  | Alloc of {reg: Var.t; num: Exp.t; loc: Loc.t}
+  | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
+  | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
 [@@deriving sexp]
 
 type cmnd = inst vector [@@deriving sexp]
-
 type label = string [@@deriving sexp]
 
 type 'a control_transfer =
-  {mutable dst: 'a; args: Exp.t vector; mutable retreating: bool}
-[@@deriving sexp]
+  {mutable dst: 'a; args: Exp.t list; mutable retreating: bool}
+[@@deriving compare, sexp_of]
 
 type jump = block control_transfer
 
 and term =
   | Switch of {key: Exp.t; tbl: (Z.t * jump) vector; els: jump; loc: Loc.t}
-  | ISwitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
+  | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
   | Call of
       { call: Exp.t control_transfer
+      ; typ: Typ.t
       ; return: jump
       ; throw: jump option
       ; ignore_result: bool
@@ -43,7 +44,8 @@ and term =
 
 and block =
   { lbl: label
-  ; params: Var.t vector
+  ; params: Var.t list
+  ; locals: Var.Set.t
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
@@ -51,239 +53,322 @@ and block =
 
 and cfg = block vector
 
-and func = {name: Global.t; entry: block; cfg: cfg} [@@deriving sexp]
+(* [entry] is not part of [cfg] since it is special in two ways: its params
+   are the func params, and it cannot be jumped to, only called. *)
+and func = {name: Global.t; entry: block; cfg: cfg}
 
-type t =
-  {typ_defns: Typ.t list; globals: Global.t vector; functions: func vector}
+let rec sexp_of_jump ({dst; args; retreating} as jmp) =
+  if retreating then
+    [%sexp {dst= (dst.lbl : label); args : Exp.t list; retreating : bool}]
+  else [%sexp_of: jump] jmp
+
+and sexp_of_term t = [%sexp_of: term] t
+
+and sexp_of_block {lbl; params; locals; cmnd; term; parent; sort_index} =
+  [%sexp
+    { lbl : label
+    ; params : Var.t list
+    ; locals : Var.Set.t
+    ; cmnd : cmnd
+    ; term : term
+    ; parent= (parent.name.var : Var.t)
+    ; sort_index : int }]
+
+and sexp_of_func f = [%sexp_of: func] f
+
+(* blocks in a [t] are uniquely identified by [sort_index] *)
+let compare_block x y = Int.compare x.sort_index y.sort_index
+
+type t = {globals: Global.t vector; functions: func vector}
+[@@deriving sexp_of]
+
+let pp_inst fs inst =
+  let pf pp = Format.fprintf fs pp in
+  match inst with
+  | Load {reg; ptr; len; loc} ->
+      pf "@[<2>load %a@ %a@ %a;@]\t%a" Exp.pp len Var.pp reg Exp.pp ptr
+        Loc.pp loc
+  | Store {ptr; exp; len; loc} ->
+      pf "@[<2>store %a@ %a@ %a;@]\t%a" Exp.pp len Exp.pp ptr Exp.pp exp
+        Loc.pp loc
+  | Memcpy {dst; src; len; loc} ->
+      pf "@[<2>memcpy %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
+        Loc.pp loc
+  | Memmov {dst; src; len; loc} ->
+      pf "@[<2>memmov %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp src
+        Loc.pp loc
+  | Memset {dst; byt; len; loc} ->
+      pf "@[<2>memset %a %a %a;@]\t%a" Exp.pp len Exp.pp dst Exp.pp byt
+        Loc.pp loc
+  | Alloc {reg; num; len; loc} ->
+      pf "@[<2>alloc %a@ [%a x %a];@]\t%a" Var.pp reg Exp.pp num Exp.pp len
+        Loc.pp loc
+  | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
+  | Nondet {reg; msg; loc} ->
+      pf "@[<2>nondet %a\"%s\";@]\t%a" (Option.pp "%a " Var.pp) reg msg
+        Loc.pp loc
+  | Strlen {reg; ptr; loc} ->
+      pf "@[<2>strlen %a@ %a;@]\t%a" Var.pp reg Exp.pp ptr Loc.pp loc
+
+let pp_args pp_arg fs args =
+  Format.fprintf fs "@ (@[%a@])" (List.pp ",@ " pp_arg) (List.rev args)
+
+let pp_param fs var = Var.pp fs var
+
+let pp_jump fs {dst= {lbl}; args; retreating} =
+  Format.fprintf fs "@[<2>%s%%%s%a@]"
+    (if retreating then "↑" else "")
+    lbl (pp_args Exp.pp) args
+
+let pp_term fs term =
+  let pf pp = Format.fprintf fs pp in
+  let pp_goto fs jmp = Format.fprintf fs "goto %a;" pp_jump jmp in
+  match term with
+  | Switch {key; tbl; els; loc} -> (
+    match Vector.to_array tbl with
+    | [||] -> pf "@[%a@]\t%a" pp_goto els Loc.pp loc
+    | [|(z, jmp)|] when Z.equal Z.one z ->
+        pf "@[if %a@;<1 2>%a@ @[else@;<1 2>%a@]@]\t%a" Exp.pp key pp_goto
+          jmp pp_goto els Loc.pp loc
+    | _ ->
+        pf "@[<2>switch %a@ @[%a@ else: %a@]@]\t%a" Exp.pp key
+          (Vector.pp "@ " (fun fs (z, jmp) ->
+               Format.fprintf fs "%a: %a" Z.pp_print z pp_goto jmp ))
+          tbl pp_goto els Loc.pp loc )
+  | Iswitch {ptr; tbl; loc} ->
+      pf "@[<2>iswitch %a@ @[<hv>%a@]@]\t%a" Exp.pp ptr
+        (Vector.pp "@ " (fun fs ({dst= {lbl}; _} as jmp) ->
+             Format.fprintf fs "%s: %a" lbl pp_goto jmp ))
+        tbl Loc.pp loc
+  | Call {call= {dst; args; retreating}; return; throw; loc} ->
+      pf "@[<2>@[<7>call @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
+        (if retreating then "↑" else "")
+        Exp.pp dst (pp_args Exp.pp) args pp_jump return
+        (Option.pp "@ throwto %a" pp_jump)
+        throw Loc.pp loc
+  | Return {exp; loc} ->
+      pf "@[<2>return%a@]\t%a" (Option.pp " %a" Exp.pp) exp Loc.pp loc
+  | Throw {exc; loc} -> pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
+  | Unreachable -> pf "unreachable"
+
+let pp_cmnd = Vector.pp "@ " pp_inst
+
+let pp_block fs {lbl; params; cmnd; term; sort_index} =
+  Format.fprintf fs "@[<v 2>@[<4>%s%a@]: #%i@ @[<v>%a%t%a@]@]" lbl
+    (pp_args pp_param) params sort_index pp_cmnd cmnd
+    (fun fs -> if Vector.is_empty cmnd then () else Format.fprintf fs "@ ")
+    pp_term term
 
 (** Initial cyclic values *)
 
 let rec dummy_block =
   { lbl= "dummy"
-  ; params= Vector.empty
+  ; params= []
+  ; locals= Var.Set.empty
   ; cmnd= Vector.empty
   ; term= Unreachable
   ; parent= dummy_func
   ; sort_index= 0 }
 
-
 and dummy_func =
-  {name= Global.mk "dummy" Typ.i8p; entry= dummy_block; cfg= Vector.empty}
+  let dummy_ptr_typ = Typ.pointer ~elt:(Typ.opaque ~name:"dummy") in
+  { name= Global.mk (Var.program "dummy") 0 dummy_ptr_typ Loc.none
+  ; entry= dummy_block
+  ; cfg= Vector.empty }
 
+(** Instructions *)
 
 module Inst = struct
-  type t = inst
+  type t = inst [@@deriving sexp]
 
-  let mkLoad ~reg ~ptr ~loc =
-    assert (
-      match Exp.typ ptr with
-      | Pointer {elt} -> Typ.equal elt (Var.typ reg) && Typ.is_sized elt
-      | _ -> false ) ;
-    Load {reg; ptr; loc}
+  let pp = pp_inst
+  let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
+  let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
+  let memcpy ~dst ~src ~len ~loc = Memcpy {dst; src; len; loc}
+  let memmov ~dst ~src ~len ~loc = Memmov {dst; src; len; loc}
+  let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
+  let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
+  let free ~ptr ~loc = Free {ptr; loc}
+  let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
+  let strlen ~reg ~ptr ~loc = Strlen {reg; ptr; loc}
 
+  let loc = function
+    | Load {loc}
+     |Store {loc}
+     |Memcpy {loc}
+     |Memmov {loc}
+     |Memset {loc}
+     |Alloc {loc}
+     |Free {loc}
+     |Nondet {loc}
+     |Strlen {loc} ->
+        loc
 
-  let mkStore ~ptr ~exp ~loc =
-    assert (
-      match Exp.typ ptr with
-      | Pointer {elt} -> Typ.equal elt (Exp.typ exp) && Typ.is_sized elt
-      | _ -> false ) ;
-    Store {ptr; exp; loc}
-
-
-  let mkMemcpy ~dst ~src ~len ~loc =
-    assert (
-      match (Exp.typ dst, Exp.typ src, Exp.typ len) with
-      | (Pointer {elt} as ptr1), ptr2, Integer _ ->
-          Typ.equal ptr1 ptr2 && Typ.is_sized elt
-      | _ -> false ) ;
-    Memcpy {dst; src; len; loc}
-
-
-  let mkMemmov ~dst ~src ~len ~loc =
-    assert (
-      match (Exp.typ dst, Exp.typ src, Exp.typ len) with
-      | (Pointer {elt} as ptr1), ptr2, Integer _ ->
-          Typ.equal ptr1 ptr2 && Typ.is_sized elt
-      | _ -> false ) ;
-    Memmov {dst; src; len; loc}
-
-
-  let mkMemset ~dst ~byt ~len ~loc =
-    assert (
-      match (Exp.typ dst, Exp.typ byt, Exp.typ len) with
-      | Pointer {elt}, Integer {bits= 8}, Integer _ -> Typ.is_sized elt
-      | _ -> false ) ;
-    Memset {dst; byt; len; loc}
-
-
-  let mkAlloc ~reg ~num ~loc =
-    assert (
-      match (Var.typ reg, Exp.typ num) with
-      | Pointer {elt}, Integer _ -> Typ.is_sized elt
-      | _ -> false ) ;
-    Alloc {reg; num; loc}
-
-
-  let mkFree ~ptr ~loc =
-    assert (
-      match Exp.typ ptr with
-      | Pointer {elt} -> Typ.is_sized elt
-      | _ -> false ) ;
-    Free {ptr; loc}
-
-
-  let mkNondet ~reg ~msg ~loc =
-    assert (Option.for_all ~f:(Var.typ >> Typ.is_sized) reg) ;
-    Nondet {reg; msg; loc}
-
-
-  let fmt ff inst =
-    let pf fmt = Format.fprintf ff fmt in
+  let union_locals inst vs =
     match inst with
-    | Load {reg; ptr} -> pf "load %a %a;" Var.fmt reg Exp.fmt ptr
-    | Store {ptr; exp} -> pf "store %a %a;" Exp.fmt ptr Exp.fmt exp
-    | Memcpy {dst; src; len} ->
-        pf "memcpy %a %a %a;" Exp.fmt dst Exp.fmt src Exp.fmt len
-    | Memmov {dst; src; len} ->
-        pf "memmov %a %a %a;" Exp.fmt dst Exp.fmt src Exp.fmt len
-    | Memset {dst; byt; len} ->
-        pf "memset %a %a %a;" Exp.fmt dst Exp.fmt byt Exp.fmt len
-    | Alloc {reg; num} ->
-        let[@warning "p"] (Typ.Pointer {elt}) = Var.typ reg in
-        pf "alloc %a [%a x %a];" Var.fmt reg Exp.fmt num Typ.fmt elt
-    | Free {ptr} -> pf "free %a;" Exp.fmt ptr
-    | Nondet {reg; msg} ->
-        pf "nondet %a\"%s\";" (option_fmt "%a " Var.fmt) reg msg
+    | Load {reg} | Alloc {reg} | Nondet {reg= Some reg} | Strlen {reg} ->
+        Set.add vs reg
+    | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _ | Nondet {reg= None}
+      ->
+        vs
+
+  let locals inst = union_locals inst Var.Set.empty
 end
 
-let fmt_cmnd = vector_fmt "@ " Inst.fmt
-
-let fmt_args fmt_arg ff args =
-  Format.fprintf ff "@ (@[%a@])" (vector_fmt ",@ " fmt_arg) args
-
-
-let fmt_param ff var =
-  Format.fprintf ff "%a %a" Typ.fmt (Var.typ var) Var.fmt var
-
+(** Jumps *)
 
 module Jump = struct
-  type t = jump
+  type t = jump [@@deriving sexp_of]
 
-  let mk lbl args = {dst= {dummy_block with lbl}; args; retreating= false}
+  let compare = compare_control_transfer compare_block
+  let pp = pp_jump
 
-  let fmt ff {dst= {lbl}; args; retreating} =
-    Format.fprintf ff "@[<2>%s%%%s%a@]"
-      (if retreating then "↑" else "")
-      lbl (fmt_args Exp.fmt) args
+  let invariant ?(accept_return = false) jmp =
+    Invariant.invariant [%here] jmp [%sexp_of: t]
+    @@ fun () ->
+    let {dst= {params; parent}; args} = jmp in
+    if parent == dummy_func then
+      (* jmp not yet backpatched by Func.mk *)
+      assert true
+    else
+      assert (
+        List.length params = List.length args + Bool.to_int accept_return )
+
+  let mk lbl args =
+    {dst= {dummy_block with lbl}; args; retreating= false}
+    |> check invariant
 end
 
+(** Basic-Block Terminators *)
+
 module Term = struct
-  type t = term
+  type t = term [@@deriving sexp_of]
 
-  let mkSwitch ~key ~tbl ~els ~loc =
-    assert (match Exp.typ key with Integer _ -> true | _ -> false) ;
-    Switch {key; tbl; els; loc}
+  let pp = pp_term
 
+  let invariant term =
+    Invariant.invariant [%here] term [%sexp_of: t]
+    @@ fun () ->
+    match term with
+    | Switch {tbl; els} ->
+        Vector.iter tbl ~f:(fun (_, jmp) -> Jump.invariant jmp) ;
+        Jump.invariant els
+    | Iswitch {tbl} -> Vector.iter tbl ~f:Jump.invariant
+    | Call {call= {args= actls}; typ; return; throw; ignore_result} -> (
+      match typ with
+      | Pointer {elt= Function {args= frmls; return= retn_typ}} ->
+          assert (Vector.length frmls = List.length actls) ;
+          Jump.invariant return
+            ~accept_return:(Option.is_some retn_typ && not ignore_result) ;
+          Option.iter throw ~f:(Jump.invariant ~accept_return:true)
+      | _ -> assert false )
+    | Return _ | Throw _ | Unreachable -> assert true
 
-  let mkISwitch ~ptr ~tbl ~loc =
-    assert (
-      match Exp.typ ptr with
-      | Pointer {elt= Integer {bits= 8}} -> true
-      | _ -> false ) ;
-    ISwitch {ptr; tbl; loc}
+  let switch ~key ~tbl ~els ~loc =
+    Switch {key; tbl; els; loc} |> check invariant
 
+  let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let mkCall ~func ~args ~return ~throw ~ignore_result ~loc =
-    assert (
-      match Exp.typ func with
-      | Pointer {elt= Function {args= typs}} ->
-          Vector.for_all2_exn typs args ~f:(fun typ arg ->
-              Typ.equal typ (Exp.typ arg) )
-      | _ -> false ) ;
+  let call ~func ~typ ~args ~return ~throw ~ignore_result ~loc =
     Call
       { call= {dst= func; args; retreating= false}
+      ; typ
       ; return
       ; throw
       ; ignore_result
       ; loc }
+    |> check invariant
 
-
-  let mkReturn ~exp ~loc = Return {exp; loc}
-
-  let mkThrow ~exc ~loc = Throw {exc; loc}
-
-  let mkUnreachable = Unreachable
-
-  let fmt ff term =
-    let pf fmt = Format.fprintf ff fmt in
-    let fmt_goto ff jmp = Format.fprintf ff "goto %a;" Jump.fmt jmp in
-    match term with
-    | Switch {key; tbl; els} -> (
-      match Vector.to_array tbl with
-      | [||] -> pf "%a" fmt_goto els
-      | [|(z, jmp)|] when Z.equal Z.one z ->
-          pf "@[if (%a)@;<1 2>%a@ @[else@;<1 2>%a@]@]" Exp.fmt key fmt_goto
-            jmp fmt_goto els
-      | _ ->
-          pf "@[<2>switch %a@ @[%a@ else: %a@]@]" Exp.fmt key
-            (vector_fmt "@ " (fun ff (z, jmp) ->
-                 Format.fprintf ff "%a: %a" Z.pp_print z fmt_goto jmp ))
-            tbl fmt_goto els )
-    | ISwitch {ptr; tbl} ->
-        pf "@[<2>iswitch %a@ @[<hv>%a@]@]" Exp.fmt ptr
-          (vector_fmt "@ " (fun ff ({dst= {lbl}; _} as jmp) ->
-               Format.fprintf ff "%s: %a" lbl fmt_goto jmp ))
-          tbl
-    | Call {call= {dst; args; retreating}; return; throw} ->
-        pf "@[<2>@[<7>call @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]"
-          (if retreating then "↑" else "")
-          Exp.fmt dst (fmt_args Exp.fmt) args Jump.fmt return
-          (option_fmt "@ throwto %a" Jump.fmt)
-          throw
-    | Return {exp} -> pf "return%a" (option_fmt " %a" Exp.fmt) exp
-    | Throw {exc} -> pf "throw %a" Exp.fmt exc
-    | Unreachable -> pf "unreachable"
+  let return ~exp ~loc = Return {exp; loc} |> check invariant
+  let throw ~exc ~loc = Throw {exc; loc} |> check invariant
+  let unreachable = Unreachable |> check invariant
 end
+
+(** Basic-Blocks *)
 
 module Block = struct
-  type t = block [@@deriving sexp]
+  module T = struct type t = block [@@deriving compare, sexp_of] end
+  include T
+  include Comparator.Make (T)
+
+  let pp = pp_block
+
+  let invariant blk =
+    Invariant.invariant [%here] blk [%sexp_of: t]
+    @@ fun () ->
+    assert (not (List.contains_dup blk.params ~compare:Var.compare))
 
   let mk ~lbl ~params ~cmnd ~term =
-    assert (
-      not (List.contains_dup (Vector.to_list params) ~compare:Var.compare)
-    ) ;
-    {dummy_block with lbl; params; cmnd; term}
-
-
-  (* blocks in a [t] are uniquely identified by [sort_index] *)
-  let compare x y = Int.compare x.sort_index y.sort_index
-
-  let hash {sort_index} = Int.hash sort_index
-
-  let fmt ff {lbl; params; cmnd; term; sort_index} =
-    Format.fprintf ff "@[<v 2>@[<4>%s%a@]: #%i@ @[<v>%a%t%a@]@]" lbl
-      (fmt_args fmt_param) params sort_index fmt_cmnd cmnd
-      (fun ff -> if Vector.is_empty cmnd then () else Format.fprintf ff "@ ")
-      Term.fmt term
+    let locals =
+      let locals_cmnd cmnd vs =
+        Vector.fold_right cmnd ~init:vs ~f:Inst.union_locals
+      in
+      let locals_params params vs = List.fold params ~init:vs ~f:Set.add in
+      locals_params params (locals_cmnd cmnd Var.Set.empty)
+    in
+    { lbl
+    ; params
+    ; locals
+    ; cmnd
+    ; term
+    ; parent= dummy_block.parent
+    ; sort_index= dummy_block.sort_index }
+    |> check invariant
 end
 
+(** Functions *)
+
 module Func = struct
-  type t = func
-
-  let find functions func =
-    Vector.find functions ~f:(fun {name} -> Global.equal func name)
-
+  type t = func [@@deriving sexp_of]
 
   let is_undefined = function
     | {entry= {cmnd; term= Unreachable}} -> Vector.is_empty cmnd
     | _ -> false
 
+  let pp fs ({name; entry= {params; cmnd; term; sort_index}; cfg} as func) =
+    let pp_if cnd str fs = if cnd then Format.fprintf fs str in
+    Format.fprintf fs "@[<v>@[<v>%a@[<2>%a%a@]%t@]" (Option.pp "%a " Typ.pp)
+      ( match name.typ with
+      | Pointer {elt= Function {return}} -> return
+      | _ -> None )
+      Global.pp name (pp_args pp_param) params
+      (fun fs ->
+        if is_undefined func then Format.fprintf fs " #%i@]" sort_index
+        else
+          Format.fprintf fs " { #%i %a@;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
+            sort_index Loc.pp name.loc pp_cmnd cmnd Term.pp term
+            (pp_if (not (Vector.is_empty cfg)) "@ @   ")
+            (Vector.pp "@\n@\n  " Block.pp)
+            cfg )
 
-  let fold_term {entry; cfg} ~init ~f =
-    let fold_block {term} ~init ~f = f init term in
-    Vector.fold cfg ~init:(fold_block entry ~init ~f) ~f:(fun z k ->
-        fold_block k ~init:z ~f )
+  let fold_term {entry= {term}; cfg} ~init ~f =
+    Vector.fold cfg ~init:(f init term) ~f:(fun a {term} -> f a term)
 
+  let iter_term {entry= {term}; cfg} ~f =
+    f term ;
+    Vector.iter cfg ~f:(fun {term} -> f term)
+
+  let invariant func =
+    Invariant.invariant [%here] func [%sexp_of: t]
+    @@ fun () ->
+    let {name= {typ}; cfg} = func in
+    match typ with
+    | Pointer _ ->
+        assert (
+          not
+            (Vector.contains_dup cfg ~compare:(fun b1 b2 ->
+                 String.compare b1.lbl b2.lbl )) ) ;
+        assert (
+          not
+            (List.contains_dup
+               (List.concat_map (Vector.to_list cfg) ~f:(fun {params} ->
+                    params ))
+               ~compare:Var.compare) ) ;
+        iter_term func ~f:(fun term -> Term.invariant term)
+    | _ -> assert false
+
+  let find functions name =
+    Vector.find functions ~f:(fun {name= {var}} -> Var.equal name var)
 
   let mk ~name ~entry ~cfg =
     let func = {name; entry; cfg} in
@@ -297,7 +382,7 @@ module Func = struct
       | Switch {tbl; els} ->
           Vector.iter tbl ~f:(fun (_, jmp) -> set_dst jmp) ;
           set_dst els
-      | ISwitch {tbl} -> Vector.iter tbl ~f:set_dst
+      | Iswitch {tbl} -> Vector.iter tbl ~f:set_dst
       | Call {return; throw} ->
           set_dst return ;
           Option.iter throw ~f:set_dst
@@ -305,155 +390,107 @@ module Func = struct
     in
     resolve_parent_and_jumps entry ;
     Vector.iter cfg ~f:resolve_parent_and_jumps ;
-    assert (
-      not
-        (List.contains_dup (Vector.to_list cfg) ~compare:(fun b1 b2 ->
-             String.compare b1.lbl b2.lbl )) ) ;
-    assert (
-      let check_jump ?retn_typ {dst= {params}; args} =
-        let rev_frml_typs =
-          Vector.fold params ~init:[] ~f:(fun rev_frml_typs frml ->
-              Var.typ frml :: rev_frml_typs )
-        in
-        let rev_actl_typs =
-          Option.to_list retn_typ
-          @ Vector.fold args ~init:[] ~f:(fun rev_actl_typs actl ->
-                Exp.typ actl :: rev_actl_typs )
-        in
-        List.iter2_exn rev_frml_typs rev_actl_typs ~f:(fun frml actl ->
-            assert (Typ.equal frml actl && Typ.is_sized frml) )
-      in
-      fold_term func ~init:() ~f:(fun () -> function
-        | Switch {tbl; els} ->
-            Vector.iter tbl ~f:(fun (_, jmp) -> check_jump jmp) ;
-            check_jump els
-        | ISwitch {tbl} -> Vector.iter tbl ~f:check_jump
-        | Call {call= {dst; args= actls}; return; throw; ignore_result} -> (
-          match Exp.typ dst with
-          | Pointer {elt= Function {args= frmls; return= retn_typ}} ->
-              Vector.iter2_exn frmls actls ~f:(fun frml actl ->
-                  assert (Typ.equal frml (Exp.typ actl)) ) ;
-              check_jump return
-                ?retn_typ:(if ignore_result then None else retn_typ) ;
-              Option.iter throw ~f:(fun throw ->
-                  check_jump throw ~retn_typ:Typ.i8p )
-          | _ -> assert false )
-        | Return {exp} -> (
-            let typ = Option.map exp ~f:Exp.typ in
-            match Global.typ name with
-            | Pointer {elt= Function {return}} ->
-                assert (Option.equal Typ.equal typ return)
-            | _ -> assert false )
-        | Throw {exc} -> assert (Typ.equal Typ.i8p (Exp.typ exc))
-        | Unreachable -> () ) ;
-      true ) ;
-    func
-
+    func |> check invariant
 
   let mk_undefined ~name ~params =
     let entry =
-      Block.mk ~lbl:"" ~params ~cmnd:Vector.empty ~term:Term.mkUnreachable
+      Block.mk ~lbl:"" ~params ~cmnd:Vector.empty ~term:Term.unreachable
     in
     let cfg = Vector.empty in
     mk ~name ~entry ~cfg
-
-
-  let fmt ff ({name; entry= {params; cmnd; term; sort_index}; cfg} as func)
-      =
-    let fmt_if cnd str ff = if cnd then Format.fprintf ff str in
-    let[@warning "p"] (Typ.Pointer {elt= Function {return}}) =
-      Global.typ name
-    in
-    Format.fprintf ff "@[<v>@[<v>%a@[<2>%a%a@]%t@]"
-      (option_fmt "%a " Typ.fmt)
-      return Global.fmt name (fmt_args fmt_param) params (fun ff ->
-        if is_undefined func then Format.fprintf ff " #%i@]" sort_index
-        else
-          Format.fprintf ff " { #%i @;<1 4>@[<v>%a@ %a@]%t%a@]@ }"
-            sort_index fmt_cmnd cmnd Term.fmt term
-            (fmt_if (not (Vector.is_empty cfg)) "@ @   ")
-            (vector_fmt "@\n@\n  " Block.fmt)
-            cfg )
 end
 
-module Block_id = struct
-  type t = block [@@deriving sexp]
+(** Derived meta-data *)
 
-  (* block labels within a function are unique *)
-  let compare x y =
-    [%compare: string * Global.t] (x.lbl, x.parent.name)
-      (y.lbl, y.parent.name)
+(* Blocks compared by label, which are unique within a function, used to
+   compute unique sort_index ids *)
+module Block_label = struct
+  module T = struct
+    module T0 = struct
+      type t = block [@@deriving sexp_of]
 
+      let compare x y =
+        [%compare: string * Global.t] (x.lbl, x.parent.name)
+          (y.lbl, y.parent.name)
 
-  let hash b = Hashtbl.hash (b.lbl, b.parent.name)
+      let hash b = [%hash: string * Global.t] (b.lbl, b.parent.name)
+    end
+
+    include T0
+    include Comparator.Make (T0)
+  end
+
+  include T
+
+  let empty_set = Set.empty (module T)
 end
 
-module BS = Set.Make (Block_id)
-module BQ = Hash_queue.Make (Block_id)
-module FQ = Hash_queue.Make (Global)
+module BlockQ = Hash_queue.Make (Block_label)
+module FuncQ = Hash_queue.Make (Var)
 
 let set_derived_metadata functions =
   let compute_roots functions =
-    let roots = FQ.create () in
-    Array.iter functions ~f:(fun func -> FQ.enqueue_exn roots func.name func) ;
+    let roots = FuncQ.create () in
+    Array.iter functions ~f:(fun func ->
+        FuncQ.enqueue_exn roots func.name.var func ) ;
     Array.iter functions ~f:(fun func ->
         Func.fold_term func ~init:() ~f:(fun () -> function
           | Call {call= {dst}} -> (
-            match Global.of_exp dst with
-            | Some callee -> FQ.remove roots callee |> ignore
+            match Var.of_exp dst with
+            | Some callee ->
+                FuncQ.remove roots callee |> (ignore : [> ] -> unit)
             | None -> () )
           | _ -> () ) ) ;
     roots
   in
   let topsort functions roots =
-    let tips_to_roots = BQ.create () in
+    let tips_to_roots = BlockQ.create () in
     let rec visit ancestors func src =
-      if not (BQ.mem tips_to_roots src) then (
-        let ancestors = BS.add ancestors src in
+      if BlockQ.mem tips_to_roots src then ()
+      else
+        let ancestors = Set.add ancestors src in
         let jump jmp =
-          if BS.mem ancestors jmp.dst then jmp.retreating <- true
+          if Set.mem ancestors jmp.dst then jmp.retreating <- true
           else visit ancestors func jmp.dst
         in
         ( match src.term with
         | Switch {tbl; els} ->
             Vector.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
-        | ISwitch {tbl} -> Vector.iter tbl ~f:jump
+        | Iswitch {tbl} -> Vector.iter tbl ~f:jump
         | Call {call= {dst} as call; return; throw} ->
-            ( match Global.of_exp dst with
-            | Some name -> (
-              match Func.find (Vector.of_array functions) name with
-              | Some func ->
-                  if BS.mem ancestors func.entry then
-                    call.retreating <- true
-                  else visit ancestors func func.entry
-              | None ->
-                  fail "Call to unknown function: %a" Global.fmt name () )
+            ( match
+                Var.of_exp dst >>= Func.find (Vector.of_array functions)
+              with
+            | Some func ->
+                if Set.mem ancestors func.entry then call.retreating <- true
+                else visit ancestors func func.entry
             | None ->
                 (* conservatively assume all virtual calls are recursive *)
                 call.retreating <- true ) ;
             jump return ; Option.iter ~f:jump throw
         | Return _ | Throw _ | Unreachable -> () ) ;
-        BQ.enqueue_exn tips_to_roots src () )
+        BlockQ.enqueue_exn tips_to_roots src ()
     in
-    FQ.iter roots ~f:(fun root -> visit BS.empty root root.entry) ;
+    FuncQ.iter roots ~f:(fun root ->
+        visit Block_label.empty_set root root.entry ) ;
     tips_to_roots
   in
   let set_sort_indices tips_to_roots =
-    let index = ref (BQ.length tips_to_roots) in
-    BQ.iteri tips_to_roots ~f:(fun ~key:block ~data:_ ->
+    let index = ref (BlockQ.length tips_to_roots) in
+    BlockQ.iteri tips_to_roots ~f:(fun ~key:block ~data:_ ->
         block.sort_index <- !index ;
-        decr index )
+        index := !index - 1 )
   in
   let sort_cfgs functions =
     Array.iter functions ~f:(fun {cfg} ->
         Array.sort
-          ~cmp:(fun x y -> Int.compare x.sort_index y.sort_index)
+          ~compare:(fun x y -> Int.compare x.sort_index y.sort_index)
           (Vector.to_array cfg) )
   in
   let sort_functions functions =
     Array.sort
-      ~cmp:(fun x y -> Int.compare x.entry.sort_index y.entry.sort_index)
+      ~compare:(fun x y -> Int.compare x.entry.sort_index y.entry.sort_index)
       functions
   in
   let functions = Array.of_list functions in
@@ -464,33 +501,27 @@ let set_derived_metadata functions =
   sort_functions functions ;
   Vector.of_array functions
 
-
-let mk ~typ_defns ~globals ~functions =
+let invariant pgm =
+  Invariant.invariant [%here] pgm [%sexp_of: t]
+  @@ fun () ->
+  let {globals; functions} = pgm in
   assert (
-    (not
-       (List.contains_dup typ_defns ~compare:(fun (s : Typ.t) (t : Typ.t) ->
-            match (s, t) with
-            | ( (Struct {name= n1} | Opaque {name= n1})
-              , (Struct {name= n2} | Opaque {name= n2}) ) ->
-                String.compare n1 n2
-            | _ -> Typ.compare s t )))
-    && (not
-          (List.contains_dup globals ~compare:(fun g1 g2 ->
-               String.compare (Global.name g1) (Global.name g2) )))
-    && not
-         (List.contains_dup functions ~compare:(fun f1 f2 ->
-              String.compare (Global.name f1.name) (Global.name f2.name) ))
-  ) ;
-  { typ_defns
-  ; globals= Vector.of_list_rev globals
+    not
+      (Vector.contains_dup globals ~compare:(fun g1 g2 ->
+           Var.compare g1.Global.var g2.Global.var )) ) ;
+  assert (
+    not
+      (Vector.contains_dup functions ~compare:(fun f1 f2 ->
+           Var.compare f1.name.var f2.name.var )) )
+
+let mk ~globals ~functions =
+  { globals= Vector.of_list_rev globals
   ; functions= set_derived_metadata functions }
+  |> check invariant
 
-
-let fmt ff {typ_defns; globals; functions} =
-  Format.fprintf ff "@[<v>@[%a@]@ @ @ @[%a@]@ @ @ @[%a@]@]"
-    (list_fmt "@\n@\n" Typ.fmt_defn)
-    typ_defns
-    (vector_fmt "@\n@\n" Global.fmt_defn)
+let pp fs {globals; functions} =
+  Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
+    (Vector.pp "@\n@\n" Global.pp_defn)
     globals
-    (vector_fmt "@\n@\n" Func.fmt)
+    (Vector.pp "@\n@\n" Func.pp)
     functions
