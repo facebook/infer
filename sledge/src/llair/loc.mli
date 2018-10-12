@@ -8,15 +8,9 @@
 (** Source code debug locations *)
 
 type t = {dir: string; file: string; line: int; col: int}
+[@@deriving compare, hash, sexp]
 
-val compare : t -> t -> int
-
-val t_of_sexp : Sexp.t -> t
-
-val sexp_of_t : t -> Sexp.t
-
-val fmt : t fmt
-
+val pp : t pp
 val none : t
-
+val is_none : t -> bool
 val mk : ?dir:string -> ?file:string -> ?col:int -> line:int -> t
