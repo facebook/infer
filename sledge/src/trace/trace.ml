@@ -7,52 +7,81 @@
 
 (** Debug trace logging *)
 
-type 'a printf = ('a, Format.formatter, unit) format -> 'a
+type 'a printf = ('a, Formatter.t, unit) format -> 'a
+type pf = {pf: 'a. 'a printf}
 
-let ff = Format.err_formatter
+let fs = Format.err_formatter
+let flush = Format.pp_print_newline fs
 
-let flush = Format.pp_print_newline ff
+type trace_mod_funs =
+  {trace_mod: bool option; trace_funs: bool Map.M(String).t}
 
-let margin = 100
+type config =
+  {trace_all: bool; trace_mods_funs: trace_mod_funs Map.M(String).t}
 
-let trace_all = ref false
+let config : config ref =
+  ref {trace_all= false; trace_mods_funs= Map.empty (module String)}
 
-let init ~trace_all:ta =
+let init ?(margin = 160) ~config:c () =
   Format.set_margin margin ;
   Format.set_max_indent (margin - 1) ;
-  Format.pp_set_margin ff margin ;
-  Format.pp_set_max_indent ff (margin - 1) ;
-  Format.pp_open_vbox ff 0 ;
+  Format.pp_set_margin fs margin ;
+  Format.pp_set_max_indent fs (margin - 1) ;
+  Format.pp_open_vbox fs 0 ;
   Caml.at_exit flush ;
-  trace_all := ta
+  config := c
 
+let unwrap s =
+  let rec index s i =
+    if i <= 1 then None
+    else if not (Char.equal '_' s.[i]) then index s (i - 1)
+    else if not (Char.equal '_' s.[i - 1]) then index s (i - 2)
+    else Some (i + 1)
+  in
+  match index s (String.length s - 2) with
+  | Some pos -> String.subo s ~pos
+  | None -> s
 
-(* selective tracing not yet implemented *)
-let enabled _ = !trace_all
+let enabled mod_name fun_name =
+  let {trace_all; trace_mods_funs} = !config in
+  match Map.find trace_mods_funs (unwrap mod_name) with
+  | Some {trace_mod; trace_funs} -> (
+    match Map.find trace_funs fun_name with
+    | Some fun_enabled -> fun_enabled
+    | None -> (
+      match trace_mod with
+      | Some mod_enabled -> mod_enabled
+      | None -> trace_all ) )
+  | None -> trace_all
 
 let info mod_name fun_name fmt =
-  if enabled [fun_name; mod_name] then (
-    Format.fprintf ff "@\n@[<2>| " ;
-    Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
-  else Format.ifprintf ff fmt
+  if enabled mod_name fun_name then (
+    Format.fprintf fs "@\n@[<2>| " ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
+  else Format.ifprintf fs fmt
 
+let incf mod_name fun_name fmt =
+  if enabled mod_name fun_name then (
+    Format.fprintf fs "@\n@[<2>@[<hv 2>( %s:@ " fun_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
+  else Format.ifprintf fs fmt
 
-let incf rev_prefix name fmt =
-  if enabled (name :: rev_prefix) then (
-    Format.fprintf ff "@\n@[<2>@[( %s: " name ;
-    Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
-  else Format.ifprintf ff fmt
+let decf mod_name fun_name fmt =
+  if enabled mod_name fun_name then (
+    Format.fprintf fs "@]@\n@[<2>) %s:@ " fun_name ;
+    Format.kfprintf (fun fs -> Format.fprintf fs "@]") fs fmt )
+  else Format.ifprintf fs fmt
 
-
-let decf rev_prefix name fmt =
-  if enabled (name :: rev_prefix) then (
-    Format.fprintf ff "@]@\n@[<2>) %s:@ " name ;
-    Format.kfprintf (fun ff -> Format.fprintf ff "@]") ff fmt )
-  else Format.ifprintf ff fmt
-
-
-let call mod_name fun_name k = k (incf [mod_name] fun_name)
+let call mod_name fun_name k =
+  k {pf= (fun fmt -> incf mod_name fun_name fmt)}
 
 let retn mod_name fun_name k result =
-  k (decf [mod_name] fun_name) result ;
+  k {pf= (fun fmt -> decf mod_name fun_name fmt)} result ;
   result
+
+let report fmt =
+  Format.fprintf fs "@\n@[<2>| " ;
+  Format.kfprintf (fun fs -> Format.fprintf fs "@]" ; false) fs fmt
+
+let%test_module _ =
+  (module struct let () = init ~margin:70 ~config:!config () end)

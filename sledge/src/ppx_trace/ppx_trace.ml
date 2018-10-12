@@ -20,8 +20,8 @@
 
     For example, this enables writing
 
-    [[%Trace.call fun pf -> pf "%a" fmt_arg_type arg] ; f arg |>
-    [%Trace.retn fun pf -> pf "%a" fmt_result_type]]
+    [%Trace.call fun {pf} -> pf "%a" pp_arg_type arg] ; func arg |>
+    [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
 
     to trace calls to [f] in debug mode while completely compiling out the
     debug code in non-debug builds.
@@ -32,14 +32,14 @@
     Additionally, [[%debug]] is rewritten to the compile-time boolean
     constant determined by whether or not [--debug] is passed. *)
 
-open Ppx_core
+open Ppxlib
 open Ast_builder.Default
 module Ast_mapper = Selected_ast.Ast.Ast_mapper
 
 let debug = ref false
 
 ;;
-Ppx_driver.add_arg "--debug" (Caml.Arg.Set debug)
+Driver.add_arg "--debug" (Caml.Arg.Set debug)
   ~doc:"Enable debug tracing output"
 
 let rec get_fun_name pat =
@@ -54,18 +54,16 @@ let rec get_fun_name pat =
             (Selected_ast.To_ocaml.copy_pattern p) )
         pat
 
-
 let vb_stack_with, vb_stack_top =
   let stack = ref [] in
   let with_ x ~f =
     stack := x :: !stack ;
     let r = f () in
-    stack := List.tl_exn !stack ;
+    stack := List.tl !stack ;
     r
   in
-  let top () = List.hd_exn !stack in
+  let top () = List.hd !stack in
   (with_, top)
-
 
 let mapper =
   let value_binding (m : Ast_mapper.mapper) vb =
@@ -115,8 +113,7 @@ let mapper =
   in
   {Ast_mapper.default_mapper with expr; value_binding}
 
-
 let impl = Selected_ast.Ast.map_structure mapper
 
 ;;
-Ppx_driver.register_transformation "trace" ~impl
+Driver.register_transformation "trace" ~impl
