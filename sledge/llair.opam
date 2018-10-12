@@ -10,6 +10,8 @@ build: [
 depends: [
   "cmdliner"
   "core_kernel" {>= "v0.11.0"}
+  "ctypes"
+  "ctypes-foreign"
   "dune" {build}
   "llvm" {build & = "7.0.0"}
   "ppx_compare" {>= "v0.11.0"}
