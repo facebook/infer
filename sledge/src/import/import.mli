@@ -7,19 +7,35 @@
 
 (** Global namespace opened in each source file by the build system *)
 
-include module type of Option.Monad_infix
+include module type of (
+  Base :
+    sig
+      include
+        (module type of Base
+        (* extended below, remove *)
+        with module Invariant := Base.Invariant
+         and module List := Base.List
+         and module Map := Base.Map
+         and module Option := Base.Option
+         and module Result := Base.Result
+         and module Set := Base.Set
+        (* prematurely deprecated, remove and use Stdlib instead *)
+         and module Filename := Base.Filename
+         and module Format := Base.Format
+         and module Scanf := Base.Scanf
+         and type ('ok, 'err) result := ('ok, 'err) Base.result)
+      [@warning "-3"]
+    end )
 
-module Z : sig
-  include module type of Z
+(* undeprecate *)
 
-  val t_of_sexp : Sexp.t -> t
+external ( == ) : 'a -> 'a -> bool = "%eq"
 
-  val sexp_of_t : t -> Sexp.t
-end
+include module type of Stdio
+module Fheap = Core_kernel.Fheap
+module Hash_queue = Core_kernel.Hash_queue
 
-module Vector = Vector
-
-include module type of Vector.Infix
+(** Tuple operations *)
 
 val fst3 : 'a * _ * _ -> 'a
 (** First projection from a triple. *)
@@ -29,6 +45,8 @@ val snd3 : _ * 'a * _ -> 'a
 
 val trd3 : _ * _ * 'a -> 'a
 (** Third projection from a triple. *)
+
+(** Function combinators *)
 
 val ( >> ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
 (** Composition of functions: [(f >> g) x] is exactly equivalent to [g (f
@@ -46,43 +64,154 @@ val ( <$ ) : ('a -> unit) -> 'a -> 'a
 (** Reverse apply and ignore function: [f <$ x] is exactly equivalent to [f
     x ; x]. Left associative. *)
 
+(** Pretty-printing *)
+
+(** Pretty-printer for argument type. *)
+type 'a pp = Formatter.t -> 'a -> unit
+
 (** Format strings. *)
-type ('a, 'b) fmt_str = ('a, Format.formatter, unit, 'b) format4
+type ('a, 'b) fmt = ('a, Formatter.t, unit, 'b) format4
 
-(** Formatting function for argument type. *)
-type 'a fmt = Format.formatter -> 'a -> unit
-
-val option_fmt :
-  ('a_fmt -> 'a -> unit, unit) fmt_str -> 'a_fmt -> 'a option fmt
-(** Format an option. *)
-
-val list_fmt : (unit, unit) fmt_str -> 'a fmt -> 'a list fmt
-(** Format a list. *)
-
-val vector_fmt : (unit, unit) fmt_str -> 'a fmt -> 'a vector fmt
-(** Format a vector. *)
+(** Failures *)
 
 exception Unimplemented of string
 
-val warn : ('a, unit) fmt_str -> 'a
+val warn : ('a, unit) fmt -> 'a
 (** Issue a warning for a survivable problem. *)
 
-val todo : ('a, unit -> _) fmt_str -> 'a
+val todo : ('a, unit -> _) fmt -> 'a
 (** Raise an [Unimplemented] exception indicating that an input is valid but
     not handled by the current implementation. *)
 
-val assertf : bool -> ('a, unit -> unit) fmt_str -> 'a
+val assertf : bool -> ('a, unit -> unit) fmt -> 'a
 (** Raise an [Failure] exception if the bool argument is false, indicating
     that the expected condition was not satisfied. *)
 
-val checkf : bool -> ('a, unit -> bool) fmt_str -> 'a
+val checkf : bool -> ('a, unit -> bool) fmt -> 'a
 (** As [assertf] but returns the argument bool. *)
 
-val fail : ('a, unit -> _) fmt_str -> 'a
+val fail : ('a, unit -> _) fmt -> 'a
 (** Raise a [Failure] exception indicating a fatal error not covered by
     [assertf], [checkf], or [todo]. *)
 
-type 'a or_error = ('a, exn * Caml.Printexc.raw_backtrace) Result.t
+val check : ('a -> unit) -> 'a -> 'a
+(** Assert that function does not raise on argument, and return argument. *)
+
+val violates : ('a -> unit) -> 'a -> _
+(** Assert that function raises on argument. *)
+
+type 'a or_error = ('a, exn * Caml.Printexc.raw_backtrace) result
 
 val or_error : ('a -> 'b) -> 'a -> unit -> 'b or_error
 (** [or_error f x] runs [f x] and converts unhandled exceptions to errors. *)
+
+(** Extensions *)
+
+module Invariant : module type of Base.Invariant
+
+module Option : sig
+  include module type of Base.Option
+
+  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> 'a option pp
+  (** Pretty-print an option. *)
+
+  val cons : 'a t -> 'a list -> 'a list
+end
+
+include module type of Option.Monad_infix
+
+module List : sig
+  include module type of Base.List
+
+  val pp :
+       ?pre:(unit, unit) fmt
+    -> ?suf:(unit, unit) fmt
+    -> (unit, unit) fmt
+    -> 'a pp
+    -> 'a list pp
+  (** Pretty-print a list. *)
+
+  val find_map_remove :
+    'a list -> f:('a -> 'b option) -> ('b * 'a list) option
+
+  val fold_option :
+       'a t
+    -> init:'accum
+    -> f:('accum -> 'a -> 'accum option)
+    -> 'accum option
+  (** [fold_option t ~init ~f] is a short-circuiting version of [fold] that
+      runs in the [Option] monad. If [f] returns [None], that value is
+      returned without any additional invocations of [f]. *)
+
+  val map_preserving_phys_equal : 'a t -> f:('a -> 'a) -> 'a t
+  (** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
+      every element. *)
+
+  val remove_exn : ?equal:('a -> 'a -> bool) -> 'a list -> 'a -> 'a list
+  (** Returns the input list without the first element [equal] to the
+      argument, or raise [Not_found] if no such element exists. [equal]
+      defaults to physical equality. *)
+
+  val remove : 'a list -> 'a -> 'a list option
+  val rev_init : int -> f:(int -> 'a) -> 'a list
+end
+
+module Map : sig
+  include module type of Base.Map
+
+  val find_and_remove_exn : ('k, 'v, 'c) t -> 'k -> 'v * ('k, 'v, 'c) t
+  val find_and_remove : ('k, 'v, 'c) t -> 'k -> ('v * ('k, 'v, 'c) t) option
+
+  val find_or_add :
+       ('k, 'v, 'c) t
+    -> 'k
+    -> default:'v
+    -> if_found:('v -> 'a)
+    -> if_added:(('k, 'v, 'c) t -> 'a)
+    -> 'a
+
+  val map_preserving_phys_equal :
+    ('k, 'v, 'c) t -> f:('v -> 'v) -> ('k, 'v, 'c) t
+  (** Like map, but preserves [phys_equal] if [f] preserves [phys_equal] of
+      every element. *)
+end
+
+module Result : sig
+  include module type of Base.Result
+
+  val pp : ('a_pp -> 'a -> unit, unit) fmt -> 'a_pp -> ('a, _) t pp
+  (** Pretty-print a result. *)
+end
+
+module Vector : sig
+  include module type of Vector
+
+  val pp : (unit, unit) fmt -> 'a pp -> 'a t pp
+  (** Pretty-print a vector. *)
+end
+
+include module type of Vector.Infix
+
+module Set : sig
+  include module type of Base.Set
+
+  type ('e, 'c) tree
+
+  val pp : 'e pp -> ('e, 'c) t pp
+  val disjoint : ('e, 'c) t -> ('e, 'c) t -> bool
+
+  val diff_inter_diff :
+    ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t * ('e, 'c) t
+
+  val inter_diff : ('e, 'c) t -> ('e, 'c) t -> ('e, 'c) t * ('e, 'c) t
+  val of_vector : ('e, 'c) comparator -> 'e vector -> ('e, 'c) t
+  val to_tree : ('e, 'c) t -> ('e, 'c) tree
+end
+
+module Z : sig
+  include module type of Z
+
+  val hash_fold_t : t Hash.folder
+  val t_of_sexp : Sexp.t -> t
+  val sexp_of_t : t -> Sexp.t
+end
