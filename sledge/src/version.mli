@@ -8,5 +8,4 @@
 (** Version information populated by build system *)
 
 val debug : bool
-
 val version : string

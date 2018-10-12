@@ -7,6 +7,5 @@
 
 (** Version information populated by build system *)
 
-let debug = [%debug ]
-
+let debug = [%debug]
 let version = "%%VERSION%%" ^ if debug then "-dbg" else "-opt"

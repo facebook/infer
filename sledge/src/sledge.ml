@@ -7,16 +7,17 @@
 
 (** Sledge executable entry point *)
 
-let main ~input ~output =
+let main ~input ~output ~compile_only =
   try
     let program = Frontend.translate input in
     Trace.flush () ;
     Option.iter output ~f:(function
-      | "-" -> Format.printf "%a@." Llair.fmt program
+      | "-" -> Format.printf "%a@." Llair.pp program
       | filename ->
           Out_channel.with_file filename ~f:(fun oc ->
-              let ff = Format.formatter_of_out_channel oc in
-              Format.fprintf ff "%a@." Llair.fmt program ) ) ;
+              let fs = Format.formatter_of_out_channel oc in
+              Format.fprintf fs "%a@." Llair.pp program ) ) ;
+    if not compile_only then ( Control.exec_pgm program ; Trace.flush () ) ;
     Format.printf "@\nRESULT: Success@."
   with exn ->
     let bt = Caml.Printexc.get_raw_backtrace () in
@@ -31,7 +32,6 @@ let main ~input ~output =
         Format.printf "@\nRESULT: Unknown error: %s@."
           (Caml.Printexc.to_string exn) ) ;
     Caml.Printexc.raise_with_backtrace exn bt
-
 
 ;;
 Config.run main

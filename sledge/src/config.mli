@@ -7,7 +7,8 @@
 
 (** Configuration options *)
 
-val run : (input:string -> output:string option -> 'a) -> 'a
+val run :
+  (input:string -> output:string option -> compile_only:bool -> 'a) -> 'a
 (** [run main] parses command line options, performs some imperative
     initialization, and then executes [main] passing the configuration
     options. *)
