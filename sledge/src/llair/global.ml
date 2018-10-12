@@ -7,4 +7,31 @@
 
 (** Global variables *)
 
-include Exp.Global
+type t = {var: Var.t; init: Exp.t option; siz: int; typ: Typ.t; loc: Loc.t}
+[@@deriving compare, hash, sexp]
+
+let equal = [%compare.equal: t]
+
+let pp fs {var} =
+  let name = Var.name var in
+  let pf pp =
+    Format.pp_open_box fs 2 ;
+    Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs pp
+  in
+  pf "@%s%t" name (fun fs ->
+      let demangled = Llvm.demangle name in
+      if not (String.is_empty demangled || String.equal name demangled) then
+        Format.fprintf fs "“%s”" demangled )
+
+let pp_defn fs {var; init; typ} =
+  Format.fprintf fs "@[<2>%a %a%a@]" Typ.pp typ Var.pp var
+    (Option.pp " =@ @[%a@]" Exp.pp)
+    init
+
+let invariant g =
+  Invariant.invariant [%here] g [%sexp_of: t]
+  @@ fun () ->
+  let {typ} = g in
+  assert (Typ.is_sized typ)
+
+let mk ?init var siz typ loc = {var; init; siz; typ; loc} |> check invariant

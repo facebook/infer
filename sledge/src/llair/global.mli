@@ -7,4 +7,14 @@
 
 (** Global variables *)
 
-include module type of Exp.Global
+type t = private
+  {var: Var.t; init: Exp.t option; siz: int; typ: Typ.t; loc: Loc.t}
+[@@deriving compare, hash, sexp]
+
+val equal : t -> t -> bool
+val pp : t pp
+val pp_defn : t pp
+
+include Invariant.S with type t := t
+
+val mk : ?init:Exp.t -> Var.t -> int -> Typ.t -> Loc.t -> t
