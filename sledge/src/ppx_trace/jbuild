@@ -1,5 +1,0 @@
-(library
- ((name ppx_trace)
-  (kind ppx_rewriter)
-  (preprocess no_preprocessing)
-  (libraries (ppx_core ppx_driver))))

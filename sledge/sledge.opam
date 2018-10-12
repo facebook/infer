@@ -1,15 +1,18 @@
 opam-version: "1.2"
 maintainer: "Josh Berdine <jjb@fb.com>"
 authors: "Josh Berdine <jjb@fb.com>"
+homepage: "https://github.com/facebook/infer/tree/master/sledge"
+bug-reports: "https://github.com/facebook/infer/issues"
 build: [
-  ["make setup"]
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  [make "setup"]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
   "cmdliner"
-  "core_kernel" {>= "v0.10.0"}
-  "jbuilder" {build}
+  "core_kernel" {>= "v0.11.0"}
+  "dune" {build}
   "llvm" {build & = "7.0.0"}
-  "ppx_compare" {>= "v0.10.0"}
+  "ppx_compare" {>= "v0.11.0"}
+  "ppx_hash" {>= "v0.11.0"}
   "zarith"
 ]

@@ -151,7 +151,7 @@ OCAMLFORMAT_EXE?=ocamlformat
 fmt:
 	parallel $(OCAMLFORMAT_EXE) -i ::: $$(git diff --name-only --diff-filter=ACMRU $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
 
-DUNE_ML:=$(shell find * -name 'dune*.in' | grep -v workspace | grep -v sledge)
+DUNE_ML:=$(shell find * -name 'dune*.in' | grep -v workspace)
 
 .PHONY: fmt_dune
 fmt_dune:

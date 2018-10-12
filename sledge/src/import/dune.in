@@ -1,0 +1,15 @@
+(* -*- tuareg -*- *)
+
+let deps = []
+
+;;
+Jbuild_plugin.V1.send
+@@ Format.sprintf
+     {|
+(library
+ (name import)
+ (public_name llair.import)
+ %s
+ (libraries core_kernel zarith %s))
+|}
+     (flags deps) (libraries deps)

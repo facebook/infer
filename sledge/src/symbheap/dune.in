@@ -1,0 +1,15 @@
+(* -*- tuareg -*- *)
+
+let deps = ["import"; "trace"; "llair_"]
+
+;;
+Jbuild_plugin.V1.send
+@@ Format.sprintf
+     {|
+(library
+ (name symbheap)
+ %s
+ (libraries %s)
+ (inline_tests))
+|}
+     (flags deps) (libraries deps)

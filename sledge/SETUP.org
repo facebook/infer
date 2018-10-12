@@ -1,55 +1,51 @@
-1. NOTE: These instructions use ~/.local/llvm_$(opam config var switch) as an install root for llvm/clang, but installing elsewhere should be fine. Also note that you probably don't want to use this clang for anything else because it is a default debug build and hence very slow. So some PATH management is likely needed to have ~/.local/llvm_$(opam config var switch) in PATH only when building / running llair. This is done automatically for the targets in test/Makefile.
+1. export SLEDGE=$HOME/sat/sledge
 2. clone llvm, clang, and libcxxabi
-   - cd ~/path/to/sledge
-   - git clone git+ssh://git@github.com/jberdine/llvm.git --branch ocaml_api
+   - cd $SLEDGE
+   - git clone https://github.com/jberdine/llvm.git --branch ocaml_api
    - git clone https://github.com/llvm-mirror/clang.git llvm/tools/clang
+   - git -C llvm/tools/clang checkout 32f603c58965543e256fdf8c3cb6eaceec2974da
+   - git clone https://github.com/llvm-mirror/libcxx.git llvm/projects/libcxx
    - git clone https://github.com/llvm-mirror/libcxxabi.git llvm/projects/libcxxabi
-3. build llvm & clang
-   - brew install cmake ninja
-   - cd ~/path/to/sledge/llvm
+3. export OPAMJOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+4. create opam switches
+   - for variant in '' '+flambda'; do opam switch --yes create sledge$variant 4.07.1+rc1$variant; done
+5. install llvm deps
+   - install deps
+     + sudo yum install cmake ninja
+     + brew install cmake ninja
+   - for switch in sledge sledge+flambda; do opam install --yes --switch=$switch ctypes; done
+6. build llvm & clang
+   - cd $SLEDGE/llvm
    - mkdir _build
    - cd _build
-   - cmake -G Ninja -DCMAKE_INSTALL_PREFIX=~/.local/llvm_$(opam config var switch) -DLLVM_OCAML_INSTALL_PATH=~/.local/llvm_$(opam config var switch)/lib/ocaml ..
-   - ninja -j8
-   - ninja ocaml_doc
-   - ninja install
-4. install deps
-   - add ~/.local/llvm_$(opam config var switch)/bin to shell PATH
-     + because installing the opam package for llvm will look for it
-     + export PATH=~/.local/llvm_$(opam config var switch)/bin:$PATH
-   - pin conf-llvm
-     + opam pin add -n conf-llvm --dev
-     + opam pin edit conf-llvm
-       - edit version number to match that of the llvm clone (= 7.0.0)
-   - pin llvm
-     + cd ~/path/to/sledge/llvm
-     + opam pin add -n -k git llvm .
-     + opam pin edit llvm
-       - edit llvm and conf-llvm version number to match that of the llvm clone (= 7.0.0)
-       - when prompted, ok to save new opam file
-5. install llair for llvm_sil
-   - cd ~/path/to/sledge
-   - opam pin add -n -k git llair .
-     + when prompted, ok to create new package
-   - opam install llair
-6. hush `ld: warning: directory not found for option '-L/opt/local/lib'`
+   - for switch in sledge sledge+flambda; do cmake -G Ninja -DCMAKE_INSTALL_PREFIX=../_install/$switch -DLLVM_OCAML_INSTALL_PATH=../_install/$switch -DLLVM_TARGETS_TO_BUILD="X86" .. && ninja && ninja install; done
+7. install deps
+   - cd $SLEDGE/llvm
+   - for switch in sledge sledge+flambda; do opam pin --switch=$switch add -n -k git llvm .; done
+   - cd $SLEDGE
+   - for switch in sledge sledge+flambda; do PATH=$SLEDGE/llvm/_install/$switch/bin:$PATH opam install --yes --switch=$switch ./sledge.opam --deps-only; done
+8. hush `ld: warning: directory not found for option '-L/opt/local/lib'`
    - the zarith package adds a spurious linker option unless you have both brew and macports, so if you see this linker warning when compiling, execute
      + sudo mkdir -p /opt/local/lib
-7. install dev tools
-   - opam install merlin ocp-indent tuareg user-setup
-   - install ocamlformat
-8. if needed: point new clang to xcode c++ lib
-   - cd ~/.local/llvm_$(opam config var switch)/include
-   - ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++ .
-9. llvm dev workflow
-   - modify llvm sources
-   - cd ~/path/to/sledge/llvm/_build; ninja -j8
-   - iterate
-   - (optional?) git add -u; git commit -m ...
-   - ninja -j8 && ninja ocaml_doc && ninja install && opam upgrade llvm
-   - cd ~/path/to/sledge; make
-   - it is not uncommon to get "inconsistent assumptions" errors: clean and re-make
-10. llvm emacs mode
-    - (add-to-list 'load-path (expand-file-name "~/path/to/sledge/llvm/utils/emacs"))
+9. install dev tools
+   - opam pin --yes --switch=sledge add tools/opam
+10. if needed: point new clang to xcode c++ lib
+    - cd $SLEDGE/$(opam switch show)/include
+    - ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++ .
+11. llvm dev workflow
+    - modify llvm sources
+    - cd $SLEDGE/llvm/_build; ninja
+    - iterate
+    - (optional?) git add -u; git commit -m ...
+    - ninja && ninja ocaml_doc && ninja install && opam upgrade llvm
+    - cd $SLEDGE; make
+    - it is not uncommon to get "inconsistent assumptions" errors: clean and re-make
+12. llvm emacs mode
+    - (add-to-list 'load-path (expand-file-name "$SLEDGE/llvm/utils/emacs"))
     - (require 'llvm-mode)
     - (require 'autodisass-llvm-bitcode)
+13. install llair for llvm_sil
+    - cd $SLEDGE
+    - opam pin add -n -k git llair .
+      + when prompted, ok to create new package
+    - opam install llair

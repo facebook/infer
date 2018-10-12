@@ -1,0 +1,5 @@
+(library
+ (name ppx_trace)
+ (kind ppx_rewriter)
+ (preprocess no_preprocessing)
+ (libraries ppxlib))

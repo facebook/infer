@@ -1,4 +1,3 @@
-break-cases = fit
-break-string-literals = wrap
+profile = compact
 margin = 77
 wrap-comments = true

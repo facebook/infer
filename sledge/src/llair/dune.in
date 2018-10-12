@@ -1,0 +1,15 @@
+(* -*- tuareg -*- *)
+
+let deps = ["import"; "trace"]
+
+;;
+Jbuild_plugin.V1.send
+@@ Format.sprintf
+     {|
+(library
+ (name llair_)
+ (public_name llair)
+ %s
+ (libraries llvm llvm.irreader llvm.analysis llvm.scalar_opts llvm.target %s))
+|}
+     (flags deps) (libraries deps)

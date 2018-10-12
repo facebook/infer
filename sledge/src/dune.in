@@ -1,0 +1,20 @@
+(* -*- tuareg -*- *)
+
+let deps = ["import"; "trace"; "llair_"; "symbheap"]
+
+;;
+Jbuild_plugin.V1.send
+@@ Format.sprintf
+     {|
+(rule
+ (targets version.ml)
+ (deps version.ml.in (universe))
+ (action (run ../tools/gen_version.sh version.ml))
+ (mode promote-until-clean))
+
+(executable
+ (name sledge)
+ %s
+ (libraries cmdliner %s))
+|}
+     (flags deps) (libraries deps)
