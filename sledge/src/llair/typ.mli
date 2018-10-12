@@ -10,10 +10,10 @@
 type t = private
   | Function of {return: t option; args: t vector}
       (** (Global) function names have type Pointer to Function. *)
-  | Integer of {bits: int}  (** Integer of given bitwidth *)
+  | Integer of {bits: int}  (** Integer of given bitwidth. *)
   | Float of {bits: int; enc: [`IEEE | `Extended | `Pair]}
-      (** Floating-point numbers of given bitwidth and encoding *)
-  | Pointer of {elt: t}  (** Pointer to element type *)
+      (** Floating-point numbers of given bitwidth and encoding. *)
+  | Pointer of {elt: t}  (** Pointer to element type. *)
   | Array of {elt: t; len: int}
       (** Statically-sized array of [len] elements of type [elt]. *)
   | Tuple of {elts: t vector; packed: bool}
@@ -24,53 +24,36 @@ type t = private
           types are represented by cyclic values. *)
   | Opaque of {name: string}
       (** Uniquely named aggregate type whose definition is hidden. *)
-  | Bytes  (** Dynamically-sized byte-array. *)
-
-val compare : t -> t -> int
+[@@deriving compare, hash, sexp]
 
 val equal : t -> t -> bool
+val pp : t pp
+val pp_defn : t pp
 
-val t_of_sexp : Sexp.t -> t
-
-val sexp_of_t : t -> Sexp.t
-
-val fmt : t fmt
-
-val fmt_defn : t fmt
+include Invariant.S with type t := t
 
 (** Constructors *)
 
-val mkFunction : return:t option -> args:t vector -> t
-
-val mkInteger : bits:int -> t
-
-val mkFloat : bits:int -> enc:[`Extended | `IEEE | `Pair] -> t
-
-val mkPointer : elt:t -> t
-
-val mkArray : elt:t -> len:int -> t
-
-val mkTuple : packed:bool -> t vector -> t
-
-val mkStruct : name:string -> packed:bool -> t lazy_t vector -> t
-
-val mkOpaque : name:string -> t
-
-val mkBytes : t
-
-(** Special types *)
-
-val i1 : t
-(** Booleans are represented by 1-bit integers. *)
-
-val i8p : t
-(** Byte-pointers are effectively a universal type. *)
+val function_ : return:t option -> args:t vector -> t
+val integer : bits:int -> t
+val float : bits:int -> enc:[`Extended | `IEEE | `Pair] -> t
+val pointer : elt:t -> t
+val array : elt:t -> len:int -> t
+val tuple : t vector -> packed:bool -> t
+val struct_ : name:string -> packed:bool -> t lazy_t vector -> t
+val opaque : name:string -> t
 
 (** Queries *)
 
-val compatible : t -> t -> bool
-(** Compatible types are those that can be cast or converted between,
-    perhaps with some loss of information. *)
-
 val is_sized : t -> bool
 (** Holds of types which are first-class and have a statically-known size. *)
+
+val castable : t -> t -> bool
+(** Castable types are those that can be cast between without loss of
+    information. An equivalence relation. *)
+
+val convertible : t -> t -> bool
+(** Convertible types are those that can be converted between, perhaps with
+    some loss of information. Not transitive: some admissible conversions
+    must be performed in multiple steps, such as from [Pointer] to [Integer]
+    to [Array]. *)
