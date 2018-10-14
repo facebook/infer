@@ -27,8 +27,13 @@ let is_fun_call_invariant tenv ~is_exp_invariant ~is_inv_by_default callee_pname
   match Models.Call.dispatch tenv callee_pname params with
   | Some inv ->
       InvariantModels.is_invariant inv
-  | None ->
-      is_inv_by_default
+  | None -> (
+    (* If there is no model, invoke purity analysis to see if function is pure *)
+    match Ondemand.analyze_proc_name callee_pname with
+    | Some {Summary.payloads= {Payloads.purity= Some is_pure}} ->
+        is_pure
+    | _ ->
+        is_inv_by_default )
 
 
 (* check if the def of var is unique and invariant *)

@@ -33,6 +33,25 @@ module Node = ProcCfg.DefaultNode
    set it to 1 and for function call we take it from the spec of the function.
    The nodes in the domain of the map are those in the path reaching the current node.
 *)
+
+let instantiate_cost ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
+  match Ondemand.get_proc_desc callee_pname with
+  | None ->
+      L.(die InternalError)
+        "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
+        callee_cost Typ.Procname.pp callee_pname
+  | Some callee_pdesc -> (
+    match BufferOverrunChecker.Payload.read caller_pdesc callee_pname with
+    | None ->
+        L.(die InternalError)
+          "Can't instantiate symbolic cost %a from call to %a (can't get summary)" BasicCost.pp
+          callee_cost Typ.Procname.pp callee_pname
+    | Some _ ->
+        let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
+        let eval_sym = BufferOverrunSemantics.mk_eval_sym callee_pdesc params inferbo_caller_mem in
+        BasicCost.subst callee_cost eval_sym )
+
+
 module TransferFunctionsNodesBasicCost = struct
   module CFG = InstrCFG
   module Domain = NodesBasicCostDomain
@@ -40,26 +59,6 @@ module TransferFunctionsNodesBasicCost = struct
   type extras = BufferOverrunChecker.invariant_map
 
   let cost_atomic_instruction = BasicCost.one
-
-  let instantiate_cost ~caller_pdesc ~inferbo_caller_mem ~callee_pname ~params ~callee_cost =
-    match Ondemand.get_proc_desc callee_pname with
-    | None ->
-        L.(die InternalError)
-          "Can't instantiate symbolic cost %a from call to %a (can't get procdesc)" BasicCost.pp
-          callee_cost Typ.Procname.pp callee_pname
-    | Some callee_pdesc -> (
-      match BufferOverrunChecker.Payload.read caller_pdesc callee_pname with
-      | None ->
-          L.(die InternalError)
-            "Can't instantiate symbolic cost %a from call to %a (can't get summary)" BasicCost.pp
-            callee_cost Typ.Procname.pp callee_pname
-      | Some _ ->
-          let inferbo_caller_mem = Option.value_exn inferbo_caller_mem in
-          let eval_sym =
-            BufferOverrunSemantics.mk_eval_sym callee_pdesc params inferbo_caller_mem
-          in
-          BasicCost.subst callee_cost eval_sym )
-
 
   let exec_instr_cost inferbo_mem (astate : CostDomain.NodeInstructionToCostMap.astate)
       {ProcData.pdesc} (node : CFG.Node.t) instr : CostDomain.NodeInstructionToCostMap.astate =

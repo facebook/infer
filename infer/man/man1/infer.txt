@@ -412,6 +412,11 @@ OPTIONS
            infer-diff(1), infer-events(1), infer-explore(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
+       --hoisting-report-only-expensive
+           Activates: [Hoisting] Report loop-invariant calls only when the
+           function is expensive, i.e. at least linear (Conversely:
+           --no-hoisting-report-only-expensive)           See also infer-report(1).
+
        --html
            Activates: Generate html report. (Conversely: --no-html)       
     See also infer-explore(1).

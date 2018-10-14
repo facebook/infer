@@ -380,6 +380,8 @@ val get_linter_doc_url : linter_id:string -> string option
 
 val html : bool
 
+val hoisting_report_only_expensive : bool
+
 val icfg_dotty_outfile : string option
 
 val ignore_trivial_traces : bool

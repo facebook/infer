@@ -61,12 +61,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "purity checker"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
+module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
-let should_report pure pdesc =
+let should_report is_pure pdesc =
   match Procdesc.get_proc_name pdesc with
   | Typ.Procname.Java java_pname as proc_name ->
-      pure
+      is_pure
       && (not (Typ.Procname.is_constructor proc_name))
       && (not (Typ.Procname.Java.is_class_initializer java_pname))
       && not (Typ.Procname.Java.is_access_method java_pname)
@@ -85,9 +85,9 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
     Reporting.log_error summary ~loc ~ltr IssueType.pure_function exp_desc
   in
   match Analyzer.compute_post proc_data ~initial with
-  | Some pure ->
-      if should_report pure proc_desc then report_pure () ;
-      Payload.update_summary pure summary
+  | Some is_pure ->
+      if should_report is_pure proc_desc then report_pure () ;
+      Payload.update_summary is_pure summary
   | None ->
       L.internal_error "Analyzer failed to compute purity information for %a@." Typ.Procname.pp
         proc_name ;

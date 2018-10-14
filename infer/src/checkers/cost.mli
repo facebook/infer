@@ -8,3 +8,11 @@
 open! IStd
 
 val checker : Callbacks.proc_callback_t
+
+val instantiate_cost :
+     caller_pdesc:Procdesc.t
+  -> inferbo_caller_mem:BufferOverrunDomain.Mem.astate option
+  -> callee_pname:Typ.Procname.t
+  -> params:(Exp.t * 'a) list
+  -> callee_cost:Itv.NonNegativePolynomial.astate
+  -> Itv.NonNegativePolynomial.astate

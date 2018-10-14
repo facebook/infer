@@ -161,6 +161,11 @@ OPTIONS
            Activates: Whether paths in --skip-analysis-in-path should be
            compiled or not (Conversely:
            --no-skip-analysis-in-path-skips-compilation)
+HOISTING OPTIONS
+       --hoisting-report-only-expensive
+           Activates: [Hoisting] Report loop-invariant calls only when the
+           function is expensive, i.e. at least linear (Conversely:
+           --no-hoisting-report-only-expensive)
 
 
 ENVIRONMENT

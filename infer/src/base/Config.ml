@@ -208,6 +208,8 @@ let manual_crashcontext = "CRASHCONTEXT OPTIONS"
 
 let manual_generic = Cmdliner.Manpage.s_options
 
+let manual_hoisting = "HOISTING OPTIONS"
+
 let manual_internal = "INTERNAL OPTIONS"
 
 let manual_java = "JAVA OPTIONS"
@@ -1374,6 +1376,13 @@ and html =
   CLOpt.mk_bool ~long:"html"
     ~in_help:InferCommand.[(Explore, manual_generic)]
     "Generate html report."
+
+
+and hoisting_report_only_expensive =
+  CLOpt.mk_bool ~long:"hoisting-report-only-expensive" ~default:false
+    ~in_help:InferCommand.[(Report, manual_hoisting)]
+    "[Hoisting] Report loop-invariant calls only when the function is expensive, i.e. at least \
+     linear"
 
 
 and icfg_dotty_outfile =
@@ -2611,6 +2620,8 @@ and generated_classes = !generated_classes
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
 and html = !html
+
+and hoisting_report_only_expensive = !hoisting_report_only_expensive
 
 and icfg_dotty_outfile = !icfg_dotty_outfile
 

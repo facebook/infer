@@ -243,6 +243,18 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
 
 type invariant_map = Analyzer.invariant_map
 
+(* Use a weak Hashtbl to prevent memory leaks (GC unnecessarily
+   keeping invariant maps around) *)
+module WeakInvMapHashTbl = Caml.Weak.Make (struct
+  type t = Typ.Procname.t * invariant_map option
+
+  let equal (pname1, _) (pname2, _) = Typ.Procname.equal pname1 pname2
+
+  let hash (pname, _) = Hashtbl.hash pname
+end)
+
+let inv_map_cache = WeakInvMapHashTbl.create 100
+
 module Init = struct
   let declare_symbolic_val :
          Typ.Procname.t
@@ -749,7 +761,27 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
     | _ ->
         summary
   in
+  if Config.hoisting_report_only_expensive then
+    let pname = Procdesc.get_proc_name proc_desc in
+    WeakInvMapHashTbl.add inv_map_cache (pname, Some inv_map)
+  else () ;
   (inv_map, summary)
+
+
+let lookup_inv_map_cache (callback_args : Callbacks.proc_callback_args) (pname : Typ.Procname.t) :
+    invariant_map =
+  (* Since we are using a weak Hashtbl, represented as a set of
+     (Procname) hashed values, we have to lookup with a dummy element
+     *)
+  match WeakInvMapHashTbl.find_opt inv_map_cache (pname, None) with
+  | Some (_, Some inv_map) ->
+      inv_map
+  | Some (_, None) ->
+      (* this should never happen *)
+      assert false
+  | None ->
+      (* if bufferoverrun has not been run yet, run it *)
+      compute_invariant_map_and_check callback_args |> fst
 
 
 let checker : Callbacks.proc_callback_args -> Summary.t =

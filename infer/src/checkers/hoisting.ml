@@ -9,7 +9,9 @@ module F = Format
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 
 module Call = struct
-  type t = {pname: Typ.Procname.t; loc: Location.t} [@@deriving compare]
+  type t =
+    {loc: Location.t; pname: Typ.Procname.t; node: Procdesc.Node.t; params: (Exp.t * Typ.t) list}
+  [@@deriving compare]
 
   let pp fmt {pname; loc} =
     F.fprintf fmt "loop-invariant call to %a, at %a " Typ.Procname.pp pname Location.pp loc
@@ -28,12 +30,12 @@ module LoopHeadToHoistInstrs = Procdesc.NodeMap
 
 let add_if_hoistable inv_vars instr node source_nodes idom hoistable_calls =
   match instr with
-  | Sil.Call ((ret_id, _), Exp.Const (Const.Cfun pname), _, loc, _)
+  | Sil.Call ((ret_id, _), Exp.Const (Const.Cfun pname), params, loc, _)
     when (* Check condition (1); N dominates all loop sources *)
          List.for_all ~f:(fun source -> Dominators.dominates idom node source) source_nodes
          && (* Check condition (2); id should be invariant already *)
             LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars ->
-      HoistCalls.add {pname; loc} hoistable_calls
+      HoistCalls.add {pname; loc; node; params} hoistable_calls
   | _ ->
       hoistable_calls
 
@@ -73,13 +75,35 @@ let do_report summary Call.({pname; loc}) loop_head_loc =
   Reporting.log_error summary ~loc ~ltr IssueType.invariant_call message
 
 
-let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
+let should_report proc_desc Call.({pname; node; params}) inferbo_invariant_map =
+  (not Config.hoisting_report_only_expensive)
+  ||
+  (* only report if function call has expensive/symbolic cost *)
+  match Ondemand.analyze_proc_name pname with
+  | Some {Summary.payloads= {Payloads.cost= Some {CostDomain.post= cost}}}
+    when Itv.NonNegativePolynomial.is_symbolic cost ->
+      let instr_node_id = InstrCFG.last_of_underlying_node node |> InstrCFG.Node.id in
+      let inferbo_invariant_map = Lazy.force inferbo_invariant_map in
+      let inferbo_mem = BufferOverrunChecker.extract_pre instr_node_id inferbo_invariant_map in
+      (* get the cost of the function call *)
+      Cost.instantiate_cost ~caller_pdesc:proc_desc ~inferbo_caller_mem:inferbo_mem
+        ~callee_pname:pname ~params ~callee_cost:cost
+      |> Itv.NonNegativePolynomial.is_symbolic
+  | _ ->
+      false
+
+
+let checker ({Callbacks.tenv; summary; proc_desc} as callback_args) : Summary.t =
   let cfg = InstrCFG.from_pdesc proc_desc in
   let proc_data = ProcData.make_default proc_desc tenv in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map =
     ReachingDefs.Analyzer.exec_cfg cfg proc_data
       ~initial:(ReachingDefs.init_reaching_defs_with_formals proc_desc)
+  in
+  let pname = Procdesc.get_proc_name proc_desc in
+  let inferbo_invariant_map =
+    lazy (BufferOverrunChecker.lookup_inv_map_cache callback_args pname)
   in
   (* get dominators *)
   let idom = Dominators.get_idoms proc_desc in
@@ -94,6 +118,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Summary.t =
   LoopHeadToHoistInstrs.iter
     (fun loop_head inv_instrs ->
       let loop_head_loc = Procdesc.Node.get_loc loop_head in
-      HoistCalls.iter (fun call -> do_report summary call loop_head_loc) inv_instrs )
+      HoistCalls.iter
+        (fun call ->
+          if should_report proc_desc call inferbo_invariant_map then
+            do_report summary call loop_head_loc )
+        inv_instrs )
     loop_head_to_inv_instrs ;
   summary
