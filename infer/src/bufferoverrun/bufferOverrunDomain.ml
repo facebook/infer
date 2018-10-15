@@ -548,11 +548,15 @@ module PrunePairs = struct
        value in the latest pruning. *)
     type t = Loc.t * Val.t
 
+    let pp fmt (l, v) = F.fprintf fmt "%a -> %a" Loc.pp l Val.pp v
+
     let equal ((l1, v1) as x) ((l2, v2) as y) =
       phys_equal x y || (Loc.equal l1 l2 && Val.equal v1 v2)
   end
 
   type t = PrunePair.t list
+
+  let pp = Pp.seq PrunePair.pp
 
   let empty = []
 
@@ -582,6 +586,21 @@ module LatestPrune = struct
     | FalseBranch of Pvar.t * PrunePairs.t
     | V of Pvar.t * PrunePairs.t * PrunePairs.t
     | Top
+
+  let pvar_pp = Pvar.pp Pp.text
+
+  let pp fmt = function
+    | Top ->
+        ()
+    | Latest p ->
+        F.fprintf fmt "LatestPrune: latest %a" PrunePairs.pp p
+    | TrueBranch (v, p) ->
+        F.fprintf fmt "LatestPrune: true(%a) %a" pvar_pp v PrunePairs.pp p
+    | FalseBranch (v, p) ->
+        F.fprintf fmt "LatestPrune: false(%a) %a" pvar_pp v PrunePairs.pp p
+    | V (v, p1, p2) ->
+        F.fprintf fmt "LatestPrune: v(%a) %a / %a" pvar_pp v PrunePairs.pp p1 PrunePairs.pp p2
+
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -672,8 +691,8 @@ module MemReach = struct
 
   let pp : F.formatter -> t -> unit =
    fun fmt x ->
-    F.fprintf fmt "Stack:@;%a@;Heap:@;%a@;%a" StackLocs.pp x.stack_locs MemPure.pp x.mem_pure
-      Alias.pp x.alias ;
+    F.fprintf fmt "StackLocs:@;%a@;MemPure:@;%a@;%a@;%a" StackLocs.pp x.stack_locs MemPure.pp
+      x.mem_pure Alias.pp x.alias LatestPrune.pp x.latest_prune ;
     if Option.is_some Config.bo_relational_domain then
       F.fprintf fmt "@;Relation:@;%a" Relation.pp x.relation
 
