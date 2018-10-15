@@ -52,8 +52,6 @@ h1 { font-size:14pt }
 .expansion { display: none; }
 .visited:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
 .visited { color: darkmagenta; background-color:LemonChiffon; position: relative }
-.visitedproof:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
-.visitedproof { color: darkmagenta; background-color:lightgreen; position: relative }
 .dangling:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
 .dangling { color: gray; background-color:white; position: relative }
 .num { width:2.5em; padding-right:2ex; background-color:#eeeeee }
@@ -142,13 +140,11 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
   let node_filename pname id = F.sprintf "%s_node%d" (Typ.Procname.to_filename pname) id
 
   (** Print an html link to the given node. *)
-  let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
+  let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited fmt id =
     let node_fname = node_filename pname id in
     let node_text =
       let descr = if String.equal description "" then "N" else String.prefix description 1 in
-      let style_class =
-        if not isvisited then "dangling" else if isproof then "visitedproof" else "visited"
-      in
+      let style_class = if not isvisited then "dangling" else "visited" in
       F.asprintf
         "<span class='%s'>%s_%d<span class='expansion'>node%d preds:%a succs:%a exn:%a \
          %s%s</span></span>"

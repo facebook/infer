@@ -78,16 +78,9 @@ let is_visited node =
       Summary.Stats.is_visited stats node_id
 
 
-let pp_node_link path_to_root ?proof_cover ~description fmt node =
+let pp_node_link path_to_root ~description fmt node =
   let description =
     if description then Procdesc.Node.get_description (Pp.html Black) node else ""
-  in
-  let isproof =
-    match proof_cover with
-    | Some proof_cover ->
-        BiabductionSummary.Visitedset.mem (Procdesc.Node.get_id node, []) proof_cover
-    | None ->
-        false
   in
   Io_infer.Html.pp_node_link path_to_root
     (Procdesc.Node.get_proc_name node)
@@ -95,7 +88,7 @@ let pp_node_link path_to_root ?proof_cover ~description fmt node =
     ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
     ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
     ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
-    ~isvisited:(is_visited node) ~isproof fmt
+    ~isvisited:(is_visited node) fmt
     (Procdesc.Node.get_id node :> int)
 
 
@@ -256,7 +249,7 @@ let pp_err_message fmt err_string =
   F.fprintf fmt "\n<div class=\"msg\" style=\"margin-left:9ex\">%s</div>" err_string
 
 
-let write_html_proc source proof_cover table_nodes_at_linenum global_err_log proc_desc =
+let write_html_proc source table_nodes_at_linenum global_err_log proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let process_node n =
     let lnum = (Procdesc.Node.get_loc n).Location.line in
@@ -280,11 +273,6 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
     | None ->
         ()
     | Some summary ->
-        List.iter
-          ~f:(fun sp ->
-            proof_cover :=
-              BiabductionSummary.Visitedset.union sp.BiabductionSummary.visited !proof_cover )
-          (Tabulation.get_specs_from_payload summary) ;
         Errlog.update global_err_log (Summary.get_err_log summary) )
 
 
@@ -298,7 +286,7 @@ let write_html_file linereader filename procs =
     F.fprintf fmt "<center><h1>File %a </h1></center>@\n<table class=\"code\">@\n" SourceFile.pp
       filename
   in
-  let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
+  let print_one_line table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
       match LineReader.from_file_linenum linereader filename line_number with
       | Some line_raw ->
@@ -317,9 +305,7 @@ let write_html_file linereader filename procs =
     in
     F.fprintf fmt "<tr><td class=\"num\" id=\"LINE%d\">%d</td><td class=\"line\">%s " line_number
       line_number line_html ;
-    Pp.seq
-      (pp_node_link [fname_encoding] ~proof_cover:!proof_cover ~description:true)
-      fmt nodes_at_linenum ;
+    Pp.seq (pp_node_link [fname_encoding] ~description:true) fmt nodes_at_linenum ;
     List.iter
       ~f:(fun n ->
         match Procdesc.Node.get_kind n with
@@ -348,14 +334,13 @@ let write_html_file linereader filename procs =
   pp_prelude () ;
   let global_err_log = Errlog.empty () in
   let table_nodes_at_linenum = Hashtbl.create 11 in
-  let proof_cover = ref BiabductionSummary.Visitedset.empty in
-  List.iter ~f:(write_html_proc filename proof_cover table_nodes_at_linenum global_err_log) procs ;
+  List.iter ~f:(write_html_proc filename table_nodes_at_linenum global_err_log) procs ;
   let table_err_per_line = create_table_err_per_line global_err_log in
   let linenum = ref 0 in
   try
     while true do
       incr linenum ;
-      print_one_line proof_cover table_nodes_at_linenum table_err_per_line !linenum
+      print_one_line table_nodes_at_linenum table_err_per_line !linenum
     done
   with End_of_file ->
     F.fprintf fmt "</table>@\n" ;

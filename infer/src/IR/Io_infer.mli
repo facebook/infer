@@ -51,7 +51,6 @@ module Html : sig
     -> succs:int list
     -> exn:int list
     -> isvisited:bool
-    -> isproof:bool
     -> Format.formatter
     -> int
     -> unit
