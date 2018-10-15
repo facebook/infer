@@ -64,21 +64,14 @@ type t =
   | EU of transitions option * t * t
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
+  | InObjCClass of t * t
 [@@deriving compare]
 
 let equal = [%compare.equal: t]
 
 let has_transition phi =
   match phi with
-  | True
-  | False
-  | Atomic _
-  | Not _
-  | And (_, _)
-  | Or (_, _)
-  | Implies (_, _)
-  | InNode (_, _)
-  | EH (_, _) ->
+  | True | False | Atomic _ | Not _ | And _ | Or _ | Implies _ | InNode _ | EH _ | InObjCClass _ ->
       false
   | AX (trans_opt, _)
   | AF (trans_opt, _)
@@ -212,6 +205,8 @@ module Debug = struct
         Format.fprintf fmt "ET[%a][%a](%a)"
           (Pp.comma_seq Format.pp_print_string)
           (nodes_to_string arglist) pp_transition trans pp_formula phi
+    | InObjCClass (phi1, phi2) ->
+        if full_print then Format.fprintf fmt "InObjCClass(%a, %a)" pp_formula phi1 pp_formula phi2
 
 
   let pp_ast ~ast_node_to_highlight ?(prettifier = Fn.id) fmt root =
@@ -1305,6 +1300,20 @@ and eval_ET tl trs phi an lcxt =
   eval_formula f an lcxt
 
 
+and eval_InObjCClass an lcxt f1 f2 =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, otdi)) ->
+      let open Option.Monad_infix in
+      eval_formula f1 an lcxt
+      >>= fun _ ->
+      otdi.otdi_implementation
+      >>= fun dr ->
+      CAst_utils.get_decl dr.Clang_ast_t.dr_decl_pointer
+      >>= fun n -> eval_formula f2 (Ctl_parser_types.Decl n) lcxt
+  | _ ->
+      None
+
+
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
 and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
   debug_eval_begin (debug_create_payload an f lcxt) ;
@@ -1352,5 +1361,7 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
         eval_formula (And (f1, EX (trans, EG (trans, f1)))) an lcxt
     | ET (tl, sw, phi) ->
         eval_ET tl sw phi an lcxt
+    | InObjCClass (f1, f2) ->
+        eval_InObjCClass an lcxt f1 f2
   in
   debug_eval_end res ; res

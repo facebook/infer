@@ -152,6 +152,10 @@ let rec normalize phi =
   | InNode (nl, phi1) ->
       let phi1' = normalize phi1 in
       InNode (nl, phi1')
+  | InObjCClass (phi1, phi2) ->
+      let phi1' = normalize phi1 in
+      let phi2' = normalize phi2 in
+      InObjCClass (phi1', phi2')
 
 
 (* Given a phi0 build the list of its subformulae including itself.
@@ -165,7 +169,7 @@ let formula_closure phi0 =
         [phi]
     | Not phi1 ->
         phi :: do_subformula phi1
-    | And (phi1, phi2) | Or (phi1, phi2) | EU (_, phi1, phi2) ->
+    | And (phi1, phi2) | Or (phi1, phi2) | EU (_, phi1, phi2) | InObjCClass (phi1, phi2) ->
         let cl1 = do_subformula phi1 in
         let cl2 = do_subformula phi2 in
         phi :: (cl1 @ cl2)
@@ -234,6 +238,8 @@ let add_valid_formulae an checker lcxt cl =
         if Option.is_some (eval_formula phi an lcxt) then add_in_set phi acc_set else acc_set
     | And (phi1, phi2) when is_valid phi1 acc_set && is_valid phi2 acc_set ->
         add_in_set phi acc_set
+    | InObjCClass (phi1, phi2) when is_valid phi1 acc_set && is_valid phi2 acc_set ->
+        add_in_set phi acc_set
     | Or (phi1, phi2) when is_valid phi1 acc_set || is_valid phi2 acc_set ->
         add_in_set phi acc_set
     | Not phi1 when not (is_valid phi1 acc_set) ->
@@ -274,7 +280,7 @@ let rec is_state_only_formula phi =
       (*L.(debug Linters Medium) "@\n ****** FOUND state_only_formula ***** @\n" ;*) true
   | Not phi1 ->
       is_state_only_formula phi1
-  | And (phi1, phi2) | Or (phi1, phi2) | Implies (phi1, phi2) ->
+  | And (phi1, phi2) | Or (phi1, phi2) | Implies (phi1, phi2) | InObjCClass (phi1, phi2) ->
       is_state_only_formula phi1 && is_state_only_formula phi2
   | InNode (_, phi1) ->
       is_state_only_formula phi1

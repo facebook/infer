@@ -65,6 +65,7 @@ type t =
   | ET of ALVar.alexp list * transitions option * t
       (** ET[T][l] phi <=> there exists a descentant an of the current node such that an is of type in set T
           making a transition to a node an' via label l, such that in an phi holds. *)
+  | InObjCClass of t * t
 [@@deriving compare]
 
 (* "set" clauses are used for defining mandatory variables that will be used

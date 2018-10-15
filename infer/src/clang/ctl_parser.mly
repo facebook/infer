@@ -50,6 +50,9 @@
 %token WITH_TRANSITION
 %token WHEN
 %token HOLDS_IN_NODE
+%token HOLDS_IN_OBJCCLASS
+%token INTERFACE
+%token IMPLEMENTATION
 %token SET
 %token LET
 %token TRUE
@@ -61,6 +64,8 @@
 %token ASSIGNMENT
 %token SEMICOLON
 %token COMMA
+%token LEFT_SQBRACE
+%token RIGHT_SQBRACE
 %token AND
 %token OR
 %token NOT
@@ -255,6 +260,16 @@ formula_with_paren:
  | LEFT_PAREN formula RIGHT_PAREN { $2 }
 ;
 
+when_formula:
+| INTERFACE  LEFT_SQBRACE formula RIGHT_SQBRACE
+  IMPLEMENTATION LEFT_SQBRACE formula RIGHT_SQBRACE HOLDS_IN_OBJCCLASS
+   { L.(debug Linters Verbose) "\tParsed HOLDS-IN-OBJC-CLASS @\n";
+        CTL.InObjCClass ($3, $7) }
+| formula HOLDS_IN_NODE node_list
+     { L.(debug Linters Verbose) "\tParsed InNode@\n"; CTL.InNode ($3, $1)}
+;
+
+
 formula:
   | formula_with_paren { $1 }
   | formula_id { CTL.Atomic($1, []) }
@@ -277,8 +292,7 @@ formula:
   | formula EF WITH_TRANSITION transition_label
      { L.(debug Linters Verbose) "\tParsed EF WITH-TRANSITION '%a'@\n" CTL.Debug.pp_transition $4;
        CTL.EF($4, $1) }
-  | WHEN formula HOLDS_IN_NODE node_list
-     { L.(debug Linters Verbose) "\tParsed InNode@\n"; CTL.InNode ($4, $2)}
+  | WHEN when_formula { $2 }
   | ET node_list WITH_TRANSITION transition_label formula_EF
      { L.(debug Linters Verbose) "\tParsed ET with transition '%a'@\n" CTL.Debug.pp_transition $4;
        CTL.ET ($2, $4, $5)}

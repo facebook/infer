@@ -295,6 +295,8 @@ let rec apply_substitution f sub =
       EG (trans, apply_substitution f1 sub)
   | ET (ntl, sw, f1) ->
       ET (sub_list_param ntl, sw, apply_substitution f1 sub)
+  | InObjCClass (f1, f2) ->
+      InObjCClass (apply_substitution f1 sub, apply_substitution f2 sub)
 
 
 let expand_formula phi map_ error_msg_ =
@@ -356,6 +358,8 @@ let expand_formula phi map_ error_msg_ =
         EG (trans, expand f1 map error_msg)
     | ET (tl, sw, f1) ->
         ET (tl, sw, expand f1 map error_msg)
+    | InObjCClass (f1, f2) ->
+        InObjCClass (expand f1 map error_msg, expand f2 map error_msg)
   in
   expand phi map_ error_msg_
 
