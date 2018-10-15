@@ -17,7 +17,7 @@ let new_session node =
   | None ->
       0
   | Some summary ->
-      Summary.Stats.add_visited_fp summary.stats node_id ;
+      Summary.Stats.add_visited summary.stats node_id ;
       incr summary.Summary.sessions ;
       !(summary.Summary.sessions)
 

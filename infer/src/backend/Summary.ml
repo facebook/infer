@@ -15,26 +15,15 @@ module Stats = struct
     { failure_kind: SymOp.failure_kind option
           (** what type of failure stopped the analysis (if any) *)
     ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
-    ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
-    ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *) }
+    ; mutable nodes_visited: IntSet.t  (** Nodes visited *) }
 
-  let empty =
-    {failure_kind= None; symops= 0; nodes_visited_fp= IntSet.empty; nodes_visited_re= IntSet.empty}
+  let empty = {failure_kind= None; symops= 0; nodes_visited= IntSet.empty}
 
+  let is_visited stats node_id = IntSet.mem node_id stats.nodes_visited
 
-  let is_visited_fp stats node_id = IntSet.mem node_id stats.nodes_visited_fp
+  let add_visited stats node_id = stats.nodes_visited <- IntSet.add node_id stats.nodes_visited
 
-  let is_visited_re stats node_id = IntSet.mem node_id stats.nodes_visited_re
-
-  let add_visited_fp stats node_id =
-    stats.nodes_visited_fp <- IntSet.add node_id stats.nodes_visited_fp
-
-
-  let add_visited_re stats node_id =
-    stats.nodes_visited_re <- IntSet.add node_id stats.nodes_visited_re
-
-
-  let nb_visited_re {nodes_visited_re} = IntSet.cardinal nodes_visited_re
+  let nb_visited {nodes_visited} = IntSet.cardinal nodes_visited
 
   let update ?(add_symops = 0) ?failure_kind stats =
     let symops = stats.symops + add_symops in

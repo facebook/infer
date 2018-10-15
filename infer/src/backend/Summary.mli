@@ -15,15 +15,11 @@ module Stats : sig
   (** Execution statistics *)
   type t
 
-  val add_visited_fp : t -> int -> unit
+  val add_visited : t -> int -> unit
 
-  val add_visited_re : t -> int -> unit
+  val is_visited : t -> int -> bool
 
-  val is_visited_fp : t -> int -> bool
-
-  val is_visited_re : t -> int -> bool
-
-  val nb_visited_re : t -> int
+  val nb_visited : t -> int
 
   val update : ?add_symops:int -> ?failure_kind:SymOp.failure_kind -> t -> t
 

@@ -67,23 +67,15 @@ end
 (** Current formatter for the html output *)
 let curr_html_formatter = ref F.std_formatter
 
-(** Return true if the node was visited during footprint and during re-execution*)
-let node_is_visited node =
+(** Return true if the node was visited during analysis *)
+let is_visited node =
   match Summary.get (Procdesc.Node.get_proc_name node) with
   | None ->
-      (false, false)
+      false
   | Some summary ->
       let stats = summary.Summary.stats in
       let node_id = (Procdesc.Node.get_id node :> int) in
-      let is_visited_fp = Summary.Stats.is_visited_fp stats node_id in
-      let is_visited_re = Summary.Stats.is_visited_re stats node_id in
-      (is_visited_fp, is_visited_re)
-
-
-(** Return true if the node was visited during analysis *)
-let is_visited node =
-  let visited_fp, visited_re = node_is_visited node in
-  visited_fp || visited_re
+      Summary.Stats.is_visited stats node_id
 
 
 let pp_node_link path_to_root ?proof_cover ~description fmt node =

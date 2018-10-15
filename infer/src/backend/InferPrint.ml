@@ -614,7 +614,7 @@ module StatsLogs = struct
     let lang = Typ.Procname.get_language proc_name in
     let stats =
       EventLogger.AnalysisStats
-        { analysis_nodes_visited= Summary.Stats.nb_visited_re summary.stats
+        { analysis_nodes_visited= Summary.Stats.nb_visited summary.stats
         ; analysis_status= Summary.Stats.failure_kind summary.stats
         ; analysis_total_nodes= Summary.get_proc_desc summary |> Procdesc.get_nodes_num
         ; clang_method_kind=

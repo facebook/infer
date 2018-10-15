@@ -401,10 +401,10 @@ let do_symbolic_execution exe_env summary proc_cfg handle_exn tenv
 
 
 let mark_visited summary node =
-  let node_id = (Procdesc.Node.get_id node :> int) in
-  let stats = summary.Summary.stats in
-  if !BiabductionConfig.footprint then Summary.Stats.add_visited_fp stats node_id
-  else Summary.Stats.add_visited_re stats node_id
+  if not !BiabductionConfig.footprint then
+    let node_id = (Procdesc.Node.get_id node :> int) in
+    let stats = summary.Summary.stats in
+    Summary.Stats.add_visited stats node_id
 
 
 let forward_tabulate summary exe_env tenv proc_cfg wl =
