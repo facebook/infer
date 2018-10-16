@@ -22,6 +22,19 @@ module Partition = struct
 
   let add_component head rest next = Component {head; rest; next}
 
+  let rec fold_nodes partition ~init ~f =
+    match partition with
+    | Empty ->
+        init
+    | Node {node; next} ->
+        let init = f init node in
+        (fold_nodes [@tailcall]) next ~init ~f
+    | Component {head; rest; next} ->
+        let init = f init head in
+        let init = fold_nodes rest ~init ~f in
+        (fold_nodes [@tailcall]) next ~init ~f
+
+
   let rec fold_heads partition ~init ~f =
     match partition with
     | Empty ->

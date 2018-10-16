@@ -88,6 +88,7 @@ module Node = struct
   type t =
     { id: id  (** unique id of the node *)
     ; mutable dist_exit: int option  (** distance to the exit node *)
+    ; mutable wto_index: int
     ; mutable exn: t list  (** exception nodes in the cfg *)
     ; mutable instrs: Instrs.not_reversed_t  (** instructions for symbolic execution *)
     ; kind: nodekind  (** kind of node *)
@@ -105,6 +106,7 @@ module Node = struct
   let dummy pname =
     { id= 0
     ; dist_exit= None
+    ; wto_index= Int.max_value
     ; instrs= Instrs.empty
     ; kind= Skip_node "dummy"
     ; loc= Location.dummy
@@ -198,6 +200,8 @@ module Node = struct
 
 
   let get_distance_to_exit node = node.dist_exit
+
+  let get_wto_index node = node.wto_index
 
   (** Append the instructions to the list of instructions to execute *)
   let append_instrs node instrs =
@@ -544,6 +548,7 @@ let create_node_from_not_reversed pdesc loc kind instrs =
   let node =
     { Node.id= node_id
     ; dist_exit= None
+    ; wto_index= Int.max_value
     ; instrs
     ; kind
     ; loc
@@ -600,6 +605,11 @@ let get_wto pdesc =
       wto
   | None ->
       let wto = WTO.make pdesc in
+      let _ : int =
+        WeakTopologicalOrder.Partition.fold_nodes wto ~init:0 ~f:(fun idx node ->
+            node.Node.wto_index <- idx ;
+            idx + 1 )
+      in
       pdesc.wto <- Some wto ;
       wto
 

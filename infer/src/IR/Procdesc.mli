@@ -141,6 +141,8 @@ module Node : sig
   val get_succs : t -> t list
   (** Get the successor nodes of the current node *)
 
+  val get_wto_index : t -> int
+
   val hash : t -> int
   (** Hash function for nodes *)
 
