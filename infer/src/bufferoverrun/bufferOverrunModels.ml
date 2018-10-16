@@ -186,7 +186,10 @@ let placement_new size_exp (src_exp1, t1) src_arg2_opt =
             | Some (src_exp2, t2) when Typ.is_pointer_to_void t2 ->
                 src_exp2
             | _ ->
-                L.(die InternalError) "Unexpected types of arguments for __placement_new"
+                (* TODO: Raise an exception when given unexpected arguments.  Before that, we need
+                   to fix the frontend to parse user defined `new` correctly. *)
+                L.(debug BufferOverrun Verbose) "Unexpected types of arguments for __placement_new" ;
+                src_exp1
         in
         let v = Sem.eval src_exp mem in
         Dom.Mem.add_stack (Loc.of_id id) v mem

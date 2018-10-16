@@ -131,6 +131,20 @@ void placement_new_overload4_Good() {
   x->a[0] = 0;
 }
 
+struct Allocator {
+  void* allocate(std::size_t size) { return malloc(size); }
+};
+
+void* operator new(std::size_t size, Allocator& allocator) {
+  return allocator.allocate(size);
+}
+
+void user_defined_new_Bad_FN() {
+  Allocator allocator;
+  my_class2* x = new (allocator) my_class2();
+  x->a[10] = 0;
+}
+
 class my_class4 {
  public:
   int a[3];
