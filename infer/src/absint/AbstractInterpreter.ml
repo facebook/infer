@@ -114,6 +114,9 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     NodePrinter.finish_session underlying_node
 
 
+  (** reference to log errors only at the innermost recursive call *)
+  let logged_error = ref false
+
   let exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map =
     let on_instrs instrs =
       if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
@@ -123,9 +126,16 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           (Node.underlying_node node) ;
       let astate_post =
         let compute_post pre instr =
-          try TransferFunctions.exec_instr pre proc_data node instr with exn ->
+          try
+            let post = TransferFunctions.exec_instr pre proc_data node instr in
+            (* don't forget to reset this so we output messages for future errors too *)
+            logged_error := false ;
+            post
+          with exn ->
             IExn.reraise_after exn ~f:(fun () ->
-                L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr )
+                if not !logged_error then (
+                  L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr ;
+                  logged_error := true ) )
         in
         Instrs.fold ~f:compute_post ~init:pre instrs
       in

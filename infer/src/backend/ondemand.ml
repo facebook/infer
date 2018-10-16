@@ -116,6 +116,9 @@ let restore_global_state st =
   Timeout.resume_previous_timeout ()
 
 
+(** reference to log errors only at the innermost recursive call *)
+let logged_error = ref false
+
 let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
@@ -164,17 +167,23 @@ let run_proc_analysis analyze_proc ~caller_pdesc callee_pdesc =
       else initial_summary
     in
     let final_summary = postprocess summary in
-    restore_global_state old_state ; final_summary
+    restore_global_state old_state ;
+    (* don't forget to reset this so we output messages for future errors too *)
+    logged_error := false ;
+    final_summary
   with exn -> (
+    let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
-        let source_file = attributes.ProcAttributes.translation_unit in
-        let location = attributes.ProcAttributes.loc in
-        L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
-          Typ.Procname.pp callee_pname Location.pp_file_pos location ;
+        if not !logged_error then (
+          let source_file = attributes.ProcAttributes.translation_unit in
+          let location = attributes.ProcAttributes.loc in
+          L.internal_error "While analysing function %a:%a at %a@\n" SourceFile.pp source_file
+            Typ.Procname.pp callee_pname Location.pp_file_pos location ;
+          logged_error := true ) ;
         restore_global_state old_state ;
         not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
-      callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
+      callee_pname (Exn.to_string exn) backtrace ;
     match exn with
     | SymOp.Analysis_failure_exe kind ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
