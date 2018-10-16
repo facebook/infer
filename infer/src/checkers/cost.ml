@@ -407,6 +407,8 @@ module ControlFlowCost = struct
 end
 
 module ConstraintSolver = struct
+  type debug = {f: 'a. ('a, F.formatter, unit, unit) format4 -> 'a} [@@unboxed]
+
   module Equalities = struct
     include ImperativeUnionFind.Make (ControlFlowCost.Set)
 
@@ -428,19 +430,17 @@ module ConstraintSolver = struct
       IContainer.pp_collection ~fold:fold_sets ~pp_item fmt equalities
 
 
-    let log_union equalities e1 e2 =
+    let log_union ~debug equalities e1 e2 =
       match union equalities e1 e2 with
       | None ->
-          L.(debug Analysis Verbose)
-            "[UF] Preexisting %a = %a@\n" ControlFlowCost.pp e1 ControlFlowCost.pp e2 ;
+          debug.f "[UF] Preexisting %a = %a@\n" ControlFlowCost.pp e1 ControlFlowCost.pp e2 ;
           false
       | Some (e1, e2) ->
-          L.(debug Analysis Verbose)
-            "[UF] Union %a into %a@\n" ControlFlowCost.pp e1 ControlFlowCost.pp e2 ;
+          debug.f "[UF] Union %a into %a@\n" ControlFlowCost.pp e1 ControlFlowCost.pp e2 ;
           true
 
 
-    let try_to_improve ~on_improve ~f equalities ~max =
+    let try_to_improve ~debug ~on_improve ~f equalities ~max =
       let f did_improve repr_set =
         if did_improve then (
           f ~did_improve:(fun () -> ()) repr_set ;
@@ -454,8 +454,7 @@ module ConstraintSolver = struct
         if fold_sets equalities ~init:false ~f then (
           on_improve () ;
           if max > 0 then loop (max - 1)
-          else
-            L.(debug Analysis Verbose) "[ConstraintSolver] Maximum number of iterations reached@\n" )
+          else debug.f "[ConstraintSolver] Maximum number of iterations reached@\n" )
       in
       loop max
 
@@ -472,16 +471,14 @@ module ConstraintSolver = struct
 
     Its complexity is unknown but I think it is bounded by nbNodes x nbEdges x max.
   *)
-    let infer_equalities_from_sums equalities ~max =
+    let infer_equalities_from_sums ~debug equalities ~max =
       let normalizer = normalizer equalities in
       let f ~did_improve (_repr, set) =
-        let on_infer e1 e2 = if log_union equalities e1 e2 then did_improve () in
+        let on_infer e1 e2 = if log_union equalities ~debug e1 e2 then did_improve () in
         ControlFlowCost.Set.infer_equalities_from_sums ~on_infer ~normalizer set
       in
-      let on_improve () =
-        L.(debug Analysis Verbose) "[ConstraintSolver][EInfe] %a@\n" pp_equalities equalities
-      in
-      try_to_improve ~on_improve ~f equalities ~max
+      let on_improve () = debug.f "[ConstraintSolver][EInfe] %a@\n" pp_equalities equalities in
+      try_to_improve ~debug ~on_improve ~f equalities ~max
 
 
     let normalize_sums equalities =
@@ -490,8 +487,8 @@ module ConstraintSolver = struct
           ControlFlowCost.Set.normalize_sums ~normalizer set )
 
 
-    let union equalities e1 e2 =
-      let _ : bool = log_union equalities e1 e2 in
+    let union ~debug equalities e1 e2 =
+      let _ : bool = log_union ~debug equalities e1 e2 in
       ()
 
 
@@ -505,7 +502,7 @@ module ConstraintSolver = struct
       From sums: if A = B + C, do cost(A) = min(cost(A), cost(B) + cost(C))
       From inequalities: if A = B + C, then B <= A, do cost(B) = min(cost(B), cost(A))
     *)
-    let improve_costs equalities ~max =
+    let improve_costs ~debug equalities ~max =
       let of_item (item : ControlFlowCost.Item.t) =
         (item :> ControlFlowCost.t)
         |> find equalities |> find_set equalities
@@ -513,7 +510,7 @@ module ConstraintSolver = struct
       in
       let f ~did_improve (repr, set) =
         let on_improve sum cost_of_sum new_cost =
-          L.(debug Analysis Verbose)
+          debug.f
             "[ConstraintSolver][CImpr] Improved cost of %a using %a (cost: %a), from %a to %a@\n"
             pp_repr repr ControlFlowCost.Sum.pp sum BasicCost.pp cost_of_sum BasicCost.pp
             (ControlFlowCost.Set.cost set) BasicCost.pp new_cost ;
@@ -528,7 +525,7 @@ module ConstraintSolver = struct
             ControlFlowCost.Set.improve_cost_with sum_item_set (ControlFlowCost.Set.cost set)
           with
           | Some previous_cost ->
-              L.(debug Analysis Verbose)
+              debug.f
                 "[ConstraintSolver][CImpr] Improved cost of %a <= %a (cost: %a), from %a to %a@\n"
                 ControlFlowCost.Item.pp sum_item pp_repr repr BasicCost.pp
                 (ControlFlowCost.Set.cost set) BasicCost.pp previous_cost BasicCost.pp
@@ -539,13 +536,11 @@ module ConstraintSolver = struct
         in
         ControlFlowCost.Set.sum_items set |> List.iter ~f:try_from_inequality
       in
-      let on_improve () =
-        L.(debug Analysis Verbose) "[ConstraintSolver][CImpr] %a@\n" pp_costs equalities
-      in
-      try_to_improve ~on_improve ~f equalities ~max
+      let on_improve () = debug.f "[ConstraintSolver][CImpr] %a@\n" pp_costs equalities in
+      try_to_improve ~debug ~on_improve ~f equalities ~max
   end
 
-  let add_constraints equalities node get_nodes make =
+  let add_constraints ~debug equalities node get_nodes make =
     match get_nodes node with
     | [] ->
         (* either start/exit node or dead node (broken CFG) *)
@@ -554,36 +549,32 @@ module ConstraintSolver = struct
         let node_id = Node.id node in
         let edges = List.rev_map nodes ~f:(fun other -> make node_id (Node.id other)) in
         let sum = ControlFlowCost.sum edges in
-        Equalities.union equalities (ControlFlowCost.make_node node_id) sum
+        Equalities.union ~debug equalities (ControlFlowCost.make_node node_id) sum
 
 
-  let collect_on_node equalities node =
-    add_constraints equalities node Procdesc.Node.get_preds ControlFlowCost.make_pred_edge ;
-    add_constraints equalities node Procdesc.Node.get_succs ControlFlowCost.make_succ_edge
+  let collect_on_node ~debug equalities node =
+    add_constraints ~debug equalities node Procdesc.Node.get_preds ControlFlowCost.make_pred_edge ;
+    add_constraints ~debug equalities node Procdesc.Node.get_succs ControlFlowCost.make_succ_edge
 
 
-  let collect_constraints node_cfg =
+  let collect_constraints ~debug node_cfg =
     let equalities = Equalities.create () in
-    Container.iter node_cfg ~fold:NodeCFG.fold_nodes ~f:(collect_on_node equalities) ;
-    L.(debug Analysis Verbose)
-      "[ConstraintSolver] Procedure %a @@ %a@\n" Typ.Procname.pp (Procdesc.get_proc_name node_cfg)
-      Location.pp_file_pos (Procdesc.get_loc node_cfg) ;
-    L.(debug Analysis Verbose)
-      "[ConstraintSolver][EInit] %a@\n" Equalities.pp_equalities equalities ;
+    Container.iter node_cfg ~fold:NodeCFG.fold_nodes ~f:(collect_on_node ~debug equalities) ;
+    debug.f "[ConstraintSolver] Procedure %a @@ %a@\n" Typ.Procname.pp
+      (Procdesc.get_proc_name node_cfg) Location.pp_file_pos (Procdesc.get_loc node_cfg) ;
+    debug.f "[ConstraintSolver][EInit] %a@\n" Equalities.pp_equalities equalities ;
     Equalities.normalize_sums equalities ;
-    L.(debug Analysis Verbose)
-      "[ConstraintSolver][ENorm] %a@\n" Equalities.pp_equalities equalities ;
-    Equalities.infer_equalities_from_sums equalities ~max:10 ;
-    L.(debug Analysis Verbose)
-      "[ConstraintSolver][EInfe] %a@\n" Equalities.pp_equalities equalities ;
+    debug.f "[ConstraintSolver][ENorm] %a@\n" Equalities.pp_equalities equalities ;
+    Equalities.infer_equalities_from_sums equalities ~debug ~max:10 ;
+    debug.f "[ConstraintSolver][EInfe] %a@\n" Equalities.pp_equalities equalities ;
     equalities
 
 
-  let compute_costs bound_map equalities =
+  let compute_costs ~debug bound_map equalities =
     Equalities.init_costs bound_map equalities ;
-    L.(debug Analysis Verbose) "[ConstraintSolver][CInit] %a@\n" Equalities.pp_costs equalities ;
-    Equalities.improve_costs equalities ~max:10 ;
-    L.(debug Analysis Verbose) "[ConstraintSolver][CImpr] %a@\n" Equalities.pp_costs equalities
+    debug.f "[ConstraintSolver][CInit] %a@\n" Equalities.pp_costs equalities ;
+    Equalities.improve_costs equalities ~debug ~max:10 ;
+    debug.f "[ConstraintSolver][CImpr] %a@\n" Equalities.pp_costs equalities
 
 
   let get_node_nb_exec equalities node_id =
@@ -767,8 +758,21 @@ let checker ({Callbacks.tenv; proc_desc} as callback_args) : Summary.t =
       loop_inv_map
   in
   let get_node_nb_exec =
-    let equalities = ConstraintSolver.collect_constraints node_cfg in
-    let () = ConstraintSolver.compute_costs bound_map equalities in
+    let debug =
+      if Config.write_html then
+        let f fmt = F.kasprintf L.d_strln fmt in
+        {ConstraintSolver.f}
+      else
+        let f fmt = L.(debug Analysis Verbose) fmt in
+        {ConstraintSolver.f}
+    in
+    let start_node = NodeCFG.start_node node_cfg in
+    ( if Config.write_html then
+      let pp_name fmt = F.pp_print_string fmt "cost(constraints)" in
+      NodePrinter.start_session ~pp_name start_node ) ;
+    let equalities = ConstraintSolver.collect_constraints ~debug node_cfg in
+    let () = ConstraintSolver.compute_costs ~debug bound_map equalities in
+    if Config.write_html then NodePrinter.finish_session start_node ;
     ConstraintSolver.get_node_nb_exec equalities
   in
   let initWCET = (BasicCost.zero, ReportedOnNodes.empty) in
