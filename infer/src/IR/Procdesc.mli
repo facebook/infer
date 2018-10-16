@@ -161,7 +161,7 @@ module Node : sig
 end
 
 (** Map with node id keys. *)
-module IdMap : Caml.Map.S with type key = Node.id
+module IdMap : PrettyPrintable.PPMap with type key = Node.id
 
 (** Hash table with nodes as keys. *)
 module NodeHash : Caml.Hashtbl.S with type key = Node.t

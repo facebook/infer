@@ -275,6 +275,10 @@ struct
     NodePrinter.start_session ~pp_name underlying_node ;
     let pp_node fmt node = node |> Node.id |> Node.pp_id fmt in
     L.d_strln (Format.asprintf "%a" (WeakTopologicalOrder.Partition.pp ~pp_node) wto) ;
+    let loop_heads =
+      wto |> IContainer.to_rev_list ~fold:WeakTopologicalOrder.Partition.fold_heads |> List.rev
+    in
+    L.d_strln (Format.asprintf "Loop heads: %a" (Pp.seq pp_node) loop_heads) ;
     NodePrinter.finish_session underlying_node
 
 

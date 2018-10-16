@@ -26,6 +26,8 @@ module Partition : sig
     | Node of {node: 'node; next: 'node t}
     | Component of {head: 'node; rest: 'node t; next: 'node t}
 
+  val fold_heads : ('node t, 'node, _) Container.fold
+
   val pp : pp_node:(F.formatter -> 'node -> unit) -> F.formatter -> 'node t -> unit
 end
 

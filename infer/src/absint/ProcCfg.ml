@@ -67,7 +67,7 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
     let pp = pp_id
   end
 
-  module IdMap = PrettyPrintable.MakePPMap (OrderedId)
+  module IdMap = Procdesc.IdMap
   module IdSet = PrettyPrintable.MakePPSet (OrderedId)
 end
 

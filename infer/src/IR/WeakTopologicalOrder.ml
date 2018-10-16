@@ -20,6 +20,18 @@ module Partition = struct
 
   let add_component head rest next = Component {head; rest; next}
 
+  let rec fold_heads partition ~init ~f =
+    match partition with
+    | Empty ->
+        init
+    | Node {next} ->
+        (fold_heads [@tailcall]) next ~init ~f
+    | Component {head; rest; next} ->
+        let init = f init head in
+        let init = fold_heads rest ~init ~f in
+        (fold_heads [@tailcall]) next ~init ~f
+
+
   let rec pp ~prefix ~pp_node fmt = function
     | Empty ->
         ()

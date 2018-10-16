@@ -127,16 +127,22 @@ module Node = struct
 
   type node = t
 
+  let pp_id f id = F.pp_print_int f id
+
+  let pp f node = pp_id f (get_id node)
+
   module NodeSet = Caml.Set.Make (struct
     type t = node
 
     let compare = compare
   end)
 
-  module IdMap = Caml.Map.Make (struct
+  module IdMap = PrettyPrintable.MakePPMap (struct
     type t = id
 
     let compare = compare_id
+
+    let pp = pp_id
   end)
 
   let get_exn node = node.exn
@@ -190,10 +196,6 @@ module Node = struct
     in
     fun start_node ~f -> find ~f NodeSet.empty [start_node]
 
-
-  let pp_id f id = F.pp_print_int f id
-
-  let pp f node = pp_id f (get_id node)
 
   let get_distance_to_exit node = node.dist_exit
 
@@ -398,13 +400,15 @@ type t =
   ; mutable nodes_num: int  (** number of nodes *)
   ; mutable start_node: Node.t  (** start node of this procedure *)
   ; mutable exit_node: Node.t  (** exit node of this procedure *)
-  ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
+  ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *)
+  ; mutable wto: Node.t WeakTopologicalOrder.Partition.t option
+        (** weak topological order of this procedure *) }
 
 let from_proc_attributes attributes =
   let pname = attributes.ProcAttributes.proc_name in
   let start_node = Node.dummy pname in
   let exit_node = Node.dummy pname in
-  {attributes; nodes= []; nodes_num= 0; start_node; exit_node; loop_heads= None}
+  {attributes; nodes= []; nodes_num= 0; start_node; exit_node; loop_heads= None; wto= None}
 
 
 (** Compute the distance of each node to the exit node, if not computed already *)
@@ -570,35 +574,52 @@ let node_set_succs_exn pdesc (node : Node.t) succs exn =
       set_succs_exn_base node succs exn
 
 
-(** Get loop heads for widening.
-    It collects all target nodes of back-edges in a depth-first
-    traversal.
-    *)
+module PreProcCfg = struct
+  type nonrec t = t
+
+  let fold_succs _cfg n ~init ~f = n |> Node.get_succs |> List.fold ~init ~f
+
+  let start_node = get_start_node
+
+  module Node = struct
+    type t = Node.t
+
+    type id = Node.id
+
+    let id = Node.get_id
+
+    module IdMap = IdMap
+  end
+end
+
+module WTO = WeakTopologicalOrder.Bourdoncle_SCC (PreProcCfg)
+
+let get_wto pdesc =
+  match pdesc.wto with
+  | Some wto ->
+      wto
+  | None ->
+      let wto = WTO.make pdesc in
+      pdesc.wto <- Some wto ;
+      wto
+
+
+(** Get loop heads for widening. *)
 let get_loop_heads pdesc =
-  let rec set_loop_head_rec visited heads wl =
-    match wl with
-    | [] ->
-        heads
-    | (n, ancester) :: wl' ->
-        if NodeSet.mem n visited then
-          if NodeSet.mem n ancester then set_loop_head_rec visited (NodeSet.add n heads) wl'
-          else set_loop_head_rec visited heads wl'
-        else
-          let ancester = NodeSet.add n ancester in
-          let succs = List.append (Node.get_succs n) (Node.get_exn n) in
-          let works = List.map ~f:(fun m -> (m, ancester)) succs in
-          set_loop_head_rec (NodeSet.add n visited) heads (List.append works wl')
-  in
-  let start_wl = [(get_start_node pdesc, NodeSet.empty)] in
-  let lh = set_loop_head_rec NodeSet.empty NodeSet.empty start_wl in
-  pdesc.loop_heads <- Some lh ;
-  lh
+  match pdesc.loop_heads with
+  | Some lh ->
+      lh
+  | None ->
+      let wto = get_wto pdesc in
+      let lh =
+        WeakTopologicalOrder.Partition.fold_heads wto ~init:NodeSet.empty ~f:(fun acc head ->
+            NodeSet.add head acc )
+      in
+      pdesc.loop_heads <- Some lh ;
+      lh
 
 
-let is_loop_head pdesc (node : Node.t) =
-  let lh = match pdesc.loop_heads with Some lh -> lh | None -> get_loop_heads pdesc in
-  NodeSet.mem node lh
-
+let is_loop_head pdesc (node : Node.t) = NodeSet.mem node (get_loop_heads pdesc)
 
 let pp_modify_in_block fmt modify_in_block =
   if modify_in_block then Format.pp_print_string fmt "(__block)" else ()
