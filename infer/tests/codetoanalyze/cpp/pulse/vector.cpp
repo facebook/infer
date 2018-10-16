@@ -14,4 +14,4 @@ void FN_deref_vector_element_after_lifetime_bad() {
   std::cout << *y << "\n";
 }
 
-int main() { deref_vector_element_after_lifetime(); }
+int main() { FN_deref_vector_element_after_lifetime_bad(); }
