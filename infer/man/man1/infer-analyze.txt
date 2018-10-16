@@ -219,6 +219,14 @@ OPTIONS
        --project-root,-C dir
            Specify the root directory of the project (default: .)
 
+       --pulse
+           Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
+           --no-pulse)
+
+       --pulse-only
+           Activates: Enable --pulse and disable all other checkers
+           (Conversely: --no-pulse-only)
+
        --purity
            Activates: [EXPERIMENTAL] Purity analysis (Conversely:
            --no-purity)

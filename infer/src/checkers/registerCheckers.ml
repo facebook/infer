@@ -77,6 +77,7 @@ let all_checkers =
   ; { name= "ownership"
     ; active= Config.ownership
     ; callbacks= [(Procedure Ownership.checker, Language.Clang)] }
+  ; {name= "pulse"; active= Config.pulse; callbacks= [(Procedure Pulse.checker, Language.Clang)]}
   ; { name= "quandary"
     ; active= Config.quandary || Config.quandaryBO
     ; callbacks=

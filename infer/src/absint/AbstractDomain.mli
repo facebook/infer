@@ -31,6 +31,15 @@ module type S = sig
   val pp : F.formatter -> astate -> unit
 end
 
+include
+  (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+  sig
+    [@@@warning "-60"]
+
+    (** a trivial domain *)
+    module Empty : S with type astate = unit
+end
+
 (** A domain with an explicit bottom value *)
 module type WithBottom = sig
   include S

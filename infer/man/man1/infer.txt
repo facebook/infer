@@ -650,6 +650,14 @@ OPTIONS
     See also infer-analyze(1), infer-capture(1), infer-report(1), and
            infer-run(1).
 
+       --pulse
+           Activates: [EXPERIMENTAL] C++ lifetime analysis (Conversely:
+           --no-pulse)           See also infer-analyze(1).
+
+       --pulse-only
+           Activates: Enable --pulse and disable all other checkers
+           (Conversely: --no-pulse-only)           See also infer-analyze(1).
+
        --purity
            Activates: [EXPERIMENTAL] Purity analysis (Conversely:
            --no-purity)           See also infer-analyze(1).

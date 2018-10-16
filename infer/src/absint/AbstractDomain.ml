@@ -30,6 +30,18 @@ module type S = sig
   val pp : F.formatter -> astate -> unit
 end
 
+module Empty : S with type astate = unit = struct
+  type astate = unit
+
+  let ( <= ) ~lhs:() ~rhs:() = true
+
+  let join () () = ()
+
+  let widen ~prev:() ~next:() ~num_iters:_ = ()
+
+  let pp f () = F.pp_print_string f "()"
+end
+
 module type WithBottom = sig
   include S
 

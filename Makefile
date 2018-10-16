@@ -46,9 +46,24 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
 
 DIRECT_TESTS += \
-  c_biabduction c_bufferoverrun c_errors c_frontend c_performance c_uninit \
-  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_ownership cpp_quandary cpp_quandaryBO \
-  cpp_racerd cpp_siof cpp_uninit cpp_nullable cpp_conflicts cpp_linters-for-test-only \
+  c_biabduction \
+  c_bufferoverrun \
+  c_errors \
+  c_frontend \
+  c_performance \
+  c_uninit \
+  cpp_bufferoverrun \
+  cpp_conflicts \
+  cpp_errors \
+  cpp_frontend \
+  cpp_linters-for-test-only \
+  cpp_liveness \
+  cpp_nullable \
+  cpp_ownership cpp_pulse \
+  cpp_quandary cpp_quandaryBO \
+  cpp_racerd \
+  cpp_siof \
+  cpp_uninit \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck_blacklist buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
