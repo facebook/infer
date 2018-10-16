@@ -28,6 +28,12 @@ module Partition : sig
 
   val fold_heads : ('node t, 'node, _) Container.fold
 
+  val expand : fold_right:('a, 'b, 'b t) Container.fold -> 'a t -> 'b t
+  (** Maps a partition nodes from ['a] to ['b] using the expansion [fold_right].
+    [fold_right] should not return its [~init] directly but must always provide
+    a non-empty sequence.
+   *)
+
   val pp : pp_node:(F.formatter -> 'node -> unit) -> F.formatter -> 'node t -> unit
 end
 
@@ -56,8 +62,10 @@ end
   or
     v <= u  and  v is in H(u)       (feedback edge)
 
-  A WTO of a directed graph is such that the head u of every feedback edge u -> v is the head of a
-  component containing its tail v.
+  where H(u) is the set of heads of the nested components containing u.
+
+  A WTO of a directed graph is such that the head v of every feedback edge u -> v is the head of a
+  component containing its tail u.
 *)
 
 module type S = sig

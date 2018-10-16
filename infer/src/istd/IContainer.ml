@@ -32,6 +32,11 @@ let forto excl ~init ~f =
   aux excl ~f init 0
 
 
+let forto_right excl ~init ~f =
+  let rec aux ~f acc i = if i < 0 then acc else aux ~f (f acc i) (i - 1) in
+  aux ~f init (excl - 1)
+
+
 let to_rev_list ~fold t = fold t ~init:[] ~f:(fun tl hd -> hd :: tl)
 
 let rev_filter_to_list ~fold t ~f =

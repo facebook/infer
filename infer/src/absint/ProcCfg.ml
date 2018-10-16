@@ -147,6 +147,8 @@ module type S = sig
   val from_pdesc : Procdesc.t -> t
 
   val is_loop_head : Procdesc.t -> Node.t -> bool
+
+  val wto : t -> Node.t WeakTopologicalOrder.Partition.t
 end
 
 (** Forward CFG with no exceptional control-flow *)
@@ -183,6 +185,8 @@ module Normal = struct
   let from_pdesc pdesc = pdesc
 
   let is_loop_head = Procdesc.is_loop_head
+
+  let wto = Procdesc.get_wto
 end
 
 (** Forward CFG with exceptional control-flow *)
@@ -266,6 +270,22 @@ module Exceptional = struct
   let exit_node (pdesc, _) = Procdesc.get_exit_node pdesc
 
   let is_loop_head = Procdesc.is_loop_head
+
+  module WTO = WeakTopologicalOrder.Bourdoncle_SCC (struct
+    module Node = Node
+
+    type t = Procdesc.t
+
+    let fold_succs _cfg n ~init ~f =
+      (* we do not care about duplicate edges *)
+      let init = List.fold ~init ~f (Procdesc.Node.get_succs n) in
+      List.fold ~init ~f (Procdesc.Node.get_exn n)
+
+
+    let start_node = Procdesc.get_start_node
+  end)
+
+  let wto (pdesc, _) = WTO.make pdesc
 end
 
 (** Wrapper that reverses the direction of the CFG *)
@@ -293,6 +313,18 @@ module Backward (Base : S with type instrs_dir = Instrs.not_reversed) = struct
   let fold_exceptional_succs = Base.fold_exceptional_preds
 
   let fold_exceptional_preds = Base.fold_exceptional_succs
+
+  module WTO = WeakTopologicalOrder.Bourdoncle_SCC (struct
+    module Node = Node
+
+    type nonrec t = t
+
+    let fold_succs = fold_succs
+
+    let start_node = start_node
+  end)
+
+  let wto = WTO.make
 end
 
 module OneInstrPerNode (Base : S with module Node = DefaultNode) : sig
@@ -353,20 +385,32 @@ end = struct
 
   let proc_desc = Base.proc_desc
 
+  let fold_instr_nodes node ~init ~f =
+    match Base.instrs node |> Instrs.count with
+    | 0 ->
+        f init (node, 0)
+    | nb_instrs ->
+        IContainer.forto nb_instrs ~init ~f:(fun acc index -> f acc (node, index))
+
+
   let fold_nodes cfg ~init ~f =
-    let f init node =
-      match Base.instrs node |> Instrs.count with
-      | 0 ->
-          f init (node, 0)
-      | nb_instrs ->
-          IContainer.forto nb_instrs ~init ~f:(fun acc index -> f acc (node, index))
-    in
-    Base.fold_nodes cfg ~init ~f
+    Base.fold_nodes cfg ~init ~f:(fun acc node -> fold_instr_nodes node ~init:acc ~f)
 
 
   let from_pdesc = Base.from_pdesc
 
   let is_loop_head pdesc = function node, 0 -> Base.is_loop_head pdesc node | _ -> false
+
+  let fold_right_instr_nodes node ~init ~f =
+    match Base.instrs node |> Instrs.count with
+    | 0 ->
+        f init (node, 0)
+    | nb_instrs ->
+        IContainer.forto_right nb_instrs ~init ~f:(fun acc index -> f acc (node, index))
+
+
+  let wto cfg =
+    Base.wto cfg |> WeakTopologicalOrder.Partition.expand ~fold_right:fold_right_instr_nodes
 end
 
 module NormalOneInstrPerNode = OneInstrPerNode (Normal)

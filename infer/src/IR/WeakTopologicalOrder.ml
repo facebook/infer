@@ -18,6 +18,8 @@ module Partition = struct
 
   let add_node node next = Node {node; next}
 
+  let prepend_node next node = Node {node; next}
+
   let add_component head rest next = Component {head; rest; next}
 
   let rec fold_heads partition ~init ~f =
@@ -30,6 +32,27 @@ module Partition = struct
         let init = f init head in
         let init = fold_heads rest ~init ~f in
         (fold_heads [@tailcall]) next ~init ~f
+
+
+  let rec expand ~fold_right partition =
+    match partition with
+    | Empty ->
+        Empty
+    | Node {node; next} ->
+        let init = expand ~fold_right next in
+        fold_right node ~init ~f:prepend_node
+    | Component {head; rest; next} -> (
+        let next = expand ~fold_right next in
+        let init = expand ~fold_right rest in
+        match fold_right head ~init ~f:prepend_node with
+        | Empty | Component _ ->
+            (* [fold_right] is expected to always provide a non-empty sequence.
+            Hence the result of [fold_right ~f:prepend_node] will always start with a Node. *)
+            Logging.(die InternalError)
+              "WeakTopologicalOrder.Partition.expand: the expansion function fold_right should \
+               not return ~init directly"
+        | Node {node= head; next= rest} ->
+            Component {head; rest; next} )
 
 
   let rec pp ~prefix ~pp_node fmt = function

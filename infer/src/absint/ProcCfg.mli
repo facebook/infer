@@ -76,6 +76,8 @@ module type S = sig
   val from_pdesc : Procdesc.t -> t
 
   val is_loop_head : Procdesc.t -> Node.t -> bool
+
+  val wto : t -> Node.t WeakTopologicalOrder.Partition.t
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id

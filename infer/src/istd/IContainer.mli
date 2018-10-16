@@ -21,6 +21,8 @@ val mem_nth : fold:('t, _, int) Container.fold -> 't -> int -> bool
 
 val forto : (int, int, 'accum) Container.fold
 
+val forto_right : (int, int, 'accum) Container.fold
+
 val to_rev_list : fold:('t, 'a, 'a list) Container.fold -> 't -> 'a list
 
 val rev_filter_to_list : fold:('t, 'a, 'a list) Container.fold -> 't -> f:('a -> bool) -> 'a list

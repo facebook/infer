@@ -93,6 +93,18 @@ module MockProcCfg = struct
   let from_pdesc _ = assert false
 
   let is_loop_head _ = assert false
+
+  module WTO = WeakTopologicalOrder.Bourdoncle_SCC (struct
+    module Node = Node
+
+    type nonrec t = t
+
+    let fold_succs = fold_succs
+
+    let start_node = start_node
+  end)
+
+  let wto = WTO.make
 end
 
 module S = Scheduler.ReversePostorder (MockProcCfg)

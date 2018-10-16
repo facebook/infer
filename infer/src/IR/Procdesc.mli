@@ -270,7 +270,9 @@ val set_exit_node : t -> Node.t -> unit
 val set_start_node : t -> Node.t -> unit
 
 val signal_did_preanalysis : t -> unit
-(** indicate that we have performed preanalysis on the CFG assoociated with [t] *)
+(** indicate that we have performed preanalysis on the CFG associated with [t] *)
+
+val get_wto : t -> Node.t WeakTopologicalOrder.Partition.t
 
 val is_loop_head : t -> Node.t -> bool
 

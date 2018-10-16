@@ -258,12 +258,7 @@ struct
   let compute_post = make_compute_post ~exec_cfg_internal
 end
 
-module MakeWithWTO
-    (WTO : WeakTopologicalOrder.S)
-    (TransferFunctions : TransferFunctions.SIL
-                         with type CFG.t = WTO.CFG.t
-                          and type CFG.Node.t = WTO.CFG.Node.t) =
-struct
+module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
   include AbstractInterpreterCommon (TransferFunctions)
 
   let debug_wto wto node =
@@ -315,7 +310,7 @@ struct
 
 
   let exec_cfg_internal ~debug cfg proc_data ~initial =
-    match WTO.make cfg with
+    match CFG.wto cfg with
     | Empty ->
         InvariantMap.empty (* empty cfg *)
     | Node {node= start_node; next} as wto ->
@@ -340,5 +335,4 @@ module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S
 
 module MakeRPO (T : TransferFunctions.SIL) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
-module MakeWTO (T : TransferFunctions.SIL) =
-  MakeWithWTO (WeakTopologicalOrder.Bourdoncle_SCC (T.CFG)) (T)
+module MakeWTO (T : TransferFunctions.SIL) = MakeUsingWTO (T)
