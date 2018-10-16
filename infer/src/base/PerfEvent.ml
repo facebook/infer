@@ -239,14 +239,17 @@ let logger =
      let out_channel = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 log_file in
      let logger = F.formatter_of_out_channel out_channel in
      register_gc_stats logger ;
-     if is_toplevel_process then (
+     ( if is_toplevel_process then (
        JsonFragment.pp logger ListBegin ;
        F.fprintf logger "%!" ;
        Epilogues.register_late ~description:"closing perf trace json" ~f:(fun () ->
            log_instant_event logger ~name:"end" Global ;
            JsonFragment.pp logger ListEnd ;
            F.fprintf logger "@." ;
-           Out_channel.close out_channel ) ) ;
+           Out_channel.close out_channel ) )
+     else
+       (* assume the trace file is here and is ready to accept list elements *)
+       JsonFragment.(pp_state := InList :: !pp_state) ) ;
      logger)
 
 
@@ -283,3 +286,6 @@ let log =
     let logger = Lazy.force logger in
     f_log logger
   else fun _ -> ()
+
+
+let init () = if Config.trace_events then ignore (Lazy.force logger)

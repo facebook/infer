@@ -42,3 +42,5 @@ val log_complete_event :
 val log_instant_event : logger -> ?timestamp:Mtime.t -> name:string -> scope -> unit
 
 val log : (logger -> unit) -> unit
+
+val init : unit -> unit

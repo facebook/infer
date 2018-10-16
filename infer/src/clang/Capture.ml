@@ -98,6 +98,14 @@ let run_clang_frontend ast_source =
   print_elapsed ()
 
 
+let run_clang_frontend ast_source =
+  PerfEvent.(
+    log (fun logger ->
+        PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"clang frontend" () )) ;
+  run_clang_frontend ast_source ;
+  PerfEvent.(log (fun logger -> PerfEvent.log_end_event logger ()))
+
+
 let run_and_validate_clang_frontend ast_source =
   try run_clang_frontend ast_source with exc ->
     IExn.reraise_if exc ~f:(fun () -> not Config.keep_going) ;
@@ -119,6 +127,14 @@ let run_clang clang_command read =
       exit_with_error n
   | _ ->
       exit_with_error 1
+
+
+let run_clang clang_command read =
+  PerfEvent.(
+    log (fun logger -> PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"clang" ())) ;
+  let result = run_clang clang_command read in
+  PerfEvent.(log (fun logger -> PerfEvent.log_end_event logger ())) ;
+  result
 
 
 let run_plugin_and_frontend source_path frontend clang_cmd =

@@ -48,6 +48,7 @@ let remove_results_dir () =
 
 let prepare_logging_and_db () =
   L.setup_log_file () ;
+  PerfEvent.init () ;
   EventLogger.prepare () ;
   if Sys.is_file ResultsDatabase.database_fullpath <> `Yes then ResultsDatabase.create_db () ;
   ResultsDatabase.new_database_connection ()
