@@ -29,6 +29,24 @@ module Partition : sig
   val pp : pp_node:(F.formatter -> 'node -> unit) -> F.formatter -> 'node t -> unit
 end
 
+module type PreProcCfg = sig
+  module Node : sig
+    type t
+
+    type id
+
+    val id : t -> id
+
+    module IdMap : PrettyPrintable.PPMap with type key = id
+  end
+
+  type t
+
+  val fold_succs : t -> (Node.t, Node.t, 'accum) Container.fold
+
+  val start_node : t -> Node.t
+end
+
 (**
   A weak topological ordering (WTO) of a directed graph is a hierarchical ordering of its vertices
   such that for every edge u -> v,
@@ -41,12 +59,12 @@ end
 *)
 
 module type S = sig
-  module CFG : ProcCfg.S
+  module CFG : PreProcCfg
 
   val make : CFG.t -> CFG.Node.t Partition.t
 end
 
-module type Make = functor (CFG : ProcCfg.S) -> S with module CFG = CFG
+module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
 
 (**
   Implementation of Bourdoncle's "Hierarchical decomposition of a directed graph into strongly

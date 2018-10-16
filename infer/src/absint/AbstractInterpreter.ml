@@ -260,7 +260,9 @@ end
 
 module MakeWithWTO
     (WTO : WeakTopologicalOrder.S)
-    (TransferFunctions : TransferFunctions.SIL with module CFG = WTO.CFG) =
+    (TransferFunctions : TransferFunctions.SIL
+                         with type CFG.t = WTO.CFG.t
+                          and type CFG.Node.t = WTO.CFG.Node.t) =
 struct
   include AbstractInterpreterCommon (TransferFunctions)
 

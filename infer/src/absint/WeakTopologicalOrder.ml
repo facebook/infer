@@ -34,15 +34,33 @@ module Partition = struct
   let pp ~pp_node = pp ~prefix:"" ~pp_node
 end
 
+module type PreProcCfg = sig
+  module Node : sig
+    type t
+
+    type id
+
+    val id : t -> id
+
+    module IdMap : PrettyPrintable.PPMap with type key = id
+  end
+
+  type t
+
+  val fold_succs : t -> (Node.t, Node.t, 'accum) Container.fold
+
+  val start_node : t -> Node.t
+end
+
 module type S = sig
-  module CFG : ProcCfg.S
+  module CFG : PreProcCfg
 
   val make : CFG.t -> CFG.Node.t Partition.t
 end
 
-module type Make = functor (CFG : ProcCfg.S) -> S with module CFG = CFG
+module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
 
-module Bourdoncle_SCC (CFG : ProcCfg.S) = struct
+module Bourdoncle_SCC (CFG : PreProcCfg) = struct
   module CFG = CFG
 
   (**
