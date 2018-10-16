@@ -111,11 +111,19 @@ let initial =
   {heap= MemoryDomain.empty; stack= AliasingDomain.empty; invalids= AbstractLocationsDomain.empty}
 
 
-let check_loc_access loc astate =
-  if AbstractLocationsDomain.mem loc astate.invalids then
-    (* TODO: more structured error type so that we can actually report something informative about
+module Diagnostic = struct
+  (* TODO: more structured error type so that we can actually report something informative about
        the variables being accessed along with a trace *)
-    Error (astate, "invalid loc")
+  type t = InvalidLocation
+
+  let to_string InvalidLocation = "invalid location"
+end
+
+type access_result = (t, t * Diagnostic.t) result
+
+(** Check that the location is not known to be invalid *)
+let check_loc_access loc astate =
+  if AbstractLocationsDomain.mem loc astate.invalids then Error (astate, Diagnostic.InvalidLocation)
   else Ok astate
 
 
@@ -167,11 +175,38 @@ let walk_access_expr ?overwrite_last astate access_expr =
       walk ~overwrite_last base_loc access_list astate
 
 
+(** Use the stack and heap to walk the access path represented by the given expression down to an
+    abstract location representing what the expression points to.
+
+    Return an error state if it traverses some known invalid location or if the end destination is
+    known to be invalid. *)
 let materialize_location astate access_expr = walk_access_expr astate access_expr
 
+(** Use the stack and heap to walk the access path represented by the given expression down to an
+    abstract location representing what the expression points to, and replace that with the given
+    location.
+
+    Return an error state if it traverses some known invalid location. *)
 let overwrite_location astate access_expr new_loc =
   walk_access_expr ~overwrite_last:new_loc astate access_expr
 
 
+(** Add the given location to the set of know invalid locations. *)
 let mark_invalid loc astate =
   {astate with invalids= AbstractLocationsDomain.add loc astate.invalids}
+
+
+let read astate access_expr =
+  materialize_location astate access_expr >>= fun (astate, loc) -> check_loc_access loc astate
+
+
+let read_all access_exprs astate = List.fold_result access_exprs ~init:astate ~f:read
+
+let write access_expr astate =
+  overwrite_location astate access_expr (AbstractLocation.mk_fresh ())
+  >>| fun (astate, _) -> astate
+
+
+let invalidate access_expr astate =
+  materialize_location astate access_expr
+  >>= fun (astate, loc) -> check_loc_access loc astate >>| mark_invalid loc

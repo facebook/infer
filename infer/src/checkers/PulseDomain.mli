@@ -11,8 +11,6 @@ module F = Format
 module AbstractLocation : sig
   type t = private int [@@deriving compare]
 
-  val mk_fresh : unit -> t
-
   val pp : F.formatter -> t -> unit
 end
 
@@ -46,27 +44,16 @@ include AbstractDomain.S with type astate = t
 
 val initial : t
 
-val check_loc_access : AbstractLocation.t -> astate -> (astate, astate * string) result
-(** Check that the location is not known to be invalid *)
+module Diagnostic : sig
+  type t
 
-val materialize_location :
-  astate -> AccessExpression.t -> (astate * AbstractLocation.t, astate * string) result
-(** Use the stack and heap to walk the access path represented by the given expression down to an
-    abstract location representing what the expression points to.
+  val to_string : t -> string
+end
 
-    Return an error state if it traverses some known invalid location or if the end destination is
-    known to be invalid. *)
+type access_result = (t, t * Diagnostic.t) result
 
-val overwrite_location :
-     astate
-  -> AccessExpression.t
-  -> AbstractLocation.t
-  -> (astate * AbstractLocation.t, astate * string) result
-(** Use the stack and heap to walk the access path represented by the given expression down to an
-    abstract location representing what the expression points to, and replace that with the given
-    location.
+val read_all : AccessExpression.t list -> t -> access_result
 
-    Return an error state if it traverses some known invalid location. *)
+val write : AccessExpression.t -> t -> access_result
 
-val mark_invalid : AbstractLocation.t -> astate -> astate
-(** Add the given location to the set of know invalid locations. *)
+val invalidate : AccessExpression.t -> t -> access_result
