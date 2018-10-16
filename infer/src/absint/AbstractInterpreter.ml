@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module AnalysisState = State
 
 type debug =
   | Default
@@ -126,6 +127,7 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           (Node.underlying_node node) ;
       let astate_post =
         let compute_post pre instr =
+          AnalysisState.set_instr instr ;
           try
             let post = TransferFunctions.exec_instr pre proc_data node instr in
             (* don't forget to reset this so we output messages for future errors too *)
