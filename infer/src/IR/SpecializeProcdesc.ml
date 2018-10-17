@@ -172,9 +172,10 @@ let with_formals_types ?(has_clang_model = false) callee_pdesc resolved_pname ar
     ; is_specialized= true
     ; translation_unit }
   in
-  Attributes.store ~proc_desc:None resolved_attributes ;
-  let resolved_pdesc = Procdesc.from_proc_attributes resolved_attributes in
-  with_formals_types_proc callee_pdesc resolved_pdesc substitutions
+  let resolved_proc_desc = Procdesc.from_proc_attributes resolved_attributes in
+  let resolved_proc_desc = with_formals_types_proc callee_pdesc resolved_proc_desc substitutions in
+  Attributes.store ~proc_desc:(Some resolved_proc_desc) resolved_attributes ;
+  resolved_proc_desc
 
 
 let with_block_args_instrs resolved_pdesc substitutions =
