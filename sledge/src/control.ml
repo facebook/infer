@@ -166,20 +166,7 @@ let exec_throw stk state block exc =
 let exec_skip_func :
     stack -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
  fun stk state block ({dst; args} as return) ->
-  Format.eprintf
-    "@\n\
-     @[<v 2>%a Called unknown function %a executing instruction@;<1 \
-     2>@[%a@]@]@."
-    Loc.pp
-    (Llair.Term.loc block.term)
-    (fun fs (term : Llair.Term.t) ->
-      match term with
-      | Call {call= {dst}} -> (
-        match Var.of_exp dst with
-        | Some var -> Var.pp_demangled fs var
-        | None -> Exp.pp fs dst )
-      | _ -> () )
-    block.term Llair.Term.pp block.term ;
+  Report.unknown_call block.term ;
   let return =
     if List.is_empty dst.params then return
     else
@@ -247,16 +234,7 @@ let exec_block : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
   [%Trace.info "exec %a" Llair.Block.pp block] ;
   match Vector.fold_result ~f:Domain.exec_inst ~init:state block.cmnd with
   | Ok state -> exec_term pgm stk state block
-  | Error (q, i) ->
-      Format.printf
-        "@\n\
-         @[<v 2>%a Invalid memory access executing instruction@;<1 \
-         2>@[%a@]%t@]@."
-        Loc.pp (Llair.Inst.loc i) Llair.Inst.pp i (fun fs ->
-          if Version.debug then
-            Format.fprintf fs "@ from symbolic state@;<1 2>@[%a@]" Domain.pp
-              q ) ;
-      Work.skip
+  | Error (q, i) -> Report.invalid_access i q ; Work.skip
 
 let harness : Llair.t -> Work.t option =
  fun pgm ->
