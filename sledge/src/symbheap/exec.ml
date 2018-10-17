@@ -45,6 +45,17 @@ let alloc_spec us reg num len =
   let foot = Sh.extend_us xs Sh.emp in
   {xs; foot; post}
 
+(* { emp }
+ *   malloc r s
+ * { r=0 ∨ ∃α'. r-[r;s)->⟨s,α'⟩ }
+ *)
+let malloc_spec us reg siz =
+  let loc = Exp.var reg in
+  let {xs; seg} = fresh_seg ~loc ~bas:loc ~len:siz ~siz us in
+  let foot = Sh.extend_us xs Sh.emp in
+  let post = Sh.or_ (null_eq (Exp.var reg)) (Sh.seg seg) in
+  {xs; foot; post}
+
 (* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
  *   free p
  * { emp }
@@ -282,6 +293,7 @@ let inst : Sh.t -> Llair.inst -> (Sh.t, _) result =
   ( match inst with
   | Nondet _ -> Ok pre
   | Alloc {reg; num; len} -> exec_spec pre (alloc_spec us reg num len)
+  | Malloc {reg; siz} -> exec_spec pre (malloc_spec us reg siz)
   | Free {ptr} -> exec_spec pre (free_spec us ptr)
   | Load {reg; ptr; len} -> exec_spec pre (load_spec us reg ptr len)
   | Store {ptr; exp; len} -> exec_spec pre (store_spec us ptr exp len)

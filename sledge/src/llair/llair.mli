@@ -45,6 +45,9 @@ type inst = private
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
       (** Allocate a block of memory large enough to store [num] elements of
           [len] bytes each and bind [reg] to the first address. *)
+  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
+      (** Maybe allocate a block of memory of size [siz] bytes and bind
+          [reg] to the first address, otherwise bind [reg] to [null]. *)
   | Free of {ptr: Exp.t; loc: Loc.t}
       (** Deallocate the previously allocated block at address [ptr]. *)
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
@@ -131,6 +134,7 @@ module Inst : sig
   val memmov : dst:Exp.t -> src:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val memset : dst:Exp.t -> byt:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
   val alloc : reg:Var.t -> num:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val malloc : reg:Var.t -> siz:Exp.t -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Var.t option -> msg:string -> loc:Loc.t -> inst
   val strlen : reg:Var.t -> ptr:Exp.t -> loc:Loc.t -> inst

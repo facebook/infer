@@ -14,6 +14,7 @@ type inst =
   | Memmov of {dst: Exp.t; src: Exp.t; len: Exp.t; loc: Loc.t}
   | Memset of {dst: Exp.t; byt: Exp.t; len: Exp.t; loc: Loc.t}
   | Alloc of {reg: Var.t; num: Exp.t; len: Exp.t; loc: Loc.t}
+  | Malloc of {reg: Var.t; siz: Exp.t; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Var.t option; msg: string; loc: Loc.t}
   | Strlen of {reg: Var.t; ptr: Exp.t; loc: Loc.t}
@@ -103,6 +104,8 @@ let pp_inst fs inst =
   | Alloc {reg; num; len; loc} ->
       pf "@[<2>alloc %a@ [%a x %a];@]\t%a" Var.pp reg Exp.pp num Exp.pp len
         Loc.pp loc
+  | Malloc {reg; siz; loc} ->
+      pf "@[<2>malloc %a@ %a;@]\t%a" Var.pp reg Exp.pp siz Loc.pp loc
   | Free {ptr; loc} -> pf "@[<2>free %a;@]\t%a" Exp.pp ptr Loc.pp loc
   | Nondet {reg; msg; loc} ->
       pf "@[<2>nondet %a\"%s\";@]\t%a" (Option.pp "%a " Var.pp) reg msg
@@ -188,6 +191,7 @@ module Inst = struct
   let memmov ~dst ~src ~len ~loc = Memmov {dst; src; len; loc}
   let memset ~dst ~byt ~len ~loc = Memset {dst; byt; len; loc}
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
+  let malloc ~reg ~siz ~loc = Malloc {reg; siz; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
   let strlen ~reg ~ptr ~loc = Strlen {reg; ptr; loc}
@@ -199,6 +203,7 @@ module Inst = struct
      |Memmov {loc}
      |Memset {loc}
      |Alloc {loc}
+     |Malloc {loc}
      |Free {loc}
      |Nondet {loc}
      |Strlen {loc} ->
@@ -206,7 +211,11 @@ module Inst = struct
 
   let union_locals inst vs =
     match inst with
-    | Load {reg} | Alloc {reg} | Nondet {reg= Some reg} | Strlen {reg} ->
+    | Load {reg}
+     |Alloc {reg}
+     |Malloc {reg}
+     |Nondet {reg= Some reg}
+     |Strlen {reg} ->
         Set.add vs reg
     | Store _ | Memcpy _ | Memmov _ | Memset _ | Free _ | Nondet {reg= None}
       ->

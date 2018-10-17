@@ -942,6 +942,13 @@ let xlate_instr :
                 :: insts
               , term
               , [] ) )
+      | ["malloc"] ->
+          let siz = xlate_value x (Llvm.operand instr 0) in
+          continue (fun (insts, term) ->
+              ( Llair.Inst.malloc ~reg:(Option.value_exn reg) ~siz ~loc
+                :: insts
+              , term
+              , [] ) )
       | ["_Znwm"] ->
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
