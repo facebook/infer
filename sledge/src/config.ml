@@ -7,68 +7,7 @@
 
 (** Configuration options *)
 
-(** Extension of Cmdliner supporting lighter-weight option definition *)
-module Cmdliner : sig
-  include module type of Cmdliner
-
-  val mk : default:'a -> 'a Term.t -> 'a ref
-  (** [mk ~default term] is a ref which, after [parse] is called, contains
-      the value of the command line option specified by [term]. *)
-
-  val parse : Term.info -> (unit -> unit Term.ret) -> unit
-  (** [parse info validate] parses the command line according to the options
-      declared by calls to [mk], using manual and version [info], and
-      calling [validate] to check usage constraints not expressible in the
-      [Term] language. *)
-end = struct
-  include Cmdliner
-
-  (** existential package of a Term and a setter for a ref to receive the
-      parsed value *)
-  type arg = Arg : 'a Term.t * ('a -> unit) -> arg
-
-  (** convert a list of arg packages to a term for the tuple of all the arg
-      terms, and apply it to a function that sets all the receiver refs *)
-  let tuple args =
-    let pair (Arg (trm_x, set_x)) (Arg (trm_y, set_y)) =
-      let trm_xy = Term.(const (fun a b -> (a, b)) $ trm_x $ trm_y) in
-      let set_xy (a, b) = set_x a ; set_y b in
-      Arg (trm_xy, set_xy)
-    in
-    let init = Arg (Term.const (), fun () -> ()) in
-    let (Arg (trm, set)) = List.fold_right ~f:pair args ~init in
-    Term.app (Term.const set) trm
-
-  let args : arg list ref = ref []
-
-  let mk ~default arg =
-    let var = ref default in
-    let set x = var := x in
-    args := Arg (arg, set) :: !args ;
-    var
-
-  let parse info validate =
-    match Term.eval (Term.(ret (const validate $ tuple !args)), info) with
-    | `Ok () -> ()
-    | `Error _ -> Caml.exit 1
-    | `Help | `Version -> Caml.exit 0
-end
-
-open Cmdliner
-
-let compile_only =
-  let default = false in
-  mk ~default Arg.(value & flag & info ["c"; "compile-only"])
-
-let input =
-  mk ~default:""
-    Arg.(required & pos ~rev:true 0 (some string) None & info [])
-
-let output =
-  let default = None in
-  mk ~default Arg.(value & opt (some string) default & info ["o"; "output"])
-
-let trace =
+let trace_conv =
   let default = Map.empty (module String) in
   let parse s =
     try
@@ -116,8 +55,8 @@ let trace =
           | mod_name, None, enabled ->
               Map.set m ~key:mod_name
                 ~data:{trace_mod= Some enabled; trace_funs= default} )
-      |> fun x -> `Ok x
-    with _ -> `Error ("Invalid trace spec: " ^ s)
+      |> fun x -> Ok x
+    with _ -> Error (`Msg ("Invalid trace spec: " ^ s))
   in
   let print fs c =
     let pf fmt = Format.fprintf fs fmt in
@@ -130,16 +69,36 @@ let trace =
             if fun_enabled then pf "+%s.%s" mod_name fun_name
             else pf "-%s.%s" mod_name fun_name ) )
   in
-  mk ~default Arg.(value & opt (parse, print) default & info ["t"; "trace"])
+  (parse, print)
 
-let trace_all =
-  let default = false in
-  mk ~default Arg.(value & flag & info ["v"; "trace-all"])
-
-let info = Term.info "sledge" ~version:Version.version
-let validate () = `Ok ()
+type t =
+  { compile_only: bool
+         [@aka ["c"]]
+        (** Do not analyze: terminate after translating input LLVM to LLAIR. *)
+  ; input: string
+         [@pos 0] [@docv "input.bc"]
+        (** LLVM bitcode file to analyze, in either binary $(b,.bc) or
+            textual $(b,.ll) form. *)
+  ; output: string option
+         [@aka ["o"]] [@docv "output.llair"]
+        (** Dump $(i,input.bc) translated to LLAIR in human-readable form to
+            $(i,output.llair), or $(b,-) for $(b,stdout). *)
+  ; trace: Trace.trace_mods_funs
+         [@aka ["t"]] [@docv "spec"] [@conv trace_conv]
+        (** Enable debug tracing according to $(i,spec), which is a sequence
+            of module and function names separated by $(b,+) or $(b,-). For
+            example, $(b,Control-Control.exec_inst) enables all tracing in
+            the $(b,Control) module except the $(b,Control.exec_inst)
+            function. *)
+  ; trace_all: bool  (** Enable all debug tracing. *) }
+[@@deriving cmdliner]
 
 let run main =
-  parse info validate ;
-  Trace.init ~config:{trace_all= !trace_all; trace_mods_funs= !trace} () ;
-  main ~input:!input ~output:!output ~compile_only:!compile_only
+  let info = Cmdliner.Term.info "sledge" ~version:Version.version in
+  Cmdliner.Term.eval (cmdliner_term (), info)
+  |> function
+  | `Error _ -> Caml.exit 1
+  | `Help | `Version -> Caml.exit 0
+  | `Ok {compile_only; input; output; trace; trace_all} ->
+      Trace.init ~config:{trace_all; trace_mods_funs= trace} () ;
+      main ~input ~output ~compile_only

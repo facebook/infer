@@ -14,9 +14,11 @@ type trace_mod_funs =
   ; trace_funs: bool Map.M(String).t
         (** Enable/disable tracing of individual functions *) }
 
+type trace_mods_funs = trace_mod_funs Map.M(String).t
+
 type config =
   { trace_all: bool  (** Enable all tracing *)
-  ; trace_mods_funs: trace_mod_funs Map.M(String).t
+  ; trace_mods_funs: trace_mods_funs
         (** Specify tracing of individual toplevel modules *) }
 
 val init : ?margin:int -> config:config -> unit -> unit

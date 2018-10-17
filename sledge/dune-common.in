@@ -31,6 +31,7 @@ let flags deps =
        (pps
          ppx_compare
          ppx_custom_printf
+         ppx_deriving_cmdliner
          ppx_expect
          ppx_hash
          ppx_here

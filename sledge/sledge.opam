@@ -15,6 +15,7 @@ depends: [
   "dune" {build > "1.4.0"}
   "llvm" {build & = "7.0.0"}
   "ppx_compare" {>= "v0.11.0"}
+  "ppx_deriving_cmdliner" {>= "0.4.2"}
   "ppx_hash" {>= "v0.11.0"}
   "zarith"
 ]

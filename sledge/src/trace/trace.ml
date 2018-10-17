@@ -16,8 +16,8 @@ let flush = Format.pp_print_newline fs
 type trace_mod_funs =
   {trace_mod: bool option; trace_funs: bool Map.M(String).t}
 
-type config =
-  {trace_all: bool; trace_mods_funs: trace_mod_funs Map.M(String).t}
+type trace_mods_funs = trace_mod_funs Map.M(String).t
+type config = {trace_all: bool; trace_mods_funs: trace_mods_funs}
 
 let config : config ref =
   ref {trace_all= false; trace_mods_funs= Map.empty (module String)}
