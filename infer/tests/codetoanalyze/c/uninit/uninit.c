@@ -21,7 +21,14 @@ int dereference_bad() {
   return *p;
 }
 
-void FN_self_assign() {
+void self_assign_bad() {
   int x;
   x = x;
+}
+
+void use_and_mayinit(int, int*);
+
+void call_to_use_and_mayinit_bad_FN() {
+  int x;
+  use_and_mayinit(x, &x);
 }

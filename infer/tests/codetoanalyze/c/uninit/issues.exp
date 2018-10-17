@@ -1,1 +1,7 @@
+codetoanalyze/c/uninit/arrays.c, array_bad, 5, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/c/uninit/arrays.c, array_good1_FP, 5, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/c/uninit/arrays.c, array_good2_FP, 9, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/c/uninit/arrays.c, array_good3_FP, 9, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/c/uninit/arrays.c, call_to_mayinit_and_return_good_FP, 3, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/c/uninit/uninit.c, dereference_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/c/uninit/uninit.c, self_assign_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []

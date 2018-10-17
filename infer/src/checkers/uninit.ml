@@ -184,6 +184,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr (astate : Domain.astate) {ProcData.pdesc; extras= {formals; summary}; tenv} _
       (instr : HilInstr.t) =
+    let check_access_expr ~loc rhs_access_expr =
+      if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then
+        report_intra rhs_access_expr loc summary
+    in
+    let check_hil_expr ~loc = function
+      | HilExp.AccessExpression access_expr ->
+          check_access_expr ~loc access_expr
+      | _ ->
+          ()
+    in
     let update_prepost access_expr rhs =
       let lhs_base = AccessExpression.get_base access_expr in
       if
@@ -198,6 +208,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match instr with
     | Assign (lhs_access_expr, rhs_expr, loc) ->
+        (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
+        ( match AccessExpression.get_typ lhs_access_expr tenv with
+        | Some lhs_typ when not (Typ.is_reference lhs_typ) ->
+            check_hil_expr ~loc rhs_expr
+        | _ ->
+            () ) ;
         let maybe_uninit_vars' = MaybeUninitVars.remove lhs_access_expr astate.maybe_uninit_vars in
         let maybe_uninit_vars =
           if AccessExpression.is_base lhs_access_expr then
@@ -208,22 +224,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else maybe_uninit_vars'
         in
         let prepost = update_prepost lhs_access_expr rhs_expr in
-        (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
-        let is_lhs_not_a_pointer =
-          match AccessExpression.get_typ lhs_access_expr tenv with
-          | None ->
-              false
-          | Some lhs_ap_typ ->
-              not (Typ.is_reference lhs_ap_typ)
-        in
-        ( match rhs_expr with
-        | AccessExpression rhs_access_expr ->
-            if
-              should_report_var pdesc tenv maybe_uninit_vars rhs_access_expr
-              && is_lhs_not_a_pointer
-            then report_intra rhs_access_expr loc summary
-        | _ ->
-            () ) ;
         {astate with maybe_uninit_vars; prepost}
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
@@ -299,13 +299,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             () ) ;
         {astate with maybe_uninit_vars}
     | Assume (expr, _, _, loc) ->
-        ( match expr with
-        | AccessExpression rhs_access_expr ->
-            if should_report_var pdesc tenv astate.maybe_uninit_vars rhs_access_expr then
-              report_intra rhs_access_expr loc summary
-        | _ ->
-            () ) ;
-        astate
+        check_hil_expr expr ~loc ; astate
 
 
   let pp_session_name node fmt = F.fprintf fmt "uninit %a" CFG.Node.pp_id (CFG.Node.id node)
