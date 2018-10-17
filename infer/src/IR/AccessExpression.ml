@@ -8,10 +8,14 @@
 open! IStd
 module F = Format
 
+type typ_ = Typ.t
+
+let compare_typ_ _ _ = 0
+
 type t =
   | Base of AccessPath.base
   | FieldOffset of t * Typ.Fieldname.t
-  | ArrayOffset of t * Typ.t * t list
+  | ArrayOffset of t * typ_ * t list
   | AddressOf of t
   | Dereference of t
 [@@deriving compare]

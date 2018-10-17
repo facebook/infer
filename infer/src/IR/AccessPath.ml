@@ -19,13 +19,13 @@ module Raw = struct
 
   let equal_base = [%compare.equal: base]
 
-  type access = ArrayAccess of Typ.t * t list | FieldAccess of Typ.Fieldname.t
+  type access = ArrayAccess of typ_ * t list | FieldAccess of Typ.Fieldname.t
 
   and t = base * access list [@@deriving compare]
 
   let equal_access = [%compare.equal: access]
 
-  let equal_access_list l1 l2 = Int.equal (List.compare compare_access l1 l2) 0
+  let equal_access_list = [%compare.equal: access list]
 
   let may_pp_typ fmt typ =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
