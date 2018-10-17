@@ -81,7 +81,7 @@ module TransferFunctionsNodesBasicCost = struct
           CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
       | Sil.Remove_temps _ -> (
         match CFG.Node.kind node with
-        | Procdesc.Node.Start_node _ ->
+        | Procdesc.Node.Start_node ->
             CostDomain.NodeInstructionToCostMap.add key cost_atomic_instruction astate
         | _ ->
             astate )
