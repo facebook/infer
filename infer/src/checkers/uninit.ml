@@ -102,8 +102,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let report_on_function_params pdesc tenv maybe_uninit_vars actuals loc summary callee_formals_opt
       =
-    List.iteri
-      ~f:(fun idx e ->
+    List.iteri actuals ~f:(fun idx e ->
         match e with
         | HilExp.AccessExpression access_expr ->
             let _, t = AccessExpression.get_base access_expr in
@@ -114,10 +113,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                    (Option.exists callee_formals_opt ~f:(fun callee_formals ->
                         is_struct_field_passed_by_ref callee_formals t access_expr idx ))
             then report_intra access_expr loc summary
-            else ()
         | _ ->
             () )
-      actuals
 
 
   let is_dummy_constructor_of_a_struct call =
@@ -157,20 +154,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else None
 
 
-  let remove_initialized_params pdesc call acc idx access_expr remove_fields =
+  let remove_initialized_params pdesc call maybe_uninit_vars idx access_expr remove_fields =
     match Payload.read pdesc call with
-    | Some {pre= initialized_formal_params; post= _} -> (
-      match init_nth_actual_param call idx initialized_formal_params with
-      | Some nth_formal ->
-          let acc' = MaybeUninitVars.remove access_expr acc in
-          let base = AccessExpression.get_base access_expr in
+    | Some {pre= init_formals; post= _} -> (
+      match init_nth_actual_param call idx init_formals with
+      | Some var_formal ->
+          let maybe_uninit_vars = MaybeUninitVars.remove access_expr maybe_uninit_vars in
           if remove_fields then
-            MaybeUninitVars.remove_init_fields base nth_formal acc' initialized_formal_params
-          else acc'
+            let base = AccessExpression.get_base access_expr in
+            MaybeUninitVars.remove_init_fields base var_formal maybe_uninit_vars init_formals
+          else maybe_uninit_vars
       | _ ->
-          acc )
+          maybe_uninit_vars )
     | _ ->
-        acc
+        maybe_uninit_vars
 
 
   (* true if a function initializes at least a param or a field of a struct param *)
@@ -214,14 +211,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             check_hil_expr ~loc rhs_expr
         | _ ->
             () ) ;
-        let maybe_uninit_vars' = MaybeUninitVars.remove lhs_access_expr astate.maybe_uninit_vars in
+        let maybe_uninit_vars = MaybeUninitVars.remove lhs_access_expr astate.maybe_uninit_vars in
         let maybe_uninit_vars =
           if AccessExpression.is_base lhs_access_expr then
             (* if we assign to the root of a struct then we need to remove all the fields *)
             let lhs_base = AccessExpression.get_base lhs_access_expr in
-            MaybeUninitVars.remove_all_fields tenv lhs_base maybe_uninit_vars'
+            MaybeUninitVars.remove_all_fields tenv lhs_base maybe_uninit_vars
             |> MaybeUninitVars.remove_dereference_access lhs_base
-          else maybe_uninit_vars'
+          else maybe_uninit_vars
         in
         let prepost = update_prepost lhs_access_expr rhs_expr in
         {astate with maybe_uninit_vars; prepost}
@@ -234,17 +231,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     correctly all fields when there is an implementation of the constructor that initilizes at least one
     field. If there is no explicit implementation we cannot assume fields are initialized *)
         if function_initializes_some_formal_params pdesc call then
-          let maybe_uninit_vars' =
+          let maybe_uninit_vars =
             (* in HIL/SIL the default constructor has only one param: the struct *)
             MaybeUninitVars.remove_all_fields tenv base astate.maybe_uninit_vars
           in
-          {astate with maybe_uninit_vars= maybe_uninit_vars'}
+          {astate with maybe_uninit_vars}
         else astate
     | Call (_, call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
         let callee_formals_opt = Option.bind pname_opt ~f:get_formals in
+        let is_initializing_all_args =
+          match call with
+          | Direct pname ->
+              Models.is_initializing_all_args pname
+          | Indirect _ ->
+              false
+        in
         let maybe_uninit_vars =
           List.foldi ~init:astate.maybe_uninit_vars actuals ~f:(fun idx acc actual_exp ->
               match actual_exp with
@@ -253,41 +257,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     match access_expr with AddressOf ae -> ae | _ -> access_expr
                   in
                   match AccessExpression.get_base access_expr with
-                  | _, {Typ.desc= Tarray _}
-                    when Option.exists pname_opt ~f:Models.is_initializing_all_args ->
+                  | _, {Typ.desc= Tarray _} when is_initializing_all_args ->
                       MaybeUninitVars.remove access_expr acc
                   | _, t
                   (* Access to a field of a struct or an element of an array by reference *)
-                    when Option.exists
-                           ~f:(is_fld_or_array_elem_passed_by_ref t access_expr idx)
-                           callee_formals_opt -> (
+                    when Option.exists callee_formals_opt
+                           ~f:(is_fld_or_array_elem_passed_by_ref t access_expr idx) -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove false
                     | _ ->
                         MaybeUninitVars.remove access_expr_to_remove acc )
-                  | base
-                    when Option.value_map ~default:false ~f:Typ.Procname.is_constructor pname_opt
-                    ->
+                  | base when Option.exists pname_opt ~f:Typ.Procname.is_constructor ->
                       MaybeUninitVars.remove_all_fields tenv base
                         (MaybeUninitVars.remove access_expr_to_remove acc)
-                  | (_, {Typ.desc= Tptr _}) as base -> (
+                  | _, {Typ.desc= Tptr _} -> (
                     match pname_opt with
                     | Some pname when Config.uninit_interproc ->
                         remove_initialized_params pdesc pname acc idx access_expr_to_remove true
                     | _ ->
-                        MaybeUninitVars.remove access_expr_to_remove acc
-                        |> MaybeUninitVars.remove_all_fields tenv base
-                        |> MaybeUninitVars.remove_all_array_elements base
-                        |> MaybeUninitVars.remove_dereference_access base )
+                        MaybeUninitVars.remove_everything_under tenv access_expr_to_remove acc )
                   | _ ->
                       acc )
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
-                  List.fold
-                    ~f:(fun acc' (base, _) ->
-                      MaybeUninitVars.remove (AccessExpression.Base base) acc' )
-                    ~init:acc apl
+                  List.fold apl ~init:acc ~f:(fun acc (base, _) ->
+                      MaybeUninitVars.remove (AccessExpression.Base base) acc )
               | _ ->
                   acc )
         in

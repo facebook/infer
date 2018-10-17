@@ -12,29 +12,33 @@ module Domain = AbstractDomain.InvertedSet (AccessExpression)
 module MaybeUninitVars = struct
   include AbstractDomain.FiniteSet (AccessExpression)
 
-  let remove_init_fields base formal_var maybe_uninit_vars init_fields =
-    let subst_formal_actual_fields actual_base_var initialized_fields =
-      map
-        (fun access_expr ->
-          let v, t = AccessExpression.get_base access_expr in
-          let v' = if Var.equal v formal_var then actual_base_var else v in
-          let t' =
-            match t.desc with
-            | Typ.Tptr ({Typ.desc= Tstruct _ as desc}, _) ->
-                (* a pointer to struct needs to be changed into struct
+  let subst_formal_actual_fields formal_var actual_base_var init_formals =
+    map
+      (fun access_expr ->
+        let v, t = AccessExpression.get_base access_expr in
+        let v' = if Var.equal v formal_var then actual_base_var else v in
+        let t' =
+          match t.desc with
+          | Typ.Tptr ({Typ.desc= Tstruct _ as desc}, _) ->
+              (* a pointer to struct needs to be changed into struct
                  as the actual is just type struct and it would make it
                  equality fail. Not sure why the actual are type struct when
                  passed by reference *)
-                {t with Typ.desc}
-            | _ ->
-                t
-          in
-          AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
-        initialized_fields
-    in
-    match base with
+              {t with Typ.desc}
+          | _ ->
+              t
+        in
+        AccessExpression.replace_base ~remove_deref_after_base:true (v', t') access_expr )
+      init_formals
+
+
+  let remove_init_fields actual_base formal_var maybe_uninit_vars init_formals =
+    match actual_base with
     | actual_base_var, {Typ.desc= Tptr ({Typ.desc= Tstruct _}, _) | Tstruct _} ->
-        diff maybe_uninit_vars (subst_formal_actual_fields actual_base_var init_fields)
+        let actuals_to_remove =
+          subst_formal_actual_fields formal_var actual_base_var init_formals
+        in
+        diff maybe_uninit_vars actuals_to_remove
     | _ ->
         maybe_uninit_vars
 
@@ -67,6 +71,12 @@ module MaybeUninitVars = struct
         remove (AccessExpression.ArrayOffset (Base base, elt, [])) maybe_uninit_vars
     | _ ->
         maybe_uninit_vars
+
+
+  let remove_everything_under tenv access_expr maybe_uninit_vars =
+    let base = AccessExpression.get_base access_expr in
+    maybe_uninit_vars |> remove access_expr |> remove_all_fields tenv base
+    |> remove_all_array_elements base |> remove_dereference_access base
 end
 
 type 'a prepost = {pre: 'a; post: 'a}
