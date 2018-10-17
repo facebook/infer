@@ -13,7 +13,8 @@ Jbuild_plugin.V1.send
  (mode promote-until-clean))
 
 (executable
- (name sledge)
+ (public_name sledge)
+ (package sledge)
  %s
  (libraries cmdliner %s))
 |}

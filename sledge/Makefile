@@ -20,7 +20,7 @@ setup: dunes
 
 .PHONY: exes
 exes: setup
-	dune build _build/dev/src/sledge.exe _build/release/src/sledge.exe
+	dune build _build/dev/src/sledge.exe _build/release/src/sledge.exe _build/dev/sledge.install _build/release/sledge.install
 
 .PHONY: watch
 watch: setup
