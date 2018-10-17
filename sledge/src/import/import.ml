@@ -22,6 +22,7 @@ include (
         (* prematurely deprecated, remove and use Stdlib instead *)
          and module Filename := Base.Filename
          and module Format := Base.Format
+         and module Marshal := Base.Marshal
          and module Scanf := Base.Scanf
          and type ('ok, 'err) result := ('ok, 'err) Base.result)
       [@warning "-3"]

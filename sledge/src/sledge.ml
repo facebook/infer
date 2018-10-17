@@ -9,8 +9,17 @@
 
 let main ~input ~output ~compile_only =
   try
-    let program = Frontend.translate input in
-    Trace.flush () ;
+    let program =
+      if String.is_suffix input ~suffix:".llair" then
+        In_channel.with_file input ~f:(fun ic ->
+            (Marshal.from_channel ic : Llair.t) )
+      else
+        let program = Frontend.translate input in
+        Trace.flush () ;
+        Out_channel.with_file (input ^ ".llair") ~f:(fun oc ->
+            Marshal.to_channel oc program [Marshal.Closures] ) ;
+        program
+    in
     Option.iter output ~f:(function
       | "-" -> Format.printf "%a@." Llair.pp program
       | filename ->
