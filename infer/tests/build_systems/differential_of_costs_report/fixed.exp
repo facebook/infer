@@ -1,1 +1,1 @@
-ZERO_EXECUTION_TIME_CALL, no_bucket, src/DiffExample.java, void DiffExample.f2(int), 27
+PERFORMANCE_VARIATION, no_bucket, src/DiffExample.java, void DiffExample.f2(int), 27
