@@ -3,8 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# Expected workflow is to launch `make watch` in a terminal to
+# continuously rebuild when files change, and to use `make check` in
+# the editor to quickly type-check and populate files used by merlin
+# for cross-module information.
+
 .PHONY: default
-default: dev
+default: exes
 
 DUNEINS=$(shell find src -name dune.in)
 DUNES=$(patsubst %.in,%,$(DUNEINS))
@@ -18,6 +23,10 @@ dunes: $(DUNES)
 .PHONY: setup
 setup: dunes
 
+.PHONY: check
+check: setup
+	dune build @check
+
 .PHONY: exes
 exes: setup
 	dune build _build/dev/src/sledge.exe _build/release/src/sledge.exe _build/dev/sledge.install _build/release/sledge.install
@@ -25,18 +34,6 @@ exes: setup
 .PHONY: watch
 watch: setup
 	dune build --watch _build/dev/src/sledge.exe _build/release/src/sledge.exe
-
-.PHONY: bc
-bc: setup
-	dune build _build/dev/src/sledge.bc
-
-.PHONY: dev
-dev: setup
-	dune build _build/dev/src/sledge.exe
-
-.PHONY: release
-release: setup
-	dune build _build/release/src/sledge.exe
 
 .PHONY: test
 test:

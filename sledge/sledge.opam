@@ -12,7 +12,7 @@ depends: [
   "core_kernel" {>= "v0.11.0"}
   "ctypes"
   "ctypes-foreign"
-  "dune" {build >= "1.4.0"}
+  "dune" {build > "1.4.0"}
   "llvm" {build & = "7.0.0"}
   "ppx_compare" {>= "v0.11.0"}
   "ppx_hash" {>= "v0.11.0"}
