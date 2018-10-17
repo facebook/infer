@@ -27,6 +27,7 @@ let source_files_schema =
   {|CREATE TABLE IF NOT EXISTS source_files
   ( source_file TEXT PRIMARY KEY
   , type_environment BLOB NOT NULL
+  , integer_type_widths BLOB
   , procedure_names BLOB NOT NULL
   , freshly_captured INT NOT NULL )|}
 

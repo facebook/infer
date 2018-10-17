@@ -75,7 +75,15 @@ let run_clang_frontend ast_source =
           | _ ->
               assert false
         in
-        {CFrontend_config.source_file; lang}
+        let integer_type_widths =
+          let widths = info.Clang_ast_t.tudi_integer_type_widths in
+          { Typ.IntegerWidths.char_width= widths.itw_char_type
+          ; short_width= widths.itw_short_type
+          ; int_width= widths.itw_int_type
+          ; long_width= widths.itw_long_type
+          ; longlong_width= widths.itw_longlong_type }
+        in
+        {CFrontend_config.source_file; lang; integer_type_widths}
     | _ ->
         assert false
   in

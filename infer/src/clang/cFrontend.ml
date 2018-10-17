@@ -47,6 +47,7 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   CType_decl.add_predefined_types tenv ;
   init_global_state_capture () ;
   let source_file = translation_unit_context.CFrontend_config.source_file in
+  let integer_type_widths = translation_unit_context.CFrontend_config.integer_type_widths in
   L.(debug Capture Verbose)
     "@\n Start building call/cfg graph for '%a'....@\n" SourceFile.pp source_file ;
   let cfg = compute_icfg translation_unit_context tenv ast in
@@ -55,7 +56,7 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
   NullabilityPreanalysis.analysis cfg tenv ;
-  SourceFiles.add source_file cfg (FileLocal tenv) ;
+  SourceFiles.add source_file cfg (FileLocal tenv) (Some integer_type_widths) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
   if
     Config.debug_mode || Config.testing_mode || Config.frontend_tests

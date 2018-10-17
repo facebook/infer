@@ -43,7 +43,8 @@ val incorrect_assumption :
 (** Used to mark places in the frontend that incorrectly assume something to be
     impossible. TODO(t21762295) get rid of all instances of this. *)
 
-type translation_unit_context = {lang: clang_lang; source_file: SourceFile.t}
+type translation_unit_context =
+  {lang: clang_lang; source_file: SourceFile.t; integer_type_widths: Typ.IntegerWidths.t}
 
 exception Invalid_declaration
 

@@ -11,6 +11,18 @@
 open! IStd
 module F = Format
 
+module IntegerWidths : sig
+  type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
+
+  val java : t
+
+  val load : SourceFile.t -> t option
+
+  module SQLite : sig
+    val serialize : t option -> Sqlite3.Data.t
+  end
+end
+
 (** Kinds of integers *)
 type ikind =
   | IChar  (** [char] *)

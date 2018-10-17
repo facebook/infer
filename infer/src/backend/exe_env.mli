@@ -22,3 +22,6 @@ val mk : unit -> t
 
 val get_tenv : t -> Typ.Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
+
+val get_integer_type_widths : t -> Typ.Procname.t -> Typ.IntegerWidths.t
+(** return the integer type widths associated with the procedure *)

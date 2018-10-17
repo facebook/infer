@@ -13,6 +13,7 @@ module F = Format
 type proc_callback_args =
   { get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
   ; tenv: Tenv.t
+  ; integer_type_widths: Typ.IntegerWidths.t
   ; summary: Summary.t
   ; proc_desc: Procdesc.t
   ; exe_env: Exe_env.t }
@@ -66,6 +67,7 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
     Option.value_map source_file ~default:[] ~f:SourceFiles.proc_names_of_source
   in
   let tenv = Exe_env.get_tenv exe_env proc_name in
+  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
     ~f:(fun summary {name; dynamic_dispatch; language; callback} ->
@@ -76,7 +78,9 @@ let iterate_procedure_callbacks exe_env summary proc_desc =
               log_begin_event logger ~name ~categories:["backend"]
                 ~arguments:[("proc", `String (Typ.Procname.to_string proc_name))]
                 () )) ;
-        let summary = callback {get_procs_in_file; tenv; summary; proc_desc; exe_env} in
+        let summary =
+          callback {get_procs_in_file; tenv; integer_type_widths; summary; proc_desc; exe_env}
+        in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
       else summary )

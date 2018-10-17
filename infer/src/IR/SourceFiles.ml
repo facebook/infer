@@ -12,7 +12,7 @@ let store_statement =
   ResultsDatabase.register_statement
     {|
   INSERT OR REPLACE INTO source_files
-  VALUES (:source, :tenv, :proc_names, :freshly_captured) |}
+  VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured) |}
 
 
 let select_existing_statement =
@@ -34,7 +34,7 @@ let get_existing_data source_file =
           (tenv, proc_names) ) )
 
 
-let add source_file cfg tenv =
+let add source_file cfg tenv integer_type_widths =
   Cfg.inline_java_synthetic_methods cfg ;
   let tenv, proc_names =
     (* The same source file may get captured several times in a single capture event, for instance
@@ -73,11 +73,15 @@ let add source_file cfg tenv =
       Tenv.SQLite.serialize tenv |> Sqlite3.bind store_stmt 2
       (* :tenv *)
       |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-      Typ.Procname.SQLiteList.serialize proc_names
+      Typ.IntegerWidths.SQLite.serialize integer_type_widths
       |> Sqlite3.bind store_stmt 3
+      (* :integer_type_widths *)
+      |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
+      Typ.Procname.SQLiteList.serialize proc_names
+      |> Sqlite3.bind store_stmt 4
       (* :proc_names *)
       |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
-      Sqlite3.bind store_stmt 4 (Sqlite3.Data.INT Int64.one)
+      Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
       (* :freshly_captured *)
       |> SqliteUtils.check_result_code db ~log:"store freshness" ;
       SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )

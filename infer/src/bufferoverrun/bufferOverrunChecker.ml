@@ -734,7 +734,7 @@ let get_local_decls proc_desc =
 
 
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
- fun {proc_desc; tenv; summary} ->
+ fun {proc_desc; tenv; summary; integer_type_widths= _} ->
   Preanal.do_preanalysis proc_desc tenv ;
   let symbol_table = Itv.SymbolTable.empty () in
   let pdata = ProcData.make proc_desc tenv symbol_table in

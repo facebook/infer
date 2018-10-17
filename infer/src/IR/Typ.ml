@@ -13,6 +13,30 @@ module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
+module IntegerWidths = struct
+  type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
+
+  let java = {char_width= 16; short_width= 16; int_width= 32; long_width= 64; longlong_width= 64}
+
+  module SQLite = SqliteUtils.MarshalledNullableData (struct
+    type nonrec t = t
+  end)
+
+  let load_statement =
+    ResultsDatabase.register_statement
+      "SELECT integer_type_widths FROM source_files WHERE source_file = :k"
+
+
+  let load source =
+    ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
+        SourceFile.SQLite.serialize source
+        |> Sqlite3.bind load_stmt 1
+        |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"Typ.IntegerWidths.load" db
+          load_stmt
+        |> Option.bind ~f:SQLite.deserialize )
+end
+
 (** Kinds of integers *)
 type ikind =
   | IChar  (** [char] *)
