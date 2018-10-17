@@ -92,17 +92,23 @@ let rec get_typ t tenv : Typ.t option =
       match base_typ_opt with Some {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None )
 
 
+let may_pp_typ fmt typ =
+  if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
+
+
 let rec pp fmt = function
-  | Base (pvar, _) ->
-      Var.pp fmt pvar
+  | Base (pvar, typ) ->
+      Var.pp fmt pvar ; may_pp_typ fmt typ
   | FieldOffset (Dereference ae, fld) ->
       F.fprintf fmt "%a->%a" pp ae Typ.Fieldname.pp fld
   | FieldOffset (ae, fld) ->
       F.fprintf fmt "%a.%a" pp ae Typ.Fieldname.pp fld
-  | ArrayOffset (ae, _, []) ->
-      F.fprintf fmt "%a[_]" pp ae
-  | ArrayOffset (ae, _, index_aes) ->
-      F.fprintf fmt "%a[%a]" pp ae (PrettyPrintable.pp_collection ~pp_item:pp) index_aes
+  | ArrayOffset (ae, typ, []) ->
+      F.fprintf fmt "%a[_]%a" pp ae may_pp_typ typ
+  | ArrayOffset (ae, typ, index_aes) ->
+      F.fprintf fmt "%a[%a]%a" pp ae
+        (PrettyPrintable.pp_collection ~pp_item:pp)
+        index_aes may_pp_typ typ
   | AddressOf ae ->
       F.fprintf fmt "&(%a)" pp ae
   | Dereference ae ->

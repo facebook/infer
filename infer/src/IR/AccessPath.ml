@@ -27,15 +27,20 @@ module Raw = struct
 
   let equal_access_list l1 l2 = Int.equal (List.compare compare_access l1 l2) 0
 
-  let pp_base fmt (pvar, _) = Var.pp fmt pvar
+  let may_pp_typ fmt typ =
+    if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
+
+
+  let pp_base fmt (pvar, typ) = Var.pp fmt pvar ; may_pp_typ fmt typ
 
   let rec pp_access fmt = function
     | FieldAccess field_name ->
         Typ.Fieldname.pp fmt field_name
-    | ArrayAccess (_, []) ->
-        F.pp_print_string fmt "[_]"
-    | ArrayAccess (_, index_aps) ->
-        F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
+    | ArrayAccess (typ, []) ->
+        F.pp_print_string fmt "[_]" ; may_pp_typ fmt typ
+    | ArrayAccess (typ, index_aps) ->
+        F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps ;
+        may_pp_typ fmt typ
 
 
   and pp_access_list fmt accesses =
