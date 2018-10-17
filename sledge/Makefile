@@ -3,12 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-OCAMLFORMAT?=ocamlformat
-
 .PHONY: default
 default: dev
 
-DUNES=$(patsubst %.in,%,$(shell find src -name dune.in))
+DUNEINS=$(shell find src -name dune.in)
+DUNES=$(patsubst %.in,%,$(DUNEINS))
 
 .PHONY: dunes
 dunes: $(DUNES)
@@ -59,7 +58,8 @@ clean:
 
 .PHONY: fmt
 fmt:
-	$(OCAMLFORMAT) -i $(shell find src -name '*.ml' -or -name '*.mli') src/version.ml.in
+	dune build @_build/dev/src/fmt --auto-promote
+	ocamlformat -i src/version.ml.in $(DUNEINS)
 	clang-format -i model/llair_intrinsics.h model/cxxabi.cpp
 
 # print any variable for Makefile debugging
