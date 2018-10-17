@@ -282,6 +282,12 @@ module Term = struct
   let return ~exp ~loc = Return {exp; loc} |> check invariant
   let throw ~exc ~loc = Throw {exc; loc} |> check invariant
   let unreachable = Unreachable |> check invariant
+
+  let loc = function
+    | Switch {loc} | Iswitch {loc} | Call {loc} | Return {loc} | Throw {loc}
+      ->
+        loc
+    | Unreachable -> Loc.none
 end
 
 (** Basic-Blocks *)

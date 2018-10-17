@@ -25,22 +25,23 @@ and disjunction = starjunction list
 
 type t = starjunction [@@deriving compare, sexp]
 
-let pp_seg cong fs {loc; bas; len; siz; arr} =
-  let loc = Congruence.normalize cong loc in
-  let bas = Congruence.normalize cong bas in
-  let len = Congruence.normalize cong len in
-  let siz = Congruence.normalize cong siz in
-  let arr = Congruence.normalize cong arr in
-  Format.fprintf fs "@[<2>%a@ @[@[-[ %a, %a )->@]@ %a@]@]" Exp.pp loc Exp.pp
-    bas Exp.pp len Exp.pp (Exp.memory ~siz ~arr)
+let map_seg {loc; bas; len; siz; arr} ~f =
+  {loc= f loc; bas= f bas; len= f len; siz= f siz; arr= f arr}
 
-let pp_us fs us =
+let pp_seg fs {loc; bas; len; siz; arr} =
+  Format.fprintf fs "@[<2>%a@ @[@[-[%a)->@]@ %a@]@]" Exp.pp loc
+    (fun fs (bas, len) ->
+      if (not (Exp.equal loc bas)) || not (Exp.equal len siz) then
+        Format.fprintf fs " %a, %a " Exp.pp bas Exp.pp len )
+    (bas, len) Exp.pp (Exp.memory ~siz ~arr)
+
+let pp_us ?(pre = ("" : _ fmt)) fs us =
   if not (Set.is_empty us) then
-    Format.fprintf fs "@<2>∀ @[%a@] .@ " Var.Set.pp us
+    [%Trace.fprintf fs "%( %)@[%a@] .@ " pre Var.Set.pp us]
 
 let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
   Format.pp_open_hvbox fs 0 ;
-  if not (Set.is_empty us) then Format.fprintf fs "@[%a@] .@ " Var.Set.pp us ;
+  pp_us fs us ;
   if not (Set.is_empty xs) then
     Format.fprintf fs "@<2>∃ @[%a@] .@ ∃ @[%a@] .@ " Var.Set.pp
       (Set.inter xs vs) Var.Set.pp (Set.diff xs vs) ;
@@ -61,7 +62,18 @@ let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
   else
     List.pp
       ~pre:(if first then "  " else "@ @<2>∧ ")
-      "@ * " (pp_seg cong) fs heap ;
+      "@ * " pp_seg fs
+      (List.sort
+         (List.map ~f:(map_seg ~f:(Congruence.normalize cong)) heap)
+         ~compare:(fun s1 s2 ->
+           let b_o = function
+             | Exp.App {op= App {op= Add; arg}; arg= Integer {data}} ->
+                 (arg, data)
+             | e -> (e, Z.zero)
+           in
+           [%compare: Exp.t * (Exp.t * Z.t)]
+             (s1.bas, b_o s1.loc)
+             (s2.bas, b_o s2.loc) )) ;
   List.pp ~pre:"@ * " "@ * "
     (pp_djn (Set.union vs (Set.union us xs)))
     fs djns ;
@@ -77,7 +89,6 @@ and pp_djn vs fs = function
         djn
 
 let pp = pp_ Var.Set.empty
-let pp_seg = pp_seg Congruence.true_
 
 let fold_exps_seg {loc; bas; len; siz; arr} ~init ~f =
   let f b z = Exp.fold_exps b ~init:z ~f in

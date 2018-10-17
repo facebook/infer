@@ -245,8 +245,9 @@ let strlen_spec us reg ptr =
 (* execute a command with given spec from pre *)
 let exec_spec pre {xs; foot; post} =
   [%Trace.call fun {pf} ->
-    pf "@[%a@]@ @[<2>%a@,@[{%a}@;<0 -1>-{%a}@]@]" Sh.pp pre Sh.pp_us xs
-      Sh.pp foot Sh.pp post ;
+    pf "@[%a@]@ @[<2>%a@,@[{%a}@;<0 -1>-{%a}@]@]" Sh.pp pre
+      (Sh.pp_us ~pre:"@<2>∀ ")
+      xs Sh.pp foot Sh.pp post ;
     assert (
       let vs = Set.diff (Set.diff foot.Sh.us xs) pre.Sh.us in
       Set.is_empty vs || Trace.report "unbound foot: {%a}" Var.Set.pp vs ) ;
@@ -274,7 +275,8 @@ let rec exec_specs pre = function
 
 let inst : Sh.t -> Llair.inst -> (Sh.t, _) result =
  fun pre inst ->
-  [%Trace.info "@[<2>exec inst %a from@ %a@]" Llair.Inst.pp inst Sh.pp pre] ;
+  [%Trace.info
+    "@[<2>exec inst %a from@ @[{ %a@ }@]@]" Llair.Inst.pp inst Sh.pp pre] ;
   assert (Set.disjoint (Sh.fv pre) (Llair.Inst.locals inst)) ;
   let us = pre.us in
   ( match inst with

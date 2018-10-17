@@ -26,7 +26,7 @@ and disjunction = starjunction list
 type t = starjunction
 
 val pp_seg : seg pp
-val pp_us : Var.Set.t pp
+val pp_us : ?pre:('a, 'a) fmt -> Var.Set.t pp
 val pp : t pp
 
 include Invariant.S with type t := t

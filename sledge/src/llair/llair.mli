@@ -168,6 +168,7 @@ module Term : sig
   val return : exp:Exp.t option -> loc:Loc.t -> term
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
+  val loc : term -> Loc.t
 end
 
 module Block : sig

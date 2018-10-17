@@ -93,7 +93,7 @@ module T = struct
     in
     uncurry_ []
 
-  let pp fs exp =
+  let rec pp fs exp =
     let pp_ pp fs exp =
       let pf fmt =
         Format.pp_open_box fs 2 ;
@@ -158,13 +158,29 @@ module T = struct
       | Record -> pf "{_}"
       | App {op; arg} -> (
         match uncurry exp with
-        | Record, elts -> pf "{@[%a@]}" (List.pp ",@ " pp) elts
+        | Record, elts -> pf "{%a}" pp_record elts
         | op, [x; y] -> pf "(%a@ %a %a)" pp x pp op pp y
         | _ -> pf "(%a@ %a)" pp op pp arg )
       | Struct_rec {elts} -> pf "{|%a|}" (Vector.pp ",@ " pp) elts
       | Convert {dst; src} -> pf "(%a)(%a)" Typ.pp dst Typ.pp src
     in
     fix_flip pp_ (fun _ _ -> ()) fs exp
+
+  and pp_record fs elts =
+    [%Trace.fprintf
+      fs "%a"
+        (fun fs elts ->
+          let elta = Array.of_list elts in
+          match
+            String.init (Array.length elta) ~f:(fun i ->
+                match elta.(i) with
+                | Integer {data} -> Char.of_int_exn (Z.to_int data)
+                | _ -> raise (Invalid_argument "not a string") )
+          with
+          | s -> Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+          | exception _ ->
+              Format.fprintf fs "@[<h>%a@]" (List.pp ",@ " pp) elts )
+        elts]
 end
 
 include T
@@ -215,6 +231,31 @@ module Var = struct
     let empty = Set.empty (module T)
     let of_vector = Set.of_vector (module T)
   end
+
+  let demangle =
+    let open Ctypes in
+    let cxa_demangle =
+      (* char *__cxa_demangle(const char *, char *, size_t *, int * ) *)
+      Foreign.foreign "__cxa_demangle"
+        ( string @-> ptr char @-> ptr size_t @-> ptr int
+        @-> returning string_opt )
+    in
+    let null_ptr_char = from_voidp char null in
+    let null_ptr_size_t = from_voidp size_t null in
+    let status = allocate int 0 in
+    fun mangled ->
+      let demangled =
+        cxa_demangle mangled null_ptr_char null_ptr_size_t status
+      in
+      if !@status = 0 then demangled else None
+
+  let pp_demangled fs = function
+    | Var {name} -> (
+      match demangle name with
+      | Some demangled when not (String.equal name demangled) ->
+          Format.fprintf fs "“%s”" demangled
+      | _ -> () )
+    | _ -> ()
 
   let invariant x =
     Invariant.invariant [%here] x [%sexp_of: t]

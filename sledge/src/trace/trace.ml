@@ -22,7 +22,7 @@ type config = {trace_all: bool; trace_mods_funs: trace_mods_funs}
 let config : config ref =
   ref {trace_all= false; trace_mods_funs= Map.empty (module String)}
 
-let init ?(margin = 160) ~config:c () =
+let init ?(margin = 300) ~config:c () =
   Format.set_margin margin ;
   Format.set_max_indent (margin - 1) ;
   Format.pp_set_margin fs margin ;

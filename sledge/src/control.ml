@@ -163,7 +163,23 @@ let exec_throw stk state block exc =
       exec_jump stk state block {jmp with args= exc :: args}
   | None -> Work.skip
 
-let exec_skip_func stk state block ({dst; args} as return : Llair.jump) =
+let exec_skip_func :
+    stack -> Domain.t -> Llair.block -> Llair.jump -> Work.x =
+ fun stk state block ({dst; args} as return) ->
+  Format.eprintf
+    "@\n\
+     @[<v 2>%a Called unknown function %a executing instruction@;<1 \
+     2>@[%a@]@]@."
+    Loc.pp
+    (Llair.Term.loc block.term)
+    (fun fs (term : Llair.Term.t) ->
+      match term with
+      | Call {call= {dst}} -> (
+        match Var.of_exp dst with
+        | Some var -> Var.pp_demangled fs var
+        | None -> Exp.pp fs dst )
+      | _ -> () )
+    block.term Llair.Term.pp block.term ;
   let return =
     if List.is_empty dst.params then return
     else

@@ -97,6 +97,7 @@ module Var : sig
 
   val equal : t -> t -> bool
   val pp : t pp
+  val pp_demangled : t pp
 
   include Invariant.S with type t := t
 
