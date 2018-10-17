@@ -837,6 +837,8 @@ let rec xlate_func_name x llv =
   | InlineAsm -> todo "inline asm: %a" pp_llvalue llv ()
   | _ -> fail "unknown function: %a" pp_llvalue llv ()
 
+let ignored_callees = Hash_set.create (module String)
+
 let xlate_instr :
        pop_thunk
     -> x
@@ -888,7 +890,9 @@ let xlate_instr :
       let fname = Llvm.value_name llfunc in
       let reg = xlate_name_opt x instr in
       let skip msg =
-        warn "ignoring uninterpreted %s %s" msg fname ;
+        ( match Hash_set.strict_add ignored_callees fname with
+        | Ok () -> warn "ignoring uninterpreted %s %s" msg fname
+        | Error _ -> () ) ;
         let msg = Llvm.string_of_llvalue instr in
         continue (fun (insts, term) ->
             (Llair.Inst.nondet ~reg ~msg ~loc :: insts, term, []) )
@@ -1363,6 +1367,7 @@ let translate : string -> Llair.t =
   Hashtbl.clear anon_struct_name ;
   Hashtbl.clear memo_type ;
   Hashtbl.clear memo_value ;
+  Hash_set.clear ignored_callees ;
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext ;
   Llair.mk ~globals ~functions
