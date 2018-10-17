@@ -27,6 +27,15 @@ val init : ?margin:int -> config:config -> unit -> unit
 type 'a printf = ('a, Formatter.t, unit) format -> 'a
 type pf = {pf: 'a. 'a printf}
 
+val printf : string -> string -> 'a printf
+(** Like [Format.printf], if enabled, otherwise like [Format.iprintf]. *)
+
+val fprintf : string -> string -> Formatter.t -> 'a printf
+(** Like [Format.fprintf], if enabled, otherwise like [Format.ifprintf]. *)
+
+val kprintf : string -> string -> (Formatter.t -> unit) -> 'a printf
+(** Like [Format.kprintf], if enabled, otherwise like [Format.ifprintf]. *)
+
 val info : string -> string -> 'a printf
 (** Emit a message at the current indentation level, if enabled. *)
 

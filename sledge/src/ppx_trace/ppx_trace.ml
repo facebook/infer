@@ -81,15 +81,10 @@ let mapper =
     match exp.pexp_desc with
     | Pexp_extension ({txt= "debug"; loc}, PStr []) -> ebool ~loc !debug
     | Pexp_extension
-        ( {txt= "Trace.call"; loc= call_loc}
-        , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
-        if not !debug then eunit ~loc:exp.pexp_loc
-        else
-          pexp_apply ~loc:exp.pexp_loc
-            (evar ~loc:call_loc "Trace.call")
-            (append_here_args [(Nolabel, call_fun)])
-    | Pexp_extension
-        ( {txt= "Trace.info"; loc= info_loc}
+        ( { txt=
+              ( "Trace.info" | "Trace.printf" | "Trace.fprintf"
+              | "Trace.kprintf" ) as txt
+          ; loc }
         , PStr [{pstr_desc= Pstr_eval (arg, []); _}] ) ->
         if not !debug then eunit ~loc:exp.pexp_loc
         else
@@ -98,9 +93,16 @@ let mapper =
             | Pexp_apply (op, args) -> (Nolabel, op) :: args
             | _ -> [(Nolabel, arg)]
           in
-          pexp_apply ~loc:exp.pexp_loc
-            (evar ~loc:info_loc "Trace.info")
+          pexp_apply ~loc:exp.pexp_loc (evar ~loc txt)
             (append_here_args args)
+    | Pexp_extension
+        ( {txt= "Trace.call"; loc= call_loc}
+        , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
+        if not !debug then eunit ~loc:exp.pexp_loc
+        else
+          pexp_apply ~loc:exp.pexp_loc
+            (evar ~loc:call_loc "Trace.call")
+            (append_here_args [(Nolabel, call_fun)])
     | Pexp_extension
         ( {txt= "Trace.retn"; loc= retn_loc}
         , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->

@@ -54,6 +54,16 @@ let enabled mod_name fun_name =
       | None -> trace_all ) )
   | None -> trace_all
 
+let kprintf mod_name fun_name k fmt =
+  if enabled mod_name fun_name then Format.kfprintf k fs fmt
+  else Format.ifprintf fs fmt
+
+let fprintf mod_name fun_name fs fmt =
+  if enabled mod_name fun_name then Format.fprintf fs fmt
+  else Format.ifprintf fs fmt
+
+let printf mod_name fun_name fmt = fprintf mod_name fun_name fs fmt
+
 let info mod_name fun_name fmt =
   if enabled mod_name fun_name then (
     Format.fprintf fs "@\n@[<2>| " ;
