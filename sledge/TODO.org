@@ -1,29 +1,82 @@
 * llvm
-** squash the debug loc commits
-** squash the Token enum, GlobalIFunc, and instr enum commits
-** reword isLiteral commit to mention OCaml API
+* import
+** consider adding set ops that operate on a set and the domain of a map
+(e.g. intersect a set with the domain of a subst), which could be reimplemented efficiently internally
+** fix the order of args to ~f args to fold functions
+** implement the rest of the Array operations in Vector
+** automatically keep interface of Vector in sync with Array
 * trace and ppx_trace
 ** if a traced fun has a type annotation
 copy it to the left arg of |> and to the arg of Trace.retn
-** use toplevel module name
-rather than nearest enclosing
 ** use name of enclosing function that is a structure item
 rather than nearest enclosing
-** implement fine-grained control over which functions get traced
-* import
-** make types of [fail] and [warn] consistent
-** ? undeprecate Caml.Printexc
-- or is there some other way to use Printexc.get_raw_backtrace and Printexc.raise_with_backtrace
-** implement the rest of the Array operations in Vector
-** find some way to keep interface of Vector in sync with Array
-* config
-** document cli
+* modeling
+** translate memset to store, and remove memset inst
+** change translation of `invoke _Znwm` to possibly throw
+** revise spec of strlen to account for non-max length strings
+** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
 * llair
-** move Exp.t to Exp.T.t and remove Exp.Global.init
-** ? add lazy_t to all types which might be inhabited by cyclic values
-** define Label module for Exp.Label and Llair.label, to unify how functions and blocks are named
+** ? conflate null and 0
+** NEXT normalize arithmetic exps to polynomials
+and sort terms
+** ? distribute addition over multiplication
+for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
+** simplify to NNF where (_ ^ -1) is (not _)
+** add config to pp e.g. Exp.t as sexps
+** add check for variable non-occurrence to Exp.rename
+** define version of map that transforms args of Struct_rec
+- keep a set of seen Struct_rec exps to avoid divergence
+- | AppN {op; args; loc} ->
+      let op' = f op in
+      let args' = Vector.map_preserving_phys_equal args ~f in
+      if op' == op && args' == args then e
+      else AppN {op= op'; args= args'; loc}
+** simplify conv exps
+with dst of int 1 type by testing least significant bit of Integer
+constants
+** define Label module for Exp.Label and Llair.label
+- to unify how functions and blocks are named
+- the Exp.label construction in Control.exec_term Iswitch is unwieldy
 ** check/ensure that generated names do not clash
 - name ^ ".ti" xlate_instr LandingPad
+** check that Loc.pp follows GNU conventions
+** do not ignore types and signedness of operations
+interpretation of expressions is currently wrong
+** ? change Var.freshen to choose the first available
+analogous to the following version that is over just ints
+#+BEGIN_SRC ocaml
+let freshen x ~wrt =
+  [%Trace.call fun _ -> ()]
+  ;
+  ( match Set.max_elt wrt with
+  | None -> (x, Set.add wrt x)
+  | Some max_elt ->
+      let max = max_elt in
+      let len = Set.length wrt in
+      if len = max + 1 then
+        let x' = max + 1 in
+        (x', Set.add wrt x')
+      else
+        let rec freshen_ lb wrt ub =
+          if Set.is_empty wrt then (lb, Set.add wrt lb)
+          else
+            let mid = (lb + ub) / 2 in
+            match Set.split wrt mid with
+            | lower, _, _ when Set.length lower < (ub - lb) / 2 ->
+                freshen_ lb lower mid
+            | _, None, _ -> (mid, Set.add wrt mid)
+            | _, _, upper -> freshen_ (mid + 1) upper ub
+        in
+        freshen_ 0 wrt (max + 1) )
+  |>
+  [%Trace.retn fun _ (x', wrt') ->
+    assert (Set.mem wrt' x') ;
+    assert (not (Set.mem wrt x')) ;
+    for id = 0 to id x' - 1 do
+      assert (Set.mem wrt (Var {name= name x'; id}))
+    done]
+#+END_SRC
+** ? rename loc to pos for source locations, to avoid clash with logic loc
 ** ? expose the roots computed by Llair.mk
 ** ? types
 - could add types to Exp constructors, indicating the types at which the operation interprets its arguments
@@ -81,13 +134,7 @@ but they are currently the same for all functions: i8*
 + after entry block (and recursively everything reachable from it) is xlated, map over the function block list looking up from the table to get order of conts to match order of blocks
 ** ? format #line directives in programs
 * frontend
-** kill the frontend memo tables when translate returns
-** translate %malloc to alloc
-- call Llvm.use_begin to see if the result is immediately cast
-- call Llvm.size_of on the cast-to type
-- divide to compute the number of elements
-- fall back to the i8* return type of malloc
-** translate %free to free
+** use llvm.lifetime.{start,end} to determine where to (alloc and?) free locals
 ** hoist alloca's to the beginning of the entry block whenever possible
 ** clean up translation of intrinsics
 separation between xlate_intrinsic (which translates an intrinsic function name to an expression constructor) and the Call case of xlate_instr (which translates calls to intrinsic functions to instructions) is not clear
@@ -124,7 +171,9 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
 - by lowering into multiple scalar operations
 - most cases handled by Frontend.transform
 - tests have a few exceptions, possibly for only unrealistic code
-** combine scan_locs and scan_names into a single pass
+** support multiple address spaces
+- need to, at least, treat addrspacecast as converting between pointer types of different sizes
+** combine scan_locs, scan_names, and scan_types into a single pass
 ** exceptions
 - is it correct to translate landingpad clauses not matching to unreachable, or should the exception be re-thrown
 - check suspicious translation of landingpads
@@ -155,9 +204,7 @@ separation between xlate_intrinsic (which translates an intrinsic function name 
         - if rethrown flag not set
           + call destructor
           + deallocate memory allocated by __cxa_allocate_exception
-** improve treatment of Typ.is_sized on Opaque types
-so that xlate_type can preserve sizedness, e.g. add a post-condition that Typ.is_sized iff Llvm.type_is_sized
-** run translate in a forked subprocess
+** ? run translate in a forked subprocess
 - so that when llvm crashes it does not take down sledge and an error can be returned
 - will require serializing an deserializing the translated program
 - alternatively: install a signal handler to catch and recover from crashes from llvm
@@ -168,5 +215,209 @@ so that xlate_type can preserve sizedness, e.g. add a post-condition that Typ.is
 it is not obvious whether it will be simpler to use free variables instead of Nondet in the frontend, or to treat Nondet as a single-occurrence existential variable in the analyzer
 ** llvm bugs?
 - Why aren't shufflevector instructions with zeroinitializer masks eliminated by the scalarizer pass?
+* congruence
+** ? assert exps in formulas are in the carrier
+us and xs, or just fv?
+** strengthen invariant
+** optimize: combine use and cls into one map
+since they (could) have the same domain
+** optimize: can identity mappings in lkp be removed?
+* symbolic heap
+** NEXT normalize conditional exps to disjunction
+** Congruence should handle equalities of equalities to integers
+currently handled by Sh.pure
+** normalize exps in terms of reps
+- add operation to normalize by rewriting in terms of reps
+- check for unsat
+- call it in Exec.assume
+** eliminate existentials
+by changing Congruence reps to avoid existentials if possible and then normalizing Sh ito reps
+** add exps in pure and pto (including memory siz and arr) to carrier
+** Sh.with_pure is an underspeced, tightly coupled, API: replace
+Sh.with_pure assumes that the replaced pure part is defined in the same vocabulary, induces the same congruence, etc. This API is fragile, and ought to be replaced with something that has simpler assumptions without imposing an excessive pessimization.
+** optimize Sh.and_ with direct implementation
+** perhaps it would be better to allow us and xs to intersect
+but to rename xs when binding them or otherwise operating under the quantifier. But it might be an unnecessary complication to always have to deal with the potential for shadowing.
+** consider how to detect unsat formulas
+in relation to also wanting to express formulas in terms of congruence
+class representatives in order to perform quantifier elimination. Is
+there a way to detect unsat at the same time / as part of the same
+normalization?
+** consider hoisting existentials over disjunction:
+#+BEGIN_SRC ocaml
+  | _ ->
+      let us = Set.union q1.us q2.us in
+      let xs1, xs, xs2 = Set.diff_inter_diff q1.xs q2.xs in
+      let us1 = Set.union q1.us xs in
+      let us2 = Set.union q2.us xs in
+      { us
+      ; xs
+      ; cong= Congruence.true_
+      ; pure= []
+      ; heap= []
+      ; djns= [[{q1 with us= us1; xs= xs1}; {q2 with us= us2; xs= xs2}]] }
+  | _ ->
+      let xs1, vs1 = Set.inter_diff q1.xs q2.us in
+      let xs2, vs2 = Set.inter_diff q2.xs q1.us in
+      let us1 = Set.union q1.us vs1 in
+      let us2 = Set.union q2.us vs2 in
+      let us = Set.union q1.us q2.us in
+      let xs = Set.union vs1 vs2 in
+      { us
+      ; xs
+      ; cong= Congruence.true_
+      ; pure= []
+      ; heap= []
+      ; djns= [[{q1 with us= us1; xs= xs1}; {q2 with us= us2; xs= xs2}]] }
+#+END_SRC
+** consider how to arrange to have a complete set of variables
+at the top of formulas so that freshening wrt them is guaranteed not to clash with subformulas. This would allow removing the call to freshen_xs in rename, which is called on every subformula for every freshen/rename operation. Is it complicated to make us always include xs, as well as the us of the subformulas? That would allow the top-level us to serve as such a complete set of vars. How often would we need to compute us - xs?
+** think about how to avoid having to manipulate disjunct formulas
+unnecessarily, e.g. freshening, etc.
+** ? should star strengthen djns with stem's cong
+** optimize: refactor Sh.pure to avoid `Congruence.(and_eq true_ ...)`
+** consider strengthening cong of or_ at price of freshening existentials
+** consider using the append case when freshening existentials is needed
+** strengthen Sh.pure_approx
+* solver
+** solve more existential equations in excise_exp
+If sub.pure contains an equation involving an existential, add equation to min, remove the var from xs, continue. If all pure atoms normalize to true, added equations induce good existential witnesses, and excise will return them as part of min.
 * symbolic execution
+** narrow scope of existentials in specs
+in calls to exec_spec, only vars in post need appear in xs, others can be existential in foot
+* domain
+** implement resolve_virtual to not skip virtual calls
+** consider lazy renaming
+- instead of eagerly constructing renaming substitutions, traverse the formula and lazily construct the renaming substitution map
+- may be better in case there are many variables that do not occur in the formula
+* control
+** change Depths.t from environment- to state-like treatment
+- currently each waiting state has an associated depths map
+- the depths of all edges into a destination are joined
+- could the depths be just threaded through Work.run instead?
+- this would involve changing type x to Depths.t -> t -> Depths.t * t, and removing Depths.t from waiting_states
+- separate joining depths from joining states
+- i.e. Change to repeatedly pop edges as long as the dst is the same, and only join the states for those. This would involve keeping the waiting states in the priority queue, and removing the waiting states map entirely.
+** change Work.run to move Domain.join into ~f
+** canonicalize renamings in stacks
+It seems possible that two edges will be distinct only due to differences between choice of fresh variable names for shadowed variables. It is not obvious that this could not lead to an infinite number of Edge.t values even without recursion. Using predictable names for local variables, such as a pair of the declared name and the depth of the stack, would avoid these difficulties.
+* config
+** move Control.bound to Config
 * build
+** adapt infer's dead code detection
+* optimization
+** Control uses Var.Set for locals, but could benefit from a set with constant-time union
+* roadmap
+** lazy tracing
+- define a [Trace.t], move global [fs] into it, and thread through code
+- add a parent-pointing tree/dag of printing thunks to [Trace.t]
+- use "event" and "history" terminology
+- change from immediately printing to creating a closure that prints when called, and add it to the dag
+- add [fork] and [join] operations on [Trace.t]
+- use [Trace.fork] in [Control.exec_term], and [Trace.join] in sync with [Domain.join] (in [Control.Work.run] or wherever)
+- add a form of "terminal" trace events, which prints all the ancestor events
+- change [Report] (and elsewhere?) to use Trace.terminal
+- support ex postfacto trace exploration
+  + add a global list of terminals
+  + add to terminals list instead of eagerly printing ancestors of terminals
+  + dump/Marshal trace state at exit
+  + add subcommand for querying dumped traces
+    - list terminals
+    - print ancestors of given terminal
+  + support changing enabled status ex postfacto
+    - record module and function names with printing thunks
+    - when printing, recheck [enabled]
+- support incrementally writing trace data to file
+- support incrementally printing history as requested, in reverse
+- ? support more advanced queries
+** parallelize frontend
+- make a scan_types pass over all types to populate anon_struct_name, and change struct_name to only find, not add
+  see http://llvm.org/doxygen/ValueEnumerator_8cpp_source.html#l00321
+- [Trace.fork] a trace for each function
+- replace calls to fold_left_globals and fold_left_functions with calls to parmap
+- memo_type and memo_value could be put in shared memory instead
+  + better sharing (as much as with sequential translation)
+  + all their contents will live forever anyway
+  + would need to handle concurrent accesses
+  + maybe better to put entire Llair.t into shared memory
+  + ? shared memory = reancient + locks
+** parallelize backend
+- change exec_* functions to instead of transforming the worklist, to return the new jobs (each job is an edge, depth(s?), and state)
+  + also, change tracing so that they return new events rather than transform the whole event dag
+- adapt infer's ProcessPool
+  + When a worker finishes its task, it writes to the "up" pipe, a message indicating that it is done, which includes the worker's id and a list of discovered jobs. Then it reads another task from its "down" pipe, which might block. Maybe it should do a slice of gc before reading.
+  + The orc sits in a select waiting for the "up" pipe to be non-empty. Once it receives a message that a worker has finished, it reads responses from the "up" pipe, adding the jobs sent by the workers to the queue and add the now-idle workers to the back of the queue. When the "up" pipe is empty, it iterates through the idle workers, popping the next task from the queue and writing it to the worker's "down" pipe. Then the orc loops back to waiting on the "up" pipe. If the queue empties while there are still idle workers, keep the queue and add to it on the next finish message. Maybe the orc should check the "up" pipe between writes to worker "down" pipes.
+  + Actually, repeatedly pop all the jobs for the same block from the queue, and send the list of states to the worker to join and execute from.
+  + Currently in infer the operation of selecting the task to send to the child is trivial, but IIUC it does not have to be, and the list of tasks does not need to be computed beforehand. So, leaving the basic communication structure the same, it does not seem like a big change to extend the messages from worker to orc to also include a list of tasks to add to the queue, and to have the orc receive them, add them to a priority queue, pop the highest priority task from the queue and send it to the worker. Plus some check to see if there was an idle worker that could be given one of the tasks just returned to the orc.
+- initial inefficient version
+  + communicate blocks
+    - by forking workers after frontend finishes, thereby giving each worker a copy of the program
+    - then passing block parent name/index and block index
+      + but could instead, with some manual serialization code, pass blocks to/from workers over pipes
+    - receiver must perform a lookup to find their local copy
+  + communicate states using Marshal
+    - likely to be slow
+    - will proactively lose sharing of the representation
+  + communicate trace events by forcing printing thunks to strings
+- optimize by storing program in shared memory (reancient?)
+  + don't need to finish translation before starting analysis
+  + pass block address in reancient heap instead of indices
+  + receiver no longer needs to perform a lookup
+  + saves memory, and time to copy it, and time to futilely GC it in all workers
+- optimize by communicating states without Marshal
+  + could store them in a reancient heap and then communicate their index
+    - probably fast, but leaky
+  + could use a reancient heap for each worker, where it would store its jobs, until there is not enough space, at which point it would delete the heap and allocate a new one, passing the heap to the orc over the pipe
+    - this would need make a deep copy of every entry, or else deleting the heap is unsafe since there could be sharing between entries
+  + could perhaps have immortal heap of states appearing in function specs, try to keep sharing between communicated states and immortal ones, and take advantage of how Marshal won't follow pointers out of the GC heap to make communicated states small
+  + really ought to have a global hash-cons structure which workers add states to in order to communicate them
+  + check what flow/hack/zonc do
+    see fbcode/hphp/hack/src/heap/hh_shared.c
+  + store trace events in shared memory
+    - to avoid forcing them eagerly
+    - need a way to Marshal them from shared memory to write to file
+      + perhaps serially at exit: copy to GC heap and Marshal as normal
+      + perhaps incrementally copy oldest events from shared memory and Marshal to file
+** relax global topological ordering
+:PROPERTIES:
+:ID:       6D6A0AF5-F68F-4726-95E5-178145A4CB9B
+:END:
+- needed for lazy translation and bottom-up analysis
+- compute call graph (perhaps from ThinLTO info)
+- topsort call graph (callee smaller number than caller)
+  + possible alternative might be to translate functions leaving their sort_index unset
+  + then set it when first encountered during analysis
+  + this relies on the assumption that the analysis will perform an appropriately ordered search
+  + this assumption needs to be checked
+  + this is probably only applicable for top-down analysis
+- add sort_index field to func like block
+- change to topsort blocks intraprocedurally
+- change priority queue to use lexicographically sorted pair of func and block indices, that is, (block.parent.sort_index, block.sort_index)
+- if intraprocedural top orders are insufficient
+  + change use of block sort_index for priority in queue
+  + instead of choosing a total order (represented by ints), represent the partial order itself
+  + build a graph with blocks as vertices and edges for non-retreating jumps
+  + then a < b iff there is a path from a to b
+  + perhaps keep the graph transitively-closed, and then a < b iff b is a successor of a
+  + extending such a graph can only add new ordering relationships, never change existing ones, the partial order is stable under extension, so translating code while analyzing will not break the queue
+  + is Fheap compatible with a partial order, rather than a total order?
+  + when adding just-translated code, need to add edges for all existing (non-retreating?) Call sites of added functions: will need to index them
+** lazy translation
+- need to [[id:6D6A0AF5-F68F-4726-95E5-178145A4CB9B][generalize to partial weak topological order]] to enable adding code during analysis without breaking the priority queue
+- translate function when analyzing a Call to a declared but untranslated function
+- if in ThinLTO mode, will need to worry about finding/loading bitcode: will need an index from function names to bitcode modules where they are defined (ThinLTO should have this info)
+** summarization
+- ? standard over-approximation, or something more in tune with refutation
+- ? procedures
+- ? code segments between function entry and call sites
+- common points:
+  + summary includes
+    - precondition
+    - postcondition
+    - depth for which summary is "sound" assuming every worklist item has higher depth
+  + a summary for a given pre and depth may be incomplete (if there is an item in the worklist)
+  + a summary for a pre and depth may be extended with another for the same pre and depth, by disjoining the posts
+** differential analysis
+** start-anywhere/bottom-up analysis
+** non-dnf solver
+** arithmetic constraints
