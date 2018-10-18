@@ -11,6 +11,8 @@ module F = Format
 module AbstractLocation : sig
   type t = private int [@@deriving compare]
 
+  val mk_fresh : unit -> t
+
   val pp : F.formatter -> t -> unit
 end
 
@@ -52,10 +54,12 @@ module Diagnostic : sig
   val to_string : t -> string
 end
 
-type access_result = (t, t * Diagnostic.t) result
+type 'a access_result = ('a, t * Diagnostic.t) result
 
-val read_all : AccessExpression.t list -> t -> access_result
+val read : AccessExpression.t -> t -> (t * AbstractLocation.t) access_result
 
-val write : AccessExpression.t -> t -> access_result
+val read_all : AccessExpression.t list -> t -> t access_result
 
-val invalidate : AccessExpression.t -> t -> access_result
+val write : AccessExpression.t -> AbstractLocation.t -> t -> t access_result
+
+val invalidate : AccessExpression.t -> t -> t access_result

@@ -5,8 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+open Result.Monad_infix
 
-type exec_fun = ret:Var.t -> actuals:HilExp.t list -> PulseDomain.t -> PulseDomain.access_result
+type exec_fun =
+     ret:Var.t * Typ.t
+  -> actuals:HilExp.t list
+  -> PulseDomain.t
+  -> PulseDomain.t PulseDomain.access_result
 
 type model = exec_fun
 
@@ -18,6 +23,45 @@ module Cplusplus = struct
         PulseDomain.invalidate deleted_access astate
     | _ ->
         Ok astate
+end
+
+module StdVector = struct
+  let internal_array =
+    Typ.Fieldname.Clang.from_class_name
+      (Typ.CStruct (QualifiedCppName.of_list ["std"; "vector"]))
+      "__internal_array"
+
+
+  let deref_internal_array vector =
+    AccessExpression.ArrayOffset
+      (AccessExpression.FieldOffset (vector, internal_array), Typ.void, [])
+
+
+  let at : model =
+   fun ~ret ~actuals astate ->
+    match actuals with
+    | [AccessExpression vector; _index] ->
+        PulseDomain.read (deref_internal_array vector) astate
+        >>= fun (astate, loc) -> PulseDomain.write (AccessExpression.Base ret) loc astate
+    | _ ->
+        Ok astate
+
+
+  let push_back : model =
+   fun ~ret:_ ~actuals astate ->
+    match actuals with
+    | [AccessExpression vector; _value] ->
+        PulseDomain.invalidate (deref_internal_array vector) astate
+    | _ ->
+        Ok astate
+end
+
+module ProcNameDispatcher = struct
+  let dispatch : (unit, model) ProcnameDispatcher.ProcName.dispatcher =
+    let open ProcnameDispatcher.ProcName in
+    make_dispatcher
+      [ -"std" &:: "vector" &:: "operator[]" &--> StdVector.at
+      ; -"std" &:: "vector" &:: "push_back" &--> StdVector.push_back ]
 end
 
 let builtins_dispatcher =
@@ -38,4 +82,9 @@ let builtins_dispatcher =
   fun proc_name -> Hashtbl.find builtins_map proc_name
 
 
-let dispatch proc_name = builtins_dispatcher proc_name
+let dispatch proc_name =
+  match builtins_dispatcher proc_name with
+  | Some _ as result ->
+      result
+  | None ->
+      ProcNameDispatcher.dispatch () proc_name

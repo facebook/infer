@@ -6,7 +6,11 @@
  *)
 open! IStd
 
-type exec_fun = ret:Var.t -> actuals:HilExp.t list -> PulseDomain.t -> PulseDomain.access_result
+type exec_fun =
+     ret:Var.t * Typ.t
+  -> actuals:HilExp.t list
+  -> PulseDomain.t
+  -> PulseDomain.t PulseDomain.access_result
 
 type model = exec_fun
 

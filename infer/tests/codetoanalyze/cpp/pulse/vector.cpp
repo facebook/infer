@@ -7,11 +7,9 @@
 #include <iostream>
 #include <vector>
 
-void FN_deref_vector_element_after_lifetime_bad() {
+void deref_vector_element_after_lifetime_bad() {
   std::vector<int> x = {0, 0};
   int* y = &x[1];
   x.push_back(4);
   std::cout << *y << "\n";
 }
-
-int main() { FN_deref_vector_element_after_lifetime_bad(); }

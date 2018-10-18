@@ -10,7 +10,7 @@ CLANG_OPTIONS = -x c++ -std=c++14 -Wc++1z-extensions -nostdinc++ -isystem$(MODEL
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard ../ownership/*.cpp)
+SOURCES = $(wildcard ../ownership/*.cpp) $(wildcard *.cpp)
 
 include $(TESTS_DIR)/clang.make
 

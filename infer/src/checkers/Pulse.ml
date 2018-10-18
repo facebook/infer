@@ -39,14 +39,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        (* we could be more precise and try and evaluate [rhs_exp] down to a location and use it to
-           record the value written instead of recording a fresh location *)
-        PulseDomain.write lhs_access astate
-        >>= PulseDomain.read_all (HilExp.get_access_exprs rhs_exp)
+        (* try to evaluate [rhs_exp] down to an abstract location or generate a fresh one *)
+        let rhs_result =
+          match rhs_exp with
+          | AccessExpression rhs_access ->
+              PulseDomain.read rhs_access astate
+          | _ ->
+              PulseDomain.read_all (HilExp.get_access_exprs rhs_exp) astate
+              >>= fun astate -> Ok (astate, PulseDomain.AbstractLocation.mk_fresh ())
+        in
+        Result.bind rhs_result ~f:(fun (astate, rhs_value) ->
+            PulseDomain.write lhs_access rhs_value astate )
         |> check_error summary loc
     | Assume (condition, _, _, loc) ->
         PulseDomain.read_all (HilExp.get_access_exprs condition) astate |> check_error summary loc
-    | Call ((ret, _), call, actuals, flags, loc) ->
+    | Call (ret, call, actuals, flags, loc) ->
         PulseDomain.read_all (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
         >>= dispatch_call ret call actuals flags loc
         |> check_error summary loc

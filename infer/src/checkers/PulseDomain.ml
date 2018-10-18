@@ -130,16 +130,17 @@ include Domain
 module Diagnostic = struct
   (* TODO: more structured error type so that we can actually report something informative about
        the variables being accessed along with a trace *)
-  type t = InvalidLocation
+  type t = InvalidLocation of AbstractLocation.t
 
-  let to_string InvalidLocation = "invalid location"
+  let to_string (InvalidLocation loc) = F.asprintf "invalid location %a" AbstractLocation.pp loc
 end
 
-type access_result = (t, t * Diagnostic.t) result
+type 'a access_result = ('a, t * Diagnostic.t) result
 
 (** Check that the location is not known to be invalid *)
 let check_loc_access loc astate =
-  if AbstractLocationsDomain.mem loc astate.invalids then Error (astate, Diagnostic.InvalidLocation)
+  if AbstractLocationsDomain.mem loc astate.invalids then
+    Error (astate, Diagnostic.InvalidLocation loc)
   else Ok astate
 
 
@@ -212,15 +213,18 @@ let mark_invalid loc astate =
   {astate with invalids= AbstractLocationsDomain.add loc astate.invalids}
 
 
-let read astate access_expr =
-  materialize_location astate access_expr >>= fun (astate, loc) -> check_loc_access loc astate
+let read access_expr astate =
+  materialize_location astate access_expr
+  >>= fun (astate, loc) -> check_loc_access loc astate >>| fun astate -> (astate, loc)
 
 
-let read_all access_exprs astate = List.fold_result access_exprs ~init:astate ~f:read
+let read_all access_exprs astate =
+  List.fold_result access_exprs ~init:astate ~f:(fun astate access_expr ->
+      read access_expr astate >>| fst )
 
-let write access_expr astate =
-  overwrite_location astate access_expr (AbstractLocation.mk_fresh ())
-  >>| fun (astate, _) -> astate
+
+let write access_expr loc astate =
+  overwrite_location astate access_expr loc >>| fun (astate, _) -> astate
 
 
 let invalidate access_expr astate =
