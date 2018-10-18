@@ -8,13 +8,17 @@ open! IStd
 module F = Format
 open Result.Monad_infix
 
-let check_error summary loc = function
+let report summary diagnostic =
+  let open PulseDomain.Diagnostic in
+  Reporting.log_error summary ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
+    (get_issue_type diagnostic) (get_message diagnostic)
+
+
+let check_error summary = function
   | Ok astate ->
       astate
   | Error (astate, diagnostic) ->
-      let message = PulseDomain.Diagnostic.to_string diagnostic in
-      Reporting.log_error summary ~loc IssueType.use_after_lifetime message ;
-      astate
+      report summary diagnostic ; astate
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -23,7 +27,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Summary.t
 
-  let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) _flags _call_loc astate =
+  let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
     let model =
       match call with
       | Indirect _ ->
@@ -32,31 +36,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Direct callee_pname ->
           PulseModels.dispatch callee_pname
     in
-    match model with None -> Ok astate | Some model -> model ~ret ~actuals astate
+    match model with None -> Ok astate | Some model -> model call_loc ~ret ~actuals astate
 
 
   let exec_instr (astate : PulseDomain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t)
       =
     match instr with
     | Assign (lhs_access, rhs_exp, loc) ->
-        (* try to evaluate [rhs_exp] down to an abstract location or generate a fresh one *)
+        (* try to evaluate [rhs_exp] down to an abstract address or generate a fresh one *)
         let rhs_result =
           match rhs_exp with
           | AccessExpression rhs_access ->
-              PulseDomain.read rhs_access astate
+              PulseDomain.read loc rhs_access astate
           | _ ->
-              PulseDomain.read_all (HilExp.get_access_exprs rhs_exp) astate
-              >>= fun astate -> Ok (astate, PulseDomain.AbstractLocation.mk_fresh ())
+              PulseDomain.read_all loc (HilExp.get_access_exprs rhs_exp) astate
+              >>= fun astate -> Ok (astate, PulseDomain.AbstractAddress.mk_fresh ())
         in
         Result.bind rhs_result ~f:(fun (astate, rhs_value) ->
-            PulseDomain.write lhs_access rhs_value astate )
-        |> check_error summary loc
+            PulseDomain.write loc lhs_access rhs_value astate )
+        |> check_error summary
     | Assume (condition, _, _, loc) ->
-        PulseDomain.read_all (HilExp.get_access_exprs condition) astate |> check_error summary loc
+        PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
-        PulseDomain.read_all (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+        PulseDomain.read_all loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
         >>= dispatch_call ret call actuals flags loc
-        |> check_error summary loc
+        |> check_error summary
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"

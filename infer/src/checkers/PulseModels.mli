@@ -7,7 +7,8 @@
 open! IStd
 
 type exec_fun =
-     ret:Var.t * Typ.t
+     Location.t
+  -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
   -> PulseDomain.t
   -> PulseDomain.t PulseDomain.access_result

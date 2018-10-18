@@ -8,7 +8,8 @@ open! IStd
 open Result.Monad_infix
 
 type exec_fun =
-     ret:Var.t * Typ.t
+     Location.t
+  -> ret:Var.t * Typ.t
   -> actuals:HilExp.t list
   -> PulseDomain.t
   -> PulseDomain.t PulseDomain.access_result
@@ -17,10 +18,10 @@ type model = exec_fun
 
 module Cplusplus = struct
   let delete : model =
-   fun ~ret:_ ~actuals astate ->
+   fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
-        PulseDomain.invalidate deleted_access astate
+        PulseDomain.invalidate location deleted_access astate
     | _ ->
         Ok astate
 end
@@ -38,20 +39,20 @@ module StdVector = struct
 
 
   let at : model =
-   fun ~ret ~actuals astate ->
+   fun location ~ret ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _index] ->
-        PulseDomain.read (deref_internal_array vector) astate
-        >>= fun (astate, loc) -> PulseDomain.write (AccessExpression.Base ret) loc astate
+        PulseDomain.read location (deref_internal_array vector) astate
+        >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.Base ret) loc astate
     | _ ->
         Ok astate
 
 
   let push_back : model =
-   fun ~ret:_ ~actuals astate ->
+   fun location ~ret:_ ~actuals astate ->
     match actuals with
     | [AccessExpression vector; _value] ->
-        PulseDomain.invalidate (deref_internal_array vector) astate
+        PulseDomain.invalidate location (deref_internal_array vector) astate
     | _ ->
         Ok astate
 end

@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-module AbstractLocation : sig
+module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
   val mk_fresh : unit -> t
@@ -22,27 +22,25 @@ module Access : sig
   val pp : F.formatter -> t -> unit
 end
 
-module AbstractLocationDomain : AbstractDomain.S with type astate = AbstractLocation.t
+module AbstractAddressDomain : AbstractDomain.S with type astate = AbstractAddress.t
 
-module AbstractLocationsDomain : module type of AbstractDomain.FiniteSet (AbstractLocation)
+module MemoryEdges : module type of AbstractDomain.InvertedMap (Access) (AbstractAddressDomain)
 
-module MemoryEdges : module type of AbstractDomain.InvertedMap (Access) (AbstractLocationDomain)
+module MemoryDomain : module type of AbstractDomain.InvertedMap (AbstractAddress) (MemoryEdges)
 
-module MemoryDomain : module type of AbstractDomain.InvertedMap (AbstractLocation) (MemoryEdges)
+module AliasingDomain : module type of AbstractDomain.InvertedMap (Var) (AbstractAddressDomain)
 
-module AliasingDomain : module type of AbstractDomain.InvertedMap (Var) (AbstractLocationDomain)
-
-module InvalidLocationsDomain : module type of AbstractLocationsDomain
+module InvalidAddressesDomain : AbstractDomain.S
 
 type t =
   { heap: MemoryDomain.astate
-        (** Symbolic representation of the heap: a graph where nodes are abstract locations and edges are
+        (** Symbolic representation of the heap: a graph where nodes are abstract addresses and edges are
             access path elements. *)
   ; stack: AliasingDomain.astate
-        (** Symbolic representation of the stack: which memory location do variables point to. No other
+        (** Symbolic representation of the stack: which memory address do variables point to. No other
             values are being tracked. *)
-  ; invalids: InvalidLocationsDomain.astate
-        (** Set of locations known to be in an invalid state. *) }
+  ; invalids: InvalidAddressesDomain.astate
+        (** Set of addresses known to be in an invalid state. *) }
 
 include AbstractDomain.S with type astate = t
 
@@ -51,15 +49,21 @@ val initial : t
 module Diagnostic : sig
   type t
 
-  val to_string : t -> string
+  val get_message : t -> string
+
+  val get_location : t -> Location.t
+
+  val get_issue_type : t -> IssueType.t
+
+  val get_trace : t -> Errlog.loc_trace
 end
 
 type 'a access_result = ('a, t * Diagnostic.t) result
 
-val read : AccessExpression.t -> t -> (t * AbstractLocation.t) access_result
+val read : Location.t -> AccessExpression.t -> t -> (t * AbstractAddress.t) access_result
 
-val read_all : AccessExpression.t list -> t -> t access_result
+val read_all : Location.t -> AccessExpression.t list -> t -> t access_result
 
-val write : AccessExpression.t -> AbstractLocation.t -> t -> t access_result
+val write : Location.t -> AccessExpression.t -> AbstractAddress.t -> t -> t access_result
 
-val invalidate : AccessExpression.t -> t -> t access_result
+val invalidate : Location.t -> AccessExpression.t -> t -> t access_result
