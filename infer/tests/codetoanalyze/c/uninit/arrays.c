@@ -50,7 +50,7 @@ int array_good3_FP(int m) {
 void mayinit_vpp(const void**);
 void use_vp(void*);
 
-void* call_to_mayinit_and_return_good_FP() {
+void* call_to_mayinit_and_return_good() {
   void* obj[10];
   mayinit_vpp((const void**)obj);
   return obj[0];
