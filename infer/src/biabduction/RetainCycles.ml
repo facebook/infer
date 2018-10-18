@@ -57,21 +57,12 @@ let desc_retain_cycle tenv (cycle : RetainCyclesType.t) =
 
 let edge_is_strong tenv obj_edge =
   let open RetainCyclesType in
-  (* returns items annotation for field fn in struct t *)
-  let get_item_annotation (t : Typ.t) fn =
-    match t.desc with
-    | Tstruct name -> (
-      match Tenv.lookup tenv name with
-      | Some {fields} -> (
-        match List.find ~f:(fun (fn', _, _) -> Typ.Fieldname.equal fn fn') fields with
-        | None ->
-            None
-        | Some (_, _, ann) ->
-            Some ann (* Only returns annotations when the type and field are found in the tenv *) )
-      | None ->
-          None )
+  let has_weak_type (t : Typ.t) =
+    match t.Typ.desc with
+    | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
+        true
     | _ ->
-        None
+        false
   in
   let has_weak_or_unretained_or_assign params =
     List.exists
@@ -80,27 +71,37 @@ let edge_is_strong tenv obj_edge =
         || String.equal Config.weak att || String.equal Config.assign att )
       params
   in
-  let weak_edge_by_type =
-    match obj_edge.rc_from.rc_node_typ.Typ.desc with
-    | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-        true
+  let rc_field =
+    match obj_edge.rc_from.rc_node_typ.desc with
+    | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | Some {fields} ->
+          List.find
+            ~f:(fun (fn, _, _) -> Typ.Fieldname.equal obj_edge.rc_field.rc_field_name fn)
+            fields
+      | None ->
+          None )
     | _ ->
-        false
+        None
   in
-  let weak_edge_by_field =
-    match get_item_annotation obj_edge.rc_from.rc_node_typ obj_edge.rc_field.rc_field_name with
-    | Some ia ->
-        List.exists
-          ~f:(fun ((ann : Annot.t), _) ->
-            ( String.equal ann.class_name Config.property_attributes
-            || String.equal ann.class_name Config.ivar_attributes )
-            && has_weak_or_unretained_or_assign ann.parameters )
-          ia
-    | None ->
-        true
-    (* Assume the edge is weak if the type or field cannot be found in the tenv, to avoid FPs *)
-  in
-  not (weak_edge_by_type || weak_edge_by_field)
+  not
+    ( (* Weak edge - by type of from-node *)
+      has_weak_type obj_edge.rc_from.rc_node_typ
+    (* Weak edge - by annotation of from-node/field *)
+    || ( match rc_field with
+       | Some (_, _, ia) ->
+           List.exists
+             ~f:(fun ((ann : Annot.t), _) ->
+               ( String.equal ann.class_name Config.property_attributes
+               || String.equal ann.class_name Config.ivar_attributes )
+               && has_weak_or_unretained_or_assign ann.parameters )
+             ia
+       | _ ->
+           (* Assume the edge is weak if the type or field cannot be found in the tenv, to avoid FPs *)
+           true )
+    ||
+    (* Weak edge - by type of from-node/field *)
+    match rc_field with Some (_, typ, _) -> has_weak_type typ | None -> false )
 
 
 exception Max_retain_cycles of RetainCyclesType.Set.t
