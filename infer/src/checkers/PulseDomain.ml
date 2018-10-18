@@ -47,19 +47,39 @@ module AbstractLocationDomain : AbstractDomain.S with type astate = AbstractLoca
   let pp = AbstractLocation.pp
 end
 
-module MemoryKey = struct
-  type t = AbstractLocation.t * AccessPath.access [@@deriving compare]
+module Access = struct
+  type t = AccessPath.access [@@deriving compare]
 
-  let pp f k = Pp.pair ~fst:AbstractLocation.pp ~snd:AccessPath.pp_access f k
+  let pp = AccessPath.pp_access
 end
 
-module MemoryDomain = AbstractDomain.Map (MemoryKey) (AbstractLocationDomain)
-module AliasingDomain = AbstractDomain.Map (Var) (AbstractLocationDomain)
+module MemoryEdges = AbstractDomain.InvertedMap (Access) (AbstractLocationDomain)
+
+module MemoryDomain = struct
+  include AbstractDomain.InvertedMap (AbstractLocation) (MemoryEdges)
+
+  let add_edge loc_src access loc_end memory =
+    let edges =
+      match find_opt loc_src memory with Some edges -> edges | None -> MemoryEdges.empty
+    in
+    add loc_src (MemoryEdges.add access loc_end edges) memory
+
+
+  let find_edge_opt loc access memory =
+    let open Option.Monad_infix in
+    find_opt loc memory >>= MemoryEdges.find_opt access
+end
+
+module AliasingDomain = AbstractDomain.InvertedMap (Var) (AbstractLocationDomain)
 module AbstractLocationsDomain = AbstractDomain.FiniteSet (AbstractLocation)
 module InvalidLocationsDomain = AbstractLocationsDomain
 
 type t =
   {heap: MemoryDomain.astate; stack: AliasingDomain.astate; invalids: InvalidLocationsDomain.astate}
+
+let initial =
+  {heap= MemoryDomain.empty; stack= AliasingDomain.empty; invalids= AbstractLocationsDomain.empty}
+
 
 module Domain : AbstractDomain.S with type astate = t = struct
   type astate = t
@@ -107,10 +127,6 @@ end
 
 include Domain
 
-let initial =
-  {heap= MemoryDomain.empty; stack= AliasingDomain.empty; invalids= AbstractLocationsDomain.empty}
-
-
 module Diagnostic = struct
   (* TODO: more structured error type so that we can actually report something informative about
        the variables being accessed along with a trace *)
@@ -140,15 +156,15 @@ let rec walk ~overwrite_last loc path astate =
   | [a], Some new_loc ->
       check_loc_access loc astate
       >>| fun astate ->
-      let heap = MemoryDomain.add (loc, a) new_loc astate.heap in
+      let heap = MemoryDomain.add_edge loc a new_loc astate.heap in
       ({astate with heap}, new_loc)
   | a :: path, _ -> (
       check_loc_access loc astate
       >>= fun astate ->
-      match MemoryDomain.find_opt (loc, a) astate.heap with
+      match MemoryDomain.find_edge_opt loc a astate.heap with
       | None ->
           let loc' = AbstractLocation.mk_fresh () in
-          let heap = MemoryDomain.add (loc, a) loc' astate.heap in
+          let heap = MemoryDomain.add_edge loc a loc' astate.heap in
           let astate = {astate with heap} in
           walk ~overwrite_last loc' path astate
       | Some loc' ->

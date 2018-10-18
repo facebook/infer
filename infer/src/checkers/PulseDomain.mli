@@ -14,8 +14,8 @@ module AbstractLocation : sig
   val pp : F.formatter -> t -> unit
 end
 
-module MemoryKey : sig
-  type t = AbstractLocation.t * AccessPath.access [@@deriving compare]
+module Access : sig
+  type t = AccessPath.access [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 end
@@ -24,9 +24,11 @@ module AbstractLocationDomain : AbstractDomain.S with type astate = AbstractLoca
 
 module AbstractLocationsDomain : module type of AbstractDomain.FiniteSet (AbstractLocation)
 
-module MemoryDomain : module type of AbstractDomain.Map (MemoryKey) (AbstractLocationDomain)
+module MemoryEdges : module type of AbstractDomain.InvertedMap (Access) (AbstractLocationDomain)
 
-module AliasingDomain : module type of AbstractDomain.Map (Var) (AbstractLocationDomain)
+module MemoryDomain : module type of AbstractDomain.InvertedMap (AbstractLocation) (MemoryEdges)
+
+module AliasingDomain : module type of AbstractDomain.InvertedMap (Var) (AbstractLocationDomain)
 
 module InvalidLocationsDomain : module type of AbstractLocationsDomain
 
