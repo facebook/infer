@@ -127,6 +127,12 @@ module ItvPure : sig
   val get_symbols : t -> Symbol.t list
 
   val subst : t -> (Symb.Symbol.t -> Bound.t bottom_lifted) -> t bottom_lifted
+
+  val plus : t -> t -> t
+
+  val minus : t -> t -> t
+
+  val mult : t -> t -> t
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)

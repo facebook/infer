@@ -185,6 +185,14 @@ val infinite_execution_time_call : t
 
 val inherently_dangerous_function : t
 
+val integer_overflow_l1 : t
+
+val integer_overflow_l2 : t
+
+val integer_overflow_l5 : t
+
+val integer_overflow_u5 : t
+
 val interface_not_thread_safe : t
 
 val internal_error : t

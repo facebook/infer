@@ -500,8 +500,8 @@ module Report = struct
         cond_set
 
 
-  let check_expr : Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t
-      =
+  let check_expr_for_array_access :
+      Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t -> PO.ConditionSet.t =
    fun exp location mem cond_set ->
     let rec check_sub_expr exp cond_set =
       match exp with
@@ -531,6 +531,41 @@ module Report = struct
         cond_set
 
 
+  let check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem cond_set =
+    match bop with
+    | Binop.PlusA (Some _) | Binop.MinusA (Some _) | Binop.Mult (Some _) ->
+        let lhs_v = Sem.eval lhs mem in
+        let rhs_v = Sem.eval rhs mem in
+        BoUtils.Check.binary_operation integer_type_widths bop ~lhs:lhs_v ~rhs:rhs_v location
+          cond_set
+    | _ ->
+        cond_set
+
+
+  let rec check_expr_for_integer_overflow integer_type_widths exp location mem cond_set =
+    match exp with
+    | Exp.UnOp (_, e, _)
+    | Exp.Exn e
+    | Exp.Lfield (e, _, _)
+    | Exp.Cast (_, e)
+    | Exp.Sizeof {dynamic_length= Some e} ->
+        check_expr_for_integer_overflow integer_type_widths e location mem cond_set
+    | Exp.BinOp (bop, lhs, rhs) ->
+        cond_set
+        |> check_binop_for_integer_overflow integer_type_widths bop ~lhs ~rhs location mem
+        |> check_expr_for_integer_overflow integer_type_widths lhs location mem
+        |> check_expr_for_integer_overflow integer_type_widths rhs location mem
+    | Exp.Lindex (e1, e2) ->
+        cond_set
+        |> check_expr_for_integer_overflow integer_type_widths e1 location mem
+        |> check_expr_for_integer_overflow integer_type_widths e2 location mem
+    | Exp.Closure {captured_vars} ->
+        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _) ->
+            check_expr_for_integer_overflow integer_type_widths e location mem cond_set )
+    | Exp.Var _ | Exp.Const _ | Exp.Lvar _ | Exp.Sizeof {dynamic_length= None} ->
+        cond_set
+
+
   let instantiate_cond :
          Tenv.t
       -> Procdesc.t
@@ -552,34 +587,48 @@ module Report = struct
   let check_instr :
          Procdesc.t
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> Itv.SymbolTable.t
       -> CFG.Node.t
       -> Sil.instr
       -> Dom.Mem.astate
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
-   fun pdesc tenv symbol_table node instr mem cond_set ->
+   fun pdesc tenv integer_type_widths symbol_table node instr mem cond_set ->
     match instr with
-    | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
-        check_expr exp location mem cond_set
+    | Sil.Load (_, exp, _, location) ->
+        cond_set
+        |> check_expr_for_array_access exp location mem
+        |> check_expr_for_integer_overflow integer_type_widths exp location mem
+    | Sil.Store (lexp, _, rexp, location) ->
+        cond_set
+        |> check_expr_for_array_access lexp location mem
+        |> check_expr_for_integer_overflow integer_type_widths lexp location mem
+        |> check_expr_for_integer_overflow integer_type_widths rexp location mem
     | Sil.Call (_, Const (Cfun callee_pname), params, location, _) -> (
-      match Models.Call.dispatch tenv callee_pname params with
-      | Some {Models.check} ->
-          let node_hash = CFG.Node.hash node in
-          let pname = Procdesc.get_proc_name pdesc in
-          check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
-      | None -> (
-        match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
-        | Some callee_summary -> (
-          match Payload.of_summary callee_summary with
-          | Some callee_payload ->
-              let callee_pdesc = Summary.get_proc_desc callee_summary in
-              instantiate_cond tenv callee_pdesc params mem callee_payload location
-              |> PO.ConditionSet.join cond_set
+        let cond_set =
+          List.fold params ~init:cond_set ~f:(fun cond_set (exp, _) ->
+              check_expr_for_integer_overflow integer_type_widths exp location mem cond_set )
+        in
+        match Models.Call.dispatch tenv callee_pname params with
+        | Some {Models.check} ->
+            let node_hash = CFG.Node.hash node in
+            let pname = Procdesc.get_proc_name pdesc in
+            check (Models.mk_model_env pname node_hash location tenv symbol_table) mem cond_set
+        | None -> (
+          match Ondemand.analyze_proc_name ~caller_pdesc:pdesc callee_pname with
+          | Some callee_summary -> (
+            match Payload.of_summary callee_summary with
+            | Some callee_payload ->
+                let callee_pdesc = Summary.get_proc_desc callee_summary in
+                instantiate_cond tenv callee_pdesc params mem callee_payload location
+                |> PO.ConditionSet.join cond_set
+            | None ->
+                (* no inferbo payload *) cond_set )
           | None ->
-              (* no inferbo payload *) cond_set )
-        | None ->
-            (* unknown call *) cond_set ) )
+              (* unknown call *) cond_set ) )
+    | Sil.Prune (exp, location, _, _) ->
+        check_expr_for_integer_overflow integer_type_widths exp location mem cond_set
     | _ ->
         cond_set
 
@@ -598,6 +647,7 @@ module Report = struct
          Summary.t
       -> Procdesc.t
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> Itv.SymbolTable.t
       -> CFG.t
       -> CFG.Node.t
@@ -605,7 +655,7 @@ module Report = struct
       -> Dom.Mem.astate AbstractInterpreter.State.t
       -> PO.ConditionSet.t
       -> PO.ConditionSet.t =
-   fun summary pdesc tenv symbol_table cfg node instrs state cond_set ->
+   fun summary pdesc tenv integer_type_widths symbol_table cfg node instrs state cond_set ->
     match state with
     | _ when Instrs.is_empty instrs ->
         cond_set
@@ -622,7 +672,9 @@ module Report = struct
           | NonBottom _ ->
               ()
         in
-        let cond_set = check_instr pdesc tenv symbol_table node instr pre cond_set in
+        let cond_set =
+          check_instr pdesc tenv integer_type_widths symbol_table node instr pre cond_set
+        in
         print_debug_info instr pre cond_set ;
         cond_set
 
@@ -631,17 +683,19 @@ module Report = struct
          Summary.t
       -> Procdesc.t
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> Itv.SymbolTable.t
       -> CFG.t
       -> Analyzer.invariant_map
       -> PO.ConditionSet.t
       -> CFG.Node.t
       -> PO.ConditionSet.t =
-   fun summary pdesc tenv symbol_table cfg inv_map cond_set node ->
+   fun summary pdesc tenv integer_type_widths symbol_table cfg inv_map cond_set node ->
     match Analyzer.extract_state (CFG.Node.id node) inv_map with
     | Some state ->
         let instrs = CFG.instrs node in
-        check_instrs summary pdesc tenv symbol_table cfg node instrs state cond_set
+        check_instrs summary pdesc tenv integer_type_widths symbol_table cfg node instrs state
+          cond_set
     | _ ->
         cond_set
 
@@ -650,13 +704,14 @@ module Report = struct
          Summary.t
       -> Procdesc.t
       -> Tenv.t
+      -> Typ.IntegerWidths.t
       -> Itv.SymbolTable.t
       -> CFG.t
       -> Analyzer.invariant_map
       -> PO.ConditionSet.t =
-   fun summary pdesc tenv symbol_table cfg inv_map ->
+   fun summary pdesc tenv integer_type_widths symbol_table cfg inv_map ->
     CFG.fold_nodes cfg
-      ~f:(check_node summary pdesc tenv symbol_table cfg inv_map)
+      ~f:(check_node summary pdesc tenv integer_type_widths symbol_table cfg inv_map)
       ~init:PO.ConditionSet.empty
 
 
@@ -674,6 +729,9 @@ module Report = struct
           (Errlog.make_trace_element depth location "ArrayDeclaration" [] :: trace, depth)
       | Trace.Assign location ->
           (Errlog.make_trace_element depth location "Assignment" [] :: trace, depth)
+      | Trace.Binop location ->
+          let desc = "Binop: " ^ issue_desc in
+          (Errlog.make_trace_element depth location desc [] :: trace, depth)
       | Trace.Call location ->
           (Errlog.make_trace_element depth location "Call" [] :: trace, depth + 1)
       | Trace.Return location ->
@@ -734,7 +792,7 @@ let get_local_decls proc_desc =
 
 
 let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_map * Summary.t =
- fun {proc_desc; tenv; summary; integer_type_widths= _} ->
+ fun {proc_desc; tenv; integer_type_widths; summary} ->
   Preanal.do_preanalysis proc_desc tenv ;
   let symbol_table = Itv.SymbolTable.empty () in
   let pdata = ProcData.make proc_desc tenv symbol_table in
@@ -747,7 +805,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
     |> Option.map ~f:(Dom.Mem.forget_locs locals)
   in
   let cond_set =
-    Report.check_proc summary proc_desc tenv symbol_table cfg inv_map
+    Report.check_proc summary proc_desc tenv integer_type_widths symbol_table cfg inv_map
     |> Report.report_errors summary |> Report.forget_locs locals |> Report.for_summary
   in
   let summary =

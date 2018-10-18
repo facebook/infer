@@ -15,6 +15,7 @@ module BoTrace = struct
     | ArrAccess of Location.t
     | ArrDecl of Location.t
     | Assign of Location.t
+    | Binop of Location.t
     | Call of Location.t
     | Return of Location.t
     | SymAssign of Loc.t * Location.t
@@ -49,6 +50,8 @@ module BoTrace = struct
         F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos location
     | Assign location ->
         F.fprintf fmt "Assign (%a)" Location.pp_file_pos location
+    | Binop location ->
+        F.fprintf fmt "Binop (%a)" Location.pp_file_pos location
     | Call location ->
         F.fprintf fmt "Call (%a)" Location.pp_file_pos location
     | Return location ->

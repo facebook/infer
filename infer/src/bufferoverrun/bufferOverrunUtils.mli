@@ -167,4 +167,13 @@ module Check : sig
     -> Location.t
     -> PO.ConditionSet.t
     -> PO.ConditionSet.t
+
+  val binary_operation :
+       Typ.IntegerWidths.t
+    -> Binop.t
+    -> lhs:Dom.Val.t
+    -> rhs:Dom.Val.t
+    -> Location.t
+    -> PO.ConditionSet.t
+    -> PO.ConditionSet.t
 end

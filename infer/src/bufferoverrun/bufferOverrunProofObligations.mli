@@ -48,6 +48,16 @@ module ConditionSet : sig
 
   val add_alloc_size : Location.t -> length:ItvPure.astate -> ValTraceSet.t -> t -> t
 
+  val add_binary_operation :
+       Typ.IntegerWidths.t
+    -> Location.t
+    -> Binop.t
+    -> lhs:ItvPure.astate
+    -> rhs:ItvPure.astate
+    -> ValTraceSet.t
+    -> t
+    -> t
+
   val join : t -> t -> t
 
   val subst :

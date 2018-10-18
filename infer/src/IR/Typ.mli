@@ -41,6 +41,12 @@ type ikind =
   | IU128  (** [__uint128_t] *)
 [@@deriving compare]
 
+val equal_ikind : ikind -> ikind -> bool
+
+val ikind_to_string : ikind -> string
+
+val range_of_ikind : IntegerWidths.t -> ikind -> Z.t * Z.t
+
 val ikind_is_char : ikind -> bool
 (** Check whether the integer kind is a char *)
 

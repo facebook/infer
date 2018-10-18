@@ -138,3 +138,21 @@ void FP_call_prune_arrblk_eq_Ok() {
   int* x = (int*)malloc(sizeof(int) * 5);
   prune_arrblk_eq(x);
 }
+
+void prune_minmax1_Ok(unsigned int x, unsigned int y) {
+  if (x > 0) {
+    if (y >= x + 1) {
+      unsigned int z = y - 1;
+    }
+  }
+}
+
+void FP_call_prune_minmax1_Ok() { prune_minmax1_Ok(0, 0); }
+
+void prune_minmax2_Ok(unsigned int x, unsigned int y) {
+  if (x > y) {
+    unsigned int z = x - y;
+  }
+}
+
+void FP_call_prune_minmax2_Ok() { prune_minmax2_Ok(0, 2); }

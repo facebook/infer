@@ -55,6 +55,8 @@ type ikind =
   | IU128  (** [__uint128_t] *)
 [@@deriving compare]
 
+let equal_ikind = [%compare.equal: ikind]
+
 let ikind_to_string = function
   | IChar ->
       "char"
@@ -84,6 +86,46 @@ let ikind_to_string = function
       "__int128_t"
   | IU128 ->
       "__uint128_t"
+
+
+let range_of_ikind =
+  let range bits ~signed =
+    if signed then
+      let bound = Z.(shift_left ~$1) (bits - 1) in
+      Z.(~-bound, bound - ~$1)
+    else Z.(~$0, shift_left ~$1 bits - ~$1)
+  in
+  let u1 = range 1 ~signed:false in
+  let s128 = range 128 ~signed:true in
+  let u128 = range 128 ~signed:false in
+  fun {IntegerWidths.char_width; short_width; int_width; long_width; longlong_width} x ->
+    match x with
+    | IBool ->
+        u1
+    | ISChar ->
+        range char_width ~signed:true
+    | IChar | IUChar ->
+        range char_width ~signed:false
+    | IShort ->
+        range short_width ~signed:true
+    | IUShort ->
+        range short_width ~signed:false
+    | IInt ->
+        range int_width ~signed:true
+    | IUInt ->
+        range int_width ~signed:false
+    | ILong ->
+        range long_width ~signed:true
+    | IULong ->
+        range long_width ~signed:false
+    | ILongLong ->
+        range longlong_width ~signed:true
+    | IULongLong ->
+        range longlong_width ~signed:false
+    | I128 ->
+        s128
+    | IU128 ->
+        u128
 
 
 let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false

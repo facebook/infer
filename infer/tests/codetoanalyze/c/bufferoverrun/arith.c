@@ -111,7 +111,7 @@ void plus_linear_min3_Good_FP() {
   a[plus_linear_min(15)] = 1;
 }
 
-void integer_overflow_by_addition_Bad_FN() {
+void integer_overflow_by_addition_Bad() {
   char arr[10];
   int32_t x = 2000000000;
   int32_t y = 2000000000;
@@ -121,7 +121,17 @@ void integer_overflow_by_addition_Bad_FN() {
   }
 }
 
-void integer_overflow_by_subtraction_Bad_FN() {
+void integer_overflow_by_addition_l2_Bad(int x) {
+  int32_t y;
+  if (x) {
+    y = 0;
+  } else {
+    y = 2000000000;
+  }
+  y = y + y;
+}
+
+void integer_overflow_by_subtraction_Bad() {
   char arr[10];
   int32_t x = -2000000000;
   int32_t y = 2000000000;
@@ -131,7 +141,7 @@ void integer_overflow_by_subtraction_Bad_FN() {
   }
 }
 
-void integer_overflow_by_multiplication_Bad_FN() {
+void integer_overflow_by_multiplication_Bad() {
   char arr[10];
   int32_t x = 300000;
   int32_t y = 300000;

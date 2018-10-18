@@ -286,10 +286,133 @@ module ArrayAccessCondition = struct
    fun locs c -> {c with relation= Relation.forget_locs locs c.relation}
 end
 
+module BinaryOperationCondition = struct
+  type binop_t = Plus | Minus | Mult [@@deriving compare]
+
+  let equal_binop = [%compare.equal: binop_t]
+
+  let binop_to_string = function Plus -> "+" | Minus -> "-" | Mult -> "*"
+
+  type t =
+    { binop: binop_t
+    ; typ: Typ.ikind
+    ; integer_widths: Typ.IntegerWidths.t
+    ; lhs: ItvPure.astate
+    ; rhs: ItvPure.astate }
+
+  let get_symbols c = ItvPure.get_symbols c.lhs @ ItvPure.get_symbols c.rhs
+
+  let subst eval_sym c =
+    match (ItvPure.subst c.lhs eval_sym, ItvPure.subst c.rhs eval_sym) with
+    | NonBottom lhs, NonBottom rhs ->
+        Some {c with lhs; rhs}
+    | _, _ ->
+        None
+
+
+  let have_similar_bounds {binop= binop1; typ= typ1; lhs= lhs1; rhs= rhs1}
+      {binop= binop2; typ= typ2; lhs= lhs2; rhs= rhs2} =
+    equal_binop binop1 binop2 && Typ.equal_ikind typ1 typ2
+    && ItvPure.have_similar_bounds lhs1 lhs2
+    && ItvPure.have_similar_bounds rhs1 rhs2
+
+
+  let has_infty {lhs; rhs} = ItvPure.has_infty lhs || ItvPure.has_infty rhs
+
+  let xcompare ~lhs:{binop= binop1; typ= typ1; lhs= lhs1; rhs= rhs1}
+      ~rhs:{binop= binop2; typ= typ2; lhs= lhs2; rhs= rhs2} =
+    if not (equal_binop binop1 binop2 && Typ.equal_ikind typ1 typ2) then `NotComparable
+    else
+      let lhscmp = ItvPure.xcompare ~lhs:lhs1 ~rhs:lhs2 in
+      let rhscmp = ItvPure.xcompare ~lhs:rhs1 ~rhs:rhs2 in
+      match (lhscmp, rhscmp) with
+      | `Equal, `Equal ->
+          `Equal
+      | `Equal, `LeftSubsumesRight
+      | `LeftSubsumesRight, `Equal
+      | `LeftSubsumesRight, `LeftSubsumesRight ->
+          `LeftSubsumesRight
+      | `Equal, `RightSubsumesLeft
+      | `RightSubsumesLeft, `Equal
+      | `RightSubsumesLeft, `RightSubsumesLeft ->
+          `RightSubsumesLeft
+      | `NotComparable, _
+      | _, `NotComparable
+      | `LeftSmallerThanRight, _
+      | _, `LeftSmallerThanRight
+      | `RightSmallerThanLeft, _
+      | _, `RightSmallerThanLeft
+      | `LeftSubsumesRight, `RightSubsumesLeft
+      | `RightSubsumesLeft, `LeftSubsumesRight ->
+          `NotComparable
+
+
+  let pp fmt {binop; typ; lhs; rhs} =
+    F.fprintf fmt "(%a %s %a):%s" ItvPure.pp lhs (binop_to_string binop) ItvPure.pp rhs
+      (Typ.ikind_to_string typ)
+
+
+  let pp_description = pp
+
+  let check {binop; typ; integer_widths; lhs; rhs} =
+    let v =
+      match binop with
+      | Plus ->
+          ItvPure.plus lhs rhs
+      | Minus ->
+          ItvPure.minus lhs rhs
+      | Mult ->
+          ItvPure.mult lhs rhs
+    in
+    let v_lb, v_ub = (ItvPure.lb v, ItvPure.ub v) in
+    let typ_lb, typ_ub =
+      let lb, ub = Typ.range_of_ikind integer_widths typ in
+      (Bound.of_big_int lb, Bound.of_big_int ub)
+    in
+    if
+      (* typ_lb <= v_lb and v_ub <= typ_ub, not an error *)
+      Bound.le v_ub typ_ub && Bound.le typ_lb v_lb
+    then {report_issue_type= None; propagate= false}
+    else if
+      (* v_ub < typ_lb or typ_ub < v_lb, definitely an error *)
+      Bound.lt v_ub typ_lb || Bound.lt typ_ub v_lb
+    then {report_issue_type= Some IssueType.integer_overflow_l1; propagate= false}
+    else if
+      (* -oo != v_lb < typ_lb or typ_ub < v_ub != +oo, probably an error *)
+      (Bound.lt v_lb typ_lb && Bound.is_not_infty v_lb)
+      || (Bound.lt typ_ub v_ub && Bound.is_not_infty v_ub)
+    then {report_issue_type= Some IssueType.integer_overflow_l2; propagate= false}
+    else
+      let is_symbolic = ItvPure.is_symbolic v in
+      let report_issue_type =
+        if Config.bo_debug <= 3 && is_symbolic then None else Some IssueType.integer_overflow_l5
+      in
+      {report_issue_type; propagate= is_symbolic}
+
+
+  let make integer_widths bop ~lhs ~rhs =
+    if ItvPure.is_invalid lhs || ItvPure.is_invalid rhs then None
+    else
+      let binop, typ =
+        match bop with
+        | Binop.PlusA (Some typ) ->
+            (Plus, typ)
+        | Binop.MinusA (Some typ) ->
+            (Minus, typ)
+        | Binop.Mult (Some typ) ->
+            (Mult, typ)
+        | _ ->
+            L.(die InternalError)
+              "Unexpected type %s is given to BinaryOperationCondition." (Binop.str Pp.text bop)
+      in
+      Some {binop; typ; integer_widths; lhs; rhs}
+end
+
 module Condition = struct
   type t =
     | AllocSize of AllocSizeCondition.t
     | ArrayAccess of {is_collection_add: bool; c: ArrayAccessCondition.t}
+    | BinaryOperation of BinaryOperationCondition.t
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
@@ -297,11 +420,15 @@ module Condition = struct
     Option.map ~f:(fun c -> ArrayAccess {is_collection_add; c})
 
 
+  let make_binary_operation = Option.map ~f:(fun c -> BinaryOperation c)
+
   let get_symbols = function
     | AllocSize c ->
         AllocSizeCondition.get_symbols c
     | ArrayAccess {c} ->
         ArrayAccessCondition.get_symbols c
+    | BinaryOperation c ->
+        BinaryOperationCondition.get_symbols c
 
 
   let subst eval_sym rel_map caller_relation = function
@@ -310,6 +437,8 @@ module Condition = struct
     | ArrayAccess {is_collection_add; c} ->
         ArrayAccessCondition.subst eval_sym rel_map caller_relation c
         |> make_array_access ~is_collection_add
+    | BinaryOperation c ->
+        BinaryOperationCondition.subst eval_sym c |> make_binary_operation
 
 
   let have_similar_bounds c1 c2 =
@@ -318,11 +447,20 @@ module Condition = struct
         AllocSizeCondition.have_similar_bounds c1 c2
     | ArrayAccess {c= c1}, ArrayAccess {c= c2} ->
         ArrayAccessCondition.have_similar_bounds c1 c2
+    | BinaryOperation c1, BinaryOperation c2 ->
+        BinaryOperationCondition.have_similar_bounds c1 c2
     | _ ->
         false
 
 
-  let has_infty = function ArrayAccess {c} -> ArrayAccessCondition.has_infty c | _ -> false
+  let has_infty = function
+    | ArrayAccess {c} ->
+        ArrayAccessCondition.has_infty c
+    | BinaryOperation c ->
+        BinaryOperationCondition.has_infty c
+    | _ ->
+        false
+
 
   let xcompare ~lhs ~rhs =
     match (lhs, rhs) with
@@ -331,6 +469,8 @@ module Condition = struct
     | ArrayAccess {is_collection_add= b1; c= lhs}, ArrayAccess {is_collection_add= b2; c= rhs}
       when Bool.equal b1 b2 ->
         ArrayAccessCondition.xcompare ~lhs ~rhs
+    | BinaryOperation lhs, BinaryOperation rhs ->
+        BinaryOperationCondition.xcompare ~lhs ~rhs
     | _ ->
         `NotComparable
 
@@ -340,6 +480,8 @@ module Condition = struct
         AllocSizeCondition.pp fmt c
     | ArrayAccess {c} ->
         ArrayAccessCondition.pp fmt c
+    | BinaryOperation c ->
+        BinaryOperationCondition.pp fmt c
 
 
   let pp_description fmt = function
@@ -347,6 +489,8 @@ module Condition = struct
         AllocSizeCondition.pp_description fmt c
     | ArrayAccess {c} ->
         ArrayAccessCondition.pp_description fmt c
+    | BinaryOperation c ->
+        BinaryOperationCondition.pp_description fmt c
 
 
   let check = function
@@ -354,13 +498,15 @@ module Condition = struct
         AllocSizeCondition.check c
     | ArrayAccess {is_collection_add; c} ->
         ArrayAccessCondition.check ~is_collection_add c
+    | BinaryOperation c ->
+        BinaryOperationCondition.check c
 
 
   let forget_locs locs x =
     match x with
     | ArrayAccess {is_collection_add; c} ->
         ArrayAccess {is_collection_add; c= ArrayAccessCondition.forget_locs locs c}
-    | AllocSize _ ->
+    | AllocSize _ | BinaryOperation _ ->
         x
 end
 
@@ -422,9 +568,13 @@ module ConditionTrace = struct
 
   let has_unknown ct = ValTraceSet.has_unknown ct.val_traces
 
-  let check : _ t0 -> IssueType.t option =
-   fun ct -> if has_unknown ct then Some IssueType.buffer_overrun_u5 else None
+  let check issue_type_u5 : _ t0 -> IssueType.t option =
+   fun ct -> if has_unknown ct then Some issue_type_u5 else None
 
+
+  let check_buffer_overrun ct = check IssueType.buffer_overrun_u5 ct
+
+  let check_integer_overflow ct = check IssueType.integer_overflow_u5 ct
 
   let for_summary : _ t0 -> summary_t = fun ct -> {ct with cond_trace= ()}
 end
@@ -481,13 +631,15 @@ module ConditionWithTrace = struct
         Some {cond; trace; reported= cwt.reported}
 
 
-  let set_buffer_overrun_u5 {cond; trace} issue_type =
+  let set_u5 {cond; trace} issue_type =
     if
       ( IssueType.equal issue_type IssueType.buffer_overrun_l3
       || IssueType.equal issue_type IssueType.buffer_overrun_l4
       || IssueType.equal issue_type IssueType.buffer_overrun_l5 )
       && Condition.has_infty cond
-    then Option.value (ConditionTrace.check trace) ~default:issue_type
+    then Option.value (ConditionTrace.check_buffer_overrun trace) ~default:issue_type
+    else if IssueType.equal issue_type IssueType.integer_overflow_l5 && Condition.has_infty cond
+    then Option.value (ConditionTrace.check_integer_overflow trace) ~default:issue_type
     else issue_type
 
 
@@ -497,7 +649,7 @@ module ConditionWithTrace = struct
     | None ->
         checked
     | Some issue_type ->
-        let issue_type = set_buffer_overrun_u5 cwt issue_type in
+        let issue_type = set_u5 cwt issue_type in
         (* Only report if the precision has improved.
         This is approximated by: only report if the issue_type has changed. *)
         let report_issue_type =
@@ -599,6 +751,12 @@ module ConditionSet = struct
 
   let add_alloc_size location ~length val_traces condset =
     AllocSizeCondition.make ~length |> Condition.make_alloc_size
+    |> add_opt location val_traces condset
+
+
+  let add_binary_operation integer_type_widths location bop ~lhs ~rhs val_traces condset =
+    BinaryOperationCondition.make integer_type_widths bop ~lhs ~rhs
+    |> Condition.make_binary_operation
     |> add_opt location val_traces condset
 
 

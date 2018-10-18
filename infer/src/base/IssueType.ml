@@ -277,6 +277,14 @@ let infinite_execution_time_call = from_string ~enabled:false "INFINITE_EXECUTIO
 
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
+let integer_overflow_l1 = from_string "INTEGER_OVERFLOW_L1"
+
+let integer_overflow_l2 = from_string "INTEGER_OVERFLOW_L2"
+
+let integer_overflow_l5 = from_string "INTEGER_OVERFLOW_L5"
+
+let integer_overflow_u5 = from_string "INTEGER_OVERFLOW_U5"
+
 let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
 
 let internal_error = from_string "Internal_error"
