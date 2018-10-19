@@ -178,3 +178,15 @@ void use_uint64_max_Bad_FN() {
   uint64_t y = UINT64_MAX - 15;
   arr[x - y] = 0;
 }
+
+uint64_t unknown_uint();
+
+void muliply_one_Good() {
+  uint64_t x = unknown_uint();
+  uint64_t y = x * 1;
+}
+
+void muliply_two_Bad() {
+  uint64_t x = unknown_uint();
+  uint64_t y = x * 2;
+}

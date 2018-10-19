@@ -568,6 +568,8 @@ module ItvPure = struct
 
   let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
 
+  let is_one : t -> bool = fun (l, u) -> Bound.eq l Bound.one && Bound.eq u Bound.one
+
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
 
   let is_false : t -> bool = is_zero

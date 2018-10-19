@@ -98,6 +98,8 @@ module ItvPure : sig
 
   val is_top : t -> bool
 
+  val is_one : t -> bool
+
   val ( <= ) : lhs:t -> rhs:t -> bool
 
   val have_similar_bounds : t -> t -> bool
