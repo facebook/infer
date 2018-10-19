@@ -13,4 +13,4 @@ type summary = astate
 
 val pp_summary : F.formatter -> summary -> unit
 
-val integrate_summary : astate -> Typ.Procname.t -> Location.t -> summary -> astate
+val integrate_summary : Typ.Procname.t -> Location.t -> astate -> summary -> astate

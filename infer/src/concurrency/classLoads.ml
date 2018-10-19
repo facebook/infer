@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module L = Logging
 
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
@@ -16,17 +15,19 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.class_loads
 end)
 
-module TransferFunctions (CFG : ProcCfg.S) = struct
-  module CFG = CFG
+module TransferFunctions = struct
+  module CFG = ProcCfg.Normal
   module Domain = ClassLoadsDomain
 
   type extras = unit
 
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc} _ (instr : HilInstr.t) =
+  type instr = Sil.instr
+
+  let exec_instr (astate : Domain.astate) {ProcData.pdesc} _ (instr : instr) =
     match instr with
-    | Call (_, Direct callee, _, _, loc) ->
+    | Call (_, Const (Cfun callee), _, loc, _) ->
         Payload.read pdesc callee
-        |> Option.value_map ~default:astate ~f:(Domain.integrate_summary astate callee loc)
+        |> Option.fold ~init:astate ~f:(Domain.integrate_summary callee loc)
     | _ ->
         astate
 
@@ -34,17 +35,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "class loads"
 end
 
-module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
-
-let die_if_not_java proc_desc =
-  let is_java =
-    Procdesc.get_proc_name proc_desc |> Typ.Procname.get_language |> Language.(equal Java)
-  in
-  if not is_java then L.(die InternalError "Not supposed to run on non-Java code yet.")
-
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
-  die_if_not_java proc_desc ;
   let initial = ClassLoadsDomain.empty in
   let proc_data = ProcData.make proc_desc tenv () in
   Analyzer.compute_post proc_data ~initial

@@ -21,7 +21,7 @@ let add ({Event.trace} as x) astate =
 
 let union xs ys = fold add xs ys
 
-let integrate_summary astate callee_pname loc callee_summary =
+let integrate_summary callee_pname loc astate callee_summary =
   match callee_pname with
   | Typ.Procname.Java java_pname ->
       let clazz = Typ.Procname.Java.get_class_name java_pname in
