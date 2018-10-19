@@ -34,3 +34,5 @@ val get_current_class_and_annotated_superclasses :
 
 val find_annotated_or_overriden_annotated_method :
   (Annot.Item.t -> bool) -> BuiltinDecl.t -> Tenv.t -> BuiltinDecl.t sexp_option
+
+val cpp_lock_types_matcher : QualifiedCppName.Match.quals_matcher

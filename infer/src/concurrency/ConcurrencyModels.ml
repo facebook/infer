@@ -41,6 +41,19 @@ let get_thread = function
       UnknownThread
 
 
+let cpp_lock_types_matcher =
+  QualifiedCppName.Match.of_fuzzy_qual_names
+    [ "apache::thrift::concurrency::ReadWriteMutex"
+    ; "folly::LockedPtr"
+    ; "folly::MicroSpinLock"
+    ; "folly::RWSpinLock"
+    ; "folly::SharedMutex"
+      (* NB not impl as in [matcher_lock] as this is just a type, not a call *)
+    ; "folly::SpinLock"
+    ; "folly::SpinLockGuard"
+    ; "std::mutex" ]
+
+
 let get_lock =
   let is_cpp_lock =
     let matcher_lock =

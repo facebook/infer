@@ -1256,9 +1256,9 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     in
     let class_has_mutex_member objc_cpp tenv =
       let class_name = Typ.Procname.ObjC_Cpp.get_class_type_name objc_cpp in
-      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"] in
+      let matcher = ConcurrencyModels.cpp_lock_types_matcher in
       Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
-          (* check if the class contains a member of type std::mutex *)
+          (* check if the class contains a lock member *)
           List.exists class_str.Typ.Struct.fields ~f:(fun (_, ft, _) ->
               Option.exists (Typ.name ft) ~f:(fun name ->
                   QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) ) ) )
@@ -1266,9 +1266,8 @@ let report_unsafe_accesses (aggregated_access_map : ReportMap.t) =
     let should_report {tenv; procdesc} =
       match Procdesc.get_proc_name procdesc with
       | Java _ ->
-          List.exists
-            ~f:(fun ({threads} : reported_access) -> ThreadsDomain.is_any threads)
-            grouped_accesses
+          List.exists grouped_accesses ~f:(fun ({threads} : reported_access) ->
+              ThreadsDomain.is_any threads )
           && should_report_on_proc procdesc tenv
       | ObjC_Cpp objc_cpp ->
           (* do not report if a procedure is private  *)
