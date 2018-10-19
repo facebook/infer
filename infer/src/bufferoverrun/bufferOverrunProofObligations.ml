@@ -347,9 +347,15 @@ module BinaryOperationCondition = struct
           `NotComparable
 
 
-  let pp fmt {binop; typ; lhs; rhs} =
-    F.fprintf fmt "(%a %s %a):%s" ItvPure.pp lhs (binop_to_string binop) ItvPure.pp rhs
-      (Typ.ikind_to_string typ)
+  let pp fmt {binop; typ; integer_widths; lhs; rhs} =
+    F.fprintf fmt "(%a %s %a):" ItvPure.pp lhs (binop_to_string binop) ItvPure.pp rhs ;
+    match typ with
+    | Typ.IBool ->
+        F.fprintf fmt "bool"
+    | _ ->
+        F.fprintf fmt "%s%d"
+          (if Typ.ikind_is_unsigned typ then "unsigned" else "signed")
+          (Typ.width_of_ikind integer_widths typ)
 
 
   let pp_description = pp

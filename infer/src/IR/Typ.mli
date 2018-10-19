@@ -43,7 +43,7 @@ type ikind =
 
 val equal_ikind : ikind -> ikind -> bool
 
-val ikind_to_string : ikind -> string
+val width_of_ikind : IntegerWidths.t -> ikind -> int
 
 val range_of_ikind : IntegerWidths.t -> ikind -> Z.t * Z.t
 

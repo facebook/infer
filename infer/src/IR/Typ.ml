@@ -88,54 +88,42 @@ let ikind_to_string = function
       "__uint128_t"
 
 
+let width_of_ikind {IntegerWidths.char_width; short_width; int_width; long_width; longlong_width} =
+  function
+  | IBool ->
+      1
+  | ISChar | IChar | IUChar ->
+      char_width
+  | IShort | IUShort ->
+      short_width
+  | IInt | IUInt ->
+      int_width
+  | ILong | IULong ->
+      long_width
+  | ILongLong | IULongLong ->
+      longlong_width
+  | I128 | IU128 ->
+      128
+
+
+let ikind_is_unsigned = function
+  | IBool | IUChar | IUShort | IUInt | IULong | IULongLong | IU128 ->
+      true
+  | ISChar | IChar | IShort | IInt | ILong | ILongLong | I128 ->
+      false
+
+
 let range_of_ikind =
-  let range bits ~signed =
-    if signed then
+  let range bits ~unsigned =
+    if unsigned then Z.(~$0, shift_left ~$1 bits - ~$1)
+    else
       let bound = Z.(shift_left ~$1) (bits - 1) in
       Z.(~-bound, bound - ~$1)
-    else Z.(~$0, shift_left ~$1 bits - ~$1)
   in
-  let u1 = range 1 ~signed:false in
-  let s128 = range 128 ~signed:true in
-  let u128 = range 128 ~signed:false in
-  fun {IntegerWidths.char_width; short_width; int_width; long_width; longlong_width} x ->
-    match x with
-    | IBool ->
-        u1
-    | ISChar ->
-        range char_width ~signed:true
-    | IChar | IUChar ->
-        range char_width ~signed:false
-    | IShort ->
-        range short_width ~signed:true
-    | IUShort ->
-        range short_width ~signed:false
-    | IInt ->
-        range int_width ~signed:true
-    | IUInt ->
-        range int_width ~signed:false
-    | ILong ->
-        range long_width ~signed:true
-    | IULong ->
-        range long_width ~signed:false
-    | ILongLong ->
-        range longlong_width ~signed:true
-    | IULongLong ->
-        range longlong_width ~signed:false
-    | I128 ->
-        s128
-    | IU128 ->
-        u128
+  fun integer_widths x -> range (width_of_ikind integer_widths x) ~unsigned:(ikind_is_unsigned x)
 
 
 let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
-
-let ikind_is_unsigned = function
-  | IUChar | IUInt | IUShort | IULong | IULongLong ->
-      true
-  | _ ->
-      false
-
 
 (** Kinds of floating-point numbers *)
 type fkind =
