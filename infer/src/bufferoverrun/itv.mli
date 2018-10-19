@@ -100,6 +100,12 @@ module ItvPure : sig
 
   val is_one : t -> bool
 
+  val is_ge_zero : t -> bool
+
+  val is_le_zero : t -> bool
+
+  val is_le_mone : t -> bool
+
   val ( <= ) : lhs:t -> rhs:t -> bool
 
   val have_similar_bounds : t -> t -> bool

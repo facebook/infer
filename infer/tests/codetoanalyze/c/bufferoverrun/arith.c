@@ -190,3 +190,53 @@ void muliply_two_Bad() {
   uint64_t x = unknown_uint();
   uint64_t y = x * 2;
 }
+
+void minus_one_Good() {
+  uint64_t x = unknown_uint();
+  if (x > 0) {
+    uint64_t y = x - 1;
+  }
+}
+
+void minus_one_Bad() {
+  uint64_t x = unknown_uint();
+  if (x >= 0) {
+    uint64_t y = x - 1;
+  }
+}
+
+int64_t unknown_int();
+
+void plus_one_Good() {
+  int64_t x = unknown_int();
+  if (x < INT64_MAX) {
+    int64_t y = x + 1;
+  }
+}
+
+void plus_one_Bad() {
+  int64_t x = unknown_int();
+  if (x <= INT64_MAX) {
+    int64_t y = x + 1;
+  }
+}
+
+void minus_minimum_Good() {
+  int64_t x = -1;
+  int64_t y = x - INT64_MIN;
+}
+
+void minus_minimum_Bad() {
+  int64_t x = 0;
+  int64_t y = x - INT64_MIN;
+}
+
+void mult_minimum_Good() {
+  int64_t x = 1;
+  int64_t y = x * INT64_MIN;
+}
+
+void mult_minimum_Bad() {
+  int64_t x = -1;
+  int64_t y = x * INT64_MIN;
+}

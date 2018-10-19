@@ -364,7 +364,31 @@ module BinaryOperationCondition = struct
     equal_binop binop Mult && (ItvPure.is_one lhs || ItvPure.is_one rhs)
 
 
-  let check {binop; typ; integer_widths; lhs; rhs} =
+  let should_check {binop; typ; lhs; rhs} =
+    let cannot_underflow, cannot_overflow =
+      match (binop, Typ.ikind_is_unsigned typ) with
+      | Plus, true ->
+          (true, false)
+      | Minus, true ->
+          (false, true)
+      | Mult, true ->
+          (true, false)
+      | Plus, false ->
+          ( ItvPure.is_ge_zero lhs || ItvPure.is_ge_zero rhs
+          , ItvPure.is_le_zero lhs || ItvPure.is_le_zero rhs )
+      | Minus, false ->
+          ( ItvPure.is_ge_zero lhs || ItvPure.is_le_zero rhs
+          , ItvPure.is_le_mone lhs || ItvPure.is_ge_zero rhs )
+      | Mult, false ->
+          ( (ItvPure.is_ge_zero lhs && ItvPure.is_ge_zero rhs)
+            || (ItvPure.is_le_zero lhs && ItvPure.is_le_zero rhs)
+          , (ItvPure.is_ge_zero lhs && ItvPure.is_le_zero rhs)
+            || (ItvPure.is_le_zero lhs && ItvPure.is_ge_zero rhs) )
+    in
+    (not cannot_underflow, not cannot_overflow)
+
+
+  let check ({binop; typ; integer_widths; lhs; rhs} as c) =
     if is_mult_one binop lhs rhs then {report_issue_type= None; propagate= false}
     else
       let v =
@@ -381,18 +405,20 @@ module BinaryOperationCondition = struct
         let lb, ub = Typ.range_of_ikind integer_widths typ in
         (Bound.of_big_int lb, Bound.of_big_int ub)
       in
+      let check_underflow, check_overflow = should_check c in
       if
         (* typ_lb <= v_lb and v_ub <= typ_ub, not an error *)
-        Bound.le v_ub typ_ub && Bound.le typ_lb v_lb
+        ((not check_underflow) || Bound.le typ_lb v_lb)
+        && ((not check_overflow) || Bound.le v_ub typ_ub)
       then {report_issue_type= None; propagate= false}
       else if
         (* v_ub < typ_lb or typ_ub < v_lb, definitely an error *)
-        Bound.lt v_ub typ_lb || Bound.lt typ_ub v_lb
+        (check_underflow && Bound.lt v_ub typ_lb) || (check_overflow && Bound.lt typ_ub v_lb)
       then {report_issue_type= Some IssueType.integer_overflow_l1; propagate= false}
       else if
         (* -oo != v_lb < typ_lb or typ_ub < v_ub != +oo, probably an error *)
-        (Bound.lt v_lb typ_lb && Bound.is_not_infty v_lb)
-        || (Bound.lt typ_ub v_ub && Bound.is_not_infty v_ub)
+        (check_underflow && Bound.lt v_lb typ_lb && Bound.is_not_infty v_lb)
+        || (check_overflow && Bound.lt typ_ub v_ub && Bound.is_not_infty v_ub)
       then {report_issue_type= Some IssueType.integer_overflow_l2; propagate= false}
       else
         let is_symbolic = ItvPure.is_symbolic v in

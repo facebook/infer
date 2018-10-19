@@ -580,6 +580,8 @@ module ItvPure = struct
 
   let is_le_zero : t -> bool = fun (_, ub) -> Bound.le ub Bound.zero
 
+  let is_le_mone : t -> bool = fun (_, ub) -> Bound.le ub Bound.mone
+
   let range : t -> ItvRange.t = fun (lb, ub) -> ItvRange.of_bounds ~lb ~ub
 
   let neg : t -> t =
