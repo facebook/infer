@@ -55,6 +55,13 @@ OPTIONS
            Activates: Enable --check-nullable and disable all other checkers
            (Conversely: --no-check-nullable-only)
 
+       --classloads
+           Activates: class loading analysis (Conversely: --no-classloads)
+
+       --classloads-only
+           Activates: Enable --classloads and disable all other checkers
+           (Conversely: --no-classloads-only)
+
        --continue
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was

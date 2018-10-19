@@ -129,7 +129,9 @@ let all_checkers =
     ; active= Config.purity
     ; callbacks=
         [(Procedure Purity.checker, Language.Clang); (Procedure Purity.checker, Language.Java)] }
-  ]
+  ; { name= "Class loading analysis"
+    ; active= Config.class_loads
+    ; callbacks= [(Procedure ClassLoads.analyze_procedure, Language.Java)] } ]
 
 
 let get_active_checkers () =

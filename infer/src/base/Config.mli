@@ -69,6 +69,8 @@ val classnames_dir_name : string
 
 val classpath : string option
 
+val class_loads : bool
+
 val costs_report_json : string
 
 val cpp_extra_include_dir : string

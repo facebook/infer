@@ -147,6 +147,14 @@ OPTIONS
            Specify a file containing the AST of the program, in biniou format       
     See also infer-capture(1).
 
+       --classloads
+           Activates: class loading analysis (Conversely: --no-classloads)       
+    See also infer-analyze(1).
+
+       --classloads-only
+           Activates: Enable --classloads and disable all other checkers
+           (Conversely: --no-classloads-only)           See also infer-analyze(1).
+
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
            times)           See also infer-capture(1).

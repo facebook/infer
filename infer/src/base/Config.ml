@@ -587,6 +587,7 @@ and ( annotation_reachability
     , biabduction
     , bufferoverrun
     , check_nullable
+    , class_loads
     , cost
     , crashcontext
     , eradicate
@@ -630,6 +631,7 @@ and ( annotation_reachability
   and check_nullable =
     mk_checker ~long:"check-nullable"
       "checks that values annotated with nullable are always checked for null before dereference"
+  and class_loads = mk_checker ~long:"classloads" ~default:false "class loading analysis"
   and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
   and crashcontext =
     mk_checker ~long:"crashcontext"
@@ -712,6 +714,7 @@ and ( annotation_reachability
   , biabduction
   , bufferoverrun
   , check_nullable
+  , class_loads
   , cost
   , crashcontext
   , eradicate
@@ -2508,6 +2511,8 @@ and clang_ignore_regex = !clang_ignore_regex
 and clang_include_to_override_regex = !clang_include_to_override_regex
 
 and classpath = !classpath
+
+and class_loads = !class_loads
 
 and compute_analytics = !compute_analytics
 

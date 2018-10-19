@@ -12,17 +12,18 @@ type t =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
   ; buffer_overrun: BufferOverrunSummary.t option
+  ; class_loads: ClassLoadsDomain.summary option
+  ; cost: CostDomain.summary option
   ; crashcontext_frame: Stacktree_t.stacktree option
   ; litho: LithoDomain.astate option
+  ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
-  ; typestate: TypeState.t option
-  ; uninit: UninitDomain.Summary.t option
-  ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option
-  ; purity: PurityDomain.summary option }
+  ; typestate: TypeState.t option
+  ; uninit: UninitDomain.Summary.t option }
 
 val pp : Pp.env -> Format.formatter -> t -> unit
 

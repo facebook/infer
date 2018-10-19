@@ -12,41 +12,45 @@ type t =
   { annot_map: AnnotReachabilityDomain.astate option
   ; biabduction: BiabductionSummary.t option
   ; buffer_overrun: BufferOverrunSummary.t option
+  ; class_loads: ClassLoadsDomain.summary option
+  ; cost: CostDomain.summary option
   ; crashcontext_frame: Stacktree_t.stacktree option
   ; litho: LithoDomain.astate option
+  ; purity: PurityDomain.summary option
   ; quandary: QuandarySummary.t option
   ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.Summary.astate option
-  ; typestate: TypeState.t option
-  ; uninit: UninitDomain.Summary.t option
-  ; cost: CostDomain.summary option
   ; starvation: StarvationDomain.summary option
-  ; purity: PurityDomain.summary option }
+  ; typestate: TypeState.t option
+  ; uninit: UninitDomain.Summary.t option }
 
 let pp pe fmt
-    { biabduction
-    ; typestate
-    ; crashcontext_frame
-    ; quandary
-    ; siof
-    ; racerd
-    ; litho
+    { annot_map
+    ; biabduction
     ; buffer_overrun
-    ; annot_map
-    ; uninit
+    ; class_loads
     ; cost
+    ; crashcontext_frame
+    ; litho
+    ; purity
+    ; quandary
+    ; racerd
+    ; siof
     ; starvation
-    ; purity } =
+    ; typestate
+    ; uninit } =
   let pp_opt prefix pp fmt = function
     | Some x ->
         F.fprintf fmt "%s: %a@\n" prefix pp x
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "Biabduction" (BiabductionSummary.pp pe))
     biabduction (pp_opt "TypeState" TypeState.pp) typestate
+    (pp_opt "ClassLoads" ClassLoadsDomain.pp_summary)
+    class_loads
     (pp_opt "CrashContext" Crashcontext.pp_stacktree)
     crashcontext_frame
     (pp_opt "Quandary" QuandarySummary.pp)
@@ -70,17 +74,18 @@ let pp pe fmt
 
 
 let empty =
-  { biabduction= None
-  ; typestate= None
-  ; annot_map= None
+  { annot_map= None
+  ; biabduction= None
+  ; class_loads= None
+  ; buffer_overrun= None
   ; crashcontext_frame= None
+  ; cost= None
+  ; litho= None
+  ; purity= None
   ; quandary= None
+  ; racerd= None
   ; resources= None
   ; siof= None
-  ; racerd= None
-  ; litho= None
-  ; buffer_overrun= None
-  ; uninit= None
-  ; cost= None
   ; starvation= None
-  ; purity= None }
+  ; typestate= None
+  ; uninit= None }
