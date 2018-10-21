@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module F = Format
 
 module Payload = SummaryPayload.Make (struct
   type t = ClassLoadsDomain.summary
@@ -15,30 +14,16 @@ module Payload = SummaryPayload.Make (struct
   let of_payloads (payloads : Payloads.t) = payloads.class_loads
 end)
 
-module TransferFunctions = struct
-  module CFG = ProcCfg.Normal
-  module Domain = ClassLoadsDomain
-
-  type extras = unit
-
-  type instr = Sil.instr
-
-  let exec_instr (astate : Domain.astate) {ProcData.pdesc} _ (instr : instr) =
-    match instr with
-    | Call (_, Const (Cfun callee), _, loc, _) ->
-        Payload.read pdesc callee
-        |> Option.fold ~init:astate ~f:(Domain.integrate_summary callee loc)
-    | _ ->
-        astate
+let exec_instr pdesc astate _ (instr : Sil.instr) =
+  match instr with
+  | Call (_, Const (Cfun callee), _, loc, _) ->
+      Payload.read pdesc callee
+      |> Option.fold ~init:astate ~f:(ClassLoadsDomain.integrate_summary callee loc)
+  | _ ->
+      astate
 
 
-  let pp_session_name _node fmt = F.pp_print_string fmt "class loads"
-end
-
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
-
-let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
-  let initial = ClassLoadsDomain.empty in
-  let proc_data = ProcData.make proc_desc tenv () in
-  Analyzer.compute_post proc_data ~initial
-  |> Option.value_map ~default:summary ~f:(fun astate -> Payload.update_summary astate summary)
+let analyze_procedure {Callbacks.proc_desc; summary} =
+  let init = ClassLoadsDomain.empty in
+  let post = Procdesc.fold_instrs proc_desc ~init ~f:(exec_instr proc_desc) in
+  Payload.update_summary post summary
