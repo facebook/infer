@@ -194,8 +194,6 @@ module Bound = struct
   module Sign = struct
     type t = sign [@@deriving compare]
 
-    let equal = [%compare.equal: t]
-
     let neg = function Plus -> Minus | Minus -> Plus
 
     let eval_big_int x i1 i2 = match x with Plus -> Z.(i1 + i2) | Minus -> Z.(i1 - i2)
@@ -212,8 +210,6 @@ module Bound = struct
 
   module MinMax = struct
     type t = min_max [@@deriving compare]
-
-    let equal = [%compare.equal: t]
 
     let neg = function Min -> Max | Max -> Min
 
@@ -405,22 +401,30 @@ module Bound = struct
         false
     | Linear (c0, x0), Linear (c1, x1) ->
         c0 <= c1 && SymLinear.le x0 x1
-    | MinMax (c1, sign1, m1, d1, x1), MinMax (c2, sign2, m2, d2, x2)
-      when Sign.equal sign1 sign2 && MinMax.equal m1 m2 ->
-        c1 <= c2 && Z.equal d1 d2 && Symb.Symbol.equal x1 x2
     | MinMax _, MinMax _ when le_minmax_by_int x y ->
         true
-    | MinMax (c1, Plus, Min, _, x1), MinMax (c2, Plus, Max, _, x2)
-    | MinMax (c1, Minus, Max, _, x1), MinMax (c2, Minus, Min, _, x2) ->
-        c1 <= c2 && Symb.Symbol.equal x1 x2
+    | MinMax (c1, (Plus as sign), Min, d1, s1), MinMax (c2, Plus, Min, d2, s2)
+    | MinMax (c1, (Minus as sign), Min, d1, s1), MinMax (c2, Minus, Min, d2, s2)
+    | MinMax (c1, (Plus as sign), Max, d1, s1), MinMax (c2, Plus, Max, d2, s2)
+    | MinMax (c1, (Minus as sign), Max, d1, s1), MinMax (c2, Minus, Max, d2, s2)
+      when Symb.Symbol.equal s1 s2 ->
+        Z.leq c1 c2
+        &&
+        let v1 = Sign.eval_big_int sign c1 d1 in
+        let v2 = Sign.eval_big_int sign c2 d2 in
+        Z.leq v1 v2
+    | MinMax (c1, Plus, Min, _, s1), MinMax (c2, Plus, Max, _, s2)
+    | MinMax (c1, Minus, Max, _, s1), MinMax (c2, Minus, Min, _, s2)
+      when Symb.Symbol.equal s1 s2 ->
+        Z.leq c1 c2
+    | MinMax _, MinMax _ ->
+        false
     | MinMax _, Linear (c, se) ->
         (SymLinear.is_ge_zero se && le_opt1 Z.leq (big_int_ub_of_minmax x) c)
         || le_opt1 le (linear_ub_of_minmax x) y
     | Linear (c, se), MinMax _ ->
         (SymLinear.is_le_zero se && le_opt2 Z.leq c (big_int_lb_of_minmax y))
         || le_opt2 le x (linear_lb_of_minmax y)
-    | _, _ ->
-        false
 
 
   let lt : t -> t -> bool =
