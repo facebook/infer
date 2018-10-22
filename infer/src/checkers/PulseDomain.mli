@@ -6,41 +6,14 @@
  *)
 
 open! IStd
-module F = Format
 
 module AbstractAddress : sig
   type t = private int [@@deriving compare]
 
   val mk_fresh : unit -> t
-
-  val pp : F.formatter -> t -> unit
 end
 
-module Access : sig
-  type t = AccessPath.access [@@deriving compare]
-
-  val pp : F.formatter -> t -> unit
-end
-
-module AbstractAddressDomain : AbstractDomain.S with type astate = AbstractAddress.t
-
-module MemoryEdges : module type of AbstractDomain.InvertedMap (Access) (AbstractAddressDomain)
-
-module MemoryDomain : module type of AbstractDomain.InvertedMap (AbstractAddress) (MemoryEdges)
-
-module AliasingDomain : module type of AbstractDomain.InvertedMap (Var) (AbstractAddressDomain)
-
-module InvalidAddressesDomain : AbstractDomain.S
-
-type t =
-  { heap: MemoryDomain.astate
-        (** Symbolic representation of the heap: a graph where nodes are abstract addresses and edges are
-            access path elements. *)
-  ; stack: AliasingDomain.astate
-        (** Symbolic representation of the stack: which memory address do variables point to. No other
-            values are being tracked. *)
-  ; invalids: InvalidAddressesDomain.astate
-        (** Set of addresses known to be in an invalid state. *) }
+type t
 
 include AbstractDomain.S with type astate = t
 
