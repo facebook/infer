@@ -136,6 +136,8 @@ let checkers_printf_args = from_string "CHECKERS_PRINTF_ARGS"
 
 let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
 
+let class_load = from_string "CLASS_LOAD"
+
 let codequery = from_string "Codequery"
 
 let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"

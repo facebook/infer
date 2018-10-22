@@ -6,8 +6,15 @@
  *)
 open! IStd
 module F = Format
+module ClassLoad = String
+
+val get_java_class : Typ.Procname.t -> string option
+
+module Event : ExplicitTrace.TraceElem with type elem_t = ClassLoad.t
 
 include AbstractDomain.WithBottom
+
+include PrettyPrintable.PPSet with type t = astate and type elt = Event.t
 
 type summary = astate
 

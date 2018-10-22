@@ -55,12 +55,13 @@ OPTIONS
            Activates: Enable --check-nullable and disable all other checkers
            (Conversely: --no-check-nullable-only)
 
-       --classloads
-           Activates: class loading analysis (Conversely: --no-classloads)
+       --class-loads
+           Activates: Java class loading analysis (Conversely:
+           --no-class-loads)
 
-       --classloads-only
-           Activates: Enable --classloads and disable all other checkers
-           (Conversely: --no-classloads-only)
+       --class-loads-only
+           Activates: Enable --class-loads and disable all other checkers
+           (Conversely: --no-class-loads-only)
 
        --continue
            Activates: Continue the capture for the reactive analysis,

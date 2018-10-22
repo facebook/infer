@@ -84,6 +84,8 @@ val checkers_printf_args : t
 
 val class_cast_exception : t
 
+val class_load : t
+
 val codequery : t
 
 val comparing_floats_for_equality : t

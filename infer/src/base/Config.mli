@@ -71,6 +71,8 @@ val classpath : string option
 
 val class_loads : bool
 
+val class_loads_roots : String.Set.t
+
 val costs_report_json : string
 
 val cpp_extra_include_dir : string

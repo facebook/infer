@@ -631,7 +631,7 @@ and ( annotation_reachability
   and check_nullable =
     mk_checker ~long:"check-nullable"
       "checks that values annotated with nullable are always checked for null before dereference"
-  and class_loads = mk_checker ~long:"classloads" ~default:false "class loading analysis"
+  and class_loads = mk_checker ~long:"class-loads" ~default:false "Java class loading analysis"
   and cost = mk_checker ~long:"cost" ~default:false "checker for performance cost analysis"
   and crashcontext =
     mk_checker ~long:"crashcontext"
@@ -882,6 +882,10 @@ and clang_ignore_regex =
     "The files in this regex will be ignored in the compilation process and an empty file will be \
      passed to clang instead. This is to be used with the buck flavour infer-capture-all to work \
      around missing generated files."
+
+
+and class_loads_roots =
+  CLOpt.mk_string_list ~long:"class-loads-roots" "Report class loads of this list of Java methods"
 
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
@@ -2513,6 +2517,8 @@ and clang_include_to_override_regex = !clang_include_to_override_regex
 and classpath = !classpath
 
 and class_loads = !class_loads
+
+and class_loads_roots = String.Set.of_list !class_loads_roots
 
 and compute_analytics = !compute_analytics
 

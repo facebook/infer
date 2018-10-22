@@ -21,16 +21,20 @@ let add ({Event.trace} as x) astate =
 
 let union xs ys = fold add xs ys
 
-let integrate_summary callee_pname loc astate callee_summary =
-  match callee_pname with
+let get_java_class = function
   | Typ.Procname.Java java_pname ->
-      let clazz = Typ.Procname.Java.get_class_name java_pname in
-      let new_event = Event.make clazz loc in
-      let callsite = CallSite.make callee_pname loc in
-      let summary = with_callsite callee_summary callsite in
-      add new_event astate |> union summary
+      Some (Typ.Procname.Java.get_class_name java_pname)
   | _ ->
-      astate
+      None
+
+
+let integrate_summary callee_pname loc astate callee_summary =
+  get_java_class callee_pname
+  |> Option.value_map ~default:astate ~f:(fun clazz ->
+         let new_event = Event.make clazz loc in
+         let callsite = CallSite.make callee_pname loc in
+         let summary = with_callsite callee_summary callsite in
+         add new_event astate |> union summary )
 
 
 type summary = astate

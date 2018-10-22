@@ -147,13 +147,13 @@ OPTIONS
            Specify a file containing the AST of the program, in biniou format       
     See also infer-capture(1).
 
-       --classloads
-           Activates: class loading analysis (Conversely: --no-classloads)       
-    See also infer-analyze(1).
+       --class-loads
+           Activates: Java class loading analysis (Conversely:
+           --no-class-loads)           See also infer-analyze(1).
 
-       --classloads-only
-           Activates: Enable --classloads and disable all other checkers
-           (Conversely: --no-classloads-only)           See also infer-analyze(1).
+       --class-loads-only
+           Activates: Enable --class-loads and disable all other checkers
+           (Conversely: --no-class-loads-only)           See also infer-analyze(1).
 
        --compilation-database +path
            File that contain compilation commands (can be specified multiple
