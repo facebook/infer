@@ -64,6 +64,8 @@ val read : Location.t -> AccessExpression.t -> t -> (t * AbstractAddress.t) acce
 
 val read_all : Location.t -> AccessExpression.t list -> t -> t access_result
 
+val havoc : Var.t -> t -> t
+
 val write : Location.t -> AccessExpression.t -> AbstractAddress.t -> t -> t access_result
 
 val invalidate : Location.t -> AccessExpression.t -> t -> t access_result

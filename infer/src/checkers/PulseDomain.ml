@@ -285,6 +285,8 @@ let write location access_expr addr astate =
   overwrite_address astate access_expr addr location >>| fun (astate, _) -> astate
 
 
+let havoc var astate = {astate with stack= AliasingDomain.remove var astate.stack}
+
 let invalidate location access_expr astate =
   materialize_address astate access_expr location
   >>= fun (astate, addr) ->

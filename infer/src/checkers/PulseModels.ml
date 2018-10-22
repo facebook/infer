@@ -45,7 +45,7 @@ module StdVector = struct
         PulseDomain.read location (deref_internal_array vector) astate
         >>= fun (astate, loc) -> PulseDomain.write location (AccessExpression.Base ret) loc astate
     | _ ->
-        Ok astate
+        Ok (PulseDomain.havoc (fst ret) astate)
 
 
   let push_back : model =

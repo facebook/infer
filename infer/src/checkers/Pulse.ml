@@ -39,7 +39,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Direct callee_pname ->
           PulseModels.dispatch callee_pname
     in
-    match model with None -> Ok astate | Some model -> model call_loc ~ret ~actuals astate
+    match model with
+    | None ->
+        PulseDomain.havoc (fst ret) astate |> Result.return
+    | Some model ->
+        model call_loc ~ret ~actuals astate
 
 
   let exec_instr (astate : PulseDomain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t)
