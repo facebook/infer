@@ -140,11 +140,14 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
             (* don't forget to reset this so we output messages for future errors too *)
             logged_error := false ;
             post
-          with exn ->
-            IExn.reraise_after exn ~f:(fun () ->
-                if not !logged_error then (
-                  L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr ;
-                  logged_error := true ) )
+          with
+          | AbstractDomain.Stop_analysis as exn ->
+              raise_notrace exn
+          | exn ->
+              IExn.reraise_after exn ~f:(fun () ->
+                  if not !logged_error then (
+                    L.internal_error "In instruction %a@\n" (Sil.pp_instr Pp.text) instr ;
+                    logged_error := true ) )
         in
         Instrs.fold ~f:compute_post ~init:pre instrs
       in

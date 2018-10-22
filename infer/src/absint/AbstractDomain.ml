@@ -16,6 +16,8 @@ end
 
 open! Types
 
+exception Stop_analysis
+
 module type S = sig
   type astate
 

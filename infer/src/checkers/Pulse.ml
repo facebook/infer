@@ -17,8 +17,11 @@ let report summary diagnostic =
 let check_error summary = function
   | Ok astate ->
       astate
-  | Error (astate, diagnostic) ->
-      report summary diagnostic ; astate
+  | Error diagnostic ->
+      report summary diagnostic ;
+      (* We can also continue the analysis by returning {!PulseDomain.initial} here but there might
+         be a risk we would get nonsense. This seems safer for now but TODO. *)
+      raise_notrace AbstractDomain.Stop_analysis
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -70,5 +73,6 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (Transf
 
 let checker {Callbacks.proc_desc; tenv; summary} =
   let proc_data = ProcData.make proc_desc tenv summary in
-  ignore (Analyzer.compute_post proc_data ~initial:PulseDomain.initial) ;
+  ( try ignore (Analyzer.compute_post proc_data ~initial:PulseDomain.initial)
+    with AbstractDomain.Stop_analysis -> () ) ;
   summary

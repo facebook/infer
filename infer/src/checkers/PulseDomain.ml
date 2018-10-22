@@ -188,14 +188,13 @@ module Diagnostic = struct
   let get_issue_type (AccessToInvalidAddress _) = IssueType.use_after_lifetime
 end
 
-type 'a access_result = ('a, t * Diagnostic.t) result
+type 'a access_result = ('a, Diagnostic.t) result
 
 (** Check that the address is not known to be invalid *)
 let check_addr_access actor address astate =
   match InvalidAddressesDomain.get_invalidation address astate.invalids with
   | Some invalidated_at ->
-      Error
-        (astate, Diagnostic.AccessToInvalidAddress {invalidated_at; accessed_by= actor; address})
+      Error (Diagnostic.AccessToInvalidAddress {invalidated_at; accessed_by= actor; address})
   | None ->
       Ok astate
 

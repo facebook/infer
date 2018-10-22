@@ -58,7 +58,7 @@ module Diagnostic : sig
   val get_trace : t -> Errlog.loc_trace
 end
 
-type 'a access_result = ('a, t * Diagnostic.t) result
+type 'a access_result = ('a, Diagnostic.t) result
 
 val read : Location.t -> AccessExpression.t -> t -> (t * AbstractAddress.t) access_result
 

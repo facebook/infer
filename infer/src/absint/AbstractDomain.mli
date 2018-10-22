@@ -16,6 +16,10 @@ end
 
 open! Types
 
+(** This exception can be raised by abstract interpreters to stop the analysis early without
+    triggering further errors. Clients who raise this exception should catch it eventually. *)
+exception Stop_analysis
+
 (** Abstract domains and domain combinators *)
 
 module type S = sig
