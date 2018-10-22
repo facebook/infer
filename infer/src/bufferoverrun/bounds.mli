@@ -81,11 +81,11 @@ module Bound : sig
 
   val xcompare : t PartialOrder.xcompare
 
-  val min_l : t -> t -> t
+  val underapprox_min : t -> t -> t
 
-  val min_u : t -> t -> t
+  val overapprox_min : t -> t -> t
 
-  val max_u : t -> t -> t
+  val overapprox_max : t -> t -> t
 
   val widen_l : t -> t -> t
 

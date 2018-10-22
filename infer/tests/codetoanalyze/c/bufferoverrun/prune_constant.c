@@ -61,7 +61,7 @@ void call_fromHex_sym_Good(char c) {
   }
 }
 
-void call_fromHex_200_Good_FP() {
+void call_fromHex_200_Good() {
   char arr[16];
   int idx = fromHex(200);
   if (idx >= 0) {
@@ -69,7 +69,7 @@ void call_fromHex_200_Good_FP() {
   }
 }
 
-void call_fromHex2_sym_Good(char c) {
+void call_fromHex2_sym_Good_FP(char c) {
   char arr[17];
   int idx = fromHex(c);
   arr[idx + 1] = 'H';

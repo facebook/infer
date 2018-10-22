@@ -501,7 +501,9 @@ module ItvPure = struct
         `RightSubsumesLeft
 
 
-  let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.min_l l1 l2, Bound.max_u u1 u2)
+  let join : t -> t -> t =
+   fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_max u1 u2)
+
 
   let widen : prev:t -> next:t -> num_iters:int -> t =
    fun ~prev:(l1, u1) ~next:(l2, u2) ~num_iters:_ -> (Bound.widen_l l1 l2, Bound.widen_u u1 u2)
@@ -729,7 +731,9 @@ module ItvPure = struct
     else Boolean.Top
 
 
-  let min_sem : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.min_l l1 l2, Bound.min_u u1 u2)
+  let min_sem : t -> t -> t =
+   fun (l1, u1) (l2, u2) -> (Bound.underapprox_min l1 l2, Bound.overapprox_min u1 u2)
+
 
   let is_invalid : t -> bool = function
     | Bound.PInf, _ | _, Bound.MInf ->

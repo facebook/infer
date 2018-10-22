@@ -198,6 +198,8 @@ module Bound = struct
 
     let eval_big_int x i1 i2 = match x with Plus -> Z.(i1 + i2) | Minus -> Z.(i1 - i2)
 
+    let eval_neg_if_minus x i = match x with Plus -> i | Minus -> Z.neg i
+
     let pp ~need_plus : F.formatter -> t -> unit =
      fun fmt -> function
       | Plus ->
@@ -306,10 +308,10 @@ module Bound = struct
   let big_int_ub_of_minmax = function
     | MinMax (c, Plus, Min, d, _) ->
         Some Z.(c + d)
-    | MinMax (c, Minus, Max, d, s) when Symb.Symbol.is_unsigned s ->
-        Some Z.(min c (c - d))
     | MinMax (c, Minus, Max, d, _) ->
         Some Z.(c - d)
+    | MinMax (c, Minus, Min, _, s) when Symb.Symbol.is_unsigned s ->
+        Some c
     | MinMax _ ->
         None
     | MInf | PInf | Linear _ ->
@@ -317,12 +319,12 @@ module Bound = struct
 
 
   let big_int_lb_of_minmax = function
-    | MinMax (c, Plus, Max, d, s) when Symb.Symbol.is_unsigned s ->
-        Some Z.(max c (c + d))
     | MinMax (c, Plus, Max, d, _) ->
         Some Z.(c + d)
     | MinMax (c, Minus, Min, d, _) ->
         Some Z.(c - d)
+    | MinMax (c, Plus, Min, _, s) when Symb.Symbol.is_unsigned s ->
+        Some c
     | MinMax _ ->
         None
     | MInf | PInf | Linear _ ->
@@ -446,23 +448,30 @@ module Bound = struct
 
   let xcompare = PartialOrder.of_le ~le
 
-  let remove_max_int : t -> t =
-   fun x ->
-    match x with
-    | MinMax (c, Plus, Max, _, s) ->
-        Linear (c, SymLinear.singleton_one s)
-    | MinMax (c, Minus, Min, _, s) ->
-        Linear (c, SymLinear.singleton_minus_one s)
+  let is_const : t -> bool = function
+    | Linear (_, se) when SymLinear.is_zero se ->
+        true
     | _ ->
-        x
+        false
 
 
-  let rec lb : default:t -> t -> t -> t =
-   fun ~default x y ->
-    if le x y then x
-    else if le y x then y
+  let neg : t -> t = function
+    | MInf ->
+        PInf
+    | PInf ->
+        MInf
+    | Linear (c, x) ->
+        Linear (Z.neg c, SymLinear.neg x)
+    | MinMax (c, sign, min_max, d, x) ->
+        mk_MinMax (Z.neg c, Sign.neg sign, min_max, d, x)
+
+
+  let exact_min : otherwise:(t -> t -> t) -> t -> t -> t =
+   fun ~otherwise b1 b2 ->
+    if le b1 b2 then b1
+    else if le b2 b1 then b2
     else
-      match (x, y) with
+      match (b1, b2) with
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_one_symbol x2 ->
           mk_MinMax (c2, Plus, Min, Z.(c1 - c2), SymLinear.get_one_symbol x2)
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2 ->
@@ -473,70 +482,168 @@ module Bound = struct
       | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
         ->
           mk_MinMax (c1, Minus, Max, Z.(c1 - c2), SymLinear.get_mone_symbol x1)
-      | MinMax (c1, Plus, Min, d1, s), Linear (c2, se)
-      | Linear (c2, se), MinMax (c1, Plus, Min, d1, s)
+      | MinMax (c1, (Plus as sign), (Min as minmax), _, s), Linear (c2, se)
+      | Linear (c2, se), MinMax (c1, (Plus as sign), (Min as minmax), _, s)
+      | MinMax (c1, (Minus as sign), (Max as minmax), _, s), Linear (c2, se)
+      | Linear (c2, se), MinMax (c1, (Minus as sign), (Max as minmax), _, s)
         when SymLinear.is_zero se ->
-          mk_MinMax (c1, Plus, Min, Z.(min d1 (c2 - c1)), s)
-      | MinMax (c1, Plus, Max, _, s), Linear (c2, se)
-      | Linear (c2, se), MinMax (c1, Plus, Max, _, s)
-        when SymLinear.is_zero se ->
-          mk_MinMax (c1, Plus, Min, Z.(c2 - c1), s)
-      | MinMax (c1, Minus, Min, _, s), Linear (c2, se)
-      | Linear (c2, se), MinMax (c1, Minus, Min, _, s)
-        when SymLinear.is_zero se ->
-          mk_MinMax (c1, Minus, Max, Z.(c1 - c2), s)
-      | MinMax (c1, Minus, Max, d1, s), Linear (c2, se)
-      | Linear (c2, se), MinMax (c1, Minus, Max, d1, s)
-        when SymLinear.is_zero se ->
-          mk_MinMax (c1, Minus, Max, Z.(max d1 (c1 - c2)), s)
-      | MinMax (_, Plus, Min, _, _), MinMax (_, Plus, Max, _, _)
-      | MinMax (_, Plus, Min, _, _), MinMax (_, Minus, Min, _, _)
-      | MinMax (_, Minus, Max, _, _), MinMax (_, Plus, Max, _, _)
-      | MinMax (_, Minus, Max, _, _), MinMax (_, Minus, Min, _, _) ->
-          lb ~default x (remove_max_int y)
-      | MinMax (_, Plus, Max, _, _), MinMax (_, Plus, Min, _, _)
-      | MinMax (_, Minus, Min, _, _), MinMax (_, Plus, Min, _, _)
-      | MinMax (_, Plus, Max, _, _), MinMax (_, Minus, Max, _, _)
-      | MinMax (_, Minus, Min, _, _), MinMax (_, Minus, Max, _, _) ->
-          lb ~default (remove_max_int x) y
-      | MinMax (c1, Plus, Max, d1, _), MinMax (c2, Plus, Max, d2, _) ->
-          Linear (Z.(min (c1 + d1) (c2 + d2)), SymLinear.zero)
-      | _, _ ->
-          default
+          let d = Sign.eval_neg_if_minus sign Z.(c2 - c1) in
+          mk_MinMax (c1, sign, minmax, d, s)
+      | MinMax (c1, (Minus as sign), (Max as minmax), d1, s1), MinMax (c2, Minus, Max, d2, s2)
+      | MinMax (c1, (Plus as sign), (Min as minmax), d1, s1), MinMax (c2, Plus, Min, d2, s2)
+        when Symb.Symbol.equal s1 s2 ->
+          let v1 = Sign.eval_big_int sign c1 d1 in
+          let v2 = Sign.eval_big_int sign c2 d2 in
+          let c = Z.min c1 c2 in
+          let v = MinMax.eval_big_int minmax v1 v2 in
+          let d = Sign.eval_neg_if_minus sign Z.(v - c) in
+          mk_MinMax (c, sign, minmax, d, s1)
+      | b1, b2 ->
+          otherwise b1 b2
 
 
-  (** underapproximation of min b1 b2 *)
-  let min_l b1 b2 = lb ~default:MInf b1 b2
+  let rec underapprox_min b1 b2 =
+    exact_min b1 b2 ~otherwise:(fun b1 b2 ->
+        match (b1, b2) with
+        | MinMax (c1, sign, _, d1, _s), Linear (_c2, se)
+        | Linear (_c2, se), MinMax (c1, sign, _, d1, _s)
+          when SymLinear.is_zero se ->
+            Linear (Sign.eval_big_int sign c1 d1, SymLinear.zero)
+            (*
+              There is no best abstraction, we could also use:
+              For Plus, Max: mk_MinMax (c1, Plus, Min, Z.(c2 - c1), s)
+              For Minus, Min: mk_MinMax (c1, Minus, Max, Z.(c1 - c2), s)
+            *)
+        | MinMax (_, Minus, Max, _, _), MinMax (_, Plus, Min, _, _)
+        | MinMax (_, Plus, Min, _, _), MinMax (_, Minus, Max, _, _) ->
+            fallback_underapprox_min b1 b2
+        | MinMax (c1, (Plus as sign1), Max, d1, _), MinMax (c2, (Minus as sign2), Min, d2, _)
+        | MinMax (c1, (Minus as sign1), Min, d1, _), MinMax (c2, (Plus as sign2), Max, d2, _) ->
+            let v1 = Sign.eval_big_int sign1 c1 d1 in
+            let v2 = Sign.eval_big_int sign2 c2 d2 in
+            Linear (Z.min v1 v2, SymLinear.zero)
+        | MinMax (c1, (Plus as sign), (Max as minmax), d1, s1), MinMax (c2, Plus, Max, d2, s2)
+        | MinMax (c1, (Minus as sign), (Min as minmax), d1, s1), MinMax (c2, Minus, Min, d2, s2)
+          when Symb.Symbol.equal s1 s2 ->
+            let v1 = Sign.eval_big_int sign c1 d1 in
+            let v2 = Sign.eval_big_int sign c2 d2 in
+            let v = Z.min v1 v2 in
+            let c = Z.min c1 c2 in
+            let d = Sign.eval_neg_if_minus sign Z.(v - c) in
+            mk_MinMax (c, sign, minmax, d, s1)
+        | ( MinMax (c1, (Plus as sign1), (Min as minmax1), d1, s1)
+          , MinMax (c2, (Plus as sign2), Max, d2, s2) )
+        | ( MinMax (c2, (Plus as sign2), Max, d2, s2)
+          , MinMax (c1, (Plus as sign1), (Min as minmax1), d1, s1) )
+        | ( MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1)
+          , MinMax (c2, (Minus as sign2), Min, d2, s2) )
+        | ( MinMax (c2, (Minus as sign2), Min, d2, s2)
+          , MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1) )
+        | ( MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1)
+          , MinMax (c2, (Plus as sign2), Max, d2, s2) )
+        | ( MinMax (c2, (Plus as sign2), (Max as minmax1), d2, s2)
+          , MinMax (c1, (Minus as sign1), Max, d1, s1) )
+        | ( MinMax (c1, (Plus as sign1), (Min as minmax1), d1, s1)
+          , MinMax (c2, (Minus as sign2), Min, d2, s2) )
+        | ( MinMax (c2, (Minus as sign2), (Min as minmax1), d2, s2)
+          , MinMax (c1, (Plus as sign1), Min, d1, s1) )
+          when Symb.Symbol.equal s1 s2 ->
+            let v1 = Sign.eval_big_int sign1 c1 d1 in
+            let v2 = Sign.eval_big_int sign2 c2 d2 in
+            let v = Z.min v1 v2 in
+            let d = Sign.eval_neg_if_minus sign1 Z.(v - c1) in
+            mk_MinMax (c1, sign1, minmax1, d, s1)
+        | b1, b2 ->
+            fallback_underapprox_min b1 b2 )
 
-  (** overapproximation of min b1 b2 *)
-  let min_u b1 b2 =
-    lb
-      ~default:
-        (* When the result is not representable, our best effort is to return the first argument. Any other deterministic heuristics would work too. *)
-        b1 b1 b2
+
+  and fallback_underapprox_min b1 b2 =
+    match big_int_lb b2 with
+    | Some v2 when not (is_const b2) ->
+        underapprox_min b1 (Linear (v2, SymLinear.zero))
+    | _ -> (
+      match big_int_lb b1 with
+      | Some v1 when not (is_const b1) ->
+          underapprox_min (Linear (v1, SymLinear.zero)) b2
+      | _ ->
+          MInf )
 
 
-  let ub : default:t -> t -> t -> t =
-   fun ~default x y ->
-    if le x y then y
-    else if le y x then x
-    else
-      match (x, y) with
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_one_symbol x2 ->
-          mk_MinMax (c2, Plus, Max, Z.(c1 - c2), SymLinear.get_one_symbol x2)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2 ->
-          mk_MinMax (c1, Plus, Max, Z.(c2 - c1), SymLinear.get_one_symbol x1)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
-        ->
-          mk_MinMax (c2, Minus, Min, Z.(c2 - c1), SymLinear.get_mone_symbol x2)
-      | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
-        ->
-          mk_MinMax (c1, Minus, Min, Z.(c1 - c2), SymLinear.get_mone_symbol x1)
-      | _, _ ->
-          default
+  let overapprox_min original_b1 b2 =
+    let rec overapprox_min b1 b2 =
+      exact_min b1 b2 ~otherwise:(fun b1 b2 ->
+          match (b1, b2) with
+          | ( MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1)
+            , MinMax (c2, (Plus as sign2), Min, d2, s2) )
+          | ( MinMax (c1, (Plus as sign1), (Min as minmax1), d1, s1)
+            , MinMax (c2, (Minus as sign2), Max, d2, s2) )
+            when Symb.Symbol.equal s1 s2 ->
+              let v1 = Sign.eval_big_int sign1 c1 d1 in
+              let v2 = Sign.eval_big_int sign2 c2 d2 in
+              let vmeet = Z.(shift_right (c1 + c2 + one) 1) in
+              let v = Z.(min vmeet (min v1 v2)) in
+              let d = Sign.eval_neg_if_minus sign1 Z.(v - c1) in
+              mk_MinMax (c1, sign1, minmax1, d, s1)
+          | MinMax (c1, (Minus as sign1), Max, d1, s1), MinMax (c2, (Plus as sign2), Min, d2, s2)
+          | MinMax (c1, (Minus as sign1), Min, d1, s1), MinMax (c2, (Plus as sign2), Max, d2, s2)
+          | MinMax (c1, (Plus as sign1), Min, d1, s1), MinMax (c2, (Minus as sign2), Max, d2, s2)
+          | MinMax (c1, (Plus as sign1), Max, d1, s1), MinMax (c2, (Minus as sign2), Min, d2, s2)
+            when Symb.Symbol.equal s1 s2 ->
+              let v1 = Sign.eval_big_int sign1 c1 d1 in
+              let v2 = Sign.eval_big_int sign2 c2 d2 in
+              let vmeet = Z.(shift_right (c1 + c2 + one) 1) in
+              Linear (Z.(max vmeet (max v1 v2)), SymLinear.zero)
+          | (MinMax (_, Plus, Min, _, s1) as b), MinMax (_, Plus, Max, _, s2)
+          | MinMax (_, Plus, Max, _, s2), (MinMax (_, Plus, Min, _, s1) as b)
+          | (MinMax (_, Minus, Min, _, s1) as b), MinMax (_, Minus, Max, _, s2)
+          | MinMax (_, Minus, Max, _, s2), (MinMax (_, Minus, Min, _, s1) as b)
+            when Symb.Symbol.equal s1 s2 ->
+              b
+          | MinMax (c1, Plus, Max, _, s1), MinMax (c2, Plus, Max, _, s2)
+          | MinMax (c1, Minus, Min, _, s1), MinMax (c2, Minus, Min, _, s2)
+            when Symb.Symbol.equal s1 s2 ->
+              if Z.leq c1 c2 then b1 else b2
+          | ( MinMax (c1, (Minus as sign1), (Max as minmax1), d1, s1)
+            , MinMax (c2, (Plus as sign2), Max, d2, s2) )
+          | ( MinMax (c2, (Plus as sign2), (Max as minmax1), d2, s2)
+            , MinMax (c1, (Minus as sign1), Max, d1, s1) )
+          | ( MinMax (c1, (Plus as sign1), (Min as minmax1), d1, s1)
+            , MinMax (c2, (Minus as sign2), Min, d2, s2) )
+          | ( MinMax (c2, (Minus as sign2), (Min as minmax1), d2, s2)
+            , MinMax (c1, (Plus as sign1), Min, d1, s1) )
+            when Symb.Symbol.equal s1 s2 ->
+              let v1 = Sign.eval_big_int sign1 c1 d1 in
+              let v2 = Sign.eval_big_int sign2 c2 d2 in
+              let vmin, vmax = if Z.leq v1 v2 then (v1, v2) else (v2, v1) in
+              let vmeet = Z.(shift_right (c1 + c2 + one) 1) in
+              let v = if Z.leq vmin vmeet && Z.leq vmeet vmax then vmeet else vmax in
+              let d = Sign.eval_neg_if_minus sign1 Z.(v - c1) in
+              mk_MinMax (c1, sign1, minmax1, d, s1)
+          | _ -> (
+            match big_int_ub b2 with
+            | Some v2 when not (is_const b2) ->
+                overapprox_min b1 (Linear (v2, SymLinear.zero))
+            | _ -> (
+              match big_int_ub b1 with
+              | Some v1 when not (is_const b1) ->
+                  overapprox_min (Linear (v1, SymLinear.zero)) b2
+              | _ ->
+                  (* When the result is not representable, our best effort is to return the first original argument. Any other deterministic heuristics would work too. *)
+                  original_b1 ) ) )
+    in
+    overapprox_min original_b1 b2
 
 
-  let max_u : t -> t -> t = ub ~default:PInf
+  let underapprox_max b1 b2 = neg (overapprox_min (neg b1) (neg b2))
+
+  let overapprox_max b1 b2 = neg (underapprox_min (neg b1) (neg b2))
+
+  let approx_max = function
+    | Symb.BoundEnd.LowerBound ->
+        underapprox_max
+    | Symb.BoundEnd.UpperBound ->
+        overapprox_max
+
 
   let widen_l : t -> t -> t =
    fun x y ->
@@ -656,17 +763,6 @@ module Bound = struct
 
   let mult_const_u = mult_const Symb.BoundEnd.UpperBound
 
-  let neg : t -> t = function
-    | MInf ->
-        PInf
-    | PInf ->
-        MInf
-    | Linear (c, x) ->
-        Linear (Z.neg c, SymLinear.neg x)
-    | MinMax (c, sign, min_max, d, x) ->
-        mk_MinMax (Z.neg c, Sign.neg sign, min_max, d, x)
-
-
   let div_const : t -> NonZeroInt.t -> t option =
    fun x n ->
     match x with
@@ -727,7 +823,7 @@ module Bound = struct
     let get s =
       match eval_sym s with
       | NonBottom x when Symb.Symbol.is_unsigned s ->
-          NonBottom (ub ~default:x zero x)
+          NonBottom (approx_max subst_pos x zero)
       | x ->
           x
     in
@@ -745,7 +841,8 @@ module Bound = struct
               Bottom )
         | NonBottom x ->
             let x = mult_const subst_pos coeff x in
-            if Symb.Symbol.is_unsigned s then NonBottom (ub ~default:x zero x) else NonBottom x
+            if Symb.Symbol.is_unsigned s then NonBottom (approx_max subst_pos x zero)
+            else NonBottom x
     in
     match x with
     | MInf | PInf ->
