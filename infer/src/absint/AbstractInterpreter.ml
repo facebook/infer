@@ -108,9 +108,16 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     let underlying_node = Node.underlying_node node in
     NodePrinter.start_session ~pp_name underlying_node ;
     let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
+    let pp_right f =
+      if phys_equal right left then F.pp_print_string f "= LEFT" else Domain.pp f right
+    in
+    let pp_result f =
+      if phys_equal result left then F.pp_print_string f "= LEFT"
+      else if phys_equal result right then F.pp_print_string f "= RIGHT"
+      else Domain.pp f result
+    in
     L.d_strln
-      ( Format.asprintf "LEFT: %a@.RIGHT: %a@.RESULT: %a@." Domain.pp left Domain.pp right
-          Domain.pp result
+      ( Format.asprintf "LEFT: %a@.RIGHT: %t@.RESULT: %t@." Domain.pp left pp_right pp_result
       |> Escape.escape_xml ) ;
     NodePrinter.finish_session underlying_node
 
@@ -143,9 +150,13 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
       in
       if Config.write_html && debug <> DefaultNoExecInstr_UseFromLowerHilAbstractInterpreterOnly
       then (
+        let pp_post f =
+          if phys_equal astate_post pre then F.pp_print_string f "= PRE"
+          else Domain.pp f astate_post
+        in
         L.d_strln
-          ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %a@]@." Domain.pp pre
-              (Instrs.pp Pp.text) instrs Domain.pp astate_post
+          ( Format.asprintf "@[PRE: %a@]@\n@[INSTRS: %a@]@[POST: %t@]@." Domain.pp pre
+              (Instrs.pp Pp.text) instrs pp_post
           |> Escape.escape_xml ) ;
         NodePrinter.finish_session (Node.underlying_node node) ) ;
       InvariantMap.add node_id {State.pre; post= astate_post; visit_count} inv_map
