@@ -29,7 +29,7 @@ let out_of_bound_cl = "java.lang.ArrayIndexOutOfBoundsException"
 
 (** {2 Names of special variables, constants and method names} *)
 
-let this = Mangled.from_string "this"
+let this = Mangled.this
 
 let constructor_name = "<init>"
 

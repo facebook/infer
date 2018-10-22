@@ -31,6 +31,10 @@ val to_string_full : t -> string
 val pp : Format.formatter -> t -> unit
 (** Pretty print a mangled name *)
 
+val this : t
+
+val is_this : t -> bool
+
 (** Set of Mangled. *)
 module Set : Caml.Set.S with type elt = t
 

@@ -350,8 +350,8 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
           constructor_check_calls_this calls_this pname ;
           (* Drop reference parameters to this and outer objects. *)
           let is_hidden_parameter (n, _) =
-            let n_str = Mangled.to_string n in
-            String.equal n_str "this" || Str.string_match (Str.regexp "$bcvar[0-9]+") n_str 0
+            Mangled.is_this n
+            || Str.string_match (Str.regexp "$bcvar[0-9]+") (Mangled.to_string n) 0
           in
           let rec drop_n_args ntl =
             match ntl with
@@ -502,10 +502,10 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
                 ~f:(fun i (_, typ) ->
                   let arg =
                     if Int.equal i 0 && not (Typ.Procname.Java.is_static callee_pname_java) then
-                      "this"
-                    else Printf.sprintf "arg%d" i
+                      Mangled.this
+                    else Printf.sprintf "arg%d" i |> Mangled.from_string
                   in
-                  (Mangled.from_string arg, typ) )
+                  (arg, typ) )
                 etl_
             in
             let ret_type = Typ.Procname.Java.get_return_typ callee_pname_java in
@@ -774,8 +774,7 @@ let typecheck_instr tenv calls_this checks (node : Procdesc.Node.t) idenv curr_p
             ~f:(fun (sparam, _) ->
               let s, _, _ = sparam in
               let param_is_this =
-                String.equal (Mangled.to_string s) "this"
-                || String.is_prefix ~prefix:"this$" (Mangled.to_string s)
+                Mangled.is_this s || String.is_prefix ~prefix:"this$" (Mangled.to_string s)
               in
               not param_is_this )
             (List.zip_exn sig_slice call_slice)

@@ -302,8 +302,7 @@ let inner_class_normalize p =
     (* this$n.f ... -> this.f . ... *)
     (* happens in ctrs only *)
     | Some ((Var.ProgramVar pvar, typ), all_accesses) when is_synthetic_this pvar ->
-        let varname = Mangled.from_string "this" in
-        mk_pvar_as varname pvar
+        mk_pvar_as Mangled.this pvar
         |> Option.map ~f:(fun new_pvar -> (base_of_pvar new_pvar typ, all_accesses))
     | _ ->
         None

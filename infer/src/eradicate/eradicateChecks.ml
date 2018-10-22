@@ -51,12 +51,7 @@ let classify_procedure proc_attributes =
   classification
 
 
-let is_virtual = function
-  | (p, _, _) :: _ when String.equal (Mangled.to_string p) "this" ->
-      true
-  | _ ->
-      false
-
+let is_virtual = function (p, _, _) :: _ when Mangled.is_this p -> true | _ -> false
 
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname ta loc :
@@ -259,7 +254,7 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
                 | TypeOrigin.Undef ->
                     false
                 | TypeOrigin.Field (TypeOrigin.Formal name, _, _) ->
-                    let circular = String.equal (Mangled.to_string name) "this" in
+                    let circular = Mangled.is_this name in
                     not circular
                 | _ ->
                     true

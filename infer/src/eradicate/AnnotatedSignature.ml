@@ -91,7 +91,7 @@ let mark proc_name ann asig (b, bs) =
     in
     let rec combine l1 l2 =
       match (l1, l2) with
-      | (p, ia, t) :: l1', l2' when String.equal (Mangled.to_string p) "this" ->
+      | (p, ia, t) :: l1', l2' when Mangled.is_this p ->
           (p, ia, t) :: combine l1' l2'
       | (s, ia, t) :: l1', x :: l2' ->
           mark_param (s, ia, t) x :: combine l1' l2'

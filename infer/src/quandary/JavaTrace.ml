@@ -158,11 +158,7 @@ module SourceKind = struct
       List.map
         ~f:(fun (name, typ) ->
           let taint =
-            match Mangled.to_string name with
-            | "this" ->
-                None
-            | _ ->
-                Some (make_source name typ.Typ.desc)
+            if Mangled.is_this name then None else Some (make_source name typ.Typ.desc)
           in
           (name, typ, taint) )
         (Procdesc.get_formals pdesc)
