@@ -85,6 +85,7 @@ public class Cost_test_deps {
     return p;
   }
 
+  /* Expected: 5 * 100 */
   private static int nested_loop() {
     int k = 0;
     for (int i = 0; i < 5; i++) {

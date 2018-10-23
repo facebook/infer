@@ -239,7 +239,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.NormalOneInstrPerNode
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
+module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions (CFG))
 
 type invariant_map = Analyzer.invariant_map
 

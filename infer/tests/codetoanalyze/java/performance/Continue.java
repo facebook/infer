@@ -7,7 +7,8 @@
 package codetoanalyze.java.performance;
 
 public class Continue {
-  int continue_outer_loop_FN() {
+  /* Expected 1000 * 1000 / 2 */
+  int continue_outer_loop() {
     outer:
     for (int i = 2; i < 1000; i++) {
       for (int j = 2; j < i; j++) {

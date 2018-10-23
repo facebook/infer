@@ -46,7 +46,7 @@ public class Loops {
     }
   }
 
-  static void dumbSort(long[] a, long[] b, int length) {
+  static void dumbSort_FP(long[] a, long[] b, int length) {
     for (int i = length - 1; i >= 0; --i) {
       for (int j = 0; j < i; ++j) {
         if (a[j] * b[j + 1] > a[j + 1] * b[j]) {

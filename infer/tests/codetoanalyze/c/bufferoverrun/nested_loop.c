@@ -19,3 +19,37 @@ void nested_loop() {
     }
   }
 }
+
+void nested_loop2_Ok() {
+  double arr[10];
+
+  int i, j;
+  for (i = 0; i < 10; i++) {
+    for (j = 5; j < 15; j++) {
+      arr[i] = 0.0;
+      arr[j - 5] = 0.0;
+    }
+  }
+}
+
+void nested_loop3_Bad() {
+  double arr[10];
+
+  int i, j;
+  for (i = 0; i <= 10; i++) {
+    for (j = 5; j < 15; j++) {
+      arr[i] = 0.0;
+    }
+  }
+}
+
+void nested_loop4_Bad() {
+  double arr[10];
+
+  int i, j;
+  for (i = 0; i < 10; i++) {
+    for (j = 5; j <= 15; j++) {
+      arr[j - 5] = 0.0;
+    }
+  }
+}

@@ -15,7 +15,7 @@ void nested_loop_with_label() {
   for (i = 0; i < 10; i++) {
   outer_loop:
     a[j] = 'a'; /* BUG */
-    for (j = 0; j <= 10; j++) {
+    for (j = 0; j <= 10; j++) { // Loop condition always true
       if (j >= 10)
         goto outer_loop;
     }

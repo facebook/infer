@@ -99,11 +99,7 @@ int loop_despite_inferbo(int p) {
   return p;
 }
 
-// -- Below examples should have worked, but due to the imprecision/weakness
-//  in inferbo's relational analysis, they don't
-
-// We can get program point A's execution count as 5, however
-// due to the weakness in inferbo's relational analysis `i` is in [0, +oo]
+/* Expected: 5 * 100 */
 int nested_loop() {
   int k = 0;
   for (int i = 0; i < 5; i++) {
@@ -182,6 +178,7 @@ RETURN:
 }
 
 /* Conditional inside goto loop  */
+/* Expected: 5 * 100 */
 int simulated_nested_loop_cond_in_goto(int p) {
   int k = 0;
   int t = 5;

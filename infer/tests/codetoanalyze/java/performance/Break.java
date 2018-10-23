@@ -24,7 +24,12 @@ public class Break {
     return break_loop(p, -1);
   }
 
-  private static void break_outer_loop_FN(int maxI, int maxJ) {
+  /*
+    If maxI >= 1 and maxJ >= 1 and maxI + maxJ > 8 then Infinite loop
+      (but the CFG constraints never finds infinite loops)
+    Otherwise, O(maxI * maxJ)
+  */
+  private static void break_outer_loop_MaybeInfinite(int maxI, int maxJ) {
     int i = 0;
     outerloop:
     while (i < maxI) {

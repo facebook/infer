@@ -33,8 +33,8 @@ void do_k_times_array(int n) {
   }
 }
 
-/* Expected Theta(n * m), but can't handle nested loops over symbols yet */
-void do_n_m_times_nested_FP(int n, int m) {
+/* Expected Theta(n * m) */
+void do_n_m_times_nested(int n, int m) {
   int k = n;
   int p = m;
   for (int i = 0; i < k; i++) {
@@ -43,9 +43,8 @@ void do_n_m_times_nested_FP(int n, int m) {
   }
 }
 
-/* Expected Theta(m) but can't handle nested loops over symbols yet.
- Also inner loop will have t as invariant */
-void two_loops_nested_invariant_FP(int p) {
+/* Expected ~ 3 * p. Also inner loop will have t as invariant */
+void two_loops_nested_invariant(int p) {
   int t = 0;
   int m = p;
   for (int i = 0; i < m; i++) {

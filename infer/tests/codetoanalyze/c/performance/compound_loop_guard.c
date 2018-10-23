@@ -33,7 +33,7 @@ int simulated_while_with_and(int p) {
   int i = 0;
   int k = 0;
 LOOP_COND:
-  if (k == 0 && i < p) {
+  if (k == 0 && i < p) { // k == 0 always true
     goto INCR;
   } else {
     goto RETURN;
@@ -79,7 +79,8 @@ int nested_while_and_or(int p) {
   return j;
 }
 
-/* k,j and i will be control variables for B  */
+/* j and i will be control variables for B  */
+/* Expected: 5 + 100 */
 int simulated_nested_loop_with_and(int p) {
   int k = 0;
   int t = 5;
@@ -88,7 +89,7 @@ int simulated_nested_loop_with_and(int p) {
   B:
     t = 3;
     j++;
-    if (k == 0 && j < 100) {
+    if (k == 0 && j < 100) { // k == 0 always true
       goto B; // continue;
     }
   }
