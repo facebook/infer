@@ -446,7 +446,7 @@ let difference r a b =
 let%test_module _ =
   ( module struct
     let printf pp = Format.printf "@.%a@." pp
-    let ( ! ) i = Exp.integer (Z.of_int i)
+    let ( ! ) i = Exp.integer (Z.of_int i) Typ.siz
 
     let%expect_test _ =
       printf pp {true_ with pnd= [(!0, !1)]} ;

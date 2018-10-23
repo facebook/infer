@@ -106,7 +106,7 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
       ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let o_n = Exp.integer o_n in
+  let o_n = Exp.integer o_n Typ.siz in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
   let com = Sh.star (Sh.seg {msg with siz= n; arr= a0}) com in
@@ -148,7 +148,7 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
       ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let n_o = Exp.integer n_o in
+  let n_o = Exp.integer n_o Typ.siz in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let a1', xs, zs, _ = fresh_var "a1" xs zs ~wrt:(Set.union us xs) in
@@ -188,7 +188,7 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       ssg pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Exp.integer l_k in
+  let l_k = Exp.integer l_k Typ.siz in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, _ = fresh_var "a1" us zs ~wrt in
   let com =
@@ -232,7 +232,7 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Exp.integer l_k and ko_ln = Exp.integer ko_ln in
+  let l_k = Exp.integer l_k Typ.siz and ko_ln = Exp.integer ko_ln Typ.siz in
   let ln = Exp.add l n in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
@@ -282,9 +282,9 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
       pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let l_k = Exp.integer l_k in
-  let ko_l = Exp.integer ko_l in
-  let ln_ko = Exp.integer ln_ko in
+  let l_k = Exp.integer l_k Typ.siz in
+  let ko_l = Exp.integer ko_l Typ.siz in
+  let ln_ko = Exp.integer ln_ko Typ.siz in
   let ko = Exp.add k o in
   let a0, us, zs, wrt = fresh_var "a0" us zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in
@@ -339,7 +339,7 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       ssg pp goal] ;
   let {Sh.bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Exp.integer k_l in
+  let k_l = Exp.integer k_l Typ.siz in
   let a0', xs, zs, _ = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
@@ -380,8 +380,8 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Exp.integer k_l in
-  let ln_ko = Exp.integer ln_ko in
+  let k_l = Exp.integer k_l Typ.siz in
+  let ln_ko = Exp.integer ln_ko Typ.siz in
   let ko = Exp.add k o in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a2', xs, zs, _ = fresh_var "a2" xs zs ~wrt in
@@ -427,9 +427,9 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
       pp goal] ;
   let {Sh.loc= k; bas= b; len= m; siz= o; arr= a} = msg in
   let {Sh.loc= l; bas= b'; len= m'; siz= n; arr= a'} = ssg in
-  let k_l = Exp.integer k_l in
-  let ln_k = Exp.integer ln_k in
-  let ko_ln = Exp.integer ko_ln in
+  let k_l = Exp.integer k_l Typ.siz in
+  let ln_k = Exp.integer ln_k Typ.siz in
+  let ko_ln = Exp.integer ko_ln Typ.siz in
   let ln = Exp.add l n in
   let a0', xs, zs, wrt = fresh_var "a0" xs zs ~wrt:(Set.union us xs) in
   let a1, us, zs, wrt = fresh_var "a1" us zs ~wrt in

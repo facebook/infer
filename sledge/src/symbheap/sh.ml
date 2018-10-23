@@ -67,7 +67,7 @@ let rec pp_ vs fs {us; xs; cong; pure; heap; djns} =
          (List.map ~f:(map_seg ~f:(Congruence.normalize cong)) heap)
          ~compare:(fun s1 s2 ->
            let b_o = function
-             | Exp.App {op= App {op= Add; arg}; arg= Integer {data}} ->
+             | Exp.App {op= App {op= Add; arg}; arg= Integer {data; _}} ->
                  (arg, data)
              | e -> (e, Z.zero)
            in
@@ -117,7 +117,9 @@ let rec fv_union init q =
 let fv q = fv_union Var.Set.empty q
 
 let invariant_pure = function
-  | Exp.Integer {data} -> assert (not (Z.equal Z.zero data))
+  | Exp.Integer {data; typ} ->
+      assert (Typ.equal Typ.bool typ) ;
+      assert (not (Z.equal Z.zero data))
   | _ -> assert true
 
 let invariant_seg _ = ()
@@ -333,16 +335,15 @@ let rec pure (e : Exp.t) =
   ;
   let us = Exp.fv e in
   ( match e with
-  | Integer {data} -> if Z.equal Z.zero data then false_ us else emp
+  | Integer {data; typ= Integer {bits= 1}} ->
+      if Z.equal Z.zero data then false_ us else emp
   | App {op= App {op= And; arg= e1}; arg= e2} -> star (pure e1) (pure e2)
   | App {op= App {op= Or; arg= e1}; arg= e2} -> or_ (pure e1) (pure e2)
-  | App
-      { op= App {op= Eq; arg= App {op= App {op= Eq; arg= e1}; arg= e2}}
-      ; arg= Integer {data} }
-    when Z.equal Z.one data ->
-      let cong = Congruence.(and_eq true_ e1 e2) in
-      if Congruence.is_false cong then false_ us
-      else {emp with us; cong; pure= [e]}
+  | App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
+    ->
+      or_
+        (star (pure cnd) (pure thn))
+        (star (pure (Exp.not_ Typ.bool cnd)) (pure els))
   | App {op= App {op= Eq; arg= e1}; arg= e2} ->
       let cong = Congruence.(and_eq true_ e1 e2) in
       if Congruence.is_false cong then false_ us

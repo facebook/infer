@@ -100,6 +100,11 @@ let struct_ =
         Vector.iteri elt_thks ~f:(fun i (lazy elt) -> elts.(i) <- elt) ;
         typ |> check invariant
 
+(** Constants *)
+
+let bool = integer ~bits:1
+let siz = integer ~bits:64
+
 (** Queries *)
 
 let rec prim_bit_size_of = function

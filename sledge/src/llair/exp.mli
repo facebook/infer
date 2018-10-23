@@ -34,7 +34,7 @@ type t = private
   | Splat  (** Iterated concatenation of a single byte *)
   | Memory  (** Size-tagged byte-array *)
   | Concat  (** Byte-array concatenation *)
-  | Integer of {data: Z.t}  (** Integer constant *)
+  | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
   | Float of {data: string}  (** Floating-point constant *)
   | Eq  (** Equal test *)
   | Dq  (** Disequal test *)
@@ -55,12 +55,12 @@ type t = private
   | Udiv  (** Unsigned division *)
   | Rem  (** Remainder of division *)
   | Urem  (** Remainder of unsigned division *)
-  | And  (** Conjunction *)
-  | Or  (** Disjunction *)
-  | Xor  (** Exclusive-or / Boolean disequality *)
-  | Shl  (** Shift left *)
-  | Lshr  (** Logical shift right *)
-  | Ashr  (** Arithmetic shift right *)
+  | And  (** Conjunction, boolean or bitwise *)
+  | Or  (** Disjunction, boolean or bitwise *)
+  | Xor  (** Exclusive-or, bitwise *)
+  | Shl  (** Shift left, bitwise *)
+  | Lshr  (** Logical shift right, bitwise *)
+  | Ashr  (** Arithmetic shift right, bitwise *)
   | Conditional  (** If-then-else *)
   | Record  (** Record (array / struct) constant *)
   | Select  (** Select an index from a record *)
@@ -134,7 +134,7 @@ val splat : byt:t -> siz:t -> t
 val memory : siz:t -> arr:t -> t
 val concat : t -> t -> t
 val bool : bool -> t
-val integer : Z.t -> t
+val integer : Z.t -> Typ.t -> t
 val float : string -> t
 val eq : t -> t -> t
 val dq : t -> t -> t
@@ -158,6 +158,7 @@ val urem : t -> t -> t
 val and_ : t -> t -> t
 val or_ : t -> t -> t
 val xor : t -> t -> t
+val not_ : Typ.t -> t -> t
 val shl : t -> t -> t
 val lshr : t -> t -> t
 val ashr : t -> t -> t

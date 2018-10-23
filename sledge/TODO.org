@@ -16,12 +16,14 @@ rather than nearest enclosing
 ** revise spec of strlen to account for non-max length strings
 ** convert strlen inst into a primitive to return the end of the block containing a pointer, and model strlen in code
 * llair
-** ? conflate null and 0
 ** NEXT normalize arithmetic exps to polynomials
 and sort terms
+** when Sub exps have types, simplify e - e to 0
+** when Xor exps have types, simplify e xor e to 0
+** ? remove src typ from Convert
 ** ? distribute addition over multiplication
 for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
-** simplify to NNF where (_ ^ -1) is (not _)
+** ? conflate null and 0
 ** add config to pp e.g. Exp.t as sexps
 ** add check for variable non-occurrence to Exp.rename
 ** define version of map that transforms args of Struct_rec
@@ -31,17 +33,12 @@ for e.g. ((%12 + 1) * 8) to ((%12 * 8) + 8)
       let args' = Vector.map_preserving_phys_equal args ~f in
       if op' == op && args' == args then e
       else AppN {op= op'; args= args'; loc}
-** simplify conv exps
-with dst of int 1 type by testing least significant bit of Integer
-constants
 ** define Label module for Exp.Label and Llair.label
 - to unify how functions and blocks are named
 - the Exp.label construction in Control.exec_term Iswitch is unwieldy
 ** check/ensure that generated names do not clash
 - name ^ ".ti" xlate_instr LandingPad
 ** check that Loc.pp follows GNU conventions
-** do not ignore types and signedness of operations
-interpretation of expressions is currently wrong
 ** ? change Var.freshen to choose the first available
 analogous to the following version that is over just ints
 #+BEGIN_SRC ocaml

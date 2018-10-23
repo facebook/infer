@@ -108,7 +108,7 @@ let memcpy_eq_spec us dst src len =
   let dst_heap = Sh.seg seg in
   let foot =
     Sh.and_ (Exp.eq dst src)
-      (Sh.and_ (Exp.eq len (Exp.integer Z.zero)) dst_heap)
+      (Sh.and_ (Exp.eq len (Exp.integer Z.zero Typ.siz)) dst_heap)
   in
   let post = dst_heap in
   {xs; foot; post}
@@ -249,7 +249,7 @@ let strlen_spec us reg ptr =
   let {xs; seg} = fresh_seg ~loc:ptr us in
   let foot = Sh.seg seg in
   let {Sh.loc= p; bas= b; len= m} = seg in
-  let ret = Exp.sub (Exp.add (Exp.sub b p) m) (Exp.integer Z.one) in
+  let ret = Exp.sub (Exp.add (Exp.sub b p) m) (Exp.integer Z.one Typ.siz) in
   let post = Sh.and_ (Exp.eq (Exp.var reg) ret) foot in
   {xs; foot; post}
 

@@ -7,6 +7,58 @@
 
 (** Expressions *)
 
+(** Z wrapped to treat bounded and unsigned operations *)
+module Z = struct
+  type t = Z.t [@@deriving compare, hash, sexp]
+
+  let equal = Z.equal
+  let pp = Z.pp_print
+  let zero = Z.zero
+  let one = Z.one
+  let to_int = Z.to_int
+  let numbits = Z.numbits
+  let fits_int = Z.fits_int
+
+  (* the signed 1-bit integers are -1 and 0 *)
+  let true_ = Z.minus_one
+  let false_ = Z.zero
+  let of_bool = function true -> true_ | false -> false_
+  let is_true = Z.equal true_
+  let is_false = Z.equal false_
+
+  (** Interpret as a bounded integer with specified signedness and width. *)
+  let clamp ~signed bits z =
+    if signed then Z.signed_extract z 0 bits else Z.extract z 0 bits
+
+  let clamp_binop ~signed bits op x y =
+    op (clamp ~signed bits x) (clamp ~signed bits y)
+
+  let leq ~bits x y = clamp_binop ~signed:true bits Z.leq x y
+  let geq ~bits x y = clamp_binop ~signed:true bits Z.geq x y
+  let lt ~bits x y = clamp_binop ~signed:true bits Z.lt x y
+  let gt ~bits x y = clamp_binop ~signed:true bits Z.gt x y
+  let uleq ~bits x y = clamp_binop ~signed:false bits Z.leq x y
+  let ugeq ~bits x y = clamp_binop ~signed:false bits Z.geq x y
+  let ult ~bits x y = clamp_binop ~signed:false bits Z.lt x y
+  let ugt ~bits x y = clamp_binop ~signed:false bits Z.gt x y
+  let neg ~bits z = Z.neg (clamp bits ~signed:true z)
+  let add ~bits x y = clamp_binop ~signed:true bits Z.add x y
+  let sub ~bits x y = clamp_binop ~signed:true bits Z.sub x y
+  let mul ~bits x y = clamp_binop ~signed:true bits Z.mul x y
+  let div ~bits x y = clamp_binop ~signed:true bits Z.div x y
+  let rem ~bits x y = clamp_binop ~signed:true bits Z.rem x y
+  let udiv ~bits x y = clamp_binop ~signed:false bits Z.div x y
+  let urem ~bits x y = clamp_binop ~signed:false bits Z.rem x y
+  let logand ~bits x y = clamp_binop ~signed:true bits Z.logand x y
+  let logor ~bits x y = clamp_binop ~signed:true bits Z.logor x y
+  let logxor ~bits x y = clamp_binop ~signed:true bits Z.logxor x y
+  let shift_left ~bits z i = Z.shift_left (clamp bits ~signed:true z) i
+  let shift_right ~bits z i = Z.shift_right (clamp bits ~signed:true z) i
+
+  let shift_right_trunc ~bits z i =
+    Z.shift_right_trunc (clamp bits ~signed:true z) i
+end
+
 module T0 = struct
   type t =
     | Var of {id: int; name: string}
@@ -19,7 +71,7 @@ module T0 = struct
     | Memory
     | Concat
     (* numeric constants *)
-    | Integer of {data: Z.t}
+    | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string}
     (* binary: comparison *)
     | Eq
@@ -110,7 +162,7 @@ module T = struct
       | App {op= App {op= Memory; arg= siz}; arg= bytes} ->
           pf "@<1>⟨%a,%a@<1>⟩" pp siz pp bytes
       | Concat -> pf "^"
-      | Integer {data} -> pf "%a" Z.pp_print data
+      | Integer {data} -> pf "%a" Z.pp data
       | Float {data} -> pf "%s" data
       | Eq -> pf "="
       | Dq -> pf "!="
@@ -134,11 +186,15 @@ module T = struct
       | And -> pf "&&"
       | Or -> pf "||"
       | Xor -> pf "xor"
-      | App {op= App {op= Xor; arg}; arg= Integer {data}}
-        when Z.equal Z.minus_one data ->
+      | App
+          { op= App {op= Xor; arg}
+          ; arg= Integer {data; typ= Integer {bits= 1}} }
+        when Z.is_true data ->
           pf "¬%a" pp arg
-      | App {op= App {op= Xor; arg= Integer {data}}; arg}
-        when Z.equal Z.minus_one data ->
+      | App
+          { op= App {op= Xor; arg= Integer {data; typ= Integer {bits= 1}}}
+          ; arg }
+        when Z.is_true data ->
           pf "¬%a" pp arg
       | Shl -> pf "shl"
       | Lshr -> pf "lshr"
@@ -198,15 +254,24 @@ let invariant ?(partial = false) e =
     assert (nargs = arity || (partial && nargs < arity))
   in
   match op with
+  | Integer {data; typ= Integer {bits}} ->
+      assert_arity 0 ;
+      assert (Z.numbits data <= bits)
   | Var _ | Nondet _ | Label _ | Null | Integer _ | Float _ ->
       assert_arity 0
   | Convert {dst; src} ->
-      assert (Typ.convertible src dst) ;
-      assert_arity 1
-  | Splat | Memory | Concat | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge
-   |Ult | Ule | Ord | Uno | Add | Sub | Mul | Div | Udiv | Rem | Urem
-   |And | Or | Xor | Shl | Lshr | Ashr | Select ->
-      assert_arity 2
+      ( match args with
+      | [Integer {typ}] -> assert (Typ.equal src typ)
+      | _ -> assert_arity 1 ) ;
+      assert (Typ.convertible src dst)
+  | Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Add | Sub | Mul
+   |Div | Udiv | Rem | Urem | And | Or | Xor | Shl | Lshr | Ashr -> (
+    match args with
+    | [Integer {typ= Integer {bits= m}}; Integer {typ= Integer {bits= n}}]
+      ->
+        assert (m = n)
+    | _ -> assert_arity 2 )
+  | Splat | Memory | Concat | Ord | Uno | Select -> assert_arity 2
   | Conditional | Update -> assert_arity 3
   | Record -> assert (partial || not (List.is_empty args))
   | Struct_rec {elts} ->
@@ -372,165 +437,366 @@ let var x = x
 let nondet msg = Nondet {msg} |> check invariant
 let label ~parent ~name = Label {parent; name} |> check invariant
 let null = Null |> check invariant
-let integer data = Integer {data} |> check invariant
-let bool b = integer (Z.of_int (Bool.to_int b))
+let integer data typ = Integer {data; typ} |> check invariant
+let bool b = integer (Z.of_bool b) Typ.bool
 let float data = Float {data} |> check invariant
 
-let simp_convert signed (dst : Typ.t) (src : Typ.t) arg =
-  match (signed, dst, src, arg) with
-  | _, Integer {bits}, _, Integer {data} when Z.numbits data <= bits ->
-      integer data
-  | false, Integer {bits= m}, Integer {bits= n}, _ when m >= n -> arg
+let simp_convert signed (dst : Typ.t) src arg =
+  match (dst, arg) with
+  | Integer {bits= m}, Integer {data; typ= Integer {bits= n}} ->
+      integer (Z.clamp ~signed (min m n) data) dst
   | _ -> App {op= Convert {signed; dst; src}; arg}
-
-let rec simp_eq x y =
-  match (x, y) with
-  (* i = j ==> i=j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
-  (* e+i = j ==> e = j-i *)
-  | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
-    , Integer {data= j} ) ->
-      simp_eq e (integer (Z.sub j i))
-  (* e = e ==> 1 *)
-  | _ when equal x y -> bool true
-  | _ -> App {op= App {op= Eq; arg= x}; arg= y}
-
-let simp_dq x y =
-  match (x, y) with
-  (* i != j ==> i!=j *)
-  | Integer {data= i}, Integer {data= j} -> bool (not (Z.equal i j))
-  (* e = e ==> 0 *)
-  | _ when equal x y -> bool false
-  | _ -> App {op= App {op= Dq; arg= x}; arg= y}
 
 let simp_gt x y =
   match (x, y) with
-  (* i > j ==> i>j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.gt i j)
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.gt ~bits i j)
   | _ -> App {op= App {op= Gt; arg= x}; arg= y}
+
+let simp_ugt x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.ugt ~bits i j)
+  | _ -> App {op= App {op= Ugt; arg= x}; arg= y}
 
 let simp_ge x y =
   match (x, y) with
-  (* i >= j ==> i>=j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.geq i j)
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.geq ~bits i j)
   | _ -> App {op= App {op= Ge; arg= x}; arg= y}
+
+let simp_uge x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.ugeq ~bits i j)
+  | _ -> App {op= App {op= Uge; arg= x}; arg= y}
 
 let simp_lt x y =
   match (x, y) with
-  (* i < j ==> i<j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.lt i j)
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.lt ~bits i j)
   | _ -> App {op= App {op= Lt; arg= x}; arg= y}
+
+let simp_ult x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.ult ~bits i j)
+  | _ -> App {op= App {op= Ult; arg= x}; arg= y}
 
 let simp_le x y =
   match (x, y) with
-  (* i <= j ==> i<=j *)
-  | Integer {data= i}, Integer {data= j} -> bool (Z.leq i j)
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.leq ~bits i j)
   | _ -> App {op= App {op= Le; arg= x}; arg= y}
+
+let simp_ule x y =
+  match (x, y) with
+  | Integer {data= i}, Integer {data= j; typ= Integer {bits}} ->
+      bool (Z.uleq ~bits i j)
+  | _ -> App {op= App {op= Ule; arg= x}; arg= y}
+
+let simp_ord x y = App {op= App {op= Ord; arg= x}; arg= y}
+let simp_uno x y = App {op= App {op= Uno; arg= x}; arg= y}
+
+let simp_cond cnd thn els =
+  match cnd with
+  (* ¬(true ? t : e) ==> t *)
+  | Integer {data; typ= Integer {bits= 1}} when Z.is_true data -> thn
+  (* ¬(false ? t : e) ==> e *)
+  | Integer {data; typ= Integer {bits= 1}} when Z.is_false data -> els
+  | _ ->
+      App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
+
+let rec simp_not (typ : Typ.t) exp =
+  match (exp, typ) with
+  (* ¬(x = y) ==> x != y *)
+  | App {op= App {op= Eq; arg= x}; arg= y}, _ -> simp_dq x y
+  (* ¬(x != y) ==> x = y *)
+  | App {op= App {op= Dq; arg= x}; arg= y}, _ -> simp_eq x y
+  (* ¬(x > y) ==> x <= y *)
+  | App {op= App {op= Gt; arg= x}; arg= y}, _ -> simp_le x y
+  (* ¬(x >= y) ==> x < y *)
+  | App {op= App {op= Ge; arg= x}; arg= y}, _ -> simp_lt x y
+  (* ¬(x < y) ==> x >= y *)
+  | App {op= App {op= Lt; arg= x}; arg= y}, _ -> simp_ge x y
+  (* ¬(x <= y) ==> x > y *)
+  | App {op= App {op= Le; arg= x}; arg= y}, _ -> simp_gt x y
+  (* ¬(x u> y) ==> x u<= y *)
+  | App {op= App {op= Ugt; arg= x}; arg= y}, _ -> simp_ule x y
+  (* ¬(x u>= y) ==> x u< y *)
+  | App {op= App {op= Uge; arg= x}; arg= y}, _ -> simp_ult x y
+  (* ¬(x u< y) ==> x u>= y *)
+  | App {op= App {op= Ult; arg= x}; arg= y}, _ -> simp_uge x y
+  (* ¬(x u<= y) ==> x u> y *)
+  | App {op= App {op= Ule; arg= x}; arg= y}, _ -> simp_ugt x y
+  (* ¬(x != nan ∧ y != nan) ==> x = nan ∨ y = nan *)
+  | App {op= App {op= Ord; arg= x}; arg= y}, _ -> simp_uno x y
+  (* ¬(x = nan ∨ y = nan) ==> x != nan ∧ y != nan *)
+  | App {op= App {op= Uno; arg= x}; arg= y}, _ -> simp_ord x y
+  (* ¬(a ∧ b) ==> ¬a ∨ ¬b *)
+  | App {op= App {op= And; arg= x}; arg= y}, Integer {bits= 1} ->
+      simp_or (simp_not typ x) (simp_not typ y)
+  (* ¬(a ∨ b) ==> ¬a ∧ ¬b *)
+  | App {op= App {op= Or; arg= x}; arg= y}, Integer {bits= 1} ->
+      simp_and (simp_not typ x) (simp_not typ y)
+  (* ¬(c ? t : e) ==> c ? ¬t : ¬e *)
+  | ( App {op= App {op= App {op= Conditional; arg= cnd}; arg= thn}; arg= els}
+    , Integer {bits= 1} ) ->
+      simp_cond cnd (simp_not typ thn) (simp_not typ els)
+  (* ¬b ==> false = b *)
+  | b, Integer {bits= 1} -> App {op= App {op= Eq; arg= bool false}; arg= b}
+  (* ¬e ==> true xor e *)
+  | e, _ ->
+      App {op= App {op= Xor; arg= integer (Z.of_bool true) typ}; arg= e}
+
+and simp_eq x y =
+  match (x, y) with
+  (* i = j *)
+  | Integer {data= i}, Integer {data= j} -> bool (Z.equal i j)
+  (* e+i = j ==> e = j-i *)
+  | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
+    , Integer {data= j; typ= Integer {bits} as typ} ) ->
+      simp_eq e (integer (Z.sub ~bits j i) typ)
+  (* b = false ==> ¬b *)
+  | b, Integer {data; typ= Integer {bits= 1}}
+   |Integer {data; typ= Integer {bits= 1}}, b
+    when Z.is_false data ->
+      simp_not Typ.bool b
+  (* b = true ==> b *)
+  | b, Integer {data; typ= Integer {bits= 1}}
+   |Integer {data; typ= Integer {bits= 1}}, b
+    when Z.is_true data ->
+      b
+  | _ ->
+      let c = compare x y in
+      (* e = e ==> true *)
+      if c = 0 then bool true
+      else if c < 0 then App {op= App {op= Eq; arg= y}; arg= x}
+      else App {op= App {op= Eq; arg= x}; arg= y}
+
+and simp_dq x y =
+  match (x, y) with
+  (* i != j *)
+  | Integer {data= i}, Integer {data= j} -> bool (not (Z.equal i j))
+  (* e+i != j ==> e != j-i *)
+  | ( App {op= App {op= Add; arg= e}; arg= Integer {data= i}}
+    , Integer {data= j; typ= Integer {bits} as typ} ) ->
+      simp_dq e (integer (Z.sub ~bits j i) typ)
+  (* b != false ==> b *)
+  | b, Integer {data; typ= Integer {bits= 1}}
+   |Integer {data; typ= Integer {bits= 1}}, b
+    when Z.is_false data ->
+      b
+  (* b != true ==> ¬b *)
+  | b, Integer {data; typ= Integer {bits= 1}}
+   |Integer {data; typ= Integer {bits= 1}}, b
+    when Z.is_true data ->
+      simp_not Typ.bool b
+  | _ ->
+      let c = compare x y in
+      (* e = e ==> false *)
+      if c = 0 then bool false
+      else if c < 0 then App {op= App {op= Dq; arg= x}; arg= y}
+      else App {op= App {op= Dq; arg= y}; arg= x}
+
+and simp_and x y =
+  match (x, y) with
+  (* i && j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.logand ~bits i j) typ
+  (* e && true ==> e *)
+  | Integer {data; typ= Integer {bits= 1}}, e
+   |e, Integer {data; typ= Integer {bits= 1}}
+    when Z.is_true data ->
+      e
+  (* e && false ==> 0 *)
+  | (Integer {data; typ= Integer {bits= 1}} as f), _
+   |_, (Integer {data; typ= Integer {bits= 1}} as f)
+    when Z.is_false data ->
+      f
+  | _ ->
+      let c = compare x y in
+      (* e && e ==> e *)
+      if c = 0 then x
+      else if c < 0 then App {op= App {op= And; arg= x}; arg= y}
+      else App {op= App {op= And; arg= y}; arg= x}
+
+and simp_or x y =
+  match (x, y) with
+  (* i || j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.logor ~bits i j) typ
+  (* e || true ==> true *)
+  | (Integer {data; typ= Integer {bits= 1}} as t), _
+   |_, (Integer {data; typ= Integer {bits= 1}} as t)
+    when Z.is_true data ->
+      t
+  (* e || false ==> e *)
+  | Integer {data; typ= Integer {bits= 1}}, e
+   |e, Integer {data; typ= Integer {bits= 1}}
+    when Z.is_false data ->
+      e
+  | _ ->
+      let c = compare x y in
+      (* e || e ==> e *)
+      if c = 0 then x
+      else if c < 0 then App {op= App {op= Or; arg= x}; arg= y}
+      else App {op= App {op= Or; arg= y}; arg= x}
+
+let simp_xor x y =
+  match (x, y) with
+  (* i xor j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.logxor ~bits i j) typ
+  (* true xor b ==> ¬b *)
+  | Integer {data; typ= Integer {bits= 1}}, b
+   |b, Integer {data; typ= Integer {bits= 1}}
+    when Z.is_true data ->
+      simp_not Typ.bool b
+  | _ ->
+      let c = compare x y in
+      if c <= 0 then App {op= App {op= Xor; arg= x}; arg= y}
+      else App {op= App {op= Xor; arg= y}; arg= x}
+
+let simp_shl x y =
+  match (x, y) with
+  (* i shl j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+    when Z.fits_int j ->
+      integer (Z.shift_left ~bits i (Z.to_int j)) typ
+  (* e shl 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> App {op= App {op= Shl; arg= x}; arg= y}
+
+let simp_lshr x y =
+  match (x, y) with
+  (* i lshr j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+    when Z.fits_int j ->
+      integer (Z.shift_right_trunc ~bits i (Z.to_int j)) typ
+  (* e lshr 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> App {op= App {op= Lshr; arg= x}; arg= y}
+
+let simp_ashr x y =
+  match (x, y) with
+  (* i ashr j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}}
+    when Z.fits_int j ->
+      integer (Z.shift_right ~bits i (Z.to_int j)) typ
+  (* e ashr 0 ==> e *)
+  | e, Integer {data} when Z.equal Z.zero data -> e
+  | _ -> App {op= App {op= Ashr; arg= x}; arg= y}
 
 let rec simp_add x y =
   match (x, y) with
-  (* i + j ==> i+j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.add i j)
+  (* i + j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.add ~bits i j) typ
   (* i + e ==> e + i *)
   | Integer _, _ -> simp_add y x
   (* e + 0 ==> e *)
-  | _, Integer {data} when Z.equal Z.zero data -> x
+  | e, Integer {data} when Z.equal Z.zero data -> e
   (* (e+i) + j ==> e+(i+j) *)
-  | App {op= App {op= Add; arg}; arg= Integer {data= i}}, Integer {data= j}
-    ->
-      simp_add arg (integer (Z.add i j))
+  | ( App
+        { op= App {op= Add; arg}
+        ; arg= Integer {data= i; typ= Integer {bits} as typ} }
+    , Integer {data= j} ) ->
+      simp_add arg (integer (Z.add ~bits i j) typ)
   (* (i-e) + j ==> (i+j)-e *)
-  | App {op= App {op= Sub; arg= Integer {data= i}}; arg}, Integer {data= j}
-    ->
-      simp_sub (integer (Z.add i j)) arg
+  | ( App
+        { op=
+            App {op= Sub; arg= Integer {data= i; typ= Integer {bits} as typ}}
+        ; arg }
+    , Integer {data= j} ) ->
+      simp_sub (integer (Z.add ~bits i j) typ) arg
   | _ -> App {op= App {op= Add; arg= x}; arg= y}
 
 and simp_sub x y =
   match (x, y) with
-  (* i - j ==> i-j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.sub i j)
+  (* i - j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.sub ~bits i j) typ
   (* e - i ==> e + (-i) *)
-  | _, Integer {data} -> simp_add x (integer (Z.neg data))
-  (* e - e ==> 0 *)
-  | _ when equal x y -> integer Z.zero
+  | _, Integer {data; typ= Integer {bits} as typ} ->
+      simp_add x (integer (Z.neg ~bits data) typ)
   | _ -> App {op= App {op= Sub; arg= x}; arg= y}
 
 let simp_mul x y =
   match (x, y) with
-  (* i * j ==> i*j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.mul i j)
+  (* i * j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.mul ~bits i j) typ
   (* e * 1 ==> e *)
-  | (Integer {data}, e | e, Integer {data}) when Z.equal Z.one data -> e
+  | Integer {data}, e when Z.equal Z.one data -> e
+  | e, Integer {data} when Z.equal Z.one data -> e
   | _ -> App {op= App {op= Mul; arg= x}; arg= y}
 
 let simp_div x y =
   match (x, y) with
-  (* i / j ==> i/j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.div i j)
+  (* i / j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.div ~bits i j) typ
+  (* e / 1 ==> e *)
+  | Integer {data}, e when Z.equal Z.one data -> e
   | _ -> App {op= App {op= Div; arg= x}; arg= y}
+
+let simp_udiv x y =
+  match (x, y) with
+  (* i u/ j *)
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+      integer (Z.udiv ~bits i j) typ
+  (* e u/ 1 ==> e *)
+  | Integer {data}, e when Z.equal Z.one data -> e
+  | _ -> App {op= App {op= Udiv; arg= x}; arg= y}
 
 let simp_rem x y =
   match (x, y) with
-  (* i % j ==> i%j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.( mod ) i j)
+  (* i % j *)
+  | Integer {data= i; typ}, Integer {data= j; typ= Integer {bits}} ->
+      integer (Z.rem ~bits i j) typ
+  (* e % 1 ==> 0 *)
+  | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
   | _ -> App {op= App {op= Rem; arg= x}; arg= y}
 
-let simp_and x y =
+let simp_urem x y =
   match (x, y) with
-  (* i && j ==> i logand j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.logand i j)
-  (* e && 1 ==> e *)
-  | (Integer {data}, e | e, Integer {data}) when Z.equal Z.one data -> e
-  (* e && 0 ==> 0 *)
-  | ((Integer {data} as z), _ | _, (Integer {data} as z))
-    when Z.equal Z.zero data ->
-      z
-  | _ -> App {op= App {op= And; arg= x}; arg= y}
-
-let simp_or x y =
-  match (x, y) with
-  (* i || j ==> i logor j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.logor i j)
-  (* e || 1 ==> e *)
-  | (Integer {data}, _ | _, Integer {data}) when Z.equal Z.one data ->
-      integer Z.one
-  (* e || 0 ==> e *)
-  | (Integer {data}, e | e, Integer {data}) when Z.equal Z.zero data -> e
-  | _ -> App {op= App {op= Or; arg= x}; arg= y}
-
-let simp_xor x y =
-  match (x, y) with
-  (* i xor j ==> i logxor j *)
-  | Integer {data= i}, Integer {data= j} -> integer (Z.logxor i j)
-  (* ¬(x=y) ==> x!=y *)
-  | App {op= App {op= Eq; arg= x}; arg= y}, Integer {data}
-   |Integer {data}, App {op= App {op= Eq; arg= x}; arg= y}
-    when Z.equal Z.minus_one data ->
-      simp_dq x y
-  (* ¬(x!=y) ==> x=y *)
-  | App {op= App {op= Dq; arg= x}; arg= y}, Integer {data}
-   |Integer {data}, App {op= App {op= Dq; arg= x}; arg= y}
-    when Z.equal Z.minus_one data ->
-      simp_eq x y
-  | _ -> App {op= App {op= Xor; arg= x}; arg= y}
+  (* i u% j *)
+  | Integer {data= i; typ= Integer {bits} as typ}, Integer {data= j} ->
+      integer (Z.urem ~bits i j) typ
+  (* e u% 1 ==> 0 *)
+  | _, Integer {data; typ} when Z.equal Z.one data -> integer Z.zero typ
+  | _ -> App {op= App {op= Urem; arg= x}; arg= y}
 
 let app1 ?(partial = false) op arg =
   ( match (op, arg) with
-  | Convert {signed; dst; src}, x -> simp_convert signed dst src x
   | App {op= Eq; arg= x}, y -> simp_eq x y
   | App {op= Dq; arg= x}, y -> simp_dq x y
   | App {op= Gt; arg= x}, y -> simp_gt x y
   | App {op= Ge; arg= x}, y -> simp_ge x y
   | App {op= Lt; arg= x}, y -> simp_lt x y
   | App {op= Le; arg= x}, y -> simp_le x y
+  | App {op= Ugt; arg= x}, y -> simp_ugt x y
+  | App {op= Uge; arg= x}, y -> simp_uge x y
+  | App {op= Ult; arg= x}, y -> simp_ult x y
+  | App {op= Ule; arg= x}, y -> simp_ule x y
+  | App {op= Ord; arg= x}, y -> simp_ord x y
+  | App {op= Uno; arg= x}, y -> simp_uno x y
   | App {op= Add; arg= x}, y -> simp_add x y
   | App {op= Sub; arg= x}, y -> simp_sub x y
   | App {op= Mul; arg= x}, y -> simp_mul x y
   | App {op= Div; arg= x}, y -> simp_div x y
+  | App {op= Udiv; arg= x}, y -> simp_udiv x y
   | App {op= Rem; arg= x}, y -> simp_rem x y
+  | App {op= Urem; arg= x}, y -> simp_urem x y
   | App {op= And; arg= x}, y -> simp_and x y
   | App {op= Or; arg= x}, y -> simp_or x y
   | App {op= Xor; arg= x}, y -> simp_xor x y
+  | App {op= Shl; arg= x}, y -> simp_shl x y
+  | App {op= Lshr; arg= x}, y -> simp_lshr x y
+  | App {op= Ashr; arg= x}, y -> simp_ashr x y
+  | App {op= App {op= Conditional; arg= x}; arg= y}, z -> simp_cond x y z
+  | Convert {signed; dst; src}, x -> simp_convert signed dst src x
   | _ -> App {op; arg} )
   |> check (invariant ~partial)
 
@@ -562,6 +828,7 @@ let urem = app2 Urem
 let and_ = app2 And
 let or_ = app2 Or
 let xor = app2 Xor
+let not_ = simp_not
 let shl = app2 Shl
 let lshr = app2 Lshr
 let ashr = app2 Ashr
@@ -634,8 +901,13 @@ let rename e sub =
 
 (** Query *)
 
-let is_true = function Integer {data} -> Z.equal Z.one data | _ -> false
-let is_false = function Integer {data} -> Z.equal Z.zero data | _ -> false
+let is_true = function
+  | Integer {data; typ= Integer {bits= 1}} -> Z.is_true data
+  | _ -> false
+
+let is_false = function
+  | Integer {data; typ= Integer {bits= 1}} -> Z.is_false data
+  | _ -> false
 
 let rec is_constant = function
   | Var _ | Nondet _ -> false
