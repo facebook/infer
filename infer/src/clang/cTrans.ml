@@ -2802,7 +2802,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_placement_control, res_trans_placement_exps =
       instructions trans_state_placement placement_args
     in
-    let res_trans_new = cpp_new_trans sil_loc typ size_exp_opt res_trans_placement_exps in
+    let res_trans_new =
+      cpp_new_trans context.translation_unit_context.integer_type_widths sil_loc typ size_exp_opt
+        res_trans_placement_exps
+    in
     let stmt_opt =
       CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr source_range
     in

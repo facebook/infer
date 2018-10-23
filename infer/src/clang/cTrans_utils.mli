@@ -120,7 +120,13 @@ val new_or_alloc_trans :
   -> string
   -> trans_result
 
-val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.typ) list -> trans_result
+val cpp_new_trans :
+     Typ.IntegerWidths.t
+  -> Location.t
+  -> Typ.t
+  -> Exp.t option
+  -> (Exp.t * Typ.typ) list
+  -> trans_result
 
 (** Module for creating cfg nodes and other utility functions related to them. *)
 module Nodes : sig

@@ -326,7 +326,8 @@ module Scope = struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc function_type =
+let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_args_exps sil_loc
+    function_type =
   let function_type, function_type_np =
     match function_type.Typ.desc with
     | Tptr (styp, Typ.Pk_pointer)
@@ -339,8 +340,15 @@ let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc fu
   in
   let ret_id = Ident.create_fresh Ident.knormal in
   let args =
+    let nbytes =
+      match function_type_np.Typ.desc with
+      | Tint ikind ->
+          Some (Typ.width_of_ikind integer_type_widths ikind / 8)
+      | _ ->
+          None
+    in
     let sizeof_exp_ =
-      Exp.Sizeof {typ= function_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+      Exp.Sizeof {typ= function_type_np; nbytes; dynamic_length= None; subtype= Subtype.exact}
     in
     let sizeof_exp =
       match size_exp with
@@ -360,7 +368,10 @@ let create_alloc_instrs ~alloc_builtin ?size_exp ?placement_args_exps sil_loc fu
 
 
 let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
-  let function_type, instrs, exp = create_alloc_instrs ~alloc_builtin loc function_type in
+  let integer_type_widths = trans_state.context.translation_unit_context.integer_type_widths in
+  let function_type, instrs, exp =
+    create_alloc_instrs integer_type_widths ~alloc_builtin loc function_type
+  in
   let control_tmp = {empty_control with instrs} in
   PriorityNode.compute_control_to_parent trans_state loc ~node_name:(Call "alloc") stmt_info
     control_tmp
@@ -368,8 +379,9 @@ let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
 
 
 let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_type =
+  let integer_type_widths = trans_state.context.translation_unit_context.integer_type_widths in
   let alloc_ret_type, alloc_stmt_call, alloc_ret_exp =
-    create_alloc_instrs ~alloc_builtin loc function_type
+    create_alloc_instrs integer_type_widths ~alloc_builtin loc function_type
   in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
@@ -412,7 +424,7 @@ let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt select
   else Logging.die InternalError "Expected selector new or alloc but got, %s" selector
 
 
-let cpp_new_trans sil_loc function_type size_exp placement_args_exps =
+let cpp_new_trans integer_type_widths sil_loc function_type size_exp placement_args_exps =
   let alloc_builtin =
     match placement_args_exps with
     | [] -> (
@@ -422,7 +434,8 @@ let cpp_new_trans sil_loc function_type size_exp placement_args_exps =
         BuiltinDecl.__placement_new
   in
   let function_type, stmt_call, exp =
-    create_alloc_instrs ~alloc_builtin ?size_exp ~placement_args_exps sil_loc function_type
+    create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ~placement_args_exps sil_loc
+      function_type
   in
   mk_trans_result (exp, function_type) {empty_control with instrs= stmt_call}
 
