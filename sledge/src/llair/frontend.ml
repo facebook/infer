@@ -444,10 +444,14 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Exp.t =
     match Option.value_exn (Llvm.icmp_predicate llv) with
     | Eq -> binary Exp.eq
     | Ne -> binary Exp.dq
-    | Sgt | Ugt -> binary Exp.gt
-    | Sge | Uge -> binary Exp.ge
-    | Slt | Ult -> binary Exp.lt
-    | Sle | Ule -> binary Exp.le )
+    | Sgt -> binary Exp.gt
+    | Sge -> binary Exp.ge
+    | Slt -> binary Exp.lt
+    | Sle -> binary Exp.le
+    | Ugt -> binary Exp.ugt
+    | Uge -> binary Exp.uge
+    | Ult -> binary Exp.ult
+    | Ule -> binary Exp.ule )
   | FCmp -> (
     match Llvm.fcmp_predicate llv with
     | None | Some False -> binary (fun _ _ -> Exp.bool false)
