@@ -273,6 +273,10 @@ module Term = struct
       | _ -> assert false )
     | Return _ | Throw _ | Unreachable -> assert true
 
+  let goto ~dst ~loc =
+    Switch {key= Exp.integer Z.zero; tbl= Vector.empty; els= dst; loc}
+    |> check invariant
+
   let switch ~key ~tbl ~els ~loc =
     Switch {key; tbl; els; loc} |> check invariant
 

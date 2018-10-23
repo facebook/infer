@@ -154,6 +154,9 @@ module Term : sig
 
   val pp : t pp
 
+  val goto : dst:jump -> loc:Loc.t -> term
+  (** Construct a [Switch] representing an unconditional branch. *)
+
   val switch :
     key:Exp.t -> tbl:(Z.t * jump) vector -> els:jump -> loc:Loc.t -> term
 

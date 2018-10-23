@@ -1014,24 +1014,19 @@ let xlate_instr :
       | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
           todo "statepoints:@ %a" pp_llvalue instr ()
       | ["__llair_throw"] ->
-          let key = Exp.integer Z.zero in
-          let tbl = Vector.empty in
-          let els = Llair.Jump.mk unwind_dst args in
-          terminal [] (Llair.Term.switch ~key ~tbl ~els ~loc) []
+          let dst = Llair.Jump.mk unwind_dst args in
+          terminal [] (Llair.Term.goto ~dst ~loc) []
       | ["_Znwm"] ->
           let reg = xlate_name_opt x instr in
           let num = xlate_value x (Llvm.operand instr 0) in
           let llt = Llvm.type_of instr in
           let len = Exp.integer (Z.of_int (size_of x llt)) in
-          let key = Exp.integer Z.zero in
-          let tbl = Vector.empty in
           let blk = Llvm.get_normal_dest instr in
-          let dst = label_of_block blk in
           let args = jump_args x instr blk in
-          let els = Llair.Jump.mk dst args in
+          let dst = Llair.Jump.mk (label_of_block blk) args in
           terminal
             [Llair.Inst.alloc ~reg:(Option.value_exn reg) ~num ~len ~loc]
-            (Llair.Term.switch ~key ~tbl ~els ~loc)
+            (Llair.Term.goto ~dst ~loc)
             []
       | _ ->
           let func = xlate_func_name x llfunc in
@@ -1054,12 +1049,8 @@ let xlate_instr :
                 let params = [xlate_name instr] in
                 let cmnd = Vector.empty in
                 let term =
-                  let key = Exp.integer Z.zero in
-                  let tbl = Vector.empty in
-                  let dst = label_of_block blk in
-                  let args = jump_args x instr blk in
-                  let els = Llair.Jump.mk dst args in
-                  Llair.Term.switch ~key ~tbl ~els ~loc
+                  let dst = Llair.Jump.mk (label_of_block blk) args in
+                  Llair.Term.goto ~dst ~loc
                 in
                 Llair.Block.mk ~lbl ~params ~cmnd ~term
               in
@@ -1083,12 +1074,9 @@ let xlate_instr :
   | Br -> (
     match Option.value_exn (Llvm.get_branch instr) with
     | `Unconditional blk ->
-        let key = Exp.integer Z.zero in
-        let tbl = Vector.empty in
-        let dst = label_of_block blk in
         let args = jump_args x instr blk in
-        let els = Llair.Jump.mk dst args in
-        terminal [] (Llair.Term.switch ~key ~tbl ~els ~loc) []
+        let dst = Llair.Jump.mk (label_of_block blk) args in
+        terminal [] (Llair.Term.goto ~dst ~loc) []
     | `Conditional (cnd, thn, els) ->
         let key = xlate_value x cnd in
         let thn_lbl = label_of_block thn in
@@ -1181,10 +1169,8 @@ let xlate_instr :
         Llair.Jump.mk dst args
       in
       let goto_unwind sel =
-        let key = Exp.integer Z.zero in
-        let tbl = Vector.empty in
-        let els = jump_unwind sel in
-        Llair.Term.switch ~key ~tbl ~els ~loc
+        let dst = jump_unwind sel in
+        Llair.Term.goto ~dst ~loc
       in
       let term_unwind, rev_blocks =
         if Llvm.is_cleanup instr then (goto_unwind (Exp.integer Z.zero), [])
@@ -1201,11 +1187,7 @@ let xlate_instr :
           let xlate_clause i =
             let clause = Llvm.operand instr i in
             let num_tis = Llvm.num_operands clause in
-            if num_tis = 0 then
-              let key = Exp.integer Z.zero in
-              let tbl = Vector.empty in
-              let els = match_filter in
-              Llair.Term.switch ~key ~tbl ~els ~loc
+            if num_tis = 0 then Llair.Term.goto ~dst:match_filter ~loc
             else
               match Llvm.classify_type (Llvm.type_of clause) with
               | Array (* filter *) -> (
