@@ -30,6 +30,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Summary.t
 
+  let is_destructor = function
+    | Typ.Procname.ObjC_Cpp clang_pname ->
+        Typ.Procname.ObjC_Cpp.is_destructor clang_pname
+        && not
+             (* Our frontend generates synthetic inner destructors to model invocation of base class
+           destructors correctly; see D5834555/D7189239 *)
+             (Typ.Procname.ObjC_Cpp.is_inner_destructor clang_pname)
+    | _ ->
+        false
+
+
+  let exec_call _ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
+    match call with
+    | Direct callee_pname when is_destructor callee_pname -> (
+      match actuals with
+      | [AccessExpression destroyed_access] ->
+          PulseDomain.invalidate call_loc destroyed_access astate
+      | _ ->
+          Ok astate )
+    | _ ->
+        PulseDomain.read_all call_loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+
+
   let dispatch_call ret (call : HilInstr.call) (actuals : HilExp.t list) _flags call_loc astate =
     let model =
       match call with
@@ -41,9 +64,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match model with
     | None ->
-        PulseDomain.havoc (fst ret) astate |> Result.return
+        exec_call ret call actuals _flags call_loc astate >>| PulseDomain.havoc (fst ret)
     | Some model ->
-        model call_loc ~ret ~actuals astate
+        PulseDomain.read_all call_loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+        >>= model call_loc ~ret ~actuals
 
 
   let exec_instr (astate : PulseDomain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t)
@@ -65,9 +89,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assume (condition, _, _, loc) ->
         PulseDomain.read_all loc (HilExp.get_access_exprs condition) astate |> check_error summary
     | Call (ret, call, actuals, flags, loc) ->
-        PulseDomain.read_all loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
-        >>= dispatch_call ret call actuals flags loc
-        |> check_error summary
+        dispatch_call ret call actuals flags loc astate |> check_error summary
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
