@@ -1096,11 +1096,7 @@ let xlate_instr :
             let blk =
               Llvm.block_of_value (Llvm.operand instr ((2 * i) + 1))
             in
-            let num =
-              match xlate_value x idx with
-              | Exp.Integer {data} -> data
-              | _ -> fail "xlate_instr: %a" pp_llvalue instr ()
-            in
+            let num = xlate_value x idx in
             let dst = label_of_block blk in
             let args = jump_args x instr blk in
             let rest = xlate_cases (i + 1) in

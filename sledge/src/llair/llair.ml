@@ -30,7 +30,7 @@ type 'a control_transfer =
 type jump = block control_transfer
 
 and term =
-  | Switch of {key: Exp.t; tbl: (Z.t * jump) vector; els: jump; loc: Loc.t}
+  | Switch of {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}
   | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
   | Call of
       { call: Exp.t control_transfer
@@ -130,13 +130,13 @@ let pp_term fs term =
   | Switch {key; tbl; els; loc} -> (
     match Vector.to_array tbl with
     | [||] -> pf "@[%a@]\t%a" pp_goto els Loc.pp loc
-    | [|(z, jmp)|] when Z.equal Z.zero z ->
+    | [|(z, jmp)|] when Exp.is_false z ->
         pf "@[if %a@;<1 2>%a@ @[else@;<1 2>%a@]@]\t%a" Exp.pp key pp_goto
           els pp_goto jmp Loc.pp loc
     | _ ->
         pf "@[<2>switch %a@ @[%a@ else: %a@]@]\t%a" Exp.pp key
-          (Vector.pp "@ " (fun fs (z, jmp) ->
-               Format.fprintf fs "%a: %a" Z.pp_print z pp_goto jmp ))
+          (Vector.pp "@ " (fun fs (case, jmp) ->
+               Format.fprintf fs "%a: %a" Exp.pp case pp_goto jmp ))
           tbl pp_goto els Loc.pp loc )
   | Iswitch {ptr; tbl; loc} ->
       pf "@[<2>iswitch %a@ @[<hv>%a@]@]\t%a" Exp.pp ptr
@@ -274,11 +274,11 @@ module Term = struct
     | Return _ | Throw _ | Unreachable -> assert true
 
   let goto ~dst ~loc =
-    Switch {key= Exp.integer Z.zero; tbl= Vector.empty; els= dst; loc}
+    Switch {key= Exp.bool false; tbl= Vector.empty; els= dst; loc}
     |> check invariant
 
   let branch ~key ~nzero ~zero ~loc =
-    let tbl = Vector.of_array [|(Z.zero, zero)|] in
+    let tbl = Vector.of_array [|(Exp.bool false, zero)|] in
     let els = nzero in
     Switch {key; tbl; els; loc} |> check invariant
 

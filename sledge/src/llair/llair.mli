@@ -75,9 +75,9 @@ type jump = block control_transfer
 
 (** Block terminators for function call/return or other control transfers. *)
 and term = private
-  | Switch of {key: Exp.t; tbl: (Z.t * jump) vector; els: jump; loc: Loc.t}
-      (** Invoke the [jump] in [tbl] associated with the integer [z] which
-          is equal to [key], if any, otherwise invoke [els]. *)
+  | Switch of {key: Exp.t; tbl: (Exp.t * jump) vector; els: jump; loc: Loc.t}
+      (** Invoke the [jump] in [tbl] associated with the integer expression
+          [case] which is equal to [key], if any, otherwise invoke [els]. *)
   | Iswitch of {ptr: Exp.t; tbl: jump vector; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
   | Call of
@@ -161,7 +161,7 @@ module Term : sig
   (** Construct a [Switch] representing a conditional branch. *)
 
   val switch :
-    key:Exp.t -> tbl:(Z.t * jump) vector -> els:jump -> loc:Loc.t -> term
+    key:Exp.t -> tbl:(Exp.t * jump) vector -> els:jump -> loc:Loc.t -> term
 
   val iswitch : ptr:Exp.t -> tbl:jump vector -> loc:Loc.t -> term
 

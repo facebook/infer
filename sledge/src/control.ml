@@ -185,15 +185,14 @@ let exec_term : Llair.t -> stack -> Domain.t -> Llair.block -> Work.x =
   | Switch {key; tbl; els} ->
       Vector.fold tbl
         ~f:(fun x (case, jump) ->
-          match Domain.assume state (Exp.eq key (Exp.integer case)) with
+          match Domain.assume state (Exp.eq key case) with
           | Some state -> exec_jump stk state block jump |> Work.seq x
           | None -> x )
         ~init:
           ( match
               Domain.assume state
                 (Vector.fold tbl ~init:(Exp.bool true)
-                   ~f:(fun b (case, _) ->
-                     Exp.and_ (Exp.dq key (Exp.integer case)) b ))
+                   ~f:(fun b (case, _) -> Exp.and_ (Exp.dq key case) b ))
             with
           | Some state -> exec_jump stk state block els
           | None -> Work.skip )
