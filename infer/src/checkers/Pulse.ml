@@ -66,8 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None ->
         exec_call ret call actuals _flags call_loc astate >>| PulseDomain.havoc (fst ret)
     | Some model ->
-        PulseDomain.read_all call_loc (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
-        >>= model call_loc ~ret ~actuals
+        model call_loc ~ret ~actuals astate
 
 
   let exec_instr (astate : PulseDomain.t) {ProcData.extras= summary} _cfg_node (instr : HilInstr.t)

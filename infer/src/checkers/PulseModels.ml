@@ -19,9 +19,29 @@ type model = exec_fun
 module Cplusplus = struct
   let delete : model =
    fun location ~ret:_ ~actuals astate ->
+    PulseDomain.read_all location (List.concat_map actuals ~f:HilExp.get_access_exprs) astate
+    >>= fun astate ->
     match actuals with
     | [AccessExpression deleted_access] ->
         PulseDomain.invalidate location deleted_access astate
+    | _ ->
+        Ok astate
+
+
+  let placement_new : model =
+   fun location ~ret ~actuals astate ->
+    match List.rev actuals with
+    | HilExp.AccessExpression expr :: other_actuals ->
+        let new_address = PulseDomain.AbstractAddress.mk_fresh () in
+        PulseDomain.write location expr new_address astate
+        >>= PulseDomain.write location (Base ret) new_address
+        >>= PulseDomain.read_all location
+              (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
+    | _ :: other_actuals ->
+        PulseDomain.read_all location
+          (List.concat_map other_actuals ~f:HilExp.get_access_exprs)
+          astate
+        >>= PulseDomain.write location (Base ret) (PulseDomain.AbstractAddress.mk_fresh ())
     | _ ->
         Ok astate
 end
@@ -66,7 +86,10 @@ module ProcNameDispatcher = struct
 end
 
 let builtins_dispatcher =
-  let builtins = [(BuiltinDecl.__delete, Cplusplus.delete)] in
+  let builtins =
+    [ (BuiltinDecl.__delete, Cplusplus.delete)
+    ; (BuiltinDecl.__placement_new, Cplusplus.placement_new) ]
+  in
   let builtins_map =
     Hashtbl.create
       ( module struct
