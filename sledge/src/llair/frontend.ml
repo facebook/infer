@@ -1082,11 +1082,10 @@ let xlate_instr :
         let thn_lbl = label_of_block thn in
         let thn_args = jump_args x instr thn in
         let thn = Llair.Jump.mk thn_lbl thn_args in
-        let tbl = Vector.of_array [|(Z.one, thn)|] in
         let els_lbl = label_of_block els in
         let els_args = jump_args x instr els in
         let els = Llair.Jump.mk els_lbl els_args in
-        terminal [] (Llair.Term.switch ~key ~tbl ~els ~loc) [] )
+        terminal [] (Llair.Term.branch ~key ~nzero:thn ~zero:els ~loc) [] )
   | Switch ->
       let key = xlate_value x (Llvm.operand instr 0) in
       let cases =
@@ -1200,18 +1199,16 @@ let xlate_instr :
                       else Exp.dq tiI ti
                     in
                     let key = xlate_filter 0 in
-                    let thn = match_filter in
-                    let tbl = Vector.of_array [|(Z.one, thn)|] in
-                    Llair.Term.switch ~key ~tbl ~els:(jump (i + 1)) ~loc
+                    Llair.Term.branch ~loc ~key ~nzero:match_filter
+                      ~zero:(jump (i + 1))
                 | _ -> fail "xlate_instr: %a" pp_llvalue instr () )
               | _ (* catch *) ->
                   let clause = xlate_value x clause in
                   let key =
                     Exp.or_ (Exp.eq clause Exp.null) (Exp.eq clause ti)
                   in
-                  let thn = jump_unwind typeid in
-                  let tbl = Vector.of_array [|(Z.one, thn)|] in
-                  Llair.Term.switch ~key ~tbl ~els:(jump (i + 1)) ~loc
+                  Llair.Term.branch ~loc ~key ~nzero:(jump_unwind typeid)
+                    ~zero:(jump (i + 1))
           in
           let rec rev_blocks i z =
             if i < num_clauses then

@@ -157,6 +157,9 @@ module Term : sig
   val goto : dst:jump -> loc:Loc.t -> term
   (** Construct a [Switch] representing an unconditional branch. *)
 
+  val branch : key:Exp.t -> nzero:jump -> zero:jump -> loc:Loc.t -> term
+  (** Construct a [Switch] representing a conditional branch. *)
+
   val switch :
     key:Exp.t -> tbl:(Z.t * jump) vector -> els:jump -> loc:Loc.t -> term
 
