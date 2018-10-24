@@ -798,7 +798,7 @@ let compute_invariant_map_and_check : Callbacks.proc_callback_args -> invariant_
   let pdata = ProcData.make proc_desc tenv symbol_table in
   let cfg = CFG.from_pdesc proc_desc in
   let initial = Init.initial_state pdata (CFG.start_node cfg) in
-  let inv_map = Analyzer.exec_pdesc ~initial pdata in
+  let inv_map = Analyzer.exec_pdesc ~do_narrowing:true ~initial pdata in
   let locals = get_local_decls proc_desc in
   let exit_mem =
     extract_post (CFG.exit_node cfg |> CFG.Node.id) inv_map

@@ -57,19 +57,24 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
 
   val compute_post :
-       ?debug:debug
+       ?do_narrowing:bool
+    -> ?debug:debug
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
 
   val exec_cfg :
-       TransferFunctions.CFG.t
+       ?do_narrowing:bool
+    -> TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> invariant_map
 
   val exec_pdesc :
-    TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map
+       ?do_narrowing:bool
+    -> TransferFunctions.extras ProcData.t
+    -> initial:TransferFunctions.Domain.astate
+    -> invariant_map
 
   val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
 
@@ -171,7 +176,10 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     else on_instrs instrs
 
 
-  let exec_node ~debug ({ProcData.pdesc} as proc_data) node ~is_loop_head astate_pre inv_map =
+  (* Note on narrowing operations: we defines the narrowing operations simply to take a smaller one.
+     So, as of now, the termination of narrowing is not guaranteed in general. *)
+  let exec_node ~debug ({ProcData.pdesc} as proc_data) node ~is_loop_head ~is_narrowing astate_pre
+      inv_map =
     let node_id = Node.id node in
     let update_inv_map pre ~visit_count =
       let inv_map' = exec_instrs ~debug proc_data node node_id ~visit_count pre inv_map in
@@ -179,8 +187,8 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
     in
     if InvariantMap.mem node_id inv_map then
       let old_state = InvariantMap.find node_id inv_map in
-      let widened_pre =
-        if is_loop_head then (
+      let new_pre =
+        if is_loop_head && not is_narrowing then (
           let num_iters = (old_state.State.visit_count :> int) in
           let prev = old_state.State.pre in
           let next = astate_pre in
@@ -190,10 +198,13 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
           res )
         else astate_pre
       in
-      if Domain.( <= ) ~lhs:widened_pre ~rhs:old_state.State.pre then (inv_map, ReachedFixPoint)
+      if
+        ((not is_narrowing) && Domain.( <= ) ~lhs:new_pre ~rhs:old_state.State.pre)
+        || (is_narrowing && Domain.( <= ) ~lhs:old_state.State.pre ~rhs:new_pre)
+      then (inv_map, ReachedFixPoint)
       else
         let visit_count' = VisitCount.succ ~pdesc old_state.State.visit_count in
-        update_inv_map widened_pre ~visit_count:visit_count'
+        update_inv_map new_pre ~visit_count:visit_count'
     else
       (* first time visiting this node *)
       update_inv_map astate_pre ~visit_count:VisitCount.first_time
@@ -217,15 +228,15 @@ module AbstractInterpreterCommon (TransferFunctions : TransferFunctions.SIL) = s
 
 
   (** compute and return an invariant map for [pdesc] *)
-  let make_exec_pdesc ~exec_cfg_internal ({ProcData.pdesc} as proc_data) ~initial =
-    exec_cfg_internal ~debug:Default (CFG.from_pdesc pdesc) proc_data ~initial
+  let make_exec_pdesc ~exec_cfg_internal ({ProcData.pdesc} as proc_data) ~do_narrowing ~initial =
+    exec_cfg_internal ~debug:Default (CFG.from_pdesc pdesc) proc_data ~do_narrowing ~initial
 
 
   (** compute and return the postcondition of [pdesc] *)
   let make_compute_post ~exec_cfg_internal ?(debug = Default) ({ProcData.pdesc} as proc_data)
-      ~initial =
+      ~do_narrowing ~initial =
     let cfg = CFG.from_pdesc pdesc in
-    let inv_map = exec_cfg_internal ~debug cfg proc_data ~initial in
+    let inv_map = exec_cfg_internal ~debug cfg proc_data ~do_narrowing ~initial in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
 end
 
@@ -244,7 +255,10 @@ struct
           match compute_pre cfg node inv_map with
           | Some astate_pre -> (
               let is_loop_head = CFG.is_loop_head pdesc node in
-              match exec_node ~debug proc_data node ~is_loop_head astate_pre inv_map with
+              match
+                exec_node ~debug proc_data node ~is_loop_head ~is_narrowing:false astate_pre
+                  inv_map
+              with
               | inv_map, ReachedFixPoint ->
                   (inv_map, work_queue')
               | inv_map, DidNotReachFixPoint ->
@@ -258,20 +272,21 @@ struct
 
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg_internal ~debug cfg proc_data ~initial =
+  let exec_cfg_internal ~debug cfg proc_data ~do_narrowing:_ ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map, _did_not_reach_fix_point =
-      exec_node ~debug proc_data start_node ~is_loop_head:false initial InvariantMap.empty
+      exec_node ~debug proc_data start_node ~is_loop_head:false ~is_narrowing:false initial
+        InvariantMap.empty
     in
     let work_queue = Scheduler.schedule_succs (Scheduler.empty cfg) start_node in
     exec_worklist ~debug cfg proc_data work_queue inv_map
 
 
-  let exec_cfg = exec_cfg_internal ~debug:Default
+  let exec_cfg ?do_narrowing:_ = exec_cfg_internal ~debug:Default ~do_narrowing:false
 
-  let exec_pdesc = make_exec_pdesc ~exec_cfg_internal
+  let exec_pdesc ?do_narrowing:_ = make_exec_pdesc ~exec_cfg_internal ~do_narrowing:false
 
-  let compute_post = make_compute_post ~exec_cfg_internal
+  let compute_post ?do_narrowing:_ = make_compute_post ~exec_cfg_internal ~do_narrowing:false
 end
 
 module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
@@ -293,57 +308,65 @@ module MakeUsingWTO (TransferFunctions : TransferFunctions.SIL) = struct
     NodePrinter.finish_session underlying_node
 
 
-  let exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head =
+  let exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head ~is_narrowing =
     match compute_pre cfg node inv_map with
     | Some astate_pre ->
-        exec_node ~debug proc_data node ~is_loop_head astate_pre inv_map
+        exec_node ~debug proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map
     | None ->
         L.(die InternalError) "Could not compute the pre of a node"
 
 
-  let rec exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head rest =
-    match exec_wto_node ~debug cfg proc_data inv_map head ~is_loop_head with
+  let rec exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head ~is_narrowing rest =
+    match exec_wto_node ~debug cfg proc_data inv_map head ~is_loop_head ~is_narrowing with
     | inv_map, ReachedFixPoint ->
         inv_map
     | inv_map, DidNotReachFixPoint ->
-        let inv_map = exec_wto_partition ~debug cfg proc_data inv_map rest in
-        exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:true rest
+        let inv_map = exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map rest in
+        exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:true ~is_narrowing rest
 
 
-  and exec_wto_partition ~debug cfg proc_data inv_map
+  and exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map
       (partition : CFG.Node.t WeakTopologicalOrder.Partition.t) =
     match partition with
     | Empty ->
         inv_map
     | Node {node; next} ->
-        let inv_map = exec_wto_node ~debug cfg proc_data inv_map node ~is_loop_head:false |> fst in
-        exec_wto_partition ~debug cfg proc_data inv_map next
+        let inv_map =
+          exec_wto_node ~debug cfg proc_data ~is_narrowing inv_map node ~is_loop_head:false |> fst
+        in
+        exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
     | Component {head; rest; next} ->
         let inv_map =
-          exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:false rest
+          exec_wto_component ~debug cfg proc_data inv_map head ~is_loop_head:false ~is_narrowing
+            rest
         in
-        exec_wto_partition ~debug cfg proc_data inv_map next
+        exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
 
 
-  let exec_cfg_internal ~debug cfg proc_data ~initial =
-    match CFG.wto cfg with
-    | Empty ->
-        InvariantMap.empty (* empty cfg *)
-    | Node {node= start_node; next} as wto ->
-        if Config.write_html then debug_wto wto start_node ;
-        let inv_map, _did_not_reach_fix_point =
-          exec_node ~debug proc_data start_node ~is_loop_head:false initial InvariantMap.empty
-        in
-        exec_wto_partition ~debug cfg proc_data inv_map next
-    | Component _ ->
-        L.(die InternalError) "Did not expect the start node to be part of a loop"
+  let exec_cfg_internal ~debug cfg proc_data ~do_narrowing ~initial =
+    let wto = CFG.wto cfg in
+    let exec_cfg ~is_narrowing inv_map =
+      match wto with
+      | Empty ->
+          inv_map (* empty cfg *)
+      | Node {node= start_node; next} as wto ->
+          if Config.write_html then debug_wto wto start_node ;
+          let inv_map, _did_not_reach_fix_point =
+            exec_node ~debug proc_data start_node ~is_loop_head:false ~is_narrowing initial inv_map
+          in
+          exec_wto_partition ~debug cfg proc_data ~is_narrowing inv_map next
+      | Component _ ->
+          L.(die InternalError) "Did not expect the start node to be part of a loop"
+    in
+    let inv_map = exec_cfg ~is_narrowing:false InvariantMap.empty in
+    if do_narrowing then exec_cfg ~is_narrowing:true inv_map else inv_map
 
 
-  let exec_cfg = exec_cfg_internal ~debug:Default
+  let exec_cfg ?(do_narrowing = false) = exec_cfg_internal ~debug:Default ~do_narrowing
 
-  let exec_pdesc = make_exec_pdesc ~exec_cfg_internal
+  let exec_pdesc ?(do_narrowing = false) = make_exec_pdesc ~exec_cfg_internal ~do_narrowing
 
-  let compute_post = make_compute_post ~exec_cfg_internal
+  let compute_post ?(do_narrowing = false) = make_compute_post ~exec_cfg_internal ~do_narrowing
 end
 
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) -> S

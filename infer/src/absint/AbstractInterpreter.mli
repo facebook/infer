@@ -27,21 +27,26 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate State.t InvariantMap.t
 
   val compute_post :
-       ?debug:debug
+       ?do_narrowing:bool
+    -> ?debug:debug
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> TransferFunctions.Domain.astate option
   (** compute and return the postcondition for the given procedure starting from [initial]. *)
 
   val exec_cfg :
-       TransferFunctions.CFG.t
+       ?do_narrowing:bool
+    -> TransferFunctions.CFG.t
     -> TransferFunctions.extras ProcData.t
     -> initial:TransferFunctions.Domain.astate
     -> invariant_map
   (** compute and return invariant map for the given CFG/procedure starting from [initial]. *)
 
   val exec_pdesc :
-    TransferFunctions.extras ProcData.t -> initial:TransferFunctions.Domain.astate -> invariant_map
+       ?do_narrowing:bool
+    -> TransferFunctions.extras ProcData.t
+    -> initial:TransferFunctions.Domain.astate
+    -> invariant_map
   (** compute and return invariant map for the given procedure starting from [initial] *)
 
   val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
