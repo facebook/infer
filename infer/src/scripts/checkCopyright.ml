@@ -205,10 +205,9 @@ let pp_copyright ~monoidics ~ropas ~copyright_year com_style fmt =
   in
   pp_start () ;
   if ropas then (
-    pp_line " Copyright (c) %d-present" copyright_year ;
-    pp_line "" ;
-    pp_line " Programming Research Laboratory (ROPAS)" ;
-    pp_line " Seoul National University, Korea" )
+    pp_line " Copyright (c) 2016-present, Programming Research Laboratory (ROPAS)" ;
+    pp_line "                             Seoul National University, Korea" ;
+    pp_line " Copyright (c) 2017-present, Facebook, Inc." )
   else (
     if monoidics then pp_line " Copyright (c) 2009-2013, Monoidics ltd." ;
     pp_line " Copyright (c) %d-present, Facebook, Inc." copyright_year ) ;
@@ -244,14 +243,17 @@ let copyright_has_changed fname lines ~notice_range:(cstart, cend) ~monoidics ~r
 let com_style_of_lang =
   [ (".ac", comment_style_m4)
   ; (".al", comment_style_al)
+  ; (".atd", comment_style_ocaml)
   ; (".c", comment_style_c)
   ; (".cpp", comment_style_c)
   ; (".h", comment_style_c)
+  ; (".inc", comment_style_c)
   ; (".java", comment_style_c)
   ; (".ll", comment_style_llvm)
   ; (".m", comment_style_c)
   ; (".m4", comment_style_m4)
   ; (".make", comment_style_make)
+  ; (".mk", comment_style_make)
   ; (".ml", comment_style_ocaml)
   ; (".mli", comment_style_ocaml)
   ; (".mll", comment_style_ocaml)
@@ -262,6 +264,10 @@ let com_style_of_lang =
   ; (".re", comment_style_c)
   ; (".rei", comment_style_c)
   ; (".sh", comment_style_shell)
+  ; ("dune.in", comment_style_ocaml)
+  ; ("dune.common.in", comment_style_ocaml)
+  ; ("dune-common.in", comment_style_ocaml)
+  ; ("dune-workspace.in", comment_style_llvm)
   ; ("Makefile", comment_style_make) ]
 
 

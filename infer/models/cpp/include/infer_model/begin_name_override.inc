@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2016-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 #define make_shared std__make_shared
 #define enable_shared_from_this std__enable_shared_from_this
 #define shared_ptr std__shared_ptr
